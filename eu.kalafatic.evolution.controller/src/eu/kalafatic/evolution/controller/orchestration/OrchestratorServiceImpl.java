@@ -220,6 +220,11 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                     if (settings.containsKey("stepMode")) s.setStepMode((Boolean)settings.get("stepMode"));
                     if (settings.containsKey("maxIterations")) s.setMaxIterations((Integer)settings.get("maxIterations"));
                     if (settings.containsKey("autoApprove")) s.setAutoApprove((Boolean)settings.get("autoApprove"));
+                    if (settings.containsKey("aiMode")) s.setAiMode(eu.kalafatic.evolution.model.orchestration.AiMode.get((Integer)settings.get("aiMode")));
+                    if (settings.containsKey("localModel")) s.setLocalModel((String)settings.get("localModel"));
+                    if (settings.containsKey("remoteModel")) s.setRemoteModel((String)settings.get("remoteModel"));
+                    if (settings.containsKey("bitState")) s.setBitState((Long)settings.get("bitState"));
+                    if (settings.containsKey("targetPath")) s.setTargetPath((String)settings.get("targetPath"));
                 });
 
             PromptInstructions pi = model.getAiChat().getPromptInstructions();
@@ -297,6 +302,21 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                 if (orchModel == null) orchModel = this.orchestrator;
 
                 orchModel = ensureOrchestratorModel(orchModel, sessionId);
+
+                // Sync session settings to model/context if available
+                final String sid = sessionId;
+                final Orchestrator finalOrch = orchModel;
+                orchModel.getAiChat().getSessions().stream()
+                    .filter(s -> sid.equals(s.getId()))
+                    .findFirst()
+                    .ifPresent(s -> {
+                        if (s.getAiMode() != null) finalOrch.setAiMode(s.getAiMode());
+                        if (s.getLocalModel() != null) {
+                            finalOrch.setLocalModel(s.getLocalModel());
+                            if (finalOrch.getOllama() != null) finalOrch.getOllama().setModel(s.getLocalModel());
+                        }
+                        if (s.getRemoteModel() != null) finalOrch.setRemoteModel(s.getRemoteModel());
+                    });
 
                 TaskContext context = (session instanceof SessionContext) ? ((SessionContext)session).getTaskContext() : null;
 

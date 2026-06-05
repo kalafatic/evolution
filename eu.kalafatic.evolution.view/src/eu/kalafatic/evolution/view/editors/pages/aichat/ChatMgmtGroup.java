@@ -225,10 +225,11 @@ public class ChatMgmtGroup extends AEvoGroup {
         if (!isUpdating) {
             isUpdating = true;
             try {
+                eu.kalafatic.evolution.model.orchestration.ChatSession session = page.getCurrentSession();
                 eu.kalafatic.evolution.view.projection.RuntimeProjection projection = eu.kalafatic.evolution.view.projection.ProjectionService.getInstance().getProjection(page.getCurrentSessionName());
                 java.util.Map<String, Object> config = projection.getConfiguration();
 
-                int modeVal = (int) config.getOrDefault("aiMode", orchestrator != null ? orchestrator.getAiMode().getValue() : 0);
+                int modeVal = (int) config.getOrDefault("aiMode", session != null && session.getAiMode() != null ? session.getAiMode().getValue() : (orchestrator != null ? orchestrator.getAiMode().getValue() : 0));
                 AiMode mode = AiMode.get(modeVal);
                 if (aiModeCombo.getSelectionIndex() != mode.getValue()) {
                     aiModeCombo.select(mode.getValue());
@@ -246,7 +247,7 @@ public class ChatMgmtGroup extends AEvoGroup {
                     }
                 }
 
-                String remoteModel = (String) config.getOrDefault("remoteModel", orchestrator != null ? orchestrator.getRemoteModel() : "deepseek");
+                String remoteModel = (String) config.getOrDefault("remoteModel", session != null && session.getRemoteModel() != null ? session.getRemoteModel() : (orchestrator != null ? orchestrator.getRemoteModel() : "deepseek"));
                 if (remoteModel != null) {
                     selectSafe(aiRemoteCombo, remoteModel);
                 }
@@ -280,7 +281,7 @@ public class ChatMgmtGroup extends AEvoGroup {
                         }
                     }
 
-                    String model = (String) config.getOrDefault("localModel", orchestrator != null ? orchestrator.getLocalModel() : "");
+                    String model = (String) config.getOrDefault("localModel", session != null && session.getLocalModel() != null ? session.getLocalModel() : (orchestrator != null ? orchestrator.getLocalModel() : ""));
                     if (model != null) {
                         selectSafe(localModelCombo, model);
                     }

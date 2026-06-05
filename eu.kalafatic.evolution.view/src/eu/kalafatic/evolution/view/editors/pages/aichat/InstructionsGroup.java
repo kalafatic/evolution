@@ -350,6 +350,11 @@ public class InstructionsGroup extends AEvoGroup {
                 setSelectionSafe(stepModeCheck, (Boolean) config.getOrDefault("stepMode", session != null ? session.isStepMode() : (pi != null ? pi.isStepMode() : false)));
                 setSelectionSafe(autoApproveCheck, (Boolean) config.getOrDefault("autoApprove", session != null ? session.isAutoApprove() : (pi != null ? pi.isAutoApprove() : false)));
 
+                if (expansionScale != null && !expansionScale.isDisposed()) {
+                    int defaultExpansion = session != null ? (int)session.getBitState() : 5; // Placeholder use of bitState for expansion depth if needed
+                    expansionScale.setSelection((Integer) config.getOrDefault("expansion", defaultExpansion));
+                }
+
                 int defaultMaxIter = session != null ? session.getMaxIterations() : (pi != null ? pi.getPreferredMaxIterations() : 4);
                 if (defaultMaxIter <= 0) defaultMaxIter = 4;
 

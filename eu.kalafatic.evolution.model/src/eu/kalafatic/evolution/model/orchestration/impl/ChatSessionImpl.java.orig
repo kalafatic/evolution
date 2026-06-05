@@ -2,7 +2,6 @@
  */
 package eu.kalafatic.evolution.model.orchestration.impl;
 
-import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.ChatMessage;
 import eu.kalafatic.evolution.model.orchestration.ChatSession;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
@@ -42,10 +41,6 @@ import org.eclipse.emf.ecore.util.InternalEList;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl#getTargetPath <em>Target Path</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl#getTargetType <em>Target Type</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl#isAutoApprove <em>Auto Approve</em>}</li>
- *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl#getAiMode <em>Ai Mode</em>}</li>
- *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl#getLocalModel <em>Local Model</em>}</li>
- *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl#getRemoteModel <em>Remote Model</em>}</li>
- *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl#getBitState <em>Bit State</em>}</li>
  * </ul>
  *
  * @generated
@@ -282,86 +277,6 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 	protected boolean autoApprove = AUTO_APPROVE_EDEFAULT;
 
 	/**
-	 * The default value of the '{@link #getAiMode() <em>Ai Mode</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #getAiMode()
-	 * @generated
-	 * @ordered
-	 */
-	protected static final AiMode AI_MODE_EDEFAULT = AiMode.LOCAL;
-
-	/**
-	 * The cached value of the '{@link #getAiMode() <em>Ai Mode</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #getAiMode()
-	 * @generated
-	 * @ordered
-	 */
-	protected AiMode aiMode = AI_MODE_EDEFAULT;
-
-	/**
-	 * The default value of the '{@link #getLocalModel() <em>Local Model</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #getLocalModel()
-	 * @generated
-	 * @ordered
-	 */
-	protected static final String LOCAL_MODEL_EDEFAULT = null;
-
-	/**
-	 * The cached value of the '{@link #getLocalModel() <em>Local Model</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #getLocalModel()
-	 * @generated
-	 * @ordered
-	 */
-	protected String localModel = LOCAL_MODEL_EDEFAULT;
-
-	/**
-	 * The default value of the '{@link #getRemoteModel() <em>Remote Model</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #getRemoteModel()
-	 * @generated
-	 * @ordered
-	 */
-	protected static final String REMOTE_MODEL_EDEFAULT = null;
-
-	/**
-	 * The cached value of the '{@link #getRemoteModel() <em>Remote Model</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #getRemoteModel()
-	 * @generated
-	 * @ordered
-	 */
-	protected String remoteModel = REMOTE_MODEL_EDEFAULT;
-
-	/**
-	 * The default value of the '{@link #getBitState() <em>Bit State</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #getBitState()
-	 * @generated
-	 * @ordered
-	 */
-	protected static final long BIT_STATE_EDEFAULT = 0L;
-
-	/**
-	 * The cached value of the '{@link #getBitState() <em>Bit State</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #getBitState()
-	 * @generated
-	 * @ordered
-	 */
-	protected long bitState = BIT_STATE_EDEFAULT;
-
-	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
@@ -382,98 +297,6 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 		autoApprove = newAutoApprove;
 		if (eNotificationRequired())
 			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_SESSION__AUTO_APPROVE, oldAutoApprove, autoApprove));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public AiMode getAiMode() {
-		return aiMode;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setAiMode(AiMode newAiMode) {
-		AiMode oldAiMode = aiMode;
-		aiMode = newAiMode == null ? AI_MODE_EDEFAULT : newAiMode;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_SESSION__AI_MODE, oldAiMode, aiMode));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public String getLocalModel() {
-		return localModel;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setLocalModel(String newLocalModel) {
-		String oldLocalModel = localModel;
-		localModel = newLocalModel;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_SESSION__LOCAL_MODEL, oldLocalModel, localModel));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public String getRemoteModel() {
-		return remoteModel;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setRemoteModel(String newRemoteModel) {
-		String oldRemoteModel = remoteModel;
-		remoteModel = newRemoteModel;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_SESSION__REMOTE_MODEL, oldRemoteModel, remoteModel));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public long getBitState() {
-		return bitState;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setBitState(long newBitState) {
-		long oldBitState = bitState;
-		bitState = newBitState;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_SESSION__BIT_STATE, oldBitState, bitState));
 	}
 
 	/**
@@ -784,14 +607,6 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 				return getOutputPath();
 			case OrchestrationPackage.CHAT_SESSION__AUTO_APPROVE:
 				return isAutoApprove();
-			case OrchestrationPackage.CHAT_SESSION__AI_MODE:
-				return getAiMode();
-			case OrchestrationPackage.CHAT_SESSION__LOCAL_MODEL:
-				return getLocalModel();
-			case OrchestrationPackage.CHAT_SESSION__REMOTE_MODEL:
-				return getRemoteModel();
-			case OrchestrationPackage.CHAT_SESSION__BIT_STATE:
-				return getBitState();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -842,18 +657,6 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 			case OrchestrationPackage.CHAT_SESSION__AUTO_APPROVE:
 				setAutoApprove((Boolean)newValue);
 				return;
-			case OrchestrationPackage.CHAT_SESSION__AI_MODE:
-				setAiMode((AiMode)newValue);
-				return;
-			case OrchestrationPackage.CHAT_SESSION__LOCAL_MODEL:
-				setLocalModel((String)newValue);
-				return;
-			case OrchestrationPackage.CHAT_SESSION__REMOTE_MODEL:
-				setRemoteModel((String)newValue);
-				return;
-			case OrchestrationPackage.CHAT_SESSION__BIT_STATE:
-				setBitState((Long)newValue);
-				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -902,18 +705,6 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 			case OrchestrationPackage.CHAT_SESSION__AUTO_APPROVE:
 				setAutoApprove(AUTO_APPROVE_EDEFAULT);
 				return;
-			case OrchestrationPackage.CHAT_SESSION__AI_MODE:
-				setAiMode(AI_MODE_EDEFAULT);
-				return;
-			case OrchestrationPackage.CHAT_SESSION__LOCAL_MODEL:
-				setLocalModel(LOCAL_MODEL_EDEFAULT);
-				return;
-			case OrchestrationPackage.CHAT_SESSION__REMOTE_MODEL:
-				setRemoteModel(REMOTE_MODEL_EDEFAULT);
-				return;
-			case OrchestrationPackage.CHAT_SESSION__BIT_STATE:
-				setBitState(BIT_STATE_EDEFAULT);
-				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -950,14 +741,6 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 				return OUTPUT_PATH_EDEFAULT == null ? outputPath != null : !OUTPUT_PATH_EDEFAULT.equals(outputPath);
 			case OrchestrationPackage.CHAT_SESSION__AUTO_APPROVE:
 				return autoApprove != AUTO_APPROVE_EDEFAULT;
-			case OrchestrationPackage.CHAT_SESSION__AI_MODE:
-				return aiMode != AI_MODE_EDEFAULT;
-			case OrchestrationPackage.CHAT_SESSION__LOCAL_MODEL:
-				return LOCAL_MODEL_EDEFAULT == null ? localModel != null : !LOCAL_MODEL_EDEFAULT.equals(localModel);
-			case OrchestrationPackage.CHAT_SESSION__REMOTE_MODEL:
-				return REMOTE_MODEL_EDEFAULT == null ? remoteModel != null : !REMOTE_MODEL_EDEFAULT.equals(remoteModel);
-			case OrchestrationPackage.CHAT_SESSION__BIT_STATE:
-				return bitState != BIT_STATE_EDEFAULT;
 		}
 		return super.eIsSet(featureID);
 	}
@@ -994,14 +777,6 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 		result.append(outputPath);
 		result.append(", autoApprove: ");
 		result.append(autoApprove);
-		result.append(", aiMode: ");
-		result.append(aiMode);
-		result.append(", localModel: ");
-		result.append(localModel);
-		result.append(", remoteModel: ");
-		result.append(remoteModel);
-		result.append(", bitState: ");
-		result.append(bitState);
 		result.append(')');
 		return result.toString();
 	}

@@ -612,6 +612,10 @@ public class AiChatPage extends AEvoPage {
 
 					updateModeDisplay();
 					updateScrolledContent();
+
+					// Force UI groups to reload from the new session object
+					if (chatMgmtGroup != null) chatMgmtGroup.scheduleRefresh();
+					if (instructionsGroup != null) instructionsGroup.scheduleRefresh();
 				});
 	}
 

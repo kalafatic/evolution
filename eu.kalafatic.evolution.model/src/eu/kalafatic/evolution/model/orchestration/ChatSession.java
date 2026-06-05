@@ -295,4 +295,96 @@ public interface ChatSession extends EObject {
 	 */
 	void setAutoApprove(boolean value);
 
+	/**
+	 * Returns the value of the '<em><b>Ai Mode</b></em>' attribute.
+	 * The literals are from the enumeration {@link eu.kalafatic.evolution.model.orchestration.AiMode}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Ai Mode</em>' attribute.
+	 * @see eu.kalafatic.evolution.model.orchestration.AiMode
+	 * @see #setAiMode(AiMode)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getChatSession_AiMode()
+	 * @model
+	 * @generated
+	 */
+	AiMode getAiMode();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.ChatSession#getAiMode <em>Ai Mode</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Ai Mode</em>' attribute.
+	 * @see eu.kalafatic.evolution.model.orchestration.AiMode
+	 * @see #getAiMode()
+	 * @generated
+	 */
+	void setAiMode(AiMode value);
+
+	/**
+	 * Returns the value of the '<em><b>Local Model</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Local Model</em>' attribute.
+	 * @see #setLocalModel(String)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getChatSession_LocalModel()
+	 * @model
+	 * @generated
+	 */
+	String getLocalModel();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.ChatSession#getLocalModel <em>Local Model</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Local Model</em>' attribute.
+	 * @see #getLocalModel()
+	 * @generated
+	 */
+	void setLocalModel(String value);
+
+	/**
+	 * Returns the value of the '<em><b>Remote Model</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Remote Model</em>' attribute.
+	 * @see #setRemoteModel(String)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getChatSession_RemoteModel()
+	 * @model
+	 * @generated
+	 */
+	String getRemoteModel();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.ChatSession#getRemoteModel <em>Remote Model</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Remote Model</em>' attribute.
+	 * @see #getRemoteModel()
+	 * @generated
+	 */
+	void setRemoteModel(String value);
+
+	/**
+	 * Returns the value of the '<em><b>Bit State</b></em>' attribute.
+	 * The default value is <code>"0"</code>.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Bit State</em>' attribute.
+	 * @see #setBitState(long)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getChatSession_BitState()
+	 * @model default="0"
+	 * @generated
+	 */
+	long getBitState();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.ChatSession#getBitState <em>Bit State</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Bit State</em>' attribute.
+	 * @see #getBitState()
+	 * @generated
+	 */
+	void setBitState(long value);
+
 } // ChatSession

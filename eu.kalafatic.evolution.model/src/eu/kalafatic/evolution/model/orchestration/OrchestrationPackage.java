@@ -3118,13 +3118,49 @@ public interface OrchestrationPackage extends EPackage {
 	int CHAT_SESSION__AUTO_APPROVE = 11;
 
 	/**
+	 * The feature id for the '<em><b>Ai Mode</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int CHAT_SESSION__AI_MODE = 12;
+
+	/**
+	 * The feature id for the '<em><b>Local Model</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int CHAT_SESSION__LOCAL_MODEL = 13;
+
+	/**
+	 * The feature id for the '<em><b>Remote Model</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int CHAT_SESSION__REMOTE_MODEL = 14;
+
+	/**
+	 * The feature id for the '<em><b>Bit State</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int CHAT_SESSION__BIT_STATE = 15;
+
+	/**
 	 * The number of structural features of the '<em>Chat Session</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int CHAT_SESSION_FEATURE_COUNT = 12;
+	int CHAT_SESSION_FEATURE_COUNT = 16;
 
 	/**
 	 * The number of operations of the '<em>Chat Session</em>' class.
@@ -6224,6 +6260,50 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getChatSession_AutoApprove();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.ChatSession#getAiMode <em>Ai Mode</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Ai Mode</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ChatSession#getAiMode()
+	 * @see #getChatSession()
+	 * @generated
+	 */
+	EAttribute getChatSession_AiMode();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.ChatSession#getLocalModel <em>Local Model</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Local Model</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ChatSession#getLocalModel()
+	 * @see #getChatSession()
+	 * @generated
+	 */
+	EAttribute getChatSession_LocalModel();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.ChatSession#getRemoteModel <em>Remote Model</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Remote Model</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ChatSession#getRemoteModel()
+	 * @see #getChatSession()
+	 * @generated
+	 */
+	EAttribute getChatSession_RemoteModel();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.ChatSession#getBitState <em>Bit State</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Bit State</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ChatSession#getBitState()
+	 * @see #getChatSession()
+	 * @generated
+	 */
+	EAttribute getChatSession_BitState();
+
+	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.ChatMessage <em>Chat Message</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -8750,6 +8830,38 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute CHAT_SESSION__AUTO_APPROVE = eINSTANCE.getChatSession_AutoApprove();
+
+		/**
+		 * The meta object literal for the '<em><b>Ai Mode</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute CHAT_SESSION__AI_MODE = eINSTANCE.getChatSession_AiMode();
+
+		/**
+		 * The meta object literal for the '<em><b>Local Model</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute CHAT_SESSION__LOCAL_MODEL = eINSTANCE.getChatSession_LocalModel();
+
+		/**
+		 * The meta object literal for the '<em><b>Remote Model</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute CHAT_SESSION__REMOTE_MODEL = eINSTANCE.getChatSession_RemoteModel();
+
+		/**
+		 * The meta object literal for the '<em><b>Bit State</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute CHAT_SESSION__BIT_STATE = eINSTANCE.getChatSession_BitState();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ChatMessageImpl <em>Chat Message</em>}' class.

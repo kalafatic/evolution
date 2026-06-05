@@ -19,6 +19,7 @@ import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import org.eclipse.jface.viewers.ITreeContentProvider;
 
 import eu.kalafatic.evolution.model.orchestration.AiChat;
+import eu.kalafatic.evolution.model.orchestration.ChatSession;
 import eu.kalafatic.evolution.model.orchestration.Compiler;
 import eu.kalafatic.evolution.model.orchestration.Database;
 import eu.kalafatic.evolution.model.orchestration.Eclipse;
@@ -183,11 +184,12 @@ public class OrchestrationNavigatorContentProvider implements ITreeContentProvid
             };
         } else if (parentElement instanceof AiChat) {
             AiChat a = (AiChat) parentElement;
-            return new Object[] {
-                new ModelProperty(a, OrchestrationPackage.Literals.AI_CHAT__URL, "URL"),
-                new ModelProperty(a, OrchestrationPackage.Literals.AI_CHAT__TOKEN, "Token"),
-                new ModelProperty(a, OrchestrationPackage.Literals.AI_CHAT__PROMPT, "Prompt")
-            };
+            List<Object> children = new ArrayList<>();
+            children.add(new ModelProperty(a, OrchestrationPackage.Literals.AI_CHAT__URL, "URL"));
+            children.add(new ModelProperty(a, OrchestrationPackage.Literals.AI_CHAT__TOKEN, "Token"));
+            children.add(new ModelProperty(a, OrchestrationPackage.Literals.AI_CHAT__PROMPT, "Prompt"));
+            children.addAll(a.getSessions());
+            return children.toArray();
         } else if (parentElement instanceof Maven) {
             Maven m = (Maven) parentElement;
             return new Object[] {
@@ -225,6 +227,18 @@ public class OrchestrationNavigatorContentProvider implements ITreeContentProvid
             return new Object[] {
                 new ModelProperty(f, OrchestrationPackage.Literals.FILE_CONFIG__LOCAL_PATH, "Path")
             };
+        } else if (parentElement instanceof ChatSession) {
+            ChatSession s = (ChatSession) parentElement;
+            List<Object> children = new ArrayList<>();
+            children.add(new ModelProperty(s, OrchestrationPackage.Literals.CHAT_SESSION__AI_MODE, "AI Mode"));
+            children.add(new ModelProperty(s, OrchestrationPackage.Literals.CHAT_SESSION__LOCAL_MODEL, "Local Model"));
+            children.add(new ModelProperty(s, OrchestrationPackage.Literals.CHAT_SESSION__REMOTE_MODEL, "Remote Model"));
+            children.add(new ModelProperty(s, OrchestrationPackage.Literals.CHAT_SESSION__BIT_STATE, "Bit State"));
+            children.add(new ModelProperty(s, OrchestrationPackage.Literals.CHAT_SESSION__TARGET_PATH, "Target Path"));
+            children.add(new ModelProperty(s, OrchestrationPackage.Literals.CHAT_SESSION__ITERATIVE_MODE, "Iterative"));
+            children.add(new ModelProperty(s, OrchestrationPackage.Literals.CHAT_SESSION__DARWIN_MODE, "Darwin"));
+            children.add(new ModelProperty(s, OrchestrationPackage.Literals.CHAT_SESSION__AUTO_APPROVE, "Auto Approve"));
+            return children.toArray();
         }
         return new Object[0];
     }
