@@ -761,8 +761,27 @@ public class ChatGroup extends AEvoGroup {
                             }
                         }
                     }
-                    msg.setIndex(s.getMessages().size());
-                    s.getMessages().add(msg);
+
+                    // Handle in-place updates for progress messages
+                    ChatMessage existingProgress = null;
+                    if (newAgentType != null && newAgentType.contains("evolution-progress")) {
+                        for (ChatMessage m : s.getMessages()) {
+                            if (msg.getTurnId() != null && msg.getTurnId().equals(m.getTurnId())) {
+                                existingProgress = m;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (existingProgress != null) {
+                        existingProgress.setText(msg.getText());
+                        existingProgress.setAgentType(newAgentType);
+                        existingProgress.setIsTerminal(msg.isIsTerminal());
+                    } else {
+                        msg.setIndex(s.getMessages().size());
+                        s.getMessages().add(msg);
+                    }
+
                     if (s == currentSession) {
                         scheduleRefresh();
                     }

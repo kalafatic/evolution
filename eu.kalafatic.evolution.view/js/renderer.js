@@ -34,7 +34,10 @@ window.ChatApp.Renderer = {
              } catch(e) {}
         }
 
-        if (isDarwin) {
+        if (role.includes('evolution-progress')) {
+            content.style.flexDirection = 'column';
+            content.appendChild(this.renderEvolutionProgress(m));
+        } else if (isDarwin) {
             content.style.flexDirection = 'column';
             content.appendChild(this.renderDarwin(m));
 
@@ -373,6 +376,94 @@ window.ChatApp.Renderer = {
             });
 
         } catch(e) { container.innerHTML = `<div class="bubble error">Failed to parse Darwin: ${e.message}</div>`; }
+        return container;
+    },
+
+    renderEvolutionProgress: function(m) {
+        const container = document.createElement('div');
+        container.className = 'progress-monitor';
+        try {
+            const data = JSON.parse(m.text);
+            const stages = [
+                { id: 'ITERATION_START', label: 'Iteration Started' },
+                { id: 'ANALYZE_PARENT', label: 'Parent Analysis' },
+                { id: 'GENERATE_BRANCH', label: 'Branch Generation' },
+                { id: 'VALIDATE_BRANCH', label: 'Validation' },
+                { id: 'SCORE_BRANCH', label: 'Scoring' },
+                { id: 'SELECT_WINNER', label: 'Selection' },
+                { id: 'SAVE_LINEAGE', label: 'Persist Lineage' },
+                { id: 'ITERATION_COMPLETE', label: 'Complete' }
+            ];
+
+            const currentStageIdx = stages.findIndex(s => s.id === data.stage);
+            const percent = Math.round(((currentStageIdx + 1) / stages.length) * 100);
+
+            let branchTableRows = (data.branches || []).map(b => `
+                <tr>
+                    <td>${b.id}</td>
+                    <td>${b.status || 'waiting'}</td>
+                    <td>${b.score !== undefined ? Math.round(b.score * 100) : '-'}</td>
+                </tr>
+            `).join('');
+
+            const now = Date.now();
+            const start = data.startTime || now;
+            const elapsed = Math.max(0, Math.round((now - start) / 1000));
+            // Guard against extreme elapsed times in mock data
+            const displayElapsed = elapsed > 36000 ? 0 : elapsed;
+            const minutes = Math.floor(displayElapsed / 60).toString().padStart(2, '0');
+            const seconds = (displayElapsed % 60).toString().padStart(2, '0');
+
+            container.innerHTML = `
+                <div class="progress-header">
+                    <span>Iteration <b>#${data.iterationCount}</b></span>
+                    <span>Generation <b>${data.generation}</b></span>
+                    <span>Lineage <b>${data.lineage}</b></span>
+                </div>
+                <div class="global-progress-container">
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" style="width: ${percent}%"></div>
+                    </div>
+                    <div class="current-stage">${stages[currentStageIdx]?.label || data.stage}</div>
+                </div>
+                <div class="evolution-pipeline">
+                    ${stages.map((s, idx) => {
+                        let icon = '○';
+                        let statusClass = 'step-status-waiting';
+                        if (idx < currentStageIdx || data.stage === 'ITERATION_COMPLETE') {
+                            icon = '✓';
+                            statusClass = 'step-status-completed';
+                        } else if (idx === currentStageIdx) {
+                            icon = '►';
+                            statusClass = 'step-status-active';
+                        }
+                        return `<div class="pipeline-step ${statusClass}"><span class="step-icon">${icon}</span> ${s.label}</div>`;
+                    }).join('')}
+                </div>
+                <table class="branch-table">
+                    <thead>
+                        <tr><th>Branch</th><th>Status</th><th>Score</th></tr>
+                    </thead>
+                    <tbody>
+                        ${branchTableRows || '<tr><td colspan="3" style="text-align:center;color:var(--text-secondary)">No branches yet</td></tr>'}
+                    </tbody>
+                </table>
+                <div class="active-llm-panel">
+                    <div class="llm-info-row">
+                        <span class="llm-label">Active Model:</span>
+                        <span>${data.currentModel || 'local'}</span>
+                    </div>
+                    <div class="llm-info-row">
+                        <span class="llm-label">Task:</span>
+                        <span>${data.currentTask || 'Initializing...'}</span>
+                    </div>
+                    <div class="llm-info-row">
+                        <span class="llm-label">Elapsed:</span>
+                        <span>${minutes}:${seconds}</span>
+                    </div>
+                </div>
+            `;
+        } catch(e) { container.innerHTML = `<div class="bubble error">Failed to parse Progress: ${e.message}</div>`; }
         return container;
     }
 };

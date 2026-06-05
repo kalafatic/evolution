@@ -725,6 +725,11 @@ public class IterationManager {
 
         context.log("[KERNEL] Darwin Evolution Phase: " + state.getCurrentPhase());
 
+        Trajectory activeTrajectory = getActiveTrajectory(context);
+        int generation = activeTrajectory != null ? activeTrajectory.getGeneration() : 0;
+        String lineage = activeTrajectory != null ? activeTrajectory.getTrajectoryId() : "alpha";
+        EvolutionProgressPublisher.startIteration(context, state.getIterationCount(), generation, lineage);
+
         if (phase == EvolutionPhase.INTENT_EXPANSION) {
             transition(SystemState.ANALYZING, context);
             IntentExpansionResult expansion = getIntentExpansionEngine().expand(goal, context);
@@ -850,8 +855,10 @@ public class IterationManager {
                 result.setDecision(SelfDevDecision.STOP);
             }
 
+            EvolutionProgressPublisher.completeIteration(context);
             transition(SystemState.DONE, context);
         } else {
+            EvolutionProgressPublisher.completeIteration(context);
             transition(SystemState.FAILED, context);
         }
 
@@ -1442,6 +1449,7 @@ public class IterationManager {
     }
 
     public EvolutionDecision decide(String iterationId, List<BranchVariant> variants, TaskContext context, String manualSelectionId) {
+        EvolutionProgressPublisher.updateStage(context, EvolutionStage.SELECT_WINNER);
         EvolutionDecision decision = authorityEngine.decide(iterationId, variants, context, manualSelectionId);
         applyDecision(decision, variants, context);
         return decision;
