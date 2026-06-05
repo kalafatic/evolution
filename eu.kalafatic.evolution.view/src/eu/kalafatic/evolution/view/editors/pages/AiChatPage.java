@@ -610,6 +610,15 @@ public class AiChatPage extends AEvoPage {
 					instructionsGroup.setPaused(projection.isPaused());
 					chatGroup.setThinking(projection.isRunning() && !projection.isPaused());
 
+					// Reset progress panel for new session
+					if (chatGroup.isDisposed()) return;
+					chatGroup.getControl().getDisplay().asyncExec(() -> {
+						if (chatGroup.isDisposed()) return;
+						// We clear the progress panel by sending an empty/reset message if no active progress event exists
+						// For now, let's just trigger a browser refresh which will naturally handle the message state
+						chatGroup.refreshUI();
+					});
+
 					updateModeDisplay();
 					updateScrolledContent();
 				});

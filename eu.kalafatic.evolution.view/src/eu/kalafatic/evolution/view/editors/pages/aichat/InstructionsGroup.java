@@ -190,11 +190,16 @@ public class InstructionsGroup extends AEvoGroup {
             public void widgetSelected(SelectionEvent e) {
                 if (isUpdating) return;
                 int val = expansionScale.getSelection();
+
+                isUpdating = true;
+                try {
+                    maxIterationsSpinner.setSelection(val);
+                } finally {
+                    isUpdating = false;
+                }
                
-                //expansionValueLabel.setText(val + "/10");
-                //expansionValueLabel.getParent().layout();
                 java.util.Map<String, Object> settings = new java.util.HashMap<>();
-                settings.put("expansion", val);
+                settings.put("maxIterations", val);
                 page.updateConfiguration(settings);
             }
         });
@@ -290,8 +295,20 @@ public class InstructionsGroup extends AEvoGroup {
         maxIterationsSpinner.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
+                if (isUpdating) return;
+                int val = maxIterationsSpinner.getSelection();
+
+                isUpdating = true;
+                try {
+                    if (val <= expansionScale.getMaximum()) {
+                        expansionScale.setSelection(val);
+                    }
+                } finally {
+                    isUpdating = false;
+                }
+
                 java.util.Map<String, Object> settings = new java.util.HashMap<>();
-                settings.put("maxIterations", maxIterationsSpinner.getSelection());
+                settings.put("maxIterations", val);
                 page.updateConfiguration(settings);
                 page.saveLastUsedSettings();
             }
@@ -356,6 +373,9 @@ public class InstructionsGroup extends AEvoGroup {
                 int maxIter = (Integer) config.getOrDefault("maxIterations", defaultMaxIter);
                 if (maxIterationsSpinner.getSelection() != maxIter) {
                     maxIterationsSpinner.setSelection(maxIter);
+                }
+                if (maxIter <= expansionScale.getMaximum() && expansionScale.getSelection() != maxIter) {
+                    expansionScale.setSelection(maxIter);
                 }
             } finally {
                 isUpdating = false;

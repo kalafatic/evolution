@@ -25,6 +25,28 @@
     white-space: nowrap;
 }
 
+.session-properties-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 12px;
+}
+
+.session-properties-row .badge {
+    font-size: 0.75em;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: var(--border);
+    color: var(--text-secondary);
+    opacity: 0.5;
+}
+
+.session-properties-row .badge.active {
+    background: var(--primary);
+    color: white;
+    opacity: 1;
+}
+
 .global-progress-container {
     margin-bottom: 16px;
 }
