@@ -1,11 +1,12 @@
 package eu.kalafatic.evolution.controller.orchestration;
 
-import eu.kalafatic.evolution.controller.supervision.AuthorityController;
-import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationMemoryService;
+import java.io.File;
+
 import eu.kalafatic.evolution.controller.orchestration.selfdev.GitManager;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationMemoryService;
+import eu.kalafatic.evolution.controller.supervision.AuthorityController;
 import eu.kalafatic.evolution.controller.trajectory.SignalBus;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventBus;
-import java.io.File;
 
 /**
  * Shared container for kernel-scoped services.

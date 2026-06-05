@@ -3,14 +3,14 @@ package eu.kalafatic.evolution.controller.orchestration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import eu.kalafatic.evolution.model.orchestration.Task;
-import eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent;
-import eu.kalafatic.evolution.controller.orchestration.diagnostics.CausalNode;
-import eu.kalafatic.evolution.controller.orchestration.diagnostics.CognitiveTrace;
-import eu.kalafatic.evolution.controller.orchestration.workspace.SemanticWorkspace;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
+import eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent;
+import eu.kalafatic.evolution.controller.orchestration.diagnostics.CognitiveTrace;
+import eu.kalafatic.evolution.controller.orchestration.workspace.SemanticWorkspace;
+import eu.kalafatic.evolution.model.orchestration.Task;
 
 /**
  * Centralized container for orchestration state.

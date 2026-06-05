@@ -1,7 +1,5 @@
 package eu.kalafatic.evolution.controller.orchestration;
 
-import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
-
 /**
  * Strategy interface for different orchestration flows.
  */

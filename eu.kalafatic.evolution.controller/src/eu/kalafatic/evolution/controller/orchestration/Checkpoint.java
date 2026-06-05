@@ -2,12 +2,13 @@ package eu.kalafatic.evolution.controller.orchestration;
 
 import java.util.List;
 import java.util.Map;
-import eu.kalafatic.evolution.controller.orchestration.selfdev.StateSnapshot;
-import eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceArtifact;
-import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationRecord;
+
 import eu.kalafatic.evolution.controller.orchestration.diagnostics.CausalNode;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionDimension;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionaryPressureVector;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationRecord;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.StateSnapshot;
+import eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceArtifact;
 import eu.kalafatic.evolution.controller.trajectory.Trajectory;
 
 /**

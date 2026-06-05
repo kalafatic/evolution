@@ -1,28 +1,13 @@
 package eu.kalafatic.evolution.controller.orchestration;
 
-import fi.iki.elonen.NanoHTTPD;
-import org.json.JSONObject;
-import org.json.JSONArray;
-
-import eu.kalafatic.evolution.model.orchestration.ChatMessage;
-import eu.kalafatic.evolution.model.orchestration.MonitoringData;
-import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
-import eu.kalafatic.evolution.model.orchestration.Orchestrator;
-import eu.kalafatic.evolution.model.orchestration.PromptInstructions;
-import eu.kalafatic.evolution.model.orchestration.ServerSession;
-import eu.kalafatic.evolution.model.orchestration.SessionType;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
-import eu.kalafatic.evolution.controller.manager.OllamaService;
-import eu.kalafatic.evolution.controller.manager.OllamaModel;
-import eu.kalafatic.evolution.controller.tools.GitTool;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -32,6 +17,20 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import eu.kalafatic.evolution.controller.manager.OllamaModel;
+import eu.kalafatic.evolution.controller.manager.OllamaService;
+import eu.kalafatic.evolution.controller.tools.GitTool;
+import eu.kalafatic.evolution.model.orchestration.ChatMessage;
+import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
+import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.model.orchestration.PromptInstructions;
+import eu.kalafatic.evolution.model.orchestration.ServerSession;
+import eu.kalafatic.evolution.model.orchestration.SessionType;
+import fi.iki.elonen.NanoHTTPD;
 
 /**
  * Embedded REST server for remote control.

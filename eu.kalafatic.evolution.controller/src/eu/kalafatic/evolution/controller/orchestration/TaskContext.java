@@ -4,22 +4,21 @@ import java.io.File;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
-import org.json.JSONObject;
-import eu.kalafatic.evolution.controller.orchestration.selfdev.SelfDevProtocol;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.UUID;
 
-import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
-import eu.kalafatic.evolution.model.orchestration.Orchestrator;
-import eu.kalafatic.evolution.model.orchestration.PromptInstructions;
+import org.json.JSONObject;
+
+import eu.kalafatic.evolution.controller.log.Log;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.SelfDevProtocol;
 import eu.kalafatic.evolution.controller.orchestration.workspace.SemanticWorkspace;
 import eu.kalafatic.evolution.controller.trajectory.SignalBus;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventBus;
-import eu.kalafatic.evolution.controller.log.Log;
+import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 
 /**
  * Shared context for an orchestration task, including project info, state, and logs.

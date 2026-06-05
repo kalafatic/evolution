@@ -1,12 +1,5 @@
 package eu.kalafatic.evolution.controller.orchestration;
 
-import java.util.ArrayList;
-import java.util.List;
-import eu.kalafatic.evolution.controller.orchestration.*;
-import eu.kalafatic.evolution.controller.orchestration.intent.AtomicIntentAnalysis;
-import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
-import eu.kalafatic.evolution.model.orchestration.Task;
-
 /**
  * Deterministic atomic execution flow for simple, high-confidence tasks.
  */

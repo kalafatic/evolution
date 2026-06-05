@@ -2,17 +2,14 @@ package eu.kalafatic.evolution.controller.orchestration;
 
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import eu.kalafatic.evolution.controller.workflow.RuntimeEventBus;
+
 import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEventBus;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
-import eu.kalafatic.evolution.controller.tools.GitTool;
+import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.PromptInstructions;
-import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.utils.log.Log;
 

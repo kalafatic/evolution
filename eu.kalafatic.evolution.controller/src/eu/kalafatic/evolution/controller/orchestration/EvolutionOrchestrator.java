@@ -1,31 +1,19 @@
 package eu.kalafatic.evolution.controller.orchestration;
-import java.util.Map;
-import eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider;
-import eu.kalafatic.evolution.controller.orchestration.selfdev.*;
-
 import java.util.ArrayList;
-import java.io.File;
 import java.util.List;
+import java.util.Map;
 
-import org.json.JSONObject;
-import eu.kalafatic.evolution.model.orchestration.LogLevel;
-import eu.kalafatic.evolution.model.orchestration.Task;
-import eu.kalafatic.evolution.model.orchestration.TaskStatus;
-import eu.kalafatic.evolution.controller.log.LoggingService;
 import eu.kalafatic.evolution.controller.agents.AgentFactory;
 import eu.kalafatic.evolution.controller.agents.AnalyticAgent;
 import eu.kalafatic.evolution.controller.agents.BaseAiAgent;
-import eu.kalafatic.evolution.controller.agents.FinalResponseAgent;
-import eu.kalafatic.evolution.controller.agents.GeneralAgent;
 import eu.kalafatic.evolution.controller.agents.IAgent;
 import eu.kalafatic.evolution.controller.agents.ProposalConsolidatorAgent;
 import eu.kalafatic.evolution.controller.agents.RepairAgent;
 import eu.kalafatic.evolution.controller.agents.ValidatorAgent;
-import eu.kalafatic.evolution.controller.tools.FileTool;
-import eu.kalafatic.evolution.controller.manager.OrchestrationStatusManager;
 import eu.kalafatic.evolution.controller.orchestration.util.CodeExtractor;
 import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants;
 import eu.kalafatic.evolution.controller.tools.ToolFactory;
+import eu.kalafatic.evolution.model.orchestration.Task;
 
 
 /**

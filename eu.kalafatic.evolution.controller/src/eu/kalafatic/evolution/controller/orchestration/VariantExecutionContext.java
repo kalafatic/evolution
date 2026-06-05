@@ -1,11 +1,11 @@
 package eu.kalafatic.evolution.controller.orchestration;
 
-import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
-import eu.kalafatic.evolution.controller.workflow.RuntimeEventListener;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
 
 /**
  * Provides isolated execution state for parallel Darwin variants.

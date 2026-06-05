@@ -1,5 +1,7 @@
 package eu.kalafatic.evolution.controller.orchestration;
 
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityException;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityRegistry;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.DarwinEngine;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.Evaluator;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.GitManager;
@@ -7,9 +9,6 @@ import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationMemorySe
 import eu.kalafatic.evolution.controller.orchestration.selfdev.SystemStateSignalProvider;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.TaskExecutor;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.TaskPlanner;
-import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityRegistry;
-import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityException;
-import eu.kalafatic.evolution.controller.execution.KernelScheduler;
 import eu.kalafatic.evolution.controller.supervision.ActivationResolver;
 
 /**

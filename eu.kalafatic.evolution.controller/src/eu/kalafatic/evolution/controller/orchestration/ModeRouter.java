@@ -1,9 +1,8 @@
 package eu.kalafatic.evolution.controller.orchestration;
 
-import eu.kalafatic.evolution.model.orchestration.Orchestrator;
-import eu.kalafatic.evolution.controller.orchestration.*;
 import java.util.regex.Pattern;
-import java.util.regex.Matcher;
+
+import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 
 /**
  * Routes execution based on detected or assigned PlatformMode.

@@ -1,7 +1,7 @@
 package eu.kalafatic.evolution.controller.orchestration;
 
-import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.controller.orchestration.llm.LlmRouter;
+import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 
 /**
  * Service to handle AI requests, decoupled from Eclipse UI handlers.
