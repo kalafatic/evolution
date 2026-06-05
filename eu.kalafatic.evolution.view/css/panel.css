@@ -1,6 +1,5 @@
-#side-panel {
+.side-panel {
     position: relative;
-    width: 320px;
     background: #fff;
     border-left: 1px solid var(--border);
     display: flex;
@@ -9,7 +8,11 @@
     transition: width 0.3s ease;
 }
 
-#resize-handle {
+#side-panel {
+    width: 320px;
+}
+
+.resize-handle {
     position: absolute;
     left: 0;
     top: 0;
@@ -19,7 +22,7 @@
     z-index: 100;
     transition: background-color 0.2s;
 }
-#resize-handle:hover {
+.resize-handle:hover {
     background-color: #3b82f6;
 }
 
