@@ -635,10 +635,10 @@ public class IterationManager {
 
         String summary;
         if (state.getCurrentPhase().contains("TERMINAL") || state.getCurrentPhase().contains("SYNTHESIS")) {
-            if (context.getMetadata().containsKey("testMode")) {
-                summary = "Evolution completed (Test Mode).";
-            } else if (context.getBehaviorProfile().hasTrait(BehaviorTrait.SUPERVISION_MEDIATED)) {
+            if (context.getBehaviorProfile().hasTrait(BehaviorTrait.SUPERVISION_MEDIATED)) {
                 summary = performMediatedExportConvergence(request, context);
+            } else if (context.getMetadata().containsKey("testMode")) {
+                summary = "Evolution completed (Test Mode).";
             } else {
                 summary = getFinalResponseAgent().generateFinalResponse(request, context.getOrchestrator().getTasks(), context);
             }

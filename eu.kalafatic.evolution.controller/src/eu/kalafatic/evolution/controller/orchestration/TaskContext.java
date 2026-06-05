@@ -215,7 +215,8 @@ public class TaskContext {
     public void provideInput(String input) {
         if (inputFuture != null) {
             inputFuture.complete(input);
-            inputFuture = null;
+            // DO NOT NULLIFY: prevent race conditions where requestInput might return null
+            // if provideInput is called immediately by a listener on another thread.
         }
     }
 
