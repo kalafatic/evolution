@@ -568,6 +568,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
         // BRANCH A - CONCISE_MAPPING
         TrajectoryBlueprint concise = new TrajectoryBlueprint("concise_mapping", goal, "Minimal and concise mediation package");
+        concise.setStrategyType(DarwinStrategyType.ARCHITECTURE_MAPPING);
         concise.addRequiredCharacteristic("Minimal high-signal context");
         concise.addRequiredCharacteristic("Concise reasoning instructions");
         concise.setArchitecturalDirection("Focus: Information density. Strategy: concise prompt and minimal context.");
@@ -577,6 +578,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
         // BRANCH B - ARCHITECTURE_DRIVEN
         TrajectoryBlueprint arch = new TrajectoryBlueprint("architecture_driven", goal, "Architecture-focused mediation package");
+        arch.setStrategyType(DarwinStrategyType.ARCHITECTURE_MAPPING);
         arch.addRequiredCharacteristic("Detailed architectural mapping");
         arch.addRequiredCharacteristic("Structural reasoning instructions");
         arch.setArchitecturalDirection("Focus: Structural topology. Strategy: architecture-driven prompt and structural context.");
@@ -586,6 +588,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
         // BRANCH C - IMPLEMENTATION_DRIVEN
         TrajectoryBlueprint impl = new TrajectoryBlueprint("implementation_driven", goal, "Implementation-focused mediation package");
+        impl.setStrategyType(DarwinStrategyType.REFACTOR_HOTSPOT_ANALYSIS);
         impl.addRequiredCharacteristic("Direct implementation hotspots");
         impl.addRequiredCharacteristic("Logic-oriented reasoning instructions");
         impl.setArchitecturalDirection("Focus: Functional logic. Strategy: implementation-driven prompt and logic-dense context.");
@@ -595,6 +598,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
         // BRANCH D - DEPENDENCY_EXPANDED
         TrajectoryBlueprint dep = new TrajectoryBlueprint("dependency_expanded", goal, "Dependency-expanded mediation package");
+        dep.setStrategyType(DarwinStrategyType.DEPENDENCY_EXPLORATION);
         dep.addRequiredCharacteristic("Broad dependency context");
         dep.addRequiredCharacteristic("Cross-module reasoning instructions");
         dep.setArchitecturalDirection("Focus: Module interactions. Strategy: dependency-expanded prompt and interaction context.");

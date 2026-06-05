@@ -10,8 +10,17 @@ public class KernelFacade implements IOrchestrator {
 
     @Override
     public OrchestratorResponse handle(TaskRequest taskRequest, TaskContext context) throws Exception {
-        SessionContext session = (SessionContext) context.getMetadata().get("sessionContext");
-        IterationManager kernel = KernelFactory.create(context, session);
+        SessionContainer session = (SessionContainer) context.getMetadata().get("sessionContext");
+        if (session == null) {
+            session = SessionManager.getInstance().getOrCreateSession(context.getSessionId());
+        }
+
+        IterationManager kernel = session.getIterationManager();
+        if (kernel == null) {
+            kernel = KernelFactory.create(context, session);
+            session.setIterationManager(kernel);
+        }
+
         return kernel.handle(taskRequest);
     }
 
@@ -29,8 +38,17 @@ public class KernelFacade implements IOrchestrator {
     public String executeTask(Task task, TaskContext context) throws Exception {
         // Direct task execution is still routed through IterationManager
         // to ensure the system is in the correct state (EXECUTING).
-        SessionContext session = (SessionContext) context.getMetadata().get("sessionContext");
-        IterationManager kernel = KernelFactory.create(context, session);
+        SessionContainer session = (SessionContainer) context.getMetadata().get("sessionContext");
+        if (session == null) {
+            session = SessionManager.getInstance().getOrCreateSession(context.getSessionId());
+        }
+
+        IterationManager kernel = session.getIterationManager();
+        if (kernel == null) {
+            kernel = KernelFactory.create(context, session);
+            session.setIterationManager(kernel);
+        }
+
         java.util.List<Task> tasks = new java.util.ArrayList<>();
         tasks.add(task);
         boolean success = kernel.executeTasksWithRetries(tasks);
