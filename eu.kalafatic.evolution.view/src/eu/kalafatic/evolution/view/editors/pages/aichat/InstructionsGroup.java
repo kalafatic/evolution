@@ -16,6 +16,7 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Scale;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
@@ -32,6 +33,7 @@ public class InstructionsGroup extends AEvoGroup {
     private StyledText requestText;
     private Button iterativeCheck, selfIterativeCheck, darwinCheck, autoApproveCheck, gitAutomationCheck, stepModeCheck;
     private org.eclipse.swt.widgets.Spinner maxIterationsSpinner;
+    private Scale expansionScale;
     private Button sendButton, pauseButton, stopButton, attachButton;
     private Composite attachmentArea;
     private List<String> instructionFiles = new ArrayList<>();
@@ -166,9 +168,36 @@ public class InstructionsGroup extends AEvoGroup {
         });
 
         attachButton = GUIFactory.INSTANCE.createButton(btnComp, "\ud83d\udcce" + "Attach MD");
+        
+        
 
         // Right side: Checkboxes and Spinners
-        Composite settingsComp = GUIFactory.INSTANCE.createComposite(parent, 8);
+        Composite settingsComp = GUIFactory.INSTANCE.createComposite(parent, 10);
+        
+        // 4. Expansion Depth Slider        
+        GUIFactory.INSTANCE.createLabel(settingsComp, "Expansion Depth (Atomic - Multiple):", SWT.NONE, 200);
+        expansionScale = new Scale(settingsComp, SWT.HORIZONTAL);
+        expansionScale.setMinimum(1);
+        expansionScale.setMaximum(10);
+        expansionScale.setIncrement(1);
+        expansionScale.setSelection(5);       
+        expansionScale.setPageIncrement(2);
+        expansionScale.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        expansionScale.setToolTipText("Adjust the depth of evolutionary iterations and architectural branching.");           
+
+        expansionScale.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                if (isUpdating) return;
+                int val = expansionScale.getSelection();
+               
+                //expansionValueLabel.setText(val + "/10");
+                //expansionValueLabel.getParent().layout();
+                java.util.Map<String, Object> settings = new java.util.HashMap<>();
+                settings.put("expansion", val);
+                page.updateConfiguration(settings);
+            }
+        });
 
         selfIterativeCheck = GUIFactory.INSTANCE.createCheckButton(settingsComp, "Self Development");
         selfIterativeCheck.setToolTipText("Enable autonomous iterative development to improve the codebase.");
@@ -186,6 +215,8 @@ public class InstructionsGroup extends AEvoGroup {
                 page.saveLastUsedSettings();
             }
         });
+        
+        
 
         darwinCheck = GUIFactory.INSTANCE.createCheckButton(settingsComp, "Darwin");
         darwinCheck.setSelection(true);
@@ -266,6 +297,11 @@ public class InstructionsGroup extends AEvoGroup {
             }
         });
         GUIFactory.INSTANCE.createLabel(settingsComp, "Max Iterations",SWT.NONE,70);
+        
+        
+        
+   
+        
 
         attachButton.setToolTipText("Add External Instructions (.md)");
         attachButton.addSelectionListener(new SelectionAdapter() {

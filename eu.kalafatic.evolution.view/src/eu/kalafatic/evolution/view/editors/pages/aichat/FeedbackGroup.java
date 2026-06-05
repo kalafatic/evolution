@@ -40,7 +40,7 @@ public class FeedbackGroup extends AEvoGroup {
 
     // Feedback Level controls
     private Button[] levelButtons;
-    private Scale expansionScale;
+    
     private Label expansionValueLabel;
     private Button autoEscalateCheck;
     private Label autoStatusLabel;
@@ -68,13 +68,7 @@ public class FeedbackGroup extends AEvoGroup {
             setSelectionSafe(autoEscalateCheck, task.isAutoEscalate());
 
             eu.kalafatic.evolution.view.projection.RuntimeProjection projection = eu.kalafatic.evolution.view.projection.ProjectionService.getInstance().getProjection(page.getCurrentSessionName());
-            int maxIter = (Integer) projection.getConfiguration().getOrDefault("maxIterations", 4);
-            if (expansionScale != null && !expansionScale.isDisposed()) {
-                expansionScale.setSelection(maxIter);
-            }
-            if (expansionValueLabel != null && !expansionValueLabel.isDisposed()) {
-                expansionValueLabel.setText(maxIter + "/10");
-            }
+                      
 
             // Update (auto) status
             if (task.isAutoEscalate() && level.getValue() > FeedbackLevel.SIMPLE_VALUE) {
@@ -88,59 +82,7 @@ public class FeedbackGroup extends AEvoGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Session Interaction & Feedback", 1, true);
-
-        // 1. Satisfaction Box
-        satisfactionBox = GUIFactory.INSTANCE.createComposite(group, 2);
-        GUIFactory.INSTANCE.createLabel(satisfactionBox, "Rate Session (1-10):");
-        satisfactionScale = new Scale(satisfactionBox, SWT.HORIZONTAL);
-        satisfactionScale.setMinimum(1);
-        satisfactionScale.setMaximum(10);
-        satisfactionScale.setIncrement(1);
-        satisfactionScale.setSelection(5);       
-        satisfactionScale.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        
-       // 4. Expansion Depth Slider
-        Composite expansionBox = GUIFactory.INSTANCE.createComposite(group, 2);
-        GUIFactory.INSTANCE.createLabel(expansionBox, "Expansion Depth (Atomic - Multiple):");
-        expansionScale = new Scale(expansionBox, SWT.HORIZONTAL);
-        expansionScale.setMinimum(1);
-        expansionScale.setMaximum(10);
-        expansionScale.setIncrement(1);
-        expansionScale.setSelection(5);       
-        expansionScale.setPageIncrement(2);
-        expansionScale.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        expansionScale.setToolTipText("Adjust the depth of evolutionary iterations and architectural branching.");
-
-        expansionValueLabel = toolkit.createLabel(expansionBox, "");
-        GridData evlGd = new GridData();
-        evlGd.widthHint = 40;
-        expansionValueLabel.setLayoutData(evlGd);
-
-        expansionScale.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                if (isUpdating) return;
-                int val = expansionScale.getSelection();
-                expansionValueLabel.setText(val + "/10");
-                expansionValueLabel.getParent().layout();
-                java.util.Map<String, Object> settings = new java.util.HashMap<>();
-                settings.put("maxIterations", val);
-                page.updateConfiguration(settings);
-            }
-        });
-        
-        feedbackBox = GUIFactory.INSTANCE.createComposite(group, 3);
-        GUIFactory.INSTANCE.createLabel(feedbackBox, "Session Feedback:");
-        satisfactionCommentsText = GUIFactory.INSTANCE.createText(feedbackBox, "", SWT.BORDER | SWT.SINGLE);
-        Button submitSatButton = GUIFactory.INSTANCE.createButton(feedbackBox, "Submit Feedback");
-        submitSatButton.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                page.submitFeedback(satisfactionScale.getSelection(), satisfactionCommentsText.getText());
-            }
-        });
-      
+        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Session Interaction & Feedback", 2, true);
         
         Composite buttonBox = GUIFactory.INSTANCE.createComposite(group, 2);
         
@@ -172,10 +114,11 @@ public class FeedbackGroup extends AEvoGroup {
             }
         });
         GUIFactory.INSTANCE.createLabel(approvalBox); // Spacer
-     
-
-        // 3. Feedback Level Controls (Always Visible inside the group)
-        Composite levelBox = GUIFactory.INSTANCE.createComposite(buttonBox, 3);
+        
+        
+        
+     // 3. Feedback Level Controls (Always Visible inside the group)
+        Composite levelBox = GUIFactory.INSTANCE.createComposite(group, 3);
        
 
         GUIFactory.INSTANCE.createLabel(levelBox, "Feedback Depth:");
@@ -212,7 +155,29 @@ public class FeedbackGroup extends AEvoGroup {
                 }
             }
         });
+        
 
+        // 1. Satisfaction Box
+        satisfactionBox = GUIFactory.INSTANCE.createComposite(group, 2);
+        GUIFactory.INSTANCE.createLabel(satisfactionBox, "Rate Session (1-10):");
+        satisfactionScale = new Scale(satisfactionBox, SWT.HORIZONTAL);
+        satisfactionScale.setMinimum(1);
+        satisfactionScale.setMaximum(10);
+        satisfactionScale.setIncrement(1);
+        satisfactionScale.setSelection(5);       
+        satisfactionScale.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));        
+       
+        
+        feedbackBox = GUIFactory.INSTANCE.createComposite(group, 3);
+        GUIFactory.INSTANCE.createLabel(feedbackBox, "Session Feedback:");
+        satisfactionCommentsText = GUIFactory.INSTANCE.createText(feedbackBox, "", SWT.BORDER | SWT.SINGLE);
+        Button submitSatButton = GUIFactory.INSTANCE.createButton(feedbackBox, "Submit Feedback");
+        submitSatButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                page.submitFeedback(satisfactionScale.getSelection(), satisfactionCommentsText.getText());
+            }
+        });
         
     }
 
