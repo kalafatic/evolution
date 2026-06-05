@@ -3,7 +3,6 @@ package eu.kalafatic.evolution.controller.orchestration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Tracks file changes during an orchestration session.

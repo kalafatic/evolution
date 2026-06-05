@@ -1,13 +1,13 @@
 package eu.kalafatic.evolution.controller.orchestration;
 
-import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
-import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
-import eu.kalafatic.evolution.model.orchestration.ChatMessage;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
 
 /**
  * Helper to publish evolutionary progress events and update the UI progress monitor.

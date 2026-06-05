@@ -2,9 +2,8 @@ package eu.kalafatic.evolution.controller.orchestration;
 
 import org.json.JSONObject;
 
-import eu.kalafatic.evolution.controller.parsers.JsonUtils;
 import eu.kalafatic.evolution.controller.orchestration.llm.LlmRouter;
-import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.controller.parsers.JsonUtils;
 
 /**
  * LLM-based intent classification optimized for small models.

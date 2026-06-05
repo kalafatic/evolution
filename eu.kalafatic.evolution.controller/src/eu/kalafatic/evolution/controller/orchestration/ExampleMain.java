@@ -1,9 +1,10 @@
 package eu.kalafatic.evolution.controller.orchestration;
 
 import java.io.File;
+
+import eu.kalafatic.evolution.model.orchestration.Ollama;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
-import eu.kalafatic.evolution.model.orchestration.Ollama;
 
 /**
  * Example main to verify the orchestration system.

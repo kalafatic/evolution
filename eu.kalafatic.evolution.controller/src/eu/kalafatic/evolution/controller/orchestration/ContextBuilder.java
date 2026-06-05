@@ -4,14 +4,15 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import eu.kalafatic.evolution.model.orchestration.Task;
+import java.util.stream.Collectors;
+
 import eu.kalafatic.evolution.controller.orchestration.attachments.AttachmentInjector;
 import eu.kalafatic.evolution.controller.orchestration.workspace.ContextResolver;
 import eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceArtifact;
 import eu.kalafatic.evolution.controller.tools.FileTool;
+import eu.kalafatic.evolution.model.orchestration.Task;
 
 /**
  * Builds a deterministic ContextPackage from a Task using a staged pipeline.

@@ -4,18 +4,14 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
-import eu.kalafatic.evolution.controller.orchestration.IOrchestrator;
-import eu.kalafatic.evolution.controller.orchestration.KernelFacade;
-import eu.kalafatic.evolution.controller.orchestration.TaskContext;
-import eu.kalafatic.evolution.controller.orchestration.PlatformMode;
-import eu.kalafatic.evolution.controller.orchestration.PlatformType;
-import eu.kalafatic.evolution.controller.orchestration.AutonomyLevel;
+
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.PromptInstructions;
+import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
 
 /**
  * CLI entry point for Standalone SELF_DEV mode.
