@@ -91,6 +91,7 @@ public class DarwinFlow implements IOrchestrationFlow {
         String iterId = currentIterationModelImpl != null ? currentIterationModelImpl.getId() : "default";
 
         context.log("[COGNITION] Discovering semantic trajectories to resolve goal: " + goal);
+        EvolutionProgressPublisher.updateStage(context, EvolutionStage.ANALYZE_PARENT);
 
         Evaluator.Evaluation initialEval = manager.getEvaluator().evaluateWithSnapshot();
         StateSnapshot snapshot = initialEval.snapshot;
@@ -132,6 +133,7 @@ public class DarwinFlow implements IOrchestrationFlow {
             graph.recordTerritory("EXTENSIBILITY", "Service Orientation");
         }
 
+        EvolutionProgressPublisher.updateStage(context, EvolutionStage.GENERATE_BRANCH);
         List<BranchVariant> rawVariants = manager.getDarwinEngine().generateVariants(goal, snapshot, failureMemory, trajectory, pressure);
 
         if (rawVariants.isEmpty()) {
@@ -195,6 +197,7 @@ public class DarwinFlow implements IOrchestrationFlow {
         }
 
         context.log("[APPROVED:" + finalWinnerId + "] [COGNITION] Surviving trajectory committed: " + selectedVariant.getStrategy() + ". Proceeding to execution.");
+        EvolutionProgressPublisher.updateStage(context, EvolutionStage.SAVE_LINEAGE);
 
         for (BranchVariant v : variants) {
             if (v.getId().equals(finalWinnerId)) continue;

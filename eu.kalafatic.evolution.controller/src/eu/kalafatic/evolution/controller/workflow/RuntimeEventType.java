@@ -17,6 +17,7 @@ public enum RuntimeEventType {
     FLOW_COMPLETED(EventCategory.FLOW),
     ITERATION_STARTED(EventCategory.FLOW),
     ITERATION_COMPLETED(EventCategory.FLOW),
+    EVOLUTION_PROGRESS(EventCategory.FLOW),
 
     // 3. AGENT (Reasoning Layer)
     HYPOTHESIS_GENERATED(EventCategory.AGENT),

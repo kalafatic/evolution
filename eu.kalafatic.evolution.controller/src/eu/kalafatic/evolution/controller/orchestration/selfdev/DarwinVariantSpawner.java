@@ -6,6 +6,7 @@ import java.util.List;
 import org.json.JSONObject;
 
 import eu.kalafatic.evolution.controller.orchestration.AiService;
+import eu.kalafatic.evolution.controller.orchestration.EvolutionProgressPublisher;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 
@@ -33,6 +34,8 @@ public class DarwinVariantSpawner {
 
         for (TrajectoryBlueprint bp : blueprints) {
             context.log("[SPAWNER] Materializing trajectory from blueprint: " + bp.getId());
+            EvolutionProgressPublisher.updateBranchStatus(context, bp.getId(), bp.getPhilosophy(), "active", null);
+            EvolutionProgressPublisher.updateActiveModel(context, orchestrator != null ? (orchestrator.getOllama() != null ? orchestrator.getOllama().getModel() : "local") : "local", "Generating Branch " + (variants.size() + 1) + " of " + blueprints.size());
 
             String bpPrompt = buildBlueprintPrompt(bp, basePrompt, lineageContext, rejectedSiblings, currentRoundVariants, isMediated, context);
             JSONObject validated = null;
@@ -58,6 +61,7 @@ public class DarwinVariantSpawner {
                 variants.add(validated);
                 currentRoundVariants.add(validated);
                 context.log("[SPAWNER] Successfully materialized blueprint: " + bp.getId());
+                EvolutionProgressPublisher.updateBranchStatus(context, bp.getId(), bp.getPhilosophy(), "complete", validated.optDouble("score"));
             } else {
                 context.log("[SPAWNER] Materialization retries failed for " + bp.getId() + ". Attempting deterministic auto-repair.");
                 JSONObject repaired = autoRepair(bp, context);
@@ -278,6 +282,9 @@ public class DarwinVariantSpawner {
 
         for (DarwinStrategySeed seed : seeds) {
             context.log("[SPAWNER] Generating " + seed.getType() + " trajectory...");
+            String branchId = "v-" + seed.getType().name().toLowerCase();
+            EvolutionProgressPublisher.updateBranchStatus(context, branchId, seed.getType().name(), "active", null);
+            EvolutionProgressPublisher.updateActiveModel(context, orchestrator != null ? (orchestrator.getOllama() != null ? orchestrator.getOllama().getModel() : "local") : "local", "Generating Branch " + (variants.size() + 1) + " of " + seeds.size());
 
             String seedPrompt = buildSeedPrompt(seed, basePrompt, lineageContext, rejectedSiblings, currentRoundVariants, isMediated, context);
             JSONObject validated = null;
@@ -303,6 +310,7 @@ public class DarwinVariantSpawner {
                 variants.add(validated);
                 currentRoundVariants.add(validated);
                 context.log("[SPAWNER] Successfully generated " + seed.getType() + " trajectory.");
+                EvolutionProgressPublisher.updateBranchStatus(context, validated.optString("id"), seed.getType().name(), "complete", validated.optDouble("score"));
             } else if (seed.isMandatory()) {
                 context.log("[SPAWNER] FAILED to generate mandatory " + seed.getType() + " trajectory after retries.");
             }
