@@ -119,7 +119,11 @@ public class StabilityAnalyzer {
         // Check if test mode is active to allow accelerated convergence
         boolean isTestMode = context != null && context.getMetadata().containsKey("testMode");
 
-        // Convergence requires high stability. Minimum depth is now handled by shouldProgress.
+        // Convergence requires high stability.
+        // Enforce minimum evolutionary depth even for simple tasks to preserve iterative Darwin nature.
+        int generation = trajectory.getGeneration();
+        if (generation < 2) return false;
+
         boolean converged = stability > 0.92; // Higher threshold for stability-based convergence
 
         if (converged) {
@@ -158,7 +162,7 @@ public class StabilityAnalyzer {
 
         // MANDATORY EVOLUTIONARY DEPTH (CRITICAL)
         // We force multiple generations even for simple tasks to ensure lineage evolution.
-        if (generation < 3 && !converged) {
+        if (generation < 2 && !converged) {
              context.log("[STABILITY] Mandatory evolutionary depth not reached (Gen: " + generation + "). Recursing in " + current);
              return false;
         }

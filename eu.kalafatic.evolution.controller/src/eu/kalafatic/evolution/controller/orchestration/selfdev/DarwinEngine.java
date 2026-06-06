@@ -260,7 +260,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             context.getOrchestrator().getAiChat().getPromptInstructions() != null) {
             preferredMaxIterations = context.getOrchestrator().getAiChat().getPromptInstructions().getPreferredMaxIterations();
         }
-        int branchingLimit = Math.max(1, preferredMaxIterations / 2);
+        int branchingLimit = Math.max(3, preferredMaxIterations / 2);
 
         if (generation == 0) {
             if (isMediated) {

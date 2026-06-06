@@ -63,7 +63,16 @@ public class ContextBuilder {
 
                 depBuilder.append(extractDependencies(cleanPath, content)).append("\n");
             } catch (Exception e) {
-                context.log("ContextBuilder: Could not read file " + path + ": " + e.getMessage());
+                // RESILIENCE: If we are creating a new file, it won't exist yet.
+                // Ignore FileNotFoundException if the task name suggests a write/create operation for this specific file.
+                String taskName = task.getName().toUpperCase();
+                if (e.getMessage() != null && e.getMessage().contains("File not found") &&
+                    (taskName.contains("WRITE") || taskName.contains("CREATE")) &&
+                    taskName.contains(path.replaceAll("^\\[FILE:|\\]$", "").toUpperCase())) {
+                    state.addDiagnostic("ContextBuilder: Target file " + path + " does not exist yet (expected for NEW file).");
+                } else {
+                    context.log("ContextBuilder: Could not read file " + path + ": " + e.getMessage());
+                }
             }
         }
 
