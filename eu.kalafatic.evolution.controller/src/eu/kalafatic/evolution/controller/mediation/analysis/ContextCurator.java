@@ -102,6 +102,13 @@ public class ContextCurator {
             }
         }
 
+        // 4. Final safety fallback: ensure at least some context if nothing selected
+        if (selectedIds.isEmpty() && !snapshot.getNodes().isEmpty()) {
+            snapshot.getNodes().values().stream()
+                .limit(Math.min(snapshot.getNodes().size(), 4))
+                .forEach(node -> selectedIds.add(node.getId()));
+        }
+
         return selectedIds.stream()
             .map(id -> snapshot.getNodes().get(id).getPath())
             .collect(Collectors.toList());
