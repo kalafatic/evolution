@@ -38,7 +38,7 @@ public class TargetScanner {
                 for (File child : children) scanRecursive(child, root, target);
             }
         } else {
-            String relativePath = root.toURI().relativize(current.toURI()).getPath();
+            String relativePath = root.toPath().relativize(current.toPath()).toString().replace('\\', '/');
             String extension = getExtension(current.getName());
             target.getFiles().add(new FileDescriptor(relativePath, extension, current.length()));
         }
@@ -52,7 +52,7 @@ public class TargetScanner {
                 for (File child : children) scanRecursiveToSnapshot(child, root, snapshot);
             }
         } else {
-            String relativePath = root.toURI().relativize(current.toURI()).getPath();
+            String relativePath = root.toPath().relativize(current.toPath()).toString().replace('\\', '/');
             String extension = getExtension(current.getName());
             String stableId = relativePath; // Stable identifier is the path
             SemanticNode node = new SemanticNode(stableId, relativePath, extension);

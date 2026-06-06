@@ -1318,6 +1318,19 @@ public class IterationManager {
             eu.kalafatic.evolution.controller.mediation.model.MediationCandidate winningCandidate = null;
             if (winningCandidateObj instanceof eu.kalafatic.evolution.controller.mediation.model.MediationCandidate) {
                 winningCandidate = (eu.kalafatic.evolution.controller.mediation.model.MediationCandidate) winningCandidateObj;
+            } else if (winningCandidateObj instanceof Map) {
+                // RESILIENCE: Handle candidate restored from JSON checkpoint as a Map
+                Map<String, Object> map = (Map<String, Object>) winningCandidateObj;
+                winningCandidate = new eu.kalafatic.evolution.controller.mediation.model.MediationCandidate();
+                winningCandidate.setPrompt((String) map.get("prompt"));
+                winningCandidate.setArchitectureSummary((String) map.get("architectureSummary"));
+                winningCandidate.setDependencies((String) map.get("dependencies"));
+                winningCandidate.setExecutionInstructions((String) map.get("executionInstructions"));
+                winningCandidate.setEvaluation((String) map.get("evaluation"));
+                Object files = map.get("selectedFiles");
+                if (files instanceof List) {
+                    winningCandidate.setSelectedFiles((List<String>) files);
+                }
             }
 
             List<String> selectedPaths;
@@ -1328,14 +1341,13 @@ public class IterationManager {
 
             if (winningCandidate != null) {
                 context.log("[KERNEL] Mediated Mode: Using evolved mediation candidate.");
-                selectedPaths = winningCandidate.getSelectedFiles();
+                selectedPaths = new ArrayList<>(winningCandidate.getSelectedFiles());
 
                 // Ensure context completeness: If LLM failed to select enough files, fall back to curation
-                if (selectedPaths == null || selectedPaths.size() < 4) {
-                    context.log("[KERNEL] Mediated Mode: Evolved candidate contains insufficient context (" + (selectedPaths == null ? 0 : selectedPaths.size()) + " files). Supplementing with curated files.");
+                if (selectedPaths.size() < 4) {
+                    context.log("[KERNEL] Mediated Mode: Evolved candidate contains insufficient context (" + selectedPaths.size() + " files). Supplementing with curated files.");
                     ContextCurator curator = new ContextCurator();
                     List<String> curated = curator.selectContext(snapshot, request, 12);
-                    if (selectedPaths == null) selectedPaths = new ArrayList<>();
                     for (String path : curated) {
                         if (!selectedPaths.contains(path)) selectedPaths.add(path);
                     }
@@ -1352,8 +1364,10 @@ public class IterationManager {
                     ContextCurator curator = new ContextCurator();
                     selectedPaths = curator.selectContext(snapshot, request, 16);
                 }
-                String evolvedUnderstanding = (String) context.getOrchestrationState().getMetadata().get("current_understanding");
-                String evolvedReasoningFocus = (String) context.getOrchestrationState().getMetadata().get("current_reasoning_focus");
+                Object understanding = context.getOrchestrationState().getMetadata().get("current_understanding");
+                Object focus = context.getOrchestrationState().getMetadata().get("current_reasoning_focus");
+                String evolvedUnderstanding = understanding != null ? understanding.toString() : "";
+                String evolvedReasoningFocus = focus != null ? focus.toString() : "";
                 PromptSynthesizer synthesizer = new PromptSynthesizer();
                 optimizedPrompt = synthesizer.synthesizeOptimized(request, snapshot, selectedPaths, evolvedUnderstanding + "\n\nREASONING FOCUS: " + evolvedReasoningFocus);
             }
