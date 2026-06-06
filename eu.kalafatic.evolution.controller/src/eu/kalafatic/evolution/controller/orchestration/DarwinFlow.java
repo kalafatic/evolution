@@ -345,6 +345,9 @@ public class DarwinFlow implements IOrchestrationFlow {
                     }
                 }
 
+                manager.updateVariantLifecycle(List.of(variant), variant.getId(), BranchVariant.ActivationState.VERIFIED, context);
+                manager.updateVariantLifecycle(List.of(variant), variant.getId(), BranchVariant.ActivationState.SCORING, context);
+
                 variant.setMutationTrace(isMediated ? "Cognitive evolution in mediated mode" : "Mocked in test mode");
                 return variantExecContext;
             }
