@@ -572,45 +572,35 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
     private List<TrajectoryBlueprint> generateMediatedBlueprints(String goal, int limit) {
         List<TrajectoryBlueprint> blueprints = new ArrayList<>();
 
-        // BRANCH A - HIGH_SIGNAL_DISTILLATION
-        TrajectoryBlueprint concise = new TrajectoryBlueprint("high_signal_distillation", goal, "High-signal distilled mediation package");
-        concise.setStrategyType(DarwinStrategyType.ARCHITECTURE_MAPPING);
-        concise.addRequiredCharacteristic("Minimal high-signal context (4-8 files)");
-        concise.addRequiredCharacteristic("High-density architectural distillation");
-        concise.setArchitecturalDirection("Focus: Maximum information density. Strategy: Distill the subsystem into the smallest possible set of high-signal files.");
-        concise.getEngineeringDimensions().put("philosophy", "information density distillation");
-        concise.getEngineeringDimensions().put("abstraction_depth", "high");
-        blueprints.add(concise);
+        // LINEAGE A: CORE LINEAGE (System Execution)
+        TrajectoryBlueprint core = new TrajectoryBlueprint("core_lineage", goal, "Core execution-centric lineage");
+        core.setStrategyType(DarwinStrategyType.ARCHITECTURE_MAPPING);
+        core.addRequiredCharacteristic("Minimal set required to understand system execution");
+        core.addRequiredCharacteristic("Primary execution entrypoints and bootstrap logic");
+        core.setArchitecturalDirection("Focus: Execution flow. Strategy: Identify and select the minimal set of files that define the system's runtime execution path.");
+        core.getEngineeringDimensions().put("philosophy", "execution-centric distillation");
+        core.getEngineeringDimensions().put("abstraction_depth", "medium");
+        blueprints.add(core);
 
-        // BRANCH B - ARCHITECTURAL_SKELETON
-        TrajectoryBlueprint arch = new TrajectoryBlueprint("architectural_skeleton", goal, "Architecture-focused skeletal package");
-        arch.setStrategyType(DarwinStrategyType.ARCHITECTURE_MAPPING);
-        arch.addRequiredCharacteristic("Architectural entry points and interfaces");
-        arch.addRequiredCharacteristic("Structural relationship mapping");
-        arch.setArchitecturalDirection("Focus: Structural skeleton. Strategy: Select files that collectively define the architectural topology of the affected subsystem.");
-        arch.getEngineeringDimensions().put("philosophy", "structural skeleton mapping");
-        arch.getEngineeringDimensions().put("abstraction_depth", "high");
-        blueprints.add(arch);
+        // LINEAGE B: STRUCTURAL LINEAGE (Architecture & Wiring)
+        TrajectoryBlueprint structural = new TrajectoryBlueprint("structural_lineage", goal, "Structural architecture-centric lineage");
+        structural.setStrategyType(DarwinStrategyType.ARCHITECTURE_MAPPING);
+        structural.addRequiredCharacteristic("Architecture, config, and dependency wiring");
+        structural.addRequiredCharacteristic("Framework glue and orchestration logic");
+        structural.setArchitecturalDirection("Focus: Structural skeleton. Strategy: Select files that define the architectural topology and component wiring.");
+        structural.getEngineeringDimensions().put("philosophy", "structural/wiring mapping");
+        structural.getEngineeringDimensions().put("abstraction_depth", "high");
+        blueprints.add(structural);
 
-        // BRANCH C - LOGIC_DENSE_HOTSPOTS
-        TrajectoryBlueprint impl = new TrajectoryBlueprint("logic_dense_hotspots", goal, "Logic-dense hotspot mediation package");
-        impl.setStrategyType(DarwinStrategyType.REFACTOR_HOTSPOT_ANALYSIS);
-        impl.addRequiredCharacteristic("Primary implementation hotspots");
-        impl.addRequiredCharacteristic("Logic-oriented context selection");
-        impl.setArchitecturalDirection("Focus: Functional density. Strategy: Target the logic-dense files directly involved in the behavioral modification.");
-        impl.getEngineeringDimensions().put("philosophy", "behavioral hotspot auditing");
-        impl.getEngineeringDimensions().put("execution_model", "analytical");
-        blueprints.add(impl);
-
-        // BRANCH D - DEPENDENCY_SYNERGY
-        TrajectoryBlueprint dep = new TrajectoryBlueprint("dependency_synergy", goal, "Dependency-synergy mediation package");
-        dep.setStrategyType(DarwinStrategyType.DEPENDENCY_EXPLORATION);
-        dep.addRequiredCharacteristic("Critical dependency visibility");
-        dep.addRequiredCharacteristic("Cross-module interaction points");
-        dep.setArchitecturalDirection("Focus: Interaction density. Strategy: Select the minimal set of files that explain how the subsystem interacts with its dependencies.");
-        dep.getEngineeringDimensions().put("philosophy", "dependency synergy analysis");
-        dep.getEngineeringDimensions().put("risk_acceptance", "experimental");
-        blueprints.add(dep);
+        // LINEAGE C: BEHAVIORAL LINEAGE (Domain & Logic)
+        TrajectoryBlueprint behavioral = new TrajectoryBlueprint("behavioral_lineage", goal, "Behavioral domain-centric lineage");
+        behavioral.setStrategyType(DarwinStrategyType.REFACTOR_HOTSPOT_ANALYSIS);
+        behavioral.addRequiredCharacteristic("Business logic and domain rules");
+        behavioral.addRequiredCharacteristic("Mutation-heavy logic and behavioral hotspots");
+        behavioral.setArchitecturalDirection("Focus: Behavioral density. Strategy: Target the logic-dense files directly involved in system behavior and domain rules.");
+        behavioral.getEngineeringDimensions().put("philosophy", "behavioral/domain auditing");
+        behavioral.getEngineeringDimensions().put("execution_model", "analytical");
+        blueprints.add(behavioral);
 
         if (limit > 0 && blueprints.size() > limit) {
             return blueprints.subList(0, limit);
