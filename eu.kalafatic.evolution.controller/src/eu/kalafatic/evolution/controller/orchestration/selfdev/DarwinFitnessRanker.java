@@ -122,7 +122,16 @@ public class DarwinFitnessRanker {
 
         // 3. Signal to Noise (Self-evaluation)
         String evaluation = med.optString("evaluation").toLowerCase();
-        if (evaluation.contains("density") || evaluation.contains("signal") || evaluation.contains("distilled")) {
+        if (evaluation.contains("density") || evaluation.contains("signal") || evaluation.contains("distilled") || evaluation.contains("centrality")) {
+            medScore += 0.05;
+        }
+
+        // 4. Architectural Signal (Reward entrypoints and dependency influence)
+        String summary = med.optString("architecture_summary").toLowerCase();
+        if (summary.contains("entrypoint") || summary.contains("bootstrap") || summary.contains("orchestration")) {
+            medScore += 0.05;
+        }
+        if (summary.contains("dependency") || summary.contains("wiring") || summary.contains("skeleton")) {
             medScore += 0.05;
         }
 

@@ -41,11 +41,10 @@ public class ContextCurator {
         curatedPaths.addAll(target.getFiles().stream()
             .filter(f -> f.getTags().contains("Interface") || f.getTags().contains("Spring Component") ||
                          f.getPath().endsWith(".ino") || f.getPath().endsWith(".cpp") || f.getPath().endsWith(".h"))
-            .limit(12)
             .map(f -> f.getPath())
             .collect(Collectors.toList()));
 
-        return curatedPaths.stream().distinct().limit(16).collect(Collectors.toList());
+        return curatedPaths.stream().distinct().collect(Collectors.toList());
     }
 
     public List<String> selectContext(TargetSnapshot snapshot, String query, int maxFiles) {
@@ -67,13 +66,22 @@ public class ContextCurator {
                 else if (path.contains(word)) score += 5.0;
             }
 
-            // 2. Semantic Tags (Architectural Significance)
-            if (node.getTags().contains("Entry Point")) score += 15.0;
-            if (node.getTags().contains("Interface")) score += 12.0;
-            if (node.getTags().contains("Evolution Component")) score += 10.0;
-            if (node.getTags().contains("Spring Component")) score += 5.0;
-            if (node.getTags().contains("React Component")) score += 5.0;
+            // 2. Semantic Tags (Architectural Significance & Centrality)
+            if (node.getTags().contains("Entry Point")) score += 20.0; // Higher weight for entrypoints
+            if (node.getTags().contains("Interface")) score += 15.0; // Higher weight for interfaces/contracts
+            if (node.getTags().contains("Evolution Component")) score += 12.0;
+            if (node.getTags().contains("Spring Component")) score += 8.0;
+            if (node.getTags().contains("React Component")) score += 8.0;
             if (node.getTags().contains("C++ Source")) score += 8.0;
+
+            // 2b. Role-based Centrality (Orchestration/Control)
+            String role = node.getAttributes().get("role");
+            if (role != null) {
+                role = role.toLowerCase();
+                if (role.contains("orchestrator") || role.contains("controller") || role.contains("kernel")) score += 15.0;
+                if (role.contains("service") || role.contains("manager")) score += 10.0;
+                if (role.contains("provider") || role.contains("engine")) score += 10.0;
+            }
 
             // 3. Structural Matches (Classes/Methods)
             for (String word : keywords) {
