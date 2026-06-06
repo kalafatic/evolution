@@ -255,6 +255,15 @@ public class DarwinFlow implements IOrchestrationFlow {
                 context.getFileChangeTracker().recordChange(path, type);
             });
 
+            // LOGICAL SYNC: Ensure files from variant actions are always recorded in UI panel
+            for (BranchVariant.Action action : selectedVariant.getActions()) {
+                if ("WRITE".equals(action.getOperation()) && action.getTarget() != null) {
+                    context.getFileChangeTracker().recordChange(action.getTarget(), FileChangeTracker.ChangeType.EDITED);
+                } else if ("DELETE".equals(action.getOperation()) && action.getTarget() != null) {
+                    context.getFileChangeTracker().recordChange(action.getTarget(), FileChangeTracker.ChangeType.REMOVED);
+                }
+            }
+
             boolean isSignificant = reality.isSignificant();
             if (!isSignificant) {
                 context.log("[KERNEL] Reality Check WARNING: Winner variant resulted in NO physical changes.");
