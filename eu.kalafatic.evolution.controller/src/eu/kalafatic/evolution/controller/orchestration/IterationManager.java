@@ -371,8 +371,13 @@ public class IterationManager {
                         TargetSnapshot.TargetType type = context.getProjectRoot().getAbsolutePath().contains("evolution") ? TargetSnapshot.TargetType.SELF : TargetSnapshot.TargetType.PROJECT;
                         TargetSnapshot snapshot = scanner.scanToSnapshot(context.getProjectRoot(), type);
 
+                        // TWO-STAGE SELECTION: Heuristic pick 32 candidates before deep analysis
+                        ContextCurator curator = new ContextCurator();
+                        List<String> candidates = curator.selectContext(snapshot, request, 32);
+
+                        context.log("[KERNEL] Mediated Mode: Selective deep analysis of " + candidates.size() + " high-signal candidates.");
                         SemanticExtractor extractor = new SemanticExtractor();
-                        extractor.extractToSnapshot(snapshot);
+                        extractor.extractToSnapshot(snapshot, candidates);
 
                         state.getMetadata().put("mediatedSnapshot", snapshot);
 
@@ -1305,31 +1310,65 @@ public class IterationManager {
             context.log("[KERNEL] Mediated Mode: Converging understanding into export package.");
             checkStep(context.getSessionId(), "MEDIATION_EXPORT", "Preparing final repository-grounded cognition export.");
 
-            TargetSnapshot snapshot = (TargetSnapshot) context.getOrchestrationState().getMetadata().get("mediatedSnapshot");
+            Object snapshotObj = context.getOrchestrationState().getMetadata().get("mediatedSnapshot");
+            TargetSnapshot snapshot = null;
+            if (snapshotObj instanceof TargetSnapshot) {
+                snapshot = (TargetSnapshot) snapshotObj;
+            } else if (snapshotObj instanceof Map) {
+                // RESILIENCE: Restore snapshot from Map if it came from a JSON checkpoint
+                try {
+                    snapshot = new com.fasterxml.jackson.databind.ObjectMapper()
+                        .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                        .convertValue(snapshotObj, TargetSnapshot.class);
+                } catch (Exception e) {
+                    context.log("[KERNEL] Warning: Failed to restore mediatedSnapshot from Map: " + e.getMessage());
+                }
+            }
+
             if (snapshot == null) {
+                context.log("[KERNEL] Mediated Mode: Building fresh semantic repository snapshot.");
                 TargetScanner scanner = new TargetScanner();
                 TargetSnapshot.TargetType type = context.getProjectRoot().getAbsolutePath().contains("evolution") ? TargetSnapshot.TargetType.SELF : TargetSnapshot.TargetType.PROJECT;
                 snapshot = scanner.scanToSnapshot(context.getProjectRoot(), type);
+
+                // Heuristic pick 32 candidates for analysis
+                ContextCurator curator = new ContextCurator();
+                List<String> candidates = curator.selectContext(snapshot, request, 32);
+
+                context.log("[KERNEL] Mediated Mode: Selective deep analysis of " + candidates.size() + " high-signal candidates.");
                 SemanticExtractor extractor = new SemanticExtractor();
-                extractor.extractToSnapshot(snapshot);
+                extractor.extractToSnapshot(snapshot, candidates);
+                context.getOrchestrationState().getMetadata().put("mediatedSnapshot", snapshot);
             }
 
             Object winningCandidateObj = context.getOrchestrationState().getMetadata().get("winningMediationCandidate");
             eu.kalafatic.evolution.controller.mediation.model.MediationCandidate winningCandidate = null;
             if (winningCandidateObj instanceof eu.kalafatic.evolution.controller.mediation.model.MediationCandidate) {
                 winningCandidate = (eu.kalafatic.evolution.controller.mediation.model.MediationCandidate) winningCandidateObj;
-            } else if (winningCandidateObj instanceof Map) {
-                // RESILIENCE: Handle candidate restored from JSON checkpoint as a Map
-                Map<String, Object> map = (Map<String, Object>) winningCandidateObj;
-                winningCandidate = new eu.kalafatic.evolution.controller.mediation.model.MediationCandidate();
-                winningCandidate.setPrompt((String) map.get("prompt"));
-                winningCandidate.setArchitectureSummary((String) map.get("architectureSummary"));
-                winningCandidate.setDependencies((String) map.get("dependencies"));
-                winningCandidate.setExecutionInstructions((String) map.get("executionInstructions"));
-                winningCandidate.setEvaluation((String) map.get("evaluation"));
-                Object files = map.get("selectedFiles");
-                if (files instanceof List) {
-                    winningCandidate.setSelectedFiles((List<String>) files);
+            } else if (winningCandidateObj != null) {
+                // RESILIENCE: Handle candidate restored from JSON checkpoint (Map or JSONObject)
+                try {
+                    winningCandidate = new com.fasterxml.jackson.databind.ObjectMapper()
+                        .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                        .setPropertyNamingStrategy(com.fasterxml.jackson.databind.PropertyNamingStrategies.SNAKE_CASE)
+                        .convertValue(winningCandidateObj, eu.kalafatic.evolution.controller.mediation.model.MediationCandidate.class);
+                } catch (Exception e) {
+                    context.log("[KERNEL] Warning: Failed to restore winningMediationCandidate using Jackson: " + e.getMessage());
+                    // Fallback to manual Map extraction if Jackson fails
+                    if (winningCandidateObj instanceof Map) {
+                        Map<String, Object> map = (Map<String, Object>) winningCandidateObj;
+                        winningCandidate = new eu.kalafatic.evolution.controller.mediation.model.MediationCandidate();
+                        winningCandidate.setPrompt((String) map.get("prompt"));
+                        winningCandidate.setArchitectureSummary((String) (map.containsKey("architecture_summary") ? map.get("architecture_summary") : map.get("architectureSummary")));
+                        winningCandidate.setDependencies((String) map.get("dependencies"));
+                        winningCandidate.setExecutionInstructions((String) (map.containsKey("execution_instructions") ? map.get("execution_instructions") : map.get("executionInstructions")));
+                        winningCandidate.setEvaluation((String) map.get("evaluation"));
+                        Object files = map.get("selectedFiles");
+                        if (files == null) files = map.get("selected_files");
+                        if (files instanceof List) {
+                            winningCandidate.setSelectedFiles((List<String>) files);
+                        }
+                    }
                 }
             }
 
@@ -1341,16 +1380,26 @@ public class IterationManager {
 
             if (winningCandidate != null) {
                 context.log("[KERNEL] Mediated Mode: Using evolved mediation candidate.");
-                selectedPaths = new ArrayList<>(winningCandidate.getSelectedFiles());
+                selectedPaths = new ArrayList<>();
+                if (winningCandidate.getSelectedFiles() != null) {
+                    for (String p : winningCandidate.getSelectedFiles()) {
+                         if (p != null && !p.isEmpty()) selectedPaths.add(p);
+                    }
+                }
 
                 // Ensure context completeness: If LLM failed to select enough files, fall back to curation
-                if (selectedPaths.size() < 4) {
+                if (selectedPaths.size() < 4 && snapshot != null) {
                     context.log("[KERNEL] Mediated Mode: Evolved candidate contains insufficient context (" + selectedPaths.size() + " files). Supplementing with curated files.");
                     ContextCurator curator = new ContextCurator();
-                    List<String> curated = curator.selectContext(snapshot, request, 12);
+                    List<String> curated = curator.selectContext(snapshot, request, 16);
                     for (String path : curated) {
-                        if (!selectedPaths.contains(path)) selectedPaths.add(path);
+                        if (path != null && !selectedPaths.contains(path)) selectedPaths.add(path);
                     }
+                }
+
+                // Final safety limit
+                if (selectedPaths.size() > 16) {
+                    selectedPaths = selectedPaths.subList(0, 16);
                 }
 
                 optimizedPrompt = winningCandidate.getPrompt();
@@ -1359,8 +1408,14 @@ public class IterationManager {
                 executionInstructions = winningCandidate.getExecutionInstructions();
             } else {
                 context.log("[KERNEL] Mediated Mode: No evolved mediation candidate found. Falling back to static curation and synthesis.");
-                selectedPaths = (List<String>) context.getOrchestrationState().getMetadata().get("current_selected_files");
-                if (selectedPaths == null || selectedPaths.isEmpty()) {
+                Object currentSelected = context.getOrchestrationState().getMetadata().get("current_selected_files");
+                if (currentSelected instanceof List) {
+                    selectedPaths = (List<String>) currentSelected;
+                } else {
+                    selectedPaths = new ArrayList<>();
+                }
+
+                if ((selectedPaths == null || selectedPaths.isEmpty()) && snapshot != null) {
                     ContextCurator curator = new ContextCurator();
                     selectedPaths = curator.selectContext(snapshot, request, 16);
                 }
@@ -1390,6 +1445,7 @@ public class IterationManager {
             MediatedExportManager exportManager = new MediatedExportManager();
             String metadataJson = snapshot.getMetadata().toString();
             String historyAnalysis = memoryService.getHistoryAnalysis();
+            context.log("[KERNEL] Mediated Mode: Final selected files for export: " + selectedPaths);
             File exportPackage = exportManager.createExportPackage(context.getSessionId(), optimizedPrompt, selectedPaths, context.getProjectRoot(), outputPath, metadataJson, historyAnalysis, architectureSummary, dependencies, executionInstructions);
 
             // Record as a change so it appears in Changes view

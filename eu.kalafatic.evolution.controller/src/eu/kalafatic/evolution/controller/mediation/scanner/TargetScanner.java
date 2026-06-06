@@ -32,13 +32,14 @@ public class TargetScanner {
 
     private void scanRecursive(File current, File root, TargetDescriptor target) {
         if (current.isDirectory()) {
-            if (IGNORE_DIRS.contains(current.getName())) return;
+            if (current != root && IGNORE_DIRS.contains(current.getName())) return;
             File[] children = current.listFiles();
             if (children != null) {
                 for (File child : children) scanRecursive(child, root, target);
             }
         } else {
             String relativePath = root.toPath().relativize(current.toPath()).toString().replace('\\', '/');
+            if (relativePath.isEmpty()) relativePath = current.getName();
             String extension = getExtension(current.getName());
             target.getFiles().add(new FileDescriptor(relativePath, extension, current.length()));
         }
@@ -46,13 +47,14 @@ public class TargetScanner {
 
     private void scanRecursiveToSnapshot(File current, File root, TargetSnapshot snapshot) {
         if (current.isDirectory()) {
-            if (IGNORE_DIRS.contains(current.getName())) return;
+            if (current != root && IGNORE_DIRS.contains(current.getName())) return;
             File[] children = current.listFiles();
             if (children != null) {
                 for (File child : children) scanRecursiveToSnapshot(child, root, snapshot);
             }
         } else {
             String relativePath = root.toPath().relativize(current.toPath()).toString().replace('\\', '/');
+            if (relativePath.isEmpty()) relativePath = current.getName();
             String extension = getExtension(current.getName());
             String stableId = relativePath; // Stable identifier is the path
             SemanticNode node = new SemanticNode(stableId, relativePath, extension);
@@ -78,6 +80,8 @@ public class TargetScanner {
             if (path.endsWith(".py")) techs.add("Python");
             if (path.endsWith(".pdf")) techs.add("PDF Documents");
             if (path.endsWith(".html")) techs.add("HTML/Web");
+            if (path.endsWith(".ino")) techs.add("Arduino");
+            if (path.endsWith(".cpp") || path.endsWith(".c") || path.endsWith(".h") || path.endsWith(".hpp")) techs.add("C/C++");
         }
         target.getDetectedTechnologies().addAll(techs);
     }
@@ -94,6 +98,8 @@ public class TargetScanner {
             if (path.endsWith(".py")) techs.add("Python");
             if (path.endsWith(".pdf")) techs.add("PDF Documents");
             if (path.endsWith(".html")) techs.add("HTML/Web");
+            if (path.endsWith(".ino")) techs.add("Arduino");
+            if (path.endsWith(".cpp") || path.endsWith(".c") || path.endsWith(".h") || path.endsWith(".hpp")) techs.add("C/C++");
         }
         snapshot.getMetadata().put("detectedTechnologies", new ArrayList<>(techs));
     }

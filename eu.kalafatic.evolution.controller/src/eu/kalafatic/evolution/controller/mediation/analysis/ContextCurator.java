@@ -1,8 +1,10 @@
 package eu.kalafatic.evolution.controller.mediation.analysis;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import eu.kalafatic.evolution.controller.mediation.model.FileDescriptor;
@@ -30,13 +32,16 @@ public class ContextCurator {
             .collect(Collectors.toList()));
 
         curatedPaths.addAll(target.getFiles().stream()
-            .filter(f -> f.getPath().endsWith("pom.xml") || f.getPath().endsWith("package.json"))
+            .filter(f -> f.getPath().endsWith("pom.xml") || f.getPath().endsWith("package.json") ||
+                         f.getPath().endsWith(".project") || f.getPath().endsWith(".cproject") ||
+                         f.getPath().endsWith(".gitignore"))
             .map(f -> f.getPath())
             .collect(Collectors.toList()));
 
         curatedPaths.addAll(target.getFiles().stream()
-            .filter(f -> f.getTags().contains("Interface") || f.getTags().contains("Spring Component"))
-            .limit(10)
+            .filter(f -> f.getTags().contains("Interface") || f.getTags().contains("Spring Component") ||
+                         f.getPath().endsWith(".ino") || f.getPath().endsWith(".cpp") || f.getPath().endsWith(".h"))
+            .limit(12)
             .map(f -> f.getPath())
             .collect(Collectors.toList()));
 
@@ -44,73 +49,86 @@ public class ContextCurator {
     }
 
     public List<String> selectContext(TargetSnapshot snapshot, String query, int maxFiles) {
-        Set<String> selectedIds = new HashSet<>();
+        if (snapshot == null || snapshot.getNodes().isEmpty()) return new ArrayList<>();
+
+        Map<String, Double> scores = new HashMap<>();
         String lowerQuery = query.toLowerCase();
-
-        // 0. High-density semantic match (e.g. class names mentioned in query)
         String[] keywords = lowerQuery.split("\\s+");
-        for (String word : keywords) {
-            if (word.length() < 3) continue;
-            List<SemanticNode> semanticMatches = snapshot.getNodes().values().stream()
-                .filter(node -> {
-                    String fileName = new java.io.File(node.getPath()).getName().toLowerCase();
-                    return fileName.contains(word) || node.getStructures().stream().anyMatch(s -> s.toLowerCase().contains(word));
-                })
-                .collect(Collectors.toList());
-            for (SemanticNode node : semanticMatches) {
-                if (selectedIds.size() >= maxFiles) break;
-                selectedIds.add(node.getId());
+
+        for (SemanticNode node : snapshot.getNodes().values()) {
+            double score = 0.0;
+            String path = node.getPath().toLowerCase();
+            String name = new java.io.File(node.getPath()).getName().toLowerCase();
+
+            // 1. Keyword Matches (Path and Name)
+            for (String word : keywords) {
+                if (word.length() < 3) continue;
+                if (name.contains(word)) score += 10.0;
+                else if (path.contains(word)) score += 5.0;
             }
-        }
 
-        // 1. Direct relevance (Query keywords in path or tags)
-        List<SemanticNode> directNodes = snapshot.getNodes().values().stream()
-            .filter(node -> node.getPath().toLowerCase().contains(lowerQuery) ||
-                            node.getTags().stream().anyMatch(t -> t.toLowerCase().contains(lowerQuery)))
-            .collect(Collectors.toList());
+            // 2. Semantic Tags (Architectural Significance)
+            if (node.getTags().contains("Entry Point")) score += 15.0;
+            if (node.getTags().contains("Interface")) score += 12.0;
+            if (node.getTags().contains("Evolution Component")) score += 10.0;
+            if (node.getTags().contains("Spring Component")) score += 5.0;
+            if (node.getTags().contains("React Component")) score += 5.0;
+            if (node.getTags().contains("C++ Source")) score += 8.0;
 
-        for (SemanticNode node : directNodes) {
-            if (selectedIds.size() >= maxFiles) break;
-            selectedIds.add(node.getId());
-        }
-
-        // 2. Entry points and main configs
-        List<SemanticNode> criticalNodes = snapshot.getNodes().values().stream()
-            .filter(node -> node.getTags().contains("Entry Point") ||
-                            node.getPath().endsWith("pom.xml") ||
-                            node.getPath().endsWith("package.json") ||
-                            node.getTags().contains("Interface"))
-            .collect(Collectors.toList());
-
-        for (SemanticNode node : criticalNodes) {
-            if (selectedIds.size() >= maxFiles) break;
-            selectedIds.add(node.getId());
-        }
-
-        // 3. Graph proximity (Neighbors of direct nodes)
-        if (selectedIds.size() < maxFiles) {
-            Set<String> neighbors = new HashSet<>();
-            for (String id : selectedIds) {
-                for (SemanticEdge edge : snapshot.getEdges()) {
-                    if (edge.getSourceId().equals(id)) neighbors.add(edge.getTargetId());
-                    else if (edge.getTargetId().equals(id)) neighbors.add(edge.getSourceId());
+            // 3. Structural Matches (Classes/Methods)
+            for (String word : keywords) {
+                if (word.length() < 3) continue;
+                if (node.getStructures().stream().anyMatch(s -> s.toLowerCase().contains(word))) {
+                    score += 8.0;
                 }
             }
-            for (String neighborId : neighbors) {
-                if (selectedIds.size() >= maxFiles) break;
-                selectedIds.add(neighborId);
+
+            // 4. Summary Content (Relevance)
+            if (node.getSummary() != null) {
+                String summary = node.getSummary().toLowerCase();
+                for (String word : keywords) {
+                    if (word.length() < 3) continue;
+                    if (summary.contains(word)) score += 3.0;
+                }
+            }
+
+            // 5. Config/Project File Priority (Moderate)
+            if (name.equals("pom.xml") || name.equals("package.json") || name.endsWith(".ino")) score += 12.0;
+            if (name.equals(".project") || name.equals(".cproject") || name.equals(".gitignore")) score += 8.0;
+
+            // 6. Penalty for Boilerplate/Artifacts
+            if (path.contains("/target/") || path.contains("/build/") || path.contains("/dist/")) score -= 20.0;
+            if (path.contains("/node_modules/")) score -= 20.0;
+
+            if (score > 0) {
+                scores.put(node.getId(), score);
             }
         }
 
-        // 4. Final safety fallback: ensure at least some context if nothing selected
-        if (selectedIds.isEmpty() && !snapshot.getNodes().isEmpty()) {
-            snapshot.getNodes().values().stream()
-                .limit(Math.min(snapshot.getNodes().size(), 4))
-                .forEach(node -> selectedIds.add(node.getId()));
+        // Boost neighbors of high-scoring nodes
+        Set<String> highScorers = scores.entrySet().stream()
+            .filter(e -> e.getValue() > 15.0)
+            .map(Map.Entry::getKey)
+            .collect(Collectors.toSet());
+
+        for (String id : highScorers) {
+            for (SemanticEdge edge : snapshot.getEdges()) {
+                if (edge.getSourceId().equals(id)) scores.merge(edge.getTargetId(), 2.0, Double::sum);
+                else if (edge.getTargetId().equals(id)) scores.merge(edge.getSourceId(), 2.0, Double::sum);
+            }
         }
 
-        return selectedIds.stream()
-            .map(id -> snapshot.getNodes().get(id).getPath())
+        // Final safety fallback: ensure at least some context if nothing selected
+        if (scores.isEmpty()) {
+            snapshot.getNodes().values().stream()
+                .limit(Math.min(snapshot.getNodes().size(), 16))
+                .forEach(node -> scores.put(node.getId(), 1.0));
+        }
+
+        return scores.entrySet().stream()
+            .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
+            .limit(maxFiles)
+            .map(e -> snapshot.getNodes().get(e.getKey()).getPath())
             .collect(Collectors.toList());
     }
 }
