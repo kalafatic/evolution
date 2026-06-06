@@ -31,9 +31,22 @@ public class SemanticExtractor {
     }
 
     public void extractToSnapshot(TargetSnapshot snapshot) {
+        extractToSnapshot(snapshot, null);
+    }
+
+    public void extractToSnapshot(TargetSnapshot snapshot, List<String> pathsToAnalyze) {
         File root = new File(snapshot.getRootPath());
-        for (SemanticNode node : snapshot.getNodes().values()) {
-            analyzeNode(node, root, snapshot);
+        if (pathsToAnalyze == null) {
+            for (SemanticNode node : snapshot.getNodes().values()) {
+                analyzeNode(node, root, snapshot);
+            }
+        } else {
+            for (String path : pathsToAnalyze) {
+                SemanticNode node = snapshot.getNodes().get(path);
+                if (node != null) {
+                    analyzeNode(node, root, snapshot);
+                }
+            }
         }
         inferArchitectureFromSnapshot(snapshot);
     }
@@ -185,7 +198,7 @@ public class SemanticExtractor {
             if (trimmed.contains("@Component") || trimmed.contains("@Service") || trimmed.contains("@Controller")) {
                 file.getTags().add("Spring Component");
             }
-            if (trimmed.contains("public static void main")) {
+            if (trimmed.contains("public static void main") || trimmed.contains("void setup()") || trimmed.contains("void loop()")) {
                 file.getTags().add("Entry Point");
             }
             if (trimmed.contains("extends HttpServlet") || trimmed.contains("@WebServlet")) {
@@ -196,6 +209,9 @@ public class SemanticExtractor {
             }
             if (trimmed.contains("interface ") && !trimmed.contains("(")) {
                 file.getTags().add("Interface");
+            }
+            if (trimmed.contains("#include ") || trimmed.contains("namespace ")) {
+                file.getTags().add("C++ Source");
             }
         }
     }
@@ -209,7 +225,7 @@ public class SemanticExtractor {
             if (trimmed.contains("@Component") || trimmed.contains("@Service") || trimmed.contains("@Controller")) {
                 node.getTags().add("Spring Component");
             }
-            if (trimmed.contains("public static void main")) {
+            if (trimmed.contains("public static void main") || trimmed.contains("void setup()") || trimmed.contains("void loop()")) {
                 node.getTags().add("Entry Point");
             }
             if (trimmed.contains("extends HttpServlet") || trimmed.contains("@WebServlet")) {
@@ -221,9 +237,12 @@ public class SemanticExtractor {
             if (trimmed.contains("interface ") && !trimmed.contains("(")) {
                 node.getTags().add("Interface");
             }
+            if (trimmed.contains("#include ") || trimmed.contains("namespace ")) {
+                node.getTags().add("C++ Source");
+            }
 
             // Extract structures (classes/functions)
-            if (trimmed.startsWith("public class ") || trimmed.startsWith("class ")) {
+            if (trimmed.startsWith("public class ") || trimmed.startsWith("class ") || (trimmed.contains("void ") && trimmed.contains("()") && trimmed.endsWith("{"))) {
                 node.getStructures().add("class:" + trimmed);
             }
             if (trimmed.contains("public ") && trimmed.contains("(") && trimmed.contains(")") && trimmed.endsWith("{")) {

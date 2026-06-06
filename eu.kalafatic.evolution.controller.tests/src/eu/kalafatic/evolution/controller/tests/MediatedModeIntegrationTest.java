@@ -61,6 +61,7 @@ public class MediatedModeIntegrationTest {
         shell.execute("git config user.email \"test@example.com\"", root, initContext);
         shell.execute("git config user.name \"Test User\"", root, initContext);
         Files.writeString(new File(root, "pom.xml").toPath(), "<project><modelVersion>4.0.0</modelVersion><groupId>test</groupId><artifactId>test</artifactId><version>1.0</version></project>");
+        Files.writeString(new File(root, "sloeber.ino").toPath(), "void setup() {} void loop() {}");
         shell.execute("git add .", root, initContext);
         shell.execute("git commit -m \"Initial commit\"", root, initContext);
 
@@ -104,10 +105,14 @@ public class MediatedModeIntegrationTest {
             "  \"strategy_type\": \"ARCHITECTURE_MAPPING\"," +
             "  \"strategy\": \"Test mediated strategy\"," +
             "  \"survival_argument\": \"Test survival\"," +
+            "  \"semantic_justification\": \"Test justification\"," +
+            "  \"tradeoffs\": \"Test tradeoffs\"," +
+            "  \"failure_risks\": \"Test risks\"," +
+            "  \"actions\": [{ \"domain\": \"kernel\", \"operation\": \"ANALYZE\", \"target\": \"workspace\", \"description\": \"Test action\" }]," +
             "  \"score\": 0.95," +
             "  \"mediation_candidate\": {" +
             "    \"prompt\": \"Optimized prompt for big LLM\"," +
-            "    \"selected_files\": [\"pom.xml\"]," +
+            "    \"selected_files\": [\"pom.xml\", \"sloeber.ino\"]," +
             "    \"architecture_summary\": \"Test arch\"," +
             "    \"dependencies\": \"Test deps\"," +
             "    \"execution_instructions\": \"Test instructions\"" +
@@ -135,6 +140,13 @@ public class MediatedModeIntegrationTest {
         File[] files = context.getProjectRoot().listFiles((dir, name) -> name.startsWith("mediated_export_") && name.endsWith(".zip"));
         assertNotNull("ZIP file list should not be null", files);
         assertTrue("Export ZIP file should exist", files.length > 0);
+
+        // Verify ZIP content
+        try (java.util.zip.ZipFile zip = new java.util.zip.ZipFile(files[0])) {
+            assertNotNull("pom.xml should be in ZIP", zip.getEntry("affected-files/pom.xml"));
+            assertNotNull("sloeber.ino should be in ZIP", zip.getEntry("affected-files/sloeber.ino"));
+            assertNotNull("prompt.md should be in ZIP", zip.getEntry("prompt.md"));
+        }
     }
 
     private static class MockLlmProvider {

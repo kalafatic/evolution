@@ -47,10 +47,21 @@ public class MediatedExportManager {
             }
 
             // 4. Add Selected File Contents
-            for (String relativePath : selectedPaths) {
-                File file = new File(projectRoot, relativePath);
+            for (String path : selectedPaths) {
+                String normalizedPath = path.replace('\\', '/');
+                File file = new File(projectRoot, normalizedPath);
                 if (file.exists() && file.isFile()) {
-                    addFileToZip(zos, "affected-files/" + relativePath, file);
+                    addFileToZip(zos, "affected-files/" + normalizedPath, file);
+                } else {
+                    // Try absolute path if relative fails
+                    File absFile = new File(normalizedPath);
+                    if (absFile.exists() && absFile.isFile()) {
+                        String zipEntryName = normalizedPath;
+                        if (normalizedPath.startsWith(projectRoot.getAbsolutePath())) {
+                            zipEntryName = projectRoot.toPath().relativize(absFile.toPath()).toString().replace('\\', '/');
+                        }
+                        addFileToZip(zos, "affected-files/" + zipEntryName, absFile);
+                    }
                 }
             }
         }
