@@ -321,6 +321,10 @@ public class IterationManager {
                            prompt.equalsIgnoreCase("proceed");
 
         String checkpointGoal = (String) state.getMetadata().get("checkpoint_goal");
+        if (isControl) {
+            state.getMetadata().put("pendingControlCommand", prompt);
+        }
+
         if (!isControl) {
             if (checkpointGoal != null && !checkpointGoal.equalsIgnoreCase(request)) {
                 context.log("[KERNEL] New request detected. Invalidating stale evolution phase: " + state.getCurrentPhase());
@@ -817,11 +821,25 @@ public class IterationManager {
 
         String manualId = null;
 
+        if (state.getMetadata().containsKey("pendingControlCommand")) {
+            String pendingCommand = (String) state.getMetadata().remove("pendingControlCommand");
+            if (pendingCommand.toLowerCase().startsWith("select ") || pendingCommand.toLowerCase().startsWith("approve variant ")) {
+                manualId = pendingCommand.toLowerCase().startsWith("select ") ? pendingCommand.substring(7).trim() : pendingCommand.substring(16).trim();
+                context.log("[KERNEL] Auto-resolving variant selection from initial command: " + manualId);
+            } else if (pendingCommand.equalsIgnoreCase("approved") || pendingCommand.equalsIgnoreCase("proceed") || pendingCommand.equalsIgnoreCase("yes") || pendingCommand.equalsIgnoreCase("force solution")) {
+                manualId = variants.stream()
+                        .max((v1, v2) -> Double.compare(v1.getScore(), v2.getScore()))
+                        .map(v -> v.getId())
+                        .orElse(null);
+                context.log("[KERNEL] Auto-approving best variant from initial command: " + manualId);
+            }
+        }
+
         if (variants.size() < 4 && state.getIterationCount() < 2) {
             context.log("[KERNEL] EVOLUTIONARY MANDATE: Attempting to maximize vector diversity within capability envelope.");
         }
 
-        if (!context.isAutoApprove()) {
+        if (manualId == null && !context.isAutoApprove()) {
             manualId = handleVariantSelection(context, variants, goal);
             if ("REGENERATE".equals(manualId)) {
                 return runDarwinIteration(context, darwinFlow);
@@ -1494,6 +1512,19 @@ public class IterationManager {
         EvolutionProgressPublisher.updateStage(context, EvolutionStage.SELECT_WINNER);
         EvolutionDecision decision = authorityEngine.decide(iterationId, variants, context, manualSelectionId);
         applyDecision(decision, variants, context);
+
+        // UI SYNC: Emit centralized [DARWIN_BRANCHES] message for variant status updates
+        StringBuilder outcomeBuilder = new StringBuilder("[DARWIN_BRANCHES] ");
+        String winnerId = decision.getSelectedVariantId();
+        outcomeBuilder.append("[APPROVED:").append(winnerId).append("] ");
+
+        for (BranchVariant v : variants) {
+            if (v.getId().equals(winnerId)) continue;
+            String status = (v.getActivationState() == BranchVariant.ActivationState.KEPT) ? "KEPT" : "REJECTED";
+            outcomeBuilder.append("[").append(status).append(":").append(v.getId()).append("] ");
+        }
+        context.log(outcomeBuilder.toString());
+
         return decision;
     }
 
@@ -1505,10 +1536,11 @@ public class IterationManager {
                 updateVariantLifecycle(variants, variant.getId(), BranchVariant.ActivationState.ACTIVE, context);
                 variant.setRank("winner");
             } else if (decision.getRejectedVariantIds().contains(variant.getId())) {
-                updateVariantLifecycle(variants, variant.getId(), BranchVariant.ActivationState.ARCHIVED, context);
+                BranchVariant.ActivationState newState = (variant.getActivationState() == BranchVariant.ActivationState.KEPT) ? BranchVariant.ActivationState.KEPT : BranchVariant.ActivationState.REJECTED;
+                updateVariantLifecycle(variants, variant.getId(), newState, context);
                 variant.setRank("runner-up");
             } else {
-                updateVariantLifecycle(variants, variant.getId(), BranchVariant.ActivationState.ARCHIVED, context);
+                updateVariantLifecycle(variants, variant.getId(), BranchVariant.ActivationState.REJECTED, context);
                 variant.setRank("noise");
             }
         }

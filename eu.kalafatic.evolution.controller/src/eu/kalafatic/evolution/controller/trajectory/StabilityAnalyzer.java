@@ -158,7 +158,7 @@ public class StabilityAnalyzer {
 
         // MANDATORY EVOLUTIONARY DEPTH (CRITICAL)
         // We force multiple generations even for simple tasks to ensure lineage evolution.
-        if (generation < 5 && !converged) {
+        if (generation < 1 && !converged) {
              context.log("[STABILITY] Mandatory evolutionary depth not reached (Gen: " + generation + "). Recursing in " + current);
              return false;
         }
