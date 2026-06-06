@@ -327,6 +327,19 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                             if (finalOrch.getOllama() != null) finalOrch.getOllama().setModel(s.getLocalModel());
                         }
                         if (s.getRemoteModel() != null) finalOrch.setRemoteModel(s.getRemoteModel());
+
+                        // Sync session flags to PromptInstructions
+                        PromptInstructions pi = finalOrch.getAiChat().getPromptInstructions();
+                        if (pi == null) {
+                            pi = OrchestrationFactory.eINSTANCE.createPromptInstructions();
+                            finalOrch.getAiChat().setPromptInstructions(pi);
+                        }
+                        pi.setAutoApprove(s.isAutoApprove());
+                        pi.setStepMode(s.isStepMode());
+                        pi.setGitAutomation(s.isGitAutomation());
+                        pi.setIterativeMode(s.isIterativeMode());
+                        pi.setSelfIterativeMode(s.isSelfIterativeMode());
+                        pi.setPreferredMaxIterations(s.getMaxIterations());
                     });
 
                 TaskContext context = (session instanceof SessionContext) ? ((SessionContext)session).getTaskContext() : null;
