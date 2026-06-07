@@ -80,7 +80,7 @@ public class ContextBuilder {
         pkg.setDependencies(depBuilder.toString());
 
         // 4b. SEMANTIC WORKSPACE INJECTION (Trajectory & Hypothesis Aware)
-        ContextResolver resolver = new ContextResolver();
+        ContextResolver resolver = new ContextResolver(context.getSessionId());
 
         // Enhance goal with trajectory and hypothesis metadata for better semantic retrieval
         String semanticGoal = pkg.getGoal();

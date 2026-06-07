@@ -19,32 +19,16 @@ import eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot;
 public class ContextCurator {
 
     public List<String> curate(TargetDescriptor target) {
-        // Selection strategy:
-        // 1. Entry points
-        // 2. Main configuration files (pom.xml, package.json)
-        // 3. High-density semantic markers (Interfaces, Components)
+        // REFACTOR: Generic curation based on semantic tags and abstract centrality.
+        // Hardcoded file extensions and project-specific names are removed.
 
-        List<String> curatedPaths = new ArrayList<>();
-
-        curatedPaths.addAll(target.getFiles().stream()
-            .filter(f -> f.getTags().contains("Entry Point"))
+        return target.getFiles().stream()
+            .filter(f -> f.getTags().contains("Entry Point") ||
+                         f.getTags().contains("Interface") ||
+                         f.getTags().contains("Architecture"))
             .map(f -> f.getPath())
-            .collect(Collectors.toList()));
-
-        curatedPaths.addAll(target.getFiles().stream()
-            .filter(f -> f.getPath().endsWith("pom.xml") || f.getPath().endsWith("package.json") ||
-                         f.getPath().endsWith(".project") || f.getPath().endsWith(".cproject") ||
-                         f.getPath().endsWith(".gitignore"))
-            .map(f -> f.getPath())
-            .collect(Collectors.toList()));
-
-        curatedPaths.addAll(target.getFiles().stream()
-            .filter(f -> f.getTags().contains("Interface") || f.getTags().contains("Spring Component") ||
-                         f.getPath().endsWith(".ino") || f.getPath().endsWith(".cpp") || f.getPath().endsWith(".h"))
-            .map(f -> f.getPath())
-            .collect(Collectors.toList()));
-
-        return curatedPaths.stream().distinct().collect(Collectors.toList());
+            .distinct()
+            .collect(Collectors.toList());
     }
 
     public List<String> selectContext(TargetSnapshot snapshot, String query, int maxFiles) {
@@ -100,9 +84,10 @@ public class ContextCurator {
                 }
             }
 
-            // 5. Config/Project File Priority (Moderate)
-            if (name.equals("pom.xml") || name.equals("package.json") || name.endsWith(".ino")) score += 12.0;
-            if (name.equals(".project") || name.equals(".cproject") || name.equals(".gitignore")) score += 8.0;
+            // 5. Semantic Signal Priority: Boost based on inferred role instead of name
+            if (node.getTags().contains("Architecture") || node.getTags().contains("Configuration")) {
+                score += 12.0;
+            }
 
             // 6. Penalty for Boilerplate/Artifacts
             if (path.contains("/target/") || path.contains("/build/") || path.contains("/dist/")) score -= 20.0;

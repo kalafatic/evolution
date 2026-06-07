@@ -262,50 +262,24 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         }
         int branchingLimit = Math.max(3, preferredMaxIterations / 2);
 
+        // DYNAMIC TERRITORY DISCOVERY: Replace hardcoded blueprints with LLM-driven territory mapping
+        TrajectoryTerritoryMapper mapper = new TrajectoryTerritoryMapper(getSessionContainer());
+        mapper.setAiService(aiService);
+
         if (generation == 0) {
-            if (isMediated) {
-                context.log("[DARWIN] Gen 0 (Mediated): Spawning divergent cognitive seeds.");
-                currentBlueprints.addAll(generateMediatedBlueprints(goal, branchingLimit));
-            } else {
-                context.log("[DARWIN] Gen 0 (Evolutionary Seeds): Spawning divergent architectural blueprints.");
+            context.log("[DARWIN] Gen 0: Dynamically mapping evolutionary territory.");
+            currentBlueprints.addAll(mapper.map(goal, context, branchingLimit));
 
-                // ORCHESTRATOR-DRIVEN DYNAMIC BLUEPRINTS: Prefer blueprints from intent expansion
-                if (expansion != null && !expansion.getUnresolvedDimensions().isEmpty()) {
-                    String activeDimId = expansion.getActiveDimensionId();
-                    EvolutionDimension activeDim = expansion.getUnresolvedDimensions().stream()
-                        .filter(d -> activeDimId != null && activeDimId.equals(d.getId()))
-                        .findFirst()
-                        .orElse(expansion.getUnresolvedDimensions().get(0));
-
-                    if (activeDim != null && !activeDim.getCandidateBranches().isEmpty()) {
-                        context.log("[DARWIN] Using " + activeDim.getCandidateBranches().size() + " dynamic blueprints from dimension: " + activeDim.getId());
-                        for (BranchVariant bv : activeDim.getCandidateBranches()) {
-                            TrajectoryBlueprint bp = new TrajectoryBlueprint(bv.getId(), goal, bv.getStrategy());
-                            bp.setStrategyType(DarwinStrategyType.PROBABLE_SURVIVOR);
-                            bp.setArchitecturalDirection(bv.getStrategy());
-                            bp.setSurvivalArgument(bv.getSurvivalArgument());
-                            bp.setTradeoffs(bv.getTradeoffs());
-                            bp.setPhilosophy(activeDim.getDescription());
-                            currentBlueprints.add(bp);
-                        }
-                    }
-                }
-
-                if (currentBlueprints.isEmpty()) {
-                    boolean isSimpleTask = (expansion != null && expansion.getConfidence() != null && expansion.getConfidence().getOverallConfidence() > 0.8) ||
-                                          (goal.toLowerCase().contains("create") && goal.toLowerCase().contains("class"));
-
-                    if (isSimpleTask) {
-                        context.log("[DARWIN] Simple task detected. Using task-aware simple blueprints.");
-                        currentBlueprints.addAll(generateSimpleBlueprints(goal, branchingLimit));
-                    } else {
-                        currentBlueprints.addAll(generateStandardBlueprints(goal, branchingLimit));
-                    }
-                }
+            if (currentBlueprints.isEmpty()) {
+                context.log("[DARWIN] Territory Mapper yielded zero blueprints. Using generic fallback.");
+                TrajectoryBlueprint bp = new TrajectoryBlueprint("default-candidate", goal, "Standard Implementation");
+                bp.setStrategyType(DarwinStrategyType.PROBABLE_SURVIVOR);
+                bp.setPhilosophy("Practical realization of " + goal);
+                currentBlueprints.add(bp);
             }
         } else {
             context.log("[DARWIN] Gen " + generation + " (Lineage Mutation): Targeting unresolved pressures.");
-            currentBlueprints.addAll(generateMutationBlueprints(goal, pressure, trajectory, branchingLimit));
+            currentBlueprints.addAll(mapper.map(goal + " (Mutation Gen " + generation + ")", context, branchingLimit));
         }
 
         // Model Capability Coefficient
@@ -394,219 +368,6 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         return variants;
     }
 
-    private List<TrajectoryBlueprint> generateSimpleBlueprints(String goal, int limit) {
-        List<TrajectoryBlueprint> blueprints = new ArrayList<>();
-
-        // BRANCH A - DIRECT_STANDARD
-        TrajectoryBlueprint standard = new TrajectoryBlueprint("direct_standard", goal, "Standard idiomatic implementation");
-        standard.setStrategyType(DarwinStrategyType.PROBABLE_SURVIVOR);
-        standard.addRequiredCharacteristic("Direct implementation of goal");
-        standard.addRequiredCharacteristic("Standard library usage");
-        standard.setArchitecturalDirection("A clean, idiomatic implementation using standard patterns without unnecessary abstractions.");
-        standard.getEngineeringDimensions().put("philosophy", "standard/idiomatic");
-        standard.getEngineeringDimensions().put("abstraction_depth", "low");
-        blueprints.add(standard);
-
-        // BRANCH B - OPTIMIZED_ATOMIC
-        TrajectoryBlueprint optimized = new TrajectoryBlueprint("optimized_atomic", goal, "Optimized and concise implementation");
-        optimized.addRequiredCharacteristic("Minimal footprint");
-        optimized.addRequiredCharacteristic("Performance-oriented logic");
-        optimized.setArchitecturalDirection("A performance-focused approach, minimizing object creation and using efficient algorithms.");
-        optimized.getEngineeringDimensions().put("philosophy", "performance/conciseness");
-        optimized.getEngineeringDimensions().put("execution_model", "atomic");
-        blueprints.add(optimized);
-
-        // BRANCH C - DEFENSIVE_ROBUST
-        TrajectoryBlueprint robust = new TrajectoryBlueprint("defensive_robust", goal, "Robust implementation with validation");
-        robust.setStrategyType(DarwinStrategyType.STABILIZATION_RECOVERY);
-        robust.addRequiredCharacteristic("Input validation");
-        robust.addRequiredCharacteristic("Basic error handling");
-        robust.setArchitecturalDirection("A defensive approach prioritizing stability through validation and basic exception management.");
-        robust.getEngineeringDimensions().put("philosophy", "defensive/robust");
-        robust.getEngineeringDimensions().put("risk_acceptance", "conservative");
-        blueprints.add(robust);
-
-        if (limit > 0 && blueprints.size() > limit) {
-            return blueprints.subList(0, limit);
-        }
-        return blueprints;
-    }
-
-    private List<TrajectoryBlueprint> generateStandardBlueprints(String goal, int limit) {
-        List<TrajectoryBlueprint> blueprints = new ArrayList<>();
-
-        // BRANCH A - DIRECT_MINIMAL
-        TrajectoryBlueprint direct = new TrajectoryBlueprint("direct_minimal", goal, "Minimal executable implementation");
-        direct.setStrategyType(DarwinStrategyType.PROBABLE_SURVIVOR);
-        direct.getTargetVector().setAbstraction(0.1);
-        direct.getTargetVector().setDeterminism(0.9);
-        direct.getTargetVector().setModularity(0.1);
-        direct.addRequiredCharacteristic("Direct output/execution");
-        direct.addRequiredCharacteristic("Primary entry point");
-        direct.addRequiredCharacteristic("Atomic structure");
-        direct.addForbiddenOverlap("interfaces");
-        direct.addForbiddenOverlap("services");
-        direct.addForbiddenOverlap("layered architecture");
-        direct.addForbiddenOverlap("factories");
-        direct.setArchitecturalDirection("A minimalist, single-class approach focusing on raw execution speed and zero external dependencies. Ideal for atomic utilities.");
-        direct.getEngineeringDimensions().put("execution_model", "atomic");
-        direct.getEngineeringDimensions().put("abstraction_depth", "low");
-        direct.getEngineeringDimensions().put("modularity_approach", "monolithic");
-        direct.getEngineeringDimensions().put("testing_strategy", "smoke");
-        direct.getEngineeringDimensions().put("extensibility", "low");
-        blueprints.add(direct);
-
-        // BRANCH B - PERSISTENT_STORAGE
-        TrajectoryBlueprint persistent = new TrajectoryBlueprint("persistent_storage", goal, "Persistent data management");
-        persistent.getTargetVector().setPersistence(0.9);
-        persistent.getTargetVector().setAbstraction(0.5);
-        persistent.addRequiredCharacteristic("Persistence support (FileWriter/Database)");
-        persistent.addRequiredCharacteristic("External state management");
-        persistent.addRequiredCharacteristic("Configurable storage paths");
-        persistent.addForbiddenOverlap("console-only execution");
-        persistent.addForbiddenOverlap("ephemeral state");
-        persistent.addForbiddenOverlap("logger abstraction");
-        persistent.setArchitecturalDirection("An implementation centered around state persistence and file/database IO, ensuring that execution results survive process termination.");
-        persistent.getEngineeringDimensions().put("execution_model", "synchronous");
-        persistent.getEngineeringDimensions().put("abstraction_depth", "medium");
-        persistent.getEngineeringDimensions().put("modularity_approach", "modular");
-        persistent.getEngineeringDimensions().put("testing_strategy", "integration");
-        persistent.getEngineeringDimensions().put("extensibility", "medium");
-        blueprints.add(persistent);
-
-        // BRANCH C - STABILIZED_RESILIENT
-        TrajectoryBlueprint stabilized = new TrajectoryBlueprint("stabilized_resilient", goal, "Resilient and validated implementation");
-        stabilized.setStrategyType(DarwinStrategyType.STABILIZATION_RECOVERY);
-        stabilized.getTargetVector().setResilience(0.9);
-        stabilized.getTargetVector().setRiskAcceptance(0.1);
-        stabilized.addRequiredCharacteristic("Input validation");
-        stabilized.addRequiredCharacteristic("Exception handling and recovery");
-        stabilized.addRequiredCharacteristic("Unit tests for edge cases");
-        stabilized.addForbiddenOverlap("speculative abstractions");
-        stabilized.addForbiddenOverlap("overengineering");
-        stabilized.addForbiddenOverlap("persistence overlap");
-        stabilized.setArchitecturalDirection("A defensive engineering approach prioritizing input validation, robust error handling, and high test coverage to prevent runtime failures.");
-        stabilized.getEngineeringDimensions().put("execution_model", "defensive");
-        stabilized.getEngineeringDimensions().put("abstraction_depth", "medium");
-        stabilized.getEngineeringDimensions().put("modularity_approach", "modular");
-        stabilized.getEngineeringDimensions().put("testing_strategy", "unit-tdd");
-        stabilized.getEngineeringDimensions().put("extensibility", "medium");
-        blueprints.add(stabilized);
-
-        // BRANCH D - REUSABLE_SERVICE
-        TrajectoryBlueprint service = new TrajectoryBlueprint("reusable_service", goal, "Extensible and modular service architecture");
-        service.getTargetVector().setServiceOrientation(0.9);
-        service.getTargetVector().setModularity(0.8);
-        service.getTargetVector().setAbstraction(0.8);
-        service.getTargetVector().setExtensibility(0.9);
-        service.addRequiredCharacteristic("Interface-based design");
-        service.addRequiredCharacteristic("Implementation separation (Service/Impl)");
-        service.addRequiredCharacteristic("Dependency injection or factory patterns");
-        service.addForbiddenOverlap("hardcoded output");
-        service.addForbiddenOverlap("direct println coupling");
-        service.addForbiddenOverlap("monolithic structure");
-        service.setArchitecturalDirection("A decoupled, service-oriented architecture using interfaces and dependency separation to ensure long-term maintainability and reuse.");
-        service.getEngineeringDimensions().put("execution_model", "service-oriented");
-        service.getEngineeringDimensions().put("abstraction_depth", "high");
-        service.getEngineeringDimensions().put("modularity_approach", "modular");
-        service.getEngineeringDimensions().put("testing_strategy", "contract");
-        service.getEngineeringDimensions().put("extensibility", "high");
-        blueprints.add(service);
-
-        if (limit > 0 && blueprints.size() > limit) {
-            return blueprints.subList(0, limit);
-        }
-        return blueprints;
-    }
-
-    private List<TrajectoryBlueprint> generateMutationBlueprints(String goal, EvolutionaryPressureVector pressure, Trajectory trajectory, int limit) {
-        List<TrajectoryBlueprint> blueprints = new ArrayList<>();
-
-        if (pressure.failureExposure > 0.5) {
-            TrajectoryBlueprint bp = new TrajectoryBlueprint("reliability_mutation", goal, "Reliability and Fault Tolerance");
-            bp.setStrategyType(DarwinStrategyType.STABILIZATION_RECOVERY);
-            bp.setArchitecturalDirection("Strengthen the lineage with error handling, validation, and recovery logic to address failure exposure pressure.");
-            bp.addRequiredCharacteristic("Input validation");
-            bp.addRequiredCharacteristic("Exception recovery");
-            bp.addRequiredCharacteristic("Robustness wrappers");
-            bp.getEngineeringDimensions().put("risk_acceptance", "conservative");
-            blueprints.add(bp);
-        }
-
-        if (pressure.extensibility > 0.4) {
-            TrajectoryBlueprint bp = new TrajectoryBlueprint("extensibility_mutation", goal, "Structural Extensibility and Abstraction");
-            bp.setStrategyType(DarwinStrategyType.PHILOSOPHY_MUTATION);
-            bp.setArchitecturalDirection("Mutate the lineage to improve modularity and extensibility, resolving hardcoded dependencies.");
-            bp.addRequiredCharacteristic("Interface extraction");
-            bp.addRequiredCharacteristic("Decoupled state");
-            bp.addRequiredCharacteristic("Plugin/Service hooks");
-            bp.getEngineeringDimensions().put("abstraction_depth", "high");
-            blueprints.add(bp);
-        }
-
-        if (pressure.ambiguity > 0.5) {
-            TrajectoryBlueprint bp = new TrajectoryBlueprint("observability_mutation", goal, "Observability and Technical Clarity");
-            bp.setArchitecturalDirection("Enhance the lineage with logging, telemetry, and self-documenting structures to resolve semantic ambiguity.");
-            bp.addRequiredCharacteristic("Structured logging");
-            bp.addRequiredCharacteristic("State telemetry");
-            bp.addRequiredCharacteristic("Traceability hooks");
-            bp.getEngineeringDimensions().put("runtime_behavior", "observable");
-            blueprints.add(bp);
-        }
-
-        // Always provide at least one "Refinement" branch if no specific high pressure
-        if (blueprints.isEmpty()) {
-            TrajectoryBlueprint bp = new TrajectoryBlueprint("refinement_mutation", goal, "Continuous Refinement");
-            bp.setArchitecturalDirection("General refinement of the surviving lineage to improve overall technical quality.");
-            bp.addRequiredCharacteristic("Code cleanup");
-            bp.addRequiredCharacteristic("Optimization");
-            blueprints.add(bp);
-        }
-
-        if (limit > 0 && blueprints.size() > limit) {
-            return blueprints.subList(0, limit);
-        }
-        return blueprints;
-    }
-
-    private List<TrajectoryBlueprint> generateMediatedBlueprints(String goal, int limit) {
-        List<TrajectoryBlueprint> blueprints = new ArrayList<>();
-
-        // LINEAGE A: CORE LINEAGE (System Execution)
-        TrajectoryBlueprint core = new TrajectoryBlueprint("core_lineage", goal, "Core execution-centric lineage");
-        core.setStrategyType(DarwinStrategyType.ARCHITECTURE_MAPPING);
-        core.addRequiredCharacteristic("Minimal set required to understand system execution");
-        core.addRequiredCharacteristic("Primary execution entrypoints and bootstrap logic");
-        core.setArchitecturalDirection("Focus: Execution flow. Strategy: Identify and select the minimal set of files that define the system's runtime execution path.");
-        core.getEngineeringDimensions().put("philosophy", "execution-centric distillation");
-        core.getEngineeringDimensions().put("abstraction_depth", "medium");
-        blueprints.add(core);
-
-        // LINEAGE B: STRUCTURAL LINEAGE (Architecture & Wiring)
-        TrajectoryBlueprint structural = new TrajectoryBlueprint("structural_lineage", goal, "Structural architecture-centric lineage");
-        structural.setStrategyType(DarwinStrategyType.ARCHITECTURE_MAPPING);
-        structural.addRequiredCharacteristic("Architecture, config, and dependency wiring");
-        structural.addRequiredCharacteristic("Framework glue and orchestration logic");
-        structural.setArchitecturalDirection("Focus: Structural skeleton. Strategy: Select files that define the architectural topology and component wiring.");
-        structural.getEngineeringDimensions().put("philosophy", "structural/wiring mapping");
-        structural.getEngineeringDimensions().put("abstraction_depth", "high");
-        blueprints.add(structural);
-
-        // LINEAGE C: BEHAVIORAL LINEAGE (Domain & Logic)
-        TrajectoryBlueprint behavioral = new TrajectoryBlueprint("behavioral_lineage", goal, "Behavioral domain-centric lineage");
-        behavioral.setStrategyType(DarwinStrategyType.REFACTOR_HOTSPOT_ANALYSIS);
-        behavioral.addRequiredCharacteristic("Business logic and domain rules");
-        behavioral.addRequiredCharacteristic("Mutation-heavy logic and behavioral hotspots");
-        behavioral.setArchitecturalDirection("Focus: Behavioral density. Strategy: Target the logic-dense files directly involved in system behavior and domain rules.");
-        behavioral.getEngineeringDimensions().put("philosophy", "behavioral/domain auditing");
-        behavioral.getEngineeringDimensions().put("execution_model", "analytical");
-        blueprints.add(behavioral);
-
-        if (limit > 0 && blueprints.size() > limit) {
-            return blueprints.subList(0, limit);
-        }
-        return blueprints;
-    }
 
     private BranchVariant mapToBranchVariant(JSONObject obj, String goal, String currentPhase, Trajectory trajectory, TaskContext context) {
         BranchVariant v = new BranchVariant();

@@ -8,6 +8,7 @@ import org.json.JSONObject;
 import eu.kalafatic.evolution.controller.orchestration.AiService;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionProgressPublisher;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.orchestration.intent.AtomicIntentAnalysis;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 
 /**
@@ -133,12 +134,35 @@ public class DarwinVariantSpawner {
             repair.put("score", 0.45); // Auto-repaired branches start with lower fitness
 
             org.json.JSONArray actions = new org.json.JSONArray();
-            JSONObject action = new JSONObject();
-            action.put("domain", "kernel");
-            action.put("operation", "ANALYZE");
-            action.put("target", "workspace");
-            action.put("description", "Bootstrap " + bp.getId() + " architectural strategy.");
-            actions.put(action);
+
+            // GENERIC TASK RECOVERY: Use context-driven bootstrap synthesis instead of hardcoded templates
+            AtomicIntentAnalysis atomic = (AtomicIntentAnalysis) context.getOrchestrationState().getMetadata().get("atomicAnalysis");
+            if (atomic != null && atomic.isAtomic() && atomic.getTargetArtifact() != null && !atomic.getTargetArtifact().isEmpty()) {
+                JSONObject writeAction = new JSONObject();
+                String target = atomic.getTargetArtifact();
+
+                writeAction.put("domain", "semantic");
+                writeAction.put("operation", "BOOTSTRAP");
+                writeAction.put("target", target);
+
+                try {
+                    String bootstrapPrompt = "Generate a minimal valid bootstrap implementation for " + target + " given the goal: " + bp.getGoal() + ". Return ONLY the content.";
+                    String content = aiService.sendRequest(context.getOrchestrator(), bootstrapPrompt, context);
+                    writeAction.put("description", content);
+                } catch (Exception e) {
+                    writeAction.put("description", "// Dynamic bootstrap failed for " + target);
+                }
+
+                actions.put(writeAction);
+                repair.put("strategy", "Dynamic auto-repair: bootstrapping " + target);
+            } else {
+                JSONObject action = new JSONObject();
+                action.put("domain", "kernel");
+                action.put("operation", "ANALYZE");
+                action.put("target", "workspace");
+                action.put("description", "Bootstrap " + bp.getId() + " architectural strategy.");
+                actions.put(action);
+            }
             repair.put("actions", actions);
 
             JSONObject dimensions = new JSONObject();
@@ -202,7 +226,7 @@ public class DarwinVariantSpawner {
           .append("- Adhere STRICTLY to the philosophy and required characteristics.\n")
           .append("- DO NOT propose anything mentioned in 'Forbidden Overlaps'.\n")
           .append("- If you fail to stay within the blueprint constraints, the trajectory will be REJECTED.\n")
-          .append("- Provide CONCRETE technical actions and steps. Do NOT use placeholders like '<path.java>' or 'precise engineering strategy'.\n")
+          .append("- Provide CONCRETE technical actions and steps. Do NOT use placeholders like '<artifact_path>' or 'precise engineering strategy'.\n")
           .append("- Every field MUST contain real, specific technical detail.\n")
           .append("- Output your response within <BEGIN_DARWIN_JSON> and <END_DARWIN_JSON> tags.\n\n");
 
@@ -296,9 +320,9 @@ public class DarwinVariantSpawner {
           .append("  \"failure_risks\": \"(Potential failure modes)\",\n")
           .append("  \"semantic_justification\": \"").append(bp.getPhilosophy()).append("\",\n")
           .append("  \"projected_steps\": [\"step 1\", \"step 2\"],\n")
-          .append("  \"expected_outputs\": [\"App.java\"],\n")
+          .append("  \"expected_outputs\": [\"TargetArtifact\"],\n")
           .append("  \"score\": 0.8,\n")
-          .append("  \"actions\": [{ \"domain\": \"file\", \"operation\": \"WRITE\", \"target\": \"src/main/java/App.java\", \"description\": \"Action description\" }]\n")
+          .append("  \"actions\": [{ \"domain\": \"file\", \"operation\": \"WRITE\", \"target\": \"src/main/java/TargetArtifact\", \"description\": \"Action description\" }]\n")
           .append("}");
 
         return sb.toString();
@@ -488,7 +512,7 @@ public class DarwinVariantSpawner {
                .append("  \"strategy_type\": \"").append(seed.getType()).append("\",\n")
                .append("  \"strategy\": \"precise engineering strategy for this trajectory\",\n")
                .append("  \"reasoning_focus\": \"specific architectural focus for this mediated trajectory\",\n")
-               .append("  \"selected_files\": [\"src/main/java/Main.java\"],\n")
+               .append("  \"selected_files\": [\"path/to/artifact\"],\n")
                .append("  \"engineering_dimensions\": {\n")
                .append("    \"philosophy\": \"specific philosophy for this branch\",\n")
                .append("    \"execution_model\": \"atomic/service/reactive/etc\",\n")
@@ -525,7 +549,7 @@ public class DarwinVariantSpawner {
           .append("    {\n")
           .append("      \"domain\": \"file\",\n")
           .append("      \"operation\": \"WRITE\",\n")
-          .append("      \"target\": \"src/main/java/Main.java\",\n")
+          .append("      \"target\": \"path/to/artifact\",\n")
           .append("      \"description\": \"specific technical instruction for this action\"\n")
           .append("    }\n")
           .append("  ],\n")

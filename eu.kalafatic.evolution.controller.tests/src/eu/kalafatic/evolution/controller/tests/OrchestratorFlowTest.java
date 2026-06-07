@@ -34,6 +34,8 @@ public class OrchestratorFlowTest {
 
     @Before
     public void setUp() throws Exception {
+        SessionManager.getInstance().getOrCreateSession("test-flow");
+        SessionManager.getInstance().getOrCreateSession("GLOBAL");
         tempDir = Files.createTempDirectory("evo-flow-test").toFile();
         orchestrator = OrchestrationFactory.eINSTANCE.createOrchestrator();
         orchestrator.setId("test-flow");

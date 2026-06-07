@@ -187,17 +187,17 @@ public class DarwinFlow implements IOrchestrationFlow {
             currentIterationModelImpl.setJustification(selectedVariant.getStrategy());
         }
 
-        boolean isMediated = context.getBehaviorProfile().hasTrait(BehaviorTrait.SUPERVISION_MEDIATED);
+        boolean isExportOnly = context.getBehaviorProfile().hasTrait(BehaviorTrait.WORKFLOW_EXPORT_ONLY);
 
         boolean isTestMode = context.getMetadata().containsKey("testMode");
         try {
-            if (!isMediated && !isTestMode) {
+            if (!isExportOnly && !isTestMode) {
                 manager.getGitManager().createBranchFrom(originalBranch, snapshotBranch);
                 manager.getGitManager().forceCheckout(snapshotBranch);
             }
 
             context.log("[KERNEL] Executing winner variant: " + selectedVariant.getId() + " (" + selectedVariant.getStrategy() + ")");
-            if (!isMediated && !isTestMode) {
+            if (!isExportOnly && !isTestMode) {
                 manager.getGitManager().createBranchFrom(originalBranch, selectedVariant.getBranchName());
             }
 
@@ -210,17 +210,17 @@ public class DarwinFlow implements IOrchestrationFlow {
 
             if (!selectedVariant.isSuccess()) {
                 context.log("[KERNEL] Winner variant execution failed.");
-                if (!isMediated && !isTestMode) {
+                if (!isExportOnly && !isTestMode) {
                     manager.getGitManager().forceCheckout(originalBranch);
                     manager.getGitManager().rollback();
                 }
                 return manager.failedResult();
             }
 
-            if (!isMediated && !isTestMode) {
+            if (!isExportOnly && !isTestMode) {
                 manager.getGitManager().forceCheckout(originalBranch);
                 manager.getGitManager().merge(selectedVariant.getBranchName());
-            } else if (isMediated) {
+            } else if (isExportOnly) {
                 context.log("[KERNEL] Applying cognitive winner: " + selectedVariant.getStrategy());
                 context.getOrchestrationState().getMetadata().put("current_understanding", selectedVariant.getStrategy());
                 context.getOrchestrationState().getMetadata().put("current_strategy", selectedVariant.getStrategyType());
@@ -240,7 +240,7 @@ public class DarwinFlow implements IOrchestrationFlow {
                 }
             }
 
-            if (isMediated) {
+            if (isExportOnly) {
                 EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
                 res.setSuccess(true);
                 res.setDecision(eu.kalafatic.evolution.model.orchestration.SelfDevDecision.CONTINUE);
@@ -309,7 +309,7 @@ public class DarwinFlow implements IOrchestrationFlow {
         File tempDir = null;
         AuthorityController authority = context.getKernelContext().getAuthority();
         VariantExecutionContext variantExecContext = new VariantExecutionContext(variant.getId());
-        boolean isMediated = context.getBehaviorProfile().hasTrait(BehaviorTrait.SUPERVISION_MEDIATED);
+        boolean isMediated = context.getBehaviorProfile().hasTrait(BehaviorTrait.WORKFLOW_EXPORT_ONLY);
 
         try {
             if (context.getMetadata().containsKey("testMode") || isMediated) {

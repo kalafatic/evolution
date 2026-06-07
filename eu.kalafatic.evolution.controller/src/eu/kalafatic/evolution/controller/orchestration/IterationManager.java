@@ -369,7 +369,7 @@ public class IterationManager {
                     archArtifact.getSemanticTags().add("structure");
                     context.getSemanticWorkspace().addArtifact(archArtifact);
 
-                    if (profile.hasTrait(BehaviorTrait.SUPERVISION_MEDIATED)) {
+                    if (profile.hasTrait(BehaviorTrait.WORKFLOW_EXPORT_ONLY)) {
                         context.log("[KERNEL] Mediated Discovery: Building semantic repository snapshot.");
                         TargetScanner scanner = new TargetScanner();
                         TargetSnapshot.TargetType type = context.getProjectRoot().getAbsolutePath().contains("evolution") ? TargetSnapshot.TargetType.SELF : TargetSnapshot.TargetType.PROJECT;
@@ -433,10 +433,10 @@ public class IterationManager {
                         context.getSessionId(), "Kernel", mode.getType().toString()));
             }
 
-            if (context.getPlatformMode() != null && context.getPlatformMode().getType() == PlatformType.SIMPLE_CHAT) {
+            if (profile.hasTrait(BehaviorTrait.COGNITIVE_SIMPLE_CHAT)) {
                 PlatformMode fastMode = router.routeFast(request, context.getOrchestrator());
                 if (fastMode != null && fastMode.getType() == PlatformType.SIMPLE_CHAT) {
-                    context.log("[KERNEL] Fast-track greeting detected. Bypassing evolutionary kernel.");
+                    context.log("[KERNEL] Fast-track greeting detected via cognitive trait. Bypassing evolutionary kernel.");
                     IOrchestrationFlow flow = (IOrchestrationFlow) getInternalAgent(EvolutionConstants.AGENT_GENERAL);
                     String resultStr = ((eu.kalafatic.evolution.controller.agents.GeneralAgent)flow).process(request, context, null);
                     response.setResultType(ResultType.CHAT);
@@ -461,16 +461,18 @@ public class IterationManager {
             context.log("[KERNEL] Routing to unified iterative evolutionary kernel.");
             OrchestratorResponse result = evolve(request, context, initialAssessment);
 
-            if (result != null && result.getResultType() == ResultType.ERROR) {
+            boolean isError = result != null && result.getResultType() == ResultType.ERROR;
+
+            if (isError) {
                 transition(SystemState.FAILED, context);
             } else {
-            // Final response handled inside evolve if terminal phase reached
-            if (!context.getStateHolder().getState().equals(SystemState.DONE)) {
-                transition(SystemState.DONE, context);
-            }
+                // Final response handled inside evolve if terminal phase reached
+                if (!context.getStateHolder().getState().equals(SystemState.DONE)) {
+                    transition(SystemState.DONE, context);
+                }
             }
 
-            if (result != null && result.getResultType() != ResultType.ERROR) {
+            if (!isError) {
                 PromptInstructions instructions = (context.getOrchestrator() != null && context.getOrchestrator().getAiChat() != null) ?
                         context.getOrchestrator().getAiChat().getPromptInstructions() : null;
 
@@ -485,7 +487,7 @@ public class IterationManager {
             }
 
             FinalResponseAssembler assembler = new FinalResponseAssembler();
-            FinalResponse finalResponse = assembler.assemble(context, result.getSummary(), true, context.getStartTime());
+            FinalResponse finalResponse = assembler.assemble(context, result.getSummary(), !isError, context.getStartTime());
             result.setFinalResponse(finalResponse);
 
             return result;
@@ -653,9 +655,15 @@ public class IterationManager {
         OrchestratorResponse response = new OrchestratorResponse();
         response.setResultType(ResultType.CHAT);
 
+        // FAILURE PROPAGATION: If the loop exited without reaching a terminal phase, it might be a failure
+        if (result != null && !result.isSuccess()) {
+            response.setResultType(ResultType.ERROR);
+            context.log("[KERNEL] Evolution loop terminated due to iteration failure.");
+        }
+
         String summary;
-        if (state.getCurrentPhase().contains("TERMINAL") || state.getCurrentPhase().contains("SYNTHESIS")) {
-            if (context.getBehaviorProfile().hasTrait(BehaviorTrait.SUPERVISION_MEDIATED)) {
+        if ((state.getCurrentPhase().contains("TERMINAL") || state.getCurrentPhase().contains("SYNTHESIS")) && response.getResultType() != ResultType.ERROR) {
+            if (context.getBehaviorProfile().hasTrait(BehaviorTrait.WORKFLOW_EXPORT_ONLY)) {
                 summary = performMediatedExportConvergence(request, context);
             } else if (context.getMetadata().containsKey("testMode")) {
                 summary = "Evolution completed (Test Mode).";

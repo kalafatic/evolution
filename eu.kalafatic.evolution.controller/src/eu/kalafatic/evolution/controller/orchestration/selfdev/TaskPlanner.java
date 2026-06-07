@@ -45,25 +45,7 @@ public class TaskPlanner extends BaseAiAgent {
 
             String domain = action.getDomain() != null ? action.getDomain().toLowerCase() : "";
 
-            // Smart extension appending for known artifact types
-            if (target != null && !target.isEmpty()) {
-                if ("java".equals(domain) || "class".equals(domain) || "interface".equals(domain) || "enum".equals(domain) || "record".equals(domain)) {
-                    if (!target.endsWith(".java")) {
-                        if (target.contains(".")) {
-                            target = target.substring(0, target.lastIndexOf('.')) + ".java";
-                        } else {
-                            target = target + ".java";
-                        }
-                    }
-                    // Ensure PascalCase for Java classes if it's a simple name
-                    if (!target.contains("/") && !target.contains("\\") && Character.isLowerCase(target.charAt(0))) {
-                        target = Character.toUpperCase(target.charAt(0)) + target.substring(1);
-                    }
-                } else if ("script".equals(domain) && !target.contains(".")) {
-                    target = target + ".sh";
-                }
-            }
-
+            // Dynamic Target Normalization: Use semantic intent instead of hardcoded rules
             task.setName(op + " " + target);
 
             String type = "llm";
