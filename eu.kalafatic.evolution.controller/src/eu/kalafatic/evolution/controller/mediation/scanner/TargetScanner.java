@@ -69,38 +69,12 @@ public class TargetScanner {
     }
 
     private void detectTechnologies(TargetDescriptor target) {
-        Set<String> techs = new HashSet<>();
-        for (FileDescriptor file : target.getFiles()) {
-            String path = file.getPath();
-            if (path.endsWith("pom.xml")) techs.add("Maven");
-            if (path.endsWith("build.gradle")) techs.add("Gradle");
-            if (path.contains("package.json")) techs.add("Node.js/React");
-            if (path.endsWith(".java")) techs.add("Java");
-            if (path.endsWith(".ts") || path.endsWith(".tsx")) techs.add("TypeScript/React");
-            if (path.endsWith(".py")) techs.add("Python");
-            if (path.endsWith(".pdf")) techs.add("PDF Documents");
-            if (path.endsWith(".html")) techs.add("HTML/Web");
-            if (path.endsWith(".ino")) techs.add("Arduino");
-            if (path.endsWith(".cpp") || path.endsWith(".c") || path.endsWith(".h") || path.endsWith(".hpp")) techs.add("C/C++");
-        }
-        target.getDetectedTechnologies().addAll(techs);
+        // REFACTOR: Remove hardcoded extension-to-technology mapping.
+        // Technology detection is now a cognitive concern handled during the ANALYZING phase
+        // by the MetadataAgent or dynamic territory mapping.
     }
 
     private void detectTechnologiesInSnapshot(TargetSnapshot snapshot) {
-        Set<String> techs = new HashSet<>();
-        for (SemanticNode node : snapshot.getNodes().values()) {
-            String path = node.getPath();
-            if (path.endsWith("pom.xml")) techs.add("Maven");
-            if (path.endsWith("build.gradle")) techs.add("Gradle");
-            if (path.contains("package.json")) techs.add("Node.js/React");
-            if (path.endsWith(".java")) techs.add("Java");
-            if (path.endsWith(".ts") || path.endsWith(".tsx")) techs.add("TypeScript/React");
-            if (path.endsWith(".py")) techs.add("Python");
-            if (path.endsWith(".pdf")) techs.add("PDF Documents");
-            if (path.endsWith(".html")) techs.add("HTML/Web");
-            if (path.endsWith(".ino")) techs.add("Arduino");
-            if (path.endsWith(".cpp") || path.endsWith(".c") || path.endsWith(".h") || path.endsWith(".hpp")) techs.add("C/C++");
-        }
-        snapshot.getMetadata().put("detectedTechnologies", new ArrayList<>(techs));
+        // REFACTOR: Move technology detection to runtime cognitive inference.
     }
 }

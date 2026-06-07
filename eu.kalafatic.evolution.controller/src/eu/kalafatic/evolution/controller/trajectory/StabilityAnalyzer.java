@@ -1,20 +1,20 @@
 package eu.kalafatic.evolution.controller.trajectory;
 
-import java.util.List;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionPhase;
-import eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionResult;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionaryPressureVector;
 import eu.kalafatic.utils.semantic.EvolutionComponent;
 import eu.kalafatic.utils.semantic.EvolutionaryImpact;
 import eu.kalafatic.utils.semantic.Stability;
 
 /**
  * Analyzes architectural stability to determine convergence and progression.
+ * Refactored to be policy-driven and agnostic of hardcoded rules.
  */
 @EvolutionComponent(
     domain = "trajectory",
     role = "stability-analyzer",
-    purpose = "Evaluates convergence and phase progression based on architectural equilibrium",
+    purpose = "Evaluates convergence and phase progression based on architectural equilibrium policies",
     stability = Stability.STABLE,
     evolutionaryImpact = EvolutionaryImpact.MEDIUM
 )
@@ -24,126 +24,24 @@ public class StabilityAnalyzer {
         return calculateStability(trajectory, context, null);
     }
 
-    public double calculateStability(Trajectory trajectory, TaskContext context, eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionaryPressureVector pressure) {
-        if (trajectory == null) return 0.0;
-
-        double pressureResolution = calculatePressureResolution(trajectory, context);
-        double mutationEffectiveness = calculateMutationEffectiveness(trajectory, context);
-        double deltaDecay = calculateDeltaDecay(trajectory, context);
-        double confidenceStability = calculateConfidenceStability(trajectory, context);
-
-        // System Equilibrium: Weighted combination of factors
-        double stability = (pressureResolution * 0.3) +
-                          (mutationEffectiveness * 0.2) +
-                          (deltaDecay * 0.3) +
-                          (confidenceStability * 0.2);
-
-        context.log(String.format("[STABILITY] Trajectory %s | Stability: %.2f (PR: %.2f, ME: %.2f, DD: %.2f, CS: %.2f)",
-            trajectory.getTrajectoryId(), stability, pressureResolution, mutationEffectiveness, deltaDecay, confidenceStability));
-
-        return stability;
-    }
-
-    private double calculatePressureResolution(Trajectory trajectory, TaskContext context) {
-        List<eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionaryPressureVector> history = trajectory.getPressureHistory();
-        if (history == null || history.size() < 2) return 0.5;
-
-        double first = history.get(0).getTotalPressure();
-        double last = history.get(history.size() - 1).getTotalPressure();
-
-        if (first <= 0.0) return 1.0;
-
-        // Higher resolution (lower pressure) means higher stability
-        double resolution = 1.0 - (last / first);
-        return Math.max(0.0, Math.min(1.0, 0.5 + resolution));
-    }
-
-    private double calculateMutationEffectiveness(Trajectory trajectory, TaskContext context) {
-        List<Double> fitness = trajectory.getFitnessHistory();
-        if (fitness == null || fitness.size() < 2) return 0.5;
-
-        double gain = fitness.get(fitness.size() - 1) - fitness.get(0);
-        int generations = trajectory.getGeneration();
-
-        if (generations <= 0) return 0.5;
-
-        // Effectiveness: Gain per generation
-        double effectiveness = gain / generations;
-        return Math.max(0.0, Math.min(1.0, 0.5 + effectiveness));
-    }
-
-    private double calculateDeltaDecay(Trajectory trajectory, TaskContext context) {
-        List<Double> history = trajectory.getFitnessHistory();
-        if (history == null || history.size() < 2) return 0.0;
-
-        double last = history.get(history.size() - 1);
-        double prev = history.get(history.size() - 2);
-
-        double delta = Math.abs(last - prev);
-        // Delta decay: Smaller delta means higher stability
-        return Math.max(0.0, 1.0 - (delta * 4.0));
-    }
-
-    private double calculateConfidenceStability(Trajectory trajectory, TaskContext context) {
-        List<Double> history = trajectory.getConfidenceHistory();
-        if (history == null || history.size() < 2) return 0.5;
-
-        double last = history.get(history.size() - 1);
-        double prev = history.get(history.size() - 2);
-
-        double delta = Math.abs(last - prev);
-        return Math.max(0.0, 1.0 - (delta * 2.0));
+    public double calculateStability(Trajectory trajectory, TaskContext context, EvolutionaryPressureVector pressure) {
+        return resolvePolicy(context).calculateStability(trajectory, context, pressure);
     }
 
     public boolean isConverged(Trajectory trajectory, TaskContext context) {
         return isConverged(trajectory, context, null);
     }
 
-    public boolean isConverged(Trajectory trajectory, TaskContext context, eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionaryPressureVector pressure) {
+    public boolean isConverged(Trajectory trajectory, TaskContext context, EvolutionaryPressureVector pressure) {
         if (trajectory == null) return false;
 
-        // Intent expansion never triggers convergence logic
-        if (context != null && context.getOrchestrationState() != null) {
-            String phase = context.getOrchestrationState().getCurrentPhase();
-            if (EvolutionPhase.INTENT_EXPANSION.name().equals(phase) || "INTENT_EXPANSION".equals(phase)) {
-                return false;
-            }
-        }
-
-        if (context != null && context.getOrchestrationState().getMetadata().get("forceSolution") != null) {
+        // Force Solution override (Universal Cognitive Signal)
+        if (context != null && context.getOrchestrationState().getMetadata().containsKey("forceSolution")) {
             context.log("[STABILITY] Force Solution detected. Forcing convergence.");
             return true;
         }
 
-        double stability = calculateStability(trajectory, context, pressure);
-
-        // Check if test mode is active to allow accelerated convergence
-        boolean isTestMode = context != null && context.getMetadata().containsKey("testMode");
-
-        // Convergence requires high stability.
-        // Enforce minimum evolutionary depth even for simple tasks to preserve iterative Darwin nature.
-        int generation = trajectory.getGeneration();
-
-        // SIMPLE TASK ACCELERATION: Detect high-confidence simple tasks for early convergence
-        boolean isSimpleTask = false;
-        Object expansion = context != null ? context.getMetadata().get("intentExpansion") : null;
-        if (expansion instanceof IntentExpansionResult) {
-            IntentExpansionResult intentExpansion = (IntentExpansionResult) expansion;
-            if (intentExpansion.getConfidence() != null && intentExpansion.getConfidence().getOverallConfidence() > 0.8) {
-                isSimpleTask = true;
-            }
-        }
-
-        if (generation < 2 && !isSimpleTask) return false;
-        if (generation < 1 && isSimpleTask) return false; // Still require at least one mutation/variant round
-
-        boolean converged = isSimpleTask ? stability > 0.90 : stability > 0.92; // Higher threshold for stability-based convergence
-
-        if (converged) {
-            context.log("[STABILITY] Architectural equilibrium reached for trajectory: " + trajectory.getTrajectoryId());
-        }
-
-        return converged;
+        return resolvePolicy(context).isConverged(trajectory, context, pressure);
     }
 
     /**
@@ -156,58 +54,29 @@ public class StabilityAnalyzer {
     /**
      * Determines if the evolution should progress to the next phase or stay in the current one with pressure awareness.
      */
-    public boolean shouldProgress(EvolutionPhase current, Trajectory trajectory, TaskContext context, eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionaryPressureVector pressure) {
-        // Intent expansion always progresses once intent is clear (handled in IterationManager)
+    public boolean shouldProgress(EvolutionPhase current, Trajectory trajectory, TaskContext context, EvolutionaryPressureVector pressure) {
+        // Intent expansion always progresses once intent is clear
         if (current == EvolutionPhase.INTENT_EXPANSION) {
             context.log("[STABILITY] Intent expansion phase complete. Progressing.");
             return true;
         }
 
-        if (context != null && context.getOrchestrationState().getMetadata().get("forceSolution") != null) {
+        if (context != null && context.getOrchestrationState().getMetadata().containsKey("forceSolution")) {
             context.log("[STABILITY] Force Solution detected. Forcing progression.");
             return true;
         }
 
         if (trajectory == null) return true;
 
-        int generation = trajectory.getGeneration();
-        boolean converged = isConverged(trajectory, context, pressure);
+        return resolvePolicy(context).shouldProgress(current, trajectory, context, pressure);
+    }
 
-        // SIMPLE TASK ACCELERATION
-        boolean isSimpleTask = false;
-        Object expansion = context != null ? context.getMetadata().get("intentExpansion") : null;
-        if (expansion instanceof IntentExpansionResult) {
-            IntentExpansionResult intentExpansion = (IntentExpansionResult) expansion;
-            if (intentExpansion.getConfidence() != null && intentExpansion.getConfidence().getOverallConfidence() > 0.8) {
-                isSimpleTask = true;
-            }
+    private IStabilityPolicy resolvePolicy(TaskContext context) {
+        // Dynamic policy resolution from context metadata or service registry
+        IStabilityPolicy policy = (IStabilityPolicy) context.getOrchestrationState().getMetadata().get("stabilityPolicy");
+        if (policy == null) {
+            policy = new DefaultStabilityPolicy();
         }
-
-        // MANDATORY EVOLUTIONARY DEPTH (CRITICAL)
-        // We force multiple generations even for simple tasks to ensure lineage evolution.
-        if (generation < 2 && !converged && !isSimpleTask) {
-             context.log("[STABILITY] Mandatory evolutionary depth not reached (Gen: " + generation + "). Recursing in " + current);
-             return false;
-        }
-
-        if (isSimpleTask && generation < 1 && !converged) {
-            context.log("[STABILITY] Simple task: Requiring at least one mutation generation (Gen: " + generation + "). Recursing in " + current);
-            return false;
-        }
-
-        if (converged) {
-            context.log("[STABILITY] Stability confirmed through pressure resolution and improvement decay. Ready to progress from " + current);
-            return true;
-        }
-
-        // If not converged, we might still want to progress after significant effort
-        if (generation >= 8) {
-            context.log("[STABILITY] Maximum generation limit reached for phase (Gen: " + generation + "). Forcing progression from " + current);
-            return true;
-        }
-
-        // Default to recursion in evolutionary phases if not converged and depth not reached
-        context.log("[STABILITY] Stability not yet reached. Continuing evolution in phase: " + current);
-        return false;
+        return policy;
     }
 }
