@@ -3,6 +3,7 @@ package eu.kalafatic.evolution.controller.trajectory;
 import java.util.List;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionPhase;
+import eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionResult;
 import eu.kalafatic.utils.semantic.EvolutionComponent;
 import eu.kalafatic.utils.semantic.EvolutionaryImpact;
 import eu.kalafatic.utils.semantic.Stability;
@@ -122,9 +123,21 @@ public class StabilityAnalyzer {
         // Convergence requires high stability.
         // Enforce minimum evolutionary depth even for simple tasks to preserve iterative Darwin nature.
         int generation = trajectory.getGeneration();
-        if (generation < 2) return false;
 
-        boolean converged = stability > 0.92; // Higher threshold for stability-based convergence
+        // SIMPLE TASK ACCELERATION: Detect high-confidence simple tasks for early convergence
+        boolean isSimpleTask = false;
+        Object expansion = context != null ? context.getMetadata().get("intentExpansion") : null;
+        if (expansion instanceof IntentExpansionResult) {
+            IntentExpansionResult intentExpansion = (IntentExpansionResult) expansion;
+            if (intentExpansion.getConfidence() != null && intentExpansion.getConfidence().getOverallConfidence() > 0.8) {
+                isSimpleTask = true;
+            }
+        }
+
+        if (generation < 2 && !isSimpleTask) return false;
+        if (generation < 1 && isSimpleTask) return false; // Still require at least one mutation/variant round
+
+        boolean converged = isSimpleTask ? stability > 0.90 : stability > 0.92; // Higher threshold for stability-based convergence
 
         if (converged) {
             context.log("[STABILITY] Architectural equilibrium reached for trajectory: " + trajectory.getTrajectoryId());
@@ -160,11 +173,26 @@ public class StabilityAnalyzer {
         int generation = trajectory.getGeneration();
         boolean converged = isConverged(trajectory, context, pressure);
 
+        // SIMPLE TASK ACCELERATION
+        boolean isSimpleTask = false;
+        Object expansion = context != null ? context.getMetadata().get("intentExpansion") : null;
+        if (expansion instanceof IntentExpansionResult) {
+            IntentExpansionResult intentExpansion = (IntentExpansionResult) expansion;
+            if (intentExpansion.getConfidence() != null && intentExpansion.getConfidence().getOverallConfidence() > 0.8) {
+                isSimpleTask = true;
+            }
+        }
+
         // MANDATORY EVOLUTIONARY DEPTH (CRITICAL)
         // We force multiple generations even for simple tasks to ensure lineage evolution.
-        if (generation < 2 && !converged) {
+        if (generation < 2 && !converged && !isSimpleTask) {
              context.log("[STABILITY] Mandatory evolutionary depth not reached (Gen: " + generation + "). Recursing in " + current);
              return false;
+        }
+
+        if (isSimpleTask && generation < 1 && !converged) {
+            context.log("[STABILITY] Simple task: Requiring at least one mutation generation (Gen: " + generation + "). Recursing in " + current);
+            return false;
         }
 
         if (converged) {

@@ -69,4 +69,8 @@ public class OrchestratorResponse {
     public void setDebugLogs(List<String> debugLogs) {
         this.debugLogs = debugLogs;
     }
+
+    public boolean isSuccess() {
+        return resultType != ResultType.ERROR;
+    }
 }

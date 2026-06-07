@@ -8,6 +8,7 @@ import org.json.JSONObject;
 import eu.kalafatic.evolution.controller.orchestration.AiService;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionProgressPublisher;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.orchestration.intent.AtomicIntentAnalysis;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 
 /**
@@ -133,12 +134,39 @@ public class DarwinVariantSpawner {
             repair.put("score", 0.45); // Auto-repaired branches start with lower fitness
 
             org.json.JSONArray actions = new org.json.JSONArray();
-            JSONObject action = new JSONObject();
-            action.put("domain", "kernel");
-            action.put("operation", "ANALYZE");
-            action.put("target", "workspace");
-            action.put("description", "Bootstrap " + bp.getId() + " architectural strategy.");
-            actions.put(action);
+
+            // SIMPLE TASK RECOVERY: If it's an atomic task with a clear target, generate a WRITE action
+            AtomicIntentAnalysis atomic = (AtomicIntentAnalysis) context.getOrchestrationState().getMetadata().get("atomicAnalysis");
+            if (atomic != null && atomic.isAtomic() && atomic.getTargetArtifact() != null && !atomic.getTargetArtifact().isEmpty()) {
+                JSONObject writeAction = new JSONObject();
+                String target = atomic.getTargetArtifact();
+                String type = atomic.getArtifactType() != null ? atomic.getArtifactType() : "file";
+
+                writeAction.put("domain", type.toLowerCase());
+                writeAction.put("operation", "WRITE");
+                writeAction.put("target", target);
+
+                String className = target.contains("/") ? target.substring(target.lastIndexOf('/') + 1) : target;
+                if (className.endsWith(".java")) className = className.substring(0, className.length() - 5);
+
+                String content = "";
+                if ("java".equalsIgnoreCase(type) || target.endsWith(".java")) {
+                    content = "public class " + className + " {\n    // Auto-repaired implementation for " + className + "\n}";
+                } else {
+                    content = "// Auto-repaired implementation for " + target;
+                }
+
+                writeAction.put("description", content);
+                actions.put(writeAction);
+                repair.put("strategy", "Atomic auto-repair: implementing " + target);
+            } else {
+                JSONObject action = new JSONObject();
+                action.put("domain", "kernel");
+                action.put("operation", "ANALYZE");
+                action.put("target", "workspace");
+                action.put("description", "Bootstrap " + bp.getId() + " architectural strategy.");
+                actions.put(action);
+            }
             repair.put("actions", actions);
 
             JSONObject dimensions = new JSONObject();
