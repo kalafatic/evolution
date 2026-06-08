@@ -30,16 +30,21 @@ public class ContextBuilder {
 
         // 1. RAW_INPUT & INITIALIZATION
         ContextPackage pkg = new ContextPackage();
-        pkg.setGoal(task.getGoal());
-        pkg.setStep(task.getName());
+        if (task != null) {
+            pkg.setGoal(task.getGoal());
+            pkg.setStep(task.getName());
+        } else if (context != null && context.getOrchestrator() != null) {
+            pkg.setGoal("Context building for session " + context.getSessionId());
+            pkg.setStep("Context Expansion");
+        }
         pkg.setAttempt(attempt);
         pkg.setLastFeedback(lastFeedback);
 
-        OrchestrationState state = context.getOrchestrationState();
-        state.addDiagnostic("ContextBuilder: Starting pipeline for " + task.getName());
+        OrchestrationState state = context != null ? context.getOrchestrationState() : new OrchestrationState();
+        state.addDiagnostic("ContextBuilder: Starting pipeline for " + (task != null ? task.getName() : "Context Expansion"));
 
         // 2. ANALYSIS (File selection)
-        Set<String> scope = selectRelevantFiles(task, context);
+        Set<String> scope = task != null ? selectRelevantFiles(task, context) : new HashSet<>();
         pkg.getScope().addAll(scope);
 
         // 2b. ARCHITECTURAL EXPANSION
@@ -65,13 +70,13 @@ public class ContextBuilder {
             } catch (Exception e) {
                 // RESILIENCE: If we are creating a new file, it won't exist yet.
                 // Ignore FileNotFoundException if the task name suggests a write/create operation for this specific file.
-                String taskName = task.getName().toUpperCase();
+                String taskName = task != null ? task.getName().toUpperCase() : "";
                 if (e.getMessage() != null && e.getMessage().contains("File not found") &&
                     (taskName.contains("WRITE") || taskName.contains("CREATE")) &&
-                    taskName.contains(path.replaceAll("^\\[FILE:|\\]$", "").toUpperCase())) {
+                    !taskName.isEmpty() && taskName.contains(path.replaceAll("^\\[FILE:|\\]$", "").toUpperCase())) {
                     state.addDiagnostic("ContextBuilder: Target file " + path + " does not exist yet (expected for NEW file).");
                 } else {
-                    context.log("ContextBuilder: Could not read file " + path + ": " + e.getMessage());
+                    if (context != null) context.log("ContextBuilder: Could not read file " + path + ": " + e.getMessage());
                 }
             }
         }
@@ -80,27 +85,29 @@ public class ContextBuilder {
         pkg.setDependencies(depBuilder.toString());
 
         // 4b. SEMANTIC WORKSPACE INJECTION (Trajectory & Hypothesis Aware)
-        ContextResolver resolver = new ContextResolver(context.getSessionId());
+        if (context != null) {
+            ContextResolver resolver = new ContextResolver(context.getSessionId());
 
-        // Enhance goal with trajectory and hypothesis metadata for better semantic retrieval
-        String semanticGoal = pkg.getGoal();
-        String currentPhase = context.getOrchestrationState().getCurrentPhase();
-        if (currentPhase != null) {
-            semanticGoal += " Phase: " + currentPhase;
-        }
+            // Enhance goal with trajectory and hypothesis metadata for better semantic retrieval
+            String semanticGoal = pkg.getGoal();
+            String currentPhase = context.getOrchestrationState().getCurrentPhase();
+            if (currentPhase != null) {
+                semanticGoal += " Phase: " + currentPhase;
+            }
 
-        List<WorkspaceArtifact> artifacts = resolver.resolveRelevantArtifacts(semanticGoal, context.getSemanticWorkspace());
+            List<WorkspaceArtifact> artifacts = resolver.resolveRelevantArtifacts(semanticGoal, context.getSemanticWorkspace());
 
-        // Filter artifacts based on current trajectory stability
-        double stability = context.getSemanticWorkspace().getTrajectoryMemory().getSuccessfulStrategies().size() > 0 ? 0.8 : 0.4;
-        List<WorkspaceArtifact> filteredArtifacts = artifacts.stream()
-                .filter(a -> a.getConfidence() > (1.0 - stability))
-                .collect(Collectors.toList());
+            // Filter artifacts based on current trajectory stability
+            double stability = context.getSemanticWorkspace().getTrajectoryMemory().getSuccessfulStrategies().size() > 0 ? 0.8 : 0.4;
+            List<WorkspaceArtifact> filteredArtifacts = artifacts.stream()
+                    .filter(a -> a.getConfidence() > (1.0 - stability))
+                    .collect(Collectors.toList());
 
-        String workspacePrompt = resolver.formatArtifactsForPrompt(filteredArtifacts);
-        if (!workspacePrompt.isEmpty()) {
-            pkg.setAttachmentContext((pkg.getAttachmentContext() != null ? pkg.getAttachmentContext() : "") + "\n" + workspacePrompt);
-            state.addDiagnostic("ContextBuilder: Injected " + filteredArtifacts.size() + " adaptive semantic artifacts.");
+            String workspacePrompt = resolver.formatArtifactsForPrompt(filteredArtifacts);
+            if (workspacePrompt != null && !workspacePrompt.isEmpty()) {
+                pkg.setAttachmentContext((pkg.getAttachmentContext() != null ? pkg.getAttachmentContext() : "") + "\n" + workspacePrompt);
+                state.addDiagnostic("ContextBuilder: Injected " + filteredArtifacts.size() + " adaptive semantic artifacts.");
+            }
         }
 
         // 5. FILTERING (Constraints)
@@ -109,7 +116,7 @@ public class ContextBuilder {
         constraints.add("keep compatibility with EMF model");
         constraints.add("modify only files in scope");
 
-        if (task.getDescription() != null) {
+        if (task != null && task.getDescription() != null) {
             String desc = task.getDescription().toLowerCase();
             if (desc.contains("must") || desc.contains("don't") || desc.contains("do not") || desc.contains("ensure")) {
                 constraints.add("Task Hint: " + task.getDescription());
@@ -118,10 +125,13 @@ public class ContextBuilder {
         pkg.setConstraints(constraints);
 
         // Enrichment: Authoritative Attachment Injection
-        if (context.getInstructionFiles() != null && !context.getInstructionFiles().isEmpty()) {
-            String combined = (task.getName() != null ? task.getName() : "") + " " +
+        if (context != null && context.getInstructionFiles() != null && !context.getInstructionFiles().isEmpty()) {
+            String combined = "";
+            if (task != null) {
+                combined = (task.getName() != null ? task.getName() : "") + " " +
                              (task.getDescription() != null ? task.getDescription() : "") + " " +
                              (task.getGoal() != null ? task.getGoal() : "");
+            }
             String attachmentContext = AttachmentInjector.inject(context.getInstructionFiles(), combined.trim(), context);
             pkg.setAttachmentContext(attachmentContext);
         }
@@ -130,7 +140,7 @@ public class ContextBuilder {
         ArchitectureContext arch = new ArchitectureContext();
         arch.getKeyRules().add("Single Transition Authority: ONLY IterationManager may change system state");
         arch.getKeyRules().add("Stateless Execution: EvolutionOrchestrator is a blind executor");
-        arch.setCurrentFocus(task.getName());
+        arch.setCurrentFocus(task != null ? task.getName() : "Context Expansion");
         pkg.setArchitectureContext(arch);
 
         state.addDiagnostic("ContextBuilder: Pipeline complete.");
@@ -158,7 +168,9 @@ public class ContextBuilder {
 
     private static Set<String> selectRelevantFiles(Task task, TaskContext context) {
         Set<String> files = new HashSet<>();
-        String combined = (task.getName() + " " + task.getDescription() + " " + task.getGoal());
+        String combined = (task.getName() != null ? task.getName() : "") + " " +
+                          (task.getDescription() != null ? task.getDescription() : "") + " " +
+                          (task.getGoal() != null ? task.getGoal() : "");
 
         Pattern fileTagPattern = Pattern.compile("\\[FILE:([^]]+)\\]", Pattern.CASE_INSENSITIVE);
         Matcher tagMatcher = fileTagPattern.matcher(combined);

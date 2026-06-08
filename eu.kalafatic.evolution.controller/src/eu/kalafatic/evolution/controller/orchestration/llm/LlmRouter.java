@@ -67,19 +67,21 @@ public class LlmRouter {
     }
 
     public String buildContextLocally(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
-        ContextPackage pkg = new ContextPackage();
-        pkg.setGoal(prompt);
-        pkg.setStep("Context Expansion");
-
-        // Use standard ContextBuilder logic
-        ContextPackage expanded = ContextBuilder.build(null, context, 1, null);
-        expanded.setGoal(prompt);
-
-        return ContextBuilder.buildPrompt(expanded);
+        // Optimization phase using local LLM
+        String optimizationPrompt = "Please optimize and enrich the following user request with technical context: " + prompt;
+        return sendLocalRequest(orchestrator, optimizationPrompt, temperature, proxyUrl, context);
     }
 
     public String verifyResponseLocally(Orchestrator orchestrator, String response, float temperature, String proxyUrl, TaskContext context) throws Exception {
-        // Semantic verification phase
-        return response;
+        // Semantic verification/simplification phase
+        String prompt = "Please simplify and verify the following response from a large model: " + response;
+        return sendLocalRequest(orchestrator, prompt, temperature, proxyUrl, context);
+    }
+
+    /**
+     * Tests the connection to the LLM.
+     */
+    public String testConnection(Orchestrator orchestrator, float temperature, String proxyUrl, TaskContext context) throws Exception {
+        return sendRequest(orchestrator, "Ping", temperature, proxyUrl, context);
     }
 }
