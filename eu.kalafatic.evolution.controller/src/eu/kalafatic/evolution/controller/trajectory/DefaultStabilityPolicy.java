@@ -32,6 +32,14 @@ public class DefaultStabilityPolicy implements IStabilityPolicy {
     public boolean isConverged(Trajectory trajectory, TaskContext context, EvolutionaryPressureVector pressure) {
         if (trajectory == null) return false;
 
+        // DIAGNOSTIC OPTIMIZATION: Early convergence for analytical tasks in Mediated Mode
+        if (context.getBehaviorProfile().hasTrait(eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait.WORKFLOW_EXPORT_ONLY)) {
+            String goal = context.getOrchestrationState().getRawInput();
+            if (goal != null && isAnalytical(goal)) {
+                return true;
+            }
+        }
+
         double stability = calculateStability(trajectory, context, pressure);
         int generation = trajectory.getGeneration();
 
@@ -79,6 +87,13 @@ public class DefaultStabilityPolicy implements IStabilityPolicy {
         if (history == null || history.size() < 2) return 0.0;
         double delta = Math.abs(history.get(history.size() - 1) - history.get(history.size() - 2));
         return Math.max(0.0, 1.0 - (delta * 4.0));
+    }
+
+    private boolean isAnalytical(String goal) {
+        if (goal == null) return false;
+        String lower = goal.toLowerCase();
+        return lower.contains("analyze") || lower.contains("aalyze") || lower.contains("anlyze") ||
+               lower.contains("investigate") || lower.contains("report") || lower.contains("summarize");
     }
 
     private double calculateConfidenceStability(Trajectory trajectory) {

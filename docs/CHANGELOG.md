@@ -90,3 +90,16 @@
 - **Risks**: Fuzzy matching may occasionally conflict if proposal indices are ambiguous, but prioritized exact ID and strategy type matches mitigate this.
 - **Next Step**: Implement a "Cognitive Pressure Dashboard" to visualize divergence axes and evolutionary tension in real-time.
 - **Traceability**: `iterations/23/plan.json`
+
+## [Iteration 24] - Mediated Mode Fixes and Diagnostic Flow Optimization
+- **Goal**: Fix Mediated Mode UI persistence, variant status markers, and optimize diagnostic workflows.
+- **Changes**:
+    - **UI Persistence**: Updated `AiChatPage` and `OrchestratorServiceImpl` to synchronize `aiMode`, `localModel`, and `targetPath` across session switches.
+    - **Variant Status**: Fixed `IterationManager` and `OrchestratorServiceImpl` to correctly assign and display variant activation states (`APPROVED`, `REJECTED`, `KEPT`) without character replacement issues.
+    - **Flow Optimization**: Implemented "Diagnostic Fast-Track" in `DefaultStabilityPolicy` and `DarwinFlow` to allow early convergence and bypass sub-task execution for analytical goals in Mediated Mode.
+- **Architectural Impact**:
+    - Enhances "Information Value" principle by reducing noise in analytical/mediated tasks.
+    - Improves state-UI consistency across the orchestration control plane.
+- **Risks**: Fast-tracking relies on keyword inference; complex analytical tasks might occasionally converge prematurely if not explicitly marked.
+- **Next Step**: Refactor `ContextCurator` to support multi-dimensional significance scoring based on cross-lineage impact.
+- **Traceability**: `iterations/24/plan.json`
