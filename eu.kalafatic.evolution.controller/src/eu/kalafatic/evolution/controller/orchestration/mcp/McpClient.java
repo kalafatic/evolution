@@ -101,7 +101,11 @@ public class McpClient {
     }
 
 	public boolean testConnection() {
-		// TODO Auto-generated method stub
-		return false;
+		try {
+			initialize();
+			return true;
+		} catch (Exception e) {
+			return false;
+		}
 	}
 }
