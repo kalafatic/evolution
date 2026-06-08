@@ -24,7 +24,7 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
         return "You are a Trajectory Territory Mapper. Your goal is to DISCOVER COMPETING EVOLUTIONARY BLUEPRINTS.\n" +
                "Given a goal and system context, identify divergent architectural directions.\n" +
                "Avoid hardcoded rules. Infer the best divergence axes (e.g., Performance vs. Resilience, Monolithic vs. Service).\n" +
-               "Generate 3-5 unique blueprints that explore different technical futures.";
+               "Generate 4-6 unique blueprints that explore different technical futures.";
     }
 
     public List<TrajectoryBlueprint> map(String goal, TaskContext context, int limit) throws Exception {

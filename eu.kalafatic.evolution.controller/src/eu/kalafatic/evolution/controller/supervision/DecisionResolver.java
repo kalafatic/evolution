@@ -49,8 +49,9 @@ public class DecisionResolver {
         
         // If manual selection is provided, we bypass standard resolution for the winner
         if (manualSelectionId != null) {
-            context.log("[AUTHORITY] Manual selection override: " + manualSelectionId);
-            return createManualDecision(iterationId, manualSelectionId, variants, signals);
+            String resolvedId = resolveFuzzyId(manualSelectionId, variants, context);
+            context.log("[AUTHORITY] Manual selection override: " + manualSelectionId + (resolvedId.equals(manualSelectionId) ? "" : " (Resolved to: " + resolvedId + ")"));
+            return createManualDecision(iterationId, resolvedId, variants, signals);
         }
 
         DecisionSnapshot decision = activationResolver.resolve(
@@ -66,8 +67,60 @@ public class DecisionResolver {
         return decision;
     }
 
+    private String resolveFuzzyId(String manualId, List<BranchVariant> variants, TaskContext context) {
+        if (manualId == null) return null;
+
+        // 1. Exact match
+        for (BranchVariant v : variants) {
+            if (v.getId().equalsIgnoreCase(manualId)) return v.getId();
+        }
+
+        String lowerManualId = manualId.toLowerCase();
+
+        // 2. Strategy type match (e.g. "PROBABLE_SURVIVOR")
+        for (BranchVariant v : variants) {
+            if (v.getStrategyType() != null && !v.getStrategyType().isEmpty() &&
+                lowerManualId.contains(v.getStrategyType().toLowerCase())) {
+                return v.getId();
+            }
+        }
+
+        // 3. Proposal number match (e.g. "1", "variant 1", "0.1", "1.1")
+        String numeric = lowerManualId.replaceAll("[^0-9.]", " ").trim();
+        if (!numeric.isEmpty()) {
+            String[] parts = numeric.split("\\s+");
+            for (String part : parts) {
+                int index = -1;
+                if (part.contains(".")) {
+                    String[] subparts = part.split("\\.");
+                    try {
+                        index = Integer.parseInt(subparts[subparts.length - 1]) - 1;
+                    } catch (NumberFormatException e) {}
+                } else {
+                    try {
+                        index = Integer.parseInt(part) - 1;
+                    } catch (NumberFormatException e) {}
+                }
+
+                if (index >= 0 && index < variants.size()) {
+                    return variants.get(index).getId();
+                }
+            }
+        }
+
+        return manualId;
+    }
+
     private DecisionSnapshot createManualDecision(String iterationId, String manualId, List<BranchVariant> variants, List<EvaluationSignal> signals) {
-        List<String> ranked = variants.stream().map(BranchVariant::getId).collect(Collectors.toList());
+        List<String> ranked = new ArrayList<>();
+        // Prioritize the selected variant in the ranking
+        ranked.add(manualId);
+        for (BranchVariant v : variants) {
+            if (!v.getId().equals(manualId)) {
+                ranked.add(v.getId());
+            }
+        }
+
         return new DecisionSnapshot(
             iterationId,
             manualId,
