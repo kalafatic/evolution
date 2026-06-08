@@ -101,38 +101,40 @@ public class DarwinFitnessRanker {
         if (med == null) return 0.0;
         double medScore = 0.0;
 
-        // 1. File Selection Count (Sweet spot: 4-16 files)
+        // 1. File Selection Constraint (4-16 files)
         JSONArray files = med.optJSONArray("selected_files");
         if (files != null) {
             int count = files.length();
             if (count >= 4 && count <= 16) {
                 medScore += 0.2; // Reward ideal range
             } else if (count > 0 && count < 4) {
-                medScore += 0.05; // Penalize too small
+                medScore -= 0.1; // Penalize insufficient context
             } else if (count > 16) {
-                medScore -= Math.min(0.3, (count - 16) * 0.02); // Penalize bloat aggressively
+                medScore -= Math.min(0.4, (count - 16) * 0.03); // Penalize bloat
+            } else if (count == 0) {
+                medScore -= 0.5; // Fatal penalty for empty packages
             }
         }
 
-        // 2. Information Density (Completeness of summaries)
+        // 2. Information Density (Abstract completeness)
         if (med.optString("architecture_summary").length() > 50) medScore += 0.05;
         if (med.optString("dependencies").length() > 30) medScore += 0.05;
         if (med.optString("execution_instructions").length() > 50) medScore += 0.05;
         if (med.optString("prompt").length() > 100) medScore += 0.05;
 
-        // 3. Signal to Noise (Self-evaluation)
+        // 3. Significance Merit (Self-justification of importance)
         String evaluation = med.optString("evaluation").toLowerCase();
-        if (evaluation.contains("density") || evaluation.contains("signal") || evaluation.contains("distilled") || evaluation.contains("centrality")) {
-            medScore += 0.05;
+        if (evaluation.contains("density") || evaluation.contains("centrality") || evaluation.contains("influence") || evaluation.contains("connectivity")) {
+            medScore += 0.1; // Reward candidates that justify selection via emergent properties
         }
 
-        // 4. Architectural Signal (Reward entrypoints and dependency influence)
+        // 4. Divergence Penalty (Penalize generic technology labels in favor of structural descriptions)
         String summary = med.optString("architecture_summary").toLowerCase();
-        if (summary.contains("entrypoint") || summary.contains("bootstrap") || summary.contains("orchestration")) {
-            medScore += 0.05;
+        if (summary.contains("java project") || summary.contains("arduino sketch") || summary.contains("spring boot")) {
+            medScore -= 0.05; // Discourage hardcoded label usage in summaries
         }
-        if (summary.contains("dependency") || summary.contains("wiring") || summary.contains("skeleton")) {
-            medScore += 0.05;
+        if (summary.contains("coordinator") || summary.contains("entry") || summary.contains("topology") || summary.contains("bottleneck")) {
+            medScore += 0.05; // Reward structural/topological descriptions
         }
 
         return medScore;

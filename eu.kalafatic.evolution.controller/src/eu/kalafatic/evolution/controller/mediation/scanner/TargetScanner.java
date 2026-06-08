@@ -2,6 +2,7 @@ package eu.kalafatic.evolution.controller.mediation.scanner;
 
 import java.io.File;
 import java.util.Set;
+import java.util.List;
 import java.util.HashSet;
 import eu.kalafatic.evolution.controller.mediation.model.FileDescriptor;
 import eu.kalafatic.evolution.controller.mediation.model.SemanticNode;
@@ -32,34 +33,64 @@ public class TargetScanner {
 
     private void scanRecursive(File current, File root, TargetDescriptor target) {
         if (current.isDirectory()) {
-            if (current != root && IGNORE_DIRS.contains(current.getName())) return;
+            // Robust check: normalize name and ensure root is never ignored even if named like an ignored dir
+            String dirName = current.getName();
+            if (!current.equals(root) && IGNORE_DIRS.contains(dirName)) return;
+
             File[] children = current.listFiles();
             if (children != null) {
                 for (File child : children) scanRecursive(child, root, target);
             }
         } else {
-            String relativePath = root.toPath().relativize(current.toPath()).toString().replace('\\', '/');
-            if (relativePath.isEmpty()) relativePath = current.getName();
-            String extension = getExtension(current.getName());
-            target.getFiles().add(new FileDescriptor(relativePath, extension, current.length()));
+            try {
+                // Ensure cross-platform relative paths with forward slashes
+                String relativePath = root.toPath().toAbsolutePath().relativize(current.toPath().toAbsolutePath()).toString().replace('\\', '/');
+                if (relativePath.isEmpty()) relativePath = current.getName();
+                String extension = getExtension(current.getName());
+                target.getFiles().add(new FileDescriptor(relativePath, extension, current.length()));
+            } catch (Exception e) {
+                // Fallback for edge cases where relativize fails
+                String path = current.getAbsolutePath().replace('\\', '/');
+                String rootPath = root.getAbsolutePath().replace('\\', '/');
+                if (path.startsWith(rootPath)) {
+                    String rel = path.substring(rootPath.length());
+                    if (rel.startsWith("/")) rel = rel.substring(1);
+                    target.getFiles().add(new FileDescriptor(rel, getExtension(current.getName()), current.length()));
+                }
+            }
         }
     }
 
     private void scanRecursiveToSnapshot(File current, File root, TargetSnapshot snapshot) {
         if (current.isDirectory()) {
-            if (current != root && IGNORE_DIRS.contains(current.getName())) return;
+            String dirName = current.getName();
+            if (!current.equals(root) && IGNORE_DIRS.contains(dirName)) return;
+
             File[] children = current.listFiles();
             if (children != null) {
                 for (File child : children) scanRecursiveToSnapshot(child, root, snapshot);
             }
         } else {
-            String relativePath = root.toPath().relativize(current.toPath()).toString().replace('\\', '/');
-            if (relativePath.isEmpty()) relativePath = current.getName();
-            String extension = getExtension(current.getName());
-            String stableId = relativePath; // Stable identifier is the path
-            SemanticNode node = new SemanticNode(stableId, relativePath, extension);
-            node.getAttributes().put("size", String.valueOf(current.length()));
-            snapshot.addNode(node);
+            try {
+                String relativePath = root.toPath().toAbsolutePath().relativize(current.toPath().toAbsolutePath()).toString().replace('\\', '/');
+                if (relativePath.isEmpty()) relativePath = current.getName();
+                String extension = getExtension(current.getName());
+                String stableId = relativePath;
+                SemanticNode node = new SemanticNode(stableId, relativePath, extension);
+                node.getAttributes().put("size", String.valueOf(current.length()));
+                snapshot.addNode(node);
+            } catch (Exception e) {
+                String path = current.getAbsolutePath().replace('\\', '/');
+                String rootPath = root.getAbsolutePath().replace('\\', '/');
+                if (path.startsWith(rootPath)) {
+                    String rel = path.substring(rootPath.length());
+                    if (rel.startsWith("/")) rel = rel.substring(1);
+                    String extension = getExtension(current.getName());
+                    SemanticNode node = new SemanticNode(rel, rel, extension);
+                    node.getAttributes().put("size", String.valueOf(current.length()));
+                    snapshot.addNode(node);
+                }
+            }
         }
     }
 
@@ -69,9 +100,12 @@ public class TargetScanner {
     }
 
     private void detectTechnologies(TargetDescriptor target) {
-        // REFACTOR: Remove hardcoded extension-to-technology mapping.
-        // Technology detection is now a cognitive concern handled during the ANALYZING phase
-        // by the MetadataAgent or dynamic territory mapping.
+        // REFACTOR: Technology detection is no longer assumed by labels.
+        // It is an emergent property discovered during semantic extraction and curation.
+    }
+
+    private void addIfNotExists(List<String> list, String value) {
+        if (!list.contains(value)) list.add(value);
     }
 
     private void detectTechnologiesInSnapshot(TargetSnapshot snapshot) {

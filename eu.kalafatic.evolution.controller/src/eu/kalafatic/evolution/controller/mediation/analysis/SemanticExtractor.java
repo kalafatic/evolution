@@ -27,7 +27,6 @@ public class SemanticExtractor {
         for (FileDescriptor file : target.getFiles()) {
             analyzeFile(file, root);
         }
-        inferArchitecture(target);
     }
 
     public void extractToSnapshot(TargetSnapshot snapshot) {
@@ -48,7 +47,6 @@ public class SemanticExtractor {
                 }
             }
         }
-        inferArchitectureFromSnapshot(snapshot);
     }
 
     private void analyzeFile(FileDescriptor file, File root) {
@@ -192,26 +190,13 @@ public class SemanticExtractor {
     private void analyzeContent(FileDescriptor file, List<String> lines) {
         for (String line : lines) {
             String trimmed = line.trim();
-            if (trimmed.contains("@EvolutionComponent")) {
-                file.getTags().add("Evolution Component");
+            // REFACTOR: Generic structural evidence collection.
+            // No hardcoded technology tags.
+            if (trimmed.contains("@")) {
+                addTagIfNotExists(file.getTags(), "Annotated");
             }
-            if (trimmed.contains("@Component") || trimmed.contains("@Service") || trimmed.contains("@Controller")) {
-                file.getTags().add("Spring Component");
-            }
-            if (trimmed.contains("public static void main") || trimmed.contains("void setup()") || trimmed.contains("void loop()")) {
-                file.getTags().add("Entry Point");
-            }
-            if (trimmed.contains("extends HttpServlet") || trimmed.contains("@WebServlet")) {
-                file.getTags().add("Servlet");
-            }
-            if (trimmed.contains("import React")) {
-                file.getTags().add("React Component");
-            }
-            if (trimmed.contains("interface ") && !trimmed.contains("(")) {
-                file.getTags().add("Interface");
-            }
-            if (trimmed.contains("#include ") || trimmed.contains("namespace ")) {
-                file.getTags().add("C++ Source");
+            if (trimmed.contains("public static void main") || trimmed.contains("setup()") || trimmed.contains("loop()")) {
+                addTagIfNotExists(file.getTags(), "Executory");
             }
         }
     }
@@ -219,45 +204,48 @@ public class SemanticExtractor {
     private void analyzeContentForNode(SemanticNode node, List<String> lines, TargetSnapshot snapshot) {
         for (String line : lines) {
             String trimmed = line.trim();
-            if (trimmed.contains("@EvolutionComponent")) {
-                node.getTags().add("Evolution Component");
-            }
-            if (trimmed.contains("@Component") || trimmed.contains("@Service") || trimmed.contains("@Controller")) {
-                node.getTags().add("Spring Component");
-            }
-            if (trimmed.contains("public static void main") || trimmed.contains("void setup()") || trimmed.contains("void loop()")) {
-                node.getTags().add("Entry Point");
-            }
-            if (trimmed.contains("extends HttpServlet") || trimmed.contains("@WebServlet")) {
-                node.getTags().add("Servlet");
-            }
-            if (trimmed.contains("import React")) {
-                node.getTags().add("React Component");
-            }
-            if (trimmed.contains("interface ") && !trimmed.contains("(")) {
-                node.getTags().add("Interface");
-            }
-            if (trimmed.contains("#include ") || trimmed.contains("namespace ")) {
-                node.getTags().add("C++ Source");
+
+            // Abstract Significance Evidence
+            if (trimmed.contains("@")) {
+                addTagIfNotExists(node.getTags(), "Annotated");
             }
 
-            // Extract structures (classes/functions)
-            if (trimmed.startsWith("public class ") || trimmed.startsWith("class ") || (trimmed.contains("void ") && trimmed.contains("()") && trimmed.endsWith("{"))) {
-                node.getStructures().add("class:" + trimmed);
+            // Extract generic structures (classes/functions/definitions)
+            // This evidence is used for Semantic Density calculation.
+            if (trimmed.startsWith("public class ") || trimmed.startsWith("class ") ||
+                (trimmed.contains("void ") && trimmed.contains("()") && trimmed.endsWith("{")) ||
+                (trimmed.startsWith("namespace "))) {
+                node.getStructures().add("struct:" + trimmed);
             }
             if (trimmed.contains("public ") && trimmed.contains("(") && trimmed.contains(")") && trimmed.endsWith("{")) {
-                node.getStructures().add("method:" + trimmed);
+                node.getStructures().add("behavior:" + trimmed);
             }
 
-            // Extract dependencies (imports)
-            if (trimmed.startsWith("import ")) {
-                String dep = trimmed.substring(7).replace(";", "").trim();
-                node.getDependencies().add(dep);
-
-                // Attempt to link to other nodes in snapshot
-                linkDependency(node, dep, snapshot);
+            // Extract dependencies (Generic: imports, includes, requirements)
+            // This evidence is used for Graph Centrality calculation.
+            if (trimmed.startsWith("import ") || trimmed.startsWith("#include ") || trimmed.startsWith("require(")) {
+                String dep = extractDependency(trimmed);
+                if (dep != null) {
+                    node.getDependencies().add(dep);
+                    linkDependency(node, dep, snapshot);
+                }
             }
         }
+    }
+
+    private String extractDependency(String line) {
+        if (line.startsWith("import ")) return line.substring(7).replace(";", "").trim();
+        if (line.startsWith("#include ")) return line.substring(9).replace("\"", "").replace("<", "").replace(">", "").trim();
+        if (line.startsWith("require(")) {
+            int start = line.indexOf("(") + 1;
+            int end = line.indexOf(")");
+            if (end > start) return line.substring(start, end).replace("'", "").replace("\"", "").trim();
+        }
+        return null;
+    }
+
+    private void addTagIfNotExists(List<String> tags, String tag) {
+        if (!tags.contains(tag)) tags.add(tag);
     }
 
     private String extractAnnotationValue(String block, String key) {
@@ -275,55 +263,14 @@ public class SemanticExtractor {
     }
 
     private void linkDependency(SemanticNode source, String dependency, TargetSnapshot snapshot) {
-        // Simple heuristic to find target nodes by path similarity or package
+        // Generic dependency linking based on path matching.
+        // Works for both Java packages and C-style includes.
+        String depMatch = dependency.replace(".", "/");
         for (SemanticNode target : snapshot.getNodes().values()) {
-            String targetPathAsPackage = target.getPath().replace("/", ".").replace(".java", "");
-            if (targetPathAsPackage.endsWith(dependency)) {
+            String targetPath = target.getPath();
+            if (targetPath.contains(depMatch) || targetPath.endsWith(dependency)) {
                 snapshot.addEdge(new SemanticEdge(source.getId(), target.getId(), SemanticEdge.EdgeType.DEPENDS_ON));
             }
         }
-    }
-
-    private void inferArchitecture(TargetDescriptor target) {
-        StringBuilder sb = new StringBuilder();
-        boolean hasJava = target.getDetectedTechnologies().contains("Java");
-        boolean hasReact = target.getDetectedTechnologies().contains("Node.js/React") || target.getDetectedTechnologies().contains("TypeScript/React");
-
-        if (hasJava && hasReact) {
-            sb.append("Full-stack application with Java backend and React frontend.");
-        } else if (hasJava) {
-            sb.append("Java-based application/service.");
-        } else if (hasReact) {
-            sb.append("React-based web application.");
-        }
-
-        long entryPoints = target.getFiles().stream().filter(f -> f.getTags().contains("Entry Point")).count();
-        if (entryPoints > 0) {
-            sb.append(" Found ").append(entryPoints).append(" main entry points.");
-        }
-
-        target.setArchitectureInference(sb.toString());
-    }
-
-    private void inferArchitectureFromSnapshot(TargetSnapshot snapshot) {
-        StringBuilder sb = new StringBuilder();
-        List<String> techs = (List<String>) snapshot.getMetadata().get("detectedTechnologies");
-        boolean hasJava = techs != null && techs.contains("Java");
-        boolean hasReact = techs != null && (techs.contains("Node.js/React") || techs.contains("TypeScript/React"));
-
-        if (hasJava && hasReact) {
-            sb.append("Full-stack application with Java backend and React frontend.");
-        } else if (hasJava) {
-            sb.append("Java-based application/service.");
-        } else if (hasReact) {
-            sb.append("React-based web application.");
-        }
-
-        long entryPoints = snapshot.getNodes().values().stream().filter(f -> f.getTags().contains("Entry Point")).count();
-        if (entryPoints > 0) {
-            sb.append(" Found ").append(entryPoints).append(" main entry points.");
-        }
-
-        snapshot.getMetadata().put("architectureInference", sb.toString());
     }
 }

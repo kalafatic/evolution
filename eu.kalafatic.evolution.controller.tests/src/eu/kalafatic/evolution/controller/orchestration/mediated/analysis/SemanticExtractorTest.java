@@ -18,20 +18,28 @@ public class SemanticExtractorTest {
     @Test
     public void testExtract() throws IOException {
         File mainJava = folder.newFile("Main.java");
-        Files.writeString(mainJava.toPath(), "public class Main { public static void main(String[] args) {} }");
+        Files.write(mainJava.toPath(), "public class Main { public static void main(String[] args) {} }\n".getBytes());
 
         File serviceJava = folder.newFile("MyService.java");
-        Files.writeString(serviceJava.toPath(), "import org.springframework.stereotype.Service; @Service public class MyService {}");
+        Files.write(serviceJava.toPath(), "import org.springframework.stereotype.Service; @Service public class MyService {}\n".getBytes());
 
         TargetScanner scanner = new TargetScanner();
         TargetDescriptor target = scanner.scan(folder.getRoot());
 
+        System.out.println("Files scanned: " + target.getFiles().size());
+        for (FileDescriptor fd : target.getFiles()) {
+            System.out.println(" - " + fd.getPath());
+        }
+
         SemanticExtractor extractor = new SemanticExtractor();
         extractor.extract(target, folder.getRoot());
 
-        assertTrue(target.getFiles().stream().anyMatch(f -> f.getTags().contains("Entry Point")));
-        assertTrue(target.getFiles().stream().anyMatch(f -> f.getTags().contains("Spring Component")));
-        assertNotNull(target.getArchitectureInference());
-        assertTrue(target.getArchitectureInference().contains("Java"));
+        for (FileDescriptor fd : target.getFiles()) {
+            System.out.println("File: " + fd.getPath() + " Tags: " + fd.getTags());
+        }
+
+        // Executory and Annotated are the new abstract tags
+        assertTrue("Should have Executory tag", target.getFiles().stream().anyMatch(f -> f.getTags().contains("Executory")));
+        assertTrue("Should have Annotated tag", target.getFiles().stream().anyMatch(f -> f.getTags().contains("Annotated")));
     }
 }
