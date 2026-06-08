@@ -32,23 +32,26 @@ public class DefaultStabilityPolicy implements IStabilityPolicy {
     public boolean isConverged(Trajectory trajectory, TaskContext context, EvolutionaryPressureVector pressure) {
         if (trajectory == null) return false;
 
-        // DIAGNOSTIC OPTIMIZATION: Early convergence for analytical tasks in Mediated Mode
-        if (context.getBehaviorProfile().hasTrait(eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait.WORKFLOW_EXPORT_ONLY)) {
-            String goal = context.getOrchestrationState().getRawInput();
-            if (goal != null && isAnalytical(goal)) {
-                return true;
-            }
-        }
-
-        double stability = calculateStability(trajectory, context, pressure);
-        int generation = trajectory.getGeneration();
-
         // Convergence logic is now driven by abstract signals found in metadata/context
         double threshold = context.getOrchestrationState().getMetadata().containsKey("convergenceThreshold") ?
             (Double) context.getOrchestrationState().getMetadata().get("convergenceThreshold") : 0.92;
 
         int minGen = context.getOrchestrationState().getMetadata().containsKey("minEvolutionaryDepth") ?
             (Integer) context.getOrchestrationState().getMetadata().get("minEvolutionaryDepth") : 2;
+
+        // DIAGNOSTIC OPTIMIZATION: Early convergence for analytical tasks in Mediated Mode
+        if (context.getBehaviorProfile().hasTrait(eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait.WORKFLOW_EXPORT_ONLY)) {
+            String goal = context.getOrchestrationState().getRawInput();
+            if (goal != null && isAnalytical(goal)) {
+                // Respect minGen even for analytical tasks unless Force Solution is present
+                if (trajectory.getGeneration() >= minGen) {
+                    return true;
+                }
+            }
+        }
+
+        double stability = calculateStability(trajectory, context, pressure);
+        int generation = trajectory.getGeneration();
 
         return generation >= minGen && stability >= threshold;
     }

@@ -282,6 +282,29 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             currentBlueprints.addAll(mapper.map(goal + " (Mutation Gen " + generation + ")", context, branchingLimit));
         }
 
+        // DIVERSITY ENFORCEMENT: Ensure at least 4 blueprints to maintain evolutionary pressure
+        if (currentBlueprints.size() < 4) {
+            context.log("[DARWIN] Blueprint set below threshold (" + currentBlueprints.size() + "). Injecting divergent fallbacks.");
+            if (currentBlueprints.stream().noneMatch(bp -> bp.getStrategyType() == DarwinStrategyType.STABILIZATION_RECOVERY)) {
+                TrajectoryBlueprint bp = new TrajectoryBlueprint("fallback-stabilization", goal, "Stabilization & Recovery");
+                bp.setStrategyType(DarwinStrategyType.STABILIZATION_RECOVERY);
+                bp.setPhilosophy("Ensure data availability and system resilience through failover mechanisms.");
+                currentBlueprints.add(bp);
+            }
+            if (currentBlueprints.size() < 4 && currentBlueprints.stream().noneMatch(bp -> bp.getStrategyType() == DarwinStrategyType.PHILOSOPHY_MUTATION)) {
+                TrajectoryBlueprint bp = new TrajectoryBlueprint("fallback-mutation", goal, "Radical Philosophy Mutation");
+                bp.setStrategyType(DarwinStrategyType.PHILOSOPHY_MUTATION);
+                bp.setPhilosophy("Mutation of the core architectural assumptions to discover alternative futures.");
+                currentBlueprints.add(bp);
+            }
+            if (currentBlueprints.size() < 4 && currentBlueprints.stream().noneMatch(bp -> bp.getStrategyType() == DarwinStrategyType.MAXIMAL_DIVERGENCE)) {
+                TrajectoryBlueprint bp = new TrajectoryBlueprint("fallback-divergence", goal, "Maximal Divergence");
+                bp.setStrategyType(DarwinStrategyType.MAXIMAL_DIVERGENCE);
+                bp.setPhilosophy("Maximize conceptual distance from standard implementation patterns.");
+                currentBlueprints.add(bp);
+            }
+        }
+
         // Model Capability Coefficient
         String modelName = (context.getOrchestrator().getOllama() != null) ? context.getOrchestrator().getOllama().getModel() : "unknown";
         double modelCapability = 0.5; // Default

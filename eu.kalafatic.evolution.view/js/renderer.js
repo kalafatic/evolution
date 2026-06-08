@@ -332,16 +332,14 @@ window.ChatApp.Renderer = {
 
             const role = (m.agentType || '').toLowerCase();
             const isApproved = role.includes('approved');
-            const approvedId = isApproved && role.includes(':') ? role.split(':').pop().trim() : null;
             const isRejected = role.includes('rejected');
-            const rejectedId = isRejected && role.includes(':') ? role.split(':').pop().trim() : null;
             const isWaiting = role.includes('waiting');
 
             variants.forEach((v, index) => {
                 const vId = String(v.id || index);
-                const isThisApproved = isApproved && (approvedId === null || approvedId === vId);
-                const isThisRejected = (isApproved && approvedId !== null && approvedId !== vId) || (isRejected && rejectedId === vId);
-                const isThisKept = v.approved === true || v.status === 'KEPT' || (v.id && m.text.includes(v.id + '"') && m.text.includes('"status":"KEPT"'));
+                const isThisApproved = role.includes('approved:' + vId);
+                const isThisRejected = role.includes('rejected:' + vId);
+                const isThisKept = role.includes('kept:' + vId) || v.approved === true || v.status === 'KEPT' || (v.id && m.text.includes(v.id + '"') && m.text.includes('"status":"KEPT"'));
 
                 const col = document.createElement('div');
                 col.className = 'branch-column' + (v.isBest ? ' best' : '') + (isThisApproved ? ' approved' : '') + (isThisRejected ? ' rejected' : '') + (isThisKept ? ' kept' : '');
