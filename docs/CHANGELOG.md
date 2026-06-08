@@ -77,3 +77,16 @@
     - **UI**: Updated `IterationPage` with dynamic polling, session status/progress labels, and integrated "Self-Dev Loop" controls.
     - **Navigation**: Added `showArchitecturePage()` and `showIterationPage()` to `MultiPageEditor`.
 - **Traceability**: `iterations/22/plan.json`
+
+## [Iteration 23] - Darwin Flow Optimization and Manual Selection Resilience
+- **Goal**: Fix Darwin flow issues related to branching width and manual selection resolution.
+- **Changes**:
+    - **Branching Width**: Increased minimum `branchingLimit` to 4 and updated `TrajectoryTerritoryMapper` to request 4-6 unique blueprints.
+    - **Manual Selection**: Implemented `resolveFuzzyId` in `DecisionResolver` to map user-friendly inputs (indices, types) to internal IDs.
+    - **Override Authority**: Updated `createManualDecision` to prioritize the manually selected variant in the ranking, ensuring human override.
+- **Architectural Impact**:
+    - Aligns with "Survival of the Fittest" by ensuring a diverse candidate pool.
+    - Strengthens the Authority boundary by improving human-in-the-loop decision mapping.
+- **Risks**: Fuzzy matching may occasionally conflict if proposal indices are ambiguous, but prioritized exact ID and strategy type matches mitigate this.
+- **Next Step**: Implement a "Cognitive Pressure Dashboard" to visualize divergence axes and evolutionary tension in real-time.
+- **Traceability**: `iterations/23/plan.json`
