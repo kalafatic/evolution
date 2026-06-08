@@ -619,6 +619,11 @@ public class AiChatPage extends AEvoPage {
 						chatGroup.refreshUI();
 					});
 
+					// Synchronize model with session settings
+					if (t.getAiMode() != null) orchestrator.setAiMode(t.getAiMode());
+					if (t.getLocalModel() != null) orchestrator.setLocalModel(t.getLocalModel());
+					if (t.getRemoteModel() != null) orchestrator.setRemoteModel(t.getRemoteModel());
+
 					updateModeDisplay();
 					updateScrolledContent();
 

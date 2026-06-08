@@ -190,7 +190,12 @@ public class OrchestratorServiceImpl implements OrchestratorService {
 
         if (model != null) {
             if (settings.containsKey("aiMode")) {
-                model.setAiMode(eu.kalafatic.evolution.model.orchestration.AiMode.get((Integer)settings.get("aiMode")));
+                Object modeVal = settings.get("aiMode");
+                if (modeVal instanceof Integer) {
+                    model.setAiMode(eu.kalafatic.evolution.model.orchestration.AiMode.get((Integer)modeVal));
+                } else if (modeVal instanceof eu.kalafatic.evolution.model.orchestration.AiMode) {
+                    model.setAiMode((eu.kalafatic.evolution.model.orchestration.AiMode)modeVal);
+                }
             }
             if (settings.containsKey("localModel")) {
                 model.setLocalModel((String)settings.get("localModel"));
@@ -220,7 +225,14 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                     if (settings.containsKey("stepMode")) s.setStepMode((Boolean)settings.get("stepMode"));
                     if (settings.containsKey("maxIterations")) s.setMaxIterations((Integer)settings.get("maxIterations"));
                     if (settings.containsKey("autoApprove")) s.setAutoApprove((Boolean)settings.get("autoApprove"));
-                    if (settings.containsKey("aiMode")) s.setAiMode(eu.kalafatic.evolution.model.orchestration.AiMode.get((Integer)settings.get("aiMode")));
+                    if (settings.containsKey("aiMode")) {
+                        Object modeVal = settings.get("aiMode");
+                        if (modeVal instanceof Integer) {
+                            s.setAiMode(eu.kalafatic.evolution.model.orchestration.AiMode.get((Integer)modeVal));
+                        } else if (modeVal instanceof eu.kalafatic.evolution.model.orchestration.AiMode) {
+                            s.setAiMode((eu.kalafatic.evolution.model.orchestration.AiMode)modeVal);
+                        }
+                    }
                     if (settings.containsKey("localModel")) s.setLocalModel((String)settings.get("localModel"));
                     if (settings.containsKey("remoteModel")) s.setRemoteModel((String)settings.get("remoteModel"));
                     if (settings.containsKey("bitState")) s.setBitState((Long)settings.get("bitState"));
@@ -327,6 +339,9 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                             if (finalOrch.getOllama() != null) finalOrch.getOllama().setModel(s.getLocalModel());
                         }
                         if (s.getRemoteModel() != null) finalOrch.setRemoteModel(s.getRemoteModel());
+                    if (s.getTargetPath() != null) {
+                        // For Mediated Mode persistence
+                    }
 
                         // Sync session flags to PromptInstructions
                         PromptInstructions pi = finalOrch.getAiChat().getPromptInstructions();
@@ -471,11 +486,13 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                 if (agentType.isEmpty()) agentType = "ai";
                 agentType += " " + status + ":" + variantId;
             }
-            content = content.replace(approvedMatcher.group(0), "").trim();
 
             if (agentType.contains("darwin-branches")) {
+                 content = content.replace(approvedMatcher.group(0), "").trim();
                  content = content.replaceAll("\\[[\\s\\S]*\\]", "").trim();
                  if (content.isEmpty()) content = "Evolution variant " + variantId + " " + status + ".";
+            } else {
+                 content = content.replace(approvedMatcher.group(0), "").trim();
             }
         }
 

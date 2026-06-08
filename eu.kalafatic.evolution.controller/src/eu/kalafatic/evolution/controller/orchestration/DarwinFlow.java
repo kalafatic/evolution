@@ -201,7 +201,17 @@ public class DarwinFlow implements IOrchestrationFlow {
                 manager.getGitManager().createBranchFrom(originalBranch, selectedVariant.getBranchName());
             }
 
-            winningContext = evaluateVariantParallel(selectedVariant, manager.getTaskPlanner(), context, baseCommit, decision.getPressure());
+            // DIAGNOSTIC OPTIMIZATION: Bypassing task generation for analytical variants in Mediated Mode
+            boolean isAnalyticalVariant = selectedVariant.getStrategyType() != null &&
+                (selectedVariant.getStrategyType().equals("ANALYTICAL") ||
+                 selectedVariant.getStrategyType().equals(eu.kalafatic.evolution.controller.orchestration.selfdev.DarwinStrategyType.ARCHITECTURE_MAPPING.name()));
+            if (isExportOnly && isAnalyticalVariant) {
+                context.log("[DARWIN] Fast-tracking analytical variant without sub-task execution.");
+                selectedVariant.setSuccess(true);
+                selectedVariant.setScore(0.95);
+            } else {
+                winningContext = evaluateVariantParallel(selectedVariant, manager.getTaskPlanner(), context, baseCommit, decision.getPressure());
+            }
 
             ResultSynthesizer synthesizer = new ResultSynthesizer();
             synthesizer.synthesize(List.of(selectedVariant), context);

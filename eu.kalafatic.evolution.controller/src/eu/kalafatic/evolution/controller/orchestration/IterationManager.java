@@ -1599,13 +1599,10 @@ public class IterationManager {
             if (variant.getId().equals(winnerId)) {
                 updateVariantLifecycle(variants, variant.getId(), BranchVariant.ActivationState.ACTIVE, context);
                 variant.setRank("winner");
-            } else if (decision.getRejectedVariantIds().contains(variant.getId())) {
+            } else {
                 BranchVariant.ActivationState newState = (variant.getActivationState() == BranchVariant.ActivationState.KEPT) ? BranchVariant.ActivationState.KEPT : BranchVariant.ActivationState.REJECTED;
                 updateVariantLifecycle(variants, variant.getId(), newState, context);
-                variant.setRank("runner-up");
-            } else {
-                updateVariantLifecycle(variants, variant.getId(), BranchVariant.ActivationState.REJECTED, context);
-                variant.setRank("noise");
+                variant.setRank(decision.getRejectedVariantIds().contains(variant.getId()) ? "runner-up" : "noise");
             }
         }
     }
