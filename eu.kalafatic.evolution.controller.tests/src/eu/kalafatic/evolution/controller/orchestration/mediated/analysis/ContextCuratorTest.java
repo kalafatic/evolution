@@ -11,7 +11,8 @@ public class ContextCuratorTest {
     public void testCurate() {
         TargetDescriptor target = new TargetDescriptor("/root");
         FileDescriptor f1 = new FileDescriptor("Main.java", "java", 100);
-        f1.getTags().add("Entry Point");
+        // The new curate() filter looks for "Executory" or "Annotated"
+        f1.getTags().add("Executory");
         target.getFiles().add(f1);
 
         FileDescriptor f2 = new FileDescriptor("pom.xml", "xml", 200);
@@ -20,8 +21,8 @@ public class ContextCuratorTest {
         ContextCurator curator = new ContextCurator();
         List<String> curated = curator.curate(target);
 
-        assertEquals(2, curated.size());
+        // Only tagged architectural/executory files are curated
+        assertEquals(1, curated.size());
         assertTrue(curated.contains("Main.java"));
-        assertTrue(curated.contains("pom.xml"));
     }
 }

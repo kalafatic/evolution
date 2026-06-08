@@ -26,8 +26,8 @@ public class TargetScannerTest {
 
         assertNotNull(target);
         assertEquals(2, target.getFiles().size()); // Main.java and pom.xml
-        assertTrue(target.getDetectedTechnologies().contains("Java"));
-        assertTrue(target.getDetectedTechnologies().contains("Maven"));
+        // Technology detection is now empty by default as it's an emergent property
+        assertTrue(target.getDetectedTechnologies().isEmpty());
         assertFalse(target.getFiles().stream().anyMatch(f -> f.getPath().contains(".git")));
     }
 }
