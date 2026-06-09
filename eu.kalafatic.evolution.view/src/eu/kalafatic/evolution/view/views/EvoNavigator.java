@@ -34,7 +34,7 @@ public class EvoNavigator extends CommonNavigator {
 	private final Lock lock = new ReentrantLock(true);
 
 	/** The actions. */
-	private Action expandAllAction, collapseAllAction;
+//	private Action expandAllAction, collapseAllAction;
 
 	public EvoNavigator() {
 		super();
@@ -138,8 +138,8 @@ public class EvoNavigator extends CommonNavigator {
 	 * @param manager the manager
 	 */
 	private void fillLocalPullDown(IMenuManager manager) {
-		manager.add(expandAllAction);
-		manager.add(collapseAllAction);
+//		manager.add(expandAllAction);
+//		manager.add(collapseAllAction);
 	}
 
 	/**
@@ -148,31 +148,31 @@ public class EvoNavigator extends CommonNavigator {
 	 * @param manager the manager
 	 */
 	private void fillLocalToolBar(IToolBarManager manager) {
-		manager.add(expandAllAction);
-		manager.add(collapseAllAction);
+//		manager.add(expandAllAction);
+//		manager.add(collapseAllAction);
 	}
 
 	/**
 	 * Make actions.
 	 */
 	private void makeActions() {
-		expandAllAction = new Action("Expand All") {
-			@Override
-			public void run() {
-				getCommonViewer().expandAll();
-			}
-		};
-		expandAllAction.setToolTipText("Expand All");
-		expandAllAction.setImageDescriptor(PlatformUI.getWorkbench().getSharedImages().getImageDescriptor(ISharedImages.IMG_ELCL_SYNCED));
-
-		collapseAllAction = new Action("Collapse All") {
-			@Override
-			public void run() {
-				getCommonViewer().collapseAll();
-			}
-		};
-		collapseAllAction.setToolTipText("Collapse All");
-		collapseAllAction.setImageDescriptor(PlatformUI.getWorkbench().getSharedImages().getImageDescriptor(ISharedImages.IMG_ELCL_COLLAPSEALL));
+//		expandAllAction = new Action("Expand All") {
+//			@Override
+//			public void run() {
+//				getCommonViewer().expandAll();
+//			}
+//		};
+//		expandAllAction.setToolTipText("Expand All");
+//		expandAllAction.setImageDescriptor(PlatformUI.getWorkbench().getSharedImages().getImageDescriptor(ISharedImages.IMG_ELCL_SYNCED));
+//
+//		collapseAllAction = new Action("Collapse All") {
+//			@Override
+//			public void run() {
+//				getCommonViewer().collapseAll();
+//			}
+//		};
+//		collapseAllAction.setToolTipText("Collapse All");
+//		collapseAllAction.setImageDescriptor(PlatformUI.getWorkbench().getSharedImages().getImageDescriptor(ISharedImages.IMG_ELCL_COLLAPSEALL));
 	}
 
 	/**
