@@ -325,21 +325,14 @@ public class IterationManager {
             state.getMetadata().put("pendingControlCommand", prompt);
         }
 
-        EvolutionPhaseMachine phaseMachine = new EvolutionPhaseMachine();
-        String currentPhaseStr = state.getCurrentPhase();
-        boolean isTerminal = currentPhaseStr != null && phaseMachine.isTerminal(EvolutionPhase.fromString(currentPhaseStr));
-
         if (!isControl) {
-            if (isTerminal || (checkpointGoal != null && !checkpointGoal.equalsIgnoreCase(request))) {
-                context.log("[KERNEL] Resetting evolution state for new request or after completion. Previous phase: " + currentPhaseStr);
+            if (checkpointGoal != null && !checkpointGoal.equalsIgnoreCase(request)) {
+                context.log("[KERNEL] New request detected. Invalidating stale evolution phase: " + state.getCurrentPhase());
                 state.setCurrentPhase(null);
                 state.setIterationCount(0);
 
                 // Also reset trajectory lineage
-                if (context.getKernelContext().getMemoryService() != null) {
-                    context.getKernelContext().getMemoryService().getRecords().clear();
-                    context.getKernelContext().getMemoryService().getTrajectoryMemory().getTrajectories().clear();
-                }
+                context.getKernelContext().getMemoryService().getRecords().clear();
             }
             state.setRawInput(request);
             state.getMetadata().put("checkpoint_goal", request);
@@ -1423,10 +1416,7 @@ public class IterationManager {
                     ContextCurator curator = new ContextCurator();
                     List<String> curated = curator.selectContext(snapshot, request, 16);
                     for (String path : curated) {
-                        if (path != null && !selectedPaths.contains(path)) {
-                            selectedPaths.add(path);
-                        }
-                        if (selectedPaths.size() >= 16) break;
+                        if (path != null && !selectedPaths.contains(path)) selectedPaths.add(path);
                     }
                 }
 
@@ -1591,7 +1581,15 @@ public class IterationManager {
 
         for (BranchVariant v : variants) {
             if (v.getId().equals(winnerId)) continue;
+
+            // Survival Rule: If not winner and not manually kept, it is explicitly REJECTED
             String status = (v.getActivationState() == BranchVariant.ActivationState.KEPT) ? "KEPT" : "REJECTED";
+
+            // Force state update for consistent UI stamping
+            if (!"KEPT".equals(status)) {
+                v.setActivationState(BranchVariant.ActivationState.REJECTED);
+            }
+
             outcomeBuilder.append("[").append(status).append(":").append(v.getId()).append("] ");
         }
 
