@@ -9,6 +9,8 @@ import eu.kalafatic.evolution.selfdev.genome.event.GenomeEventBus;
 import eu.kalafatic.evolution.selfdev.genome.mediation.MediatedPackageProcessor;
 import eu.kalafatic.evolution.selfdev.genome.repository.GenomeRepository;
 import eu.kalafatic.evolution.selfdev.genome.selfupgrade.SecondhandUpgradeEngine;
+import eu.kalafatic.evolution.selfdev.genome.selfupgrade.UpgradeContext;
+import eu.kalafatic.evolution.selfdev.genome.selfupgrade.UpgradePlan;
 
 public class SelfDevGenomeHub {
 
@@ -41,7 +43,7 @@ public class SelfDevGenomeHub {
                 "NEW_MEDIATED_PACKAGE",
                 artifact.getId(),
                 artifact.getTopic()
-        ));
+            ));
 
         return artifact;
     }
@@ -54,9 +56,13 @@ public class SelfDevGenomeHub {
                 "NEW_DISCOVERY",
                 artifact.getId(),
                 artifact.getTopic()
-        ));
+            ));
 
         return artifact;
+    }
+
+    public UpgradePlan generateUpgradePlan(UpgradeContext context) {
+        return upgradeEngine.compile(context);
     }
 
     public GenomeRepository getRepository() {

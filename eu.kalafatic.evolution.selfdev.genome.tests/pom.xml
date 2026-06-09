@@ -8,21 +8,10 @@
 		<version>2.6.5-SNAPSHOT</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
-	<artifactId>eu.kalafatic.evolution.selfdev.genome</artifactId>
-
-	<packaging>eclipse-plugin</packaging>
+	<artifactId>eu.kalafatic.evolution.selfdev.genome.tests</artifactId>
+	<packaging>eclipse-test-plugin</packaging>
 
 	<build>
 		<sourceDirectory>src</sourceDirectory>
-		<plugins>
-			<plugin>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.13.0</version>
-				<configuration>
-					<release>21</release>
-				</configuration>
-			</plugin>
-		</plugins>
 	</build>
-
 </project>

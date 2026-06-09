@@ -16,6 +16,8 @@ import org.junit.Test;
 
 import eu.kalafatic.evolution.selfdev.genome.core.GenomeArtifact;
 import eu.kalafatic.evolution.selfdev.genome.core.MediatedPackageArtifact;
+import eu.kalafatic.evolution.selfdev.genome.core.Mode;
+import eu.kalafatic.evolution.selfdev.genome.core.ProjectSnapshot;
 import eu.kalafatic.evolution.selfdev.genome.event.GenomeEvent;
 import eu.kalafatic.evolution.selfdev.genome.event.GenomeEventBus;
 import eu.kalafatic.evolution.selfdev.genome.event.GenomeEventListener;
@@ -24,6 +26,8 @@ import eu.kalafatic.evolution.selfdev.genome.mediation.MediatedPackageProcessor;
 import eu.kalafatic.evolution.selfdev.genome.repository.LocalGenomeRepository;
 import eu.kalafatic.evolution.selfdev.genome.selfupgrade.ProjectContext;
 import eu.kalafatic.evolution.selfdev.genome.selfupgrade.SecondhandUpgradeEngine;
+import eu.kalafatic.evolution.selfdev.genome.selfupgrade.UpgradeContext;
+import eu.kalafatic.evolution.selfdev.genome.selfupgrade.UpgradePlan;
 import eu.kalafatic.evolution.selfdev.genome.selfupgrade.UpgradeProposal;
 
 public class GenomeHubTest {
@@ -56,6 +60,31 @@ public class GenomeHubTest {
         } finally {
             zipFile.delete();
         }
+    }
+
+    @Test
+    public void testUpgradePlanGeneration() {
+        LocalGenomeRepository repository = new LocalGenomeRepository();
+        MockEventBus eventBus = new MockEventBus();
+        MediatedPackageProcessor processor = new MediatedPackageProcessor();
+        SecondhandUpgradeEngine upgradeEngine = new SecondhandUpgradeEngine(repository);
+        SelfDevGenomeHub hub = new SelfDevGenomeHub(repository, eventBus, processor, upgradeEngine);
+
+        UpgradeContext context = new UpgradeContext();
+        context.setMode(Mode.SELF_DEV);
+        ProjectSnapshot snapshot = new ProjectSnapshot();
+        snapshot.setProjectName("ECOS");
+        context.setProject(snapshot);
+
+        UpgradePlan plan = hub.generateUpgradePlan(context);
+
+        assertNotNull(plan);
+        assertNotNull(plan.getPlanId());
+        assertEquals(Mode.SELF_DEV, plan.getMode());
+        assertEquals("ECOS", plan.getTargetProject());
+        assertTrue(plan.getExpectedFitnessGain() > 0);
+        assertNotNull(plan.getReasoningSteps());
+        assertNotNull(plan.getValidationHints());
     }
 
     private File createSampleZip() throws IOException {
