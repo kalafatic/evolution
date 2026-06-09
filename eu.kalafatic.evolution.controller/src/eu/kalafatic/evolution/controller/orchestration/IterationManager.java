@@ -800,6 +800,7 @@ public class IterationManager {
             state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(nextPhase));
 
             context.log("[KERNEL] Intent grounding complete. Progressing to " + nextPhase);
+            state.setIterationCount(state.getIterationCount() + 1);
 
             EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
             res.setSuccess(true);

@@ -21,14 +21,18 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
 
     @Override
     protected String getAgentInstructions() {
-        return "You are a Trajectory Territory Mapper. Your goal is to DISCOVER COMPETING EVOLUTIONARY BLUEPRINTS.\n" +
-               "Given a goal and system context, identify divergent architectural directions.\n" +
+        return "You are a Trajectory Territory Mapper. Your goal is to DISCOVER ONE UNIQUE EVOLUTIONARY BLUEPRINT.\n" +
+               "Given a goal and system context, identify a divergent architectural direction.\n" +
                "Avoid hardcoded rules. Infer the best divergence axes (e.g., Performance vs. Resilience, Monolithic vs. Service).\n" +
-               "MANDATORY: You MUST generate EXACTLY 4-6 unique and highly divergent blueprints that explore different technical futures. This is NON-NEGOTIABLE.";
+               "MANDATORY: You MUST generate a blueprint that is CONCEPTUALLY DISTINCT from any provided existing blueprints. Focus on an unexplored technical quadrant.";
     }
 
     public List<TrajectoryBlueprint> map(String goal, TaskContext context, int limit) throws Exception {
-        context.log("[TERRITORY] Dynamically mapping evolutionary trajectories for: " + goal);
+        return mapSequential(goal, context, limit, new ArrayList<>());
+    }
+
+    public TrajectoryBlueprint discoverNext(String goal, TaskContext context, List<TrajectoryBlueprint> existing) throws Exception {
+        context.log("[TERRITORY] Sequentially discovering next unique evolutionary trajectory for: " + goal);
 
         StringBuilder sb = new StringBuilder();
         sb.append("GOAL: ").append(goal).append("\n\n");
@@ -41,8 +45,15 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
             sb.append("INTENT: ").append(expansion.getDominantIntent()).append("\n");
         }
 
+        if (!existing.isEmpty()) {
+            sb.append("\nEXISTING BLUEPRINTS (DO NOT REPEAT OR OVERLAP):\n");
+            for (TrajectoryBlueprint bp : existing) {
+                sb.append("- ").append(bp.getStrategyType()).append(": ").append(bp.getPhilosophy()).append("\n");
+            }
+        }
+
         String prompt = sb.toString() + "\n\n" +
-               "Output exactly ONE JSON array of blueprint objects. Each object MUST have:\n" +
+               "Output exactly ONE JSON object for a unique blueprint. The object MUST have:\n" +
                "- id: unique string\n" +
                "- strategy: concise title\n" +
                "- philosophy: architectural core\n" +
@@ -52,33 +63,35 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
                "- strategy_type: one of [PROBABLE_SURVIVOR, PHILOSOPHY_MUTATION, MAXIMAL_DIVERGENCE, STABILIZATION_RECOVERY, ARCHITECTURE_MAPPING, REFACTOR_HOTSPOT_ANALYSIS]";
 
         String response = aiService.sendRequest(context.getOrchestrator(), getAgentInstructions() + "\n\n" + prompt, context);
-        JSONArray array = JsonUtils.extractJsonArrayFlexible(response);
+        JSONObject obj = JsonUtils.extractJsonObject(response);
 
-        List<TrajectoryBlueprint> blueprints = new ArrayList<>();
-        if (array != null) {
-            for (int i = 0; i < Math.min(array.length(), limit); i++) {
-                JSONObject obj = array.getJSONObject(i);
-                TrajectoryBlueprint bp = new TrajectoryBlueprint(obj.optString("id"), goal, obj.optString("strategy"));
-                bp.setPhilosophy(obj.optString("philosophy"));
-                bp.setArchitecturalDirection(obj.optString("direction"));
-                bp.setSurvivalArgument(obj.optString("survival_argument", obj.optString("philosophy")));
-                bp.setTradeoffs(obj.optString("tradeoffs"));
+        if (obj != null) {
+            TrajectoryBlueprint bp = new TrajectoryBlueprint(obj.optString("id"), goal, obj.optString("strategy"));
+            bp.setPhilosophy(obj.optString("philosophy"));
+            bp.setArchitecturalDirection(obj.optString("direction"));
+            bp.setSurvivalArgument(obj.optString("survival_argument", obj.optString("philosophy")));
+            bp.setTradeoffs(obj.optString("tradeoffs"));
 
-                String typeStr = obj.optString("strategy_type", "PROBABLE_SURVIVOR");
-                try {
-                    bp.setStrategyType(DarwinStrategyType.valueOf(typeStr.toUpperCase()));
-                } catch (Exception e) {
-                    bp.setStrategyType(DarwinStrategyType.PROBABLE_SURVIVOR);
-                }
-
-                JSONArray chars = obj.optJSONArray("characteristics");
-                if (chars != null) {
-                    for (int j = 0; j < chars.length(); j++) bp.addRequiredCharacteristic(chars.getString(j));
-                }
-                blueprints.add(bp);
+            String typeStr = obj.optString("strategy_type", "PROBABLE_SURVIVOR");
+            try {
+                bp.setStrategyType(DarwinStrategyType.valueOf(typeStr.toUpperCase()));
+            } catch (Exception e) {
+                bp.setStrategyType(DarwinStrategyType.PROBABLE_SURVIVOR);
             }
+
+            JSONArray chars = obj.optJSONArray("characteristics");
+            if (chars != null) {
+                for (int j = 0; j < chars.length(); j++) bp.addRequiredCharacteristic(chars.getString(j));
+            }
+            return bp;
         }
 
-        return blueprints;
+        return null;
+    }
+
+    @Deprecated
+    public List<TrajectoryBlueprint> mapSequential(String goal, TaskContext context, int limit, List<TrajectoryBlueprint> existing) throws Exception {
+        // This is now handled by DarwinEngine's sequential loop
+        return existing;
     }
 }

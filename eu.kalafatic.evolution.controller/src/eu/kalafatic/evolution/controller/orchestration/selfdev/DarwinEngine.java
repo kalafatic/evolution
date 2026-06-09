@@ -266,20 +266,28 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         TrajectoryTerritoryMapper mapper = new TrajectoryTerritoryMapper(getSessionContainer());
         mapper.setAiService(aiService);
 
-        if (generation == 0) {
-            context.log("[DARWIN] Gen 0: Dynamically mapping evolutionary territory.");
-            currentBlueprints.addAll(mapper.map(goal, context, branchingLimit));
-
-            if (currentBlueprints.isEmpty()) {
-                context.log("[DARWIN] Territory Mapper yielded zero blueprints. Using generic fallback.");
-                TrajectoryBlueprint bp = new TrajectoryBlueprint("default-candidate", goal, "Standard Implementation");
-                bp.setStrategyType(DarwinStrategyType.PROBABLE_SURVIVOR);
-                bp.setPhilosophy("Practical realization of " + goal);
-                currentBlueprints.add(bp);
+        context.log("[DARWIN] Sequential Blueprint Discovery initialized (Target: " + branchingLimit + " unique trajectories).");
+        for (int i = 0; i < branchingLimit; i++) {
+            try {
+                String discoveryGoal = generation == 0 ? goal : goal + " (Mutation Gen " + generation + ")";
+                TrajectoryBlueprint bp = mapper.discoverNext(discoveryGoal, context, currentBlueprints);
+                if (bp != null) {
+                    currentBlueprints.add(bp);
+                } else {
+                    context.log("[DARWIN] Discovery Loop: Mapper returned null at index " + i);
+                    break;
+                }
+            } catch (Exception e) {
+                context.log("[DARWIN] Discovery Error: " + e.getMessage());
             }
-        } else {
-            context.log("[DARWIN] Gen " + generation + " (Lineage Mutation): Targeting unresolved pressures.");
-            currentBlueprints.addAll(mapper.map(goal + " (Mutation Gen " + generation + ")", context, branchingLimit));
+        }
+
+        if (currentBlueprints.isEmpty()) {
+            context.log("[DARWIN] Territory Mapper yielded zero blueprints. Using generic fallback.");
+            TrajectoryBlueprint bp = new TrajectoryBlueprint("default-candidate", goal, "Standard Implementation");
+            bp.setStrategyType(DarwinStrategyType.PROBABLE_SURVIVOR);
+            bp.setPhilosophy("Practical realization of " + goal);
+            currentBlueprints.add(bp);
         }
 
         // DIVERSITY ENFORCEMENT: Ensure at least 4 blueprints to maintain evolutionary pressure
@@ -326,6 +334,16 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             lineageContext = "SURVIVING TRAJECTORY (ANCESTOR): " + lastWinner.getStrategy() + "\n" +
                              "PHILOSOPHY: " + lastWinner.getSemanticAnchor() + "\n" +
                              "MUTATION HISTORY: " + lastWinner.getMutationTrace() + "\n";
+
+            // REFINEMENT: Inject evolved mediation context if present (Understanding Refinement)
+            Object winningMedCandidate = context.getOrchestrationState().getMetadata().get("winningMediationCandidate");
+            if (winningMedCandidate instanceof eu.kalafatic.evolution.controller.mediation.model.MediationCandidate) {
+                eu.kalafatic.evolution.controller.mediation.model.MediationCandidate med = (eu.kalafatic.evolution.controller.mediation.model.MediationCandidate) winningMedCandidate;
+                lineageContext += "\n--- EVOLVED UNDERSTANDING (ANCESTOR) ---\n";
+                lineageContext += "ARCHITECTURE: " + med.getArchitectureSummary() + "\n";
+                lineageContext += "DEPENDENCIES: " + med.getDependencies() + "\n";
+                lineageContext += "INSTRUCTIONS: " + med.getExecutionInstructions() + "\n";
+            }
 
             // CUMULATIVE REJECTED LINEAGE: Collect all rejected philosophies from ALL previous iterations
             rejectedSiblings = records.stream()
