@@ -633,10 +633,6 @@ public class IterationManager {
                 boolean stabilized = evolutionaryTrajectoryEngine.evolve(activeTrajectory, context);
                 if (stabilized) {
                     context.log("[KERNEL] Evolutionary equilibrium detected. Converging.");
-                    // After convergence, we might need one more iteration to reach terminal phase
-                    if (!state.getCurrentPhase().contains("TERMINAL") && !state.getCurrentPhase().contains("SYNTHESIS")) {
-                        advanceEvolutionPhase(state);
-                    }
                 }
             }
 
