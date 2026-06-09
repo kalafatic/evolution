@@ -1584,6 +1584,11 @@ public class IterationManager {
             String status = (v.getActivationState() == BranchVariant.ActivationState.KEPT) ? "KEPT" : "REJECTED";
             outcomeBuilder.append("[").append(status).append(":").append(v.getId()).append("] ");
         }
+
+        // Ensure decision type and variant metadata are logged for visual stamping
+        String decisionType = (manualSelectionId != null) ? "MANUAL" : "AUTO";
+        outcomeBuilder.append("[DECISION:").append(decisionType).append("]");
+
         context.log(outcomeBuilder.toString());
 
         return decision;

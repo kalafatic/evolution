@@ -98,6 +98,15 @@
         .branch-body { padding: 10px; flex: 1; font-size: 11px; line-height: 1.5; color: #475569; overflow-y: auto; max-height: 200px; }
         .branch-footer { padding: 10px; border-top: 1px solid var(--border); display: flex; gap: 5px; flex-wrap: wrap; }
 
+        .decision-stamp {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-15deg);
+            font-size: 24px; font-weight: 900; padding: 4px 10px; border-radius: 6px;
+            pointer-events: none; z-index: 10; user-select: none; opacity: 0.8; background: rgba(255,255,255,0.9);
+        }
+        .decision-stamp.approved { color: #16a34a; border: 4px solid #16a34a; }
+        .decision-stamp.rejected { color: #dc2626; border: 4px solid #dc2626; }
+        .decision-stamp.kept { color: #166534; border: 4px solid #166534; }
+
         .branch-btn {
             padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: white;
         }
@@ -518,6 +527,9 @@
                 const rejectedId = isRejected && role.includes(':') ? role.split(':').pop().trim() : null;
                 const isWaiting = role.includes('waiting');
 
+            const isManualDecision = role.includes('decision:manual');
+            const isAutoDecision = role.includes('decision:auto');
+
                 variants.forEach((v, index) => {
                     const vId = String(v.id || index);
                     const isThisApproved = isApproved && (approvedId === null || approvedId === vId);
@@ -526,6 +538,23 @@
 
                     const col = document.createElement('div');
                     col.className = 'branch-column' + (v.isBest ? ' best' : '') + (isThisApproved ? ' approved' : '') + (isThisRejected ? ' rejected' : '') + (isThisKept ? ' kept' : '');
+                col.style.position = 'relative';
+
+                if (isThisApproved || isThisRejected || isThisKept) {
+                    const stamp = document.createElement('div');
+                    stamp.className = 'decision-stamp';
+                    if (isThisApproved) {
+                        stamp.innerText = isAutoDecision ? 'AUTO-APPROVED' : 'APPROVED';
+                        stamp.classList.add('approved');
+                    } else if (isThisRejected) {
+                        stamp.innerText = 'REJECTED';
+                        stamp.classList.add('rejected');
+                    } else if (isThisKept) {
+                        stamp.innerText = 'KEPT';
+                        stamp.classList.add('kept');
+                    }
+                    col.appendChild(stamp);
+                }
 
                     let headerLabel = iteration !== null ? `ITERATION ${iteration} - PROPOSAL ${index + 1}` : `PROPOSAL ${index + 1}`;
                     let headerHtml = `<div class="branch-header">${headerLabel}${isThisKept ? ' [KEPT]' : ''}</div>`;
