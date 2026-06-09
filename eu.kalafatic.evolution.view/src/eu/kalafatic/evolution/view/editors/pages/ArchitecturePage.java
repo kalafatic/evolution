@@ -171,27 +171,56 @@ public class ArchitecturePage extends AEvoPage {
         model.setName(orchestrator.getName() != null ? orchestrator.getName() : "Evolution Architecture");
 
         int i = 0;
-        // 1. Agents as components (Fixed positions in top row)
+
+        // 1. Static Configuration Components
+        if (orchestrator.getGit() != null) {
+            ComponentRecord git = new ComponentRecord();
+            git.setName("Git: " + (orchestrator.getGit().getBranch() != null ? orchestrator.getGit().getBranch() : "master"));
+            git.setType("VCS");
+            git.setX(50); git.setY(50);
+            if (orchestrator.getGit().getRepositoryUrl() != null) git.getProperties().add("URL: " + orchestrator.getGit().getRepositoryUrl());
+            model.getComponents().add(git);
+        }
+
+        if (orchestrator.getOllama() != null) {
+            ComponentRecord ollama = new ComponentRecord();
+            ollama.setName("Ollama: " + (orchestrator.getOllama().getModel() != null ? orchestrator.getOllama().getModel() : "local"));
+            ollama.setType("LLM Provider");
+            ollama.setX(300); ollama.setY(50);
+            if (orchestrator.getOllama().getUrl() != null) ollama.getProperties().add("URL: " + orchestrator.getOllama().getUrl());
+            model.getComponents().add(ollama);
+        }
+
+        if (orchestrator.getLlm() != null) {
+            ComponentRecord llm = new ComponentRecord();
+            llm.setName("LLM: " + (orchestrator.getLlm().getModel() != null ? orchestrator.getLlm().getModel() : "gpt-4o"));
+            llm.setType("Model");
+            llm.setX(550); llm.setY(50);
+            llm.getProperties().add("Temp: " + orchestrator.getLlm().getTemperature());
+            model.getComponents().add(llm);
+        }
+
+        i = 2; // Offset for agents/tasks
+
+        // 2. Agents as components
         for (eu.kalafatic.evolution.model.orchestration.Agent agent : orchestrator.getAgents()) {
             ComponentRecord rec = new ComponentRecord();
             rec.setName(agent.getId());
             rec.setType(agent.getType() != null ? agent.getType() : "Agent");
-            rec.setX(50 + (i * 250));
-            rec.setY(50);
-            if (agent.getExecutionMode() != null) rec.getProperties().add("Mode: " + agent.getExecutionMode().toString());
+            rec.setX(50 + (i * 220) % 880);
+            rec.setY(250 + (i / 4) * 200);
             model.getComponents().add(rec);
             i++;
         }
 
-        // 2. Tasks as components (Main flow)
-        i = 0;
+        // 3. Tasks as components
         for (eu.kalafatic.evolution.model.orchestration.Task task : orchestrator.getTasks()) {
             ComponentRecord rec = new ComponentRecord();
             String taskName = task.getName() != null ? task.getName() : (task.getId() != null ? task.getId() : "Task " + task.hashCode());
             rec.setName(taskName);
             rec.setType("Task");
-            rec.setX(50 + (i % 4) * 250);
-            rec.setY(300 + (i / 4) * 250);
+            rec.setX(50 + (i * 220) % 880);
+            rec.setY(250 + (i / 4) * 200);
 
             if (task.getStatus() != null) {
                 rec.getProperties().add("Status: " + task.getStatus().toString());
@@ -212,15 +241,16 @@ public class ArchitecturePage extends AEvoPage {
             i++;
         }
 
-        // 3. Iterations if present (Right side sidebar-like)
+        // 4. Iterations if present
         if (orchestrator.getSelfDevSession() != null) {
             i = 0;
             for (eu.kalafatic.evolution.model.orchestration.Iteration iter : orchestrator.getSelfDevSession().getIterations()) {
                 ComponentRecord rec = new ComponentRecord();
-                rec.setName(iter.getId() != null ? iter.getId() : "Iteration " + iter.hashCode());
+                String iterName = iter.getId() != null ? iter.getId() : "Iteration " + iter.hashCode();
+                rec.setName(iterName);
                 rec.setType("Iteration");
-                rec.setX(1100);
-                rec.setY(50 + (i * 150));
+                rec.setX(50 + (i * 220) % 880);
+                rec.setY(250 + (i / 4) * 200);
                 if (iter.getPhase() != null) rec.getProperties().add("Phase: " + iter.getPhase());
                 if (iter.getStatus() != null) rec.getProperties().add("Status: " + iter.getStatus());
                 model.getComponents().add(rec);

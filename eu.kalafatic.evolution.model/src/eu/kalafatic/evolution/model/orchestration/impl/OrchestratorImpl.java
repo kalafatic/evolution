@@ -13,6 +13,7 @@ import eu.kalafatic.evolution.model.orchestration.Git;
 import eu.kalafatic.evolution.model.orchestration.LLM;
 import eu.kalafatic.evolution.model.orchestration.Maven;
 import eu.kalafatic.evolution.model.orchestration.MonitoringData;
+import eu.kalafatic.evolution.model.orchestration.NetworkEntry;
 import eu.kalafatic.evolution.model.orchestration.NeuronAI;
 import eu.kalafatic.evolution.model.orchestration.Ollama;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
@@ -513,6 +514,29 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 * @ordered
 	 */
 	protected SupervisorSettings supervisorSettings;
+
+	/**
+	 * The cached value of the '{@link #getNetworkEntries() <em>Network Entries</em>}' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getNetworkEntries()
+	 * @generated
+	 * @ordered
+	 */
+	protected EList<NetworkEntry> networkEntries;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EList<NetworkEntry> getNetworkEntries() {
+		if (networkEntries == null) {
+			networkEntries = new EObjectContainmentEList<NetworkEntry>(NetworkEntry.class, this, OrchestrationPackage.ORCHESTRATOR__NETWORK_ENTRIES);
+		}
+		return networkEntries;
+	}
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -1480,6 +1504,8 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	@Override
 	public NotificationChain eInverseRemove(InternalEObject otherEnd, int featureID, NotificationChain msgs) {
 		switch (featureID) {
+			case OrchestrationPackage.ORCHESTRATOR__NETWORK_ENTRIES:
+				return ((InternalEList<?>)getNetworkEntries()).basicRemove(otherEnd, msgs);
 			case OrchestrationPackage.ORCHESTRATOR__AGENTS:
 				return ((InternalEList<?>)getAgents()).basicRemove(otherEnd, msgs);
 			case OrchestrationPackage.ORCHESTRATOR__TASKS:
@@ -1530,6 +1556,8 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	@Override
 	public Object eGet(int featureID, boolean resolve, boolean coreType) {
 		switch (featureID) {
+			case OrchestrationPackage.ORCHESTRATOR__NETWORK_ENTRIES:
+				return getNetworkEntries();
 			case OrchestrationPackage.ORCHESTRATOR__ID:
 				return getId();
 			case OrchestrationPackage.ORCHESTRATOR__NAME:
@@ -1605,6 +1633,10 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	@Override
 	public void eSet(int featureID, Object newValue) {
 		switch (featureID) {
+			case OrchestrationPackage.ORCHESTRATOR__NETWORK_ENTRIES:
+				getNetworkEntries().clear();
+				getNetworkEntries().addAll((java.util.Collection<? extends NetworkEntry>)newValue);
+				return;
 			case OrchestrationPackage.ORCHESTRATOR__ID:
 				setId((String)newValue);
 				return;
@@ -1716,6 +1748,9 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	@Override
 	public void eUnset(int featureID) {
 		switch (featureID) {
+			case OrchestrationPackage.ORCHESTRATOR__NETWORK_ENTRIES:
+				getNetworkEntries().clear();
+				return;
 			case OrchestrationPackage.ORCHESTRATOR__ID:
 				setId(ID_EDEFAULT);
 				return;
@@ -1821,6 +1856,8 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	@Override
 	public boolean eIsSet(int featureID) {
 		switch (featureID) {
+			case OrchestrationPackage.ORCHESTRATOR__NETWORK_ENTRIES:
+				return networkEntries != null && !networkEntries.isEmpty();
 			case OrchestrationPackage.ORCHESTRATOR__ID:
 				return ID_EDEFAULT == null ? id != null : !ID_EDEFAULT.equals(id);
 			case OrchestrationPackage.ORCHESTRATOR__NAME:

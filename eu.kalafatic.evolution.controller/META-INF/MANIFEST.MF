@@ -60,6 +60,7 @@ Export-Package: eu.kalafatic.evolution.controller,
  eu.kalafatic.evolution.controller.trajectory,
  eu.kalafatic.evolution.controller.vcs,
  eu.kalafatic.evolution.controller.workflow,
+ eu.kalafatic.evolution.controller.discovery,
  org.json
 Bundle-ClassPath: .,
  lib/json-20140107.jar,
