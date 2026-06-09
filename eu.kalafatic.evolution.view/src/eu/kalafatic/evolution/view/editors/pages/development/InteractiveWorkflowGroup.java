@@ -115,7 +115,11 @@ public class InteractiveWorkflowGroup extends AEvoGroup {
     @Override
     protected void refreshUI() {
         if (browser != null && !browser.isDisposed() && isLoaded) {
-            String sid = sessionId != null ? sessionId : "Default";
+            String sid = (editor != null && editor.getAiChatPage() != null) ?
+                editor.getAiChatPage().getCurrentSessionName() :
+                (sessionId != null ? sessionId : "Default");
+
+            this.sessionId = sid;
             executor.setSessionId(sid);
             executor.setContext(editor.getCurrentContext());
 
@@ -131,6 +135,7 @@ public class InteractiveWorkflowGroup extends AEvoGroup {
 
     public void setSessionId(String sessionId) {
         this.sessionId = sessionId;
+        scheduleRefresh();
     }
 
     @Override

@@ -33,15 +33,6 @@ public class ArchitecturePage extends AEvoPage {
     private DesignRenderer renderer = new DesignRenderer();
     private Runnable refreshRunnable = this::refreshBrowser;
 
-    private Adapter modelAdapter = new EContentAdapter() {
-        @Override
-        public void notifyChanged(Notification notification) {
-            super.notifyChanged(notification);
-            if (notification.isTouch()) return;
-            scheduleRefresh();
-        }
-    };
-
     public ArchitecturePage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
         super(parent, editor, orchestrator);
         this.setLayout(new GridLayout(1, false));
@@ -52,26 +43,12 @@ public class ArchitecturePage extends AEvoPage {
         this.browser.setLayoutData(new GridData(GridData.FILL_BOTH));
 
         hookContextMenu();
-        setOrchestrator(orchestrator);
         refreshBrowser();
     }
 
-    public void setOrchestrator(Orchestrator orchestrator) {
-        if (this.orchestrator != null) {
-            this.orchestrator.eAdapters().remove(modelAdapter);
-        }
-        this.orchestrator = orchestrator;
-        if (this.orchestrator != null) {
-            this.orchestrator.eAdapters().add(modelAdapter);
-        }
-    }
-
+    @Override
     public void scheduleRefresh() {
-        Display.getDefault().asyncExec(() -> {
-            if (isDisposed()) return;
-            Display.getDefault().timerExec(-1, refreshRunnable); // Cancel previous
-            Display.getDefault().timerExec(500, refreshRunnable); // Debounce
-        });
+        super.scheduleRefresh();
     }
 
     private void createControlPanel() {
@@ -194,52 +171,82 @@ public class ArchitecturePage extends AEvoPage {
         model.setName(orchestrator.getName() != null ? orchestrator.getName() : "Evolution Architecture");
 
         int i = 0;
-        // 1. Agents as components
+        // 1. Agents as components (Fixed positions in top row)
         for (eu.kalafatic.evolution.model.orchestration.Agent agent : orchestrator.getAgents()) {
             ComponentRecord rec = new ComponentRecord();
             rec.setName(agent.getId());
             rec.setType(agent.getType() != null ? agent.getType() : "Agent");
-            rec.setX(50 + (i * 220) % 880);
-            rec.setY(50 + (i / 4) * 200);
+            rec.setX(50 + (i * 250));
+            rec.setY(50);
+            if (agent.getExecutionMode() != null) rec.getProperties().add("Mode: " + agent.getExecutionMode().toString());
             model.getComponents().add(rec);
             i++;
         }
 
-        // 2. Tasks as components
+        // 2. Tasks as components (Main flow)
+        i = 0;
         for (eu.kalafatic.evolution.model.orchestration.Task task : orchestrator.getTasks()) {
             ComponentRecord rec = new ComponentRecord();
-            rec.setName(task.getName() != null ? task.getName() : (task.getId() != null ? task.getId() : "Task " + task.hashCode()));
+            String taskName = task.getName() != null ? task.getName() : (task.getId() != null ? task.getId() : "Task " + task.hashCode());
+            rec.setName(taskName);
             rec.setType("Task");
-            rec.setX(50 + (i * 220) % 880);
-            rec.setY(50 + (i / 4) * 200);
+            rec.setX(50 + (i % 4) * 250);
+            rec.setY(300 + (i / 4) * 250);
 
             if (task.getStatus() != null) {
                 rec.getProperties().add("Status: " + task.getStatus().toString());
             }
+            if (task.getRating() > 0) rec.getProperties().add("Rating: " + task.getRating());
+
             model.getComponents().add(rec);
 
             // Relationships from task hierarchy/flow
             for (eu.kalafatic.evolution.model.orchestration.Task next : task.getNext()) {
                 RelationshipRecord rel = new RelationshipRecord();
-                rel.setFrom(rec.getName());
-                rel.setTo(next.getName() != null ? next.getName() : (next.getId() != null ? next.getId() : "Task " + next.hashCode()));
+                rel.setFrom(taskName);
+                String nextName = next.getName() != null ? next.getName() : (next.getId() != null ? next.getId() : "Task " + next.hashCode());
+                rel.setTo(nextName);
                 rel.setType("next");
                 model.getRelationships().add(rel);
             }
             i++;
         }
 
-        // 3. Iterations if present
+        // 3. Iterations if present (Right side sidebar-like)
         if (orchestrator.getSelfDevSession() != null) {
+            i = 0;
             for (eu.kalafatic.evolution.model.orchestration.Iteration iter : orchestrator.getSelfDevSession().getIterations()) {
                 ComponentRecord rec = new ComponentRecord();
                 rec.setName(iter.getId() != null ? iter.getId() : "Iteration " + iter.hashCode());
                 rec.setType("Iteration");
-                rec.setX(50 + (i * 220) % 880);
-                rec.setY(50 + (i / 4) * 200);
+                rec.setX(1100);
+                rec.setY(50 + (i * 150));
                 if (iter.getPhase() != null) rec.getProperties().add("Phase: " + iter.getPhase());
+                if (iter.getStatus() != null) rec.getProperties().add("Status: " + iter.getStatus());
                 model.getComponents().add(rec);
                 i++;
+            }
+        }
+
+        // 4. Shared Memory elements if they look like components
+        String sharedMemory = orchestrator.getSharedMemory();
+        if (sharedMemory != null && sharedMemory.startsWith("{")) {
+            try {
+                JSONObject json = new JSONObject(sharedMemory);
+                if (json.has("components")) {
+                    JSONArray comps = json.getJSONArray("components");
+                    for (int j = 0; j < comps.length(); j++) {
+                        JSONObject c = comps.getJSONObject(j);
+                        ComponentRecord rec = new ComponentRecord();
+                        rec.setName(c.optString("name", "Unknown"));
+                        rec.setType(c.optString("type", "Component"));
+                        rec.setX(c.optInt("x", 500));
+                        rec.setY(c.optInt("y", 500));
+                        model.getComponents().add(rec);
+                    }
+                }
+            } catch (Exception e) {
+                // Ignore parsing errors for shared memory
             }
         }
 
@@ -339,13 +346,5 @@ public class ArchitecturePage extends AEvoPage {
     @Override
     protected void refreshUI() {
         refreshBrowser();
-    }
-
-    @Override
-    public void dispose() {
-        if (orchestrator != null) {
-            orchestrator.eAdapters().remove(modelAdapter);
-        }
-        super.dispose();
     }
 }

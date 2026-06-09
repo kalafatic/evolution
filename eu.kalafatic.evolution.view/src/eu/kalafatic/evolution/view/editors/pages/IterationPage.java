@@ -259,23 +259,29 @@ public class IterationPage extends AEvoPage {
         return viewerColumn;
     }
 
-    public void refreshData() {
-        if (memoryService == null) return;
+    public synchronized void refreshData() {
+        if (memoryService != null) {
+            memoryService.refresh();
+        }
 
-        List<IterationRecord> records = new ArrayList<>(memoryService.getRecords());
+        List<IterationRecord> records = (memoryService != null) ?
+            new ArrayList<>(memoryService.getRecords()) : new ArrayList<>();
 
         // Merge with active session iterations
         if (orchestrator != null && orchestrator.getSelfDevSession() != null) {
-            for (eu.kalafatic.evolution.model.orchestration.Iteration iter : orchestrator.getSelfDevSession().getIterations()) {
-                boolean exists = records.stream().anyMatch(r -> r.getIteration() == orchestrator.getSelfDevSession().getIterations().indexOf(iter) + 1);
+            List<eu.kalafatic.evolution.model.orchestration.Iteration> sessionIters = orchestrator.getSelfDevSession().getIterations();
+            for (int i = 0; i < sessionIters.size(); i++) {
+                eu.kalafatic.evolution.model.orchestration.Iteration iter = sessionIters.get(i);
+                final int itNum = i + 1;
+                boolean exists = records.stream().anyMatch(r -> r.getIteration() == itNum);
                 if (!exists) {
                     IterationRecord r = new IterationRecord();
-                    r.setIteration(orchestrator.getSelfDevSession().getIterations().indexOf(iter) + 1);
+                    r.setIteration(itNum);
                     r.setGoal(orchestrator.getSelfDevSession().getInitialRequest());
-                    r.setBranch(iter.getBranchName());
-                    r.setStatus(iter.getStatus().getName());
+                    r.setBranch(iter.getBranchName() != null ? iter.getBranchName() : "it-" + itNum);
+                    r.setStatus(iter.getStatus() != null ? iter.getStatus().getName() : "RUNNING");
                     r.setResult("RUNNING");
-                    r.setStrategy(iter.getPhase());
+                    r.setStrategy(iter.getPhase() != null ? iter.getPhase() : "EVOLVING");
                     records.add(r);
                 }
             }
@@ -286,6 +292,8 @@ public class IterationPage extends AEvoPage {
 
         if (currentIterationIndex == -1 && !iterationNumbers.isEmpty()) {
             currentIterationIndex = iterationNumbers.size() - 1; // Last one
+        } else if (currentIterationIndex >= iterationNumbers.size()) {
+            currentIterationIndex = iterationNumbers.size() - 1;
         }
     }
 
@@ -431,6 +439,7 @@ public class IterationPage extends AEvoPage {
     protected void refreshUI() {
         refreshData();
         updateUI();
+        updateSessionStatus();
     }
 
     public void updateUIFromModel() {
