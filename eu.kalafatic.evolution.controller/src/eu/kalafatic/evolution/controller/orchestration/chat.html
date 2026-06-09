@@ -50,6 +50,11 @@
             flex: 1; display: flex; flex-direction: column; overflow: hidden;
         }
 
+        #visual-area {
+            width: 400px; background: white; border-left: 1px solid var(--border);
+            display: flex; flex-direction: column; overflow-y: auto;
+        }
+
         #header {
             height: 60px; background: white; border-bottom: 1px solid var(--border);
             display: flex; align-items: center; justify-content: space-between; padding: 0 20px;
@@ -241,6 +246,17 @@
         <div id="input-area">
             <input type="text" id="user-input" placeholder="Type a message or response..." onkeypress="if(event.key==='Enter') sendMessage()">
             <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <div id="visual-area">
+        <div style="padding: 15px; border-bottom: 1px solid var(--border); font-weight: bold; background: #f8fafc;">System Visualization</div>
+        <div id="system-tree" style="padding: 10px; font-size: 13px;">
+            <!-- Dynamic Tree Content -->
+        </div>
+        <div style="padding: 15px; border-bottom: 1px solid var(--border); font-weight: bold; background: #f8fafc; margin-top: 20px;">Network Graph</div>
+        <div id="graph-container" style="height: 300px; padding: 10px;">
+             <svg id="visual-svg" width="100%" height="100%" viewBox="0 0 400 300"></svg>
         </div>
     </div>
 
@@ -553,7 +569,92 @@
         pollStatus();
         refreshBranches();
 
+        async function pollSystemState() {
+            try {
+                const response = await fetch('/server/system/state');
+                const state = await response.json();
+                renderSystemState(state);
+            } catch (err) {}
+        }
+
+        function renderSystemState(state) {
+            const tree = document.getElementById('system-tree');
+            let html = `<div><b>Orchestrator:</b> ${state.name || 'Unnamed'} (${state.aiMode})</div>`;
+
+            if (state.session) {
+                html += `<div style="margin-top:10px; color: #3b82f6;"><b>Session Status:</b> ${state.session.status}</div>`;
+                if (state.session.iterations) {
+                    state.session.iterations.forEach(it => {
+                        html += `<div style="margin-left:15px; font-size: 11px;">• Iteration ${it.id}: ${it.phase}</div>`;
+                    });
+                }
+            }
+
+            if (state.tasks && state.tasks.length > 0) {
+                 html += `<div style="margin-top:10px;"><b>Active Tasks:</b></div>`;
+                 state.tasks.forEach(t => {
+                     html += `<div style="margin-left:15px; font-size: 12px;">- ${t.name} [${t.status}]</div>`;
+                 });
+            }
+
+            tree.innerHTML = html;
+            updateVisualGraph(state);
+        }
+
+        function updateVisualGraph(state) {
+            const svg = document.getElementById('visual-svg');
+            svg.innerHTML = '';
+            const nodes = [];
+            const links = [];
+
+            if (state.agents) {
+                state.agents.forEach((a, i) => {
+                    nodes.push({ id: a.id, label: a.type, x: 50, y: 50 + i * 60, color: '#eff6ff', stroke: '#3b82f6' });
+                });
+            }
+
+            if (state.tasks) {
+                state.tasks.forEach((t, i) => {
+                    nodes.push({ id: t.id, label: t.name, x: 200, y: 50 + i * 70, color: '#f0fdf4', stroke: '#22c55e' });
+                    if (t.next) {
+                        t.next.forEach(nid => links.push({ source: t.id, target: nid }));
+                    }
+                });
+            }
+
+            const nodeMap = {};
+            nodes.forEach(n => {
+                nodeMap[n.id] = n;
+                const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', n.x); circle.setAttribute('cy', n.y); circle.setAttribute('r', 25);
+                circle.setAttribute('fill', n.color); circle.setAttribute('stroke', n.stroke);
+                circle.setAttribute('stroke-width', '2');
+                g.appendChild(circle);
+
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', n.x); text.setAttribute('y', n.y + 5);
+                text.setAttribute('text-anchor', 'middle');
+                text.setAttribute('font-size', '8');
+                text.textContent = n.label.substring(0, 10);
+                g.appendChild(text);
+                svg.appendChild(g);
+            });
+
+            links.forEach(l => {
+                const s = nodeMap[l.source], t = nodeMap[l.target];
+                if (s && t) {
+                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    line.setAttribute('x1', s.x + 25); line.setAttribute('y1', s.y);
+                    line.setAttribute('x2', t.x - 25); line.setAttribute('y2', t.y);
+                    line.setAttribute('stroke', '#94a3b8');
+                    svg.appendChild(line);
+                }
+            });
+        }
+
         setInterval(pollConversation, 1000);
+        setInterval(pollSystemState, 2000);
         setInterval(pollStatus, 10000);
         setInterval(fetchSettings, 30000);
     </script>

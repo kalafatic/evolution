@@ -71,6 +71,12 @@ public class OrchestrationNavigatorLabelProvider extends LabelProvider implement
                 return "Neuron AI: " + ((NeuronAI) element).getModel();
             } else if (element instanceof SupervisorSettings) {
                 return "Supervisor";
+            } else if (element instanceof eu.kalafatic.evolution.model.orchestration.SelfDevSession) {
+                return "Self-Dev Session";
+            } else if (element instanceof eu.kalafatic.evolution.model.orchestration.Iteration) {
+                return "Iteration " + ((eu.kalafatic.evolution.model.orchestration.Iteration) element).getId();
+            } else if (element instanceof eu.kalafatic.evolution.model.orchestration.EvaluationResult) {
+                return "Evaluation";
             } else if (element instanceof ModelProperty) {
                 return ((ModelProperty) element).label;
             }
@@ -83,6 +89,12 @@ public class OrchestrationNavigatorLabelProvider extends LabelProvider implement
             if (element instanceof Task) {
                 Task task = (Task) element;
                 return task.getStatus() != null ? task.getStatus().toString() : "PENDING";
+            } else if (element instanceof eu.kalafatic.evolution.model.orchestration.SelfDevSession) {
+                return ((eu.kalafatic.evolution.model.orchestration.SelfDevSession) element).getStatus().toString();
+            } else if (element instanceof eu.kalafatic.evolution.model.orchestration.Iteration) {
+                return ((eu.kalafatic.evolution.model.orchestration.Iteration) element).getPhase();
+            } else if (element instanceof eu.kalafatic.evolution.model.orchestration.EvaluationResult) {
+                return "Score: " + ((eu.kalafatic.evolution.model.orchestration.EvaluationResult) element).getUserSatisfaction();
             } else if (element instanceof Orchestrator) {
                 String id = ((Orchestrator) element).getId();
                 return OrchestrationStatusManager.getInstance().getStatus(id);
@@ -136,6 +148,12 @@ public class OrchestrationNavigatorLabelProvider extends LabelProvider implement
             return "Neuron AI: " + ((NeuronAI) element).getModel();
         } else if (element instanceof SupervisorSettings) {
             return "Supervisor";
+        } else if (element instanceof eu.kalafatic.evolution.model.orchestration.SelfDevSession) {
+            return "Self-Dev Session [" + ((eu.kalafatic.evolution.model.orchestration.SelfDevSession) element).getStatus() + "]";
+        } else if (element instanceof eu.kalafatic.evolution.model.orchestration.Iteration) {
+            return "Iteration " + ((eu.kalafatic.evolution.model.orchestration.Iteration) element).getId() + " [" + ((eu.kalafatic.evolution.model.orchestration.Iteration) element).getPhase() + "]";
+        } else if (element instanceof eu.kalafatic.evolution.model.orchestration.EvaluationResult) {
+            return "Evaluation [Satisfaction: " + ((eu.kalafatic.evolution.model.orchestration.EvaluationResult) element).getUserSatisfaction() + "]";
         } else if (element instanceof ModelProperty) {
             return ((ModelProperty) element).label;
         }
@@ -187,6 +205,12 @@ public class OrchestrationNavigatorLabelProvider extends LabelProvider implement
             return getCachedImage("eu.kalafatic.evolution.view", "icons/evo_settings.svg");
         } else if (element instanceof SupervisorSettings) {
             return getCachedImage("eu.kalafatic.evolution.view", "icons/orchestrator.png");
+        } else if (element instanceof eu.kalafatic.evolution.model.orchestration.SelfDevSession) {
+            return getCachedImage("eu.kalafatic.evolution.view", "icons/evo_stack.svg");
+        } else if (element instanceof eu.kalafatic.evolution.model.orchestration.Iteration) {
+            return getCachedImage("eu.kalafatic.evolution.view", "icons/evo_task.svg");
+        } else if (element instanceof eu.kalafatic.evolution.model.orchestration.EvaluationResult) {
+            return getCachedImage("eu.kalafatic.evolution.view", "icons/evo_settings.svg");
         } else if (element instanceof ModelProperty) {
             return getCachedImage("eu.kalafatic.evolution.view", "icons/evo_settings.svg");
         }

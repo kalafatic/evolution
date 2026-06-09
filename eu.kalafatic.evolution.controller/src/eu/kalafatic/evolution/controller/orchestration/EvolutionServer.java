@@ -65,6 +65,8 @@ public class EvolutionServer extends NanoHTTPD {
                 return handleGetChat();
             } else if (Method.GET.equals(method) && "/server/status".equals(uri)) {
                 return handleGetServerStatus();
+            } else if (Method.GET.equals(method) && "/server/system/state".equals(uri)) {
+                return handleGetSystemState();
             } else if (Method.POST.equals(method) && "/server/session/ui".equals(uri)) {
                 return handleRegisterUiSession(session);
             } else if (Method.GET.equals(method) && uri.startsWith("/server/conversation/")) {
@@ -500,6 +502,48 @@ public class EvolutionServer extends NanoHTTPD {
         status.put("port", getListeningPort());
 
         return newFixedLengthResponse(Response.Status.OK, "application/json", status.toString());
+    }
+
+    private Response handleGetSystemState() {
+        Orchestrator orch = OrchestratorServiceImpl.getInstance().getOrchestrator();
+        if (orch == null) return newFixedLengthResponse(Response.Status.NOT_FOUND, "application/json", "{}");
+
+        JSONObject root = new JSONObject();
+        root.put("name", orch.getName());
+        root.put("aiMode", orch.getAiMode().getName());
+
+        JSONArray agents = new JSONArray();
+        for (eu.kalafatic.evolution.model.orchestration.Agent a : orch.getAgents()) {
+            agents.put(new JSONObject().put("id", a.getId()).put("type", a.getType()));
+        }
+        root.put("agents", agents);
+
+        JSONArray tasks = new JSONArray();
+        for (eu.kalafatic.evolution.model.orchestration.Task t : orch.getTasks()) {
+            JSONObject taskObj = new JSONObject()
+                .put("id", t.getId())
+                .put("name", t.getName())
+                .put("status", t.getStatus().toString());
+
+            JSONArray next = new JSONArray();
+            for (eu.kalafatic.evolution.model.orchestration.Task n : t.getNext()) next.put(n.getId());
+            taskObj.put("next", next);
+            tasks.put(taskObj);
+        }
+        root.put("tasks", tasks);
+
+        if (orch.getSelfDevSession() != null) {
+            JSONObject session = new JSONObject();
+            session.put("status", orch.getSelfDevSession().getStatus().toString());
+            JSONArray iterations = new JSONArray();
+            for (eu.kalafatic.evolution.model.orchestration.Iteration i : orch.getSelfDevSession().getIterations()) {
+                iterations.put(new JSONObject().put("id", i.getId()).put("phase", i.getPhase()));
+            }
+            session.put("iterations", iterations);
+            root.put("session", session);
+        }
+
+        return newFixedLengthResponse(Response.Status.OK, "application/json", root.toString());
     }
 
     private Response handleGetGitBranches(IHTTPSession session) {

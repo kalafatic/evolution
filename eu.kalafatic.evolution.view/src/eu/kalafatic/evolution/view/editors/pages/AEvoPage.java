@@ -1,6 +1,7 @@
 package eu.kalafatic.evolution.view.editors.pages;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
@@ -14,19 +15,29 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.SharedScrolledComposite;
 
+import eu.kalafatic.evolution.controller.workflow.RuntimeEventListener;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
+import eu.kalafatic.evolution.view.projection.ProjectionService;
+import eu.kalafatic.evolution.view.projection.RuntimeProjection;
 
 /**
  * Abstract superclass for Evolution Editor pages.
  */
-public abstract class AEvoPage extends SharedScrolledComposite {
+public abstract class AEvoPage extends SharedScrolledComposite implements RuntimeEventListener {
 
     protected MultiPageEditor editor;
     protected Orchestrator orchestrator;
     protected FormToolkit toolkit;
     protected AtomicBoolean refreshPending = new AtomicBoolean(false);
     protected boolean needsRefresh = false;
+
+    private final Consumer<RuntimeProjection> projectionObserver = projection -> {
+        if (!isDisposed() && projection.getSessionId().equals(getCurrentSessionName())) {
+            scheduleRefresh();
+        }
+    };
 
     public AEvoPage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
         super(parent, SWT.H_SCROLL | SWT.V_SCROLL);
@@ -36,6 +47,17 @@ public abstract class AEvoPage extends SharedScrolledComposite {
 
         setExpandHorizontal(true);
         setExpandVertical(true);
+
+        ProjectionService.getInstance().subscribe(projectionObserver);
+    }
+
+    protected String getCurrentSessionName() {
+        return (orchestrator != null && orchestrator.getId() != null) ? orchestrator.getId() : "Default";
+    }
+
+    @Override
+    public void onEvent(RuntimeEvent event) {
+        scheduleRefresh();
     }
 
     private long lastRefreshTime = 0;
@@ -187,6 +209,7 @@ public abstract class AEvoPage extends SharedScrolledComposite {
 
     @Override
     public void dispose() {
+        ProjectionService.getInstance().unsubscribe(projectionObserver);
         if (toolkit != null) {
             toolkit.dispose();
         }

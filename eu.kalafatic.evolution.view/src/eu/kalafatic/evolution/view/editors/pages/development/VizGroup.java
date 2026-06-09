@@ -39,7 +39,13 @@ public class VizGroup extends AEvoGroup {
         if (group.getParent() instanceof Section) {
             Section section = (Section) group.getParent();
             Composite toolbar = toolkit.createComposite(section);
-            toolbar.setLayout(new GridLayout(4, true));
+            toolbar.setLayout(new GridLayout(6, true));
+
+            Button refresh = toolkit.createButton(toolbar, "Ref", SWT.PUSH);
+            refresh.setToolTipText("Refresh");
+            refresh.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
+                @Override public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) { page.scheduleRefresh(); }
+            });
 
             Button zoomIn = toolkit.createButton(toolbar, "+", SWT.PUSH);
             zoomIn.setToolTipText("Zoom In");
@@ -58,10 +64,23 @@ public class VizGroup extends AEvoGroup {
             reset.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
                 @Override public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) { if (browser != null) browser.execute("resetZoom();"); }
             });
+
+            Button export = toolkit.createButton(toolbar, "Exp", SWT.PUSH);
+            export.setToolTipText("Export (Log to Console)");
+            export.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
+                @Override public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
+                    if (browser != null) {
+                        Object html = browser.evaluate("return document.documentElement.outerHTML;");
+                        System.out.println("Exported Diagram HTML: " + html);
+                    }
+                }
+            });
             
            GUIFactory.INSTANCE.createMaximizeButton(toolbar, section, false);
            
            section.setTextClient(toolbar);
+
+           hookContextMenu(page);
         }
 
         Composite browserContainer = toolkit.createComposite(group);
@@ -77,6 +96,20 @@ public class VizGroup extends AEvoGroup {
         } catch (Exception e) {
             toolkit.createLabel(browserContainer, "Browser not supported: " + e.getMessage());
         }
+    }
+
+    private void hookContextMenu(DevelopmentPage page) {
+        org.eclipse.jface.action.MenuManager menuMgr = new org.eclipse.jface.action.MenuManager("#PopupMenu");
+        menuMgr.setRemoveAllWhenShown(true);
+        menuMgr.addMenuListener(manager -> {
+            manager.add(new org.eclipse.jface.action.Action("Refresh") { @Override public void run() { page.scheduleRefresh(); } });
+            manager.add(new org.eclipse.jface.action.Separator());
+            manager.add(new org.eclipse.jface.action.Action("Zoom In") { @Override public void run() { if (browser != null) browser.execute("applyZoom(1.2);"); } });
+            manager.add(new org.eclipse.jface.action.Action("Zoom Out") { @Override public void run() { if (browser != null) browser.execute("applyZoom(0.8);"); } });
+            manager.add(new org.eclipse.jface.action.Action("Reset Zoom") { @Override public void run() { if (browser != null) browser.execute("resetZoom();"); } });
+        });
+        org.eclipse.swt.widgets.Menu menu = menuMgr.createContextMenu(browser);
+        browser.setMenu(menu);
     }
 
     public Browser getBrowser() { return browser; }
