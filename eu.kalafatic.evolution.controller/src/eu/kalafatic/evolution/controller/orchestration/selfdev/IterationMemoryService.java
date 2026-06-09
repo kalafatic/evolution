@@ -91,10 +91,13 @@ public class IterationMemoryService {
     }
 
     private File findEffectiveRoot(File startDir) {
-        if (startDir == null) return new File(".");
-        File current = startDir;
+        if (startDir == null) return new File(".").getAbsoluteFile().getParentFile();
+        File current = startDir.getAbsoluteFile();
         while (current != null) {
-            if (new File(current, "iterations").exists() || new File(current, ".git").exists()) {
+            if (new File(current, "iterations").exists() ||
+                new File(current, "orchestrator").exists() ||
+                new File(current, ".git").exists() ||
+                new File(current, "pom.xml").exists()) {
                 return current;
             }
             current = current.getParentFile();

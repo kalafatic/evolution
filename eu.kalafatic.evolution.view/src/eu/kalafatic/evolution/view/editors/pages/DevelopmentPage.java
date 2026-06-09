@@ -418,10 +418,9 @@ public class DevelopmentPage extends AEvoPage {
         if (vizGroup == null || vizGroup.getBrowser() == null || vizGroup.getBrowser().isDisposed()) return;
 
         String json = getModelAsJson();
-        if (json.equals(lastJson)) return; // Always update lastJson even if not loaded yet
+        if (json.equals(lastJson)) return;
 
         if (!isLoaded) {
-            lastJson = json;
             if (!isVizInitializing) {
                 isVizInitializing = true;
                 vizGroup.getBrowser().setText(getHtmlTemplate());
@@ -441,13 +440,12 @@ public class DevelopmentPage extends AEvoPage {
                     initRetries++;
                     if (!isVizInitializing) {
                         isVizInitializing = true;
-                        lastJson = json;
                         vizGroup.getBrowser().setText(getHtmlTemplate());
                     }
                 }
             }
         } catch (Exception e) {
-            // Browser might not be ready
+            // Browser might not be ready, will retry on next scheduleRefresh
         }
     }
 
@@ -549,9 +547,8 @@ public class DevelopmentPage extends AEvoPage {
                 + "  var links = [];"
                 + "  var x = 140, y = 40;"
                 + "  if (data.tasks) {"
-                + "    data.tasks.forEach(function(t) {"
-                + "      nodes[t.id] = { id: t.id, name: t.name, status: t.status, next: t.next, x: x, y: y };"
-                + "      x += 180; if (x > 500) { x = 140; y += 100; }"
+                + "    data.tasks.forEach(function(t, i) {"
+                + "      nodes[t.id] = { id: t.id, name: t.name, status: t.status, next: t.next, x: 140 + (i % 4) * 200, y: 40 + Math.floor(i / 4) * 120 };"
                 + "      if (t.next) t.next.forEach(function(nid) { links.push({ from: t.id, to: nid }); });"
                 + "    });"
                 + "  }"
