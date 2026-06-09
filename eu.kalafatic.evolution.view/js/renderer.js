@@ -334,6 +334,8 @@ window.ChatApp.Renderer = {
             const isApproved = role.includes('approved');
             const isRejected = role.includes('rejected');
             const isWaiting = role.includes('waiting');
+            const isManualDecision = role.includes('decision:manual');
+            const isAutoDecision = role.includes('decision:auto');
 
             variants.forEach((v, index) => {
                 const vId = String(v.id || index);
@@ -343,6 +345,22 @@ window.ChatApp.Renderer = {
 
                 const col = document.createElement('div');
                 col.className = 'branch-column' + (v.isBest ? ' best' : '') + (isThisApproved ? ' approved' : '') + (isThisRejected ? ' rejected' : '') + (isThisKept ? ' kept' : '');
+
+                if (isThisApproved || isThisRejected || isThisKept) {
+                    const stamp = document.createElement('div');
+                    stamp.className = 'decision-stamp';
+                    if (isThisApproved) {
+                        stamp.innerText = isAutoDecision ? 'AUTO-APPROVED' : 'APPROVED';
+                        stamp.classList.add('approved');
+                    } else if (isThisRejected) {
+                        stamp.innerText = 'REJECTED';
+                        stamp.classList.add('rejected');
+                    } else if (isThisKept) {
+                        stamp.innerText = 'KEPT';
+                        stamp.classList.add('kept');
+                    }
+                    col.appendChild(stamp);
+                }
 
                 // Simplified Darwin Header
                 let headerLabel = iteration !== null ? `ITERATION ${iteration} - PROPOSAL ${index + 1}` : `PROPOSAL ${index + 1}`;
