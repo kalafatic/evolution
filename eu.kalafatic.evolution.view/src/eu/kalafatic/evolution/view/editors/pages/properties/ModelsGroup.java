@@ -177,7 +177,7 @@ public class ModelsGroup extends AEvoGroup {
             }
             @Override
             public Color getBackground(Object element) {
-                return getModelColor((AIProvider) element);
+                return getSafeColor(getModelColor((AIProvider) element));
             }
         });
         org.eclipse.jface.viewers.ColumnViewerToolTipSupport.enableFor(viewer);
@@ -191,7 +191,7 @@ public class ModelsGroup extends AEvoGroup {
             }
             @Override
             public Color getBackground(Object element) {
-                return getModelColor((AIProvider) element);
+                return getSafeColor(getModelColor((AIProvider) element));
             }
         });
 
@@ -206,7 +206,7 @@ public class ModelsGroup extends AEvoGroup {
             }
             @Override
             public Color getBackground(Object element) {
-                return getModelColor((AIProvider) element);
+                return getSafeColor(getModelColor((AIProvider) element));
             }
         });
 
@@ -219,7 +219,7 @@ public class ModelsGroup extends AEvoGroup {
             }
             @Override
             public Color getBackground(Object element) {
-                return getModelColor((AIProvider) element);
+                return getSafeColor(getModelColor((AIProvider) element));
             }
         });
 
@@ -234,7 +234,7 @@ public class ModelsGroup extends AEvoGroup {
             }
             @Override
             public Color getBackground(Object element) {
-                return getModelColor((AIProvider) element);
+                return getSafeColor(getModelColor((AIProvider) element));
             }
         });
 
@@ -248,7 +248,7 @@ public class ModelsGroup extends AEvoGroup {
             }
             @Override
             public Color getBackground(Object element) {
-                return getModelColor((AIProvider) element);
+                return getSafeColor(getModelColor((AIProvider) element));
             }
         });
 
