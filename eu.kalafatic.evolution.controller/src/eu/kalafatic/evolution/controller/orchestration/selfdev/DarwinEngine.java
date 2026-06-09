@@ -216,6 +216,21 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             candidates.forEach(path -> state.append("- ").append(path).append("\n"));
         }
 
+        eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel realityModel = (eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel) context.getOrchestrationState().getMetadata().get("targetRealityModel");
+        if (realityModel != null) {
+            state.append("\n--- DISCOVERED TARGET REALITY (GROUNDING SOURCE) ---\n");
+            state.append("Domain: ").append(realityModel.getDomain()).append("\n");
+            state.append("Purpose: ").append(realityModel.getPurpose()).append("\n");
+            state.append("Architecture Summary: ").append(realityModel.getArchitectureSummary()).append("\n");
+            state.append("Objectives: ").append(realityModel.getObjectives()).append("\n");
+            state.append("Risks: ").append(realityModel.getRisks()).append("\n");
+
+            state.append("\nIDENTIFIED HOTSPOTS (PRIORITY EVOLUTION TARGETS):\n");
+            for (eu.kalafatic.evolution.controller.mediation.model.Hotspot hotspot : realityModel.getHotspots()) {
+                state.append("- ").append(hotspot.getName()).append(" [").append(hotspot.getType()).append("]: ").append(hotspot.getDescription()).append(" (Significance: ").append(hotspot.getSignificance()).append(")\n");
+            }
+        }
+
         List<IterationRecord> records = memoryService.getRecords();
         List<IterationRecord> activeRecords = memoryService.getActiveLineage();
 

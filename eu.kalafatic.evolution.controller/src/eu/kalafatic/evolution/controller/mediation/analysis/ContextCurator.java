@@ -53,9 +53,9 @@ public class ContextCurator {
             double score = 0.0;
             String nid = node.getId();
 
-            // A. Graph Centrality Signal
+            // A. Graph Centrality Signal (Primary Hotspot Indicator)
             int totalDegree = inDegree.getOrDefault(nid, 0) + outDegree.getOrDefault(nid, 0);
-            score += (totalDegree * 5.0); // Reward nodes that link parts of the system together
+            score += (totalDegree * 8.0); // Increased weight for centrality
 
             // B. Semantic Density Signal
             // Higher density of structures (methods, classes) and attributes indicates higher info value.
@@ -79,8 +79,8 @@ public class ContextCurator {
             }
 
             // D. Abstract Significance Evidence
-            if (node.getTags().contains("Executory")) score += 10.0;
-            if (node.getTags().contains("Annotated")) score += 5.0;
+            if (node.getTags().contains("Executory")) score += 15.0; // Entry points are major hotspots
+            if (node.getTags().contains("Annotated")) score += 10.0; // Components with metadata are significant
 
             if (score > 0) {
                 scores.put(nid, score);

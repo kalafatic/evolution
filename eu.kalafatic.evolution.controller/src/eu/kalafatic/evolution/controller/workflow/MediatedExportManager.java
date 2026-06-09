@@ -13,6 +13,10 @@ import java.util.zip.ZipOutputStream;
 public class MediatedExportManager {
 
     public File createExportPackage(String sessionId, String prompt, List<String> selectedPaths, File projectRoot, String outputPath, String metadataJson, String historyAnalysis, String architectureSummary, String dependencies, String executionInstructions) throws IOException {
+        return createExportPackage(sessionId, prompt, selectedPaths, projectRoot, outputPath, metadataJson, historyAnalysis, architectureSummary, dependencies, executionInstructions, null);
+    }
+
+    public File createExportPackage(String sessionId, String prompt, List<String> selectedPaths, File projectRoot, String outputPath, String metadataJson, String historyAnalysis, String architectureSummary, String dependencies, String executionInstructions, String realityModelJson) throws IOException {
         String fileName = "mediated_export_" + sessionId + "_" + System.currentTimeMillis() + ".zip";
         File targetDir = projectRoot;
         if (outputPath != null && !outputPath.isEmpty()) {
@@ -44,6 +48,9 @@ public class MediatedExportManager {
             }
             if (executionInstructions != null) {
                 addStringToZip(zos, "execution-instructions.md", executionInstructions);
+            }
+            if (realityModelJson != null) {
+                addStringToZip(zos, "reality-model.json", realityModelJson);
             }
 
             // 4. Add Selected File Contents
