@@ -55,12 +55,12 @@ public class ContextCurator {
 
             // A. Graph Centrality Signal
             int totalDegree = inDegree.getOrDefault(nid, 0) + outDegree.getOrDefault(nid, 0);
-            score += (totalDegree * 8.0); // Reward nodes that link parts of the system together (High Signal)
+            score += (totalDegree * 5.0); // Reward nodes that link parts of the system together
 
             // B. Semantic Density Signal
             // Higher density of structures (methods, classes) and attributes indicates higher info value.
             int density = node.getStructures().size() + node.getAttributes().size() + node.getDependencies().size();
-            score += (density * 3.0);
+            score += (density * 2.0);
 
             // C. Abstract Relevance Signal
             if (node.getSummary() != null) {
@@ -79,8 +79,8 @@ public class ContextCurator {
             }
 
             // D. Abstract Significance Evidence
-            if (node.getTags().contains("Executory")) score += 15.0;
-            if (node.getTags().contains("Annotated")) score += 10.0;
+            if (node.getTags().contains("Executory")) score += 10.0;
+            if (node.getTags().contains("Annotated")) score += 5.0;
 
             if (score > 0) {
                 scores.put(nid, score);

@@ -36,7 +36,6 @@ import eu.kalafatic.evolution.controller.trajectory.Trajectory;
 import eu.kalafatic.evolution.controller.mediation.model.MediationCandidate;
 
 import eu.kalafatic.evolution.controller.orchestration.SessionManager;
-import eu.kalafatic.evolution.controller.orchestration.EvolutionProgressPublisher;
 
 public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationContract {
     private final TaskContext context;
@@ -268,43 +267,30 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         mapper.setAiService(aiService);
 
         context.log("[DARWIN] Sequential Blueprint Discovery initialized (Target: " + branchingLimit + " unique trajectories).");
-        try {
-            List<TrajectoryBlueprint> bulk = mapper.mapBulk(goal, context, branchingLimit);
-            for (TrajectoryBlueprint bp : bulk) {
-                if (currentBlueprints.size() < branchingLimit) {
-                    currentBlueprints.add(bp);
-                }
-            }
-        } catch (Exception e) {
-            context.log("[DARWIN] Bulk mapping failed: " + e.getMessage() + ". Falling back to sequential discovery.");
-        }
+        int discoveryAttempts = 0;
+        int maxDiscoveryAttempts = branchingLimit * 2;
+        while (currentBlueprints.size() < branchingLimit && discoveryAttempts < maxDiscoveryAttempts) {
+            discoveryAttempts++;
+            try {
+                String discoveryGoal = generation == 0 ? goal : goal + " (Mutation Gen " + generation + ")";
+                TrajectoryBlueprint bp = mapper.discoverNext(discoveryGoal, context, currentBlueprints);
+                if (bp != null) {
+                    // Avoid duplicate strategies or philosophies
+                    boolean isDuplicate = currentBlueprints.stream().anyMatch(existing ->
+                        existing.getStrategy().equalsIgnoreCase(bp.getStrategy()) ||
+                        existing.getPhilosophy().equalsIgnoreCase(bp.getPhilosophy())
+                    );
 
-        if (currentBlueprints.size() < branchingLimit) {
-            int discoveryAttempts = 0;
-            int maxDiscoveryAttempts = branchingLimit * 2;
-            while (currentBlueprints.size() < branchingLimit && discoveryAttempts < maxDiscoveryAttempts) {
-                discoveryAttempts++;
-                try {
-                    String discoveryGoal = generation == 0 ? goal : goal + " (Mutation Gen " + generation + ")";
-                    TrajectoryBlueprint bp = mapper.discoverNext(discoveryGoal, context, currentBlueprints);
-                    if (bp != null) {
-                        // Avoid duplicate strategies or philosophies
-                        boolean isDuplicate = currentBlueprints.stream().anyMatch(existing ->
-                            existing.getStrategy().equalsIgnoreCase(bp.getStrategy()) ||
-                            existing.getPhilosophy().equalsIgnoreCase(bp.getPhilosophy())
-                        );
-
-                        if (!isDuplicate) {
-                            currentBlueprints.add(bp);
-                        } else {
-                            context.log("[DARWIN] Discovery Loop: Ignoring duplicate blueprint: " + bp.getStrategy());
-                        }
+                    if (!isDuplicate) {
+                        currentBlueprints.add(bp);
                     } else {
-                        context.log("[DARWIN] Discovery Loop: Mapper returned null at attempt " + discoveryAttempts);
+                        context.log("[DARWIN] Discovery Loop: Ignoring duplicate blueprint: " + bp.getStrategy());
                     }
-                } catch (Exception e) {
-                    context.log("[DARWIN] Discovery Error: " + e.getMessage());
+                } else {
+                    context.log("[DARWIN] Discovery Loop: Mapper returned null at attempt " + discoveryAttempts);
                 }
+            } catch (Exception e) {
+                context.log("[DARWIN] Discovery Error: " + e.getMessage());
             }
         }
 
@@ -395,18 +381,6 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
         if (uniqueVariants.isEmpty()) {
             context.log("[DARWIN] CRITICAL: All LLM variants failed diversity analysis. Evolution stalled.");
-        }
-
-        // 1. Validation Stage
-        EvolutionProgressPublisher.updateStage(context, eu.kalafatic.evolution.controller.orchestration.EvolutionStage.VALIDATE_BRANCH);
-        for (JSONObject v : uniqueVariants) {
-            EvolutionProgressPublisher.updateBranchStatus(context, v.optString("id"), v.optString("strategy"), "validating", null);
-        }
-
-        // 2. Scoring Stage
-        EvolutionProgressPublisher.updateStage(context, eu.kalafatic.evolution.controller.orchestration.EvolutionStage.SCORE_BRANCH);
-        for (JSONObject v : uniqueVariants) {
-            EvolutionProgressPublisher.updateBranchStatus(context, v.optString("id"), v.optString("strategy"), "scoring", null);
         }
 
         // Fitness Ranking

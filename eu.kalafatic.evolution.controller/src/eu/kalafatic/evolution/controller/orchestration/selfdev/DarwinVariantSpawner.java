@@ -239,7 +239,7 @@ public class DarwinVariantSpawner {
               .append("- You MUST select 4-16 high-signal files for the FINAL mediation package.\n")
               .append("- CONSOLIDATION RULES: KEEP if in 2+ lineages, extreme centrality, or critical flow; REMOVE if redundant or leaf-only.\n")
               .append("- Ranked selected files by importance (1 = highest) in the reasoning focus.\n")
-              .append("- Strictly avoid context bloat (> 16 files is PENALIZED, < 4 files is INSUFFICIENT).\n")
+              .append("- Strictly avoid context bloat (> 16 files is PENALIZED).\n")
               .append("- Your goal is to produce a high-quality mediation candidate for external LLM processing.\n\n");
 
             if (context != null && context.getOrchestrationState() != null) {
@@ -422,7 +422,7 @@ public class DarwinVariantSpawner {
               .append("- You MUST select 4-16 high-signal files for the FINAL mediation package.\n")
               .append("- CONSOLIDATION RULES: KEEP if in 2+ lineages, extreme centrality, or critical flow; REMOVE if redundant or leaf-only.\n")
               .append("- Ranked selected files by importance (1 = highest) in the reasoning focus.\n")
-              .append("- Strictly avoid context bloat (> 16 files is PENALIZED, < 4 files is INSUFFICIENT).\n")
+              .append("- Strictly avoid context bloat (> 16 files is PENALIZED).\n")
               .append("- Focus on producing high-quality mediation candidates (prompt, context, instructions).\n")
               .append("- Strictly prohibit invented APIs or fictitious infrastructure.\n\n");
 

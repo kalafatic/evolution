@@ -31,73 +31,6 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
         return mapSequential(goal, context, limit, new ArrayList<>());
     }
 
-    public List<TrajectoryBlueprint> mapBulk(String goal, TaskContext context, int limit) throws Exception {
-        context.log("[TERRITORY] Discovering " + limit + " divergent evolutionary trajectories for: " + goal);
-
-        StringBuilder sb = new StringBuilder();
-        sb.append("GOAL: ").append(goal).append("\n\n");
-
-        String projectStructure = (String) context.getOrchestrationState().getMetadata().get("projectStructure");
-        if (projectStructure != null) sb.append("STRUCTURE: ").append(projectStructure).append("\n");
-
-        IntentExpansionResult expansion = (IntentExpansionResult) context.getMetadata().get("intentExpansion");
-        if (expansion != null) {
-            sb.append("INTENT: ").append(expansion.getDominantIntent()).append("\n");
-        }
-
-        String prompt = sb.toString() + "\n\n" +
-               "Identify " + limit + " CONCEPTUALLY DISTINCT and COMPETING architectural directions.\n" +
-               "Output exactly ONE JSON object containing a 'blueprints' array. Each blueprint MUST have:\n" +
-               "- id: unique string\n" +
-               "- strategy: concise title\n" +
-               "- philosophy: architectural core\n" +
-               "- direction: detailed technical path\n" +
-               "- characteristics: array of required traits\n" +
-               "- tradeoffs: what is sacrificed\n" +
-               "- strategy_type: one of [PROBABLE_SURVIVOR, PHILOSOPHY_MUTATION, MAXIMAL_DIVERGENCE, STABILIZATION_RECOVERY, ARCHITECTURE_MAPPING, REFACTOR_HOTSPOT_ANALYSIS]";
-
-        String response = aiService.sendRequest(context.getOrchestrator(), getAgentInstructions() + "\n\n" + prompt, context);
-        JSONObject root = JsonUtils.extractJsonObject(response);
-        List<TrajectoryBlueprint> blueprints = new ArrayList<>();
-
-        if (root != null && root.has("blueprints")) {
-            JSONArray arr = root.getJSONArray("blueprints");
-            for (int i = 0; i < arr.length(); i++) {
-                JSONObject obj = arr.getJSONObject(i);
-                TrajectoryBlueprint bp = convertToBlueprint(obj, goal, blueprints.size());
-                if (bp != null) blueprints.add(bp);
-            }
-        }
-
-        return blueprints;
-    }
-
-    private TrajectoryBlueprint convertToBlueprint(JSONObject obj, String goal, int index) {
-        if (obj == null) return null;
-        String id = obj.optString("id");
-        if (id == null || id.isEmpty()) {
-            id = "bp-" + System.currentTimeMillis() + "-" + (index + 1);
-        }
-        TrajectoryBlueprint bp = new TrajectoryBlueprint(id, goal, obj.optString("strategy"));
-        bp.setPhilosophy(obj.optString("philosophy"));
-        bp.setArchitecturalDirection(obj.optString("direction"));
-        bp.setSurvivalArgument(obj.optString("survival_argument", obj.optString("philosophy")));
-        bp.setTradeoffs(obj.optString("tradeoffs"));
-
-        String typeStr = obj.optString("strategy_type", "PROBABLE_SURVIVOR");
-        try {
-            bp.setStrategyType(DarwinStrategyType.valueOf(typeStr.toUpperCase()));
-        } catch (Exception e) {
-            bp.setStrategyType(DarwinStrategyType.PROBABLE_SURVIVOR);
-        }
-
-        JSONArray chars = obj.optJSONArray("characteristics");
-        if (chars != null) {
-            for (int j = 0; j < chars.length(); j++) bp.addRequiredCharacteristic(chars.getString(j));
-        }
-        return bp;
-    }
-
     public TrajectoryBlueprint discoverNext(String goal, TaskContext context, List<TrajectoryBlueprint> existing) throws Exception {
         context.log("[TERRITORY] Sequentially discovering next unique evolutionary trajectory for: " + goal);
 
@@ -131,7 +64,33 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
 
         String response = aiService.sendRequest(context.getOrchestrator(), getAgentInstructions() + "\n\n" + prompt, context);
         JSONObject obj = JsonUtils.extractJsonObject(response);
-        return convertToBlueprint(obj, goal, existing.size());
+
+        if (obj != null) {
+            String id = obj.optString("id");
+            if (id == null || id.isEmpty()) {
+                id = "bp-" + System.currentTimeMillis() + "-" + (existing.size() + 1);
+            }
+            TrajectoryBlueprint bp = new TrajectoryBlueprint(id, goal, obj.optString("strategy"));
+            bp.setPhilosophy(obj.optString("philosophy"));
+            bp.setArchitecturalDirection(obj.optString("direction"));
+            bp.setSurvivalArgument(obj.optString("survival_argument", obj.optString("philosophy")));
+            bp.setTradeoffs(obj.optString("tradeoffs"));
+
+            String typeStr = obj.optString("strategy_type", "PROBABLE_SURVIVOR");
+            try {
+                bp.setStrategyType(DarwinStrategyType.valueOf(typeStr.toUpperCase()));
+            } catch (Exception e) {
+                bp.setStrategyType(DarwinStrategyType.PROBABLE_SURVIVOR);
+            }
+
+            JSONArray chars = obj.optJSONArray("characteristics");
+            if (chars != null) {
+                for (int j = 0; j < chars.length(); j++) bp.addRequiredCharacteristic(chars.getString(j));
+            }
+            return bp;
+        }
+
+        return null;
     }
 
     @Deprecated
