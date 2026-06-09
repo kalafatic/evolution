@@ -10,6 +10,7 @@ import java.util.List;
 public class TrajectoryBlueprint {
     private String id;
     private String goal;
+    private String strategy;
     private String philosophy;
     private String survivalArgument;
     private String tradeoffs;
@@ -21,10 +22,10 @@ public class TrajectoryBlueprint {
     private TrajectoryVector targetVector = new TrajectoryVector();
     private java.util.Map<String, String> engineeringDimensions = new java.util.HashMap<>();
 
-    public TrajectoryBlueprint(String id, String goal, String philosophy) {
+    public TrajectoryBlueprint(String id, String goal, String strategy) {
         this.id = id;
         this.goal = goal;
-        this.philosophy = philosophy;
+        this.strategy = strategy;
     }
 
     public String getId() {
@@ -41,6 +42,14 @@ public class TrajectoryBlueprint {
 
     public void setGoal(String goal) {
         this.goal = goal;
+    }
+
+    public String getStrategy() {
+        return strategy;
+    }
+
+    public void setStrategy(String strategy) {
+        this.strategy = strategy;
     }
 
     public String getPhilosophy() {

@@ -250,6 +250,15 @@ public class DarwinFlow implements IOrchestrationFlow {
                 }
             }
 
+            // LOGICAL SYNC: Ensure files from variant actions are always recorded in UI panel
+            for (BranchVariant.Action action : selectedVariant.getActions()) {
+                if (("WRITE".equals(action.getOperation()) || "CREATE".equals(action.getOperation())) && action.getTarget() != null) {
+                    context.getFileChangeTracker().recordChange(action.getTarget(), FileChangeTracker.ChangeType.EDITED);
+                } else if ("DELETE".equals(action.getOperation()) && action.getTarget() != null) {
+                    context.getFileChangeTracker().recordChange(action.getTarget(), FileChangeTracker.ChangeType.REMOVED);
+                }
+            }
+
             if (isExportOnly) {
                 EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
                 res.setSuccess(true);
@@ -264,15 +273,6 @@ public class DarwinFlow implements IOrchestrationFlow {
             reality.getChangedFileMap().forEach((path, type) -> {
                 context.getFileChangeTracker().recordChange(path, type);
             });
-
-            // LOGICAL SYNC: Ensure files from variant actions are always recorded in UI panel
-            for (BranchVariant.Action action : selectedVariant.getActions()) {
-                if ("WRITE".equals(action.getOperation()) && action.getTarget() != null) {
-                    context.getFileChangeTracker().recordChange(action.getTarget(), FileChangeTracker.ChangeType.EDITED);
-                } else if ("DELETE".equals(action.getOperation()) && action.getTarget() != null) {
-                    context.getFileChangeTracker().recordChange(action.getTarget(), FileChangeTracker.ChangeType.REMOVED);
-                }
-            }
 
             boolean isSignificant = reality.isSignificant();
             if (!isSignificant) {

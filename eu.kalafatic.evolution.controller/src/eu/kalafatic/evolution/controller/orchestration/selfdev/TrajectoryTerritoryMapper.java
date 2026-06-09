@@ -66,7 +66,11 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
         JSONObject obj = JsonUtils.extractJsonObject(response);
 
         if (obj != null) {
-            TrajectoryBlueprint bp = new TrajectoryBlueprint(obj.optString("id"), goal, obj.optString("strategy"));
+            String id = obj.optString("id");
+            if (id == null || id.isEmpty()) {
+                id = "bp-" + System.currentTimeMillis() + "-" + (existing.size() + 1);
+            }
+            TrajectoryBlueprint bp = new TrajectoryBlueprint(id, goal, obj.optString("strategy"));
             bp.setPhilosophy(obj.optString("philosophy"));
             bp.setArchitecturalDirection(obj.optString("direction"));
             bp.setSurvivalArgument(obj.optString("survival_argument", obj.optString("philosophy")));

@@ -103,7 +103,7 @@ public class FinalResponseAssembler {
             sb.append("_No physical changes detected._\n");
         } else {
             for (FileReference ref : files) {
-                sb.append("- `").append(ref.getPath()).append("`\n");
+                sb.append("- [").append(ref.getPath()).append("](").append(ref.getEclipseUri()).append(")\n");
             }
         }
 
@@ -201,6 +201,9 @@ public class FinalResponseAssembler {
                 absolutePath = "/" + absolutePath;
             }
             String uri = "file://" + absolutePath;
+            if (!uri.startsWith("file:///")) {
+                uri = uri.replace("file://", "file:///");
+            }
 
             refs.add(new FileReference(relativePath, displayName, uri));
         }

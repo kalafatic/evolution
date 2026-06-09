@@ -267,15 +267,27 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         mapper.setAiService(aiService);
 
         context.log("[DARWIN] Sequential Blueprint Discovery initialized (Target: " + branchingLimit + " unique trajectories).");
-        for (int i = 0; i < branchingLimit; i++) {
+        int discoveryAttempts = 0;
+        int maxDiscoveryAttempts = branchingLimit * 2;
+        while (currentBlueprints.size() < branchingLimit && discoveryAttempts < maxDiscoveryAttempts) {
+            discoveryAttempts++;
             try {
                 String discoveryGoal = generation == 0 ? goal : goal + " (Mutation Gen " + generation + ")";
                 TrajectoryBlueprint bp = mapper.discoverNext(discoveryGoal, context, currentBlueprints);
                 if (bp != null) {
-                    currentBlueprints.add(bp);
+                    // Avoid duplicate strategies or philosophies
+                    boolean isDuplicate = currentBlueprints.stream().anyMatch(existing ->
+                        existing.getStrategy().equalsIgnoreCase(bp.getStrategy()) ||
+                        existing.getPhilosophy().equalsIgnoreCase(bp.getPhilosophy())
+                    );
+
+                    if (!isDuplicate) {
+                        currentBlueprints.add(bp);
+                    } else {
+                        context.log("[DARWIN] Discovery Loop: Ignoring duplicate blueprint: " + bp.getStrategy());
+                    }
                 } else {
-                    context.log("[DARWIN] Discovery Loop: Mapper returned null at index " + i);
-                    break;
+                    context.log("[DARWIN] Discovery Loop: Mapper returned null at attempt " + discoveryAttempts);
                 }
             } catch (Exception e) {
                 context.log("[DARWIN] Discovery Error: " + e.getMessage());
