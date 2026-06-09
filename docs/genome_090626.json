@@ -1,0 +1,135 @@
+{
+  "system_name": "AI Evolution Platform",
+  "version": "v1_090626",
+  "architecture_type": "Modular OSGi Monolith",
+  "entry_points": [
+    "eu.kalafatic.evolution.controller.orchestration.OrchestratorServiceImpl",
+    "eu.kalafatic.evolution.controller.orchestration.IterationManager",
+    "eu.kalafatic.evolution.view.application.Application"
+  ],
+  "modules": [
+    {
+      "name": "eu.kalafatic.utils",
+      "type": "infra",
+      "responsibilities": [
+        "Semantic annotations",
+        "Logging utilities"
+      ],
+      "depends_on": [],
+      "exposes": [
+        "eu.kalafatic.utils.semantic",
+        "eu.kalafatic.utils.log"
+      ],
+      "mutation_safety": "stable"
+    },
+    {
+      "name": "eu.kalafatic.evolution.model",
+      "type": "core",
+      "responsibilities": [
+        "EMF model definitions for orchestration",
+        "State persistence"
+      ],
+      "depends_on": [
+        "eu.kalafatic.utils"
+      ],
+      "exposes": [
+        "eu.kalafatic.evolution.model.orchestration"
+      ],
+      "mutation_safety": "stable"
+    },
+    {
+      "name": "eu.kalafatic.evolution.controller",
+      "type": "core",
+      "responsibilities": [
+        "Orchestration kernel",
+        "Darwin engine",
+        "Agent execution",
+        "Workflow coordination"
+      ],
+      "depends_on": [
+        "eu.kalafatic.evolution.model",
+        "eu.kalafatic.utils"
+      ],
+      "exposes": [
+        "eu.kalafatic.evolution.controller.orchestration",
+        "eu.kalafatic.evolution.controller.engine",
+        "eu.kalafatic.evolution.controller.agents"
+      ],
+      "mutation_safety": "semi-stable"
+    },
+    {
+      "name": "eu.kalafatic.evolution.selfdev.genome",
+      "type": "experimental",
+      "responsibilities": [
+        "Self-development logic",
+        "Cross-project knowledge sharing"
+      ],
+      "depends_on": [
+        "eu.kalafatic.evolution.controller",
+        "eu.kalafatic.evolution.model"
+      ],
+      "exposes": [
+        "eu.kalafatic.evolution.selfdev.genome"
+      ],
+      "mutation_safety": "experimental"
+    }
+  ],
+  "execution_flow": {
+    "core_loop": "Plan-Execute-Verify (PEV) loop",
+    "data_flow": [
+      "User Prompt -> Intent Decompression -> Context Grounding -> Darwin Spawning -> Winner Selection -> Mutation Execution -> Verification"
+    ],
+    "event_flow": [
+      "Throttled category-based RuntimeEventBus (KERNEL, FLOW, AGENT, EXECUTION, UI, SUPERVISOR, WORKSPACE)"
+    ]
+  },
+  "darwin_model": {
+    "mutation_points": [
+      "Trajectory Blueprints",
+      "Branch Variants",
+      "AI Agent Prompt Templates"
+    ],
+    "selection_mechanisms": [
+      "Darwin Diversity Analysis (Vector-based)",
+      "Fitness Ranking (Build success, test coverage, semantic alignment)",
+      "Manual Supervisor Approval"
+    ],
+    "fitness_criteria": [
+      "Build stability",
+      "Test pass rate",
+      "Conceptual diversity",
+      "Significance coefficient"
+    ],
+    "stable_invariants": [
+      "Single authority state transitions",
+      "Thread-local session isolation",
+      "Repository-grounded reasoning"
+    ]
+  },
+  "mediated_model": {
+    "core_concepts": [
+      "Evolutionary Trajectory",
+      "Semantic Dimension",
+      "Cognitive Trace",
+      "Target Reality Model"
+    ],
+    "abstract_flows": [
+      "Intent Expansion -> Darwin Spawning -> Mediated Selection -> Validated Mutation"
+    ],
+    "external_llm_view": "System is a deterministic kernel that manages AI-driven code mutations through a multi-branch divergent-convergent process."
+  },
+  "risk_map": {
+    "tight_coupling": [
+      "Eclipse RCP / OSGi dependency",
+      "EMF model synchronization"
+    ],
+    "hidden_state": [
+      "SessionBoundaryGuard thread-locals",
+      "Singleton OrchestratorService instance"
+    ],
+    "fragile_components": [
+      "JSON blueprint parsers",
+      "Tycho build resolution"
+    ]
+  }
+}
