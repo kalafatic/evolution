@@ -15,6 +15,7 @@ import eu.kalafatic.evolution.controller.agents.CriticAgent;
 import eu.kalafatic.evolution.controller.agents.FinalResponseAgent;
 import eu.kalafatic.evolution.controller.agents.IAgent;
 import eu.kalafatic.evolution.controller.agents.PlannerAgent;
+import eu.kalafatic.evolution.controller.agents.RealityDiscoveryAgent;
 import eu.kalafatic.evolution.controller.agents.StructureAgent;
 import eu.kalafatic.evolution.controller.kernel.AuthorityEngine;
 import eu.kalafatic.evolution.controller.kernel.BranchManager;
@@ -131,6 +132,7 @@ public class IterationManager {
     private final EvolutionaryTrajectoryEngine evolutionaryTrajectoryEngine = new EvolutionaryTrajectoryEngine();
 
     private final AnalyticAgent analyticAgent;
+    private final RealityDiscoveryAgent realityDiscoveryAgent;
     private final StructureAgent structureAgent;
     private final PlannerAgent strategicPlanner;
     private final CriticAgent criticAgent;
@@ -198,6 +200,8 @@ public class IterationManager {
         }
 
         analyticAgent = (AnalyticAgent) getInternalAgent(EvolutionConstants.AGENT_ANALYTIC);
+        realityDiscoveryAgent = new RealityDiscoveryAgent(sessionContainer);
+        realityDiscoveryAgent.setAiService(aiService);
         structureAgent = (StructureAgent) getInternalAgent(EvolutionConstants.AGENT_STRUCTURE);
         strategicPlanner = (PlannerAgent) getInternalAgent(EvolutionConstants.AGENT_PLANNER);
         criticAgent = (CriticAgent) getInternalAgent(EvolutionConstants.AGENT_CRITIC);
@@ -369,28 +373,34 @@ public class IterationManager {
                     archArtifact.getSemanticTags().add("structure");
                     context.getSemanticWorkspace().addArtifact(archArtifact);
 
+                    // Formal Reality Discovery
+                    context.log("[KERNEL] Discovery: Building semantic repository snapshot.");
+                    TargetScanner scanner = new TargetScanner();
+                    TargetSnapshot.TargetType type = context.getProjectRoot().getAbsolutePath().contains("evolution") ? TargetSnapshot.TargetType.SELF : TargetSnapshot.TargetType.PROJECT;
+                    TargetSnapshot snapshot = scanner.scanToSnapshot(context.getProjectRoot(), type);
+
+                    // TWO-STAGE SELECTION: Heuristic pick 32 candidates for deep analysis
+                    ContextCurator curator = new ContextCurator();
+                    List<String> candidates = curator.selectContext(snapshot, request, 32);
+
+                    context.log("[KERNEL] Discovery: Selective deep analysis of " + candidates.size() + " high-signal candidates.");
+                    SemanticExtractor extractor = new SemanticExtractor();
+                    extractor.extractToSnapshot(snapshot, candidates);
+
+                    state.getMetadata().put("mediatedSnapshot", snapshot);
+
+                    // Construct formal TargetRealityModel
+                    context.log("[KERNEL] Discovery: Formalizing Target Reality Model.");
+                    eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel realityModel = realityDiscoveryAgent.discover(request, context, snapshot);
+                    state.getMetadata().put("targetRealityModel", realityModel);
+
                     if (profile.hasTrait(BehaviorTrait.WORKFLOW_EXPORT_ONLY)) {
-                        context.log("[KERNEL] Mediated Discovery: Building semantic repository snapshot.");
-                        TargetScanner scanner = new TargetScanner();
-                        TargetSnapshot.TargetType type = context.getProjectRoot().getAbsolutePath().contains("evolution") ? TargetSnapshot.TargetType.SELF : TargetSnapshot.TargetType.PROJECT;
-                        TargetSnapshot snapshot = scanner.scanToSnapshot(context.getProjectRoot(), type);
-
-                        // TWO-STAGE SELECTION: Heuristic pick 32 candidates before deep analysis
-                        ContextCurator curator = new ContextCurator();
-                        List<String> candidates = curator.selectContext(snapshot, request, 32);
-
-                        context.log("[KERNEL] Mediated Mode: Selective deep analysis of " + candidates.size() + " high-signal candidates.");
-                        SemanticExtractor extractor = new SemanticExtractor();
-                        extractor.extractToSnapshot(snapshot, candidates);
-
-                        state.getMetadata().put("mediatedSnapshot", snapshot);
-
                         context.log("[KERNEL] Mediated Mode: Triggering MetadataAgent repository cognition.");
                         eu.kalafatic.evolution.controller.agents.MetadataAgent metadataAgent = new eu.kalafatic.evolution.controller.agents.MetadataAgent();
                         metadataAgent.generate(context.getProjectRoot());
                     }
 
-                    context.getOrchestrationState().addDiagnostic("[OrchestrationTrace] Discovery complete. Repository-aware context initialized.");
+                    context.getOrchestrationState().addDiagnostic("[OrchestrationTrace] Discovery complete. Target Reality Model initialized.");
                 }
             }
 
@@ -1468,8 +1478,19 @@ public class IterationManager {
             MediatedExportManager exportManager = new MediatedExportManager();
             String metadataJson = snapshot.getMetadata().toString();
             String historyAnalysis = memoryService.getHistoryAnalysis();
+
+            Object realityModelObj = context.getOrchestrationState().getMetadata().get("targetRealityModel");
+            String realityModelJson = null;
+            if (realityModelObj != null) {
+                try {
+                    realityModelJson = new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(realityModelObj);
+                } catch (Exception e) {
+                    context.log("[KERNEL] Warning: Could not serialize realityModel to JSON: " + e.getMessage());
+                }
+            }
+
             context.log("[KERNEL] Mediated Mode: Final selected files for export: " + selectedPaths);
-            File exportPackage = exportManager.createExportPackage(context.getSessionId(), optimizedPrompt, selectedPaths, context.getProjectRoot(), outputPath, metadataJson, historyAnalysis, architectureSummary, dependencies, executionInstructions);
+            File exportPackage = exportManager.createExportPackage(context.getSessionId(), optimizedPrompt, selectedPaths, context.getProjectRoot(), outputPath, metadataJson, historyAnalysis, architectureSummary, dependencies, executionInstructions, realityModelJson);
 
             // Record as a change so it appears in Changes view
             context.getFileChangeTracker().recordChange(exportPackage.getName(), FileChangeTracker.ChangeType.NEW);

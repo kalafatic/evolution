@@ -47,6 +47,20 @@ public class PromptSynthesizer {
         sb.append("Architecture: ").append(snapshot.getMetadata().get("architectureInference")).append("\n");
         sb.append("Technologies: ").append(snapshot.getMetadata().get("detectedTechnologies")).append("\n\n");
 
+        eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel realityModel = (eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel) snapshot.getMetadata().get("targetRealityModel");
+        if (realityModel != null) {
+            sb.append("## DISCOVERED TARGET REALITY\n");
+            sb.append("Domain: ").append(realityModel.getDomain()).append("\n");
+            sb.append("Purpose: ").append(realityModel.getPurpose()).append("\n");
+            sb.append("Architecture: ").append(realityModel.getArchitectureSummary()).append("\n\n");
+
+            sb.append("### Identified Hotspots\n");
+            for (eu.kalafatic.evolution.controller.mediation.model.Hotspot hotspot : realityModel.getHotspots()) {
+                sb.append("- ").append(hotspot.getName()).append(" [").append(hotspot.getType()).append("]: ").append(hotspot.getDescription()).append("\n");
+            }
+            sb.append("\n");
+        }
+
         sb.append("## SELECTED CONTEXT SUMMARIES\n");
         for (String path : selectedPaths) {
             SemanticNode node = snapshot.getNodes().get(path);
