@@ -23,8 +23,9 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
     protected String getAgentInstructions() {
         return "You are a Trajectory Territory Mapper. Your goal is to DISCOVER ONE UNIQUE EVOLUTIONARY BLUEPRINT.\n" +
                "Given a goal and system context, identify a divergent architectural direction.\n" +
-               "Avoid hardcoded rules. Infer the best divergence axes (e.g., Performance vs. Resilience, Monolithic vs. Service).\n" +
-               "MANDATORY: You MUST generate a blueprint that is CONCEPTUALLY DISTINCT from any provided existing blueprints. Focus on an unexplored technical quadrant.";
+               "STRICT RULE: All blueprints MUST be descendants of the discovered Target Reality and hotspots.\n" +
+               "Avoid hardcoded rules. Infer the best divergence axes based on observed evidence.\n" +
+               "MANDATORY: You MUST generate a blueprint that is CONCEPTUALLY DISTINCT from any provided existing blueprints. Focus on an unexplored technical quadrant of the target reality.";
     }
 
     public List<TrajectoryBlueprint> map(String goal, TaskContext context, int limit) throws Exception {
@@ -39,6 +40,13 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
 
         String projectStructure = (String) context.getOrchestrationState().getMetadata().get("projectStructure");
         if (projectStructure != null) sb.append("STRUCTURE: ").append(projectStructure).append("\n");
+
+        eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel realityModel = (eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel) context.getOrchestrationState().getMetadata().get("targetRealityModel");
+        if (realityModel != null) {
+            sb.append("\nTARGET REALITY GROUNDING:\n");
+            sb.append("Domain: ").append(realityModel.getDomain()).append("\n");
+            sb.append("Hotspots: ").append(realityModel.getHotspots().stream().map(h -> h.getName()).collect(java.util.stream.Collectors.joining(", "))).append("\n");
+        }
 
         IntentExpansionResult expansion = (IntentExpansionResult) context.getMetadata().get("intentExpansion");
         if (expansion != null) {

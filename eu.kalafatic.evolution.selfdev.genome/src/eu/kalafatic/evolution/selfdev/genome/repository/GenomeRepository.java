@@ -1,0 +1,17 @@
+package eu.kalafatic.evolution.selfdev.genome.repository;
+
+import java.util.List;
+import java.util.Optional;
+
+import eu.kalafatic.evolution.selfdev.genome.core.GenomeArtifact;
+
+public interface GenomeRepository {
+
+    void save(GenomeArtifact artifact);
+
+    Optional<GenomeArtifact> findById(String id);
+
+    List<GenomeArtifact> findByTopic(String topic);
+
+    List<GenomeArtifact> findAll();
+}

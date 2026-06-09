@@ -33,15 +33,6 @@ public class ArchitecturePage extends AEvoPage {
     private DesignRenderer renderer = new DesignRenderer();
     private Runnable refreshRunnable = this::refreshBrowser;
 
-    private Adapter modelAdapter = new EContentAdapter() {
-        @Override
-        public void notifyChanged(Notification notification) {
-            super.notifyChanged(notification);
-            if (notification.isTouch()) return;
-            scheduleRefresh();
-        }
-    };
-
     public ArchitecturePage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
         super(parent, editor, orchestrator);
         this.setLayout(new GridLayout(1, false));
@@ -52,26 +43,12 @@ public class ArchitecturePage extends AEvoPage {
         this.browser.setLayoutData(new GridData(GridData.FILL_BOTH));
 
         hookContextMenu();
-        setOrchestrator(orchestrator);
         refreshBrowser();
     }
 
-    public void setOrchestrator(Orchestrator orchestrator) {
-        if (this.orchestrator != null) {
-            this.orchestrator.eAdapters().remove(modelAdapter);
-        }
-        this.orchestrator = orchestrator;
-        if (this.orchestrator != null) {
-            this.orchestrator.eAdapters().add(modelAdapter);
-        }
-    }
-
+    @Override
     public void scheduleRefresh() {
-        Display.getDefault().asyncExec(() -> {
-            if (isDisposed()) return;
-            Display.getDefault().timerExec(-1, refreshRunnable); // Cancel previous
-            Display.getDefault().timerExec(500, refreshRunnable); // Debounce
-        });
+        super.scheduleRefresh();
     }
 
     private void createControlPanel() {
@@ -248,6 +225,8 @@ public class ArchitecturePage extends AEvoPage {
             if (task.getStatus() != null) {
                 rec.getProperties().add("Status: " + task.getStatus().toString());
             }
+            if (task.getRating() > 0) rec.getProperties().add("Rating: " + task.getRating());
+
             model.getComponents().add(rec);
 
             // Relationships from task hierarchy/flow
@@ -264,6 +243,7 @@ public class ArchitecturePage extends AEvoPage {
 
         // 4. Iterations if present
         if (orchestrator.getSelfDevSession() != null) {
+            i = 0;
             for (eu.kalafatic.evolution.model.orchestration.Iteration iter : orchestrator.getSelfDevSession().getIterations()) {
                 ComponentRecord rec = new ComponentRecord();
                 String iterName = iter.getId() != null ? iter.getId() : "Iteration " + iter.hashCode();
@@ -272,8 +252,31 @@ public class ArchitecturePage extends AEvoPage {
                 rec.setX(50 + (i * 220) % 880);
                 rec.setY(250 + (i / 4) * 200);
                 if (iter.getPhase() != null) rec.getProperties().add("Phase: " + iter.getPhase());
+                if (iter.getStatus() != null) rec.getProperties().add("Status: " + iter.getStatus());
                 model.getComponents().add(rec);
                 i++;
+            }
+        }
+
+        // 4. Shared Memory elements if they look like components
+        String sharedMemory = orchestrator.getSharedMemory();
+        if (sharedMemory != null && sharedMemory.startsWith("{")) {
+            try {
+                JSONObject json = new JSONObject(sharedMemory);
+                if (json.has("components")) {
+                    JSONArray comps = json.getJSONArray("components");
+                    for (int j = 0; j < comps.length(); j++) {
+                        JSONObject c = comps.getJSONObject(j);
+                        ComponentRecord rec = new ComponentRecord();
+                        rec.setName(c.optString("name", "Unknown"));
+                        rec.setType(c.optString("type", "Component"));
+                        rec.setX(c.optInt("x", 500));
+                        rec.setY(c.optInt("y", 500));
+                        model.getComponents().add(rec);
+                    }
+                }
+            } catch (Exception e) {
+                // Ignore parsing errors for shared memory
             }
         }
 
@@ -373,13 +376,5 @@ public class ArchitecturePage extends AEvoPage {
     @Override
     protected void refreshUI() {
         refreshBrowser();
-    }
-
-    @Override
-    public void dispose() {
-        if (orchestrator != null) {
-            orchestrator.eAdapters().remove(modelAdapter);
-        }
-        super.dispose();
     }
 }

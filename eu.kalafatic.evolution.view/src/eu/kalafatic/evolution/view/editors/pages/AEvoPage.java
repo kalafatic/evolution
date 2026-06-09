@@ -3,6 +3,9 @@ package eu.kalafatic.evolution.view.editors.pages;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
+import org.eclipse.emf.common.notify.Adapter;
+import org.eclipse.emf.common.notify.Notification;
+import org.eclipse.emf.ecore.util.EContentAdapter;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.widgets.Button;
@@ -33,6 +36,15 @@ public abstract class AEvoPage extends SharedScrolledComposite implements Runtim
     protected AtomicBoolean refreshPending = new AtomicBoolean(false);
     protected boolean needsRefresh = false;
 
+    protected Adapter modelAdapter = new EContentAdapter() {
+        @Override
+        public void notifyChanged(Notification notification) {
+            super.notifyChanged(notification);
+            if (notification.isTouch()) return;
+            scheduleRefresh();
+        }
+    };
+
     private final Consumer<RuntimeProjection> projectionObserver = projection -> {
         if (!isDisposed() && projection.getSessionId().equals(getCurrentSessionName())) {
             scheduleRefresh();
@@ -49,6 +61,9 @@ public abstract class AEvoPage extends SharedScrolledComposite implements Runtim
         setExpandVertical(true);
 
         ProjectionService.getInstance().subscribe(projectionObserver);
+        if (this.orchestrator != null) {
+            this.orchestrator.eAdapters().add(modelAdapter);
+        }
     }
 
     protected String getCurrentSessionName() {
@@ -199,7 +214,13 @@ public abstract class AEvoPage extends SharedScrolledComposite implements Runtim
     }
 
     public void setOrchestrator(Orchestrator orchestrator) {
+        if (this.orchestrator != null) {
+            this.orchestrator.eAdapters().remove(modelAdapter);
+        }
         this.orchestrator = orchestrator;
+        if (this.orchestrator != null) {
+            this.orchestrator.eAdapters().add(modelAdapter);
+        }
         scheduleRefresh();
     }
 
@@ -210,6 +231,9 @@ public abstract class AEvoPage extends SharedScrolledComposite implements Runtim
     @Override
     public void dispose() {
         ProjectionService.getInstance().unsubscribe(projectionObserver);
+        if (this.orchestrator != null) {
+            this.orchestrator.eAdapters().remove(modelAdapter);
+        }
         if (toolkit != null) {
             toolkit.dispose();
         }
