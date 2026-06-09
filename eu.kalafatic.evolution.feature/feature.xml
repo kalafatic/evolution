@@ -44,4 +44,8 @@
          id="eu.kalafatic.evolution.tests"
          version="0.0.0"/>
 
+   <plugin
+         id="eu.kalafatic.evolution.selfdev.genome"
+         version="0.0.0"/>
+
 </feature>

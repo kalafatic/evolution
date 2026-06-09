@@ -27,6 +27,7 @@
 		<module>eu.kalafatic.evolution.repository</module>
 		<module>eu.kalafatic.evolution.module</module>
 		<module>eu.kalafatic.evolution.quality.tests</module>
+		<module>eu.kalafatic.evolution.selfdev.genome</module>
 	</modules>
 
 	<build>
