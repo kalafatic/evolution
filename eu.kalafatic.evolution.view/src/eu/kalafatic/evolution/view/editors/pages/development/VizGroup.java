@@ -79,8 +79,6 @@ public class VizGroup extends AEvoGroup {
            GUIFactory.INSTANCE.createMaximizeButton(toolbar, section, false);
            
            section.setTextClient(toolbar);
-
-           hookContextMenu(page);
         }
 
         Composite browserContainer = toolkit.createComposite(group);
@@ -91,6 +89,7 @@ public class VizGroup extends AEvoGroup {
 		browser = GUIFactory.INSTANCE.createBrowser(browserContainer,700);
           
             page.setupBrowserListeners(browser);
+            hookContextMenu(page);
             
             
         } catch (Exception e) {

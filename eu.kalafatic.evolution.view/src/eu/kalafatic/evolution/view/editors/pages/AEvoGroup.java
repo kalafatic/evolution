@@ -151,17 +151,24 @@ public abstract class AEvoGroup {
         }
     }
 
+    protected Color getSafeColor(Color color) {
+        if (color == null || color.isDisposed()) return null;
+        return color;
+    }
+
     protected void setBackgroundSafe(Control control, Color color) {
         if (control == null || control.isDisposed()) return;
-        if (color != null && !color.equals(control.getBackground())) {
-            control.setBackground(color);
+        Color safeColor = getSafeColor(color);
+        if (safeColor != null && !safeColor.equals(control.getBackground())) {
+            control.setBackground(safeColor);
         }
     }
 
     protected void setForegroundSafe(Control control, Color color) {
         if (control == null || control.isDisposed()) return;
-        if (color != null && !color.equals(control.getForeground())) {
-            control.setForeground(color);
+        Color safeColor = getSafeColor(color);
+        if (safeColor != null && !safeColor.equals(control.getForeground())) {
+            control.setForeground(safeColor);
         }
     }
 
