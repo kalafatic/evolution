@@ -489,7 +489,6 @@ public class OrchestratorServiceImpl implements OrchestratorService {
 
             if (agentType.contains("darwin-branches")) {
                  content = content.replace(approvedMatcher.group(0), "").trim();
-                 content = content.replaceAll("\\[[\\s\\S]*\\]", "").trim();
                  if (content.isEmpty()) content = "Evolution variant " + variantId + " " + status + ".";
             } else {
                  content = content.replace(approvedMatcher.group(0), "").trim();
@@ -528,6 +527,7 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                         .replaceAll("\\[DARWINENGINE\\]", "")
                         .replaceAll("\\[THINKING\\]", "")
                         .replaceAll("\\[ORCHESTRATOR\\]", "")
+                        .replaceAll("\\[(APPROVED|REJECTED|KEPT):[^]]+\\]", "")
                         .trim();
 
         ConversationOutputController.getInstance().submitMessage(sessionId, turnId, sender, content, agentType, priority, priority == MessagePriority.FINAL);

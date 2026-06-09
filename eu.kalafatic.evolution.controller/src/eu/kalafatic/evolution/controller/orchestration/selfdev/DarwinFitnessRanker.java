@@ -130,11 +130,18 @@ public class DarwinFitnessRanker {
 
         // 4. Divergence Penalty (Penalize generic technology labels in favor of structural descriptions)
         String summary = med.optString("architecture_summary").toLowerCase();
-        if (summary.contains("java project") || summary.contains("arduino sketch") || summary.contains("spring boot")) {
-            medScore -= 0.05; // Discourage hardcoded label usage in summaries
+        if (summary.contains("java project") || summary.contains("arduino sketch") || summary.contains("spring boot") || summary.contains("maven") || summary.contains("gradle")) {
+            medScore -= 0.1; // Discourage hardcoded technology labels (Low Signal)
         }
-        if (summary.contains("coordinator") || summary.contains("entry") || summary.contains("topology") || summary.contains("bottleneck")) {
-            medScore += 0.05; // Reward structural/topological descriptions
+        if (summary.contains("coordinator") || summary.contains("entry") || summary.contains("topology") || summary.contains("bottleneck") || summary.contains("flow") || summary.contains("core")) {
+            medScore += 0.1; // Reward structural/topological descriptions (High Signal)
+        }
+
+        // 5. Ratio Optimization (Understanding / Context)
+        JSONArray selectedFiles = med.optJSONArray("selected_files");
+        if (selectedFiles != null && selectedFiles.length() > 0) {
+            double ratio = (double) med.optString("architecture_summary").length() / selectedFiles.length();
+            if (ratio > 50) medScore += 0.1; // High information density per file
         }
 
         return medScore;
