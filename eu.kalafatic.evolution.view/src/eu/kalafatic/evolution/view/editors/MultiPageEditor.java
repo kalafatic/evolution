@@ -71,6 +71,7 @@ import eu.kalafatic.evolution.view.editors.pages.PeerReviewPage;
 import eu.kalafatic.evolution.view.editors.pages.PreviewPage;
 import eu.kalafatic.evolution.view.editors.pages.PropertiesPage;
 import eu.kalafatic.evolution.view.editors.pages.ServerPage;
+import eu.kalafatic.evolution.view.editors.pages.SettingsPage;
 import eu.kalafatic.evolution.view.editors.pages.TaskStackPage;
 import eu.kalafatic.evolution.view.editors.pages.TestsPage;
 import eu.kalafatic.evolution.view.editors.pages.ToolsPage;
@@ -97,6 +98,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
     private PeerReviewPage peerReviewPage;
     private ComparePage comparePage;
     private ServerPage serverPage;
+    private SettingsPage settingsPage;
 
     private Orchestrator orchestrator;
     private TaskContext currentContext;
@@ -222,6 +224,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
                 graphPage = GraphPageFactory.createGraphPage(this, orchestrator);
                 comparePage = ComparePageFactory.createComparePage(this, orchestrator);
                 serverPage = ServerPageFactory.createServerPage(this, orchestrator);
+                settingsPage = SettingsPageFactory.createSettingsPage(this, orchestrator);
             } else {
                 Composite placeholder = new Composite(getContainer(), SWT.NONE);
                 placeholder.setLayout(new FillLayout());
@@ -406,6 +409,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
         if (taskStackPage != null) taskStackPage.setOrchestrator(orchestrator);
         if (contextPage != null) contextPage.setOrchestrator(orchestrator);
         if (serverPage != null) serverPage.setOrchestrator(orchestrator);
+        if (settingsPage != null) settingsPage.setOrchestrator(orchestrator);
     }
 
     public void reloadModel() {
@@ -451,6 +455,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
         if (mcpSettingsPage != null) mcpSettingsPage.scheduleRefresh();
         if (contextPage != null) contextPage.refreshUI(); // TODO: refactor ContextPage if needed
         if (serverPage != null) serverPage.scheduleRefresh();
+        if (settingsPage != null) settingsPage.scheduleRefresh();
         if (approvalPage != null) approvalPage.scheduleRefresh();
         if (developmentPage != null) developmentPage.scheduleRefresh();
 

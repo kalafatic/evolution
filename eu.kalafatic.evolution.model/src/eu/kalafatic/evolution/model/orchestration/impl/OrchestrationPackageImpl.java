@@ -29,6 +29,7 @@ import eu.kalafatic.evolution.model.orchestration.LogLevel;
 import eu.kalafatic.evolution.model.orchestration.Maven;
 import eu.kalafatic.evolution.model.orchestration.MemoryRule;
 import eu.kalafatic.evolution.model.orchestration.MonitoringData;
+import eu.kalafatic.evolution.model.orchestration.NetworkEntry;
 import eu.kalafatic.evolution.model.orchestration.NetworkRule;
 import eu.kalafatic.evolution.model.orchestration.NeuronAI;
 import eu.kalafatic.evolution.model.orchestration.NeuronType;
@@ -83,9 +84,98 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	private EClass networkEntryEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@Override
 	public EAttribute getChatSession_AiMode() {
 		return (EAttribute)chatSessionEClass.getEStructuralFeatures().get(12);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getOrchestrator_NetworkEntries() {
+		return (EReference)orchestratorEClass.getEStructuralFeatures().get(31);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getNetworkEntry() {
+		return networkEntryEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getNetworkEntry_Address() {
+		return (EAttribute)networkEntryEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getNetworkEntry_Host() {
+		return (EAttribute)networkEntryEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getNetworkEntry_Port() {
+		return (EAttribute)networkEntryEClass.getEStructuralFeatures().get(2);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getNetworkEntry_Login() {
+		return (EAttribute)networkEntryEClass.getEStructuralFeatures().get(3);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getNetworkEntry_Note() {
+		return (EAttribute)networkEntryEClass.getEStructuralFeatures().get(4);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getNetworkEntry_Type() {
+		return (EAttribute)networkEntryEClass.getEStructuralFeatures().get(5);
 	}
 
 	/**
@@ -3552,6 +3642,15 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEReference(orchestratorEClass, ORCHESTRATOR__SERVER_SESSIONS);
 		createEReference(orchestratorEClass, ORCHESTRATOR__MONITORING_HISTORY);
 		createEReference(orchestratorEClass, ORCHESTRATOR__SUPERVISOR_SETTINGS);
+		createEReference(orchestratorEClass, ORCHESTRATOR__NETWORK_ENTRIES);
+
+		networkEntryEClass = createEClass(NETWORK_ENTRY);
+		createEAttribute(networkEntryEClass, NETWORK_ENTRY__ADDRESS);
+		createEAttribute(networkEntryEClass, NETWORK_ENTRY__HOST);
+		createEAttribute(networkEntryEClass, NETWORK_ENTRY__PORT);
+		createEAttribute(networkEntryEClass, NETWORK_ENTRY__LOGIN);
+		createEAttribute(networkEntryEClass, NETWORK_ENTRY__NOTE);
+		createEAttribute(networkEntryEClass, NETWORK_ENTRY__TYPE);
 
 		serverSettingsEClass = createEClass(SERVER_SETTINGS);
 		createEAttribute(serverSettingsEClass, SERVER_SETTINGS__PORT);
@@ -3923,6 +4022,15 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEReference(getOrchestrator_ServerSessions(), this.getServerSession(), null, "serverSessions", null, 0, -1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getOrchestrator_MonitoringHistory(), this.getMonitoringData(), null, "monitoringHistory", null, 0, -1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getOrchestrator_SupervisorSettings(), this.getSupervisorSettings(), null, "supervisorSettings", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getOrchestrator_NetworkEntries(), this.getNetworkEntry(), null, "networkEntries", null, 0, -1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(networkEntryEClass, NetworkEntry.class, "NetworkEntry", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getNetworkEntry_Address(), ecorePackage.getEString(), "address", null, 0, 1, NetworkEntry.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getNetworkEntry_Host(), ecorePackage.getEString(), "host", null, 0, 1, NetworkEntry.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getNetworkEntry_Port(), ecorePackage.getEInt(), "port", null, 0, 1, NetworkEntry.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getNetworkEntry_Login(), ecorePackage.getEString(), "login", null, 0, 1, NetworkEntry.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getNetworkEntry_Note(), ecorePackage.getEString(), "note", null, 0, 1, NetworkEntry.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getNetworkEntry_Type(), ecorePackage.getEString(), "type", null, 0, 1, NetworkEntry.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(supervisorSettingsEClass, SupervisorSettings.class, "SupervisorSettings", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getSupervisorSettings_ExecutablePath(), ecorePackage.getEString(), "executablePath", null, 0, 1, SupervisorSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);

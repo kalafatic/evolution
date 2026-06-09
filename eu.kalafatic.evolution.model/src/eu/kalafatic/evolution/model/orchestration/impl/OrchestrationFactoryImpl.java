@@ -30,6 +30,7 @@ import eu.kalafatic.evolution.model.orchestration.LogLevel;
 import eu.kalafatic.evolution.model.orchestration.Maven;
 import eu.kalafatic.evolution.model.orchestration.MemoryRule;
 import eu.kalafatic.evolution.model.orchestration.MonitoringData;
+import eu.kalafatic.evolution.model.orchestration.NetworkEntry;
 import eu.kalafatic.evolution.model.orchestration.NetworkRule;
 import eu.kalafatic.evolution.model.orchestration.NeuronAI;
 import eu.kalafatic.evolution.model.orchestration.NeuronType;
@@ -104,8 +105,20 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
+	public NetworkEntry createNetworkEntry() {
+		NetworkEntryImpl networkEntry = new NetworkEntryImpl();
+		return networkEntry;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public EObject create(EClass eClass) {
 		switch (eClass.getClassifierID()) {
+			case OrchestrationPackage.NETWORK_ENTRY: return createNetworkEntry();
 			case OrchestrationPackage.TASK: return createTask();
 			case OrchestrationPackage.AGENT: return createAgent();
 			case OrchestrationPackage.ORCHESTRATOR: return createOrchestrator();
