@@ -20,6 +20,7 @@ import org.eclipse.ui.ide.IDE;
 import org.osgi.framework.Bundle;
 
 import eu.kalafatic.evolution.model.orchestration.Agent;
+import eu.kalafatic.evolution.model.orchestration.ChatSession;
 import eu.kalafatic.evolution.model.orchestration.EvoProject;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.Task;
@@ -77,6 +78,9 @@ public class OrchestrationNavigatorLabelProvider extends LabelProvider implement
                 return "Iteration " + ((eu.kalafatic.evolution.model.orchestration.Iteration) element).getId();
             } else if (element instanceof eu.kalafatic.evolution.model.orchestration.EvaluationResult) {
                 return "Evaluation";
+            } else if (element instanceof ChatSession) {
+                String id = ((ChatSession) element).getId();
+                return id != null ? id : "Chat Session";
             } else if (element instanceof ModelProperty) {
                 return ((ModelProperty) element).label;
             }
@@ -154,6 +158,9 @@ public class OrchestrationNavigatorLabelProvider extends LabelProvider implement
             return "Iteration " + ((eu.kalafatic.evolution.model.orchestration.Iteration) element).getId() + " [" + ((eu.kalafatic.evolution.model.orchestration.Iteration) element).getPhase() + "]";
         } else if (element instanceof eu.kalafatic.evolution.model.orchestration.EvaluationResult) {
             return "Evaluation [Satisfaction: " + ((eu.kalafatic.evolution.model.orchestration.EvaluationResult) element).getUserSatisfaction() + "]";
+        } else if (element instanceof ChatSession) {
+            String id = ((ChatSession) element).getId();
+            return id != null ? id : "Chat Session";
         } else if (element instanceof ModelProperty) {
             return ((ModelProperty) element).label;
         }
@@ -186,15 +193,15 @@ public class OrchestrationNavigatorLabelProvider extends LabelProvider implement
         } else if (element instanceof Orchestrator) {
             return getCachedImage("eu.kalafatic.evolution.view", "icons/evo_orchestrate.svg");
         } else if (element instanceof Agent) {
-            return getCachedImage("eu.kalafatic.evolution.view", "icons/evo_model.svg");
+            return getCachedImage("eu.kalafatic.evolution.view", "icons/agent.png");
         } else if (element instanceof Task) {
             return getCachedImage("eu.kalafatic.evolution.view", "icons/evo_task.svg");
         } else if (element instanceof Git) {
-            return getCachedImage("eu.kalafatic.evolution.view", "icons/evo_settings.svg");
+            return getCachedImage("eu.kalafatic.evolution.view", "icons/evo_navigator.svg");
         } else if (element instanceof Maven) {
             return getCachedImage("eu.kalafatic.evolution.view", "icons/evo_graph.svg");
         } else if (element instanceof LLM) {
-            return getCachedImage("eu.kalafatic.evolution.view", "icons/evo_settings.svg");
+            return getCachedImage("eu.kalafatic.evolution.view", "icons/evo_model.svg");
         } else if (element instanceof Compiler) {
             return getCachedImage("eu.kalafatic.evolution.view", "icons/evo_stack.svg");
         } else if (element instanceof Ollama) {
@@ -202,7 +209,7 @@ public class OrchestrationNavigatorLabelProvider extends LabelProvider implement
         } else if (element instanceof AiChat) {
             return getCachedImage("eu.kalafatic.evolution.view", "icons/evo_chat.svg");
         } else if (element instanceof NeuronAI) {
-            return getCachedImage("eu.kalafatic.evolution.view", "icons/evo_settings.svg");
+            return getCachedImage("eu.kalafatic.evolution.view", "icons/evo_diagram.svg");
         } else if (element instanceof SupervisorSettings) {
             return getCachedImage("eu.kalafatic.evolution.view", "icons/orchestrator.png");
         } else if (element instanceof eu.kalafatic.evolution.model.orchestration.SelfDevSession) {
@@ -211,6 +218,8 @@ public class OrchestrationNavigatorLabelProvider extends LabelProvider implement
             return getCachedImage("eu.kalafatic.evolution.view", "icons/evo_task.svg");
         } else if (element instanceof eu.kalafatic.evolution.model.orchestration.EvaluationResult) {
             return getCachedImage("eu.kalafatic.evolution.view", "icons/evo_settings.svg");
+        } else if (element instanceof ChatSession) {
+            return getCachedImage("eu.kalafatic.evolution.view", "icons/evo_chat.svg");
         } else if (element instanceof ModelProperty) {
             return getCachedImage("eu.kalafatic.evolution.view", "icons/evo_settings.svg");
         }

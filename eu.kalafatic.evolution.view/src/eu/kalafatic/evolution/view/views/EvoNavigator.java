@@ -23,7 +23,15 @@ import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TextCellEditor;
 import org.eclipse.jface.viewers.TreeViewerColumn;
 import eu.kalafatic.evolution.view.provider.OrchestrationNavigatorContentProvider.ModelProperty;
+import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.ui.IDecoratorManager;
+import org.eclipse.jface.viewers.Viewer;
+import org.eclipse.jface.viewers.ViewerFilter;
+import org.eclipse.swt.events.ModifyEvent;
+import org.eclipse.swt.events.ModifyListener;
+import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.navigator.CommonNavigator;
@@ -34,7 +42,7 @@ public class EvoNavigator extends CommonNavigator {
 	private final Lock lock = new ReentrantLock(true);
 
 	/** The actions. */
-	private Action expandAllAction, collapseAllAction;
+	private Action expandAllAction, collapseAllAction, refreshAction;
 
 	public EvoNavigator() {
 		super();
@@ -45,9 +53,48 @@ public class EvoNavigator extends CommonNavigator {
         return ResourcesPlugin.getWorkspace().getRoot();
     }
 
+	private Text filterText;
+	private String pattern = "";
+
 	@Override
 	public void createPartControl(final Composite parent) {
-		super.createPartControl(parent);
+		Composite container = new Composite(parent, SWT.NONE);
+		GridLayout layout = new GridLayout(1, false);
+		layout.marginHeight = 0;
+		layout.marginWidth = 0;
+		layout.verticalSpacing = 0;
+		container.setLayout(layout);
+
+		filterText = new Text(container, SWT.SEARCH | SWT.ICON_SEARCH | SWT.ICON_CANCEL);
+		filterText.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
+		filterText.setMessage("Filter elements...");
+		filterText.addModifyListener(new ModifyListener() {
+			@Override
+			public void modifyText(ModifyEvent e) {
+				pattern = filterText.getText().toLowerCase();
+				getCommonViewer().refresh();
+			}
+		});
+
+		super.createPartControl(container);
+		getCommonViewer().getControl().setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+
+		getCommonViewer().addFilter(new ViewerFilter() {
+			@Override
+			public boolean select(Viewer viewer, Object parentElement, Object element) {
+				if (pattern.isEmpty()) return true;
+				String text = ((org.eclipse.jface.viewers.ILabelProvider) getCommonViewer().getLabelProvider()).getText(element);
+				if (text != null && text.toLowerCase().contains(pattern)) return true;
+
+				// Recursive check for children
+				ITreeContentProvider cp = (ITreeContentProvider) getCommonViewer().getContentProvider();
+				for (Object child : cp.getChildren(element)) {
+					if (select(viewer, element, child)) return true;
+				}
+
+				return false;
+			}
+		});
 
 		Tree tree = getCommonViewer().getTree();
 		tree.setHeaderVisible(true);
@@ -140,6 +187,8 @@ public class EvoNavigator extends CommonNavigator {
 	private void fillLocalPullDown(IMenuManager manager) {
 		manager.add(expandAllAction);
 		manager.add(collapseAllAction);
+		manager.add(new Separator());
+		manager.add(refreshAction);
 	}
 
 	/**
@@ -150,6 +199,8 @@ public class EvoNavigator extends CommonNavigator {
 	private void fillLocalToolBar(IToolBarManager manager) {
 		manager.add(expandAllAction);
 		manager.add(collapseAllAction);
+		manager.add(new Separator());
+		manager.add(refreshAction);
 	}
 
 	/**
@@ -173,6 +224,15 @@ public class EvoNavigator extends CommonNavigator {
 		};
 		collapseAllAction.setToolTipText("Collapse All");
 		collapseAllAction.setImageDescriptor(PlatformUI.getWorkbench().getSharedImages().getImageDescriptor(ISharedImages.IMG_ELCL_COLLAPSEALL));
+
+		refreshAction = new Action("Refresh") {
+			@Override
+			public void run() {
+				refresh();
+			}
+		};
+		refreshAction.setToolTipText("Refresh");
+		refreshAction.setImageDescriptor(PlatformUI.getWorkbench().getSharedImages().getImageDescriptor(ISharedImages.IMG_ELCL_SYNCED));
 	}
 
 	/**
