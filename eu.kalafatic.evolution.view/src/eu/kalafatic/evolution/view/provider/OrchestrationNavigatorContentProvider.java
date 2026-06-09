@@ -139,6 +139,10 @@ public class OrchestrationNavigatorContentProvider implements ITreeContentProvid
             children.add(new ModelProperty(orch, OrchestrationPackage.Literals.ORCHESTRATOR__DARWIN_MODE, "Darwin Mode"));
             children.add(new ModelProperty(orch, OrchestrationPackage.Literals.ORCHESTRATOR__OFFLINE_MODE, "Offline Mode"));
 
+            if (orch.getSelfDevSession() != null) {
+                children.add(orch.getSelfDevSession());
+            }
+
             children.addAll(orch.getAgents());
             children.addAll(orch.getTasks());
             if (orch.getGit() != null) children.add(orch.getGit());
@@ -239,6 +243,21 @@ public class OrchestrationNavigatorContentProvider implements ITreeContentProvid
             children.add(new ModelProperty(s, OrchestrationPackage.Literals.CHAT_SESSION__ITERATIVE_MODE, "Iterative"));
             children.add(new ModelProperty(s, OrchestrationPackage.Literals.CHAT_SESSION__DARWIN_MODE, "Darwin"));
             children.add(new ModelProperty(s, OrchestrationPackage.Literals.CHAT_SESSION__AUTO_APPROVE, "Auto Approve"));
+            return children.toArray();
+        } else if (parentElement instanceof eu.kalafatic.evolution.model.orchestration.SelfDevSession) {
+            eu.kalafatic.evolution.model.orchestration.SelfDevSession s = (eu.kalafatic.evolution.model.orchestration.SelfDevSession) parentElement;
+            List<Object> children = new ArrayList<>();
+            children.add(new ModelProperty(s, OrchestrationPackage.Literals.SELF_DEV_SESSION__STATUS, "Status"));
+            children.add(new ModelProperty(s, OrchestrationPackage.Literals.SELF_DEV_SESSION__MAX_ITERATIONS, "Max Iterations"));
+            children.addAll(s.getIterations());
+            return children.toArray();
+        } else if (parentElement instanceof eu.kalafatic.evolution.model.orchestration.Iteration) {
+            eu.kalafatic.evolution.model.orchestration.Iteration i = (eu.kalafatic.evolution.model.orchestration.Iteration) parentElement;
+            List<Object> children = new ArrayList<>();
+            children.add(new ModelProperty(i, OrchestrationPackage.Literals.ITERATION__PHASE, "Phase"));
+            if (i.getEvaluationResult() != null) {
+                children.add(i.getEvaluationResult());
+            }
             return children.toArray();
         }
         return new Object[0];

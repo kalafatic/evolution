@@ -111,11 +111,9 @@ public class AiChatPage extends AEvoPage {
 	private int editingMessageIndex = -1;
 	private String editingVariantId = null;
 
-	private final java.util.function.Consumer<RuntimeProjection> projectionObserver = projection -> {
+	private final java.util.function.Consumer<RuntimeProjection> chatProjectionObserver = projection -> {
 		if (isDisposed()) return;
 		if (projection.getSessionId().equals(getCurrentSessionName())) {
-			scheduleRefresh();
-
 			// Handle special view updates from projection (like token requests)
 			projection.getEvents().stream()
 				.filter(e -> e.getType() == RuntimeEventType.VIEW_UPDATED && "TokenRequest".equals(e.getSource()))
@@ -123,6 +121,7 @@ public class AiChatPage extends AEvoPage {
 				.ifPresent(e -> {
 					Object[] payload = (Object[]) e.getPayload();
 					String provider = (String) payload[0];
+					@SuppressWarnings("unchecked")
 					java.util.concurrent.CompletableFuture<String> future = (java.util.concurrent.CompletableFuture<String>) payload[1];
 					if (!future.isDone()) {
 						Display.getDefault().asyncExec(() -> {
@@ -164,11 +163,11 @@ public class AiChatPage extends AEvoPage {
 		this.outputController = ConversationOutputController.getInstance();
 		this.outputController.subscribe(messageSubscriber);
 		createControl();
-		ProjectionService.getInstance().subscribe(projectionObserver);
+		ProjectionService.getInstance().subscribe(chatProjectionObserver);
 		addDisposeListener(new DisposeListener() {
 			@Override
 			public void widgetDisposed(DisposeEvent e) {
-				ProjectionService.getInstance().unsubscribe(projectionObserver);
+				ProjectionService.getInstance().unsubscribe(chatProjectionObserver);
 				if (outputController != null) outputController.unsubscribe(messageSubscriber);
 
 				// Shut down all sessions associated with this page/orchestrator

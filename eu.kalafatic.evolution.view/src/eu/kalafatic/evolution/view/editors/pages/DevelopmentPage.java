@@ -52,7 +52,7 @@ import eu.kalafatic.evolution.view.editors.pages.development.VizGroup;
 import eu.kalafatic.evolution.view.editors.pages.iteration.SelfDevEditDialog;
 import eu.kalafatic.utils.factories.GUIFactory;
 
-public class DevelopmentPage extends AEvoPage implements RuntimeEventListener {
+public class DevelopmentPage extends AEvoPage {
 
     public static class SelfDevRow {
         public static final String SELF_DEV_LOOP = "Self-Dev Loop";
@@ -96,12 +96,6 @@ public class DevelopmentPage extends AEvoPage implements RuntimeEventListener {
         initImageRegistry();
         initMemoryService();
         createControl();
-
-        ProjectionService.getInstance().subscribe(p -> {
-            if (p.getSessionId().equals(getCurrentSessionName())) {
-                scheduleRefresh();
-            }
-        });
     }
 
     private void initImageRegistry() {
@@ -296,9 +290,10 @@ public class DevelopmentPage extends AEvoPage implements RuntimeEventListener {
         return viewerColumn;
     }
 
-    private String getCurrentSessionName() {
+    @Override
+    protected String getCurrentSessionName() {
         return (orchestrator != null && orchestrator.getSelfDevSession() != null) ?
-                orchestrator.getSelfDevSession().getId() : "Default";
+                orchestrator.getSelfDevSession().getId() : super.getCurrentSessionName();
     }
 
     private void handleSelfDevAction(SelfDevRow row, int columnIndex) {

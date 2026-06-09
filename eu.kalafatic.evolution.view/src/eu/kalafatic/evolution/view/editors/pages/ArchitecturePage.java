@@ -28,10 +28,8 @@ import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 /**
  * @evo:19:A reason=dynamic-architecture-page
  */
-public class ArchitecturePage extends Composite {
+public class ArchitecturePage extends AEvoPage {
     private Browser browser;
-    private Orchestrator orchestrator;
-    private MultiPageEditor editor;
     private DesignRenderer renderer = new DesignRenderer();
     private Runnable refreshRunnable = this::refreshBrowser;
 
@@ -45,8 +43,7 @@ public class ArchitecturePage extends Composite {
     };
 
     public ArchitecturePage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
-        super(parent, SWT.NONE);
-        this.editor = editor;
+        super(parent, editor, orchestrator);
         this.setLayout(new GridLayout(1, false));
 
         createControlPanel();
@@ -54,6 +51,7 @@ public class ArchitecturePage extends Composite {
         this.browser = new Browser(this, SWT.NONE);
         this.browser.setLayoutData(new GridData(GridData.FILL_BOTH));
 
+        hookContextMenu();
         setOrchestrator(orchestrator);
         refreshBrowser();
     }
@@ -77,42 +75,44 @@ public class ArchitecturePage extends Composite {
     }
 
     private void createControlPanel() {
-        Composite panel = new Composite(this, SWT.NONE);
-        panel.setLayout(new GridLayout(2, false));
-        panel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        Composite toolbarComp = new Composite(this, SWT.NONE);
+        toolbarComp.setLayout(new org.eclipse.swt.layout.FillLayout());
+        toolbarComp.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
 
-        Button exportBtn = new Button(panel, SWT.PUSH);
-        exportBtn.setText("Export Architecture (HTML)");
-        exportBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
-            @Override
-            public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
-                handleExport();
-            }
-        });
+        org.eclipse.jface.action.ToolBarManager mgr = new org.eclipse.jface.action.ToolBarManager(SWT.FLAT | SWT.RIGHT);
+        mgr.createControl(toolbarComp);
 
-        Button saveBtn = new Button(panel, SWT.PUSH);
-        saveBtn.setText("Save Design Model (JSON)");
-        saveBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
-            @Override
-            public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
-                handleSaveModel();
-            }
-        });
+        mgr.add(new org.eclipse.jface.action.Action("Refresh") { @Override public void run() { scheduleRefresh(); } });
+        mgr.add(new org.eclipse.jface.action.Separator());
+        mgr.add(new org.eclipse.jface.action.Action("Zoom In") { @Override public void run() { if (browser != null) browser.execute("document.body.style.zoom = (parseFloat(document.body.style.zoom || 1) + 0.1);"); } });
+        mgr.add(new org.eclipse.jface.action.Action("Zoom Out") { @Override public void run() { if (browser != null) browser.execute("document.body.style.zoom = (parseFloat(document.body.style.zoom || 1) - 0.1);"); } });
+        mgr.add(new org.eclipse.jface.action.Action("Reset Zoom") { @Override public void run() { if (browser != null) browser.execute("document.body.style.zoom = 1.0;"); } });
+        mgr.add(new org.eclipse.jface.action.Separator());
+        mgr.add(new org.eclipse.jface.action.Action("Export HTML") { @Override public void run() { handleExport(); } });
+        mgr.add(new org.eclipse.jface.action.Action("Save JSON") { @Override public void run() { handleSaveModel(); } });
+        mgr.add(new org.eclipse.jface.action.Separator());
+        mgr.add(new org.eclipse.jface.action.Action("Generate Metadata") { @Override public void run() { handleGenerateMetadata(); } });
 
-        Group metaGroup = new Group(panel, SWT.NONE);
-        metaGroup.setText("Metadata");
-        metaGroup.setLayout(new GridLayout(1, false));
-        metaGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        mgr.update(true);
+    }
 
-        Button generateMetaBtn = new Button(metaGroup, SWT.PUSH);
-        generateMetaBtn.setText("Generate AI Metadata");
-        generateMetaBtn.setToolTipText("Generate .ai.json sidecar files for this project");
-        generateMetaBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
-            @Override
-            public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
-                handleGenerateMetadata();
-            }
-        });
+    private void hookContextMenu() {
+        org.eclipse.jface.action.MenuManager menuMgr = new org.eclipse.jface.action.MenuManager("#PopupMenu");
+        menuMgr.setRemoveAllWhenShown(true);
+        menuMgr.addMenuListener(manager -> fillContextMenu(manager));
+        org.eclipse.swt.widgets.Menu menu = menuMgr.createContextMenu(browser);
+        browser.setMenu(menu);
+    }
+
+    private void fillContextMenu(org.eclipse.jface.action.IMenuManager manager) {
+        manager.add(new org.eclipse.jface.action.Action("Refresh") { @Override public void run() { scheduleRefresh(); } });
+        manager.add(new org.eclipse.jface.action.Separator());
+        manager.add(new org.eclipse.jface.action.Action("Zoom In") { @Override public void run() { if (browser != null) browser.execute("document.body.style.zoom = (parseFloat(document.body.style.zoom || 1) + 0.1);"); } });
+        manager.add(new org.eclipse.jface.action.Action("Zoom Out") { @Override public void run() { if (browser != null) browser.execute("document.body.style.zoom = (parseFloat(document.body.style.zoom || 1) - 0.1);"); } });
+        manager.add(new org.eclipse.jface.action.Action("Reset Zoom") { @Override public void run() { if (browser != null) browser.execute("document.body.style.zoom = 1.0;"); } });
+        manager.add(new org.eclipse.jface.action.Separator());
+        manager.add(new org.eclipse.jface.action.Action("Export Architecture (HTML)") { @Override public void run() { handleExport(); } });
+        manager.add(new org.eclipse.jface.action.Action("Save Design Model (JSON)") { @Override public void run() { handleSaveModel(); } });
     }
 
     private void handleGenerateMetadata() {
@@ -191,47 +191,63 @@ public class ArchitecturePage extends Composite {
         DesignModel model = new DesignModel();
         if (orchestrator == null) return model;
 
-        String jsonStr = orchestrator.getSharedMemory();
-        if (jsonStr == null || jsonStr.isEmpty() || !jsonStr.trim().startsWith("{")) {
+        model.setName(orchestrator.getName() != null ? orchestrator.getName() : "Evolution Architecture");
+
+        int i = 0;
+        // 1. Agents as components
+        for (eu.kalafatic.evolution.model.orchestration.Agent agent : orchestrator.getAgents()) {
+            ComponentRecord rec = new ComponentRecord();
+            rec.setName(agent.getId());
+            rec.setType(agent.getType() != null ? agent.getType() : "Agent");
+            rec.setX(50 + (i * 220) % 880);
+            rec.setY(50 + (i / 4) * 200);
+            model.getComponents().add(rec);
+            i++;
+        }
+
+        // 2. Tasks as components
+        for (eu.kalafatic.evolution.model.orchestration.Task task : orchestrator.getTasks()) {
+            ComponentRecord rec = new ComponentRecord();
+            rec.setName(task.getName() != null ? task.getName() : (task.getId() != null ? task.getId() : "Task " + task.hashCode()));
+            rec.setType("Task");
+            rec.setX(50 + (i * 220) % 880);
+            rec.setY(50 + (i / 4) * 200);
+
+            if (task.getStatus() != null) {
+                rec.getProperties().add("Status: " + task.getStatus().toString());
+            }
+            model.getComponents().add(rec);
+
+            // Relationships from task hierarchy/flow
+            for (eu.kalafatic.evolution.model.orchestration.Task next : task.getNext()) {
+                RelationshipRecord rel = new RelationshipRecord();
+                rel.setFrom(rec.getName());
+                rel.setTo(next.getName() != null ? next.getName() : (next.getId() != null ? next.getId() : "Task " + next.hashCode()));
+                rel.setType("next");
+                model.getRelationships().add(rel);
+            }
+            i++;
+        }
+
+        // 3. Iterations if present
+        if (orchestrator.getSelfDevSession() != null) {
+            for (eu.kalafatic.evolution.model.orchestration.Iteration iter : orchestrator.getSelfDevSession().getIterations()) {
+                ComponentRecord rec = new ComponentRecord();
+                rec.setName(iter.getId() != null ? iter.getId() : "Iteration " + iter.hashCode());
+                rec.setType("Iteration");
+                rec.setX(50 + (i * 220) % 880);
+                rec.setY(50 + (i / 4) * 200);
+                if (iter.getPhase() != null) rec.getProperties().add("Phase: " + iter.getPhase());
+                model.getComponents().add(rec);
+                i++;
+            }
+        }
+
+        if (model.getComponents().isEmpty()) {
             return createDefaultModel();
         }
 
-        try {
-            JSONObject root = new JSONObject(jsonStr);
-            if (root.has("architecture")) {
-                JSONObject arch = root.getJSONObject("architecture");
-                model.setName(arch.optString("name", "Evolution Architecture"));
-
-                if (arch.has("components")) {
-                    JSONArray comps = arch.getJSONArray("components");
-                    for (int i = 0; i < comps.length(); i++) {
-                        JSONObject c = comps.getJSONObject(i);
-                        ComponentRecord rec = new ComponentRecord();
-                        rec.setName(c.getString("name"));
-                        rec.setType(c.optString("type", "Component"));
-                        rec.setX(c.optInt("x", 50 + (i * 200) % 800));
-                        rec.setY(c.optInt("y", 50 + (i / 4) * 150));
-                        model.getComponents().add(rec);
-                    }
-                }
-
-                if (arch.has("relationships")) {
-                    JSONArray rels = arch.getJSONArray("relationships");
-                    for (int i = 0; i < rels.length(); i++) {
-                        JSONObject r = rels.getJSONObject(i);
-                        RelationshipRecord rec = new RelationshipRecord();
-                        rec.setFrom(r.getString("from"));
-                        rec.setTo(r.getString("to"));
-                        rec.setType(r.optString("type", "link"));
-                        model.getRelationships().add(rec);
-                    }
-                }
-                return model;
-            }
-        } catch (Exception e) {
-            // Fallback to default
-        }
-        return createDefaultModel();
+        return model;
     }
 
     private DesignModel createDefaultModel() {
@@ -318,6 +334,11 @@ public class ArchitecturePage extends Composite {
         model.getRelationships().add(rel);
 
         return model;
+    }
+
+    @Override
+    protected void refreshUI() {
+        refreshBrowser();
     }
 
     @Override
