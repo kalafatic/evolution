@@ -1,6 +1,8 @@
 package eu.kalafatic.evolution.controller.agents;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -23,13 +25,42 @@ import eu.kalafatic.utils.semantic.Stability;
  */
 public class MetadataAgent {
 
+    private static final long MAX_METADATA_FILE_SIZE = 512 * 1024;
+    private static final int MAX_SUMMARY_LENGTH = 2000;
+    private static final int MAX_SUMMARY_LINES = 20;
+    private static final int MAX_KB_FOR_SUMMARY = 8 * 1024;
+    private static final int MAX_LINES_TO_SCAN = 50;
+
     public static final String ARCHITECTURE_CONTEXT = "ARCHITECTURE_CONTEXT.md";
     public static final String SEMANTIC_OVERVIEW = "SEMANTIC_OVERVIEW.md";
     public static final String TRAJECTORY_MAP = "TRAJECTORY_MAP.json";
     public static final String PACKAGE_CONTEXT = "PACKAGE_CONTEXT.md";
 
     private final AIContextTool contextTool = new AIContextTool();
-    private final Map<File, EvoMetadata> processedMetadata = new HashMap<>();
+    private final Map<File, MetadataProjection> processedMetadata = new HashMap<>();
+    private int filesProcessedCount = 0;
+
+    /**
+     * Lightweight projection of EvoMetadata to reduce memory footprint during repository-wide scans.
+     */
+    private static class MetadataProjection {
+        private final String path;
+        private final String role;
+        private final double importanceScore;
+        private final String summary;
+
+        MetadataProjection(EvoMetadata meta) {
+            this.path = meta.getPath();
+            this.role = meta.getRole();
+            this.importanceScore = meta.getImportanceScore();
+            this.summary = meta.getSummary();
+        }
+
+        String getPath() { return path; }
+        String getRole() { return role; }
+        double getImportanceScore() { return importanceScore; }
+        String getSummary() { return summary; }
+    }
 
     public MetadataResult generate(File root) {
         return generate(root, new NullProgressMonitor());
@@ -40,6 +71,7 @@ public class MetadataAgent {
 
         MetadataResult result = new MetadataResult(root);
         processedMetadata.clear();
+        filesProcessedCount = 0;
 
         int totalFiles = countFiles(root);
         monitor.beginTask("Generating AI Metadata", totalFiles + 10);
@@ -76,7 +108,7 @@ public class MetadataAgent {
 
         for (File file : files) {
             if (file.isDirectory()) {
-                if (!file.getName().startsWith(".") && !file.getName().equals("target") && !file.getName().equals("bin")) {
+                if (!isExcludedDirectory(file)) {
                     count += countFiles(file);
                 }
             } else {
@@ -97,23 +129,54 @@ public class MetadataAgent {
         for (File file : files) {
             if (monitor.isCanceled()) return;
             if (file.isDirectory()) {
-                if (!file.getName().startsWith(".") && !file.getName().equals("target") && !file.getName().equals("bin")) {
+                if (!isExcludedDirectory(file)) {
                     scanAndEnrich(file, root, result, monitor);
                 }
             } else {
                 if (shouldProcess(file)) {
-                    monitor.subTask("Enriching " + file.getName());
+                    filesProcessedCount++;
+                    monitor.subTask("Enriching [" + filesProcessedCount + "] " + file.getName());
                     processFile(file, root, result);
                     monitor.worked(1);
+
+                    if (filesProcessedCount % 100 == 0) {
+                        logProgress();
+                    }
                 }
             }
         }
+    }
+
+    private void logProgress() {
+        Runtime runtime = Runtime.getRuntime();
+        long usedMemory = (runtime.totalMemory() - runtime.freeMemory()) / (1024 * 1024);
+        long maxMemory = runtime.maxMemory() / (1024 * 1024);
+
+        System.out.println(String.format("[MetadataAgent] Processed %d files. Generated %d metadata entries. Heap: %dMB / %dMB",
+            filesProcessedCount, processedMetadata.size(), usedMemory, maxMemory));
+    }
+
+    private boolean isExcludedDirectory(File dir) {
+        String name = dir.getName();
+        return name.startsWith(".") ||
+               name.equals("target") ||
+               name.equals("bin") ||
+               name.equals("milestones") ||
+               name.equals(".git") ||
+               name.equals(".settings") ||
+               name.equals(".metadata");
     }
 
     private boolean shouldProcess(File file) {
         String name = file.getName();
         if (name.endsWith(".ai.json") || name.endsWith(".evo.json")) return false;
         if (name.startsWith(".")) return false;
+
+        // Skip generated artifacts
+        if (ARCHITECTURE_CONTEXT.equals(name) || SEMANTIC_OVERVIEW.equals(name) ||
+            PACKAGE_CONTEXT.equals(name) || TRAJECTORY_MAP.equals(name)) {
+            return false;
+        }
 
         // Process most source and documentation files
         return name.endsWith(".java") || name.endsWith(".c") || name.endsWith(".cpp") ||
@@ -143,7 +206,7 @@ public class MetadataAgent {
 
         // 2f: Save Sidecar
         contextTool.saveMetadata(file, meta);
-        processedMetadata.put(file, meta);
+        processedMetadata.put(file, new MetadataProjection(meta));
 
         result.addGeneratedFile(new File(file.getParentFile(), file.getName() + AIContextTool.METADATA_SUFFIX));
         result.incrementRoleStat(meta.getRole());
@@ -198,18 +261,37 @@ public class MetadataAgent {
     }
 
     private void generateSummary(File file, EvoMetadata meta) {
-        try {
-            List<String> lines = Files.readAllLines(file.toPath());
-            StringBuilder summary = new StringBuilder();
-            int count = 0;
-            for (String line : lines) {
+        if (file.length() > MAX_METADATA_FILE_SIZE) {
+            meta.setSummary("Large file - summary skipped");
+            return;
+        }
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            StringBuilder sb = new StringBuilder();
+            String line;
+            int linesRead = 0;
+            int nonEmptyLines = 0;
+            int totalChars = 0;
+
+            while ((line = reader.readLine()) != null) {
+                linesRead++;
                 String trimmed = line.trim();
                 if (!trimmed.isEmpty() && !trimmed.startsWith("/") && !trimmed.startsWith("*") && !trimmed.startsWith("#")) {
-                    summary.append(trimmed).append(" ");
-                    if (++count >= 3) break;
+                    sb.append(trimmed).append(" ");
+                    nonEmptyLines++;
+                    totalChars += trimmed.length() + 1;
+                }
+
+                if (linesRead >= MAX_LINES_TO_SCAN || nonEmptyLines >= MAX_SUMMARY_LINES || totalChars >= MAX_KB_FOR_SUMMARY) {
+                    break;
                 }
             }
-            meta.setSummary(summary.toString().trim());
+
+            String summary = sb.toString().trim();
+            if (summary.length() > MAX_SUMMARY_LENGTH) {
+                summary = summary.substring(0, MAX_SUMMARY_LENGTH);
+            }
+            meta.setSummary(summary);
         } catch (IOException e) {
             meta.setSummary("Error reading file content.");
         }
@@ -217,9 +299,16 @@ public class MetadataAgent {
 
     private void checkAndSuggestAnnotations(File file, EvoMetadata meta) {
         if (meta.getImportanceScore() > 0.8) {
-            try {
-                String content = new String(Files.readAllBytes(file.toPath()));
-                if (!content.contains("@EvolutionComponent")) {
+            try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+                String line;
+                boolean found = false;
+                while ((line = reader.readLine()) != null) {
+                    if (line.contains("@EvolutionComponent")) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
                     meta.setEvolutionaryNotes("Suggestion: Add @EvolutionComponent annotation to this high-importance class.");
                 }
             } catch (IOException e) {}
@@ -248,7 +337,7 @@ public class MetadataAgent {
         sb.append("* **Execution**: Deterministic scheduling and budget control.\n\n");
 
         sb.append("## High-Importance Components\n");
-        for (EvoMetadata m : processedMetadata.values()) {
+        for (MetadataProjection m : processedMetadata.values()) {
             if (m.getImportanceScore() > 0.9) {
                 sb.append("* `").append(m.getPath()).append("`: ").append(m.getSummary()).append("\n");
             }
@@ -266,7 +355,7 @@ public class MetadataAgent {
         sb.append("Summary of the system's semantic nervous system.\n\n");
 
         Map<String, List<String>> byRole = new HashMap<>();
-        for (EvoMetadata m : processedMetadata.values()) {
+        for (MetadataProjection m : processedMetadata.values()) {
             byRole.computeIfAbsent(m.getRole(), k -> new ArrayList<>()).add(m.getPath());
         }
 
@@ -286,7 +375,7 @@ public class MetadataAgent {
         StringBuilder sb = new StringBuilder("{\n  \"version\": \"1.0\",\n  \"components\": [\n");
 
         List<String> items = new ArrayList<>();
-        for (EvoMetadata m : processedMetadata.values()) {
+        for (MetadataProjection m : processedMetadata.values()) {
             if (m.getImportanceScore() > 0.7) {
                 items.add("    { \"path\": \"" + m.getPath() + "\", \"role\": \"" + m.getRole() + "\", \"importance\": " + m.getImportanceScore() + " }");
             }
@@ -314,7 +403,7 @@ public class MetadataAgent {
 
             sb.append("## Components\n");
             for (File f : entry.getValue()) {
-                EvoMetadata m = processedMetadata.get(f);
+                MetadataProjection m = processedMetadata.get(f);
                 if (m != null) {
                     sb.append("* `").append(f.getName()).append("`: ").append(m.getSummary()).append("\n");
                 }
