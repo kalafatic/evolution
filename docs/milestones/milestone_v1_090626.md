@@ -1,46 +1,66 @@
 # Milestone Freezepoint v1 - 090626 (DARWIN GENOME)
 
-## 🧬 System State Summary
-The system is currently at version **2.6.5-SNAPSHOT**. It functions as a production-capable **AI Evolution Platform** that coordinates divergent coding trajectories. It effectively manages session-isolated evolutionary loops grounded in repository reality.
+## 1. System State Summary (TRUTH ONLY)
+The system is at version **2.6.5-SNAPSHOT**. It is a functional **Evolutionary AI Kernel** capable of:
+- Multi-trajectory spawning and vector-based diversity analysis.
+- Mediated selection of architectural variants.
+- Repository-grounded intent expansion and context curation.
+- Atomic side-effect application via Git.
+- Session isolation using thread-local guards.
 
-## 🧱 Core Invariants (DO NOT BREAK)
-1.  **Single Transition Authority**: Only `IterationManager` may mutate system state (`SystemState`).
-2.  **Darwinian Divergence**: Mutation cycles MUST generate at least 4 unique conceptual trajectories.
-3.  **Thread-Session Integrity**: Access to session resources must pass through `RuntimeInvariant.checkSession`.
-4.  **No Global Drift**: Hidden singleton access within active sessions is prohibited and reported.
+**Implemented Features:** PEV Loop, Runtime Event Bus, Capability Registry, Darwin Engine, Semantic Workspace.
+**Partial/Experimental:** `selfdev-genome` upgrade plans, `NeuronAI` signals, advanced auto-repair skeletons.
 
-## 📊 Stability Classification
-- **Stable**: `IterationManager`, `OrchestratorServiceImpl`, `EMF Core Model`, `RuntimeEventBus`.
-- **Semi-Stable**: `DarwinEngine`, `TrajectoryTerritoryMapper`, `ContextCurator`.
-- **Experimental**: `selfdev-genome` runtime, `NeuronAI` evaluators, `IntentExpansionEngine`.
+## 2. Core Execution Model
+- **Entry Points:** `OrchestratorServiceImpl`, `IterationManager`.
+- **Runtime Flow:** `INIT` -> `ANALYZING` -> `(CLARIFYING)` -> `EXECUTING` -> `VERIFYING` -> `DONE`.
+- **Control Structure:** Centralized authority machine in `IterationManager`.
+- **System Heartbeat:** The recursive iteration loop in `IterationManager.evolve()`.
 
-## ❄️ Darwin Freeze Boundaries
-- **SAFE MUTATION ZONES**:
-    - Agent prompt templates (`/src/eu/kalafatic/evolution/controller/agents/`).
-    - Evaluation fitness heuristics.
-    - Diversity vector weights.
-- **UNSAFE MUTATION ZONES**:
-    - `IterationManager` state machine transitions.
-    - `RuntimeEventBus` category definitions.
-    - `SessionBoundaryGuard` lifecycle management.
-- **PROHIBITED CHANGE AREAS**:
-    - EMF Package `orchestration` structure (requires full model regeneration).
+## 3. Stability Classification Map
+- 🟢 **Stable Core (DO NOT TOUCH):**
+    - `eu.kalafatic.evolution.model` (EMF Package)
+    - `eu.kalafatic.evolution.controller.kernel` (Invariants)
+    - `eu.kalafatic.evolution.controller.workflow` (Event Bus)
+- 🟡 **Controlled Evolution Zone (Safe Mutation):**
+    - `eu.kalafatic.evolution.controller.engine` (Darwin logic)
+    - `eu.kalafatic.evolution.controller.agents` (AI Roles)
+    - `eu.kalafatic.evolution.controller.mediation` (Curation)
+- 🔴 **Experimental Zone (Free Mutation):**
+    - `eu.kalafatic.evolution.selfdev.genome`
+    - `eu.kalafatic.evolution.controller.orchestration.intent`
 
-## 🛠 External Self-Dev Supervisor Integration
-The following hooks are provided for the external Supervisor:
-- **Hook Points**:
-    - `TASK_STARTED` / `TASK_COMPLETED` (Execution tracking).
-    - `VARIANT_EVALUATED` (Decision point).
-- **Validation Gates**:
-    - `mvn integration-test` (Build integrity).
-    - `DarwinDiversityAnalyzer` (Conceptual integrity).
-- **Rollback Conditions**:
-    - `InvariantViolationException` detection.
-    - Consecutive task failures (> 3).
-- **Safe Deployment Boundaries**:
-    - Mutations must be committed to a non-main branch (`evo-*`).
+## 4. Core Invariants (ABSOLUTE RULES)
+- Only `IterationManager` transitions the global state.
+- Every entry point must be session-guarded via `SessionBoundaryGuard`.
+- All kernel signals must be published via `RuntimeEventBus` with correct category.
+- Minimum 4-branch divergence mandate for the `DarwinEngine`.
 
-## 🧬 Evolution Strategy Notes
-- **Recommended Next Direction**: Stabilize `IntentExpansionEngine` to reduce semantic ambiguity before spawning.
-- **Forbidden Evolution Areas**: Do not move towards multi-threaded shared state; maintain the "Single-Thread-per-Session" model.
-- **High-Value Mutation Targets**: Context curation logic (`ContextCurator`) to improve signal-to-noise ratio in small local models.
+## 5. Darwin Mutation Boundaries
+- **Safe Mutation Zones:** Agent prompt templates, fitness heuristics, vector weights.
+- **Unsafe Mutation Zones:** PEV loop sequence, event bus categories, thread-local management.
+- **Forbidden Structural Changes:** EMF orchestration schema changes without synchronized regeneration.
+- **High-Risk Coupling:** Interaction between OSGi bundles and JGit transactions.
+
+## 6. Fitness & Selection Model
+- **Correctness:** Evaluated via `mvn integration-test` (build integrity).
+- **Successful Evolution:** A trajectory that passes verification AND maintains conceptual distance (Diversity > 0.1).
+- **Regression Criteria:** Detection of `InvariantViolationException` or drop in test pass rate.
+
+## 7. Mediated Model Summary
+- **System Conceptual Model:** A state-controlled mutation kernel.
+- **Core Abstractions:** Evolutionary Trajectory, Semantic Dimension, Target Reality Model.
+- **Behavioral Flows:** Intent Expansion -> Darwin Branching -> Validated Convergence.
+
+## 8. External Self-Dev Supervisor Contract
+- **Build Triggers:** Published `TASK_STARTED` events.
+- **Test Execution Gates:** `ValidatorAgent` calls to `mvn integration-test`.
+- **Rollback Conditions:** `InvariantViolationException`, consecutive failures, or user rejection in mediated mode.
+- **Deployment Constraints:** Mutations must remain on isolated `evo-*` branches.
+- **Validation Checkpoints:** `VARIANT_EVALUATED` (Pre-selection), `FLOW_COMPLETED` (Post-execution).
+
+## 9. Evolution Strategy (NEXT STEP ONLY)
+- **SHOULD Evolve:** `ContextCurator` token-budget optimization for larger snapshots.
+- **MUST NOT Evolve:** Global static state for session resources.
+- **High Value Target:** `TrajectoryTerritoryMapper` Bulk Discovery efficiency.
+- **Recommended Focus:** Stabilize `IntentExpansionEngine` to reduce semantic noise.

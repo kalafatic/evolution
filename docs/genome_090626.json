@@ -12,8 +12,8 @@
       "name": "eu.kalafatic.utils",
       "type": "infra",
       "responsibilities": [
-        "Semantic annotations",
-        "Logging utilities"
+        "Semantic annotations (@EvolutionComponent)",
+        "Repository-agnostic structural evidence extraction"
       ],
       "depends_on": [],
       "exposes": [
@@ -26,8 +26,8 @@
       "name": "eu.kalafatic.evolution.model",
       "type": "core",
       "responsibilities": [
-        "EMF model definitions for orchestration",
-        "State persistence"
+        "EMF-based system state definition",
+        "XMI persistence for orchestration sessions"
       ],
       "depends_on": [
         "eu.kalafatic.utils"
@@ -41,10 +41,9 @@
       "name": "eu.kalafatic.evolution.controller",
       "type": "core",
       "responsibilities": [
-        "Orchestration kernel",
-        "Darwin engine",
-        "Agent execution",
-        "Workflow coordination"
+        "Single-authority orchestration kernel",
+        "Darwinian variant spawning and diversity analysis",
+        "Capability-based extension registry"
       ],
       "depends_on": [
         "eu.kalafatic.evolution.model",
@@ -52,8 +51,8 @@
       ],
       "exposes": [
         "eu.kalafatic.evolution.controller.orchestration",
-        "eu.kalafatic.evolution.controller.engine",
-        "eu.kalafatic.evolution.controller.agents"
+        "eu.kalafatic.evolution.controller.kernel",
+        "eu.kalafatic.evolution.controller.engine"
       ],
       "mutation_safety": "semi-stable"
     },
@@ -61,8 +60,8 @@
       "name": "eu.kalafatic.evolution.selfdev.genome",
       "type": "experimental",
       "responsibilities": [
-        "Self-development logic",
-        "Cross-project knowledge sharing"
+        "Deterministic upgrade plan compilation",
+        "Cross-project knowledge materialization"
       ],
       "depends_on": [
         "eu.kalafatic.evolution.controller",
@@ -75,61 +74,62 @@
     }
   ],
   "execution_flow": {
-    "core_loop": "Plan-Execute-Verify (PEV) loop",
+    "core_loop": "Plan-Execute-Verify (PEV) loop via EvolutionPhaseMachine",
     "data_flow": [
-      "User Prompt -> Intent Decompression -> Context Grounding -> Darwin Spawning -> Winner Selection -> Mutation Execution -> Verification"
+      "User Intent -> Semantic Expansion -> Reality Grounding -> Darwin Spawning -> Winner Selection -> Patch Execution -> Validation"
     ],
     "event_flow": [
-      "Throttled category-based RuntimeEventBus (KERNEL, FLOW, AGENT, EXECUTION, UI, SUPERVISOR, WORKSPACE)"
+      "Throttled category-based signaling (KERNEL, FLOW, AGENT, EXECUTION, UI, SUPERVISOR, WORKSPACE)"
     ]
   },
   "darwin_model": {
     "mutation_points": [
-      "Trajectory Blueprints",
-      "Branch Variants",
-      "AI Agent Prompt Templates"
+      "Trajectory Blueprints (JSON-defined schemas)",
+      "Branch Variants (Divergent lineages)",
+      "AI Agent prompt instructions",
+      "Fitness scoring heuristics"
     ],
     "selection_mechanisms": [
-      "Darwin Diversity Analysis (Vector-based)",
-      "Fitness Ranking (Build success, test coverage, semantic alignment)",
-      "Manual Supervisor Approval"
+      "DarwinDiversityAnalyzer (10-dimension vector distance)",
+      "FitnessRanker (Significance + Information Density)",
+      "Manual DecisionResolver (Fuzzy ID mapping)"
     ],
     "fitness_criteria": [
-      "Build stability",
-      "Test pass rate",
-      "Conceptual diversity",
-      "Significance coefficient"
+      "Build stability (Maven/Tycho)",
+      "Test pass rate (Surefire/Surefire Integration)",
+      "Semantic significance coefficient",
+      "Lineage continuity"
     ],
     "stable_invariants": [
-      "Single authority state transitions",
-      "Thread-local session isolation",
-      "Repository-grounded reasoning"
+      "Single Transition Authority (IterationManager)",
+      "Thread-local session isolation (SessionBoundaryGuard)",
+      "Minimum 4-branch divergence mandate"
     ]
   },
   "mediated_model": {
     "core_concepts": [
       "Evolutionary Trajectory",
+      "Target Reality Model",
       "Semantic Dimension",
-      "Cognitive Trace",
-      "Target Reality Model"
+      "Memory Decay"
     ],
     "abstract_flows": [
-      "Intent Expansion -> Darwin Spawning -> Mediated Selection -> Validated Mutation"
+      "Intent Expansion -> Darwin Iteration -> Mediated Export -> Final Convergence"
     ],
-    "external_llm_view": "System is a deterministic kernel that manages AI-driven code mutations through a multi-branch divergent-convergent process."
+    "external_llm_view": "System is a state-controlled evolution kernel that manages coding trajectories through divergent exploration and validated selection."
   },
   "risk_map": {
     "tight_coupling": [
-      "Eclipse RCP / OSGi dependency",
-      "EMF model synchronization"
+      "OSGi Require-Bundle hierarchy",
+      "SWT-dependent view logic"
     ],
     "hidden_state": [
-      "SessionBoundaryGuard thread-locals",
-      "Singleton OrchestratorService instance"
+      "ThreadLocal session IDs in SessionBoundaryGuard",
+      "Singleton OrchestratorServiceImpl"
     ],
     "fragile_components": [
-      "JSON blueprint parsers",
-      "Tycho build resolution"
+      "LLM-generated JSON blueprint parsers",
+      "Tycho/Maven dependency resolution chains"
     ]
   }
 }
