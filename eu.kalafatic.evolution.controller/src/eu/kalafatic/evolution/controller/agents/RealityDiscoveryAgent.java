@@ -142,7 +142,8 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
             JSONArray hotspots = obj.optJSONArray("hotspots");
             if (hotspots != null) {
                 for (int i = 0; i < hotspots.length(); i++) {
-                    JSONObject hObj = hotspots.getJSONObject(i);
+                    JSONObject hObj = hotspots.optJSONObject(i);
+                    if (hObj == null) continue;
                     Hotspot hotspot = new Hotspot();
                     hotspot.setId(hObj.optString("id"));
                     hotspot.setName(hObj.optString("name"));
@@ -166,7 +167,8 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
             JSONArray subsystems = obj.optJSONArray("subsystems");
             if (subsystems != null) {
                 for (int i = 0; i < subsystems.length(); i++) {
-                    JSONObject sObj = subsystems.getJSONObject(i);
+                    JSONObject sObj = subsystems.optJSONObject(i);
+                    if (sObj == null) continue;
                     Subsystem subsystem = new Subsystem();
                     subsystem.setId(sObj.optString("id"));
                     subsystem.setName(sObj.optString("name"));
@@ -192,7 +194,8 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
             JSONArray facts = obj.optJSONArray("architectural_facts");
             if (facts != null) {
                 for (int i = 0; i < facts.length(); i++) {
-                    JSONObject fObj = facts.getJSONObject(i);
+                    JSONObject fObj = facts.optJSONObject(i);
+                    if (fObj == null) continue;
                     ArchitecturalFact fact = new ArchitecturalFact();
                     fact.setId(fObj.optString("id"));
                     fact.setSubject(fObj.optString("subject"));
