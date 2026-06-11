@@ -131,6 +131,8 @@ public class ArchitecturePage extends AEvoPage {
 
         mgr.add(new org.eclipse.jface.action.Action("Refresh") { @Override public void run() { scheduleRefresh(); } });
         mgr.add(new org.eclipse.jface.action.Separator());
+        mgr.add(new org.eclipse.jface.action.Action("Discover") { @Override public void run() { handleDiscover(); } });
+        mgr.add(new org.eclipse.jface.action.Separator());
         mgr.add(new org.eclipse.jface.action.Action("Export HTML") { @Override public void run() { handleExport(); } });
         mgr.add(new org.eclipse.jface.action.Action("Save JSON") { @Override public void run() { handleSaveModel(); } });
         mgr.add(new org.eclipse.jface.action.Separator());
@@ -156,6 +158,46 @@ public class ArchitecturePage extends AEvoPage {
         manager.add(new org.eclipse.jface.action.Separator());
         manager.add(new org.eclipse.jface.action.Action("Export Architecture (HTML)") { @Override public void run() { handleExport(); } });
         manager.add(new org.eclipse.jface.action.Action("Save Design Model (JSON)") { @Override public void run() { handleSaveModel(); } });
+    }
+
+    private void handleDiscover() {
+        if (editor == null) return;
+        org.eclipse.ui.IEditorInput input = editor.getEditorInput();
+        if (input instanceof org.eclipse.ui.IFileEditorInput) {
+            org.eclipse.core.resources.IProject project = ((org.eclipse.ui.IFileEditorInput) input).getFile().getProject();
+            java.io.File root = project.getLocation().toFile();
+
+            org.eclipse.core.runtime.jobs.Job job = new org.eclipse.core.runtime.jobs.Job("Discovering Architecture") {
+                @Override
+                protected org.eclipse.core.runtime.IStatus run(org.eclipse.core.runtime.IProgressMonitor monitor) {
+                    try {
+                        // 1. Physical Scan
+                        eu.kalafatic.evolution.controller.mediation.scanner.TargetScanner scanner = new eu.kalafatic.evolution.controller.mediation.scanner.TargetScanner();
+                        eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot snapshot = scanner.scanToSnapshot(root, eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot.TargetType.PROJECT);
+
+                        // 2. AI Understanding (Reality Discovery)
+                        if (orchestrator != null) {
+                            String sid = orchestrator.getSelfDevSession() != null ? orchestrator.getSelfDevSession().getId() : "discovery";
+                            eu.kalafatic.evolution.controller.orchestration.SessionContainer session = eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getOrCreateSession(sid);
+                            eu.kalafatic.evolution.controller.agents.RealityDiscoveryAgent agent = new eu.kalafatic.evolution.controller.agents.RealityDiscoveryAgent(session);
+                            agent.setAiService(eu.kalafatic.evolution.controller.orchestration.OrchestratorServiceImpl.getInstance().getOrchestrator().getAiService());
+
+                            eu.kalafatic.evolution.controller.orchestration.TaskContext ctx = new eu.kalafatic.evolution.controller.orchestration.TaskContext(orchestrator, root);
+                            eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel reality = agent.discover("Analyze repository architecture and key hotspots", ctx, snapshot);
+
+                            // Save to metadata for extractModel to find it
+                            ctx.getOrchestrationState().getMetadata().put("targetRealityModel", reality);
+                        }
+
+                        scheduleRefresh();
+                        return org.eclipse.core.runtime.Status.OK_STATUS;
+                    } catch (Exception e) {
+                        return new org.eclipse.core.runtime.Status(org.eclipse.core.runtime.IStatus.ERROR, "eu.kalafatic.evolution.view", "Discovery failed", e);
+                    }
+                }
+            };
+            job.schedule();
+        }
     }
 
     private void handleGenerateMetadata() {
@@ -250,9 +292,66 @@ public class ArchitecturePage extends AEvoPage {
         java.io.File root = project.getLocation().toFile();
 
         DesignModel model = discoverArchitectureNodes(root);
+
+        // Integrate Reality Discovery Model if present in orchestrator
+        if (orchestrator != null && orchestrator.getSelfDevSession() != null) {
+            String sid = orchestrator.getSelfDevSession().getId();
+            eu.kalafatic.evolution.controller.orchestration.SessionContainer session = eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getSession(sid);
+            if (session instanceof eu.kalafatic.evolution.controller.orchestration.SessionContext) {
+                eu.kalafatic.evolution.controller.orchestration.TaskContext ctx = ((eu.kalafatic.evolution.controller.orchestration.SessionContext)session).getTaskContext();
+                if (ctx != null) {
+                    Object trm = ctx.getOrchestrationState().getMetadata().get("targetRealityModel");
+                    if (trm instanceof eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel) {
+                        convertRealityToModel((eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel) trm, model);
+                    }
+                }
+            }
+        }
+
         model.setName(project.getName() + " Architecture");
 
+        if (model.getComponents().isEmpty()) {
+            return createDefaultModel();
+        }
+
         return filterModel(model, currentMode);
+    }
+
+    private void convertRealityToModel(eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel reality, DesignModel model) {
+        if (reality.getDomain() != null) {
+            ComponentRecord d = new ComponentRecord();
+            d.setId("reality:domain");
+            d.setName(reality.getDomain());
+            d.setType("DOMAIN");
+            d.setDescription(reality.getPurpose());
+            model.getComponents().add(d);
+        }
+
+        for (eu.kalafatic.evolution.controller.mediation.model.Hotspot h : reality.getHotspots()) {
+            ComponentRecord hr = new ComponentRecord();
+            hr.setId("reality:hotspot:" + h.getId());
+            hr.setName(h.getName());
+            hr.setType("HOTSPOT");
+            hr.setDescription(h.getDescription());
+            hr.setImportanceScore(h.getSignificance());
+            model.getComponents().add(hr);
+
+            for (String art : h.getRelatedArtifacts()) {
+                eu.kalafatic.evolution.controller.orchestration.design.RelationshipRecord rel = new eu.kalafatic.evolution.controller.orchestration.design.RelationshipRecord();
+                rel.setFrom(hr.getId());
+                rel.setTo(art);
+                rel.setType("HIGHLIGHTS");
+                model.getRelationships().add(rel);
+            }
+        }
+
+        for (String obj : reality.getObjectives()) {
+            ComponentRecord o = new ComponentRecord();
+            o.setId("reality:objective:" + obj.hashCode());
+            o.setName(obj);
+            o.setType("OBJECTIVE");
+            model.getComponents().add(o);
+        }
     }
 
     private DesignModel discoverArchitectureNodes(java.io.File root) {
@@ -269,7 +368,36 @@ public class ArchitecturePage extends AEvoPage {
             parseArchitectureContext(archCtx, nodes, model);
         }
 
+        // 3. Fallback: Local Structure Discovery
+        if (model.getComponents().isEmpty()) {
+            discoverLocalStructure(root, root, model);
+        }
+
         return model;
+    }
+
+    private void discoverLocalStructure(java.io.File current, java.io.File root, DesignModel model) {
+        java.io.File[] files = current.listFiles();
+        if (files == null) return;
+
+        for (java.io.File f : files) {
+            if (f.isDirectory()) {
+                String name = f.getName();
+                if (!name.startsWith(".") && !name.equals("target") && !name.equals("bin") && !name.equals("node_modules")) {
+                    ComponentRecord rec = new ComponentRecord();
+                    rec.setId(root.toURI().relativize(f.toURI()).getPath());
+                    rec.setName(name);
+                    rec.setType("MODULE");
+                    rec.setDescription("Discovered module directory");
+                    model.getComponents().add(rec);
+
+                    // Only scan one level deep for fallback to keep it clean
+                    if (current.equals(root)) {
+                        discoverLocalStructure(f, root, model);
+                    }
+                }
+            }
+        }
     }
 
     private void scanForMetadata(java.io.File current, java.io.File root, eu.kalafatic.utils.semantic.AIContextTool tool, Map<String, ComponentRecord> nodes, DesignModel model) {
