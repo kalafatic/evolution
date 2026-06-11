@@ -40,6 +40,9 @@ public class MediatedTargetDialog extends DynamicMapDialog {
     private static final String TARGET_PATH = "targetPath";
     private static final String TARGET_TYPE = "targetType";
     private static final String OUTPUT_PATH = "outputPath";
+    private static final String SKIP_METADATA = "skipMetadata";
+    private static final String CLEAN_METADATA = "cleanMetadata";
+    private static final String TIMESTAMP_METADATA = "timestampMetadata";
 
     public MediatedTargetDialog(Shell parentShell, ChatSession session, File projectRoot, MultiPageEditor editor) {
         super(parentShell, createFields(session, projectRoot));
@@ -95,6 +98,10 @@ public class MediatedTargetDialog extends DynamicMapDialog {
         }
         fields.put(OUTPUT_PATH, new DynamicField("Output Path:", DynamicField.TYPE_TEXT | DynamicField.DIRECTORY, initialOutput));
 
+        fields.put(SKIP_METADATA, new DynamicField("Skip Existing:", DynamicField.TYPE_CHECKBOX, false));
+        fields.put(CLEAN_METADATA, new DynamicField("Clean Target:", DynamicField.TYPE_CHECKBOX, false));
+        fields.put(TIMESTAMP_METADATA, new DynamicField("Add Timestamp:", DynamicField.TYPE_CHECKBOX, false));
+
         return fields;
     }
 
@@ -142,7 +149,12 @@ public class MediatedTargetDialog extends DynamicMapDialog {
                             @Override
                             protected IStatus run(IProgressMonitor monitor) {
                                 MetadataAgent generator = new MetadataAgent();
-                                final MetadataResult result = generator.generate(root, new IProgressMonitor() {
+                                MetadataAgent.Options options = new MetadataAgent.Options();
+                                options.skipExisting = getBoolean(SKIP_METADATA);
+                                options.cleanExisting = getBoolean(CLEAN_METADATA);
+                                options.useTimestamp = getBoolean(TIMESTAMP_METADATA);
+
+                                final MetadataResult result = generator.generate(root, options, new IProgressMonitor() {
                                     private long lastUpdate = 0;
                                     private int pendingWork = 0;
 

@@ -5,7 +5,9 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
@@ -41,6 +43,15 @@ public class MetadataAgent {
     private int filesProcessedCount = 0;
 
     /**
+     * Options for metadata generation.
+     */
+    public static class Options {
+        public boolean skipExisting = false;
+        public boolean cleanExisting = false;
+        public boolean useTimestamp = false;
+    }
+
+    /**
      * Lightweight projection of EvoMetadata to reduce memory footprint during repository-wide scans.
      */
     private static class MetadataProjection {
@@ -63,11 +74,21 @@ public class MetadataAgent {
     }
 
     public MetadataResult generate(File root) {
-        return generate(root, new NullProgressMonitor());
+        return generate(root, new Options(), new NullProgressMonitor());
     }
 
     public MetadataResult generate(File root, IProgressMonitor monitor) {
+        return generate(root, new Options(), monitor);
+    }
+
+    public MetadataResult generate(File root, Options options, IProgressMonitor monitor) {
+        if (monitor == null) monitor = new NullProgressMonitor();
         if (!root.exists() || !root.isDirectory()) return null;
+
+        if (options.cleanExisting) {
+            monitor.subTask("Cleaning existing metadata...");
+            cleanExistingMetadata(root);
+        }
 
         MetadataResult result = new MetadataResult(root);
         processedMetadata.clear();
@@ -76,7 +97,7 @@ public class MetadataAgent {
         int totalFiles = countFiles(root);
         monitor.beginTask("Generating AI Metadata", totalFiles + 10);
 
-        scanAndEnrich(root, root, result, monitor);
+        scanAndEnrich(root, root, result, options, monitor);
 
         if (monitor.isCanceled()) {
             monitor.done();
@@ -101,6 +122,26 @@ public class MetadataAgent {
         return result;
     }
 
+    private void cleanExistingMetadata(File current) {
+        File[] files = current.listFiles();
+        if (files == null) return;
+
+        for (File file : files) {
+            if (file.isDirectory()) {
+                if (!isExcludedDirectory(file)) {
+                    cleanExistingMetadata(file);
+                }
+            } else {
+                String name = file.getName();
+                if (name.endsWith(".ai.json") || ARCHITECTURE_CONTEXT.equals(name) ||
+                    SEMANTIC_OVERVIEW.equals(name) || PACKAGE_CONTEXT.equals(name) ||
+                    TRAJECTORY_MAP.equals(name)) {
+                    file.delete();
+                }
+            }
+        }
+    }
+
     private int countFiles(File current) {
         int count = 0;
         File[] files = current.listFiles();
@@ -120,7 +161,7 @@ public class MetadataAgent {
         return count;
     }
 
-    private void scanAndEnrich(File current, File root, MetadataResult result, IProgressMonitor monitor) {
+    private void scanAndEnrich(File current, File root, MetadataResult result, Options options, IProgressMonitor monitor) {
         if (monitor.isCanceled()) return;
 
         File[] files = current.listFiles();
@@ -130,13 +171,13 @@ public class MetadataAgent {
             if (monitor.isCanceled()) return;
             if (file.isDirectory()) {
                 if (!isExcludedDirectory(file)) {
-                    scanAndEnrich(file, root, result, monitor);
+                    scanAndEnrich(file, root, result, options, monitor);
                 }
             } else {
                 if (shouldProcess(file)) {
                     filesProcessedCount++;
                     monitor.subTask("Enriching [" + filesProcessedCount + "] " + file.getName());
-                    processFile(file, root, result);
+                    processFile(file, root, result, options);
                     monitor.worked(1);
 
                     if (filesProcessedCount % 100 == 0) {
@@ -185,7 +226,19 @@ public class MetadataAgent {
                name.endsWith(".md") || name.endsWith(".txt");
     }
 
-    private void processFile(File file, File root, MetadataResult result) {
+    private void processFile(File file, File root, MetadataResult result, Options options) {
+        File sidecar = new File(file.getParentFile(), file.getName() + AIContextTool.METADATA_SUFFIX);
+        if (sidecar.exists()) {
+            if (options.skipExisting) {
+                return;
+            }
+            if (options.useTimestamp) {
+                String suffix = new SimpleDateFormat("_ddMMyy").format(new Date());
+                File renamed = new File(file.getParentFile(), file.getName() + suffix + AIContextTool.METADATA_SUFFIX);
+                sidecar.renameTo(renamed);
+            }
+        }
+
         EvoMetadata meta = contextTool.loadMetadata(file);
         if (meta == null) {
             meta = new EvoMetadata();
@@ -208,7 +261,7 @@ public class MetadataAgent {
         contextTool.saveMetadata(file, meta);
         processedMetadata.put(file, new MetadataProjection(meta));
 
-        result.addGeneratedFile(new File(file.getParentFile(), file.getName() + AIContextTool.METADATA_SUFFIX));
+        result.addGeneratedFile(sidecar);
         result.incrementRoleStat(meta.getRole());
     }
 
