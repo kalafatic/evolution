@@ -5,18 +5,26 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import eu.kalafatic.evolution.controller.mediation.model.ArchitecturalFact;
 import eu.kalafatic.evolution.controller.mediation.model.FileDescriptor;
 import eu.kalafatic.evolution.controller.mediation.model.SemanticEdge;
 import eu.kalafatic.evolution.controller.mediation.model.SemanticNode;
+import eu.kalafatic.evolution.controller.mediation.model.Subsystem;
 import eu.kalafatic.evolution.controller.mediation.model.TargetDescriptor;
+import eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel;
 import eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot;
 
 /**
  * Selects high-value context while avoiding token floods.
  */
 public class ContextCurator {
+
+    public List<String> selectContext(TargetSnapshot snapshot, String query, int maxFiles, TargetRealityModel realityModel) {
+        return selectContextWithBudget(snapshot, query, DEFAULT_TOKEN_BUDGET, realityModel);
+    }
 
     public List<String> curate(TargetDescriptor target) {
         // REFACTOR: Generic curation based on semantic density and abstract significance.
@@ -35,6 +43,10 @@ public class ContextCurator {
     }
 
     public List<String> selectContextWithBudget(TargetSnapshot snapshot, String query, int tokenBudget) {
+        return selectContextWithBudget(snapshot, query, tokenBudget, null);
+    }
+
+    public List<String> selectContextWithBudget(TargetSnapshot snapshot, String query, int tokenBudget, TargetRealityModel realityModel) {
         if (snapshot == null || snapshot.getNodes().isEmpty()) return new ArrayList<>();
 
         Map<String, Double> scores = new HashMap<>();
@@ -53,12 +65,30 @@ public class ContextCurator {
             double score = 0.0;
             String nid = node.getId();
 
-            // A. Graph Centrality Signal (Primary Hotspot Indicator)
+            // A. Architectural Authority (Primary Signal from Discovery)
+            double authority = node.getArchitecturalAuthority();
+            if (realityModel != null) {
+                // If we have a formal reality model, elevate authority based on discovered subsystems and facts
+                String path = node.getPath();
+                Optional<Subsystem> sub = realityModel.getSubsystems().stream().filter(s -> s.getCriticalFiles().contains(path)).findFirst();
+                if (sub.isPresent()) {
+                    authority += 30.0;
+                    if (sub.get().getBoundaries().contains(path)) authority += 20.0;
+                }
+
+                long factCount = realityModel.getArchitecturalFacts().stream().filter(f -> f.getEvidence().contains(path)).count();
+                authority += (factCount * 15.0);
+            }
+
+            if (authority > 0) {
+                score += (authority * 2.0);
+            }
+
+            // B. Graph Centrality Signal (Hotspot Indicator)
             int totalDegree = inDegree.getOrDefault(nid, 0) + outDegree.getOrDefault(nid, 0);
             score += (totalDegree * 5.0);
 
-            // B. Architectural Authority (Coordination & Orchestration responsibility)
-            // Files that act as hubs or controllers have higher authority.
+            // C. Heuristic Architectural Markers
             if (node.getSummary() != null) {
                 String summary = node.getSummary().toLowerCase();
                 if (summary.contains("coordinate") || summary.contains("orchestrate")) score += 20.0;
@@ -67,12 +97,12 @@ public class ContextCurator {
                 if (summary.contains("subsystem") || summary.contains("boundary")) score += 10.0;
             }
 
-            // C. Semantic Density Signal
+            // D. Semantic Density Signal
             // Higher density of structures (methods, classes) and attributes indicates higher info value.
             int density = node.getStructures().size() + node.getAttributes().size() + node.getDependencies().size();
             score += (density * 2.0);
 
-            // D. Abstract Relevance Signal
+            // E. Abstract Relevance Signal
             if (node.getSummary() != null) {
                 String summary = node.getSummary().toLowerCase();
                 for (String word : keywords) {
@@ -88,7 +118,7 @@ public class ContextCurator {
                 }
             }
 
-            // D. Abstract Significance Evidence
+            // F. Abstract Significance Evidence
             if (node.getTags().contains("Executory")) score += 15.0; // Entry points are major hotspots
             if (node.getTags().contains("Annotated")) score += 10.0; // Components with metadata are significant
 
@@ -125,6 +155,25 @@ public class ContextCurator {
             selected.add(node.getPath());
             selectedClusters.add(cluster);
             currentTokens += estimatedTokens;
+        }
+
+        // 3. Subsystem Coverage Enforcement: Ensure at least one file from each major subsystem if budget permits
+        if (realityModel != null && selected.size() < 16) {
+            for (Subsystem sub : realityModel.getSubsystems()) {
+                boolean covered = sub.getCriticalFiles().stream().anyMatch(selected::contains);
+                if (!covered && !sub.getCriticalFiles().isEmpty()) {
+                    String bestFile = sub.getCriticalFiles().get(0);
+                    SemanticNode n = snapshot.getNodes().get(bestFile);
+                    if (n != null) {
+                        long tokens = estimateTokens(n);
+                        if (currentTokens + tokens <= tokenBudget) {
+                            selected.add(bestFile);
+                            currentTokens += tokens;
+                        }
+                    }
+                }
+                if (selected.size() >= 16) break;
+            }
         }
 
         // Final safety fallback: ensure at least 4 files if available and budget permits

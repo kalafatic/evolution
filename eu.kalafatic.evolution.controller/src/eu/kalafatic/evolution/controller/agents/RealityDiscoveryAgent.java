@@ -43,10 +43,28 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
     }
 
     public TargetRealityModel discover(String goal, TaskContext context, TargetSnapshot snapshot) throws Exception {
+        return discover(goal, context, snapshot, null);
+    }
+
+    public TargetRealityModel discover(String goal, TaskContext context, TargetSnapshot snapshot, TargetRealityModel existingModel) throws Exception {
         context.log("[DISCOVERY] Formalizing Target Reality Model for: " + goal);
 
         StringBuilder sb = new StringBuilder();
         sb.append("GOAL: ").append(goal).append("\n\n");
+
+        if (existingModel != null) {
+            sb.append("EXISTING ARCHITECTURAL MEMORY (REVISION REQUIRED):\n");
+            sb.append("- Domain: ").append(existingModel.getDomain()).append("\n");
+            sb.append("- Purpose: ").append(existingModel.getPurpose()).append("\n");
+            sb.append("- Facts: ").append(existingModel.getArchitecturalFacts().size()).append("\n");
+            sb.append("- Subsystems: ").append(existingModel.getSubsystems().size()).append("\n\n");
+
+            // Identify Knowledge Gaps for recursive focus
+            sb.append("KNOWLEDGE GAP ANALYSIS:\n");
+            List<String> gaps = identifyKnowledgeGaps(snapshot, existingModel);
+            for (String gap : gaps) sb.append("- ").append(gap).append("\n");
+            sb.append("\n");
+        }
 
         if (snapshot != null) {
             sb.append("REPOSITORY STRUCTURE SUMMARY:\n");
@@ -56,7 +74,7 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
             sb.append("- Node Count: ").append(snapshot.getNodes().size()).append("\n\n");
 
             // Extract high-signal hotspots from graph centrality
-            List<SemanticNode> topNodes = getTopCentralNodes(snapshot, 10);
+            List<SemanticNode> topNodes = getTopCentralNodes(snapshot, 15);
             sb.append("HIGH-CENTRALITY CANDIDATES:\n");
             for (SemanticNode node : topNodes) {
                 sb.append("- ").append(node.getPath()).append(" (Summary: ").append(node.getSummary()).append(")\n");
@@ -210,6 +228,37 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
         }
 
         return model;
+    }
+
+    private List<String> identifyKnowledgeGaps(TargetSnapshot snapshot, TargetRealityModel model) {
+        List<String> gaps = new ArrayList<>();
+        if (snapshot == null) return gaps;
+
+        // 1. Identify high-centrality nodes not covered by subsystems or facts
+        List<SemanticNode> topNodes = getTopCentralNodes(snapshot, 20);
+        for (SemanticNode node : topNodes) {
+            boolean covered = model.getSubsystems().stream().anyMatch(s -> s.getCriticalFiles().contains(node.getPath())) ||
+                              model.getArchitecturalFacts().stream().anyMatch(f -> f.getEvidence().contains(node.getPath()));
+            if (!covered) {
+                gaps.add("High-influence component unmapped: " + node.getPath());
+            }
+        }
+
+        // 2. Check for missing subsystem boundaries
+        for (Subsystem s : model.getSubsystems()) {
+            if (s.getBoundaries().isEmpty()) {
+                gaps.add("Subsystem missing boundaries: " + s.getName());
+            }
+        }
+
+        // 3. Identify low-confidence facts
+        for (ArchitecturalFact f : model.getArchitecturalFacts()) {
+            if (f.getConfidence() < 0.6) {
+                gaps.add("Low-confidence fact requires verification: " + f.toString());
+            }
+        }
+
+        return gaps.stream().limit(5).collect(Collectors.toList());
     }
 
     private List<SemanticNode> getTopCentralNodes(TargetSnapshot snapshot, int limit) {

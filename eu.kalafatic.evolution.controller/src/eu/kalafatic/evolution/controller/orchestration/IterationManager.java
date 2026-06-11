@@ -37,6 +37,9 @@ import eu.kalafatic.evolution.controller.kernel.TrajectoryEngine;
 import eu.kalafatic.evolution.controller.mediation.analysis.ContextCurator;
 import eu.kalafatic.evolution.controller.mediation.analysis.PromptSynthesizer;
 import eu.kalafatic.evolution.controller.mediation.analysis.SemanticExtractor;
+import eu.kalafatic.evolution.controller.mediation.model.ArchitecturalFact;
+import eu.kalafatic.evolution.controller.mediation.model.Subsystem;
+import eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel;
 import eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot;
 import eu.kalafatic.evolution.controller.mediation.scanner.TargetScanner;
 import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorProfile;
@@ -634,6 +637,11 @@ public class IterationManager {
         // 1. Recursive Evolutionary Loop
         context.log("[KERNEL] Phase: Recursive Evolutionary Trajectory System.");
         while (safetyCounter < 10 && !context.isPaused()) {
+            // RECURSIVE ARCHITECTURAL DISCOVERY: Refine model in each iteration
+            if (safetyCounter > 0) {
+                refineTargetReality(request, context);
+            }
+
             result = runDarwinIteration(context, darwinFlow);
             safetyCounter++;
 
@@ -1337,6 +1345,37 @@ public class IterationManager {
         bus.publish(new RuntimeEvent(RuntimeEventType.SESSION_RESUMED, context.getSessionId(), "Kernel", cp));
     }
 
+
+    private void refineTargetReality(String goal, TaskContext context) throws Exception {
+        context.log("[KERNEL] Recursive Discovery: Refining Target Reality Model based on new iteration evidence.");
+        TargetSnapshot snapshot = (TargetSnapshot) context.getOrchestrationState().getMetadata().get("mediatedSnapshot");
+        TargetRealityModel existingModel = (TargetRealityModel) context.getOrchestrationState().getMetadata().get("targetRealityModel");
+
+        if (snapshot != null && existingModel != null) {
+            TargetRealityModel refinedModel = realityDiscoveryAgent.discover(goal, context, snapshot, existingModel);
+            context.getOrchestrationState().getMetadata().put("targetRealityModel", refinedModel);
+        }
+    }
+
+    public void mergeArchitecturalDiscovery(BranchVariant winner, TaskContext context) {
+        if (winner.getMediationCandidate() == null) return;
+
+        TargetRealityModel model = (TargetRealityModel) context.getOrchestrationState().getMetadata().get("targetRealityModel");
+        if (model == null) return;
+
+        context.log("[KERNEL] Merging architectural discovery from winning variant into Target Reality Model.");
+        int iteration = context.getOrchestrationState().getIterationCount();
+
+        for (ArchitecturalFact fact : winner.getMediationCandidate().getArchitecturalFacts()) {
+            fact.setDiscoveryIteration(iteration);
+            model.addArchitecturalFact(fact);
+        }
+
+        for (Subsystem sub : winner.getMediationCandidate().getSubsystems()) {
+            sub.setDiscoveryIteration(iteration);
+            model.addSubsystem(sub);
+        }
+    }
 
     private String performMediatedExportConvergence(String request, TaskContext context) {
         try {
