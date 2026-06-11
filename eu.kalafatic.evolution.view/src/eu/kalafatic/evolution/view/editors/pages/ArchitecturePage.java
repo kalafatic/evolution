@@ -38,6 +38,9 @@ public class ArchitecturePage extends AEvoPage {
     private Browser browser;
     private DesignRenderer renderer = new DesignRenderer();
     private Runnable refreshRunnable = this::refreshBrowser;
+    private boolean isLoaded = false;
+    private boolean isJsReady = false;
+    private String lastJson = "";
 
     public ArchitecturePage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
         super(parent, editor, orchestrator);
@@ -47,6 +50,28 @@ public class ArchitecturePage extends AEvoPage {
 
         this.browser = new Browser(this, SWT.NONE);
         this.browser.setLayoutData(new GridData(GridData.FILL_BOTH));
+
+        browser.addProgressListener(new org.eclipse.swt.browser.ProgressAdapter() {
+            @Override
+            public void completed(org.eclipse.swt.browser.ProgressEvent event) {
+                isLoaded = true;
+                setupJavaScriptBridges();
+
+                Display.getDefault().asyncExec(() -> {
+                    Display.getDefault().timerExec(200, () -> {
+                        refreshBrowser();
+                    });
+                });
+            }
+        });
+
+        setupJavaScriptBridges();
+        hookContextMenu();
+        initBrowser();
+    }
+
+    private void setupJavaScriptBridges() {
+        if (browser.isDisposed()) return;
 
         new BrowserFunction(browser, "navigatorFunction") {
             @Override
@@ -64,14 +89,17 @@ public class ArchitecturePage extends AEvoPage {
             @Override
             public Object function(Object[] arguments) {
                 if (arguments.length >= 1) {
-                    eu.kalafatic.evolution.controller.log.Log.log("[ARCH_JS] " + arguments[0]);
+                    String msg = (String) arguments[0];
+                    if ("ready".equals(msg)) {
+                        isJsReady = true;
+                        refreshBrowser();
+                    } else {
+                        eu.kalafatic.evolution.controller.log.Log.log("[ARCH_JS] " + msg);
+                    }
                 }
                 return null;
             }
         };
-
-        hookContextMenu();
-        refreshBrowser();
     }
 
     private void handleNavigatorAction(String id, String action) {
@@ -431,12 +459,22 @@ public class ArchitecturePage extends AEvoPage {
     }
 
     private void refreshBrowser() {
-        if (browser == null || browser.isDisposed()) return;
+        if (browser == null || browser.isDisposed() || !isLoaded || !isJsReady) return;
         Display.getDefault().asyncExec(() -> {
             if (browser == null || browser.isDisposed()) return;
             DesignModel model = extractModel();
-            browser.setText(renderer.render(model, currentMode.name()));
+            String json = renderer.serializeModel(model);
+
+            if (json.equals(lastJson)) return;
+            lastJson = json;
+
+            browser.execute("if(window.updateGraph) { window.updateGraph(" + json + "); }");
         });
+    }
+
+    private void initBrowser() {
+        if (browser == null || browser.isDisposed()) return;
+        browser.setText(renderer.render(null, currentMode.name()));
     }
 
     public enum ViewMode {
@@ -465,7 +503,8 @@ public class ArchitecturePage extends AEvoPage {
             return filterModel(cached, currentMode);
         }
 
-        DesignModel model = discoverArchitectureNodes(root);
+        // 2. DO NOT start loading models before user (Discovery)
+        DesignModel model = new DesignModel();
         eu.kalafatic.evolution.controller.log.Log.log("[ARCH_PAGE] Discovered " + model.getComponents().size() + " components via node scan.");
 
         // Integrate Reality Discovery Model if present in orchestrator
