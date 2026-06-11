@@ -9,7 +9,9 @@ import java.util.stream.Collectors;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import eu.kalafatic.evolution.controller.mediation.model.ArchitecturalFact;
 import eu.kalafatic.evolution.controller.mediation.model.Hotspot;
+import eu.kalafatic.evolution.controller.mediation.model.Subsystem;
 import eu.kalafatic.evolution.controller.mediation.model.SemanticEdge;
 import eu.kalafatic.evolution.controller.mediation.model.SemanticNode;
 import eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel;
@@ -33,9 +35,11 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
     protected String getAgentInstructions() {
         return "You are a Reality Discovery Agent.\n" +
                "Your goal is to construct a formal Target Reality Model from the provided repository evidence.\n" +
-               "Identify the domain, purpose, architecture, hotspots, objectives, and risks.\n" +
+               "Identify the domain, purpose, architecture, hotspots, subsystems, architectural facts, objectives, and risks.\n" +
                "STRICT RULE: Only use discovered evidence. Do NOT compensate with invention or fashionable patterns.\n" +
-               "Identify hotspots based on connectivity, information density, and entry points.";
+               "Identify hotspots based on connectivity, information density, and entry points.\n" +
+               "Discover subsystems based on dependencies, communication patterns, and shared responsibilities.\n" +
+               "Accumulate reusable architectural facts (e.g., 'Component A coordinates execution').";
     }
 
     public TargetRealityModel discover(String goal, TaskContext context, TargetSnapshot snapshot) throws Exception {
@@ -75,6 +79,27 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
                "      \"significance\": 0.0-1.0,\n" +
                "      \"evidence\": [\"string\"],\n" +
                "      \"related_artifacts\": [\"path/to/artifact\"]\n" +
+               "    }\n" +
+               "  ],\n" +
+               "  \"subsystems\": [\n" +
+               "    {\n" +
+               "      \"id\": \"string\",\n" +
+               "      \"name\": \"string\",\n" +
+               "      \"purpose\": \"string\",\n" +
+               "      \"description\": \"string\",\n" +
+               "      \"boundaries\": [\"string\"],\n" +
+               "      \"critical_files\": [\"string\"],\n" +
+               "      \"responsibilities\": [\"string\"]\n" +
+               "    }\n" +
+               "  ],\n" +
+               "  \"architectural_facts\": [\n" +
+               "    {\n" +
+               "      \"id\": \"string\",\n" +
+               "      \"subject\": \"string\",\n" +
+               "      \"predicate\": \"string\",\n" +
+               "      \"description\": \"string\",\n" +
+               "      \"confidence\": 0.0-1.0,\n" +
+               "      \"evidence\": [\"string\"]\n" +
                "    }\n" +
                "  ],\n" +
                "  \"objectives\": [\"string\"],\n" +
@@ -117,6 +142,51 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
                         for (int j = 0; j < rel.length(); j++) hotspot.getRelatedArtifacts().add(rel.getString(j));
                     }
                     model.addHotspot(hotspot);
+                }
+            }
+
+            JSONArray subsystems = obj.optJSONArray("subsystems");
+            if (subsystems != null) {
+                for (int i = 0; i < subsystems.length(); i++) {
+                    JSONObject sObj = subsystems.getJSONObject(i);
+                    Subsystem subsystem = new Subsystem();
+                    subsystem.setId(sObj.optString("id"));
+                    subsystem.setName(sObj.optString("name"));
+                    subsystem.setPurpose(sObj.optString("purpose"));
+                    subsystem.setDescription(sObj.optString("description"));
+
+                    JSONArray bounds = sObj.optJSONArray("boundaries");
+                    if (bounds != null) {
+                        for (int j = 0; j < bounds.length(); j++) subsystem.getBoundaries().add(bounds.getString(j));
+                    }
+                    JSONArray crit = sObj.optJSONArray("critical_files");
+                    if (crit != null) {
+                        for (int j = 0; j < crit.length(); j++) subsystem.getCriticalFiles().add(crit.getString(j));
+                    }
+                    JSONArray resp = sObj.optJSONArray("responsibilities");
+                    if (resp != null) {
+                        for (int j = 0; j < resp.length(); j++) subsystem.getResponsibilities().add(resp.getString(j));
+                    }
+                    model.addSubsystem(subsystem);
+                }
+            }
+
+            JSONArray facts = obj.optJSONArray("architectural_facts");
+            if (facts != null) {
+                for (int i = 0; i < facts.length(); i++) {
+                    JSONObject fObj = facts.getJSONObject(i);
+                    ArchitecturalFact fact = new ArchitecturalFact();
+                    fact.setId(fObj.optString("id"));
+                    fact.setSubject(fObj.optString("subject"));
+                    fact.setPredicate(fObj.optString("predicate"));
+                    fact.setDescription(fObj.optString("description"));
+                    fact.setConfidence(fObj.optDouble("confidence", 0.5));
+
+                    JSONArray ev = fObj.optJSONArray("evidence");
+                    if (ev != null) {
+                        for (int j = 0; j < ev.length(); j++) fact.getEvidence().add(ev.getString(j));
+                    }
+                    model.addArchitecturalFact(fact);
                 }
             }
 

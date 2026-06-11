@@ -1489,8 +1489,21 @@ public class IterationManager {
                 }
             }
 
+            // Extract facts and subsystems for export
+            String architecturalFactsJson = "[]";
+            String subsystemsJson = "[]";
+            if (winningCandidate != null) {
+                try {
+                    var mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                    architecturalFactsJson = mapper.writeValueAsString(winningCandidate.getArchitecturalFacts());
+                    subsystemsJson = mapper.writeValueAsString(winningCandidate.getSubsystems());
+                } catch (Exception e) {
+                    context.log("[KERNEL] Warning: Could not serialize facts/subsystems: " + e.getMessage());
+                }
+            }
+
             context.log("[KERNEL] Mediated Mode: Final selected files for export: " + selectedPaths);
-            File exportPackage = exportManager.createExportPackage(context.getSessionId(), optimizedPrompt, selectedPaths, context.getProjectRoot(), outputPath, metadataJson, historyAnalysis, architectureSummary, dependencies, executionInstructions, realityModelJson);
+            File exportPackage = exportManager.createExportPackage(context.getSessionId(), optimizedPrompt, selectedPaths, context.getProjectRoot(), outputPath, metadataJson, historyAnalysis, architectureSummary, dependencies, executionInstructions, realityModelJson, architecturalFactsJson, subsystemsJson);
 
             // Record as a change so it appears in Changes view
             context.getFileChangeTracker().recordChange(exportPackage.getName(), FileChangeTracker.ChangeType.NEW);

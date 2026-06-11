@@ -234,13 +234,13 @@ public class DarwinVariantSpawner {
             sb.append("MEDIATED MODE COGNITION RULES (CRITICAL):\n")
               .append("- Focus on ARCHITECTURAL UNDERSTANDING, not code.\n")
               .append("- USE ONLY REAL repository evidence from the provided candidate list.\n")
-              .append("- Follow the 4-Phase Darwin Process: Scan, Seed, Branching, and Consolidation.\n")
-              .append("- Focus on INFORMATION VALUE and DENSITY: smallest set of files explaining architecture, flow, and mutation points.\n")
+                  .append("- Identify core SUBSYSTEMS and accumulate ARCHITECTURAL FACTS.\n")
+                  .append("- Focus on ARCHITECTURAL AUTHORITY: smallest set of files explaining coordination, flow, and boundaries.\n")
               .append("- You MUST select 4-16 high-signal files for the FINAL mediation package.\n")
-              .append("- CONSOLIDATION RULES: KEEP if in 2+ lineages, extreme centrality, or critical flow; REMOVE if redundant or leaf-only.\n")
+                  .append("- Ask recursively: 'What architectural knowledge is missing?'\n")
               .append("- Ranked selected files by importance (1 = highest) in the reasoning focus.\n")
               .append("- Strictly avoid context bloat (> 16 files is PENALIZED).\n")
-              .append("- Your goal is to produce a high-quality mediation candidate for external LLM processing.\n\n");
+                  .append("- Your goal is to produce a high-quality mediation candidate with deep architectural memory.\n\n");
 
             if (context != null && context.getOrchestrationState() != null) {
                 var metadata = context.getOrchestrationState().getMetadata();
@@ -308,6 +308,12 @@ public class DarwinVariantSpawner {
               .append("    \"prompt\": \"(The optimized prompt for the external LLM)\",\n")
               .append("    \"selected_files\": [\"(Select 8-16 key files from the candidate list)\"],\n")
               .append("    \"architecture_summary\": \"(Concise architecture mapping)\",\n")
+              .append("    \"subsystems\": [\n")
+              .append("      { \"id\": \"s1\", \"name\": \"Subsystem Name\", \"purpose\": \"Subsystem Purpose\", \"description\": \"...\", \"boundaries\": [\"...\"], \"critical_files\": [\"...\"], \"responsibilities\": [\"...\"] }\n")
+              .append("    ],\n")
+              .append("    \"architectural_facts\": [\n")
+              .append("      { \"id\": \"f1\", \"subject\": \"...\", \"predicate\": \"...\", \"description\": \"...\", \"confidence\": 1.0, \"evidence\": [\"...\"] }\n")
+              .append("    ],\n")
               .append("    \"dependencies\": \"(Key module relationships and third-party deps)\",\n")
               .append("    \"execution_instructions\": \"(Specific instructions for the external LLM)\",\n")
               .append("    \"evaluation\": \"(Self-evaluation of this candidate's quality)\"\n")
@@ -530,6 +536,12 @@ public class DarwinVariantSpawner {
               .append("    \"prompt\": \"(The optimized prompt for the external LLM)\",\n")
               .append("    \"selected_files\": [\"(Select 4-16 HIGH-SIGNAL files from the candidate list)\"],\n")
               .append("    \"architecture_summary\": \"(Concise architecture mapping)\",\n")
+              .append("    \"subsystems\": [\n")
+              .append("      { \"id\": \"s1\", \"name\": \"Subsystem Name\", \"purpose\": \"Subsystem Purpose\", \"description\": \"...\", \"boundaries\": [\"...\"], \"critical_files\": [\"...\"], \"responsibilities\": [\"...\"] }\n")
+              .append("    ],\n")
+              .append("    \"architectural_facts\": [\n")
+              .append("      { \"id\": \"f1\", \"subject\": \"...\", \"predicate\": \"...\", \"description\": \"...\", \"confidence\": 1.0, \"evidence\": [\"...\"] }\n")
+              .append("    ],\n")
               .append("    \"dependencies\": \"(Key module relationships and third-party deps)\",\n")
               .append("    \"execution_instructions\": \"(Specific instructions for the external LLM)\",\n")
               .append("    \"evaluation\": \"(Self-evaluation of this candidate's quality)\"\n")
