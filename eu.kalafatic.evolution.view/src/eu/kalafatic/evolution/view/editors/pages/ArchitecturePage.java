@@ -60,11 +60,22 @@ public class ArchitecturePage extends AEvoPage {
             }
         };
 
+        new BrowserFunction(browser, "logFunction") {
+            @Override
+            public Object function(Object[] arguments) {
+                if (arguments.length >= 1) {
+                    eu.kalafatic.evolution.controller.log.Log.log("[ARCH_JS] " + arguments[0]);
+                }
+                return null;
+            }
+        };
+
         hookContextMenu();
         refreshBrowser();
     }
 
     private void handleNavigatorAction(String id, String action) {
+        eu.kalafatic.evolution.controller.log.Log.log("[ARCH_PAGE] Navigator Action: " + action + " for ID: " + id);
         Display.getDefault().asyncExec(() -> {
             switch (action) {
                 case "REFRESH":
@@ -289,6 +300,7 @@ public class ArchitecturePage extends AEvoPage {
         if (input instanceof org.eclipse.ui.IFileEditorInput) {
             org.eclipse.core.resources.IProject project = ((org.eclipse.ui.IFileEditorInput) input).getFile().getProject();
             java.io.File root = project.getLocation().toFile();
+            eu.kalafatic.evolution.controller.log.Log.log("[ARCH_PAGE] Starting Discovery for Project: " + project.getName() + " at " + root.getAbsolutePath());
 
             org.eclipse.core.runtime.jobs.Job job = new org.eclipse.core.runtime.jobs.Job("Discovering Architecture") {
                 @Override
@@ -297,6 +309,7 @@ public class ArchitecturePage extends AEvoPage {
                         // 1. Physical Scan
                         eu.kalafatic.evolution.controller.mediation.scanner.TargetScanner scanner = new eu.kalafatic.evolution.controller.mediation.scanner.TargetScanner();
                         eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot snapshot = scanner.scanToSnapshot(root, eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot.TargetType.PROJECT);
+                        eu.kalafatic.evolution.controller.log.Log.log("[ARCH_PAGE] Physical Scan complete. Found " + snapshot.getNodes().size() + " nodes.");
 
                         // 2. AI Understanding (Mediated Mode Style)
                         if (orchestrator != null) {
@@ -329,6 +342,7 @@ public class ArchitecturePage extends AEvoPage {
                             agent.setAiService(ctx.getAiService());
 
                             eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel reality = agent.discover("Analyze repository architecture and key hotspots", ctx, snapshot);
+                            eu.kalafatic.evolution.controller.log.Log.log("[ARCH_PAGE] Reality Model synthesized: " + reality.getDomain());
 
                             // Save to metadata for extractModel to find it
                             ctx.getOrchestrationState().getMetadata().put("targetRealityModel", reality);
@@ -447,10 +461,12 @@ public class ArchitecturePage extends AEvoPage {
         // 1. Try to load from Cache first
         DesignModel cached = loadModelFromCache();
         if (cached != null) {
+            eu.kalafatic.evolution.controller.log.Log.log("[ARCH_PAGE] Returning cached model: " + cached.getComponents().size() + " components.");
             return filterModel(cached, currentMode);
         }
 
         DesignModel model = discoverArchitectureNodes(root);
+        eu.kalafatic.evolution.controller.log.Log.log("[ARCH_PAGE] Discovered " + model.getComponents().size() + " components via node scan.");
 
         // Integrate Reality Discovery Model if present in orchestrator
         if (orchestrator != null && orchestrator.getSelfDevSession() != null) {
@@ -518,6 +534,7 @@ public class ArchitecturePage extends AEvoPage {
         eu.kalafatic.utils.semantic.AIContextTool tool = new eu.kalafatic.utils.semantic.AIContextTool();
         Map<String, ComponentRecord> nodes = new HashMap<>();
 
+        eu.kalafatic.evolution.controller.log.Log.log("[ARCH_PAGE] Scanning for metadata at: " + root.getAbsolutePath());
         // 1. Scan for .ai.json files
         scanForMetadata(root, root, tool, nodes, model);
 
@@ -537,7 +554,10 @@ public class ArchitecturePage extends AEvoPage {
 
     private void discoverLocalStructure(java.io.File current, java.io.File root, DesignModel model) {
         java.io.File[] files = current.listFiles();
-        if (files == null) return;
+        if (files == null) {
+            eu.kalafatic.evolution.controller.log.Log.log("[ARCH_PAGE] Local structure: No files found in " + current.getAbsolutePath());
+            return;
+        }
 
         for (java.io.File f : files) {
             if (f.isDirectory()) {
@@ -563,6 +583,8 @@ public class ArchitecturePage extends AEvoPage {
         java.io.File[] files = current.listFiles();
         if (files == null) return;
 
+        if (current.equals(root)) eu.kalafatic.evolution.controller.log.Log.log("[ARCH_PAGE] scanForMetadata: Processing " + files.length + " entries at root.");
+
         for (java.io.File f : files) {
             if (f.isDirectory()) {
                 if (!f.getName().startsWith(".") && !f.getName().equals("target") && !f.getName().equals("bin")) {
@@ -571,6 +593,7 @@ public class ArchitecturePage extends AEvoPage {
             } else if (f.getName().endsWith(".java") || f.getName().endsWith(".md") || f.getName().endsWith(".json")) {
                 eu.kalafatic.utils.semantic.EvoMetadata meta = tool.loadMetadata(f);
                 if (meta != null) {
+                    eu.kalafatic.evolution.controller.log.Log.log("[ARCH_PAGE] Found Metadata for: " + f.getName());
                     ComponentRecord rec = new ComponentRecord();
                     rec.setId(meta.getPath() != null ? meta.getPath() : f.getName());
                     rec.setName(f.getName());

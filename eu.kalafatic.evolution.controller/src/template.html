@@ -165,13 +165,20 @@
     </svg>
 
     <script>
+        function log(msg) { if (window.logFunction) window.logFunction(msg); else console.log(msg); }
+
         window.INITIAL_MODEL = {{MODEL_JSON}};
         window.CURRENT_VIEW_MODE = "{{VIEW_MODE}}";
+
+        log("Template loaded. Mode: " + window.CURRENT_VIEW_MODE);
 
         // Sync select dropdown
         document.getElementById('mode-select').value = window.CURRENT_VIEW_MODE;
         if (window.INITIAL_MODEL && window.INITIAL_MODEL.name) {
             document.getElementById('project-title').innerText = window.INITIAL_MODEL.name;
+            log("Project title: " + window.INITIAL_MODEL.name + " (" + (window.INITIAL_MODEL.components ? window.INITIAL_MODEL.components.length : 0) + " comps)");
+        } else {
+            log("No project title or model available in template.");
         }
     </script>
     <script>{{NAVIGATOR_JS}}</script>

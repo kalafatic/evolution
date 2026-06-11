@@ -26,8 +26,10 @@ public class TargetScanner {
     public TargetSnapshot scanToSnapshot(File root, TargetSnapshot.TargetType type) {
         String id = "snapshot-" + System.currentTimeMillis();
         TargetSnapshot snapshot = new TargetSnapshot(id, "1.0", type, root.getAbsolutePath());
+        eu.kalafatic.evolution.controller.log.Log.log("[TARGET_SCANNER] Starting scan of: " + root.getAbsolutePath());
         scanRecursiveToSnapshot(root, root, snapshot);
         detectTechnologiesInSnapshot(snapshot);
+        eu.kalafatic.evolution.controller.log.Log.log("[TARGET_SCANNER] Scan complete. Total nodes: " + snapshot.getNodes().size());
         return snapshot;
     }
 
