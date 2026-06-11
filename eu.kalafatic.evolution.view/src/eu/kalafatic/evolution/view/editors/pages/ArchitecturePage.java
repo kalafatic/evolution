@@ -99,6 +99,95 @@ public class ArchitecturePage extends AEvoPage {
         }
     }
 
+    private void saveModelToCache(eu.kalafatic.evolution.controller.orchestration.TaskContext ctx, DesignModel model) {
+        try {
+            String json = serializeModelToJson(model);
+            ctx.getOrchestrator().setSharedMemory(
+                eu.kalafatic.evolution.controller.orchestration.ConversationState.save(
+                    ctx.getOrchestrator().getSharedMemory(), ctx.getSessionId(), "architecture_cache", json));
+        } catch (Exception e) {}
+    }
+
+    private DesignModel loadModelFromCache() {
+        if (orchestrator == null || orchestrator.getSharedMemory() == null) return null;
+        try {
+            String sid = (orchestrator.getSelfDevSession() != null) ? orchestrator.getSelfDevSession().getId() : "discovery-session";
+            String json = eu.kalafatic.evolution.controller.orchestration.ConversationState.load(orchestrator.getSharedMemory(), sid).getMetadata("architecture_cache");
+            if (json == null || json.isEmpty()) return null;
+
+            JSONObject obj = new JSONObject(json);
+            DesignModel model = new DesignModel();
+            model.setName(obj.optString("name", "Cached Architecture"));
+
+            JSONArray comps = obj.optJSONArray("components");
+            if (comps != null) {
+                for (int i = 0; i < comps.length(); i++) {
+                    JSONObject co = comps.getJSONObject(i);
+                    ComponentRecord c = new ComponentRecord();
+                    c.setId(co.optString("id"));
+                    c.setName(co.optString("name"));
+                    c.setType(co.optString("type"));
+                    c.setDescription(co.optString("description"));
+                    c.setPath(co.optString("path"));
+                    c.setImportanceScore(co.optDouble("importance", 0.5));
+
+                    JSONArray uc = co.optJSONArray("useCases");
+                    if (uc != null) for (int j = 0; j < uc.length(); j++) c.getUseCases().add(uc.getString(j));
+
+                    JSONArray kc = co.optJSONArray("keyClasses");
+                    if (kc != null) for (int j = 0; j < kc.length(); j++) c.getKeyClasses().add(kc.getString(j));
+
+                    model.getComponents().add(c);
+                }
+            }
+
+            JSONArray rels = obj.optJSONArray("relationships");
+            if (rels != null) {
+                for (int i = 0; i < rels.length(); i++) {
+                    JSONObject ro = rels.getJSONObject(i);
+                    RelationshipRecord r = new RelationshipRecord();
+                    r.setFrom(ro.optString("from"));
+                    r.setTo(ro.optString("to"));
+                    r.setType(ro.optString("type"));
+                    model.getRelationships().add(r);
+                }
+            }
+            return model;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private String serializeModelToJson(DesignModel model) {
+        JSONObject obj = new JSONObject();
+        obj.put("name", model.getName());
+        JSONArray comps = new JSONArray();
+        for (ComponentRecord c : model.getComponents()) {
+            JSONObject co = new JSONObject();
+            co.put("id", c.getId());
+            co.put("name", c.getName());
+            co.put("type", c.getType());
+            co.put("description", c.getDescription());
+            co.put("path", c.getPath());
+            co.put("importance", c.getImportanceScore());
+            co.put("useCases", new JSONArray(c.getUseCases()));
+            co.put("keyClasses", new JSONArray(c.getKeyClasses()));
+            comps.put(co);
+        }
+        obj.put("components", comps);
+
+        JSONArray rels = new JSONArray();
+        for (RelationshipRecord r : model.getRelationships()) {
+            JSONObject ro = new JSONObject();
+            ro.put("from", r.getFrom());
+            ro.put("to", r.getTo());
+            ro.put("type", r.getType());
+            rels.put(ro);
+        }
+        obj.put("relationships", rels);
+        return obj.toString();
+    }
+
     @Override
     public void scheduleRefresh() {
         super.scheduleRefresh();
@@ -175,18 +264,48 @@ public class ArchitecturePage extends AEvoPage {
                         eu.kalafatic.evolution.controller.mediation.scanner.TargetScanner scanner = new eu.kalafatic.evolution.controller.mediation.scanner.TargetScanner();
                         eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot snapshot = scanner.scanToSnapshot(root, eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot.TargetType.PROJECT);
 
-                        // 2. AI Understanding (Reality Discovery)
+                        // 2. AI Understanding (Mediated Mode Style)
                         if (orchestrator != null) {
-                            String sid = orchestrator.getSelfDevSession() != null ? orchestrator.getSelfDevSession().getId() : "discovery";
-                            eu.kalafatic.evolution.controller.orchestration.SessionContainer session = eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getOrCreateSession(sid);
-                            eu.kalafatic.evolution.controller.agents.RealityDiscoveryAgent agent = new eu.kalafatic.evolution.controller.agents.RealityDiscoveryAgent(session);
-                            agent.setAiService(eu.kalafatic.evolution.controller.orchestration.OrchestratorServiceImpl.getInstance().getOrchestrator().getAiService());
+                            String sid = (orchestrator.getSelfDevSession() != null && orchestrator.getSelfDevSession().getId() != null) ?
+                                         orchestrator.getSelfDevSession().getId() : "discovery-session";
 
-                            eu.kalafatic.evolution.controller.orchestration.TaskContext ctx = new eu.kalafatic.evolution.controller.orchestration.TaskContext(orchestrator, root);
+                            eu.kalafatic.evolution.controller.orchestration.SessionContainer session = eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getOrCreateSession(sid);
+                            eu.kalafatic.evolution.controller.orchestration.TaskContext ctx = (session instanceof eu.kalafatic.evolution.controller.orchestration.SessionContext) ?
+                                    ((eu.kalafatic.evolution.controller.orchestration.SessionContext)session).getTaskContext() : null;
+
+                            if (ctx == null) {
+                                ctx = new eu.kalafatic.evolution.controller.orchestration.TaskContext(orchestrator, root);
+                                ctx.setSessionId(sid);
+                                if (session instanceof eu.kalafatic.evolution.controller.orchestration.SessionContext) {
+                                    ((eu.kalafatic.evolution.controller.orchestration.SessionContext)session).setTaskContext(ctx);
+                                }
+                            }
+
+                            monitor.subTask("Mediating High-Signal Context");
+                            eu.kalafatic.evolution.controller.mediation.analysis.ContextCurator curator = new eu.kalafatic.evolution.controller.mediation.analysis.ContextCurator();
+                            java.util.List<String> candidates = curator.selectContext(snapshot, "architectural overview and key entry points", 32);
+
+                            eu.kalafatic.evolution.controller.mediation.analysis.SemanticExtractor extractor = new eu.kalafatic.evolution.controller.mediation.analysis.SemanticExtractor();
+                            extractor.extractToSnapshot(snapshot, candidates);
+
+                            monitor.subTask("Synthesizing Reality Model");
+                            eu.kalafatic.evolution.controller.agents.RealityDiscoveryAgent agent = new eu.kalafatic.evolution.controller.agents.RealityDiscoveryAgent(session);
+
+                            // FIX: Avoid using Orchestrator.getAiService() which is undefined. Use TaskContext.getAiService().
+                            agent.setAiService(ctx.getAiService());
+
                             eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel reality = agent.discover("Analyze repository architecture and key hotspots", ctx, snapshot);
 
                             // Save to metadata for extractModel to find it
                             ctx.getOrchestrationState().getMetadata().put("targetRealityModel", reality);
+
+                            // Also trigger MetadataAgent for persistent sidecars
+                            monitor.subTask("Generating AI Metadata Sidecars");
+                            MetadataAgent generator = new MetadataAgent();
+                            generator.generate(root, monitor);
+
+                            // Persistent Cache in Shared Memory
+                            saveModelToCache(ctx, extractModel());
                         }
 
                         scheduleRefresh();
@@ -290,6 +409,12 @@ public class ArchitecturePage extends AEvoPage {
 
         org.eclipse.core.resources.IProject project = ((org.eclipse.ui.IFileEditorInput) input).getFile().getProject();
         java.io.File root = project.getLocation().toFile();
+
+        // 1. Try to load from Cache first
+        DesignModel cached = loadModelFromCache();
+        if (cached != null) {
+            return filterModel(cached, currentMode);
+        }
 
         DesignModel model = discoverArchitectureNodes(root);
 

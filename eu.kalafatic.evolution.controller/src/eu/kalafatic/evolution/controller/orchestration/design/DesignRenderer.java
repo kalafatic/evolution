@@ -18,9 +18,13 @@ public class DesignRenderer {
         String navigatorJs = eu.kalafatic.evolution.controller.tools.FileTool.readResource("/js/navigator.js");
         if (navigatorJs == null) navigatorJs = "// Navigator script not found";
 
+        String d3Js = eu.kalafatic.evolution.controller.tools.FileTool.readResource("/js/d3.v7.min.js");
+        if (d3Js == null) d3Js = "// D3.js not found";
+
         return template
             .replace("{{MODEL_JSON}}", serializeModel(model))
-            .replace("{{NAVIGATOR_JS}}", navigatorJs);
+            .replace("{{NAVIGATOR_JS}}", navigatorJs)
+            .replace("{{D3_JS}}", d3Js);
     }
 
     private String serializeModel(DesignModel model) {

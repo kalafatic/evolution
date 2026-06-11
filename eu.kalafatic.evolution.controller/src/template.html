@@ -1,5 +1,5 @@
 <!DOCTYPE html><html><head><meta charset='UTF-8'>
-<script src='https://d3js.org/d3.v7.min.js'></script>
+<script>{{D3_JS}}</script>
 <style>
 html, body { font-family: 'Segoe UI', sans-serif; background-color: #f8fafc; padding: 0; margin: 0; width: 100%; height: 100%; overflow: hidden; }
 #architecture-container { width: 100%; height: 100%; }
@@ -23,9 +23,17 @@ html, body { font-family: 'Segoe UI', sans-serif; background-color: #f8fafc; pad
 .menu-item { padding: 8px 15px; cursor: pointer; font-size: 0.9em; color: #334155; }
 .menu-item:hover { background: #f1f5f9; color: #0f172a; }
 hr { border: 0; border-top: 1px solid #f1f5f9; margin: 5px 0; }
+        #empty-state { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: #94a3b8; display: none; }
+        #empty-state.active { display: block; }
+        #empty-state h1 { font-size: 2em; margin-bottom: 10px; }
+        #empty-state p { font-size: 1.1em; }
 </style></head><body>
 <div id='architecture-container'>
 <svg id='architecture-svg' width='100%' height='100%'></svg>
+    <div id='empty-state'>
+        <h1>Architecture Map</h1>
+        <p>No model loaded. Use <b>Discover</b> or <b>Generate Metadata</b> to populate the map.</p>
+    </div>
 </div>
 <div id='details-panel'></div>
 <div id='context-menu'></div>

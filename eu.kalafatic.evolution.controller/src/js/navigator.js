@@ -6,6 +6,7 @@
 
     const gMain = svg.append("g");
     const gLinks = gMain.append("g").attr("class", "links");
+    const gEdgeLabels = gMain.append("g").attr("class", "edge-labels");
     const gNodes = gMain.append("g").attr("class", "nodes");
 
     const zoom = d3.zoom()
@@ -41,6 +42,7 @@
         }));
 
         graphData = { nodes, links };
+        d3.select("#empty-state").classed("active", nodes.length === 0);
         render();
     };
 
@@ -60,6 +62,15 @@
             .attr("stroke", "#94a3b8")
             .attr("stroke-width", 2)
             .attr("marker-end", "url(#arrowhead)");
+
+        const edgeLabel = gEdgeLabels.selectAll(".edge-label")
+            .data(graphData.links)
+            .join("text")
+            .attr("class", "edge-label")
+            .attr("font-size", "9px")
+            .attr("fill", "#64748b")
+            .attr("text-anchor", "middle")
+            .text(d => d.type);
 
         const node = gNodes.selectAll(".node")
             .data(graphData.nodes)
@@ -101,6 +112,10 @@
                 .attr("y1", d => d.source.y)
                 .attr("x2", d => d.target.x)
                 .attr("y2", d => d.target.y);
+
+            edgeLabel
+                .attr("x", d => (d.source.x + d.target.x) / 2)
+                .attr("y", d => (d.source.y + d.target.y) / 2 - 5);
 
             node
                 .attr("transform", d => `translate(${d.x}, ${d.y})`);
