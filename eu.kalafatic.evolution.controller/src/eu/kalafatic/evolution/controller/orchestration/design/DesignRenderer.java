@@ -44,7 +44,7 @@ public class DesignRenderer {
             .replace("{{D3_JS}}", d3Js);
     }
 
-    private String serializeModel(DesignModel model) {
+    public String serializeModel(DesignModel model) {
         if (model == null) return "{}";
         org.json.JSONObject json = new org.json.JSONObject();
         json.put("name", model.getName() != null ? model.getName() : "Evolution Architecture");
