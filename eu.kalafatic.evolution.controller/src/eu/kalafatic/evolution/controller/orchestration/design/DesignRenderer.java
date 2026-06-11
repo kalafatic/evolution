@@ -20,13 +20,22 @@ public class DesignRenderer {
             eu.kalafatic.evolution.controller.log.Log.log("[DESIGN_RENDERER] Rendering model: " + model.getName() + " with " + model.getComponents().size() + " components. Mode: " + viewMode);
         }
         String template = eu.kalafatic.evolution.controller.tools.FileTool.readResource("/template.html");
-        if (template == null) return "Error: Template not found";
+        if (template == null) {
+            eu.kalafatic.evolution.controller.log.Log.log("[DESIGN_RENDERER] ERROR: template.html not found in bundle resources!");
+            return "Error: Template not found";
+        }
 
         String navigatorJs = eu.kalafatic.evolution.controller.tools.FileTool.readResource("/js/navigator.js");
-        if (navigatorJs == null) navigatorJs = "// Navigator script not found";
+        if (navigatorJs == null) {
+            eu.kalafatic.evolution.controller.log.Log.log("[DESIGN_RENDERER] ERROR: /js/navigator.js not found in bundle resources!");
+            navigatorJs = "log('ERROR: /js/navigator.js not found in bundle resources!');";
+        }
 
         String d3Js = eu.kalafatic.evolution.controller.tools.FileTool.readResource("/js/d3.v7.min.js");
-        if (d3Js == null) d3Js = "// D3.js not found";
+        if (d3Js == null) {
+            eu.kalafatic.evolution.controller.log.Log.log("[DESIGN_RENDERER] ERROR: /js/d3.v7.min.js not found in bundle resources!");
+            d3Js = "log('ERROR: /js/d3.v7.min.js not found in bundle resources!');";
+        }
 
         return template
             .replace("{{MODEL_JSON}}", serializeModel(model))

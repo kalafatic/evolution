@@ -235,7 +235,8 @@ public class IterationPage extends AEvoPage {
             @Override
             public String getText(Object element) {
                 IterationRecord r = (IterationRecord) element;
-                return r.getResult() + (r.getResult().equals("SUCCESS") ? " \u2705" : " \u274C");
+                String res = r.getResult() != null ? r.getResult() : "UNKNOWN";
+                return res + ("SUCCESS".equals(res) ? " \u2705" : " \u274C");
             }
         });
 

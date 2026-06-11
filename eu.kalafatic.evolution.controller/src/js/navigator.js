@@ -1,9 +1,17 @@
 (function() {
+    // Global Error Bridge
+    window.onerror = function(message, source, lineno, colno, error) {
+        const errorMsg = "JS Error: " + message + " at " + source + ":" + lineno + ":" + colno;
+        if (window.logFunction) window.logFunction(errorMsg);
+        return false;
+    };
+
     const svg = d3.select("#architecture-svg");
     const container = d3.select("#architecture-container");
 
-    let width = container.node().getBoundingClientRect().width;
-    let height = container.node().getBoundingClientRect().height;
+    let rect = container.node().getBoundingClientRect();
+    let width = rect.width || window.innerWidth || 800;
+    let height = rect.height || window.innerHeight || 600;
 
     const gMain = svg.append("g");
     const gLinks = gMain.append("g").attr("class", "links");
@@ -19,8 +27,9 @@
     svg.call(zoom);
 
     window.addEventListener('resize', () => {
-        width = container.node().getBoundingClientRect().width;
-        height = container.node().getBoundingClientRect().height;
+        let newRect = container.node().getBoundingClientRect();
+        width = newRect.width || window.innerWidth || 800;
+        height = newRect.height || window.innerHeight || 600;
         if (simulation) simulation.force("center", d3.forceCenter(width / 2, height / 2)).alpha(0.3).restart();
     });
 
