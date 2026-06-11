@@ -410,8 +410,10 @@ window.ChatApp.Renderer = {
         if (!panel || !content) return;
 
         // Auto-open panel if closed and iteration is starting
-        if (panel.style.width === '0px' || panel.style.width === '0') {
+        if (!panel.style.width || panel.style.width === '0px' || panel.style.width === '0') {
              panel.style.width = '320px';
+             // Force layout update if in split-view/flexbox
+             if (window.ChatApp && window.ChatApp.UI) window.ChatApp.UI.updateLayout();
         }
 
         try {

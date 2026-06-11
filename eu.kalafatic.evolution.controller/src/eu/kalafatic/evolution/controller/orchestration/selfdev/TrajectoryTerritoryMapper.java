@@ -25,7 +25,8 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
                "Given a goal and system context, identify a divergent architectural direction.\n" +
                "STRICT RULE: All blueprints MUST be descendants of the discovered Target Reality and hotspots.\n" +
                "Avoid hardcoded rules. Infer the best divergence axes based on observed evidence.\n" +
-               "MANDATORY: You MUST generate a blueprint that is CONCEPTUALLY DISTINCT from any provided existing blueprints. Focus on an unexplored technical quadrant of the target reality.";
+               "MANDATORY: You MUST generate a blueprint that is CONCEPTUALLY DISTINCT from any provided existing blueprints. Focus on an unexplored technical quadrant of the target reality.\n" +
+               "TECHNICAL SPECIFICITY: Blueprints MUST contain specific technical mechanisms, design patterns, and architectural trade-offs. Avoid generic descriptions.";
     }
 
     public List<TrajectoryBlueprint> map(String goal, TaskContext context, int limit) throws Exception {
@@ -64,10 +65,11 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
                "Output exactly ONE JSON object for a unique blueprint. The object MUST have:\n" +
                "- id: unique string\n" +
                "- strategy: concise title\n" +
-               "- philosophy: architectural core\n" +
-               "- direction: detailed technical path\n" +
-               "- characteristics: array of required traits\n" +
-               "- tradeoffs: what is sacrificed\n" +
+               "- philosophy: architectural core (high-level concept)\n" +
+               "- direction: detailed technical implementation path (SPECIFIC classes, patterns, or components involved)\n" +
+               "- characteristics: array of required traits (TECHNICAL, e.g., 'Reactive', 'Event-Driven', 'Monolithic with Interfaces')\n" +
+               "- tradeoffs: what is sacrificed (e.g., 'Increased latency for higher consistency')\n" +
+               "- survival_argument: why this path is technically viable\n" +
                "- strategy_type: one of [PROBABLE_SURVIVOR, PHILOSOPHY_MUTATION, MAXIMAL_DIVERGENCE, STABILIZATION_RECOVERY, ARCHITECTURE_MAPPING, REFACTOR_HOTSPOT_ANALYSIS]";
 
         String response = aiService.sendRequest(context.getOrchestrator(), getAgentInstructions() + "\n\n" + prompt, context);

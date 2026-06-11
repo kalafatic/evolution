@@ -12,6 +12,12 @@
     width: 320px;
 }
 
+#progress-panel {
+    width: 0; /* Default closed, will be opened via JS or manually */
+    border-left: 1px solid var(--border);
+    background: #fdfdfd;
+}
+
 .resize-handle {
     position: absolute;
     left: 0;

@@ -1544,14 +1544,19 @@ public class IterationManager {
             context.log("[KERNEL] Mediated Mode: Final selected files for export: " + selectedPaths);
             File exportPackage = exportManager.createExportPackage(context.getSessionId(), optimizedPrompt, selectedPaths, context.getProjectRoot(), outputPath, metadataJson, historyAnalysis, architectureSummary, dependencies, executionInstructions, realityModelJson, architecturalFactsJson, subsystemsJson);
 
+            // NEW: Create export folder in addition to ZIP
+            File exportFolder = exportManager.createExportFolder(context.getSessionId(), optimizedPrompt, selectedPaths, context.getProjectRoot(), outputPath, metadataJson, historyAnalysis, architectureSummary, dependencies, executionInstructions, realityModelJson, architecturalFactsJson, subsystemsJson);
+
             // Record as a change so it appears in Changes view
             context.getFileChangeTracker().recordChange(exportPackage.getName(), FileChangeTracker.ChangeType.NEW);
+            context.getFileChangeTracker().recordChange(exportFolder.getName(), FileChangeTracker.ChangeType.NEW);
 
             StringBuilder summaryBuilder = new StringBuilder();
             summaryBuilder.append("### Mediated Darwin Evolution Complete\n\n");
 
             String packageUri = exportPackage.toURI().toString();
-            summaryBuilder.append("**Export Package:** [").append(exportPackage.getName()).append("](").append(packageUri).append(")\n");
+            summaryBuilder.append("**Export Package (ZIP):** [").append(exportPackage.getName()).append("](").append(packageUri).append(")\n");
+            summaryBuilder.append("**Export Folder:** `").append(exportFolder.getName()).append("` (Created in project resources)\n");
             summaryBuilder.append("**Selected Files:** ").append(selectedPaths.size()).append(" (Limit: 16)\n\n");
             summaryBuilder.append("**Target Type:** ").append(snapshot.getTargetType()).append("\n");
             summaryBuilder.append("**Inferred Architecture:** ").append(snapshot.getMetadata().get("architectureInference")).append("\n\n");
@@ -1670,6 +1675,7 @@ public class IterationManager {
         String decisionType = (manualSelectionId != null) ? "MANUAL" : "AUTO";
         outcomeBuilder.append("[DECISION:").append(decisionType).append("]");
 
+        // STAMPING MANDATE: Always emit branch statuses for the UI to render stamps correctly
         context.log(outcomeBuilder.toString());
 
         return decision;

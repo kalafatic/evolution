@@ -39,12 +39,18 @@ public class DefaultStabilityPolicy implements IStabilityPolicy {
         int minGen = context.getOrchestrationState().getMetadata().containsKey("minEvolutionaryDepth") ?
             (Integer) context.getOrchestrationState().getMetadata().get("minEvolutionaryDepth") : 2;
 
+        // MEDIATED MODE: Demand deeper refinement for architectural discovery
+        if (context.getBehaviorProfile().hasTrait(eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait.WORKFLOW_EXPORT_ONLY)) {
+            minGen = Math.max(minGen, 3);
+        }
+
         // DIAGNOSTIC OPTIMIZATION: Early convergence for analytical tasks in Mediated Mode
         if (context.getBehaviorProfile().hasTrait(eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait.WORKFLOW_EXPORT_ONLY)) {
             String goal = context.getOrchestrationState().getRawInput();
             if (goal != null && isAnalytical(goal)) {
-                // Respect minGen even for analytical tasks unless Force Solution is present
-                if (trajectory.getGeneration() >= minGen) {
+                // For extremely simple analytical tasks, we might allow earlier convergence,
+                // but we still want at least 2 generations of refinement.
+                if (trajectory.getGeneration() >= Math.max(2, minGen - 1)) {
                     return true;
                 }
             }

@@ -103,5 +103,10 @@ window.ChatApp.UI = {
         if (panel && (panel.style.width === '0px' || panel.style.width === '0')) {
             panel.style.width = '320px';
         }
+    },
+
+    updateLayout: function() {
+        // Trigger reflow if needed, though flexbox should handle it
+        window.dispatchEvent(new Event('resize'));
     }
 };
