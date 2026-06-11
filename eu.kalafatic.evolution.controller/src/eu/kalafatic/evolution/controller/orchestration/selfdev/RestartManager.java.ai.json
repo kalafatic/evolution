@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration.selfdev; import org.eclipse.emf.ecore.resource.Resource; import eu.kalafatic.evolution.controller.orchestration.TaskContext;",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration.selfdev; import org.eclipse.emf.ecore.resource.Resource; import eu.kalafatic.evolution.controller.orchestration.TaskContext; public class RestartManager { private final TaskContext context; public RestartManager(TaskContext context) { this.context = context; } public void restartIfNeeded() { context.log(\"[RESTART] Checking if system restart or reload is needed...\"); context.log(\"[RESTART] System is stable. No restart required for this iteration.\"); } public void persistAndPrepareForRestart() { context.log(\"[RESTART] Persisting session state before restart...\"); try { Resource resource = context.getOrchestrator().eResource(); if (resource != null) { resource.save(null); context.log(\"[RESTART] EMF Resource saved successfully.\"); } else {",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

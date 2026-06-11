@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.model.orchestration.provider; import eu.kalafatic.evolution.model.orchestration.util.OrchestrationAdapterFactory; import java.util.ArrayList;",
+  "summary": "package eu.kalafatic.evolution.model.orchestration.provider; import eu.kalafatic.evolution.model.orchestration.util.OrchestrationAdapterFactory; import java.util.ArrayList; import java.util.Collection; import org.eclipse.emf.common.notify.Adapter; import org.eclipse.emf.common.notify.Notification; import org.eclipse.emf.common.notify.Notifier; import org.eclipse.emf.edit.provider.ChangeNotifier; import org.eclipse.emf.edit.provider.ComposeableAdapterFactory; import org.eclipse.emf.edit.provider.ComposedAdapterFactory; import org.eclipse.emf.edit.provider.IChangeNotifier; import org.eclipse.emf.edit.provider.IDisposable; import org.eclipse.emf.edit.provider.IEditingDomainItemProvider; import org.eclipse.emf.edit.provider.IItemLabelProvider; import org.eclipse.emf.edit.provider.IItemPropertySource; import org.eclipse.emf.edit.provider.INotifyChangedListener; import org.eclipse.emf.edit.provider.IStructuredItemContentProvider; import org.eclipse.emf.edit.provider.ITreeItemContentProvider; public class OrchestrationItemProviderAdapterFactory extends OrchestrationAdapterFactory implements ComposeableAdapterFactory, IChangeNotifier, IDisposable { protected ComposedAdapterFactory parentAdapterFactory;",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

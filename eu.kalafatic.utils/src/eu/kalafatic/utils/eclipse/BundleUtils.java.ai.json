@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.2,
   "importanceScore": 0.2,
-  "summary": "package eu.kalafatic.utils.eclipse; import java.util.HashMap; import java.util.Map;",
+  "summary": "package eu.kalafatic.utils.eclipse; import java.util.HashMap; import java.util.Map; import org.eclipse.core.runtime.IBundleGroup; import org.eclipse.core.runtime.IBundleGroupProvider; import org.eclipse.core.runtime.Platform; import org.eclipse.core.runtime.Plugin; import org.eclipse.osgi.internal.framework.BundleContextImpl; import org.eclipse.osgi.internal.framework.EquinoxBundle; import org.eclipse.osgi.storage.BundleInfo.Generation; import org.eclipse.osgi.storage.bundlefile.BundleFile; import org.eclipse.ui.plugin.AbstractUIPlugin; import org.osgi.framework.Bundle; import org.osgi.framework.BundleContext; @SuppressWarnings(\"restriction\") public class BundleUtils { private final String GE_PREFIX = \"eu.kalafatic\"; private volatile static BundleUtils INSTANCE; public static BundleUtils getInstance() { if (INSTANCE == null) {",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

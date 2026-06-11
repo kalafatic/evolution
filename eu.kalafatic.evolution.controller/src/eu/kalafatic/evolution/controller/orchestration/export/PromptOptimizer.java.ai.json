@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration.export; import eu.kalafatic.evolution.controller.orchestration.TaskContext; import eu.kalafatic.evolution.controller.orchestration.AiService;",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration.export; import eu.kalafatic.evolution.controller.orchestration.TaskContext; import eu.kalafatic.evolution.controller.orchestration.AiService; import eu.kalafatic.evolution.controller.agents.GeneralAgent; import eu.kalafatic.evolution.controller.agents.AgentFactory; import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants; public class PromptOptimizer { private final GeneralAgent promptAgent; public PromptOptimizer(eu.kalafatic.evolution.controller.orchestration.SessionContainer sessionContainer) { this.promptAgent = (GeneralAgent) AgentFactory.createIsolatedAgents(sessionContainer).stream().filter(a -> a.getType().equals(EvolutionConstants.AGENT_GENERAL)).findFirst().orElse(null); } public String optimize(String originalRequest, String architectureSummary, TaskContext context, AiService aiService) throws Exception { context.log(\"[EXPORT] Optimizing prompt for ChatGPT...\"); StringBuilder sb = new StringBuilder(); sb.append(\"You are a Prompt Engineering expert. Your goal is to convert a user request into a high-quality, structured prompt for ChatGPT.\n\n\"); sb.append(\"CONTEXT:\n\"); sb.append(\"- Original Request: \").append(originalRequest).append(\"\n\"); sb.append(\"- System Architecture: \").append(architectureSummary).append(\"\n\n\"); sb.append(\"STRICT RULES FOR THE GENERATED PROMPT:\n\"); sb.append(\"1. Must include a clear goal derived from the original request.\n\");",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

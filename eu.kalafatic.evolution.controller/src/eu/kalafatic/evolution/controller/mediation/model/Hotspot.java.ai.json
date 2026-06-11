@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "mediation",
+  "stability": "STABLE",
+  "mediatedRelevanceScore": 1.0,
+  "importanceScore": 1.0,
+  "summary": "package eu.kalafatic.evolution.controller.mediation.model; import java.util.ArrayList; import java.util.List; public class Hotspot { private String id; private String name; private String type; // e.g., \"entry_point\", \"core_module\", \"bottleneck\", \"critical_query\" private String description; private double significance; private List<String> evidence = new ArrayList<>(); private List<String> relatedArtifacts = new ArrayList<>(); public Hotspot() {} public Hotspot(String id, String name, String type) { this.id = id; this.name = name; this.type = type; } public String getId() { return id; } public void setId(String id) { this.id = id; } public String getName() { return name; }",
+  "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
+  "contextSelectionHints": ["mandatory_context"],
+  "dependencyLinks": []
+}

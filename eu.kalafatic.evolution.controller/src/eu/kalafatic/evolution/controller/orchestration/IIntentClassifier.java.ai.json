@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration; import org.json.JSONObject; public interface IIntentClassifier {",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration; import org.json.JSONObject; public interface IIntentClassifier { JSONObject classify(String input, TaskContext context) throws Exception; void setAiService(AiService aiService); }",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

@@ -1,10 +1,9 @@
 # PACKAGE CONTEXT
 
-## Directory: eu.kalafatic.evolution.view/src/eu/kalafatic/evolution/view/editors/pages/context/
+## Directory: git/evolution/eu.kalafatic.evolution.view/src/eu/kalafatic/evolution/view/editors/pages/context/
 
 ## Domain: general
 
 ## Components
-* `BestPracticesGroup.java`: package eu.kalafatic.evolution.view.editors.pages.context; import java.io.File; import org.eclipse.swt.SWT;
-* `PACKAGE_CONTEXT.md`: 
-* `NeuronContextGroup.java`: package eu.kalafatic.evolution.view.editors.pages.context; import java.io.File; import org.eclipse.swt.SWT;
+* `BestPracticesGroup.java`: package eu.kalafatic.evolution.view.editors.pages.context; import java.io.File; import org.eclipse.swt.SWT; import org.eclipse.swt.layout.GridData; import org.eclipse.swt.layout.GridLayout; import org.eclipse.swt.widgets.Button; import org.eclipse.swt.widgets.Composite; import org.eclipse.swt.widgets.Label; import org.eclipse.swt.widgets.Group; import eu.kalafatic.evolution.controller.services.BestPracticesService; import eu.kalafatic.evolution.model.orchestration.Orchestrator; import eu.kalafatic.evolution.view.editors.pages.AEvoGroup; import eu.kalafatic.evolution.view.editors.MultiPageEditor; public class BestPracticesGroup extends AEvoGroup { private final File projectRoot; public BestPracticesGroup(Composite parent, MultiPageEditor editor, Orchestrator orchestrator, File projectRoot) { super(editor, orchestrator); this.projectRoot = projectRoot; Group g = new Group(parent, SWT.NONE); g.setText("Best Practices Management");
+* `NeuronContextGroup.java`: package eu.kalafatic.evolution.view.editors.pages.context; import java.io.File; import org.eclipse.swt.SWT; import org.eclipse.swt.layout.GridData; import org.eclipse.swt.layout.GridLayout; import org.eclipse.swt.widgets.Button; import org.eclipse.swt.widgets.Composite; import org.eclipse.swt.widgets.Label; import org.eclipse.swt.widgets.Text; import org.eclipse.swt.widgets.Group; import eu.kalafatic.evolution.controller.services.NeuronContextService; import eu.kalafatic.evolution.model.orchestration.Orchestrator; import eu.kalafatic.evolution.view.editors.pages.AEvoGroup; import eu.kalafatic.evolution.view.editors.MultiPageEditor; public class NeuronContextGroup extends AEvoGroup { private final NeuronContextService service; private Text contextPreview; public NeuronContextGroup(Composite parent, MultiPageEditor editor, Orchestrator orchestrator, File projectRoot) { super(editor, orchestrator); this.service = new NeuronContextService(orchestrator, projectRoot);

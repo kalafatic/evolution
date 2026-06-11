@@ -82,6 +82,7 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
     Reference serverSessions : ServerSession<<0..*>>
     Reference monitoringHistory : MonitoringData<<0..*>>
     Reference supervisorSettings : SupervisorSettings
+    Reference networkEntries : NetworkEntry<<0..*>>
 
   Class ServerSettings
     Attribute port : EInt
@@ -299,6 +300,12 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
     Attribute targetPath : EString
     Attribute targetType : EString
     Attribute outputPath : EString
+    Attribute autoApprove : EBoolean
+    Attribute aiMode : AiMode
+    Attribute localModel : EString
+    Attribute remoteModel : EString
+    Attribute bitState : ELong
+    Attribute expansion : EInt
 
   Class ChatMessage
     Attribute index : EInt
@@ -313,6 +320,16 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
     Attribute sequenceNumber : ELong
     Attribute turnId : EString
     Attribute isTerminal : EBoolean
+
+  Class NetworkEntry
+    Attribute host : EString
+    Attribute address : EString
+    Attribute port : EInt
+    Attribute path : EString
+    Attribute login : EString
+    Attribute password : EString
+    Attribute type : EString
+    Attribute note : EString
 
   Class PromptInstructions
     Attribute autoApprove : EBoolean

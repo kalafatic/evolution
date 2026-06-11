@@ -4,9 +4,10 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+
 import eu.kalafatic.evolution.controller.mediation.model.FileDescriptor;
 import eu.kalafatic.evolution.controller.mediation.model.SemanticEdge;
 import eu.kalafatic.evolution.controller.mediation.model.SemanticNode;
@@ -16,31 +17,16 @@ import eu.kalafatic.utils.semantic.AIContextTool;
 import eu.kalafatic.utils.semantic.EvoMetadata;
 
 /**
- * Extracts lightweight semantic information from files using heuristics and AI metadata.
- * Implements Semantic Authority Hierarchy: Annotation > Sidecar > Package Context > Heuristic.
+ * Extracts semantic information from source files to build the Target Reality Model.
  */
 public class SemanticExtractor {
 
     private final AIContextTool contextTool = new AIContextTool();
 
-    public void extract(TargetDescriptor target, File root) {
-        for (FileDescriptor file : target.getFiles()) {
-            analyzeFile(file, root);
-        }
-    }
-
-    public void extractToSnapshot(TargetSnapshot snapshot) {
-        extractToSnapshot(snapshot, null);
-    }
-
-    public void extractToSnapshot(TargetSnapshot snapshot, List<String> pathsToAnalyze) {
-        File root = new File(snapshot.getRootPath());
-        if (pathsToAnalyze == null) {
-            for (SemanticNode node : snapshot.getNodes().values()) {
-                analyzeNode(node, root, snapshot);
-            }
-        } else {
-            for (String path : pathsToAnalyze) {
+    public void extract(TargetSnapshot snapshot, File root) {
+        for (String path : snapshot.getNodes().keySet()) {
+            File file = new File(root, path);
+            if (file.exists() && !file.isDirectory()) {
                 SemanticNode node = snapshot.getNodes().get(path);
                 if (node != null) {
                     analyzeNode(node, root, snapshot);
@@ -48,38 +34,116 @@ public class SemanticExtractor {
             }
         }
     }
-
-    private void analyzeFile(FileDescriptor file, File root) {
+    
+    public void extract(TargetDescriptor target, File root) {
+        // Compatibility for TargetDescriptor-based tests
+        for (FileDescriptor file : target.getFiles()) {
+            analyzeFileDescriptor(file, root);
+        }
+    }
+    
+    private void analyzeFileDescriptor(FileDescriptor file, File root) {
         File actualFile = new File(root, file.getPath());
-        if (actualFile.length() > 500000) return; // Skip large files
-
+        if (!actualFile.exists() || actualFile.length() > 500000) return;
         try {
             List<String> lines = Files.readAllLines(actualFile.toPath());
+            for (String line : lines) {
+                String trimmed = line.trim();
+                if (trimmed.contains("@")) {
+                    if (!file.getTags().contains("Annotated")) file.getTags().add("Annotated");
+                }
+                if (trimmed.contains("public static void main") || trimmed.contains("setup()") || trimmed.contains("loop()")) {
+                    if (!file.getTags().contains("Executory")) file.getTags().add("Executory");
+                }
+            }
+        } catch (IOException e) {}
+    }
 
-            // Collect metadata from all levels
-            Map<String, String> annotationMeta = extractAnnotationMetadataFromLines(lines);
-            EvoMetadata sidecarMeta = contextTool.loadMetadata(actualFile);
-            String packageDomain = inferDomainFromPath(file.getPath());
-            String markdownContext = loadPackageMarkdownContext(actualFile.getParentFile());
+    public void extractToSnapshot(TargetSnapshot snapshot, List<String> paths) {
+        // Compatibility method for existing IterationManager calls
+        File root = new File("."); // Usually executed in project root
+        for (String path : paths) {
+            SemanticNode node = snapshot.getNodes().get(path);
+            if (node != null) {
+                analyzeNode(node, root, snapshot);
+            }
+        }
+    }
 
-            // Resolve with Authority Hierarchy
-            resolveMetadata(file.getTags(), annotationMeta, sidecarMeta, markdownContext, packageDomain);
+    public void validateAndRepairMetadata(File root) {
+        scanAndRepairRecursive(root, root);
+    }
 
-            analyzeContent(file, lines);
-        } catch (IOException e) {
-            // Log and skip
+    private void scanAndRepairRecursive(File current, File root) {
+        if (current.isDirectory()) {
+            if (current.getName().equals(".git") || current.getName().equals("target")) return;
+            File[] children = current.listFiles();
+            if (children != null) {
+                for (File child : children) scanAndRepairRecursive(child, root);
+            }
+        } else {
+            String name = current.getName();
+            if (name.endsWith(".java") || name.endsWith(".ts") || name.endsWith(".py") || name.endsWith(".cpp")) {
+                repairFileMetadata(current, root);
+            }
+        }
+    }
+
+    private void repairFileMetadata(File file, File root) {
+        EvoMetadata meta = contextTool.loadMetadata(file);
+        boolean newlyCreated = false;
+        if (meta == null) {
+            meta = new EvoMetadata();
+            String fullPath = file.getAbsolutePath();
+            String rootPath = root.getAbsolutePath();
+            if (fullPath.startsWith(rootPath)) {
+                meta.setPath(fullPath.substring(rootPath.length()).replaceFirst("^[/\\\\]", ""));
+            } else {
+                meta.setPath(file.getName());
+            }
+            newlyCreated = true;
+        }
+
+        boolean changed = newlyCreated;
+
+        // Auto-infer missing mandatory fields
+        if (meta.getDomain() == null || meta.getDomain().isEmpty() || "unknown".equals(meta.getDomain())) {
+            meta.setDomain(inferDomainFromPath(meta.getPath()));
+            changed = true;
+        }
+
+        if (meta.getArchitecturalLayer() == null || meta.getArchitecturalLayer().isEmpty()) {
+            meta.setArchitecturalLayer(inferLayerFromPath(meta.getPath()));
+            changed = true;
+        }
+
+        if (meta.getSystemCriticality() == null || meta.getSystemCriticality().isEmpty()) {
+            meta.setSystemCriticality(inferCriticality(meta.getPath()));
+            changed = true;
+        }
+
+        // Heuristic concept discovery
+        if (meta.getConcepts().isEmpty()) {
+            List<String> concepts = discoverConcepts(file);
+            if (!concepts.isEmpty()) {
+                meta.setConcepts(concepts);
+                changed = true;
+            }
+        }
+
+        if (changed) {
+            contextTool.saveMetadata(file, meta);
         }
     }
 
     private void analyzeNode(SemanticNode node, File root, TargetSnapshot snapshot) {
         File actualFile = new File(root, node.getPath());
-        if (actualFile.length() > 500000) return;
+        if (!actualFile.exists() || actualFile.length() > 500000) return;
 
         try {
             List<String> lines = Files.readAllLines(actualFile.toPath());
             analyzeContentForNode(node, lines, snapshot);
 
-            // Generate compact summary (first non-empty 3 lines)
             StringBuilder summary = new StringBuilder();
             int count = 0;
             for (String line : lines) {
@@ -90,7 +154,6 @@ public class SemanticExtractor {
             }
             node.setSummary(summary.toString().trim());
 
-            // Resolution with Authority Hierarchy
             Map<String, String> annotationMeta = extractAnnotationMetadataFromLines(lines);
             EvoMetadata sidecarMeta = contextTool.loadMetadata(actualFile);
             String packageDomain = inferDomainFromPath(node.getPath());
@@ -98,31 +161,12 @@ public class SemanticExtractor {
 
             resolveMetadataForNode(node, annotationMeta, sidecarMeta, markdownContext, packageDomain);
 
-        } catch (IOException e) {
-            // Log and skip
-        }
-    }
-
-    private void resolveMetadata(List<String> tags, Map<String, String> ann, EvoMetadata side, String md, String pkg) {
-        String domain = ann.containsKey("domain") ? ann.get("domain") :
-                        (side != null && side.getDomain() != null ? side.getDomain() :
-                        (md != null ? md : pkg));
-
-        if (domain != null) tags.add("domain:" + domain);
-
-        // Conflict detection
-        if (ann.containsKey("domain") && side != null && side.getDomain() != null && !ann.get("domain").equals(side.getDomain())) {
-            tags.add("warning:metadata_conflict_domain");
-        }
-
-        if (side != null && side.isStale()) {
-            tags.add("warning:stale_metadata");
-        }
+        } catch (IOException e) {}
     }
 
     private void resolveMetadataForNode(SemanticNode node, Map<String, String> ann, EvoMetadata side, String md, String pkg) {
         String domain = ann.getOrDefault("domain",
-                        (side != null && side.getDomain() != null) ? side.getDomain() :
+                        (side != null && side.getDomain() != null && !side.getDomain().isEmpty()) ? side.getDomain() :
                         (md != null ? md : pkg));
 
         String role = ann.getOrDefault("role", (side != null && side.getRole() != null) ? side.getRole() : "unknown");
@@ -141,7 +185,33 @@ public class SemanticExtractor {
         if (path.contains("/supervision/")) return "supervision";
         if (path.contains("/execution/")) return "execution";
         if (path.contains("/orchestration/")) return "orchestration";
-        return null;
+        if (path.contains("/genome/")) return "genome";
+        return "core";
+    }
+
+    private String inferLayerFromPath(String path) {
+        if (path.contains("/model/")) return "model";
+        if (path.contains("/controller/")) return "controller";
+        if (path.contains("/view/") || path.contains("/ui/")) return "view";
+        if (path.contains("/utils/")) return "utils";
+        return "unknown";
+    }
+
+    private String inferCriticality(String path) {
+        if (path.contains("IterationManager") || path.contains("Orchestrator") || path.contains("DarwinEngine")) return "HIGH";
+        return "MEDIUM";
+    }
+
+    private List<String> discoverConcepts(File file) {
+        List<String> concepts = new ArrayList<>();
+        try {
+            String content = new String(Files.readAllLines(file.toPath()).stream().limit(100).collect(java.util.stream.Collectors.joining("\n")));
+            if (content.contains("Agent")) concepts.add("Agent");
+            if (content.contains("Darwin")) concepts.add("Evolution");
+            if (content.contains("Genome")) concepts.add("Genome");
+            if (content.contains("Mediated")) concepts.add("Mediation");
+        } catch (IOException e) {}
+        return concepts;
     }
 
     private String loadPackageMarkdownContext(File directory) {
@@ -150,7 +220,7 @@ public class SemanticExtractor {
             try {
                 List<String> lines = Files.readAllLines(contextFile.toPath());
                 for (String line : lines) {
-                    if (line.startsWith("## Domain: ") || line.startsWith("# Domain: ") || line.contains("Domain: ")) {
+                    if (line.contains("Domain: ")) {
                          return line.substring(line.indexOf("Domain:") + 7).trim().toLowerCase();
                     }
                 }
@@ -187,47 +257,19 @@ public class SemanticExtractor {
         if (block.contains("role")) meta.put("role", extractAnnotationValue(block, "role"));
     }
 
-    private void analyzeContent(FileDescriptor file, List<String> lines) {
-        for (String line : lines) {
-            String trimmed = line.trim();
-            // REFACTOR: Generic structural evidence collection.
-            // No hardcoded technology tags.
-            if (trimmed.contains("@")) {
-                addTagIfNotExists(file.getTags(), "Annotated");
-            }
-            if (trimmed.contains("public static void main") || trimmed.contains("setup()") || trimmed.contains("loop()")) {
-                addTagIfNotExists(file.getTags(), "Executory");
-            }
-        }
-    }
-
     private void analyzeContentForNode(SemanticNode node, List<String> lines, TargetSnapshot snapshot) {
         for (String line : lines) {
             String trimmed = line.trim();
-
-            // Abstract Significance Evidence
             if (trimmed.contains("@")) {
                 addTagIfNotExists(node.getTags(), "Annotated");
             }
-
-            // Extract generic structures (classes/functions/definitions)
-            // This evidence is used for Semantic Density calculation.
-            if (trimmed.startsWith("public class ") || trimmed.startsWith("class ") ||
-                (trimmed.contains("void ") && trimmed.contains("()") && trimmed.endsWith("{")) ||
-                (trimmed.startsWith("namespace "))) {
+            if (trimmed.startsWith("public class ") || trimmed.startsWith("class ")) {
                 node.getStructures().add("struct:" + trimmed);
             }
-            if (trimmed.contains("public ") && trimmed.contains("(") && trimmed.contains(")") && trimmed.endsWith("{")) {
-                node.getStructures().add("behavior:" + trimmed);
-            }
-
-            // Extract dependencies (Generic: imports, includes, requirements)
-            // This evidence is used for Graph Centrality calculation.
-            if (trimmed.startsWith("import ") || trimmed.startsWith("#include ") || trimmed.startsWith("require(")) {
+            if (trimmed.startsWith("import ") || trimmed.startsWith("#include ")) {
                 String dep = extractDependency(trimmed);
                 if (dep != null) {
                     node.getDependencies().add(dep);
-                    linkDependency(node, dep, snapshot);
                 }
             }
         }
@@ -236,11 +278,6 @@ public class SemanticExtractor {
     private String extractDependency(String line) {
         if (line.startsWith("import ")) return line.substring(7).replace(";", "").trim();
         if (line.startsWith("#include ")) return line.substring(9).replace("\"", "").replace("<", "").replace(">", "").trim();
-        if (line.startsWith("require(")) {
-            int start = line.indexOf("(") + 1;
-            int end = line.indexOf(")");
-            if (end > start) return line.substring(start, end).replace("'", "").replace("\"", "").trim();
-        }
         return null;
     }
 
@@ -251,7 +288,7 @@ public class SemanticExtractor {
     private String extractAnnotationValue(String block, String key) {
         try {
             int start = block.indexOf(key + " = \"") + key.length() + 4;
-            if (start < key.length() + 4) { // Try without spaces
+            if (start < key.length() + 4) {
                  start = block.indexOf(key + "=\"") + key.length() + 2;
             }
             int end = block.indexOf("\"", start);
@@ -260,17 +297,5 @@ public class SemanticExtractor {
             }
         } catch (Exception e) {}
         return "unknown";
-    }
-
-    private void linkDependency(SemanticNode source, String dependency, TargetSnapshot snapshot) {
-        // Generic dependency linking based on path matching.
-        // Works for both Java packages and C-style includes.
-        String depMatch = dependency.replace(".", "/");
-        for (SemanticNode target : snapshot.getNodes().values()) {
-            String targetPath = target.getPath();
-            if (targetPath.contains(depMatch) || targetPath.endsWith(dependency)) {
-                snapshot.addEdge(new SemanticEdge(source.getId(), target.getId(), SemanticEdge.EdgeType.DEPENDS_ON));
-            }
-        }
     }
 }

@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "orchestration",
+  "stability": "STABLE",
+  "mediatedRelevanceScore": 1.0,
+  "importanceScore": 1.0,
+  "summary": "package eu.kalafatic.evolution.controller.orchestration.selfdev; import java.util.ArrayList; import java.util.HashSet; import java.util.List; import java.util.Set; import org.json.JSONArray; import org.json.JSONObject; import eu.kalafatic.evolution.controller.orchestration.TaskContext; public class DarwinDiversityAnalyzer { public List<JSONObject> analyze(List<JSONObject> variants, List<TrajectoryBlueprint> blueprints, double strictness, double modelCapability, TaskContext context) { if (variants.isEmpty()) return variants; double effectiveStrictness = strictness * modelCapability; context.log(String.format(\"[DIVERSITY] Starting vector analysis. Strictness: %.2f, Model Capability: %.2f, Effective Threshold: %.2f\", strictness, modelCapability, effectiveStrictness)); List<JSONObject> unique = new ArrayList<>(); for (JSONObject v : variants) { DiversityResultType result = evaluate(v, blueprints, unique, effectiveStrictness, context); if (result == DiversityResultType.ACCEPTED || result == DiversityResultType.ACCEPTED_WITH_WARNINGS) { unique.add(v); v.put(\"diversity_result\", result.name());",
+  "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
+  "contextSelectionHints": ["mandatory_context"],
+  "dependencyLinks": []
+}

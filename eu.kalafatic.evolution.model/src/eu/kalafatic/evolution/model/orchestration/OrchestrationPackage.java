@@ -772,88 +772,6 @@ public interface OrchestrationPackage extends EPackage {
 	int ORCHESTRATOR_FEATURE_COUNT = 32;
 
 	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.NetworkEntryImpl <em>Network Entry</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.NetworkEntryImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getNetworkEntry()
-	 * @generated
-	 */
-	int NETWORK_ENTRY = 50;
-
-	/**
-	 * The feature id for the '<em><b>Address</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int NETWORK_ENTRY__ADDRESS = 0;
-
-	/**
-	 * The feature id for the '<em><b>Host</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int NETWORK_ENTRY__HOST = 1;
-
-	/**
-	 * The feature id for the '<em><b>Port</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int NETWORK_ENTRY__PORT = 2;
-
-	/**
-	 * The feature id for the '<em><b>Login</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int NETWORK_ENTRY__LOGIN = 3;
-
-	/**
-	 * The feature id for the '<em><b>Note</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int NETWORK_ENTRY__NOTE = 4;
-
-	/**
-	 * The feature id for the '<em><b>Type</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int NETWORK_ENTRY__TYPE = 5;
-
-	/**
-	 * The number of structural features of the '<em>Network Entry</em>' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int NETWORK_ENTRY_FEATURE_COUNT = 6;
-
-	/**
-	 * The number of operations of the '<em>Network Entry</em>' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int NETWORK_ENTRY_OPERATION_COUNT = 0;
-
-	/**
 	 * The number of operations of the '<em>Orchestrator</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -2944,36 +2862,6 @@ public interface OrchestrationPackage extends EPackage {
 	int CHANGE_SET_OPERATION_COUNT = 0;
 
 	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ReviewSessionImpl <em>Review Session</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.ReviewSessionImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getReviewSession()
-	 * @generated
-	 */
-	int REVIEW_SESSION = 33;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl <em>Chat Session</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getChatSession()
-	 * @generated
-	 */
-	int CHAT_SESSION = 34;
-
-	/**
-	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ChatMessageImpl <em>Chat Message</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.ChatMessageImpl
-	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getChatMessage()
-	 * @generated
-	 */
-	int CHAT_MESSAGE = 35;
-
-	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.SupervisorSettingsImpl <em>Supervisor Settings</em>}' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -3047,6 +2935,16 @@ public interface OrchestrationPackage extends EPackage {
 	int SUPERVISOR_SETTINGS_OPERATION_COUNT = 0;
 
 	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ReviewSessionImpl <em>Review Session</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.ReviewSessionImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getReviewSession()
+	 * @generated
+	 */
+	int REVIEW_SESSION = 33;
+
+	/**
 	 * The feature id for the '<em><b>Id</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -3099,6 +2997,16 @@ public interface OrchestrationPackage extends EPackage {
 	 * @ordered
 	 */
 	int REVIEW_SESSION_OPERATION_COUNT = 0;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl <em>Chat Session</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getChatSession()
+	 * @generated
+	 */
+	int CHAT_SESSION = 34;
 
 	/**
 	 * The feature id for the '<em><b>Id</b></em>' attribute.
@@ -3272,6 +3180,16 @@ public interface OrchestrationPackage extends EPackage {
 	int CHAT_SESSION_OPERATION_COUNT = 0;
 
 	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ChatMessageImpl <em>Chat Message</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.ChatMessageImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getChatMessage()
+	 * @generated
+	 */
+	int CHAT_MESSAGE = 35;
+
+	/**
 	 * The feature id for the '<em><b>Index</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -3398,6 +3316,106 @@ public interface OrchestrationPackage extends EPackage {
 	int CHAT_MESSAGE_OPERATION_COUNT = 0;
 
 	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.NetworkEntryImpl <em>Network Entry</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.NetworkEntryImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getNetworkEntry()
+	 * @generated
+	 */
+	int NETWORK_ENTRY = 36;
+
+	/**
+	 * The feature id for the '<em><b>Host</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int NETWORK_ENTRY__HOST = 0;
+
+	/**
+	 * The feature id for the '<em><b>Address</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int NETWORK_ENTRY__ADDRESS = 1;
+
+	/**
+	 * The feature id for the '<em><b>Port</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int NETWORK_ENTRY__PORT = 2;
+
+	/**
+	 * The feature id for the '<em><b>Path</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int NETWORK_ENTRY__PATH = 3;
+
+	/**
+	 * The feature id for the '<em><b>Login</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int NETWORK_ENTRY__LOGIN = 4;
+
+	/**
+	 * The feature id for the '<em><b>Password</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int NETWORK_ENTRY__PASSWORD = 5;
+
+	/**
+	 * The feature id for the '<em><b>Type</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int NETWORK_ENTRY__TYPE = 6;
+
+	/**
+	 * The feature id for the '<em><b>Note</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int NETWORK_ENTRY__NOTE = 7;
+
+	/**
+	 * The number of structural features of the '<em>Network Entry</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int NETWORK_ENTRY_FEATURE_COUNT = 8;
+
+	/**
+	 * The number of operations of the '<em>Network Entry</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int NETWORK_ENTRY_OPERATION_COUNT = 0;
+
+	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.PromptInstructionsImpl <em>Prompt Instructions</em>}' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -3405,7 +3423,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getPromptInstructions()
 	 * @generated
 	 */
-	int PROMPT_INSTRUCTIONS = 36;
+	int PROMPT_INSTRUCTIONS = 37;
 
 	/**
 	 * The feature id for the '<em><b>Auto Approve</b></em>' attribute.
@@ -3487,7 +3505,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getTaskStatus()
 	 * @generated
 	 */
-	int TASK_STATUS = 37;
+	int TASK_STATUS = 38;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.LogLevel <em>Log Level</em>}' enum.
@@ -3497,7 +3515,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getLogLevel()
 	 * @generated
 	 */
-	int LOG_LEVEL = 38;
+	int LOG_LEVEL = 39;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.FeedbackLevel <em>Feedback Level</em>}' enum.
@@ -3507,7 +3525,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getFeedbackLevel()
 	 * @generated
 	 */
-	int FEEDBACK_LEVEL = 39;
+	int FEEDBACK_LEVEL = 40;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.SessionType <em>Session Type</em>}' enum.
@@ -3517,7 +3535,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSessionType()
 	 * @generated
 	 */
-	int SESSION_TYPE = 40;
+	int SESSION_TYPE = 41;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.CommandStatus <em>Command Status</em>}' enum.
@@ -3527,7 +3545,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getCommandStatus()
 	 * @generated
 	 */
-	int COMMAND_STATUS = 41;
+	int COMMAND_STATUS = 42;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.ExecutionMode <em>Execution Mode</em>}' enum.
@@ -3537,7 +3555,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getExecutionMode()
 	 * @generated
 	 */
-	int EXECUTION_MODE = 42;
+	int EXECUTION_MODE = 43;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.NeuronType <em>Neuron Type</em>}' enum.
@@ -3547,7 +3565,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getNeuronType()
 	 * @generated
 	 */
-	int NEURON_TYPE = 43;
+	int NEURON_TYPE = 44;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.AiMode <em>Ai Mode</em>}' enum.
@@ -3557,7 +3575,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getAiMode()
 	 * @generated
 	 */
-	int AI_MODE = 44;
+	int AI_MODE = 45;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.SelfDevStatus <em>Self Dev Status</em>}' enum.
@@ -3567,7 +3585,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSelfDevStatus()
 	 * @generated
 	 */
-	int SELF_DEV_STATUS = 45;
+	int SELF_DEV_STATUS = 46;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.IterationStatus <em>Iteration Status</em>}' enum.
@@ -3577,7 +3595,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getIterationStatus()
 	 * @generated
 	 */
-	int ITERATION_STATUS = 46;
+	int ITERATION_STATUS = 47;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.SelfDevDecision <em>Self Dev Decision</em>}' enum.
@@ -3587,7 +3605,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSelfDevDecision()
 	 * @generated
 	 */
-	int SELF_DEV_DECISION = 47;
+	int SELF_DEV_DECISION = 48;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.TestStatus <em>Test Status</em>}' enum.
@@ -3597,7 +3615,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getTestStatus()
 	 * @generated
 	 */
-	int TEST_STATUS = 48;
+	int TEST_STATUS = 49;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.ReviewDecision <em>Review Decision</em>}' enum.
@@ -3607,7 +3625,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getReviewDecision()
 	 * @generated
 	 */
-	int REVIEW_DECISION = 49;
+	int REVIEW_DECISION = 50;
 
 
 	/**
@@ -4389,17 +4407,6 @@ public interface OrchestrationPackage extends EPackage {
 	EReference getOrchestrator_ServerSessions();
 
 	/**
-	 * Returns the meta object for the containment reference list '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getNetworkEntries <em>Network Entries</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the containment reference list '<em>Network Entries</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getNetworkEntries()
-	 * @see #getOrchestrator()
-	 * @generated
-	 */
-	EReference getOrchestrator_NetworkEntries();
-
-	/**
 	 * Returns the meta object for the containment reference list '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getMonitoringHistory <em>Monitoring History</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -4411,80 +4418,26 @@ public interface OrchestrationPackage extends EPackage {
 	EReference getOrchestrator_MonitoringHistory();
 
 	/**
-	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.NetworkEntry <em>Network Entry</em>}'.
+	 * Returns the meta object for the containment reference '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getSupervisorSettings <em>Supervisor Settings</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the meta object for class '<em>Network Entry</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.NetworkEntry
+	 * @return the meta object for the containment reference '<em>Supervisor Settings</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getSupervisorSettings()
+	 * @see #getOrchestrator()
 	 * @generated
 	 */
-	EClass getNetworkEntry();
+	EReference getOrchestrator_SupervisorSettings();
 
 	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.NetworkEntry#getAddress <em>Address</em>}'.
+	 * Returns the meta object for the containment reference list '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getNetworkEntries <em>Network Entries</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Address</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.NetworkEntry#getAddress()
-	 * @see #getNetworkEntry()
+	 * @return the meta object for the containment reference list '<em>Network Entries</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getNetworkEntries()
+	 * @see #getOrchestrator()
 	 * @generated
 	 */
-	EAttribute getNetworkEntry_Address();
-
-	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.NetworkEntry#getHost <em>Host</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Host</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.NetworkEntry#getHost()
-	 * @see #getNetworkEntry()
-	 * @generated
-	 */
-	EAttribute getNetworkEntry_Host();
-
-	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.NetworkEntry#getPort <em>Port</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Port</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.NetworkEntry#getPort()
-	 * @see #getNetworkEntry()
-	 * @generated
-	 */
-	EAttribute getNetworkEntry_Port();
-
-	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.NetworkEntry#getLogin <em>Login</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Login</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.NetworkEntry#getLogin()
-	 * @see #getNetworkEntry()
-	 * @generated
-	 */
-	EAttribute getNetworkEntry_Login();
-
-	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.NetworkEntry#getNote <em>Note</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Note</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.NetworkEntry#getNote()
-	 * @see #getNetworkEntry()
-	 * @generated
-	 */
-	EAttribute getNetworkEntry_Note();
-
-	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.NetworkEntry#getType <em>Type</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Type</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.NetworkEntry#getType()
-	 * @see #getNetworkEntry()
-	 * @generated
-	 */
-	EAttribute getNetworkEntry_Type();
+	EReference getOrchestrator_NetworkEntries();
 
 	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.ServerSettings <em>Server Settings</em>}'.
@@ -4900,17 +4853,6 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getGit_BranchName();
 
 	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Git#getPassword <em>Password</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Password</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Git#getPassword()
-	 * @see #getGit()
-	 * @generated
-	 */
-	EAttribute getGit_Password();
-
-	/**
 	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Git#getCommitMsg <em>Commit Msg</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -4920,6 +4862,17 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 */
 	EAttribute getGit_CommitMsg();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Git#getPassword <em>Password</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Password</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Git#getPassword()
+	 * @see #getGit()
+	 * @generated
+	 */
+	EAttribute getGit_Password();
 
 	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Maven <em>Maven</em>}'.
@@ -5319,17 +5272,6 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 */
 	EReference getEvoProject_Orchestrations();
-
-	/**
-	 * Returns the meta object for the containment reference '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getSupervisorSettings <em>Supervisor Settings</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the containment reference '<em>Supervisor Settings</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getSupervisorSettings()
-	 * @see #getOrchestrator()
-	 * @generated
-	 */
-	EReference getOrchestrator_SupervisorSettings();
 
 	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Rule <em>Rule</em>}'.
@@ -6251,6 +6193,71 @@ public interface OrchestrationPackage extends EPackage {
 	EReference getChangeSet_Files();
 
 	/**
+	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.SupervisorSettings <em>Supervisor Settings</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Supervisor Settings</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.SupervisorSettings
+	 * @generated
+	 */
+	EClass getSupervisorSettings();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.SupervisorSettings#getExecutablePath <em>Executable Path</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Executable Path</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.SupervisorSettings#getExecutablePath()
+	 * @see #getSupervisorSettings()
+	 * @generated
+	 */
+	EAttribute getSupervisorSettings_ExecutablePath();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.SupervisorSettings#isDeployed <em>Deployed</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Deployed</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.SupervisorSettings#isDeployed()
+	 * @see #getSupervisorSettings()
+	 * @generated
+	 */
+	EAttribute getSupervisorSettings_Deployed();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.SupervisorSettings#getSourcePath <em>Source Path</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Source Path</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.SupervisorSettings#getSourcePath()
+	 * @see #getSupervisorSettings()
+	 * @generated
+	 */
+	EAttribute getSupervisorSettings_SourcePath();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.SupervisorSettings#getCommands <em>Commands</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Commands</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.SupervisorSettings#getCommands()
+	 * @see #getSupervisorSettings()
+	 * @generated
+	 */
+	EAttribute getSupervisorSettings_Commands();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.SupervisorSettings#getSettings <em>Settings</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Settings</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.SupervisorSettings#getSettings()
+	 * @see #getSupervisorSettings()
+	 * @generated
+	 */
+	EAttribute getSupervisorSettings_Settings();
+
+	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.ReviewSession <em>Review Session</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -6644,69 +6651,102 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getChatMessage_IsTerminal();
 
 	/**
-	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.SupervisorSettings <em>Supervisor Settings</em>}'.
+	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.NetworkEntry <em>Network Entry</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the meta object for class '<em>Supervisor Settings</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.SupervisorSettings
+	 * @return the meta object for class '<em>Network Entry</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.NetworkEntry
 	 * @generated
 	 */
-	EClass getSupervisorSettings();
+	EClass getNetworkEntry();
 
 	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.SupervisorSettings#getExecutablePath <em>Executable Path</em>}'.
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.NetworkEntry#getHost <em>Host</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Executable Path</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.SupervisorSettings#getExecutablePath()
-	 * @see #getSupervisorSettings()
+	 * @return the meta object for the attribute '<em>Host</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.NetworkEntry#getHost()
+	 * @see #getNetworkEntry()
 	 * @generated
 	 */
-	EAttribute getSupervisorSettings_ExecutablePath();
+	EAttribute getNetworkEntry_Host();
 
 	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.SupervisorSettings#isDeployed <em>Deployed</em>}'.
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.NetworkEntry#getAddress <em>Address</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Deployed</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.SupervisorSettings#isDeployed()
-	 * @see #getSupervisorSettings()
+	 * @return the meta object for the attribute '<em>Address</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.NetworkEntry#getAddress()
+	 * @see #getNetworkEntry()
 	 * @generated
 	 */
-	EAttribute getSupervisorSettings_Deployed();
+	EAttribute getNetworkEntry_Address();
 
 	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.SupervisorSettings#getSourcePath <em>Source Path</em>}'.
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.NetworkEntry#getPort <em>Port</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Source Path</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.SupervisorSettings#getSourcePath()
-	 * @see #getSupervisorSettings()
+	 * @return the meta object for the attribute '<em>Port</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.NetworkEntry#getPort()
+	 * @see #getNetworkEntry()
 	 * @generated
 	 */
-	EAttribute getSupervisorSettings_SourcePath();
+	EAttribute getNetworkEntry_Port();
 
 	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.SupervisorSettings#getCommands <em>Commands</em>}'.
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.NetworkEntry#getPath <em>Path</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Commands</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.SupervisorSettings#getCommands()
-	 * @see #getSupervisorSettings()
+	 * @return the meta object for the attribute '<em>Path</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.NetworkEntry#getPath()
+	 * @see #getNetworkEntry()
 	 * @generated
 	 */
-	EAttribute getSupervisorSettings_Commands();
+	EAttribute getNetworkEntry_Path();
 
 	/**
-	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.SupervisorSettings#getSettings <em>Settings</em>}'.
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.NetworkEntry#getLogin <em>Login</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Settings</em>'.
-	 * @see eu.kalafatic.evolution.model.orchestration.SupervisorSettings#getSettings()
-	 * @see #getSupervisorSettings()
+	 * @return the meta object for the attribute '<em>Login</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.NetworkEntry#getLogin()
+	 * @see #getNetworkEntry()
 	 * @generated
 	 */
-	EAttribute getSupervisorSettings_Settings();
+	EAttribute getNetworkEntry_Login();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.NetworkEntry#getPassword <em>Password</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Password</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.NetworkEntry#getPassword()
+	 * @see #getNetworkEntry()
+	 * @generated
+	 */
+	EAttribute getNetworkEntry_Password();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.NetworkEntry#getType <em>Type</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Type</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.NetworkEntry#getType()
+	 * @see #getNetworkEntry()
+	 * @generated
+	 */
+	EAttribute getNetworkEntry_Type();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.NetworkEntry#getNote <em>Note</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Note</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.NetworkEntry#getNote()
+	 * @see #getNetworkEntry()
+	 * @generated
+	 */
+	EAttribute getNetworkEntry_Note();
 
 	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.PromptInstructions <em>Prompt Instructions</em>}'.
@@ -7534,64 +7574,6 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EReference ORCHESTRATOR__NETWORK_ENTRIES = eINSTANCE.getOrchestrator_NetworkEntries();
-
-		/**
-		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.NetworkEntryImpl <em>Network Entry</em>}' class.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @see eu.kalafatic.evolution.model.orchestration.impl.NetworkEntryImpl
-		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getNetworkEntry()
-		 * @generated
-		 */
-		EClass NETWORK_ENTRY = eINSTANCE.getNetworkEntry();
-
-		/**
-		 * The meta object literal for the '<em><b>Address</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute NETWORK_ENTRY__ADDRESS = eINSTANCE.getNetworkEntry_Address();
-
-		/**
-		 * The meta object literal for the '<em><b>Host</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute NETWORK_ENTRY__HOST = eINSTANCE.getNetworkEntry_Host();
-
-		/**
-		 * The meta object literal for the '<em><b>Port</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute NETWORK_ENTRY__PORT = eINSTANCE.getNetworkEntry_Port();
-
-		/**
-		 * The meta object literal for the '<em><b>Login</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute NETWORK_ENTRY__LOGIN = eINSTANCE.getNetworkEntry_Login();
-
-		/**
-		 * The meta object literal for the '<em><b>Note</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute NETWORK_ENTRY__NOTE = eINSTANCE.getNetworkEntry_Note();
-
-		/**
-		 * The meta object literal for the '<em><b>Type</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute NETWORK_ENTRY__TYPE = eINSTANCE.getNetworkEntry_Type();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ServerSettingsImpl <em>Server Settings</em>}' class.
@@ -8948,6 +8930,56 @@ public interface OrchestrationPackage extends EPackage {
 		EReference CHANGE_SET__FILES = eINSTANCE.getChangeSet_Files();
 
 		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.SupervisorSettingsImpl <em>Supervisor Settings</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.SupervisorSettingsImpl
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSupervisorSettings()
+		 * @generated
+		 */
+		EClass SUPERVISOR_SETTINGS = eINSTANCE.getSupervisorSettings();
+
+		/**
+		 * The meta object literal for the '<em><b>Executable Path</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute SUPERVISOR_SETTINGS__EXECUTABLE_PATH = eINSTANCE.getSupervisorSettings_ExecutablePath();
+
+		/**
+		 * The meta object literal for the '<em><b>Deployed</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute SUPERVISOR_SETTINGS__DEPLOYED = eINSTANCE.getSupervisorSettings_Deployed();
+
+		/**
+		 * The meta object literal for the '<em><b>Source Path</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute SUPERVISOR_SETTINGS__SOURCE_PATH = eINSTANCE.getSupervisorSettings_SourcePath();
+
+		/**
+		 * The meta object literal for the '<em><b>Commands</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute SUPERVISOR_SETTINGS__COMMANDS = eINSTANCE.getSupervisorSettings_Commands();
+
+		/**
+		 * The meta object literal for the '<em><b>Settings</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute SUPERVISOR_SETTINGS__SETTINGS = eINSTANCE.getSupervisorSettings_Settings();
+
+		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ReviewSessionImpl <em>Review Session</em>}' class.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
@@ -9242,54 +9274,78 @@ public interface OrchestrationPackage extends EPackage {
 		EAttribute CHAT_MESSAGE__IS_TERMINAL = eINSTANCE.getChatMessage_IsTerminal();
 
 		/**
-		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.SupervisorSettingsImpl <em>Supervisor Settings</em>}' class.
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.NetworkEntryImpl <em>Network Entry</em>}' class.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
-		 * @see eu.kalafatic.evolution.model.orchestration.impl.SupervisorSettingsImpl
-		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSupervisorSettings()
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.NetworkEntryImpl
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getNetworkEntry()
 		 * @generated
 		 */
-		EClass SUPERVISOR_SETTINGS = eINSTANCE.getSupervisorSettings();
+		EClass NETWORK_ENTRY = eINSTANCE.getNetworkEntry();
 
 		/**
-		 * The meta object literal for the '<em><b>Executable Path</b></em>' attribute feature.
+		 * The meta object literal for the '<em><b>Host</b></em>' attribute feature.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
 		 * @generated
 		 */
-		EAttribute SUPERVISOR_SETTINGS__EXECUTABLE_PATH = eINSTANCE.getSupervisorSettings_ExecutablePath();
+		EAttribute NETWORK_ENTRY__HOST = eINSTANCE.getNetworkEntry_Host();
 
 		/**
-		 * The meta object literal for the '<em><b>Deployed</b></em>' attribute feature.
+		 * The meta object literal for the '<em><b>Address</b></em>' attribute feature.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
 		 * @generated
 		 */
-		EAttribute SUPERVISOR_SETTINGS__DEPLOYED = eINSTANCE.getSupervisorSettings_Deployed();
+		EAttribute NETWORK_ENTRY__ADDRESS = eINSTANCE.getNetworkEntry_Address();
 
 		/**
-		 * The meta object literal for the '<em><b>Source Path</b></em>' attribute feature.
+		 * The meta object literal for the '<em><b>Port</b></em>' attribute feature.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
 		 * @generated
 		 */
-		EAttribute SUPERVISOR_SETTINGS__SOURCE_PATH = eINSTANCE.getSupervisorSettings_SourcePath();
+		EAttribute NETWORK_ENTRY__PORT = eINSTANCE.getNetworkEntry_Port();
 
 		/**
-		 * The meta object literal for the '<em><b>Commands</b></em>' attribute feature.
+		 * The meta object literal for the '<em><b>Path</b></em>' attribute feature.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
 		 * @generated
 		 */
-		EAttribute SUPERVISOR_SETTINGS__COMMANDS = eINSTANCE.getSupervisorSettings_Commands();
+		EAttribute NETWORK_ENTRY__PATH = eINSTANCE.getNetworkEntry_Path();
 
 		/**
-		 * The meta object literal for the '<em><b>Settings</b></em>' attribute feature.
+		 * The meta object literal for the '<em><b>Login</b></em>' attribute feature.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
 		 * @generated
 		 */
-		EAttribute SUPERVISOR_SETTINGS__SETTINGS = eINSTANCE.getSupervisorSettings_Settings();
+		EAttribute NETWORK_ENTRY__LOGIN = eINSTANCE.getNetworkEntry_Login();
+
+		/**
+		 * The meta object literal for the '<em><b>Password</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute NETWORK_ENTRY__PASSWORD = eINSTANCE.getNetworkEntry_Password();
+
+		/**
+		 * The meta object literal for the '<em><b>Type</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute NETWORK_ENTRY__TYPE = eINSTANCE.getNetworkEntry_Type();
+
+		/**
+		 * The meta object literal for the '<em><b>Note</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute NETWORK_ENTRY__NOTE = eINSTANCE.getNetworkEntry_Note();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.PromptInstructionsImpl <em>Prompt Instructions</em>}' class.

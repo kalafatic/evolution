@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.4,
   "importanceScore": 0.4,
-  "summary": "package eu.kalafatic.evolution.view.editors; import org.eclipse.jface.resource.ImageDescriptor; import org.eclipse.ui.IEditorInput;",
+  "summary": "package eu.kalafatic.evolution.view.editors; import org.eclipse.jface.resource.ImageDescriptor; import org.eclipse.ui.IEditorInput; import org.eclipse.ui.IPersistableElement; import eu.kalafatic.evolution.model.orchestration.Orchestrator; public class OrchestratorEditorInput implements IEditorInput { private Orchestrator orchestrator; public OrchestratorEditorInput(Orchestrator orchestrator) { this.orchestrator = orchestrator; } public Orchestrator getOrchestrator() { return orchestrator; } @Override public boolean exists() { return true; } @Override public ImageDescriptor getImageDescriptor() { return null;",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

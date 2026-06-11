@@ -47,8 +47,8 @@ import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
 import eu.kalafatic.evolution.model.orchestration.SelfDevStatus;
 import eu.kalafatic.evolution.model.orchestration.ServerSession;
 import eu.kalafatic.evolution.model.orchestration.ServerSettings;
-import eu.kalafatic.evolution.model.orchestration.SupervisorSettings;
 import eu.kalafatic.evolution.model.orchestration.SessionType;
+import eu.kalafatic.evolution.model.orchestration.SupervisorSettings;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.model.orchestration.TaskStatus;
 import eu.kalafatic.evolution.model.orchestration.Test;
@@ -105,20 +105,8 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
-	public NetworkEntry createNetworkEntry() {
-		NetworkEntryImpl networkEntry = new NetworkEntryImpl();
-		return networkEntry;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
 	public EObject create(EClass eClass) {
 		switch (eClass.getClassifierID()) {
-			case OrchestrationPackage.NETWORK_ENTRY: return createNetworkEntry();
 			case OrchestrationPackage.TASK: return createTask();
 			case OrchestrationPackage.AGENT: return createAgent();
 			case OrchestrationPackage.ORCHESTRATOR: return createOrchestrator();
@@ -150,25 +138,15 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 			case OrchestrationPackage.DIFF_HUNK: return createDiffHunk();
 			case OrchestrationPackage.FILE_CHANGE: return createFileChange();
 			case OrchestrationPackage.CHANGE_SET: return createChangeSet();
+			case OrchestrationPackage.SUPERVISOR_SETTINGS: return createSupervisorSettings();
 			case OrchestrationPackage.REVIEW_SESSION: return createReviewSession();
 			case OrchestrationPackage.CHAT_SESSION: return createChatSession();
 			case OrchestrationPackage.CHAT_MESSAGE: return createChatMessage();
-			case OrchestrationPackage.SUPERVISOR_SETTINGS: return createSupervisorSettings();
+			case OrchestrationPackage.NETWORK_ENTRY: return createNetworkEntry();
 			case OrchestrationPackage.PROMPT_INSTRUCTIONS: return createPromptInstructions();
 			default:
 				throw new IllegalArgumentException("The class '" + eClass.getName() + "' is not a valid classifier");
 		}
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public SupervisorSettings createSupervisorSettings() {
-		SupervisorSettingsImpl supervisorSettings = new SupervisorSettingsImpl();
-		return supervisorSettings;
 	}
 
 	/**
@@ -596,6 +574,17 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
+	public SupervisorSettings createSupervisorSettings() {
+		SupervisorSettingsImpl supervisorSettings = new SupervisorSettingsImpl();
+		return supervisorSettings;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public ReviewSession createReviewSession() {
 		ReviewSessionImpl reviewSession = new ReviewSessionImpl();
 		return reviewSession;
@@ -621,6 +610,17 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 	public ChatMessage createChatMessage() {
 		ChatMessageImpl chatMessage = new ChatMessageImpl();
 		return chatMessage;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public NetworkEntry createNetworkEntry() {
+		NetworkEntryImpl networkEntry = new NetworkEntryImpl();
+		return networkEntry;
 	}
 
 	/**

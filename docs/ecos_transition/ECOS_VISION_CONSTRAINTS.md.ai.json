@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "documentation",
+  "stability": "EVOLVING",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "This document defines the long-term architectural direction of ECOS. Every implementation task, bug fix, refactor, optimization, and feature addition must be evaluated against these constraints. The purpose of this document is to prevent architectural drift, local optimizations, hardcoded shortcuts, and accidental degradation of the evolutionary cognition vision. --- ECOS is an experimental Evolutionary Cognition Operating System. It is NOT: Those are merely current use cases. The actual objective is: A general-purpose evolutionary cognition platform capable of evolving arbitrary artifacts through iterative variation, evaluation, selection, inheritance, and pressure-driven refinement. --- Every major capability must ultimately be expressible through: If a new feature introduces an entirely separate optimization process, explain why it cannot be represented using existing evolutionary primitives. ---",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

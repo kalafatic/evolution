@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "orchestration",
+  "stability": "STABLE",
+  "mediatedRelevanceScore": 1.0,
+  "importanceScore": 1.0,
+  "summary": "package eu.kalafatic.evolution.controller.orchestration.llm; import java.util.ArrayList; import java.util.List; import eu.kalafatic.evolution.model.orchestration.Orchestrator; import eu.kalafatic.evolution.model.orchestration.AiMode; import eu.kalafatic.evolution.controller.orchestration.TaskContext; public class RoutingPolicyRegistry { private static final List<IRoutingPolicy> policies = new ArrayList<>(); static { policies.add(new IRoutingPolicy() { @Override public boolean applies(Orchestrator orchestrator, TaskContext context) { return orchestrator.getAiMode() == AiMode.LOCAL || orchestrator.getAiMode() == AiMode.PROXY; } @Override public String handle(LlmRouter router, Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception { return router.sendLocalRequest(orchestrator, prompt, temperature, proxyUrl, context); } }); policies.add(new IRoutingPolicy() { @Override public boolean applies(Orchestrator orchestrator, TaskContext context) { return orchestrator.getAiMode() == AiMode.HYBRID;",
+  "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
+  "contextSelectionHints": ["mandatory_context"],
+  "dependencyLinks": []
+}

@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.controller; import java.util.ArrayList; import java.util.HashMap;",
+  "summary": "package eu.kalafatic.evolution.controller; import java.util.ArrayList; import java.util.HashMap; import java.util.List; import java.util.Map; import org.eclipse.jface.action.IStatusLineManager; import org.eclipse.swt.widgets.TrayItem; import eu.kalafatic.evolution.controller.splashHandlers.ISplashUser; import eu.kalafatic.utils.hack.EclipseSplashHandler; import eu.kalafatic.utils.hack.StatusLineContributionItem; public final class AppData { private TrayItem trayItem; private IStatusLineManager statusLineManager; private StatusLineContributionItem msgItem, cpuItem, speedUpItem, speedDownItem; private float allUpSpeed, allDownSpeed; private EclipseSplashHandler splashHandler; private final List<ISplashUser> splashUsers = new ArrayList<ISplashUser>();",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

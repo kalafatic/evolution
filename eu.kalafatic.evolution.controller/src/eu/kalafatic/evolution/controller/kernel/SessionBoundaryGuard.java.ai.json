@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "unknown",
+  "stability": "EVOLVING",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "package eu.kalafatic.evolution.controller.kernel; public class SessionBoundaryGuard { private static final ThreadLocal<String> currentSessionId = new ThreadLocal<>(); public static void enterSession(String sessionId) { currentSessionId.set(sessionId); } public static void exitSession() { currentSessionId.remove(); } public static String getCurrentSessionId() { return currentSessionId.get(); } public static boolean isInSession() { return currentSessionId.get() != null; } }",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

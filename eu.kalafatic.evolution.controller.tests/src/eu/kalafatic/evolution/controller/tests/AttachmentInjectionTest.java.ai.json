@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.controller.tests; import static org.junit.Assert.*; import org.junit.Test;",
+  "summary": "package eu.kalafatic.evolution.controller.tests; import eu.kalafatic.evolution.controller.orchestration.SessionManager; import static org.junit.Assert.*; import org.junit.Test; import java.io.File; import java.nio.file.Files; import java.util.Arrays; import java.util.List; import eu.kalafatic.evolution.controller.orchestration.attachments.*; import eu.kalafatic.evolution.controller.orchestration.TaskContext; public class AttachmentInjectionTest { @Test public void testParserClassification() { String md = \"# Rules\nAlways use Spring.\n\n# Examples\nSample output: success.\"; StructuredAttachmentContext ctx = AttachmentParser.parse(md, \"test.md\"); List<AttachmentSection> rules = ctx.getSections(AttachmentCategory.RULES); assertEquals(1, rules.size()); assertEquals(\"Rules\", rules.get(0).getHeader()); assertTrue(rules.get(0).getContent().contains(\"Spring\")); List<AttachmentSection> examples = ctx.getSections(AttachmentCategory.EXAMPLES);",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

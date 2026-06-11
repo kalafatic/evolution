@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.controller.manager; import java.util.concurrent.ConcurrentHashMap; import java.util.Map;",
+  "summary": "package eu.kalafatic.evolution.controller.manager; import java.util.concurrent.ConcurrentHashMap; import java.util.Map; public class OllamaManager { private static final OllamaManager INSTANCE = new OllamaManager(); private final Map<String, OllamaService> services = new ConcurrentHashMap<>(); private OllamaManager() {} public static OllamaManager getInstance() { return INSTANCE; } public OllamaService getService(String url) { String key = (url != null && !url.isEmpty()) ? url : \"http://localhost:11434\"; if (key.endsWith(\"/\")) { key = key.substring(0, key.length() - 1); } return services.computeIfAbsent(key, k -> new OllamaService(k, null)); } public void removeService(String url) { if (url != null) { services.remove(url);",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

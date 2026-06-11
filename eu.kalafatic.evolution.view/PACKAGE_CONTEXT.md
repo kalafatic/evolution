@@ -1,11 +1,10 @@
 # PACKAGE CONTEXT
 
-## Directory: eu.kalafatic.evolution.view/
+## Directory: git/evolution/eu.kalafatic.evolution.view/
 
 ## Domain: general
 
 ## Components
-* `PACKAGE_CONTEXT.md`: 
-* `example.xml`: <?xml version="1.0" encoding="UTF-8"?> <orchestration:Orchestrator xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:orchestration="http://example.com/orchestration" id="1" name="MyOrchestrator"> <agents id="a1" type="planning">
-* `plugin.xml`: <?xml version="1.0" encoding="UTF-8"?> <?eclipse version="3.4"?> <plugin>
-* `pom.xml`: <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+* `example.xml`: <?xml version="1.0" encoding="UTF-8"?> <orchestration:Orchestrator xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:orchestration="http://example.com/orchestration" id="1" name="MyOrchestrator"> <agents id="a1" type="planning"> <tasks id="t1" name="Setup Project" status="PENDING"/> <tasks id="t2" name="Implement Features" status="PENDING"/> </agents> <git repositoryUrl="https://github.com/user/repo.git" branch="main" localPath="/path/to/repo"/> <maven> <goals>clean</goals> <goals>install</goals> </maven> <llm model="gpt-4" temperature="0.7"/> <compiler sourceVersion="1.8" targetVersion="1.8"/> </orchestration:Orchestrator>
+* `plugin.xml`: <?xml version="1.0" encoding="UTF-8"?> <?eclipse version="3.4"?> <plugin> <extension id="eu.kalafatic.evolution.view.product" point="org.eclipse.core.runtime.products"> <product name="AI Evolution" application="eu.kalafatic.evolution.view.application.Application"> <property name="windowImages" value="icons/eclipse16.png,icons/eclipse32.png,icons/eclipse48.png,icons/eclipse64.png, icons/eclipse128.png,icons/eclipse256.png"> </property> <property name="appName" value="AI Evolution"> </property> <property name="preferenceCustomization" value="plugin_customization.ini">
+* `pom.xml`: <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"> <modelVersion>4.0.0</modelVersion> <parent> <groupId>eu.kalafatic.evolution</groupId> <artifactId>eu.kalafatic.evolution.aggregator</artifactId> <version>2.6.5-SNAPSHOT</version> <relativePath>../pom.xml</relativePath> </parent> <artifactId>eu.kalafatic.evolution.view</artifactId> <packaging>eclipse-plugin</packaging> <build> <sourceDirectory>src</sourceDirectory> <resources> <resource> <directory>icons</directory> <excludes> <exclude>**/*.java</exclude> </excludes>

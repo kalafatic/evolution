@@ -5,8 +5,8 @@
   "stability": "",
   "mediatedRelevanceScore": 0.9,
   "importanceScore": 0.9,
-  "summary": "package eu.kalafatic.evolution.controller.execution; import java.util.List; import java.util.stream.Collectors;",
+  "summary": "package eu.kalafatic.evolution.controller.execution; import java.util.List; import java.util.stream.Collectors; import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant; public class DefaultSchedulingPolicy implements SchedulingPolicy { @Override public List<BranchVariant> selectVariants(List<BranchVariant> proposals, ExecutionBudget budget) { return proposals.stream() .limit(budget.getMaxVariantsAllowed()) .collect(Collectors.toList()); } }",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

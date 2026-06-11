@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration.behavior; public class BitState { private static final int MODE_SHIFT = 0;",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration.behavior; public class BitState { private static final int MODE_SHIFT = 0; private static final int SUPERVISION_SHIFT = 8; private static final int INTERACTION_SHIFT = 16; private static final int REASONING_SHIFT = 24; private static final int WORKFLOW_SHIFT = 32; private static final int OPTIONS_SHIFT = 40; private static final long MASK = 0xFFL; public static long encode(int mode, int supervision, int interaction, int reasoning) { return encode(mode, supervision, interaction, reasoning, WORKFLOW_TASK_ORIENTED, 0); } public static long encode(int mode, int supervision, int interaction, int reasoning, int workflow) { return encode(mode, supervision, interaction, reasoning, workflow, 0); } public static long encode(int mode, int supervision, int interaction, int reasoning, int workflow, int options) { long state = 0; state |= ((long) (mode & 0xFF)) << MODE_SHIFT; state |= ((long) (supervision & 0xFF)) << SUPERVISION_SHIFT; state |= ((long) (interaction & 0xFF)) << INTERACTION_SHIFT;",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

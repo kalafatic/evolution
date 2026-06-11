@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.2,
   "importanceScore": 0.2,
-  "summary": "package eu.kalafatic.utils.constants; public final class FRegistryConstants { public static final String REG_ADD = \"REG ADD {0} /f\";",
+  "summary": "package eu.kalafatic.utils.constants; public final class FRegistryConstants { public static final String REG_ADD = \"REG ADD {0} /f\"; public static final String REG_DEL = \"REG DELETE {0} /f\"; public static final String SOFTWARE = \"\\"HKLM\\SOFTWARE\\\"; public static final String APP_PATHS = \"\\"HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\\"; public static final String HKCU_ENV = \"HKCU\\Environment\"; public static final String HKLM_ENV = \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment\"; public static final String TASK_KILL = \"taskkill /f /IM {0}\"; public static final String TASK_START = \"{0}\"; public static final String PAUSE_CMD = \"1.1.1.1 -n 1 -w 5000 >NUL\";",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

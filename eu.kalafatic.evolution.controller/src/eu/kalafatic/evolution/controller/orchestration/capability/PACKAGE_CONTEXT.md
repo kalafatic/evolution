@@ -1,15 +1,14 @@
 # PACKAGE CONTEXT
 
-## Directory: eu.kalafatic.evolution.controller/src/eu/kalafatic/evolution/controller/orchestration/capability/
+## Directory: git/evolution/eu.kalafatic.evolution.controller/src/eu/kalafatic/evolution/controller/orchestration/capability/
 
 ## Domain: general
 
 ## Components
-* `CapabilityRegistry.java`: package eu.kalafatic.evolution.controller.orchestration.capability; import java.util.ArrayList; import java.util.Collections;
-* `CapabilitySandbox.java`: package eu.kalafatic.evolution.controller.orchestration.capability; import java.util.concurrent.Callable; public class CapabilitySandbox {
-* `ICapability.java`: package eu.kalafatic.evolution.controller.orchestration.capability; import java.util.List; public interface ICapability {
-* `CapabilityStatus.java`: package eu.kalafatic.evolution.controller.orchestration.capability; public enum CapabilityStatus { INITIALIZED,
-* `CapabilityHealth.java`: package eu.kalafatic.evolution.controller.orchestration.capability; public class CapabilityHealth { private final double stabilityScore;
+* `CapabilityRegistry.java`: package eu.kalafatic.evolution.controller.orchestration.capability; import java.util.ArrayList; import java.util.Collections; import java.util.HashMap; import java.util.List; import java.util.Map; import java.util.stream.Collectors; public class CapabilityRegistry { private final Map<String, ICapability> capabilities = new HashMap<>(); public CapabilityRegistry() {} public synchronized void register(ICapability capability) throws CapabilityException { if (capabilities.containsKey(capability.getCapabilityId())) { return; // Already registered } capability.initialize(new CapabilityContext()); capabilities.put(capability.getCapabilityId(), capability); } public synchronized void startAll() throws CapabilityException { for (ICapability capability : capabilities.values()) { if (capability.getStatus() == CapabilityStatus.INITIALIZED) {
+* `CapabilitySandbox.java`: package eu.kalafatic.evolution.controller.orchestration.capability; import java.util.concurrent.Callable; public class CapabilitySandbox { public static <V> V execute(ICapability capability, Callable<V> task) throws CapabilityException { long start = System.currentTimeMillis(); try { return task.call(); } catch (Exception e) { throw new CapabilityException("Capability " + capability.getCapabilityId() + " failed during execution.", e); } finally { long duration = System.currentTimeMillis() - start; } } }
+* `ICapability.java`: package eu.kalafatic.evolution.controller.orchestration.capability; import java.util.List; public interface ICapability { String getCapabilityId(); String getVersion(); CapabilityStatus getStatus(); void initialize(CapabilityContext context) throws CapabilityException; void start() throws CapabilityException; void stop() throws CapabilityException; List<String> getSupportedContracts(); List<String> getDependencies(); CapabilityHealth getHealth(); }
+* `CapabilityHealth.java`: package eu.kalafatic.evolution.controller.orchestration.capability; public class CapabilityHealth { private final double stabilityScore; private final String statusMessage; private final long latencyMs; public CapabilityHealth(double stabilityScore, String statusMessage, long latencyMs) { this.stabilityScore = stabilityScore; this.statusMessage = statusMessage; this.latencyMs = latencyMs; } public double getStabilityScore() { return stabilityScore; } public String getStatusMessage() { return statusMessage; } public long getLatencyMs() { return latencyMs; } }
+* `CapabilityException.java`: package eu.kalafatic.evolution.controller.orchestration.capability; public class CapabilityException extends Exception { public CapabilityException(String message) { super(message); } public CapabilityException(String message, Throwable cause) { super(message, cause); } }
 * `CapabilityContext.java`: package eu.kalafatic.evolution.controller.orchestration.capability; public class CapabilityContext { }
-* `CapabilityException.java`: package eu.kalafatic.evolution.controller.orchestration.capability; public class CapabilityException extends Exception { public CapabilityException(String message) {
-* `PACKAGE_CONTEXT.md`: 
+* `CapabilityStatus.java`: package eu.kalafatic.evolution.controller.orchestration.capability; public enum CapabilityStatus { INITIALIZED, STARTED, STOPPED, ERROR }

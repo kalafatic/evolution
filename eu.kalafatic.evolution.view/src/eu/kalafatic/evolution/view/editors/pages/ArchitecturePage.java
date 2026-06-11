@@ -558,8 +558,8 @@ public class ArchitecturePage extends AEvoPage {
                     rec.setDescription(meta.getSummary());
                     rec.setPath(meta.getPath());
                     rec.setImportanceScore(meta.getImportanceScore());
-                    rec.getUseCases().addAll(meta.getUseCases());
-                    rec.getKeyClasses().addAll(meta.getKeyClasses());
+                    //rec.getUseCases().addAll(meta.getUseCases());
+                   // rec.getKeyClasses().addAll(meta.getKeyClasses());
 
                     model.getComponents().add(rec);
                     nodes.put(rec.getId(), rec);

@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "orchestration",
+  "stability": "STABLE",
+  "mediatedRelevanceScore": 1.0,
+  "importanceScore": 1.0,
+  "summary": "package eu.kalafatic.evolution.controller.orchestration.selfdev; import java.util.ArrayList; import java.util.List; public class EvolutionDimension { private String id; private String description; private AbstractionLevel abstractionLevel; private SemanticDomain semanticDomain; private DimensionState state = DimensionState.DISCOVERED; private double ambiguityScore; private double evolutionaryPressure; private double branchabilityScore; private double significanceScore; private double informationGain; private List<String> dependencyDimensions = new ArrayList<>(); private List<BranchVariant> candidateBranches = new ArrayList<>(); @com.fasterxml.jackson.annotation.JsonCreator public EvolutionDimension(@com.fasterxml.jackson.annotation.JsonProperty(\"id\") String id, @com.fasterxml.jackson.annotation.JsonProperty(\"description\") String description, @com.fasterxml.jackson.annotation.JsonProperty(\"abstractionLevel\") AbstractionLevel level,",
+  "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
+  "contextSelectionHints": ["mandatory_context"],
+  "dependencyLinks": []
+}

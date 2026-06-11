@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "{ \"project\": \"AI Evolution\", \"use_cases\": [",
+  "summary": "{ \"project\": \"AI Evolution\", \"use_cases\": [ { \"id\": \"interactive_code_assistance\", \"name\": \"Interactive Code Assistance\", \"description\": \"User interacts with AI Chat to brainstorm and generate code snippets, which are then manually or semi-automatically integrated into the project.\", \"primary_components\": [\"AiChat\", \"LLM\"], \"workflow\": [ \"User opens AI Chat view.\", \"User provides a prompt for code generation.\", \"AI returns code.\", \"User reviews and copies code to workspace.\" ] }, { \"id\": \"autonomous_agent_workflow\", \"name\": \"Autonomous Agentic Workflow\", \"description\": \"A set of agents (e.g., developer, reviewer) work together to complete a complex task without constant user intervention.\", \"primary_components\": [\"Agent\", \"Task\", \"LLM\", \"Orchestrator\"],",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

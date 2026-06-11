@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "unknown",
+  "stability": "EVOLVING",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "package eu.kalafatic.evolution.controller.discovery; import java.io.BufferedReader; import java.io.File; import java.io.FileReader; import java.net.URI; import java.util.ArrayList; import java.util.HashSet; import java.util.List; import java.util.Set; import java.util.regex.Matcher; import java.util.regex.Pattern; import eu.kalafatic.evolution.model.orchestration.NetworkEntry; import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory; import eu.kalafatic.evolution.model.orchestration.Orchestrator; public class NetworkDiscoveryService { private static final Pattern URL_PATTERN = Pattern.compile(\"(https?://[a-zA-Z0-9\\.\\-:]+)\"); public void discoverAndSync(Orchestrator orchestrator, File rootDir) { if (orchestrator == null || rootDir == null || !rootDir.exists()) return; Set<String> discoveredUrls = new HashSet<>(); scanDirectory(rootDir, discoveredUrls);",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "--- The platform is not designed as a traditional chatbot. It is evolved into a modular capability platform capable of:",
+  "summary": "--- The platform is not designed as a traditional chatbot. It is evolved into a modular capability platform capable of: - coordinating small local LLMs - supporting manual and automatic decision workflows - evolving multiple proposal branches - evaluating proposals using independent subsystems - remaining deterministic and stable - scaling from simple prompts to research-grade exploration The system prioritizes: - robustness - modularity - deterministic orchestration - branch exploration - user-guided evolution --- The architecture intentionally separates: | Layer | Responsibility | Extension Model | |---|---|---| | Darwin | generate possibilities | `IMutationContract` |",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

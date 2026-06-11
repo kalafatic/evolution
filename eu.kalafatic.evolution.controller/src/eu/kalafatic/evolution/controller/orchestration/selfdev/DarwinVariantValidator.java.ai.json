@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "orchestration",
+  "stability": "STABLE",
+  "mediatedRelevanceScore": 1.0,
+  "importanceScore": 1.0,
+  "summary": "package eu.kalafatic.evolution.controller.orchestration.selfdev; import java.util.List; import org.json.JSONArray; import org.json.JSONObject; import eu.kalafatic.evolution.controller.orchestration.TaskContext; import eu.kalafatic.evolution.controller.parsers.JsonUtils; public class DarwinVariantValidator { public JSONObject validate(String rawResponse, DarwinStrategyType expectedType, TaskContext context) { if (rawResponse == null || rawResponse.trim().isEmpty()) { return null; } if (rawResponse.contains(\"<think>\") || rawResponse.contains(\"</think>\")) { if (context != null) context.log(\"[VALIDATOR] Error: Response contains hidden reasoning tags.\"); return null; } if (rawResponse.trim().startsWith(\"[\")) { if (context != null) context.log(\"[VALIDATOR] Error: LLM returned an array instead of a single object.\"); return null; } JSONObject json = JsonUtils.extractJsonObject(rawResponse);",
+  "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
+  "contextSelectionHints": ["mandatory_context"],
+  "dependencyLinks": []
+}

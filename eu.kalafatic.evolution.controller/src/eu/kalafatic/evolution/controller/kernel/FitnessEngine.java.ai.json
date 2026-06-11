@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "unknown",
+  "stability": "EVOLVING",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "package eu.kalafatic.evolution.controller.kernel; import java.io.File; import eu.kalafatic.evolution.model.orchestration.EvaluationResult; import eu.kalafatic.evolution.controller.orchestration.TaskContext; import eu.kalafatic.evolution.controller.orchestration.selfdev.Evaluator; import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionaryPressureVector; public interface FitnessEngine { EvaluationResult evaluate(File projectRoot, TaskContext context, EvolutionaryPressureVector pressure) throws Exception; Evaluator.Evaluation evaluateWithSnapshot() throws Exception; }",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration.selfdev; import java.io.File; import java.io.IOException;",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration.selfdev; import java.io.File; import java.io.IOException; import java.nio.file.Files; import java.util.List; import org.json.JSONArray; import org.json.JSONObject; public class SelfDevProtocol { private final File runDir; public SelfDevProtocol(File projectRoot) { this.runDir = new File(projectRoot, \"self-dev-run\"); if (!runDir.exists()) { runDir.mkdirs(); } } public void updateState(int iteration, String phase, String status, String message, double progress) { try { JSONObject state = new JSONObject(); state.put(\"iteration\", iteration); state.put(\"phase\", phase);",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

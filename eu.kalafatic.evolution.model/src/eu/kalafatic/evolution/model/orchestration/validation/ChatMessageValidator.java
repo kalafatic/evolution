@@ -22,12 +22,8 @@ public interface ChatMessageValidator {
 	boolean validateIsItalic(boolean value);
 	boolean validateAgentType(String value);
 	boolean validateTimestamp(String value);
-
 	boolean validatePriority(int value);
-
 	boolean validateSequenceNumber(long value);
-
 	boolean validateTurnId(String value);
-
 	boolean validateIsTerminal(boolean value);
 }

@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.controller.workflow; import java.util.Map; import java.util.concurrent.ConcurrentHashMap;",
+  "summary": "package eu.kalafatic.evolution.controller.workflow; import java.util.Map; import java.util.concurrent.ConcurrentHashMap; import java.util.List; import java.util.ArrayList; public class WorkflowStepRegistry { private final Map<String, WorkflowStep> steps = new ConcurrentHashMap<>(); private final Map<String, List<String>> sessionSteps = new ConcurrentHashMap<>(); public WorkflowStepRegistry() {} public void registerStep(String sessionId, WorkflowStep step) { steps.put(step.getId(), step); sessionSteps.computeIfAbsent(sessionId, k -> new ArrayList<>()).add(step.getId()); } public WorkflowStep getStep(String stepId) { return steps.get(stepId); } public List<WorkflowStep> getStepsForSession(String sessionId) { List<WorkflowStep> result = new ArrayList<>(); List<String> ids = sessionSteps.get(sessionId); if (ids != null) {",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.7,
   "importanceScore": 0.7,
-  "summary": "package eu.kalafatic.utils.model; @FunctionalInterface public interface IModelChangeListener {",
+  "summary": "package eu.kalafatic.utils.model; @FunctionalInterface public interface IModelChangeListener { void onChanged(ModelChangeEvent event); }",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

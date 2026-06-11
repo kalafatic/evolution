@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration; import java.util.ArrayList; import java.util.List;",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration; public class AtomicFlow implements IOrchestrationFlow { private final AiService aiService; private final IterationManager manager; public AtomicFlow(AiService aiService, IterationManager manager) { this.aiService = aiService; this.manager = manager; } @Override public OrchestratorResponse execute(String request, TaskContext context) throws Exception { context.log(\"[KERNEL] Executing Atomic Flow (Delegating to DarwinFlow).\"); try { return new DarwinFlow(aiService, manager).execute(request, context); } catch (Exception e) { manager.getGitManager().rollback(); throw e; } } }",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

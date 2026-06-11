@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "unknown",
+  "stability": "EVOLVING",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "package eu.kalafatic.evolution.controller.tests; import eu.kalafatic.evolution.controller.orchestration.SessionManager; import static org.junit.Assert.*; import org.junit.Test; import eu.kalafatic.evolution.controller.orchestration.intent.ClarificationPlanner; import eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionResult; import eu.kalafatic.evolution.controller.orchestration.intent.InterpretationState; import eu.kalafatic.evolution.controller.orchestration.TaskContext; import eu.kalafatic.evolution.controller.orchestration.OrchestrationState; import eu.kalafatic.evolution.controller.orchestration.intent.AtomicIntentAnalysis; import java.util.HashMap; public class IntentResolutionTest { @Test public void testClearIntent() { IntentExpansionResult result = new IntentExpansionResult(); result.setState(InterpretationState.CLEAR); ClarificationPlanner planner = new ClarificationPlanner(); ClarificationPlanner.Strategy strategy = planner.determineStrategy(result, createMockContext()); assertEquals(ClarificationPlanner.Strategy.AUTO_INFER, strategy); }",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

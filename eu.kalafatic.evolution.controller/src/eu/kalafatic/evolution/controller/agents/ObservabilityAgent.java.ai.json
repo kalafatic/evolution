@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.controller.agents; import eu.kalafatic.evolution.controller.tools.ShellTool; public class ObservabilityAgent extends BaseAiAgent {",
+  "summary": "package eu.kalafatic.evolution.controller.agents; import eu.kalafatic.evolution.controller.tools.ShellTool; public class ObservabilityAgent extends BaseAiAgent { public ObservabilityAgent(eu.kalafatic.evolution.controller.orchestration.SessionContainer container) { super(\"Observability\", \"Observability\", container); } @Override protected String getAgentInstructions() { return \"You are an AI Observability Agent. Your task is to monitor application status and analyze logs.\n\" + \"Use commands like tail, grep, or custom log analysis to provide insights into application behavior.\"; } }",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

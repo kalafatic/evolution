@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "The Cognitive Tracing architecture evolves the platform from simple event-emitting orchestration to a causally explainable reasoning infrastructure. It allows the kernel to explain *why* decisions were made, *why* failures occurred, and *why* specific paths were taken. Represents a complete causal chain of reasoning events for a single orchestration lifecycle. It tracks: - Intent expansion paths",
+  "summary": "The Cognitive Tracing architecture evolves the platform from simple event-emitting orchestration to a causally explainable reasoning infrastructure. It allows the kernel to explain *why* decisions were made, *why* failures occurred, and *why* specific paths were taken. Represents a complete causal chain of reasoning events for a single orchestration lifecycle. It tracks: - Intent expansion paths - Clarification decisions - Branch mutations - Evaluation signals - Scheduling decisions - Resolver outcomes - Workspace retrievals and memory decay - State transitions A single reasoning event inside the trace graph. - `nodeId`: Unique identifier - `nodeType`: e.g., `INTENT_EXPANSION`, `SCHEDULING`, `RESOLVER_POLICY`, `MUTATION` - `sourceComponent`: The component that emitted the node - `inputReferences` / `outputReferences`: Linkage to previous/next artifacts or decisions - `confidence`: The degree of certainty in the decision - `rationale`: Human-readable explanation of the reasoning The central diagnostics layer responsible for: - Reconstructing reasoning chains from raw nodes - Generating causal summaries for humans",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

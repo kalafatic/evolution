@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.supervision; import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant; public class StabilityImpactPolicy implements ResolverPolicy {",
+  "summary": "package eu.kalafatic.evolution.controller.supervision; import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant; public class StabilityImpactPolicy implements ResolverPolicy { @Override public PolicyResult evaluate(BranchVariant variant) { double score = 0.5; StringBuilder trace = new StringBuilder(\"Base stability score: 0.5. \"); if (variant.getFailureRisks() != null) { if (variant.getFailureRisks().toLowerCase().contains(\"high\")) { score -= 0.3; trace.append(\"High failure risk detected (-0.3). \"); } else if (variant.getFailureRisks().toLowerCase().contains(\"low\")) { score += 0.2; trace.append(\"Low failure risk detected (+0.2). \"); } } return new PolicyResult(score, 0.7, trace.toString().trim()); } @Override public String getName() {",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

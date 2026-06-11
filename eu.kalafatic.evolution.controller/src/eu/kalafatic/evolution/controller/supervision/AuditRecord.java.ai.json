@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.supervision; public final class AuditRecord { private final long timestamp;",
+  "summary": "package eu.kalafatic.evolution.controller.supervision; public final class AuditRecord { private final long timestamp; private final String iterationId; private final String branchId; private final String authorityAction; // APPROVED, REJECTED, ACTIVATED, etc. private final String previousState; private final String newState; private final String actor; // AuthorityController, User, etc. private final String reason; private final String correlationId; public AuditRecord(String iterationId, String branchId, String authorityAction, String previousState, String newState, String actor, String reason, String correlationId) { this.timestamp = System.currentTimeMillis(); this.iterationId = iterationId; this.branchId = branchId; this.authorityAction = authorityAction; this.previousState = previousState; this.newState = newState;",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

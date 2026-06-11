@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.2,
   "importanceScore": 0.2,
-  "summary": "package eu.kalafatic.utils.interfaces; public interface IFormInput { boolean setInput();",
+  "summary": "package eu.kalafatic.utils.interfaces; public interface IFormInput { boolean setInput(); }",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

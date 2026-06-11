@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "unknown",
+  "stability": "EVOLVING",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "package eu.kalafatic.evolution.selfdev.genome.repository; import java.util.ArrayList; import java.util.HashMap; import java.util.List; import java.util.Map; import java.util.Optional; import eu.kalafatic.evolution.selfdev.genome.core.GenomeArtifact; public class LocalGenomeRepository implements GenomeRepository { private final Map<String, GenomeArtifact> storage = new HashMap<>(); @Override public void save(GenomeArtifact artifact) { storage.put(artifact.getId(), artifact); } @Override public Optional<GenomeArtifact> findById(String id) { return Optional.ofNullable(storage.get(id)); } @Override public List<GenomeArtifact> findByTopic(String topic) { return storage.values().stream()",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration.capability; import java.util.concurrent.Callable; public class CapabilitySandbox {",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration.capability; import java.util.concurrent.Callable; public class CapabilitySandbox { public static <V> V execute(ICapability capability, Callable<V> task) throws CapabilityException { long start = System.currentTimeMillis(); try { return task.call(); } catch (Exception e) { throw new CapabilityException(\"Capability \" + capability.getCapabilityId() + \" failed during execution.\", e); } finally { long duration = System.currentTimeMillis() - start; } } }",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.controller.agents; import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants; import eu.kalafatic.evolution.controller.tools.ToolFactory;",
+  "summary": "package eu.kalafatic.evolution.controller.agents; import eu.kalafatic.evolution.controller.tools.FileTool; public class FileAgent extends BaseAiAgent { public FileAgent(eu.kalafatic.evolution.controller.orchestration.SessionContainer container) { super(\"File\", \"File\", container); addTool(new FileTool()); } @Override protected String getAgentInstructions() { return \"You are an AI File Agent. You specialize in reading, writing, and managing files.\"; } }",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.7,
   "importanceScore": 0.7,
-  "summary": "package eu.kalafatic.utils.model; import java.util.ArrayList; import java.util.List;",
+  "summary": "package eu.kalafatic.utils.model; import java.util.ArrayList; import java.util.List; import eu.kalafatic.utils.convert.ConvertUtils; public class ComboData { public List<Element> data = new ArrayList<Element>(); public int defaultSelection = 0; public ComboData(int defaultSelection, String... items) { this.defaultSelection = defaultSelection; for (int i = 0; i < items.length; i++) { data.add(new Element(i, items[i])); } }",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

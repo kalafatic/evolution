@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration; import java.util.ArrayList; import java.util.Collections;",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration; import java.util.ArrayList; import java.util.Collections; import java.util.Comparator; import java.util.List; import java.util.Map; import java.util.concurrent.ConcurrentHashMap; import java.util.concurrent.CopyOnWriteArrayList; import java.util.concurrent.Executors; import java.util.concurrent.ScheduledExecutorService; import java.util.concurrent.TimeUnit; import java.util.concurrent.atomic.AtomicLong; import java.util.function.Consumer; import eu.kalafatic.evolution.model.orchestration.ChatMessage; import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory; public class ConversationOutputController { private static final long STABILIZATION_BUFFER_MS = 300; private static ConversationOutputController instance; public static synchronized ConversationOutputController getInstance() { if (instance == null) {",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

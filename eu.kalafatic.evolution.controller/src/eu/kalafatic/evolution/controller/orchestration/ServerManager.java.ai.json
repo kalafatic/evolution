@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration; import java.io.IOException; public class ServerManager {",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration; import java.io.IOException; public class ServerManager { private static ServerManager instance; private EvolutionServer server; private int currentPort = 48080; private ServerManager() {} public static synchronized ServerManager getInstance() { if (instance == null) { instance = new ServerManager(); } return instance; } public synchronized void start(int port) throws IOException { if (server != null) { stop(); } this.currentPort = port; server = new EvolutionServer(port); server.startServer();",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

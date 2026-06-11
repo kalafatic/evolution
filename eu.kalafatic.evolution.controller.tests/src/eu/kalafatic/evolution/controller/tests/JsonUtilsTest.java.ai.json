@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.controller.tests; import static org.junit.Assert.*; import org.json.JSONArray;",
+  "summary": "package eu.kalafatic.evolution.controller.tests; import eu.kalafatic.evolution.controller.orchestration.SessionManager; import static org.junit.Assert.*; import org.json.JSONArray; import org.json.JSONObject; import org.junit.Test; import eu.kalafatic.evolution.controller.parsers.JsonUtils; public class JsonUtilsTest { @Test public void testStripThinkBlocks() { String text = \"<think>some internal thought</think>[\n\" + \"  {\\"id\\": \\"t1\\", \\"strategy\\": \\"S1\\", \\"suffix\\": \\"s1\\"}\n\" + \"]\"; JSONArray result = JsonUtils.extractJsonArrayFlexible(text); assertNotNull(result); assertEquals(1, result.length()); assertEquals(\"S1\", result.getJSONObject(0).getString(\"strategy\")); } @Test public void testConvertObjectToArray() {",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

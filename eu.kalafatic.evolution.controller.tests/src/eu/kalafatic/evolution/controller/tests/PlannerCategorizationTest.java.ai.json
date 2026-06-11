@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.controller.tests; import static org.junit.Assert.*; import java.util.List;",
+  "summary": "package eu.kalafatic.evolution.controller.tests; import eu.kalafatic.evolution.controller.orchestration.SessionManager; import eu.kalafatic.evolution.controller.orchestration.SessionManager; import static org.junit.Assert.*; import java.util.List; import org.junit.Before; import org.junit.Test; import eu.kalafatic.evolution.controller.agents.PlannerAgent; import eu.kalafatic.evolution.controller.orchestration.TaskContext; import eu.kalafatic.evolution.controller.orchestration.llm.ILlmProvider; import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory; import eu.kalafatic.evolution.model.orchestration.Orchestrator; import eu.kalafatic.evolution.model.orchestration.Task; import java.lang.reflect.Field; public class PlannerCategorizationTest { private Orchestrator orchestrator; private TaskContext context; private MockLlmProvider mockLlm; @Before public void setUp() {",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

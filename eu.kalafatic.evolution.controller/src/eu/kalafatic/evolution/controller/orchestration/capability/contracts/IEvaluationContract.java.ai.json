@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration.capability.contracts; import eu.kalafatic.evolution.model.orchestration.EvaluationResult; import eu.kalafatic.evolution.controller.orchestration.TaskContext;",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration.capability.contracts; import eu.kalafatic.evolution.model.orchestration.EvaluationResult; import eu.kalafatic.evolution.controller.orchestration.TaskContext; import eu.kalafatic.evolution.controller.trajectory.EvaluationSignal; import java.io.File; import java.util.List; public interface IEvaluationContract { String ID = \"contract.evaluation\"; EvaluationResult evaluate(File projectRoot, TaskContext context, eu.kalafatic.evolution.controller.tools.ITool mavenTool) throws Exception; List<EvaluationSignal> evaluate(String variantId); }",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

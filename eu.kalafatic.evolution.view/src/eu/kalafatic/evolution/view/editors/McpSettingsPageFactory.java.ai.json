@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.4,
   "importanceScore": 0.4,
-  "summary": "package eu.kalafatic.evolution.view.editors; import org.eclipse.ui.PartInitException; import eu.kalafatic.evolution.model.orchestration.Orchestrator;",
+  "summary": "package eu.kalafatic.evolution.view.editors; import org.eclipse.ui.PartInitException; import eu.kalafatic.evolution.model.orchestration.Orchestrator; import eu.kalafatic.evolution.view.editors.pages.McpSettingsPage; public class McpSettingsPageFactory { public static McpSettingsPage createMcpSettingsPage(MultiPageEditor editor, Orchestrator orchestrator) throws PartInitException { McpSettingsPage page = new McpSettingsPage(editor.getContainer(), editor, orchestrator); int index = editor.addPage(page); editor.setPageText(index, \"MCP Settings\"); return page; } }",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

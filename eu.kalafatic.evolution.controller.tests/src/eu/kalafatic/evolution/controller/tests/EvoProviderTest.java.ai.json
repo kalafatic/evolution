@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.controller.tests; import static org.junit.Assert.*; import org.junit.Test;",
+  "summary": "package eu.kalafatic.evolution.controller.tests; import eu.kalafatic.evolution.controller.orchestration.SessionManager; import static org.junit.Assert.*; import org.junit.Test; public class EvoProviderTest { @Test public void testDummy() { assertTrue(true); } }",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

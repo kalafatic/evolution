@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "unknown",
+  "stability": "EVOLVING",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "package eu.kalafatic.evolution.controller.tests; import static org.junit.Assert.*; import org.json.JSONObject; import org.junit.Test; import eu.kalafatic.evolution.controller.orchestration.selfdev.DarwinStrategyType; import eu.kalafatic.evolution.controller.orchestration.selfdev.DarwinVariantValidator; public class DarwinVariantValidatorTest { @Test public void testValidateMissingIdPasses() { DarwinVariantValidator validator = new DarwinVariantValidator(); String rawResponse = \"{\n\" + \"  \\"strategy_type\\": \\"PROBABLE_SURVIVOR\\",\n\" + \"  \\"strategy\\": \\"Implement a simple direct execution path.\\",\n\" + \"  \\"reasoning_focus\\": \\"Direct execution\\",\n\" + \"  \\"survival_argument\\": \\"Most practical path\\",\n\" + \"  \\"semantic_justification\\": \\"Minimalist philosophy\\",\n\" + \"  \\"tradeoffs\\": \\"Lacks extensibility\\",\n\" + \"  \\"failure_risks\\": \\"Monolithic\\",\n\" + \"  \\"actions\\": [\n\" + \"    {\n\" +",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

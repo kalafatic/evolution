@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.model.orchestration.tests; import eu.kalafatic.evolution.model.orchestration.EvoProject; import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;",
+  "summary": "package eu.kalafatic.evolution.model.orchestration.tests; import eu.kalafatic.evolution.model.orchestration.EvoProject; import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory; import junit.framework.TestCase; import junit.textui.TestRunner; public class EvoProjectTest extends TestCase { protected EvoProject fixture = null; public static void main(String[] args) { TestRunner.run(EvoProjectTest.class); } public EvoProjectTest(String name) { super(name); }",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

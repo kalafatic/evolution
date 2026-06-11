@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "window.ChatApp = window.ChatApp || {}; window.ChatApp.Panel = { renderChanges: function(files, lastDiffs) {",
+  "summary": "window.ChatApp = window.ChatApp || {}; window.ChatApp.Panel = { renderChanges: function(files, lastDiffs) { const list = document.getElementById('changes-list'); if (!list) return; list.innerHTML = ''; if (!files || files.length === 0) { list.innerHTML = '<div style=\"font-size: 11px; color: #94a3b8; text-align: center; margin-top: 20px;\">No changes detected</div>'; return; } files.forEach(itemData => { let fileInfo = typeof itemData === 'string' ? itemData : itemData.info; let date = typeof itemData === 'string' ? '' : itemData.date; let status = 'M'; let path = fileInfo; if (fileInfo.includes(' ')) { status = fileInfo.substring(0, 2).trim().toUpperCase(); path = fileInfo.substring(2).trim(); } const item = document.createElement('div');",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

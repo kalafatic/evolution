@@ -33,6 +33,7 @@ import org.eclipse.emf.ecore.util.EDataTypeUniqueEList;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.EvaluationResultImpl#getErrors <em>Errors</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.EvaluationResultImpl#getDecision <em>Decision</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.EvaluationResultImpl#getUserSatisfaction <em>User Satisfaction</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.EvaluationResultImpl#getFitnessHistory <em>Fitness History</em>}</li>
  * </ul>
  *
  * @generated

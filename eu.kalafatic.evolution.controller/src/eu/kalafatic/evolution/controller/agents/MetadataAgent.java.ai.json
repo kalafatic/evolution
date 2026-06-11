@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.controller.agents; import java.io.File; import java.io.IOException;",
+  "summary": "package eu.kalafatic.evolution.controller.agents; import java.io.BufferedReader; import java.io.File; import java.io.FileReader; import java.io.IOException; import java.nio.file.Files; import java.util.ArrayList; import java.util.List; import java.util.Map; import java.util.HashMap; import java.util.stream.Collectors; import org.eclipse.core.runtime.IProgressMonitor; import org.eclipse.core.runtime.NullProgressMonitor; import eu.kalafatic.utils.semantic.AIContextTool; import eu.kalafatic.utils.semantic.EvoMetadata; import eu.kalafatic.utils.semantic.Stability; public class MetadataAgent { private static final long MAX_METADATA_FILE_SIZE = 512 * 1024; private static final int MAX_SUMMARY_LENGTH = 2000; private static final int MAX_SUMMARY_LINES = 20;",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

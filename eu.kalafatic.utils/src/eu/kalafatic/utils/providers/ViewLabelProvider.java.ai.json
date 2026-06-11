@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.2,
   "importanceScore": 0.2,
-  "summary": "package eu.kalafatic.utils.providers; import java.util.HashMap; import java.util.Iterator;",
+  "summary": "package eu.kalafatic.utils.providers; import java.util.HashMap; import java.util.Iterator; import org.eclipse.jface.resource.ImageDescriptor; import org.eclipse.jface.viewers.ColumnLabelProvider; import org.eclipse.jface.viewers.ColumnViewer; import org.eclipse.jface.viewers.ViewerColumn; import org.eclipse.swt.graphics.Color; import org.eclipse.swt.graphics.Image; import org.eclipse.ui.IWorkbenchPage; import org.eclipse.ui.IWorkbenchWindow; import org.eclipse.ui.views.IViewDescriptor; import eu.kalafatic.utils.constants.FCoreImageConstants; public class ViewLabelProvider extends ColumnLabelProvider { private HashMap<ImageDescriptor, Image> images; private final IWorkbenchWindow window; private final Color dimmedForeground;",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

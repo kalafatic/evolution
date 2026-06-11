@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.4,
   "importanceScore": 0.4,
-  "summary": "package eu.kalafatic.evolution.view.views; import java.util.HashMap; import java.util.Map;",
+  "summary": "package eu.kalafatic.evolution.view.views; import java.util.HashMap; import java.util.Map; import org.eclipse.jface.dialogs.InputDialog; import org.eclipse.jface.text.TextViewer; import org.eclipse.jface.window.Window; import org.eclipse.swt.SWT; import org.eclipse.core.runtime.IProgressMonitor; import org.eclipse.core.runtime.IStatus; import org.eclipse.core.runtime.Status; import org.eclipse.core.runtime.jobs.Job; import org.eclipse.swt.events.KeyAdapter; import org.eclipse.swt.events.KeyEvent; import org.eclipse.swt.events.SelectionAdapter; import org.eclipse.swt.events.SelectionEvent; import org.eclipse.swt.layout.GridData; import org.eclipse.swt.layout.GridLayout; import org.eclipse.swt.widgets.Button; import org.eclipse.swt.widgets.Combo; import org.eclipse.swt.widgets.Composite;",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

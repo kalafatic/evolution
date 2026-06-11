@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "unknown",
+  "stability": "EVOLVING",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "{ \"system_name\": \"AI Evolution Platform\", \"version\": \"v1_090626\", \"architecture_type\": \"Modular OSGi Monolith\", \"entry_points\": [ \"eu.kalafatic.evolution.controller.orchestration.OrchestratorServiceImpl\", \"eu.kalafatic.evolution.controller.orchestration.IterationManager\", \"eu.kalafatic.evolution.view.application.Application\" ], \"modules\": [ { \"name\": \"eu.kalafatic.utils\", \"type\": \"infra\", \"responsibilities\": [ \"Semantic annotations (@EvolutionComponent)\", \"Repository-agnostic structural evidence extraction\" ], \"depends_on\": [], \"exposes\": [ \"eu.kalafatic.utils.semantic\",",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

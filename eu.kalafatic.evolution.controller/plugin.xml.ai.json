@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "<?xml version=\"1.0\" encoding=\"UTF-8\"?> <?eclipse version=\"3.4\"?> <plugin>",
+  "summary": "<?xml version=\"1.0\" encoding=\"UTF-8\"?> <?eclipse version=\"3.4\"?> <plugin> <extension point=\"org.eclipse.ui.commands\"> <command name=\"Save\" id=\"eu.kalafatic.evolution.controller.saveCommand\"> </command> <command name=\"Maven Build\" id=\"eu.kalafatic.evolution.controller.mavenBuildCommand\"> </command> <command name=\"Git Commit\" id=\"eu.kalafatic.evolution.controller.gitCommitCommand\"> </command> <command name=\"Orchestrate\" id=\"eu.kalafatic.evolution.controller.orchestrationCommand\">",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

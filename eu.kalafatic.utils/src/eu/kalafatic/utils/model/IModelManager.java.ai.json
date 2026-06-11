@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.7,
   "importanceScore": 0.7,
-  "summary": "package eu.kalafatic.utils.model; import org.eclipse.emf.ecore.EObject; public interface IModelManager {",
+  "summary": "package eu.kalafatic.utils.model; import org.eclipse.emf.ecore.EObject; public interface IModelManager { void createModel(); void initModel(); void initModel(String path, String projectName, String modelName); void setUpModel(); void setUpProject(String projectName);",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

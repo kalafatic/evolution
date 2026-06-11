@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.2,
   "importanceScore": 0.2,
-  "summary": "package eu.kalafatic.utils.lib; public enum ELogType { TXT(0, \"txt\"),",
+  "summary": "package eu.kalafatic.utils.lib; public enum ELogType { TXT(0, \"txt\"), HTML(1, \"html\"), XML(2, \"xml\"); private int index; private String value; private ELogType(int index, String value) { this.index = index; this.value = value; }",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

@@ -27,7 +27,11 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.ChatSession#getTargetType <em>Target Type</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.ChatSession#getOutputPath <em>Output Path</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.ChatSession#isAutoApprove <em>Auto Approve</em>}</li>
-	 *   <li>{@link eu.kalafatic.evolution.model.orchestration.ChatSession#getExpansion <em>Expansion</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.ChatSession#getAiMode <em>Ai Mode</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.ChatSession#getLocalModel <em>Local Model</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.ChatSession#getRemoteModel <em>Remote Model</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.ChatSession#getBitState <em>Bit State</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.ChatSession#getExpansion <em>Expansion</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getChatSession()

@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "{ \"iteration\": 15, \"variant\": \"A\",",
+  "summary": "{ \"iteration\": 15, \"variant\": \"A\", \"files\": [\"architecture.md\", \"CHANGELOG.md\"] }",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

@@ -5,8 +5,8 @@
   "stability": "",
   "mediatedRelevanceScore": 0.9,
   "importanceScore": 0.9,
-  "summary": "package eu.kalafatic.evolution.controller.trajectory.strategy; import eu.kalafatic.evolution.controller.orchestration.TaskContext; public class ExplorationBranch implements EvolutionBranch {",
+  "summary": "package eu.kalafatic.evolution.controller.trajectory.strategy; import eu.kalafatic.evolution.controller.orchestration.TaskContext; public class ExplorationBranch implements EvolutionBranch { @Override public BranchType getType() { return BranchType.EXPLORATION; } @Override public boolean isApplicable(TaskContext context) { Object epsObj = context.getOrchestrationState().getMetadata().get(\"eps\"); double eps = (epsObj instanceof Double) ? (Double) epsObj : 0.5; return eps > 0.7; // High novelty/uncertainty triggers exploration } @Override public double getPriority(TaskContext context) { Object epsObj = context.getOrchestrationState().getMetadata().get(\"eps\"); double eps = (epsObj instanceof Double) ? (Double) epsObj : 0.5; return eps * 0.8; } @Override",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

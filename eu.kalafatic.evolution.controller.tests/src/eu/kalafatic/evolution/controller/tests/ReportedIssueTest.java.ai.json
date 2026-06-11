@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.controller.tests; import static org.junit.Assert.*; import org.junit.Test;",
+  "summary": "package eu.kalafatic.evolution.controller.tests; import eu.kalafatic.evolution.controller.orchestration.SessionManager; import static org.junit.Assert.*; import org.junit.Test; import eu.kalafatic.evolution.controller.orchestration.intent.AtomicIntentAnalysis; import eu.kalafatic.evolution.controller.orchestration.intent.HybridAtomicIntentClassifier; import eu.kalafatic.evolution.controller.orchestration.IterationManager; public class ReportedIssueTest { @Test public void testReportedPrompt() { String request = \"create java class which can print text\"; AtomicIntentAnalysis analysis = HybridAtomicIntentClassifier.heuristicAnalyze(request); assertTrue(\"Confidence should be >= 0.80 for: \" + request + \" (Score: \" + analysis.getConfidence() + \")\", analysis.getConfidence() >= 0.80); assertFalse(\"Should NOT require planning for: \" + request, analysis.isRequiresPlanning()); } @Test public void testGenericClassCreation() { String request = \"create a java class\"; AtomicIntentAnalysis analysis = HybridAtomicIntentClassifier.heuristicAnalyze(request);",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

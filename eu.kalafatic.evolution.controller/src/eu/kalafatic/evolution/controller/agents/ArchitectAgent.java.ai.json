@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.controller.agents; import eu.kalafatic.evolution.controller.tools.FileTool; import eu.kalafatic.evolution.controller.tools.ShellTool;",
+  "summary": "package eu.kalafatic.evolution.controller.agents; import eu.kalafatic.evolution.controller.tools.FileTool; import eu.kalafatic.evolution.controller.tools.ShellTool; public class ArchitectAgent extends BaseAiAgent { public ArchitectAgent(eu.kalafatic.evolution.controller.orchestration.SessionContainer container) { super(\"Architect\", \"Architect\", container); addTool(new FileTool()); addTool(new ShellTool()); } public void updateDesignModel(eu.kalafatic.evolution.controller.orchestration.TaskContext context, String designJson) { context.getOrchestrator().setSharedMemory(designJson); } @Override protected String getAgentInstructions() { return \"You are acting as an Architect Agent. Analyze technical requirements and provide a detailed architecture design.\"; } }",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

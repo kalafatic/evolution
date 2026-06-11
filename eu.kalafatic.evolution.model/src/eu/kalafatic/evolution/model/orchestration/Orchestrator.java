@@ -46,7 +46,7 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getServerSessions <em>Server Sessions</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getMonitoringHistory <em>Monitoring History</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getSupervisorSettings <em>Supervisor Settings</em>}</li>
-	 *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getNetworkEntries <em>Network Entries</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getNetworkEntries <em>Network Entries</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator()

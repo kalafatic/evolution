@@ -5,8 +5,8 @@
   "stability": "",
   "mediatedRelevanceScore": 0.9,
   "importanceScore": 0.9,
-  "summary": "package eu.kalafatic.evolution.controller.trajectory; import eu.kalafatic.evolution.controller.orchestration.TaskContext; import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;",
+  "summary": "package eu.kalafatic.evolution.controller.trajectory; import eu.kalafatic.evolution.controller.orchestration.TaskContext; import eu.kalafatic.evolution.controller.workflow.RuntimeEvent; import eu.kalafatic.evolution.controller.workflow.RuntimeEventBus; import eu.kalafatic.evolution.controller.workflow.RuntimeEventType; import eu.kalafatic.evolution.controller.workflow.RuntimeEvent; import eu.kalafatic.evolution.controller.workflow.RuntimeEventBus; import eu.kalafatic.evolution.controller.workflow.RuntimeEventType; public class GitEmfReconciler { private final TaskContext context; public GitEmfReconciler(TaskContext context) { this.context = context; subscribeToEvents(); } private void subscribeToEvents() { if (context == null) { throw new IllegalStateException(\"GitEmfReconciler: context is null. Cannot subscribe to events.\"); } context.getKernelContext().getEventBus().subscribe(event -> { if (event.getType() == RuntimeEventType.TOOL_EXECUTION_SUCCEEDED && \"GitTool\".equals(event.getSource())) {",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

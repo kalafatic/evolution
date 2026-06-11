@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.mediation.model; import java.util.ArrayList; import java.util.List;",
+  "summary": "package eu.kalafatic.evolution.controller.mediation.model; import java.util.ArrayList; import java.util.List; import java.util.Map; import java.util.HashMap; public class TargetSnapshot { public enum TargetType { PROJECT, SELF } private final String snapshotId; private final String version; private final long timestamp; private final TargetType targetType; private final String rootPath; private final Map<String, SemanticNode> nodes = new HashMap<>(); private final List<SemanticEdge> edges = new ArrayList<>(); private final Map<String, Object> metadata = new HashMap<>(); public TargetSnapshot(String snapshotId, String version, TargetType targetType, String rootPath) { this.snapshotId = snapshotId; this.version = version; this.timestamp = System.currentTimeMillis(); this.targetType = targetType;",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

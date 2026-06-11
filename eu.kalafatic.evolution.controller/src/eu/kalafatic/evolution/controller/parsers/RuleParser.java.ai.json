@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.controller.parsers; import eu.kalafatic.evolution.model.orchestration.*; public class RuleParser {",
+  "summary": "package eu.kalafatic.evolution.controller.parsers; import eu.kalafatic.evolution.model.orchestration.*; public class RuleParser { public static void parseAndAddRules(Agent agent, String rulesData) { if (rulesData == null || rulesData.isEmpty()) return; String[] ruleSpecs = rulesData.split(\";\"); OrchestrationFactory factory = OrchestrationFactory.eINSTANCE; for (String spec : ruleSpecs) { String[] parts = spec.split(\"=\", 2); if (parts.length < 2) continue; String type = parts[0].trim(); String config = parts[1].trim(); Rule rule = null; if (\"access\".equalsIgnoreCase(type)) { AccessRule ar = factory.createAccessRule(); parseKeyValuePairs(ar, config); rule = ar; } else if (\"network\".equalsIgnoreCase(type)) { NetworkRule nr = factory.createNetworkRule(); parseKeyValuePairs(nr, config);",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

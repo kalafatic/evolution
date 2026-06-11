@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.4,
   "importanceScore": 0.4,
-  "summary": "package eu.kalafatic.evolution.view.editors.pages.taskstack; import java.util.ArrayList; import java.util.LinkedHashMap;",
+  "summary": "package eu.kalafatic.evolution.view.editors.pages.taskstack; import java.util.ArrayList; import java.util.LinkedHashMap; import java.util.List; import org.eclipse.jface.dialogs.InputDialog; import org.eclipse.jface.viewers.ArrayContentProvider; import org.eclipse.jface.viewers.ListViewer; import org.eclipse.jface.window.Window; import org.eclipse.swt.SWT; import org.eclipse.swt.layout.GridData; import org.eclipse.swt.layout.GridLayout; import org.eclipse.swt.widgets.Button; import org.eclipse.swt.widgets.Composite; import org.eclipse.swt.widgets.Control; import org.eclipse.swt.widgets.Shell; import eu.kalafatic.evolution.controller.orchestration.behavior.BitState; import eu.kalafatic.evolution.model.orchestration.Task; import eu.kalafatic.evolution.view.editors.pages.TaskStackPage; import eu.kalafatic.utils.dialogs.DynamicField; import eu.kalafatic.utils.dialogs.DynamicMapDialog;",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

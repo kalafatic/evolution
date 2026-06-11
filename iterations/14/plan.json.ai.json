@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "{ \"iteration\": 14, \"variant\": \"B\",",
+  "summary": "{ \"iteration\": 14, \"variant\": \"B\", \"files\": [\"EvolutionOrchestrator.java\", \"AnalyticAgent.java\", \"LlmRouter.java\"] }",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.4,
   "importanceScore": 0.4,
-  "summary": "package eu.kalafatic.evolution.view.wizards; import org.eclipse.jface.viewers.IStructuredSelection; import org.eclipse.jface.wizard.Wizard;",
+  "summary": "package eu.kalafatic.evolution.view.wizards; import org.eclipse.jface.viewers.IStructuredSelection; import org.eclipse.jface.wizard.Wizard; import org.eclipse.jface.wizard.WizardPage; import org.eclipse.ui.INewWizard; import org.eclipse.ui.IWorkbench; import org.eclipse.ui.IWorkbenchWindow; import org.eclipse.swt.SWT; import org.eclipse.swt.layout.GridLayout; import org.eclipse.swt.widgets.Composite; import org.eclipse.swt.widgets.Label; import org.eclipse.swt.widgets.Link; import org.eclipse.swt.widgets.Text; import org.eclipse.swt.widgets.Button; import org.eclipse.core.runtime.jobs.Job; import org.eclipse.core.runtime.IProgressMonitor; import org.eclipse.core.runtime.IStatus; import org.eclipse.core.runtime.Status; import org.eclipse.core.resources.ResourcesPlugin; import org.eclipse.core.resources.IProject;",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

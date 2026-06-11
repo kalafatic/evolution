@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "documentation",
+  "stability": "EVOLVING",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "Prioritized implementation sequence for the ECOS transition. --- - **Priority**: CRITICAL - **Effort**: LOW - **Risk**: LOW - **Description**: Delete `ExampleMain.java`, `SelfDevMain.java`, and other legacy entry points. - **Impact**: Reduces confusion and enforces \"One Kernel\" vision. - **Priority**: MEDIUM - **Effort**: LOW - **Risk**: LOW - **Description**: Move `NeuronEngine` to a separate plugin or remove mock implementation from the core. - **Impact**: Clarifies system capability vs simulation. --- - **Priority**: CRITICAL - **Effort**: HIGH - **Risk**: HIGH - **Description**: Introduce `IArtifact` and `IEvolutionEnvironment`. Refactor `IterationManager` to delegate artifact-specific execution to the environment. - **Impact**: Enables true artifact agnosticism and mode-as-environment architecture. - **Priority**: HIGH - **Effort**: MEDIUM",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

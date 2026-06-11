@@ -24,6 +24,7 @@ import eu.kalafatic.evolution.model.orchestration.LLM;
 import eu.kalafatic.evolution.model.orchestration.Maven;
 import eu.kalafatic.evolution.model.orchestration.MemoryRule;
 import eu.kalafatic.evolution.model.orchestration.MonitoringData;
+import eu.kalafatic.evolution.model.orchestration.NetworkEntry;
 import eu.kalafatic.evolution.model.orchestration.NetworkRule;
 import eu.kalafatic.evolution.model.orchestration.NeuronAI;
 import eu.kalafatic.evolution.model.orchestration.Ollama;
@@ -246,6 +247,10 @@ public class OrchestrationAdapterFactory extends AdapterFactoryImpl {
 			@Override
 			public Adapter caseChatMessage(ChatMessage object) {
 				return createChatMessageAdapter();
+			}
+			@Override
+			public Adapter caseNetworkEntry(NetworkEntry object) {
+				return createNetworkEntryAdapter();
 			}
 			@Override
 			public Adapter casePromptInstructions(PromptInstructions object) {
@@ -772,6 +777,20 @@ public class OrchestrationAdapterFactory extends AdapterFactoryImpl {
 	 * @generated
 	 */
 	public Adapter createChatMessageAdapter() {
+		return null;
+	}
+
+	/**
+	 * Creates a new adapter for an object of class '{@link eu.kalafatic.evolution.model.orchestration.NetworkEntry <em>Network Entry</em>}'.
+	 * <!-- begin-user-doc -->
+	 * This default implementation returns null so that we can easily ignore cases;
+	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
+	 * <!-- end-user-doc -->
+	 * @return the new adapter.
+	 * @see eu.kalafatic.evolution.model.orchestration.NetworkEntry
+	 * @generated
+	 */
+	public Adapter createNetworkEntryAdapter() {
 		return null;
 	}
 

@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.controller.log; import org.json.JSONObject; import eu.kalafatic.evolution.model.orchestration.LogLevel;",
+  "summary": "package eu.kalafatic.evolution.controller.log; import org.json.JSONObject; import eu.kalafatic.evolution.model.orchestration.LogLevel; import eu.kalafatic.evolution.controller.orchestration.TaskContext; public class LoggingService { private static final LoggingService INSTANCE = new LoggingService(); public static LoggingService getInstance() { return INSTANCE; } public void log(TaskContext context, LogLevel level, String message, Object data) { LogLevel threshold = getThreshold(context); if (level.getValue() < threshold.getValue()) { return; } JSONObject structured = new JSONObject(); structured.put(\"taskId\", context.getCurrentTaskId()); structured.put(\"iteration\", context.getCurrentIteration()); structured.put(\"phase\", context.getCurrentPhase()); structured.put(\"level\", level.getName()); structured.put(\"message\", message);",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.controller.tests; import static org.junit.Assert.*; import org.json.JSONArray;",
+  "summary": "package eu.kalafatic.evolution.controller.tests; import eu.kalafatic.evolution.controller.orchestration.SessionManager; import static org.junit.Assert.*; import org.json.JSONArray; import org.json.JSONObject; import org.junit.Test; import eu.kalafatic.evolution.controller.parsers.JsonUtils; public class JsonRobustnessTest { @Test public void testMultipleConcatenatedObjects() { String noisyResponse = \"```json\n\" + \"{\n\" + \"  \\"category\\": \\"CODING\\",\n\" + \"  \\"objective\\": \\"create java class\\",\n\" + \"  \\"isAmbiguous\\": false,\n\" + \"  \\"missingInformation\\": [],\n\" + \"  \\"clarificationQuestion\\": \\"\\",\n\" + \"  \\"refinedPrompt\\": \\"Create a Java class.\\"\n\" + \"}\n\" + \"```\n\" +",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

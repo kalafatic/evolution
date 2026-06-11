@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "documentation",
+  "stability": "EVOLVING",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "This document defines the strict dependency graph and execution order for the ECOS transition. --- - No circular dependencies. - No impossible ordering. - Dependency violation prevents execution of downstream steps. --- - **Description**: Cleanup dead code and stubs. - **Dependencies**: NONE. - **Outputs**: Cleaned repository. - **Description**: Define `IArtifact`, `IEvolutionEnvironment`, `IMutationStrategy`. - **Dependencies**: [STB-0]. - **Outputs**: Core ECOS API. - **Description**: Create `DevelopmentEnvironment` and `MediationEnvironment`. - **Dependencies**: [INF-1]. - **Outputs**: Artifact-specific execution environments. - **Description**: Move Java/Git/Mediated logic out of `IterationManager` and `DarwinFlow`. - **Dependencies**: [ENV-1]. - **Outputs**: Generalized Evolution Kernel. - **Description**: Ensure agents cite environments and follow stateless kernel requests. - **Dependencies**: [KRN-1].",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

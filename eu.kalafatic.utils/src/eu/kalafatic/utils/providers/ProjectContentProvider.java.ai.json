@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.2,
   "importanceScore": 0.2,
-  "summary": "package eu.kalafatic.utils.providers; import java.util.LinkedHashMap; import java.util.List;",
+  "summary": "package eu.kalafatic.utils.providers; import java.util.LinkedHashMap; import java.util.List; import java.util.Map; import java.util.Map.Entry; import org.eclipse.core.resources.IFolder; import org.eclipse.core.resources.IProject; import org.eclipse.core.resources.IWorkspaceRoot; import org.eclipse.core.runtime.CoreException; import org.eclipse.jface.viewers.ITreeContentProvider; import org.eclipse.jface.viewers.Viewer; import eu.kalafatic.utils.constants.EProject; @SuppressWarnings({ \"rawtypes\", \"unchecked\" }) public class ProjectContentProvider implements ITreeContentProvider { @Override public Object[] getChildren(Object arg0) { return getElements(arg0); } @Override public Object getParent(Object arg0) {",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

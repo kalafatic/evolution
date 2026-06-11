@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration; import java.util.Objects; public class SystemStateHolder {",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration; import java.util.Objects; public class SystemStateHolder { private SystemState currentState = SystemState.INIT; public SystemStateHolder() { } public SystemState getState() { return currentState; } void applyTransition(TransitionToken token, SystemState newState) { Objects.requireNonNull(token, \"TransitionToken is mandatory for state changes\"); Objects.requireNonNull(newState, \"Target SystemState cannot be null\"); currentState = newState; } }",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

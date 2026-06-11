@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.controller.workflow; import java.util.ArrayList; import java.util.List;",
+  "summary": "package eu.kalafatic.evolution.controller.workflow; import java.util.ArrayList; import java.util.List; import java.util.concurrent.CopyOnWriteArrayList; import java.util.concurrent.Executors; import java.util.concurrent.ScheduledExecutorService; import java.util.concurrent.TimeUnit; import eu.kalafatic.evolution.controller.execution.BackpressureController; import eu.kalafatic.evolution.controller.execution.ExecutionBudget; import eu.kalafatic.evolution.controller.orchestration.SessionContainer; import eu.kalafatic.evolution.controller.orchestration.SessionManager; public class RuntimeEventBus { private final List<RuntimeEventListener> listeners = new CopyOnWriteArrayList<>(); private ExecutionBudget budget = ExecutionBudget.defaultProfile(); private final String sessionId; private final java.util.concurrent.BlockingQueue<RuntimeEvent> eventBuffer = new java.util.concurrent.LinkedBlockingQueue<>(); private final ScheduledExecutorService scheduler; private static final int THROTTLE_MS = 100; public RuntimeEventBus(String sessionId) { this.sessionId = sessionId;",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

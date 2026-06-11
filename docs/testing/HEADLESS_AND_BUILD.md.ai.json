@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "To automate the full Tycho build process, use the provided build script: ```bash ./scripts/build.sh",
+  "summary": "To automate the full Tycho build process, use the provided build script: ```bash ./scripts/build.sh ``` This script runs `mvn clean verify -DskipTests=true` to regenerate all OSGi bundles and the P2 repository. The platform includes an embedded REST server (`EvolutionServer`) for remote control and headless orchestration. To start the headless server: ```bash ./scripts/start-headless.sh [PORT] ``` - **Default Port:** 48080 - **Dependencies:** The script automatically resolves core EMF and OSGi dependencies from the Tycho cache. Once the server is running, you can interact with it via REST: ```bash curl http://localhost:48080/server/status ``` ```bash curl -X POST http://localhost:48080/task -d '{\"prompt\": \"mode: chat - Summarize the project structure\", \"projectRoot\": \".\"}' ``` Comprehensive tests for the headless API and mode routing are located in:",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

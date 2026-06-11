@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.7,
   "importanceScore": 0.7,
-  "summary": "package eu.kalafatic.utils.model; import java.io.File; import org.eclipse.core.resources.IFile;",
+  "summary": "package eu.kalafatic.utils.model; import java.io.File; import org.eclipse.core.resources.IFile; import org.eclipse.core.resources.IProject; import org.eclipse.core.resources.IResource; import org.eclipse.core.runtime.NullProgressMonitor; import org.eclipse.emf.common.util.URI; import org.eclipse.emf.ecore.resource.Resource; import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl; import org.eclipse.jface.viewers.StructuredSelection; import org.eclipse.swt.widgets.Display; import org.eclipse.ui.PlatformUI; import org.eclipse.ui.navigator.resources.ProjectExplorer; import eu.kalafatic.utils.application.AppUtils; public abstract class AModelManager implements IModelManager { protected File modelFile; protected URI modelURI; protected Resource resource; protected Object model; private IProject iProject;",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

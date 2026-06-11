@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration.llm; import eu.kalafatic.evolution.model.orchestration.AiMode; import eu.kalafatic.evolution.model.orchestration.Orchestrator;",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration.llm; import eu.kalafatic.evolution.model.orchestration.AiMode; import eu.kalafatic.evolution.model.orchestration.Orchestrator; import eu.kalafatic.evolution.model.orchestration.Task; import eu.kalafatic.evolution.controller.orchestration.ContextBuilder; import eu.kalafatic.evolution.controller.orchestration.ContextPackage; import eu.kalafatic.evolution.controller.orchestration.TaskContext; import eu.kalafatic.evolution.controller.providers.AiProviders; import eu.kalafatic.evolution.controller.providers.ProviderConfig; public class LlmRouter { private static final LlmRouter INSTANCE = new LlmRouter(); public static LlmRouter getInstance() { return INSTANCE; } private ILlmProvider ollamaProvider = new OllamaProvider(); public void setLocalProvider(ILlmProvider provider) { this.ollamaProvider = provider; } public ILlmProvider getLocalProvider() { return ollamaProvider;",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

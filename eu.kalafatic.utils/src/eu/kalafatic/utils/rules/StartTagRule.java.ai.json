@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.2,
   "importanceScore": 0.2,
-  "summary": "package eu.kalafatic.utils.rules; import org.eclipse.jface.text.rules.ICharacterScanner; import org.eclipse.jface.text.rules.IToken;",
+  "summary": "package eu.kalafatic.utils.rules; import org.eclipse.jface.text.rules.ICharacterScanner; import org.eclipse.jface.text.rules.IToken; import org.eclipse.jface.text.rules.MultiLineRule; public class StartTagRule extends MultiLineRule { public StartTagRule(IToken token) { this(token, false); } protected StartTagRule(IToken token, boolean endAsWell) { super(\"<\", endAsWell ? \"/>\" : \">\", token); }",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

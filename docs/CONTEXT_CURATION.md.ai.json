@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "Context Curation is the process of selecting a minimal, high-signal set of artifacts to provide to an external LLM. - **Anchors:** Key architectural files like `pom.xml` or `package.json`. - **Entry Points:** Files containing `main` methods or core controllers.",
+  "summary": "Context Curation is the process of selecting a minimal, high-signal set of artifacts to provide to an external LLM. - **Anchors:** Key architectural files like `pom.xml` or `package.json`. - **Entry Points:** Files containing `main` methods or core controllers. - **Structural Models:** Important interfaces and base classes. - **Semantic Clusters:** Files with high density of technical markers. - Avoid token floods by limiting the number of selected files. - Prioritize architectural relevance over raw size.",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.2,
   "importanceScore": 0.2,
-  "summary": "package eu.kalafatic.utils.lib; import org.eclipse.swt.graphics.Image; import eu.kalafatic.utils.constants.FCoreImageConstants;",
+  "summary": "package eu.kalafatic.utils.lib; import org.eclipse.swt.graphics.Image; import eu.kalafatic.utils.constants.FCoreImageConstants; public enum ELang { CS(0, \"CS\", FCoreImageConstants.CS_IMG), EN(1, \"EN\", FCoreImageConstants.EN_IMG), DE(2, \"DE\", FCoreImageConstants.DE_IMG), ZH(3, \"ZH\", FCoreImageConstants.ZH_IMG), RU(4, \"RU\", FCoreImageConstants.RU_IMG), ES(5, \"ES\", FCoreImageConstants.ES_IMG); public int index; public String literal; public Image image;",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

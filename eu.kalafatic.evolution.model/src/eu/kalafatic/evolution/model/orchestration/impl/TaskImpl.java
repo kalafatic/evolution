@@ -67,6 +67,7 @@ import org.eclipse.emf.ecore.util.InternalEList;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getMaxIterations <em>Max Iterations</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#isStepMode <em>Step Mode</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getBitState <em>Bit State</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.TaskImpl#getJustification <em>Justification</em>}</li>
  * </ul>
  *
  * @generated
@@ -721,52 +722,6 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 	 * @ordered
 	 */
 	protected String justification = JUSTIFICATION_EDEFAULT;
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public long getBitState() {
-		return bitState;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setBitState(long newBitState) {
-		long oldBitState = bitState;
-		bitState = newBitState;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__BIT_STATE, oldBitState, bitState));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public String getJustification() {
-		return justification;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setJustification(String newJustification) {
-		String oldJustification = justification;
-		justification = newJustification;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__JUSTIFICATION, oldJustification, justification));
-	}
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -1491,6 +1446,52 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 		stepMode = newStepMode;
 		if (eNotificationRequired())
 			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__STEP_MODE, oldStepMode, stepMode));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public long getBitState() {
+		return bitState;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setBitState(long newBitState) {
+		long oldBitState = bitState;
+		bitState = newBitState;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__BIT_STATE, oldBitState, bitState));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getJustification() {
+		return justification;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setJustification(String newJustification) {
+		String oldJustification = justification;
+		justification = newJustification;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.TASK__JUSTIFICATION, oldJustification, justification));
 	}
 
 	/**

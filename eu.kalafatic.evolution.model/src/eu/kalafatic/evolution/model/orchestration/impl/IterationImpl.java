@@ -41,6 +41,11 @@ import org.eclipse.emf.ecore.util.InternalEList;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.IterationImpl#getComments <em>Comments</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.IterationImpl#getRating <em>Rating</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.IterationImpl#getRationale <em>Rationale</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.IterationImpl#getJustification <em>Justification</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.IterationImpl#getSemanticPressure <em>Semantic Pressure</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.IterationImpl#getSurvivalArgument <em>Survival Argument</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.IterationImpl#getTradeoffs <em>Tradeoffs</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.IterationImpl#getFailureRisks <em>Failure Risks</em>}</li>
  * </ul>
  *
  * @generated

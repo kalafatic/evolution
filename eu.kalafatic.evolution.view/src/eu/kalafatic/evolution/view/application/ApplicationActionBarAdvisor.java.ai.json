@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.4,
   "importanceScore": 0.4,
-  "summary": "package eu.kalafatic.evolution.view.application; import org.eclipse.jface.action.GroupMarker; import org.eclipse.jface.action.IMenuManager;",
+  "summary": "package eu.kalafatic.evolution.view.application; import org.eclipse.jface.action.GroupMarker; import org.eclipse.jface.action.IMenuManager; import org.eclipse.jface.action.IStatusLineManager; import org.eclipse.jface.action.MenuManager; import org.eclipse.jface.action.IAction; import org.eclipse.jface.action.Separator; import org.eclipse.swt.graphics.Image; import org.eclipse.ui.IWorkbenchActionConstants; import org.eclipse.ui.IWorkbenchWindow; import org.eclipse.ui.actions.ActionFactory; import org.eclipse.ui.application.ActionBarAdvisor; import org.eclipse.ui.application.IActionBarConfigurer; import eu.kalafatic.utils.builders.WorkbenchActionBuilder; import eu.kalafatic.utils.hack.StatusLineContributionItem; import eu.kalafatic.utils.lib.AppData; import eu.kalafatic.utils.lib.ELang; import static eu.kalafatic.utils.constants.FCoreConstants.FILTERED_ACTIONSETS; import static eu.kalafatic.utils.constants.FCoreImageConstants.ARROW_DOWN_IMG; import static eu.kalafatic.utils.constants.FCoreImageConstants.ARROW_UP_IMG;",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

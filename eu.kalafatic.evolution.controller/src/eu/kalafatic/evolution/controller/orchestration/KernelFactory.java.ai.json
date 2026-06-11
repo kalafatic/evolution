@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration; import eu.kalafatic.evolution.controller.orchestration.selfdev.DarwinEngine; import eu.kalafatic.evolution.controller.orchestration.selfdev.Evaluator;",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration; import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityException; import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityRegistry; import eu.kalafatic.evolution.controller.orchestration.selfdev.DarwinEngine; import eu.kalafatic.evolution.controller.orchestration.selfdev.Evaluator; import eu.kalafatic.evolution.controller.orchestration.selfdev.GitManager; import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationMemoryService; import eu.kalafatic.evolution.controller.orchestration.selfdev.SystemStateSignalProvider; import eu.kalafatic.evolution.controller.orchestration.selfdev.TaskExecutor; import eu.kalafatic.evolution.controller.orchestration.selfdev.TaskPlanner; import eu.kalafatic.evolution.controller.supervision.ActivationResolver; public class KernelFactory { public static IterationManager create(TaskContext context, SessionContainer sessionContext) { return create(context, sessionContext, new AiService()); } public static IterationManager create(TaskContext context, SessionContainer sessionContext, AiService aiService) { GitManager gitManager = new GitManager(context.getProjectRoot()); TaskPlanner taskPlanner = new TaskPlanner(sessionContext); TaskExecutor taskExecutor = new TaskExecutor(context, context.getOrchestrator()); if (taskExecutor.getOrchestrator() != null) {",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration.export; import java.util.Set; import java.util.HashSet;",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration.export; import java.util.Set; import java.util.HashSet; import java.util.Map; import java.util.HashMap; import org.json.JSONObject; import eu.kalafatic.evolution.controller.orchestration.TaskContext; import eu.kalafatic.evolution.controller.orchestration.ContextBuilder; import eu.kalafatic.evolution.controller.orchestration.ContextPackage; import eu.kalafatic.evolution.model.orchestration.Task; import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory; import eu.kalafatic.evolution.controller.tools.FileTool; public class ContextSelectionEngine { private final FileTool fileTool = new FileTool(); public Map<String, String> selectContext(String goal, JSONObject analysis, TaskContext context) throws Exception { context.log(\"[EXPORT] Selecting relevant context for goal: \" + goal); Task tempTask = OrchestrationFactory.eINSTANCE.createTask(); tempTask.setGoal(goal); tempTask.setName(\"Export Context Gathering\"); tempTask.setDescription(analysis.optString(\"refinedPrompt\", goal));",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

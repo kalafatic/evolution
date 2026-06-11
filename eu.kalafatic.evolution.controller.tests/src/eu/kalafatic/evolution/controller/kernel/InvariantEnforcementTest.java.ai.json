@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "unknown",
+  "stability": "EVOLVING",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "package eu.kalafatic.evolution.controller.kernel; import static org.junit.Assert.*; import org.junit.Test; import eu.kalafatic.evolution.controller.orchestration.*; import eu.kalafatic.evolution.controller.workflow.*; import eu.kalafatic.evolution.controller.execution.BackpressureController; public class InvariantEnforcementTest { @Test public void testSessionBoundaryEnforcement() { String sessionId = \"test-session-1\"; SessionBoundaryGuard.enterSession(sessionId); try { assertEquals(sessionId, SessionBoundaryGuard.getCurrentSessionId()); assertTrue(SessionBoundaryGuard.isInSession()); RuntimeInvariant.checkSession(sessionId, \"Test\"); try { RuntimeInvariant.checkSession(\"wrong-session\", \"Test\"); fail(\"Should have thrown InvariantViolationException for session mismatch\"); } catch (InvariantViolationException e) { assertTrue(e.getMessage().contains(\"Cross-session access detected\"));",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

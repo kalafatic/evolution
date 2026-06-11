@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.2,
   "importanceScore": 0.2,
-  "summary": "package eu.kalafatic.utils.lib; public enum ELogEvent { BOTH(0, \"Both\"),",
+  "summary": "package eu.kalafatic.utils.lib; public enum ELogEvent { BOTH(0, \"Both\"), EVENTS(1, \"Events\"), EXCEPTIONS(2, \"Exceptions\"); private int index; private String value; private ELogEvent(int index, String value) { this.index = index; this.value = value; }",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

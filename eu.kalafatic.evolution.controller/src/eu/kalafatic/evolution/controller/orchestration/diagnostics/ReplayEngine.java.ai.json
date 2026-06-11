@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration.diagnostics; import eu.kalafatic.evolution.controller.orchestration.IterationManager; import eu.kalafatic.evolution.controller.orchestration.TaskContext;",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration.diagnostics; import eu.kalafatic.evolution.controller.orchestration.IterationManager; import eu.kalafatic.evolution.controller.orchestration.TaskContext; import eu.kalafatic.evolution.controller.orchestration.SystemState; public class ReplayEngine { public void replay(CognitiveTrace trace, IterationManager manager, TaskContext context) { context.log(\"[REPLAY] Starting replay of trace: \" + trace.getTraceId()); for (CausalNode node : trace.getCausalChain()) { context.log(\"[REPLAY] Event: \" + node.getNodeType() + \" from \" + node.getSourceComponent()); context.log(\"[REPLAY] Rationale: \" + node.getRationale()); if (\"STATE_TRANSITION\".equals(node.getNodeType())) { String stateStr = node.getOutputReferences().get(0); SystemState state = SystemState.valueOf(stateStr); manager.transition(state, context); } } context.log(\"[REPLAY] Replay completed.\"); } }",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.2,
   "importanceScore": 0.2,
-  "summary": "package eu.kalafatic.utils.views; import java.io.File; import org.eclipse.jface.action.IMenuManager;",
+  "summary": "package eu.kalafatic.utils.views; import java.io.File; import org.eclipse.jface.action.IMenuManager; import org.eclipse.jface.action.MenuManager; import org.eclipse.jface.action.Separator; import org.eclipse.jface.viewers.DoubleClickEvent; import org.eclipse.jface.viewers.IDoubleClickListener; import org.eclipse.jface.viewers.IStructuredSelection; import org.eclipse.jface.viewers.TreeSelection; import org.eclipse.jface.viewers.TreeViewer; import org.eclipse.swt.widgets.Composite; import org.eclipse.ui.IWorkbenchActionConstants; import org.eclipse.ui.PartInitException; import org.eclipse.ui.actions.OpenFileAction; import eu.kalafatic.utils.constants.FCoreImageConstants; import eu.kalafatic.utils.hack.OpenWithMenu; import eu.kalafatic.utils.interfaces.ATreeViewer; import eu.kalafatic.utils.providers.FileTreeContentProvider; import eu.kalafatic.utils.providers.FileTreeLabelProvider; public class FileNavigatorView extends ATreeViewer {",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

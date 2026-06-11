@@ -15,6 +15,7 @@ import eu.kalafatic.evolution.model.orchestration.Git;
 import eu.kalafatic.evolution.model.orchestration.LLM;
 import eu.kalafatic.evolution.model.orchestration.Maven;
 import eu.kalafatic.evolution.model.orchestration.MonitoringData;
+import eu.kalafatic.evolution.model.orchestration.NetworkEntry;
 import eu.kalafatic.evolution.model.orchestration.NeuronAI;
 import eu.kalafatic.evolution.model.orchestration.Ollama;
 import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
@@ -65,6 +66,6 @@ public interface OrchestratorValidator {
 	boolean validateServerSettings(ServerSettings value);
 	boolean validateServerSessions(EList<ServerSession> value);
 	boolean validateMonitoringHistory(EList<MonitoringData> value);
-
 	boolean validateSupervisorSettings(SupervisorSettings value);
+	boolean validateNetworkEntries(EList<NetworkEntry> value);
 }

@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.4,
   "importanceScore": 0.4,
-  "summary": "package eu.kalafatic.evolution.view.editors.pages.properties; import org.eclipse.jface.fieldassist.ControlDecoration; import org.eclipse.jface.fieldassist.FieldDecorationRegistry;",
+  "summary": "package eu.kalafatic.evolution.view.editors.pages.properties; import org.eclipse.jface.fieldassist.ControlDecoration; import org.eclipse.jface.fieldassist.FieldDecorationRegistry; import org.eclipse.swt.SWT; import org.eclipse.swt.events.SelectionAdapter; import org.eclipse.swt.events.SelectionEvent; import org.eclipse.swt.layout.GridData; import org.eclipse.swt.widgets.Combo; import org.eclipse.swt.widgets.Composite; import org.eclipse.swt.widgets.Display; import org.eclipse.swt.widgets.Text; import org.eclipse.ui.forms.widgets.FormToolkit; import eu.kalafatic.evolution.controller.manager.ProjectModelManager; import eu.kalafatic.evolution.controller.providers.AiProviders; import eu.kalafatic.evolution.controller.providers.ProviderConfig; import eu.kalafatic.evolution.model.orchestration.AIProvider; import eu.kalafatic.evolution.model.orchestration.Orchestrator; import eu.kalafatic.evolution.view.editors.MultiPageEditor; import eu.kalafatic.evolution.view.editors.pages.AEvoGroup; import eu.kalafatic.evolution.view.editors.pages.PropertiesPage;",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

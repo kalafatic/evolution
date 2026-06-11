@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "documentation",
+  "stability": "EVOLVING",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "The AI Evolution Platform is a deterministic, state-transition-based evolution kernel designed to coordinate small local LLMs for autonomous software development. It operates as an **Orchestration-First Modular Monolith**, leveraging Eclipse RCP/Tycho for plugin management and the Eclipse Modeling Framework (EMF) for state representation. - **Type:** Modular OSGi Monolith. - **Architectural Style:** State-Transition Orchestration with Throttled Category-Based Signaling. - **Decision Authority:** Centralized `IterationManager` with human-in-the-loop (Mediated) or autonomous selection. - **`IterationManager`**: The authoritative control plane governing the lifecycle of developer intents. - **`EvolutionPhaseMachine`**: A deterministic 6-phase state graph: 1. `INTENT_EXPANSION`: Goal decomposition and ambiguity detection. 2. `ARCHITECTURE_VARIANTS`: Divergent trajectory spawning. 3. `SELECTION_REFINEMENT`: User/Kernel selection of the winning path. 4. `IMPLEMENTATION_PLAN`: Step-by-step task generation. 5. `FINAL_SYNTHESIS`: Outcome summarization. 6. `TERMINAL_SUCCESS/FAILURE`: Exit states. - **`SessionBoundaryGuard`**: Enforces strict session isolation using `ThreadLocal<String> currentSessionId`. - **`RuntimeInvariant`**: Validates session integrity and prohibits global state drift. - **`DarwinEngine`**: The materializer of architectural lineages. - **`TrajectoryTerritoryMapper`**: Discovers conceptual blueprints via bulk LLM requests, mapping divergent quadrants of the \"Target Reality\". - **`DarwinDiversityAnalyzer`**: Ensures conceptual distance using a 10-dimension vector (Modularity, Resilience, Abstraction, etc.). - **`DarwinFitnessRanker`**: Scores trajectories based on information density and architectural influence. - **`SemanticWorkspace`**: Persistent reasoning context. Implements **Memory Decay** (factor 0.95) to prune stale artifacts. - **`ContextCurator`**: Significance-driven context distillation (Significance = Relevance × Centrality × SemanticDensity ×",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

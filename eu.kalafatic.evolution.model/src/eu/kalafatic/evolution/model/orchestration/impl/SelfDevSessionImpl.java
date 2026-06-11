@@ -91,7 +91,7 @@ public class SelfDevSessionImpl extends MinimalEObjectImpl.Container implements 
 	 * @generated
 	 * @ordered
 	 */
-	protected static final int MAX_ITERATIONS_EDEFAULT = 4;
+	protected static final int MAX_ITERATIONS_EDEFAULT = 0;
 
 	/**
 	 * The cached value of the '{@link #getMaxIterations() <em>Max Iterations</em>}' attribute.

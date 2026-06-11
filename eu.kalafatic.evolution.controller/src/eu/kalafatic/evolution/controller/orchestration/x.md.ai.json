@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "orchestration",
+  "stability": "STABLE",
+  "mediatedRelevanceScore": 1.0,
+  "importanceScore": 1.0,
+  "summary": "You are performing a HIGH-PRIORITY ARCHITECTURAL STABILIZATION and CONSOLIDATION refactor of the EVO platform. IMPORTANT: Do NOT treat EVO as: a coding assistant a workflow engine a proposal generator a deterministic automation system a hardcoded response generator EVO is: an EXPERIMENTAL EVOLUTIONARY COGNITION PLATFORM. The primary goal is: CLEAN ADAPTIVE AI ARCHITECTURE. Correct outputs, implementations, exports, or generated code are ONLY byproducts of: a coherent evolutionary cognition system. ======================================== CRITICAL STABILIZATION CONTEXT The platform already contains MOST required features: iterative Darwin evolution branch generation mutation chains",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": ["mandatory_context"],
+  "dependencyLinks": []
+}

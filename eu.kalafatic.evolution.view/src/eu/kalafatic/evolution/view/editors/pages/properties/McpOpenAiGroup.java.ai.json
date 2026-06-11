@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.4,
   "importanceScore": 0.4,
-  "summary": "package eu.kalafatic.evolution.view.editors.pages.properties; import org.eclipse.swt.SWT; import org.eclipse.swt.events.SelectionAdapter;",
+  "summary": "package eu.kalafatic.evolution.view.editors.pages.properties; import org.eclipse.swt.SWT; import org.eclipse.swt.events.SelectionAdapter; import org.eclipse.swt.events.SelectionEvent; import org.eclipse.swt.layout.GridData; import org.eclipse.swt.widgets.Button; import org.eclipse.swt.widgets.Combo; import org.eclipse.swt.widgets.Composite; import org.eclipse.swt.widgets.Text; import org.eclipse.ui.forms.widgets.FormToolkit; import eu.kalafatic.evolution.controller.manager.ProjectModelManager; import eu.kalafatic.evolution.model.orchestration.AiMode; import eu.kalafatic.evolution.model.orchestration.Orchestrator; import eu.kalafatic.evolution.view.editors.MultiPageEditor; import eu.kalafatic.evolution.view.editors.pages.AEvoGroup; import eu.kalafatic.evolution.view.editors.pages.PropertiesPage; import eu.kalafatic.utils.factories.GUIFactory; public class McpOpenAiGroup extends AEvoGroup { private Combo aiModeCombo; private Button offlineBtn;",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

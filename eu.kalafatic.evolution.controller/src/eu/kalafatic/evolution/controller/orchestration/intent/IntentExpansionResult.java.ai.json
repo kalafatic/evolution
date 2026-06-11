@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration.intent; import java.util.ArrayList; import java.util.List;",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration.intent; import java.util.ArrayList; import java.util.List; import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionAxis; import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionDimension; public class IntentExpansionResult { private String originalPrompt; private List<IntentDimension> dimensions = new ArrayList<>(); private List<EvolutionDimension> unresolvedDimensions = new ArrayList<>(); private String activeDimensionId; private List<IntentHypothesis> hypotheses = new ArrayList<>(); private IntentConfidence confidence; private String recommendedClarification; private List<EvolutionAxis> evolutionaryAxes = new ArrayList<>(); private InterpretationState state = InterpretationState.CLEAR; private String dominantIntent; private double dominantConfidence; private double ambiguityScore; private double executionRiskScore; private double evolutionOpportunityScore;",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

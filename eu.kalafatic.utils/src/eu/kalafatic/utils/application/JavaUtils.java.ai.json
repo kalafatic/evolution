@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.2,
   "importanceScore": 0.2,
-  "summary": "package eu.kalafatic.utils.application; import java.util.Properties; public class JavaUtils {",
+  "summary": "package eu.kalafatic.utils.application; import java.util.Properties; public class JavaUtils { private Properties properties = System.getProperties(); public static final JavaUtils INSTANCE = new JavaUtils(); public String getJavaVersion() { return properties.getProperty(\"java.version\"); } }",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

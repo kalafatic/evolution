@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "orchestration",
+  "stability": "STABLE",
+  "mediatedRelevanceScore": 1.0,
+  "importanceScore": 1.0,
+  "summary": "package eu.kalafatic.evolution.controller.orchestration.selfdev; import java.util.HashMap; import java.util.Map; public class SemanticDomainResolver { private static final Map<String, SemanticDomain> ALIAS_MAP = new HashMap<>(); static { ALIAS_MAP.put(\"COMMUNICATION\", SemanticDomain.COMMUNICATION); ALIAS_MAP.put(\"MESSAGE_IO\", SemanticDomain.COMMUNICATION); ALIAS_MAP.put(\"OUTPUT\", SemanticDomain.COMMUNICATION); ALIAS_MAP.put(\"PERSISTENCE\", SemanticDomain.PERSISTENCE); ALIAS_MAP.put(\"STORAGE\", SemanticDomain.PERSISTENCE); ALIAS_MAP.put(\"DATABASE\", SemanticDomain.PERSISTENCE); ALIAS_MAP.put(\"EXECUTION\", SemanticDomain.EXECUTION); ALIAS_MAP.put(\"LOGIC\", SemanticDomain.EXECUTION); ALIAS_MAP.put(\"RESILIENCE\", SemanticDomain.RESILIENCE); ALIAS_MAP.put(\"ERROR_HANDLING\", SemanticDomain.RESILIENCE); ALIAS_MAP.put(\"STRUCTURE\", SemanticDomain.STRUCTURE); ALIAS_MAP.put(\"MODEL\", SemanticDomain.STRUCTURE); ALIAS_MAP.put(\"VALIDATION\", SemanticDomain.VALIDATION); ALIAS_MAP.put(\"CHECK\", SemanticDomain.VALIDATION);",
+  "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
+  "contextSelectionHints": ["mandatory_context"],
+  "dependencyLinks": []
+}

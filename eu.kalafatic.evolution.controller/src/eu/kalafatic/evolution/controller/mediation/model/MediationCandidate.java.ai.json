@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "mediation",
+  "stability": "STABLE",
+  "mediatedRelevanceScore": 1.0,
+  "importanceScore": 1.0,
+  "summary": "package eu.kalafatic.evolution.controller.mediation.model; import java.util.ArrayList; import java.util.List; import java.util.HashMap; import java.util.Map; public class MediationCandidate { private String prompt; private List<String> selectedFiles = new ArrayList<>(); private String architectureSummary; private String dependencies; private String executionInstructions; private Map<String, Object> metadata = new HashMap<>(); private String evaluation; public String getPrompt() { return prompt; } public void setPrompt(String prompt) { this.prompt = prompt; } public List<String> getSelectedFiles() {",
+  "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
+  "contextSelectionHints": ["mandatory_context"],
+  "dependencyLinks": []
+}

@@ -80,6 +80,7 @@ import org.eclipse.emf.ecore.util.InternalEList;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getServerSessions <em>Server Sessions</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getMonitoringHistory <em>Monitoring History</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getSupervisorSettings <em>Supervisor Settings</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getNetworkEntries <em>Network Entries</em>}</li>
  * </ul>
  *
  * @generated
@@ -524,64 +525,6 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 * @ordered
 	 */
 	protected EList<NetworkEntry> networkEntries;
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EList<NetworkEntry> getNetworkEntries() {
-		if (networkEntries == null) {
-			networkEntries = new EObjectContainmentEList<NetworkEntry>(NetworkEntry.class, this, OrchestrationPackage.ORCHESTRATOR__NETWORK_ENTRIES);
-		}
-		return networkEntries;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public SupervisorSettings getSupervisorSettings() {
-		return supervisorSettings;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public NotificationChain basicSetSupervisorSettings(SupervisorSettings newSupervisorSettings, NotificationChain msgs) {
-		SupervisorSettings oldSupervisorSettings = supervisorSettings;
-		supervisorSettings = newSupervisorSettings;
-		if (eNotificationRequired()) {
-			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__SUPERVISOR_SETTINGS, oldSupervisorSettings, newSupervisorSettings);
-			if (msgs == null) msgs = notification; else msgs.add(notification);
-		}
-		return msgs;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setSupervisorSettings(SupervisorSettings newSupervisorSettings) {
-		if (newSupervisorSettings != supervisorSettings) {
-			NotificationChain msgs = null;
-			if (supervisorSettings != null)
-				msgs = ((InternalEObject)supervisorSettings).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.ORCHESTRATOR__SUPERVISOR_SETTINGS, null, msgs);
-			if (newSupervisorSettings != null)
-				msgs = ((InternalEObject)newSupervisorSettings).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.ORCHESTRATOR__SUPERVISOR_SETTINGS, null, msgs);
-			msgs = basicSetSupervisorSettings(newSupervisorSettings, msgs);
-			if (msgs != null) msgs.dispatch();
-		}
-		else if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__SUPERVISOR_SETTINGS, newSupervisorSettings, newSupervisorSettings));
-	}
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -1502,10 +1445,66 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 * @generated
 	 */
 	@Override
+	public SupervisorSettings getSupervisorSettings() {
+		return supervisorSettings;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public NotificationChain basicSetSupervisorSettings(SupervisorSettings newSupervisorSettings, NotificationChain msgs) {
+		SupervisorSettings oldSupervisorSettings = supervisorSettings;
+		supervisorSettings = newSupervisorSettings;
+		if (eNotificationRequired()) {
+			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__SUPERVISOR_SETTINGS, oldSupervisorSettings, newSupervisorSettings);
+			if (msgs == null) msgs = notification; else msgs.add(notification);
+		}
+		return msgs;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setSupervisorSettings(SupervisorSettings newSupervisorSettings) {
+		if (newSupervisorSettings != supervisorSettings) {
+			NotificationChain msgs = null;
+			if (supervisorSettings != null)
+				msgs = ((InternalEObject)supervisorSettings).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.ORCHESTRATOR__SUPERVISOR_SETTINGS, null, msgs);
+			if (newSupervisorSettings != null)
+				msgs = ((InternalEObject)newSupervisorSettings).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.ORCHESTRATOR__SUPERVISOR_SETTINGS, null, msgs);
+			msgs = basicSetSupervisorSettings(newSupervisorSettings, msgs);
+			if (msgs != null) msgs.dispatch();
+		}
+		else if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__SUPERVISOR_SETTINGS, newSupervisorSettings, newSupervisorSettings));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EList<NetworkEntry> getNetworkEntries() {
+		if (networkEntries == null) {
+			networkEntries = new EObjectContainmentEList<NetworkEntry>(NetworkEntry.class, this, OrchestrationPackage.ORCHESTRATOR__NETWORK_ENTRIES);
+		}
+		return networkEntries;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public NotificationChain eInverseRemove(InternalEObject otherEnd, int featureID, NotificationChain msgs) {
 		switch (featureID) {
-			case OrchestrationPackage.ORCHESTRATOR__NETWORK_ENTRIES:
-				return ((InternalEList<?>)getNetworkEntries()).basicRemove(otherEnd, msgs);
 			case OrchestrationPackage.ORCHESTRATOR__AGENTS:
 				return ((InternalEList<?>)getAgents()).basicRemove(otherEnd, msgs);
 			case OrchestrationPackage.ORCHESTRATOR__TASKS:
@@ -1544,6 +1543,8 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return ((InternalEList<?>)getMonitoringHistory()).basicRemove(otherEnd, msgs);
 			case OrchestrationPackage.ORCHESTRATOR__SUPERVISOR_SETTINGS:
 				return basicSetSupervisorSettings(null, msgs);
+			case OrchestrationPackage.ORCHESTRATOR__NETWORK_ENTRIES:
+				return ((InternalEList<?>)getNetworkEntries()).basicRemove(otherEnd, msgs);
 		}
 		return super.eInverseRemove(otherEnd, featureID, msgs);
 	}
@@ -1556,8 +1557,6 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	@Override
 	public Object eGet(int featureID, boolean resolve, boolean coreType) {
 		switch (featureID) {
-			case OrchestrationPackage.ORCHESTRATOR__NETWORK_ENTRIES:
-				return getNetworkEntries();
 			case OrchestrationPackage.ORCHESTRATOR__ID:
 				return getId();
 			case OrchestrationPackage.ORCHESTRATOR__NAME:
@@ -1620,6 +1619,8 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return getMonitoringHistory();
 			case OrchestrationPackage.ORCHESTRATOR__SUPERVISOR_SETTINGS:
 				return getSupervisorSettings();
+			case OrchestrationPackage.ORCHESTRATOR__NETWORK_ENTRIES:
+				return getNetworkEntries();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -1633,10 +1634,6 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	@Override
 	public void eSet(int featureID, Object newValue) {
 		switch (featureID) {
-			case OrchestrationPackage.ORCHESTRATOR__NETWORK_ENTRIES:
-				getNetworkEntries().clear();
-				getNetworkEntries().addAll((java.util.Collection<? extends NetworkEntry>)newValue);
-				return;
 			case OrchestrationPackage.ORCHESTRATOR__ID:
 				setId((String)newValue);
 				return;
@@ -1736,6 +1733,10 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			case OrchestrationPackage.ORCHESTRATOR__SUPERVISOR_SETTINGS:
 				setSupervisorSettings((SupervisorSettings)newValue);
 				return;
+			case OrchestrationPackage.ORCHESTRATOR__NETWORK_ENTRIES:
+				getNetworkEntries().clear();
+				getNetworkEntries().addAll((Collection<? extends NetworkEntry>)newValue);
+				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -1748,9 +1749,6 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	@Override
 	public void eUnset(int featureID) {
 		switch (featureID) {
-			case OrchestrationPackage.ORCHESTRATOR__NETWORK_ENTRIES:
-				getNetworkEntries().clear();
-				return;
 			case OrchestrationPackage.ORCHESTRATOR__ID:
 				setId(ID_EDEFAULT);
 				return;
@@ -1844,6 +1842,9 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			case OrchestrationPackage.ORCHESTRATOR__SUPERVISOR_SETTINGS:
 				setSupervisorSettings((SupervisorSettings)null);
 				return;
+			case OrchestrationPackage.ORCHESTRATOR__NETWORK_ENTRIES:
+				getNetworkEntries().clear();
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -1856,8 +1857,6 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	@Override
 	public boolean eIsSet(int featureID) {
 		switch (featureID) {
-			case OrchestrationPackage.ORCHESTRATOR__NETWORK_ENTRIES:
-				return networkEntries != null && !networkEntries.isEmpty();
 			case OrchestrationPackage.ORCHESTRATOR__ID:
 				return ID_EDEFAULT == null ? id != null : !ID_EDEFAULT.equals(id);
 			case OrchestrationPackage.ORCHESTRATOR__NAME:
@@ -1920,6 +1919,8 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return monitoringHistory != null && !monitoringHistory.isEmpty();
 			case OrchestrationPackage.ORCHESTRATOR__SUPERVISOR_SETTINGS:
 				return supervisorSettings != null;
+			case OrchestrationPackage.ORCHESTRATOR__NETWORK_ENTRIES:
+				return networkEntries != null && !networkEntries.isEmpty();
 		}
 		return super.eIsSet(featureID);
 	}

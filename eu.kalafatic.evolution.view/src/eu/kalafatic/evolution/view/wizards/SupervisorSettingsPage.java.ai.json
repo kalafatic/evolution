@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.4,
   "importanceScore": 0.4,
-  "summary": "package eu.kalafatic.evolution.view.wizards; import org.eclipse.swt.SWT; import org.eclipse.swt.layout.GridData;",
+  "summary": "package eu.kalafatic.evolution.view.wizards; import org.eclipse.swt.SWT; import org.eclipse.swt.layout.GridData; import org.eclipse.swt.layout.GridLayout; import org.eclipse.swt.widgets.Button; import org.eclipse.swt.widgets.Composite; import org.eclipse.swt.widgets.Label; import org.eclipse.swt.widgets.Text; import eu.kalafatic.utils.factories.GUIFactory; public class SupervisorSettingsPage extends AWizardPage { private Text executablePathText; private Text sourcePathText; private Text commandsText; private Text settingsText; private Button deployedCheck; private boolean isSkipped = false; public SupervisorSettingsPage() { super(\"SupervisorSettingsPage\"); setTitle(\"Supervisor Settings\"); setDescription(\"Set external loop controller settings for self-development.\");",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

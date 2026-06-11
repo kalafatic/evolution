@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "trajectory",
+  "stability": "EVOLVING",
+  "mediatedRelevanceScore": 0.9,
+  "importanceScore": 0.9,
+  "summary": "package eu.kalafatic.evolution.controller.trajectory; import java.util.List; import eu.kalafatic.evolution.controller.kernel.EvolutionaryPressureEngine; import eu.kalafatic.evolution.controller.kernel.TrajectoryMutationEngine; import eu.kalafatic.evolution.controller.orchestration.TaskContext; import eu.kalafatic.evolution.controller.orchestration.EvolutionPhase; import eu.kalafatic.evolution.controller.orchestration.EvolutionPhaseMachine; import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant; import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionaryPressureVector; import eu.kalafatic.utils.semantic.EvolutionComponent; import eu.kalafatic.utils.semantic.EvolutionaryImpact; import eu.kalafatic.utils.semantic.Stability; @EvolutionComponent( domain = \"trajectory\", role = \"evolution-coordinator\", purpose = \"Drives recursive mutation and pressure-based adaptation\", stability = Stability.STABLE, evolutionaryImpact = EvolutionaryImpact.CRITICAL ) public class EvolutionaryTrajectoryEngine {",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": ["mandatory_context"],
+  "dependencyLinks": []
+}

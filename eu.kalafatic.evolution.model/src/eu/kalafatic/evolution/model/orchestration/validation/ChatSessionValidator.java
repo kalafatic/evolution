@@ -4,6 +4,7 @@
  */
 package eu.kalafatic.evolution.model.orchestration.validation;
 
+import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.ChatMessage;
 
 import org.eclipse.emf.common.util.EList;
@@ -25,10 +26,13 @@ public interface ChatSessionValidator {
 	boolean validateGitAutomation(boolean value);
 	boolean validateMaxIterations(int value);
 	boolean validateStepMode(boolean value);
-
 	boolean validateTargetPath(String value);
-
 	boolean validateTargetType(String value);
-
 	boolean validateOutputPath(String value);
+	boolean validateAutoApprove(boolean value);
+	boolean validateAiMode(AiMode value);
+	boolean validateLocalModel(String value);
+	boolean validateRemoteModel(String value);
+	boolean validateBitState(long value);
+	boolean validateExpansion(int value);
 }

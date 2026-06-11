@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "ui",
+  "stability": "EVOLVING",
+  "mediatedRelevanceScore": 0.4,
+  "importanceScore": 0.4,
+  "summary": "package eu.kalafatic.evolution.view.projection; import eu.kalafatic.evolution.controller.workflow.RuntimeEvent; import eu.kalafatic.evolution.controller.workflow.RuntimeEventBus; import eu.kalafatic.evolution.controller.workflow.RuntimeEventListener; import java.util.Map; import java.util.concurrent.ConcurrentHashMap; import java.util.concurrent.CopyOnWriteArrayList; import java.util.List; import java.util.function.Consumer; public class ProjectionService implements RuntimeEventListener { private static final ProjectionService INSTANCE = new ProjectionService(); private final Map<String, RuntimeProjection> projections = new ConcurrentHashMap<>(); private final List<Consumer<RuntimeProjection>> observers = new CopyOnWriteArrayList<>(); private ProjectionService() { } public void initializeForSession(RuntimeEventBus bus) { bus.subscribe(this); } public static ProjectionService getInstance() { return INSTANCE;",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

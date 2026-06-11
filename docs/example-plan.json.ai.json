@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "{ \"iteration\": 12, \"variant\": \"A\",",
+  "summary": "{ \"iteration\": 12, \"variant\": \"A\", \"files\": [ \"EvolutionOrchestrator.java\", \"FileTool.java\", \"EnumUtils.java\" ] }",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

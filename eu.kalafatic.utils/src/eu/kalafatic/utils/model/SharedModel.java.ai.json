@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.7,
   "importanceScore": 0.7,
-  "summary": "package eu.kalafatic.utils.model; import java.util.HashMap; import java.util.Map;",
+  "summary": "package eu.kalafatic.utils.model; import java.util.HashMap; import java.util.Map; public class SharedModel { public String name; public Map<String, Element> elements = new HashMap<String, Element>(); public class Element extends SharedModel { public String path; } }",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

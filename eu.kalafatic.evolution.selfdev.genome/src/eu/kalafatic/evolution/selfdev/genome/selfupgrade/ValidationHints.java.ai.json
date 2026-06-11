@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "unknown",
+  "stability": "EVOLVING",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "package eu.kalafatic.evolution.selfdev.genome.selfupgrade; import java.util.List; public class ValidationHints { private boolean requiresFullRebuild; private boolean requiresTestSuite; private boolean requiresRestart; private List<String> criticalModulesToCheck; public boolean isRequiresFullRebuild() { return requiresFullRebuild; } public void setRequiresFullRebuild(boolean requiresFullRebuild) { this.requiresFullRebuild = requiresFullRebuild; } public boolean isRequiresTestSuite() { return requiresTestSuite; } public void setRequiresTestSuite(boolean requiresTestSuite) { this.requiresTestSuite = requiresTestSuite; } public boolean isRequiresRestart() {",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

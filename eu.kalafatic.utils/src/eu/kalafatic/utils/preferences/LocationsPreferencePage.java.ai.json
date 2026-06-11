@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.2,
   "importanceScore": 0.2,
-  "summary": "package eu.kalafatic.utils.preferences; import static eu.kalafatic.utils.constants.FConstants.PREFERENCES; import org.eclipse.swt.SWT;",
+  "summary": "package eu.kalafatic.utils.preferences; import static eu.kalafatic.utils.constants.FConstants.PREFERENCES; import org.eclipse.swt.SWT; import org.eclipse.swt.widgets.Button; import org.eclipse.swt.widgets.Composite; import org.eclipse.swt.widgets.Control; import org.eclipse.swt.widgets.Event; import org.eclipse.swt.widgets.Group; import org.eclipse.swt.widgets.Text; import org.eclipse.ui.IWorkbench; import eu.kalafatic.utils.Activator; import eu.kalafatic.utils.application.FileUtils; import eu.kalafatic.utils.constants.APreferencePage; import eu.kalafatic.utils.constants.FTextConstants; import eu.kalafatic.utils.dialogs.DialogUtils; import eu.kalafatic.utils.factories.GUIFactory; public class LocationsPreferencePage extends APreferencePage { private Text workspaceLocText, modelsLocText, logsLocText, certLocText; private Button workspaceLocBtn, modelsLocBtn, logsLocBtn, certLocBtn; private String workspaceLocValue, modelsLocValue, logsLocValue, certLocValue;",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

@@ -1,11 +1,10 @@
 # PACKAGE CONTEXT
 
-## Directory: eu.kalafatic.utils/src/eu/kalafatic/utils/wizards/
+## Directory: git/evolution/eu.kalafatic.utils/src/eu/kalafatic/utils/wizards/
 
 ## Domain: general
 
 ## Components
-* `PACKAGE_CONTEXT.md`: 
-* `ImportConfigurationWizardPage.java`: package eu.kalafatic.utils.wizards; import java.io.File; import java.io.FileInputStream;
-* `ExportConfigurationWizard.java`: package eu.kalafatic.utils.wizards; import org.eclipse.jface.viewers.IStructuredSelection; import org.eclipse.jface.wizard.Wizard;
-* `ImportConfigurationWizard.java`: package eu.kalafatic.utils.wizards; import org.eclipse.core.resources.IFile; import org.eclipse.jface.viewers.IStructuredSelection;
+* `ImportConfigurationWizardPage.java`: package eu.kalafatic.utils.wizards; import java.io.File; import java.io.FileInputStream; import java.io.FileNotFoundException; import java.io.InputStream; import org.eclipse.core.runtime.IPath; import org.eclipse.core.runtime.IStatus; import org.eclipse.core.runtime.Path; import org.eclipse.core.runtime.Status; import org.eclipse.jface.preference.FileFieldEditor; import org.eclipse.jface.viewers.IStructuredSelection; import org.eclipse.swt.SWT; import org.eclipse.swt.events.ModifyEvent; import org.eclipse.swt.events.ModifyListener; import org.eclipse.swt.layout.GridData; import org.eclipse.swt.layout.GridLayout; import org.eclipse.swt.widgets.Composite; import org.eclipse.ui.dialogs.WizardNewFileCreationPage; public class ImportConfigurationWizardPage extends WizardNewFileCreationPage { protected FileFieldEditor editor;
+* `ExportConfigurationWizard.java`: package eu.kalafatic.utils.wizards; import org.eclipse.jface.viewers.IStructuredSelection; import org.eclipse.jface.wizard.Wizard; import org.eclipse.ui.IExportWizard; import org.eclipse.ui.IWorkbench; public class ExportConfigurationWizard extends Wizard implements IExportWizard { public ExportConfigurationWizard() { } @Override public void init(IWorkbench workbench, IStructuredSelection selection) { } @Override public boolean performFinish() { return false; } }
+* `ImportConfigurationWizard.java`: package eu.kalafatic.utils.wizards; import org.eclipse.core.resources.IFile; import org.eclipse.jface.viewers.IStructuredSelection; import org.eclipse.jface.wizard.Wizard; import org.eclipse.ui.IImportWizard; import org.eclipse.ui.IWorkbench; public class ImportConfigurationWizard extends Wizard implements IImportWizard { ImportConfigurationWizardPage mainPage; public ImportConfigurationWizard() { super(); } public boolean performFinish() { IFile file = mainPage.createNewFile(); if (file == null) return false; return true; } public void init(IWorkbench workbench, IStructuredSelection selection) { setWindowTitle("File Import Wizard"); //NON-NLS-1 setNeedsProgressMonitor(true);

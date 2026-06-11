@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration.intent; import eu.kalafatic.evolution.controller.orchestration.TaskContext; public interface AtomicIntentClassifier {",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration.intent; import eu.kalafatic.evolution.controller.orchestration.TaskContext; public interface AtomicIntentClassifier { AtomicIntentAnalysis analyze(String request, TaskContext context); }",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

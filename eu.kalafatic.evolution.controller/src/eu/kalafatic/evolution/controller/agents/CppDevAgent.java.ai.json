@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.controller.agents; import eu.kalafatic.evolution.controller.tools.CppTool; import eu.kalafatic.evolution.controller.tools.FileTool;",
+  "summary": "package eu.kalafatic.evolution.controller.agents; import eu.kalafatic.evolution.controller.tools.CppTool; import eu.kalafatic.evolution.controller.tools.FileTool; import eu.kalafatic.evolution.controller.tools.GitTool; import eu.kalafatic.evolution.controller.tools.ShellTool; public class CppDevAgent extends BaseAiAgent { public CppDevAgent(eu.kalafatic.evolution.controller.orchestration.SessionContainer container) { super(\"CppDev\", \"CppDev\", container); addTool(new FileTool()); addTool(new CppTool()); addTool(new GitTool()); addTool(new ShellTool()); } @Override protected String getAgentInstructions() { return \"You are acting as a Senior C/C++ Developer Agent.\n\" + \"Generate C/C++ source code, headers, Makefiles or CMakeLists.txt content as requested.\"; } @Override protected String getFooterInstructions() {",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "documentation",
+  "stability": "EVOLVING",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "This document defines the unified ECOS model, normalizing existing components into a consistent evolutionary framework. - **Definition**: The fundamental unit of evolution. - **Normalized Entities**: - `CodeArtifact` (Current: Workspace files) - `MediationArtifact` (Current: MediationPackage/ZIP) - `CognitiveArtifact` (Current: Prompt, Strategy, ReasoningFocus) - **Ownership**: The Evolution Kernel manages Artifacts through abstraction. - **Definition**: A transformation applied to an Artifact to produce a descendant. - **Normalized Entities**: - `StrategicMutation` (Current: BranchVariant strategy) - `ImplementationMutation` (Current: Task response/patch) - **Ownership**: `MutationEngine` / `DarwinEngine`. - **Definition**: A process that produces signals and fitness scores for an Artifact. - **Normalized Entities**: - `ArchitecturalSignal` (Current: Stability, Pressure) - `OperationalSignal` (Current: Test pass rate, Build status) - **Ownership**: `Evaluator` / `StabilityAnalyzer`. - **Definition**: The decision process that identifies survivors. - **Normalized Entities**: - `EvolutionarySelection` (Current: Darwin variant selection)",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

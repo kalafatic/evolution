@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "trajectory",
+  "stability": "EVOLVING",
+  "mediatedRelevanceScore": 0.9,
+  "importanceScore": 0.9,
+  "summary": "package eu.kalafatic.evolution.controller.trajectory; import java.util.List; import eu.kalafatic.evolution.controller.orchestration.TaskContext; import eu.kalafatic.evolution.controller.orchestration.EvolutionPhase; import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionaryPressureVector; public class DefaultStabilityPolicy implements IStabilityPolicy { @Override public double calculateStability(Trajectory trajectory, TaskContext context, EvolutionaryPressureVector pressure) { if (trajectory == null) return 0.0; double pressureResolution = calculatePressureResolution(trajectory); double mutationEffectiveness = calculateMutationEffectiveness(trajectory); double deltaDecay = calculateDeltaDecay(trajectory); double confidenceStability = calculateConfidenceStability(trajectory); double stability = (pressureResolution * 0.3) + (mutationEffectiveness * 0.2) + (deltaDecay * 0.3) + (confidenceStability * 0.2); return stability; } @Override",
+  "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
+  "contextSelectionHints": ["mandatory_context"],
+  "dependencyLinks": []
+}

@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "documentation",
+  "stability": "EVOLVING",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "This report identifies architectural contradictions, roadmap conflicts, and constraint violations within the current platform based on ECOS vision documents. - **Severity**: HIGH - **Description**: The system uses `if(isMediated)` and `if(isTestMode)` checks in `IterationManager` and `DarwinFlow` to alter core evolution behavior. - **Evidence**: `IterationManager.java` (lines 882, 1145), `DarwinFlow.java` (lines 142, 151, 169). - **ECOS Violation**: Violates Constraint 8 (NO MODE-SPECIFIC SHORTCUTS). - **Severity**: MEDIUM - **Description**: `NeuronEngine` and related agents are present in the codebase but are entirely simulated/stubbed, creating a false \"neuromorphic\" architectural claim. - **Evidence**: `EVO_ARCHITECTURE_AUDIT.md` (Section 2.C), `NeuronEngine.java`. - **ECOS Violation**: Not a direct ECOS violation, but represents architectural \"noise\" and \"dead weight\" that obscures evolutionary clarity. - **Severity**: LOW - **Description**: `ExampleMain.java` and `SelfDevMain.java` exist alongside the unified `IterationManager` flow. - **Evidence**: `EVO_ARCHITECTURE_AUDIT.md` (Section 2.E). - **ECOS Violation**: Violates the \"ONE EVOLUTION KERNEL\" (Constraint 2) vision by keeping legacy entry points. --- - **Severity**: HIGH - **Description**: The current implementation is heavily \"branch-centric\" (Git-based) and uses \"BranchVariant\" objects, while the roadmap calls for \"Surviving Lineages\" as the primary persistent structure. - **Evidence**: `ECOS_TRANSITION_ROADMAP.md` (Phase F), `BranchVariant.java`. - **Conflict**: Roadmap goal of Lineage Consolidation is currently hampered by the deep coupling to Git branch-based variants. - **Severity**: MEDIUM - **Description**: Evaluators currently produce scores used for selection, but \"Pressure\" is largely a calculated derivative rather than the primary driver of mutation generation in all paths.",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

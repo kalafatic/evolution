@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration; import java.util.ArrayList; import java.util.List;",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration; import java.util.ArrayList; import java.util.List; import org.json.JSONArray; import org.json.JSONObject; public class ContextPackage { private String goal; private String step; private ArchitectureContext architectureContext; private List<String> scope = new ArrayList<>(); private String code; private String dependencies; private List<String> constraints = new ArrayList<>(); private String attachmentContext; private int attempt; private String lastFeedback; public String getGoal() { return goal; } public void setGoal(String goal) {",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

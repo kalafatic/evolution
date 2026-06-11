@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "unknown",
+  "stability": "EVOLVING",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "package eu.kalafatic.evolution.controller.parsers.structured; import org.json.JSONObject; import org.json.JSONException; import eu.kalafatic.evolution.controller.orchestration.TaskContext; import java.util.Map; import java.util.HashMap; import java.util.List; import java.util.ArrayList; public class StructuredResponsePipeline { private final JsonRepairEngine repairEngine = new JsonRepairEngine(); private final SchemaValidator schemaValidator = new SchemaValidator(); private final SemanticValidator semanticValidator = new SemanticValidator(); private final RecoveryStrategy recoveryStrategy = new RecoveryStrategy(); public JSONObject process(String rawResponse, Map<String, Class<?>> schema, TaskContext context) { return process(rawResponse, schema, context, 0); } private JSONObject process(String rawResponse, Map<String, Class<?>> schema, TaskContext context, int attempt) { if (rawResponse == null || rawResponse.trim().isEmpty()) { return recoveryStrategy.recover(rawResponse, List.of(\"Empty response\"), context, schema, attempt); }",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

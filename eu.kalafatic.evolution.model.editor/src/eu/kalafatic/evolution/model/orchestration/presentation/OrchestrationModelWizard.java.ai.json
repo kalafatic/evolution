@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.model.orchestration.presentation; import java.util.ArrayList; import java.util.Arrays;",
+  "summary": "package eu.kalafatic.evolution.model.orchestration.presentation; import java.util.ArrayList; import java.util.Arrays; import java.util.Collection; import java.util.Collections; import java.util.HashMap; import java.util.List; import java.util.Map; import java.util.MissingResourceException; import java.util.StringTokenizer; import org.eclipse.emf.common.CommonPlugin; import org.eclipse.emf.common.util.URI; import org.eclipse.emf.ecore.EClass; import org.eclipse.emf.ecore.EClassifier; import org.eclipse.emf.ecore.resource.Resource; import org.eclipse.emf.ecore.resource.ResourceSet; import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl; import org.eclipse.emf.ecore.EObject; import org.eclipse.emf.ecore.xmi.XMLResource; import org.eclipse.emf.edit.ui.provider.ExtendedImageRegistry;",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

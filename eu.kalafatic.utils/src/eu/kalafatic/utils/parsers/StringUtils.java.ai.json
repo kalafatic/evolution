@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.2,
   "importanceScore": 0.2,
-  "summary": "package eu.kalafatic.utils.parsers; import java.util.ArrayList; import java.util.List;",
+  "summary": "package eu.kalafatic.utils.parsers; import java.util.ArrayList; import java.util.List; import java.util.regex.Matcher; import java.util.regex.Pattern; import eu.kalafatic.utils.constants.ERegex; public class StringUtils { public static String split(String name) { return split(name, ERegex.SPLIT_NAME.getRegex()); } public static String split(String name, String regex) { StringBuffer stringBuffer = new StringBuffer(); String[] splitArray = name.split(regex);",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

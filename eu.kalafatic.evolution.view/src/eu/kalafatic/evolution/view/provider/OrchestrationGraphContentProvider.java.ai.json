@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.4,
   "importanceScore": 0.4,
-  "summary": "package eu.kalafatic.evolution.view.provider; import eu.kalafatic.evolution.model.orchestration.Agent; import eu.kalafatic.evolution.model.orchestration.Iteration;",
+  "summary": "package eu.kalafatic.evolution.view.provider; import eu.kalafatic.evolution.model.orchestration.Agent; import eu.kalafatic.evolution.model.orchestration.Iteration; import eu.kalafatic.evolution.model.orchestration.NeuronAI; import eu.kalafatic.evolution.model.orchestration.Orchestrator; import eu.kalafatic.evolution.model.orchestration.SelfDevSession; import eu.kalafatic.evolution.model.orchestration.Task; import org.eclipse.emf.ecore.EObject; import org.eclipse.jface.viewers.ArrayContentProvider; import org.eclipse.zest.core.viewers.IGraphEntityContentProvider; import java.util.ArrayList; import java.util.List; public class OrchestrationGraphContentProvider extends ArrayContentProvider implements IGraphEntityContentProvider { @Override public Object[] getConnectedTo(Object entity) { if (entity instanceof Orchestrator) { Orchestrator o = (Orchestrator) entity; List<Object> connections = new ArrayList<>(); connections.addAll(o.getAgents()); connections.addAll(o.getTasks());",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

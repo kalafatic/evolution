@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "documentation",
+  "stability": "EVOLVING",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "This document maps ECOS vision constraints to enforceable architectural rules and affected modules. --- - **Constraint**: ONLY `IterationManager` may change system state. - **Enforcement**: Mandatory code reviews and static analysis (future). - **Affected Modules**: `eu.kalafatic.evolution.controller` (all agent-based packages). - **Blockers**: None, currently enforced by policy and `SessionBoundaryGuard`. - **Constraint**: Modes represent environments, not independent logic. - **Enforcement**: Forbid `if(mode == X)` in Kernel. - **Affected Modules**: `IterationManager`, `DarwinFlow`. - **Blockers**: Significant mode-specific conditionals currently exist. Requires refactoring to `EvolutionEnvironment` strategy. --- - **Constraint**: Surviving lineages are the primary persistent cognitive structure. - **Enforcement**: Artifacts must be linked to an ancestor in the lineage. - **Affected Modules**: `eu.kalafatic.evolution.controller.trajectory`, `eu.kalafatic.evolution.controller.orchestration.selfdev`. - **Blockers**: Current persistence is branch-centric. - **Constraint**: Kernel must evolve artifacts, not implementations (Java, Git, etc.). - **Enforcement**: Abstract artifact interfaces. - **Affected Modules**: `IterationManager`, `DarwinEngine`. - **Blockers**: Kernel has hardcoded dependencies on Git and Maven. ---",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

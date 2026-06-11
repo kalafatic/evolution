@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.controller.manager; import java.io.File; import java.util.ArrayList;",
+  "summary": "package eu.kalafatic.evolution.controller.manager; import java.io.File; import java.util.ArrayList; import java.util.List; import eu.kalafatic.evolution.model.orchestration.Orchestrator; import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory; public class EnvironmentSuggestionService { public static class Suggestion { public String field; public String currentValue; public String suggestedValue; public String reason; public boolean isMissing; public Suggestion(String field, String current, String suggested, String reason, boolean missing) { this.field = field; this.currentValue = current; this.suggestedValue = suggested; this.reason = reason; this.isMissing = missing; }",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration.intent; public class ConfidenceEvaluator { public static double evaluate(IntentExpansionResult result) {",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration.intent; public class ConfidenceEvaluator { public static double evaluate(IntentExpansionResult result) { double score = 1.0; if (result.getDominantIntent() == null || result.getDominantIntent().trim().isEmpty()) { score -= 0.4; } if (!result.getMissingInformation().isEmpty()) { score -= Math.min(0.4, result.getMissingInformation().size() * 0.1); } if (!result.getAmbiguities().isEmpty()) { score -= Math.min(0.2, result.getAmbiguities().size() * 0.05); } if (!result.getContradictions().isEmpty()) { score -= Math.min(0.3, result.getContradictions().size() * 0.15); } return Math.max(0.0, Math.min(1.0, score)); } }",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

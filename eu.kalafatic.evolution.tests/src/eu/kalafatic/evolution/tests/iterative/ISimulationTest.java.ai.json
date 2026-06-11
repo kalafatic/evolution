@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.tests.iterative; public interface ISimulationTest { void run();",
+  "summary": "package eu.kalafatic.evolution.tests.iterative; public interface ISimulationTest { void run(); void stop(); }",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

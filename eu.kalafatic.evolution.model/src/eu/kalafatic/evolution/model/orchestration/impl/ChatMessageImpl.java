@@ -28,6 +28,10 @@ import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatMessageImpl#isIsItalic <em>Is Italic</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatMessageImpl#getAgentType <em>Agent Type</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatMessageImpl#getTimestamp <em>Timestamp</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatMessageImpl#getPriority <em>Priority</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatMessageImpl#getSequenceNumber <em>Sequence Number</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatMessageImpl#getTurnId <em>Turn Id</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatMessageImpl#isIsTerminal <em>Is Terminal</em>}</li>
  * </ul>
  *
  * @generated

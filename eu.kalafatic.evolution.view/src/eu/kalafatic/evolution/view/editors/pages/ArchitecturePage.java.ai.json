@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.4,
   "importanceScore": 0.4,
-  "summary": "package eu.kalafatic.evolution.view.editors.pages; import org.eclipse.emf.common.notify.Adapter; import org.eclipse.emf.common.notify.Notification;",
+  "summary": "package eu.kalafatic.evolution.view.editors.pages; import org.eclipse.emf.common.notify.Adapter; import org.eclipse.emf.common.notify.Notification; import org.eclipse.emf.ecore.util.EContentAdapter; import org.eclipse.swt.SWT; import org.eclipse.swt.browser.Browser; import org.eclipse.swt.layout.GridData; import org.eclipse.swt.layout.GridLayout; import org.eclipse.swt.widgets.Button; import org.eclipse.swt.widgets.Composite; import org.eclipse.swt.widgets.FileDialog; import org.eclipse.swt.widgets.Group; import org.eclipse.swt.widgets.MessageBox; import org.eclipse.swt.widgets.Display; import org.json.JSONArray; import org.json.JSONObject; import eu.kalafatic.evolution.controller.orchestration.design.ComponentRecord; import eu.kalafatic.evolution.controller.orchestration.design.DesignExporter; import eu.kalafatic.evolution.controller.orchestration.design.DesignModel; import eu.kalafatic.evolution.controller.agents.MetadataAgent;",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

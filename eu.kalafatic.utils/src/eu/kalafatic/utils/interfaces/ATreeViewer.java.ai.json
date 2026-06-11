@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.2,
   "importanceScore": 0.2,
-  "summary": "package eu.kalafatic.utils.interfaces; import org.eclipse.jface.action.Action; import org.eclipse.jface.action.IMenuManager;",
+  "summary": "package eu.kalafatic.utils.interfaces; import org.eclipse.jface.action.Action; import org.eclipse.jface.action.IMenuManager; import org.eclipse.jface.action.IToolBarManager; import org.eclipse.jface.action.Separator; import org.eclipse.jface.viewers.AbstractTreeViewer; import org.eclipse.jface.viewers.TreeViewer; import org.eclipse.swt.widgets.Composite; import org.eclipse.ui.IWorkbenchActionConstants; import org.eclipse.ui.part.DrillDownAdapter; import eu.kalafatic.utils.constants.FTextConstants; import eu.kalafatic.utils.constants.FUIConstants; public abstract class ATreeViewer extends AViewer { protected DrillDownAdapter drillDownAdapter; protected Action expandAll, collapseAll; @Override public void createPartControl(Composite parent) { viewer = new TreeViewer(parent, FUIConstants.TREE_STYLE_0); drillDownAdapter = new DrillDownAdapter((TreeViewer) viewer);",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

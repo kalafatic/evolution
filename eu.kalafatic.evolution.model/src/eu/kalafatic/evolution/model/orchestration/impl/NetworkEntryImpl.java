@@ -20,37 +20,19 @@ import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
  * The following features are implemented:
  * </p>
  * <ul>
- *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.NetworkEntryImpl#getAddress <em>Address</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.NetworkEntryImpl#getHost <em>Host</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.NetworkEntryImpl#getAddress <em>Address</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.NetworkEntryImpl#getPort <em>Port</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.NetworkEntryImpl#getPath <em>Path</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.NetworkEntryImpl#getLogin <em>Login</em>}</li>
- *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.NetworkEntryImpl#getNote <em>Note</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.NetworkEntryImpl#getPassword <em>Password</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.NetworkEntryImpl#getType <em>Type</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.NetworkEntryImpl#getNote <em>Note</em>}</li>
  * </ul>
  *
  * @generated
  */
 public class NetworkEntryImpl extends MinimalEObjectImpl.Container implements NetworkEntry {
-	/**
-	 * The default value of the '{@link #getAddress() <em>Address</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #getAddress()
-	 * @generated
-	 * @ordered
-	 */
-	protected static final String ADDRESS_EDEFAULT = null;
-
-	/**
-	 * The cached value of the '{@link #getAddress() <em>Address</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #getAddress()
-	 * @generated
-	 * @ordered
-	 */
-	protected String address = ADDRESS_EDEFAULT;
-
 	/**
 	 * The default value of the '{@link #getHost() <em>Host</em>}' attribute.
 	 * <!-- begin-user-doc -->
@@ -70,6 +52,26 @@ public class NetworkEntryImpl extends MinimalEObjectImpl.Container implements Ne
 	 * @ordered
 	 */
 	protected String host = HOST_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getAddress() <em>Address</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getAddress()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String ADDRESS_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getAddress() <em>Address</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getAddress()
+	 * @generated
+	 * @ordered
+	 */
+	protected String address = ADDRESS_EDEFAULT;
 
 	/**
 	 * The default value of the '{@link #getPort() <em>Port</em>}' attribute.
@@ -92,6 +94,26 @@ public class NetworkEntryImpl extends MinimalEObjectImpl.Container implements Ne
 	protected int port = PORT_EDEFAULT;
 
 	/**
+	 * The default value of the '{@link #getPath() <em>Path</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getPath()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String PATH_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getPath() <em>Path</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getPath()
+	 * @generated
+	 * @ordered
+	 */
+	protected String path = PATH_EDEFAULT;
+
+	/**
 	 * The default value of the '{@link #getLogin() <em>Login</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -112,24 +134,24 @@ public class NetworkEntryImpl extends MinimalEObjectImpl.Container implements Ne
 	protected String login = LOGIN_EDEFAULT;
 
 	/**
-	 * The default value of the '{@link #getNote() <em>Note</em>}' attribute.
+	 * The default value of the '{@link #getPassword() <em>Password</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @see #getNote()
+	 * @see #getPassword()
 	 * @generated
 	 * @ordered
 	 */
-	protected static final String NOTE_EDEFAULT = null;
+	protected static final String PASSWORD_EDEFAULT = null;
 
 	/**
-	 * The cached value of the '{@link #getNote() <em>Note</em>}' attribute.
+	 * The cached value of the '{@link #getPassword() <em>Password</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @see #getNote()
+	 * @see #getPassword()
 	 * @generated
 	 * @ordered
 	 */
-	protected String note = NOTE_EDEFAULT;
+	protected String password = PASSWORD_EDEFAULT;
 
 	/**
 	 * The default value of the '{@link #getType() <em>Type</em>}' attribute.
@@ -152,6 +174,26 @@ public class NetworkEntryImpl extends MinimalEObjectImpl.Container implements Ne
 	protected String type = TYPE_EDEFAULT;
 
 	/**
+	 * The default value of the '{@link #getNote() <em>Note</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getNote()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String NOTE_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getNote() <em>Note</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getNote()
+	 * @generated
+	 * @ordered
+	 */
+	protected String note = NOTE_EDEFAULT;
+
+	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
@@ -168,29 +210,6 @@ public class NetworkEntryImpl extends MinimalEObjectImpl.Container implements Ne
 	@Override
 	protected EClass eStaticClass() {
 		return OrchestrationPackage.Literals.NETWORK_ENTRY;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public String getAddress() {
-		return address;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setAddress(String newAddress) {
-		String oldAddress = address;
-		address = newAddress;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.NETWORK_ENTRY__ADDRESS, oldAddress, address));
 	}
 
 	/**
@@ -222,6 +241,29 @@ public class NetworkEntryImpl extends MinimalEObjectImpl.Container implements Ne
 	 * @generated
 	 */
 	@Override
+	public String getAddress() {
+		return address;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setAddress(String newAddress) {
+		String oldAddress = address;
+		address = newAddress;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.NETWORK_ENTRY__ADDRESS, oldAddress, address));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public int getPort() {
 		return port;
 	}
@@ -237,6 +279,29 @@ public class NetworkEntryImpl extends MinimalEObjectImpl.Container implements Ne
 		port = newPort;
 		if (eNotificationRequired())
 			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.NETWORK_ENTRY__PORT, oldPort, port));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getPath() {
+		return path;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setPath(String newPath) {
+		String oldPath = path;
+		path = newPath;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.NETWORK_ENTRY__PATH, oldPath, path));
 	}
 
 	/**
@@ -268,8 +333,8 @@ public class NetworkEntryImpl extends MinimalEObjectImpl.Container implements Ne
 	 * @generated
 	 */
 	@Override
-	public String getNote() {
-		return note;
+	public String getPassword() {
+		return password;
 	}
 
 	/**
@@ -278,11 +343,11 @@ public class NetworkEntryImpl extends MinimalEObjectImpl.Container implements Ne
 	 * @generated
 	 */
 	@Override
-	public void setNote(String newNote) {
-		String oldNote = note;
-		note = newNote;
+	public void setPassword(String newPassword) {
+		String oldPassword = password;
+		password = newPassword;
 		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.NETWORK_ENTRY__NOTE, oldNote, note));
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.NETWORK_ENTRY__PASSWORD, oldPassword, password));
 	}
 
 	/**
@@ -314,20 +379,47 @@ public class NetworkEntryImpl extends MinimalEObjectImpl.Container implements Ne
 	 * @generated
 	 */
 	@Override
+	public String getNote() {
+		return note;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setNote(String newNote) {
+		String oldNote = note;
+		note = newNote;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.NETWORK_ENTRY__NOTE, oldNote, note));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public Object eGet(int featureID, boolean resolve, boolean coreType) {
 		switch (featureID) {
-			case OrchestrationPackage.NETWORK_ENTRY__ADDRESS:
-				return getAddress();
 			case OrchestrationPackage.NETWORK_ENTRY__HOST:
 				return getHost();
+			case OrchestrationPackage.NETWORK_ENTRY__ADDRESS:
+				return getAddress();
 			case OrchestrationPackage.NETWORK_ENTRY__PORT:
 				return getPort();
+			case OrchestrationPackage.NETWORK_ENTRY__PATH:
+				return getPath();
 			case OrchestrationPackage.NETWORK_ENTRY__LOGIN:
 				return getLogin();
-			case OrchestrationPackage.NETWORK_ENTRY__NOTE:
-				return getNote();
+			case OrchestrationPackage.NETWORK_ENTRY__PASSWORD:
+				return getPassword();
 			case OrchestrationPackage.NETWORK_ENTRY__TYPE:
 				return getType();
+			case OrchestrationPackage.NETWORK_ENTRY__NOTE:
+				return getNote();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -340,23 +432,29 @@ public class NetworkEntryImpl extends MinimalEObjectImpl.Container implements Ne
 	@Override
 	public void eSet(int featureID, Object newValue) {
 		switch (featureID) {
-			case OrchestrationPackage.NETWORK_ENTRY__ADDRESS:
-				setAddress((String)newValue);
-				return;
 			case OrchestrationPackage.NETWORK_ENTRY__HOST:
 				setHost((String)newValue);
+				return;
+			case OrchestrationPackage.NETWORK_ENTRY__ADDRESS:
+				setAddress((String)newValue);
 				return;
 			case OrchestrationPackage.NETWORK_ENTRY__PORT:
 				setPort((Integer)newValue);
 				return;
+			case OrchestrationPackage.NETWORK_ENTRY__PATH:
+				setPath((String)newValue);
+				return;
 			case OrchestrationPackage.NETWORK_ENTRY__LOGIN:
 				setLogin((String)newValue);
 				return;
-			case OrchestrationPackage.NETWORK_ENTRY__NOTE:
-				setNote((String)newValue);
+			case OrchestrationPackage.NETWORK_ENTRY__PASSWORD:
+				setPassword((String)newValue);
 				return;
 			case OrchestrationPackage.NETWORK_ENTRY__TYPE:
 				setType((String)newValue);
+				return;
+			case OrchestrationPackage.NETWORK_ENTRY__NOTE:
+				setNote((String)newValue);
 				return;
 		}
 		super.eSet(featureID, newValue);
@@ -370,23 +468,29 @@ public class NetworkEntryImpl extends MinimalEObjectImpl.Container implements Ne
 	@Override
 	public void eUnset(int featureID) {
 		switch (featureID) {
-			case OrchestrationPackage.NETWORK_ENTRY__ADDRESS:
-				setAddress(ADDRESS_EDEFAULT);
-				return;
 			case OrchestrationPackage.NETWORK_ENTRY__HOST:
 				setHost(HOST_EDEFAULT);
+				return;
+			case OrchestrationPackage.NETWORK_ENTRY__ADDRESS:
+				setAddress(ADDRESS_EDEFAULT);
 				return;
 			case OrchestrationPackage.NETWORK_ENTRY__PORT:
 				setPort(PORT_EDEFAULT);
 				return;
+			case OrchestrationPackage.NETWORK_ENTRY__PATH:
+				setPath(PATH_EDEFAULT);
+				return;
 			case OrchestrationPackage.NETWORK_ENTRY__LOGIN:
 				setLogin(LOGIN_EDEFAULT);
 				return;
-			case OrchestrationPackage.NETWORK_ENTRY__NOTE:
-				setNote(NOTE_EDEFAULT);
+			case OrchestrationPackage.NETWORK_ENTRY__PASSWORD:
+				setPassword(PASSWORD_EDEFAULT);
 				return;
 			case OrchestrationPackage.NETWORK_ENTRY__TYPE:
 				setType(TYPE_EDEFAULT);
+				return;
+			case OrchestrationPackage.NETWORK_ENTRY__NOTE:
+				setNote(NOTE_EDEFAULT);
 				return;
 		}
 		super.eUnset(featureID);
@@ -400,18 +504,22 @@ public class NetworkEntryImpl extends MinimalEObjectImpl.Container implements Ne
 	@Override
 	public boolean eIsSet(int featureID) {
 		switch (featureID) {
-			case OrchestrationPackage.NETWORK_ENTRY__ADDRESS:
-				return ADDRESS_EDEFAULT == null ? address != null : !ADDRESS_EDEFAULT.equals(address);
 			case OrchestrationPackage.NETWORK_ENTRY__HOST:
 				return HOST_EDEFAULT == null ? host != null : !HOST_EDEFAULT.equals(host);
+			case OrchestrationPackage.NETWORK_ENTRY__ADDRESS:
+				return ADDRESS_EDEFAULT == null ? address != null : !ADDRESS_EDEFAULT.equals(address);
 			case OrchestrationPackage.NETWORK_ENTRY__PORT:
 				return port != PORT_EDEFAULT;
+			case OrchestrationPackage.NETWORK_ENTRY__PATH:
+				return PATH_EDEFAULT == null ? path != null : !PATH_EDEFAULT.equals(path);
 			case OrchestrationPackage.NETWORK_ENTRY__LOGIN:
 				return LOGIN_EDEFAULT == null ? login != null : !LOGIN_EDEFAULT.equals(login);
-			case OrchestrationPackage.NETWORK_ENTRY__NOTE:
-				return NOTE_EDEFAULT == null ? note != null : !NOTE_EDEFAULT.equals(note);
+			case OrchestrationPackage.NETWORK_ENTRY__PASSWORD:
+				return PASSWORD_EDEFAULT == null ? password != null : !PASSWORD_EDEFAULT.equals(password);
 			case OrchestrationPackage.NETWORK_ENTRY__TYPE:
 				return TYPE_EDEFAULT == null ? type != null : !TYPE_EDEFAULT.equals(type);
+			case OrchestrationPackage.NETWORK_ENTRY__NOTE:
+				return NOTE_EDEFAULT == null ? note != null : !NOTE_EDEFAULT.equals(note);
 		}
 		return super.eIsSet(featureID);
 	}
@@ -426,18 +534,22 @@ public class NetworkEntryImpl extends MinimalEObjectImpl.Container implements Ne
 		if (eIsProxy()) return super.toString();
 
 		StringBuilder result = new StringBuilder(super.toString());
-		result.append(" (address: ");
-		result.append(address);
-		result.append(", host: ");
+		result.append(" (host: ");
 		result.append(host);
+		result.append(", address: ");
+		result.append(address);
 		result.append(", port: ");
 		result.append(port);
+		result.append(", path: ");
+		result.append(path);
 		result.append(", login: ");
 		result.append(login);
-		result.append(", note: ");
-		result.append(note);
+		result.append(", password: ");
+		result.append(password);
 		result.append(", type: ");
 		result.append(type);
+		result.append(", note: ");
+		result.append(note);
 		result.append(')');
 		return result.toString();
 	}

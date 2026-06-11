@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration; import eu.kalafatic.evolution.model.orchestration.Task; public class KernelFacade implements IOrchestrator {",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration; import eu.kalafatic.evolution.model.orchestration.Task; public class KernelFacade implements IOrchestrator { @Override public OrchestratorResponse handle(TaskRequest taskRequest, TaskContext context) throws Exception { SessionContainer session = (SessionContainer) context.getMetadata().get(\"sessionContext\"); if (session == null) { session = SessionManager.getInstance().getOrCreateSession(context.getSessionId()); } IterationManager kernel = session.getIterationManager(); if (kernel == null) { kernel = KernelFactory.create(context, session); session.setIterationManager(kernel); } return kernel.handle(taskRequest); } @Override public String execute(String request, TaskContext context) throws Exception { if (context == null) throw new Exception(\"Cannot execute kernel command: No active task context.\"); OrchestratorResponse response = handle(new TaskRequest(request, context.getProjectRoot()), context);",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

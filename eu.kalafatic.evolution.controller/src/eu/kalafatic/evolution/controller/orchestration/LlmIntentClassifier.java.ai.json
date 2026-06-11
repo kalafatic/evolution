@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration; import org.json.JSONObject; import eu.kalafatic.evolution.controller.parsers.JsonUtils;",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration; import org.json.JSONObject; import eu.kalafatic.evolution.controller.orchestration.llm.LlmRouter; import eu.kalafatic.evolution.controller.parsers.JsonUtils; public class LlmIntentClassifier implements IIntentClassifier { private final LlmRouter llmRouter = new LlmRouter(); private AiService aiService = new AiService(); @Override public JSONObject classify(String input, TaskContext context) throws Exception { if (input == null) input = \"\"; String lowerInput = input.toLowerCase(); context.log(\"[INTENT] Classifying: \" + input); if (lowerInput.matches(\"^\\s*(hi|hello|hey|greetings|good morning|good afternoon|good evening)\\s*[!.]*\\s*$\")) { JSONObject result = new JSONObject(); result.put(\"intent\", \"chat\"); result.put(\"confidence\", 1.0); result.put(\"reason\", \"Fast-track greeting detection.\"); return result; } String prompt = \"Classify intent: \" + input;",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

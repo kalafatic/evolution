@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.controller.tools; import java.io.File; import eu.kalafatic.evolution.controller.orchestration.TaskContext;",
+  "summary": "package eu.kalafatic.evolution.controller.tools; import java.io.File; import eu.kalafatic.evolution.controller.orchestration.TaskContext; import eu.kalafatic.evolution.model.orchestration.Eclipse; public class EclipseTool implements ITool { @Override public String getName() { return \"EclipseTool\"; } @Override public String execute(String command, File workingDir, TaskContext context) throws Exception { context.log(\"EclipseTool: Executing \" + command); ShellTool shell = new ShellTool(); String os = System.getProperty(\"os.name\").toLowerCase(); String mvnCmd = os.contains(\"win\") ? \"mvn.cmd\" : \"mvn\"; switch (command.toUpperCase()) { case \"BUILD_PLUGINS\": return shell.execute(mvnCmd + \" clean install -DskipTests\", workingDir, context); case \"BUILD_FEATURES\": return shell.execute(mvnCmd + \" clean install -DskipTests\", workingDir, context);",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

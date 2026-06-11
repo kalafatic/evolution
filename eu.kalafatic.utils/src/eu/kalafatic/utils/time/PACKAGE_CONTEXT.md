@@ -1,9 +1,8 @@
 # PACKAGE CONTEXT
 
-## Directory: eu.kalafatic.utils/src/eu/kalafatic/utils/time/
+## Directory: git/evolution/eu.kalafatic.utils/src/eu/kalafatic/utils/time/
 
 ## Domain: general
 
 ## Components
-* `PACKAGE_CONTEXT.md`: 
-* `DateUtils.java`: package eu.kalafatic.utils.time; import java.text.SimpleDateFormat; import java.util.Calendar;
+* `DateUtils.java`: package eu.kalafatic.utils.time; import java.text.SimpleDateFormat; import java.util.Calendar; import java.util.Date; import org.eclipse.swt.widgets.DateTime; import eu.kalafatic.utils.constants.EDateFormat; public class DateUtils { public static Long dateTimeToTime(DateTime dateTime) { Calendar calendar = Calendar.getInstance(); calendar.clear(); calendar.set(dateTime.getYear(), dateTime.getMonth(), dateTime.getDay()); return calendar.getTime().getTime(); }

@@ -47,8 +47,8 @@ import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
 import eu.kalafatic.evolution.model.orchestration.SelfDevStatus;
 import eu.kalafatic.evolution.model.orchestration.ServerSession;
 import eu.kalafatic.evolution.model.orchestration.ServerSettings;
-import eu.kalafatic.evolution.model.orchestration.SupervisorSettings;
 import eu.kalafatic.evolution.model.orchestration.SessionType;
+import eu.kalafatic.evolution.model.orchestration.SupervisorSettings;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.model.orchestration.TaskStatus;
 import eu.kalafatic.evolution.model.orchestration.Test;
@@ -74,316 +74,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	@Override
-	public EAttribute getGit_BranchName() {
-		return (EAttribute)gitEClass.getEStructuralFeatures().get(5);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	private EClass networkEntryEClass = null;
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getChatSession_AiMode() {
-		return (EAttribute)chatSessionEClass.getEStructuralFeatures().get(12);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EReference getOrchestrator_NetworkEntries() {
-		return (EReference)orchestratorEClass.getEStructuralFeatures().get(31);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EClass getNetworkEntry() {
-		return networkEntryEClass;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getNetworkEntry_Address() {
-		return (EAttribute)networkEntryEClass.getEStructuralFeatures().get(0);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getNetworkEntry_Host() {
-		return (EAttribute)networkEntryEClass.getEStructuralFeatures().get(1);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getNetworkEntry_Port() {
-		return (EAttribute)networkEntryEClass.getEStructuralFeatures().get(2);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getNetworkEntry_Login() {
-		return (EAttribute)networkEntryEClass.getEStructuralFeatures().get(3);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getNetworkEntry_Note() {
-		return (EAttribute)networkEntryEClass.getEStructuralFeatures().get(4);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getNetworkEntry_Type() {
-		return (EAttribute)networkEntryEClass.getEStructuralFeatures().get(5);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getChatSession_LocalModel() {
-		return (EAttribute)chatSessionEClass.getEStructuralFeatures().get(13);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getChatSession_RemoteModel() {
-		return (EAttribute)chatSessionEClass.getEStructuralFeatures().get(14);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getChatSession_BitState() {
-		return (EAttribute)chatSessionEClass.getEStructuralFeatures().get(15);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getChatSession_Expansion() {
-		return (EAttribute)chatSessionEClass.getEStructuralFeatures().get(16);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getChatSession_OutputPath() {
-		return (EAttribute)chatSessionEClass.getEStructuralFeatures().get(10);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getChatSession_AutoApprove() {
-		return (EAttribute)chatSessionEClass.getEStructuralFeatures().get(11);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getChatSession_TargetPath() {
-		return (EAttribute)chatSessionEClass.getEStructuralFeatures().get(8);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getChatSession_TargetType() {
-		return (EAttribute)chatSessionEClass.getEStructuralFeatures().get(9);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getGit_CommitMsg() {
-		return (EAttribute)gitEClass.getEStructuralFeatures().get(6);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getGit_Password() {
-		return (EAttribute)gitEClass.getEStructuralFeatures().get(7);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
 	private EClass taskEClass = null;
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EReference getOrchestrator_SupervisorSettings() {
-		return (EReference)orchestratorEClass.getEStructuralFeatures().get(30);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getTask_BitState() {
-		return (EAttribute)taskEClass.getEStructuralFeatures().get(32);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getTask_Justification() {
-		return (EAttribute)taskEClass.getEStructuralFeatures().get(33);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EClass getSupervisorSettings() {
-		return supervisorSettingsEClass;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getSupervisorSettings_ExecutablePath() {
-		return (EAttribute)supervisorSettingsEClass.getEStructuralFeatures().get(0);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getSupervisorSettings_Deployed() {
-		return (EAttribute)supervisorSettingsEClass.getEStructuralFeatures().get(1);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getSupervisorSettings_SourcePath() {
-		return (EAttribute)supervisorSettingsEClass.getEStructuralFeatures().get(2);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getSupervisorSettings_Commands() {
-		return (EAttribute)supervisorSettingsEClass.getEStructuralFeatures().get(3);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getSupervisorSettings_Settings() {
-		return (EAttribute)supervisorSettingsEClass.getEStructuralFeatures().get(4);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getTask_StepMode() {
-		return (EAttribute)taskEClass.getEStructuralFeatures().get(31);
-	}
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -607,6 +298,13 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	private EClass supervisorSettingsEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	private EClass reviewSessionEClass = null;
 
 	/**
@@ -628,7 +326,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	private EClass supervisorSettingsEClass = null;
+	private EClass networkEntryEClass = null;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -1114,6 +812,36 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
+	public EAttribute getTask_StepMode() {
+		return (EAttribute)taskEClass.getEStructuralFeatures().get(31);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getTask_BitState() {
+		return (EAttribute)taskEClass.getEStructuralFeatures().get(32);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getTask_Justification() {
+		return (EAttribute)taskEClass.getEStructuralFeatures().get(33);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public EClass getAgent() {
 		return agentEClass;
 	}
@@ -1484,6 +1212,26 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
+	public EReference getOrchestrator_SupervisorSettings() {
+		return (EReference)orchestratorEClass.getEStructuralFeatures().get(30);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getOrchestrator_NetworkEntries() {
+		return (EReference)orchestratorEClass.getEStructuralFeatures().get(31);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public EClass getServerSettings() {
 		return serverSettingsEClass;
 	}
@@ -1846,6 +1594,36 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	@Override
 	public EAttribute getGit_TestStatus() {
 		return (EAttribute)gitEClass.getEStructuralFeatures().get(4);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getGit_BranchName() {
+		return (EAttribute)gitEClass.getEStructuralFeatures().get(5);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getGit_CommitMsg() {
+		return (EAttribute)gitEClass.getEStructuralFeatures().get(6);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getGit_Password() {
+		return (EAttribute)gitEClass.getEStructuralFeatures().get(7);
 	}
 
 	/**
@@ -3074,6 +2852,66 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
+	public EClass getSupervisorSettings() {
+		return supervisorSettingsEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getSupervisorSettings_ExecutablePath() {
+		return (EAttribute)supervisorSettingsEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getSupervisorSettings_Deployed() {
+		return (EAttribute)supervisorSettingsEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getSupervisorSettings_SourcePath() {
+		return (EAttribute)supervisorSettingsEClass.getEStructuralFeatures().get(2);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getSupervisorSettings_Commands() {
+		return (EAttribute)supervisorSettingsEClass.getEStructuralFeatures().get(3);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getSupervisorSettings_Settings() {
+		return (EAttribute)supervisorSettingsEClass.getEStructuralFeatures().get(4);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public EClass getReviewSession() {
 		return reviewSessionEClass;
 	}
@@ -3214,6 +3052,96 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
+	public EAttribute getChatSession_TargetPath() {
+		return (EAttribute)chatSessionEClass.getEStructuralFeatures().get(8);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getChatSession_TargetType() {
+		return (EAttribute)chatSessionEClass.getEStructuralFeatures().get(9);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getChatSession_OutputPath() {
+		return (EAttribute)chatSessionEClass.getEStructuralFeatures().get(10);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getChatSession_AutoApprove() {
+		return (EAttribute)chatSessionEClass.getEStructuralFeatures().get(11);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getChatSession_AiMode() {
+		return (EAttribute)chatSessionEClass.getEStructuralFeatures().get(12);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getChatSession_LocalModel() {
+		return (EAttribute)chatSessionEClass.getEStructuralFeatures().get(13);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getChatSession_RemoteModel() {
+		return (EAttribute)chatSessionEClass.getEStructuralFeatures().get(14);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getChatSession_BitState() {
+		return (EAttribute)chatSessionEClass.getEStructuralFeatures().get(15);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getChatSession_Expansion() {
+		return (EAttribute)chatSessionEClass.getEStructuralFeatures().get(16);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public EClass getChatMessage() {
 		return chatMessageEClass;
 	}
@@ -3336,6 +3264,96 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	@Override
 	public EAttribute getChatMessage_IsTerminal() {
 		return (EAttribute)chatMessageEClass.getEStructuralFeatures().get(11);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getNetworkEntry() {
+		return networkEntryEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getNetworkEntry_Host() {
+		return (EAttribute)networkEntryEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getNetworkEntry_Address() {
+		return (EAttribute)networkEntryEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getNetworkEntry_Port() {
+		return (EAttribute)networkEntryEClass.getEStructuralFeatures().get(2);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getNetworkEntry_Path() {
+		return (EAttribute)networkEntryEClass.getEStructuralFeatures().get(3);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getNetworkEntry_Login() {
+		return (EAttribute)networkEntryEClass.getEStructuralFeatures().get(4);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getNetworkEntry_Password() {
+		return (EAttribute)networkEntryEClass.getEStructuralFeatures().get(5);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getNetworkEntry_Type() {
+		return (EAttribute)networkEntryEClass.getEStructuralFeatures().get(6);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getNetworkEntry_Note() {
+		return (EAttribute)networkEntryEClass.getEStructuralFeatures().get(7);
 	}
 
 	/**
@@ -3644,14 +3662,6 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEReference(orchestratorEClass, ORCHESTRATOR__SUPERVISOR_SETTINGS);
 		createEReference(orchestratorEClass, ORCHESTRATOR__NETWORK_ENTRIES);
 
-		networkEntryEClass = createEClass(NETWORK_ENTRY);
-		createEAttribute(networkEntryEClass, NETWORK_ENTRY__ADDRESS);
-		createEAttribute(networkEntryEClass, NETWORK_ENTRY__HOST);
-		createEAttribute(networkEntryEClass, NETWORK_ENTRY__PORT);
-		createEAttribute(networkEntryEClass, NETWORK_ENTRY__LOGIN);
-		createEAttribute(networkEntryEClass, NETWORK_ENTRY__NOTE);
-		createEAttribute(networkEntryEClass, NETWORK_ENTRY__TYPE);
-
 		serverSettingsEClass = createEClass(SERVER_SETTINGS);
 		createEAttribute(serverSettingsEClass, SERVER_SETTINGS__PORT);
 		createEAttribute(serverSettingsEClass, SERVER_SETTINGS__AUTO_START);
@@ -3843,6 +3853,13 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEAttribute(changeSetEClass, CHANGE_SET__COMMIT_ID);
 		createEReference(changeSetEClass, CHANGE_SET__FILES);
 
+		supervisorSettingsEClass = createEClass(SUPERVISOR_SETTINGS);
+		createEAttribute(supervisorSettingsEClass, SUPERVISOR_SETTINGS__EXECUTABLE_PATH);
+		createEAttribute(supervisorSettingsEClass, SUPERVISOR_SETTINGS__DEPLOYED);
+		createEAttribute(supervisorSettingsEClass, SUPERVISOR_SETTINGS__SOURCE_PATH);
+		createEAttribute(supervisorSettingsEClass, SUPERVISOR_SETTINGS__COMMANDS);
+		createEAttribute(supervisorSettingsEClass, SUPERVISOR_SETTINGS__SETTINGS);
+
 		reviewSessionEClass = createEClass(REVIEW_SESSION);
 		createEAttribute(reviewSessionEClass, REVIEW_SESSION__ID);
 		createEReference(reviewSessionEClass, REVIEW_SESSION__CHANGE_SET);
@@ -3882,12 +3899,15 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEAttribute(chatMessageEClass, CHAT_MESSAGE__TURN_ID);
 		createEAttribute(chatMessageEClass, CHAT_MESSAGE__IS_TERMINAL);
 
-		supervisorSettingsEClass = createEClass(SUPERVISOR_SETTINGS);
-		createEAttribute(supervisorSettingsEClass, SUPERVISOR_SETTINGS__EXECUTABLE_PATH);
-		createEAttribute(supervisorSettingsEClass, SUPERVISOR_SETTINGS__DEPLOYED);
-		createEAttribute(supervisorSettingsEClass, SUPERVISOR_SETTINGS__SOURCE_PATH);
-		createEAttribute(supervisorSettingsEClass, SUPERVISOR_SETTINGS__COMMANDS);
-		createEAttribute(supervisorSettingsEClass, SUPERVISOR_SETTINGS__SETTINGS);
+		networkEntryEClass = createEClass(NETWORK_ENTRY);
+		createEAttribute(networkEntryEClass, NETWORK_ENTRY__HOST);
+		createEAttribute(networkEntryEClass, NETWORK_ENTRY__ADDRESS);
+		createEAttribute(networkEntryEClass, NETWORK_ENTRY__PORT);
+		createEAttribute(networkEntryEClass, NETWORK_ENTRY__PATH);
+		createEAttribute(networkEntryEClass, NETWORK_ENTRY__LOGIN);
+		createEAttribute(networkEntryEClass, NETWORK_ENTRY__PASSWORD);
+		createEAttribute(networkEntryEClass, NETWORK_ENTRY__TYPE);
+		createEAttribute(networkEntryEClass, NETWORK_ENTRY__NOTE);
 
 		promptInstructionsEClass = createEClass(PROMPT_INSTRUCTIONS);
 		createEAttribute(promptInstructionsEClass, PROMPT_INSTRUCTIONS__AUTO_APPROVE);
@@ -4023,21 +4043,6 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEReference(getOrchestrator_MonitoringHistory(), this.getMonitoringData(), null, "monitoringHistory", null, 0, -1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getOrchestrator_SupervisorSettings(), this.getSupervisorSettings(), null, "supervisorSettings", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getOrchestrator_NetworkEntries(), this.getNetworkEntry(), null, "networkEntries", null, 0, -1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-
-		initEClass(networkEntryEClass, NetworkEntry.class, "NetworkEntry", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
-		initEAttribute(getNetworkEntry_Address(), ecorePackage.getEString(), "address", null, 0, 1, NetworkEntry.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getNetworkEntry_Host(), ecorePackage.getEString(), "host", null, 0, 1, NetworkEntry.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getNetworkEntry_Port(), ecorePackage.getEInt(), "port", null, 0, 1, NetworkEntry.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getNetworkEntry_Login(), ecorePackage.getEString(), "login", null, 0, 1, NetworkEntry.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getNetworkEntry_Note(), ecorePackage.getEString(), "note", null, 0, 1, NetworkEntry.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getNetworkEntry_Type(), ecorePackage.getEString(), "type", null, 0, 1, NetworkEntry.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-
-		initEClass(supervisorSettingsEClass, SupervisorSettings.class, "SupervisorSettings", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
-		initEAttribute(getSupervisorSettings_ExecutablePath(), ecorePackage.getEString(), "executablePath", null, 0, 1, SupervisorSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getSupervisorSettings_Deployed(), ecorePackage.getEBoolean(), "deployed", "false", 0, 1, SupervisorSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getSupervisorSettings_SourcePath(), ecorePackage.getEString(), "sourcePath", null, 0, 1, SupervisorSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getSupervisorSettings_Commands(), ecorePackage.getEString(), "commands", null, 0, 1, SupervisorSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getSupervisorSettings_Settings(), ecorePackage.getEString(), "settings", null, 0, 1, SupervisorSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(serverSettingsEClass, ServerSettings.class, "ServerSettings", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getServerSettings_Port(), ecorePackage.getEInt(), "port", "48080", 0, 1, ServerSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
@@ -4230,6 +4235,13 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEAttribute(getChangeSet_CommitId(), ecorePackage.getEString(), "commitId", null, 0, 1, ChangeSet.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getChangeSet_Files(), this.getFileChange(), null, "files", null, 0, -1, ChangeSet.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
+		initEClass(supervisorSettingsEClass, SupervisorSettings.class, "SupervisorSettings", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getSupervisorSettings_ExecutablePath(), ecorePackage.getEString(), "executablePath", null, 0, 1, SupervisorSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getSupervisorSettings_Deployed(), ecorePackage.getEBoolean(), "deployed", "false", 0, 1, SupervisorSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getSupervisorSettings_SourcePath(), ecorePackage.getEString(), "sourcePath", null, 0, 1, SupervisorSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getSupervisorSettings_Commands(), ecorePackage.getEString(), "commands", null, 0, 1, SupervisorSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getSupervisorSettings_Settings(), ecorePackage.getEString(), "settings", null, 0, 1, SupervisorSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
 		initEClass(reviewSessionEClass, ReviewSession.class, "ReviewSession", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getReviewSession_Id(), ecorePackage.getEString(), "id", null, 0, 1, ReviewSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getReviewSession_ChangeSet(), this.getChangeSet(), null, "changeSet", null, 0, 1, ReviewSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
@@ -4268,6 +4280,16 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEAttribute(getChatMessage_SequenceNumber(), ecorePackage.getELong(), "sequenceNumber", null, 0, 1, ChatMessage.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getChatMessage_TurnId(), ecorePackage.getEString(), "turnId", null, 0, 1, ChatMessage.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getChatMessage_IsTerminal(), ecorePackage.getEBoolean(), "isTerminal", null, 0, 1, ChatMessage.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(networkEntryEClass, NetworkEntry.class, "NetworkEntry", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getNetworkEntry_Host(), ecorePackage.getEString(), "host", null, 0, 1, NetworkEntry.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getNetworkEntry_Address(), ecorePackage.getEString(), "address", null, 0, 1, NetworkEntry.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getNetworkEntry_Port(), ecorePackage.getEInt(), "port", null, 0, 1, NetworkEntry.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getNetworkEntry_Path(), ecorePackage.getEString(), "path", null, 0, 1, NetworkEntry.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getNetworkEntry_Login(), ecorePackage.getEString(), "login", null, 0, 1, NetworkEntry.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getNetworkEntry_Password(), ecorePackage.getEString(), "password", null, 0, 1, NetworkEntry.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getNetworkEntry_Type(), ecorePackage.getEString(), "type", null, 0, 1, NetworkEntry.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getNetworkEntry_Note(), ecorePackage.getEString(), "note", null, 0, 1, NetworkEntry.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(promptInstructionsEClass, PromptInstructions.class, "PromptInstructions", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getPromptInstructions_AutoApprove(), ecorePackage.getEBoolean(), "autoApprove", null, 0, 1, PromptInstructions.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);

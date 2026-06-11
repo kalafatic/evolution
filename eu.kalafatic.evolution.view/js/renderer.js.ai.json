@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "window.ChatApp = window.ChatApp || {}; window.ChatApp.Renderer = { renderMessage: function(m) {",
+  "summary": "window.ChatApp = window.ChatApp || {}; window.ChatApp.Renderer = { renderMessage: function(m) { if (!m || (m.text === undefined || m.text === null)) return null; const role = (m.agentType || '').toLowerCase(); if (m.text.trim() === \"\" && !role.includes('user')) return null; const roles = role.split(' '); const primaryRole = roles[0]; const isUser = primaryRole === 'user' || (m.sender || '').toLowerCase().includes('you') || (m.sender || '').toLowerCase().includes('user'); const div = document.createElement('div'); div.className = 'message ' + (isUser ? 'user' : 'ai') + ' ' + role; div.dataset.index = m.index; if (role.includes('approved')) div.classList.add('approved'); if (!role.includes('waiting') && (role.includes('darwin') || role.includes('branch'))) div.classList.add('sealed'); const header = document.createElement('div'); header.className = 'header'; const icon = window.ChatApp.Constants.icons[primaryRole] || (isUser ? window.ChatApp.Constants.icons.user : window.ChatApp.Constants.icons.ai); header.innerHTML = `<span class=\"timestamp\">${m.timestamp || ''}</span><span class=\"icon\">${icon}</span><span class=\"sender\">${m.sender}</span>`; const content = document.createElement('div'); content.className = 'message-content';",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

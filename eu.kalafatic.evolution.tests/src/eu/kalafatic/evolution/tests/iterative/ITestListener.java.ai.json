@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.tests.iterative; public interface ITestListener { void stepStarted(String step);",
+  "summary": "package eu.kalafatic.evolution.tests.iterative; public interface ITestListener { void stepStarted(String step); void stepSuccess(String step); void stepFailed(String step); void stepSkipped(String step); void transitionActive(String edgeId); void reset(); }",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

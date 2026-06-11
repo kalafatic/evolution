@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.2,
   "importanceScore": 0.2,
-  "summary": "package eu.kalafatic.utils.p2; import org.eclipse.core.runtime.IProgressMonitor; import org.eclipse.core.runtime.IStatus;",
+  "summary": "package eu.kalafatic.utils.p2; import org.eclipse.core.runtime.IProgressMonitor; import org.eclipse.core.runtime.IStatus; import org.eclipse.core.runtime.OperationCanceledException; import org.eclipse.core.runtime.SubMonitor; import org.eclipse.equinox.p2.core.IProvisioningAgent; import org.eclipse.equinox.p2.operations.ProvisioningJob; import org.eclipse.equinox.p2.operations.ProvisioningSession; import org.eclipse.equinox.p2.operations.UpdateOperation; public class P2Util { public static IStatus checkForUpdates(IProvisioningAgent agent, IProgressMonitor monitor) throws OperationCanceledException { ProvisioningSession session = new ProvisioningSession(agent); UpdateOperation operation = new UpdateOperation(session);",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

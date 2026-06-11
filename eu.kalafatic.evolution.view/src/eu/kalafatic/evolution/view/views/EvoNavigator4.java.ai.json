@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.4,
   "importanceScore": 0.4,
-  "summary": "package eu.kalafatic.evolution.view.views; import java.util.List; import java.util.concurrent.atomic.AtomicBoolean;",
+  "summary": "package eu.kalafatic.evolution.view.views; import java.util.List; import java.util.concurrent.atomic.AtomicBoolean; import java.util.concurrent.locks.Lock; import java.util.concurrent.locks.ReentrantLock; import org.eclipse.core.resources.IProject; import org.eclipse.core.resources.IResource; import org.eclipse.core.resources.ResourcesPlugin; import org.eclipse.core.runtime.IProgressMonitor; import org.eclipse.core.runtime.IStatus; import org.eclipse.core.runtime.Status; import org.eclipse.emf.ecore.EObject; import org.eclipse.jface.action.Action; import org.eclipse.jface.action.IMenuListener; import org.eclipse.jface.action.IMenuManager; import org.eclipse.jface.action.IToolBarManager; import org.eclipse.jface.action.MenuManager; import org.eclipse.jface.action.Separator; import org.eclipse.jface.dialogs.InputDialog; import org.eclipse.jface.dialogs.MessageDialog;",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

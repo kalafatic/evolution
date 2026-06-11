@@ -301,6 +301,15 @@ public interface OrchestrationFactory extends EFactory {
 	ChangeSet createChangeSet();
 
 	/**
+	 * Returns a new object of class '<em>Supervisor Settings</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>Supervisor Settings</em>'.
+	 * @generated
+	 */
+	SupervisorSettings createSupervisorSettings();
+
+	/**
 	 * Returns a new object of class '<em>Review Session</em>'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -328,13 +337,13 @@ public interface OrchestrationFactory extends EFactory {
 	ChatMessage createChatMessage();
 
 	/**
-	 * Returns a new object of class '<em>Supervisor Settings</em>'.
+	 * Returns a new object of class '<em>Network Entry</em>'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return a new object of class '<em>Supervisor Settings</em>'.
+	 * @return a new object of class '<em>Network Entry</em>'.
 	 * @generated
 	 */
-	SupervisorSettings createSupervisorSettings();
+	NetworkEntry createNetworkEntry();
 
 	/**
 	 * Returns a new object of class '<em>Prompt Instructions</em>'.
@@ -344,15 +353,6 @@ public interface OrchestrationFactory extends EFactory {
 	 * @generated
 	 */
 	PromptInstructions createPromptInstructions();
-
-	/**
-	 * Returns a new object of class '<em>Network Entry</em>'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return a new object of class '<em>Network Entry</em>'.
-	 * @generated
-	 */
-	NetworkEntry createNetworkEntry();
 
 	/**
 	 * Returns the package supported by this factory.

@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration; import java.time.Duration; import java.time.Instant;",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration; import java.time.Duration; import java.time.Instant; public class ExecutionMetrics { private final Instant startedAt; private final Instant finishedAt; private final Duration totalDuration; private int repairAttempts = 0; private int repairSuccesses = 0; private int validationFailures = 0; public ExecutionMetrics(Instant startedAt, Instant finishedAt) { this.startedAt = startedAt; this.finishedAt = finishedAt; this.totalDuration = Duration.between(startedAt, finishedAt); } public Instant getStartedAt() { return startedAt; } public Instant getFinishedAt() { return finishedAt;",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

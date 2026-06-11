@@ -1,10 +1,9 @@
 # PACKAGE CONTEXT
 
-## Directory: eu.kalafatic.evolution.view/src/eu/kalafatic/evolution/view/editors/listeners/
+## Directory: git/evolution/eu.kalafatic.evolution.view/src/eu/kalafatic/evolution/view/editors/listeners/
 
 ## Domain: general
 
 ## Components
-* `EditorResourceChangeListener.java`: package eu.kalafatic.evolution.view.editors.listeners; import org.eclipse.core.resources.IResourceChangeEvent; import org.eclipse.core.resources.IResourceChangeListener;
-* `PACKAGE_CONTEXT.md`: 
-* `EditorSelectionListener.java`: package eu.kalafatic.evolution.view.editors.listeners; import org.eclipse.emf.ecore.EObject; import org.eclipse.jface.text.ITextSelection;
+* `EditorResourceChangeListener.java`: package eu.kalafatic.evolution.view.editors.listeners; import org.eclipse.core.resources.IResourceChangeEvent; import org.eclipse.core.resources.IResourceChangeListener; import org.eclipse.swt.widgets.Display; import eu.kalafatic.evolution.view.editors.MultiPageEditor; public class EditorResourceChangeListener implements IResourceChangeListener { private MultiPageEditor editor; public EditorResourceChangeListener(MultiPageEditor editor) { this.editor = editor; } @Override public void resourceChanged(IResourceChangeEvent event) { if (event.getType() == IResourceChangeEvent.PRE_CLOSE || event.getType() == IResourceChangeEvent.PRE_DELETE) { Display.getDefault().asyncExec(() -> { if (editor.getSite() != null && editor.getSite().getPage() != null) { editor.getSite().getPage().closeEditor(editor, false); } }); } }
+* `EditorSelectionListener.java`: package eu.kalafatic.evolution.view.editors.listeners; import org.eclipse.emf.ecore.EObject; import org.eclipse.jface.text.ITextSelection; import org.eclipse.jface.viewers.ISelection; import org.eclipse.jface.viewers.IStructuredSelection; import org.eclipse.ui.ISelectionListener; import org.eclipse.ui.IWorkbenchPart; import eu.kalafatic.evolution.model.orchestration.Orchestrator; import eu.kalafatic.evolution.view.editors.MultiPageEditor; public class EditorSelectionListener implements ISelectionListener { private MultiPageEditor editor; public EditorSelectionListener(MultiPageEditor editor) { this.editor = editor; } @Override public void selectionChanged(IWorkbenchPart part, ISelection selection) { if (selection instanceof IStructuredSelection) { Object firstElement = ((IStructuredSelection) selection).getFirstElement(); if (firstElement instanceof EObject) { if (firstElement instanceof Orchestrator) {

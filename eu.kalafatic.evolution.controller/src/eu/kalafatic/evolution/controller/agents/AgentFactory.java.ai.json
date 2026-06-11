@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.controller.agents; import java.util.ArrayList; import java.util.List;",
+  "summary": "package eu.kalafatic.evolution.controller.agents; import java.util.ArrayList; import java.util.List; import eu.kalafatic.evolution.controller.orchestration.WebSearchAgent; import eu.kalafatic.evolution.controller.orchestration.SessionContainer; public class AgentFactory { public static List<IAgent> createIsolatedAgents(SessionContainer container) { List<IAgent> isolated = new ArrayList<>(); isolated.add(new AnalyticAgent(container)); isolated.add(new ArchitectAgent(container)); isolated.add(new JavaDevAgent(container)); isolated.add(new TesterAgent(container)); isolated.add(new ValidatorAgent(container)); isolated.add(new GeneralAgent(container)); isolated.add(new TerminalAgent(container)); isolated.add(new FileAgent(container)); isolated.add(new MavenAgent(container)); isolated.add(new GitAgent(container)); isolated.add(new StructureAgent(container)); isolated.add(new WebSearchAgent(container));",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

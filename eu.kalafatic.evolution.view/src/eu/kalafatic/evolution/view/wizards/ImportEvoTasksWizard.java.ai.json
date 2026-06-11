@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.4,
   "importanceScore": 0.4,
-  "summary": "package eu.kalafatic.evolution.view.wizards; import org.eclipse.jface.wizard.Wizard; import org.eclipse.ui.IImportWizard;",
+  "summary": "package eu.kalafatic.evolution.view.wizards; import org.eclipse.jface.wizard.Wizard; import org.eclipse.ui.IImportWizard; import org.eclipse.ui.IWorkbench; public class ImportEvoTasksWizard extends Wizard implements IImportWizard { public ImportEvoTasksWizard() { super(); } @Override public boolean performFinish() { return true; } @Override public void init(IWorkbench workbench, org.eclipse.jface.viewers.IStructuredSelection selection) { } }",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

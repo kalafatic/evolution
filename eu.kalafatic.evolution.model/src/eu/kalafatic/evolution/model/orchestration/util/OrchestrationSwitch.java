@@ -24,6 +24,7 @@ import eu.kalafatic.evolution.model.orchestration.LLM;
 import eu.kalafatic.evolution.model.orchestration.Maven;
 import eu.kalafatic.evolution.model.orchestration.MemoryRule;
 import eu.kalafatic.evolution.model.orchestration.MonitoringData;
+import eu.kalafatic.evolution.model.orchestration.NetworkEntry;
 import eu.kalafatic.evolution.model.orchestration.NetworkRule;
 import eu.kalafatic.evolution.model.orchestration.NeuronAI;
 import eu.kalafatic.evolution.model.orchestration.Ollama;
@@ -319,6 +320,12 @@ public class OrchestrationSwitch<T> extends Switch<T> {
 			case OrchestrationPackage.CHAT_MESSAGE: {
 				ChatMessage chatMessage = (ChatMessage)theEObject;
 				T result = caseChatMessage(chatMessage);
+				if (result == null) result = defaultCase(theEObject);
+				return result;
+			}
+			case OrchestrationPackage.NETWORK_ENTRY: {
+				NetworkEntry networkEntry = (NetworkEntry)theEObject;
+				T result = caseNetworkEntry(networkEntry);
 				if (result == null) result = defaultCase(theEObject);
 				return result;
 			}
@@ -869,6 +876,21 @@ public class OrchestrationSwitch<T> extends Switch<T> {
 	 * @generated
 	 */
 	public T caseChatMessage(ChatMessage object) {
+		return null;
+	}
+
+	/**
+	 * Returns the result of interpreting the object as an instance of '<em>Network Entry</em>'.
+	 * <!-- begin-user-doc -->
+	 * This implementation returns null;
+	 * returning a non-null result will terminate the switch.
+	 * <!-- end-user-doc -->
+	 * @param object the target of the switch.
+	 * @return the result of interpreting the object as an instance of '<em>Network Entry</em>'.
+	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
+	 * @generated
+	 */
+	public T caseNetworkEntry(NetworkEntry object) {
 		return null;
 	}
 

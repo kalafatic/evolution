@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "unknown",
+  "stability": "EVOLVING",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "package eu.kalafatic.evolution.selfdev.genome.hub; import java.io.File; import eu.kalafatic.evolution.selfdev.genome.core.GenomeArtifact; import eu.kalafatic.evolution.selfdev.genome.core.MediatedPackageArtifact; import eu.kalafatic.evolution.selfdev.genome.event.GenomeEvent; import eu.kalafatic.evolution.selfdev.genome.event.GenomeEventBus; import eu.kalafatic.evolution.selfdev.genome.mediation.MediatedPackageProcessor; import eu.kalafatic.evolution.selfdev.genome.repository.GenomeRepository; import eu.kalafatic.evolution.selfdev.genome.selfupgrade.SecondhandUpgradeEngine; import eu.kalafatic.evolution.selfdev.genome.selfupgrade.UpgradeContext; import eu.kalafatic.evolution.selfdev.genome.selfupgrade.UpgradePlan; public class SelfDevGenomeHub { private final GenomeRepository repository; private final GenomeEventBus eventBus; private final MediatedPackageProcessor processor; private final SecondhandUpgradeEngine upgradeEngine; public SelfDevGenomeHub( GenomeRepository repository, GenomeEventBus eventBus, MediatedPackageProcessor processor,",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

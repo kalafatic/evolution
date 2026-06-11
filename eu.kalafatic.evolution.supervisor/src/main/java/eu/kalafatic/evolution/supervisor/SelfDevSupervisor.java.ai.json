@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.supervisor; import java.io.File; import java.io.IOException;",
+  "summary": "package eu.kalafatic.evolution.supervisor; import java.io.File; import java.io.IOException; import java.util.HashMap; import java.util.Map; public class SelfDevSupervisor { private final File baseDir; private final ProcessRunner runner = new ProcessRunner(); private final SelfDevProtocol protocol; private final ResultReader reader = new ResultReader(); private final EvoValidator validator = new EvoValidator(); private final IterationManager iterationManager; public SelfDevSupervisor(File baseDir) { this.baseDir = baseDir; this.protocol = new SelfDevProtocol(baseDir); this.iterationManager = new IterationManager(baseDir); } public void run() { System.out.println(\"[SUPERVISOR] Starting monitoring loop...\"); try {",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

@@ -5,8 +5,8 @@
   "stability": "",
   "mediatedRelevanceScore": 0.9,
   "importanceScore": 0.9,
-  "summary": "package eu.kalafatic.evolution.controller.trajectory; import java.util.Map; import java.util.concurrent.ConcurrentHashMap;",
+  "summary": "package eu.kalafatic.evolution.controller.trajectory; import java.util.Map; import java.util.concurrent.ConcurrentHashMap; import eu.kalafatic.evolution.controller.workflow.RuntimeEvent; import eu.kalafatic.evolution.controller.workflow.RuntimeEventType; public class EvolutionRegistry { private final Map<String, Signal> signals = new ConcurrentHashMap<>(); private final Map<String, Trajectory> trajectories = new ConcurrentHashMap<>(); public EvolutionRegistry() { initializeDefaultSignals(); } private void initializeDefaultSignals() { signals.put(\"proposalFitness\", new Signal(\"proposalFitness\", Signal.SignalType.SCALAR, 0.5)); signals.put(\"explorationPressure\", new Signal(\"explorationPressure\", Signal.SignalType.CATEGORICAL, \"MEDIUM\")); signals.put(\"branchNovelty\", new Signal(\"branchNovelty\", Signal.SignalType.CATEGORICAL, \"LOW\")); signals.put(\"userConfidence\", new Signal(\"userConfidence\", Signal.SignalType.CATEGORICAL, \"MEDIUM\")); signals.put(\"convergenceTrend\", new Signal(\"convergenceTrend\", Signal.SignalType.TREND, Signal.Trend.STABLE)); } public Signal getSignal(String name) { return signals.get(name);",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.2,
   "importanceScore": 0.2,
-  "summary": "package eu.kalafatic.utils.xml; import org.eclipse.jface.text.rules.IWhitespaceDetector; public class XMLWhitespaceDetector implements IWhitespaceDetector {",
+  "summary": "package eu.kalafatic.utils.xml; import org.eclipse.jface.text.rules.IWhitespaceDetector; public class XMLWhitespaceDetector implements IWhitespaceDetector { @Override public boolean isWhitespace(char c) { return (c == ' ' || c == '\t' || c == '\n' || c == '\r'); } }",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

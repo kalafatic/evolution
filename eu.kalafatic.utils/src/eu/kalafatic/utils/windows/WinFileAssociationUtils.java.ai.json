@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.2,
   "importanceScore": 0.2,
-  "summary": "package eu.kalafatic.utils.windows; public class WinFileAssociationUtils { public static String getAssoc(String ext) {",
+  "summary": "package eu.kalafatic.utils.windows; public class WinFileAssociationUtils { public static String getAssoc(String ext) { Process process = WinCMDUtils.getInstance().processCommand(\"cmd.exe\", \"/c\", \"assoc\", ext); return WinCMDUtils.getInstance().getProcessOutput(process); } public static String getFtype(String ftype) { Process process = WinCMDUtils.getInstance().processCommand(\"cmd.exe\", \"/c\", \"ftype\", ftype);",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

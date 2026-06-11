@@ -1,10 +1,9 @@
 # PACKAGE CONTEXT
 
-## Directory: eu.kalafatic.evolution.view/src/eu/kalafatic/evolution/view/editors/pages/mcpsettings/
+## Directory: git/evolution/eu.kalafatic.evolution.view/src/eu/kalafatic/evolution/view/editors/pages/mcpsettings/
 
 ## Domain: general
 
 ## Components
-* `McpResourcesGroup.java`: package eu.kalafatic.evolution.view.editors.pages.mcpsettings; import org.eclipse.swt.SWT; import org.eclipse.swt.events.SelectionAdapter;
-* `PACKAGE_CONTEXT.md`: 
-* `McpConfigGroup.java`: package eu.kalafatic.evolution.view.editors.pages.mcpsettings; import org.eclipse.swt.events.SelectionAdapter; import org.eclipse.swt.events.SelectionEvent;
+* `McpResourcesGroup.java`: package eu.kalafatic.evolution.view.editors.pages.mcpsettings; import org.eclipse.swt.SWT; import org.eclipse.swt.events.SelectionAdapter; import org.eclipse.swt.events.SelectionEvent; import org.eclipse.swt.layout.GridData; import org.eclipse.swt.widgets.Button; import org.eclipse.swt.widgets.Composite; import org.eclipse.swt.widgets.Table; import org.eclipse.swt.widgets.TableColumn; import org.eclipse.swt.widgets.TableItem; import org.eclipse.ui.forms.widgets.FormToolkit; import eu.kalafatic.evolution.view.editors.pages.McpSettingsPage; import eu.kalafatic.utils.factories.GUIFactory; import eu.kalafatic.evolution.model.orchestration.Orchestrator; import eu.kalafatic.evolution.view.editors.MultiPageEditor; import eu.kalafatic.evolution.view.editors.pages.AEvoGroup; public class McpResourcesGroup extends AEvoGroup { private Table resourcesTable; private McpSettingsPage page; public McpResourcesGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, McpSettingsPage page) {
+* `McpConfigGroup.java`: package eu.kalafatic.evolution.view.editors.pages.mcpsettings; import org.eclipse.swt.events.SelectionAdapter; import org.eclipse.swt.events.SelectionEvent; import org.eclipse.swt.widgets.Button; import org.eclipse.swt.widgets.Composite; import org.eclipse.swt.widgets.Text; import org.eclipse.ui.forms.widgets.FormToolkit; import eu.kalafatic.evolution.model.orchestration.Orchestrator; import eu.kalafatic.evolution.view.editors.MultiPageEditor; import eu.kalafatic.evolution.view.editors.pages.AEvoGroup; import eu.kalafatic.evolution.view.editors.pages.McpSettingsPage; import eu.kalafatic.utils.factories.GUIFactory; public class McpConfigGroup extends AEvoGroup { private Text mcpUrlText; private McpSettingsPage page; public McpConfigGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, McpSettingsPage page) { super(editor, orchestrator); this.page = page; createControl(toolkit, parent); }

@@ -22,12 +22,20 @@ public class EvoMetadata {
     private double importanceScore = 0.0;
     private List<String> contextSelectionHints = new ArrayList<>();
     private List<String> dependencyLinks = new ArrayList<>();
-    private List<String> useCases = new ArrayList<>();
-    private List<String> keyClasses = new ArrayList<>();
     private String summary;
     private String evolutionaryNotes;
     private boolean stale = false;
     private Map<String, Object> customAttributes = new HashMap<>();
+
+    // Enhanced Genome Fields
+    private String architecturalLayer;
+    private String systemCriticality;
+    private String mutationRisk;
+    private String evolutionPriority;
+    private boolean participatesInCoreLoop = false;
+    private String coreLoopRole;
+    private List<String> concepts = new ArrayList<>();
+    private List<String> capabilities = new ArrayList<>();
 
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
@@ -71,12 +79,6 @@ public class EvoMetadata {
     public List<String> getDependencyLinks() { return dependencyLinks; }
     public void setDependencyLinks(List<String> dependencyLinks) { this.dependencyLinks = dependencyLinks; }
 
-    public List<String> getUseCases() { return useCases; }
-    public void setUseCases(List<String> useCases) { this.useCases = useCases; }
-
-    public List<String> getKeyClasses() { return keyClasses; }
-    public void setKeyClasses(List<String> keyClasses) { this.keyClasses = keyClasses; }
-
     public String getSummary() { return summary; }
     public void setSummary(String summary) { this.summary = summary; }
 
@@ -85,4 +87,29 @@ public class EvoMetadata {
 
     public boolean isStale() { return stale; }
     public void setStale(boolean stale) { this.stale = stale; }
+
+    // Enhanced Getters/Setters
+    public String getArchitecturalLayer() { return architecturalLayer; }
+    public void setArchitecturalLayer(String architecturalLayer) { this.architecturalLayer = architecturalLayer; }
+
+    public String getSystemCriticality() { return systemCriticality; }
+    public void setSystemCriticality(String systemCriticality) { this.systemCriticality = systemCriticality; }
+
+    public String getMutationRisk() { return mutationRisk; }
+    public void setMutationRisk(String mutationRisk) { this.mutationRisk = mutationRisk; }
+
+    public String getEvolutionPriority() { return evolutionPriority; }
+    public void setEvolutionPriority(String evolutionPriority) { this.evolutionPriority = evolutionPriority; }
+
+    public boolean isParticipatesInCoreLoop() { return participatesInCoreLoop; }
+    public void setParticipatesInCoreLoop(boolean participatesInCoreLoop) { this.participatesInCoreLoop = participatesInCoreLoop; }
+
+    public String getCoreLoopRole() { return coreLoopRole; }
+    public void setCoreLoopRole(String coreLoopRole) { this.coreLoopRole = coreLoopRole; }
+
+    public List<String> getConcepts() { return concepts; }
+    public void setConcepts(List<String> concepts) { this.concepts = concepts; }
+
+    public List<String> getCapabilities() { return capabilities; }
+    public void setCapabilities(List<String> capabilities) { this.capabilities = capabilities; }
 }

@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "documentation",
+  "stability": "EVOLVING",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "--- Lineage persistence is achieved through a multi-layered memory system: - **IterationMemoryService:** Persists every `IterationRecord` and `TrajectoryAnalysisRecord` as JSON files in `orchestrator/memory/`. - **TrajectoryMemory:** Maintains the full `Trajectory` object, including `mutationLineage`, `fitnessHistory`, and `pressureHistory`. - **DarwinFlow Integration:** The `generateProposals` method explicitly retrieves the `lastWinner` from memory and identifies the `survivor` trajectory. - **Genetic Inheritance:** New variants created by `DarwinEngine` inherit the `lineageContext` ( ancestor's philosophy, strategy, and mutation history) and are aware of `rejectedSiblings` to prevent re-exploring failed paths. --- Darwin is not merely a parallel branch generator; it owns the **Architectural Topology**: - **Blueprint-Driven Evolution:** `DarwinEngine` generates `TrajectoryBlueprints` which define the architectural direction (e.g., \"Minimal Executable\", \"Persistent Storage\", \"Resilient/Defensive\"). - **Constraint-Based Materialization:** The `DarwinVariantSpawner` forces the LLM to materialize these specific blueprints, ensuring that the \"divergence\" is planned by the orchestrator, not just random LLM noise. - **Engineering Dimensions:** Darwin forces divergence across 9 distinct technical dimensions (Abstraction Depth, Modularity, Runtime Behavior, etc.), which creates a structured evolutionary search space. --- The `MediatedExportManager` produces a ZIP package that is significantly higher quality than a simple source dump: - **Optimized Prompting:** `PromptSynthesizer` combines the user request with repository-grounded \"Evolved Understanding\" and \"Reasoning Focus\". - **Context Distillation:** Only files selected by the Darwin evolution as \"high-signal\" are included (limited to 16 files by `ContextCurator`). - **Lineage Metadata:** The package includes `METADATA.json` (architecture inference, tech stack) and `EVOLUTION_ANALYSIS.md` (history of successful/failed s",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

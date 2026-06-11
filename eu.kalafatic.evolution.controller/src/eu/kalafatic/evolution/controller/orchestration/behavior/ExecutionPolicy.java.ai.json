@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration.behavior; import java.util.ArrayList; import java.util.List;",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration.behavior; import java.util.ArrayList; import java.util.List; public class ExecutionPolicy { public enum ExecutionMode { LOCAL, HYBRID, REMOTE, PROXY, MEDIATED } public enum SupervisionLevel { AUTO, MANUAL, HYBRID } public enum InteractionMode { CONTINUOUS, STEP, GUIDED } public enum ReasoningStrategy { ATOMIC, DARWIN, ITERATIVE, CONSERVATIVE, EXPLORATORY, ANALYTICAL } public enum WorkflowModel { TASK_ORIENTED, SELF_DEV, HYBRID, EXPORT_ONLY } public enum RepositoryMode { ISOLATED, SHARED, VIRTUAL } private ExecutionMode executionMode; private SupervisionLevel supervisionLevel; private InteractionMode interactionMode; private ReasoningStrategy reasoningStrategy; private WorkflowModel workflowModel; private RepositoryMode repositoryMode = RepositoryMode.ISOLATED; private double explorationLevel = 0.5; private double evolutionaryStrictness = 0.5; private final List<String> constraints = new ArrayList<>(); public ExecutionMode getExecutionMode() { return executionMode; }",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

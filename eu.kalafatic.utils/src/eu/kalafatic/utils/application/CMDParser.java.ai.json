@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.2,
   "importanceScore": 0.2,
-  "summary": "package eu.kalafatic.utils.application; import java.util.ArrayList; import java.util.LinkedHashMap;",
+  "summary": "package eu.kalafatic.utils.application; import java.util.ArrayList; import java.util.LinkedHashMap; import java.util.List; import java.util.Map; import java.util.StringTokenizer; public class CMDParser { private static StringTokenizer st; private static String token, key = \"app\", value = \"\"; private static List<String> args = new ArrayList<String>(); private static Map<String, Object> commandMap = new LinkedHashMap<String, Object>(); private static void parse() { switch (token.charAt(0)) { case '\"': value = getWord(st, token, \"\\"\");",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

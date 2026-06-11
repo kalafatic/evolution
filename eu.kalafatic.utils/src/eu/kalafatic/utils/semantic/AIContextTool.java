@@ -57,55 +57,34 @@ public class AIContextTool {
     private EvoMetadata parseSimpleJson(String json, String path) {
         EvoMetadata meta = new EvoMetadata();
         meta.setPath(path);
-        // Extremely basic extraction for demonstration
-        if (json.contains("\"domain\":")) {
-            meta.setDomain(extractValue(json, "domain"));
-        }
-        if (json.contains("\"purpose\":")) {
-            meta.setPurpose(extractValue(json, "purpose"));
-        }
-        if (json.contains("\"role\":")) {
-            meta.setRole(extractValue(json, "role"));
-        }
-        if (json.contains("\"stability\":")) {
-            meta.setStability(extractValue(json, "stability"));
-        }
-        if (json.contains("\"mediatedRelevanceScore\":")) {
-            meta.setMediatedRelevanceScore(extractDoubleValue(json, "mediatedRelevanceScore"));
-        }
-        if (json.contains("\"importanceScore\":")) {
-            meta.setImportanceScore(extractDoubleValue(json, "importanceScore"));
-        }
-        if (json.contains("\"summary\":")) {
-            meta.setSummary(extractValue(json, "summary"));
-        }
-        if (json.contains("\"evolutionaryNotes\":")) {
-            meta.setEvolutionaryNotes(extractValue(json, "evolutionaryNotes"));
-        }
-        if (json.contains("\"contextSelectionHints\":")) {
-            meta.setContextSelectionHints(extractListValue(json, "contextSelectionHints"));
-        }
-        if (json.contains("\"dependencyLinks\":")) {
-            meta.setDependencyLinks(extractListValue(json, "dependencyLinks"));
-        }
-        if (json.contains("\"useCases\":")) {
-            meta.setUseCases(extractListValue(json, "useCases"));
-        }
-        if (json.contains("\"keyClasses\":")) {
-            meta.setKeyClasses(extractListValue(json, "keyClasses"));
-        }
+        
+        meta.setDomain(extractValue(json, "domain"));
+        meta.setPurpose(extractValue(json, "purpose"));
+        meta.setRole(extractValue(json, "role"));
+        meta.setStability(extractValue(json, "stability"));
+        meta.setMediatedRelevanceScore(extractDoubleValue(json, "mediatedRelevanceScore"));
+        meta.setImportanceScore(extractDoubleValue(json, "importanceScore"));
+        meta.setSummary(extractValue(json, "summary"));
+        meta.setEvolutionaryNotes(extractValue(json, "evolutionaryNotes"));
+        meta.setContextSelectionHints(extractListValue(json, "contextSelectionHints"));
+        meta.setDependencyLinks(extractListValue(json, "dependencyLinks"));
+        
+        // Enhanced Genome Fields
+        meta.setArchitecturalLayer(extractValue(json, "architecturalLayer"));
+        meta.setSystemCriticality(extractValue(json, "systemCriticality"));
+        meta.setMutationRisk(extractValue(json, "mutationRisk"));
+        meta.setEvolutionPriority(extractValue(json, "evolutionPriority"));
+        meta.setParticipatesInCoreLoop(extractBooleanValue(json, "participatesInCoreLoop"));
+        meta.setCoreLoopRole(extractValue(json, "coreLoopRole"));
+        meta.setConcepts(extractListValue(json, "concepts"));
+        meta.setCapabilities(extractListValue(json, "capabilities"));
+        
         return meta;
     }
 
     private String extractValue(String json, String key) {
-        try {
-            int start = json.indexOf("\"" + key + "\":") + key.length() + 3;
-            int end = json.indexOf("\"", start + 1);
-            if (start > 0 && end > start) {
-                return json.substring(start + 1, end);
-            }
-        } catch (Exception e) {}
-        return "unknown";
+        String val = extractRawValue(json, key);
+        return val != null ? val : "";
     }
 
     private double extractDoubleValue(String json, String key) {
@@ -116,19 +95,31 @@ public class AIContextTool {
         return 0.0;
     }
 
+    private boolean extractBooleanValue(String json, String key) {
+        try {
+            String val = extractRawValue(json, key);
+            if (val != null) return Boolean.parseBoolean(val.trim());
+        } catch (Exception e) {}
+        return false;
+    }
+
     private List<String> extractListValue(String json, String key) {
         List<String> list = new ArrayList<>();
         try {
-            int start = json.indexOf("\"" + key + "\":") + key.length() + 3;
+            int keyIndex = json.indexOf("\"" + key + "\":");
+            if (keyIndex == -1) return list;
+            
+            int start = keyIndex + key.length() + 3;
             int listStart = json.indexOf("[", start);
             int listEnd = json.indexOf("]", listStart);
             if (listStart >= 0 && listEnd > listStart) {
                 String rawList = json.substring(listStart + 1, listEnd);
+                if (rawList.trim().isEmpty()) return list;
                 String[] items = rawList.split(",");
                 for (String item : items) {
                     item = item.trim();
                     if (item.startsWith("\"") && item.endsWith("\"")) {
-                        list.add(item.substring(1, item.length() - 1));
+                        list.add(item.substring(1, item.length() - 1).replace("\\\"", "\""));
                     } else if (!item.isEmpty()) {
                         list.add(item);
                     }
@@ -147,7 +138,6 @@ public class AIContextTool {
             String remaining = json.substring(start).trim();
 
             if (remaining.startsWith("\"")) {
-                // String value - find terminating quote not preceded by escape
                 int end = -1;
                 for (int i = 1; i < remaining.length(); i++) {
                     if (remaining.charAt(i) == '\"' && remaining.charAt(i-1) != '\\') {
@@ -155,9 +145,8 @@ public class AIContextTool {
                         break;
                     }
                 }
-                if (end != -1) return remaining.substring(1, end);
+                if (end != -1) return remaining.substring(1, end).replace("\\\"", "\"");
             } else {
-                // Numeric or Boolean value - find next comma or closing brace
                 int endComma = remaining.indexOf(",");
                 int endBrace = remaining.indexOf("}");
                 int end = (endComma != -1 && endBrace != -1) ? Math.min(endComma, endBrace) : (endComma != -1 ? endComma : endBrace);
@@ -171,27 +160,38 @@ public class AIContextTool {
     private String serializeSimpleJson(EvoMetadata metadata) {
         StringBuilder sb = new StringBuilder();
         sb.append("{\n");
-        sb.append("  \"domain\": \"").append(metadata.getDomain() != null ? metadata.getDomain() : "").append("\",\n");
-        sb.append("  \"purpose\": \"").append(metadata.getPurpose() != null ? metadata.getPurpose() : "").append("\",\n");
-        sb.append("  \"role\": \"").append(metadata.getRole() != null ? metadata.getRole() : "").append("\",\n");
-        sb.append("  \"stability\": \"").append(metadata.getStability() != null ? metadata.getStability() : "").append("\",\n");
+        sb.append("  \"domain\": \"").append(esc(metadata.getDomain())).append("\",\n");
+        sb.append("  \"purpose\": \"").append(esc(metadata.getPurpose())).append("\",\n");
+        sb.append("  \"role\": \"").append(esc(metadata.getRole())).append("\",\n");
+        sb.append("  \"stability\": \"").append(esc(metadata.getStability())).append("\",\n");
         sb.append("  \"mediatedRelevanceScore\": ").append(metadata.getMediatedRelevanceScore()).append(",\n");
         sb.append("  \"importanceScore\": ").append(metadata.getImportanceScore()).append(",\n");
-        sb.append("  \"summary\": \"").append(metadata.getSummary() != null ? metadata.getSummary().replace("\"", "\\\"") : "").append("\",\n");
-        sb.append("  \"evolutionaryNotes\": \"").append(metadata.getEvolutionaryNotes() != null ? metadata.getEvolutionaryNotes().replace("\"", "\\\"") : "").append("\",\n");
+        sb.append("  \"architecturalLayer\": \"").append(esc(metadata.getArchitecturalLayer())).append("\",\n");
+        sb.append("  \"systemCriticality\": \"").append(esc(metadata.getSystemCriticality())).append("\",\n");
+        sb.append("  \"mutationRisk\": \"").append(esc(metadata.getMutationRisk())).append("\",\n");
+        sb.append("  \"evolutionPriority\": \"").append(esc(metadata.getEvolutionPriority())).append("\",\n");
+        sb.append("  \"participatesInCoreLoop\": ").append(metadata.isParticipatesInCoreLoop()).append(",\n");
+        sb.append("  \"coreLoopRole\": \"").append(esc(metadata.getCoreLoopRole())).append("\",\n");
+        sb.append("  \"concepts\": ").append(serializeList(metadata.getConcepts())).append(",\n");
+        sb.append("  \"capabilities\": ").append(serializeList(metadata.getCapabilities())).append(",\n");
+        sb.append("  \"summary\": \"").append(esc(metadata.getSummary())).append("\",\n");
+        sb.append("  \"evolutionaryNotes\": \"").append(esc(metadata.getEvolutionaryNotes())).append("\",\n");
         sb.append("  \"contextSelectionHints\": ").append(serializeList(metadata.getContextSelectionHints())).append(",\n");
-        sb.append("  \"dependencyLinks\": ").append(serializeList(metadata.getDependencyLinks())).append(",\n");
-        sb.append("  \"useCases\": ").append(serializeList(metadata.getUseCases())).append(",\n");
-        sb.append("  \"keyClasses\": ").append(serializeList(metadata.getKeyClasses())).append("\n");
+        sb.append("  \"dependencyLinks\": ").append(serializeList(metadata.getDependencyLinks())).append("\n");
         sb.append("}");
         return sb.toString();
+    }
+
+    private String esc(String val) {
+        if (val == null) return "";
+        return val.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
     private String serializeList(List<String> list) {
         if (list == null || list.isEmpty()) return "[]";
         StringBuilder sb = new StringBuilder("[");
         for (int i = 0; i < list.size(); i++) {
-            sb.append("\"").append(list.get(i)).append("\"");
+            sb.append("\"").append(esc(list.get(i))).append("\"");
             if (i < list.size() - 1) sb.append(", ");
         }
         sb.append("]");

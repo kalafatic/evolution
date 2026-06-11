@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "window.ChatApp = window.ChatApp || {}; window.ChatApp.Utils = { escapeHtml: function(unsafe) {",
+  "summary": "window.ChatApp = window.ChatApp || {}; window.ChatApp.Utils = { escapeHtml: function(unsafe) { if (typeof unsafe !== 'string') return String(unsafe); return unsafe .replace(/&/g, \"&amp;\") .replace(/</g, \"&lt;\") .replace(/>/g, \"&gt;\") .replace(/\"/g, \"&quot;\") .replace(/'/g, \"&#039;\"); }, escapeJs: function(text) { if (!text) return \"\"; return text.replace(/\\/g, '\\\\') .replace(/'/g, \"\\'\") .replace(/\"/g, \"&quot;\") .replace(/`/g, \"\\`\") .replace(/\n/g, '\\n') .replace(/\r/g, ''); },",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

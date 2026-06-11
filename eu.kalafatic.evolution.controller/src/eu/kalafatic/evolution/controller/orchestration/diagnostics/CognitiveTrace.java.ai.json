@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration.diagnostics; import java.util.ArrayList; import java.util.Collections;",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration.diagnostics; import java.util.ArrayList; import java.util.Collections; import java.util.HashMap; import java.util.List; import java.util.Map; import org.json.JSONObject; import org.json.JSONArray; import eu.kalafatic.evolution.controller.trajectory.EvaluationSignal; import eu.kalafatic.evolution.controller.orchestration.capability.ICapability; import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityStatus; import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityContext; import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityException; import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityHealth; import eu.kalafatic.evolution.controller.orchestration.capability.contracts.ITraceContract; public final class CognitiveTrace implements ICapability, ITraceContract { private final String traceId; private final String iterationId; private final String lineageId; private final List<CausalNode> causalChain = new ArrayList<>();",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

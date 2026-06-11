@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "trajectory",
+  "stability": "EVOLVING",
+  "mediatedRelevanceScore": 0.9,
+  "importanceScore": 0.9,
+  "summary": "package eu.kalafatic.evolution.controller.trajectory; import eu.kalafatic.evolution.controller.orchestration.TaskContext; import eu.kalafatic.evolution.controller.orchestration.EvolutionPhase; import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionaryPressureVector; public interface IStabilityPolicy { double calculateStability(Trajectory trajectory, TaskContext context, EvolutionaryPressureVector pressure); boolean isConverged(Trajectory trajectory, TaskContext context, EvolutionaryPressureVector pressure); boolean shouldProgress(EvolutionPhase current, Trajectory trajectory, TaskContext context, EvolutionaryPressureVector pressure); }",
+  "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
+  "contextSelectionHints": ["mandatory_context"],
+  "dependencyLinks": []
+}

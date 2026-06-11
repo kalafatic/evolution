@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.2,
   "importanceScore": 0.2,
-  "summary": "package eu.kalafatic.utils.semantic; import java.util.ArrayList; import java.util.HashMap;",
+  "summary": "package eu.kalafatic.utils.semantic; import java.util.ArrayList; import java.util.HashMap; import java.util.List; import java.util.Map; public class EvoMetadata { private String id; private String path; private String domain; private String role; private String purpose; private List<String> inputs = new ArrayList<>(); private List<String> outputs = new ArrayList<>(); private String stability = \"EVOLVING\"; private String evolutionaryImpact = \"MEDIUM\"; private double mediatedRelevanceScore = 0.0; private double importanceScore = 0.0; private List<String> contextSelectionHints = new ArrayList<>(); private List<String> dependencyLinks = new ArrayList<>(); private String summary;",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

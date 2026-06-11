@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.controller.agents; import org.json.JSONObject; import eu.kalafatic.evolution.controller.orchestration.ChangeUnit;",
+  "summary": "package eu.kalafatic.evolution.controller.agents; import org.json.JSONObject; import eu.kalafatic.evolution.controller.orchestration.ChangeUnit; import eu.kalafatic.evolution.controller.orchestration.TaskContext; public class ValidatorAgent extends BaseAiAgent { private final ReviewerAgent reviewer; private final ConstraintAgent constraintAgent; public ValidatorAgent(eu.kalafatic.evolution.controller.orchestration.SessionContainer container) { super(\"Validator\", \"Validator\", container); this.reviewer = new ReviewerAgent(container); this.constraintAgent = new ConstraintAgent(container); } @Override public void setAiService(eu.kalafatic.evolution.controller.orchestration.AiService aiService) { super.setAiService(aiService); reviewer.setAiService(aiService); constraintAgent.setAiService(aiService); } @Override protected String getAgentInstructions() {",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

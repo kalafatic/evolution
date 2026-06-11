@@ -13,12 +13,14 @@ import org.eclipse.emf.ecore.EObject;
  * The following features are supported:
  * </p>
  * <ul>
- *   <li>{@link eu.kalafatic.evolution.model.orchestration.NetworkEntry#getAddress <em>Address</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.NetworkEntry#getHost <em>Host</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.NetworkEntry#getAddress <em>Address</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.NetworkEntry#getPort <em>Port</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.NetworkEntry#getPath <em>Path</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.NetworkEntry#getLogin <em>Login</em>}</li>
- *   <li>{@link eu.kalafatic.evolution.model.orchestration.NetworkEntry#getNote <em>Note</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.NetworkEntry#getPassword <em>Password</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.NetworkEntry#getType <em>Type</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.NetworkEntry#getNote <em>Note</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getNetworkEntry()
@@ -26,28 +28,6 @@ import org.eclipse.emf.ecore.EObject;
  * @generated
  */
 public interface NetworkEntry extends EObject {
-	/**
-	 * Returns the value of the '<em><b>Address</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Address</em>' attribute.
-	 * @see #setAddress(String)
-	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getNetworkEntry_Address()
-	 * @model
-	 * @generated
-	 */
-	String getAddress();
-
-	/**
-	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.NetworkEntry#getAddress <em>Address</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @param value the new value of the '<em>Address</em>' attribute.
-	 * @see #getAddress()
-	 * @generated
-	 */
-	void setAddress(String value);
-
 	/**
 	 * Returns the value of the '<em><b>Host</b></em>' attribute.
 	 * <!-- begin-user-doc -->
@@ -69,6 +49,28 @@ public interface NetworkEntry extends EObject {
 	 * @generated
 	 */
 	void setHost(String value);
+
+	/**
+	 * Returns the value of the '<em><b>Address</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Address</em>' attribute.
+	 * @see #setAddress(String)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getNetworkEntry_Address()
+	 * @model
+	 * @generated
+	 */
+	String getAddress();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.NetworkEntry#getAddress <em>Address</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Address</em>' attribute.
+	 * @see #getAddress()
+	 * @generated
+	 */
+	void setAddress(String value);
 
 	/**
 	 * Returns the value of the '<em><b>Port</b></em>' attribute.
@@ -93,6 +95,28 @@ public interface NetworkEntry extends EObject {
 	void setPort(int value);
 
 	/**
+	 * Returns the value of the '<em><b>Path</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Path</em>' attribute.
+	 * @see #setPath(String)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getNetworkEntry_Path()
+	 * @model
+	 * @generated
+	 */
+	String getPath();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.NetworkEntry#getPath <em>Path</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Path</em>' attribute.
+	 * @see #getPath()
+	 * @generated
+	 */
+	void setPath(String value);
+
+	/**
 	 * Returns the value of the '<em><b>Login</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -115,26 +139,26 @@ public interface NetworkEntry extends EObject {
 	void setLogin(String value);
 
 	/**
-	 * Returns the value of the '<em><b>Note</b></em>' attribute.
+	 * Returns the value of the '<em><b>Password</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Note</em>' attribute.
-	 * @see #setNote(String)
-	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getNetworkEntry_Note()
+	 * @return the value of the '<em>Password</em>' attribute.
+	 * @see #setPassword(String)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getNetworkEntry_Password()
 	 * @model
 	 * @generated
 	 */
-	String getNote();
+	String getPassword();
 
 	/**
-	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.NetworkEntry#getNote <em>Note</em>}' attribute.
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.NetworkEntry#getPassword <em>Password</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @param value the new value of the '<em>Note</em>' attribute.
-	 * @see #getNote()
+	 * @param value the new value of the '<em>Password</em>' attribute.
+	 * @see #getPassword()
 	 * @generated
 	 */
-	void setNote(String value);
+	void setPassword(String value);
 
 	/**
 	 * Returns the value of the '<em><b>Type</b></em>' attribute.
@@ -157,5 +181,27 @@ public interface NetworkEntry extends EObject {
 	 * @generated
 	 */
 	void setType(String value);
+
+	/**
+	 * Returns the value of the '<em><b>Note</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Note</em>' attribute.
+	 * @see #setNote(String)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getNetworkEntry_Note()
+	 * @model
+	 * @generated
+	 */
+	String getNote();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.NetworkEntry#getNote <em>Note</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Note</em>' attribute.
+	 * @see #getNote()
+	 * @generated
+	 */
+	void setNote(String value);
 
 } // NetworkEntry

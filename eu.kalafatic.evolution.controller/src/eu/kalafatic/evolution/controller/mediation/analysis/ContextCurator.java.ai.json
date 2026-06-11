@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.mediation.analysis; import java.util.ArrayList; import java.util.HashSet;",
+  "summary": "package eu.kalafatic.evolution.controller.mediation.analysis; import java.util.ArrayList; import java.util.HashMap; import java.util.HashSet; import java.util.List; import java.util.Map; import java.util.Set; import java.util.stream.Collectors; import eu.kalafatic.evolution.controller.mediation.model.FileDescriptor; import eu.kalafatic.evolution.controller.mediation.model.SemanticEdge; import eu.kalafatic.evolution.controller.mediation.model.SemanticNode; import eu.kalafatic.evolution.controller.mediation.model.TargetDescriptor; import eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot; public class ContextCurator { public List<String> curate(TargetDescriptor target) { return target.getFiles().stream() .filter(f -> f.getTags().contains(\"Executory\") || f.getTags().contains(\"Annotated\")) .map(f -> f.getPath()) .distinct() .collect(Collectors.toList());",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

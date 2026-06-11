@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "<?xml version=\"1.0\" encoding=\"UTF-8\"?> <?eclipse version=\"3.4\"?> <plugin>",
+  "summary": "<?xml version=\"1.0\" encoding=\"UTF-8\"?> <?eclipse version=\"3.4\"?> <plugin> <extension id=\"eu.kalafatic.evolution.view.product\" point=\"org.eclipse.core.runtime.products\"> <product name=\"AI Evolution\" application=\"eu.kalafatic.evolution.view.application.Application\"> <property name=\"windowImages\" value=\"icons/eclipse16.png,icons/eclipse32.png,icons/eclipse48.png,icons/eclipse64.png, icons/eclipse128.png,icons/eclipse256.png\"> </property> <property name=\"appName\" value=\"AI Evolution\"> </property> <property name=\"preferenceCustomization\" value=\"plugin_customization.ini\">",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration; import java.util.List; public class FinalResponse {",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration; import java.util.List; public class FinalResponse { private final String summary; private final List<String> proposals; private final List<FileReference> files; private final boolean success; private final String selectedVariantId; private final String executionSummary; private final ExecutionMetrics metrics; public FinalResponse(String summary, List<String> proposals, List<FileReference> files, boolean success, String selectedVariantId, String executionSummary, ExecutionMetrics metrics) { this.summary = summary; this.proposals = proposals; this.files = files; this.success = success; this.selectedVariantId = selectedVariantId; this.executionSummary = executionSummary; this.metrics = metrics;",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "documentation",
+  "stability": "EVOLVING",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "ECOS is an experimental platform for evolutionary cognition. The platform is designed around a single universal principle: The system is not fundamentally a coding assistant, prompt generator, autonomous agent, workflow engine, or self-improving application. Those are merely current manifestations of the same underlying evolutionary process. The true purpose of ECOS is to provide a general framework capable of evolving arbitrary artifacts through iterative selection and refinement. --- All cognition is expressed through: Every major capability must ultimately be representable using these primitives. --- The Evolution Kernel is the central cognition engine. Responsibilities:",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

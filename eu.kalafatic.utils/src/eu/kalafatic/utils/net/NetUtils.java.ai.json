@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.2,
   "importanceScore": 0.2,
-  "summary": "package eu.kalafatic.utils.net; import java.io.BufferedReader; import java.io.InputStreamReader;",
+  "summary": "package eu.kalafatic.utils.net; import java.io.BufferedReader; import java.io.InputStreamReader; import java.net.Inet4Address; import java.net.Inet6Address; import java.net.InetAddress; import java.net.UnknownHostException; import java.util.ArrayList; import java.util.HashSet; import java.util.List; import java.util.Set; import java.util.StringTokenizer; import java.util.regex.Matcher; import eu.kalafatic.utils.constants.ERegex; public class NetUtils { public static Set<Object> getGateway() { Set<Object> set = new HashSet<Object>(); try { Process result = Runtime.getRuntime().exec(\"netstat -rn\"); BufferedReader output = new BufferedReader(new InputStreamReader(result.getInputStream()));",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

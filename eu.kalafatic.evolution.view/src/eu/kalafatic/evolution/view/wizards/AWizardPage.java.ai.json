@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.4,
   "importanceScore": 0.4,
-  "summary": "package eu.kalafatic.evolution.view.wizards; import org.eclipse.jface.wizard.WizardPage; import eu.kalafatic.evolution.model.orchestration.Orchestrator;",
+  "summary": "package eu.kalafatic.evolution.view.wizards; import org.eclipse.jface.wizard.WizardPage; import eu.kalafatic.evolution.model.orchestration.Orchestrator; public abstract class AWizardPage extends WizardPage { protected Orchestrator orchestrator; protected AWizardPage(String pageName) { super(pageName); } public void setOrchestrator(Orchestrator orchestrator) { this.orchestrator = orchestrator; } }",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

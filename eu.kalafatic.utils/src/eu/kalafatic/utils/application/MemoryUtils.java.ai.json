@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.2,
   "importanceScore": 0.2,
-  "summary": "package eu.kalafatic.utils.application; import eu.kalafatic.utils.constants.FConstants; import eu.kalafatic.utils.preferences.ECorePreferences;",
+  "summary": "package eu.kalafatic.utils.application; import eu.kalafatic.utils.constants.FConstants; import eu.kalafatic.utils.preferences.ECorePreferences; public class MemoryUtils { private long heapSize; public static final MemoryUtils INSTANCE = new MemoryUtils(); private int maxAppMemory; private long heapSizeMB; public float getMemoryPerformance() { heapSize = Runtime.getRuntime().totalMemory(); maxAppMemory = FConstants.PREFERENCES.getInt(ECorePreferences.MAX_APP_MEMORY.getName(), (Integer) ECorePreferences.MAX_APP_MEMORY.getDef()); heapSizeMB = heapSize / (1024 * 1024); float onePercent = (maxAppMemory * 100) / 100;",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

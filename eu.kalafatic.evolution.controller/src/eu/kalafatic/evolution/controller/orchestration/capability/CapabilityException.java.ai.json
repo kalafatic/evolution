@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration.capability; public class CapabilityException extends Exception { public CapabilityException(String message) {",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration.capability; public class CapabilityException extends Exception { public CapabilityException(String message) { super(message); } public CapabilityException(String message, Throwable cause) { super(message, cause); } }",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

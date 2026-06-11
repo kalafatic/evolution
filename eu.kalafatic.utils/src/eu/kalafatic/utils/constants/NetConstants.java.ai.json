@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.2,
   "importanceScore": 0.2,
-  "summary": "package eu.kalafatic.utils.constants; public class NetConstants { public static final int PREFIX_32 = 0xFFFFFFFF;",
+  "summary": "package eu.kalafatic.utils.constants; public class NetConstants { public static final int PREFIX_32 = 0xFFFFFFFF; }",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

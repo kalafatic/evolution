@@ -41,6 +41,7 @@ import org.eclipse.emf.ecore.util.InternalEList;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl#isStepMode <em>Step Mode</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl#getTargetPath <em>Target Path</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl#getTargetType <em>Target Type</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl#getOutputPath <em>Output Path</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl#isAutoApprove <em>Auto Approve</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl#getAiMode <em>Ai Mode</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatSessionImpl#getLocalModel <em>Local Model</em>}</li>
@@ -170,7 +171,7 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 	 * @generated
 	 * @ordered
 	 */
-	protected static final int MAX_ITERATIONS_EDEFAULT = 4;
+	protected static final int MAX_ITERATIONS_EDEFAULT = 1;
 
 	/**
 	 * The cached value of the '{@link #getMaxIterations() <em>Max Iterations</em>}' attribute.
@@ -381,144 +382,6 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 	 * @ordered
 	 */
 	protected int expansion = EXPANSION_EDEFAULT;
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public int getExpansion() {
-		return expansion;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setExpansion(int newExpansion) {
-		int oldExpansion = expansion;
-		expansion = newExpansion;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_SESSION__EXPANSION, oldExpansion, expansion));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public boolean isAutoApprove() {
-		return autoApprove;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setAutoApprove(boolean newAutoApprove) {
-		boolean oldAutoApprove = autoApprove;
-		autoApprove = newAutoApprove;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_SESSION__AUTO_APPROVE, oldAutoApprove, autoApprove));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public AiMode getAiMode() {
-		return aiMode;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setAiMode(AiMode newAiMode) {
-		AiMode oldAiMode = aiMode;
-		aiMode = newAiMode == null ? AI_MODE_EDEFAULT : newAiMode;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_SESSION__AI_MODE, oldAiMode, aiMode));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public String getLocalModel() {
-		return localModel;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setLocalModel(String newLocalModel) {
-		String oldLocalModel = localModel;
-		localModel = newLocalModel;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_SESSION__LOCAL_MODEL, oldLocalModel, localModel));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public String getRemoteModel() {
-		return remoteModel;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setRemoteModel(String newRemoteModel) {
-		String oldRemoteModel = remoteModel;
-		remoteModel = newRemoteModel;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_SESSION__REMOTE_MODEL, oldRemoteModel, remoteModel));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public long getBitState() {
-		return bitState;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setBitState(long newBitState) {
-		long oldBitState = bitState;
-		bitState = newBitState;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_SESSION__BIT_STATE, oldBitState, bitState));
-	}
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -780,6 +643,144 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 		outputPath = newOutputPath;
 		if (eNotificationRequired())
 			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_SESSION__OUTPUT_PATH, oldOutputPath, outputPath));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public boolean isAutoApprove() {
+		return autoApprove;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setAutoApprove(boolean newAutoApprove) {
+		boolean oldAutoApprove = autoApprove;
+		autoApprove = newAutoApprove;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_SESSION__AUTO_APPROVE, oldAutoApprove, autoApprove));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public AiMode getAiMode() {
+		return aiMode;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setAiMode(AiMode newAiMode) {
+		AiMode oldAiMode = aiMode;
+		aiMode = newAiMode == null ? AI_MODE_EDEFAULT : newAiMode;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_SESSION__AI_MODE, oldAiMode, aiMode));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getLocalModel() {
+		return localModel;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setLocalModel(String newLocalModel) {
+		String oldLocalModel = localModel;
+		localModel = newLocalModel;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_SESSION__LOCAL_MODEL, oldLocalModel, localModel));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getRemoteModel() {
+		return remoteModel;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setRemoteModel(String newRemoteModel) {
+		String oldRemoteModel = remoteModel;
+		remoteModel = newRemoteModel;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_SESSION__REMOTE_MODEL, oldRemoteModel, remoteModel));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public long getBitState() {
+		return bitState;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setBitState(long newBitState) {
+		long oldBitState = bitState;
+		bitState = newBitState;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_SESSION__BIT_STATE, oldBitState, bitState));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public int getExpansion() {
+		return expansion;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setExpansion(int newExpansion) {
+		int oldExpansion = expansion;
+		expansion = newExpansion;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_SESSION__EXPANSION, oldExpansion, expansion));
 	}
 
 	/**

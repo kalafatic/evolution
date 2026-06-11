@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.7,
   "importanceScore": 0.7,
-  "summary": "package eu.kalafatic.utils.model; import java.io.Serializable; import java.util.HashMap;",
+  "summary": "package eu.kalafatic.utils.model; import java.io.Serializable; import java.util.HashMap; import java.util.HashSet; import java.util.List; import java.util.Map; import java.util.Set; import eu.kalafatic.utils.interfaces.ESyncType; @SuppressWarnings({ \"serial\", \"rawtypes\" }) public class SyncObject implements Serializable { public String name; public Object data; public ESyncType type; public Map<ESyncType, List> to = new HashMap<ESyncType, List>(); public int FLAGS = 0; public Set<String> note = new HashSet<String>(); public Map<Object, Object> parameters = new HashMap<Object, Object>();",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

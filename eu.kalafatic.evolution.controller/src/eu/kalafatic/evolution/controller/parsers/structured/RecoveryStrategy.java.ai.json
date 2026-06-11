@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "unknown",
+  "stability": "EVOLVING",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "package eu.kalafatic.evolution.controller.parsers.structured; import org.json.JSONObject; import eu.kalafatic.evolution.controller.orchestration.TaskContext; import java.util.List; import java.util.Map; public class RecoveryStrategy { public enum RecoveryMode { RETRY, PARTIAL_FALLBACK, SAFE_DETERMINISTIC_FALLBACK, FAIL } public JSONObject recover(String rawResponse, List<String> errors, TaskContext context, Map<String, Class<?>> schema, int attempt) { context.consoleLog(\"[RECOVERY] Attempting recovery for structured response errors: \" + String.join(\", \", errors)); if (attempt < 2 && context.getAiService() != null) { StructuredResponsePipeline pipeline = new StructuredResponsePipeline(); JSONObject retried = pipeline.retry(rawResponse, errors, context, schema, attempt); if (retried != null) return retried; } JSONObject fallback = new JSONObject();",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

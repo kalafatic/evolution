@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration; import java.util.ArrayList; import java.io.File;",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration; import java.util.ArrayList; import java.util.List; import java.util.Map; import eu.kalafatic.evolution.controller.agents.AgentFactory; import eu.kalafatic.evolution.controller.agents.AnalyticAgent; import eu.kalafatic.evolution.controller.agents.BaseAiAgent; import eu.kalafatic.evolution.controller.agents.IAgent; import eu.kalafatic.evolution.controller.agents.ProposalConsolidatorAgent; import eu.kalafatic.evolution.controller.agents.RepairAgent; import eu.kalafatic.evolution.controller.agents.ValidatorAgent; import eu.kalafatic.evolution.controller.orchestration.util.CodeExtractor; import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants; import eu.kalafatic.evolution.controller.tools.ToolFactory; import eu.kalafatic.evolution.model.orchestration.Task; public class EvolutionOrchestrator implements IOrchestrator { private static final int MAX_RETRIES = EvolutionConstants.MAX_TASK_RETRIES; private AnalyticAgent analyticAgent; private ValidatorAgent validator; private RepairAgent repairAgent;",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

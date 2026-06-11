@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration.intent; import java.util.ArrayList; import java.util.List;",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration.intent; import java.util.ArrayList; import java.util.List; public class AtomicIntentAnalysis { private boolean atomic; private double confidence; private boolean deterministic; @Deprecated private boolean requiresPlanning; private boolean multiStep; private EvolutionaryComplexityVector complexityVector = new EvolutionaryComplexityVector(); private String targetArtifact; private String artifactType; private List<String> extractedTargets = new ArrayList<>(); private List<String> signals = new ArrayList<>(); private String reason; public boolean isAtomic() { return atomic; } public void setAtomic(boolean atomic) {",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

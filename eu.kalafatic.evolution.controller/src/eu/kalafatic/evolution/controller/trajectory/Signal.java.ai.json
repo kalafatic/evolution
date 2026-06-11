@@ -5,8 +5,8 @@
   "stability": "",
   "mediatedRelevanceScore": 0.9,
   "importanceScore": 0.9,
-  "summary": "package eu.kalafatic.evolution.controller.trajectory; public class Signal { public enum SignalType { SCALAR, CATEGORICAL, TREND, COMPOSITE }",
+  "summary": "package eu.kalafatic.evolution.controller.trajectory; public class Signal { public enum SignalType { SCALAR, CATEGORICAL, TREND, COMPOSITE } public enum Trend { INCREASING, STABILIZING, COLLAPSING, STABLE } private final String name; private final SignalType type; private Object value; private Trend trend = Trend.STABLE; private long lastUpdate; public Signal(String name, SignalType type, Object initialValue) { this.name = name; this.type = type; this.value = initialValue; this.lastUpdate = System.currentTimeMillis(); } public String getName() { return name; } public SignalType getType() { return type; } public Object getValue() { return value; } public Trend getTrend() { return trend; } public long getLastUpdate() { return lastUpdate; }",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

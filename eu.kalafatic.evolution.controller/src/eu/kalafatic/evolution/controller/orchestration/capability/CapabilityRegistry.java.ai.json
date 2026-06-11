@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration.capability; import java.util.ArrayList; import java.util.Collections;",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration.capability; import java.util.ArrayList; import java.util.Collections; import java.util.HashMap; import java.util.List; import java.util.Map; import java.util.stream.Collectors; public class CapabilityRegistry { private final Map<String, ICapability> capabilities = new HashMap<>(); public CapabilityRegistry() {} public synchronized void register(ICapability capability) throws CapabilityException { if (capabilities.containsKey(capability.getCapabilityId())) { return; // Already registered } capability.initialize(new CapabilityContext()); capabilities.put(capability.getCapabilityId(), capability); } public synchronized void startAll() throws CapabilityException { for (ICapability capability : capabilities.values()) { if (capability.getStatus() == CapabilityStatus.INITIALIZED) {",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

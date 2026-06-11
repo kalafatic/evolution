@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.controller.workflow; import java.io.*; import java.nio.charset.StandardCharsets;",
+  "summary": "package eu.kalafatic.evolution.controller.workflow; import java.io.*; import java.nio.charset.StandardCharsets; import java.nio.file.*; import java.util.List; import java.util.zip.ZipEntry; import java.util.zip.ZipOutputStream; public class MediatedExportManager { public File createExportPackage(String sessionId, String prompt, List<String> selectedPaths, File projectRoot, String outputPath, String metadataJson, String historyAnalysis, String architectureSummary, String dependencies, String executionInstructions) throws IOException { return createExportPackage(sessionId, prompt, selectedPaths, projectRoot, outputPath, metadataJson, historyAnalysis, architectureSummary, dependencies, executionInstructions, null); } public File createExportPackage(String sessionId, String prompt, List<String> selectedPaths, File projectRoot, String outputPath, String metadataJson, String historyAnalysis, String architectureSummary, String dependencies, String executionInstructions, String realityModelJson) throws IOException { String fileName = \"mediated_export_\" + sessionId + \"_\" + System.currentTimeMillis() + \".zip\"; File targetDir = projectRoot; if (outputPath != null && !outputPath.isEmpty()) { targetDir = new File(outputPath); if (!targetDir.exists()) { targetDir.mkdirs(); } }",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

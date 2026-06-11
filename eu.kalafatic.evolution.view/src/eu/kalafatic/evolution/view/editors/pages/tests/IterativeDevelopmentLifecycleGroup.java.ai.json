@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.4,
   "importanceScore": 0.4,
-  "summary": "package eu.kalafatic.evolution.view.editors.pages.tests; import org.eclipse.swt.SWT; import org.eclipse.swt.browser.Browser;",
+  "summary": "package eu.kalafatic.evolution.view.editors.pages.tests; import org.eclipse.swt.SWT; import org.eclipse.swt.browser.Browser; import org.eclipse.swt.layout.GridData; import org.eclipse.swt.layout.GridLayout; import org.eclipse.swt.widgets.Button; import org.eclipse.swt.widgets.Composite; import org.eclipse.ui.forms.widgets.FormToolkit; import eu.kalafatic.evolution.view.editors.pages.TestsPage; import eu.kalafatic.utils.factories.GUIFactory; import eu.kalafatic.evolution.model.orchestration.Orchestrator; import eu.kalafatic.evolution.view.editors.MultiPageEditor; import eu.kalafatic.evolution.view.editors.pages.AEvoGroup; public class IterativeDevelopmentLifecycleGroup extends AEvoGroup { private Browser iterativeBrowser; private Button runBtn; private TestsPage page; public IterativeDevelopmentLifecycleGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, TestsPage page) { super(editor, orchestrator); this.page = page;",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

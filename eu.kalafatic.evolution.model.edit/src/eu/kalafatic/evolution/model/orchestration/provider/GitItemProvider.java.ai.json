@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.model.orchestration.provider; import eu.kalafatic.evolution.model.orchestration.Git; import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;",
+  "summary": "package eu.kalafatic.evolution.model.orchestration.provider; import eu.kalafatic.evolution.model.orchestration.Git; import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage; import java.util.Collection; import java.util.List; import org.eclipse.emf.common.notify.AdapterFactory; import org.eclipse.emf.common.notify.Notification; import org.eclipse.emf.common.util.ResourceLocator; import org.eclipse.emf.edit.provider.ComposeableAdapterFactory; import org.eclipse.emf.edit.provider.IEditingDomainItemProvider; import org.eclipse.emf.edit.provider.IItemLabelProvider; import org.eclipse.emf.edit.provider.IItemPropertyDescriptor; import org.eclipse.emf.edit.provider.IItemPropertySource; import org.eclipse.emf.edit.provider.IStructuredItemContentProvider; import org.eclipse.emf.edit.provider.ITreeItemContentProvider; import org.eclipse.emf.edit.provider.ItemPropertyDescriptor; import org.eclipse.emf.edit.provider.ItemProviderAdapter; import org.eclipse.emf.edit.provider.ViewerNotification; public class GitItemProvider extends ItemProviderAdapter",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

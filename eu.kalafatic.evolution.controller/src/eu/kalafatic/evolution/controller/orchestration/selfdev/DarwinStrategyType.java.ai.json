@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "orchestration",
+  "stability": "STABLE",
+  "mediatedRelevanceScore": 1.0,
+  "importanceScore": 1.0,
+  "summary": "package eu.kalafatic.evolution.controller.orchestration.selfdev; public enum DarwinStrategyType { PROBABLE_SURVIVOR, PHILOSOPHY_MUTATION, MAXIMAL_DIVERGENCE, STABILIZATION_RECOVERY, ARCHITECTURE_MAPPING, DEPENDENCY_EXPLORATION, REFACTOR_HOTSPOT_ANALYSIS, CONTEXT_REDUCTION }",
+  "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
+  "contextSelectionHints": ["mandatory_context"],
+  "dependencyLinks": []
+}

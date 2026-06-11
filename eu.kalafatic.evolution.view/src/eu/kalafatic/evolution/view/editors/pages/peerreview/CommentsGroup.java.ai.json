@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.4,
   "importanceScore": 0.4,
-  "summary": "package eu.kalafatic.evolution.view.editors.pages.peerreview; import java.io.File; import org.eclipse.core.resources.IProject;",
+  "summary": "package eu.kalafatic.evolution.view.editors.pages.peerreview; import java.io.File; import org.eclipse.core.resources.IProject; import org.eclipse.jface.dialogs.MessageDialog; import org.eclipse.swt.SWT; import org.eclipse.swt.layout.GridData; import org.eclipse.swt.layout.GridLayout; import org.eclipse.swt.widgets.Button; import org.eclipse.swt.widgets.Composite; import org.eclipse.swt.widgets.Label; import org.eclipse.swt.widgets.Text; import org.eclipse.ui.IFileEditorInput; import org.eclipse.ui.forms.widgets.FormToolkit; import eu.kalafatic.evolution.controller.review.service.PeerReviewService; import eu.kalafatic.evolution.model.orchestration.Orchestrator; import eu.kalafatic.evolution.model.orchestration.ReviewSession; import eu.kalafatic.evolution.view.editors.MultiPageEditor; import eu.kalafatic.evolution.view.editors.pages.AEvoGroup; import eu.kalafatic.utils.factories.GUIFactory; public class CommentsGroup extends AEvoGroup {",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

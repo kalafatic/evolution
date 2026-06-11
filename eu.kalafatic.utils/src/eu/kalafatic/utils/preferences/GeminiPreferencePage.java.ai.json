@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.2,
   "importanceScore": 0.2,
-  "summary": "package eu.kalafatic.utils.preferences; import org.eclipse.swt.widgets.Composite; import org.eclipse.swt.widgets.Control;",
+  "summary": "package eu.kalafatic.utils.preferences; import org.eclipse.swt.widgets.Composite; import org.eclipse.swt.widgets.Control; import eu.kalafatic.utils.Activator; import eu.kalafatic.utils.constants.APreferencePage; import eu.kalafatic.utils.factories.GUIFactory; public class GeminiPreferencePage extends APreferencePage { public GeminiPreferencePage() { super.noDefaultAndApplyButton(); setPreferenceStore(Activator.getDefault().getPreferenceStore()); setDescription(Activator.getPluginProperties().getString(\"aboutText\")); } @Override protected Control createContents(Composite parent) { Composite container = GUIFactory.INSTANCE.createComposite(parent, 1); return container; }",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

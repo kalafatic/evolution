@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.2,
   "importanceScore": 0.2,
-  "summary": "package eu.kalafatic.utils.p2; import org.eclipse.equinox.p2.operations.RepositoryTracker; import org.eclipse.equinox.p2.operations.UpdateOperation;",
+  "summary": "package eu.kalafatic.utils.p2; import org.eclipse.equinox.p2.operations.RepositoryTracker; import org.eclipse.equinox.p2.operations.UpdateOperation; import org.eclipse.equinox.p2.ui.LoadMetadataRepositoryJob; public class UpdateHandler extends PreloadingRepositoryHandler { boolean hasNoRepos = false; @Override protected void doExecute(LoadMetadataRepositoryJob job) { if (hasNoRepos) { return; } UpdateOperation operation = getProvisioningUI().getUpdateOperation(null, null); operation.resolveModal(null); if (getProvisioningUI().getPolicy().continueWorkingWithOperation(operation, getShell())) { getProvisioningUI().openUpdateWizard(false, operation, job); } } @Override protected boolean preloadRepositories() { hasNoRepos = false;",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "window.ChatApp = window.ChatApp || {}; window.ChatApp.UI = { m_pos: 0,",
+  "summary": "window.ChatApp = window.ChatApp || {}; window.ChatApp.UI = { m_pos: 0, currentContextFile: null, init: function() { this.initResizing(); this.initQuote(); }, initResizing: function() { this.setupPanelResizing('side-panel', 'resize-handle'); this.setupPanelResizing('progress-panel', 'progress-resize-handle'); }, setupPanelResizing: function(panelId, handleId) { const panel = document.getElementById(panelId); const handle = document.getElementById(handleId); if (!handle || !panel) return; let startX, startWidth; handle.addEventListener(\"mousedown\", (e) => { startX = e.clientX; startWidth = parseInt(getComputedStyle(panel).width);",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

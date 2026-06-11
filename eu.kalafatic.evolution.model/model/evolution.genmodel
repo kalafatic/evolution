@@ -164,6 +164,7 @@
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//Orchestrator/serverSessions"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//Orchestrator/monitoringHistory"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//Orchestrator/supervisorSettings"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//Orchestrator/networkEntries"/>
     </genClasses>
     <genClasses ecoreClass="evolution.ecore#//ServerSettings">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ServerSettings/port"/>
@@ -381,6 +382,12 @@
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ChatSession/targetPath"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ChatSession/targetType"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ChatSession/outputPath"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ChatSession/autoApprove"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ChatSession/aiMode"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ChatSession/localModel"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ChatSession/remoteModel"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ChatSession/bitState"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ChatSession/expansion"/>
     </genClasses>
     <genClasses ecoreClass="evolution.ecore#//ChatMessage">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ChatMessage/index"/>
@@ -395,6 +402,16 @@
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ChatMessage/sequenceNumber"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ChatMessage/turnId"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ChatMessage/isTerminal"/>
+    </genClasses>
+    <genClasses ecoreClass="evolution.ecore#//NetworkEntry">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//NetworkEntry/host"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//NetworkEntry/address"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//NetworkEntry/port"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//NetworkEntry/path"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//NetworkEntry/login"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//NetworkEntry/password"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//NetworkEntry/type"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//NetworkEntry/note"/>
     </genClasses>
     <genClasses ecoreClass="evolution.ecore#//PromptInstructions">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//PromptInstructions/autoApprove"/>
