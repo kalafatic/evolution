@@ -12,6 +12,10 @@ import eu.kalafatic.evolution.controller.orchestration.design.RelationshipRecord
 public class DesignRenderer {
 
     public String render(DesignModel model) {
+        return render(model, "COMPONENTS");
+    }
+
+    public String render(DesignModel model, String viewMode) {
         String template = eu.kalafatic.evolution.controller.tools.FileTool.readResource("/template.html");
         if (template == null) return "Error: Template not found";
 
@@ -23,13 +27,15 @@ public class DesignRenderer {
 
         return template
             .replace("{{MODEL_JSON}}", serializeModel(model))
+            .replace("{{VIEW_MODE}}", viewMode != null ? viewMode : "COMPONENTS")
             .replace("{{NAVIGATOR_JS}}", navigatorJs)
             .replace("{{D3_JS}}", d3Js);
     }
 
     private String serializeModel(DesignModel model) {
+        if (model == null) return "{}";
         org.json.JSONObject json = new org.json.JSONObject();
-        json.put("name", model.getName());
+        json.put("name", model.getName() != null ? model.getName() : "Evolution Architecture");
         org.json.JSONArray comps = new org.json.JSONArray();
         for (ComponentRecord cr : model.getComponents()) {
             org.json.JSONObject c = new org.json.JSONObject();

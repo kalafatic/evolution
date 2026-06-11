@@ -67,6 +67,26 @@ public class ArchitecturePage extends AEvoPage {
     private void handleNavigatorAction(String id, String action) {
         Display.getDefault().asyncExec(() -> {
             switch (action) {
+                case "REFRESH":
+                    scheduleRefresh();
+                    break;
+                case "DISCOVER":
+                    handleDiscover();
+                    break;
+                case "GENERATE_METADATA":
+                    handleGenerateMetadata();
+                    break;
+                case "EXPORT_HTML":
+                    handleExport();
+                    break;
+                case "SAVE_JSON":
+                    handleSaveModel();
+                    break;
+                case "SET_VIEW_MODE":
+                    try {
+                        setViewMode(ViewMode.valueOf(id));
+                    } catch (Exception e) {}
+                    break;
                 case "OPEN":
                     if (id != null && !id.startsWith("domain:") && !id.startsWith("uc:")) {
                         eu.kalafatic.evolution.view.handlers.OpenSourceHandler.open(id);
@@ -401,7 +421,7 @@ public class ArchitecturePage extends AEvoPage {
         Display.getDefault().asyncExec(() -> {
             if (browser == null || browser.isDisposed()) return;
             DesignModel model = extractModel();
-            browser.setText(renderer.render(model));
+            browser.setText(renderer.render(model, currentMode.name()));
         });
     }
 
