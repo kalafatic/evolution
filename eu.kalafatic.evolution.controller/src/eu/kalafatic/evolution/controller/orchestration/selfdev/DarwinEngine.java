@@ -518,7 +518,8 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         JSONArray actionsArr = obj.optJSONArray("actions");
         if (actionsArr != null) {
             for (int i = 0; i < actionsArr.length(); i++) {
-                JSONObject aObj = actionsArr.getJSONObject(i);
+                JSONObject aObj = actionsArr.optJSONObject(i);
+                if (aObj == null) continue;
                 BranchVariant.Action action = new BranchVariant.Action();
                 action.setDomain(aObj.optString("domain"));
                 action.setOperation(aObj.optString("operation"));
@@ -541,7 +542,8 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             JSONArray subArr = medObj.optJSONArray("subsystems");
             if (subArr != null) {
                 for (int i = 0; i < subArr.length(); i++) {
-                    JSONObject sObj = subArr.getJSONObject(i);
+                    JSONObject sObj = subArr.optJSONObject(i);
+                    if (sObj == null) continue;
                     eu.kalafatic.evolution.controller.mediation.model.Subsystem subsystem = new eu.kalafatic.evolution.controller.mediation.model.Subsystem();
                     subsystem.setId(sObj.optString("id"));
                     subsystem.setName(sObj.optString("name"));
@@ -560,7 +562,8 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             JSONArray factArr = medObj.optJSONArray("architectural_facts");
             if (factArr != null) {
                 for (int i = 0; i < factArr.length(); i++) {
-                    JSONObject fObj = factArr.getJSONObject(i);
+                    JSONObject fObj = factArr.optJSONObject(i);
+                    if (fObj == null) continue;
                     eu.kalafatic.evolution.controller.mediation.model.ArchitecturalFact fact = new eu.kalafatic.evolution.controller.mediation.model.ArchitecturalFact();
                     fact.setId(fObj.optString("id"));
                     fact.setSubject(fObj.optString("subject"));
