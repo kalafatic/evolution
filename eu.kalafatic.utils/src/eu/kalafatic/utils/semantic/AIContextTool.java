@@ -88,6 +88,12 @@ public class AIContextTool {
         if (json.contains("\"dependencyLinks\":")) {
             meta.setDependencyLinks(extractListValue(json, "dependencyLinks"));
         }
+        if (json.contains("\"useCases\":")) {
+            meta.setUseCases(extractListValue(json, "useCases"));
+        }
+        if (json.contains("\"keyClasses\":")) {
+            meta.setKeyClasses(extractListValue(json, "keyClasses"));
+        }
         return meta;
     }
 
@@ -174,7 +180,9 @@ public class AIContextTool {
         sb.append("  \"summary\": \"").append(metadata.getSummary() != null ? metadata.getSummary().replace("\"", "\\\"") : "").append("\",\n");
         sb.append("  \"evolutionaryNotes\": \"").append(metadata.getEvolutionaryNotes() != null ? metadata.getEvolutionaryNotes().replace("\"", "\\\"") : "").append("\",\n");
         sb.append("  \"contextSelectionHints\": ").append(serializeList(metadata.getContextSelectionHints())).append(",\n");
-        sb.append("  \"dependencyLinks\": ").append(serializeList(metadata.getDependencyLinks())).append("\n");
+        sb.append("  \"dependencyLinks\": ").append(serializeList(metadata.getDependencyLinks())).append(",\n");
+        sb.append("  \"useCases\": ").append(serializeList(metadata.getUseCases())).append(",\n");
+        sb.append("  \"keyClasses\": ").append(serializeList(metadata.getKeyClasses())).append("\n");
         sb.append("}");
         return sb.toString();
     }

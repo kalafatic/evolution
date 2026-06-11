@@ -185,6 +185,21 @@ public class FileTool implements ITool {
         }
     }
 
+    public static String readResource(String path) {
+        try (java.io.InputStream is = FileTool.class.getResourceAsStream(path)) {
+            if (is == null) return null;
+            java.io.ByteArrayOutputStream result = new java.io.ByteArrayOutputStream();
+            byte[] buffer = new byte[1024];
+            int length;
+            while ((length = is.read(buffer)) != -1) {
+                result.write(buffer, 0, length);
+            }
+            return result.toString("UTF-8");
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
     private boolean deleteRecursively(File file) {
         if (file.isDirectory()) {
             File[] files = file.listFiles();
