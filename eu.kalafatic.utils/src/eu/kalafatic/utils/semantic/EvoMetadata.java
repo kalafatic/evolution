@@ -22,6 +22,8 @@ public class EvoMetadata {
     private double importanceScore = 0.0;
     private List<String> contextSelectionHints = new ArrayList<>();
     private List<String> dependencyLinks = new ArrayList<>();
+    private List<String> useCases = new ArrayList<>();
+    private List<String> keyClasses = new ArrayList<>();
     private String summary;
     private String evolutionaryNotes;
     private boolean stale = false;
@@ -68,6 +70,12 @@ public class EvoMetadata {
 
     public List<String> getDependencyLinks() { return dependencyLinks; }
     public void setDependencyLinks(List<String> dependencyLinks) { this.dependencyLinks = dependencyLinks; }
+
+    public List<String> getUseCases() { return useCases; }
+    public void setUseCases(List<String> useCases) { this.useCases = useCases; }
+
+    public List<String> getKeyClasses() { return keyClasses; }
+    public void setKeyClasses(List<String> keyClasses) { this.keyClasses = keyClasses; }
 
     public String getSummary() { return summary; }
     public void setSummary(String summary) { this.summary = summary; }

@@ -1,0 +1,42 @@
+<!DOCTYPE html><html><head><meta charset='UTF-8'>
+<script src='https://d3js.org/d3.v7.min.js'></script>
+<style>
+html, body { font-family: 'Segoe UI', sans-serif; background-color: #f8fafc; padding: 0; margin: 0; width: 100%; height: 100%; overflow: hidden; }
+#architecture-container { width: 100%; height: 100%; }
+.node rect { cursor: pointer; stroke-width: 2px; transition: filter 0.2s; }
+.node:hover rect { filter: brightness(0.95); }
+.node text { pointer-events: none; fill: #1e293b; }
+.link { stroke-opacity: 0.6; }
+#details-panel { position: fixed; right: -400px; top: 0; width: 350px; height: 100%; background: white; border-left: 1px solid #e2e8f0; box-shadow: -4px 0 15px rgba(0,0,0,0.05); transition: right 0.3s ease; z-index: 100; padding: 20px; overflow-y: auto; }
+#details-panel.active { right: 0; }
+.panel-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 15px; margin-bottom: 15px; }
+.panel-header h2 { margin: 0; font-size: 1.4em; color: #0f172a; }
+.type-badge { background: #f1f5f9; color: #64748b; padding: 4px 8px; border-radius: 4px; font-size: 0.75em; text-transform: uppercase; font-weight: bold; }
+.panel-body h3 { font-size: 1em; color: #334155; margin-top: 20px; }
+.panel-body ul { padding-left: 20px; }
+.panel-body li { margin-bottom: 5px; color: #475569; font-size: 0.9em; }
+.panel-actions { margin-top: 30px; display: flex; gap: 10px; }
+.action-btn { flex: 1; padding: 8px; border: 1px solid #cbd5e1; background: white; border-radius: 6px; cursor: pointer; font-size: 0.9em; }
+.action-btn:hover { background: #f8fafc; border-color: #94a3b8; }
+#context-menu { position: fixed; display: none; background: white; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); z-index: 200; padding: 5px 0; min-width: 180px; }
+#context-menu.active { display: block; }
+.menu-item { padding: 8px 15px; cursor: pointer; font-size: 0.9em; color: #334155; }
+.menu-item:hover { background: #f1f5f9; color: #0f172a; }
+hr { border: 0; border-top: 1px solid #f1f5f9; margin: 5px 0; }
+</style></head><body>
+<div id='architecture-container'>
+<svg id='architecture-svg' width='100%' height='100%'></svg>
+</div>
+<div id='details-panel'></div>
+<div id='context-menu'></div>
+<svg style='width:0;height:0;position:absolute;'>
+<defs><marker id='arrowhead' markerWidth='10' markerHeight='7' refX='10' refY='3.5' orient='auto'>
+<polygon points='0 0, 10 3.5, 0 7' fill='#94a3b8' /></marker></defs></svg>
+<script>
+window.INITIAL_MODEL = {{MODEL_JSON}};
+</script>
+<script>
+{{NAVIGATOR_JS}}
+</script>
+<script>window.updateGraph(window.INITIAL_MODEL);</script>
+</body></html>

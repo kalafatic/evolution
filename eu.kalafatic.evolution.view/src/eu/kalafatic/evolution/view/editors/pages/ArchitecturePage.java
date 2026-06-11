@@ -13,8 +13,14 @@ import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.browser.BrowserFunction;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 import eu.kalafatic.evolution.controller.orchestration.design.ComponentRecord;
 import eu.kalafatic.evolution.controller.orchestration.design.DesignExporter;
@@ -42,8 +48,55 @@ public class ArchitecturePage extends AEvoPage {
         this.browser = new Browser(this, SWT.NONE);
         this.browser.setLayoutData(new GridData(GridData.FILL_BOTH));
 
+        new BrowserFunction(browser, "navigatorFunction") {
+            @Override
+            public Object function(Object[] arguments) {
+                if (arguments.length >= 2) {
+                    String id = (String) arguments[0];
+                    String action = (String) arguments[1];
+                    handleNavigatorAction(id, action);
+                }
+                return null;
+            }
+        };
+
         hookContextMenu();
         refreshBrowser();
+    }
+
+    private void handleNavigatorAction(String id, String action) {
+        Display.getDefault().asyncExec(() -> {
+            switch (action) {
+                case "OPEN":
+                    if (id != null && !id.startsWith("domain:") && !id.startsWith("uc:")) {
+                        eu.kalafatic.evolution.view.handlers.OpenSourceHandler.open(id);
+                    }
+                    break;
+                case "CONTEXT":
+                    // Generate context package for this node
+                    break;
+                case "EXPAND":
+                case "SHOW_CHILDREN":
+                case "SHOW_USE_CASES":
+                case "SHOW_CLASSES":
+                    expandAndRefresh(id, action);
+                    break;
+            }
+        });
+    }
+
+    private void expandAndRefresh(String id, String action) {
+        if (id == null) return;
+        DesignModel fullModel = extractModel();
+        // For simplicity in this iteration, we refresh the view with the relevant mode or filtered set
+        // In a real implementation, we would selectively add nodes to the JS graph
+        if ("SHOW_USE_CASES".equals(action)) {
+            setViewMode(ViewMode.USE_CASES);
+        } else if ("SHOW_CHILDREN".equals(action)) {
+            setViewMode(ViewMode.KNOWLEDGE_GRAPH);
+        } else {
+            scheduleRefresh();
+        }
     }
 
     @Override
@@ -53,17 +106,30 @@ public class ArchitecturePage extends AEvoPage {
 
     private void createControlPanel() {
         Composite toolbarComp = new Composite(this, SWT.NONE);
-        toolbarComp.setLayout(new org.eclipse.swt.layout.FillLayout());
+        GridLayout layout = new GridLayout(2, false);
+        layout.marginHeight = 0;
+        toolbarComp.setLayout(layout);
         toolbarComp.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
+
+        org.eclipse.swt.widgets.Combo modeCombo = new org.eclipse.swt.widgets.Combo(toolbarComp, SWT.READ_ONLY);
+        modeCombo.setItems(new String[] { "Use Cases", "Subsystems", "Components", "Knowledge Graph" });
+        modeCombo.select(2); // Components
+        modeCombo.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
+            @Override
+            public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
+                switch (modeCombo.getSelectionIndex()) {
+                    case 0: setViewMode(ViewMode.USE_CASES); break;
+                    case 1: setViewMode(ViewMode.SUBSYSTEMS); break;
+                    case 2: setViewMode(ViewMode.COMPONENTS); break;
+                    case 3: setViewMode(ViewMode.KNOWLEDGE_GRAPH); break;
+                }
+            }
+        });
 
         org.eclipse.jface.action.ToolBarManager mgr = new org.eclipse.jface.action.ToolBarManager(SWT.FLAT | SWT.RIGHT);
         mgr.createControl(toolbarComp);
 
         mgr.add(new org.eclipse.jface.action.Action("Refresh") { @Override public void run() { scheduleRefresh(); } });
-        mgr.add(new org.eclipse.jface.action.Separator());
-        mgr.add(new org.eclipse.jface.action.Action("Zoom In") { @Override public void run() { if (browser != null) browser.execute("document.body.style.zoom = (parseFloat(document.body.style.zoom || 1) + 0.1);"); } });
-        mgr.add(new org.eclipse.jface.action.Action("Zoom Out") { @Override public void run() { if (browser != null) browser.execute("document.body.style.zoom = (parseFloat(document.body.style.zoom || 1) - 0.1);"); } });
-        mgr.add(new org.eclipse.jface.action.Action("Reset Zoom") { @Override public void run() { if (browser != null) browser.execute("document.body.style.zoom = 1.0;"); } });
         mgr.add(new org.eclipse.jface.action.Separator());
         mgr.add(new org.eclipse.jface.action.Action("Export HTML") { @Override public void run() { handleExport(); } });
         mgr.add(new org.eclipse.jface.action.Action("Save JSON") { @Override public void run() { handleSaveModel(); } });
@@ -164,7 +230,182 @@ public class ArchitecturePage extends AEvoPage {
         });
     }
 
+    public enum ViewMode {
+        USE_CASES, SUBSYSTEMS, COMPONENTS, KNOWLEDGE_GRAPH
+    }
+
+    private ViewMode currentMode = ViewMode.COMPONENTS;
+
+    public void setViewMode(ViewMode mode) {
+        this.currentMode = mode;
+        scheduleRefresh();
+    }
+
     private DesignModel extractModel() {
+        if (editor == null) return createDefaultModel();
+        org.eclipse.ui.IEditorInput input = editor.getEditorInput();
+        if (!(input instanceof org.eclipse.ui.IFileEditorInput)) return createDefaultModel();
+
+        org.eclipse.core.resources.IProject project = ((org.eclipse.ui.IFileEditorInput) input).getFile().getProject();
+        java.io.File root = project.getLocation().toFile();
+
+        DesignModel model = discoverArchitectureNodes(root);
+        model.setName(project.getName() + " Architecture");
+
+        return filterModel(model, currentMode);
+    }
+
+    private DesignModel discoverArchitectureNodes(java.io.File root) {
+        DesignModel model = new DesignModel();
+        eu.kalafatic.utils.semantic.AIContextTool tool = new eu.kalafatic.utils.semantic.AIContextTool();
+        Map<String, ComponentRecord> nodes = new HashMap<>();
+
+        // 1. Scan for .ai.json files
+        scanForMetadata(root, root, tool, nodes, model);
+
+        // 2. Parse ARCHITECTURE_CONTEXT.md if it exists
+        java.io.File archCtx = new java.io.File(root, "ARCHITECTURE_CONTEXT.md");
+        if (archCtx.exists()) {
+            parseArchitectureContext(archCtx, nodes, model);
+        }
+
+        return model;
+    }
+
+    private void scanForMetadata(java.io.File current, java.io.File root, eu.kalafatic.utils.semantic.AIContextTool tool, Map<String, ComponentRecord> nodes, DesignModel model) {
+        java.io.File[] files = current.listFiles();
+        if (files == null) return;
+
+        for (java.io.File f : files) {
+            if (f.isDirectory()) {
+                if (!f.getName().startsWith(".") && !f.getName().equals("target") && !f.getName().equals("bin")) {
+                    scanForMetadata(f, root, tool, nodes, model);
+                }
+            } else if (f.getName().endsWith(".java") || f.getName().endsWith(".md") || f.getName().endsWith(".json")) {
+                eu.kalafatic.utils.semantic.EvoMetadata meta = tool.loadMetadata(f);
+                if (meta != null) {
+                    ComponentRecord rec = new ComponentRecord();
+                    rec.setId(meta.getPath() != null ? meta.getPath() : f.getName());
+                    rec.setName(f.getName());
+                    rec.setType(meta.getRole() != null ? meta.getRole().toUpperCase() : "COMPONENT");
+                    rec.setDescription(meta.getSummary());
+                    rec.setPath(meta.getPath());
+                    rec.setImportanceScore(meta.getImportanceScore());
+                    rec.getUseCases().addAll(meta.getUseCases());
+                    rec.getKeyClasses().addAll(meta.getKeyClasses());
+
+                    model.getComponents().add(rec);
+                    nodes.put(rec.getId(), rec);
+
+                    // Relationships from dependencyLinks
+                    for (String dep : meta.getDependencyLinks()) {
+                        eu.kalafatic.evolution.controller.orchestration.design.RelationshipRecord rel = new eu.kalafatic.evolution.controller.orchestration.design.RelationshipRecord();
+                        rel.setFrom(rec.getId());
+                        rel.setTo(dep);
+                        rel.setType("DEPENDS_ON");
+                        model.getRelationships().add(rel);
+                    }
+                }
+            }
+        }
+    }
+
+    private void parseArchitectureContext(java.io.File archCtx, Map<String, ComponentRecord> nodes, DesignModel model) {
+        try {
+            java.util.List<String> lines = java.nio.file.Files.readAllLines(archCtx.toPath());
+            String currentDomain = null;
+            for (String line : lines) {
+                if (line.startsWith("* **")) {
+                    // Domain definition: * **Orchestration**: ...
+                    int end = line.indexOf("**", 4);
+                    if (end > 4) {
+                        String domain = line.substring(4, end);
+                        ComponentRecord rec = new ComponentRecord();
+                        rec.setId("domain:" + domain.toLowerCase());
+                        rec.setName(domain);
+                        rec.setType("SUBSYSTEM");
+                        rec.setDescription(line.substring(end + 3));
+                        model.getComponents().add(rec);
+                        nodes.put(rec.getId(), rec);
+                    }
+                } else if (line.startsWith("* `")) {
+                    // Component link: * `path/to/file`: description
+                    int end = line.indexOf("`", 3);
+                    if (end > 3) {
+                        String path = line.substring(3, end);
+                        ComponentRecord rec = nodes.get(path);
+                        if (rec != null && currentDomain != null) {
+                            eu.kalafatic.evolution.controller.orchestration.design.RelationshipRecord rel = new eu.kalafatic.evolution.controller.orchestration.design.RelationshipRecord();
+                            rel.setFrom(rec.getId());
+                            rel.setTo("domain:" + currentDomain.toLowerCase());
+                            rel.setType("PART_OF");
+                            model.getRelationships().add(rel);
+                        }
+                    }
+                } else if (line.startsWith("## ")) {
+                    String header = line.substring(3).trim();
+                    if (!header.equalsIgnoreCase("Core Domains") && !header.equalsIgnoreCase("High-Importance Components")) {
+                        currentDomain = header;
+                    }
+                }
+            }
+        } catch (java.io.IOException e) {}
+    }
+
+    private DesignModel filterModel(DesignModel model, ViewMode mode) {
+        DesignModel filtered = new DesignModel();
+        filtered.setName(model.getName() + " - " + mode.name());
+
+        switch (mode) {
+            case USE_CASES:
+                Map<String, ComponentRecord> ucNodes = new HashMap<>();
+                for (ComponentRecord comp : model.getComponents()) {
+                    for (String uc : comp.getUseCases()) {
+                        ComponentRecord ucNode = ucNodes.computeIfAbsent(uc, k -> {
+                            ComponentRecord r = new ComponentRecord();
+                            r.setId("uc:" + k);
+                            r.setName(k);
+                            r.setType("USE_CASE");
+                            filtered.getComponents().add(r);
+                            return r;
+                        });
+                        eu.kalafatic.evolution.controller.orchestration.design.RelationshipRecord rel = new eu.kalafatic.evolution.controller.orchestration.design.RelationshipRecord();
+                        rel.setFrom(comp.getId());
+                        rel.setTo(ucNode.getId());
+                        rel.setType("IMPLEMENTS");
+                        filtered.getRelationships().add(rel);
+                        if (!filtered.getComponents().contains(comp)) filtered.getComponents().add(comp);
+                    }
+                }
+                break;
+
+            case SUBSYSTEMS:
+                filtered.setComponents(model.getComponents().stream()
+                    .filter(c -> "SUBSYSTEM".equals(c.getType()) || "DOMAIN".equals(c.getType()) || c.getImportanceScore() > 0.8)
+                    .collect(Collectors.toList()));
+                List<String> ids = filtered.getComponents().stream().map(ComponentRecord::getId).collect(Collectors.toList());
+                filtered.setRelationships(model.getRelationships().stream()
+                    .filter(r -> ids.contains(r.getFrom()) && ids.contains(r.getTo()))
+                    .collect(Collectors.toList()));
+                break;
+
+            case COMPONENTS:
+                filtered.setComponents(model.getComponents().stream()
+                    .filter(c -> !"USE_CASE".equals(c.getType()))
+                    .collect(Collectors.toList()));
+                filtered.setRelationships(model.getRelationships().stream()
+                    .filter(r -> !"IMPLEMENTS".equals(r.getType()))
+                    .collect(Collectors.toList()));
+                break;
+
+            case KNOWLEDGE_GRAPH:
+                return model;
+        }
+
+        return filtered;
+    }
+
+    private DesignModel extractModelLegacy() {
         DesignModel model = new DesignModel();
         if (orchestrator == null) return model;
 
