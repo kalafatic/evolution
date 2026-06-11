@@ -16,6 +16,9 @@ public class DesignRenderer {
     }
 
     public String render(DesignModel model, String viewMode) {
+        if (model != null) {
+            eu.kalafatic.evolution.controller.log.Log.log("[DESIGN_RENDERER] Rendering model: " + model.getName() + " with " + model.getComponents().size() + " components. Mode: " + viewMode);
+        }
         String template = eu.kalafatic.evolution.controller.tools.FileTool.readResource("/template.html");
         if (template == null) return "Error: Template not found";
 

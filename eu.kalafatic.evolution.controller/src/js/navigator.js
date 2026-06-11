@@ -28,7 +28,9 @@
     let graphData = { nodes: [], links: [] };
 
     window.updateGraph = function(data) {
-        if (!data || !data.components) {
+        if (typeof log === 'function') log("updateGraph called with " + (data && data.components ? data.components.length : 0) + " components.");
+
+        if (!data || !data.components || data.components.length === 0) {
             d3.select("#empty-state").classed("active", true);
             return;
         }
