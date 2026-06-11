@@ -13,6 +13,7 @@ public class ArchitecturalFact {
     private String description;
     private double confidence; // 0.0 - 1.0
     private List<String> evidence = new ArrayList<>(); // paths to files providing evidence
+    private int discoveryIteration;
 
     public ArchitecturalFact() {}
 
@@ -39,6 +40,9 @@ public class ArchitecturalFact {
 
     public List<String> getEvidence() { return evidence; }
     public void setEvidence(List<String> evidence) { this.evidence = evidence; }
+
+    public int getDiscoveryIteration() { return discoveryIteration; }
+    public void setDiscoveryIteration(int discoveryIteration) { this.discoveryIteration = discoveryIteration; }
 
     @Override
     public String toString() {

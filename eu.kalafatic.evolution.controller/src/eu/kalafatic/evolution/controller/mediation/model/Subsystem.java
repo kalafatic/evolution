@@ -14,6 +14,8 @@ public class Subsystem {
     private List<String> boundaries = new ArrayList<>(); // major interfaces/boundaries
     private List<String> criticalFiles = new ArrayList<>(); // paths to critical files
     private List<String> responsibilities = new ArrayList<>();
+    private double confidence;
+    private int discoveryIteration;
 
     public Subsystem() {}
 
@@ -42,4 +44,10 @@ public class Subsystem {
 
     public List<String> getResponsibilities() { return responsibilities; }
     public void setResponsibilities(List<String> responsibilities) { this.responsibilities = responsibilities; }
+
+    public double getConfidence() { return confidence; }
+    public void setConfidence(double confidence) { this.confidence = confidence; }
+
+    public int getDiscoveryIteration() { return discoveryIteration; }
+    public void setDiscoveryIteration(int discoveryIteration) { this.discoveryIteration = discoveryIteration; }
 }

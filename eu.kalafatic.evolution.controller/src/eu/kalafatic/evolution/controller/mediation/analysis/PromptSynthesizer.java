@@ -1,8 +1,11 @@
 package eu.kalafatic.evolution.controller.mediation.analysis;
 
 import java.util.List;
+import eu.kalafatic.evolution.controller.mediation.model.ArchitecturalFact;
 import eu.kalafatic.evolution.controller.mediation.model.SemanticNode;
+import eu.kalafatic.evolution.controller.mediation.model.Subsystem;
 import eu.kalafatic.evolution.controller.mediation.model.TargetDescriptor;
+import eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel;
 import eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot;
 
 /**
@@ -30,6 +33,10 @@ public class PromptSynthesizer {
     }
 
     public String synthesizeOptimized(String request, TargetSnapshot snapshot, List<String> selectedPaths, String evolvedUnderstanding) {
+        return synthesizeOptimized(request, snapshot, selectedPaths, evolvedUnderstanding, null);
+    }
+
+    public String synthesizeOptimized(String request, TargetSnapshot snapshot, List<String> selectedPaths, String evolvedUnderstanding, TargetRealityModel realityModel) {
         StringBuilder sb = new StringBuilder();
         sb.append("# OPTIMIZED MEDIATED CONTEXT PROMPT\n\n");
 
@@ -47,7 +54,10 @@ public class PromptSynthesizer {
         sb.append("Architecture: ").append(snapshot.getMetadata().get("architectureInference")).append("\n");
         sb.append("Technologies: ").append(snapshot.getMetadata().get("detectedTechnologies")).append("\n\n");
 
-        eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel realityModel = (eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel) snapshot.getMetadata().get("targetRealityModel");
+        if (realityModel == null) {
+            realityModel = (eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel) snapshot.getMetadata().get("targetRealityModel");
+        }
+
         if (realityModel != null) {
             sb.append("## DISCOVERED TARGET REALITY\n");
             sb.append("Domain: ").append(realityModel.getDomain()).append("\n");
@@ -57,6 +67,20 @@ public class PromptSynthesizer {
             sb.append("### Identified Hotspots\n");
             for (eu.kalafatic.evolution.controller.mediation.model.Hotspot hotspot : realityModel.getHotspots()) {
                 sb.append("- ").append(hotspot.getName()).append(" [").append(hotspot.getType()).append("]: ").append(hotspot.getDescription()).append("\n");
+            }
+
+            if (!realityModel.getSubsystems().isEmpty()) {
+                sb.append("\n### Discovered Subsystems\n");
+                for (Subsystem sub : realityModel.getSubsystems()) {
+                    sb.append("- ").append(sub.getName()).append(": ").append(sub.getPurpose()).append("\n");
+                }
+            }
+
+            if (!realityModel.getArchitecturalFacts().isEmpty()) {
+                sb.append("\n### Discovered Architectural Facts\n");
+                for (ArchitecturalFact fact : realityModel.getArchitecturalFacts()) {
+                    sb.append("- ").append(fact.toString()).append("\n");
+                }
             }
             sb.append("\n");
         }
