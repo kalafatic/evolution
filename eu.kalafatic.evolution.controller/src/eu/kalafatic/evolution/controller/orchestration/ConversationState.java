@@ -23,6 +23,7 @@ public class ConversationState {
     private List<String> clarificationHistory = new ArrayList<>();
     private boolean isRequirementMet = true;
     private ConfirmedRequirements confirmedRequirements;
+    private JSONObject metadata = new JSONObject();
 
     public String getGoal() { return goal; }
     public void setGoal(String goal) { this.goal = goal; }
@@ -71,6 +72,7 @@ public class ConversationState {
         if (confirmedRequirements != null) {
             json.put("confirmed_requirements", confirmedRequirements.toJSON());
         }
+        json.put("metadata", metadata);
         return json;
     }
 
@@ -92,6 +94,9 @@ public class ConversationState {
             state.setRequirementMet(json.optBoolean("is_requirement_met", true));
             if (json.has("confirmed_requirements")) {
                 state.setConfirmedRequirements(ConfirmedRequirements.fromJSON(json.getJSONObject("confirmed_requirements")));
+            }
+            if (json.has("metadata")) {
+                state.metadata = json.getJSONObject("metadata");
             }
         } catch (Exception e) {
             // Log error and return empty state
@@ -131,5 +136,37 @@ public class ConversationState {
         }
         allStates.put(sessionId, state.toJSON());
         return allStates.toString();
+    }
+
+    public static String save(String sharedMemory, String sessionId, String key, String value) {
+        JSONObject allStates;
+        try {
+            allStates = new JSONObject(sharedMemory);
+        } catch (Exception e) {
+            allStates = new JSONObject();
+        }
+
+        JSONObject sessionObj = allStates.optJSONObject(sessionId);
+        if (sessionObj == null) {
+            sessionObj = new JSONObject();
+            allStates.put(sessionId, sessionObj);
+        }
+
+        JSONObject metadata = sessionObj.optJSONObject("metadata");
+        if (metadata == null) {
+            metadata = new JSONObject();
+            sessionObj.put("metadata", metadata);
+        }
+        metadata.put(key, value);
+
+        return allStates.toString();
+    }
+
+    public String getMetadata(String key) {
+        return metadata.optString(key, null);
+    }
+
+    public void putMetadata(String key, String value) {
+        metadata.put(key, value);
     }
 }

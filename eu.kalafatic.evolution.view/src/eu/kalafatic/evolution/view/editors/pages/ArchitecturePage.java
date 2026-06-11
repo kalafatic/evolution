@@ -87,12 +87,26 @@ public class ArchitecturePage extends AEvoPage {
 
     private void expandAndRefresh(String id, String action) {
         if (id == null) return;
-        DesignModel fullModel = extractModel();
-        // For simplicity in this iteration, we refresh the view with the relevant mode or filtered set
-        // In a real implementation, we would selectively add nodes to the JS graph
-        if ("SHOW_USE_CASES".equals(action)) {
-            setViewMode(ViewMode.USE_CASES);
-        } else if ("SHOW_CHILDREN".equals(action)) {
+        DesignModel model = extractModel();
+        ComponentRecord comp = model.getComponents().stream()
+                .filter(c -> id.equals(c.getId()))
+                .findFirst().orElse(null);
+
+        if (comp != null) {
+            if ("SHOW_USE_CASES".equals(action)) {
+                String title = "Use Cases: " + comp.getName();
+                String jsonItems = new JSONArray(comp.getUseCases()).toString();
+                browser.execute("window.showPopup('" + title + "', " + jsonItems + ")");
+                return;
+            } else if ("SHOW_CLASSES".equals(action)) {
+                String title = "Key Classes: " + comp.getName();
+                String jsonItems = new JSONArray(comp.getKeyClasses()).toString();
+                browser.execute("window.showPopup('" + title + "', " + jsonItems + ")");
+                return;
+            }
+        }
+
+        if ("SHOW_CHILDREN".equals(action)) {
             setViewMode(ViewMode.KNOWLEDGE_GRAPH);
         } else {
             scheduleRefresh();

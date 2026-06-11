@@ -218,3 +218,19 @@
     }
 
 })();
+
+    window.showPopup = function(title, items) {
+        const popup = d3.select("#popup-panel");
+        popup.style("display", "block");
+        d3.select("#popup-title").text(title);
+        const content = d3.select("#popup-content");
+        content.html("");
+        if (items && items.length > 0) {
+            const ul = content.append("ul");
+            items.forEach(item => {
+                ul.append("li").text(item);
+            });
+        } else {
+            content.append("p").text("None found.");
+        }
+    };
