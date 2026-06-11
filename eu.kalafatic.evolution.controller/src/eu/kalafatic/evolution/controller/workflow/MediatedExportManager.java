@@ -17,6 +17,10 @@ public class MediatedExportManager {
     }
 
     public File createExportPackage(String sessionId, String prompt, List<String> selectedPaths, File projectRoot, String outputPath, String metadataJson, String historyAnalysis, String architectureSummary, String dependencies, String executionInstructions, String realityModelJson) throws IOException {
+        return createExportPackage(sessionId, prompt, selectedPaths, projectRoot, outputPath, metadataJson, historyAnalysis, architectureSummary, dependencies, executionInstructions, realityModelJson, null, null);
+    }
+
+    public File createExportPackage(String sessionId, String prompt, List<String> selectedPaths, File projectRoot, String outputPath, String metadataJson, String historyAnalysis, String architectureSummary, String dependencies, String executionInstructions, String realityModelJson, String architecturalFactsJson, String subsystemsJson) throws IOException {
         String fileName = "mediated_export_" + sessionId + "_" + System.currentTimeMillis() + ".zip";
         File targetDir = projectRoot;
         if (outputPath != null && !outputPath.isEmpty()) {
@@ -51,6 +55,12 @@ public class MediatedExportManager {
             }
             if (realityModelJson != null) {
                 addStringToZip(zos, "reality-model.json", realityModelJson);
+            }
+            if (architecturalFactsJson != null) {
+                addStringToZip(zos, "architectural-facts.json", architecturalFactsJson);
+            }
+            if (subsystemsJson != null) {
+                addStringToZip(zos, "subsystems.json", subsystemsJson);
             }
 
             // 4. Add Selected File Contents

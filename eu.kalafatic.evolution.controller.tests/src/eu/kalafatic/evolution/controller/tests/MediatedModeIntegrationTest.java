@@ -114,6 +114,8 @@ public class MediatedModeIntegrationTest {
             "    \"prompt\": \"Optimized prompt for big LLM\"," +
             "    \"selected_files\": [\"pom.xml\", \"sloeber.ino\"]," +
             "    \"architecture_summary\": \"Test arch\"," +
+            "    \"subsystems\": [{\"id\":\"s1\",\"name\":\"TestSubsystem\",\"purpose\":\"Test purpose\",\"description\":\"Test desc\",\"boundaries\":[],\"critical_files\":[],\"responsibilities\":[] }]," +
+            "    \"architectural_facts\": [{\"id\":\"f1\",\"subject\":\"TestSubsystem\",\"predicate\":\"exists\",\"description\":\"Verified existence\",\"confidence\":1.0,\"evidence\":[] }]," +
             "    \"dependencies\": \"Test deps\"," +
             "    \"execution_instructions\": \"Test instructions\"" +
             "  }" +
@@ -146,6 +148,8 @@ public class MediatedModeIntegrationTest {
             assertNotNull("pom.xml should be in ZIP", zip.getEntry("affected-files/pom.xml"));
             assertNotNull("sloeber.ino should be in ZIP", zip.getEntry("affected-files/sloeber.ino"));
             assertNotNull("prompt.md should be in ZIP", zip.getEntry("prompt.md"));
+            assertNotNull("architectural-facts.json should be in ZIP", zip.getEntry("architectural-facts.json"));
+            assertNotNull("subsystems.json should be in ZIP", zip.getEntry("subsystems.json"));
         }
     }
 

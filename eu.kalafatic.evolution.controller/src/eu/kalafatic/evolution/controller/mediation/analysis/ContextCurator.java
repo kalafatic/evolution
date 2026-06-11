@@ -55,14 +55,24 @@ public class ContextCurator {
 
             // A. Graph Centrality Signal (Primary Hotspot Indicator)
             int totalDegree = inDegree.getOrDefault(nid, 0) + outDegree.getOrDefault(nid, 0);
-            score += (totalDegree * 8.0); // Increased weight for centrality
+            score += (totalDegree * 5.0);
 
-            // B. Semantic Density Signal
+            // B. Architectural Authority (Coordination & Orchestration responsibility)
+            // Files that act as hubs or controllers have higher authority.
+            if (node.getSummary() != null) {
+                String summary = node.getSummary().toLowerCase();
+                if (summary.contains("coordinate") || summary.contains("orchestrate")) score += 20.0;
+                if (summary.contains("control") || summary.contains("manager")) score += 15.0;
+                if (summary.contains("kernel") || summary.contains("authority")) score += 25.0;
+                if (summary.contains("subsystem") || summary.contains("boundary")) score += 10.0;
+            }
+
+            // C. Semantic Density Signal
             // Higher density of structures (methods, classes) and attributes indicates higher info value.
             int density = node.getStructures().size() + node.getAttributes().size() + node.getDependencies().size();
             score += (density * 2.0);
 
-            // C. Abstract Relevance Signal
+            // D. Abstract Relevance Signal
             if (node.getSummary() != null) {
                 String summary = node.getSummary().toLowerCase();
                 for (String word : keywords) {

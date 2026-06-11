@@ -13,6 +13,8 @@ public class MediationCandidate {
     private String prompt;
     private List<String> selectedFiles = new ArrayList<>();
     private String architectureSummary;
+    private List<ArchitecturalFact> architecturalFacts = new ArrayList<>();
+    private List<Subsystem> subsystems = new ArrayList<>();
     private String dependencies;
     private String executionInstructions;
     private Map<String, Object> metadata = new HashMap<>();
@@ -40,6 +42,22 @@ public class MediationCandidate {
 
     public void setArchitectureSummary(String architectureSummary) {
         this.architectureSummary = architectureSummary;
+    }
+
+    public List<ArchitecturalFact> getArchitecturalFacts() {
+        return architecturalFacts;
+    }
+
+    public void setArchitecturalFacts(List<ArchitecturalFact> architecturalFacts) {
+        this.architecturalFacts = architecturalFacts;
+    }
+
+    public List<Subsystem> getSubsystems() {
+        return subsystems;
+    }
+
+    public void setSubsystems(List<Subsystem> subsystems) {
+        this.subsystems = subsystems;
     }
 
     public String getDependencies() {

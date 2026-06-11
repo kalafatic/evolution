@@ -222,7 +222,22 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             state.append("Domain: ").append(realityModel.getDomain()).append("\n");
             state.append("Purpose: ").append(realityModel.getPurpose()).append("\n");
             state.append("Architecture Summary: ").append(realityModel.getArchitectureSummary()).append("\n");
-            state.append("Objectives: ").append(realityModel.getObjectives()).append("\n");
+
+            if (!realityModel.getSubsystems().isEmpty()) {
+                state.append("\nDISCOVERED SUBSYSTEMS:\n");
+                for (var s : realityModel.getSubsystems()) {
+                    state.append("- ").append(s.getName()).append(": ").append(s.getPurpose()).append("\n");
+                }
+            }
+
+            if (!realityModel.getArchitecturalFacts().isEmpty()) {
+                state.append("\nARCHITECTURAL FACTS:\n");
+                for (var f : realityModel.getArchitecturalFacts()) {
+                    state.append("- ").append(f.toString()).append("\n");
+                }
+            }
+
+            state.append("\nObjectives: ").append(realityModel.getObjectives()).append("\n");
             state.append("Risks: ").append(realityModel.getRisks()).append("\n");
 
             state.append("\nIDENTIFIED HOTSPOTS (PRIORITY EVOLUTION TARGETS):\n");
@@ -368,6 +383,17 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
                 eu.kalafatic.evolution.controller.mediation.model.MediationCandidate med = (eu.kalafatic.evolution.controller.mediation.model.MediationCandidate) winningMedCandidate;
                 lineageContext += "\n--- EVOLVED UNDERSTANDING (ANCESTOR) ---\n";
                 lineageContext += "ARCHITECTURE: " + med.getArchitectureSummary() + "\n";
+
+                if (med.getSubsystems() != null && !med.getSubsystems().isEmpty()) {
+                    lineageContext += "DISCOVERED SUBSYSTEMS:\n";
+                    for (var s : med.getSubsystems()) lineageContext += "- " + s.getName() + ": " + s.getPurpose() + "\n";
+                }
+
+                if (med.getArchitecturalFacts() != null && !med.getArchitecturalFacts().isEmpty()) {
+                    lineageContext += "ARCHITECTURAL FACTS:\n";
+                    for (var f : med.getArchitecturalFacts()) lineageContext += "- " + f.toString() + "\n";
+                }
+
                 lineageContext += "DEPENDENCIES: " + med.getDependencies() + "\n";
                 lineageContext += "INSTRUCTIONS: " + med.getExecutionInstructions() + "\n";
             }
@@ -511,6 +537,42 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
                 for (int i = 0; i < medFiles.length(); i++) med.getSelectedFiles().add(medFiles.getString(i));
             }
             med.setArchitectureSummary(medObj.optString("architecture_summary"));
+
+            JSONArray subArr = medObj.optJSONArray("subsystems");
+            if (subArr != null) {
+                for (int i = 0; i < subArr.length(); i++) {
+                    JSONObject sObj = subArr.getJSONObject(i);
+                    eu.kalafatic.evolution.controller.mediation.model.Subsystem subsystem = new eu.kalafatic.evolution.controller.mediation.model.Subsystem();
+                    subsystem.setId(sObj.optString("id"));
+                    subsystem.setName(sObj.optString("name"));
+                    subsystem.setPurpose(sObj.optString("purpose"));
+                    subsystem.setDescription(sObj.optString("description"));
+                    JSONArray bounds = sObj.optJSONArray("boundaries");
+                    if (bounds != null) for (int j = 0; j < bounds.length(); j++) subsystem.getBoundaries().add(bounds.getString(j));
+                    JSONArray crit = sObj.optJSONArray("critical_files");
+                    if (crit != null) for (int j = 0; j < crit.length(); j++) subsystem.getCriticalFiles().add(crit.getString(j));
+                    JSONArray resp = sObj.optJSONArray("responsibilities");
+                    if (resp != null) for (int j = 0; j < resp.length(); j++) subsystem.getResponsibilities().add(resp.getString(j));
+                    med.getSubsystems().add(subsystem);
+                }
+            }
+
+            JSONArray factArr = medObj.optJSONArray("architectural_facts");
+            if (factArr != null) {
+                for (int i = 0; i < factArr.length(); i++) {
+                    JSONObject fObj = factArr.getJSONObject(i);
+                    eu.kalafatic.evolution.controller.mediation.model.ArchitecturalFact fact = new eu.kalafatic.evolution.controller.mediation.model.ArchitecturalFact();
+                    fact.setId(fObj.optString("id"));
+                    fact.setSubject(fObj.optString("subject"));
+                    fact.setPredicate(fObj.optString("predicate"));
+                    fact.setDescription(fObj.optString("description"));
+                    fact.setConfidence(fObj.optDouble("confidence", 1.0));
+                    JSONArray ev = fObj.optJSONArray("evidence");
+                    if (ev != null) for (int j = 0; j < ev.length(); j++) fact.getEvidence().add(ev.getString(j));
+                    med.getArchitecturalFacts().add(fact);
+                }
+            }
+
             med.setDependencies(medObj.optString("dependencies"));
             med.setExecutionInstructions(medObj.optString("execution_instructions"));
             med.setEvaluation(medObj.optString("evaluation"));

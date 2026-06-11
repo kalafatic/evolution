@@ -15,6 +15,8 @@ public class TargetRealityModel {
     private String architectureSummary;
     private List<String> technologies = new ArrayList<>();
     private List<Hotspot> hotspots = new ArrayList<>();
+    private List<ArchitecturalFact> architecturalFacts = new ArrayList<>();
+    private List<Subsystem> subsystems = new ArrayList<>();
     private Map<String, String> dimensions = new HashMap<>(); // Dynamic dimensions (e.g., constraints, stakeholders)
     private List<String> objectives = new ArrayList<>();
     private List<String> risks = new ArrayList<>();
@@ -36,6 +38,12 @@ public class TargetRealityModel {
     public List<Hotspot> getHotspots() { return hotspots; }
     public void setHotspots(List<Hotspot> hotspots) { this.hotspots = hotspots; }
 
+    public List<ArchitecturalFact> getArchitecturalFacts() { return architecturalFacts; }
+    public void setArchitecturalFacts(List<ArchitecturalFact> architecturalFacts) { this.architecturalFacts = architecturalFacts; }
+
+    public List<Subsystem> getSubsystems() { return subsystems; }
+    public void setSubsystems(List<Subsystem> subsystems) { this.subsystems = subsystems; }
+
     public Map<String, String> getDimensions() { return dimensions; }
     public void setDimensions(Map<String, String> dimensions) { this.dimensions = dimensions; }
 
@@ -47,6 +55,14 @@ public class TargetRealityModel {
 
     public void addHotspot(Hotspot hotspot) {
         this.hotspots.add(hotspot);
+    }
+
+    public void addArchitecturalFact(ArchitecturalFact fact) {
+        this.architecturalFacts.add(fact);
+    }
+
+    public void addSubsystem(Subsystem subsystem) {
+        this.subsystems.add(subsystem);
     }
 
     public void addObjective(String objective) {
