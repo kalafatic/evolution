@@ -90,11 +90,6 @@ public class InstructionsGroup extends AEvoGroup {
                         page.handleSend();
                     }
                 }
-                // Ctrl+N: New Session
-                if (e.keyCode == 'n' && (e.stateMask & SWT.CTRL) != 0) {
-                    e.doit = false;
-                    page.createNewSession();
-                }
                 // Ctrl+L: Clean Chat
                 if (e.keyCode == 'l' && (e.stateMask & SWT.CTRL) != 0) {
                     e.doit = false;
@@ -127,10 +122,6 @@ public class InstructionsGroup extends AEvoGroup {
                         updateModel();
                         page.handleSend();
                     }
-                }
-                if (e.keyCode == 'n' && (e.stateMask & SWT.CTRL) != 0) {
-                    e.doit = false;
-                    page.createNewSession();
                 }
                 if (e.keyCode == 'l' && (e.stateMask & SWT.CTRL) != 0) {
                     e.doit = false;

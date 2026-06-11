@@ -748,7 +748,7 @@
             commandId="eu.kalafatic.evolution.view.newAiSession"
             contextId="org.eclipse.ui.contexts.window"
             schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
-            sequence="M1+M3+T">
+            sequence="M1+N">
       </key>
    </extension>
    <extension
