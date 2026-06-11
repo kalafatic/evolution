@@ -376,8 +376,21 @@ public class AiChatPage extends AEvoPage {
 		section.put("AiMode", orchestrator.getAiMode().getValue());
 		if (orchestrator.getLocalModel() != null) section.put("LocalModel", orchestrator.getLocalModel());
 		if (orchestrator.getRemoteModel() != null) section.put("RemoteModel", orchestrator.getRemoteModel());
-		if (chatMgmtGroup.getRemoteToken() != null) section.put("RemoteToken_" + orchestrator.getRemoteModel(), chatMgmtGroup.getRemoteToken());
-		if (chatMgmtGroup.getRemoteUrl() != null) section.put("RemoteUrl_" + orchestrator.getRemoteModel(), chatMgmtGroup.getRemoteUrl());
+		if (chatMgmtGroup != null && chatMgmtGroup.getRemoteToken() != null) section.put("RemoteToken_" + orchestrator.getRemoteModel(), chatMgmtGroup.getRemoteToken());
+		if (chatMgmtGroup != null && chatMgmtGroup.getRemoteUrl() != null) section.put("RemoteUrl_" + orchestrator.getRemoteModel(), chatMgmtGroup.getRemoteUrl());
+
+		if (currentSession != null) {
+			section.put("iterativeMode", currentSession.isIterativeMode());
+			section.put("selfIterativeMode", currentSession.isSelfIterativeMode());
+			section.put("darwinMode", currentSession.isDarwinMode());
+			section.put("gitAutomation", currentSession.isGitAutomation());
+			section.put("maxIterations", currentSession.getMaxIterations());
+			section.put("stepMode", currentSession.isStepMode());
+			if (currentSession.getTargetPath() != null) section.put("targetPath", currentSession.getTargetPath());
+			if (currentSession.getTargetType() != null) section.put("targetType", currentSession.getTargetType());
+			section.put("autoApprove", currentSession.isAutoApprove());
+			section.put("expansion", currentSession.getExpansion());
+		}
 	}
 
 	public void loadLastUsedSettings() {
@@ -411,6 +424,27 @@ public class AiChatPage extends AEvoPage {
 				if (orchestrator.getAiChat() == null) orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
 				orchestrator.getAiChat().setUrl(url);
 			}
+		}
+
+		if (currentSession != null) {
+			if (section.get("iterativeMode") != null) currentSession.setIterativeMode(section.getBoolean("iterativeMode"));
+			if (section.get("selfIterativeMode") != null) currentSession.setSelfIterativeMode(section.getBoolean("selfIterativeMode"));
+			if (section.get("darwinMode") != null) currentSession.setDarwinMode(section.getBoolean("darwinMode"));
+			if (section.get("gitAutomation") != null) currentSession.setGitAutomation(section.getBoolean("gitAutomation"));
+			try { if (section.get("maxIterations") != null) currentSession.setMaxIterations(section.getInt("maxIterations")); } catch (NumberFormatException e) {}
+			if (section.get("stepMode") != null) currentSession.setStepMode(section.getBoolean("stepMode"));
+			String targetPath = section.get("targetPath");
+			if (targetPath != null) currentSession.setTargetPath(targetPath);
+			String targetType = section.get("targetType");
+			if (targetType != null) currentSession.setTargetType(targetType);
+			if (section.get("autoApprove") != null) currentSession.setAutoApprove(section.getBoolean("autoApprove"));
+			try { if (section.get("expansion") != null) currentSession.setExpansion(section.getInt("expansion")); } catch (NumberFormatException e) {}
+
+			// Also update orchestrator fields if they exist and match
+			orchestrator.setDarwinMode(currentSession.isDarwinMode());
+			if (currentSession.getAiMode() != null) orchestrator.setAiMode(currentSession.getAiMode());
+			if (currentSession.getLocalModel() != null) orchestrator.setLocalModel(currentSession.getLocalModel());
+			if (currentSession.getRemoteModel() != null) orchestrator.setRemoteModel(currentSession.getRemoteModel());
 		}
 	}
 
@@ -582,12 +616,29 @@ public class AiChatPage extends AEvoPage {
 			ChatSession newSession = OrchestrationFactory.eINSTANCE.createChatSession();
 			newSession.setId(id);
 
-			// Pre-select model from last used settings
-			loadLastUsedSettings();
-			scheduleRefresh();
+			// Copy general settings from current session
+			if (currentSession != null) {
+				newSession.setIterativeMode(currentSession.isIterativeMode());
+				newSession.setSelfIterativeMode(currentSession.isSelfIterativeMode());
+				newSession.setDarwinMode(currentSession.isDarwinMode());
+				newSession.setGitAutomation(currentSession.isGitAutomation());
+				newSession.setMaxIterations(currentSession.getMaxIterations());
+				newSession.setStepMode(currentSession.isStepMode());
+				newSession.setTargetPath(currentSession.getTargetPath());
+				newSession.setTargetType(currentSession.getTargetType());
+				newSession.setAutoApprove(currentSession.isAutoApprove());
+				newSession.setAiMode(currentSession.getAiMode());
+				newSession.setLocalModel(currentSession.getLocalModel());
+				newSession.setRemoteModel(currentSession.getRemoteModel());
+				newSession.setExpansion(currentSession.getExpansion());
+			}
 
 			orchestrator.getAiChat().getSessions().add(newSession);
 			currentSession = newSession;
+
+			// Pre-select model from last used settings (and other general settings)
+			loadLastUsedSettings();
+			scheduleRefresh();
 			chatGroup.setSession(currentSession);
 			updateSessionCombo();
 
