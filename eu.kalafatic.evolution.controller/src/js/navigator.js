@@ -114,7 +114,11 @@
             'DOMAIN': '#8b5cf6',
             'ORCHESTRATION': '#10b981',
             'MEDIATION': '#f59e0b',
-            'SUPERVISION': '#6366f1'
+            'SUPERVISION': '#6366f1',
+            'HOTSPOT': '#f43f5e',
+            'OBJECTIVE': '#22c55e',
+            'RISK': '#f97316',
+            'MODULE': '#64748b'
         };
         return colors[type] || '#94a3b8';
     }
