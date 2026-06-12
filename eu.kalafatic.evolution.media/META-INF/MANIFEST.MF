@@ -5,7 +5,10 @@ Bundle-SymbolicName: eu.kalafatic.evolution.media;singleton:=true
 Bundle-Version: 2.6.5.qualifier
 Require-Bundle: eu.kalafatic.evolution.controller;bundle-version="2.6.5",
  eu.kalafatic.utils;bundle-version="2.6.5",
- org.eclipse.core.runtime
+ org.eclipse.core.runtime,
+ com.fasterxml.jackson.core.jackson-databind,
+ com.fasterxml.jackson.core.jackson-core,
+ com.fasterxml.jackson.core.jackson-annotations
 Bundle-RequiredExecutionEnvironment: JavaSE-21
 Automatic-Module-Name: eu.kalafatic.evolution.media
 Export-Package: eu.kalafatic.evolution.media,

@@ -1,11 +1,15 @@
 package eu.kalafatic.evolution.media.render;
 
 import eu.kalafatic.evolution.media.model.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.HashMap;
+import java.util.ArrayList;
 
 public class HtmlRenderer {
+
+    private final ObjectMapper mapper = new ObjectMapper();
 
     public String render(Diagram diagram) {
         StringBuilder html = new StringBuilder();
@@ -123,18 +127,37 @@ public class HtmlRenderer {
     }
 
     private void appendScripts(StringBuilder html, Diagram diagram) {
-        // Embed D3.js to make it self-contained
-        // Since I cannot easily fetch and embed the whole D3 here,
-        // I will use a very minimal force layout implementation in plain JS
-        // OR I will assume for now that I can provide a "compact" D3 or just stick to the requirement
-        // Actually, the requirement says "No server required", "Single self-contained HTML".
-        // I will implement a minimal force layout to be truly self-contained.
-
         html.append("<script>\n");
-        html.append("const data = {\n");
-        html.append("  nodes: ").append(serializeNodes(diagram.getNodes())).append(",\n");
-        html.append("  links: ").append(serializeEdges(diagram.getEdges())).append("\n");
-        html.append("};\n");
+
+        Map<String, Object> data = new HashMap<>();
+        List<Map<String, Object>> nodes = new ArrayList<>();
+        for (Node n : diagram.getNodes()) {
+            Map<String, Object> nodeMap = new HashMap<>();
+            nodeMap.put("id", n.getId());
+            nodeMap.put("label", n.getLabel());
+            nodeMap.put("type", n.getType());
+            nodeMap.put("properties", n.getProperties());
+            nodes.add(nodeMap);
+        }
+
+        List<Map<String, Object>> links = new ArrayList<>();
+        for (Edge e : diagram.getEdges()) {
+            Map<String, Object> linkMap = new HashMap<>();
+            linkMap.put("source", e.getSourceId());
+            linkMap.put("target", e.getTargetId());
+            linkMap.put("label", e.getLabel());
+            linkMap.put("type", e.getType());
+            links.add(linkMap);
+        }
+
+        data.put("nodes", nodes);
+        data.put("links", links);
+
+        try {
+            html.append("const data = ").append(mapper.writeValueAsString(data)).append(";\n");
+        } catch (Exception e) {
+            html.append("const data = {nodes:[], links:[]};\n");
+        }
 
         html.append("""
             // Minimal Force-Directed Layout Implementation
@@ -335,32 +358,6 @@ public class HtmlRenderer {
             }
             """);
         html.append("</script>\n");
-    }
-
-    private String serializeNodes(List<Node> nodes) {
-        return "[" + nodes.stream().map(n -> String.format("{\"id\":\"%s\",\"label\":\"%s\",\"type\":\"%s\",\"properties\":%s}",
-            escapeJson(n.getId()), escapeJson(n.getLabel()), escapeJson(n.getType()), serializeProperties(n.getProperties()))).collect(Collectors.joining(",")) + "]";
-    }
-
-    private String serializeEdges(List<Edge> edges) {
-        return "[" + edges.stream().map(e -> String.format("{\"source\":\"%s\",\"target\":\"%s\",\"label\":\"%s\",\"type\":\"%s\"}",
-            escapeJson(e.getSourceId()), escapeJson(e.getTargetId()), escapeJson(e.getLabel()), escapeJson(e.getType()))).collect(Collectors.joining(",")) + "]";
-    }
-
-    private String serializeProperties(Map<String, String> properties) {
-        if (properties.isEmpty()) return "{}";
-        return "{" + properties.entrySet().stream().map(e -> String.format("\"%s\":\"%s\"", escapeJson(e.getKey()), escapeJson(e.getValue()))).collect(Collectors.joining(",")) + "}";
-    }
-
-    private String escapeJson(String text) {
-        if (text == null) return "";
-        return text.replace("\\", "\\\\")
-                   .replace("\"", "\\\"")
-                   .replace("\b", "\\b")
-                   .replace("\f", "\\f")
-                   .replace("\n", "\\n")
-                   .replace("\r", "\\r")
-                   .replace("\t", "\\t");
     }
 
     private String escapeHtml(String text) {

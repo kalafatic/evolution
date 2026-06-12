@@ -11,8 +11,9 @@ import java.io.IOException;
 public class MediaServiceManualTest {
     public static void main(String[] args) throws IOException {
         MediaService mediaService = new MediaService();
+        String projectName = "TestProject";
 
-        // Test Architecture HTML
+        // 1. Test Architecture HTML (Discovery simulation)
         DesignModel designModel = new DesignModel();
         designModel.setName("Test System");
 
@@ -33,21 +34,49 @@ public class MediaServiceManualTest {
         designModel.getRelationships().add(r1);
 
         File archFile = new File("test-architecture.html");
-        mediaService.generateArchitectureHtml(designModel, archFile);
-        System.out.println("Generated architecture HTML: " + archFile.getAbsolutePath());
+        mediaService.generateArchitectureHtml(projectName, designModel, archFile);
+        System.out.println("Generated architecture HTML and CACHED: " + archFile.getAbsolutePath());
 
-        // Test Reality HTML & Presentation
+        // 2. Test Reality HTML & Presentation
         TargetRealityModel realityModel = new TargetRealityModel();
         realityModel.setDomain("Testing 'Media'");
         realityModel.setPurpose("Verify media module");
         realityModel.setArchitectureSummary("A simple model for testing.");
 
         File realityFile = new File("test-reality.html");
-        mediaService.generateRealityHtml(realityModel, realityFile);
-        System.out.println("Generated reality HTML: " + realityFile.getAbsolutePath());
+        mediaService.generateRealityHtml(projectName, realityModel, realityFile);
+        System.out.println("Generated reality HTML and CACHED: " + realityFile.getAbsolutePath());
 
         File presFile = new File("test-presentation.html");
-        mediaService.generatePresentation(realityModel, presFile);
+        mediaService.generatePresentation(projectName, realityModel, presFile);
         System.out.println("Generated presentation HTML: " + presFile.getAbsolutePath());
+
+        // 3. Test CACHE REUSE
+        String commitHash = getCurrentCommitHash();
+        DesignModel cachedModel = mediaService.loadArtifact(projectName, "architecture", commitHash, DesignModel.class);
+        if (cachedModel != null) {
+            System.out.println("SUCCESS: Loaded cached architecture model for " + commitHash);
+            System.out.println("Cached model name: " + cachedModel.getName());
+        } else {
+            System.err.println("FAILURE: Could not load cached architecture model for " + commitHash);
+        }
+
+        TargetRealityModel cachedReality = mediaService.loadArtifact(projectName, "reality", commitHash, TargetRealityModel.class);
+        if (cachedReality != null) {
+            System.out.println("SUCCESS: Loaded cached reality model for " + commitHash);
+            System.out.println("Cached reality domain: " + cachedReality.getDomain());
+        } else {
+            System.err.println("FAILURE: Could not load cached reality model for " + commitHash);
+        }
+    }
+
+    private static String getCurrentCommitHash() {
+        try {
+            Process process = Runtime.getRuntime().exec("git rev-parse --short HEAD");
+            process.waitFor();
+            return new String(process.getInputStream().readAllBytes()).trim();
+        } catch (Exception e) {
+            return "unknown";
+        }
     }
 }
