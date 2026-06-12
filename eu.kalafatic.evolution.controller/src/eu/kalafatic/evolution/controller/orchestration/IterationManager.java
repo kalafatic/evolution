@@ -1351,9 +1351,24 @@ public class IterationManager {
         TargetSnapshot snapshot = (TargetSnapshot) context.getOrchestrationState().getMetadata().get("mediatedSnapshot");
         TargetRealityModel existingModel = (TargetRealityModel) context.getOrchestrationState().getMetadata().get("targetRealityModel");
 
-        if (snapshot != null && existingModel != null) {
-            TargetRealityModel refinedModel = realityDiscoveryAgent.discover(goal, context, snapshot, existingModel);
-            context.getOrchestrationState().getMetadata().put("targetRealityModel", refinedModel);
+        if (snapshot == null || existingModel == null) return;
+
+        // Recursive Reconstruction Loop: iterate discovery until completeness threshold or convergence
+        double lastCompleteness = existingModel.getRealityCompleteness();
+        int pass = 1;
+        while (pass <= 3 && existingModel.getRealityCompleteness() < 0.85) {
+            context.log("[KERNEL] Discovery Loop Pass " + pass + " (Completeness: " + existingModel.getRealityCompleteness() + ")");
+
+            // Targeted Discovery driven by Knowledge Gaps and coverage scores
+            existingModel = realityDiscoveryAgent.discover(goal, context, snapshot, existingModel);
+            context.getOrchestrationState().getMetadata().put("targetRealityModel", existingModel);
+
+            if (Math.abs(existingModel.getRealityCompleteness() - lastCompleteness) < 0.05) {
+                context.log("[KERNEL] Discovery converged.");
+                break;
+            }
+            lastCompleteness = existingModel.getRealityCompleteness();
+            pass++;
         }
     }
 
@@ -1374,6 +1389,17 @@ public class IterationManager {
         for (Subsystem sub : winner.getMediationCandidate().getSubsystems()) {
             sub.setDiscoveryIteration(iteration);
             model.addSubsystem(sub);
+        }
+
+        // Merge discovered genes
+        for (eu.kalafatic.evolution.controller.mediation.model.ArchitecturalGene gene : winner.getMediationCandidate().getGenes()) {
+            gene.setDiscoveryIteration(iteration);
+            model.addGene(gene);
+        }
+
+        // Merge Knowledge Gaps
+        for (eu.kalafatic.evolution.controller.mediation.model.KnowledgeGap gap : winner.getMediationCandidate().getKnowledgeGaps()) {
+            model.addKnowledgeGap(gap);
         }
     }
 
@@ -1528,24 +1554,36 @@ public class IterationManager {
                 }
             }
 
-            // Extract facts and subsystems for export
+            // Extract facts, subsystems, gaps and genes for export
             String architecturalFactsJson = "[]";
             String subsystemsJson = "[]";
-            if (winningCandidate != null) {
-                try {
-                    var mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            String knowledgeGapsJson = "[]";
+            String genesJson = "[]";
+
+            try {
+                var mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                if (winningCandidate != null) {
                     architecturalFactsJson = mapper.writeValueAsString(winningCandidate.getArchitecturalFacts());
                     subsystemsJson = mapper.writeValueAsString(winningCandidate.getSubsystems());
-                } catch (Exception e) {
-                    context.log("[KERNEL] Warning: Could not serialize facts/subsystems: " + e.getMessage());
+                    knowledgeGapsJson = mapper.writeValueAsString(winningCandidate.getKnowledgeGaps());
+                    genesJson = mapper.writeValueAsString(winningCandidate.getGenes());
+                } else if (realityModelObj != null) {
+                    // Fallback to global reality model if no winning candidate
+                    TargetRealityModel model = (TargetRealityModel) realityModelObj;
+                    architecturalFactsJson = mapper.writeValueAsString(model.getArchitecturalFacts());
+                    subsystemsJson = mapper.writeValueAsString(model.getSubsystems());
+                    knowledgeGapsJson = mapper.writeValueAsString(model.getKnowledgeGaps());
+                    genesJson = mapper.writeValueAsString(model.getGenes());
                 }
+            } catch (Exception e) {
+                context.log("[KERNEL] Warning: Could not serialize export components: " + e.getMessage());
             }
 
             context.log("[KERNEL] Mediated Mode: Final selected files for export: " + selectedPaths);
-            File exportPackage = exportManager.createExportPackage(context.getSessionId(), optimizedPrompt, selectedPaths, context.getProjectRoot(), outputPath, metadataJson, historyAnalysis, architectureSummary, dependencies, executionInstructions, realityModelJson, architecturalFactsJson, subsystemsJson);
+            File exportPackage = exportManager.createExportPackage(context.getSessionId(), optimizedPrompt, selectedPaths, context.getProjectRoot(), outputPath, metadataJson, historyAnalysis, architectureSummary, dependencies, executionInstructions, realityModelJson, architecturalFactsJson, subsystemsJson, knowledgeGapsJson, genesJson);
 
             // NEW: Create export folder in addition to ZIP
-            File exportFolder = exportManager.createExportFolder(context.getSessionId(), optimizedPrompt, selectedPaths, context.getProjectRoot(), outputPath, metadataJson, historyAnalysis, architectureSummary, dependencies, executionInstructions, realityModelJson, architecturalFactsJson, subsystemsJson);
+            File exportFolder = exportManager.createExportFolder(context.getSessionId(), optimizedPrompt, selectedPaths, context.getProjectRoot(), outputPath, metadataJson, historyAnalysis, architectureSummary, dependencies, executionInstructions, realityModelJson, architecturalFactsJson, subsystemsJson, knowledgeGapsJson, genesJson);
 
             // Record as a change so it appears in Changes view
             context.getFileChangeTracker().recordChange(exportPackage.getName(), FileChangeTracker.ChangeType.NEW);

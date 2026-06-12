@@ -8,7 +8,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 import eu.kalafatic.evolution.controller.mediation.model.ArchitecturalFact;
+import eu.kalafatic.evolution.controller.mediation.model.ArchitecturalGene;
+import eu.kalafatic.evolution.controller.mediation.model.KnowledgeGap;
 import eu.kalafatic.evolution.controller.mediation.model.FileDescriptor;
 import eu.kalafatic.evolution.controller.mediation.model.SemanticEdge;
 import eu.kalafatic.evolution.controller.mediation.model.SemanticNode;
@@ -64,25 +67,35 @@ public class ContextCurator {
         for (SemanticNode node : snapshot.getNodes().values()) {
             double score = 0.0;
             String nid = node.getId();
+            String path = node.getPath();
 
-            // A. Architectural Authority (Primary Signal from Discovery)
+            // A. Architectural Authority & Influence (Primary Signal)
             double authority = node.getArchitecturalAuthority();
+            double influence = node.getEvolutionaryInfluenceScore();
+
             if (realityModel != null) {
-                // If we have a formal reality model, elevate authority based on discovered subsystems and facts
-                String path = node.getPath();
+                // Subsystem & Boundary Elevation
                 Optional<Subsystem> sub = realityModel.getSubsystems().stream().filter(s -> s.getCriticalFiles().contains(path)).findFirst();
                 if (sub.isPresent()) {
                     authority += 30.0;
                     if (sub.get().getBoundaries().contains(path)) authority += 20.0;
                 }
 
+                // Fact Evidence Elevation
                 long factCount = realityModel.getArchitecturalFacts().stream().filter(f -> f.getEvidence().contains(path)).count();
                 authority += (factCount * 15.0);
+
+                // Unknownness / Uncertainty Elevation (Knowledge Gap Driven)
+                Optional<KnowledgeGap> gap = realityModel.getKnowledgeGaps().stream()
+                    .filter(g -> g.getRelatedArtifacts().contains(path))
+                    .findFirst();
+                if (gap.isPresent()) {
+                    score += (gap.get().getSignificance() * 100.0); // Prioritize uncertainty reduction
+                }
             }
 
-            if (authority > 0) {
-                score += (authority * 2.0);
-            }
+            score += (authority * 2.0);
+            score += (influence * 50.0); // Influence is a high-signal multiplier
 
             // B. Graph Centrality Signal (Hotspot Indicator)
             int totalDegree = inDegree.getOrDefault(nid, 0) + outDegree.getOrDefault(nid, 0);
@@ -127,7 +140,7 @@ public class ContextCurator {
             }
         }
 
-        // 2. Token-Budget Driven Selection with Diversity Preservation
+        // 2. Coverage-Driven Selection logic
         List<String> selected = new ArrayList<>();
         List<Map.Entry<String, Double>> sortedCandidates = scores.entrySet().stream()
             .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
@@ -136,43 +149,41 @@ public class ContextCurator {
         Set<String> selectedClusters = new HashSet<>();
         long currentTokens = 0;
 
+        // Selection Pass A: Critical Coverage (Authority + Gaps)
         for (Map.Entry<String, Double> entry : sortedCandidates) {
             String nodeId = entry.getKey();
             SemanticNode node = snapshot.getNodes().get(nodeId);
 
             long estimatedTokens = estimateTokens(node);
             if (currentTokens + estimatedTokens > tokenBudget) continue;
-            if (selected.size() >= 16) break; // Hard ceiling for mediated mode efficiency
 
-            // Derive a generic 'cluster' based on path depth
+            // Stop only when adequate coverage is reached or budget is exhausted.
+            // "Coverage" means we have represented the core subsystems and addressed high-significance gaps.
+            if (isCoverageAdequate(selected, realityModel, currentTokens, tokenBudget)) break;
+
             String cluster = deriveCluster(node);
-
-            // Penalize context saturation (Diversity Preservation)
-            if (selectedClusters.contains(cluster)) {
-                if (entry.getValue() < 50.0) continue; // Skip weak duplicates unless extreme significance
-            }
+            if (selectedClusters.contains(cluster) && entry.getValue() < 100.0) continue;
 
             selected.add(node.getPath());
             selectedClusters.add(cluster);
             currentTokens += estimatedTokens;
         }
 
-        // 3. Subsystem Coverage Enforcement: Ensure at least one file from each major subsystem if budget permits
-        if (realityModel != null && selected.size() < 16) {
+        // Selection Pass B: Subsystem Boundary Enforcement
+        if (realityModel != null) {
             for (Subsystem sub : realityModel.getSubsystems()) {
-                boolean covered = sub.getCriticalFiles().stream().anyMatch(selected::contains);
-                if (!covered && !sub.getCriticalFiles().isEmpty()) {
-                    String bestFile = sub.getCriticalFiles().get(0);
-                    SemanticNode n = snapshot.getNodes().get(bestFile);
+                boolean covered = sub.getBoundaries().stream().anyMatch(selected::contains);
+                if (!covered && !sub.getBoundaries().isEmpty()) {
+                    String boundaryFile = sub.getBoundaries().get(0);
+                    SemanticNode n = snapshot.getNodes().get(boundaryFile);
                     if (n != null) {
                         long tokens = estimateTokens(n);
                         if (currentTokens + tokens <= tokenBudget) {
-                            selected.add(bestFile);
+                            selected.add(boundaryFile);
                             currentTokens += tokens;
                         }
                     }
                 }
-                if (selected.size() >= 16) break;
             }
         }
 
@@ -208,6 +219,31 @@ public class ContextCurator {
         } catch (NumberFormatException e) {
             return 250;
         }
+    }
+
+    private boolean isCoverageAdequate(List<String> selected, TargetRealityModel model, long currentTokens, int budget) {
+        if (selected.size() < 4) return false; // Minimum context
+        if (currentTokens > budget * 0.8) return true; // Budget nearing limit
+        if (selected.size() >= 24) return true; // Extreme ceiling for small models
+
+        if (model != null) {
+            // Coverage threshold: most subsystems and high-significance gaps addressed
+            long subsystemsCovered = model.getSubsystems().stream()
+                .filter(s -> s.getCriticalFiles().stream().anyMatch(selected::contains))
+                .count();
+
+            long highSignificanceGapsCovered = model.getKnowledgeGaps().stream()
+                .filter(g -> g.getSignificance() > 0.8)
+                .filter(g -> g.getRelatedArtifacts().stream().anyMatch(selected::contains))
+                .count();
+
+            boolean subsystemsAdequate = model.getSubsystems().isEmpty() || (subsystemsCovered >= model.getSubsystems().size() * 0.7);
+            boolean gapsAdequate = model.getKnowledgeGaps().stream().filter(g -> g.getSignificance() > 0.8).count() == highSignificanceGapsCovered;
+
+            return subsystemsAdequate && gapsAdequate;
+        }
+
+        return selected.size() >= 12; // Default heuristic if no model
     }
 
     private String deriveCluster(SemanticNode node) {

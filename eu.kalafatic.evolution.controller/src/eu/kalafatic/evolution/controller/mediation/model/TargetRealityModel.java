@@ -17,6 +17,15 @@ public class TargetRealityModel {
     private List<Hotspot> hotspots = new ArrayList<>();
     private List<ArchitecturalFact> architecturalFacts = new ArrayList<>();
     private List<Subsystem> subsystems = new ArrayList<>();
+    private List<ArchitecturalGene> genes = new ArrayList<>();
+    private List<KnowledgeGap> knowledgeGaps = new ArrayList<>();
+    private double realityCompleteness; // 0.0 - 1.0
+
+    // Structured Views
+    private final Map<String, Object> architectureView = new HashMap<>();
+    private final Map<String, Object> implementationView = new HashMap<>();
+    private final Map<String, Object> genomeView = new HashMap<>();
+
     private Map<String, String> dimensions = new HashMap<>(); // Dynamic dimensions (e.g., constraints, stakeholders)
     private List<String> objectives = new ArrayList<>();
     private List<String> risks = new ArrayList<>();
@@ -44,6 +53,19 @@ public class TargetRealityModel {
     public List<Subsystem> getSubsystems() { return subsystems; }
     public void setSubsystems(List<Subsystem> subsystems) { this.subsystems = subsystems; }
 
+    public List<ArchitecturalGene> getGenes() { return genes; }
+    public void setGenes(List<ArchitecturalGene> genes) { this.genes = genes; }
+
+    public List<KnowledgeGap> getKnowledgeGaps() { return knowledgeGaps; }
+    public void setKnowledgeGaps(List<KnowledgeGap> knowledgeGaps) { this.knowledgeGaps = knowledgeGaps; }
+
+    public double getRealityCompleteness() { return realityCompleteness; }
+    public void setRealityCompleteness(double realityCompleteness) { this.realityCompleteness = realityCompleteness; }
+
+    public Map<String, Object> getArchitectureView() { return architectureView; }
+    public Map<String, Object> getImplementationView() { return implementationView; }
+    public Map<String, Object> getGenomeView() { return genomeView; }
+
     public Map<String, String> getDimensions() { return dimensions; }
     public void setDimensions(Map<String, String> dimensions) { this.dimensions = dimensions; }
 
@@ -63,6 +85,14 @@ public class TargetRealityModel {
 
     public void addSubsystem(Subsystem subsystem) {
         this.subsystems.add(subsystem);
+    }
+
+    public void addGene(ArchitecturalGene gene) {
+        this.genes.add(gene);
+    }
+
+    public void addKnowledgeGap(KnowledgeGap gap) {
+        this.knowledgeGaps.add(gap);
     }
 
     public void addObjective(String objective) {

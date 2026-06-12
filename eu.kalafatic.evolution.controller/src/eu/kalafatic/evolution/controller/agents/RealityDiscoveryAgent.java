@@ -10,7 +10,9 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import eu.kalafatic.evolution.controller.mediation.model.ArchitecturalFact;
+import eu.kalafatic.evolution.controller.mediation.model.ArchitecturalGene;
 import eu.kalafatic.evolution.controller.mediation.model.Hotspot;
+import eu.kalafatic.evolution.controller.mediation.model.KnowledgeGap;
 import eu.kalafatic.evolution.controller.mediation.model.Subsystem;
 import eu.kalafatic.evolution.controller.mediation.model.SemanticEdge;
 import eu.kalafatic.evolution.controller.mediation.model.SemanticNode;
@@ -33,209 +35,317 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
 
     @Override
     protected String getAgentInstructions() {
-        return "You are a Reality Discovery Agent.\n" +
-               "Your goal is to construct a formal Target Reality Model from the provided repository evidence.\n" +
-               "Identify the domain, purpose, architecture, hotspots, subsystems, architectural facts, objectives, and risks.\n" +
-               "STRICT RULE: Only use discovered evidence. Do NOT compensate with invention or fashionable patterns.\n" +
-               "Identify hotspots based on connectivity, information density, and entry points.\n" +
-               "Discover subsystems based on dependencies, communication patterns, and shared responsibilities.\n" +
-               "Accumulate reusable architectural facts (e.g., 'Component A coordinates execution').";
+        return "You are a Reality Discovery Agent specialized in Recursive Reality Reconstruction.\n" +
+               "Your goal is deep architectural comprehension that remains executable on small local models.\n" +
+               "Small models participate in a recursive discovery process that gradually reconstructs the target reality.\n" +
+               "Never ask to explain the entire system. Instead ask 'What is the most important architectural fact not yet known?'\n" +
+               "Identify evidence, uncertainty, and knowledge gaps.\n" +
+               "STRICT RULE: Only use discovered evidence. Do NOT compensate with invention.";
     }
 
     public TargetRealityModel discover(String goal, TaskContext context, TargetSnapshot snapshot) throws Exception {
-        return discover(goal, context, snapshot, null);
+        return discover(goal, context, snapshot, new TargetRealityModel());
     }
 
-    public TargetRealityModel discover(String goal, TaskContext context, TargetSnapshot snapshot, TargetRealityModel existingModel) throws Exception {
-        context.log("[DISCOVERY] Formalizing Target Reality Model for: " + goal);
+    public TargetRealityModel discover(String goal, TaskContext context, TargetSnapshot snapshot, TargetRealityModel model) throws Exception {
+        context.log("[DISCOVERY] Starting Recursive Reality Reconstruction for: " + goal);
 
-        StringBuilder sb = new StringBuilder();
-        sb.append("GOAL: ").append(goal).append("\n\n");
+        // PASS 1 - STRUCTURAL DISCOVERY (Already performed by snapshot creation)
+        context.log("[DISCOVERY] Pass 1: Structural Discovery complete (Snapshot grounded).");
 
-        if (existingModel != null) {
-            sb.append("EXISTING ARCHITECTURAL MEMORY (REVISION REQUIRED):\n");
-            sb.append("- Domain: ").append(existingModel.getDomain()).append("\n");
-            sb.append("- Purpose: ").append(existingModel.getPurpose()).append("\n");
-            sb.append("- Facts: ").append(existingModel.getArchitecturalFacts().size()).append("\n");
-            sb.append("- Subsystems: ").append(existingModel.getSubsystems().size()).append("\n\n");
+        // PASS 2 - LOCAL RESPONSIBILITY DISCOVERY
+        discoverLocalResponsibilities(snapshot, model, context);
 
-            // Identify Knowledge Gaps for recursive focus
-            sb.append("KNOWLEDGE GAP ANALYSIS:\n");
-            List<String> gaps = identifyKnowledgeGaps(snapshot, existingModel);
-            for (String gap : gaps) sb.append("- ").append(gap).append("\n");
-            sb.append("\n");
-        }
+        // PASS 3 - RELATIONSHIP DISCOVERY & EVOLUTIONARY INFLUENCE
+        discoverRelationships(snapshot, model, context);
 
-        if (snapshot != null) {
-            sb.append("REPOSITORY STRUCTURE SUMMARY:\n");
-            sb.append("- Root: ").append(snapshot.getRootPath()).append("\n");
-            sb.append("- Technologies: ").append(snapshot.getMetadata().get("detectedTechnologies")).append("\n");
-            sb.append("- Architecture Inference: ").append(snapshot.getMetadata().get("architectureInference")).append("\n");
-            sb.append("- Node Count: ").append(snapshot.getNodes().size()).append("\n\n");
+        // PASS 4 - SUBSYSTEM DISCOVERY
+        discoverSubsystems(snapshot, model, context);
 
-            // Extract high-signal hotspots from graph centrality
-            List<SemanticNode> topNodes = getTopCentralNodes(snapshot, 15);
-            sb.append("HIGH-CENTRALITY CANDIDATES:\n");
-            for (SemanticNode node : topNodes) {
-                sb.append("- ").append(node.getPath()).append(" (Summary: ").append(node.getSummary()).append(")\n");
-            }
-        }
+        // PASS 5 - REALITY DISCOVERY (Synthesis & Completeness Tracking)
+        synthesizeReality(goal, snapshot, model, context);
 
-        String prompt = sb.toString() + "\n\n" +
-               "Output a JSON object for the Target Reality Model with the following schema:\n" +
-               "{\n" +
-               "  \"domain\": \"string\",\n" +
-               "  \"purpose\": \"string\",\n" +
-               "  \"architecture_summary\": \"string\",\n" +
-               "  \"technologies\": [\"string\"],\n" +
-               "  \"hotspots\": [\n" +
-               "    {\n" +
-               "      \"id\": \"string\",\n" +
-               "      \"name\": \"string\",\n" +
-               "      \"type\": \"entry_point|core_module|bottleneck|critical_query\",\n" +
-               "      \"description\": \"string\",\n" +
-               "      \"significance\": 0.0-1.0,\n" +
-               "      \"evidence\": [\"string\"],\n" +
-               "      \"related_artifacts\": [\"path/to/artifact\"]\n" +
-               "    }\n" +
-               "  ],\n" +
-               "  \"subsystems\": [\n" +
-               "    {\n" +
-               "      \"id\": \"string\",\n" +
-               "      \"name\": \"string\",\n" +
-               "      \"purpose\": \"string\",\n" +
-               "      \"description\": \"string\",\n" +
-               "      \"boundaries\": [\"string\"],\n" +
-               "      \"critical_files\": [\"string\"],\n" +
-               "      \"responsibilities\": [\"string\"]\n" +
-               "    }\n" +
-               "  ],\n" +
-               "  \"architectural_facts\": [\n" +
-               "    {\n" +
-               "      \"id\": \"string\",\n" +
-               "      \"subject\": \"string\",\n" +
-               "      \"predicate\": \"string\",\n" +
-               "      \"description\": \"string\",\n" +
-               "      \"confidence\": 0.0-1.0,\n" +
-               "      \"evidence\": [\"string\"]\n" +
-               "    }\n" +
-               "  ],\n" +
-               "  \"objectives\": [\"string\"],\n" +
-               "  \"risks\": [\"string\"],\n" +
-               "  \"dimensions\": {\"key\": \"value\"}\n" +
-               "}";
+        // PASS 6 - GENOME DISCOVERY (Portable Patterns)
+        discoverGenome(model, context);
 
-        String response = aiService.sendRequest(context.getOrchestrator(), getAgentInstructions() + "\n\n" + prompt, context);
-        JSONObject obj = JsonUtils.extractJsonObject(response);
+        // PASS 7 - ARCHITECTURAL COMPRESSION
+        compressUnderstanding(model, context);
 
-        TargetRealityModel model = new TargetRealityModel();
-        if (obj != null) {
-            model.setDomain(obj.optString("domain"));
-            model.setPurpose(obj.optString("purpose"));
-            model.setArchitectureSummary(obj.optString("architecture_summary"));
-
-            JSONArray techs = obj.optJSONArray("technologies");
-            if (techs != null) {
-                for (int i = 0; i < techs.length(); i++) model.getTechnologies().add(techs.getString(i));
-            }
-
-            JSONArray hotspots = obj.optJSONArray("hotspots");
-            if (hotspots != null) {
-                for (int i = 0; i < hotspots.length(); i++) {
-                    JSONObject hObj = hotspots.optJSONObject(i);
-                    if (hObj == null) continue;
-                    Hotspot hotspot = new Hotspot();
-                    hotspot.setId(hObj.optString("id"));
-                    hotspot.setName(hObj.optString("name"));
-                    hotspot.setType(hObj.optString("type"));
-                    hotspot.setDescription(hObj.optString("description"));
-                    hotspot.setSignificance(hObj.optDouble("significance", 0.5));
-
-                    JSONArray ev = hObj.optJSONArray("evidence");
-                    if (ev != null) {
-                        for (int j = 0; j < ev.length(); j++) hotspot.getEvidence().add(ev.getString(j));
-                    }
-
-                    JSONArray rel = hObj.optJSONArray("related_artifacts");
-                    if (rel != null) {
-                        for (int j = 0; j < rel.length(); j++) hotspot.getRelatedArtifacts().add(rel.getString(j));
-                    }
-                    model.addHotspot(hotspot);
-                }
-            }
-
-            JSONArray subsystems = obj.optJSONArray("subsystems");
-            if (subsystems != null) {
-                for (int i = 0; i < subsystems.length(); i++) {
-                    JSONObject sObj = subsystems.optJSONObject(i);
-                    if (sObj == null) continue;
-                    Subsystem subsystem = new Subsystem();
-                    subsystem.setId(sObj.optString("id"));
-                    subsystem.setName(sObj.optString("name"));
-                    subsystem.setPurpose(sObj.optString("purpose"));
-                    subsystem.setDescription(sObj.optString("description"));
-
-                    JSONArray bounds = sObj.optJSONArray("boundaries");
-                    if (bounds != null) {
-                        for (int j = 0; j < bounds.length(); j++) subsystem.getBoundaries().add(bounds.getString(j));
-                    }
-                    JSONArray crit = sObj.optJSONArray("critical_files");
-                    if (crit != null) {
-                        for (int j = 0; j < crit.length(); j++) subsystem.getCriticalFiles().add(crit.getString(j));
-                    }
-                    JSONArray resp = sObj.optJSONArray("responsibilities");
-                    if (resp != null) {
-                        for (int j = 0; j < resp.length(); j++) subsystem.getResponsibilities().add(resp.getString(j));
-                    }
-                    model.addSubsystem(subsystem);
-                }
-            }
-
-            JSONArray facts = obj.optJSONArray("architectural_facts");
-            if (facts != null) {
-                for (int i = 0; i < facts.length(); i++) {
-                    JSONObject fObj = facts.optJSONObject(i);
-                    if (fObj == null) continue;
-                    ArchitecturalFact fact = new ArchitecturalFact();
-                    fact.setId(fObj.optString("id"));
-                    fact.setSubject(fObj.optString("subject"));
-                    fact.setPredicate(fObj.optString("predicate"));
-                    fact.setDescription(fObj.optString("description"));
-                    fact.setConfidence(fObj.optDouble("confidence", 0.5));
-
-                    JSONArray ev = fObj.optJSONArray("evidence");
-                    if (ev != null) {
-                        for (int j = 0; j < ev.length(); j++) fact.getEvidence().add(ev.getString(j));
-                    }
-                    model.addArchitecturalFact(fact);
-                }
-            }
-
-            JSONArray objectives = obj.optJSONArray("objectives");
-            if (objectives != null) {
-                for (int i = 0; i < objectives.length(); i++) model.getObjectives().add(objectives.getString(i));
-            }
-
-            JSONArray risks = obj.optJSONArray("risks");
-            if (risks != null) {
-                for (int i = 0; i < risks.length(); i++) model.getRisks().add(risks.getString(i));
-            }
-
-            JSONObject dims = obj.optJSONObject("dimensions");
-            if (dims != null) {
-                for (Object keyObj : dims.keySet()) {
-                    String key = (String) keyObj;
-                    model.getDimensions().put(key, dims.optString(key));
-                }
-            }
-        }
+        // KNOWLEDGE GAP IDENTIFICATION
+        identifyKnowledgeGaps(snapshot, model, context);
 
         return model;
     }
 
-    private List<String> identifyKnowledgeGaps(TargetSnapshot snapshot, TargetRealityModel model) {
-        List<String> gaps = new ArrayList<>();
-        if (snapshot == null) return gaps;
+    private void discoverLocalResponsibilities(TargetSnapshot snapshot, TargetRealityModel model, TaskContext context) throws Exception {
+        context.log("[DISCOVERY] Pass 2: Local Responsibility Discovery.");
+
+        // Prioritize hotspots and high-centrality nodes
+        List<SemanticNode> candidates = getTopCentralNodes(snapshot, 10);
+        for (SemanticNode node : candidates) {
+            // Check if we already have facts about this node
+            boolean known = model.getArchitecturalFacts().stream().anyMatch(f -> f.getEvidence().contains(node.getPath()));
+            if (known) continue;
+
+            context.log("[DISCOVERY] Analyzing responsibility of: " + node.getPath());
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("ARTIFACT: ").append(node.getPath()).append("\n");
+            sb.append("SUMMARY: ").append(node.getSummary()).append("\n");
+            sb.append("DEPENDENCIES: ").append(node.getDependencies()).append("\n\n");
+            sb.append("Identify responsibilities, inputs, outputs, decisions, and concepts for this artifact.");
+
+            String prompt = sb.toString() + "\n\n" +
+                    "Output a JSON object:\n" +
+                    "{\n" +
+                    "  \"responsibilities\": [\"string\"],\n" +
+                    "  \"inputs\": [\"string\"],\n" +
+                    "  \"outputs\": [\"string\"],\n" +
+                    "  \"decisions\": [\"string\"],\n" +
+                    "  \"concepts\": [\"string\"],\n" +
+                    "  \"role_candidate\": \"string\"\n" +
+                    "}";
+
+            String response = aiService.sendRequest(context.getOrchestrator(), getAgentInstructions() + "\n\n" + prompt, context);
+            JSONObject obj = JsonUtils.extractJsonObject(response);
+            if (obj != null) {
+                JSONArray resps = obj.optJSONArray("responsibilities");
+                if (resps != null) {
+                    for (int i = 0; i < resps.length(); i++) {
+                        ArchitecturalFact fact = new ArchitecturalFact(node.getId() + "-resp-" + i, node.getPath(), "provides responsibility: " + resps.getString(i), 0.8);
+                        fact.getEvidence().add(node.getPath());
+                        model.addArchitecturalFact(fact);
+                    }
+                }
+                String role = obj.optString("role_candidate");
+                if (!role.isEmpty()) {
+                    ArchitecturalFact roleFact = new ArchitecturalFact(node.getId() + "-role", node.getPath(), "acts as " + role, 0.7);
+                    roleFact.getEvidence().add(node.getPath());
+                    model.addArchitecturalFact(roleFact);
+                }
+            }
+        }
+    }
+
+    private void discoverRelationships(TargetSnapshot snapshot, TargetRealityModel model, TaskContext context) throws Exception {
+        context.log("[DISCOVERY] Pass 3: Relationship Discovery & Evolutionary Influence.");
+
+        List<SemanticNode> influentialNodes = getTopCentralNodes(snapshot, 15);
+        for (SemanticNode node : influentialNodes) {
+            context.log("[DISCOVERY] Analyzing relationships and influence for: " + node.getPath());
+
+            List<SemanticEdge> incoming = snapshot.getEdges().stream().filter(e -> e.getTargetId().equals(node.getId())).collect(Collectors.toList());
+            List<SemanticEdge> outgoing = snapshot.getEdges().stream().filter(e -> e.getSourceId().equals(node.getId())).collect(Collectors.toList());
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("NODE: ").append(node.getPath()).append("\n");
+            sb.append("INCOMING DEPENDENCIES: ").append(incoming.size()).append("\n");
+            sb.append("OUTGOING DEPENDENCIES: ").append(outgoing.size()).append("\n");
+            sb.append("Identify control, ownership, orchestration, and coordination responsibilities.\n");
+            sb.append("Analyze Evolutionary Leverage: If this file changes, what breaks? What evolves? What behavior changes?");
+
+            String prompt = sb.toString() + "\n\n" +
+                    "Output a JSON object:\n" +
+                    "{\n" +
+                    "  \"relationships\": [\n" +
+                    "    {\n" +
+                    "      \"type\": \"control|ownership|orchestration|coordination\",\n" +
+                    "      \"subject\": \"string\",\n" +
+                    "      \"description\": \"string\",\n" +
+                    "      \"impact_if_removed\": \"string\"\n" +
+                    "    }\n" +
+                    "  ],\n" +
+                    "  \"evolutionary_leverage\": {\n" +
+                    "    \"influence_score\": 0.0-1.0,\n" +
+                    "    \"break_impacts\": [\"string\"],\n" +
+                    "    \"evolution_potentials\": [\"string\"]\n" +
+                    "  }\n" +
+                    "}";
+
+            String response = aiService.sendRequest(context.getOrchestrator(), getAgentInstructions() + "\n\n" + prompt, context);
+            JSONObject obj = JsonUtils.extractJsonObject(response);
+            if (obj != null) {
+                JSONArray rels = obj.optJSONArray("relationships");
+                if (rels != null) {
+                    for (int i = 0; i < rels.length(); i++) {
+                        JSONObject rObj = rels.optJSONObject(i);
+                        if (rObj == null) continue;
+                        ArchitecturalFact fact = new ArchitecturalFact(node.getId() + "-rel-" + i, node.getPath(), rObj.optString("type") + ": " + rObj.optString("description"), 0.85);
+                        fact.setDescription("Impact if removed: " + rObj.optString("impact_if_removed"));
+                        fact.getEvidence().add(node.getPath());
+                        model.addArchitecturalFact(fact);
+                    }
+                }
+
+                JSONObject lev = obj.optJSONObject("evolutionary_leverage");
+                if (lev != null) {
+                    node.setEvolutionaryInfluenceScore(lev.optDouble("influence_score", 0.5));
+                    JSONArray breaks = lev.optJSONArray("break_impacts");
+                    if (breaks != null) for (int i = 0; i < breaks.length(); i++) node.addBreakImpact(breaks.getString(i));
+                    JSONArray evs = lev.optJSONArray("evolution_potentials");
+                    if (evs != null) for (int i = 0; i < evs.length(); i++) node.addEvolutionPotential(evs.getString(i));
+                }
+            }
+        }
+    }
+
+    private void discoverSubsystems(TargetSnapshot snapshot, TargetRealityModel model, TaskContext context) throws Exception {
+        context.log("[DISCOVERY] Pass 4: Subsystem Discovery.");
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("EXISTING ARCHITECTURAL FACTS:\n");
+        model.getArchitecturalFacts().stream().limit(20).forEach(f -> sb.append("- ").append(f.toString()).append("\n"));
+        sb.append("\nIdentify strongly interacting clusters and define Subsystems.");
+
+        String prompt = sb.toString() + "\n\n" +
+                "Output a JSON object:\n" +
+                "{\n" +
+                "  \"subsystems\": [\n" +
+                "    {\n" +
+                "      \"name\": \"string\",\n" +
+                "      \"purpose\": \"string\",\n" +
+                "      \"boundaries\": [\"string\"],\n" +
+                "      \"critical_files\": [\"string\"],\n" +
+                "      \"responsibilities\": [\"string\"]\n" +
+                "    }\n" +
+                "  ]\n" +
+                "}";
+
+        String response = aiService.sendRequest(context.getOrchestrator(), getAgentInstructions() + "\n\n" + prompt, context);
+        JSONObject obj = JsonUtils.extractJsonObject(response);
+        if (obj != null) {
+            JSONArray subs = obj.optJSONArray("subsystems");
+            if (subs != null) {
+                for (int i = 0; i < subs.length(); i++) {
+                    JSONObject sObj = subs.optJSONObject(i);
+                    if (sObj == null) continue;
+                    Subsystem sub = new Subsystem("sub-" + i, sObj.optString("name"), 0.8);
+                    sub.setPurpose(sObj.optString("purpose"));
+                    JSONArray bounds = sObj.optJSONArray("boundaries");
+                    if (bounds != null) for (int j = 0; j < bounds.length(); j++) sub.getBoundaries().add(bounds.getString(j));
+                    JSONArray files = sObj.optJSONArray("critical_files");
+                    if (files != null) for (int j = 0; j < files.length(); j++) sub.getCriticalFiles().add(files.getString(j));
+                    JSONArray resps = sObj.optJSONArray("responsibilities");
+                    if (resps != null) for (int j = 0; j < resps.length(); j++) sub.getResponsibilities().add(resps.getString(j));
+                    model.addSubsystem(sub);
+                }
+            }
+        }
+    }
+
+    private void synthesizeReality(String goal, TargetSnapshot snapshot, TargetRealityModel model, TaskContext context) throws Exception {
+        context.log("[DISCOVERY] Pass 5: Reality Discovery & Completeness Tracking.");
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("GOAL: ").append(goal).append("\n");
+        sb.append("FACTS: ").append(model.getArchitecturalFacts().size()).append("\n");
+        sb.append("SUBSYSTEMS: ").append(model.getSubsystems().size()).append("\n");
+        sb.append("KNOWLEDGE GAPS: ").append(model.getKnowledgeGaps().size()).append("\n");
+        sb.append("\nSynthesize Reality Model and estimate Completeness (0.0-1.0).\n");
+        sb.append("Also organize the model into ArchitectureView, ImplementationView, and GenomeView.");
+
+        String prompt = sb.toString() + "\n\n" +
+                "Output a JSON object:\n" +
+                "{\n" +
+                "  \"domain\": \"string\",\n" +
+                "  \"purpose\": \"string\",\n" +
+                "  \"architecture_summary\": \"string\",\n" +
+                "  \"completeness_score\": 0.0-1.0,\n" +
+                "  \"views\": {\n" +
+                "    \"architecture\": {\"hubs\": [\"string\"], \"orchestration\": \"string\"},\n" +
+                "    \"implementation\": {\"entry_points\": [\"string\"], \"critical_path\": [\"string\"]},\n" +
+                "    \"genome\": {\"core_patterns\": [\"string\"]}\n" +
+                "  }\n" +
+                "}";
+
+        String response = aiService.sendRequest(context.getOrchestrator(), getAgentInstructions() + "\n\n" + prompt, context);
+        JSONObject obj = JsonUtils.extractJsonObject(response);
+        if (obj != null) {
+            model.setDomain(obj.optString("domain"));
+            model.setPurpose(obj.optString("purpose"));
+            model.setArchitectureSummary(obj.optString("architecture_summary"));
+            model.setRealityCompleteness(obj.optDouble("completeness_score", 0.5));
+
+            JSONObject views = obj.optJSONObject("views");
+            if (views != null) {
+                JSONObject arch = views.optJSONObject("architecture");
+                if (arch != null) {
+                    for (Object key : arch.keySet()) model.getArchitectureView().put((String)key, arch.get((String)key));
+                }
+                JSONObject impl = views.optJSONObject("implementation");
+                if (impl != null) {
+                    for (Object key : impl.keySet()) model.getImplementationView().put((String)key, impl.get((String)key));
+                }
+                JSONObject gen = views.optJSONObject("genome");
+                if (gen != null) {
+                    for (Object key : gen.keySet()) model.getGenomeView().put((String)key, gen.get((String)key));
+                }
+            }
+        }
+    }
+
+    private void discoverGenome(TargetRealityModel model, TaskContext context) throws Exception {
+        context.log("[DISCOVERY] Pass 6: Genome Discovery (Portable Patterns).");
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("REALITY MODEL: ").append(model.getArchitectureSummary()).append("\n");
+        sb.append("Identify portable patterns and their required artifacts.");
+
+        String prompt = sb.toString() + "\n\n" +
+                "Output a JSON object:\n" +
+                "{\n" +
+                "  \"genes\": [\n" +
+                "    {\n" +
+                "      \"pattern\": \"string\",\n" +
+                "      \"purpose\": \"string\",\n" +
+                "      \"rationale\": \"string\",\n" +
+                "      \"required_artifacts\": [\"string\"],\n" +
+                "      \"transferability\": \"string\"\n" +
+                "    }\n" +
+                "  ]\n" +
+                "}";
+
+        String response = aiService.sendRequest(context.getOrchestrator(), getAgentInstructions() + "\n\n" + prompt, context);
+        JSONObject obj = JsonUtils.extractJsonObject(response);
+        if (obj != null) {
+            JSONArray genes = obj.optJSONArray("genes");
+            if (genes != null) {
+                for (int i = 0; i < genes.length(); i++) {
+                    JSONObject gObj = genes.optJSONObject(i);
+                    if (gObj == null) continue;
+                    ArchitecturalGene gene = new ArchitecturalGene("gene-" + i, gObj.optString("purpose"));
+                    gene.setPattern(gObj.optString("pattern"));
+                    gene.setRationale(gObj.optString("rationale"));
+                    JSONArray reqs = gObj.optJSONArray("required_artifacts");
+                    if (reqs != null) for (int j = 0; j < reqs.length(); j++) gene.getRequiredArtifacts().add(reqs.getString(j));
+                    gene.setTransferability(gObj.optString("transferability"));
+                    model.addGene(gene);
+                }
+            }
+        }
+    }
+
+    private void compressUnderstanding(TargetRealityModel model, TaskContext context) throws Exception {
+        context.log("[DISCOVERY] Pass 7: Architectural Compression.");
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("TARGET REALITY MODEL:\n");
+        sb.append("- Domain: ").append(model.getDomain()).append("\n");
+        sb.append("- Subsystems: ").append(model.getSubsystems().size()).append("\n");
+        sb.append("- Facts: ").append(model.getArchitecturalFacts().size()).append("\n");
+        sb.append("- Genes: ").append(model.getGenes().size()).append("\n");
+        sb.append("\nCompress these observations into high-signal architectural facts and genes while preserving understanding.");
+
+        String prompt = sb.toString() + "\n\n" +
+                "Summarize the core architectural essence in 3 paragraphs.";
+
+        String response = aiService.sendRequest(context.getOrchestrator(), getAgentInstructions() + "\n\n" + prompt, context);
+        model.getDimensions().put("architectural_essence", response);
+    }
+
+    private void identifyKnowledgeGaps(TargetSnapshot snapshot, TargetRealityModel model, TaskContext context) throws Exception {
+        context.log("[DISCOVERY] Identifying Knowledge Gaps.");
+        model.getKnowledgeGaps().clear();
 
         // 1. Identify high-centrality nodes not covered by subsystems or facts
         List<SemanticNode> topNodes = getTopCentralNodes(snapshot, 20);
@@ -243,25 +353,32 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
             boolean covered = model.getSubsystems().stream().anyMatch(s -> s.getCriticalFiles().contains(node.getPath())) ||
                               model.getArchitecturalFacts().stream().anyMatch(f -> f.getEvidence().contains(node.getPath()));
             if (!covered) {
-                gaps.add("High-influence component unmapped: " + node.getPath());
+                KnowledgeGap gap = new KnowledgeGap("gap-" + node.getId(), "High-influence component unmapped: " + node.getPath(), KnowledgeGap.GapType.UNKNOWN_FACT);
+                gap.getRelatedArtifacts().add(node.getPath());
+                gap.setSignificance(0.9);
+                model.addKnowledgeGap(gap);
             }
         }
 
         // 2. Check for missing subsystem boundaries
         for (Subsystem s : model.getSubsystems()) {
             if (s.getBoundaries().isEmpty()) {
-                gaps.add("Subsystem missing boundaries: " + s.getName());
+                KnowledgeGap gap = new KnowledgeGap("gap-" + s.getId() + "-bounds", "Subsystem missing boundaries: " + s.getName(), KnowledgeGap.GapType.MISSING_EVIDENCE);
+                gap.setSignificance(0.7);
+                model.addKnowledgeGap(gap);
             }
         }
 
         // 3. Identify low-confidence facts
         for (ArchitecturalFact f : model.getArchitecturalFacts()) {
             if (f.getConfidence() < 0.6) {
-                gaps.add("Low-confidence fact requires verification: " + f.toString());
+                KnowledgeGap gap = new KnowledgeGap("gap-" + f.getId(), "Low-confidence fact requires verification: " + f.toString(), KnowledgeGap.GapType.WEAK_FACT);
+                gap.setSignificance(0.5);
+                model.addKnowledgeGap(gap);
             }
         }
 
-        return gaps.stream().limit(5).collect(Collectors.toList());
+        context.log("[DISCOVERY] Identified " + model.getKnowledgeGaps().size() + " knowledge gaps.");
     }
 
     private List<SemanticNode> getTopCentralNodes(TargetSnapshot snapshot, int limit) {

@@ -15,6 +15,8 @@ public class MediationCandidate {
     private String architectureSummary;
     private List<ArchitecturalFact> architecturalFacts = new ArrayList<>();
     private List<Subsystem> subsystems = new ArrayList<>();
+    private List<ArchitecturalGene> genes = new ArrayList<>();
+    private List<KnowledgeGap> knowledgeGaps = new ArrayList<>();
     private String dependencies;
     private String executionInstructions;
     private Map<String, Object> metadata = new HashMap<>();
@@ -58,6 +60,22 @@ public class MediationCandidate {
 
     public void setSubsystems(List<Subsystem> subsystems) {
         this.subsystems = subsystems;
+    }
+
+    public List<ArchitecturalGene> getGenes() {
+        return genes;
+    }
+
+    public void setGenes(List<ArchitecturalGene> genes) {
+        this.genes = genes;
+    }
+
+    public List<KnowledgeGap> getKnowledgeGaps() {
+        return knowledgeGaps;
+    }
+
+    public void setKnowledgeGaps(List<KnowledgeGap> knowledgeGaps) {
+        this.knowledgeGaps = knowledgeGaps;
     }
 
     public String getDependencies() {
