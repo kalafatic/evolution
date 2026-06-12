@@ -70,6 +70,16 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
     public NewEvoProjectWizard() {
         setWindowTitle("New Evo Project");
         this.orchestrator = ProjectModelManager.getInstance().createOrchestrator("orch1", "Initial Orchestration");
+
+        // Use discovery to set initial project name if possible
+        eu.kalafatic.evolution.controller.discovery.SourceDiscoveryResult discovery =
+            ProjectModelManager.getInstance().getOrDiscoverWorkspace();
+        if (discovery.getPrimaryRepository() != null) {
+            String name = discovery.getPrimaryRepository().getName();
+            if (name != null && !name.isEmpty()) {
+                orchestrator.setName(name + " Orchestration");
+            }
+        }
     }
 
     @Override

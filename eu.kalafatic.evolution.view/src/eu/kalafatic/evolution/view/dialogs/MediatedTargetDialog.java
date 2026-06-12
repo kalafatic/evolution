@@ -19,6 +19,7 @@ import org.eclipse.swt.widgets.Shell;
 
 import eu.kalafatic.evolution.controller.agents.MetadataAgent;
 import eu.kalafatic.evolution.controller.agents.MetadataResult;
+import eu.kalafatic.evolution.controller.discovery.SourceDiscoveryResult;
 import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
 import eu.kalafatic.evolution.model.orchestration.ChatSession;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
@@ -56,35 +57,30 @@ public class MediatedTargetDialog extends DynamicMapDialog {
     private static LinkedHashMap<String, DynamicField> createFields(ChatSession session, File projectRoot) {
         LinkedHashMap<String, DynamicField> fields = new LinkedHashMap<>();
 
-        boolean selfDev = session != null && session.isSelfIterativeMode();
         String initialPath = session != null ? session.getTargetPath() : "";
+
+        // Use Discovery to obtain all target paths
+        SourceDiscoveryResult discovery = ProjectModelManager.getInstance().getOrDiscoverWorkspace();
         java.util.List<String> comboItems = new java.util.ArrayList<>();
 
-        if (selfDev) {
-            if (initialPath == null || initialPath.isEmpty()) {
-                initialPath = ProjectModelManager.getInstance().findEvolutionRepository();
-            }
-            java.util.List<String> allRepos = ProjectModelManager.getInstance().getAvailableLocalRepositories();
-            for (String repo : allRepos) {
-                File repoDir = new File(repo);
-                if (repoDir.getName().toLowerCase().startsWith("evo")) {
-                    comboItems.add(repo);
-                }
-            }
-        } else {
-            if (initialPath == null || initialPath.isEmpty()) {
-                initialPath = System.getProperty("user.home");
-            }
-            File userHome = new File(System.getProperty("user.home"));
-            File[] files = userHome.listFiles();
-            if (files != null) {
-                for (File f : files) {
-                    if (f.isDirectory() && !f.getName().startsWith(".")) {
-                        comboItems.add(f.getAbsolutePath());
-                    }
-                }
-            }
-            java.util.Collections.sort(comboItems);
+        if (discovery.getPrimaryRepository() != null) {
+            comboItems.add(discovery.getPrimaryRepository().getAbsolutePath());
+        }
+
+        for (File repo : discovery.getGitRepositories()) {
+            String path = repo.getAbsolutePath();
+            if (!comboItems.contains(path)) comboItems.add(path);
+        }
+
+        for (File pRoot : discovery.getProjectRoots()) {
+            String path = pRoot.getAbsolutePath();
+            if (!comboItems.contains(path)) comboItems.add(path);
+        }
+
+        if (initialPath == null || initialPath.isEmpty()) {
+            initialPath = discovery.getPrimaryRepository() != null ?
+                         discovery.getPrimaryRepository().getAbsolutePath() :
+                         System.getProperty("user.home");
         }
 
         fields.put(TARGET_PATH, new DynamicField("Target Path:", DynamicField.TYPE_COMBO | DynamicField.DIRECTORY, initialPath, comboItems));

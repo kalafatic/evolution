@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
 
+import eu.kalafatic.evolution.controller.discovery.SourceDiscoveryResult;
+import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
 import eu.kalafatic.evolution.controller.orchestration.design.ComponentRecord;
 import eu.kalafatic.evolution.controller.orchestration.design.DesignExporter;
 import eu.kalafatic.evolution.controller.orchestration.design.DesignModel;
@@ -82,13 +84,22 @@ public class ArchitecturePage extends AEvoPage {
             defaultTargetPath = orchestrator.getDefaultTarget();
             currentTargetPath = defaultTargetPath;
             eu.kalafatic.evolution.controller.log.Log.log("[ARCH] Default target from model: " + currentTargetPath);
-        } else {
-            String evoRepo = findEvoRepository();
-            if (evoRepo != null) {
-                defaultTargetPath = evoRepo;
-                currentTargetPath = evoRepo;
-                eu.kalafatic.evolution.controller.log.Log.log("[ARCH] EVO repository detected at default path: " + currentTargetPath);
+        }
+
+        // Use discovery to populate target history and fallback paths
+        SourceDiscoveryResult discovery = ProjectModelManager.getInstance().getOrDiscoverWorkspace();
+        if (discovery.getPrimaryRepository() != null) {
+            String primary = discovery.getPrimaryRepository().getAbsolutePath();
+            if (currentTargetPath == null) {
+                currentTargetPath = primary;
+                defaultTargetPath = primary;
             }
+            if (!targetHistory.contains(primary)) targetHistory.add(primary);
+        }
+
+        for (java.io.File repo : discovery.getGitRepositories()) {
+            String path = repo.getAbsolutePath();
+            if (!targetHistory.contains(path)) targetHistory.add(path);
         }
 
         if (currentTargetPath == null && editor != null) {

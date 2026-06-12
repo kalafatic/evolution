@@ -25,6 +25,9 @@ import eu.kalafatic.evolution.model.orchestration.Maven;
 import eu.kalafatic.evolution.model.orchestration.NeuronAI;
 import eu.kalafatic.evolution.model.orchestration.NeuronType;
 import eu.kalafatic.evolution.model.orchestration.Ollama;
+import eu.kalafatic.evolution.controller.discovery.SourceDiscoveryRequest;
+import eu.kalafatic.evolution.controller.discovery.SourceDiscoveryResult;
+import eu.kalafatic.evolution.controller.discovery.WorkspaceSourceResolver;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
@@ -48,6 +51,7 @@ public class ProjectModelManager {
 
     private final ResourceSet resourceSet;
     private final EvolutionRegistry evolutionRegistry = new EvolutionRegistry();
+    private SourceDiscoveryResult cachedDiscoveryResult;
 
     private ProjectModelManager() {
         resourceSet = new ResourceSetImpl();
@@ -119,15 +123,19 @@ public class ProjectModelManager {
 
     public Orchestrator loadOrchestrator(IFile file) throws IOException {
         org.eclipse.emf.ecore.EObject root = loadModel(file);
+        Orchestrator orch = null;
         if (root instanceof Orchestrator) {
-            return (Orchestrator) root;
+            orch = (Orchestrator) root;
         } else if (root instanceof EvoProject) {
             EvoProject project = (EvoProject) root;
             if (!project.getOrchestrations().isEmpty()) {
-                return project.getOrchestrations().get(0);
+                orch = project.getOrchestrations().get(0);
             }
         }
-        return null;
+        if (orch != null) {
+            initializeDefaults(orch);
+        }
+        return orch;
     }
 
     public void saveResource(Resource resource) throws IOException {
@@ -156,6 +164,17 @@ public class ProjectModelManager {
     }
 
     public void initializeDefaults(Orchestrator orchestrator) {
+        if (orchestrator.getDefaultTarget() == null || orchestrator.getDefaultTarget().isEmpty()) {
+            SourceDiscoveryResult result = getOrDiscoverWorkspace();
+            if (result != null && result.getPrimaryRepository() != null) {
+                orchestrator.setDefaultTarget(result.getPrimaryRepository().getAbsolutePath());
+                eu.kalafatic.evolution.controller.log.Log.log("[MODEL] Default target discovered from workspace: " + orchestrator.getDefaultTarget());
+            } else {
+                // Fallback to legacy scan if workspace discovery failed
+                orchestrator.setDefaultTarget(findEvolutionRepository());
+            }
+        }
+
         if (orchestrator.getLlm() == null) {
             LLM llm = OrchestrationFactory.eINSTANCE.createLLM();
             llm.setModel("gpt-4o");
@@ -178,9 +197,6 @@ public class ProjectModelManager {
         }
         if (orchestrator.getAiChat() == null) {
             orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
-        }
-        if (orchestrator.getDefaultTarget() == null) {
-            orchestrator.setDefaultTarget(findEvolutionRepository());
         }
     }
 
@@ -572,6 +588,14 @@ public class ProjectModelManager {
         }
         Collections.sort(paths);
         return paths;
+    }
+
+    public synchronized SourceDiscoveryResult getOrDiscoverWorkspace() {
+        if (cachedDiscoveryResult == null) {
+            WorkspaceSourceResolver resolver = new WorkspaceSourceResolver();
+            cachedDiscoveryResult = resolver.discover(new SourceDiscoveryRequest());
+        }
+        return cachedDiscoveryResult;
     }
 
     /**
