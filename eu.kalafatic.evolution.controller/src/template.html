@@ -103,15 +103,20 @@
         <h1>🧬 Architecture</h1>
 
         <div class="sidebar-section">
-            <h2>Navigation</h2>
+            <h2>Target</h2>
             <div class="control-group">
-                <button class="primary" onclick="javaAction('', 'REFRESH')">🔄 Refresh View</button>
-                <button onclick="javaAction('', 'DISCOVER')">🔍 Deep Discovery</button>
+                <div style="display:flex; gap:5px;">
+                    <select id="target-select" onchange="javaAction(this.value, 'SET_TARGET')" style="flex:1;">
+                        <!-- Populated by JS -->
+                    </select>
+                    <button onclick="javaAction('', 'BROWSE_TARGET')" style="width:auto; padding:8px;">📁</button>
+                </div>
+                <button class="primary" onclick="javaAction('', 'DISCOVER')">🔍 Discover Architecture</button>
             </div>
         </div>
 
         <div class="sidebar-section">
-            <h2>View Mode</h2>
+            <h2>View</h2>
             <div class="control-group">
                 <select id="mode-select" onchange="javaAction(this.value, 'SET_VIEW_MODE')">
                     <option value="COMPONENTS">Components Map</option>
@@ -119,6 +124,7 @@
                     <option value="USE_CASES">Use Cases Trace</option>
                     <option value="KNOWLEDGE_GRAPH">Knowledge Graph</option>
                 </select>
+                <button onclick="javaAction('', 'REFRESH')">🔄 Refresh View</button>
             </div>
         </div>
 
@@ -169,9 +175,26 @@
 
         window.INITIAL_MODEL = {{MODEL_JSON}};
         window.CURRENT_VIEW_MODE = "{{VIEW_MODE}}";
+        window.TARGET_PATH = "{{TARGET_PATH}}";
+        window.DEFAULT_PATH = "{{DEFAULT_PATH}}";
+        window.TARGET_HISTORY = {{TARGET_HISTORY_JSON}};
 
         // Sync select dropdown
         document.getElementById('mode-select').value = window.CURRENT_VIEW_MODE;
+
+        const targetSelect = document.getElementById('target-select');
+        window.TARGET_HISTORY.forEach(path => {
+            const opt = document.createElement('option');
+            opt.value = path;
+            let displayPath = path;
+            if (path === window.DEFAULT_PATH) {
+                displayPath = "EVO (default): " + path;
+            }
+            opt.text = displayPath;
+            if (path === window.TARGET_PATH) opt.selected = true;
+            targetSelect.appendChild(opt);
+        });
+
         if (window.INITIAL_MODEL && window.INITIAL_MODEL.name) {
             document.getElementById('project-title').innerText = window.INITIAL_MODEL.name;
         }

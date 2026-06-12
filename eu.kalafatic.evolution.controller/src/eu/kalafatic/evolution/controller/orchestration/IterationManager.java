@@ -394,7 +394,7 @@ public class IterationManager {
 
                     // Construct formal TargetRealityModel
                     context.log("[KERNEL] Discovery: Formalizing Target Reality Model.");
-                    eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel realityModel = realityDiscoveryAgent.discover(request, context, snapshot);
+                    eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel realityModel = realityDiscoveryAgent.discover(request, context, context.getProjectRoot().getAbsolutePath());
                     state.getMetadata().put("targetRealityModel", realityModel);
 
                     if (profile.hasTrait(BehaviorTrait.WORKFLOW_EXPORT_ONLY)) {
@@ -1360,7 +1360,7 @@ public class IterationManager {
             context.log("[KERNEL] Discovery Loop Pass " + pass + " (Completeness: " + existingModel.getRealityCompleteness() + ")");
 
             // Targeted Discovery driven by Knowledge Gaps and coverage scores
-            existingModel = realityDiscoveryAgent.discover(goal, context, snapshot, existingModel);
+            existingModel = realityDiscoveryAgent.discover(goal, context, snapshot.getRootPath(), existingModel);
             context.getOrchestrationState().getMetadata().put("targetRealityModel", existingModel);
 
             if (Math.abs(existingModel.getRealityCompleteness() - lastCompleteness) < 0.05) {

@@ -47,7 +47,9 @@ public class RealityDiscoveryAgentRobustnessTest {
         RealityDiscoveryAgent agent = new RealityDiscoveryAgent(session);
         agent.setAiService(aiService);
 
-        TargetRealityModel model = agent.discover("test", context, null);
+        // Mock a project root for the scanner
+        java.io.File tempDir = java.nio.file.Files.createTempDirectory("evo-test").toFile();
+        TargetRealityModel model = agent.discover("test", context, tempDir.getAbsolutePath());
 
         assertNotNull(model);
         assertEquals("Evolution", model.getDomain());

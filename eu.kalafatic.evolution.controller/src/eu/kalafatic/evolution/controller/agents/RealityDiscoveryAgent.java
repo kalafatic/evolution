@@ -44,16 +44,23 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
                "STRICT RULE: Only use discovered evidence. Do NOT compensate with invention.";
     }
 
-    public TargetRealityModel discover(String goal, TaskContext context, TargetSnapshot snapshot) throws Exception {
-        return discover(goal, context, snapshot, new TargetRealityModel());
+    public TargetRealityModel discover(String goal, TaskContext context, String targetPath) throws Exception {
+        return discover(goal, context, targetPath, new TargetRealityModel());
     }
 
-    public TargetRealityModel discover(String goal, TaskContext context, TargetSnapshot snapshot, TargetRealityModel model) throws Exception {
+    public TargetRealityModel discover(String goal, TaskContext context, String targetPath, TargetRealityModel model) throws Exception {
         long startTime = System.currentTimeMillis();
         context.log("[DISCOVERY] Starting Recursive Reality Reconstruction for: " + goal);
+        context.log("[ARCH] Target path: " + targetPath);
 
-        // PASS 1 - STRUCTURAL DISCOVERY & METADATA LOADING
-        context.log("[DISCOVERY] Pass 1: Structural Discovery & Metadata Loading.");
+        // 1. Structural Scan to Snapshot
+        eu.kalafatic.evolution.controller.mediation.scanner.TargetScanner scanner = new eu.kalafatic.evolution.controller.mediation.scanner.TargetScanner();
+        File root = new File(targetPath);
+        TargetSnapshot.TargetType type = targetPath.contains("evolution") ? TargetSnapshot.TargetType.SELF : TargetSnapshot.TargetType.PROJECT;
+        TargetSnapshot snapshot = scanner.scanToSnapshot(root, type);
+
+        // PASS 1 - METADATA LOADING
+        context.log("[DISCOVERY] Pass 1: Metadata Loading.");
         loadAllMetadata(snapshot, context, model);
 
         // PASS 2 - LOCAL RESPONSIBILITY DISCOVERY
