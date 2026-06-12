@@ -41,10 +41,12 @@ public class ArchitecturePage extends AEvoPage {
     private boolean isLoaded = false;
     private boolean isJsReady = false;
     private String lastJson = "";
+    private String lastTargetPath = "";
 
     private String currentTargetPath;
     private String defaultTargetPath;
     private List<String> targetHistory = new ArrayList<>();
+    private org.eclipse.swt.widgets.Combo targetCombo;
 
     public ArchitecturePage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
         super(parent, editor, orchestrator);
@@ -91,6 +93,7 @@ public class ArchitecturePage extends AEvoPage {
         if (currentTargetPath != null && !targetHistory.contains(currentTargetPath)) {
             targetHistory.add(0, currentTargetPath);
         }
+        updateTargetCombo();
     }
 
     private String findEvoRepository() {
@@ -226,8 +229,17 @@ public class ArchitecturePage extends AEvoPage {
             targetHistory.add(0, path);
         }
 
+        updateTargetCombo();
         invalidateCache();
         scheduleRefresh();
+    }
+
+    private void updateTargetCombo() {
+        if (targetCombo == null || targetCombo.isDisposed()) return;
+        targetCombo.setItems(targetHistory.toArray(new String[0]));
+        if (currentTargetPath != null) {
+            targetCombo.setText(currentTargetPath);
+        }
     }
 
     private void invalidateCache() {
@@ -379,7 +391,7 @@ public class ArchitecturePage extends AEvoPage {
 
     private void createControlPanel() {
         Composite toolbarComp = new Composite(this, SWT.NONE);
-        GridLayout layout = new GridLayout(2, false);
+        GridLayout layout = new GridLayout(4, false);
         layout.marginHeight = 0;
         toolbarComp.setLayout(layout);
         toolbarComp.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
@@ -396,6 +408,30 @@ public class ArchitecturePage extends AEvoPage {
                     case 2: setViewMode(ViewMode.COMPONENTS); break;
                     case 3: setViewMode(ViewMode.KNOWLEDGE_GRAPH); break;
                 }
+            }
+        });
+
+        targetCombo = new org.eclipse.swt.widgets.Combo(toolbarComp, SWT.DROP_DOWN);
+        targetCombo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+        targetCombo.setToolTipText("Select Target Project to analyze");
+        updateTargetCombo();
+        targetCombo.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
+            @Override
+            public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
+                setTargetPath(targetCombo.getText());
+            }
+            @Override
+            public void widgetDefaultSelected(org.eclipse.swt.events.SelectionEvent e) {
+                setTargetPath(targetCombo.getText());
+            }
+        });
+
+        Button browseBtn = new Button(toolbarComp, SWT.PUSH);
+        browseBtn.setText("Browse...");
+        browseBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
+            @Override
+            public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
+                handleBrowseTarget();
             }
         });
 
@@ -573,10 +609,13 @@ public class ArchitecturePage extends AEvoPage {
             if (browser == null || browser.isDisposed()) return;
             DesignModel model = extractModel();
 
-            // Re-render full template if target path changed or model is null
-            if (lastJson.isEmpty() || model.getComponents().isEmpty()) {
+            boolean targetChanged = currentTargetPath != null && !currentTargetPath.equals(lastTargetPath);
+
+            // Re-render full template only if target path changed or it's the first load
+            if (lastJson.isEmpty() || targetChanged) {
                 browser.setText(renderer.render(model, currentMode.name(), currentTargetPath, defaultTargetPath, targetHistory));
                 lastJson = renderer.serializeModel(model);
+                lastTargetPath = currentTargetPath;
                 return;
             }
 
