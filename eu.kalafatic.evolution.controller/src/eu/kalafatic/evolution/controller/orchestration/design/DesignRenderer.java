@@ -16,6 +16,14 @@ public class DesignRenderer {
     }
 
     public String render(DesignModel model, String viewMode) {
+        return render(model, viewMode, null, new java.util.ArrayList<>());
+    }
+
+    public String render(DesignModel model, String viewMode, String targetPath, java.util.List<String> history) {
+        return render(model, viewMode, targetPath, null, history);
+    }
+
+    public String render(DesignModel model, String viewMode, String targetPath, String defaultPath, java.util.List<String> history) {
         if (model != null) {
             eu.kalafatic.evolution.controller.log.Log.log("[DESIGN_RENDERER] Rendering model: " + model.getName() + " with " + model.getComponents().size() + " components. Mode: " + viewMode);
         }
@@ -40,6 +48,9 @@ public class DesignRenderer {
         return template
             .replace("{{MODEL_JSON}}", serializeModel(model))
             .replace("{{VIEW_MODE}}", viewMode != null ? viewMode : "COMPONENTS")
+            .replace("{{TARGET_PATH}}", targetPath != null ? targetPath : "")
+            .replace("{{DEFAULT_PATH}}", defaultPath != null ? defaultPath : "")
+            .replace("{{TARGET_HISTORY_JSON}}", new org.json.JSONArray(history).toString())
             .replace("{{NAVIGATOR_JS}}", navigatorJs)
             .replace("{{D3_JS}}", d3Js);
     }

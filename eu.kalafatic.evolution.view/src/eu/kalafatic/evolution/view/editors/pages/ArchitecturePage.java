@@ -42,6 +42,10 @@ public class ArchitecturePage extends AEvoPage {
     private boolean isJsReady = false;
     private String lastJson = "";
 
+    private String currentTargetPath;
+    private String defaultTargetPath;
+    private List<String> targetHistory = new ArrayList<>();
+
     public ArchitecturePage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
         super(parent, editor, orchestrator);
         this.setLayout(new GridLayout(1, false));
@@ -67,7 +71,47 @@ public class ArchitecturePage extends AEvoPage {
 
         setupJavaScriptBridges();
         hookContextMenu();
+        initTargetPath();
         initBrowser();
+    }
+
+    private void initTargetPath() {
+        String evoRepo = findEvoRepository();
+        if (evoRepo != null) {
+            defaultTargetPath = evoRepo;
+            currentTargetPath = evoRepo;
+            eu.kalafatic.evolution.controller.log.Log.log("[ARCH] EVO repository detected at default path: " + currentTargetPath);
+        } else if (editor != null) {
+            org.eclipse.ui.IEditorInput input = editor.getEditorInput();
+            if (input instanceof org.eclipse.ui.IFileEditorInput) {
+                currentTargetPath = ((org.eclipse.ui.IFileEditorInput) input).getFile().getProject().getLocation().toOSString();
+            }
+        }
+
+        if (currentTargetPath != null && !targetHistory.contains(currentTargetPath)) {
+            targetHistory.add(0, currentTargetPath);
+        }
+    }
+
+    private String findEvoRepository() {
+        if (editor != null) {
+            org.eclipse.ui.IEditorInput input = editor.getEditorInput();
+            if (input instanceof org.eclipse.ui.IFileEditorInput) {
+                java.io.File root = ((org.eclipse.ui.IFileEditorInput) input).getFile().getProject().getLocation().toFile();
+                if (isEvoRepo(root)) return root.getAbsolutePath();
+
+                java.io.File parent = root.getParentFile();
+                if (parent != null && isEvoRepo(parent)) return parent.getAbsolutePath();
+            }
+        }
+        return null;
+    }
+
+    private boolean isEvoRepo(java.io.File dir) {
+        if (dir == null || !dir.isDirectory()) return false;
+        return new java.io.File(dir, ".git").exists() &&
+               (new java.io.File(dir, "eu.kalafatic.evolution.controller").exists() ||
+                new java.io.File(dir, "pom.xml").exists());
     }
 
     private void setupJavaScriptBridges() {
@@ -121,6 +165,12 @@ public class ArchitecturePage extends AEvoPage {
                 case "SAVE_JSON":
                     handleSaveModel();
                     break;
+                case "BROWSE_TARGET":
+                    handleBrowseTarget();
+                    break;
+                case "SET_TARGET":
+                    setTargetPath(id);
+                    break;
                 case "SET_VIEW_MODE":
                     try {
                         setViewMode(ViewMode.valueOf(id));
@@ -142,6 +192,52 @@ public class ArchitecturePage extends AEvoPage {
                     break;
             }
         });
+    }
+
+    private void handleBrowseTarget() {
+        org.eclipse.swt.widgets.DirectoryDialog dialog = new org.eclipse.swt.widgets.DirectoryDialog(getShell());
+        dialog.setText("Select Architecture Target");
+        dialog.setMessage("Choose a folder to analyze repository architecture.");
+        if (currentTargetPath != null) dialog.setFilterPath(currentTargetPath);
+        String selected = dialog.open();
+        if (selected != null) {
+            setTargetPath(selected);
+        }
+    }
+
+    private void setTargetPath(String path) {
+        if (path == null || path.isEmpty()) return;
+        if (path.equals(currentTargetPath)) return;
+
+        java.io.File f = new java.io.File(path);
+        if (!f.exists() || !f.canRead()) {
+            MessageBox box = new MessageBox(getShell(), SWT.ICON_ERROR | SWT.OK);
+            box.setText("Invalid Path");
+            box.setMessage("Target path does not exist or is not readable: " + path);
+            box.open();
+            return;
+        }
+
+        this.currentTargetPath = path;
+        if (!targetHistory.contains(path)) {
+            targetHistory.add(0, path);
+        } else {
+            targetHistory.remove(path);
+            targetHistory.add(0, path);
+        }
+
+        invalidateCache();
+        scheduleRefresh();
+    }
+
+    private void invalidateCache() {
+        if (orchestrator == null || orchestrator.getSharedMemory() == null) return;
+        try {
+            String sid = (orchestrator.getSelfDevSession() != null) ? orchestrator.getSelfDevSession().getId() : "discovery-session";
+            orchestrator.setSharedMemory(
+                eu.kalafatic.evolution.controller.orchestration.ConversationState.save(
+                    orchestrator.getSharedMemory(), sid, "architecture_cache", ""));
+        } catch (Exception e) {}
     }
 
     private void expandAndRefresh(String id, String action) {
@@ -174,10 +270,14 @@ public class ArchitecturePage extends AEvoPage {
 
     private void saveModelToCache(eu.kalafatic.evolution.controller.orchestration.TaskContext ctx, DesignModel model) {
         try {
-            String json = serializeModelToJson(model);
+            JSONObject obj = serializeModelToJSONObject(model);
+            obj.put("targetPath", currentTargetPath);
+            obj.put("viewMode", currentMode.name());
+            obj.put("timestamp", System.currentTimeMillis());
+
             ctx.getOrchestrator().setSharedMemory(
                 eu.kalafatic.evolution.controller.orchestration.ConversationState.save(
-                    ctx.getOrchestrator().getSharedMemory(), ctx.getSessionId(), "architecture_cache", json));
+                    ctx.getOrchestrator().getSharedMemory(), ctx.getSessionId(), "architecture_cache", obj.toString()));
         } catch (Exception e) {}
     }
 
@@ -189,6 +289,13 @@ public class ArchitecturePage extends AEvoPage {
             if (json == null || json.isEmpty()) return null;
 
             JSONObject obj = new JSONObject(json);
+
+            // Path-aware validation
+            String cachedPath = obj.optString("targetPath");
+            String cachedMode = obj.optString("viewMode");
+            if (cachedPath != null && !cachedPath.equals(currentTargetPath)) return null;
+            if (cachedMode != null && !cachedMode.equals(currentMode.name())) return null;
+
             DesignModel model = new DesignModel();
             model.setName(obj.optString("name", "Cached Architecture"));
 
@@ -232,6 +339,10 @@ public class ArchitecturePage extends AEvoPage {
     }
 
     private String serializeModelToJson(DesignModel model) {
+        return serializeModelToJSONObject(model).toString();
+    }
+
+    private JSONObject serializeModelToJSONObject(DesignModel model) {
         JSONObject obj = new JSONObject();
         obj.put("name", model.getName());
         JSONArray comps = new JSONArray();
@@ -258,7 +369,7 @@ public class ArchitecturePage extends AEvoPage {
             rels.put(ro);
         }
         obj.put("relationships", rels);
-        return obj.toString();
+        return obj;
     }
 
     @Override
@@ -323,108 +434,106 @@ public class ArchitecturePage extends AEvoPage {
     }
 
     private void handleDiscover() {
-        if (editor == null) return;
-        org.eclipse.ui.IEditorInput input = editor.getEditorInput();
-        if (input instanceof org.eclipse.ui.IFileEditorInput) {
-            org.eclipse.core.resources.IProject project = ((org.eclipse.ui.IFileEditorInput) input).getFile().getProject();
-            java.io.File root = project.getLocation().toFile();
-            eu.kalafatic.evolution.controller.log.Log.log("[ARCH_PAGE] Starting Discovery for Project: " + project.getName() + " at " + root.getAbsolutePath());
+        if (currentTargetPath == null) {
+            handleBrowseTarget();
+            if (currentTargetPath == null) return;
+        }
 
-            org.eclipse.core.runtime.jobs.Job job = new org.eclipse.core.runtime.jobs.Job("Discovering Architecture") {
-                @Override
-                protected org.eclipse.core.runtime.IStatus run(org.eclipse.core.runtime.IProgressMonitor monitor) {
-                    try {
-                        // 1. Physical Scan
-                        eu.kalafatic.evolution.controller.mediation.scanner.TargetScanner scanner = new eu.kalafatic.evolution.controller.mediation.scanner.TargetScanner();
-                        eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot snapshot = scanner.scanToSnapshot(root, eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot.TargetType.PROJECT);
-                        eu.kalafatic.evolution.controller.log.Log.log("[ARCH_PAGE] Physical Scan complete. Found " + snapshot.getNodes().size() + " nodes.");
+        java.io.File root = new java.io.File(currentTargetPath);
+        eu.kalafatic.evolution.controller.log.Log.log("[ARCH] Target path: " + currentTargetPath);
+        eu.kalafatic.evolution.controller.log.Log.log("[ARCH] Mode: " + currentMode.name());
+        eu.kalafatic.evolution.controller.log.Log.log("[ARCH] Starting scan...");
 
-                        // 2. AI Understanding (Mediated Mode Style)
-                        if (orchestrator != null) {
-                            String sid = (orchestrator.getSelfDevSession() != null && orchestrator.getSelfDevSession().getId() != null) ?
-                                         orchestrator.getSelfDevSession().getId() : "discovery-session";
+        org.eclipse.core.runtime.jobs.Job job = new org.eclipse.core.runtime.jobs.Job("Discovering Architecture") {
+            @Override
+            protected org.eclipse.core.runtime.IStatus run(org.eclipse.core.runtime.IProgressMonitor monitor) {
+                try {
+                    // 1. Physical Scan
+                    eu.kalafatic.evolution.controller.mediation.scanner.TargetScanner scanner = new eu.kalafatic.evolution.controller.mediation.scanner.TargetScanner();
+                    eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot snapshot = scanner.scanToSnapshot(root, eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot.TargetType.PROJECT);
+                    eu.kalafatic.evolution.controller.log.Log.log("[ARCH_PAGE] Physical Scan complete. Found " + snapshot.getNodes().size() + " nodes.");
 
-                            eu.kalafatic.evolution.controller.orchestration.SessionContainer session = eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getOrCreateSession(sid);
-                            eu.kalafatic.evolution.controller.orchestration.TaskContext ctx = (session instanceof eu.kalafatic.evolution.controller.orchestration.SessionContext) ?
-                                    ((eu.kalafatic.evolution.controller.orchestration.SessionContext)session).getTaskContext() : null;
+                    // 2. AI Understanding (Mediated Mode Style)
+                    if (orchestrator != null) {
+                        String sid = (orchestrator.getSelfDevSession() != null && orchestrator.getSelfDevSession().getId() != null) ?
+                                     orchestrator.getSelfDevSession().getId() : "discovery-session";
 
-                            if (ctx == null) {
-                                ctx = new eu.kalafatic.evolution.controller.orchestration.TaskContext(orchestrator, root);
-                                ctx.setSessionId(sid);
-                                if (session instanceof eu.kalafatic.evolution.controller.orchestration.SessionContext) {
-                                    ((eu.kalafatic.evolution.controller.orchestration.SessionContext)session).setTaskContext(ctx);
-                                }
+                        eu.kalafatic.evolution.controller.orchestration.SessionContainer session = eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getOrCreateSession(sid);
+                        eu.kalafatic.evolution.controller.orchestration.TaskContext ctx = (session instanceof eu.kalafatic.evolution.controller.orchestration.SessionContext) ?
+                                ((eu.kalafatic.evolution.controller.orchestration.SessionContext)session).getTaskContext() : null;
+
+                        if (ctx == null) {
+                            ctx = new eu.kalafatic.evolution.controller.orchestration.TaskContext(orchestrator, root);
+                            ctx.setSessionId(sid);
+                            if (session instanceof eu.kalafatic.evolution.controller.orchestration.SessionContext) {
+                                ((eu.kalafatic.evolution.controller.orchestration.SessionContext)session).setTaskContext(ctx);
                             }
-
-                            monitor.subTask("Mediating High-Signal Context");
-                            eu.kalafatic.evolution.controller.mediation.analysis.ContextCurator curator = new eu.kalafatic.evolution.controller.mediation.analysis.ContextCurator();
-                            java.util.List<String> candidates = curator.selectContext(snapshot, "architectural overview and key entry points", 32);
-
-                            eu.kalafatic.evolution.controller.mediation.analysis.SemanticExtractor extractor = new eu.kalafatic.evolution.controller.mediation.analysis.SemanticExtractor();
-                            extractor.extractToSnapshot(snapshot, candidates);
-
-                            monitor.subTask("Synthesizing Reality Model");
-                            eu.kalafatic.evolution.controller.agents.RealityDiscoveryAgent agent = new eu.kalafatic.evolution.controller.agents.RealityDiscoveryAgent(session);
-
-                            // FIX: Avoid using Orchestrator.getAiService() which is undefined. Use TaskContext.getAiService().
-                            agent.setAiService(ctx.getAiService());
-
-                            eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel reality = agent.discover("Analyze repository architecture and key hotspots", ctx, snapshot);
-                            eu.kalafatic.evolution.controller.log.Log.log("[ARCH_PAGE] Reality Model synthesized: " + reality.getDomain());
-
-                            // Save to metadata for extractModel to find it
-                            ctx.getOrchestrationState().getMetadata().put("targetRealityModel", reality);
-
-                            // Also trigger MetadataAgent for persistent sidecars
-                            monitor.subTask("Generating AI Metadata Sidecars");
-                            MetadataAgent generator = new MetadataAgent();
-                            generator.generate(root, monitor);
-
-                            // Persistent Cache in Shared Memory
-                            saveModelToCache(ctx, extractModel());
                         }
 
-                        scheduleRefresh();
-                        return org.eclipse.core.runtime.Status.OK_STATUS;
-                    } catch (Exception e) {
-                        return new org.eclipse.core.runtime.Status(org.eclipse.core.runtime.IStatus.ERROR, "eu.kalafatic.evolution.view", "Discovery failed", e);
-                    }
-                }
-            };
-            job.schedule();
-        }
-    }
+                        monitor.subTask("Mediating High-Signal Context");
+                        eu.kalafatic.evolution.controller.mediation.analysis.ContextCurator curator = new eu.kalafatic.evolution.controller.mediation.analysis.ContextCurator();
+                        java.util.List<String> candidates = curator.selectContext(snapshot, "architectural overview and key entry points", 32);
 
-    private void handleGenerateMetadata() {
-        if (editor == null) return;
-        org.eclipse.ui.IEditorInput input = editor.getEditorInput();
-        if (input instanceof org.eclipse.ui.IFileEditorInput) {
-            org.eclipse.core.resources.IProject project = ((org.eclipse.ui.IFileEditorInput) input).getFile().getProject();
-            java.io.File root = project.getLocation().toFile();
+                        eu.kalafatic.evolution.controller.mediation.analysis.SemanticExtractor extractor = new eu.kalafatic.evolution.controller.mediation.analysis.SemanticExtractor();
+                        extractor.extractToSnapshot(snapshot, candidates);
 
-            org.eclipse.core.runtime.jobs.Job job = new org.eclipse.core.runtime.jobs.Job("Generating AI Metadata") {
-                @Override
-                protected org.eclipse.core.runtime.IStatus run(org.eclipse.core.runtime.IProgressMonitor monitor) {
-                    try {
+                        monitor.subTask("Synthesizing Reality Model");
+                        eu.kalafatic.evolution.controller.agents.RealityDiscoveryAgent agent = new eu.kalafatic.evolution.controller.agents.RealityDiscoveryAgent(session);
+
+                        // FIX: Avoid using Orchestrator.getAiService() which is undefined. Use TaskContext.getAiService().
+                        agent.setAiService(ctx.getAiService());
+
+                            eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel reality = agent.discover("Analyze repository architecture and key hotspots", ctx, currentTargetPath);
+                        eu.kalafatic.evolution.controller.log.Log.log("[ARCH_PAGE] Reality Model synthesized: " + reality.getDomain());
+
+                        // Save to metadata for extractModel to find it
+                        ctx.getOrchestrationState().getMetadata().put("targetRealityModel", reality);
+
+                        // Also trigger MetadataAgent for persistent sidecars
+                        monitor.subTask("Generating AI Metadata Sidecars");
                         MetadataAgent generator = new MetadataAgent();
                         generator.generate(root, monitor);
 
-                        Display.getDefault().asyncExec(() -> {
-                            if (!getShell().isDisposed()) {
-                                MessageBox box = new MessageBox(getShell(), SWT.ICON_INFORMATION | SWT.OK);
-                                box.setText("Metadata Generation");
-                                box.setMessage("AI Metadata generation completed for: " + project.getName());
-                                box.open();
-                            }
-                        });
-                        return org.eclipse.core.runtime.Status.OK_STATUS;
-                    } catch (Exception e) {
-                        return new org.eclipse.core.runtime.Status(org.eclipse.core.runtime.IStatus.ERROR, "eu.kalafatic.evolution.view", "Failed to generate metadata", e);
+                        // Persistent Cache in Shared Memory
+                        saveModelToCache(ctx, extractModel());
                     }
+
+                    scheduleRefresh();
+                    return org.eclipse.core.runtime.Status.OK_STATUS;
+                } catch (Exception e) {
+                    return new org.eclipse.core.runtime.Status(org.eclipse.core.runtime.IStatus.ERROR, "eu.kalafatic.evolution.view", "Discovery failed", e);
                 }
-            };
-            job.schedule();
-        }
+            }
+        };
+        job.schedule();
+    }
+
+    private void handleGenerateMetadata() {
+        if (currentTargetPath == null) return;
+        java.io.File root = new java.io.File(currentTargetPath);
+
+        org.eclipse.core.runtime.jobs.Job job = new org.eclipse.core.runtime.jobs.Job("Generating AI Metadata") {
+            @Override
+            protected org.eclipse.core.runtime.IStatus run(org.eclipse.core.runtime.IProgressMonitor monitor) {
+                try {
+                    MetadataAgent generator = new MetadataAgent();
+                    generator.generate(root, monitor);
+
+                    Display.getDefault().asyncExec(() -> {
+                        if (!getShell().isDisposed()) {
+                            MessageBox box = new MessageBox(getShell(), SWT.ICON_INFORMATION | SWT.OK);
+                            box.setText("Metadata Generation");
+                            box.setMessage("AI Metadata generation completed for: " + root.getName());
+                            box.open();
+                        }
+                    });
+                    return org.eclipse.core.runtime.Status.OK_STATUS;
+                } catch (Exception e) {
+                    return new org.eclipse.core.runtime.Status(org.eclipse.core.runtime.IStatus.ERROR, "eu.kalafatic.evolution.view", "Failed to generate metadata", e);
+                }
+            }
+        };
+        job.schedule();
     }
 
     private void handleExport() {
@@ -436,7 +545,7 @@ public class ArchitecturePage extends AEvoPage {
             try {
                 DesignModel model = extractModel();
                 eu.kalafatic.evolution.controller.orchestration.TaskContext context = new eu.kalafatic.evolution.controller.orchestration.TaskContext(orchestrator, null);
-                DesignExporter.exportToHtml(renderer.render(model), new java.io.File(path), context);
+                DesignExporter.exportToHtml(renderer.render(model, currentMode.name(), currentTargetPath, targetHistory), new java.io.File(path), context);
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
@@ -463,8 +572,15 @@ public class ArchitecturePage extends AEvoPage {
         Display.getDefault().asyncExec(() -> {
             if (browser == null || browser.isDisposed()) return;
             DesignModel model = extractModel();
-            String json = renderer.serializeModel(model);
 
+            // Re-render full template if target path changed or model is null
+            if (lastJson.isEmpty() || model.getComponents().isEmpty()) {
+                browser.setText(renderer.render(model, currentMode.name(), currentTargetPath, defaultTargetPath, targetHistory));
+                lastJson = renderer.serializeModel(model);
+                return;
+            }
+
+            String json = renderer.serializeModel(model);
             if (json.equals(lastJson)) return;
             lastJson = json;
 
@@ -474,7 +590,7 @@ public class ArchitecturePage extends AEvoPage {
 
     private void initBrowser() {
         if (browser == null || browser.isDisposed()) return;
-        browser.setText(renderer.render(null, currentMode.name()));
+        browser.setText(renderer.render(null, currentMode.name(), currentTargetPath, defaultTargetPath, targetHistory));
     }
 
     public enum ViewMode {
@@ -489,22 +605,18 @@ public class ArchitecturePage extends AEvoPage {
     }
 
     private DesignModel extractModel() {
-        if (editor == null) return createDefaultModel();
-        org.eclipse.ui.IEditorInput input = editor.getEditorInput();
-        if (!(input instanceof org.eclipse.ui.IFileEditorInput)) return createDefaultModel();
-
-        org.eclipse.core.resources.IProject project = ((org.eclipse.ui.IFileEditorInput) input).getFile().getProject();
-        java.io.File root = project.getLocation().toFile();
+        if (currentTargetPath == null) return createDefaultModel();
+        java.io.File root = new java.io.File(currentTargetPath);
 
         // 1. Try to load from Cache first
         DesignModel cached = loadModelFromCache();
         if (cached != null) {
-            eu.kalafatic.evolution.controller.log.Log.log("[ARCH_PAGE] Returning cached model: " + cached.getComponents().size() + " components.");
+            eu.kalafatic.evolution.controller.log.Log.log("[ARCH_PAGE] Returning cached model for: " + currentTargetPath);
             return filterModel(cached, currentMode);
         }
 
-        // 2. DO NOT start loading models before user (Discovery)
-        DesignModel model = new DesignModel();
+        // 2. Initial view: physical scan for metadata
+        DesignModel model = discoverArchitectureNodes(root);
         eu.kalafatic.evolution.controller.log.Log.log("[ARCH_PAGE] Discovered " + model.getComponents().size() + " components via node scan.");
 
         // Integrate Reality Discovery Model if present in orchestrator
@@ -522,7 +634,7 @@ public class ArchitecturePage extends AEvoPage {
             }
         }
 
-        model.setName(project.getName() + " Architecture");
+        model.setName(root.getName() + " Architecture");
 
         if (model.getComponents().isEmpty()) {
             return createDefaultModel();
