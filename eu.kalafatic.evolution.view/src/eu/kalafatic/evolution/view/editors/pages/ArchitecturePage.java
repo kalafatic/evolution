@@ -78,12 +78,20 @@ public class ArchitecturePage extends AEvoPage {
     }
 
     private void initTargetPath() {
-        String evoRepo = findEvoRepository();
-        if (evoRepo != null) {
-            defaultTargetPath = evoRepo;
-            currentTargetPath = evoRepo;
-            eu.kalafatic.evolution.controller.log.Log.log("[ARCH] EVO repository detected at default path: " + currentTargetPath);
-        } else if (editor != null) {
+        if (orchestrator != null && orchestrator.getDefaultTarget() != null && !orchestrator.getDefaultTarget().isEmpty()) {
+            defaultTargetPath = orchestrator.getDefaultTarget();
+            currentTargetPath = defaultTargetPath;
+            eu.kalafatic.evolution.controller.log.Log.log("[ARCH] Default target from model: " + currentTargetPath);
+        } else {
+            String evoRepo = findEvoRepository();
+            if (evoRepo != null) {
+                defaultTargetPath = evoRepo;
+                currentTargetPath = evoRepo;
+                eu.kalafatic.evolution.controller.log.Log.log("[ARCH] EVO repository detected at default path: " + currentTargetPath);
+            }
+        }
+
+        if (currentTargetPath == null && editor != null) {
             org.eclipse.ui.IEditorInput input = editor.getEditorInput();
             if (input instanceof org.eclipse.ui.IFileEditorInput) {
                 currentTargetPath = ((org.eclipse.ui.IFileEditorInput) input).getFile().getProject().getLocation().toOSString();

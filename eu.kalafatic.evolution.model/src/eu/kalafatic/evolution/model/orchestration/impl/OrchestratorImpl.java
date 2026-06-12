@@ -81,6 +81,7 @@ import org.eclipse.emf.ecore.util.InternalEList;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getMonitoringHistory <em>Monitoring History</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getSupervisorSettings <em>Supervisor Settings</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getNetworkEntries <em>Network Entries</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getDefaultTarget <em>Default Target</em>}</li>
  * </ul>
  *
  * @generated
@@ -525,6 +526,26 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 * @ordered
 	 */
 	protected EList<NetworkEntry> networkEntries;
+
+	/**
+	 * The default value of the '{@link #getDefaultTarget() <em>Default Target</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getDefaultTarget()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String DEFAULT_TARGET_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getDefaultTarget() <em>Default Target</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getDefaultTarget()
+	 * @generated
+	 * @ordered
+	 */
+	protected String defaultTarget = DEFAULT_TARGET_EDEFAULT;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -1503,6 +1524,29 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 * @generated
 	 */
 	@Override
+	public String getDefaultTarget() {
+		return defaultTarget;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setDefaultTarget(String newDefaultTarget) {
+		String oldDefaultTarget = defaultTarget;
+		defaultTarget = newDefaultTarget;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.ORCHESTRATOR__DEFAULT_TARGET, oldDefaultTarget, defaultTarget));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public NotificationChain eInverseRemove(InternalEObject otherEnd, int featureID, NotificationChain msgs) {
 		switch (featureID) {
 			case OrchestrationPackage.ORCHESTRATOR__AGENTS:
@@ -1621,6 +1665,8 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return getSupervisorSettings();
 			case OrchestrationPackage.ORCHESTRATOR__NETWORK_ENTRIES:
 				return getNetworkEntries();
+			case OrchestrationPackage.ORCHESTRATOR__DEFAULT_TARGET:
+				return getDefaultTarget();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -1737,6 +1783,9 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				getNetworkEntries().clear();
 				getNetworkEntries().addAll((Collection<? extends NetworkEntry>)newValue);
 				return;
+			case OrchestrationPackage.ORCHESTRATOR__DEFAULT_TARGET:
+				setDefaultTarget((String)newValue);
+				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -1845,6 +1894,9 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			case OrchestrationPackage.ORCHESTRATOR__NETWORK_ENTRIES:
 				getNetworkEntries().clear();
 				return;
+			case OrchestrationPackage.ORCHESTRATOR__DEFAULT_TARGET:
+				setDefaultTarget(DEFAULT_TARGET_EDEFAULT);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -1921,6 +1973,8 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return supervisorSettings != null;
 			case OrchestrationPackage.ORCHESTRATOR__NETWORK_ENTRIES:
 				return networkEntries != null && !networkEntries.isEmpty();
+			case OrchestrationPackage.ORCHESTRATOR__DEFAULT_TARGET:
+				return DEFAULT_TARGET_EDEFAULT == null ? defaultTarget != null : !DEFAULT_TARGET_EDEFAULT.equals(defaultTarget);
 		}
 		return super.eIsSet(featureID);
 	}
@@ -1959,6 +2013,8 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 		result.append(sharedMemory);
 		result.append(", darwinMode: ");
 		result.append(darwinMode);
+		result.append(", defaultTarget: ");
+		result.append(defaultTarget);
 		result.append(')');
 		return result.toString();
 	}

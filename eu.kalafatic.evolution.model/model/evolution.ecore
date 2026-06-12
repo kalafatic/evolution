@@ -136,6 +136,7 @@
         containment="true"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="networkEntries" upperBound="-1"
         eType="#//NetworkEntry" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="defaultTarget" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="ServerSettings">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="port" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"

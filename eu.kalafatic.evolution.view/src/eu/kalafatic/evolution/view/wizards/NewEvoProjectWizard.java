@@ -185,6 +185,9 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
             
             EvoProject evoProject = modelManager.createProject(projectName);
 
+            // General Settings
+            modelManager.updateDefaultTarget(orchestrator, configPage.getDefaultTargetPath());
+
             // Git Settings
             if (!gitPage.isSkipped()) {
                 modelManager.updateGitSettings(orchestrator, gitPage.getRepoUrl(), gitPage.getBranch(), gitPage.getUsername(), gitPage.getPassword(), gitPage.getLocalPath());
