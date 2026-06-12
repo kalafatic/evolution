@@ -763,13 +763,22 @@ public interface OrchestrationPackage extends EPackage {
 	int ORCHESTRATOR__NETWORK_ENTRIES = 31;
 
 	/**
+	 * The feature id for the '<em><b>Default Target</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ORCHESTRATOR__DEFAULT_TARGET = 32;
+
+	/**
 	 * The number of structural features of the '<em>Orchestrator</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR_FEATURE_COUNT = 32;
+	int ORCHESTRATOR_FEATURE_COUNT = 33;
 
 	/**
 	 * The number of operations of the '<em>Orchestrator</em>' class.
@@ -4440,6 +4449,17 @@ public interface OrchestrationPackage extends EPackage {
 	EReference getOrchestrator_NetworkEntries();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getDefaultTarget <em>Default Target</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Default Target</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getDefaultTarget()
+	 * @see #getOrchestrator()
+	 * @generated
+	 */
+	EAttribute getOrchestrator_DefaultTarget();
+
+	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.ServerSettings <em>Server Settings</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -7574,6 +7594,14 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EReference ORCHESTRATOR__NETWORK_ENTRIES = eINSTANCE.getOrchestrator_NetworkEntries();
+
+		/**
+		 * The meta object literal for the '<em><b>Default Target</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute ORCHESTRATOR__DEFAULT_TARGET = eINSTANCE.getOrchestrator_DefaultTarget();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ServerSettingsImpl <em>Server Settings</em>}' class.

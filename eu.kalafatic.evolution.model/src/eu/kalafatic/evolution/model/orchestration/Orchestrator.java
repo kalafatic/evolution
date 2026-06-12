@@ -47,6 +47,7 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getMonitoringHistory <em>Monitoring History</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getSupervisorSettings <em>Supervisor Settings</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getNetworkEntries <em>Network Entries</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getDefaultTarget <em>Default Target</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator()
@@ -692,5 +693,27 @@ public interface Orchestrator extends EObject {
 	 * @generated
 	 */
 	EList<NetworkEntry> getNetworkEntries();
+
+	/**
+	 * Returns the value of the '<em><b>Default Target</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Default Target</em>' attribute.
+	 * @see #setDefaultTarget(String)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator_DefaultTarget()
+	 * @model
+	 * @generated
+	 */
+	String getDefaultTarget();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getDefaultTarget <em>Default Target</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Default Target</em>' attribute.
+	 * @see #getDefaultTarget()
+	 * @generated
+	 */
+	void setDefaultTarget(String value);
 
 } // Orchestrator

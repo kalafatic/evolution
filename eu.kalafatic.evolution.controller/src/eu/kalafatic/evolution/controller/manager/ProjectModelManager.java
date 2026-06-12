@@ -179,6 +179,13 @@ public class ProjectModelManager {
         if (orchestrator.getAiChat() == null) {
             orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
         }
+        if (orchestrator.getDefaultTarget() == null) {
+            orchestrator.setDefaultTarget(findEvolutionRepository());
+        }
+    }
+
+    public void updateDefaultTarget(Orchestrator orchestrator, String path) {
+        orchestrator.setDefaultTarget(path);
     }
 
     public void updateGitSettings(Orchestrator orchestrator, String url, String branch, String username, String password, String localPath) {
