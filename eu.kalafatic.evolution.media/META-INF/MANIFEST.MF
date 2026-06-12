@@ -1,0 +1,15 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Media
+Bundle-SymbolicName: eu.kalafatic.evolution.media;singleton:=true
+Bundle-Version: 2.6.5.qualifier
+Require-Bundle: eu.kalafatic.evolution.controller;bundle-version="2.6.5",
+ eu.kalafatic.utils;bundle-version="2.6.5",
+ org.eclipse.core.runtime
+Bundle-RequiredExecutionEnvironment: JavaSE-21
+Automatic-Module-Name: eu.kalafatic.evolution.media
+Export-Package: eu.kalafatic.evolution.media,
+ eu.kalafatic.evolution.media.model,
+ eu.kalafatic.evolution.media.render,
+ eu.kalafatic.evolution.media.generator,
+ eu.kalafatic.evolution.media.video
