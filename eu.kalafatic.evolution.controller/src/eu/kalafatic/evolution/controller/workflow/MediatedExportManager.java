@@ -21,6 +21,14 @@ public class MediatedExportManager {
     }
 
     public File createExportPackage(String sessionId, String prompt, List<String> selectedPaths, File projectRoot, String outputPath, String metadataJson, String historyAnalysis, String architectureSummary, String dependencies, String executionInstructions, String realityModelJson, String architecturalFactsJson, String subsystemsJson) throws IOException {
+        return createExportPackage(sessionId, prompt, selectedPaths, projectRoot, outputPath, metadataJson, historyAnalysis, architectureSummary, dependencies, executionInstructions, realityModelJson, architecturalFactsJson, subsystemsJson, null);
+    }
+
+    public File createExportPackage(String sessionId, String prompt, List<String> selectedPaths, File projectRoot, String outputPath, String metadataJson, String historyAnalysis, String architectureSummary, String dependencies, String executionInstructions, String realityModelJson, String architecturalFactsJson, String subsystemsJson, String knowledgeGapsJson) throws IOException {
+        return createExportPackage(sessionId, prompt, selectedPaths, projectRoot, outputPath, metadataJson, historyAnalysis, architectureSummary, dependencies, executionInstructions, realityModelJson, architecturalFactsJson, subsystemsJson, knowledgeGapsJson, null);
+    }
+
+    public File createExportPackage(String sessionId, String prompt, List<String> selectedPaths, File projectRoot, String outputPath, String metadataJson, String historyAnalysis, String architectureSummary, String dependencies, String executionInstructions, String realityModelJson, String architecturalFactsJson, String subsystemsJson, String knowledgeGapsJson, String genesJson) throws IOException {
         String fileName = "mediated_export_" + sessionId + "_" + System.currentTimeMillis() + ".zip";
         File targetDir = projectRoot;
         if (outputPath != null && !outputPath.isEmpty()) {
@@ -62,6 +70,12 @@ public class MediatedExportManager {
             if (subsystemsJson != null) {
                 addStringToZip(zos, "subsystems.json", subsystemsJson);
             }
+            if (knowledgeGapsJson != null) {
+                addStringToZip(zos, "knowledge-gaps.json", knowledgeGapsJson);
+            }
+            if (genesJson != null) {
+                addStringToZip(zos, "genome.json", genesJson);
+            }
 
             // 4. Add Selected File Contents
             for (String path : selectedPaths) {
@@ -102,6 +116,14 @@ public class MediatedExportManager {
     }
 
     public File createExportFolder(String sessionId, String prompt, List<String> selectedPaths, File projectRoot, String outputPath, String metadataJson, String historyAnalysis, String architectureSummary, String dependencies, String executionInstructions, String realityModelJson, String architecturalFactsJson, String subsystemsJson) throws IOException {
+        return createExportFolder(sessionId, prompt, selectedPaths, projectRoot, outputPath, metadataJson, historyAnalysis, architectureSummary, dependencies, executionInstructions, realityModelJson, architecturalFactsJson, subsystemsJson, null);
+    }
+
+    public File createExportFolder(String sessionId, String prompt, List<String> selectedPaths, File projectRoot, String outputPath, String metadataJson, String historyAnalysis, String architectureSummary, String dependencies, String executionInstructions, String realityModelJson, String architecturalFactsJson, String subsystemsJson, String knowledgeGapsJson) throws IOException {
+        return createExportFolder(sessionId, prompt, selectedPaths, projectRoot, outputPath, metadataJson, historyAnalysis, architectureSummary, dependencies, executionInstructions, realityModelJson, architecturalFactsJson, subsystemsJson, knowledgeGapsJson, null);
+    }
+
+    public File createExportFolder(String sessionId, String prompt, List<String> selectedPaths, File projectRoot, String outputPath, String metadataJson, String historyAnalysis, String architectureSummary, String dependencies, String executionInstructions, String realityModelJson, String architecturalFactsJson, String subsystemsJson, String knowledgeGapsJson, String genesJson) throws IOException {
         String dateStamp = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
         String folderName = "mediated_export_" + dateStamp;
         File targetDir = projectRoot;
@@ -130,6 +152,8 @@ public class MediatedExportManager {
         if (realityModelJson != null) writeStringToFile(new File(exportDir, "reality-model.json"), realityModelJson);
         if (architecturalFactsJson != null) writeStringToFile(new File(exportDir, "architectural-facts.json"), architecturalFactsJson);
         if (subsystemsJson != null) writeStringToFile(new File(exportDir, "subsystems.json"), subsystemsJson);
+        if (knowledgeGapsJson != null) writeStringToFile(new File(exportDir, "knowledge-gaps.json"), knowledgeGapsJson);
+        if (genesJson != null) writeStringToFile(new File(exportDir, "genome.json"), genesJson);
 
         // 4. Add Selected File Contents
         File affectedFilesDir = new File(exportDir, "affected-files");

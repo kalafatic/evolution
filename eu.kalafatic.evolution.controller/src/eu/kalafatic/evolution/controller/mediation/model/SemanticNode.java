@@ -15,6 +15,9 @@ public class SemanticNode {
     private String summary;
     private final List<String> tags = new ArrayList<>();
     private double architecturalAuthority;
+    private double evolutionaryInfluenceScore;
+    private List<String> breakImpacts = new ArrayList<>();
+    private List<String> evolutionPotentials = new ArrayList<>();
     private int discoveryDepth;
 
     // Extracted structure: functions, classes, sections, etc.
@@ -41,6 +44,18 @@ public class SemanticNode {
 
     public double getArchitecturalAuthority() { return architecturalAuthority; }
     public void setArchitecturalAuthority(double architecturalAuthority) { this.architecturalAuthority = architecturalAuthority; }
+
+    public double getEvolutionaryInfluenceScore() { return evolutionaryInfluenceScore; }
+    public void setEvolutionaryInfluenceScore(double evolutionaryInfluenceScore) { this.evolutionaryInfluenceScore = evolutionaryInfluenceScore; }
+
+    public List<String> getBreakImpacts() { return breakImpacts; }
+    public void setBreakImpacts(List<String> breakImpacts) { this.breakImpacts = breakImpacts; }
+
+    public List<String> getEvolutionPotentials() { return evolutionPotentials; }
+    public void setEvolutionPotentials(List<String> evolutionPotentials) { this.evolutionPotentials = evolutionPotentials; }
+
+    public void addBreakImpact(String impact) { this.breakImpacts.add(impact); }
+    public void addEvolutionPotential(String potential) { this.evolutionPotentials.add(potential); }
 
     public int getDiscoveryDepth() { return discoveryDepth; }
     public void setDiscoveryDepth(int discoveryDepth) { this.discoveryDepth = discoveryDepth; }
