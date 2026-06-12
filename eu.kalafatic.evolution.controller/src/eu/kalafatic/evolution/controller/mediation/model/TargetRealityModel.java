@@ -32,7 +32,13 @@ public class TargetRealityModel {
     private final Map<String, Double> influenceGraph = new HashMap<>(); // Node ID -> influence score
     private final List<String> executionFlows = new ArrayList<>();
     private final List<String> decisionFlows = new ArrayList<>();
+    private final List<String> architecturalAuthorityFiles = new ArrayList<>();
+    private final List<String> implementationFrontierFiles = new ArrayList<>();
     private final List<String> selectedFiles = new ArrayList<>();
+    private final List<String> impactPaths = new ArrayList<>();
+    private final List<String> lessons = new ArrayList<>();
+    private final List<String> patterns = new ArrayList<>();
+    private final List<String> referenceImplementations = new ArrayList<>();
 
     private final Map<String, Object> architectureView = new HashMap<>();
     private final Map<String, Object> implementationView = new HashMap<>();
@@ -75,7 +81,13 @@ public class TargetRealityModel {
     public Map<String, Double> getInfluenceGraph() { return influenceGraph; }
     public List<String> getExecutionFlows() { return executionFlows; }
     public List<String> getDecisionFlows() { return decisionFlows; }
+    public List<String> getArchitecturalAuthorityFiles() { return architecturalAuthorityFiles; }
+    public List<String> getImplementationFrontierFiles() { return implementationFrontierFiles; }
     public List<String> getSelectedFiles() { return selectedFiles; }
+    public List<String> getImpactPaths() { return impactPaths; }
+    public List<String> getLessons() { return lessons; }
+    public List<String> getPatterns() { return patterns; }
+    public List<String> getReferenceImplementations() { return referenceImplementations; }
 
     public Map<String, Object> getArchitectureView() { return architectureView; }
     public Map<String, Object> getImplementationView() { return implementationView; }

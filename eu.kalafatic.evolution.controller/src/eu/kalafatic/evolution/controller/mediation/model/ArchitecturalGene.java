@@ -12,10 +12,13 @@ public class ArchitecturalGene {
     private String pattern;
     private String purpose;
     private String rationale;
+    private String name;
     private List<String> requiredArtifacts = new ArrayList<>();
     private List<String> facts = new ArrayList<>();
     private List<String> evidence = new ArrayList<>(); // paths to artifacts
     private List<String> dependencies = new ArrayList<>(); // dependent genes or artifacts
+    private List<String> exampleFiles = new ArrayList<>();
+    private String activationConditions;
     private String transferability; // how easily this can be applied to other systems
     private int discoveryIteration;
 
@@ -28,6 +31,9 @@ public class ArchitecturalGene {
 
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
+
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 
     public String getPattern() { return pattern; }
     public void setPattern(String pattern) { this.pattern = pattern; }
@@ -49,6 +55,12 @@ public class ArchitecturalGene {
 
     public List<String> getDependencies() { return dependencies; }
     public void setDependencies(List<String> dependencies) { this.dependencies = dependencies; }
+
+    public List<String> getExampleFiles() { return exampleFiles; }
+    public void setExampleFiles(List<String> exampleFiles) { this.exampleFiles = exampleFiles; }
+
+    public String getActivationConditions() { return activationConditions; }
+    public void setActivationConditions(String activationConditions) { this.activationConditions = activationConditions; }
 
     public String getTransferability() { return transferability; }
     public void setTransferability(String transferability) { this.transferability = transferability; }
