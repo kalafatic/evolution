@@ -18,6 +18,8 @@ import org.eclipse.ui.IActionBars;
 import org.eclipse.ui.IWorkbenchActionConstants;
 import org.eclipse.jface.viewers.CellEditor;
 import org.eclipse.jface.viewers.ColumnLabelProvider;
+import org.eclipse.jface.viewers.DelegatingStyledCellLabelProvider;
+import org.eclipse.jface.viewers.DelegatingStyledCellLabelProvider.IStyledLabelProvider;
 import org.eclipse.jface.viewers.EditingSupport;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TextCellEditor;
@@ -40,9 +42,6 @@ public class EvoNavigator extends CommonNavigator {
 
 	/** The lock. */
 	private final Lock lock = new ReentrantLock(true);
-
-	/** The actions. */
-	private Action expandAllAction, collapseAllAction, refreshAction;
 
 	public EvoNavigator() {
 		super();
@@ -78,6 +77,10 @@ public class EvoNavigator extends CommonNavigator {
 
 		super.createPartControl(container);
 		getCommonViewer().getControl().setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+
+		if (getCommonViewer().getLabelProvider() instanceof IStyledLabelProvider) {
+			getCommonViewer().setLabelProvider(new DelegatingStyledCellLabelProvider((IStyledLabelProvider) getCommonViewer().getLabelProvider()));
+		}
 
 		getCommonViewer().addFilter(new ViewerFilter() {
 			@Override
@@ -166,73 +169,6 @@ public class EvoNavigator extends CommonNavigator {
 			}
 		});
 
-		makeActions();
-		contributeToActionBars();
-	}
-
-	/**
-	 * Contribute to action bars.
-	 */
-	private void contributeToActionBars() {
-		IActionBars bars = getViewSite().getActionBars();
-		fillLocalPullDown(bars.getMenuManager());
-		fillLocalToolBar(bars.getToolBarManager());
-	}
-
-	/**
-	 * Fill local pull down.
-	 * 
-	 * @param manager the manager
-	 */
-	private void fillLocalPullDown(IMenuManager manager) {
-		manager.add(expandAllAction);
-		manager.add(collapseAllAction);
-		manager.add(new Separator());
-		manager.add(refreshAction);
-	}
-
-	/**
-	 * Fill local tool bar.
-	 * 
-	 * @param manager the manager
-	 */
-	private void fillLocalToolBar(IToolBarManager manager) {
-		manager.add(expandAllAction);
-		manager.add(collapseAllAction);
-		manager.add(new Separator());
-		manager.add(refreshAction);
-	}
-
-	/**
-	 * Make actions.
-	 */
-	private void makeActions() {
-		expandAllAction = new Action("Expand All") {
-			@Override
-			public void run() {
-				getCommonViewer().expandAll();
-			}
-		};
-		expandAllAction.setToolTipText("Expand All");
-		expandAllAction.setImageDescriptor(PlatformUI.getWorkbench().getSharedImages().getImageDescriptor(ISharedImages.IMG_ELCL_SYNCED));
-
-		collapseAllAction = new Action("Collapse All") {
-			@Override
-			public void run() {
-				getCommonViewer().collapseAll();
-			}
-		};
-		collapseAllAction.setToolTipText("Collapse All");
-		collapseAllAction.setImageDescriptor(PlatformUI.getWorkbench().getSharedImages().getImageDescriptor(ISharedImages.IMG_ELCL_COLLAPSEALL));
-
-		refreshAction = new Action("Refresh") {
-			@Override
-			public void run() {
-				refresh();
-			}
-		};
-		refreshAction.setToolTipText("Refresh");
-		refreshAction.setImageDescriptor(PlatformUI.getWorkbench().getSharedImages().getImageDescriptor(ISharedImages.IMG_ELCL_SYNCED));
 	}
 
 	/**

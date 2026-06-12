@@ -35,6 +35,7 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.SupervisorSettings;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.view.nature.EvolutionNature;
+import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
 
 public class OrchestrationNavigatorContentProvider implements ITreeContentProvider {
 
@@ -158,6 +159,15 @@ public class OrchestrationNavigatorContentProvider implements ITreeContentProvid
             return ((Task) parentElement).getSubTasks().toArray();
         } else if (parentElement instanceof Git) {
             Git g = (Git) parentElement;
+
+            // Auto-link local repo if path is empty
+            if (g.getLocalPath() == null || g.getLocalPath().isEmpty()) {
+                String repoPath = ProjectModelManager.getInstance().findEvolutionRepository();
+                if (repoPath != null) {
+                    g.setLocalPath(repoPath);
+                }
+            }
+
             return new Object[] {
                 new ModelProperty(g, OrchestrationPackage.Literals.GIT__REPOSITORY_URL, "URL"),
                 new ModelProperty(g, OrchestrationPackage.Literals.GIT__BRANCH, "Branch"),
