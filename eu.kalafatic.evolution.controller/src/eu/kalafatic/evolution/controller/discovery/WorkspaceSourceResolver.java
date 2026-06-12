@@ -118,13 +118,30 @@ public class WorkspaceSourceResolver {
 
     private Optional<File> findGitRoot(File dir) {
         File current = dir;
+        File gitRoot = null;
+        File mavenRoot = null;
+
         while (current != null) {
             File gitDir = new File(current, ".git");
             if (gitDir.exists() && gitDir.isDirectory()) {
-                return Optional.of(current);
+                gitRoot = current;
+                // Once we find a Git root, we can stop walking up for Git,
+                // but we might want to see if there's a Maven parent even higher (unlikely but possible)
+                // or if the Git root itself is the Maven root.
             }
+
+            File pomFile = new File(current, "pom.xml");
+            if (pomFile.exists()) {
+                mavenRoot = current;
+            }
+
             current = current.getParentFile();
         }
+
+        // Prefer Git root, but if Maven root is found and it's a parent of the project, it's a strong candidate
+        if (gitRoot != null) return Optional.of(gitRoot);
+        if (mavenRoot != null) return Optional.of(mavenRoot);
+
         return Optional.empty();
     }
 
