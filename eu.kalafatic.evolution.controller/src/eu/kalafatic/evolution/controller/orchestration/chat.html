@@ -214,6 +214,34 @@
         </div>
 
         <div class="sidebar-section">
+            <h2>Cognitive State</h2>
+            <div class="control-group" style="font-size: 12px; line-height: 1.6;">
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="opacity: 0.6;">Intent:</span>
+                    <span id="cog-intent" style="font-weight: 600; color: #60a5fa;">LEARNING</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="opacity: 0.6;">Capability:</span>
+                    <span id="cog-capability" style="font-weight: 600; color: #34d399;">CHAT</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="opacity: 0.6;">Direction:</span>
+                    <span id="cog-direction" style="font-weight: 600; color: #fbbf24;">STABLE</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="opacity: 0.6;">Confidence:</span>
+                    <span id="cog-confidence" style="font-weight: 600;">100%</span>
+                </div>
+                <div style="margin-top: 5px;">
+                    <span style="opacity: 0.6; display: block; margin-bottom: 2px;">Trajectory:</span>
+                    <div id="cog-trajectory" style="display: flex; gap: 3px; overflow-x: auto; padding-bottom: 3px;">
+                        <!-- Trajectory pills -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar-section">
             <h2>Workspace</h2>
             <div class="control-group">
                 <div class="control-item">
@@ -616,6 +644,29 @@
                     state.session.iterations.forEach(it => {
                         html += `<div style="margin-left:15px; font-size: 11px;">• Iteration ${it.id}: ${it.phase}</div>`;
                     });
+                }
+
+                // Update Cognitive State UI
+                if (state.session.cognitiveState) {
+                    const cs = state.session.cognitiveState;
+                    document.getElementById('cog-intent').innerText = cs.intent || 'LEARNING';
+                    document.getElementById('cog-capability').innerText = cs.capability || 'CHAT';
+                    document.getElementById('cog-direction').innerText = cs.direction || 'STABLE';
+                    document.getElementById('cog-confidence').innerText = Math.round((cs.confidence || 0) * 100) + '%';
+
+                    const traj = document.getElementById('cog-trajectory');
+                    traj.innerHTML = '';
+                    if (cs.trajectory) {
+                        cs.trajectory.forEach(t => {
+                            const pill = document.createElement('span');
+                            pill.style.fontSize = '8px';
+                            pill.style.padding = '1px 4px';
+                            pill.style.borderRadius = '3px';
+                            pill.style.background = 'rgba(255,255,255,0.1)';
+                            pill.innerText = t;
+                            traj.appendChild(pill);
+                        });
+                    }
                 }
             }
 

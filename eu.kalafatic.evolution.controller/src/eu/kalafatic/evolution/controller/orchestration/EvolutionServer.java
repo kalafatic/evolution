@@ -540,6 +540,27 @@ public class EvolutionServer extends NanoHTTPD {
                 iterations.put(new JSONObject().put("id", i.getId()).put("phase", i.getPhase()));
             }
             session.put("iterations", iterations);
+
+            // Add Cognitive State for UI
+            String sessionId = orch.getId();
+            SessionContainer container = SessionManager.getInstance().getSession(sessionId);
+            if (container != null) {
+                eu.kalafatic.evolution.controller.orchestration.cognitive.SessionCognitiveState cs = container.getCognitiveState();
+                if (cs != null) {
+                    JSONObject cog = new JSONObject();
+                    cog.put("intent", cs.getCurrentIntent().name());
+                    cog.put("capability", cs.getCurrentCapability().name());
+                    cog.put("direction", cs.getCurrentDirection().name());
+                    cog.put("confidence", cs.getConfidence());
+
+                    JSONArray trajectory = new JSONArray();
+                    cs.getTrajectory().forEach(t -> trajectory.put(t.name()));
+                    cog.put("trajectory", trajectory);
+
+                    session.put("cognitiveState", cog);
+                }
+            }
+
             root.put("session", session);
         }
 

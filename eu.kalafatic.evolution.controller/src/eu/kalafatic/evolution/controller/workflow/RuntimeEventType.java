@@ -7,6 +7,7 @@ public enum RuntimeEventType {
     KERNEL_STARTED(EventCategory.KERNEL),
     KERNEL_SHUTDOWN(EventCategory.KERNEL),
     MODE_CHANGED(EventCategory.KERNEL),
+    COGNITIVE_STATE_CHANGED(EventCategory.KERNEL),
     SESSION_RESUMED(EventCategory.KERNEL),
     CONFIGURATION_UPDATED(EventCategory.KERNEL),
 
