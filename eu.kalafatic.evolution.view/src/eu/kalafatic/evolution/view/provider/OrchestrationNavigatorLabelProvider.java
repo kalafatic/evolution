@@ -11,8 +11,10 @@ import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.jface.resource.ImageDescriptor;
+import org.eclipse.jface.viewers.DelegatingStyledCellLabelProvider.IStyledLabelProvider;
 import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.LabelProvider;
+import org.eclipse.jface.viewers.StyledString;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.PlatformUI;
@@ -35,7 +37,7 @@ import eu.kalafatic.evolution.model.orchestration.SupervisorSettings;
 import eu.kalafatic.evolution.controller.manager.OrchestrationStatusManager;
 import eu.kalafatic.evolution.view.provider.OrchestrationNavigatorContentProvider.ModelProperty;
 
-public class OrchestrationNavigatorLabelProvider extends LabelProvider implements ITableLabelProvider {
+public class OrchestrationNavigatorLabelProvider extends LabelProvider implements ITableLabelProvider, IStyledLabelProvider {
 
     private final Map<String, Image> imageCache = new HashMap<>();
 
@@ -165,6 +167,17 @@ public class OrchestrationNavigatorLabelProvider extends LabelProvider implement
             return ((ModelProperty) element).label;
         }
         return super.getText(element);
+    }
+
+    @Override
+    public StyledString getStyledText(Object element) {
+        String text = getText(element);
+        if (text == null) text = "";
+        StyledString styledString = new StyledString(text);
+        if (element instanceof EvoProject || element instanceof Orchestrator) {
+            styledString.setStyle(0, text.length(), StyledString.BOLD_STYLER);
+        }
+        return styledString;
     }
 
     @Override
