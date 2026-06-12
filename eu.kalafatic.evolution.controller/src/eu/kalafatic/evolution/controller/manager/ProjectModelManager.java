@@ -25,6 +25,9 @@ import eu.kalafatic.evolution.model.orchestration.Maven;
 import eu.kalafatic.evolution.model.orchestration.NeuronAI;
 import eu.kalafatic.evolution.model.orchestration.NeuronType;
 import eu.kalafatic.evolution.model.orchestration.Ollama;
+import eu.kalafatic.evolution.controller.discovery.SourceDiscoveryRequest;
+import eu.kalafatic.evolution.controller.discovery.SourceDiscoveryResult;
+import eu.kalafatic.evolution.controller.discovery.WorkspaceSourceResolver;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
@@ -156,6 +159,18 @@ public class ProjectModelManager {
     }
 
     public void initializeDefaults(Orchestrator orchestrator) {
+        if (orchestrator.getDefaultTarget() == null || orchestrator.getDefaultTarget().isEmpty()) {
+            WorkspaceSourceResolver resolver = new WorkspaceSourceResolver();
+            SourceDiscoveryResult result = resolver.discover(new SourceDiscoveryRequest());
+            if (result.getPrimaryRepository() != null) {
+                orchestrator.setDefaultTarget(result.getPrimaryRepository().getAbsolutePath());
+                eu.kalafatic.evolution.controller.log.Log.log("[MODEL] Default target discovered from workspace: " + orchestrator.getDefaultTarget());
+            } else {
+                // Fallback to legacy scan if workspace discovery failed
+                orchestrator.setDefaultTarget(findEvolutionRepository());
+            }
+        }
+
         if (orchestrator.getLlm() == null) {
             LLM llm = OrchestrationFactory.eINSTANCE.createLLM();
             llm.setModel("gpt-4o");
@@ -178,9 +193,6 @@ public class ProjectModelManager {
         }
         if (orchestrator.getAiChat() == null) {
             orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
-        }
-        if (orchestrator.getDefaultTarget() == null) {
-            orchestrator.setDefaultTarget(findEvolutionRepository());
         }
     }
 
