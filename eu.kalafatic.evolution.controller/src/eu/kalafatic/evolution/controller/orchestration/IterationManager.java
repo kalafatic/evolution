@@ -1561,6 +1561,27 @@ public class IterationManager {
 
                 Object refs = context.getOrchestrationState().getMetadata().get("referenceImplementations");
                 if (refs instanceof List) model.getReferenceImplementations().addAll((List<String>) refs);
+
+                // AUTHORITY VS FRONTIER POPULATION
+                model.getArchitecturalAuthorityFiles().addAll(model.getSelectedFiles());
+
+                Object frontier = context.getOrchestrationState().getMetadata().get("implementationFrontier");
+                if (frontier instanceof List) {
+                    model.getImplementationFrontierFiles().addAll((List<String>) frontier);
+                } else {
+                    // Fallback: frontier = authority
+                    model.getImplementationFrontierFiles().addAll(model.getSelectedFiles());
+                }
+
+                // RECONSTRUCTION FIELDS
+                Object flows = context.getOrchestrationState().getMetadata().get("executionFlows");
+                if (flows instanceof List) model.getExecutionFlows().addAll((List<String>) flows);
+
+                Object decisions = context.getOrchestrationState().getMetadata().get("decisionFlows");
+                if (decisions instanceof List) model.getDecisionFlows().addAll((List<String>) decisions);
+
+                Object influence = context.getOrchestrationState().getMetadata().get("influenceGraph");
+                if (influence instanceof Map) model.getInfluenceGraph().putAll((Map<String, Double>) influence);
             }
 
             File exportPackage = exportManager.createUnifiedExport(model, MediatedExportManager.ExportProfile.FULL, request, context.getProjectRoot(), outputPath, context.getSessionId());
