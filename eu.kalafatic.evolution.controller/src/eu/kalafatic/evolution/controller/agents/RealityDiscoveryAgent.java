@@ -71,14 +71,65 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
         // PASS 7 - ARCHITECTURAL COMPRESSION
         compressUnderstanding(model, context);
 
+        // POPULATE CANONICAL PROJECTIONS
+        populateCanonicalFields(snapshot, model, context, goal);
+
         // KNOWLEDGE GAP IDENTIFICATION
         identifyKnowledgeGaps(snapshot, model, context);
 
         return model;
     }
 
+    private void populateCanonicalFields(TargetSnapshot snapshot, TargetRealityModel model, TaskContext context, String goal) throws Exception {
+        context.log("[DISCOVERY] Populating Canonical Reconstruction Fields.");
+        if (snapshot == null) return;
+
+        // 1. Influence Graph
+        for (SemanticNode node : snapshot.getNodes().values()) {
+            if (node.getEvolutionaryInfluenceScore() > 0) {
+                model.getInfluenceGraph().put(node.getId(), node.getEvolutionaryInfluenceScore());
+            }
+        }
+
+        // 2. Flows & Decision Centers (Derived from Pass 5 synthesis or explicit analysis)
+        StringBuilder sb = new StringBuilder();
+        sb.append("FACTS: ").append(model.getArchitecturalFacts().size()).append("\n");
+        sb.append("SUBSYSTEMS: ").append(model.getSubsystems().size()).append("\n");
+        sb.append("\nIdentify core Execution Flows and Decision Flows (3-5 high-level steps each).");
+
+        String prompt = sb.toString() + "\n\n" +
+                "Output a JSON object:\n" +
+                "{\n" +
+                "  \"execution_flows\": [\"string\"],\n" +
+                "  \"decision_flows\": [\"string\"]\n" +
+                "}";
+
+        String response = aiService.sendRequest(context.getOrchestrator(), getAgentInstructions() + "\n\n" + prompt, context);
+        JSONObject obj = JsonUtils.extractJsonObject(response);
+        if (obj != null) {
+            JSONArray execs = obj.optJSONArray("execution_flows");
+            if (execs != null) {
+                model.getExecutionFlows().clear();
+                for (int i = 0; i < execs.length(); i++) model.getExecutionFlows().add(execs.getString(i));
+            }
+            JSONArray decs = obj.optJSONArray("decision_flows");
+            if (decs != null) {
+                model.getDecisionFlows().clear();
+                for (int i = 0; i < decs.length(); i++) model.getDecisionFlows().add(decs.getString(i));
+            }
+        }
+
+        // 3. Selected Files (Coverage-Driven via ContextCurator)
+        context.log("[DISCOVERY] Running Coverage-Driven Context Selection.");
+        eu.kalafatic.evolution.controller.mediation.analysis.ContextCurator curator = new eu.kalafatic.evolution.controller.mediation.analysis.ContextCurator();
+        List<String> selected = curator.selectContext(snapshot, goal, 64, model);
+        model.getSelectedFiles().clear();
+        model.getSelectedFiles().addAll(selected);
+    }
+
     private void discoverLocalResponsibilities(TargetSnapshot snapshot, TargetRealityModel model, TaskContext context) throws Exception {
         context.log("[DISCOVERY] Pass 2: Local Responsibility Discovery.");
+        if (snapshot == null) return;
 
         // Prioritize hotspots and high-centrality nodes
         List<SemanticNode> candidates = getTopCentralNodes(snapshot, 10);
@@ -129,6 +180,7 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
 
     private void discoverRelationships(TargetSnapshot snapshot, TargetRealityModel model, TaskContext context) throws Exception {
         context.log("[DISCOVERY] Pass 3: Relationship Discovery & Evolutionary Influence.");
+        if (snapshot == null) return;
 
         List<SemanticNode> influentialNodes = getTopCentralNodes(snapshot, 15);
         for (SemanticNode node : influentialNodes) {
@@ -241,7 +293,7 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
         sb.append("FACTS: ").append(model.getArchitecturalFacts().size()).append("\n");
         sb.append("SUBSYSTEMS: ").append(model.getSubsystems().size()).append("\n");
         sb.append("KNOWLEDGE GAPS: ").append(model.getKnowledgeGaps().size()).append("\n");
-        sb.append("\nSynthesize Reality Model and estimate Completeness (0.0-1.0).\n");
+        sb.append("\nSynthesize Reality Model, discover core facts/hotspots, and estimate Completeness (0.0-1.0).\n");
         sb.append("Also organize the model into ArchitectureView, ImplementationView, and GenomeView.");
 
         String prompt = sb.toString() + "\n\n" +
@@ -251,6 +303,8 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
                 "  \"purpose\": \"string\",\n" +
                 "  \"architecture_summary\": \"string\",\n" +
                 "  \"completeness_score\": 0.0-1.0,\n" +
+                "  \"architectural_facts\": [{ \"id\": \"string\", \"subject\": \"string\", \"predicate\": \"string\", \"description\": \"string\" }],\n" +
+                "  \"hotspots\": [{ \"id\": \"string\", \"name\": \"string\", \"description\": \"string\", \"significance\": 0.0-1.0 }],\n" +
                 "  \"views\": {\n" +
                 "    \"architecture\": {\"hubs\": [\"string\"], \"orchestration\": \"string\"},\n" +
                 "    \"implementation\": {\"entry_points\": [\"string\"], \"critical_path\": [\"string\"]},\n" +
@@ -266,19 +320,56 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
             model.setArchitectureSummary(obj.optString("architecture_summary"));
             model.setRealityCompleteness(obj.optDouble("completeness_score", 0.5));
 
+            // Extract additional facts if discovered
+            JSONArray facts = obj.optJSONArray("architectural_facts");
+            if (facts != null) {
+                for (int i = 0; i < facts.length(); i++) {
+                    JSONObject fObj = facts.optJSONObject(i);
+                    if (fObj == null) continue;
+                    ArchitecturalFact fact = new ArchitecturalFact(fObj.optString("id"), fObj.optString("subject"), fObj.optString("predicate"), 0.9);
+                    fact.setDescription(fObj.optString("description"));
+                    model.addArchitecturalFact(fact);
+                }
+            }
+
+            // Extract hotspots
+            JSONArray hotspots = obj.optJSONArray("hotspots");
+            if (hotspots != null) {
+                for (int i = 0; i < hotspots.length(); i++) {
+                    JSONObject hObj = hotspots.optJSONObject(i);
+                    if (hObj == null) continue;
+                    Hotspot hotspot = new Hotspot(hObj.optString("id"), hObj.optString("name"));
+                    hotspot.setDescription(hObj.optString("description"));
+                    hotspot.setSignificance(hObj.optDouble("significance", 0.5));
+                    model.addHotspot(hotspot);
+                }
+            }
+
             JSONObject views = obj.optJSONObject("views");
             if (views != null) {
                 JSONObject arch = views.optJSONObject("architecture");
                 if (arch != null) {
-                    for (Object key : arch.keySet()) model.getArchitectureView().put((String)key, arch.get((String)key));
+                    java.util.Iterator<String> keys = arch.keys();
+                    while (keys.hasNext()) {
+                        String key = keys.next();
+                        model.getArchitectureView().put(key, arch.get(key));
+                    }
                 }
                 JSONObject impl = views.optJSONObject("implementation");
                 if (impl != null) {
-                    for (Object key : impl.keySet()) model.getImplementationView().put((String)key, impl.get((String)key));
+                    java.util.Iterator<String> keys = impl.keys();
+                    while (keys.hasNext()) {
+                        String key = keys.next();
+                        model.getImplementationView().put(key, impl.get(key));
+                    }
                 }
                 JSONObject gen = views.optJSONObject("genome");
                 if (gen != null) {
-                    for (Object key : gen.keySet()) model.getGenomeView().put((String)key, gen.get((String)key));
+                    java.util.Iterator<String> keys = gen.keys();
+                    while (keys.hasNext()) {
+                        String key = keys.next();
+                        model.getGenomeView().put(key, gen.get(key));
+                    }
                 }
             }
         }
@@ -346,6 +437,7 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
     private void identifyKnowledgeGaps(TargetSnapshot snapshot, TargetRealityModel model, TaskContext context) throws Exception {
         context.log("[DISCOVERY] Identifying Knowledge Gaps.");
         model.getKnowledgeGaps().clear();
+        if (snapshot == null) return;
 
         // 1. Identify high-centrality nodes not covered by subsystems or facts
         List<SemanticNode> topNodes = getTopCentralNodes(snapshot, 20);
@@ -382,6 +474,7 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
     }
 
     private List<SemanticNode> getTopCentralNodes(TargetSnapshot snapshot, int limit) {
+        if (snapshot == null) return new ArrayList<>();
         java.util.Map<String, Integer> inDegree = new java.util.HashMap<>();
         java.util.Map<String, Integer> outDegree = new java.util.HashMap<>();
         for (SemanticEdge edge : snapshot.getEdges()) {
