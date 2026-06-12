@@ -17,7 +17,16 @@ public class TargetRealityModel {
     private List<Subsystem> subsystems = new ArrayList<>();
     private List<ArchitecturalFact> architecturalFacts = new ArrayList<>();
     private List<ArchitecturalGene> genes = new ArrayList<>();
+    private List<ArchitecturalUseCase> useCases = new ArrayList<>();
     private List<KnowledgeGap> knowledgeGaps = new ArrayList<>();
+
+    // Repository Statistics
+    private int filesScanned;
+    private int metadataEntries;
+    private int architectureNodes;
+    private int architectureRelationships;
+    private long analysisDurationMs;
+    private String analysisWarning;
 
     // Canonical Reconstruction Fields
     private final Map<String, Double> influenceGraph = new HashMap<>(); // Node ID -> influence score
@@ -57,6 +66,9 @@ public class TargetRealityModel {
     public List<ArchitecturalGene> getGenes() { return genes; }
     public void setGenes(List<ArchitecturalGene> genes) { this.genes = genes; }
 
+    public List<ArchitecturalUseCase> getUseCases() { return useCases; }
+    public void setUseCases(List<ArchitecturalUseCase> useCases) { this.useCases = useCases; }
+
     public List<KnowledgeGap> getKnowledgeGaps() { return knowledgeGaps; }
     public void setKnowledgeGaps(List<KnowledgeGap> knowledgeGaps) { this.knowledgeGaps = knowledgeGaps; }
 
@@ -81,6 +93,26 @@ public class TargetRealityModel {
     public void addArchitecturalFact(ArchitecturalFact fact) { this.architecturalFacts.add(fact); }
     public void addSubsystem(Subsystem subsystem) { this.subsystems.add(subsystem); }
     public void addGene(ArchitecturalGene gene) { this.genes.add(gene); }
+    public void addUseCase(ArchitecturalUseCase useCase) { this.useCases.add(useCase); }
+
+    public int getFilesScanned() { return filesScanned; }
+    public void setFilesScanned(int filesScanned) { this.filesScanned = filesScanned; }
+
+    public int getMetadataEntries() { return metadataEntries; }
+    public void setMetadataEntries(int metadataEntries) { this.metadataEntries = metadataEntries; }
+
+    public int getArchitectureNodes() { return architectureNodes; }
+    public void setArchitectureNodes(int architectureNodes) { this.architectureNodes = architectureNodes; }
+
+    public int getArchitectureRelationships() { return architectureRelationships; }
+    public void setArchitectureRelationships(int architectureRelationships) { this.architectureRelationships = architectureRelationships; }
+
+    public long getAnalysisDurationMs() { return analysisDurationMs; }
+    public void setAnalysisDurationMs(long analysisDurationMs) { this.analysisDurationMs = analysisDurationMs; }
+
+    public String getAnalysisWarning() { return analysisWarning; }
+    public void setAnalysisWarning(String analysisWarning) { this.analysisWarning = analysisWarning; }
+
     public void addKnowledgeGap(KnowledgeGap gap) {
         if (this.knowledgeGaps.stream().noneMatch(g -> g.getDescription().equals(gap.getDescription()))) {
             this.knowledgeGaps.add(gap);

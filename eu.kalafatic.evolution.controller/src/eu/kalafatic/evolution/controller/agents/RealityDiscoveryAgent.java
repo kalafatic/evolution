@@ -11,6 +11,7 @@ import org.json.JSONObject;
 
 import eu.kalafatic.evolution.controller.mediation.model.ArchitecturalFact;
 import eu.kalafatic.evolution.controller.mediation.model.ArchitecturalGene;
+import eu.kalafatic.evolution.controller.mediation.model.ArchitecturalUseCase;
 import eu.kalafatic.evolution.controller.mediation.model.Hotspot;
 import eu.kalafatic.evolution.controller.mediation.model.KnowledgeGap;
 import eu.kalafatic.evolution.controller.mediation.model.Subsystem;
@@ -48,10 +49,12 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
     }
 
     public TargetRealityModel discover(String goal, TaskContext context, TargetSnapshot snapshot, TargetRealityModel model) throws Exception {
+        long startTime = System.currentTimeMillis();
         context.log("[DISCOVERY] Starting Recursive Reality Reconstruction for: " + goal);
 
-        // PASS 1 - STRUCTURAL DISCOVERY (Already performed by snapshot creation)
-        context.log("[DISCOVERY] Pass 1: Structural Discovery complete (Snapshot grounded).");
+        // PASS 1 - STRUCTURAL DISCOVERY & METADATA LOADING
+        context.log("[DISCOVERY] Pass 1: Structural Discovery & Metadata Loading.");
+        loadAllMetadata(snapshot, context, model);
 
         // PASS 2 - LOCAL RESPONSIBILITY DISCOVERY
         discoverLocalResponsibilities(snapshot, model, context);
@@ -71,11 +74,20 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
         // PASS 7 - ARCHITECTURAL COMPRESSION
         compressUnderstanding(model, context);
 
+        // PASS 8 - USE CASE DISCOVERY
+        discoverUseCases(model, context);
+
         // POPULATE CANONICAL PROJECTIONS
         populateCanonicalFields(snapshot, model, context, goal);
 
         // KNOWLEDGE GAP IDENTIFICATION
         identifyKnowledgeGaps(snapshot, model, context);
+
+        // DETECT PARTIAL ANALYSIS
+        detectPartialAnalysis(snapshot, model, context);
+
+        // POPULATE DISCOVERY REPORT
+        populateDiscoveryReport(snapshot, model, startTime, context);
 
         return model;
     }
@@ -416,6 +428,52 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
         }
     }
 
+    private void discoverUseCases(TargetRealityModel model, TaskContext context) throws Exception {
+        context.log("[DISCOVERY] Pass 8: Use Case Discovery.");
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("SUBSYSTEMS:\n");
+        model.getSubsystems().forEach(s -> sb.append("- ").append(s.getName()).append(": ").append(s.getPurpose()).append("\n"));
+        sb.append("\nARCHITECTURAL FACTS:\n");
+        model.getArchitecturalFacts().stream().limit(15).forEach(f -> sb.append("- ").append(f.toString()).append("\n"));
+        sb.append("\nIdentify major repository-wide Use Cases derived from these architectural structures.\n");
+        sb.append("Every use case MUST have supporting components, supporting files (evidence), and a confidence score.");
+
+        String prompt = sb.toString() + "\n\n" +
+                "Output a JSON object:\n" +
+                "{\n" +
+                "  \"use_cases\": [\n" +
+                "    {\n" +
+                "      \"name\": \"string\",\n" +
+                "      \"description\": \"string\",\n" +
+                "      \"supporting_components\": [\"string\"],\n" +
+                "      \"supporting_files\": [\"string\"],\n" +
+                "      \"confidence\": 0.0-1.0,\n" +
+                "      \"rationale\": \"string\"\n" +
+                "    }\n" +
+                "  ]\n" +
+                "}";
+
+        String response = aiService.sendRequest(context.getOrchestrator(), getAgentInstructions() + "\n\n" + prompt, context);
+        JSONObject obj = JsonUtils.extractJsonObject(response);
+        if (obj != null) {
+            JSONArray ucs = obj.optJSONArray("use_cases");
+            if (ucs != null) {
+                for (int i = 0; i < ucs.length(); i++) {
+                    JSONObject uObj = ucs.optJSONObject(i);
+                    if (uObj == null) continue;
+                    ArchitecturalUseCase uc = new ArchitecturalUseCase("uc-" + i, uObj.optString("name"), uObj.optString("description"), uObj.optDouble("confidence", 0.5));
+                    JSONArray comps = uObj.optJSONArray("supporting_components");
+                    if (comps != null) for (int j = 0; j < comps.length(); j++) uc.getSupportingComponents().add(comps.getString(j));
+                    JSONArray files = uObj.optJSONArray("supporting_files");
+                    if (files != null) for (int j = 0; j < files.length(); j++) uc.getSupportingFiles().add(files.getString(j));
+                    uc.setRationale(uObj.optString("rationale"));
+                    model.addUseCase(uc);
+                }
+            }
+        }
+    }
+
     private void compressUnderstanding(TargetRealityModel model, TaskContext context) throws Exception {
         context.log("[DISCOVERY] Pass 7: Architectural Compression.");
 
@@ -432,6 +490,44 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
 
         String response = aiService.sendRequest(context.getOrchestrator(), getAgentInstructions() + "\n\n" + prompt, context);
         model.getDimensions().put("architectural_essence", response);
+    }
+
+    private void populateDiscoveryReport(TargetSnapshot snapshot, TargetRealityModel model, long startTime, TaskContext context) {
+        if (snapshot != null) {
+            model.setFilesScanned(snapshot.getNodes().size());
+            model.setArchitectureNodes(model.getHotspots().size() + model.getSubsystems().size() + model.getUseCases().size());
+            // Rough estimate of relationships
+            int rels = model.getArchitecturalFacts().size();
+            model.setArchitectureRelationships(rels);
+        }
+        model.setAnalysisDurationMs(System.currentTimeMillis() - startTime);
+
+        context.log("[DISCOVERY] Discovery Report generated.");
+        context.log("[DISCOVERY] Files Scanned: " + model.getFilesScanned());
+        context.log("[DISCOVERY] Metadata Entries: " + model.getMetadataEntries());
+        context.log("[DISCOVERY] Architecture Nodes: " + model.getArchitectureNodes());
+        context.log("[DISCOVERY] Use Cases: " + model.getUseCases().size());
+        context.log("[DISCOVERY] Duration: " + model.getAnalysisDurationMs() + "ms");
+    }
+
+    private void detectPartialAnalysis(TargetSnapshot snapshot, TargetRealityModel model, TaskContext context) {
+        if (snapshot == null) return;
+        int totalNodes = snapshot.getNodes().size();
+        int metadataNodes = model.getMetadataEntries();
+        double coverage = totalNodes > 0 ? (double) metadataNodes / totalNodes : 0;
+
+        if (coverage < 0.2) {
+            String warning = "Analysis covered only " + metadataNodes + " of " + totalNodes + " source files. Architecture model incomplete.";
+            model.setAnalysisWarning(warning);
+            context.log("[DISCOVERY] WARNING: " + warning);
+            // Reduce confidence of all use cases
+            model.getUseCases().forEach(uc -> uc.setConfidence(uc.getConfidence() * 0.5));
+            model.setRealityCompleteness(model.getRealityCompleteness() * 0.5);
+        } else if (coverage < 0.5) {
+            String warning = "Analysis covered " + String.format("%.1f", coverage * 100) + "% of source files. Results may be partial.";
+            model.setAnalysisWarning(warning);
+            context.log("[DISCOVERY] WARNING: " + warning);
+        }
     }
 
     private void identifyKnowledgeGaps(TargetSnapshot snapshot, TargetRealityModel model, TaskContext context) throws Exception {
@@ -471,6 +567,31 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
         }
 
         context.log("[DISCOVERY] Identified " + model.getKnowledgeGaps().size() + " knowledge gaps.");
+    }
+
+    private void loadAllMetadata(TargetSnapshot snapshot, TaskContext context, TargetRealityModel model) {
+        if (snapshot == null) return;
+        eu.kalafatic.utils.semantic.AIContextTool tool = new eu.kalafatic.utils.semantic.AIContextTool();
+        File root = new File(snapshot.getRootPath());
+        int metadataCount = 0;
+
+        for (SemanticNode node : snapshot.getNodes().values()) {
+            File f = new File(root, node.getPath());
+            if (f.exists()) {
+                eu.kalafatic.utils.semantic.EvoMetadata meta = tool.loadMetadata(f);
+                if (meta != null) {
+                    node.setSummary(meta.getSummary());
+                    node.setArchitecturalAuthority(meta.getImportanceScore());
+                    node.setEvolutionaryInfluenceScore(meta.getMediatedRelevanceScore());
+                    if (meta.getDependencyLinks() != null) {
+                        node.getDependencies().addAll(meta.getDependencyLinks());
+                    }
+                    metadataCount++;
+                }
+            }
+        }
+        model.setMetadataEntries(metadataCount);
+        context.log("[DISCOVERY] Loaded metadata for " + metadataCount + " / " + snapshot.getNodes().size() + " nodes.");
     }
 
     private List<SemanticNode> getTopCentralNodes(TargetSnapshot snapshot, int limit) {

@@ -541,6 +541,52 @@ public class ArchitecturePage extends AEvoPage {
             model.getComponents().add(d);
         }
 
+        // Subsystems
+        for (eu.kalafatic.evolution.controller.mediation.model.Subsystem sub : reality.getSubsystems()) {
+            ComponentRecord sr = new ComponentRecord();
+            sr.setId("reality:subsystem:" + sub.getId());
+            sr.setName(sub.getName());
+            sr.setType("SUBSYSTEM");
+            sr.setDescription(sub.getPurpose());
+            sr.setImportanceScore(sub.getConfidence());
+            model.getComponents().add(sr);
+
+            for (String file : sub.getCriticalFiles()) {
+                eu.kalafatic.evolution.controller.orchestration.design.RelationshipRecord rel = new eu.kalafatic.evolution.controller.orchestration.design.RelationshipRecord();
+                rel.setFrom(sr.getId());
+                rel.setTo(file);
+                rel.setType("CONTAINS");
+                model.getRelationships().add(rel);
+            }
+        }
+
+        // Use Cases
+        for (eu.kalafatic.evolution.controller.mediation.model.ArchitecturalUseCase uc : reality.getUseCases()) {
+            ComponentRecord ur = new ComponentRecord();
+            ur.setId("reality:uc:" + uc.getId());
+            ur.setName(uc.getName());
+            ur.setType("USE_CASE");
+            ur.setDescription(uc.getDescription());
+            ur.setImportanceScore(uc.getConfidence());
+            ur.getProperties().add("Rationale: " + uc.getRationale());
+            model.getComponents().add(ur);
+
+            for (String comp : uc.getSupportingComponents()) {
+                eu.kalafatic.evolution.controller.orchestration.design.RelationshipRecord rel = new eu.kalafatic.evolution.controller.orchestration.design.RelationshipRecord();
+                rel.setFrom(ur.getId());
+                rel.setTo(comp);
+                rel.setType("SUPPORTED_BY");
+                model.getRelationships().add(rel);
+            }
+            for (String file : uc.getSupportingFiles()) {
+                eu.kalafatic.evolution.controller.orchestration.design.RelationshipRecord rel = new eu.kalafatic.evolution.controller.orchestration.design.RelationshipRecord();
+                rel.setFrom(ur.getId());
+                rel.setTo(file);
+                rel.setType("EVIDENCE");
+                model.getRelationships().add(rel);
+            }
+        }
+
         for (eu.kalafatic.evolution.controller.mediation.model.Hotspot h : reality.getHotspots()) {
             ComponentRecord hr = new ComponentRecord();
             hr.setId("reality:hotspot:" + h.getId());
@@ -707,43 +753,46 @@ public class ArchitecturePage extends AEvoPage {
 
         switch (mode) {
             case USE_CASES:
-                Map<String, ComponentRecord> ucNodes = new HashMap<>();
-                for (ComponentRecord comp : model.getComponents()) {
-                    for (String uc : comp.getUseCases()) {
-                        ComponentRecord ucNode = ucNodes.computeIfAbsent(uc, k -> {
-                            ComponentRecord r = new ComponentRecord();
-                            r.setId("uc:" + k);
-                            r.setName(k);
-                            r.setType("USE_CASE");
-                            filtered.getComponents().add(r);
-                            return r;
-                        });
-                        eu.kalafatic.evolution.controller.orchestration.design.RelationshipRecord rel = new eu.kalafatic.evolution.controller.orchestration.design.RelationshipRecord();
-                        rel.setFrom(comp.getId());
-                        rel.setTo(ucNode.getId());
-                        rel.setType("IMPLEMENTS");
+                filtered.setComponents(model.getComponents().stream()
+                    .filter(c -> "USE_CASE".equals(c.getType()))
+                    .collect(Collectors.toList()));
+                List<String> ucIds = filtered.getComponents().stream().map(ComponentRecord::getId).collect(Collectors.toList());
+
+                // Add supporting components
+                List<ComponentRecord> supporting = new ArrayList<>();
+                for (RelationshipRecord rel : model.getRelationships()) {
+                    if (ucIds.contains(rel.getFrom()) && ("SUPPORTED_BY".equals(rel.getType()) || "EVIDENCE".equals(rel.getType()))) {
+                        model.getComponents().stream().filter(c -> c.getId().equals(rel.getTo())).findFirst().ifPresent(supporting::add);
                         filtered.getRelationships().add(rel);
-                        if (!filtered.getComponents().contains(comp)) filtered.getComponents().add(comp);
                     }
                 }
+                supporting.forEach(c -> { if (!filtered.getComponents().contains(c)) filtered.getComponents().add(c); });
                 break;
 
             case SUBSYSTEMS:
                 filtered.setComponents(model.getComponents().stream()
-                    .filter(c -> "SUBSYSTEM".equals(c.getType()) || "DOMAIN".equals(c.getType()) || c.getImportanceScore() > 0.8)
+                    .filter(c -> "SUBSYSTEM".equals(c.getType()) || "DOMAIN".equals(c.getType()))
                     .collect(Collectors.toList()));
-                List<String> ids = filtered.getComponents().stream().map(ComponentRecord::getId).collect(Collectors.toList());
-                filtered.setRelationships(model.getRelationships().stream()
-                    .filter(r -> ids.contains(r.getFrom()) && ids.contains(r.getTo()))
-                    .collect(Collectors.toList()));
+                List<String> subIds = filtered.getComponents().stream().map(ComponentRecord::getId).collect(Collectors.toList());
+
+                // Add contained artifacts
+                List<ComponentRecord> contained = new ArrayList<>();
+                for (RelationshipRecord rel : model.getRelationships()) {
+                    if (subIds.contains(rel.getFrom()) && "CONTAINS".equals(rel.getType())) {
+                        model.getComponents().stream().filter(c -> c.getId().equals(rel.getTo())).findFirst().ifPresent(contained::add);
+                        filtered.getRelationships().add(rel);
+                    }
+                }
+                contained.forEach(c -> { if (!filtered.getComponents().contains(c)) filtered.getComponents().add(c); });
                 break;
 
             case COMPONENTS:
                 filtered.setComponents(model.getComponents().stream()
-                    .filter(c -> !"USE_CASE".equals(c.getType()))
+                    .filter(c -> !"USE_CASE".equals(c.getType()) && !"SUBSYSTEM".equals(c.getType()) && !"DOMAIN".equals(c.getType()))
                     .collect(Collectors.toList()));
+                List<String> compIds = filtered.getComponents().stream().map(ComponentRecord::getId).collect(Collectors.toList());
                 filtered.setRelationships(model.getRelationships().stream()
-                    .filter(r -> !"IMPLEMENTS".equals(r.getType()))
+                    .filter(r -> compIds.contains(r.getFrom()) && compIds.contains(r.getTo()))
                     .collect(Collectors.toList()));
                 break;
 
