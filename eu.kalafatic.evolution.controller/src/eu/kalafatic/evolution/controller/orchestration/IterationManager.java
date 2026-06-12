@@ -1541,64 +1541,38 @@ public class IterationManager {
             }
 
             MediatedExportManager exportManager = new MediatedExportManager();
-            String metadataJson = snapshot.getMetadata().toString();
-            String historyAnalysis = memoryService.getHistoryAnalysis();
 
             Object realityModelObj = context.getOrchestrationState().getMetadata().get("targetRealityModel");
-            String realityModelJson = null;
-            if (realityModelObj != null) {
-                try {
-                    realityModelJson = new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(realityModelObj);
-                } catch (Exception e) {
-                    context.log("[KERNEL] Warning: Could not serialize realityModel to JSON: " + e.getMessage());
-                }
-            }
 
             // DRIVE UNIFIED PROJECTIONS
             TargetRealityModel model = (TargetRealityModel) realityModelObj;
             context.log("[KERNEL] Mediated Mode: Generating Unified Reality Projections.");
 
-            String factsJson = "[]";
-            String subsystemsJson = "[]";
-            String gapsJson = "[]";
-            String genesJson = "[]";
+            // POPULATE NEW FIELDS FROM METADATA/HISTORY
+            if (model != null) {
+                Object impacts = context.getOrchestrationState().getMetadata().get("impactPaths");
+                if (impacts instanceof List) model.getImpactPaths().addAll((List<String>) impacts);
 
-            try {
-                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-                factsJson = mapper.writeValueAsString(model.getArchitecturalFacts());
-                subsystemsJson = mapper.writeValueAsString(model.getSubsystems());
-                gapsJson = mapper.writeValueAsString(model.getKnowledgeGaps());
-                genesJson = mapper.writeValueAsString(model.getGenes());
-                context.log("[KERNEL] Serialized " + model.getArchitecturalFacts().size() + " facts for export.");
-            } catch (Exception e) {
-                context.log("[KERNEL] Warning: Jackson serialization failed, falling back to empty arrays: " + e.getMessage());
+                Object lessons = context.getOrchestrationState().getMetadata().get("lessons");
+                if (lessons instanceof List) model.getLessons().addAll((List<String>) lessons);
+
+                Object patterns = context.getOrchestrationState().getMetadata().get("patterns");
+                if (patterns instanceof List) model.getPatterns().addAll((List<String>) patterns);
+
+                Object refs = context.getOrchestrationState().getMetadata().get("referenceImplementations");
+                if (refs instanceof List) model.getReferenceImplementations().addAll((List<String>) refs);
             }
 
-            File archView = exportManager.generateArchitectureProjection(model, context.getProjectRoot());
-            File implPackage = exportManager.generateImplementationProjection(model, request, context.getProjectRoot());
-            File genomePackage = exportManager.generateGenomeProjection(model, context.getProjectRoot());
-
-            // Legacy ZIP support (using implementation files)
-            File exportPackage = exportManager.createExportPackage(context.getSessionId(), optimizedPrompt, model.getSelectedFiles(), context.getProjectRoot(), outputPath, metadataJson, historyAnalysis, architectureSummary, dependencies, executionInstructions, realityModelJson, factsJson, subsystemsJson, gapsJson, genesJson);
-
-            // Generate Export Folder for deep inspection
-            File exportFolder = exportManager.createExportFolder(context.getSessionId(), optimizedPrompt, model.getSelectedFiles(), context.getProjectRoot(), outputPath, metadataJson, historyAnalysis, architectureSummary, dependencies, executionInstructions, realityModelJson, factsJson, subsystemsJson, gapsJson, genesJson);
-
-            // Record as changes
-            context.getFileChangeTracker().recordChange(archView.getName(), FileChangeTracker.ChangeType.NEW);
-            context.getFileChangeTracker().recordChange(implPackage.getName(), FileChangeTracker.ChangeType.NEW);
-            context.getFileChangeTracker().recordChange(genomePackage.getName(), FileChangeTracker.ChangeType.NEW);
+            File exportPackage = exportManager.createUnifiedExport(model, MediatedExportManager.ExportProfile.FULL, request, context.getProjectRoot(), outputPath, context.getSessionId());
 
             // Record as a change so it appears in Changes view
             context.getFileChangeTracker().recordChange(exportPackage.getName(), FileChangeTracker.ChangeType.NEW);
-            context.getFileChangeTracker().recordChange(exportFolder.getName(), FileChangeTracker.ChangeType.NEW);
 
             StringBuilder summaryBuilder = new StringBuilder();
             summaryBuilder.append("### Mediated Darwin Evolution Complete\n\n");
 
             String packageUri = exportPackage.toURI().toString();
-            summaryBuilder.append("**Export Package (ZIP):** [").append(exportPackage.getName()).append("](").append(packageUri).append(")\n");
-            summaryBuilder.append("**Export Folder:** `").append(exportFolder.getName()).append("` (Created in project resources)\n");
+            summaryBuilder.append("**Unified Export Package (ZIP):** [").append(exportPackage.getName()).append("](").append(packageUri).append(")\n");
             summaryBuilder.append("**Selected Files:** ").append(selectedPaths.size()).append(" (Limit: 16)\n\n");
             summaryBuilder.append("**Target Type:** ").append(snapshot.getTargetType()).append("\n");
             summaryBuilder.append("**Inferred Architecture:** ").append(snapshot.getMetadata().get("architectureInference")).append("\n\n");
