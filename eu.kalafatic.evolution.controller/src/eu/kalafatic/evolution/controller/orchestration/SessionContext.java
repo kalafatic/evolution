@@ -36,6 +36,7 @@ public class SessionContext implements SessionContainer {
     private final EvolutionMemoryGraph evolutionMemoryGraph;
     private final FileChangeTracker fileChangeTracker;
     private final SelectionState selectionState;
+    private final eu.kalafatic.evolution.controller.orchestration.cognitive.SessionCognitiveState cognitiveState;
     private final BackpressureController backpressureController;
     private final OrchestrationStatusManager statusManager;
     private final RuntimeCoordinator runtimeCoordinator;
@@ -64,6 +65,7 @@ public class SessionContext implements SessionContainer {
         this.evolutionMemoryGraph = new EvolutionMemoryGraph();
         this.fileChangeTracker = new FileChangeTracker();
         this.selectionState = new SelectionState();
+        this.cognitiveState = new eu.kalafatic.evolution.controller.orchestration.cognitive.SessionCognitiveState();
         this.backpressureController = new BackpressureController();
         this.statusManager = new OrchestrationStatusManager();
         this.runtimeCoordinator = new RuntimeCoordinator(sessionId, this.eventBus, this.signalBus, this.workflowRegistry);
@@ -88,6 +90,11 @@ public class SessionContext implements SessionContainer {
         } catch (Exception e) {
             // View bundle might not be present in all environments (e.g. headless tests)
         }
+    }
+
+    @Override
+    public eu.kalafatic.evolution.controller.orchestration.cognitive.SessionCognitiveState getCognitiveState() {
+        return cognitiveState;
     }
 
     @Override

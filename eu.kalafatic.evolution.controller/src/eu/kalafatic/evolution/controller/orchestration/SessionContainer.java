@@ -31,6 +31,7 @@ public interface SessionContainer {
     OrchestrationStatusManager getStatusManager();
     java.util.Map<String, eu.kalafatic.evolution.controller.agents.IAgent> getAgentRegistry();
     OrchestrationState getSessionState();
+    eu.kalafatic.evolution.controller.orchestration.cognitive.SessionCognitiveState getCognitiveState();
     IterationManager getIterationManager();
     void setIterationManager(IterationManager manager);
     RuntimeCoordinator getRuntimeCoordinator();

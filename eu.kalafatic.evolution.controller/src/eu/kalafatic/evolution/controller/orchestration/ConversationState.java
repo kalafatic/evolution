@@ -6,6 +6,10 @@ import java.util.List;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType;
+import eu.kalafatic.evolution.controller.orchestration.cognitive.CognitiveDirection;
+import eu.kalafatic.evolution.controller.orchestration.cognitive.SessionCognitiveState;
+import eu.kalafatic.evolution.controller.orchestration.cognitive.SessionIntent;
 import eu.kalafatic.evolution.controller.orchestration.intent.ConfirmedRequirements;
 
 /**
@@ -23,6 +27,7 @@ public class ConversationState {
     private List<String> clarificationHistory = new ArrayList<>();
     private boolean isRequirementMet = true;
     private ConfirmedRequirements confirmedRequirements;
+    private SessionCognitiveState cognitiveState;
     private JSONObject metadata = new JSONObject();
 
     public String getGoal() { return goal; }
@@ -58,6 +63,9 @@ public class ConversationState {
     public ConfirmedRequirements getConfirmedRequirements() { return confirmedRequirements; }
     public void setConfirmedRequirements(ConfirmedRequirements reqs) { this.confirmedRequirements = reqs; }
 
+    public SessionCognitiveState getCognitiveState() { return cognitiveState; }
+    public void setCognitiveState(SessionCognitiveState cognitiveState) { this.cognitiveState = cognitiveState; }
+
     public JSONObject toJSON() {
         JSONObject json = new JSONObject();
         json.put("goal", goal);
@@ -71,6 +79,28 @@ public class ConversationState {
         json.put("is_requirement_met", isRequirementMet);
         if (confirmedRequirements != null) {
             json.put("confirmed_requirements", confirmedRequirements.toJSON());
+        }
+        if (cognitiveState != null) {
+            JSONObject cog = new JSONObject();
+            cog.put("capability", cognitiveState.getCurrentCapability().name());
+            cog.put("intent", cognitiveState.getCurrentIntent().name());
+            cog.put("direction", cognitiveState.getCurrentDirection().name());
+            cog.put("confidence", cognitiveState.getConfidence());
+
+            JSONArray scores = new JSONArray();
+            cognitiveState.getCapabilityScores().forEach((k, v) -> {
+                JSONObject s = new JSONObject();
+                s.put("type", k.name());
+                s.put("score", v);
+                scores.put(s);
+            });
+            cog.put("scores", scores);
+
+            JSONArray traj = new JSONArray();
+            cognitiveState.getTrajectory().forEach(t -> traj.put(t.name()));
+            cog.put("trajectory", traj);
+
+            json.put("cognitive_state", cog);
         }
         json.put("metadata", metadata);
         return json;
@@ -94,6 +124,32 @@ public class ConversationState {
             state.setRequirementMet(json.optBoolean("is_requirement_met", true));
             if (json.has("confirmed_requirements")) {
                 state.setConfirmedRequirements(ConfirmedRequirements.fromJSON(json.getJSONObject("confirmed_requirements")));
+            }
+            if (json.has("cognitive_state")) {
+                JSONObject cog = json.getJSONObject("cognitive_state");
+                SessionCognitiveState scs = new SessionCognitiveState();
+                scs.setCurrentCapability(CapabilityType.valueOf(cog.optString("capability", "CHAT")));
+                scs.setCurrentIntent(SessionIntent.valueOf(cog.optString("intent", "LEARNING")));
+                scs.setCurrentDirection(CognitiveDirection.valueOf(cog.optString("direction", "STABLE")));
+                scs.setConfidence(cog.optDouble("confidence", 1.0));
+
+                JSONArray scores = cog.optJSONArray("scores");
+                if (scores != null) {
+                    for (int i = 0; i < scores.length(); i++) {
+                        JSONObject s = scores.getJSONObject(i);
+                        scs.getCapabilityScores().put(CapabilityType.valueOf(s.getString("type")), s.getDouble("score"));
+                    }
+                }
+
+                JSONArray traj = cog.optJSONArray("trajectory");
+                if (traj != null) {
+                    List<CapabilityType> trajectoryList = new ArrayList<>();
+                    for (int i = 0; i < traj.length(); i++) {
+                        trajectoryList.add(CapabilityType.valueOf(traj.getString(i)));
+                    }
+                    scs.setTrajectory(trajectoryList);
+                }
+                state.setCognitiveState(scs);
             }
             if (json.has("metadata")) {
                 state.metadata = json.getJSONObject("metadata");
