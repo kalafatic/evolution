@@ -209,11 +209,13 @@ public class DarwinFlow implements IOrchestrationFlow {
                 context.log("[DARWIN] Fast-tracking analytical variant without sub-task execution.");
                 selectedVariant.setSuccess(true);
                 selectedVariant.setScore(0.95);
-
-                // Merge discovered architectural facts from the analytical variant back into the session
-                manager.mergeArchitecturalDiscovery(selectedVariant, context);
             } else {
                 winningContext = evaluateVariantParallel(selectedVariant, manager.getTaskPlanner(), context, baseCommit, decision.getPressure());
+            }
+
+            // Merge discovered architectural facts from the winner back into the session in Mediated Mode
+            if (isExportOnly && selectedVariant.getMediationCandidate() != null) {
+                manager.mergeArchitecturalDiscovery(selectedVariant, context);
             }
 
             ResultSynthesizer synthesizer = new ResultSynthesizer();

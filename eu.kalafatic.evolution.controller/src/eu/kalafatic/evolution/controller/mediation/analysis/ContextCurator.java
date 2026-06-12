@@ -158,7 +158,7 @@ public class ContextCurator {
             if (currentTokens + estimatedTokens > tokenBudget) continue;
 
             // Stop only when adequate coverage is reached or budget is exhausted.
-            // "Coverage" means we have represented the core subsystems and addressed high-significance gaps.
+            // Dynamic threshold: no hard file count limit if completeness is low.
             if (isCoverageAdequate(selected, realityModel, currentTokens, tokenBudget)) break;
 
             String cluster = deriveCluster(node);
@@ -223,11 +223,17 @@ public class ContextCurator {
 
     private boolean isCoverageAdequate(List<String> selected, TargetRealityModel model, long currentTokens, int budget) {
         if (selected.size() < 4) return false; // Minimum context
-        if (currentTokens > budget * 0.8) return true; // Budget nearing limit
-        if (selected.size() >= 24) return true; // Extreme ceiling for small models
+        if (currentTokens > budget * 0.95) return true; // Budget nearing absolute limit
 
         if (model != null) {
-            // Coverage threshold: most subsystems and high-significance gaps addressed
+            // No arbitrary file count limit if completeness is low.
+            // We want to reach at least 80% coverage of subsystems and high-significance gaps.
+            if (model.getRealityCompleteness() < 0.8 && selected.size() < 64) {
+                 // Force more context for incomplete models
+            } else if (selected.size() >= 32) {
+                 return true;
+            }
+
             long subsystemsCovered = model.getSubsystems().stream()
                 .filter(s -> s.getCriticalFiles().stream().anyMatch(selected::contains))
                 .count();
@@ -237,13 +243,13 @@ public class ContextCurator {
                 .filter(g -> g.getRelatedArtifacts().stream().anyMatch(selected::contains))
                 .count();
 
-            boolean subsystemsAdequate = model.getSubsystems().isEmpty() || (subsystemsCovered >= model.getSubsystems().size() * 0.7);
+            boolean subsystemsAdequate = model.getSubsystems().isEmpty() || (subsystemsCovered >= model.getSubsystems().size() * 0.8);
             boolean gapsAdequate = model.getKnowledgeGaps().stream().filter(g -> g.getSignificance() > 0.8).count() == highSignificanceGapsCovered;
 
             return subsystemsAdequate && gapsAdequate;
         }
 
-        return selected.size() >= 12; // Default heuristic if no model
+        return selected.size() >= 16; // Default heuristic if no model
     }
 
     private String deriveCluster(SemanticNode node) {

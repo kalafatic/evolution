@@ -186,6 +186,74 @@ public class MediatedExportManager {
     private void copyFileToExport(File source, File targetBase, String relativePath) throws IOException {
         File targetFile = new File(targetBase, relativePath);
         targetFile.getParentFile().mkdirs();
-        Files.copy(source.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        Files.copy(source.toPath(), targetFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+    }
+
+    // PROJECTION ENGINE METHODS
+
+    public File generateArchitectureProjection(eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel model, File projectRoot) throws IOException {
+        String folderName = "architecture_projection_" + System.currentTimeMillis();
+        File exportDir = new File(projectRoot, folderName);
+        exportDir.mkdirs();
+
+        StringBuilder sb = new StringBuilder("# Architectural View\n\n");
+        sb.append("## Summary\n").append(model.getArchitectureSummary()).append("\n\n");
+        sb.append("## Subsystems\n");
+        for (var sub : model.getSubsystems()) {
+            sb.append("- ").append(sub.getName()).append(": ").append(sub.getPurpose()).append("\n");
+        }
+        sb.append("\n## Hotspots\n");
+        for (var h : model.getHotspots()) {
+            sb.append("- ").append(h.getName()).append(" (Significance: ").append(h.getSignificance()).append(")\n");
+        }
+
+        writeStringToFile(new File(exportDir, "architecture.md"), sb.toString());
+        return exportDir;
+    }
+
+    public File generateImplementationProjection(eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel model, String goal, File projectRoot) throws IOException {
+        String folderName = "implementation_package_" + System.currentTimeMillis();
+        File exportDir = new File(projectRoot, folderName);
+        exportDir.mkdirs();
+
+        StringBuilder sb = new StringBuilder("# Implementation Context\n\n");
+        sb.append("## Goal\n").append(goal).append("\n\n");
+        sb.append("## Reality Model Summary\n").append(model.getArchitectureSummary()).append("\n\n");
+
+        sb.append("## Execution Flows\n");
+        for (String flow : model.getExecutionFlows()) sb.append("- ").append(flow).append("\n");
+
+        sb.append("\n## Knowledge Gaps\n");
+        for (var gap : model.getKnowledgeGaps()) sb.append("- ").append(gap.toString()).append("\n");
+
+        writeStringToFile(new File(exportDir, "context.md"), sb.toString());
+
+        File filesDir = new File(exportDir, "files");
+        filesDir.mkdirs();
+        for (String path : model.getSelectedFiles()) {
+            File src = new File(projectRoot, path);
+            if (src.exists()) copyFileToExport(src, filesDir, path);
+        }
+
+        return exportDir;
+    }
+
+    public File generateGenomeProjection(eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel model, File projectRoot) throws IOException {
+        String folderName = "genome_package_" + System.currentTimeMillis();
+        File exportDir = new File(projectRoot, folderName);
+        exportDir.mkdirs();
+
+        StringBuilder sb = new StringBuilder("# Portable Genome Patterns\n\n");
+        for (var gene : model.getGenes()) {
+            sb.append("### ").append(gene.getPattern()).append("\n");
+            sb.append("- **Purpose**: ").append(gene.getPurpose()).append("\n");
+            sb.append("- **Rationale**: ").append(gene.getRationale()).append("\n");
+            sb.append("- **Required Artifacts**:\n");
+            for (String art : gene.getRequiredArtifacts()) sb.append("  - ").append(art).append("\n");
+            sb.append("\n");
+        }
+
+        writeStringToFile(new File(exportDir, "genome.md"), sb.toString());
+        return exportDir;
     }
 }

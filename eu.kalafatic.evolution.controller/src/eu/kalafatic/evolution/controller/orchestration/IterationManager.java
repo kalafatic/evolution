@@ -1554,36 +1554,40 @@ public class IterationManager {
                 }
             }
 
-            // Extract facts, subsystems, gaps and genes for export
-            String architecturalFactsJson = "[]";
+            // DRIVE UNIFIED PROJECTIONS
+            TargetRealityModel model = (TargetRealityModel) realityModelObj;
+            context.log("[KERNEL] Mediated Mode: Generating Unified Reality Projections.");
+
+            String factsJson = "[]";
             String subsystemsJson = "[]";
-            String knowledgeGapsJson = "[]";
+            String gapsJson = "[]";
             String genesJson = "[]";
 
             try {
-                var mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-                if (winningCandidate != null) {
-                    architecturalFactsJson = mapper.writeValueAsString(winningCandidate.getArchitecturalFacts());
-                    subsystemsJson = mapper.writeValueAsString(winningCandidate.getSubsystems());
-                    knowledgeGapsJson = mapper.writeValueAsString(winningCandidate.getKnowledgeGaps());
-                    genesJson = mapper.writeValueAsString(winningCandidate.getGenes());
-                } else if (realityModelObj != null) {
-                    // Fallback to global reality model if no winning candidate
-                    TargetRealityModel model = (TargetRealityModel) realityModelObj;
-                    architecturalFactsJson = mapper.writeValueAsString(model.getArchitecturalFacts());
-                    subsystemsJson = mapper.writeValueAsString(model.getSubsystems());
-                    knowledgeGapsJson = mapper.writeValueAsString(model.getKnowledgeGaps());
-                    genesJson = mapper.writeValueAsString(model.getGenes());
-                }
+                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                factsJson = mapper.writeValueAsString(model.getArchitecturalFacts());
+                subsystemsJson = mapper.writeValueAsString(model.getSubsystems());
+                gapsJson = mapper.writeValueAsString(model.getKnowledgeGaps());
+                genesJson = mapper.writeValueAsString(model.getGenes());
+                context.log("[KERNEL] Serialized " + model.getArchitecturalFacts().size() + " facts for export.");
             } catch (Exception e) {
-                context.log("[KERNEL] Warning: Could not serialize export components: " + e.getMessage());
+                context.log("[KERNEL] Warning: Jackson serialization failed, falling back to empty arrays: " + e.getMessage());
             }
 
-            context.log("[KERNEL] Mediated Mode: Final selected files for export: " + selectedPaths);
-            File exportPackage = exportManager.createExportPackage(context.getSessionId(), optimizedPrompt, selectedPaths, context.getProjectRoot(), outputPath, metadataJson, historyAnalysis, architectureSummary, dependencies, executionInstructions, realityModelJson, architecturalFactsJson, subsystemsJson, knowledgeGapsJson, genesJson);
+            File archView = exportManager.generateArchitectureProjection(model, context.getProjectRoot());
+            File implPackage = exportManager.generateImplementationProjection(model, request, context.getProjectRoot());
+            File genomePackage = exportManager.generateGenomeProjection(model, context.getProjectRoot());
 
-            // NEW: Create export folder in addition to ZIP
-            File exportFolder = exportManager.createExportFolder(context.getSessionId(), optimizedPrompt, selectedPaths, context.getProjectRoot(), outputPath, metadataJson, historyAnalysis, architectureSummary, dependencies, executionInstructions, realityModelJson, architecturalFactsJson, subsystemsJson, knowledgeGapsJson, genesJson);
+            // Legacy ZIP support (using implementation files)
+            File exportPackage = exportManager.createExportPackage(context.getSessionId(), optimizedPrompt, model.getSelectedFiles(), context.getProjectRoot(), outputPath, metadataJson, historyAnalysis, architectureSummary, dependencies, executionInstructions, realityModelJson, factsJson, subsystemsJson, gapsJson, genesJson);
+
+            // Generate Export Folder for deep inspection
+            File exportFolder = exportManager.createExportFolder(context.getSessionId(), optimizedPrompt, model.getSelectedFiles(), context.getProjectRoot(), outputPath, metadataJson, historyAnalysis, architectureSummary, dependencies, executionInstructions, realityModelJson, factsJson, subsystemsJson, gapsJson, genesJson);
+
+            // Record as changes
+            context.getFileChangeTracker().recordChange(archView.getName(), FileChangeTracker.ChangeType.NEW);
+            context.getFileChangeTracker().recordChange(implPackage.getName(), FileChangeTracker.ChangeType.NEW);
+            context.getFileChangeTracker().recordChange(genomePackage.getName(), FileChangeTracker.ChangeType.NEW);
 
             // Record as a change so it appears in Changes view
             context.getFileChangeTracker().recordChange(exportPackage.getName(), FileChangeTracker.ChangeType.NEW);
