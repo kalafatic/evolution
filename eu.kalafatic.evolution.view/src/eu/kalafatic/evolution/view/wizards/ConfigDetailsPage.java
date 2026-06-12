@@ -4,13 +4,17 @@ import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 
+import eu.kalafatic.evolution.controller.discovery.SourceDiscoveryResult;
+import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
+
 public class ConfigDetailsPage extends AWizardPage {
     private Text fileNameText;
-    private Text defaultTargetText;
+    private Combo defaultTargetCombo;
 
     public ConfigDetailsPage() {
         super("ConfigDetailsPage");
@@ -31,10 +35,27 @@ public class ConfigDetailsPage extends AWizardPage {
         fileNameText.setText("evo_config.xml");
 
         new Label(container, SWT.NONE).setText("Default Target Path (EVO):");
-        defaultTargetText = new Text(container, SWT.BORDER);
-        defaultTargetText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        defaultTargetCombo = new Combo(container, SWT.DROP_DOWN);
+        defaultTargetCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        // Populate with discovery results
+        SourceDiscoveryResult discovery = ProjectModelManager.getInstance().getOrDiscoverWorkspace();
+        if (discovery.getPrimaryRepository() != null) {
+            defaultTargetCombo.add(discovery.getPrimaryRepository().getAbsolutePath());
+        }
+        for (java.io.File repo : discovery.getGitRepositories()) {
+            String path = repo.getAbsolutePath();
+            boolean exists = false;
+            for (String item : defaultTargetCombo.getItems()) {
+                if (item.equals(path)) { exists = true; break; }
+            }
+            if (!exists) defaultTargetCombo.add(path);
+        }
+
         if (orchestrator != null && orchestrator.getDefaultTarget() != null) {
-            defaultTargetText.setText(orchestrator.getDefaultTarget());
+            defaultTargetCombo.setText(orchestrator.getDefaultTarget());
+        } else if (defaultTargetCombo.getItemCount() > 0) {
+            defaultTargetCombo.select(0);
         }
 
         org.eclipse.swt.widgets.Button browseBtn = new org.eclipse.swt.widgets.Button(container, SWT.PUSH);
@@ -45,11 +66,11 @@ public class ConfigDetailsPage extends AWizardPage {
                 org.eclipse.swt.widgets.DirectoryDialog dialog = new org.eclipse.swt.widgets.DirectoryDialog(getShell());
                 dialog.setText("Select Default Target Codebase");
                 dialog.setMessage("Choose the folder containing the EVO repository.");
-                String current = defaultTargetText.getText();
+                String current = defaultTargetCombo.getText();
                 if (current != null && !current.isEmpty()) dialog.setFilterPath(current);
                 String selected = dialog.open();
                 if (selected != null) {
-                    defaultTargetText.setText(selected);
+                    defaultTargetCombo.setText(selected);
                 }
             }
         });
@@ -58,5 +79,5 @@ public class ConfigDetailsPage extends AWizardPage {
     }
 
     public String getFileName() { return fileNameText.getText(); }
-    public String getDefaultTargetPath() { return defaultTargetText.getText(); }
+    public String getDefaultTargetPath() { return defaultTargetCombo.getText(); }
 }

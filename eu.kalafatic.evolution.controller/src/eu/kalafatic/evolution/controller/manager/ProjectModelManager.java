@@ -51,6 +51,7 @@ public class ProjectModelManager {
 
     private final ResourceSet resourceSet;
     private final EvolutionRegistry evolutionRegistry = new EvolutionRegistry();
+    private SourceDiscoveryResult cachedDiscoveryResult;
 
     private ProjectModelManager() {
         resourceSet = new ResourceSetImpl();
@@ -122,15 +123,19 @@ public class ProjectModelManager {
 
     public Orchestrator loadOrchestrator(IFile file) throws IOException {
         org.eclipse.emf.ecore.EObject root = loadModel(file);
+        Orchestrator orch = null;
         if (root instanceof Orchestrator) {
-            return (Orchestrator) root;
+            orch = (Orchestrator) root;
         } else if (root instanceof EvoProject) {
             EvoProject project = (EvoProject) root;
             if (!project.getOrchestrations().isEmpty()) {
-                return project.getOrchestrations().get(0);
+                orch = project.getOrchestrations().get(0);
             }
         }
-        return null;
+        if (orch != null) {
+            initializeDefaults(orch);
+        }
+        return orch;
     }
 
     public void saveResource(Resource resource) throws IOException {
@@ -160,9 +165,8 @@ public class ProjectModelManager {
 
     public void initializeDefaults(Orchestrator orchestrator) {
         if (orchestrator.getDefaultTarget() == null || orchestrator.getDefaultTarget().isEmpty()) {
-            WorkspaceSourceResolver resolver = new WorkspaceSourceResolver();
-            SourceDiscoveryResult result = resolver.discover(new SourceDiscoveryRequest());
-            if (result.getPrimaryRepository() != null) {
+            SourceDiscoveryResult result = getOrDiscoverWorkspace();
+            if (result != null && result.getPrimaryRepository() != null) {
                 orchestrator.setDefaultTarget(result.getPrimaryRepository().getAbsolutePath());
                 eu.kalafatic.evolution.controller.log.Log.log("[MODEL] Default target discovered from workspace: " + orchestrator.getDefaultTarget());
             } else {
@@ -584,6 +588,14 @@ public class ProjectModelManager {
         }
         Collections.sort(paths);
         return paths;
+    }
+
+    public synchronized SourceDiscoveryResult getOrDiscoverWorkspace() {
+        if (cachedDiscoveryResult == null) {
+            WorkspaceSourceResolver resolver = new WorkspaceSourceResolver();
+            cachedDiscoveryResult = resolver.discover(new SourceDiscoveryRequest());
+        }
+        return cachedDiscoveryResult;
     }
 
     /**
