@@ -371,8 +371,8 @@ public class MediatedExportManager {
         StringBuilder gapsSb = new StringBuilder("# Knowledge Gaps\n\n");
         for (KnowledgeGap gap : model.getKnowledgeGaps()) {
             gapsSb.append("### ").append(gap.getDescription()).append("\n");
-            gapsSb.append("- **Impact**: ").append(gap.getImpactScore()).append("\n");
-            gapsSb.append("- **Context**: ").append(gap.getContext()).append("\n\n");
+            gapsSb.append("- **Significance**: ").append(gap.getSignificance()).append("\n");
+            gapsSb.append("- **Type**: ").append(gap.getType()).append("\n\n");
         }
         addStringToZip(zos, "implementation/knowledge-gaps.md", gapsSb.toString());
 

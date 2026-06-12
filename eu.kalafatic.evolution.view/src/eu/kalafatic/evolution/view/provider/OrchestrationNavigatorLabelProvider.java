@@ -11,11 +11,13 @@ import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.jface.resource.ImageDescriptor;
+import org.eclipse.jface.resource.JFaceResources;
 import org.eclipse.jface.viewers.DelegatingStyledCellLabelProvider.IStyledLabelProvider;
 import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.jface.viewers.StyledString;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.TextStyle;
 import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.ide.IDE;
@@ -175,7 +177,12 @@ public class OrchestrationNavigatorLabelProvider extends LabelProvider implement
         if (text == null) text = "";
         StyledString styledString = new StyledString(text);
         if (element instanceof EvoProject || element instanceof Orchestrator) {
-            styledString.setStyle(0, text.length(), StyledString.BOLD_STYLER);
+            styledString.setStyle(0, text.length(), new StyledString.Styler() {
+                @Override
+                public void applyStyles(TextStyle textStyle) {
+                    textStyle.font = JFaceResources.getFontRegistry().getBold(JFaceResources.DEFAULT_FONT);
+                }
+            });
         }
         return styledString;
     }
