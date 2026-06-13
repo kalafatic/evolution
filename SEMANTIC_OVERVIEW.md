@@ -6,29 +6,29 @@ Summary of the system's semantic nervous system.
 Count: 8
 
 ## Role: orchestration
-Count: 366
+Count: 394
 
 ## Role: ui
-Count: 215
+Count: 190
 
 ## Role: domain
-Count: 16
-
-## Role: documentation
-Count: 108
+Count: 24
 
 ## Role: supervision
 Count: 16
 
+## Role: documentation
+Count: 77
+
 ## Role: utility
-Count: 225
+Count: 189
 
 ## Role: mediation
-Count: 15
+Count: 18
 
 ## Role: trajectory
-Count: 21
+Count: 26
 
 ## Role: unknown
-Count: 193
+Count: 278
 

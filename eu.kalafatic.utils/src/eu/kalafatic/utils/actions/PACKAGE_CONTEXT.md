@@ -1,6 +1,6 @@
 # PACKAGE CONTEXT
 
-## Directory: git/evolution/eu.kalafatic.utils/src/eu/kalafatic/utils/actions/
+## Directory: eu.kalafatic.utils/src/eu/kalafatic/utils/actions/
 
 ## Domain: general
 

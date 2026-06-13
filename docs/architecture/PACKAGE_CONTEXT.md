@@ -1,6 +1,6 @@
 # PACKAGE CONTEXT
 
-## Directory: git/evolution/docs/architecture/
+## Directory: docs/architecture/
 
 ## Domain: general
 

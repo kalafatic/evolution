@@ -1,6 +1,6 @@
 # PACKAGE CONTEXT
 
-## Directory: git/evolution/eu.kalafatic.evolution.quality.tests/src/eu/kalafatic/evolution/quality/tests/
+## Directory: eu.kalafatic.evolution.quality.tests/src/eu/kalafatic/evolution/quality/tests/
 
 ## Domain: general
 

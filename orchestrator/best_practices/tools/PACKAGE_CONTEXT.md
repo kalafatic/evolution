@@ -1,6 +1,6 @@
 # PACKAGE CONTEXT
 
-## Directory: git/evolution/orchestrator/best_practices/tools/
+## Directory: orchestrator/best_practices/tools/
 
 ## Domain: general
 

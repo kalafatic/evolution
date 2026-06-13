@@ -1,6 +1,6 @@
 # PACKAGE CONTEXT
 
-## Directory: git/evolution/eu.kalafatic.evolution.controller.tests/src/eu/kalafatic/evolution/controller/orchestration/mediated/scanner/
+## Directory: eu.kalafatic.evolution.controller.tests/src/eu/kalafatic/evolution/controller/orchestration/mediated/scanner/
 
 ## Domain: general
 

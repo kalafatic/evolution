@@ -1,6 +1,6 @@
 # PACKAGE CONTEXT
 
-## Directory: git/evolution/eu.kalafatic.evolution.controller.tests/orchestrator/best_practices/architect/
+## Directory: eu.kalafatic.evolution.controller.tests/orchestrator/best_practices/architect/
 
 ## Domain: general
 

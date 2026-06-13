@@ -10,7 +10,7 @@
 	</parent>
 	<artifactId>eu.kalafatic.evolution.controller</artifactId>
 
-	<packaging>eclipse-plugin</packaging>
+	2.6.5-SNAPSHOT2.6.5-SNAPSHOT2.6.5-SNAPSHOTeclipse-plugin</packaging>
 	<build>
 		<sourceDirectory>src</sourceDirectory>
 		<resources>
@@ -46,6 +46,12 @@
 		<dependency>
 			<groupId>eu.kalafatic.evolution</groupId>
 			<artifactId>eu.kalafatic.utils</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>eu.kalafatic.evolution</groupId>
+			<artifactId>eu.kalafatic.evolution.selfdev.genome</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		<dependency>

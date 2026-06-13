@@ -1,6 +1,6 @@
 # PACKAGE CONTEXT
 
-## Directory: git/evolution/orchestrator/best_practices/agent/
+## Directory: orchestrator/best_practices/agent/
 
 ## Domain: general
 

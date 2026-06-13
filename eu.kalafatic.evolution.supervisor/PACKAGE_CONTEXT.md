@@ -1,6 +1,6 @@
 # PACKAGE CONTEXT
 
-## Directory: git/evolution/eu.kalafatic.evolution.supervisor/
+## Directory: eu.kalafatic.evolution.supervisor/
 
 ## Domain: general
 

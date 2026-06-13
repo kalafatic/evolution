@@ -1,6 +1,6 @@
 # PACKAGE CONTEXT
 
-## Directory: git/evolution/verification/
+## Directory: verification/
 
 ## Domain: general
 

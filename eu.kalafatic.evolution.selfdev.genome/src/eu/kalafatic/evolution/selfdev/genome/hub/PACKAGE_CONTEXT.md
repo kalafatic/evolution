@@ -1,6 +1,6 @@
 # PACKAGE CONTEXT
 
-## Directory: git/evolution/eu.kalafatic.evolution.selfdev.genome/src/eu/kalafatic/evolution/selfdev/genome/hub/
+## Directory: eu.kalafatic.evolution.selfdev.genome/src/eu/kalafatic/evolution/selfdev/genome/hub/
 
 ## Domain: general
 

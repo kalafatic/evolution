@@ -1,0 +1,9 @@
+# PACKAGE CONTEXT
+
+## Directory: eu.kalafatic.evolution.media/src/eu/kalafatic/evolution/media/render/
+
+## Domain: general
+
+## Components
+* `HtmlRenderer.java`: package eu.kalafatic.evolution.media.render; import eu.kalafatic.evolution.media.model.*; import java.util.List; import java.util.Map; import java.util.stream.Collectors; public class HtmlRenderer { public String render(Diagram diagram) { StringBuilder html = new StringBuilder(); html.append("<!DOCTYPE html>\n<html>\n<head>\n"); html.append("<meta charset=\"UTF-8\">\n"); html.append("<title>").append(escapeHtml(diagram.getTitle())).append("</title>\n"); appendStyles(html); html.append("</head>\n<body class=\"light-theme\">\n"); html.append("<div id=\"app\">\n"); html.append("  <header>\n"); html.append("    <h1>").append(escapeHtml(diagram.getTitle())).append("</h1>\n"); html.append("    <div class=\"toolbar\">\n"); html.append("      <button onclick=\"toggleTheme()\">Toggle Theme</button>\n"); html.append("      <button onclick=\"resetView()\">Reset View</button>\n"); html.append("      <button onclick=\"exportSvg()\">Export SVG</button>\n");
+* `SvgRenderer.java`: package eu.kalafatic.evolution.media.render; import eu.kalafatic.evolution.media.model.*; import java.util.List; import java.util.HashMap; import java.util.Map; public class SvgRenderer { public String render(Diagram diagram) { StringBuilder svg = new StringBuilder(); int width = 1200; int height = 800; svg.append(String.format("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"%d\" height=\"%d\">\n", width, height)); svg.append("<rect width=\"100%\" height=\"100%\" fill=\"#f8f9fa\"/>\n"); Map<String, Point> positions = new HashMap<>(); List<Node> nodes = diagram.getNodes(); int n = nodes.size(); for (int i = 0; i < n; i++) { Node node = nodes.get(i); double angle = 2 * Math.PI * i / n; int cx = (int) (width / 2 + 300 * Math.cos(angle)); int cy = (int) (height / 2 + 300 * Math.sin(angle));

@@ -1,6 +1,6 @@
 # PACKAGE CONTEXT
 
-## Directory: git/evolution/self-dev-run/
+## Directory: self-dev-run/
 
 ## Domain: general
 

@@ -54,4 +54,6 @@
 		</dependency>
 	</dependencies>
 
+	<version>2.6.5-SNAPSHOT</version>
+	<groupId>eu.kalafatic.evolution</groupId>
 </project>

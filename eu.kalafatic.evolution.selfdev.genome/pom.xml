@@ -25,4 +25,5 @@
 		</plugins>
 	</build>
 
+	<version>2.6.5-SNAPSHOT</version>
 </project>

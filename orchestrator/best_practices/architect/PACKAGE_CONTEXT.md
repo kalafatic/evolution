@@ -1,6 +1,6 @@
 # PACKAGE CONTEXT
 
-## Directory: git/evolution/orchestrator/best_practices/architect/
+## Directory: orchestrator/best_practices/architect/
 
 ## Domain: general
 

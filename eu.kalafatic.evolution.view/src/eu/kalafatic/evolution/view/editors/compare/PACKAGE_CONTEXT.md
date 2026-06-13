@@ -1,6 +1,6 @@
 # PACKAGE CONTEXT
 
-## Directory: git/evolution/eu.kalafatic.evolution.view/src/eu/kalafatic/evolution/view/editors/compare/
+## Directory: eu.kalafatic.evolution.view/src/eu/kalafatic/evolution/view/editors/compare/
 
 ## Domain: general
 

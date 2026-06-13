@@ -1,6 +1,6 @@
 # PACKAGE CONTEXT
 
-## Directory: git/evolution/eu.kalafatic.evolution.view/src/eu/kalafatic/evolution/view/editors/pages/mcpsettings/
+## Directory: eu.kalafatic.evolution.view/src/eu/kalafatic/evolution/view/editors/pages/mcpsettings/
 
 ## Domain: general
 

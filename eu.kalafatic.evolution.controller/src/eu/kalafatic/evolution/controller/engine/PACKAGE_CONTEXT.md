@@ -1,6 +1,6 @@
 # PACKAGE CONTEXT
 
-## Directory: git/evolution/eu.kalafatic.evolution.controller/src/eu/kalafatic/evolution/controller/engine/
+## Directory: eu.kalafatic.evolution.controller/src/eu/kalafatic/evolution/controller/engine/
 
 ## Domain: general
 

@@ -1,6 +1,6 @@
 # PACKAGE CONTEXT
 
-## Directory: git/evolution/eu.kalafatic.evolution.controller.tests/orchestrator/best_practices/planner/
+## Directory: eu.kalafatic.evolution.controller.tests/orchestrator/best_practices/planner/
 
 ## Domain: general
 

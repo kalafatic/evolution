@@ -1,6 +1,6 @@
 # PACKAGE CONTEXT
 
-## Directory: git/evolution/iterations/17/
+## Directory: iterations/17/
 
 ## Domain: general
 

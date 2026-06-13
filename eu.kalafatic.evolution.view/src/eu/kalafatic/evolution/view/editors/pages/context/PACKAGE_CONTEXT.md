@@ -1,6 +1,6 @@
 # PACKAGE CONTEXT
 
-## Directory: git/evolution/eu.kalafatic.evolution.view/src/eu/kalafatic/evolution/view/editors/pages/context/
+## Directory: eu.kalafatic.evolution.view/src/eu/kalafatic/evolution/view/editors/pages/context/
 
 ## Domain: general
 

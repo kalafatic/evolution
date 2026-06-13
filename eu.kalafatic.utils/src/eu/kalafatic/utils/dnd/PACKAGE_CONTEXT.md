@@ -1,6 +1,6 @@
 # PACKAGE CONTEXT
 
-## Directory: git/evolution/eu.kalafatic.utils/src/eu/kalafatic/utils/dnd/
+## Directory: eu.kalafatic.utils/src/eu/kalafatic/utils/dnd/
 
 ## Domain: general
 
