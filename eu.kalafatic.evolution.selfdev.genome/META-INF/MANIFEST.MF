@@ -11,6 +11,7 @@ Export-Package: eu.kalafatic.evolution.selfdev.genome.core,
  eu.kalafatic.evolution.selfdev.genome.milestone,
  eu.kalafatic.evolution.selfdev.genome.repository,
  eu.kalafatic.evolution.selfdev.genome.selfupgrade,
+ eu.kalafatic.evolution.selfdev.genome.util,
  org.json
 Require-Bundle: eu.kalafatic.utils;bundle-version="2.6.5",
  eu.kalafatic.evolution.model;bundle-version="2.6.5"

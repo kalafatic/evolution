@@ -91,7 +91,94 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	@Override
+	public EReference getOrchestrator_GenomeSnapshots() {
+		return (EReference)orchestratorEClass.getEStructuralFeatures().get(33);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getGenomeSnapshot() {
+		return genomeSnapshotEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getGenomeSnapshot_Timestamp() {
+		return (EAttribute)genomeSnapshotEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getGenomeSnapshot_ArchitectureArtifact() {
+		return (EAttribute)genomeSnapshotEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getGenomeSnapshot_UseCaseArtifact() {
+		return (EAttribute)genomeSnapshotEClass.getEStructuralFeatures().get(2);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getGenomeSnapshot_MilestoneArtifact() {
+		return (EAttribute)genomeSnapshotEClass.getEStructuralFeatures().get(3);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getGenomeSnapshot_GenomeArtifact() {
+		return (EAttribute)genomeSnapshotEClass.getEStructuralFeatures().get(4);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getGenomeSnapshot_DashboardArtifact() {
+		return (EAttribute)genomeSnapshotEClass.getEStructuralFeatures().get(5);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	private EClass agentEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass genomeSnapshotEClass = null;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -3672,6 +3759,15 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEReference(orchestratorEClass, ORCHESTRATOR__SUPERVISOR_SETTINGS);
 		createEReference(orchestratorEClass, ORCHESTRATOR__NETWORK_ENTRIES);
 		createEAttribute(orchestratorEClass, ORCHESTRATOR__DEFAULT_TARGET);
+		createEReference(orchestratorEClass, ORCHESTRATOR__GENOME_SNAPSHOTS);
+
+		genomeSnapshotEClass = createEClass(GENOME_SNAPSHOT);
+		createEAttribute(genomeSnapshotEClass, GENOME_SNAPSHOT__TIMESTAMP);
+		createEAttribute(genomeSnapshotEClass, GENOME_SNAPSHOT__ARCHITECTURE_ARTIFACT);
+		createEAttribute(genomeSnapshotEClass, GENOME_SNAPSHOT__USE_CASE_ARTIFACT);
+		createEAttribute(genomeSnapshotEClass, GENOME_SNAPSHOT__MILESTONE_ARTIFACT);
+		createEAttribute(genomeSnapshotEClass, GENOME_SNAPSHOT__GENOME_ARTIFACT);
+		createEAttribute(genomeSnapshotEClass, GENOME_SNAPSHOT__DASHBOARD_ARTIFACT);
 
 		serverSettingsEClass = createEClass(SERVER_SETTINGS);
 		createEAttribute(serverSettingsEClass, SERVER_SETTINGS__PORT);
@@ -4055,6 +4151,15 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEReference(getOrchestrator_SupervisorSettings(), this.getSupervisorSettings(), null, "supervisorSettings", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getOrchestrator_NetworkEntries(), this.getNetworkEntry(), null, "networkEntries", null, 0, -1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getOrchestrator_DefaultTarget(), ecorePackage.getEString(), "defaultTarget", null, 0, 1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getOrchestrator_GenomeSnapshots(), this.getGenomeSnapshot(), null, "genomeSnapshots", null, 0, -1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(genomeSnapshotEClass, eu.kalafatic.evolution.model.orchestration.GenomeSnapshot.class, "GenomeSnapshot", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getGenomeSnapshot_Timestamp(), ecorePackage.getEString(), "timestamp", null, 0, 1, eu.kalafatic.evolution.model.orchestration.GenomeSnapshot.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getGenomeSnapshot_ArchitectureArtifact(), ecorePackage.getEString(), "architectureArtifact", null, 0, 1, eu.kalafatic.evolution.model.orchestration.GenomeSnapshot.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getGenomeSnapshot_UseCaseArtifact(), ecorePackage.getEString(), "useCaseArtifact", null, 0, 1, eu.kalafatic.evolution.model.orchestration.GenomeSnapshot.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getGenomeSnapshot_MilestoneArtifact(), ecorePackage.getEString(), "milestoneArtifact", null, 0, 1, eu.kalafatic.evolution.model.orchestration.GenomeSnapshot.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getGenomeSnapshot_GenomeArtifact(), ecorePackage.getEString(), "genomeArtifact", null, 0, 1, eu.kalafatic.evolution.model.orchestration.GenomeSnapshot.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getGenomeSnapshot_DashboardArtifact(), ecorePackage.getEString(), "dashboardArtifact", null, 0, 1, eu.kalafatic.evolution.model.orchestration.GenomeSnapshot.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(serverSettingsEClass, ServerSettings.class, "ServerSettings", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getServerSettings_Port(), ecorePackage.getEInt(), "port", "48080", 0, 1, ServerSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);

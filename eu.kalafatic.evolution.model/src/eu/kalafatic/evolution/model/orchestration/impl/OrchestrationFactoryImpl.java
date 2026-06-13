@@ -19,6 +19,7 @@ import eu.kalafatic.evolution.model.orchestration.Eclipse;
 import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
 import eu.kalafatic.evolution.model.orchestration.EvoProject;
 import eu.kalafatic.evolution.model.orchestration.ExecutionMode;
+import eu.kalafatic.evolution.model.orchestration.GenomeSnapshot;
 import eu.kalafatic.evolution.model.orchestration.FeedbackLevel;
 import eu.kalafatic.evolution.model.orchestration.FileChange;
 import eu.kalafatic.evolution.model.orchestration.FileConfig;
@@ -110,6 +111,7 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 			case OrchestrationPackage.TASK: return createTask();
 			case OrchestrationPackage.AGENT: return createAgent();
 			case OrchestrationPackage.ORCHESTRATOR: return createOrchestrator();
+			case OrchestrationPackage.GENOME_SNAPSHOT: return createGenomeSnapshot();
 			case OrchestrationPackage.SERVER_SETTINGS: return createServerSettings();
 			case OrchestrationPackage.SERVER_SESSION: return createServerSession();
 			case OrchestrationPackage.MONITORING_DATA: return createMonitoringData();
@@ -258,6 +260,17 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 	public Orchestrator createOrchestrator() {
 		OrchestratorImpl orchestrator = new OrchestratorImpl();
 		return orchestrator;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public GenomeSnapshot createGenomeSnapshot() {
+		GenomeSnapshotImpl genomeSnapshot = new GenomeSnapshotImpl();
+		return genomeSnapshot;
 	}
 
 	/**
