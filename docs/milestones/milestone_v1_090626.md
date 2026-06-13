@@ -1,66 +1,130 @@
-# Milestone Freezepoint v1 - 090626 (DARWIN GENOME)
+# Milestone FreezePoint v1 - 090626
+## 🧬 SAFE EVOLUTION BOUNDARY FOR A SELF-IMPROVING DARWIN SYSTEM
+
+**Status:** ACTIVE FREEZE
+**Version:** 1.0.0
+**Timestamp:** 2026-06-09T00:00:00Z
+**Focus:** Orchestration Kernel + Mediated Discovery Stability
+
+---
 
 ## 1. System State Summary (TRUTH ONLY)
-The system is at version **2.6.5-SNAPSHOT**. It is a functional **Evolutionary AI Kernel** capable of:
-- Multi-trajectory spawning and vector-based diversity analysis.
-- Mediated selection of architectural variants.
-- Repository-grounded intent expansion and context curation.
-- Atomic side-effect application via Git.
-- Session isolation using thread-local guards.
 
-**Implemented Features:** PEV Loop, Runtime Event Bus, Capability Registry, Darwin Engine, Semantic Workspace.
-**Partial/Experimental:** `selfdev-genome` upgrade plans, `NeuronAI` signals, advanced auto-repair skeletons.
+The EVO platform is currently a functional **Evolutionary OS Kernel** capable of autonomous repository analysis and iterative code evolution.
+
+### Implemented & Operational
+- **Recursive Evolutionary Loop (IterationManager):** Full authority for state transitions (`INIT` -> `ANALYZING` -> `EVOLVING` -> `DONE`).
+- **Darwin Engine:** Coordinates multi-branch evolution, generating `TrajectoryBlueprints` across 9 technical dimensions.
+- **Session Isolation:** Mandatory session-based dependency injection via `SessionContainer`. Replaced all global singletons.
+- **Mediated Mode:** Context distillation (limited to 16 high-signal files) and structured ZIP export for external LLM consumption.
+- **Git Automation:** Fully integrated VCS management for parallel variant spawning and merging.
+
+### Partial / Experimental
+- **MCP (Model Context Protocol):** Client exists but `testConnection` is stubbed; integration into agents is nascent.
+- **Task Planner:** Variant actions are converted to tasks, but "expected outputs" propagation is a No-Op.
+
+### Stubbed / Mocked
+- **NeuronEngine:** Simulations of MLP/CNN/RNN/Transformer models. All outputs are currently hash-based or random strings. **(NON-FUNCTIONAL)**
+
+---
 
 ## 2. Core Execution Model
-- **Entry Points:** `OrchestratorServiceImpl`, `IterationManager`.
-- **Runtime Flow:** `INIT` -> `ANALYZING` -> `(CLARIFYING)` -> `EXECUTING` -> `VERIFYING` -> `DONE`.
-- **Control Structure:** Centralized authority machine in `IterationManager`.
-- **System Heartbeat:** The recursive iteration loop in `IterationManager.evolve()`.
+
+The system "heartbeat" is driven by the **Recursive Evolutionary Cognition Loop** in `IterationManager`.
+
+### Primary Flow
+1. **Entry Point:** `OrchestratorServiceImpl` -> `KernelFacade`.
+2. **Control Plane:** `IterationManager.handleInternal()` orchestrates the lifecycle.
+3. **Exploration Engine:** `DarwinFlow.generateProposals()` spawns competing trajectories.
+4. **Execution Engine:** `TaskExecutor` materializes patches within temporary worktrees.
+5. **Selection Gate:** `AuthorityEngine` (via `DefaultAuthorityEngine`) decides winners based on fitness and pressure.
+6. **Convergence:** `StabilityAnalyzer` determines equilibrium based on `deltaDecay` and `pressureResolution`.
+
+---
 
 ## 3. Stability Classification Map
-- 🟢 **Stable Core (DO NOT TOUCH):**
-    - `eu.kalafatic.evolution.model` (EMF Package)
-    - `eu.kalafatic.evolution.controller.kernel` (Invariants)
-    - `eu.kalafatic.evolution.controller.workflow` (Event Bus)
-- 🟡 **Controlled Evolution Zone (Safe Mutation):**
-    - `eu.kalafatic.evolution.controller.engine` (Darwin logic)
-    - `eu.kalafatic.evolution.controller.agents` (AI Roles)
-    - `eu.kalafatic.evolution.controller.mediation` (Curation)
-- 🔴 **Experimental Zone (Free Mutation):**
-    - `eu.kalafatic.evolution.selfdev.genome`
-    - `eu.kalafatic.evolution.controller.orchestration.intent`
+
+| Zone | Components | Evolution Policy |
+| :--- | :--- | :--- |
+| 🟢 **Stable Core** | `IterationManager`, `DarwinFlow`, `SessionContainer`, `GitManager`, `AuthorityEngine` | **FORBIDDEN:** Structural changes to the orchestration state machine or session boundary. |
+| 🟡 **Controlled Zone** | `AnalyticAgent`, `ContextCurator`, `PromptSynthesizer`, `TaskPlanner` | **SAFE:** Refinement of analysis heuristics and prompt templates with regression tests. |
+| 🔴 **Experimental Zone** | `NeuronEngine`, `McpClient`, `StructureAgent` | **FREE:** Radical mutation, refactoring, or complete replacement allowed. |
+
+---
 
 ## 4. Core Invariants (ABSOLUTE RULES)
-- Only `IterationManager` transitions the global state.
-- Every entry point must be session-guarded via `SessionBoundaryGuard`.
-- All kernel signals must be published via `RuntimeEventBus` with correct category.
-- Minimum 4-branch divergence mandate for the `DarwinEngine`.
+
+1. **Session Integrity:** No cross-session data leakage is permitted. All agent state must reside within a `SessionContainer`.
+2. **Authority Unicity:** Multiple systems may propose; only `AuthorityController` (via `IterationManager`) may decide.
+3. **Pressure Gating:** Mutations must be justified by at least one measured evolutionary pressure (e.g., `failureExposure`, `ambiguity`).
+4. **Git Atomicity:** Every successful iteration must result in a valid Git commit; failures must trigger a rollback to the parent state.
+5. **SWT Safety:** (UI specific) All UI updates must be equality-checked and thread-safe.
+
+---
 
 ## 5. Darwin Mutation Boundaries
-- **Safe Mutation Zones:** Agent prompt templates, fitness heuristics, vector weights.
-- **Unsafe Mutation Zones:** PEV loop sequence, event bus categories, thread-local management.
-- **Forbidden Structural Changes:** EMF orchestration schema changes without synchronized regeneration.
-- **High-Risk Coupling:** Interaction between OSGi bundles and JGit transactions.
+
+### Safe Mutation Zones
+- **Agent Heuristics:** Improving the logic in `AnalyticAgent` or `CriticAgent`.
+- **Discovery Strategy:** Modifying `ContextCurator` file selection algorithms.
+- **Prompt Engineering:** Iterating on templates in `PromptSynthesizer`.
+- **Fitness Weighting:** Adjusting `DefaultFitnessEngine` scoring coefficients.
+
+### Forbidden / High-Risk Zones
+- **Execution Engine Loop:** `IterationManager.evolve()` logic.
+- **VCS Integrity:** `GitManager` core operations.
+- **Sandbox Isolation:** `ProcessRunner` and worktree management.
+- **State Machine:** The `SystemState` enum and transition logic.
+
+---
 
 ## 6. Fitness & Selection Model
-- **Correctness:** Evaluated via `mvn integration-test` (build integrity).
-- **Successful Evolution:** A trajectory that passes verification AND maintains conceptual distance (Diversity > 0.1).
-- **Regression Criteria:** Detection of `InvariantViolationException` or drop in test pass rate.
+
+Evolution is successful if:
+1. **Build Integrity:** The code compiles successfully in the target environment (verified by `mvn compile` or equivalent).
+2. **Test Convergence:** Test pass rate increases or remains stable (verified by `FitnessEngine`).
+3. **Pressure Resolution:** The targeted evolutionary pressure (e.g., `complexity`) shows a downward trend over generations.
+4. **Semantic Alignment:** The `ValidatorAgent` confirms the mutation aligns with the original `IntentExpansionResult`.
+
+---
 
 ## 7. Mediated Model Summary
-- **System Conceptual Model:** A state-controlled mutation kernel.
-- **Core Abstractions:** Evolutionary Trajectory, Semantic Dimension, Target Reality Model.
-- **Behavioral Flows:** Intent Expansion -> Darwin Branching -> Validated Convergence.
+
+### Conceptual Model
+The system is an **Architectural Intelligence Layer** that reconstructs a "Target Reality Model" from fragmented code artifacts. It views the repository as a set of interacting **Subsystems** and **Architectural Genes**.
+
+### Behavioral Flows
+- **Discovery:** 8-pass pipeline (Structural -> Relationship -> Subsystem -> Reality -> Genome -> Compression -> Use Case).
+- **Expansion:** Intent interpretation via dimension inference (mapping user requests to technical search spaces).
+- **Export:** Distillation of reality into a self-contained ZIP archive for external reasoning.
+
+---
 
 ## 8. External Self-Dev Supervisor Contract
-- **Build Triggers:** Published `TASK_STARTED` events.
-- **Test Execution Gates:** `ValidatorAgent` calls to `mvn integration-test`.
-- **Rollback Conditions:** `InvariantViolationException`, consecutive failures, or user rejection in mediated mode.
-- **Deployment Constraints:** Mutations must remain on isolated `evo-*` branches.
-- **Validation Checkpoints:** `VARIANT_EVALUATED` (Pre-selection), `FLOW_COMPLETED` (Post-execution).
 
-## 9. Evolution Strategy (NEXT STEP ONLY)
-- **SHOULD Evolve:** `ContextCurator` token-budget optimization for larger snapshots.
-- **MUST NOT Evolve:** Global static state for session resources.
-- **High Value Target:** `TrajectoryTerritoryMapper` Bulk Discovery efficiency.
-- **Recommended Focus:** Stabilize `IntentExpansionEngine` to reduce semantic noise.
+Interaction is managed via the **SelfDevProtocol** using file-based triggers.
+
+### Lifecycle Hooks
+- **Trigger:** Writing a `command.json` with `action: "BUILD_AND_RUN"` to the `self-dev-run/` directory.
+- **Monitor:** Supervisor reads `state.json` to track `BUILDING`, `STARTING`, `RUNNING`, `ERROR`, or `FAILED`.
+- **Patching:** Supervisor applies diffs from `patch.json` before a `RESTART`.
+
+### Fitness Evaluation Rules
+- **Acceptance:** `Result.score > 0.7` and `Result.status == "OK"`.
+- **Rejection:** Build failure or score below 0.3 triggers automatic rollback.
+- **Rollback:** Restores Git HEAD to the last `ACTIVE` iteration commit.
+
+### Safety Constraints
+- **Manual Approval Required:** Any mutation affecting `eu.kalafatic.evolution.controller.kernel.*`.
+- **Forbidden:** Modifications to `pom.xml` without explicit supervisor entitlement.
+
+---
+
+## 9. Evolution Strategy (NEXT STEP)
+
+1. **Primary Focus:** Upgrade `NeuronEngine` from Stub to Functional (using local tiny models or MCP integration).
+2. **Secondary Focus:** Implement "Expected Outputs" propagation in `TaskPlanner` to allow agents to verify their own task success.
+3. **Forbidden Zone:** Do NOT refactor the `IterationManager` state machine; focus on agent-level intelligence.
+
+---
+*End of Milestone v1*
