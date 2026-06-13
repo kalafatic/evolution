@@ -65,6 +65,7 @@ public class MediatedExportManager {
         if (profile == ExportProfile.FULL || profile == ExportProfile.ARCHITECTURE) {
             sb.append("- `architecture/`: Complete architectural model and visualization.\n");
         }
+        sb.append("- `logs/`: Evolutionary Event Lineage and causal chains.\n");
         if (profile == ExportProfile.FULL || profile == ExportProfile.IMPLEMENTATION) {
             sb.append("- `implementation/`: implementation-ready context and source files.\n");
         }
@@ -253,6 +254,8 @@ public class MediatedExportManager {
     }
 
     private void addArchitectureSection(ZipOutputStream zos, TargetRealityModel model) throws IOException {
+        addLogSection(zos, model);
+
         DesignModel designModel = convertToDesignModel(model);
         DesignRenderer renderer = new DesignRenderer();
 
@@ -431,6 +434,24 @@ public class MediatedExportManager {
         }
 
         return exportDir;
+    }
+
+    private void addLogSection(ZipOutputStream zos, TargetRealityModel model) throws IOException {
+        String sessionId = model.getMetadata().get("sessionId") != null ? model.getMetadata().get("sessionId").toString() : null;
+        if (sessionId == null) return;
+
+        eu.kalafatic.evolution.controller.orchestration.SessionContainer session = eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getSession(sessionId);
+        if (session == null || session.getObservabilityManager() == null) return;
+
+        EvolutionaryObservabilityManager obs = session.getObservabilityManager();
+
+        addStringToZip(zos, "logs/timeline.json", serializeToJson(obs.getTimeline()));
+        addStringToZip(zos, "logs/causal_chains.json", serializeToJson(obs.getCausalChains()));
+        addStringToZip(zos, "logs/clusters.json", serializeToJson(obs.getEventLog().stream()
+            .filter(e -> "CRITICAL".equals(e.getSeverity()))
+            .collect(java.util.stream.Collectors.toList())));
+
+        addStringToZip(zos, "logs/summaries/overview.json", serializeToJson(obs.getSummaries()));
     }
 
     public File generateGenomeProjection(eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel model, File projectRoot) throws IOException {

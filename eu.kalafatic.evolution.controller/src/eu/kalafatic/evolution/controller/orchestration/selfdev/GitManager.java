@@ -6,6 +6,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.tools.GitTool;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
 
 public class GitManager {
     private final File root;
@@ -117,10 +119,25 @@ public class GitManager {
         gitTool.execute("add .", root, context);
         // Metadata is automatically injected by GitTool for 'commit' commands
         gitTool.execute("commit --allow-empty -m \"" + message + "\"", root, context);
+
+        if (context != null && context.getKernelContext() != null && context.getKernelContext().getEventBus() != null) {
+            String hash = "";
+            try { hash = getHeadCommit(); } catch (Exception e) {}
+            context.getKernelContext().getEventBus().publish(new RuntimeEvent(RuntimeEventType.FILE_WRITTEN, context.getSessionId(), "GitManager", hash));
+        }
     }
 
     public void rollback() throws Exception {
+        rollback(null);
+    }
+
+    public void rollback(TaskContext context) throws Exception {
         cleanupLocks();
+
+        if (context != null && context.getKernelContext() != null && context.getKernelContext().getEventBus() != null) {
+            context.getKernelContext().getEventBus().publish(new RuntimeEvent(RuntimeEventType.RECOVERY_TRIGGERED, context.getSessionId(), "GitManager", "Git Rollback"));
+        }
+
         // Hardening: reset --hard HEAD clears uncommitted dirty state, clean -fd removes untracked pollution.
         gitTool.execute("reset --hard HEAD", root, null);
         try {

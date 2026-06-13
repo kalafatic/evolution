@@ -41,6 +41,7 @@ public class SessionContext implements SessionContainer {
     private final OrchestrationStatusManager statusManager;
     private final RuntimeCoordinator runtimeCoordinator;
     private final eu.kalafatic.evolution.controller.kernel.EvolutionaryPressureEngine pressureEngine;
+    private final eu.kalafatic.evolution.controller.workflow.EvolutionaryObservabilityManager observabilityManager;
 
     private final Map<String, IAgent> agentRegistry = new ConcurrentHashMap<>();
     private IterationMemoryService memoryService;
@@ -70,6 +71,8 @@ public class SessionContext implements SessionContainer {
         this.statusManager = new OrchestrationStatusManager();
         this.runtimeCoordinator = new RuntimeCoordinator(sessionId, this.eventBus, this.signalBus, this.workflowRegistry);
         this.pressureEngine = new eu.kalafatic.evolution.controller.kernel.EvolutionaryPressureEngine();
+        this.observabilityManager = new eu.kalafatic.evolution.controller.workflow.EvolutionaryObservabilityManager(sessionId);
+        this.eventBus.subscribe(this.observabilityManager);
 
         this.runtimeCoordinator.initialize();
 
@@ -197,6 +200,11 @@ public class SessionContext implements SessionContainer {
     @Override
     public eu.kalafatic.evolution.controller.kernel.EvolutionaryPressureEngine getPressureEngine() {
         return pressureEngine;
+    }
+
+    @Override
+    public eu.kalafatic.evolution.controller.workflow.EvolutionaryObservabilityManager getObservabilityManager() {
+        return observabilityManager;
     }
 
     public synchronized IterationMemoryService getMemoryService(File projectRoot) {
