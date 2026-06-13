@@ -729,4 +729,9 @@ public interface Orchestrator extends EObject {
 	 */
 	EList<GenomeSnapshot> getGenomeSnapshots();
 
+	/**
+	 * @generated
+	 */
+	EList<ForgeSession> getForgeSessions();
+
 } // Orchestrator

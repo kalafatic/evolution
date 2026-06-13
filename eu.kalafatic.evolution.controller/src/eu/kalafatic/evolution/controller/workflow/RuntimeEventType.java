@@ -73,7 +73,14 @@ public enum RuntimeEventType {
 
     // 9. COGNITIVE (LLM Reasoning)
     REASONING_TRACE(EventCategory.COGNITIVE),
-    INTENT_GROUNDED(EventCategory.COGNITIVE);
+    INTENT_GROUNDED(EventCategory.COGNITIVE),
+
+    // 10. FORGE (AI Model Design)
+    FORGE_SESSION_CREATED(EventCategory.UI),
+    FORGE_SESSION_SWITCHED(EventCategory.UI),
+    FORGE_MODEL_CHANGED(EventCategory.UI),
+    FORGE_TRAINING_STARTED(EventCategory.EXECUTION),
+    FORGE_TRAINING_STOPPED(EventCategory.EXECUTION);
 
     private final EventCategory category;
 

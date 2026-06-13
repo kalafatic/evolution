@@ -108,6 +108,10 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 	@Override
 	public EObject create(EClass eClass) {
 		switch (eClass.getClassifierID()) {
+			case OrchestrationPackage.FORGE_SESSION: return createForgeSession();
+			case OrchestrationPackage.SESSION_MODEL_STATE: return createSessionModelState();
+			case OrchestrationPackage.SESSION_EXPERIMENT: return createSessionExperiment();
+			case OrchestrationPackage.SESSION_SNAPSHOT: return createSessionSnapshot();
 			case OrchestrationPackage.TASK: return createTask();
 			case OrchestrationPackage.AGENT: return createAgent();
 			case OrchestrationPackage.ORCHESTRATOR: return createOrchestrator();
@@ -159,6 +163,8 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 	@Override
 	public Object createFromString(EDataType eDataType, String initialValue) {
 		switch (eDataType.getClassifierID()) {
+			case OrchestrationPackage.FORGE_STATUS:
+				return createForgeStatusFromString(eDataType, initialValue);
 			case OrchestrationPackage.TASK_STATUS:
 				return createTaskStatusFromString(eDataType, initialValue);
 			case OrchestrationPackage.LOG_LEVEL:
@@ -198,6 +204,8 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 	@Override
 	public String convertToString(EDataType eDataType, Object instanceValue) {
 		switch (eDataType.getClassifierID()) {
+			case OrchestrationPackage.FORGE_STATUS:
+				return convertForgeStatusToString(eDataType, instanceValue);
 			case OrchestrationPackage.TASK_STATUS:
 				return convertTaskStatusToString(eDataType, instanceValue);
 			case OrchestrationPackage.LOG_LEVEL:
@@ -271,6 +279,30 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 	public GenomeSnapshot createGenomeSnapshot() {
 		GenomeSnapshotImpl genomeSnapshot = new GenomeSnapshotImpl();
 		return genomeSnapshot;
+	}
+
+	@Override
+	public ForgeSession createForgeSession() {
+		ForgeSessionImpl forgeSession = new ForgeSessionImpl();
+		return forgeSession;
+	}
+
+	@Override
+	public SessionModelState createSessionModelState() {
+		SessionModelStateImpl sessionModelState = new SessionModelStateImpl();
+		return sessionModelState;
+	}
+
+	@Override
+	public SessionExperiment createSessionExperiment() {
+		SessionExperimentImpl sessionExperiment = new SessionExperimentImpl();
+		return sessionExperiment;
+	}
+
+	@Override
+	public SessionSnapshot createSessionSnapshot() {
+		SessionSnapshotImpl sessionSnapshot = new SessionSnapshotImpl();
+		return sessionSnapshot;
 	}
 
 	/**
@@ -658,6 +690,12 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 		return result;
 	}
 
+	public ForgeStatus createForgeStatusFromString(EDataType eDataType, String initialValue) {
+		ForgeStatus result = ForgeStatus.get(initialValue);
+		if (result == null) throw new IllegalArgumentException("The value '" + initialValue + "' is not a valid enumerator of '" + eDataType.getName() + "'");
+		return result;
+	}
+
 	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -844,6 +882,10 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 	 * @generated
 	 */
 	public String convertIterationStatusToString(EDataType eDataType, Object instanceValue) {
+		return instanceValue == null ? null : instanceValue.toString();
+	}
+
+	public String convertForgeStatusToString(EDataType eDataType, Object instanceValue) {
 		return instanceValue == null ? null : instanceValue.toString();
 	}
 

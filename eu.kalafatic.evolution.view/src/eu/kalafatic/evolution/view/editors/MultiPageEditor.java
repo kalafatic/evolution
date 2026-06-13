@@ -67,6 +67,8 @@ import eu.kalafatic.evolution.view.editors.pages.IterationPage;
 import eu.kalafatic.evolution.view.editors.pages.McpSettingsPage;
 import eu.kalafatic.evolution.view.editors.compare.ResourceCompareInput.StringElement;
 import eu.kalafatic.evolution.view.editors.pages.ComparePage;
+import eu.kalafatic.evolution.view.editors.pages.ForgePage;
+import eu.kalafatic.evolution.view.editors.pages.ForgePageFactory;
 import eu.kalafatic.evolution.view.editors.pages.PeerReviewPage;
 import eu.kalafatic.evolution.view.editors.pages.PreviewPage;
 import eu.kalafatic.evolution.view.editors.pages.PropertiesPage;
@@ -97,6 +99,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
     private ContextPage contextPage;
     private PeerReviewPage peerReviewPage;
     private ComparePage comparePage;
+    private ForgePage forgePage;
     private ServerPage serverPage;
     private SettingsPage settingsPage;
 
@@ -222,6 +225,10 @@ public class MultiPageEditor extends MultiPageEditorPart {
                 peerReviewPage = PeerReviewPageFactory.createPeerReviewPage(this, orchestrator);
                 taskStackPage = TaskStackPageFactory.createTaskStackPage(this, orchestrator);
                 graphPage = GraphPageFactory.createGraphPage(this, orchestrator);
+                forgePage = ForgePageFactory.createForgePage(this, orchestrator);
+                int forgeIdx = addPage(forgePage);
+                setPageText(forgeIdx, "Forge");
+
                 comparePage = ComparePageFactory.createComparePage(this, orchestrator);
                 serverPage = ServerPageFactory.createServerPage(this, orchestrator);
                 settingsPage = SettingsPageFactory.createSettingsPage(this, orchestrator);
@@ -409,6 +416,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
         if (taskStackPage != null) taskStackPage.setOrchestrator(orchestrator);
         if (contextPage != null) contextPage.setOrchestrator(orchestrator);
         if (serverPage != null) serverPage.setOrchestrator(orchestrator);
+        if (forgePage != null) forgePage.setOrchestrator(orchestrator);
         if (settingsPage != null) settingsPage.setOrchestrator(orchestrator);
     }
 
@@ -455,6 +463,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
         if (mcpSettingsPage != null) mcpSettingsPage.scheduleRefresh();
         if (contextPage != null) contextPage.refreshUI(); // TODO: refactor ContextPage if needed
         if (serverPage != null) serverPage.scheduleRefresh();
+        if (forgePage != null) forgePage.scheduleRefresh();
         if (settingsPage != null) settingsPage.scheduleRefresh();
         if (approvalPage != null) approvalPage.scheduleRefresh();
         if (developmentPage != null) developmentPage.scheduleRefresh();

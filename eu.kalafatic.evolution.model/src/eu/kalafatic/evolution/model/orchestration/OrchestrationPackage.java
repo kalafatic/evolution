@@ -781,13 +781,19 @@ public interface OrchestrationPackage extends EPackage {
 	int ORCHESTRATOR__GENOME_SNAPSHOTS = 33;
 
 	/**
+	 * @generated
+	 * @ordered
+	 */
+	int ORCHESTRATOR__FORGE_SESSIONS = 34;
+
+	/**
 	 * The number of structural features of the '<em>Orchestrator</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR_FEATURE_COUNT = 34;
+	int ORCHESTRATOR_FEATURE_COUNT = 35;
 
 	/**
 	 * The number of operations of the '<em>Orchestrator</em>' class.
@@ -3598,6 +3604,196 @@ public interface OrchestrationPackage extends EPackage {
 	int PROMPT_INSTRUCTIONS_OPERATION_COUNT = 0;
 
 	/**
+	 * @generated
+	 */
+	int FORGE_SESSION = 39;
+
+	/**
+	 * @generated
+	 */
+	int FORGE_SESSION__SESSION_ID = 0;
+
+	/**
+	 * @generated
+	 */
+	int FORGE_SESSION__NAME = 1;
+
+	/**
+	 * @generated
+	 */
+	int FORGE_SESSION__CREATED_AT = 2;
+
+	/**
+	 * @generated
+	 */
+	int FORGE_SESSION__LAST_MODIFIED = 3;
+
+	/**
+	 * @generated
+	 */
+	int FORGE_SESSION__STATUS = 4;
+
+	/**
+	 * @generated
+	 */
+	int FORGE_SESSION__ACTIVE_MODEL_ID = 5;
+
+	/**
+	 * @generated
+	 */
+	int FORGE_SESSION__SELECTED_MODEL_TYPE = 6;
+
+	/**
+	 * @generated
+	 */
+	int FORGE_SESSION__MODEL_STATE = 7;
+
+	/**
+	 * @generated
+	 */
+	int FORGE_SESSION__EXPERIMENTS = 8;
+
+	/**
+	 * @generated
+	 */
+	int FORGE_SESSION__SNAPSHOTS = 9;
+
+	/**
+	 * @generated
+	 */
+	int FORGE_SESSION_FEATURE_COUNT = 10;
+
+	/**
+	 * @generated
+	 */
+	int FORGE_SESSION_OPERATION_COUNT = 0;
+
+	/**
+	 * @generated
+	 */
+	int SESSION_MODEL_STATE = 40;
+
+	/**
+	 * @generated
+	 */
+	int SESSION_MODEL_STATE__SESSION_ID = 0;
+
+	/**
+	 * @generated
+	 */
+	int SESSION_MODEL_STATE__MODEL_GRAPH = 1;
+
+	/**
+	 * @generated
+	 */
+	int SESSION_MODEL_STATE__HYPERPARAMETERS = 2;
+
+	/**
+	 * @generated
+	 */
+	int SESSION_MODEL_STATE__DATASET_BINDINGS = 3;
+
+	/**
+	 * @generated
+	 */
+	int SESSION_MODEL_STATE__RUNTIME_STATE = 4;
+
+	/**
+	 * @generated
+	 */
+	int SESSION_MODEL_STATE_FEATURE_COUNT = 5;
+
+	/**
+	 * @generated
+	 */
+	int SESSION_MODEL_STATE_OPERATION_COUNT = 0;
+
+	/**
+	 * @generated
+	 */
+	int SESSION_EXPERIMENT = 41;
+
+	/**
+	 * @generated
+	 */
+	int SESSION_EXPERIMENT__ID = 0;
+
+	/**
+	 * @generated
+	 */
+	int SESSION_EXPERIMENT__SESSION_ID = 1;
+
+	/**
+	 * @generated
+	 */
+	int SESSION_EXPERIMENT__MODEL_ID = 2;
+
+	/**
+	 * @generated
+	 */
+	int SESSION_EXPERIMENT__DATASET_ID = 3;
+
+	/**
+	 * @generated
+	 */
+	int SESSION_EXPERIMENT__METRICS = 4;
+
+	/**
+	 * @generated
+	 */
+	int SESSION_EXPERIMENT__LOGS = 5;
+
+	/**
+	 * @generated
+	 */
+	int SESSION_EXPERIMENT_FEATURE_COUNT = 6;
+
+	/**
+	 * @generated
+	 */
+	int SESSION_EXPERIMENT_OPERATION_COUNT = 0;
+
+	/**
+	 * @generated
+	 */
+	int SESSION_SNAPSHOT = 42;
+
+	/**
+	 * @generated
+	 */
+	int SESSION_SNAPSHOT__ID = 0;
+
+	/**
+	 * @generated
+	 */
+	int SESSION_SNAPSHOT__SESSION_ID = 1;
+
+	/**
+	 * @generated
+	 */
+	int SESSION_SNAPSHOT__GENOME_SNAPSHOT_ID = 2;
+
+	/**
+	 * @generated
+	 */
+	int SESSION_SNAPSHOT__FULL_SERIALIZED_STATE = 3;
+
+	/**
+	 * @generated
+	 */
+	int SESSION_SNAPSHOT__TIMESTAMP = 4;
+
+	/**
+	 * @generated
+	 */
+	int SESSION_SNAPSHOT_FEATURE_COUNT = 5;
+
+	/**
+	 * @generated
+	 */
+	int SESSION_SNAPSHOT_OPERATION_COUNT = 0;
+
+	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.TaskStatus <em>Task Status</em>}' enum.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -3605,7 +3801,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getTaskStatus()
 	 * @generated
 	 */
-	int TASK_STATUS = 39;
+	int TASK_STATUS = 43;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.LogLevel <em>Log Level</em>}' enum.
@@ -3615,7 +3811,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getLogLevel()
 	 * @generated
 	 */
-	int LOG_LEVEL = 40;
+	int LOG_LEVEL = 44;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.FeedbackLevel <em>Feedback Level</em>}' enum.
@@ -3625,7 +3821,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getFeedbackLevel()
 	 * @generated
 	 */
-	int FEEDBACK_LEVEL = 41;
+	int FEEDBACK_LEVEL = 45;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.SessionType <em>Session Type</em>}' enum.
@@ -3635,7 +3831,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSessionType()
 	 * @generated
 	 */
-	int SESSION_TYPE = 42;
+	int SESSION_TYPE = 46;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.CommandStatus <em>Command Status</em>}' enum.
@@ -3645,7 +3841,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getCommandStatus()
 	 * @generated
 	 */
-	int COMMAND_STATUS = 43;
+	int COMMAND_STATUS = 47;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.ExecutionMode <em>Execution Mode</em>}' enum.
@@ -3655,7 +3851,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getExecutionMode()
 	 * @generated
 	 */
-	int EXECUTION_MODE = 44;
+	int EXECUTION_MODE = 48;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.NeuronType <em>Neuron Type</em>}' enum.
@@ -3665,7 +3861,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getNeuronType()
 	 * @generated
 	 */
-	int NEURON_TYPE = 45;
+	int NEURON_TYPE = 49;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.AiMode <em>Ai Mode</em>}' enum.
@@ -3675,7 +3871,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getAiMode()
 	 * @generated
 	 */
-	int AI_MODE = 46;
+	int AI_MODE = 50;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.SelfDevStatus <em>Self Dev Status</em>}' enum.
@@ -3685,7 +3881,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSelfDevStatus()
 	 * @generated
 	 */
-	int SELF_DEV_STATUS = 47;
+	int SELF_DEV_STATUS = 51;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.IterationStatus <em>Iteration Status</em>}' enum.
@@ -3695,7 +3891,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getIterationStatus()
 	 * @generated
 	 */
-	int ITERATION_STATUS = 48;
+	int ITERATION_STATUS = 52;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.SelfDevDecision <em>Self Dev Decision</em>}' enum.
@@ -3705,7 +3901,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSelfDevDecision()
 	 * @generated
 	 */
-	int SELF_DEV_DECISION = 49;
+	int SELF_DEV_DECISION = 53;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.TestStatus <em>Test Status</em>}' enum.
@@ -3715,7 +3911,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getTestStatus()
 	 * @generated
 	 */
-	int TEST_STATUS = 50;
+	int TEST_STATUS = 54;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.ReviewDecision <em>Review Decision</em>}' enum.
@@ -3725,7 +3921,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getReviewDecision()
 	 * @generated
 	 */
-	int REVIEW_DECISION = 51;
+	int REVIEW_DECISION = 55;
 
 
 	/**
@@ -4560,6 +4756,11 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 */
 	EReference getOrchestrator_GenomeSnapshots();
+
+	/**
+	 * @generated
+	 */
+	EReference getOrchestrator_ForgeSessions();
 
 	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.GenomeSnapshot <em>Genome Snapshot</em>}'.
@@ -7023,6 +7224,161 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getPromptInstructions_StepMode();
 
 	/**
+	 * @generated
+	 */
+	EEnum getForgeStatus();
+
+	/**
+	 * @generated
+	 */
+	EClass getForgeSession();
+
+	/**
+	 * @generated
+	 */
+	EAttribute getForgeSession_SessionId();
+
+	/**
+	 * @generated
+	 */
+	EAttribute getForgeSession_Name();
+
+	/**
+	 * @generated
+	 */
+	EAttribute getForgeSession_CreatedAt();
+
+	/**
+	 * @generated
+	 */
+	EAttribute getForgeSession_LastModified();
+
+	/**
+	 * @generated
+	 */
+	EAttribute getForgeSession_Status();
+
+	/**
+	 * @generated
+	 */
+	EAttribute getForgeSession_ActiveModelId();
+
+	/**
+	 * @generated
+	 */
+	EAttribute getForgeSession_SelectedModelType();
+
+	/**
+	 * @generated
+	 */
+	EReference getForgeSession_ModelState();
+
+	/**
+	 * @generated
+	 */
+	EReference getForgeSession_Experiments();
+
+	/**
+	 * @generated
+	 */
+	EReference getForgeSession_Snapshots();
+
+	/**
+	 * @generated
+	 */
+	EClass getSessionModelState();
+
+	/**
+	 * @generated
+	 */
+	EAttribute getSessionModelState_SessionId();
+
+	/**
+	 * @generated
+	 */
+	EAttribute getSessionModelState_ModelGraph();
+
+	/**
+	 * @generated
+	 */
+	EAttribute getSessionModelState_Hyperparameters();
+
+	/**
+	 * @generated
+	 */
+	EAttribute getSessionModelState_DatasetBindings();
+
+	/**
+	 * @generated
+	 */
+	EAttribute getSessionModelState_RuntimeState();
+
+	/**
+	 * @generated
+	 */
+	EClass getSessionExperiment();
+
+	/**
+	 * @generated
+	 */
+	EAttribute getSessionExperiment_Id();
+
+	/**
+	 * @generated
+	 */
+	EAttribute getSessionExperiment_SessionId();
+
+	/**
+	 * @generated
+	 */
+	EAttribute getSessionExperiment_ModelId();
+
+	/**
+	 * @generated
+	 */
+	EAttribute getSessionExperiment_DatasetId();
+
+	/**
+	 * @generated
+	 */
+	EAttribute getSessionExperiment_Metrics();
+
+	/**
+	 * @generated
+	 */
+	EAttribute getSessionExperiment_Logs();
+
+	/**
+	 * @generated
+	 */
+	EClass getSessionSnapshot();
+
+	/**
+	 * @generated
+	 */
+	EAttribute getSessionSnapshot_Id();
+
+	/**
+	 * @generated
+	 */
+	EAttribute getSessionSnapshot_SessionId();
+
+	/**
+	 * @generated
+	 */
+	EAttribute getSessionSnapshot_GenomeSnapshotId();
+
+	/**
+	 * @generated
+	 */
+	EAttribute getSessionSnapshot_FullSerializedState();
+
+	/**
+	 * @generated
+	 */
+	EAttribute getSessionSnapshot_Timestamp();
+
+	/**
 	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.TaskStatus <em>Task Status</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -7151,6 +7507,16 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 */
 	EEnum getReviewDecision();
+
+	/**
+	 * @generated
+	 */
+	EEnum getForgeStatus();
+
+	/**
+	 * @generated
+	 */
+	int FORGE_STATUS = 56;
 
 	/**
 	 * Returns the factory that creates the instances of the model.
@@ -7788,6 +8154,11 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EReference ORCHESTRATOR__GENOME_SNAPSHOTS = eINSTANCE.getOrchestrator_GenomeSnapshots();
+
+		/**
+		 * @generated
+		 */
+		EReference ORCHESTRATOR__FORGE_SESSIONS = eINSTANCE.getOrchestrator_ForgeSessions();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.GenomeSnapshotImpl <em>Genome Snapshot</em>}' class.

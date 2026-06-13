@@ -63,6 +63,8 @@ public class EvolutionServer extends NanoHTTPD {
                 return handleGetIndex();
             } else if (Method.GET.equals(method) && "/experimental/chat".equals(uri)) {
                 return handleGetChat();
+            } else if (Method.GET.equals(method) && "/experimental/forge".equals(uri)) {
+                return handleGetForge();
             } else if (Method.GET.equals(method) && "/server/status".equals(uri)) {
                 return handleGetServerStatus();
             } else if (Method.GET.equals(method) && "/server/system/state".equals(uri)) {
@@ -104,6 +106,27 @@ public class EvolutionServer extends NanoHTTPD {
                 return handleApplyPatch(session);
             } else if (Method.GET.equals(method) && "/git/branches".equals(uri)) {
                 return handleGetGitBranches(session);
+            } else if (Method.GET.equals(method) && "/forge/sessions".equals(uri)) {
+                return handleGetForgeSessions();
+            } else if (Method.POST.equals(method) && "/forge/session".equals(uri)) {
+                return handleCreateForgeSession(session);
+            } else if (Method.GET.equals(method) && uri.startsWith("/forge/session/")) {
+                String id = uri.substring("/forge/session/".length());
+                if (id.endsWith("/model")) {
+                    return handleGetForgeModel(id.substring(0, id.length() - 6));
+                }
+                return handleGetForgeSession(id);
+            } else if (Method.POST.equals(method) && uri.startsWith("/forge/session/")) {
+                String id = uri.substring("/forge/session/".length());
+                if (id.endsWith("/model")) {
+                    return handleUpdateForgeModel(id.substring(0, id.length() - 6), session);
+                } else if (id.endsWith("/clone")) {
+                    return handleCloneForgeSession(id.substring(0, id.length() - 6), session);
+                }
+            } else if (Method.DELETE.equals(method) && uri.startsWith("/forge/session/")) {
+                return handleDeleteForgeSession(uri.substring("/forge/session/".length()));
+            } else if (Method.POST.equals(method) && uri.startsWith("/forge/dataset/generate")) {
+                return handleGenerateSyntheticDataset(session);
             }
         } catch (Exception e) {
             return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json",
@@ -352,6 +375,20 @@ public class EvolutionServer extends NanoHTTPD {
         }
     }
 
+    private Response handleGetForge() {
+        try (InputStream is = getClass().getResourceAsStream("forge.html")) {
+            if (is == null) {
+                return newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "forge.html not found");
+            }
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+                String content = reader.lines().collect(Collectors.joining("\n"));
+                return newFixedLengthResponse(Response.Status.OK, "text/html", content);
+            }
+        } catch (IOException e) {
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", e.getMessage());
+        }
+    }
+
     private Response handleApproveConversation(String id, IHTTPSession session) throws IOException, ResponseException {
         Map<String, String> files = new HashMap<>();
         session.parseBody(files);
@@ -565,6 +602,91 @@ public class EvolutionServer extends NanoHTTPD {
         }
 
         return newFixedLengthResponse(Response.Status.OK, "application/json", root.toString());
+    }
+
+    private Response handleGetForgeSessions() {
+        JSONArray array = new JSONArray();
+        for (eu.kalafatic.evolution.model.orchestration.ForgeSession s : ForgeSessionManager.getInstance().getSessions()) {
+            array.put(new JSONObject()
+                .put("id", s.getSessionId())
+                .put("name", s.getName())
+                .put("modelType", s.getSelectedModelType())
+                .put("status", s.getStatus().getName())
+                .put("lastModified", s.getLastModified()));
+        }
+        return newFixedLengthResponse(Response.Status.OK, "application/json", array.toString());
+    }
+
+    private Response handleGetForgeSession(String id) {
+        eu.kalafatic.evolution.model.orchestration.ForgeSession s = ForgeSessionManager.getInstance().findSession(id);
+        if (s == null) return newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "Session not found");
+
+        JSONObject json = new JSONObject()
+            .put("id", s.getSessionId())
+            .put("name", s.getName())
+            .put("modelType", s.getSelectedModelType())
+            .put("status", s.getStatus().getName())
+            .put("createdAt", s.getCreatedAt())
+            .put("lastModified", s.getLastModified());
+
+        return newFixedLengthResponse(Response.Status.OK, "application/json", json.toString());
+    }
+
+    private Response handleCreateForgeSession(IHTTPSession session) throws IOException, ResponseException {
+        Map<String, String> files = new HashMap<>();
+        session.parseBody(files);
+        String postData = files.get("postData");
+        JSONObject body = new JSONObject(postData);
+
+        eu.kalafatic.evolution.model.orchestration.ForgeSession s = ForgeSessionManager.getInstance().createSession(
+            body.getString("name"), body.getString("modelType"));
+
+        return newFixedLengthResponse(Response.Status.OK, "application/json", new JSONObject().put("id", s.getSessionId()).toString());
+    }
+
+    private Response handleDeleteForgeSession(String id) {
+        boolean deleted = ForgeSessionManager.getInstance().deleteSession(id);
+        if (deleted) return newFixedLengthResponse(Response.Status.OK, "application/json", "{\"status\": \"ok\"}");
+        return newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "Session not found");
+    }
+
+    private Response handleGetForgeModel(String id) {
+        eu.kalafatic.evolution.model.orchestration.ForgeSession s = ForgeSessionManager.getInstance().findSession(id);
+        if (s == null) return newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "Session not found");
+
+        return newFixedLengthResponse(Response.Status.OK, "application/json", s.getModelState().getModelGraph());
+    }
+
+    private Response handleUpdateForgeModel(String id, IHTTPSession session) throws IOException, ResponseException {
+        Map<String, String> files = new HashMap<>();
+        session.parseBody(files);
+        String postData = files.get("postData");
+
+        ForgeSessionManager.getInstance().updateModel(id, postData);
+        return newFixedLengthResponse(Response.Status.OK, "application/json", "{\"status\": \"ok\"}");
+    }
+
+    private Response handleGenerateSyntheticDataset(IHTTPSession session) throws IOException, ResponseException {
+        Map<String, String> files = new HashMap<>();
+        session.parseBody(files);
+        String postData = files.get("postData");
+        JSONObject body = new JSONObject(postData != null ? postData : "{}");
+        String type = body.optString("type", "random");
+
+        String result = ForgeSessionManager.getInstance().generateSyntheticDataset(type);
+        return newFixedLengthResponse(Response.Status.OK, "application/json", result);
+    }
+
+    private Response handleCloneForgeSession(String id, IHTTPSession session) throws IOException, ResponseException {
+        Map<String, String> files = new HashMap<>();
+        session.parseBody(files);
+        String postData = files.get("postData");
+        JSONObject body = new JSONObject(postData);
+
+        eu.kalafatic.evolution.model.orchestration.ForgeSession clone = ForgeSessionManager.getInstance().cloneSession(id, body.getString("name"));
+        if (clone == null) return newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "Original session not found");
+
+        return newFixedLengthResponse(Response.Status.OK, "application/json", new JSONObject().put("id", clone.getSessionId()).toString());
     }
 
     private Response handleGetGitBranches(IHTTPSession session) {

@@ -559,6 +559,11 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	protected EList<eu.kalafatic.evolution.model.orchestration.GenomeSnapshot> genomeSnapshots;
 
 	/**
+	 * @generated
+	 */
+	protected EList<eu.kalafatic.evolution.model.orchestration.ForgeSession> forgeSessions;
+
+	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
@@ -1566,6 +1571,17 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	}
 
 	/**
+	 * @generated
+	 */
+	@Override
+	public EList<eu.kalafatic.evolution.model.orchestration.ForgeSession> getForgeSessions() {
+		if (forgeSessions == null) {
+			forgeSessions = new EObjectContainmentEList<eu.kalafatic.evolution.model.orchestration.ForgeSession>(eu.kalafatic.evolution.model.orchestration.ForgeSession.class, this, OrchestrationPackage.ORCHESTRATOR__FORGE_SESSIONS);
+		}
+		return forgeSessions;
+	}
+
+	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
@@ -1615,6 +1631,8 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return ((InternalEList<?>)getNetworkEntries()).basicRemove(otherEnd, msgs);
 			case OrchestrationPackage.ORCHESTRATOR__GENOME_SNAPSHOTS:
 				return ((InternalEList<?>)getGenomeSnapshots()).basicRemove(otherEnd, msgs);
+			case OrchestrationPackage.ORCHESTRATOR__FORGE_SESSIONS:
+				return ((InternalEList<?>)getForgeSessions()).basicRemove(otherEnd, msgs);
 		}
 		return super.eInverseRemove(otherEnd, featureID, msgs);
 	}
@@ -1695,6 +1713,8 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return getDefaultTarget();
 			case OrchestrationPackage.ORCHESTRATOR__GENOME_SNAPSHOTS:
 				return getGenomeSnapshots();
+			case OrchestrationPackage.ORCHESTRATOR__FORGE_SESSIONS:
+				return getForgeSessions();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -1818,6 +1838,10 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				getGenomeSnapshots().clear();
 				getGenomeSnapshots().addAll((Collection<? extends eu.kalafatic.evolution.model.orchestration.GenomeSnapshot>)newValue);
 				return;
+			case OrchestrationPackage.ORCHESTRATOR__FORGE_SESSIONS:
+				getForgeSessions().clear();
+				getForgeSessions().addAll((Collection<? extends eu.kalafatic.evolution.model.orchestration.ForgeSession>)newValue);
+				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -1932,6 +1956,9 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			case OrchestrationPackage.ORCHESTRATOR__GENOME_SNAPSHOTS:
 				getGenomeSnapshots().clear();
 				return;
+			case OrchestrationPackage.ORCHESTRATOR__FORGE_SESSIONS:
+				getForgeSessions().clear();
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -2012,6 +2039,8 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return DEFAULT_TARGET_EDEFAULT == null ? defaultTarget != null : !DEFAULT_TARGET_EDEFAULT.equals(defaultTarget);
 			case OrchestrationPackage.ORCHESTRATOR__GENOME_SNAPSHOTS:
 				return genomeSnapshots != null && !genomeSnapshots.isEmpty();
+			case OrchestrationPackage.ORCHESTRATOR__FORGE_SESSIONS:
+				return forgeSessions != null && !forgeSessions.isEmpty();
 		}
 		return super.eIsSet(featureID);
 	}
