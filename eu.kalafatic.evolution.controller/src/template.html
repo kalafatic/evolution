@@ -203,6 +203,12 @@
     <script>
         window.onload = (event) => {
             log('ready');
+            if (window.INITIAL_MODEL && window.INITIAL_MODEL.components && window.INITIAL_MODEL.components.length > 0) {
+                log('Rendering initial model...');
+                if (window.updateGraph) {
+                    window.updateGraph(window.INITIAL_MODEL);
+                }
+            }
         };
     </script>
 </body>
