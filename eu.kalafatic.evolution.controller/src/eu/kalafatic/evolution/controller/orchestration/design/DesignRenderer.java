@@ -45,11 +45,16 @@ public class DesignRenderer {
             d3Js = "log('ERROR: /js/d3.v7.min.js not found in bundle resources!');";
         }
 
+        // Use JSON quoting to safely escape strings (especially paths with backslashes) for JS insertion
+        String viewModeJson = org.json.JSONObject.quote(viewMode != null ? viewMode : "COMPONENTS");
+        String targetPathJson = org.json.JSONObject.quote(targetPath != null ? targetPath : "");
+        String defaultPathJson = org.json.JSONObject.quote(defaultPath != null ? defaultPath : "");
+
         return template
             .replace("{{MODEL_JSON}}", serializeModel(model))
-            .replace("{{VIEW_MODE}}", viewMode != null ? viewMode : "COMPONENTS")
-            .replace("{{TARGET_PATH}}", targetPath != null ? targetPath : "")
-            .replace("{{DEFAULT_PATH}}", defaultPath != null ? defaultPath : "")
+            .replace("{{VIEW_MODE_JSON}}", viewModeJson)
+            .replace("{{TARGET_PATH_JSON}}", targetPathJson)
+            .replace("{{DEFAULT_PATH_JSON}}", defaultPathJson)
             .replace("{{TARGET_HISTORY_JSON}}", new org.json.JSONArray(history).toString())
             .replace("{{NAVIGATOR_JS}}", navigatorJs)
             .replace("{{D3_JS}}", d3Js);

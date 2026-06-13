@@ -174,39 +174,57 @@
         function log(msg) { if (window.logFunction) window.logFunction(msg); else console.log(msg); }
 
         window.INITIAL_MODEL = {{MODEL_JSON}};
-        window.CURRENT_VIEW_MODE = "{{VIEW_MODE}}";
-        window.TARGET_PATH = "{{TARGET_PATH}}";
-        window.DEFAULT_PATH = "{{DEFAULT_PATH}}";
+        window.CURRENT_VIEW_MODE = {{VIEW_MODE_JSON}};
+        window.TARGET_PATH = {{TARGET_PATH_JSON}};
+        window.DEFAULT_PATH = {{DEFAULT_PATH_JSON}};
         window.TARGET_HISTORY = {{TARGET_HISTORY_JSON}};
 
-        // Sync select dropdown
-        document.getElementById('mode-select').value = window.CURRENT_VIEW_MODE;
+        function initUI() {
+            log('Initializing UI elements...');
+            // Sync select dropdown
+            const modeSelect = document.getElementById('mode-select');
+            if (modeSelect) modeSelect.value = window.CURRENT_VIEW_MODE;
 
-        const targetSelect = document.getElementById('target-select');
-        window.TARGET_HISTORY.forEach(path => {
-            const opt = document.createElement('option');
-            opt.value = path;
-            let displayPath = path;
-            if (path === window.DEFAULT_PATH) {
-                displayPath = "EVO (default): " + path;
+            const targetSelect = document.getElementById('target-select');
+            if (targetSelect) {
+                targetSelect.innerHTML = '';
+                window.TARGET_HISTORY.forEach(path => {
+                    const opt = document.createElement('option');
+                    opt.value = path;
+                    let displayPath = path;
+                    if (path === window.DEFAULT_PATH) {
+                        displayPath = "EVO (default): " + path;
+                    }
+                    opt.text = displayPath;
+                    if (path === window.TARGET_PATH) opt.selected = true;
+                    targetSelect.appendChild(opt);
+                });
             }
-            opt.text = displayPath;
-            if (path === window.TARGET_PATH) opt.selected = true;
-            targetSelect.appendChild(opt);
-        });
 
-        if (window.INITIAL_MODEL && window.INITIAL_MODEL.name) {
-            document.getElementById('project-title').innerText = window.INITIAL_MODEL.name;
+            if (window.INITIAL_MODEL && window.INITIAL_MODEL.name) {
+                const projectTitle = document.getElementById('project-title');
+                if (projectTitle) projectTitle.innerText = window.INITIAL_MODEL.name;
+            }
         }
     </script>
     <script>{{NAVIGATOR_JS}}</script>
     <script>
         window.onload = (event) => {
             log('ready');
+            initUI();
             if (window.INITIAL_MODEL && window.INITIAL_MODEL.components && window.INITIAL_MODEL.components.length > 0) {
                 log('Rendering initial model...');
                 if (window.updateGraph) {
                     window.updateGraph(window.INITIAL_MODEL);
+                } else {
+                    log('ERROR: updateGraph not found on load');
+                    // Retry once after a short delay if D3/Navigator hasn't initialized yet
+                    setTimeout(() => {
+                        if (window.updateGraph) {
+                            log('Retrying rendering initial model...');
+                            window.updateGraph(window.INITIAL_MODEL);
+                        }
+                    }, 500);
                 }
             }
         };
