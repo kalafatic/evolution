@@ -19,6 +19,12 @@ public class EvolutionEvent {
         COGNITIVE
     }
 
+    public enum CausalityType {
+        DIRECT,     // Explicit linkage (correlationId, parentEventId)
+        STRUCTURAL, // Grouped by iteration/phase
+        INFERRED    // Heuristic correlation
+    }
+
     private final EELType eventType;
     private final String component;
     private final String correlationId;
@@ -32,6 +38,8 @@ public class EvolutionEvent {
     private String cause;
     private String impact;
     private String evolutionSignal;
+    private CausalityType causalityType = CausalityType.INFERRED;
+    private double confidenceScore = 0.5;
 
     private final long timestamp;
     private final Map<String, Object> metadata = new HashMap<>();
@@ -70,6 +78,12 @@ public class EvolutionEvent {
 
     public String getEvolutionSignal() { return evolutionSignal; }
     public void setEvolutionSignal(String evolutionSignal) { this.evolutionSignal = evolutionSignal; }
+
+    public CausalityType getCausalityType() { return causalityType; }
+    public void setCausalityType(CausalityType causalityType) { this.causalityType = causalityType; }
+
+    public double getConfidenceScore() { return confidenceScore; }
+    public void setConfidenceScore(double confidenceScore) { this.confidenceScore = confidenceScore; }
 
     public Map<String, Object> getMetadata() { return metadata; }
 

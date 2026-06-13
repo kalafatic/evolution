@@ -9,13 +9,15 @@ import java.util.stream.Collectors;
 
 import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
 import eu.kalafatic.evolution.controller.orchestration.SessionManager;
+import eu.kalafatic.evolution.controller.workflow.EvolutionEvent.CausalityType;
 import eu.kalafatic.evolution.controller.workflow.EvolutionEvent.EELType;
 
 /**
  * EvolutionaryObservabilityManager
  *
- * Thin extraction layer that converts RuntimeEvents to EvolutionEvents (EEL).
- * Performs causal linking and aggregation.
+ * Pure transformation and enrichment layer.
+ * Acts as a passive, read-only observer of existing system behavior.
+ * Does NOT decide routing logic, interpret evolution outcomes, or steer the kernel.
  */
 public class EvolutionaryObservabilityManager implements RuntimeEventListener {
 
@@ -101,13 +103,21 @@ public class EvolutionaryObservabilityManager implements RuntimeEventListener {
         routeToExistingSubsystems(eel, event);
 
         String correlationId = eel.getCorrelationId();
-        if (correlationId != null) {
-            causalChains.computeIfAbsent(correlationId, k -> new ArrayList<>()).add(eel.getTimestamp() + ":" + event.getType());
-        }
-
         String iterationId = eel.getIterationId();
-        if (iterationId != null) {
-            causalChains.computeIfAbsent(iterationId, k -> new ArrayList<>()).add(eel.getTimestamp() + ":" + event.getType());
+        String taskId = eel.getTaskId();
+
+        if (correlationId != null || taskId != null) {
+            eel.setCausalityType(CausalityType.DIRECT);
+            eel.setConfidenceScore(1.0);
+            String key = correlationId != null ? correlationId : taskId;
+            causalChains.computeIfAbsent(key, k -> new ArrayList<>()).add(eel.getTimestamp() + ":" + event.getType() + " [DIRECT]");
+        } else if (iterationId != null) {
+            eel.setCausalityType(CausalityType.STRUCTURAL);
+            eel.setConfidenceScore(0.8);
+            causalChains.computeIfAbsent(iterationId, k -> new ArrayList<>()).add(eel.getTimestamp() + ":" + event.getType() + " [STRUCTURAL]");
+        } else {
+            eel.setCausalityType(CausalityType.INFERRED);
+            eel.setConfidenceScore(0.3);
         }
     }
 
