@@ -7,5 +7,8 @@ public enum EventCategory {
     EXECUTION,  // Tools & Side Effects
     UI,         // Presentation Layer
     SUPERVISOR, // Governance Layer
-    WORKSPACE   // Semantic Reasoning Environment
+    WORKSPACE,  // Semantic Reasoning Environment
+    FITNESS,    // Stability & Performance signals
+    SYSTEM,     // Low-level runtime events
+    COGNITIVE   // LLM reasoning & trajectory state
 }

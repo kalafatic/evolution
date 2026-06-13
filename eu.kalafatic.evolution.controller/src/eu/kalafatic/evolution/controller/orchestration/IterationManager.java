@@ -587,6 +587,7 @@ public class IterationManager {
         }
 
         TransitionToken token = new TransitionToken();
+        SystemState from = ctx.getStateHolder().getState();
         ctx.getStateHolder().applyTransition(token, to);
 
         if (to == SystemState.INIT || to == SystemState.RECOVERING) {
@@ -612,7 +613,9 @@ public class IterationManager {
             new eu.kalafatic.evolution.controller.workflow.RuntimeEvent(
                 eu.kalafatic.evolution.controller.workflow.RuntimeEventType.SUPERVISOR_STATUS_CHANGED,
                 ctx.getSessionId(), "Kernel", to.toString())
-                .withMetadata("execId", ctx.getDeterministicExecutionId()));
+                .withMetadata("execId", ctx.getDeterministicExecutionId())
+                .withMetadata("fromState", from != null ? from.toString() : "NONE")
+                .withMetadata("toState", to.toString()));
 
         String logMsg = String.format("[KERNEL] [%s] [%d] [%d] Transition: %s -> %s", ctx.getDeterministicExecutionId(), System.currentTimeMillis(), Thread.currentThread().getId(), (current != null ? current : "NONE"), to);
         ctx.log(logMsg);
@@ -635,6 +638,8 @@ public class IterationManager {
 
     public OrchestratorResponse evolve(String request, TaskContext context, EvolutionAssessment initialAssessment) throws Exception {
         context.log("[KERNEL] Starting Recursive Evolutionary Cognition Loop.");
+
+        sessionContainer.getEventBus().publish(new RuntimeEvent(RuntimeEventType.FLOW_STARTED, context.getSessionId(), "Kernel", request));
 
         OrchestrationState state = context.getOrchestrationState();
         state.getCognitiveTrace().addNode(new CausalNode(
@@ -674,6 +679,7 @@ public class IterationManager {
             saveFullCheckpoint();
 
             if (result.getDecision() != SelfDevDecision.CONTINUE) {
+                sessionContainer.getEventBus().publish(new RuntimeEvent(RuntimeEventType.FLOW_COMPLETED, context.getSessionId(), "Kernel", result.getDecision().toString()));
                 break;
             }
 
@@ -1590,6 +1596,7 @@ public class IterationManager {
 
             // POPULATE NEW FIELDS FROM METADATA/HISTORY
             if (model != null) {
+                model.getMetadata().put("sessionId", sessionId);
                 Object impacts = context.getOrchestrationState().getMetadata().get("impactPaths");
                 if (impacts instanceof List) model.getImpactPaths().addAll((List<String>) impacts);
 
@@ -1730,6 +1737,8 @@ public class IterationManager {
         applyDecision(decision, variants, context);
 
         // UI SYNC: Emit centralized [DARWIN_BRANCHES] message for variant status updates
+        sessionContainer.getEventBus().publish(new RuntimeEvent(RuntimeEventType.DECISION_UPDATED, context.getSessionId(), manualSelectionId, iterationId, "Kernel", decision.getSelectedVariantId(), System.currentTimeMillis()));
+
         StringBuilder outcomeBuilder = new StringBuilder("[DARWIN_BRANCHES] ");
         String winnerId = decision.getSelectedVariantId();
         outcomeBuilder.append("[APPROVED:").append(winnerId).append("] ");

@@ -39,6 +39,7 @@ public class TargetRealityModel {
     private final List<String> lessons = new ArrayList<>();
     private final List<String> patterns = new ArrayList<>();
     private final List<String> referenceImplementations = new ArrayList<>();
+    private final Map<String, Object> metadata = new HashMap<>();
 
     private final Map<String, Object> architectureView = new HashMap<>();
     private final Map<String, Object> implementationView = new HashMap<>();
@@ -88,6 +89,7 @@ public class TargetRealityModel {
     public List<String> getLessons() { return lessons; }
     public List<String> getPatterns() { return patterns; }
     public List<String> getReferenceImplementations() { return referenceImplementations; }
+    public Map<String, Object> getMetadata() { return metadata; }
 
     public Map<String, Object> getArchitectureView() { return architectureView; }
     public Map<String, Object> getImplementationView() { return implementationView; }

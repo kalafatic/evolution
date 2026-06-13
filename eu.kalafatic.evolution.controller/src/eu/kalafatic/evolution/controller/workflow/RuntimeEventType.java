@@ -64,7 +64,16 @@ public enum RuntimeEventType {
     ARTIFACT_PROMOTED(EventCategory.WORKSPACE),
     TRAJECTORY_STRENGTHENED(EventCategory.WORKSPACE),
     MEMORY_DECAY_APPLIED(EventCategory.WORKSPACE),
-    CONTEXT_OVERLOAD_DETECTED(EventCategory.WORKSPACE);
+    CONTEXT_OVERLOAD_DETECTED(EventCategory.WORKSPACE),
+
+    // 8. FITNESS (Stability & Performance)
+    STABILITY_SIGNAL(EventCategory.FITNESS),
+    MUTATION_SUCCESS(EventCategory.FITNESS),
+    FAILURE_CLUSTER_DETECTED(EventCategory.FITNESS),
+
+    // 9. COGNITIVE (LLM Reasoning)
+    REASONING_TRACE(EventCategory.COGNITIVE),
+    INTENT_GROUNDED(EventCategory.COGNITIVE);
 
     private final EventCategory category;
 

@@ -30,6 +30,7 @@ import eu.kalafatic.evolution.controller.trajectory.ResultSynthesizer;
 import eu.kalafatic.evolution.controller.trajectory.Trajectory;
 import eu.kalafatic.evolution.controller.trajectory.TrajectoryAnalysisRecord;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
 import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
 import eu.kalafatic.evolution.model.orchestration.Iteration;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
@@ -99,6 +100,8 @@ public class DarwinFlow implements IOrchestrationFlow {
 
         FailureMemory failureMemory = context.getKernelContext().getMemoryService().getFailureMemory();
 
+        sessionContainer.getEventBus().publish(new RuntimeEvent(RuntimeEventType.MUTATING, context.getSessionId(), "DarwinFlow", goal));
+
         eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionaryPressureVector pressure = null;
         if (trajectory != null) {
             pressure = manager.getPressureEngine().analyze(trajectory, context);
@@ -117,6 +120,8 @@ public class DarwinFlow implements IOrchestrationFlow {
 
         EvolutionProgressPublisher.updateStage(context, EvolutionStage.GENERATE_BRANCH);
         List<BranchVariant> rawVariants = manager.getDarwinEngine().generateVariants(goal, snapshot, failureMemory, trajectory, pressure);
+
+        sessionContainer.getEventBus().publish(new RuntimeEvent(RuntimeEventType.BRANCH_CREATED, context.getSessionId(), "DarwinFlow", rawVariants.size()));
 
         if (rawVariants.isEmpty()) {
             return Collections.emptyList();
@@ -172,6 +177,9 @@ public class DarwinFlow implements IOrchestrationFlow {
                     .filter(v -> v.getId().equals(finalWinnerId))
                     .findFirst().orElse(null);
         }
+
+        double winnerScore = decision.getAggregatedScores().getOrDefault(finalWinnerId, 0.0);
+        sessionContainer.getEventBus().publish(new RuntimeEvent(RuntimeEventType.VARIANT_EVALUATED, context.getSessionId(), finalWinnerId, iterId, "DarwinFlow", winnerScore, System.currentTimeMillis()));
 
         if (selectedVariant == null || (selectedVariant.getActivationState() != BranchVariant.ActivationState.ACTIVE && selectedVariant.getScore() < 0.3)) {
             context.log("[KERNEL] Darwin Evolution: No viable winner selected or winner score too low.");

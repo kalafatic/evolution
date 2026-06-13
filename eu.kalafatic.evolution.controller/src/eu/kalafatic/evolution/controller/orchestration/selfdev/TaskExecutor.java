@@ -4,6 +4,8 @@ import java.util.List;
 
 import eu.kalafatic.evolution.controller.orchestration.EvolutionOrchestrator;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
 import eu.kalafatic.evolution.model.orchestration.Task;
 
 public class TaskExecutor {
@@ -38,10 +40,13 @@ public class TaskExecutor {
         // HOWEVER, EvolutionOrchestrator (which this class owns) can execute tasks directly.
         try {
             for (Task task : tasks) {
+                context.getKernelContext().getEventBus().publish(new RuntimeEvent(RuntimeEventType.TASK_STARTED, context.getSessionId(), "TaskExecutor", task.getId()));
                 orchestrator.executeTask(task, context);
+                context.getKernelContext().getEventBus().publish(new RuntimeEvent(RuntimeEventType.TASK_COMPLETED, context.getSessionId(), "TaskExecutor", task.getId()));
             }
             return true;
         } catch (Exception e) {
+            context.getKernelContext().getEventBus().publish(new RuntimeEvent(RuntimeEventType.TASK_FAILED, context.getSessionId(), "TaskExecutor", e.getMessage()));
             context.log("[EXECUTOR] Direct execution failed: " + e.getMessage());
             return false;
         }

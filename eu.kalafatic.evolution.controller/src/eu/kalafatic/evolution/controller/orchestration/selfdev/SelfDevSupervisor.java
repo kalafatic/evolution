@@ -81,6 +81,14 @@ public class SelfDevSupervisor {
 
                 if (!result.isSuccess() || result.getDecision() == SelfDevDecision.ROLLBACK) {
                     failureCount++;
+
+                    context.getKernelContext().getEventBus().publish(
+                        new eu.kalafatic.evolution.controller.workflow.RuntimeEvent(
+                            eu.kalafatic.evolution.controller.workflow.RuntimeEventType.TASK_FAILED,
+                            context.getSessionId(), "Supervisor", "Iteration failed: " + i)
+                            .withMetadata("iteration", i)
+                            .withMetadata("decision", result.getDecision().toString()));
+
                     context.log("[SUPERVISOR] Iteration " + i + " failed. Total failures: " + failureCount);
                     if (failureCount >= MAX_FAILURES) {
                         context.log("[SUPERVISOR] Max failures (" + MAX_FAILURES + ") reached. Stopping session.");
@@ -119,6 +127,11 @@ public class SelfDevSupervisor {
             if (session.getStatus() == SelfDevStatus.RUNNING) {
                 session.setStatus(SelfDevStatus.COMPLETED);
             }
+
+            context.getKernelContext().getEventBus().publish(
+                new eu.kalafatic.evolution.controller.workflow.RuntimeEvent(
+                    eu.kalafatic.evolution.controller.workflow.RuntimeEventType.FLOW_COMPLETED,
+                    context.getSessionId(), "Supervisor", session.getStatus().toString()));
             context.log("[SUPERVISOR] Session completed. Status: " + session.getStatus());
 
         } catch (Exception e) {

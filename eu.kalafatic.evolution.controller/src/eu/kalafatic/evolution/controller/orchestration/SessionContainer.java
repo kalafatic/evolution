@@ -37,6 +37,7 @@ public interface SessionContainer {
     RuntimeCoordinator getRuntimeCoordinator();
     eu.kalafatic.evolution.controller.orchestration.selfdev.IterationMemoryService getMemoryService(java.io.File projectRoot);
     eu.kalafatic.evolution.controller.kernel.EvolutionaryPressureEngine getPressureEngine();
+    eu.kalafatic.evolution.controller.workflow.EvolutionaryObservabilityManager getObservabilityManager();
 
     void shutdown();
 }
