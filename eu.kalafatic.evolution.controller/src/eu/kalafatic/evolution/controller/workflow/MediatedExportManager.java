@@ -65,7 +65,7 @@ public class MediatedExportManager {
         if (profile == ExportProfile.FULL || profile == ExportProfile.ARCHITECTURE) {
             sb.append("- `architecture/`: Complete architectural model and visualization.\n");
         }
-        sb.append("- `logs/`: Evolutionary Event Lineage and causal chains.\n");
+        sb.append("- `observability/`: Evolutionary Event Lineage and causal chains.\n");
         if (profile == ExportProfile.FULL || profile == ExportProfile.IMPLEMENTATION) {
             sb.append("- `implementation/`: implementation-ready context and source files.\n");
         }
@@ -445,13 +445,13 @@ public class MediatedExportManager {
 
         EvolutionaryObservabilityManager obs = session.getObservabilityManager();
 
-        addStringToZip(zos, "logs/timeline.json", serializeToJson(obs.getTimeline()));
-        addStringToZip(zos, "logs/causal_chains.json", serializeToJson(obs.getCausalChains()));
-        addStringToZip(zos, "logs/clusters.json", serializeToJson(obs.getEventLog().stream()
+        addStringToZip(zos, "observability/event_projection.json", serializeToJson(obs.getTimeline()));
+        addStringToZip(zos, "observability/dependency_graph.json", serializeToJson(obs.getCausalChains()));
+        addStringToZip(zos, "observability/failure_space.json", serializeToJson(obs.getEventLog().stream()
             .filter(e -> "CRITICAL".equals(e.getSeverity()))
             .collect(java.util.stream.Collectors.toList())));
 
-        addStringToZip(zos, "logs/summaries/overview.json", serializeToJson(obs.getSummaries()));
+        addStringToZip(zos, "observability/summaries/overview.json", serializeToJson(obs.getSummaries()));
     }
 
     public File generateGenomeProjection(eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel model, File projectRoot) throws IOException {
