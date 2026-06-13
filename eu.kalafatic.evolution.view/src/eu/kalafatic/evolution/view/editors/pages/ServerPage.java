@@ -47,20 +47,20 @@ public class ServerPage extends AEvoPage {
 
     public ServerPage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
         super(parent, editor, orchestrator);
-        initResources();
+       // initResources();
         createControl();
     }
 
-    private void initResources() {
-        Display display = Display.getCurrent();
-        colorWaiting = new Color(display, 255, 140, 0); // Dark Orange
-        lightGreen = new Color(display, 220, 255, 220);
-
-        Font bannerDefault = JFaceResources.getBannerFont();
-        FontData[] bannerData = bannerDefault.getFontData();
-        for (FontData fd : bannerData) fd.setStyle(SWT.BOLD);
-        bannerFont = new Font(display, bannerData);
-    }
+//    protected void initResources() {
+//        Display display = Display.getCurrent();
+//        colorWaiting = new Color(display, 255, 140, 0); // Dark Orange
+//        lightGreen = new Color(display, 220, 255, 220);
+//
+//        Font bannerDefault = JFaceResources.getBannerFont();
+//        FontData[] bannerData = bannerDefault.getFontData();
+//        for (FontData fd : bannerData) fd.setStyle(SWT.BOLD);
+//        bannerFont = new Font(display, bannerData);
+//    }
 
     private void createControl() {
         Composite comp = toolkit.createComposite(this);

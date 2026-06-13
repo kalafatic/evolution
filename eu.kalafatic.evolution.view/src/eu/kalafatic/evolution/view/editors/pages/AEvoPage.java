@@ -6,8 +6,11 @@ import java.util.function.Consumer;
 import org.eclipse.emf.common.notify.Adapter;
 import org.eclipse.emf.common.notify.Notification;
 import org.eclipse.emf.ecore.util.EContentAdapter;
+import org.eclipse.jface.resource.JFaceResources;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
@@ -35,6 +38,10 @@ public abstract class AEvoPage extends SharedScrolledComposite implements Runtim
     protected FormToolkit toolkit;
     protected AtomicBoolean refreshPending = new AtomicBoolean(false);
     protected boolean needsRefresh = false;
+    
+    protected Color colorUser, colorEvolution, colorPlanner, colorArchitect, colorJavaDev, colorTester, colorReviewer, colorError, colorWhite, colorLocal, colorHybrid, colorRemote, colorWaiting, colorLightOrange;
+    protected Font chatFont, bannerFont;
+    protected Color lightGreen;
 
     protected Adapter modelAdapter = new EContentAdapter() {
         @Override
@@ -64,7 +71,39 @@ public abstract class AEvoPage extends SharedScrolledComposite implements Runtim
         if (this.orchestrator != null) {
             this.orchestrator.eAdapters().add(modelAdapter);
         }
+        
+        initResources();
     }
+    
+    protected void initResources() {
+		//Display display = getDisplay();
+		Display display = Display.getCurrent(); // safer in UI thread
+		colorUser = display.getSystemColor(SWT.COLOR_DARK_BLUE);
+		colorEvolution = display.getSystemColor(SWT.COLOR_DARK_MAGENTA);
+		colorPlanner = display.getSystemColor(SWT.COLOR_DARK_CYAN);
+		colorArchitect = display.getSystemColor(SWT.COLOR_DARK_GREEN);
+		colorJavaDev = display.getSystemColor(SWT.COLOR_BLUE);
+		colorTester = display.getSystemColor(SWT.COLOR_DARK_YELLOW);
+		colorReviewer = display.getSystemColor(SWT.COLOR_MAGENTA);
+		colorError = display.getSystemColor(SWT.COLOR_RED);
+		colorWhite = display.getSystemColor(SWT.COLOR_WHITE);
+		colorLocal = display.getSystemColor(SWT.COLOR_GREEN);
+		colorHybrid = display.getSystemColor(SWT.COLOR_GRAY);
+		colorRemote = display.getSystemColor(SWT.COLOR_MAGENTA);
+		colorWaiting = new Color(display, 255, 140, 0); // Dark Orange
+		colorLightOrange = new Color(display, 255, 200, 150);
+		lightGreen = new Color(Display.getDefault(), 220, 255, 220);
+
+		Font defaultFont = JFaceResources.getDefaultFont();
+		FontData[] fontData = defaultFont.getFontData();
+		for (FontData fd : fontData) fd.setHeight(11);
+		chatFont = new Font(display, fontData);
+
+		Font bannerDefault = JFaceResources.getBannerFont();
+		FontData[] bannerData = bannerDefault.getFontData();
+		for (FontData fd : bannerData) fd.setStyle(SWT.BOLD);
+		bannerFont = new Font(display, bannerData);
+	}
 
     protected String getCurrentSessionName() {
         return (orchestrator != null && orchestrator.getId() != null) ? orchestrator.getId() : "Default";
@@ -239,4 +278,8 @@ public abstract class AEvoPage extends SharedScrolledComposite implements Runtim
         }
         super.dispose();
     }
+    
+    public MultiPageEditor getEditor() {
+		return editor;
+	}
 }

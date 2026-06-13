@@ -16,6 +16,7 @@ import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.FileDialog;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.MessageBox;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -55,14 +56,31 @@ public class ArchitecturePage extends AEvoPage {
     private org.eclipse.swt.widgets.Combo targetCombo;
     private org.eclipse.swt.widgets.Combo snapshotCombo;
     private MilestoneGenerator milestoneGenerator = new MilestoneGenerator();
+	private Composite content;
+	private Label modeIndicatorLabel;
 
     public ArchitecturePage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
         super(parent, editor, orchestrator);
-        this.setLayout(new GridLayout(1, false));
+       
+        createControl();        
+    }
+    
+    private void createControl() {
+    	content = toolkit.createComposite(this);
+		content.setLayout(new GridLayout(1, false));
+		this.setContent(content);
+		
+		modeIndicatorLabel = new Label(content, SWT.CENTER);
+		modeIndicatorLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		modeIndicatorLabel.setFont(bannerFont);
+		setTextSafe(modeIndicatorLabel, "INITIALIZING...");
+		
+		createControlPanel(content);
+		createBrowser(content);
+	}
 
-        createControlPanel();
-
-        this.browser = new Browser(this, SWT.NONE);
+    private void createBrowser(Composite parent) {
+    	this.browser = new Browser(parent, SWT.NONE);
         this.browser.setLayoutData(new GridData(GridData.FILL_BOTH));
 
         browser.addProgressListener(new org.eclipse.swt.browser.ProgressAdapter() {
@@ -83,9 +101,10 @@ public class ArchitecturePage extends AEvoPage {
         hookContextMenu();
         initTargetPath();
         initBrowser();
-    }
+		
+	}
 
-    private void initTargetPath() {
+	private void initTargetPath() {
         if (orchestrator != null && orchestrator.getDefaultTarget() != null && !orchestrator.getDefaultTarget().isEmpty()) {
             defaultTargetPath = orchestrator.getDefaultTarget();
             currentTargetPath = defaultTargetPath;
@@ -457,8 +476,8 @@ public class ArchitecturePage extends AEvoPage {
         super.scheduleRefresh();
     }
 
-    private void createControlPanel() {
-        Composite toolbarComp = new Composite(this, SWT.NONE);
+    private void createControlPanel(Composite parent) {
+        Composite toolbarComp = new Composite(parent, SWT.NONE);
         GridLayout layout = new GridLayout(4, false);
         layout.marginHeight = 0;
         toolbarComp.setLayout(layout);

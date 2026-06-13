@@ -4,20 +4,6 @@
     <meta charset="UTF-8">
     <title>Evolution Architecture Map</title>
     <script>{{D3_JS}}</script>
-	<script>
-	       // Diagnostic JavaLog Bridge
-	       window.onerror = function(msg, url, line, col, error) {
-	           if (window.JavaLog) window.JavaLog('[JS Error] ' + msg + ' at ' + line + ':' + col);
-	           return false;
-	       };
-
-	       // Resilience: fallback for loading overlay
-	       window.hideLoading = function() {
-	           var overlay = document.getElementById('loading-overlay');
-	           if (overlay) overlay.style.display = 'none';
-	       };
-	       setTimeout(window.hideLoading, 5000);
-	   </script>
     <style>
         :root {
             --bg-canvas: #f1f5f9;
@@ -39,10 +25,10 @@
         }
 
         #sidebar {
-            width: 260px; min-width: 260px; background-color: var(--sidebar-bg);
+            width: 260px; background-color: var(--sidebar-bg);
             color: var(--sidebar-text); display: flex; flex-direction: column;
             padding: 20px; box-sizing: border-box; font-size: 14px;
-            z-index: 100; flex-shrink: 0;
+            z-index: 100;
         }
 
         #sidebar h1 { font-size: 18px; margin: 0 0 25px 0; display: flex; align-items: center; gap: 10px; }
@@ -188,57 +174,39 @@
         function log(msg) { if (window.logFunction) window.logFunction(msg); else console.log(msg); }
 
         window.INITIAL_MODEL = {{MODEL_JSON}};
-        window.CURRENT_VIEW_MODE = {{VIEW_MODE_JSON}};
-        window.TARGET_PATH = {{TARGET_PATH_JSON}};
-        window.DEFAULT_PATH = {{DEFAULT_PATH_JSON}};
+        window.CURRENT_VIEW_MODE = "{{VIEW_MODE}}";
+        window.TARGET_PATH = "{{TARGET_PATH}}";
+        window.DEFAULT_PATH = "{{DEFAULT_PATH}}";
         window.TARGET_HISTORY = {{TARGET_HISTORY_JSON}};
 
-        function initUI() {
-            log('Initializing UI elements...');
-            // Sync select dropdown
-            const modeSelect = document.getElementById('mode-select');
-            if (modeSelect) modeSelect.value = window.CURRENT_VIEW_MODE;
+        // Sync select dropdown
+        document.getElementById('mode-select').value = window.CURRENT_VIEW_MODE;
 
-            const targetSelect = document.getElementById('target-select');
-            if (targetSelect) {
-                targetSelect.innerHTML = '';
-                window.TARGET_HISTORY.forEach(path => {
-                    const opt = document.createElement('option');
-                    opt.value = path;
-                    let displayPath = path;
-                    if (path === window.DEFAULT_PATH) {
-                        displayPath = "EVO (default): " + path;
-                    }
-                    opt.text = displayPath;
-                    if (path === window.TARGET_PATH) opt.selected = true;
-                    targetSelect.appendChild(opt);
-                });
+        const targetSelect = document.getElementById('target-select');
+        window.TARGET_HISTORY.forEach(path => {
+            const opt = document.createElement('option');
+            opt.value = path;
+            let displayPath = path;
+            if (path === window.DEFAULT_PATH) {
+                displayPath = "EVO (default): " + path;
             }
+            opt.text = displayPath;
+            if (path === window.TARGET_PATH) opt.selected = true;
+            targetSelect.appendChild(opt);
+        });
 
-            if (window.INITIAL_MODEL && window.INITIAL_MODEL.name) {
-                const projectTitle = document.getElementById('project-title');
-                if (projectTitle) projectTitle.innerText = window.INITIAL_MODEL.name;
-            }
+        if (window.INITIAL_MODEL && window.INITIAL_MODEL.name) {
+            document.getElementById('project-title').innerText = window.INITIAL_MODEL.name;
         }
     </script>
     <script>{{NAVIGATOR_JS}}</script>
     <script>
         window.onload = (event) => {
             log('ready');
-            initUI();
             if (window.INITIAL_MODEL && window.INITIAL_MODEL.components && window.INITIAL_MODEL.components.length > 0) {
                 log('Rendering initial model...');
                 if (window.updateGraph) {
                     window.updateGraph(window.INITIAL_MODEL);
-                } else {
-                    log('ERROR: updateGraph not found on load');
-                    // Retry once after a short delay if D3/Navigator hasn't initialized yet
-                    setTimeout(() => {
-                        if (window.updateGraph) {
-                            log('Retrying rendering initial model...');
-                            window.updateGraph(window.INITIAL_MODEL);
-                        }
-                    }, 500);
                 }
             }
         };

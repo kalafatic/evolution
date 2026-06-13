@@ -140,9 +140,7 @@ public class AiChatPage extends AEvoPage {
 		}
 	};
 
-	private Color colorUser, colorEvolution, colorPlanner, colorArchitect, colorJavaDev, colorTester, colorReviewer, colorError, colorWhite, colorLocal, colorHybrid, colorRemote, colorWaiting, colorLightOrange;
-	private Font chatFont, bannerFont;
-	private Color lightGreen;
+
 
 	private final java.util.function.Consumer<ChatMessage> messageSubscriber = msg -> {
 		if (isDisposed()) return;
@@ -159,7 +157,7 @@ public class AiChatPage extends AEvoPage {
 
 	public AiChatPage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
 		super(parent, editor, orchestrator);
-		initResources();
+		
 		this.outputController = ConversationOutputController.getInstance();
 		this.outputController.subscribe(messageSubscriber);
 		createControl();
@@ -187,35 +185,6 @@ public class AiChatPage extends AEvoPage {
 		});
 	}
 
-	private void initResources() {
-		//Display display = getDisplay();
-		Display display = Display.getCurrent(); // safer in UI thread
-		colorUser = display.getSystemColor(SWT.COLOR_DARK_BLUE);
-		colorEvolution = display.getSystemColor(SWT.COLOR_DARK_MAGENTA);
-		colorPlanner = display.getSystemColor(SWT.COLOR_DARK_CYAN);
-		colorArchitect = display.getSystemColor(SWT.COLOR_DARK_GREEN);
-		colorJavaDev = display.getSystemColor(SWT.COLOR_BLUE);
-		colorTester = display.getSystemColor(SWT.COLOR_DARK_YELLOW);
-		colorReviewer = display.getSystemColor(SWT.COLOR_MAGENTA);
-		colorError = display.getSystemColor(SWT.COLOR_RED);
-		colorWhite = display.getSystemColor(SWT.COLOR_WHITE);
-		colorLocal = display.getSystemColor(SWT.COLOR_GREEN);
-		colorHybrid = display.getSystemColor(SWT.COLOR_GRAY);
-		colorRemote = display.getSystemColor(SWT.COLOR_MAGENTA);
-		colorWaiting = new Color(display, 255, 140, 0); // Dark Orange
-		colorLightOrange = new Color(display, 255, 200, 150);
-		lightGreen = new Color(Display.getDefault(), 220, 255, 220);
-
-		Font defaultFont = JFaceResources.getDefaultFont();
-		FontData[] fontData = defaultFont.getFontData();
-		for (FontData fd : fontData) fd.setHeight(11);
-		chatFont = new Font(display, fontData);
-
-		Font bannerDefault = JFaceResources.getBannerFont();
-		FontData[] bannerData = bannerDefault.getFontData();
-		for (FontData fd : bannerData) fd.setStyle(SWT.BOLD);
-		bannerFont = new Font(display, bannerData);
-	}
 
 	private void createControl() {
 		content = toolkit.createComposite(this);
