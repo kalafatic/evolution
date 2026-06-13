@@ -37,6 +37,9 @@ window.ChatApp.Renderer = {
         if (role.includes('evolution-progress')) {
             this.updateProgressPanel(m);
             return null; // Don't render in main chat stream
+        } else if (role.includes('cognitive-state-changed')) {
+            this.updateCognitiveStatePanel(m);
+            return null;
         } else if (isDarwin) {
             content.style.flexDirection = 'column';
             content.appendChild(this.renderDarwin(m));
@@ -401,6 +404,81 @@ window.ChatApp.Renderer = {
         if (panel) panel.style.width = '0px';
         if (content) {
             content.innerHTML = '<div style="text-align: center; color: #94a3b8; margin-top: 40px; font-size: 11px;">Evolution tracking inactive.</div>';
+        }
+    },
+
+    updateCognitiveStatePanel: function(m) {
+        const panel = document.getElementById('progress-panel');
+        const content = document.getElementById('cognitive-state-content');
+        if (!panel || !content) return;
+
+        // Auto-open panel if closed
+        if (!panel.style.width || panel.style.width === '0px' || panel.style.width === '0') {
+             panel.style.width = '320px';
+             if (window.ChatApp && window.ChatApp.UI) window.ChatApp.UI.updateLayout();
+        }
+
+        try {
+            const data = JSON.parse(m.text);
+            const confPercent = Math.round((data.confidence || 0) * 100);
+            const stabilityPercent = Math.round((data.stability || 0) * 100);
+
+            const trajectoryHtml = (data.trajectory || []).slice(-5).map(t =>
+                `<span class="trait-tag active" style="font-size: 9px; padding: 2px 4px;">${t}</span>`
+            ).join(' <span style="color:#94a3b8">→</span> ');
+
+            content.innerHTML = `
+                <div style="display: flex; flex-direction: column; gap: 8px; font-family: sans-serif;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 10px; color: #64748b; font-weight: 800;">CAPABILITY</span>
+                        <div style="display: flex; align-items: center; gap: 4px;">
+                            <span style="font-size: 9px; color: #94a3b8;">Depth ${data.depth}</span>
+                            <span class="badge active" style="background: #3b82f6; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold;">${data.capability}</span>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; margin-top: 4px;">
+                        <div style="flex: 1;">
+                            <div style="font-size: 9px; color: #94a3b8; margin-bottom: 2px;">INTENT</div>
+                            <div style="font-size: 11px; font-weight: 600; color: #334155;">${data.intent}</div>
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="font-size: 9px; color: #94a3b8; margin-bottom: 2px;">DIRECTION</div>
+                            <div style="font-size: 11px; font-weight: 600; color: #334155;">${data.direction}</div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 4px;">
+                        <div style="display: flex; justify-content: space-between; font-size: 9px; color: #94a3b8; margin-bottom: 2px;">
+                            <span>CONFIDENCE</span>
+                            <span>${confPercent}%</span>
+                        </div>
+                        <div class="progress-bar-bg" style="height: 4px;">
+                            <div class="progress-bar-fill" style="width: ${confPercent}%; background: #10b981;"></div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 4px;">
+                        <div style="display: flex; justify-content: space-between; font-size: 9px; color: #94a3b8; margin-bottom: 2px;">
+                            <span>TREND STABILITY</span>
+                            <span>${stabilityPercent}%</span>
+                        </div>
+                        <div class="progress-bar-bg" style="height: 4px;">
+                            <div class="progress-bar-fill" style="width: ${stabilityPercent}%; background: #8b5cf6;"></div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 6px;">
+                        <div style="font-size: 9px; color: #94a3b8; margin-bottom: 4px;">TRAJECTORY</div>
+                        <div style="display: flex; align-items: center; gap: 4px; overflow-x: auto; padding-bottom: 4px;">
+                            ${trajectoryHtml || '<span style="color:#cbd5e1; font-style:italic;">Stable</span>'}
+                        </div>
+                    </div>
+                </div>
+            `;
+        } catch(e) {
+            console.error("Failed to parse cognitive state:", e);
+            content.innerHTML = `<div style="color: #ef4444; font-size: 10px;">Sync Error: ${e.message}</div>`;
         }
     },
 

@@ -12,46 +12,81 @@ public class CognitiveTrajectoryEngine {
     private static final int MAX_HISTORY = 20;
 
     public void updateTrajectory(SessionCognitiveState state) {
-        List<CapabilityType> history = state.getCapabilityHistory().stream()
+        List<CapabilitySignal> history = state.getCapabilityHistory();
+        if (history.isEmpty()) return;
+
+        List<CapabilityType> types = history.stream()
                 .map(CapabilitySignal::getCapability)
                 .collect(Collectors.toList());
 
-        state.setTrajectory(history);
+        state.setTrajectory(types);
 
-        state.setCurrentDirection(calculateDirection(state));
+        // 1. Calculate dominant trend
+        CapabilityType dominant = calculateDominantTrend(history);
+        state.setDominantTrend(dominant);
+
+        // 2. Calculate direction and metrics
+        state.setCurrentDirection(calculateDirection(state, history));
+        double velocity = calculateVelocity(history);
+        state.setAcceleration(velocity - state.getVelocity());
+        state.setVelocity(velocity);
+        state.setTrendStability(calculateStability(history, dominant));
     }
 
-    private CognitiveDirection calculateDirection(SessionCognitiveState state) {
-        List<CapabilitySignal> history = state.getCapabilityHistory();
-        if (history.isEmpty()) return CognitiveDirection.STABLE;
-
-        // Calculate dominant trend in the last 5 signals
-        int size = history.size();
-        int lookback = Math.min(size, 5);
-
+    private CapabilityType calculateDominantTrend(List<CapabilitySignal> history) {
+        int lookback = Math.min(history.size(), 10);
         Map<CapabilityType, Integer> counts = new HashMap<>();
-        for (int i = size - lookback; i < size; i++) {
+        for (int i = history.size() - lookback; i < history.size(); i++) {
             CapabilityType type = history.get(i).getCapability();
             counts.put(type, counts.getOrDefault(type, 0) + 1);
         }
 
-        CapabilityType dominant = null;
-        int max = 0;
-        for (Map.Entry<CapabilityType, Integer> entry : counts.entrySet()) {
-            if (entry.getValue() > max) {
-                max = entry.getValue();
-                dominant = entry.getKey();
-            }
+        return counts.entrySet().stream()
+                .max(Map.Entry.comparingByValue())
+                .map(Map.Entry::getKey)
+                .orElse(CapabilityType.CHAT);
+    }
+
+    private CognitiveDirection calculateDirection(SessionCognitiveState state, List<CapabilitySignal> history) {
+        if (history.size() < 2) return CognitiveDirection.STABLE;
+
+        CapabilityType last = history.get(history.size() - 1).getCapability();
+        CapabilityType prev = history.get(history.size() - 2).getCapability();
+
+        if (getOrdinal(last) > getOrdinal(prev)) return mapToDirection(last); // Deepening
+        if (getOrdinal(last) < getOrdinal(prev)) return mapToDirection(last); // Shallowing
+
+        return mapToDirection(last);
+    }
+
+    private double calculateVelocity(List<CapabilitySignal> history) {
+        if (history.size() < 2) return 0.0;
+        int lookback = Math.min(history.size(), 5);
+        double totalChange = 0;
+        for (int i = history.size() - lookback + 1; i < history.size(); i++) {
+            totalChange += Math.abs(getOrdinal(history.get(i).getCapability()) - getOrdinal(history.get(i-1).getCapability()));
         }
+        return totalChange / (lookback - 1);
+    }
 
-        if (dominant == CapabilityType.CHAT && max < 3 && state.getCurrentCapability() != CapabilityType.CHAT) {
-             // Hysteresis: Stay in current deep state if chat signals are weak
-             return mapToDirection(state.getCurrentCapability());
+    private double calculateStability(List<CapabilitySignal> history, CapabilityType dominant) {
+        if (history.isEmpty()) return 1.0;
+        int lookback = Math.min(history.size(), 10);
+        long matches = 0;
+        for (int i = history.size() - lookback; i < history.size(); i++) {
+            if (history.get(i).getCapability() == dominant) matches++;
         }
+        return (double) matches / lookback;
+    }
 
-        if (dominant == null) return CognitiveDirection.STABLE;
-
-        return mapToDirection(dominant);
+    private int getOrdinal(CapabilityType type) {
+        switch (type) {
+            case EVOLUTION: return 4;
+            case ARCHITECTURE: return 3;
+            case CODE: return 2;
+            case CHAT: return 1;
+            default: return 0;
+        }
     }
 
     private CognitiveDirection mapToDirection(CapabilityType type) {

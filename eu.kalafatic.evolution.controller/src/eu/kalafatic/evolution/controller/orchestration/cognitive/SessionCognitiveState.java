@@ -17,6 +17,13 @@ public class SessionCognitiveState {
     private Map<CapabilityType, Double> capabilityScores = new HashMap<>();
     private List<CapabilitySignal> capabilityHistory = new ArrayList<>();
 
+    // Trajectory Metrics
+    private double velocity = 0.0;
+    private double acceleration = 0.0;
+    private CapabilityType dominantTrend = CapabilityType.CHAT;
+    private double trendStability = 1.0;
+    private int cognitiveDepth = 1;
+
     public SessionCognitiveState() {
         for (CapabilityType type : CapabilityType.values()) {
             capabilityScores.put(type, 0.0);
@@ -43,6 +50,21 @@ public class SessionCognitiveState {
 
     public List<CapabilitySignal> getCapabilityHistory() { return capabilityHistory; }
     public void setCapabilityHistory(List<CapabilitySignal> capabilityHistory) { this.capabilityHistory = capabilityHistory; }
+
+    public double getVelocity() { return velocity; }
+    public void setVelocity(double velocity) { this.velocity = velocity; }
+
+    public double getAcceleration() { return acceleration; }
+    public void setAcceleration(double acceleration) { this.acceleration = acceleration; }
+
+    public CapabilityType getDominantTrend() { return dominantTrend; }
+    public void setDominantTrend(CapabilityType dominantTrend) { this.dominantTrend = dominantTrend; }
+
+    public double getTrendStability() { return trendStability; }
+    public void setTrendStability(double trendStability) { this.trendStability = trendStability; }
+
+    public int getCognitiveDepth() { return cognitiveDepth; }
+    public void setCognitiveDepth(int cognitiveDepth) { this.cognitiveDepth = cognitiveDepth; }
 
     public void addSignal(CapabilitySignal signal) {
         capabilityHistory.add(signal);

@@ -10,8 +10,11 @@ public class CognitiveStateEngine {
     private final MessageClassifier classifier = new MessageClassifier();
     private final CapabilityScoringEngine scoringEngine = new CapabilityScoringEngine();
     private final CognitiveTrajectoryEngine trajectoryEngine = new CognitiveTrajectoryEngine();
+    private final CognitiveStatePublisher publisher = new CognitiveStatePublisher();
 
-    public void processInteraction(String prompt, SessionCognitiveState state, ContextAssistResult assistResult) {
+    public void processInteraction(String prompt, SessionCognitiveState state,
+                                   eu.kalafatic.evolution.controller.orchestration.TaskContext context,
+                                   eu.kalafatic.evolution.controller.orchestration.ContextAssistResult assistResult) {
         // 1. Classify current message
         CapabilitySignal signal = classifier.classify(prompt);
 
@@ -24,13 +27,49 @@ public class CognitiveStateEngine {
         // 3. Update scores and current capability
         scoringEngine.updateScores(state, signal);
 
-        // 4. Record signal and update trajectory
+        // 4. Record signal and update trajectory metrics
         state.addSignal(signal);
         state.setCurrentIntent(signal.getIntent());
         trajectoryEngine.updateTrajectory(state);
 
-        // 5. Update confidence (can be refined later)
-        state.setConfidence(0.85);
+        // 5. Calculate Cognitive Depth
+        state.setCognitiveDepth(calculateDepth(state, prompt));
+
+        // 6. Update confidence based on stability and depth
+        double baseConfidence = 0.8;
+        state.setConfidence(baseConfidence + (state.getTrendStability() * 0.2));
+
+        // 7. Publish meaningful changes
+        publisher.publish(context, state);
+    }
+
+    private int calculateDepth(SessionCognitiveState state, String prompt) {
+        int depth = state.getCognitiveDepth();
+        CapabilityType cap = state.getCurrentCapability();
+
+        // Capability Base Depth
+        int targetDepth = 1;
+        switch (cap) {
+            case EVOLUTION: targetDepth = 8; break;
+            case ARCHITECTURE: targetDepth = 5; break;
+            case CODE: targetDepth = 3; break;
+            case CHAT: default: targetDepth = 1; break;
+        }
+
+        // Convergence logic: depth moves towards target
+        if (depth < targetDepth) {
+            depth++;
+        } else if (depth > targetDepth && state.getTrendStability() > 0.8) {
+            // Only shallow if the trend is stable
+            depth--;
+        }
+
+        // Complexity boost
+        if (prompt.length() > 200 || prompt.contains("{") || prompt.contains("trajectory")) {
+            depth = Math.min(10, depth + 1);
+        }
+
+        return depth;
     }
 
     private CapabilityType mapToCapability(eu.kalafatic.evolution.controller.orchestration.PlatformType type) {

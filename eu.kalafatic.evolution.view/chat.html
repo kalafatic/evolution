@@ -104,13 +104,24 @@
             <div id="progress-resize-handle" class="resize-handle"></div>
             <div class="side-panel-header">
                 <div class="side-panel-title-row">
-                    <span style="font-weight: bold; font-size: 12px; color: #64748b;">EVOLUTION PROGRESS</span>
+                    <span style="font-weight: bold; font-size: 12px; color: #64748b;">COGNITIVE STATE</span>
                     <button class="panel-btn" onclick="document.getElementById('progress-panel').style.width='0px'" title="Close Panel">✕</button>
+                </div>
+            </div>
+            <div id="cognitive-state-content" style="padding: 10px; border-bottom: 1px solid var(--border); background: #f1f5f9;">
+                <!-- Cognitive state will be rendered here -->
+                <div style="text-align: center; color: #94a3b8; padding: 10px; font-size: 11px;">
+                    Initializing Engine...
+                </div>
+            </div>
+            <div class="side-panel-header" style="border-top: none;">
+                <div class="side-panel-title-row">
+                    <span style="font-weight: bold; font-size: 12px; color: #64748b;">EVOLUTION PROGRESS</span>
                 </div>
             </div>
             <div id="progress-content" style="flex: 1; overflow-y: auto; padding: 10px;">
                 <!-- Progress monitor will be rendered here -->
-                <div style="text-align: center; color: #94a3b8; margin-top: 40px; font-size: 11px;">
+                <div style="text-align: center; color: #94a3b8; margin-top: 20px; font-size: 11px;">
                     Evolution tracking inactive.
                 </div>
             </div>
