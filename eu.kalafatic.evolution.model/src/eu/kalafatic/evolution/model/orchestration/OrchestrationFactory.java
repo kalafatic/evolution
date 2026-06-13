@@ -58,6 +58,26 @@ public interface OrchestrationFactory extends EFactory {
 	GenomeSnapshot createGenomeSnapshot();
 
 	/**
+	 * @generated
+	 */
+	ForgeSession createForgeSession();
+
+	/**
+	 * @generated
+	 */
+	SessionModelState createSessionModelState();
+
+	/**
+	 * @generated
+	 */
+	SessionExperiment createSessionExperiment();
+
+	/**
+	 * @generated
+	 */
+	SessionSnapshot createSessionSnapshot();
+
+	/**
 	 * Returns a new object of class '<em>Server Settings</em>'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->

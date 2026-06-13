@@ -4024,6 +4024,40 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEAttribute(promptInstructionsEClass, PROMPT_INSTRUCTIONS__SELF_ITERATIVE_MODE);
 		createEAttribute(promptInstructionsEClass, PROMPT_INSTRUCTIONS__STEP_MODE);
 
+		forgeSessionEClass = createEClass(FORGE_SESSION);
+		createEAttribute(forgeSessionEClass, FORGE_SESSION__SESSION_ID);
+		createEAttribute(forgeSessionEClass, FORGE_SESSION__NAME);
+		createEAttribute(forgeSessionEClass, FORGE_SESSION__CREATED_AT);
+		createEAttribute(forgeSessionEClass, FORGE_SESSION__LAST_MODIFIED);
+		createEAttribute(forgeSessionEClass, FORGE_SESSION__STATUS);
+		createEAttribute(forgeSessionEClass, FORGE_SESSION__ACTIVE_MODEL_ID);
+		createEAttribute(forgeSessionEClass, FORGE_SESSION__SELECTED_MODEL_TYPE);
+		createEReference(forgeSessionEClass, FORGE_SESSION__MODEL_STATE);
+		createEReference(forgeSessionEClass, FORGE_SESSION__EXPERIMENTS);
+		createEReference(forgeSessionEClass, FORGE_SESSION__SNAPSHOTS);
+
+		sessionModelStateEClass = createEClass(SESSION_MODEL_STATE);
+		createEAttribute(sessionModelStateEClass, SESSION_MODEL_STATE__SESSION_ID);
+		createEAttribute(sessionModelStateEClass, SESSION_MODEL_STATE__MODEL_GRAPH);
+		createEAttribute(sessionModelStateEClass, SESSION_MODEL_STATE__HYPERPARAMETERS);
+		createEAttribute(sessionModelStateEClass, SESSION_MODEL_STATE__DATASET_BINDINGS);
+		createEAttribute(sessionModelStateEClass, SESSION_MODEL_STATE__RUNTIME_STATE);
+
+		sessionExperimentEClass = createEClass(SESSION_EXPERIMENT);
+		createEAttribute(sessionExperimentEClass, SESSION_EXPERIMENT__ID);
+		createEAttribute(sessionExperimentEClass, SESSION_EXPERIMENT__SESSION_ID);
+		createEAttribute(sessionExperimentEClass, SESSION_EXPERIMENT__MODEL_ID);
+		createEAttribute(sessionExperimentEClass, SESSION_EXPERIMENT__DATASET_ID);
+		createEAttribute(sessionExperimentEClass, SESSION_EXPERIMENT__METRICS);
+		createEAttribute(sessionExperimentEClass, SESSION_EXPERIMENT__LOGS);
+
+		sessionSnapshotEClass = createEClass(SESSION_SNAPSHOT);
+		createEAttribute(sessionSnapshotEClass, SESSION_SNAPSHOT__ID);
+		createEAttribute(sessionSnapshotEClass, SESSION_SNAPSHOT__SESSION_ID);
+		createEAttribute(sessionSnapshotEClass, SESSION_SNAPSHOT__GENOME_SNAPSHOT_ID);
+		createEAttribute(sessionSnapshotEClass, SESSION_SNAPSHOT__FULL_SERIALIZED_STATE);
+		createEAttribute(sessionSnapshotEClass, SESSION_SNAPSHOT__TIMESTAMP);
+
 		// Create enums
 		taskStatusEEnum = createEEnum(TASK_STATUS);
 		logLevelEEnum = createEEnum(LOG_LEVEL);
@@ -4416,6 +4450,40 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEAttribute(getPromptInstructions_SelfIterativeMode(), ecorePackage.getEBoolean(), "selfIterativeMode", "false", 0, 1, PromptInstructions.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getPromptInstructions_StepMode(), ecorePackage.getEBoolean(), "stepMode", "false", 0, 1, PromptInstructions.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
+		initEClass(forgeSessionEClass, ForgeSession.class, "ForgeSession", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getForgeSession_SessionId(), ecorePackage.getEString(), "sessionId", null, 0, 1, ForgeSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getForgeSession_Name(), ecorePackage.getEString(), "name", null, 0, 1, ForgeSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getForgeSession_CreatedAt(), ecorePackage.getELong(), "createdAt", null, 0, 1, ForgeSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getForgeSession_LastModified(), ecorePackage.getELong(), "lastModified", null, 0, 1, ForgeSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getForgeSession_Status(), this.getForgeStatus(), "status", null, 0, 1, ForgeSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getForgeSession_ActiveModelId(), ecorePackage.getEString(), "activeModelId", null, 0, 1, ForgeSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getForgeSession_SelectedModelType(), ecorePackage.getEString(), "selectedModelType", null, 0, 1, ForgeSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getForgeSession_ModelState(), this.getSessionModelState(), null, "modelState", null, 0, 1, ForgeSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getForgeSession_Experiments(), this.getSessionExperiment(), null, "experiments", null, 0, -1, ForgeSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getForgeSession_Snapshots(), this.getSessionSnapshot(), null, "snapshots", null, 0, -1, ForgeSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(sessionModelStateEClass, SessionModelState.class, "SessionModelState", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getSessionModelState_SessionId(), ecorePackage.getEString(), "sessionId", null, 0, 1, SessionModelState.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getSessionModelState_ModelGraph(), ecorePackage.getEString(), "modelGraph", null, 0, 1, SessionModelState.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getSessionModelState_Hyperparameters(), ecorePackage.getEString(), "hyperparameters", null, 0, 1, SessionModelState.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getSessionModelState_DatasetBindings(), ecorePackage.getEString(), "datasetBindings", null, 0, 1, SessionModelState.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getSessionModelState_RuntimeState(), ecorePackage.getEString(), "runtimeState", null, 0, 1, SessionModelState.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(sessionExperimentEClass, SessionExperiment.class, "SessionExperiment", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getSessionExperiment_Id(), ecorePackage.getEString(), "id", null, 0, 1, SessionExperiment.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getSessionExperiment_SessionId(), ecorePackage.getEString(), "sessionId", null, 0, 1, SessionExperiment.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getSessionExperiment_ModelId(), ecorePackage.getEString(), "modelId", null, 0, 1, SessionExperiment.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getSessionExperiment_DatasetId(), ecorePackage.getEString(), "datasetId", null, 0, 1, SessionExperiment.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getSessionExperiment_Metrics(), ecorePackage.getEString(), "metrics", null, 0, 1, SessionExperiment.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getSessionExperiment_Logs(), ecorePackage.getEString(), "logs", null, 0, 1, SessionExperiment.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
+		initEClass(sessionSnapshotEClass, SessionSnapshot.class, "SessionSnapshot", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getSessionSnapshot_Id(), ecorePackage.getEString(), "id", null, 0, 1, SessionSnapshot.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getSessionSnapshot_SessionId(), ecorePackage.getEString(), "sessionId", null, 0, 1, SessionSnapshot.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getSessionSnapshot_GenomeSnapshotId(), ecorePackage.getEString(), "genomeSnapshotId", null, 0, 1, SessionSnapshot.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getSessionSnapshot_FullSerializedState(), ecorePackage.getEString(), "fullSerializedState", null, 0, 1, SessionSnapshot.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getSessionSnapshot_Timestamp(), ecorePackage.getELong(), "timestamp", null, 0, 1, SessionSnapshot.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+
 		// Initialize enums and add enum literals
 		initEEnum(taskStatusEEnum, TaskStatus.class, "TaskStatus");
 		addEEnumLiteral(taskStatusEEnum, TaskStatus.READY);
@@ -4480,6 +4548,12 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		addEEnumLiteral(iterationStatusEEnum, IterationStatus.RUNNING);
 		addEEnumLiteral(iterationStatusEEnum, IterationStatus.DONE);
 		addEEnumLiteral(iterationStatusEEnum, IterationStatus.FAILED);
+
+		initEEnum(forgeStatusEEnum, ForgeStatus.class, "ForgeStatus");
+		addEEnumLiteral(forgeStatusEEnum, ForgeStatus.IDLE);
+		addEEnumLiteral(forgeStatusEEnum, ForgeStatus.TRAINING);
+		addEEnumLiteral(forgeStatusEEnum, ForgeStatus.RUNNING);
+		addEEnumLiteral(forgeStatusEEnum, ForgeStatus.ERROR);
 
 		initEEnum(selfDevDecisionEEnum, SelfDevDecision.class, "SelfDevDecision");
 		addEEnumLiteral(selfDevDecisionEEnum, SelfDevDecision.CONTINUE);
