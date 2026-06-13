@@ -1,40 +1,40 @@
 package eu.kalafatic.evolution.view.editors.pages;
 
-import org.eclipse.emf.common.notify.Adapter;
-import org.eclipse.emf.common.notify.Notification;
-import org.eclipse.emf.ecore.util.EContentAdapter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.Browser;
+import org.eclipse.swt.browser.BrowserFunction;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.FileDialog;
-import org.eclipse.swt.widgets.Group;
-import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.browser.BrowserFunction;
+import org.eclipse.swt.widgets.FileDialog;
+import org.eclipse.swt.widgets.MessageBox;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.stream.Collectors;
 
+import eu.kalafatic.evolution.controller.agents.MetadataAgent;
 import eu.kalafatic.evolution.controller.discovery.SourceDiscoveryResult;
 import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
 import eu.kalafatic.evolution.controller.orchestration.design.ComponentRecord;
 import eu.kalafatic.evolution.controller.orchestration.design.DesignExporter;
 import eu.kalafatic.evolution.controller.orchestration.design.DesignModel;
-import eu.kalafatic.evolution.controller.agents.MetadataAgent;
 import eu.kalafatic.evolution.controller.orchestration.design.DesignRenderer;
 import eu.kalafatic.evolution.controller.orchestration.design.RelationshipRecord;
-import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.GenomeSnapshot;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
+import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.selfdev.genome.milestone.MilestoneGenerator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
+import eu.kalafatic.utils.factories.GUIFactory;
 
 /**
  * @evo:19:A reason=dynamic-architecture-page
@@ -464,9 +464,8 @@ public class ArchitecturePage extends AEvoPage {
         toolbarComp.setLayout(layout);
         toolbarComp.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
 
-        org.eclipse.swt.widgets.Combo modeCombo = new org.eclipse.swt.widgets.Combo(toolbarComp, SWT.READ_ONLY);
-        modeCombo.setItems(new String[] { "Use Cases", "Subsystems", "Components", "Knowledge Graph" });
-        modeCombo.select(2); // Components
+        Combo modeCombo = GUIFactory.INSTANCE.createCombo(toolbarComp, "", "Use Cases", "Subsystems", "Components", "Knowledge Graph");       
+      
         modeCombo.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
             @Override
             public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
@@ -478,9 +477,8 @@ public class ArchitecturePage extends AEvoPage {
                 }
             }
         });
-
-        targetCombo = new org.eclipse.swt.widgets.Combo(toolbarComp, SWT.DROP_DOWN);
-        targetCombo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+        targetCombo = GUIFactory.INSTANCE.createCombo(toolbarComp);    
+        ((GridData)targetCombo.getLayoutData()).widthHint = 400;
         targetCombo.setToolTipText("Select Target Project to analyze");
         updateTargetCombo();
         targetCombo.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
