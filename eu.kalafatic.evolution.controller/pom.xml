@@ -9,8 +9,7 @@
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 	<artifactId>eu.kalafatic.evolution.controller</artifactId>
-
-	2.6.5-SNAPSHOT2.6.5-SNAPSHOT2.6.5-SNAPSHOTeclipse-plugin</packaging>
+	<packaging>eclipse-plugin</packaging>
 	<build>
 		<sourceDirectory>src</sourceDirectory>
 		<resources>
