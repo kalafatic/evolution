@@ -800,26 +800,35 @@ public class ArchitecturePage extends AEvoPage {
     }
 
     private void refreshBrowser() {
-        if (browser == null || browser.isDisposed() || !isLoaded || !isJsReady || showingSnapshot) return;
+        if (browser == null || browser.isDisposed() || !isLoaded || showingSnapshot) return;
+
         Display.getDefault().asyncExec(() -> {
             if (browser == null || browser.isDisposed() || showingSnapshot) return;
-            DesignModel model = extractModel();
 
+            DesignModel model = extractModel();
             boolean targetChanged = currentTargetPath != null && !currentTargetPath.equals(lastTargetPath);
 
             // Re-render full template only if target path changed or it's the first load
             if (lastJson.isEmpty() || targetChanged) {
+                eu.kalafatic.evolution.controller.log.Log.log("[ARCH_PAGE] Full browser reload triggered for: " + currentTargetPath);
+                isJsReady = false; // Reset readiness as we are loading a new page
                 browser.setText(renderer.render(model, currentMode.name(), currentTargetPath, defaultTargetPath, targetHistory));
                 lastJson = renderer.serializeModel(model);
                 lastTargetPath = currentTargetPath;
                 return;
             }
 
+            if (!isJsReady) {
+                eu.kalafatic.evolution.controller.log.Log.log("[ARCH_PAGE] Skipping update - JS not ready yet.");
+                return;
+            }
+
             String json = renderer.serializeModel(model);
             if (json.equals(lastJson)) return;
-            lastJson = json;
 
-            browser.execute("if(window.updateGraph) { window.updateGraph(" + json + "); }");
+            eu.kalafatic.evolution.controller.log.Log.log("[ARCH_PAGE] Updating graph with new JSON (" + (model != null ? model.getComponents().size() : 0) + " components)");
+            lastJson = json;
+            browser.execute("if(window.updateGraph) { window.updateGraph(" + json + "); } else { console.log('window.updateGraph not found'); }");
         });
     }
 

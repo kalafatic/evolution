@@ -9,7 +9,7 @@
     const svg = d3.select("#architecture-svg");
     const container = d3.select("#architecture-container");
 
-    let rect = container.node().getBoundingClientRect();
+    let rect = container.node() ? container.node().getBoundingClientRect() : { width: 800, height: 600 };
     let width = rect.width || window.innerWidth || 800;
     let height = rect.height || window.innerHeight || 600;
 
@@ -27,7 +27,7 @@
     svg.call(zoom);
 
     window.addEventListener('resize', () => {
-        let newRect = container.node().getBoundingClientRect();
+        let newRect = container.node() ? container.node().getBoundingClientRect() : { width: 800, height: 600 };
         width = newRect.width || window.innerWidth || 800;
         height = newRect.height || window.innerHeight || 600;
         if (simulation) simulation.force("center", d3.forceCenter(width / 2, height / 2)).alpha(0.3).restart();
@@ -40,7 +40,11 @@
         if (typeof log === 'function') log("updateGraph called with " + (data && data.components ? data.components.length : 0) + " components.");
 
         if (!data || !data.components || data.components.length === 0) {
+            if (typeof log === 'function') log("updateGraph: No components to render.");
             d3.select("#empty-state").classed("active", true);
+            gNodes.selectAll(".node").remove();
+            gLinks.selectAll(".link").remove();
+            gEdgeLabels.selectAll(".edge-label").remove();
             return;
         }
 
