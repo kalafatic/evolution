@@ -139,6 +139,13 @@ public abstract class BaseAiAgent implements IAgent, IOrchestrationFlow {
 
         ConversationState convState = ConversationState.load(context.getSharedMemory(), context.getSessionId());
         convState.addMessage("Evo: " + result);
+
+        // Persist current cognitive state snapshot with history
+        eu.kalafatic.evolution.controller.orchestration.SessionContainer session = eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getSession(context.getSessionId());
+        if (session != null) {
+            convState.setCognitiveState(session.getCognitiveState());
+        }
+
         context.getOrchestrator().setSharedMemory(ConversationState.save(context.getSharedMemory(), context.getSessionId(), convState));
 
         response.setSummary(result);

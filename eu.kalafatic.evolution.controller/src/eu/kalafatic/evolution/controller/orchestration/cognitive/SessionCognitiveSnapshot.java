@@ -1,11 +1,14 @@
 package eu.kalafatic.evolution.controller.orchestration.cognitive;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
- * Serialized snapshot of the cognitive state for event broadcasting.
+ * Serialized snapshot of the cognitive state for persistence and event broadcasting.
  */
-public class CognitiveStateSnapshot {
+public class SessionCognitiveSnapshot {
     private CapabilityType capability;
     private SessionIntent intent;
     private CognitiveDirection direction;
@@ -14,18 +17,22 @@ public class CognitiveStateSnapshot {
     private double stability;
     private List<CapabilityType> trajectory;
     private int depth;
+    private Map<CapabilityType, Double> scores;
+    private List<CapabilitySignal> history;
 
-    public CognitiveStateSnapshot() {}
+    public SessionCognitiveSnapshot() {}
 
-    public CognitiveStateSnapshot(SessionCognitiveState state) {
+    public SessionCognitiveSnapshot(SessionCognitiveState state) {
         this.capability = state.getCurrentCapability();
         this.intent = state.getCurrentIntent();
         this.direction = state.getCurrentDirection();
         this.confidence = state.getConfidence();
         this.velocity = state.getVelocity();
         this.stability = state.getTrendStability();
-        this.trajectory = state.getTrajectory();
+        this.trajectory = new ArrayList<>(state.getTrajectory());
         this.depth = state.getCognitiveDepth();
+        this.scores = new HashMap<>(state.getCapabilityScores());
+        this.history = new ArrayList<>(state.getCapabilityHistory());
     }
 
     public CapabilityType getCapability() { return capability; }
@@ -51,4 +58,10 @@ public class CognitiveStateSnapshot {
 
     public int getDepth() { return depth; }
     public void setDepth(int depth) { this.depth = depth; }
+
+    public Map<CapabilityType, Double> getScores() { return scores; }
+    public void setScores(Map<CapabilityType, Double> scores) { this.scores = scores; }
+
+    public List<CapabilitySignal> getHistory() { return history; }
+    public void setHistory(List<CapabilitySignal> history) { this.history = history; }
 }
