@@ -21,11 +21,21 @@ public class MilestoneGenerator {
 
     private final AIContextTool contextTool = new AIContextTool();
 
-    public void generateMilestone(File root, String projectName, String version) {
+    public String generateMilestone(File root, String projectName, String version) {
         List<EvoMetadata> allMetadata = scanAllMetadata(root);
         
-        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("ddMMyy"));
-        File milestoneDir = new File(root, "milestones/genome_" + timestamp);
+        String baseTimestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("ddMMyy"));
+        String timestamp = baseTimestamp;
+        File milestonesDir = new File(root, "milestones");
+        File milestoneDir = new File(milestonesDir, "genome_" + timestamp);
+
+        // Handle collisions if multiple milestones are generated on the same day
+        int counter = 1;
+        while (milestoneDir.exists()) {
+            timestamp = baseTimestamp + "_" + counter++;
+            milestoneDir = new File(milestonesDir, "genome_" + timestamp);
+        }
+
         milestoneDir.mkdirs();
 
         generateGenomeJson(milestoneDir, projectName, version, timestamp, allMetadata);
@@ -33,7 +43,31 @@ public class MilestoneGenerator {
         generateUseCasesMd(milestoneDir, allMetadata);
         generateMilestoneV1Md(milestoneDir, allMetadata);
         
-        applyRetentionPolicy(new File(root, "milestones"));
+        generateDashboardHtml(milestoneDir, projectName, timestamp);
+
+        applyRetentionPolicy(milestonesDir);
+
+        return timestamp;
+    }
+
+    private void generateDashboardHtml(File dir, String projectName, String timestamp) {
+        try {
+            String archMd = Files.readString(new File(dir, "architecture.md").toPath());
+            String ucMd = Files.readString(new File(dir, "use_cases.md").toPath());
+            String milestoneMd = Files.readString(new File(dir, "milestone_v1.md").toPath());
+            String genomeJson = Files.readString(new File(dir, "genome.json").toPath());
+
+            String archHtml = eu.kalafatic.evolution.selfdev.genome.util.SimpleMarkdownConverter.toHtml(archMd);
+            String ucHtml = eu.kalafatic.evolution.selfdev.genome.util.SimpleMarkdownConverter.toHtml(ucMd);
+            String milestoneHtml = eu.kalafatic.evolution.selfdev.genome.util.SimpleMarkdownConverter.toHtml(milestoneMd);
+
+            String dashboardHtml = eu.kalafatic.evolution.selfdev.genome.util.DashboardTemplate.getHtml(
+                    projectName, timestamp, archHtml, ucHtml, milestoneHtml, genomeJson);
+
+            Files.write(new File(dir, "milestone_dashboard.html").toPath(), dashboardHtml.getBytes());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private List<EvoMetadata> scanAllMetadata(File current) {

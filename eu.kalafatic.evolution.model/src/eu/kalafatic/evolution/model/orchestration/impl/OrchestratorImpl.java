@@ -82,6 +82,7 @@ import org.eclipse.emf.ecore.util.InternalEList;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getSupervisorSettings <em>Supervisor Settings</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getNetworkEntries <em>Network Entries</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getDefaultTarget <em>Default Target</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getGenomeSnapshots <em>Genome Snapshots</em>}</li>
  * </ul>
  *
  * @generated
@@ -546,6 +547,16 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 * @ordered
 	 */
 	protected String defaultTarget = DEFAULT_TARGET_EDEFAULT;
+
+	/**
+	 * The cached value of the '{@link #getGenomeSnapshots() <em>Genome Snapshots</em>}' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getGenomeSnapshots()
+	 * @generated
+	 * @ordered
+	 */
+	protected EList<eu.kalafatic.evolution.model.orchestration.GenomeSnapshot> genomeSnapshots;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -1547,6 +1558,19 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 * @generated
 	 */
 	@Override
+	public EList<eu.kalafatic.evolution.model.orchestration.GenomeSnapshot> getGenomeSnapshots() {
+		if (genomeSnapshots == null) {
+			genomeSnapshots = new EObjectContainmentEList<eu.kalafatic.evolution.model.orchestration.GenomeSnapshot>(eu.kalafatic.evolution.model.orchestration.GenomeSnapshot.class, this, OrchestrationPackage.ORCHESTRATOR__GENOME_SNAPSHOTS);
+		}
+		return genomeSnapshots;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public NotificationChain eInverseRemove(InternalEObject otherEnd, int featureID, NotificationChain msgs) {
 		switch (featureID) {
 			case OrchestrationPackage.ORCHESTRATOR__AGENTS:
@@ -1589,6 +1613,8 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return basicSetSupervisorSettings(null, msgs);
 			case OrchestrationPackage.ORCHESTRATOR__NETWORK_ENTRIES:
 				return ((InternalEList<?>)getNetworkEntries()).basicRemove(otherEnd, msgs);
+			case OrchestrationPackage.ORCHESTRATOR__GENOME_SNAPSHOTS:
+				return ((InternalEList<?>)getGenomeSnapshots()).basicRemove(otherEnd, msgs);
 		}
 		return super.eInverseRemove(otherEnd, featureID, msgs);
 	}
@@ -1667,6 +1693,8 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return getNetworkEntries();
 			case OrchestrationPackage.ORCHESTRATOR__DEFAULT_TARGET:
 				return getDefaultTarget();
+			case OrchestrationPackage.ORCHESTRATOR__GENOME_SNAPSHOTS:
+				return getGenomeSnapshots();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -1786,6 +1814,10 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			case OrchestrationPackage.ORCHESTRATOR__DEFAULT_TARGET:
 				setDefaultTarget((String)newValue);
 				return;
+			case OrchestrationPackage.ORCHESTRATOR__GENOME_SNAPSHOTS:
+				getGenomeSnapshots().clear();
+				getGenomeSnapshots().addAll((Collection<? extends eu.kalafatic.evolution.model.orchestration.GenomeSnapshot>)newValue);
+				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -1897,6 +1929,9 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 			case OrchestrationPackage.ORCHESTRATOR__DEFAULT_TARGET:
 				setDefaultTarget(DEFAULT_TARGET_EDEFAULT);
 				return;
+			case OrchestrationPackage.ORCHESTRATOR__GENOME_SNAPSHOTS:
+				getGenomeSnapshots().clear();
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -1975,6 +2010,8 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return networkEntries != null && !networkEntries.isEmpty();
 			case OrchestrationPackage.ORCHESTRATOR__DEFAULT_TARGET:
 				return DEFAULT_TARGET_EDEFAULT == null ? defaultTarget != null : !DEFAULT_TARGET_EDEFAULT.equals(defaultTarget);
+			case OrchestrationPackage.ORCHESTRATOR__GENOME_SNAPSHOTS:
+				return genomeSnapshots != null && !genomeSnapshots.isEmpty();
 		}
 		return super.eIsSet(featureID);
 	}

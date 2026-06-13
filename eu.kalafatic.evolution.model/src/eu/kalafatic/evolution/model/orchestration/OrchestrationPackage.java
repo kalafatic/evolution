@@ -772,13 +772,22 @@ public interface OrchestrationPackage extends EPackage {
 	int ORCHESTRATOR__DEFAULT_TARGET = 32;
 
 	/**
+	 * The feature id for the '<em><b>Genome Snapshots</b></em>' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ORCHESTRATOR__GENOME_SNAPSHOTS = 33;
+
+	/**
 	 * The number of structural features of the '<em>Orchestrator</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int ORCHESTRATOR_FEATURE_COUNT = 33;
+	int ORCHESTRATOR_FEATURE_COUNT = 34;
 
 	/**
 	 * The number of operations of the '<em>Orchestrator</em>' class.
@@ -790,6 +799,88 @@ public interface OrchestrationPackage extends EPackage {
 	int ORCHESTRATOR_OPERATION_COUNT = 0;
 
 	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.GenomeSnapshotImpl <em>Genome Snapshot</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.GenomeSnapshotImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getGenomeSnapshot()
+	 * @generated
+	 */
+	int GENOME_SNAPSHOT = 3;
+
+	/**
+	 * The feature id for the '<em><b>Timestamp</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int GENOME_SNAPSHOT__TIMESTAMP = 0;
+
+	/**
+	 * The feature id for the '<em><b>Architecture Artifact</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int GENOME_SNAPSHOT__ARCHITECTURE_ARTIFACT = 1;
+
+	/**
+	 * The feature id for the '<em><b>Use Case Artifact</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int GENOME_SNAPSHOT__USE_CASE_ARTIFACT = 2;
+
+	/**
+	 * The feature id for the '<em><b>Milestone Artifact</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int GENOME_SNAPSHOT__MILESTONE_ARTIFACT = 3;
+
+	/**
+	 * The feature id for the '<em><b>Genome Artifact</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int GENOME_SNAPSHOT__GENOME_ARTIFACT = 4;
+
+	/**
+	 * The feature id for the '<em><b>Dashboard Artifact</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int GENOME_SNAPSHOT__DASHBOARD_ARTIFACT = 5;
+
+	/**
+	 * The number of structural features of the '<em>Genome Snapshot</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int GENOME_SNAPSHOT_FEATURE_COUNT = 6;
+
+	/**
+	 * The number of operations of the '<em>Genome Snapshot</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int GENOME_SNAPSHOT_OPERATION_COUNT = 0;
+
+	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ServerSettingsImpl <em>Server Settings</em>}' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -797,7 +888,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getServerSettings()
 	 * @generated
 	 */
-	int SERVER_SETTINGS = 3;
+	int SERVER_SETTINGS = 4;
 
 	/**
 	 * The feature id for the '<em><b>Port</b></em>' attribute.
@@ -852,7 +943,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getServerSession()
 	 * @generated
 	 */
-	int SERVER_SESSION = 4;
+	int SERVER_SESSION = 5;
 
 	/**
 	 * The feature id for the '<em><b>Id</b></em>' attribute.
@@ -925,7 +1016,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getMonitoringData()
 	 * @generated
 	 */
-	int MONITORING_DATA = 5;
+	int MONITORING_DATA = 6;
 
 	/**
 	 * The feature id for the '<em><b>Timestamp</b></em>' attribute.
@@ -989,7 +1080,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getAIProvider()
 	 * @generated
 	 */
-	int AI_PROVIDER = 6;
+	int AI_PROVIDER = 7;
 
 	/**
 	 * The feature id for the '<em><b>Name</b></em>' attribute.
@@ -1152,7 +1243,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getGit()
 	 * @generated
 	 */
-	int GIT = 7;
+	int GIT = 8;
 
 	/**
 	 * The feature id for the '<em><b>Repository Url</b></em>' attribute.
@@ -1252,7 +1343,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getMaven()
 	 * @generated
 	 */
-	int MAVEN = 8;
+	int MAVEN = 9;
 
 	/**
 	 * The feature id for the '<em><b>Goals</b></em>' attribute list.
@@ -1307,7 +1398,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getLLM()
 	 * @generated
 	 */
-	int LLM = 9;
+	int LLM = 10;
 
 	/**
 	 * The feature id for the '<em><b>Model</b></em>' attribute.
@@ -1353,7 +1444,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getCompiler()
 	 * @generated
 	 */
-	int COMPILER = 10;
+	int COMPILER = 11;
 
 	/**
 	 * The feature id for the '<em><b>Source Version</b></em>' attribute.
@@ -1444,7 +1535,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getCommand()
 	 * @generated
 	 */
-	int COMMAND = 11;
+	int COMMAND = 12;
 
 	/**
 	 * The feature id for the '<em><b>Name</b></em>' attribute.
@@ -1490,7 +1581,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getOllama()
 	 * @generated
 	 */
-	int OLLAMA = 12;
+	int OLLAMA = 13;
 
 	/**
 	 * The feature id for the '<em><b>Url</b></em>' attribute.
@@ -1545,7 +1636,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getAiChat()
 	 * @generated
 	 */
-	int AI_CHAT = 13;
+	int AI_CHAT = 14;
 
 	/**
 	 * The feature id for the '<em><b>Url</b></em>' attribute.
@@ -1627,7 +1718,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getNeuronAI()
 	 * @generated
 	 */
-	int NEURON_AI = 14;
+	int NEURON_AI = 15;
 
 	/**
 	 * The feature id for the '<em><b>Url</b></em>' attribute.
@@ -1691,7 +1782,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getEvoProject()
 	 * @generated
 	 */
-	int EVO_PROJECT = 15;
+	int EVO_PROJECT = 16;
 
 	/**
 	 * The feature id for the '<em><b>Name</b></em>' attribute.
@@ -1737,7 +1828,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getRule()
 	 * @generated
 	 */
-	int RULE = 16;
+	int RULE = 17;
 
 	/**
 	 * The feature id for the '<em><b>Name</b></em>' attribute.
@@ -1783,7 +1874,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getAccessRule()
 	 * @generated
 	 */
-	int ACCESS_RULE = 17;
+	int ACCESS_RULE = 18;
 
 	/**
 	 * The feature id for the '<em><b>Name</b></em>' attribute.
@@ -1847,7 +1938,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getNetworkRule()
 	 * @generated
 	 */
-	int NETWORK_RULE = 18;
+	int NETWORK_RULE = 19;
 
 	/**
 	 * The feature id for the '<em><b>Name</b></em>' attribute.
@@ -1911,7 +2002,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getMemoryRule()
 	 * @generated
 	 */
-	int MEMORY_RULE = 19;
+	int MEMORY_RULE = 20;
 
 	/**
 	 * The feature id for the '<em><b>Name</b></em>' attribute.
@@ -1975,7 +2066,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSecretRule()
 	 * @generated
 	 */
-	int SECRET_RULE = 20;
+	int SECRET_RULE = 21;
 
 	/**
 	 * The feature id for the '<em><b>Name</b></em>' attribute.
@@ -2030,7 +2121,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSelfDevSession()
 	 * @generated
 	 */
-	int SELF_DEV_SESSION = 21;
+	int SELF_DEV_SESSION = 22;
 
 	/**
 	 * The feature id for the '<em><b>Id</b></em>' attribute.
@@ -2121,7 +2212,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getDatabase()
 	 * @generated
 	 */
-	int DATABASE = 22;
+	int DATABASE = 23;
 
 	/**
 	 * The feature id for the '<em><b>Url</b></em>' attribute.
@@ -2194,7 +2285,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getFileConfig()
 	 * @generated
 	 */
-	int FILE_CONFIG = 23;
+	int FILE_CONFIG = 24;
 
 	/**
 	 * The feature id for the '<em><b>Local Path</b></em>' attribute.
@@ -2240,7 +2331,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getIteration()
 	 * @generated
 	 */
-	int ITERATION = 24;
+	int ITERATION = 25;
 
 	/**
 	 * The feature id for the '<em><b>Id</b></em>' attribute.
@@ -2394,7 +2485,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getEclipse()
 	 * @generated
 	 */
-	int ECLIPSE = 25;
+	int ECLIPSE = 26;
 
 	/**
 	 * The feature id for the '<em><b>Workspace</b></em>' attribute.
@@ -2458,7 +2549,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getEvaluationResult()
 	 * @generated
 	 */
-	int EVALUATION_RESULT = 26;
+	int EVALUATION_RESULT = 27;
 
 	/**
 	 * The feature id for the '<em><b>Success</b></em>' attribute.
@@ -2549,7 +2640,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getTest()
 	 * @generated
 	 */
-	int TEST = 27;
+	int TEST = 28;
 
 	/**
 	 * The feature id for the '<em><b>Id</b></em>' attribute.
@@ -2631,7 +2722,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getComment()
 	 * @generated
 	 */
-	int COMMENT = 28;
+	int COMMENT = 29;
 
 	/**
 	 * The feature id for the '<em><b>Id</b></em>' attribute.
@@ -2731,7 +2822,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getDiffHunk()
 	 * @generated
 	 */
-	int DIFF_HUNK = 29;
+	int DIFF_HUNK = 30;
 
 	/**
 	 * The feature id for the '<em><b>Header</b></em>' attribute.
@@ -2777,7 +2868,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getFileChange()
 	 * @generated
 	 */
-	int FILE_CHANGE = 30;
+	int FILE_CHANGE = 31;
 
 	/**
 	 * The feature id for the '<em><b>File Path</b></em>' attribute.
@@ -2832,7 +2923,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getChangeSet()
 	 * @generated
 	 */
-	int CHANGE_SET = 31;
+	int CHANGE_SET = 32;
 
 	/**
 	 * The feature id for the '<em><b>Commit Id</b></em>' attribute.
@@ -2878,7 +2969,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSupervisorSettings()
 	 * @generated
 	 */
-	int SUPERVISOR_SETTINGS = 32;
+	int SUPERVISOR_SETTINGS = 33;
 
 	/**
 	 * The feature id for the '<em><b>Executable Path</b></em>' attribute.
@@ -2951,7 +3042,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getReviewSession()
 	 * @generated
 	 */
-	int REVIEW_SESSION = 33;
+	int REVIEW_SESSION = 34;
 
 	/**
 	 * The feature id for the '<em><b>Id</b></em>' attribute.
@@ -3015,7 +3106,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getChatSession()
 	 * @generated
 	 */
-	int CHAT_SESSION = 34;
+	int CHAT_SESSION = 35;
 
 	/**
 	 * The feature id for the '<em><b>Id</b></em>' attribute.
@@ -3196,7 +3287,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getChatMessage()
 	 * @generated
 	 */
-	int CHAT_MESSAGE = 35;
+	int CHAT_MESSAGE = 36;
 
 	/**
 	 * The feature id for the '<em><b>Index</b></em>' attribute.
@@ -3332,7 +3423,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getNetworkEntry()
 	 * @generated
 	 */
-	int NETWORK_ENTRY = 36;
+	int NETWORK_ENTRY = 37;
 
 	/**
 	 * The feature id for the '<em><b>Host</b></em>' attribute.
@@ -3432,7 +3523,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getPromptInstructions()
 	 * @generated
 	 */
-	int PROMPT_INSTRUCTIONS = 37;
+	int PROMPT_INSTRUCTIONS = 38;
 
 	/**
 	 * The feature id for the '<em><b>Auto Approve</b></em>' attribute.
@@ -3514,7 +3605,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getTaskStatus()
 	 * @generated
 	 */
-	int TASK_STATUS = 38;
+	int TASK_STATUS = 39;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.LogLevel <em>Log Level</em>}' enum.
@@ -3524,7 +3615,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getLogLevel()
 	 * @generated
 	 */
-	int LOG_LEVEL = 39;
+	int LOG_LEVEL = 40;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.FeedbackLevel <em>Feedback Level</em>}' enum.
@@ -3534,7 +3625,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getFeedbackLevel()
 	 * @generated
 	 */
-	int FEEDBACK_LEVEL = 40;
+	int FEEDBACK_LEVEL = 41;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.SessionType <em>Session Type</em>}' enum.
@@ -3544,7 +3635,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSessionType()
 	 * @generated
 	 */
-	int SESSION_TYPE = 41;
+	int SESSION_TYPE = 42;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.CommandStatus <em>Command Status</em>}' enum.
@@ -3554,7 +3645,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getCommandStatus()
 	 * @generated
 	 */
-	int COMMAND_STATUS = 42;
+	int COMMAND_STATUS = 43;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.ExecutionMode <em>Execution Mode</em>}' enum.
@@ -3564,7 +3655,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getExecutionMode()
 	 * @generated
 	 */
-	int EXECUTION_MODE = 43;
+	int EXECUTION_MODE = 44;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.NeuronType <em>Neuron Type</em>}' enum.
@@ -3574,7 +3665,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getNeuronType()
 	 * @generated
 	 */
-	int NEURON_TYPE = 44;
+	int NEURON_TYPE = 45;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.AiMode <em>Ai Mode</em>}' enum.
@@ -3584,7 +3675,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getAiMode()
 	 * @generated
 	 */
-	int AI_MODE = 45;
+	int AI_MODE = 46;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.SelfDevStatus <em>Self Dev Status</em>}' enum.
@@ -3594,7 +3685,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSelfDevStatus()
 	 * @generated
 	 */
-	int SELF_DEV_STATUS = 46;
+	int SELF_DEV_STATUS = 47;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.IterationStatus <em>Iteration Status</em>}' enum.
@@ -3604,7 +3695,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getIterationStatus()
 	 * @generated
 	 */
-	int ITERATION_STATUS = 47;
+	int ITERATION_STATUS = 48;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.SelfDevDecision <em>Self Dev Decision</em>}' enum.
@@ -3614,7 +3705,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSelfDevDecision()
 	 * @generated
 	 */
-	int SELF_DEV_DECISION = 48;
+	int SELF_DEV_DECISION = 49;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.TestStatus <em>Test Status</em>}' enum.
@@ -3624,7 +3715,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getTestStatus()
 	 * @generated
 	 */
-	int TEST_STATUS = 49;
+	int TEST_STATUS = 50;
 
 	/**
 	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.ReviewDecision <em>Review Decision</em>}' enum.
@@ -3634,7 +3725,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getReviewDecision()
 	 * @generated
 	 */
-	int REVIEW_DECISION = 50;
+	int REVIEW_DECISION = 51;
 
 
 	/**
@@ -4458,6 +4549,93 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 */
 	EAttribute getOrchestrator_DefaultTarget();
+
+	/**
+	 * Returns the meta object for the containment reference list '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getGenomeSnapshots <em>Genome Snapshots</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference list '<em>Genome Snapshots</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getGenomeSnapshots()
+	 * @see #getOrchestrator()
+	 * @generated
+	 */
+	EReference getOrchestrator_GenomeSnapshots();
+
+	/**
+	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.GenomeSnapshot <em>Genome Snapshot</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Genome Snapshot</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.GenomeSnapshot
+	 * @generated
+	 */
+	EClass getGenomeSnapshot();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.GenomeSnapshot#getTimestamp <em>Timestamp</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Timestamp</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.GenomeSnapshot#getTimestamp()
+	 * @see #getGenomeSnapshot()
+	 * @generated
+	 */
+	EAttribute getGenomeSnapshot_Timestamp();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.GenomeSnapshot#getArchitectureArtifact <em>Architecture Artifact</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Architecture Artifact</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.GenomeSnapshot#getArchitectureArtifact()
+	 * @see #getGenomeSnapshot()
+	 * @generated
+	 */
+	EAttribute getGenomeSnapshot_ArchitectureArtifact();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.GenomeSnapshot#getUseCaseArtifact <em>Use Case Artifact</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Use Case Artifact</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.GenomeSnapshot#getUseCaseArtifact()
+	 * @see #getGenomeSnapshot()
+	 * @generated
+	 */
+	EAttribute getGenomeSnapshot_UseCaseArtifact();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.GenomeSnapshot#getMilestoneArtifact <em>Milestone Artifact</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Milestone Artifact</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.GenomeSnapshot#getMilestoneArtifact()
+	 * @see #getGenomeSnapshot()
+	 * @generated
+	 */
+	EAttribute getGenomeSnapshot_MilestoneArtifact();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.GenomeSnapshot#getGenomeArtifact <em>Genome Artifact</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Genome Artifact</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.GenomeSnapshot#getGenomeArtifact()
+	 * @see #getGenomeSnapshot()
+	 * @generated
+	 */
+	EAttribute getGenomeSnapshot_GenomeArtifact();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.GenomeSnapshot#getDashboardArtifact <em>Dashboard Artifact</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Dashboard Artifact</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.GenomeSnapshot#getDashboardArtifact()
+	 * @see #getGenomeSnapshot()
+	 * @generated
+	 */
+	EAttribute getGenomeSnapshot_DashboardArtifact();
 
 	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.ServerSettings <em>Server Settings</em>}'.
@@ -7602,6 +7780,72 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute ORCHESTRATOR__DEFAULT_TARGET = eINSTANCE.getOrchestrator_DefaultTarget();
+
+		/**
+		 * The meta object literal for the '<em><b>Genome Snapshots</b></em>' containment reference list feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference ORCHESTRATOR__GENOME_SNAPSHOTS = eINSTANCE.getOrchestrator_GenomeSnapshots();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.GenomeSnapshotImpl <em>Genome Snapshot</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.GenomeSnapshotImpl
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getGenomeSnapshot()
+		 * @generated
+		 */
+		EClass GENOME_SNAPSHOT = eINSTANCE.getGenomeSnapshot();
+
+		/**
+		 * The meta object literal for the '<em><b>Timestamp</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute GENOME_SNAPSHOT__TIMESTAMP = eINSTANCE.getGenomeSnapshot_Timestamp();
+
+		/**
+		 * The meta object literal for the '<em><b>Architecture Artifact</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute GENOME_SNAPSHOT__ARCHITECTURE_ARTIFACT = eINSTANCE.getGenomeSnapshot_ArchitectureArtifact();
+
+		/**
+		 * The meta object literal for the '<em><b>Use Case Artifact</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute GENOME_SNAPSHOT__USE_CASE_ARTIFACT = eINSTANCE.getGenomeSnapshot_UseCaseArtifact();
+
+		/**
+		 * The meta object literal for the '<em><b>Milestone Artifact</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute GENOME_SNAPSHOT__MILESTONE_ARTIFACT = eINSTANCE.getGenomeSnapshot_MilestoneArtifact();
+
+		/**
+		 * The meta object literal for the '<em><b>Genome Artifact</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute GENOME_SNAPSHOT__GENOME_ARTIFACT = eINSTANCE.getGenomeSnapshot_GenomeArtifact();
+
+		/**
+		 * The meta object literal for the '<em><b>Dashboard Artifact</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute GENOME_SNAPSHOT__DASHBOARD_ARTIFACT = eINSTANCE.getGenomeSnapshot_DashboardArtifact();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ServerSettingsImpl <em>Server Settings</em>}' class.

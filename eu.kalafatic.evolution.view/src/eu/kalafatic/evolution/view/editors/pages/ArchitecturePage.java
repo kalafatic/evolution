@@ -31,6 +31,9 @@ import eu.kalafatic.evolution.controller.agents.MetadataAgent;
 import eu.kalafatic.evolution.controller.orchestration.design.DesignRenderer;
 import eu.kalafatic.evolution.controller.orchestration.design.RelationshipRecord;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.model.orchestration.GenomeSnapshot;
+import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
+import eu.kalafatic.evolution.selfdev.genome.milestone.MilestoneGenerator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 
 /**
@@ -44,11 +47,14 @@ public class ArchitecturePage extends AEvoPage {
     private boolean isJsReady = false;
     private String lastJson = "";
     private String lastTargetPath = "";
+    private boolean showingSnapshot = false;
 
     private String currentTargetPath;
     private String defaultTargetPath;
     private List<String> targetHistory = new ArrayList<>();
     private org.eclipse.swt.widgets.Combo targetCombo;
+    private org.eclipse.swt.widgets.Combo snapshotCombo;
+    private MilestoneGenerator milestoneGenerator = new MilestoneGenerator();
 
     public ArchitecturePage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
         super(parent, editor, orchestrator);
@@ -112,7 +118,10 @@ public class ArchitecturePage extends AEvoPage {
         if (currentTargetPath != null && !targetHistory.contains(currentTargetPath)) {
             targetHistory.add(0, currentTargetPath);
         }
+
+        synchronizeSnapshotsWithDisk();
         updateTargetCombo();
+        populateSnapshotCombo();
     }
 
     private String findEvoRepository() {
@@ -248,9 +257,49 @@ public class ArchitecturePage extends AEvoPage {
             targetHistory.add(0, path);
         }
 
+        synchronizeSnapshotsWithDisk();
         updateTargetCombo();
+        populateSnapshotCombo();
         invalidateCache();
         scheduleRefresh();
+    }
+
+    private void synchronizeSnapshotsWithDisk() {
+        if (currentTargetPath == null || orchestrator == null) return;
+        java.io.File milestonesDir = new java.io.File(currentTargetPath, "milestones");
+        if (!milestonesDir.exists()) return;
+
+        java.io.File[] dirs = milestonesDir.listFiles(java.io.File::isDirectory);
+        if (dirs == null) return;
+
+        java.util.List<String> diskSnapshots = java.util.Arrays.stream(dirs)
+                .filter(d -> d.getName().startsWith("genome_"))
+                .map(d -> d.getName().replace("genome_", ""))
+                .collect(java.util.stream.Collectors.toList());
+
+        // Remove from model if not on disk
+        orchestrator.getGenomeSnapshots().removeIf(s -> !diskSnapshots.contains(s.getTimestamp()));
+
+        // Add to model if on disk but not in model
+        for (String ts : diskSnapshots) {
+            boolean exists = orchestrator.getGenomeSnapshots().stream().anyMatch(s -> ts.equals(s.getTimestamp()));
+            if (!exists) {
+                GenomeSnapshot snapshot = OrchestrationFactory.eINSTANCE.createGenomeSnapshot();
+                snapshot.setTimestamp(ts);
+                snapshot.setArchitectureArtifact("milestones/genome_" + ts + "/architecture.md");
+                snapshot.setUseCaseArtifact("milestones/genome_" + ts + "/use_cases.md");
+                snapshot.setMilestoneArtifact("milestones/genome_" + ts + "/milestone_v1.md");
+                snapshot.setGenomeArtifact("milestones/genome_" + ts + "/genome.json");
+                snapshot.setDashboardArtifact("milestones/genome_" + ts + "/milestone_dashboard.html");
+                orchestrator.getGenomeSnapshots().add(snapshot);
+            }
+        }
+
+        // Sort by timestamp and keep latest 8
+        java.util.Collections.sort(orchestrator.getGenomeSnapshots(), (a, b) -> a.getTimestamp().compareTo(b.getTimestamp()));
+        while (orchestrator.getGenomeSnapshots().size() > 8) {
+            orchestrator.getGenomeSnapshots().remove(0);
+        }
     }
 
     private void updateTargetCombo() {
@@ -467,6 +516,136 @@ public class ArchitecturePage extends AEvoPage {
         mgr.add(new org.eclipse.jface.action.Action("Generate Metadata") { @Override public void run() { handleGenerateMetadata(); } });
 
         mgr.update(true);
+
+        Composite milestoneComp = new Composite(this, SWT.NONE);
+        milestoneComp.setLayout(new GridLayout(3, false));
+        milestoneComp.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
+
+        new org.eclipse.swt.widgets.Label(milestoneComp, SWT.NONE).setText("Genome Milestones:");
+
+        snapshotCombo = new org.eclipse.swt.widgets.Combo(milestoneComp, SWT.READ_ONLY);
+        snapshotCombo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+        populateSnapshotCombo();
+        snapshotCombo.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
+            @Override
+            public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
+                int index = snapshotCombo.getSelectionIndex();
+                if (index > 0) { // Index 0 is "Current"
+                    showingSnapshot = true;
+                    loadMilestoneDashboard(orchestrator.getGenomeSnapshots().get(index - 1));
+                } else {
+                    showingSnapshot = false;
+                    scheduleRefresh();
+                }
+            }
+        });
+
+        Button genMilestoneBtn = new Button(milestoneComp, SWT.PUSH);
+        genMilestoneBtn.setText("Generate Milestone");
+        genMilestoneBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
+            @Override
+            public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
+                handleGenerateMilestone();
+            }
+        });
+    }
+
+    private void populateSnapshotCombo() {
+        if (snapshotCombo == null || snapshotCombo.isDisposed()) return;
+        List<String> items = new ArrayList<>();
+        items.add("Current (Live Architecture)");
+        if (orchestrator != null) {
+            for (GenomeSnapshot snapshot : orchestrator.getGenomeSnapshots()) {
+                items.add("genome_" + snapshot.getTimestamp());
+            }
+        }
+        snapshotCombo.setItems(items.toArray(new String[0]));
+        snapshotCombo.select(0);
+    }
+
+    private void handleGenerateMilestone() {
+        if (currentTargetPath == null) {
+            MessageBox box = new MessageBox(getShell(), SWT.ICON_WARNING | SWT.OK);
+            box.setText("No Target Selected");
+            box.setMessage("Please select a target repository before generating a milestone.");
+            box.open();
+            return;
+        }
+
+        java.io.File root = new java.io.File(currentTargetPath);
+        String projectName = (orchestrator.getName() != null) ? orchestrator.getName() : root.getName();
+
+        org.eclipse.core.runtime.jobs.Job job = new org.eclipse.core.runtime.jobs.Job("Generating Genome Milestone") {
+            @Override
+            protected org.eclipse.core.runtime.IStatus run(org.eclipse.core.runtime.IProgressMonitor monitor) {
+                try {
+                    String timestamp = milestoneGenerator.generateMilestone(root, projectName, "v1");
+
+                    Display.getDefault().asyncExec(() -> {
+                        GenomeSnapshot snapshot = OrchestrationFactory.eINSTANCE.createGenomeSnapshot();
+                        snapshot.setTimestamp(timestamp);
+                        snapshot.setArchitectureArtifact("milestones/genome_" + timestamp + "/architecture.md");
+                        snapshot.setUseCaseArtifact("milestones/genome_" + timestamp + "/use_cases.md");
+                        snapshot.setMilestoneArtifact("milestones/genome_" + timestamp + "/milestone_v1.md");
+                        snapshot.setGenomeArtifact("milestones/genome_" + timestamp + "/genome.json");
+                        snapshot.setDashboardArtifact("milestones/genome_" + timestamp + "/milestone_dashboard.html");
+
+                        orchestrator.getGenomeSnapshots().add(snapshot);
+
+                        // Explicit save
+                        try {
+                            eu.kalafatic.evolution.controller.manager.ProjectModelManager.getInstance().saveResource(orchestrator.eResource());
+                        } catch (Exception ex) {
+                            ex.printStackTrace();
+                        }
+
+                        // Synchronize model with filesystem retention policy (latest 8)
+                        java.io.File milestonesDir = new java.io.File(root, "milestones");
+                        java.io.File[] dirs = milestonesDir.listFiles(java.io.File::isDirectory);
+                        if (dirs != null) {
+                            java.util.Set<String> existingTimestamps = java.util.Arrays.stream(dirs)
+                                    .map(d -> d.getName().replace("genome_", ""))
+                                    .collect(java.util.stream.Collectors.toSet());
+
+                            orchestrator.getGenomeSnapshots().removeIf(s -> !existingTimestamps.contains(s.getTimestamp()));
+                        }
+
+                        while (orchestrator.getGenomeSnapshots().size() > 8) {
+                            orchestrator.getGenomeSnapshots().remove(0);
+                        }
+
+                        populateSnapshotCombo();
+                        snapshotCombo.select(snapshotCombo.getItemCount() - 1);
+                        loadMilestoneDashboard(snapshot);
+                    });
+
+                    return org.eclipse.core.runtime.Status.OK_STATUS;
+                } catch (Exception e) {
+                    return new org.eclipse.core.runtime.Status(org.eclipse.core.runtime.IStatus.ERROR, "eu.kalafatic.evolution.view", "Milestone generation failed", e);
+                }
+            }
+        };
+        job.schedule();
+    }
+
+    private void loadMilestoneDashboard(GenomeSnapshot snapshot) {
+        if (currentTargetPath == null || browser == null || browser.isDisposed()) return;
+
+        java.io.File dashboardFile = new java.io.File(currentTargetPath, snapshot.getDashboardArtifact());
+        if (dashboardFile.exists()) {
+            try {
+                String html = java.nio.file.Files.readString(dashboardFile.toPath());
+                browser.setText(html);
+                lastJson = ""; // Invalidate lastJson to force reload when switching back to Current
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else {
+            MessageBox box = new MessageBox(getShell(), SWT.ICON_ERROR | SWT.OK);
+            box.setText("Dashboard Missing");
+            box.setMessage("Milestone dashboard HTML not found: " + snapshot.getDashboardArtifact());
+            box.open();
+        }
     }
 
     private void hookContextMenu() {
@@ -623,9 +802,9 @@ public class ArchitecturePage extends AEvoPage {
     }
 
     private void refreshBrowser() {
-        if (browser == null || browser.isDisposed() || !isLoaded || !isJsReady) return;
+        if (browser == null || browser.isDisposed() || !isLoaded || !isJsReady || showingSnapshot) return;
         Display.getDefault().asyncExec(() -> {
-            if (browser == null || browser.isDisposed()) return;
+            if (browser == null || browser.isDisposed() || showingSnapshot) return;
             DesignModel model = extractModel();
 
             boolean targetChanged = currentTargetPath != null && !currentTargetPath.equals(lastTargetPath);

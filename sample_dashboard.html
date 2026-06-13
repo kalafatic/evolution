@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Genome Milestone Dashboard - TestProject</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1000px; margin: 0 auto; padding: 20px; background-color: #f4f7f6; }
+        header { border-bottom: 2px solid #007acc; padding-bottom: 10px; margin-bottom: 30px; }
+        h1 { color: #007acc; margin: 0; }
+        .meta { color: #666; font-size: 0.9em; margin-top: 5px; }
+        section { background: #fff; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h2 { border-bottom: 1px solid #eee; padding-bottom: 10px; margin-top: 0; color: #444; }
+        pre { background: #f8f8f8; padding: 15px; border-radius: 5px; overflow-x: auto; border: 1px solid #ddd; }
+        code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace; font-size: 0.9em; }
+        .collapsible { cursor: pointer; user-select: none; }
+        .collapsible:after { content: ' \25BC'; float: right; }
+        .active:after { content: ' \25B2'; }
+        .content { display: block; overflow: hidden; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Genome Milestone Dashboard</h1>
+        <div class="meta">Project: TestProject | Snapshot: genome_130626</div>
+    </header>
+
+    <section>
+        <h2 class="collapsible active">Architecture Overview</h2>
+        <div class="content"><h1>Arch</h1>
+<ul><li>Component A: Description A</li>
+<li>Component B: Description B</li></ul>
+</div>
+    </section>
+
+    <section>
+        <h2 class="collapsible active">Use Cases and Behaviors</h2>
+        <div class="content"><h1>Use Cases</h1>
+<h2>UC1</h2>
+Purpose: Test purpose
+</div>
+    </section>
+
+    <section>
+        <h2 class="collapsible active">Milestone Freeze Point</h2>
+        <div class="content"><h1>Milestone</h1>
+<h2>Stable</h2>
+<ul><li>File 1</li></ul>
+</div>
+    </section>
+
+    <section>
+        <h2 class="collapsible">Genome JSON Summary</h2>
+        <div class="content" style="display:none;">
+            <pre><code>{"identity": {"name": "Test", "version": "v1"}}</code></pre>
+        </div>
+    </section>
+
+    <script>
+        var coll = document.getElementsByClassName("collapsible");
+        for (var i = 0; i < coll.length; i++) {
+            coll[i].addEventListener("click", function() {
+                this.classList.toggle("active");
+                var content = this.nextElementSibling;
+                if (content.style.display === "block" || content.style.display === "") {
+                    content.style.display = "none";
+                } else {
+                    content.style.display = "block";
+                }
+            });
+        }
+    </script>
+</body>
+</html>

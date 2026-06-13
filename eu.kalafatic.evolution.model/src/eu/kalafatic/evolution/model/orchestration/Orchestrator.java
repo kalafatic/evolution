@@ -48,6 +48,7 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getSupervisorSettings <em>Supervisor Settings</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getNetworkEntries <em>Network Entries</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getDefaultTarget <em>Default Target</em>}</li>
+	 *   <li>{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getGenomeSnapshots <em>Genome Snapshots</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator()
@@ -715,5 +716,17 @@ public interface Orchestrator extends EObject {
 	 * @generated
 	 */
 	void setDefaultTarget(String value);
+
+	/**
+	 * Returns the value of the '<em><b>Genome Snapshots</b></em>' containment reference list.
+	 * The list contents are of type {@link eu.kalafatic.evolution.model.orchestration.GenomeSnapshot}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Genome Snapshots</em>' containment reference list.
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator_GenomeSnapshots()
+	 * @model containment="true"
+	 * @generated
+	 */
+	EList<GenomeSnapshot> getGenomeSnapshots();
 
 } // Orchestrator

@@ -49,6 +49,15 @@ public interface OrchestrationFactory extends EFactory {
 	Orchestrator createOrchestrator();
 
 	/**
+	 * Returns a new object of class '<em>Genome Snapshot</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>Genome Snapshot</em>'.
+	 * @generated
+	 */
+	GenomeSnapshot createGenomeSnapshot();
+
+	/**
 	 * Returns a new object of class '<em>Server Settings</em>'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
