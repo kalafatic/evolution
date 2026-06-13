@@ -9,6 +9,8 @@ import java.util.stream.Collectors;
 
 import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
 import eu.kalafatic.evolution.controller.orchestration.SessionManager;
+import eu.kalafatic.evolution.selfdev.genome.core.MetricArtifact;
+import eu.kalafatic.evolution.selfdev.genome.hub.SelfDevGenomeHub;
 import eu.kalafatic.evolution.controller.workflow.EvolutionEvent.CausalityType;
 import eu.kalafatic.evolution.controller.workflow.EvolutionEvent.EELType;
 
@@ -170,14 +172,14 @@ public class EvolutionaryObservabilityManager implements RuntimeEventListener {
             eu.kalafatic.evolution.selfdev.genome.repository.GenomeRepository repo = null;
             // Best-effort discovery of genome repository via hub or registry
             try {
-                eu.kalafatic.evolution.selfdev.genome.hub.SelfDevGenomeHub hub = (eu.kalafatic.evolution.selfdev.genome.hub.SelfDevGenomeHub)
+                SelfDevGenomeHub hub = (SelfDevGenomeHub)
                     session.getCapabilityRegistry().getContractImplementation("genome.hub", Object.class);
                 if (hub != null) repo = hub.getRepository();
             } catch (Exception e) {}
 
             if (repo != null) {
-                eu.kalafatic.evolution.selfdev.genome.core.MetricArtifact metric =
-                    new eu.kalafatic.evolution.selfdev.genome.core.MetricArtifact(
+                MetricArtifact metric =
+                    new MetricArtifact(
                         "metric-" + System.currentTimeMillis(), name, value);
                 metric.setSourceProject(sessionId);
                 repo.save(metric);

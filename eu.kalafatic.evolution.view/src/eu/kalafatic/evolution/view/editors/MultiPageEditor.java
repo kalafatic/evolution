@@ -564,6 +564,12 @@ public class MultiPageEditor extends MultiPageEditorPart {
 
     @Override
     protected void pageChange(int newPageIndex) {
+        // Null guard for e4Context in PartSite, which can be null during early initialization
+        // or during specific layout transitions in some Eclipse versions.
+        if (getSite() == null) {
+             return;
+        }
+
         super.pageChange(newPageIndex);
 
         // Update the action bar contributor to ensure the platform's global actions
