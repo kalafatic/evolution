@@ -86,6 +86,11 @@ public class ConversationState {
             cog.put("intent", cognitiveState.getCurrentIntent().name());
             cog.put("direction", cognitiveState.getCurrentDirection().name());
             cog.put("confidence", cognitiveState.getConfidence());
+            cog.put("depth", cognitiveState.getCognitiveDepth());
+            cog.put("velocity", cognitiveState.getVelocity());
+            cog.put("acceleration", cognitiveState.getAcceleration());
+            cog.put("dominant_trend", cognitiveState.getDominantTrend().name());
+            cog.put("trend_stability", cognitiveState.getTrendStability());
 
             JSONArray scores = new JSONArray();
             cognitiveState.getCapabilityScores().forEach((k, v) -> {
@@ -99,6 +104,17 @@ public class ConversationState {
             JSONArray traj = new JSONArray();
             cognitiveState.getTrajectory().forEach(t -> traj.put(t.name()));
             cog.put("trajectory", traj);
+
+            JSONArray history = new JSONArray();
+            cognitiveState.getCapabilityHistory().forEach(s -> {
+                JSONObject sig = new JSONObject();
+                sig.put("capability", s.getCapability().name());
+                sig.put("weight", s.getWeight());
+                sig.put("intent", s.getIntent().name());
+                sig.put("source", s.getSource());
+                history.put(sig);
+            });
+            cog.put("history", history);
 
             json.put("cognitive_state", cog);
         }
@@ -132,6 +148,11 @@ public class ConversationState {
                 scs.setCurrentIntent(SessionIntent.valueOf(cog.optString("intent", "LEARNING")));
                 scs.setCurrentDirection(CognitiveDirection.valueOf(cog.optString("direction", "STABLE")));
                 scs.setConfidence(cog.optDouble("confidence", 1.0));
+                scs.setCognitiveDepth(cog.optInt("depth", 1));
+                scs.setVelocity(cog.optDouble("velocity", 0.0));
+                scs.setAcceleration(cog.optDouble("acceleration", 0.0));
+                scs.setDominantTrend(CapabilityType.valueOf(cog.optString("dominant_trend", "CHAT")));
+                scs.setTrendStability(cog.optDouble("trend_stability", 1.0));
 
                 JSONArray scores = cog.optJSONArray("scores");
                 if (scores != null) {
@@ -148,6 +169,19 @@ public class ConversationState {
                         trajectoryList.add(CapabilityType.valueOf(traj.getString(i)));
                     }
                     scs.setTrajectory(trajectoryList);
+                }
+
+                JSONArray history = cog.optJSONArray("history");
+                if (history != null) {
+                    for (int i = 0; i < history.length(); i++) {
+                        JSONObject sig = history.getJSONObject(i);
+                        scs.addSignal(new eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilitySignal(
+                            CapabilityType.valueOf(sig.getString("capability")),
+                            sig.getDouble("weight"),
+                            SessionIntent.valueOf(sig.getString("intent")),
+                            sig.getString("source")
+                        ));
+                    }
                 }
                 state.setCognitiveState(scs);
             }

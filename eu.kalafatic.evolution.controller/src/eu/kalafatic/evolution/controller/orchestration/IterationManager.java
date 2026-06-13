@@ -362,6 +362,23 @@ public class IterationManager {
             ConversationState convState = ConversationState.load(context.getSharedMemory(), context.getSessionId());
             convState.addMessage("User: " + request);
 
+            // Restore cognitive state from history if present
+            if (convState.getCognitiveState() != null) {
+                context.log("[KERNEL] Restoring cognitive state from conversation history.");
+                sessionContainer.getCognitiveState().setCurrentCapability(convState.getCognitiveState().getCurrentCapability());
+                sessionContainer.getCognitiveState().setCurrentIntent(convState.getCognitiveState().getCurrentIntent());
+                sessionContainer.getCognitiveState().setCurrentDirection(convState.getCognitiveState().getCurrentDirection());
+                sessionContainer.getCognitiveState().setConfidence(convState.getCognitiveState().getConfidence());
+                sessionContainer.getCognitiveState().setCognitiveDepth(convState.getCognitiveState().getCognitiveDepth());
+                sessionContainer.getCognitiveState().setVelocity(convState.getCognitiveState().getVelocity());
+                sessionContainer.getCognitiveState().setAcceleration(convState.getCognitiveState().getAcceleration());
+                sessionContainer.getCognitiveState().setDominantTrend(convState.getCognitiveState().getDominantTrend());
+                sessionContainer.getCognitiveState().setTrendStability(convState.getCognitiveState().getTrendStability());
+                sessionContainer.getCognitiveState().setTrajectory(new ArrayList<>(convState.getCognitiveState().getTrajectory()));
+                sessionContainer.getCognitiveState().getCapabilityScores().putAll(convState.getCognitiveState().getCapabilityScores());
+                sessionContainer.getCognitiveState().getCapabilityHistory().addAll(convState.getCognitiveState().getCapabilityHistory());
+            }
+
             // 1. DISCOVERY phase
             if (!profile.hasTrait(BehaviorTrait.REASONING_ATOMIC)) {
                 if (gitManager.isGitRepository()) {

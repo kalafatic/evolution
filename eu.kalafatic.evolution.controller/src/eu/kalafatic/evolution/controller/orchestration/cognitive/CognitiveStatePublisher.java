@@ -14,9 +14,9 @@ import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
  * Implements change filtering to avoid event spam.
  */
 public class CognitiveStatePublisher {
-    private static final Map<String, CognitiveStateSnapshot> lastSnapshots = new java.util.LinkedHashMap<>() {
+    private static final Map<String, SessionCognitiveSnapshot> lastSnapshots = new java.util.LinkedHashMap<>() {
         @Override
-        protected boolean removeEldestEntry(Map.Entry<String, CognitiveStateSnapshot> eldest) {
+        protected boolean removeEldestEntry(Map.Entry<String, SessionCognitiveSnapshot> eldest) {
             return size() > 100;
         }
     };
@@ -24,8 +24,8 @@ public class CognitiveStatePublisher {
 
     public synchronized void publish(TaskContext context, SessionCognitiveState state) {
         String sessionId = context.getSessionId();
-        CognitiveStateSnapshot current = new CognitiveStateSnapshot(state);
-        CognitiveStateSnapshot last = lastSnapshots.get(sessionId);
+        SessionCognitiveSnapshot current = new SessionCognitiveSnapshot(state);
+        SessionCognitiveSnapshot last = lastSnapshots.get(sessionId);
 
         if (shouldPublish(current, last)) {
             lastSnapshots.put(sessionId, current);
@@ -33,7 +33,7 @@ public class CognitiveStatePublisher {
         }
     }
 
-    private boolean shouldPublish(CognitiveStateSnapshot current, CognitiveStateSnapshot last) {
+    private boolean shouldPublish(SessionCognitiveSnapshot current, SessionCognitiveSnapshot last) {
         if (last == null) return true;
 
         // Emit on any discrete state change
@@ -49,7 +49,7 @@ public class CognitiveStatePublisher {
         return false;
     }
 
-    private void broadcast(TaskContext context, CognitiveStateSnapshot snapshot) {
+    private void broadcast(TaskContext context, SessionCognitiveSnapshot snapshot) {
         JSONObject payload = new JSONObject(snapshot);
 
         // 1. Internal Event Bus
