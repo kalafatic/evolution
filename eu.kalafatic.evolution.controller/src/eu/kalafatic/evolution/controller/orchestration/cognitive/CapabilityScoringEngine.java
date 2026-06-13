@@ -6,38 +6,51 @@ import java.util.Map;
  * Manages capability scores and implements hysteresis to prevent oscillation.
  */
 public class CapabilityScoringEngine {
-    private static final double DECAY_FACTOR = 0.9;
+    private static final double DECAY_FACTOR = 0.95;
     private static final double HYSTERESIS_THRESHOLD = 5.0;
+    private static final double DOWNGRADE_PENALTY = 2.0;
 
     public void updateScores(SessionCognitiveState state, CapabilitySignal signal) {
         Map<CapabilityType, Double> scores = state.getCapabilityScores();
 
-        // Apply decay to all scores
+        // 1. Apply gradual decay to all scores
         for (CapabilityType type : CapabilityType.values()) {
-            scores.put(type, scores.get(type) * DECAY_FACTOR);
+            scores.put(type, scores.getOrDefault(type, 0.0) * DECAY_FACTOR);
         }
 
-        // Add current signal weight
-        double currentScore = scores.getOrDefault(signal.getCapability(), 0.0);
-        scores.put(signal.getCapability(), currentScore + signal.getWeight());
+        // 2. Add current signal weight
+        double currentSignalScore = scores.getOrDefault(signal.getCapability(), 0.0);
+        scores.put(signal.getCapability(), currentSignalScore + signal.getWeight());
 
-        // Determine if capability should transition
-        CapabilityType winner = null;
-        double maxScore = -1.0;
+        // 3. Determine potential winner
+        CapabilityType candidate = state.getCurrentCapability();
+        double maxScore = scores.getOrDefault(candidate, 0.0);
 
         for (Map.Entry<CapabilityType, Double> entry : scores.entrySet()) {
             if (entry.getValue() > maxScore) {
                 maxScore = entry.getValue();
-                winner = entry.getKey();
+                candidate = entry.getKey();
             }
         }
 
-        if (winner != null && winner != state.getCurrentCapability()) {
+        // 4. Implement Hysteresis & Depth Bias
+        if (candidate != state.getCurrentCapability()) {
             double currentCapScore = scores.getOrDefault(state.getCurrentCapability(), 0.0);
-            // Transition only if the new capability significantly outweighs the current one
-            if (maxScore > currentCapScore + HYSTERESIS_THRESHOLD) {
-                state.setCurrentCapability(winner);
+
+            // Bias: harder to move from ARCHITECTURE/EVOLUTION back to CHAT/CODE
+            double transitionThreshold = HYSTERESIS_THRESHOLD;
+            if (isDeepCapability(state.getCurrentCapability()) && !isDeepCapability(candidate)) {
+                transitionThreshold += DOWNGRADE_PENALTY;
+            }
+
+            // Require multiple contrary signals (accumulated score) before transition
+            if (maxScore > currentCapScore + transitionThreshold) {
+                state.setCurrentCapability(candidate);
             }
         }
+    }
+
+    private boolean isDeepCapability(CapabilityType type) {
+        return type == CapabilityType.ARCHITECTURE || type == CapabilityType.EVOLUTION;
     }
 }

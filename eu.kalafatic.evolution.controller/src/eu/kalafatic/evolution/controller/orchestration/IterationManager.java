@@ -1076,6 +1076,7 @@ public class IterationManager {
                 boolean found = variants.stream().anyMatch(v -> v.getId().equals(manualId));
                 if (found) {
                     context.log("[KERNEL] User selected trajectory: " + manualId);
+                    emitDarwinBranches(context, variants, manualId);
                     return manualId;
                 } else {
                     context.log("[KERNEL] Warning: Selected trajectory ID not found: " + manualId);
@@ -1085,13 +1086,16 @@ public class IterationManager {
                 variants.stream().filter(v -> v.getId().equals(keepId)).findFirst().ifPresent(v -> {
                     v.setActivationState(BranchVariant.ActivationState.KEPT);
                     context.log("[KERNEL] Trajectory " + keepId + " marked as KEPT for final evaluation.");
+                    emitDarwinBranches(context, variants, null);
                 });
             } else if (trimmed.startsWith("Reject variant ")) {
                 String rejectedId = trimmed.substring(15).trim();
-                context.log("[KERNEL] User rejected trajectory: " + rejectedId + ". Evolution stopped by user.");
-                recordRejection(goal, "Darwin trajectory " + rejectedId + " rejected by user ('no way').");
-                sessionContainer.getEvolutionMemoryGraph().recordRejection("MANUAL_SELECTION", rejectedId, "User rejected explicitly.");
-                return "STOP";
+                variants.stream().filter(v -> v.getId().equals(rejectedId)).findFirst().ifPresent(v -> {
+                    v.setActivationState(BranchVariant.ActivationState.REJECTED);
+                    context.log("[KERNEL] Trajectory " + rejectedId + " rejected by user.");
+                    sessionContainer.getEvolutionMemoryGraph().recordRejection("MANUAL_SELECTION", rejectedId, "User rejected explicitly.");
+                    emitDarwinBranches(context, variants, null);
+                });
             } else if ("Rejected".equalsIgnoreCase(trimmed) || "Reject".equalsIgnoreCase(trimmed) || "No".equalsIgnoreCase(trimmed)) {
                 recordRejection(goal, "Darwin trajectories rejected by user.");
                 sessionContainer.getEvolutionMemoryGraph().recordEntropy(1.0);
@@ -1155,6 +1159,25 @@ public class IterationManager {
     private boolean isIntentExpansionPhase(TaskContext context) {
         String phaseStr = context.getOrchestrationState().getCurrentPhase();
         return EvolutionPhase.INTENT_EXPANSION.name().equals(phaseStr) || "INTENT_EXPANSION".equals(phaseStr);
+    }
+
+    private void emitDarwinBranches(TaskContext context, List<BranchVariant> variants, String approvedId) {
+        StringBuilder outcomeBuilder = new StringBuilder("[DARWIN_BRANCHES] ");
+        if (approvedId != null) {
+            outcomeBuilder.append("[APPROVED:").append(approvedId).append("] ");
+        }
+
+        for (BranchVariant v : variants) {
+            if (v.getId().equals(approvedId)) continue;
+            String status = (v.getActivationState() == BranchVariant.ActivationState.KEPT) ? "KEPT" :
+                            (v.getActivationState() == BranchVariant.ActivationState.REJECTED) ? "REJECTED" : "PENDING";
+
+            if (!"PENDING".equals(status)) {
+                outcomeBuilder.append("[").append(status).append(":").append(v.getId()).append("] ");
+            }
+        }
+        outcomeBuilder.append("[DECISION:MANUAL]");
+        context.log(outcomeBuilder.toString());
     }
 
     private String sanitizeForBranch(String s) {

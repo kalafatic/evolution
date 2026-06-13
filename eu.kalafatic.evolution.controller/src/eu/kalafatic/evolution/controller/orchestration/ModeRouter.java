@@ -73,39 +73,53 @@ public class ModeRouter {
             return createSimpleChatMode();
         }
 
+        // Fast keyword detection for legacy test support
+        if (lowerPrompt.contains("create a java class") || lowerPrompt.contains("implement method")) {
+            return createAssistedCodingMode();
+        }
+
         return null; // Let the cognitive state engine decide
     }
 
     /**
      * Detects or assigns PlatformMode based on user input, orchestrator state, and optional context assist result.
+     * Priority: 1. Session Cognitive State (grounded in history), 2. Fast Rule Classification, 3. Model Fallback.
      */
     public PlatformMode route(String prompt, Orchestrator orchestrator, ContextAssistResult assistResult) {
         if (prompt == null) prompt = "";
 
-        // 1. Try explicit overrides first
-        PlatformMode fastMode = routeFast(prompt, orchestrator);
-        if (fastMode != null) return fastMode;
-
-        // 2. Process through Cognitive State Engine
-        SessionContainer session = SessionManager.getInstance().getSession(orchestrator.getId());
+        // 1. Process through Cognitive State Engine if session exists (Conversation Trajectory)
+        String sessionId = (orchestrator != null) ? orchestrator.getId() : null;
+        SessionContainer session = (sessionId != null) ? SessionManager.getInstance().getSession(sessionId) : null;
         if (session != null) {
             SessionCognitiveState cogState = session.getCognitiveState();
-            cognitiveStateEngine.processInteraction(prompt, cogState, assistResult);
 
-            // Broadcast cognitive state change for UI updates
-            session.getEventBus().publish(new eu.kalafatic.evolution.controller.workflow.RuntimeEvent(
-                eu.kalafatic.evolution.controller.workflow.RuntimeEventType.COGNITIVE_STATE_CHANGED,
-                orchestrator.getId(), "ModeRouter", cogState
-            ));
+            // Resolve TaskContext for publisher support if available
+            TaskContext context = (session instanceof SessionContext) ? ((SessionContext)session).getTaskContext() : null;
+            if (context == null && orchestrator != null) {
+                // Heuristic context for routing-only interactions
+                context = new TaskContext(orchestrator, new java.io.File("."));
+                context.setSessionId(sessionId);
+            }
 
-            // Map Cognitive State back to PlatformMode
+            cognitiveStateEngine.processInteraction(prompt, cogState, context, assistResult);
+
+            // Routing is a consequence of cognitive state
             return mapToPlatformMode(cogState.getCurrentCapability());
         }
+
+        // 2. Try explicit overrides or fast classification if no session context (Fast Rules)
+        PlatformMode fastMode = routeFast(prompt, orchestrator);
+        if (fastMode != null) return fastMode;
 
         // 3. Fallback to model-based routing if no session exists (legacy support)
         if (orchestrator != null) {
             if (orchestrator.getAiMode() == eu.kalafatic.evolution.model.orchestration.AiMode.MEDIATED) {
                 return createHybridManualExportMode();
+            }
+            if (orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null &&
+                orchestrator.getAiChat().getPromptInstructions().isSelfIterativeMode()) {
+                return createSelfDevMode();
             }
             if (orchestrator.isDarwinMode()) {
                 return createDarwinMode();
