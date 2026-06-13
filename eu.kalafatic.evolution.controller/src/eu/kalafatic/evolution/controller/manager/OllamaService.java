@@ -179,7 +179,7 @@ public class OllamaService {
         jsonObject.put("prompt", prompt);
         jsonObject.put("stream", false);
         JSONObject options = new JSONObject();
-        options.put("temperature", this.temperature);
+        options.put("temperature", (double) this.temperature);
         options.put("num_predict", this.numPredict);
         jsonObject.put("options", options);
 
@@ -206,11 +206,11 @@ public class OllamaService {
         json.put("stream", stream);
 
         JSONObject options = new JSONObject();
-        options.put("temperature", this.temperature);
+        options.put("temperature", (double) this.temperature);
         options.put("num_predict", this.numPredict);
-        options.put("top_p", this.topP);
+        options.put("top_p", (double) this.topP);
         options.put("top_k", this.topK);
-        options.put("repeat_penalty", this.repeatPenalty);
+        options.put("repeat_penalty", (double) this.repeatPenalty);
         json.put("options", options);
 
         JSONArray msgs = new JSONArray();
