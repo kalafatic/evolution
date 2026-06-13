@@ -87,13 +87,14 @@ public class OrchestrationNavigatorContentProvider implements ITreeContentProvid
     public Object[] getChildren(Object parentElement) {
         if (parentElement instanceof IWorkspaceRoot) {
             IProject[] projects = ((IWorkspaceRoot) parentElement).getProjects();
-           List<IProject> evolutionProjects = new ArrayList<>();
+            List<IProject> evolutionProjects = new ArrayList<>();
             for (IProject project : projects) {
                 try {
-                    if (project.isOpen() && project.hasNature(EvolutionNature.NATURE_ID)) {
+                    // Allow all open projects to be visible in the navigator to prevent an empty "Left Panel"
+                    if (project.isOpen()) {
                         evolutionProjects.add(project);
                     }
-                } catch (CoreException e) {
+                } catch (Exception e) {
                     // Ignore
                 }
             }
@@ -325,8 +326,8 @@ public class OrchestrationNavigatorContentProvider implements ITreeContentProvid
         if (element instanceof IProject) {
             IProject project = (IProject) element;
             try {
-                return project.isOpen() && project.hasNature(EvolutionNature.NATURE_ID);
-            } catch (CoreException e) {
+                return project.isOpen();
+            } catch (Exception e) {
                 return false;
             }
         }
