@@ -20,6 +20,11 @@ public class ExporterControllerImpl implements ExporterController {
             throw new Exception("Model not found: " + modelId);
         }
 
+        if (model.getLifecycleState() != eu.kalafatic.forge.controller.api.ModelLifecycleState.FROZEN &&
+            model.getLifecycleState() != eu.kalafatic.forge.controller.api.ModelLifecycleState.COMPILING) {
+            throw new Exception("Model must be FROZEN before export. Current state: " + model.getLifecycleState());
+        }
+
         // Load specific snapshot to ensure deterministic export from a frozen state
         eu.kalafatic.forge.model.EvolutionSnapshot snapshot = model.getEvolutionSnapshots().stream()
             .filter(s -> s.getId().equals(snapshotId))

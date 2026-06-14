@@ -1,6 +1,7 @@
 package eu.kalafatic.forge.model;
 
 import java.util.List;
+import eu.kalafatic.forge.controller.api.ModelLifecycleState;
 
 public interface ForgeModel {
     String getId();
@@ -27,4 +28,7 @@ public interface ForgeModel {
     ModelGenome getGenome();
     void setGenome(ModelGenome genome);
     List<EvolutionSnapshot> getEvolutionSnapshots();
+
+    ModelLifecycleState getLifecycleState();
+    void setLifecycleState(ModelLifecycleState state);
 }

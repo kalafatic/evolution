@@ -286,7 +286,9 @@
         <div id="main-content">
             <div id="top-toolbar">
                 <span id="active-session-name">No Session Selected</span>
-                <div id="session-status-indicator"></div>
+                <div id="session-status-indicator" style="margin-left: 10px;">
+                    <span id="lifecycle-badge" style="background: #444; padding: 2px 8px; border-radius: 10px; font-size: 0.7em; color: #aaa;">OFFLINE</span>
+                </div>
 
                 <div style="margin-left: auto; display: flex; gap: 10px;">
                     <button class="btn btn-sm" onclick="toggleJsonEditor()">JSON Editor</button>
@@ -507,6 +509,9 @@
             document.getElementById('active-session-name').textContent = session ? session.name : "Unknown";
             document.getElementById('model-type').value = session ? session.modelType : "NEURON";
 
+            const state = (session && session.lifecycleState) ? session.lifecycleState : 'CREATED';
+            updateLifecycleUI(state);
+
             renderSessionList();
             await fetchModel(id);
             log(`Switched to session: ${session ? session.name : id}`);
@@ -522,6 +527,25 @@
                 vizAutoRefresh = !!session.uiState.autoRefreshEnabled;
             }
             onVizChange();
+        }
+
+        function updateLifecycleUI(state) {
+            const badge = document.getElementById('lifecycle-badge');
+            badge.textContent = state;
+
+            const colors = {
+                'CREATED': '#888',
+                'TRAINING': '#dcdcaa',
+                'FROZEN': '#4fc1ff',
+                'DEPLOYED': '#89d185',
+                'EVOLVING': '#c586c0'
+            };
+            badge.style.color = colors[state] || '#aaa';
+            badge.style.borderColor = colors[state] || '#333';
+            badge.style.border = '1px solid';
+
+            // Button locking
+            document.getElementById('train-btn').disabled = (state === 'FROZEN' || state === 'COMPILING');
         }
 
         async function fetchModel(id) {
