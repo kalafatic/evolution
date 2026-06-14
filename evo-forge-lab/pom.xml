@@ -3,17 +3,12 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <parent>
-        <groupId>eu.kalafatic.evolution</groupId>
-        <artifactId>eu.kalafatic.evolution.aggregator</artifactId>
-        <version>2.6.5-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
-    </parent>
-
-    <artifactId>eu.kalafatic.evolution.forge-lab</artifactId>
+    <groupId>eu.kalafatic.evolution</groupId>
+    <artifactId>evo-forge-lab</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
-    <name>EVO Forge Lab - Parent</name>
+    <name>EVO Forge Lab - Standalone Platform</name>
     <description>Professional-grade AI model development environment</description>
 
     <properties>
@@ -26,14 +21,14 @@
     </properties>
 
     <modules>
-        <module>eu.kalafatic.evolution.forge-math</module>
-        <module>eu.kalafatic.evolution.forge-model</module>
-        <module>eu.kalafatic.evolution.forge-runtime</module>
-        <module>eu.kalafatic.evolution.forge-trainer</module>
-        <module>eu.kalafatic.evolution.forge-tokenizer</module>
-        <module>eu.kalafatic.evolution.forge-data</module>
-        <module>eu.kalafatic.evolution.forge-controller</module>
-        <module>eu.kalafatic.evolution.forge-observability</module>
+        <module>forge-math</module>
+        <module>forge-model</module>
+        <module>forge-runtime</module>
+        <module>forge-trainer</module>
+        <module>forge-tokenizer</module>
+        <module>forge-data</module>
+        <module>forge-controller</module>
+        <module>forge-observability</module>
     </modules>
 
     <dependencyManagement>
@@ -83,6 +78,10 @@
         <repository>
             <id>eclipse-releases</id>
             <url>https://repo.eclipse.org/content/repositories/releases/</url>
+        </repository>
+        <repository>
+            <id>central</id>
+            <url>https://repo.maven.apache.org/maven2</url>
         </repository>
     </repositories>
 
