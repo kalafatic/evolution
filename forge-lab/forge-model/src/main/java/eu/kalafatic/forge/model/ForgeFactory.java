@@ -8,4 +8,8 @@ public class ForgeFactory {
     public ForgeDataset createForgeDataset() { return null; }
     public ForgeTrainingRun createForgeTrainingRun() { return null; }
     public ForgeSnapshot createForgeSnapshot() { return null; }
+    public SubModel createSubModel() { return null; }
+    public ModelConnection createModelConnection() { return null; }
+    public ModelGenome createModelGenome() { return null; }
+    public EvolutionSnapshot createEvolutionSnapshot() { return null; }
 }
