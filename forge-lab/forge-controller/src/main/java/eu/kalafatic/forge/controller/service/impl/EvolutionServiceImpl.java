@@ -6,9 +6,12 @@ import eu.kalafatic.forge.controller.repository.ForgeRepository;
 import eu.kalafatic.forge.model.*;
 import java.util.ArrayList;
 
+import eu.kalafatic.forge.controller.service.EvolutionPolicy;
+
 public class EvolutionServiceImpl implements EvolutionService {
     private final EvolutionPolicyEngine policyEngine;
     private final ForgeRepository repository;
+    private final EvolutionPolicy evolutionPolicy = new EvolutionPolicy();
 
     public EvolutionServiceImpl(EvolutionPolicyEngine policyEngine, ForgeRepository repository) {
         this.policyEngine = policyEngine;
@@ -94,8 +97,14 @@ public class EvolutionServiceImpl implements EvolutionService {
         ForgeSession session = repository.load(sessionId);
         ForgeModel model = findModel(session, modelId);
 
+        // Gating logic
+        if (!evolutionPolicy.isMutationAllowed(100, model.getFitnessScore())) {
+             return;
+        }
+
         // Complex evolution logic producing new snapshot
         createSnapshot(model, "Evolution cycle triggered");
+        evolutionPolicy.recordMutation();
         repository.save(session);
     }
 
@@ -109,6 +118,17 @@ public class EvolutionServiceImpl implements EvolutionService {
         snapshot.setId("snap-" + System.currentTimeMillis());
         snapshot.setTimestamp(System.currentTimeMillis());
         snapshot.setFullGraphState(change); // Simplification for now
+
+        // Identity and Lineage management
+        String parentId = model.getEvolutionSnapshots().isEmpty() ? null :
+                          model.getEvolutionSnapshots().get(model.getEvolutionSnapshots().size() - 1).getId();
+        snapshot.setParentSnapshotId(parentId);
+        snapshot.setGeneration(model.getGenerationIndex());
+
+        if (change.contains("Evolution cycle triggered")) {
+            model.setGenerationIndex(model.getGenerationIndex() + 1);
+            snapshot.setGeneration(model.getGenerationIndex());
+        }
 
         model.getEvolutionSnapshots().add(snapshot);
 

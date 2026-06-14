@@ -945,9 +945,13 @@
                     document.getElementById('viz-details-content').innerHTML = `
                         <h4>Snapshot Info</h4>
                         <p>ID: ${s.id}</p>
+                        <p>Generation: ${s.generation || 0}</p>
                         <p>Model Type: MLP</p>
                         <p>Loss: 0.42</p>
-                        <button class="btn btn-sm" style="width:100%" onclick="compareSnapshot('${s.id}')">Compare with Active</button>
+                        <div style="display:flex; flex-direction:column; gap:5px; margin-top:10px;">
+                            <button class="btn btn-sm" style="width:100%" onclick="compareSnapshot('${s.id}')">Compare with Active</button>
+                            <button class="btn btn-sm btn-primary" style="width:100%" onclick="exportSnapshot('${s.id}')">EXPORT FOR OLLAMA</button>
+                        </div>
                     `;
                 };
                 area.appendChild(item);
@@ -962,6 +966,15 @@
                     body: JSON.stringify({ value: value })
                 });
             } catch (e) { log(`Persist error: ${e.message}`); }
+        }
+
+        async function exportSnapshot(snapshotId) {
+            log(`Triggering deterministic export for snapshot: ${snapshotId}`);
+            if (window.forgeAction) {
+                const path = await forgeAction("exportModel", activeSessionId, activeSessionId, snapshotId);
+                log(`Export complete: ${path}`);
+                alert(`Model exported to: ${path}\nYou can now deploy it to Ollama.`);
+            }
         }
 
         async function compareSnapshot(id) {

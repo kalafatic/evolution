@@ -17,6 +17,8 @@ public interface ForgeModel {
 
     String getLineageId();
     void setLineageId(String lineageId);
+    int getGenerationIndex();
+    void setGenerationIndex(int generationIndex);
     double getFitnessScore();
     void setFitnessScore(double fitnessScore);
     ModelStatus getStatus();

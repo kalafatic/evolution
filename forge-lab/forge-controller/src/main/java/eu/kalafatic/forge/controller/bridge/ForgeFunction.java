@@ -12,6 +12,10 @@ public class ForgeFunction extends BrowserFunction {
     private final TrainingController trainingController;
     private final SnapshotController snapshotController;
     private final ForgeEvolutionController evolutionController;
+    private final LLMController llmController;
+    private final ExporterController exporterController;
+    private final RuntimeController runtimeController;
+    private final ObservabilityController observabilityController;
 
     public ForgeFunction(Browser browser, String name,
                          SessionController sessionController,
@@ -19,7 +23,11 @@ public class ForgeFunction extends BrowserFunction {
                          DatasetController datasetController,
                          TrainingController trainingController,
                          SnapshotController snapshotController,
-                         ForgeEvolutionController evolutionController) {
+                         ForgeEvolutionController evolutionController,
+                         LLMController llmController,
+                         ExporterController exporterController,
+                         RuntimeController runtimeController,
+                         ObservabilityController observabilityController) {
         super(browser, name);
         this.sessionController = sessionController;
         this.modelController = modelController;
@@ -27,6 +35,10 @@ public class ForgeFunction extends BrowserFunction {
         this.trainingController = trainingController;
         this.snapshotController = snapshotController;
         this.evolutionController = evolutionController;
+        this.llmController = llmController;
+        this.exporterController = exporterController;
+        this.runtimeController = runtimeController;
+        this.observabilityController = observabilityController;
     }
 
     @Override
@@ -104,6 +116,49 @@ public class ForgeFunction extends BrowserFunction {
                         String.valueOf(arguments[1]),
                         String.valueOf(arguments[2])
                     );
+                    return true;
+                }
+                return false;
+            case "generate":
+                if (arguments.length > 1) {
+                    try {
+                        return llmController.generate(String.valueOf(arguments[1]));
+                    } catch (Exception e) {
+                        return "Error: " + e.getMessage();
+                    }
+                }
+                return null;
+            case "exportModel":
+                if (arguments.length > 3) {
+                    try {
+                        return exporterController.exportModel(String.valueOf(arguments[1]), String.valueOf(arguments[2]), String.valueOf(arguments[3]));
+                    } catch (Exception e) {
+                        return "Error: " + e.getMessage();
+                    }
+                }
+                return null;
+            case "deployModel":
+                if (arguments.length > 1) {
+                    try {
+                        runtimeController.deployModel(String.valueOf(arguments[1]));
+                        return true;
+                    } catch (Exception e) {
+                        return false;
+                    }
+                }
+                return false;
+            case "chat":
+                if (arguments.length > 1) {
+                    try {
+                        return runtimeController.chat(String.valueOf(arguments[1]));
+                    } catch (Exception e) {
+                        return "Error: " + e.getMessage();
+                    }
+                }
+                return null;
+            case "trackEvent":
+                if (arguments.length > 3) {
+                    observabilityController.trackEvent(String.valueOf(arguments[1]), String.valueOf(arguments[2]), String.valueOf(arguments[3]));
                     return true;
                 }
                 return false;
