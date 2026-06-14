@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.0"?>
+
+<!--
+-->
+
+<plugin>
+
+   <extension point="org.eclipse.emf.ecore.generated_package">
+      <!-- @generated forge -->
+      <package
+            uri="http://eu.kalafatic.forge/model"
+            class="forge-model.forge.ForgePackage"
+            genModel="eu.kalafatic.evolution.forge-lab/forge-model/src/main/resources/model/forge.genmodel"/>
+   </extension>
+
+</plugin>

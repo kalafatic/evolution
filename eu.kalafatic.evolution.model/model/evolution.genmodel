@@ -89,6 +89,12 @@
       <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//ReviewDecision/REJECTED"/>
       <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//ReviewDecision/CHANGES_REQUESTED"/>
     </genEnums>
+    <genEnums typeSafeEnumCompatible="false" ecoreEnum="evolution.ecore#//ForgeStatus">
+      <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//ForgeStatus/IDLE"/>
+      <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//ForgeStatus/TRAINING"/>
+      <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//ForgeStatus/RUNNING"/>
+      <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//ForgeStatus/ERROR"/>
+    </genEnums>
     <genClasses ecoreClass="evolution.ecore#//Task">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Task/id"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Task/name"/>
@@ -165,6 +171,17 @@
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//Orchestrator/monitoringHistory"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//Orchestrator/supervisorSettings"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//Orchestrator/networkEntries"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//Orchestrator/defaultTarget"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//Orchestrator/genomeSnapshots"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//Orchestrator/forgeSessions"/>
+    </genClasses>
+    <genClasses ecoreClass="evolution.ecore#//GenomeSnapshot">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//GenomeSnapshot/timestamp"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//GenomeSnapshot/architectureArtifact"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//GenomeSnapshot/useCaseArtifact"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//GenomeSnapshot/milestoneArtifact"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//GenomeSnapshot/genomeArtifact"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//GenomeSnapshot/dashboardArtifact"/>
     </genClasses>
     <genClasses ecoreClass="evolution.ecore#//ServerSettings">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ServerSettings/port"/>
@@ -420,6 +437,40 @@
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//PromptInstructions/iterativeMode"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//PromptInstructions/selfIterativeMode"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//PromptInstructions/stepMode"/>
+    </genClasses>
+    <genClasses ecoreClass="evolution.ecore#//ForgeSession">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ForgeSession/sessionId"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ForgeSession/name"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ForgeSession/createdAt"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ForgeSession/lastModified"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ForgeSession/status"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ForgeSession/activeModelId"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ForgeSession/selectedModelType"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//ForgeSession/modelState"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//ForgeSession/experiments"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//ForgeSession/snapshots"/>
+    </genClasses>
+    <genClasses ecoreClass="evolution.ecore#//SessionModelState">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//SessionModelState/sessionId"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//SessionModelState/modelGraph"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//SessionModelState/hyperparameters"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//SessionModelState/datasetBindings"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//SessionModelState/runtimeState"/>
+    </genClasses>
+    <genClasses ecoreClass="evolution.ecore#//SessionExperiment">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//SessionExperiment/id"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//SessionExperiment/sessionId"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//SessionExperiment/modelId"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//SessionExperiment/datasetId"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//SessionExperiment/metrics"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//SessionExperiment/logs"/>
+    </genClasses>
+    <genClasses ecoreClass="evolution.ecore#//SessionSnapshot">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//SessionSnapshot/id"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//SessionSnapshot/sessionId"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//SessionSnapshot/genomeSnapshotId"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//SessionSnapshot/fullSerializedState"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//SessionSnapshot/timestamp"/>
     </genClasses>
   </genPackages>
 </genmodel:GenModel>

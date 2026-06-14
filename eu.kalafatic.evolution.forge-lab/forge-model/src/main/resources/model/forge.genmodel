@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<genmodel:GenModel xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore"
+    xmlns:genmodel="http://www.eclipse.org/emf/2002/GenModel" modelDirectory="/eu.kalafatic.evolution.aggregator/src" modelPluginID="eu.kalafatic.evolution.aggregator"
+    modelName="Forge" rootExtendsClass="org.eclipse.emf.ecore.impl.MinimalEObjectImpl$Container"
+    importerID="org.eclipse.emf.importer.ecore" complianceLevel="21.0" copyrightFields="false"
+    operationReflection="true" importOrganizing="true">
+  <foreignModel>forge.ecore</foreignModel>
+  <genPackages prefix="Forge" basePackage="eu.kalafatic.evolution.forge-model" disposableProviderFactory="true"
+      ecorePackage="forge.ecore#/">
+    <genEnums typeSafeEnumCompatible="false" ecoreEnum="forge.ecore#//EModelType">
+      <genEnumLiterals ecoreEnumLiteral="forge.ecore#//EModelType/NEURON"/>
+      <genEnumLiterals ecoreEnumLiteral="forge.ecore#//EModelType/MLP"/>
+      <genEnumLiterals ecoreEnumLiteral="forge.ecore#//EModelType/CNN"/>
+      <genEnumLiterals ecoreEnumLiteral="forge.ecore#//EModelType/RNN"/>
+      <genEnumLiterals ecoreEnumLiteral="forge.ecore#//EModelType/TRANSFORMER"/>
+      <genEnumLiterals ecoreEnumLiteral="forge.ecore#//EModelType/LLM"/>
+      <genEnumLiterals ecoreEnumLiteral="forge.ecore#//EModelType/CUSTOM"/>
+    </genEnums>
+    <genClasses ecoreClass="forge.ecore#//ForgeModel">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute forge.ecore#//ForgeModel/id"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute forge.ecore#//ForgeModel/name"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute forge.ecore#//ForgeModel/type"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference forge.ecore#//ForgeModel/nodes"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference forge.ecore#//ForgeModel/connections"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute forge.ecore#//ForgeModel/version"/>
+    </genClasses>
+    <genClasses ecoreClass="forge.ecore#//ENode">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute forge.ecore#//ENode/id"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute forge.ecore#//ENode/type"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute forge.ecore#//ENode/config"/>
+    </genClasses>
+    <genClasses ecoreClass="forge.ecore#//EConnection">
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference forge.ecore#//EConnection/source"/>
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference forge.ecore#//EConnection/target"/>
+    </genClasses>
+    <genClasses ecoreClass="forge.ecore#//ForgeSession">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute forge.ecore#//ForgeSession/id"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute forge.ecore#//ForgeSession/name"/>
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference forge.ecore#//ForgeSession/activeModel"/>
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference forge.ecore#//ForgeSession/datasets"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference forge.ecore#//ForgeSession/trainingRuns"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference forge.ecore#//ForgeSession/snapshots"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute forge.ecore#//ForgeSession/hyperparameters"/>
+    </genClasses>
+    <genClasses ecoreClass="forge.ecore#//ForgeTrainingRun">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute forge.ecore#//ForgeTrainingRun/id"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute forge.ecore#//ForgeTrainingRun/startTime"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference forge.ecore#//ForgeTrainingRun/checkpoints"/>
+    </genClasses>
+    <genClasses ecoreClass="forge.ecore#//ForgeDataset">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute forge.ecore#//ForgeDataset/id"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute forge.ecore#//ForgeDataset/path"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute forge.ecore#//ForgeDataset/version"/>
+    </genClasses>
+    <genClasses ecoreClass="forge.ecore#//ECheckpoint">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute forge.ecore#//ECheckpoint/id"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute forge.ecore#//ECheckpoint/step"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference forge.ecore#//ECheckpoint/snapshot"/>
+    </genClasses>
+    <genClasses ecoreClass="forge.ecore#//ForgeSnapshot">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute forge.ecore#//ForgeSnapshot/id"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute forge.ecore#//ForgeSnapshot/genomeId"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute forge.ecore#//ForgeSnapshot/data"/>
+    </genClasses>
+  </genPackages>
+</genmodel:GenModel>
