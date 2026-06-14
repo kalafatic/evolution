@@ -32,10 +32,14 @@
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="ForgeSession">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="id" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="activeModel" eType="#//ForgeModel"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="dataset" eType="#//ForgeDataset"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="experiments" upperBound="-1"
+    <eStructuralFeatures xsi:type="ecore:EReference" name="datasets" upperBound="-1"
+        eType="#//ForgeDataset"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="trainingRuns" upperBound="-1"
         eType="#//ForgeTrainingRun" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="snapshots" upperBound="-1"
+        eType="#//ForgeSnapshot" containment="true"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="hyperparameters" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="ForgeTrainingRun">
@@ -56,6 +60,7 @@
         containment="true"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="ForgeSnapshot">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="id" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="genomeId" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="data" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
   </eClassifiers>
