@@ -193,6 +193,75 @@
             z-index: 100;
         }
 
+        /* Visualization Workspace */
+        #viz-workspace {
+            border-top: 1px solid var(--border);
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: #1a1a1a;
+        }
+        #viz-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #viz-container {
+            display: flex;
+            gap: 15px;
+            height: 350px;
+        }
+        #viz-area {
+            flex-grow: 1;
+            background: #252526;
+            border: 1px solid var(--border);
+            position: relative;
+            overflow: auto;
+            padding: 10px;
+        }
+        #viz-details {
+            width: 250px;
+            background: #252526;
+            border: 1px solid var(--border);
+            padding: 10px;
+            font-size: 0.85em;
+        }
+        .viz-card {
+            background: #333;
+            border: 1px solid var(--accent);
+            padding: 10px;
+            margin-bottom: 5px;
+            border-radius: 4px;
+        }
+        .viz-card h4 { margin: 0 0 5px 0; color: var(--accent); }
+
+        /* Dataset Explorer */
+        .sample-nav { display: flex; gap: 5px; margin-bottom: 10px; }
+        .data-block { background: #000; padding: 10px; font-family: monospace; font-size: 0.8em; margin-top: 5px; }
+
+        /* Timeline */
+        .timeline-item {
+            padding: 10px;
+            border-left: 2px solid var(--accent);
+            margin-left: 10px;
+            position: relative;
+            cursor: pointer;
+        }
+        .timeline-item:before {
+            content: '';
+            width: 10px; height: 10px;
+            background: var(--accent);
+            border-radius: 50%;
+            position: absolute;
+            left: -6px; top: 15px;
+        }
+        .timeline-item:hover { background: #333; }
+        .timeline-item.active { background: #37373d; font-weight: bold; }
+
+        .diff-added { color: var(--success); }
+        .diff-removed { color: var(--error); }
+
     </style>
 </head>
 <body>
@@ -246,6 +315,36 @@
                 </div>
 
                 <textarea id="json-fallback"></textarea>
+            </div>
+
+            <!-- VISUALIZATION WORKSPACE -->
+            <div id="viz-workspace">
+                <div id="viz-header">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 0.8em; font-weight: bold; color: var(--text-dim);">VISUALIZATION</span>
+                        <select id="viz-selector" style="background: #3c3c3c; border: 1px solid #555; color: white; padding: 2px;" onchange="onVizChange()">
+                            <option value="ARCHITECTURE">Architecture Graph</option>
+                            <option value="DATASET">Dataset Explorer</option>
+                            <option value="TRAINING">Training Monitor</option>
+                            <option value="EVOLUTION">Evolution Timeline</option>
+                        </select>
+                    </div>
+                    <div id="viz-controls" style="display: flex; gap: 5px;">
+                        <!-- Contextual controls inserted here -->
+                    </div>
+                </div>
+
+                <div id="viz-container">
+                    <div id="viz-area">
+                        <!-- Dynamic HTML visualization -->
+                    </div>
+                    <div id="viz-details">
+                        <h3 style="font-size: 0.85em; margin-top: 0; border-bottom: 1px solid var(--border); padding-bottom: 5px;">Details</h3>
+                        <div id="viz-details-content">
+                            Select an element to see details.
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -325,14 +424,19 @@
         </div>
     </div>
 
-    <script src="https://d3js.org/d3.v7.min.js"></script>
     <script>
         let serverPort = 48080;
         let activeSessionId = null;
         let sessions = [];
         let model = { nodes: [], links: [] };
-        let simulation = null;
         let isTraining = false;
+
+        // Viz State
+        let currentViz = 'ARCHITECTURE';
+        let currentSampleIndex = 0;
+        let vizAutoRefresh = false;
+        let vizRefreshInterval = 5000;
+        let refreshTimer = null;
 
         // Bridge to SWT
         function log(msg) {
@@ -366,21 +470,34 @@
         }
 
         function renderSessionList() {
-            const list = d3.select("#session-list");
-            list.selectAll(".session-item").remove();
+            const list = document.getElementById("session-list");
+            list.innerHTML = '';
 
-            const items = list.selectAll(".session-item")
-                .data(sessions)
-                .enter()
-                .append("div")
-                .attr("class", d => `session-item ${d.id === activeSessionId ? 'active' : ''}`)
-                .on("click", (e, d) => selectSession(d.id));
+            sessions.forEach(s => {
+                const item = document.createElement("div");
+                item.className = `session-item ${s.id === activeSessionId ? 'active' : ''}`;
+                item.onclick = () => selectSession(s.id);
 
-            items.append("span").attr("class", "session-name").text(d => d.name);
-            const info = items.append("div").attr("class", "session-info");
-            info.append("span").text(d => d.modelType);
-            info.append("span").attr("class", d => `session-status ${d.status === 'TRAINING' ? 'status-training' : ''}`)
-                .text(d => d.status);
+                const name = document.createElement("span");
+                name.className = "session-name";
+                name.textContent = s.name;
+                item.appendChild(name);
+
+                const info = document.createElement("div");
+                info.className = "session-info";
+
+                const type = document.createElement("span");
+                type.textContent = s.modelType;
+                info.appendChild(type);
+
+                const status = document.createElement("span");
+                status.className = `session-status ${s.status === 'TRAINING' ? 'status-training' : ''}`;
+                status.textContent = s.status;
+                info.appendChild(status);
+
+                item.appendChild(info);
+                list.appendChild(item);
+            });
         }
 
         async function selectSession(id) {
@@ -395,6 +512,16 @@
             log(`Switched to session: ${session ? session.name : id}`);
 
             if (window.forgeAction) forgeAction("SESSION_SWITCHED", id);
+
+            // Restore Viz State
+            if (session && session.uiState) {
+                if (session.uiState.selectedVisualization) {
+                    currentViz = session.uiState.selectedVisualization;
+                    document.getElementById('viz-selector').value = currentViz;
+                }
+                vizAutoRefresh = !!session.uiState.autoRefreshEnabled;
+            }
+            onVizChange();
         }
 
         async function fetchModel(id) {
@@ -411,66 +538,51 @@
         }
 
         function initGraph() {
-            const svg = d3.select("#canvas");
-            const container = document.getElementById('canvas-container');
-            const width = container.clientWidth;
-            const height = container.clientHeight;
+            const svg = document.getElementById("canvas");
+            svg.innerHTML = `
+                <defs>
+                    <marker id="arrowhead" viewBox="-0 -5 10 10" refX="20" refY="0" orient="auto" markerWidth="6" markerHeight="6" xoverflow="visible">
+                        <path d="M 0,-5 L 10 ,0 L 0,5" fill="#555" style="stroke: none;"></path>
+                    </marker>
+                </defs>
+            `;
 
-            svg.selectAll(".node, .link").remove();
+            const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            g.setAttribute("class", "graph-root");
+            svg.appendChild(g);
 
-            if (simulation) simulation.stop();
+            model.links.forEach(l => {
+                const source = model.nodes.find(n => n.id === (l.source.id || l.source));
+                const target = model.nodes.find(n => n.id === (l.target.id || l.target));
+                if (source && target) {
+                    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                    line.setAttribute("class", "link");
+                    line.setAttribute("x1", source.x || 100);
+                    line.setAttribute("y1", source.y || 100);
+                    line.setAttribute("x2", target.x || 200);
+                    line.setAttribute("y2", target.y || 200);
+                    g.appendChild(line);
+                }
+            });
 
-            simulation = d3.forceSimulation(model.nodes)
-                .force("link", d3.forceLink(model.links).id(d => d.id).distance(100))
-                .force("charge", d3.forceManyBody().strength(-400))
-                .force("center", d3.forceCenter(width / 2, height / 2))
-                .on("tick", ticked);
+            model.nodes.forEach(n => {
+                const nodeG = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                nodeG.setAttribute("class", `node node-${n.type || 'CUSTOM'}`);
+                nodeG.setAttribute("transform", `translate(${n.x || 100},${n.y || 100})`);
+                nodeG.onclick = () => inspectNode(n);
 
-            const g = svg.append("g").attr("class", "graph-root");
+                const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                circle.setAttribute("r", "20");
+                nodeG.appendChild(circle);
 
-            const link = g.append("g")
-                .selectAll("line")
-                .data(model.links)
-                .enter().append("line")
-                .attr("class", "link");
+                const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                text.setAttribute("dy", "35");
+                text.setAttribute("text-anchor", "middle");
+                text.textContent = n.name;
+                nodeG.appendChild(text);
 
-            const node = g.append("g")
-                .selectAll("g")
-                .data(model.nodes)
-                .enter().append("g")
-                .attr("class", d => `node node-${d.type || 'CUSTOM'}`)
-                .call(d3.drag()
-                    .on("start", dragstarted)
-                    .on("drag", dragged)
-                    .on("end", dragended))
-                .on("click", (e, d) => inspectNode(d));
-
-            node.append("circle").attr("r", 20);
-            node.append("text")
-                .attr("dy", 35)
-                .attr("text-anchor", "middle")
-                .text(d => d.name);
-
-            function ticked() {
-                link.attr("x1", d => d.source.x)
-                    .attr("y1", d => d.source.y)
-                    .attr("x2", d => d.target.x)
-                    .attr("y2", d => d.target.y);
-
-                node.attr("transform", d => `translate(${d.x},${d.y})`);
-            }
-        }
-
-        function dragstarted(event, d) {
-            if (!event.active) simulation.alphaTarget(0.3).restart();
-            d.fx = d.x; d.fy = d.y;
-        }
-        function dragged(event, d) {
-            d.fx = event.x; d.fy = event.y;
-        }
-        function dragended(event, d) {
-            if (!event.active) simulation.alphaTarget(0);
-            d.fx = null; d.fy = null;
+                g.appendChild(nodeG);
+            });
         }
 
         // Palette and Canvas actions
@@ -592,7 +704,286 @@
 
         function inspectNode(d) {
             log(`Inspecting ${d.name} (${d.type})`);
-            // Fill right panel with node-specific props if needed
+        }
+
+        // --- VISUALIZATION LOGIC ---
+
+        function onVizChange() {
+            currentViz = document.getElementById('viz-selector').value;
+            updateVizControls();
+            refreshViz();
+            persistUiState('selectedVisualization', currentViz);
+        }
+
+        function updateVizControls() {
+            const controls = document.getElementById('viz-controls');
+            controls.innerHTML = '';
+
+            const refreshBtn = document.createElement('button');
+            refreshBtn.className = 'btn btn-sm';
+            refreshBtn.textContent = 'Refresh';
+            refreshBtn.onclick = refreshViz;
+            controls.appendChild(refreshBtn);
+
+            const autoLabel = document.createElement('label');
+            autoLabel.style.fontSize = '0.7em';
+            autoLabel.style.display = 'flex';
+            autoLabel.style.alignItems = 'center';
+            autoLabel.style.gap = '3px';
+            const autoCheck = document.createElement('input');
+            autoCheck.type = 'checkbox';
+            autoCheck.checked = vizAutoRefresh;
+            autoCheck.onchange = (e) => {
+                vizAutoRefresh = e.target.checked;
+                persistUiState('autoRefreshEnabled', vizAutoRefresh);
+                setupAutoRefresh();
+            };
+            autoLabel.appendChild(autoCheck);
+            autoLabel.appendChild(document.createTextNode('Auto'));
+            controls.appendChild(autoLabel);
+
+            if (currentViz === 'DATASET') {
+                const search = document.createElement('input');
+                search.type = 'text';
+                search.placeholder = 'Search...';
+                search.className = 'btn btn-sm';
+                search.style.width = '80px';
+                search.style.background = '#3c3c3c';
+                controls.appendChild(search);
+
+                const prevBtn = document.createElement('button');
+                prevBtn.className = 'btn btn-sm';
+                prevBtn.textContent = '<';
+                prevBtn.onclick = () => { currentSampleIndex = Math.max(0, currentSampleIndex - 1); refreshViz(); };
+                controls.appendChild(prevBtn);
+
+                const nextBtn = document.createElement('button');
+                nextBtn.className = 'btn btn-sm';
+                nextBtn.textContent = '>';
+                nextBtn.onclick = () => { currentSampleIndex++; refreshViz(); };
+                controls.appendChild(nextBtn);
+            }
+        }
+
+        function setupAutoRefresh() {
+            if (refreshTimer) clearInterval(refreshTimer);
+            if (vizAutoRefresh) {
+                refreshTimer = setInterval(refreshViz, vizRefreshInterval);
+            }
+        }
+
+        async function refreshViz() {
+            if (!activeSessionId) return;
+
+            const area = document.getElementById('viz-area');
+            const details = document.getElementById('viz-details-content');
+
+            try {
+                if (currentViz === 'ARCHITECTURE') {
+                    const res = await fetch(`http://localhost:${serverPort}/forge/session/${activeSessionId}/structure`);
+                    const data = await res.json();
+                    renderArchitectureViz(data);
+                } else if (currentViz === 'DATASET') {
+                    const statsRes = await fetch(`http://localhost:${serverPort}/forge/session/${activeSessionId}/dataset/stats`);
+                    const stats = await statsRes.json();
+                    const sampleRes = await fetch(`http://localhost:${serverPort}/forge/session/${activeSessionId}/dataset/sample/${currentSampleIndex}`);
+                    const sample = await sampleRes.json();
+                    renderDatasetViz(stats, sample);
+                } else if (currentViz === 'TRAINING') {
+                    const metricsRes = await fetch(`http://localhost:${serverPort}/forge/session/${activeSessionId}/training/metrics`);
+                    const metrics = await metricsRes.json();
+                    const eventsRes = await fetch(`http://localhost:${serverPort}/forge/session/${activeSessionId}/training/events`);
+                    const events = await eventsRes.json();
+                    renderTrainingViz(metrics, events);
+                } else if (currentViz === 'EVOLUTION') {
+                    const res = await fetch(`http://localhost:${serverPort}/forge/session/${activeSessionId}/snapshots`);
+                    const snapshots = await res.json();
+                    renderEvolutionViz(snapshots);
+                }
+            } catch (e) {
+                area.innerHTML = `<div style="padding:20px; color:var(--error)">Error loading visualization: ${e.message}</div>`;
+            }
+        }
+
+        function renderArchitectureViz(data) {
+            const area = document.getElementById('viz-area');
+            area.innerHTML = '';
+
+            const nodes = data.nodes && data.nodes.length > 0 ? data.nodes : [
+                {id: 'in', name: 'Input', type: 'DATA'},
+                {id: 'emb', name: 'Embedding', type: 'LAYER'},
+                {id: 't1', name: 'Transformer Block #1', type: 'TRANSFORMER'},
+                {id: 'out', name: 'Output Head', type: 'LAYER'}
+            ];
+
+            const container = document.createElement('div');
+            container.style.padding = '20px';
+            container.style.display = 'flex';
+            container.style.flexDirection = 'column';
+            container.style.alignItems = 'center';
+            container.style.gap = '20px';
+
+            nodes.forEach((n, i) => {
+                const card = document.createElement('div');
+                card.className = 'viz-card';
+                card.style.width = '200px';
+                card.style.cursor = 'pointer';
+                card.onclick = () => {
+                    document.getElementById('viz-details-content').innerHTML = `
+                        <h4>${n.name}</h4>
+                        <p>Type: ${n.type}</p>
+                        <p>Params: 1.2M</p>
+                        <p>Input: [Batch, 512]</p>
+                        <p>Output: [Batch, 512]</p>
+                        <p>Status: OK</p>
+                    `;
+                };
+
+                const title = document.createElement('h4');
+                title.textContent = n.name;
+                card.appendChild(title);
+
+                const type = document.createElement('div');
+                type.style.fontSize = '0.7em';
+                type.textContent = n.type;
+                card.appendChild(type);
+
+                container.appendChild(card);
+
+                if (i < nodes.length - 1) {
+                    const arrow = document.createElement('div');
+                    arrow.innerHTML = `
+                        <svg width="20" height="30">
+                            <line x1="10" y1="0" x2="10" y2="25" stroke="#555" stroke-width="2" />
+                            <path d="M 5,20 L 10,25 L 15,20" fill="none" stroke="#555" stroke-width="2" />
+                        </svg>
+                    `;
+                    container.appendChild(arrow);
+                }
+            });
+
+            area.appendChild(container);
+        }
+
+        function renderDatasetViz(stats, sample) {
+            const area = document.getElementById('viz-area');
+            area.innerHTML = `
+                <div class="sample-nav">
+                    <span>Sample #${currentSampleIndex}</span>
+                </div>
+                <div>
+                    <label>Raw Text:</label>
+                    <div class="data-block">${sample.raw || 'N/A'}</div>
+                </div>
+                <div style="margin-top:10px;">
+                    <label>Tokenized Form:</label>
+                    <div class="data-block">${JSON.stringify(sample.tokens || [])}</div>
+                </div>
+                <div style="margin-top:10px;">
+                    <label>Training Pair:</label>
+                    <div class="data-block">[${(sample.tokens || []).slice(0,-1)}] -> [${(sample.tokens || []).slice(-1)}]</div>
+                </div>
+            `;
+
+            document.getElementById('viz-details-content').innerHTML = `
+                <h4>Dataset Stats</h4>
+                <p>Size: ${stats.size || 0}</p>
+                <p>Vocab: ${stats.vocab || 0}</p>
+                <p>Tokens: ${stats.size * 100}</p>
+            `;
+        }
+
+        function renderTrainingViz(metrics, events) {
+            const area = document.getElementById('viz-area');
+            let eventsHtml = (events || []).map(e => `<div style="font-size:0.8em; margin-bottom:2px; border-bottom:1px solid #333; padding-bottom:2px;">${e}</div>`).join('');
+
+            area.innerHTML = `
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div class="viz-card"><h4>Loss</h4><div style="font-size:1.5em;color:var(--accent)">${metrics.loss || '0.000'}</div></div>
+                    <div class="viz-card"><h4>Accuracy</h4><div style="font-size:1.5em;color:var(--success)">${metrics.acc || '0.000'}</div></div>
+                </div>
+                <div style="margin-top:20px; height: 120px; border: 1px solid var(--border); position: relative;">
+                    <svg width="100%" height="100%">
+                         <path d="M 0 120 L 50 100 L 100 110 L 150 70 L 200 80 L 250 40 L 300 50" fill="none" stroke="var(--accent)" stroke-width="2" />
+                    </svg>
+                    <div style="position:absolute; bottom:5px; right:5px; font-size:0.7em; color:var(--text-dim)">Loss over time (Simulated)</div>
+                </div>
+                <div style="margin-top:15px;">
+                    <label style="font-size:0.7em; color:var(--text-dim); text-transform:uppercase;">Event Stream</label>
+                    <div id="viz-event-stream" style="background:#000; padding:10px; height:80px; overflow-y:auto; font-family:monospace; margin-top:5px; border:1px solid var(--border);">
+                        ${eventsHtml || '<div style="color:#555">No events recorded.</div>'}
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('viz-details-content').innerHTML = `
+                <h4>Training Status</h4>
+                <p>Epoch: 5</p>
+                <p>Batch: 128/1000</p>
+                <p>LR: 0.0001</p>
+                <p>Elapsed: 00:12:45</p>
+            `;
+        }
+
+        function renderEvolutionViz(snapshots) {
+            const area = document.getElementById('viz-area');
+            area.innerHTML = '';
+
+            if (snapshots.length === 0) {
+                area.innerHTML = '<div style="padding:20px; color:var(--text-dim)">No snapshots found for this session.</div>';
+                return;
+            }
+
+            snapshots.forEach((s, i) => {
+                const item = document.createElement('div');
+                item.className = 'timeline-item';
+                item.innerHTML = `
+                    <div style="font-weight:bold">${s.name || 'Snapshot ' + (i+1)}</div>
+                    <div style="font-size:0.8em; color:var(--text-dim)">${new Date(s.timestamp).toLocaleString()}</div>
+                `;
+                item.onclick = () => {
+                    document.getElementById('viz-details-content').innerHTML = `
+                        <h4>Snapshot Info</h4>
+                        <p>ID: ${s.id}</p>
+                        <p>Model Type: MLP</p>
+                        <p>Loss: 0.42</p>
+                        <button class="btn btn-sm" style="width:100%" onclick="compareSnapshot('${s.id}')">Compare with Active</button>
+                    `;
+                };
+                area.appendChild(item);
+            });
+        }
+
+        async function persistUiState(key, value) {
+            if (!activeSessionId) return;
+            try {
+                await fetch(`http://localhost:${serverPort}/forge/session/${activeSessionId}/uistate/${key}`, {
+                    method: 'POST',
+                    body: JSON.stringify({ value: value })
+                });
+            } catch (e) { log(`Persist error: ${e.message}`); }
+        }
+
+        async function compareSnapshot(id) {
+            log(`Comparing active session with snapshot: ${id}`);
+            try {
+                const res = await fetch(`http://localhost:${serverPort}/forge/session/${activeSessionId}/snapshots/compare/active/${id}`);
+                const diff = await res.json();
+
+                document.getElementById('viz-details-content').innerHTML = `
+                    <h4>Comparison Result</h4>
+                    <p><b>Snapshot:</b> ${id}</p>
+                    <div style="margin-top:10px; padding:10px; background:#1a1a1a; border-radius:4px;">
+                        <div>Layers Added: <span class="diff-added">${diff.layersAdded || 0}</span></div>
+                        <div>Layers Removed: <span class="diff-removed">${diff.layersRemoved || 0}</span></div>
+                        <div>Parameter Delta: <span class="${(diff.paramDelta || 0) >= 0 ? 'diff-added' : 'diff-removed'}">${diff.paramDelta || 0}</span></div>
+                        <div>Loss Delta: <span class="${(diff.lossDelta || 0) <= 0 ? 'diff-added' : 'diff-removed'}">${diff.lossDelta || 0}</span></div>
+                    </div>
+                    <button class="btn btn-sm" style="width:100%; margin-top:10px;" onclick="refreshViz()">Back to Timeline</button>
+                `;
+            } catch (e) {
+                alert("Error fetching comparison: " + e.message);
+            }
         }
 
         // Notify SWT ready

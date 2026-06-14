@@ -1,21 +1,10 @@
 package eu.kalafatic.forge.controller.api;
 
 import java.util.List;
+import java.util.Map;
 
 public interface DatasetController {
-
-    String importDataset(
-            String sessionId,
-            String path);
-
-    void attachDataset(
-            String sessionId,
-            String datasetId);
-
-    void removeDataset(
-            String sessionId,
-            String datasetId);
-
-    List<DatasetInfo> getDatasets(
-            String sessionId);
+    List<DatasetInfo> getDatasets(String sessionId);
+    Map<String, Object> getDatasetStatistics(String sessionId);
+    Map<String, Object> getDatasetSample(String sessionId, int index);
 }

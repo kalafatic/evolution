@@ -21,6 +21,11 @@ import java.util.stream.Collectors;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import eu.kalafatic.forge.controller.api.DatasetController;
+import eu.kalafatic.forge.controller.api.ModelController;
+import eu.kalafatic.forge.controller.api.SessionController;
+import eu.kalafatic.forge.controller.api.SnapshotController;
+import eu.kalafatic.forge.controller.api.TrainingController;
 import eu.kalafatic.evolution.controller.manager.OllamaModel;
 import eu.kalafatic.evolution.controller.manager.OllamaService;
 import eu.kalafatic.evolution.controller.tools.GitTool;
@@ -38,9 +43,22 @@ import fi.iki.elonen.NanoHTTPD;
 public class EvolutionServer extends NanoHTTPD {
 
     private final Map<String, ServerSession> activeSessions = new ConcurrentHashMap<>();
+    private SessionController sessionController;
+    private ModelController modelController;
+    private DatasetController datasetController;
+    private TrainingController trainingController;
+    private SnapshotController snapshotController;
 
     public EvolutionServer(int port) {
         super(port);
+    }
+
+    public void setForgeControllers(SessionController sc, ModelController mc, DatasetController dc, TrainingController tc, SnapshotController snc) {
+        this.sessionController = sc;
+        this.modelController = mc;
+        this.datasetController = dc;
+        this.trainingController = tc;
+        this.snapshotController = snc;
     }
 
     public void startServer() throws IOException {
@@ -127,6 +145,28 @@ public class EvolutionServer extends NanoHTTPD {
                 return handleDeleteForgeSession(uri.substring("/forge/session/".length()));
             } else if (Method.POST.equals(method) && uri.startsWith("/forge/dataset/generate")) {
                 return handleGenerateSyntheticDataset(session);
+            } else if (uri.startsWith("/forge/session/")) {
+                String id = uri.substring("/forge/session/".length());
+                if (id.contains("/structure")) {
+                    return handleGetForgeStructure(id.split("/")[0]);
+                } else if (id.contains("/dataset/stats")) {
+                    return handleGetDatasetStats(id.split("/")[0]);
+                } else if (id.contains("/dataset/sample/")) {
+                    String[] parts = id.split("/");
+                    return handleGetDatasetSample(parts[0], Integer.parseInt(parts[3]));
+                } else if (id.contains("/training/metrics")) {
+                    return handleGetTrainingMetrics(id.split("/")[0]);
+                } else if (id.contains("/training/events")) {
+                    return handleGetTrainingEvents(id.split("/")[0]);
+                } else if (id.contains("/snapshots/compare/active/")) {
+                    String[] parts = id.split("/");
+                    return handleCompareSnapshots(parts[0], parts[4]);
+                } else if (id.contains("/snapshots")) {
+                    return handleGetForgeSnapshots(id.split("/")[0]);
+                } else if (id.contains("/uistate/")) {
+                    String[] parts = id.split("/");
+                    return handleUpdateUiState(parts[0], parts[2], session);
+                }
             }
         } catch (Exception e) {
             return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json",
@@ -627,7 +667,8 @@ public class EvolutionServer extends NanoHTTPD {
             .put("modelType", s.getSelectedModelType())
             .put("status", s.getStatus().getName())
             .put("createdAt", s.getCreatedAt())
-            .put("lastModified", s.getLastModified());
+            .put("lastModified", s.getLastModified())
+            .put("uiState", ForgeSessionManager.getInstance().getUiState(id));
 
         return newFixedLengthResponse(Response.Status.OK, "application/json", json.toString());
     }
@@ -687,6 +728,78 @@ public class EvolutionServer extends NanoHTTPD {
         if (clone == null) return newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "Original session not found");
 
         return newFixedLengthResponse(Response.Status.OK, "application/json", new JSONObject().put("id", clone.getSessionId()).toString());
+    }
+
+    private Response handleGetForgeStructure(String sessionId) {
+        if (modelController == null) return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", "ModelController not available");
+        return newFixedLengthResponse(Response.Status.OK, "application/json", modelController.getModelStructure(sessionId));
+    }
+
+    private Response handleGetDatasetStats(String sessionId) {
+        if (datasetController == null) return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", "DatasetController not available");
+        JSONObject stats = new JSONObject();
+        Map<String, Object> data = datasetController.getDatasetStatistics(sessionId);
+        for (Map.Entry<String, Object> entry : data.entrySet()) {
+            stats.put(entry.getKey(), entry.getValue());
+        }
+        return newFixedLengthResponse(Response.Status.OK, "application/json", stats.toString());
+    }
+
+    private Response handleGetDatasetSample(String sessionId, int index) {
+        if (datasetController == null) return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", "DatasetController not available");
+        JSONObject sample = new JSONObject();
+        Map<String, Object> data = datasetController.getDatasetSample(sessionId, index);
+        for (Map.Entry<String, Object> entry : data.entrySet()) {
+            sample.put(entry.getKey(), entry.getValue());
+        }
+        return newFixedLengthResponse(Response.Status.OK, "application/json", sample.toString());
+    }
+
+    private Response handleGetTrainingMetrics(String sessionId) {
+        if (trainingController == null) return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", "TrainingController not available");
+        JSONObject metrics = new JSONObject();
+        Map<String, Object> data = trainingController.getTrainingMetrics(sessionId);
+        for (Map.Entry<String, Object> entry : data.entrySet()) {
+            metrics.put(entry.getKey(), entry.getValue());
+        }
+        return newFixedLengthResponse(Response.Status.OK, "application/json", metrics.toString());
+    }
+
+    private Response handleGetTrainingEvents(String sessionId) {
+        if (trainingController == null) return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", "TrainingController not available");
+        JSONArray array = new JSONArray(trainingController.getRecentEvents(sessionId));
+        return newFixedLengthResponse(Response.Status.OK, "application/json", array.toString());
+    }
+
+    private Response handleGetForgeSnapshots(String sessionId) {
+        if (snapshotController == null) return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", "SnapshotController not available");
+        JSONArray array = new JSONArray();
+        List<Map<String, Object>> snapshots = snapshotController.getSnapshots(sessionId);
+        for (Map<String, Object> s : snapshots) {
+            array.put(new JSONObject(s));
+        }
+        return newFixedLengthResponse(Response.Status.OK, "application/json", array.toString());
+    }
+
+    private Response handleCompareSnapshots(String sessionId, String snapshotId) {
+        if (snapshotController == null) return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", "SnapshotController not available");
+        JSONObject diff = new JSONObject();
+        Map<String, Object> data = snapshotController.compareSnapshots("active", snapshotId);
+        for (Map.Entry<String, Object> entry : data.entrySet()) {
+            diff.put(entry.getKey(), entry.getValue());
+        }
+        return newFixedLengthResponse(Response.Status.OK, "application/json", diff.toString());
+    }
+
+    private Response handleUpdateUiState(String sessionId, String key, IHTTPSession session) throws IOException, ResponseException {
+        Map<String, String> files = new HashMap<>();
+        session.parseBody(files);
+        String postData = files.get("postData");
+        JSONObject body = new JSONObject(postData);
+        Object value = body.get("value");
+
+        ForgeSessionManager.getInstance().updateUiState(sessionId, key, value);
+        return newFixedLengthResponse(Response.Status.OK, "application/json", "{\"status\": \"ok\"}");
     }
 
     private Response handleGetGitBranches(IHTTPSession session) {
