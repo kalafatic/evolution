@@ -125,6 +125,27 @@ public class ForgeSessionManager {
         }
     }
 
+    public void updateUiState(String sessionId, String key, Object value) {
+        ForgeSession session = findSession(sessionId);
+        if (session != null && session.getModelState() != null) {
+            String current = session.getModelState().getHyperparameters();
+            JSONObject json = (current != null && !current.isEmpty() && !current.equals("{}")) ? new JSONObject(current) : new JSONObject();
+            json.put(key, value);
+            session.getModelState().setHyperparameters(json.toString());
+            session.setLastModified(System.currentTimeMillis());
+            publishEvent(session, RuntimeEventType.VIEW_UPDATED, "UI_STATE_UPDATED");
+        }
+    }
+
+    public JSONObject getUiState(String sessionId) {
+        ForgeSession session = findSession(sessionId);
+        if (session != null && session.getModelState() != null) {
+            String current = session.getModelState().getHyperparameters();
+            return (current != null && !current.isEmpty() && !current.equals("{}")) ? new JSONObject(current) : new JSONObject();
+        }
+        return new JSONObject();
+    }
+
     public String generateSyntheticDataset(String type) {
         return "{\"type\": \"" + type + "\", \"samples\": 1000, \"status\": \"generated\"}";
     }

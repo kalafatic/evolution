@@ -1,6 +1,7 @@
 package eu.kalafatic.forge.controller.api;
 
 import java.util.List;
+import java.util.Map;
 
 public interface SnapshotController {
 
@@ -10,6 +11,10 @@ public interface SnapshotController {
             String sessionId,
             String snapshotId);
 
-    List<SnapshotInfo> getSnapshots(
+    List<Map<String, Object>> getSnapshots(
             String sessionId);
+
+    Map<String, Object> getSnapshot(String snapshotId);
+
+    Map<String, Object> compareSnapshots(String snapshotA, String snapshotB);
 }
