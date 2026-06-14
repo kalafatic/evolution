@@ -11,7 +11,7 @@
     <eLiterals name="LLM" value="5"/>
     <eLiterals name="CUSTOM" value="6"/>
   </eClassifiers>
-  <eClassifiers xsi:type="ecore:EClass" name="EModel">
+  <eClassifiers xsi:type="ecore:EClass" name="ForgeModel">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="id" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="type" eType="#//EModelType"/>
@@ -30,21 +30,21 @@
     <eStructuralFeatures xsi:type="ecore:EReference" name="source" eType="#//ENode"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="target" eType="#//ENode"/>
   </eClassifiers>
-  <eClassifiers xsi:type="ecore:EClass" name="EForgeSession">
+  <eClassifiers xsi:type="ecore:EClass" name="ForgeSession">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="id" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="activeModel" eType="#//EModel"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="dataset" eType="#//EDataset"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="activeModel" eType="#//ForgeModel"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="dataset" eType="#//ForgeDataset"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="experiments" upperBound="-1"
-        eType="#//EExperiment" containment="true"/>
+        eType="#//ForgeTrainingRun" containment="true"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="hyperparameters" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
   </eClassifiers>
-  <eClassifiers xsi:type="ecore:EClass" name="EExperiment">
+  <eClassifiers xsi:type="ecore:EClass" name="ForgeTrainingRun">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="id" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="startTime" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//ELong"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="checkpoints" upperBound="-1"
         eType="#//ECheckpoint" containment="true"/>
   </eClassifiers>
-  <eClassifiers xsi:type="ecore:EClass" name="EDataset">
+  <eClassifiers xsi:type="ecore:EClass" name="ForgeDataset">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="id" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="path" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="version" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
@@ -52,10 +52,10 @@
   <eClassifiers xsi:type="ecore:EClass" name="ECheckpoint">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="id" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="step" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="snapshot" eType="#//EGenomeSnapshot"
+    <eStructuralFeatures xsi:type="ecore:EReference" name="snapshot" eType="#//ForgeSnapshot"
         containment="true"/>
   </eClassifiers>
-  <eClassifiers xsi:type="ecore:EClass" name="EGenomeSnapshot">
+  <eClassifiers xsi:type="ecore:EClass" name="ForgeSnapshot">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="genomeId" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="data" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
   </eClassifiers>
