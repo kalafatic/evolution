@@ -1,8 +1,19 @@
 package eu.kalafatic.forge.controller.api;
 
+import java.util.List;
+
 public interface SessionController {
-    void startTraining(String sessionId);
-    void stopTraining(String sessionId);
-    void switchModel(String sessionId, String modelId);
-    void saveSnapshot(String sessionId);
+
+    String createSession(String name);
+
+    void deleteSession(String sessionId);
+
+    void selectSession(String sessionId);
+
+    SessionInfo getCurrentSession();
+
+    List<SessionInfo> getSessions();
+
+    void saveSession(String sessionId);
+
 }
