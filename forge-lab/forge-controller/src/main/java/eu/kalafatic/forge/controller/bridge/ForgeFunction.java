@@ -11,19 +11,22 @@ public class ForgeFunction extends BrowserFunction {
     private final DatasetController datasetController;
     private final TrainingController trainingController;
     private final SnapshotController snapshotController;
+    private final ForgeEvolutionController evolutionController;
 
     public ForgeFunction(Browser browser, String name,
                          SessionController sessionController,
                          ModelController modelController,
                          DatasetController datasetController,
                          TrainingController trainingController,
-                         SnapshotController snapshotController) {
+                         SnapshotController snapshotController,
+                         ForgeEvolutionController evolutionController) {
         super(browser, name);
         this.sessionController = sessionController;
         this.modelController = modelController;
         this.datasetController = datasetController;
         this.trainingController = trainingController;
         this.snapshotController = snapshotController;
+        this.evolutionController = evolutionController;
     }
 
     @Override
@@ -70,6 +73,37 @@ public class ForgeFunction extends BrowserFunction {
             case "saveSession":
                 if (arguments.length > 1) {
                     sessionController.saveSession(String.valueOf(arguments[1]));
+                    return true;
+                }
+                return false;
+            case "addSubModel":
+                if (arguments.length > 4) {
+                    return evolutionController.addSubModel(
+                        String.valueOf(arguments[1]),
+                        String.valueOf(arguments[2]),
+                        String.valueOf(arguments[3]),
+                        String.valueOf(arguments[4])
+                    );
+                }
+                return null;
+            case "connectSubModels":
+                if (arguments.length > 5) {
+                    evolutionController.connectSubModels(
+                        String.valueOf(arguments[1]),
+                        String.valueOf(arguments[2]),
+                        String.valueOf(arguments[3]),
+                        String.valueOf(arguments[4]),
+                        String.valueOf(arguments[5])
+                    );
+                    return true;
+                }
+                return false;
+            case "evolve":
+                if (arguments.length > 2) {
+                    evolutionController.evolve(
+                        String.valueOf(arguments[1]),
+                        String.valueOf(arguments[2])
+                    );
                     return true;
                 }
                 return false;
