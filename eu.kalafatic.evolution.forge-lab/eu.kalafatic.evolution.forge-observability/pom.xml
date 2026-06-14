@@ -5,12 +5,12 @@
 
     <parent>
         <groupId>eu.kalafatic.evolution</groupId>
-        <artifactId>forge-lab-parent</artifactId>
+        <artifactId>eu.kalafatic.evolution.forge-lab</artifactId>
         <version>2.6.5-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>forge-observability</artifactId>
+    <artifactId>eu.kalafatic.evolution.forge-observability</artifactId>
     <name>EVO Forge Lab - Observability</name>
     <description>Event-driven monitoring system</description>
 

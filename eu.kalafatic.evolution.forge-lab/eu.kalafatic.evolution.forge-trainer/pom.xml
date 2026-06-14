@@ -5,24 +5,29 @@
 
     <parent>
         <groupId>eu.kalafatic.evolution</groupId>
-        <artifactId>forge-lab-parent</artifactId>
+        <artifactId>eu.kalafatic.evolution.forge-lab</artifactId>
         <version>2.6.5-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>forge-runtime</artifactId>
-    <name>EVO Forge Lab - Runtime</name>
-    <description>Execution engine for AI model inference</description>
+    <artifactId>eu.kalafatic.evolution.forge-trainer</artifactId>
+    <name>EVO Forge Lab - Trainer</name>
+    <description>Training engine for AI models</description>
 
     <dependencies>
         <dependency>
             <groupId>eu.kalafatic.evolution</groupId>
-            <artifactId>forge-model</artifactId>
+            <artifactId>eu.kalafatic.evolution.forge-runtime</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>eu.kalafatic.evolution</groupId>
-            <artifactId>forge-math</artifactId>
+            <artifactId>eu.kalafatic.evolution.forge-model</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>eu.kalafatic.evolution</groupId>
+            <artifactId>eu.kalafatic.evolution.forge-math</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>

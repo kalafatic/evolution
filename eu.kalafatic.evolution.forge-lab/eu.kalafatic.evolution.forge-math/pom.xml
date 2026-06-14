@@ -5,12 +5,12 @@
 
     <parent>
         <groupId>eu.kalafatic.evolution</groupId>
-        <artifactId>forge-lab-parent</artifactId>
+        <artifactId>eu.kalafatic.evolution.forge-lab</artifactId>
         <version>2.6.5-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>forge-math</artifactId>
+    <artifactId>eu.kalafatic.evolution.forge-math</artifactId>
     <name>EVO Forge Lab - Math</name>
     <description>Pure mathematical tensor computation engine</description>
 

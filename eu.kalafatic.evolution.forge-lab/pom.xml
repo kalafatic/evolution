@@ -10,7 +10,7 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>forge-lab-parent</artifactId>
+    <artifactId>eu.kalafatic.evolution.forge-lab</artifactId>
     <packaging>pom</packaging>
 
     <name>EVO Forge Lab - Parent</name>
@@ -26,14 +26,14 @@
     </properties>
 
     <modules>
-        <module>forge-math</module>
-        <module>forge-model</module>
-        <module>forge-runtime</module>
-        <module>forge-trainer</module>
-        <module>forge-tokenizer</module>
-        <module>forge-data</module>
-        <module>forge-controller</module>
-        <module>forge-observability</module>
+        <module>eu.kalafatic.evolution.forge-math</module>
+        <module>eu.kalafatic.evolution.forge-model</module>
+        <module>eu.kalafatic.evolution.forge-runtime</module>
+        <module>eu.kalafatic.evolution.forge-trainer</module>
+        <module>eu.kalafatic.evolution.forge-tokenizer</module>
+        <module>eu.kalafatic.evolution.forge-data</module>
+        <module>eu.kalafatic.evolution.forge-controller</module>
+        <module>eu.kalafatic.evolution.forge-observability</module>
     </modules>
 
     <dependencyManagement>

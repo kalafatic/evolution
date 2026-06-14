@@ -5,19 +5,19 @@
 
     <parent>
         <groupId>eu.kalafatic.evolution</groupId>
-        <artifactId>forge-lab-parent</artifactId>
+        <artifactId>eu.kalafatic.evolution.forge-lab</artifactId>
         <version>2.6.5-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>forge-data</artifactId>
+    <artifactId>eu.kalafatic.evolution.forge-data</artifactId>
     <name>EVO Forge Lab - Data</name>
     <description>Dataset management system</description>
 
     <dependencies>
         <dependency>
             <groupId>eu.kalafatic.evolution</groupId>
-            <artifactId>forge-tokenizer</artifactId>
+            <artifactId>eu.kalafatic.evolution.forge-tokenizer</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>
