@@ -286,7 +286,9 @@
         <div id="main-content">
             <div id="top-toolbar">
                 <span id="active-session-name">No Session Selected</span>
-                <div id="session-status-indicator"></div>
+                <div id="session-status-indicator" style="margin-left: 10px;">
+                    <span id="lifecycle-badge" style="background: #444; padding: 2px 8px; border-radius: 10px; font-size: 0.7em; color: #aaa;">OFFLINE</span>
+                </div>
 
                 <div style="margin-left: auto; display: flex; gap: 10px;">
                     <button class="btn btn-sm" onclick="toggleJsonEditor()">JSON Editor</button>
@@ -507,6 +509,9 @@
             document.getElementById('active-session-name').textContent = session ? session.name : "Unknown";
             document.getElementById('model-type').value = session ? session.modelType : "NEURON";
 
+            const state = (session && session.lifecycleState) ? session.lifecycleState : 'CREATED';
+            updateLifecycleUI(state);
+
             renderSessionList();
             await fetchModel(id);
             log(`Switched to session: ${session ? session.name : id}`);
@@ -522,6 +527,25 @@
                 vizAutoRefresh = !!session.uiState.autoRefreshEnabled;
             }
             onVizChange();
+        }
+
+        function updateLifecycleUI(state) {
+            const badge = document.getElementById('lifecycle-badge');
+            badge.textContent = state;
+
+            const colors = {
+                'CREATED': '#888',
+                'TRAINING': '#dcdcaa',
+                'FROZEN': '#4fc1ff',
+                'DEPLOYED': '#89d185',
+                'EVOLVING': '#c586c0'
+            };
+            badge.style.color = colors[state] || '#aaa';
+            badge.style.borderColor = colors[state] || '#333';
+            badge.style.border = '1px solid';
+
+            // Button locking
+            document.getElementById('train-btn').disabled = (state === 'FROZEN' || state === 'COMPILING');
         }
 
         async function fetchModel(id) {
@@ -945,9 +969,13 @@
                     document.getElementById('viz-details-content').innerHTML = `
                         <h4>Snapshot Info</h4>
                         <p>ID: ${s.id}</p>
+                        <p>Generation: ${s.generation || 0}</p>
                         <p>Model Type: MLP</p>
                         <p>Loss: 0.42</p>
-                        <button class="btn btn-sm" style="width:100%" onclick="compareSnapshot('${s.id}')">Compare with Active</button>
+                        <div style="display:flex; flex-direction:column; gap:5px; margin-top:10px;">
+                            <button class="btn btn-sm" style="width:100%" onclick="compareSnapshot('${s.id}')">Compare with Active</button>
+                            <button class="btn btn-sm btn-primary" style="width:100%" onclick="exportSnapshot('${s.id}')">EXPORT FOR OLLAMA</button>
+                        </div>
                     `;
                 };
                 area.appendChild(item);
@@ -962,6 +990,15 @@
                     body: JSON.stringify({ value: value })
                 });
             } catch (e) { log(`Persist error: ${e.message}`); }
+        }
+
+        async function exportSnapshot(snapshotId) {
+            log(`Triggering deterministic export for snapshot: ${snapshotId}`);
+            if (window.forgeAction) {
+                const path = await forgeAction("exportModel", activeSessionId, activeSessionId, snapshotId);
+                log(`Export complete: ${path}`);
+                alert(`Model exported to: ${path}\nYou can now deploy it to Ollama.`);
+            }
         }
 
         async function compareSnapshot(id) {

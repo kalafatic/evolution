@@ -11,4 +11,8 @@ public interface EvolutionSnapshot {
     void setTimestamp(long timestamp);
     String getMetrics();
     void setMetrics(String metrics);
+    String getParentSnapshotId();
+    void setParentSnapshotId(String parentSnapshotId);
+    int getGeneration();
+    void setGeneration(int generation);
 }
