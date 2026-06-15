@@ -138,9 +138,9 @@ public class ForgeFunction extends BrowserFunction {
                 }
                 return null;
             case "deployModel":
-                if (arguments.length > 1) {
+                if (arguments.length > 2) {
                     try {
-                        runtimeController.deployModel(String.valueOf(arguments[1]));
+                        runtimeController.deployModel(String.valueOf(arguments[1]), String.valueOf(arguments[2]));
                         return true;
                     } catch (Exception e) {
                         return false;
@@ -148,9 +148,9 @@ public class ForgeFunction extends BrowserFunction {
                 }
                 return false;
             case "chat":
-                if (arguments.length > 1) {
+                if (arguments.length > 2) {
                     try {
-                        return runtimeController.chat(String.valueOf(arguments[1]));
+                        return runtimeController.chat(String.valueOf(arguments[1]), String.valueOf(arguments[2]));
                     } catch (Exception e) {
                         return "Error: " + e.getMessage();
                     }
