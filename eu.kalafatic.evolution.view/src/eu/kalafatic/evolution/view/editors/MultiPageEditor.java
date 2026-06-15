@@ -208,30 +208,42 @@ public class MultiPageEditor extends MultiPageEditorPart {
             if (orchestrator != null) {
                 aiChatPage = AiChatPageFactory.createAiChatPage(this, orchestrator);
                 architecturePage = ArchitecturePageFactory.createArchitecturePage(this, orchestrator);
-
+                
+                forgePage = ForgePageFactory.createForgePage(this, orchestrator);
+                int forgeIdx = addPage(forgePage);
+                setPageText(forgeIdx, "Forge Models");
+               
+                
+                developmentPage = DevelopmentPageFactory.createDevelopmentPage(this, orchestrator);
+                iterationPage = IterationPageFactory.createIterationPage(this, orchestrator);
+                taskStackPage = TaskStackPageFactory.createTaskStackPage(this, orchestrator);              
+               
+                
+                serverPage = ServerPageFactory.createServerPage(this, orchestrator);                
+                mcpSettingsPage = McpSettingsPageFactory.createMcpSettingsPage(this, orchestrator);              
+                browserPage = BrowserPageFactory.createBrowserPage(this, orchestrator);                               
+                
+                testsPage = TestsPageFactory.createTestsPage(this, orchestrator);
+               
+                contextPage = ContextPageFactory.createContextPage(this, orchestrator);
+                
+                approvalPage = ApprovalPageFactory.createApprovalPage(this, orchestrator);
+                peerReviewPage = PeerReviewPageFactory.createPeerReviewPage(this, orchestrator);
+               
+                graphPage = GraphPageFactory.createGraphPage(this, orchestrator);
+               
+                toolsPage = ToolsPageFactory.createToolsPage(this, orchestrator);
+               
+                propertiesPage = PropertiesPageFactory.createPropertiesPage(this, orchestrator);
+                settingsPage = SettingsPageFactory.createSettingsPage(this, orchestrator);
+                
+                comparePage = ComparePageFactory.createComparePage(this, orchestrator);
                 textEditor = new NestedTextEditor();
                 int index = addPage(textEditor, getEditorInput());
                 setPageText(index, "Editor");
 
-                propertiesPage = PropertiesPageFactory.createPropertiesPage(this, orchestrator);
-                mcpSettingsPage = McpSettingsPageFactory.createMcpSettingsPage(this, orchestrator);              
-                browserPage = BrowserPageFactory.createBrowserPage(this, orchestrator);
-                approvalPage = ApprovalPageFactory.createApprovalPage(this, orchestrator);
-                developmentPage = DevelopmentPageFactory.createDevelopmentPage(this, orchestrator);
-                toolsPage = ToolsPageFactory.createToolsPage(this, orchestrator);
-                testsPage = TestsPageFactory.createTestsPage(this, orchestrator);
-                iterationPage = IterationPageFactory.createIterationPage(this, orchestrator);
-                contextPage = ContextPageFactory.createContextPage(this, orchestrator);
-                peerReviewPage = PeerReviewPageFactory.createPeerReviewPage(this, orchestrator);
-                taskStackPage = TaskStackPageFactory.createTaskStackPage(this, orchestrator);
-                graphPage = GraphPageFactory.createGraphPage(this, orchestrator);
-                forgePage = ForgePageFactory.createForgePage(this, orchestrator);
-                int forgeIdx = addPage(forgePage);
-                setPageText(forgeIdx, "Forge Models");
-
-                comparePage = ComparePageFactory.createComparePage(this, orchestrator);
-                serverPage = ServerPageFactory.createServerPage(this, orchestrator);
-                settingsPage = SettingsPageFactory.createSettingsPage(this, orchestrator);
+                
+                
             } else {
                 Composite placeholder = new Composite(getContainer(), SWT.NONE);
                 placeholder.setLayout(new FillLayout());
