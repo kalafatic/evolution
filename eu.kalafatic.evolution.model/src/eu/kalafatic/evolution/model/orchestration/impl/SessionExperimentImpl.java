@@ -2,6 +2,7 @@ package eu.kalafatic.evolution.model.orchestration.impl;
 
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 import eu.kalafatic.evolution.model.orchestration.SessionExperiment;
+import eu.kalafatic.evolution.model.orchestration.SessionExperiment;
 
 import org.eclipse.emf.common.notify.Notification;
 

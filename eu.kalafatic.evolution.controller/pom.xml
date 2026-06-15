@@ -50,8 +50,8 @@
 
 		<dependency>
 			<groupId>eu.kalafatic.evolution</groupId>
-			<artifactId>evo-forge-lab</artifactId>
-			<version>1.0.0-SNAPSHOT</version>
+			<artifactId>eu.kalafatic.evolution.forge.controller</artifactId>
+			<version>${project.version}</version>
 		</dependency>
 
 		<dependency>

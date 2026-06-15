@@ -7509,12 +7509,6 @@ public interface OrchestrationPackage extends EPackage {
 	EEnum getReviewDecision();
 
 	/**
-	 * @generated
-	 */
-	EEnum getForgeStatus();
-
-	/**
-	 * @generated
 	 */
 	int FORGE_STATUS = 56;
 
@@ -10177,6 +10171,68 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EEnum REVIEW_DECISION = eINSTANCE.getReviewDecision();
+
+		EClass FORGE_SESSION = eINSTANCE.getForgeSession();
+
+		EAttribute FORGE_SESSION__SESSION_ID = eINSTANCE.getForgeSession_SessionId();
+
+		EAttribute FORGE_SESSION__NAME = eINSTANCE.getForgeSession_Name();
+
+		EAttribute FORGE_SESSION__CREATED_AT = eINSTANCE.getForgeSession_CreatedAt();
+
+		EAttribute FORGE_SESSION__LAST_MODIFIED = eINSTANCE.getForgeSession_LastModified();
+
+		EAttribute FORGE_SESSION__STATUS = eINSTANCE.getForgeSession_Status();
+
+		EAttribute FORGE_SESSION__ACTIVE_MODEL_ID = eINSTANCE.getForgeSession_ActiveModelId();
+
+		EAttribute FORGE_SESSION__SELECTED_MODEL_TYPE = eINSTANCE.getForgeSession_SelectedModelType();
+
+		EReference FORGE_SESSION__MODEL_STATE = eINSTANCE.getForgeSession_ModelState();
+
+		EReference FORGE_SESSION__EXPERIMENTS = eINSTANCE.getForgeSession_Experiments();
+
+		EReference FORGE_SESSION__SNAPSHOTS = eINSTANCE.getForgeSession_Snapshots();
+
+		EClass SESSION_MODEL_STATE = eINSTANCE.getSessionModelState();
+
+		EAttribute SESSION_MODEL_STATE__SESSION_ID = eINSTANCE.getSessionModelState_SessionId();
+
+		EAttribute SESSION_MODEL_STATE__MODEL_GRAPH = eINSTANCE.getSessionModelState_ModelGraph();
+
+		EAttribute SESSION_MODEL_STATE__HYPERPARAMETERS = eINSTANCE.getSessionModelState_Hyperparameters();
+
+		EAttribute SESSION_MODEL_STATE__DATASET_BINDINGS = eINSTANCE.getSessionModelState_DatasetBindings();
+
+		EAttribute SESSION_MODEL_STATE__RUNTIME_STATE = eINSTANCE.getSessionModelState_RuntimeState();
+
+		EClass SESSION_EXPERIMENT = eINSTANCE.getSessionExperiment();
+
+		EAttribute SESSION_EXPERIMENT__ID = eINSTANCE.getSessionExperiment_Id();
+
+		EAttribute SESSION_EXPERIMENT__SESSION_ID = eINSTANCE.getSessionExperiment_SessionId();
+
+		EAttribute SESSION_EXPERIMENT__MODEL_ID = eINSTANCE.getSessionExperiment_ModelId();
+
+		EAttribute SESSION_EXPERIMENT__DATASET_ID = eINSTANCE.getSessionExperiment_DatasetId();
+
+		EAttribute SESSION_EXPERIMENT__METRICS = eINSTANCE.getSessionExperiment_Metrics();
+
+		EAttribute SESSION_EXPERIMENT__LOGS = eINSTANCE.getSessionExperiment_Logs();
+
+		EClass SESSION_SNAPSHOT = eINSTANCE.getSessionSnapshot();
+
+		EAttribute SESSION_SNAPSHOT__ID = eINSTANCE.getSessionSnapshot_Id();
+
+		EAttribute SESSION_SNAPSHOT__SESSION_ID = eINSTANCE.getSessionSnapshot_SessionId();
+
+		EAttribute SESSION_SNAPSHOT__GENOME_SNAPSHOT_ID = eINSTANCE.getSessionSnapshot_GenomeSnapshotId();
+
+		EAttribute SESSION_SNAPSHOT__FULL_SERIALIZED_STATE = eINSTANCE.getSessionSnapshot_FullSerializedState();
+
+		EAttribute SESSION_SNAPSHOT__TIMESTAMP = eINSTANCE.getSessionSnapshot_Timestamp();
+
+		EEnum FORGE_STATUS = eINSTANCE.getForgeStatus();
 
 	}
 

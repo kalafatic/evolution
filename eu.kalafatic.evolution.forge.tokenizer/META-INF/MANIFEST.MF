@@ -1,0 +1,8 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Forge Tokenizer
+Bundle-SymbolicName: eu.kalafatic.evolution.forge.tokenizer
+Bundle-Version: 2.6.5.qualifier
+Bundle-RequiredExecutionEnvironment: JavaSE-21
+Export-Package: eu.kalafatic.evolution.forge.tokenizer.api,
+ eu.kalafatic.evolution.forge.tokenizer.core

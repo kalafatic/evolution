@@ -30,6 +30,14 @@
 		<module>eu.kalafatic.evolution.selfdev.genome</module>
 		<module>eu.kalafatic.evolution.selfdev.genome.tests</module>
 		<module>eu.kalafatic.evolution.media</module>
+		<module>eu.kalafatic.evolution.forge.math</module>
+		<module>eu.kalafatic.evolution.forge.model</module>
+		<module>eu.kalafatic.evolution.forge.tokenizer</module>
+		<module>eu.kalafatic.evolution.forge.data</module>
+		<module>eu.kalafatic.evolution.forge.runtime</module>
+		<module>eu.kalafatic.evolution.forge.trainer</module>
+		<module>eu.kalafatic.evolution.forge.observability</module>
+		<module>eu.kalafatic.evolution.forge.controller</module>
 	</modules>
 
 	<build>

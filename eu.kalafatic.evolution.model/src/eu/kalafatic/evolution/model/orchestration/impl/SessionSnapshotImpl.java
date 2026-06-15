@@ -2,6 +2,7 @@ package eu.kalafatic.evolution.model.orchestration.impl;
 
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 import eu.kalafatic.evolution.model.orchestration.SessionSnapshot;
+import eu.kalafatic.evolution.model.orchestration.SessionSnapshot;
 
 import org.eclipse.emf.common.notify.Notification;
 
