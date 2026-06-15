@@ -227,7 +227,7 @@ public class MultiPageEditor extends MultiPageEditorPart {
                 graphPage = GraphPageFactory.createGraphPage(this, orchestrator);
                 forgePage = ForgePageFactory.createForgePage(this, orchestrator);
                 int forgeIdx = addPage(forgePage);
-                setPageText(forgeIdx, "Forge");
+                setPageText(forgeIdx, "Forge Models");
 
                 comparePage = ComparePageFactory.createComparePage(this, orchestrator);
                 serverPage = ServerPageFactory.createServerPage(this, orchestrator);
