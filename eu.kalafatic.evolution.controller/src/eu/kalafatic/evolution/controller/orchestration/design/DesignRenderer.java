@@ -39,12 +39,6 @@ public class DesignRenderer {
             navigatorJs = "log('ERROR: /js/navigator.js not found in bundle resources!');";
         }
 
-        String d3Js = eu.kalafatic.evolution.controller.tools.FileTool.readResource("/js/d3.v7.min.js");
-        if (d3Js == null) {
-            eu.kalafatic.evolution.controller.log.Log.log("[DESIGN_RENDERER] ERROR: /js/d3.v7.min.js not found in bundle resources!");
-            d3Js = "log('ERROR: /js/d3.v7.min.js not found in bundle resources!');";
-        }
-
         // Use JSON quoting to safely escape strings (especially paths with backslashes) for JS insertion
         String viewModeJson = org.json.JSONObject.quote(viewMode != null ? viewMode : "COMPONENTS");
         String targetPathJson = org.json.JSONObject.quote(targetPath != null ? targetPath : "");
@@ -56,8 +50,7 @@ public class DesignRenderer {
             .replace("{{TARGET_PATH_JSON}}", targetPathJson)
             .replace("{{DEFAULT_PATH_JSON}}", defaultPathJson)
             .replace("{{TARGET_HISTORY_JSON}}", new org.json.JSONArray(history).toString())
-            .replace("{{NAVIGATOR_JS}}", navigatorJs)
-            .replace("{{D3_JS}}", d3Js);
+            .replace("{{NAVIGATOR_JS}}", navigatorJs);
     }
 
     public String serializeModel(DesignModel model) {
