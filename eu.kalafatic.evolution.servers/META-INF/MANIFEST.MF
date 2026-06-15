@@ -1,0 +1,17 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Evolution Servers
+Bundle-SymbolicName: eu.kalafatic.evolution.servers;singleton:=true
+Bundle-Version: 2.6.5.qualifier
+Bundle-RequiredExecutionEnvironment: JavaSE-21
+Automatic-Module-Name: eu.kalafatic.evolution.servers
+Export-Package: eu.kalafatic.evolution.servers.server,
+ eu.kalafatic.evolution.servers.model,
+ eu.kalafatic.evolution.servers.service
+Require-Bundle: org.eclipse.core.runtime
+Import-Package: org.sqlite,
+ org.mindrot.jbcrypt,
+ fi.iki.elonen,
+ com.fasterxml.jackson.databind,
+ com.fasterxml.jackson.core,
+ com.fasterxml.jackson.annotation
