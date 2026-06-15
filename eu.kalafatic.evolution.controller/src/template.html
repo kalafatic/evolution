@@ -110,6 +110,47 @@
         .node rect { cursor: pointer; stroke-width: 2px; }
         .node text { pointer-events: none; font-weight: 600; }
         .link { stroke-opacity: 0.4; }
+
+        /* Context Menu */
+        #context-menu {
+            position: absolute; background: white; border: 1px solid var(--border);
+            border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            padding: 5px 0; z-index: 1000; display: none; min-width: 160px;
+        }
+        #context-menu.active { display: block; }
+        .menu-item {
+            padding: 8px 15px; font-size: 13px; cursor: pointer; transition: background 0.2s;
+        }
+        .menu-item:hover { background: #f1f5f9; color: var(--accent); }
+        .menu-item hr { border: none; border-top: 1px solid var(--border); margin: 5px 0; }
+
+        /* Popup Panel */
+        #popup-panel {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 500px; max-height: 80%; background: white; border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2); z-index: 2000; display: none;
+            flex-direction: column;
+        }
+        #popup-header { padding: 15px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        #popup-content { padding: 20px; overflow-y: auto; flex: 1; }
+
+        /* Zoom Controls */
+        #zoom-controls {
+            position: absolute; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 5px; z-index: 100;
+        }
+        .zoom-btn {
+            width: 36px; height: 36px; background: white; border: 1px solid var(--border);
+            border-radius: 6px; cursor: pointer; display: flex; align-items: center;
+            justify-content: center; font-size: 18px; font-weight: bold; color: var(--text-main);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: all 0.2s;
+        }
+        .zoom-btn:hover { background: #f8fafc; border-color: var(--accent); color: var(--accent); }
+
+        /* Layout Switcher */
+        .layout-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-top: 8px; }
+        .layout-btn { padding: 6px; font-size: 11px; text-align: center; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; color: white; cursor: pointer; }
+        .layout-btn:hover { background: rgba(255,255,255,0.15); }
+        .layout-btn.active { background: var(--accent); border-color: var(--accent); }
     </style>
 </head>
 <body>
@@ -138,6 +179,13 @@
                     <option value="USE_CASES">Use Cases Trace</option>
                     <option value="KNOWLEDGE_GRAPH">Knowledge Graph</option>
                 </select>
+
+                <div class="layout-grid">
+                    <div class="layout-btn active" id="layout-force" onclick="switchLayout('force')">Force</div>
+                    <div class="layout-btn" id="layout-tree" onclick="switchLayout('tree')">Tree</div>
+                    <div class="layout-btn" id="layout-radial" onclick="switchLayout('radial')">Radial</div>
+                </div>
+
                 <button onclick="javaAction('', 'REFRESH')">🔄 Refresh View</button>
             </div>
         </div>
@@ -165,6 +213,12 @@
         <div id="architecture-container">
             <svg id="architecture-svg"></svg>
 
+            <div id="zoom-controls">
+                <button class="zoom-btn" onclick="zoomIn()" title="Zoom In">+</button>
+                <button class="zoom-btn" onclick="zoomOut()" title="Zoom Out">−</button>
+                <button class="zoom-btn" onclick="resetZoom()" title="Reset Zoom">⊙</button>
+            </div>
+
             <div id="empty-state">
                 <h1 style="font-size: 24px; margin-bottom: 10px;">No Architecture Data</h1>
                 <p>Run <b>Deep Discovery</b> to analyze your project structure.</p>
@@ -174,6 +228,16 @@
                 <!-- Populated by JS -->
             </div>
         </div>
+    </div>
+
+    <div id="context-menu"></div>
+
+    <div id="popup-panel">
+        <div id="popup-header">
+            <h3 id="popup-title" style="margin:0;">Popup</h3>
+            <button onclick="document.getElementById('popup-panel').style.display='none'" style="width:auto; background:none; border:none; color:var(--text-main); font-size:20px; cursor:pointer;">&times;</button>
+        </div>
+        <div id="popup-content"></div>
     </div>
 
     <svg style="width:0;height:0;position:absolute;">

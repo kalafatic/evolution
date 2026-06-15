@@ -236,6 +236,7 @@ public class ArchitecturePage extends AEvoPage {
                     break;
                 case "EXPAND":
                 case "SHOW_CHILDREN":
+                case "SHOW_PARENTS":
                 case "SHOW_USE_CASES":
                 case "SHOW_CLASSES":
                     expandAndRefresh(id, action);
@@ -361,6 +362,8 @@ public class ArchitecturePage extends AEvoPage {
         }
 
         if ("SHOW_CHILDREN".equals(action)) {
+            setViewMode(ViewMode.KNOWLEDGE_GRAPH);
+        } else if ("SHOW_PARENTS".equals(action)) {
             setViewMode(ViewMode.KNOWLEDGE_GRAPH);
         } else {
             scheduleRefresh();
