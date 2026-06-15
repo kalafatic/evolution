@@ -3,6 +3,7 @@ package eu.kalafatic.evolution.model.orchestration.impl;
 import eu.kalafatic.evolution.model.orchestration.ForgeSession;
 import eu.kalafatic.evolution.model.orchestration.ForgeStatus;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
+import eu.kalafatic.evolution.model.orchestration.ForgeSession;
 import eu.kalafatic.evolution.model.orchestration.SessionExperiment;
 import eu.kalafatic.evolution.model.orchestration.SessionModelState;
 import eu.kalafatic.evolution.model.orchestration.SessionSnapshot;
@@ -32,7 +33,7 @@ public class ForgeSessionImpl extends MinimalEObjectImpl.Container implements Fo
 	protected long createdAt = CREATED_AT_EDEFAULT;
 	protected static final long LAST_MODIFIED_EDEFAULT = 0L;
 	protected long lastModified = LAST_MODIFIED_EDEFAULT;
-	protected static final ForgeStatus STATUS_EDEFAULT = ForgeStatus.IDLE;
+	protected static final ForgeStatus STATUS_EDEFAULT = eu.kalafatic.evolution.model.orchestration.ForgeStatus.IDLE;
 	protected ForgeStatus status = STATUS_EDEFAULT;
 	protected static final String ACTIVE_MODEL_ID_EDEFAULT = null;
 	protected String activeModelId = ACTIVE_MODEL_ID_EDEFAULT;

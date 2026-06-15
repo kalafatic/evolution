@@ -1,0 +1,10 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Forge Runtime
+Bundle-SymbolicName: eu.kalafatic.evolution.forge.runtime
+Bundle-Version: 2.6.5.qualifier
+Bundle-RequiredExecutionEnvironment: JavaSE-21
+Require-Bundle: eu.kalafatic.evolution.forge.model,
+ eu.kalafatic.evolution.forge.math
+Export-Package: eu.kalafatic.evolution.forge.runtime.api,
+ eu.kalafatic.evolution.forge.runtime.impl

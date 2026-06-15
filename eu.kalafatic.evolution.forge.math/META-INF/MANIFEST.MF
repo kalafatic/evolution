@@ -1,0 +1,8 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Forge Math
+Bundle-SymbolicName: eu.kalafatic.evolution.forge.math
+Bundle-Version: 2.6.5.qualifier
+Bundle-RequiredExecutionEnvironment: JavaSE-21
+Export-Package: eu.kalafatic.evolution.forge.math.api,
+ eu.kalafatic.evolution.forge.math.core
