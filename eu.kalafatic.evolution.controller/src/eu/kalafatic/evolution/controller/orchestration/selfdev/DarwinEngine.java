@@ -408,31 +408,56 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
                     .collect(Collectors.toList());
         }
 
-        List<JSONObject> mutationVariants = new ArrayList<>();
-        if (!currentBlueprints.isEmpty()) {
-            context.log("[DARWIN] Executing Blueprint-Driven Spawning with " + currentBlueprints.size() + " blueprints.");
-            mutationVariants = spawner.spawnBlueprints(goal, currentBlueprints, basePrompt, lineageContext, rejectedSiblings, isMediated, context);
-        } else {
-            context.log("[DARWIN] Executing Trajectory Mutation Chain with " + mutationSeeds.size() + " seeds.");
-            mutationVariants = spawner.spawn(goal, mutationSeeds, basePrompt, lineageContext, rejectedSiblings, isMediated, context);
-        }
+        List<JSONObject> uniqueVariants = new ArrayList<>();
+        String divergenceDirective = "";
 
-        // LOG ALL RAW VARIANTS BEFORE DIVERSITY FILTERING
-        context.log("[DARWIN_RAW_VARIANTS] " + mutationVariants.size() + " trajectories spawned.");
+        for (int evolutionRetry = 0; evolutionRetry < 2; evolutionRetry++) {
+            List<JSONObject> mutationVariants = new ArrayList<>();
+            String activePrompt = basePrompt + divergenceDirective;
 
-        List<JSONObject> uniqueVariants = diversityAnalyzer.analyze(mutationVariants, currentBlueprints.isEmpty() ? null : currentBlueprints, policy.getEvolutionaryStrictness(), modelCapability, context);
+            if (!currentBlueprints.isEmpty()) {
+                context.log("[DARWIN] Executing Blueprint-Driven Spawning with " + currentBlueprints.size() + " blueprints (Attempt " + (evolutionRetry + 1) + ").");
+                mutationVariants = spawner.spawnBlueprints(goal, currentBlueprints, activePrompt, lineageContext, rejectedSiblings, isMediated, context);
+            } else {
+                context.log("[DARWIN] Executing Trajectory Mutation Chain with " + mutationSeeds.size() + " seeds (Attempt " + (evolutionRetry + 1) + ").");
+                mutationVariants = spawner.spawn(goal, mutationSeeds, activePrompt, lineageContext, rejectedSiblings, isMediated, context);
+            }
 
-        if (uniqueVariants.isEmpty()) {
-            context.log("[DARWIN] CRITICAL: All LLM variants failed diversity analysis. Evolution stalled.");
+            // LOG ALL RAW VARIANTS BEFORE DIVERSITY FILTERING
+            context.log("[DARWIN_RAW_VARIANTS] " + mutationVariants.size() + " trajectories spawned.");
+
+            uniqueVariants = diversityAnalyzer.analyze(mutationVariants, currentBlueprints.isEmpty() ? null : currentBlueprints, policy.getEvolutionaryStrictness(), modelCapability, context);
+
+            if (uniqueVariants.isEmpty()) {
+                context.log("[DARWIN] CRITICAL: All LLM variants failed diversity analysis. Evolution stalled.");
+                break;
+            }
+
+            // Diagnostic Overrides: Detect evolutionary collapse
+            if (uniqueVariants.size() > 1) {
+                double avgDist = 0;
+                int pairs = 0;
+                for (int i = 0; i < uniqueVariants.size(); i++) {
+                    for (int j = i + 1; j < uniqueVariants.size(); j++) {
+                        avgDist += diversityAnalyzer.calculateDiversity(uniqueVariants.get(i), Collections.singletonList(uniqueVariants.get(j)));
+                        pairs++;
+                    }
+                }
+                avgDist /= pairs;
+
+                if (avgDist < 0.1) {
+                    context.log("[DARWIN_DIAGNOSTIC] Evolutionary collapse detected (avgDist=" + String.format("%.2f", avgDist) + "). Triggering HARD RESET of variants with forced axis mutation.");
+                    divergenceDirective = "\n[FORCED_DIVERGENCE_DIRECTIVE] Previous candidates were too similar. You MUST radically PIVOT your architectural assumptions. If the previous was monolithic, go modular. If it was synchronous, go asynchronous. Maximize conceptual distance.";
+                    uniqueVariants.clear();
+                    continue; // Retry spawning
+                }
+            }
+            break; // Success or non-collapsing state
         }
 
         // Fitness Ranking
         DarwinFitnessRanker ranker = new DarwinFitnessRanker();
-        boolean isAtomicRound = false;
-        if (atomicAnalysis != null) {
-            isAtomicRound = atomicAnalysis.isAtomic() && atomicAnalysis.getComplexityVector().determinismConfidence > 0.8;
-        }
-        ranker.rank(uniqueVariants, isAtomicRound, currentIteration, pressure);
+        ranker.rank(uniqueVariants, atomicAnalysis, currentIteration, pressure);
 
         JSONObject branchesJson = new JSONObject();
         branchesJson.put("iteration", currentIteration);

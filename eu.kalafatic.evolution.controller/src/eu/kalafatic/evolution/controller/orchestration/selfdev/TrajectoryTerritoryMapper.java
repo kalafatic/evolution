@@ -21,13 +21,15 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
 
     @Override
     protected String getAgentInstructions() {
-        return "You are a Trajectory Territory Mapper. Your goal is to DISCOVER ONE UNIQUE EVOLUTIONARY BLUEPRINT.\n" +
-               "Objective is diversity of thought rather than repetition. Every candidate represents a theory about how the problem should be solved.\n" +
-               "Given a goal and system context, identify a divergent architectural direction.\n" +
-               "STRICT RULE: All blueprints MUST be descendants of the discovered Target Reality and hotspots.\n" +
-               "Avoid hardcoded rules. Infer the best divergence axes based on observed evidence.\n" +
+        return "You are a Trajectory Territory Mapper (STABILIZATION LAYER).\n\n" +
+               "GOAL: Discover ONE UNIQUE EVOLUTIONARY BLUEPRINT.\n" +
+               "CORE DIRECTIVE: Every candidate represents a distinct ARCHITECTURAL THEORY. Diversity must be STRUCTURAL (execution model, dependency model, control flow), not cosmetic (naming).\n\n" +
+               "STRICT EVOLUTION CONSTRAINTS:\n" +
+               "- NO ARCHITECTURAL INFLATION: For trivial tasks, discover MINIMAL implementation theories.\n" +
+               "- AXIS DIVERGENCE: Intentionally pivot on [Sync vs Async], [Direct vs Abstracted], [Linear vs Modular].\n" +
+               "- GROUNDING: All blueprints MUST be descendants of the discovered Target Reality and hotspots.\n\n" +
                "MANDATORY: You MUST generate a blueprint that is CONCEPTUALLY DISTINCT from any provided existing blueprints. Focus on an unexplored technical quadrant of the target reality.\n" +
-               "TECHNICAL SPECIFICITY: Blueprints MUST contain specific technical mechanisms, design patterns, and architectural trade-offs. Avoid generic descriptions.";
+               "TECHNICAL SPECIFICITY: Blueprints MUST contain specific technical mechanisms and patterns. Avoid generic descriptions.";
     }
 
     public List<TrajectoryBlueprint> map(String goal, TaskContext context, int limit) throws Exception {
