@@ -1,6 +1,6 @@
 package eu.kalafatic.evolution.forge.controller.service.impl;
 
-import eu.kalafatic.evolution.forge.controller.api.ModelLifecycleState;
+import eu.kalafatic.evolution.forge.model.api.ModelLifecycleState;
 import eu.kalafatic.evolution.forge.controller.service.EvoKernel;
 import eu.kalafatic.evolution.forge.controller.repository.ForgeRepository;
 import eu.kalafatic.evolution.forge.model.ForgeModel;

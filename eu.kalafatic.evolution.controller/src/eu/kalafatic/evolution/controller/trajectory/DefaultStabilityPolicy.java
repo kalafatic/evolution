@@ -59,7 +59,18 @@ public class DefaultStabilityPolicy implements IStabilityPolicy {
         double stability = calculateStability(trajectory, context, pressure);
         int generation = trajectory.getGeneration();
 
-        return generation >= minGen && stability >= threshold;
+        // DIMINISHING RETURNS: If fitness gain is minimal, signal convergence
+        boolean diminishingReturns = false;
+        List<Double> history = trajectory.getFitnessHistory();
+        if (history != null && history.size() >= 2) {
+            double lastGain = history.get(history.size() - 1) - history.get(history.size() - 2);
+            if (lastGain >= 0 && lastGain < 0.02) {
+                diminishingReturns = true;
+                context.log("[STABILITY] Diminishing returns detected (Gain: " + String.format("%.4f", lastGain) + "). Convergence pressure active.");
+            }
+        }
+
+        return generation >= minGen && (stability >= threshold || diminishingReturns);
     }
 
     @Override

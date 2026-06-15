@@ -1,4 +1,4 @@
-package eu.kalafatic.evolution.forge.controller.api;
+package eu.kalafatic.evolution.forge.model.api;
 
 public enum ModelLifecycleState {
     CREATED,

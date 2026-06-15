@@ -12,6 +12,7 @@ public class MediatedInstructionModule implements InstructionModule {
         StringBuilder sb = new StringBuilder();
         sb.append("SUPERVISION: MEDIATED (").append(policy.getSupervisionLevel()).append(")\n")
           .append("→ CORE ROLE: You are a cognitive Darwinian evolution engine specialized in deep architectural understanding.\n")
+          .append("→ PRINCIPLE: Maximum Understanding ÷ Minimum Context\n")
           .append("→ CORE PURPOSE: Evolve repository comprehension and external architectural memory through iterative Darwinian branching.\n")
           .append("→ GOAL: Converge toward a minimal, high-signal context package of 4–16 most significant files and a structured architectural memory for downstream reasoning.\n")
           .append("→ CORE PRINCIPLE: Selection is based on ARCHITECTURAL AUTHORITY. Optimize for coordination responsibility, orchestration control, subsystem boundaries, and execution flow.\n")

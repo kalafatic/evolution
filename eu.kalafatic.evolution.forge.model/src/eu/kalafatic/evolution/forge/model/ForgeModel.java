@@ -1,7 +1,7 @@
 package eu.kalafatic.evolution.forge.model;
 
 import java.util.List;
-import eu.kalafatic.evolution.forge.controller.api.ModelLifecycleState;
+import eu.kalafatic.evolution.forge.model.api.ModelLifecycleState;
 
 public interface ForgeModel {
     String getId();

@@ -20,8 +20,8 @@ public class ExporterControllerImpl implements ExporterController {
             throw new Exception("Model not found: " + modelId);
         }
 
-        if (model.getLifecycleState() != eu.kalafatic.evolution.forge.controller.api.ModelLifecycleState.FROZEN &&
-            model.getLifecycleState() != eu.kalafatic.evolution.forge.controller.api.ModelLifecycleState.COMPILING) {
+        if (model.getLifecycleState() != eu.kalafatic.evolution.forge.model.api.ModelLifecycleState.FROZEN &&
+            model.getLifecycleState() != eu.kalafatic.evolution.forge.model.api.ModelLifecycleState.COMPILING) {
             throw new Exception("Model must be FROZEN before export. Current state: " + model.getLifecycleState());
         }
 

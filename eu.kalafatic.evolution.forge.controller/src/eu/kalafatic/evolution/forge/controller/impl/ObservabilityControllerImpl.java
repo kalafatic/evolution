@@ -18,34 +18,42 @@ public class ObservabilityControllerImpl implements ObservabilityController {
     @Override
     public void trackEvent(String sessionId, String eventType, String data) {
         if (eventTracker != null) {
-            ForgeEvent event = new ForgeEvent();
-            event.setSessionId(sessionId);
-            event.setType(eventType);
-            event.setData(data);
-            eventTracker.track(event);
+            // Mapping domain event to observability event
+            ForgeEvent fEvent = ForgeEvent.TRAINING_STEP;
+            if (eventType.equals(ObservabilityEventType.TRAINING_METRIC.name())) {
+                fEvent = ForgeEvent.LOSS_UPDATED;
+            }
 
-            ObservabilityEventType type = ObservabilityEventType.valueOf(eventType);
-            switch (type) {
-                case TRAINING_METRIC:
-                    if (data.contains("plateau")) {
-                        triggerEvolution(sessionId, "active-model");
-                    }
-                    break;
-                case RUNTIME_FEEDBACK:
-                    // Queue for future batch evaluation
-                    break;
-                case USER_CORRECTION:
-                    // Direct dataset update trigger
-                    break;
-                case SYSTEM_ALERT:
-                    // High priority stabilization check
-                    break;
+            eventTracker.track(fEvent, sessionId, data);
+
+            try {
+                ObservabilityEventType type = ObservabilityEventType.valueOf(eventType);
+                switch (type) {
+                    case TRAINING_METRIC:
+                        if (data != null && data.contains("plateau")) {
+                            triggerEvolution(sessionId, "active-model");
+                        }
+                        break;
+                    case RUNTIME_FEEDBACK:
+                        // Queue for future batch evaluation
+                        break;
+                    case USER_CORRECTION:
+                        // Direct dataset update trigger
+                        break;
+                    case SYSTEM_ALERT:
+                        // High priority stabilization check
+                        break;
+                }
+            } catch (IllegalArgumentException e) {
+                // Ignore unknown event types
             }
         }
     }
 
     @Override
     public void triggerEvolution(String sessionId, String modelId) {
-        evolutionService.evolve(sessionId, modelId);
+        if (evolutionService != null) {
+            evolutionService.evolve(sessionId, modelId);
+        }
     }
 }

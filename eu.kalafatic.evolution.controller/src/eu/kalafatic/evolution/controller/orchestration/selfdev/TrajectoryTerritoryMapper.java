@@ -22,6 +22,7 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
     @Override
     protected String getAgentInstructions() {
         return "You are a Trajectory Territory Mapper. Your goal is to DISCOVER ONE UNIQUE EVOLUTIONARY BLUEPRINT.\n" +
+               "Objective is diversity of thought rather than repetition. Every candidate represents a theory about how the problem should be solved.\n" +
                "Given a goal and system context, identify a divergent architectural direction.\n" +
                "STRICT RULE: All blueprints MUST be descendants of the discovered Target Reality and hotspots.\n" +
                "Avoid hardcoded rules. Infer the best divergence axes based on observed evidence.\n" +

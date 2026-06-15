@@ -290,7 +290,17 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             context.getOrchestrator().getAiChat().getPromptInstructions() != null) {
             preferredMaxIterations = context.getOrchestrator().getAiChat().getPromptInstructions().getPreferredMaxIterations();
         }
-        int branchingLimit = Math.max(4, Math.min(6, preferredMaxIterations));
+
+        // Model Capability Coefficient
+        String modelName = (context.getOrchestrator().getOllama() != null) ? context.getOrchestrator().getOllama().getModel() : "unknown";
+        double modelCapability = 0.5; // Default
+        if (modelName.contains("gemma3:1b")) modelCapability = 0.35;
+        else if (modelName.contains("qwen")) modelCapability = 0.45;
+        else if (modelName.contains("mistral")) modelCapability = 0.65;
+        else if (modelName.contains("llama3")) modelCapability = 0.75;
+        else if (modelName.contains("claude") || modelName.contains("gpt-4") || modelName.contains("o1")) modelCapability = 0.95;
+
+        int branchingLimit = modelCapability < 0.6 ? 2 : 4;
 
         // DYNAMIC TERRITORY DISCOVERY: Replace hardcoded blueprints with LLM-driven territory mapping
         TrajectoryTerritoryMapper mapper = new TrajectoryTerritoryMapper(getSessionContainer());
@@ -355,14 +365,6 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             }
         }
 
-        // Model Capability Coefficient
-        String modelName = (context.getOrchestrator().getOllama() != null) ? context.getOrchestrator().getOllama().getModel() : "unknown";
-        double modelCapability = 0.5; // Default
-        if (modelName.contains("gemma3:1b")) modelCapability = 0.35;
-        else if (modelName.contains("qwen")) modelCapability = 0.45;
-        else if (modelName.contains("mistral")) modelCapability = 0.65;
-        else if (modelName.contains("llama3")) modelCapability = 0.75;
-        else if (modelName.contains("claude") || modelName.contains("gpt-4") || modelName.contains("o1")) modelCapability = 0.95;
 
         // 1. Lineage Retrieval: Find the winner of the previous iteration
         IterationRecord lastWinner = records.stream()
