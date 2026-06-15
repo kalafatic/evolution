@@ -38,6 +38,7 @@
 		<module>eu.kalafatic.evolution.forge.trainer</module>
 		<module>eu.kalafatic.evolution.forge.observability</module>
 		<module>eu.kalafatic.evolution.forge.controller</module>
+		<module>eu.kalafatic.evolution.servers</module>
 	</modules>
 
 	<build>

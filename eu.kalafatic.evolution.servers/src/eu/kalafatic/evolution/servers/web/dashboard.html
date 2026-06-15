@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Evolution Servers</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <button id="themeToggle" class="theme-toggle">Toggle Theme</button>
+    <div class="container dashboard">
+        <div class="card">
+            <div class="dashboard-header">
+                <h2>Dashboard</h2>
+                <button id="logoutBtn" style="width: auto; padding: 8px 16px;">Logout</button>
+            </div>
+            <div id="userInfo">
+                <div class="info-item">
+                    <span class="info-label">Logged-in User:</span>
+                    <span id="displayUsername">Loading...</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Role:</span>
+                    <span id="displayRole">Loading...</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Session ID:</span>
+                    <span id="displaySessionId" style="font-size: 0.8em; word-break: break-all;">Loading...</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Login Timestamp:</span>
+                    <span id="displayTimestamp">Loading...</span>
+                </div>
+            </div>
+            <nav class="nav-menu">
+                <h3>Navigation</h3>
+                <ul>
+                    <li><a href="#">AI Chat Servers</a></li>
+                    <li><a href="#">Agent Management</a></li>
+                    <li><a href="#">REST API Docs</a></li>
+                    <li><a href="#">Workflow Services</a></li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+    <script src="js/auth.js"></script>
+</body>
+</html>
