@@ -18,13 +18,25 @@
     const gEdgeLabels = gMain.append("g").attr("class", "edge-labels");
     const gNodes = gMain.append("g").attr("class", "nodes");
 
-    const zoom = d3.zoom()
+    const zoomBehavior = d3.zoom()
         .scaleExtent([0.1, 4])
         .on("zoom", (event) => {
             gMain.attr("transform", event.transform);
         });
 
-    svg.call(zoom);
+    svg.call(zoomBehavior);
+
+    window.zoomIn = function() {
+        svg.transition().call(zoomBehavior.scaleBy, 1.3);
+    };
+
+    window.zoomOut = function() {
+        svg.transition().call(zoomBehavior.scaleBy, 0.7);
+    };
+
+    window.resetZoom = function() {
+        svg.transition().call(zoomBehavior.transform, d3.zoomIdentity);
+    };
 
     window.addEventListener('resize', () => {
         let newRect = container.node() ? container.node().getBoundingClientRect() : { width: 800, height: 600 };
@@ -35,6 +47,18 @@
 
     let simulation;
     let graphData = { nodes: [], links: [] };
+    let currentLayout = 'force';
+
+    window.switchLayout = function(type) {
+        log("Switching layout to: " + type);
+        currentLayout = type;
+
+        // Update UI buttons
+        d3.selectAll(".layout-btn").classed("active", false);
+        d3.select("#layout-" + type).classed("active", true);
+
+        render();
+    };
 
     window.updateGraph = function(data) {
         if (typeof log === 'function') log("updateGraph called with " + (data && data.components ? data.components.length : 0) + " components.");
@@ -76,7 +100,18 @@
 
     function render() {
         if (simulation) simulation.stop();
+        gMain.selectAll(".node, .link, .edge-label").interrupt();
 
+        if (currentLayout === 'force') {
+            renderForceLayout();
+        } else if (currentLayout === 'tree') {
+            renderTreeLayout(false);
+        } else if (currentLayout === 'radial') {
+            renderTreeLayout(true);
+        }
+    }
+
+    function renderForceLayout() {
         simulation = d3.forceSimulation(graphData.nodes)
             .force("link", d3.forceLink(graphData.links).id(d => d.id).distance(180))
             .force("charge", d3.forceManyBody().strength(-600))
@@ -87,9 +122,10 @@
         const link = gLinks.selectAll(".link")
             .data(graphData.links)
             .join("line")
-            .attr("class", "link")
-            .attr("stroke", "#cbd5e1")
-            .attr("stroke-width", 1.5)
+            .attr("class", d => "link " + (d.type ? d.type.toLowerCase() : ""))
+            .attr("stroke", d => getLinkColor(d.type))
+            .attr("stroke-width", d => getLinkWidth(d.type))
+            .attr("stroke-dasharray", d => getLinkDash(d.type))
             .attr("marker-end", "url(#arrowhead)");
 
         const edgeLabel = gEdgeLabels.selectAll(".edge-label")
@@ -154,6 +190,110 @@
         }
     }
 
+    function renderTreeLayout(radial) {
+        // Build a hierarchy from links (assuming a single root for now, or multiple roots)
+        const nodeMap = new Map(graphData.nodes.map(d => [d.id, { ...d, children: [] }]));
+        const childIds = new Set(graphData.links.map(l => l.target.id || l.target));
+        const roots = graphData.nodes.filter(n => !childIds.has(n.id));
+
+        if (roots.length === 0 && graphData.nodes.length > 0) roots.push(graphData.nodes[0]);
+
+        const treeData = {
+            id: "root-virtual",
+            name: "Architecture Root",
+            type: "VIRTUAL",
+            children: roots.map(r => buildHierarchy(r.id, nodeMap, new Set()))
+        };
+
+        const hierarchy = d3.hierarchy(treeData);
+        const layout = radial
+            ? d3.tree().size([2 * Math.PI, Math.min(width, height) / 2 - 100])
+            : d3.tree().size([width - 200, height - 200]);
+
+        layout(hierarchy);
+
+        const nodes = hierarchy.descendants().filter(d => d.data.type !== "VIRTUAL");
+        const links = hierarchy.links().filter(d => d.source.data.type !== "VIRTUAL");
+
+        const transition = d3.transition().duration(750);
+
+        const link = gLinks.selectAll(".link")
+            .data(links, d => d.source.data.id + "-" + d.target.data.id)
+            .join(
+                enter => enter.append("line").attr("class", "link").attr("stroke", "#cbd5e1").attr("marker-end", "url(#arrowhead)"),
+                update => update,
+                exit => exit.remove()
+            );
+
+        const node = gNodes.selectAll(".node")
+            .data(nodes, d => d.data.id)
+            .join(
+                enter => {
+                    const g = enter.append("g").attr("class", d => "node " + d.data.type.toLowerCase());
+                    g.append("rect")
+                        .attr("width", d => 140 + (d.data.importance * 30))
+                        .attr("height", 44)
+                        .attr("x", d => -(70 + (d.data.importance * 15)))
+                        .attr("y", -22)
+                        .attr("rx", 6)
+                        .attr("fill", "white")
+                        .attr("stroke", d => getRoleColor(d.data.type));
+                    g.append("text")
+                        .attr("text-anchor", "middle")
+                        .attr("dy", ".35em")
+                        .attr("font-size", "11px")
+                        .attr("fill", "#1e293b")
+                        .text(d => d.data.name.length > 20 ? d.data.name.substring(0, 17) + '...' : d.data.name);
+                    return g;
+                },
+                update => update,
+                exit => exit.remove()
+            );
+
+        node.on("click", (event, d) => {
+            event.stopPropagation();
+            showDetails(d.data);
+        }).on("contextmenu", (event, d) => {
+            event.preventDefault();
+            showContextMenu(event, d.data);
+        });
+
+        if (radial) {
+            link.transition(transition)
+                .attr("x1", d => d.source.y * Math.cos(d.source.x - Math.PI / 2) + width / 2)
+                .attr("y1", d => d.source.y * Math.sin(d.source.x - Math.PI / 2) + height / 2)
+                .attr("x2", d => d.target.y * Math.cos(d.target.x - Math.PI / 2) + width / 2)
+                .attr("y2", d => d.target.y * Math.sin(d.target.x - Math.PI / 2) + height / 2);
+
+            node.transition(transition)
+                .attr("transform", d => `translate(${d.y * Math.cos(d.x - Math.PI / 2) + width / 2}, ${d.y * Math.sin(d.x - Math.PI / 2) + height / 2})`);
+        } else {
+            link.transition(transition)
+                .attr("x1", d => d.source.x + 100)
+                .attr("y1", d => d.source.y + 100)
+                .attr("x2", d => d.target.x + 100)
+                .attr("y2", d => d.target.y + 100);
+
+            node.transition(transition)
+                .attr("transform", d => `translate(${d.x + 100}, ${d.y + 100})`);
+        }
+
+        gEdgeLabels.selectAll(".edge-label").remove();
+    }
+
+    function buildHierarchy(id, nodeMap, visited) {
+        if (visited.has(id)) return null;
+        visited.add(id);
+
+        const node = nodeMap.get(id);
+        const children = graphData.links
+            .filter(l => (l.source.id || l.source) === id)
+            .map(l => buildHierarchy(l.target.id || l.target, nodeMap, visited))
+            .filter(n => n !== null);
+
+        return { ...node, children };
+    }
+
     function getRoleColor(type) {
         const colors = {
             'USE_CASE': '#ef4444',
@@ -169,6 +309,27 @@
             'COMPONENT': '#3b82f6'
         };
         return colors[type] || '#94a3b8';
+    }
+
+    function getLinkColor(type) {
+        const colors = {
+            'CONTAINS': '#3b82f6',
+            'DEPENDS_ON': '#64748b',
+            'SUPPORTED_BY': '#10b981',
+            'EVIDENCE': '#f59e0b',
+            'PART_OF': '#8b5cf6'
+        };
+        return colors[type] || '#cbd5e1';
+    }
+
+    function getLinkWidth(type) {
+        if (type === 'CONTAINS' || type === 'PART_OF') return 2.5;
+        return 1.5;
+    }
+
+    function getLinkDash(type) {
+        if (type === 'DEPENDS_ON' || type === 'EVIDENCE') return "5,5";
+        return "none";
     }
 
     function showDetails(node) {
@@ -231,18 +392,32 @@
             .classed("active", true);
 
         menu.html(`
-            <div class="menu-item" onclick="javaAction('${node.id}', 'EXPAND')">Expand Neighborhood</div>
-            <div class="menu-item" onclick="javaAction('${node.id}', 'COLLAPSE')">Collapse Neighborhood</div>
+            <div class="menu-item" onclick="focusNode('${node.id}')"><b>🎯 Focus Node</b></div>
             <hr>
+            <div class="menu-item" onclick="javaAction('${node.id}', 'SHOW_PARENTS')">Show Parent Nodes</div>
             <div class="menu-item" onclick="javaAction('${node.id}', 'SHOW_CHILDREN')">Show Child Nodes</div>
+            <hr>
             <div class="menu-item" onclick="javaAction('${node.id}', 'SHOW_USE_CASES')">Show Use Cases</div>
             <div class="menu-item" onclick="javaAction('${node.id}', 'SHOW_CLASSES')">Show Key Classes</div>
+            <div class="menu-item" onclick="javaAction('${node.id}', 'OPEN')">Open Source</div>
         `);
 
         d3.select("body").on("click.menu-close", () => {
             menu.classed("active", false);
         });
     }
+
+    window.focusNode = function(id) {
+        log("Focusing node: " + id);
+        const node = graphData.nodes.find(n => n.id === id);
+        if (node) {
+            svg.transition().duration(750).call(
+                zoomBehavior.transform,
+                d3.zoomIdentity.translate(width / 2, height / 2).scale(1.5).translate(-node.x, -node.y)
+            );
+            showDetails(node);
+        }
+    };
 
     window.javaAction = function(id, action) {
         if (window.navigatorFunction) {
