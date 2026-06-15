@@ -5,4 +5,5 @@ Bundle-SymbolicName: eu.kalafatic.evolution.forge.model
 Bundle-Version: 2.6.5.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-21
 Require-Bundle: org.eclipse.emf.ecore
-Export-Package: eu.kalafatic.evolution.forge.model
+Export-Package: eu.kalafatic.evolution.forge.model,
+ eu.kalafatic.evolution.forge.model.api

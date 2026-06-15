@@ -108,9 +108,9 @@ public class DarwinFitnessRanker {
             if (count >= 4 && count <= 16) {
                 medScore += 0.2; // Reward ideal range
             } else if (count > 0 && count < 4) {
-                medScore -= 0.1; // Penalize insufficient context
+                medScore -= 0.15; // Penalize insufficient context
             } else if (count > 16) {
-                medScore -= Math.min(0.4, (count - 16) * 0.03); // Penalize bloat
+                medScore -= Math.min(0.5, (count - 16) * 0.05); // Penalize bloat
             } else if (count == 0) {
                 medScore -= 0.5; // Fatal penalty for empty packages
             }

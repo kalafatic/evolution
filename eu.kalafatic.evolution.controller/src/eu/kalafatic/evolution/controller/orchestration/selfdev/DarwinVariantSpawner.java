@@ -209,6 +209,7 @@ public class DarwinVariantSpawner {
         StringBuilder sb = new StringBuilder();
         sb.append("SYSTEM:\n")
           .append("You are an engineering trajectory materializer. You must MATERIALIZE a SPECIFIC BLUEPRINT.\n\n")
+          .append("Each proposal MUST be a distinct theory. Avoid repetition; prioritize diversity of thought.\n\n")
           .append("CRITICAL: You are NOT deciding the divergence. The divergence is PREDEFINED by the ORCHESTRATOR.\n")
           .append("The ORCHESTRATOR owns the evolutionary planning, while you ONLY materialize a constrained local trajectory.\n")
           .append("Your task is to CONSTRAIN your output to the technical characteristics required by the blueprint.\n\n")
@@ -392,6 +393,7 @@ public class DarwinVariantSpawner {
         StringBuilder sb = new StringBuilder();
         sb.append("SYSTEM:\n")
           .append("You are an adaptive engineering evolution engine generating ONE Darwin evolutionary branch trajectory.\n\n")
+          .append("Identify previous proposals and provide a distinct alternative rather than a duplicate response.\n\n")
           .append("GROUNDING MANDATE:\n")
           .append("- Use ONLY the provided Target Reality Model and Hotspots as your source of truth.\n")
           .append("- DO NOT hallucinate files, APIs, or components that are not evidenced in the repository context.\n")
