@@ -1,12 +1,13 @@
 package eu.kalafatic.evolution.forge.controller.impl;
 
-import eu.kalafatic.evolution.forge.controller.api.TrainingController;
-import eu.kalafatic.evolution.forge.controller.api.TrainingStatus;
-import eu.kalafatic.evolution.forge.controller.service.TrainingService;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import eu.kalafatic.evolution.forge.controller.api.TrainingController;
+import eu.kalafatic.evolution.forge.controller.api.TrainingStatus;
+import eu.kalafatic.evolution.forge.controller.service.TrainingService;
 
 public class TrainingControllerImpl implements TrainingController {
     private final TrainingService trainingService;

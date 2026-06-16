@@ -9,9 +9,10 @@ Export-Package: eu.kalafatic.evolution.servers.server,
  eu.kalafatic.evolution.servers.model,
  eu.kalafatic.evolution.servers.service
 Require-Bundle: org.eclipse.core.runtime
-Import-Package: org.sqlite,
- org.mindrot.jbcrypt,
- fi.iki.elonen,
- com.fasterxml.jackson.databind,
- com.fasterxml.jackson.core,
- com.fasterxml.jackson.annotation
+Bundle-ClassPath: .,
+ lib/json-20140107.jar,
+ lib/jackson-annotations-2.20.jar,
+ lib/jackson-core-2.20.0.jar,
+ lib/jackson-databind-2.20.0.jar,
+ lib/jbcrypt-0.4.jar,
+ lib/nanohttpd-2.3.1.jar

@@ -1,9 +1,7 @@
 package eu.kalafatic.evolution.model.orchestration.impl;
 
-import eu.kalafatic.evolution.model.orchestration.ForgeSession;
 import eu.kalafatic.evolution.model.orchestration.ForgeStatus;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
-import eu.kalafatic.evolution.model.orchestration.ForgeSession;
 import eu.kalafatic.evolution.model.orchestration.SessionExperiment;
 import eu.kalafatic.evolution.model.orchestration.SessionModelState;
 import eu.kalafatic.evolution.model.orchestration.SessionSnapshot;

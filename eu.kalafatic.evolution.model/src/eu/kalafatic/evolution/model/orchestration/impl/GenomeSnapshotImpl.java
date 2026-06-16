@@ -8,11 +8,65 @@ import org.eclipse.emf.ecore.impl.ENotificationImpl;
 import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
 
 public class GenomeSnapshotImpl extends MinimalEObjectImpl.Container implements GenomeSnapshot {
+	/**
+	 * The default value of the '{@link #getTimestamp() <em>Timestamp</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getTimestamp()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String TIMESTAMP_EDEFAULT = null;
 	protected String timestamp = null;
+	/**
+	 * The default value of the '{@link #getArchitectureArtifact() <em>Architecture Artifact</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getArchitectureArtifact()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String ARCHITECTURE_ARTIFACT_EDEFAULT = null;
 	protected String architectureArtifact = null;
+	/**
+	 * The default value of the '{@link #getUseCaseArtifact() <em>Use Case Artifact</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getUseCaseArtifact()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String USE_CASE_ARTIFACT_EDEFAULT = null;
 	protected String useCaseArtifact = null;
+	/**
+	 * The default value of the '{@link #getMilestoneArtifact() <em>Milestone Artifact</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getMilestoneArtifact()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String MILESTONE_ARTIFACT_EDEFAULT = null;
 	protected String milestoneArtifact = null;
+	/**
+	 * The default value of the '{@link #getGenomeArtifact() <em>Genome Artifact</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getGenomeArtifact()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String GENOME_ARTIFACT_EDEFAULT = null;
 	protected String genomeArtifact = null;
+	/**
+	 * The default value of the '{@link #getDashboardArtifact() <em>Dashboard Artifact</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getDashboardArtifact()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String DASHBOARD_ARTIFACT_EDEFAULT = null;
 	protected String dashboardArtifact = null;
 
 	protected GenomeSnapshotImpl() {

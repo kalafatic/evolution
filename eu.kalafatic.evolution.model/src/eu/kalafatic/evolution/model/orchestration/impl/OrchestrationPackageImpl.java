@@ -50,6 +50,7 @@ import eu.kalafatic.evolution.model.orchestration.ServerSettings;
 import eu.kalafatic.evolution.model.orchestration.SessionType;
 import eu.kalafatic.evolution.model.orchestration.ForgeSession;
 import eu.kalafatic.evolution.model.orchestration.ForgeStatus;
+import eu.kalafatic.evolution.model.orchestration.GenomeSnapshot;
 import eu.kalafatic.evolution.model.orchestration.SessionExperiment;
 import eu.kalafatic.evolution.model.orchestration.SessionModelState;
 import eu.kalafatic.evolution.model.orchestration.SessionSnapshot;
@@ -4021,8 +4022,6 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	private boolean isCreated = false;
 
 	/**
-	 * Creates the meta-model objects for the package.  This method is
-	 * guarded to have no affect on any invocation but its first.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
@@ -4033,6 +4032,8 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	}
 
 	/**
+	 * Creates the meta-model objects for the package.  This method is
+	 * guarded to have no affect on any invocation but its first.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
@@ -4550,13 +4551,13 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEReference(getOrchestrator_GenomeSnapshots(), this.getGenomeSnapshot(), null, "genomeSnapshots", null, 0, -1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getOrchestrator_ForgeSessions(), this.getForgeSession(), null, "forgeSessions", null, 0, -1, Orchestrator.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
-		initEClass(genomeSnapshotEClass, eu.kalafatic.evolution.model.orchestration.GenomeSnapshot.class, "GenomeSnapshot", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
-		initEAttribute(getGenomeSnapshot_Timestamp(), ecorePackage.getEString(), "timestamp", null, 0, 1, eu.kalafatic.evolution.model.orchestration.GenomeSnapshot.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getGenomeSnapshot_ArchitectureArtifact(), ecorePackage.getEString(), "architectureArtifact", null, 0, 1, eu.kalafatic.evolution.model.orchestration.GenomeSnapshot.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getGenomeSnapshot_UseCaseArtifact(), ecorePackage.getEString(), "useCaseArtifact", null, 0, 1, eu.kalafatic.evolution.model.orchestration.GenomeSnapshot.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getGenomeSnapshot_MilestoneArtifact(), ecorePackage.getEString(), "milestoneArtifact", null, 0, 1, eu.kalafatic.evolution.model.orchestration.GenomeSnapshot.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getGenomeSnapshot_GenomeArtifact(), ecorePackage.getEString(), "genomeArtifact", null, 0, 1, eu.kalafatic.evolution.model.orchestration.GenomeSnapshot.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getGenomeSnapshot_DashboardArtifact(), ecorePackage.getEString(), "dashboardArtifact", null, 0, 1, eu.kalafatic.evolution.model.orchestration.GenomeSnapshot.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEClass(genomeSnapshotEClass, GenomeSnapshot.class, "GenomeSnapshot", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getGenomeSnapshot_Timestamp(), ecorePackage.getEString(), "timestamp", null, 0, 1, GenomeSnapshot.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getGenomeSnapshot_ArchitectureArtifact(), ecorePackage.getEString(), "architectureArtifact", null, 0, 1, GenomeSnapshot.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getGenomeSnapshot_UseCaseArtifact(), ecorePackage.getEString(), "useCaseArtifact", null, 0, 1, GenomeSnapshot.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getGenomeSnapshot_MilestoneArtifact(), ecorePackage.getEString(), "milestoneArtifact", null, 0, 1, GenomeSnapshot.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getGenomeSnapshot_GenomeArtifact(), ecorePackage.getEString(), "genomeArtifact", null, 0, 1, GenomeSnapshot.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getGenomeSnapshot_DashboardArtifact(), ecorePackage.getEString(), "dashboardArtifact", null, 0, 1, GenomeSnapshot.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(serverSettingsEClass, ServerSettings.class, "ServerSettings", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getServerSettings_Port(), ecorePackage.getEInt(), "port", "48080", 0, 1, ServerSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
@@ -4912,12 +4913,6 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		addEEnumLiteral(iterationStatusEEnum, IterationStatus.DONE);
 		addEEnumLiteral(iterationStatusEEnum, IterationStatus.FAILED);
 
-		initEEnum(forgeStatusEEnum, ForgeStatus.class, "ForgeStatus");
-		addEEnumLiteral(forgeStatusEEnum, ForgeStatus.IDLE);
-		addEEnumLiteral(forgeStatusEEnum, ForgeStatus.TRAINING);
-		addEEnumLiteral(forgeStatusEEnum, ForgeStatus.RUNNING);
-		addEEnumLiteral(forgeStatusEEnum, ForgeStatus.ERROR);
-
 		initEEnum(selfDevDecisionEEnum, SelfDevDecision.class, "SelfDevDecision");
 		addEEnumLiteral(selfDevDecisionEEnum, SelfDevDecision.CONTINUE);
 		addEEnumLiteral(selfDevDecisionEEnum, SelfDevDecision.ROLLBACK);
@@ -4935,6 +4930,12 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		addEEnumLiteral(reviewDecisionEEnum, ReviewDecision.APPROVED);
 		addEEnumLiteral(reviewDecisionEEnum, ReviewDecision.REJECTED);
 		addEEnumLiteral(reviewDecisionEEnum, ReviewDecision.CHANGES_REQUESTED);
+
+		initEEnum(forgeStatusEEnum, ForgeStatus.class, "ForgeStatus");
+		addEEnumLiteral(forgeStatusEEnum, ForgeStatus.IDLE);
+		addEEnumLiteral(forgeStatusEEnum, ForgeStatus.TRAINING);
+		addEEnumLiteral(forgeStatusEEnum, ForgeStatus.RUNNING);
+		addEEnumLiteral(forgeStatusEEnum, ForgeStatus.ERROR);
 
 		// Create resource
 		createResource(eNS_URI);

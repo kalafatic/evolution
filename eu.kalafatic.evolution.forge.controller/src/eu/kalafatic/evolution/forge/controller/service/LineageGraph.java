@@ -1,10 +1,11 @@
 package eu.kalafatic.evolution.forge.controller.service;
 
-import eu.kalafatic.evolution.forge.model.EvolutionSnapshot;
-import eu.kalafatic.evolution.forge.model.ForgeModel;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+
+import eu.kalafatic.evolution.forge.model.EvolutionSnapshot;
+import eu.kalafatic.evolution.forge.model.ForgeModel;
 
 public class LineageGraph {
     public List<EvolutionSnapshot> getAncestors(ForgeModel model, String snapshotId) {

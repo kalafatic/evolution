@@ -18,6 +18,8 @@ import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
 import eu.kalafatic.evolution.model.orchestration.EvoProject;
 import eu.kalafatic.evolution.model.orchestration.FileChange;
 import eu.kalafatic.evolution.model.orchestration.FileConfig;
+import eu.kalafatic.evolution.model.orchestration.ForgeSession;
+import eu.kalafatic.evolution.model.orchestration.GenomeSnapshot;
 import eu.kalafatic.evolution.model.orchestration.Git;
 import eu.kalafatic.evolution.model.orchestration.Iteration;
 import eu.kalafatic.evolution.model.orchestration.LLM;
@@ -37,6 +39,9 @@ import eu.kalafatic.evolution.model.orchestration.SecretRule;
 import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
 import eu.kalafatic.evolution.model.orchestration.ServerSession;
 import eu.kalafatic.evolution.model.orchestration.ServerSettings;
+import eu.kalafatic.evolution.model.orchestration.SessionExperiment;
+import eu.kalafatic.evolution.model.orchestration.SessionModelState;
+import eu.kalafatic.evolution.model.orchestration.SessionSnapshot;
 import eu.kalafatic.evolution.model.orchestration.SupervisorSettings;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.model.orchestration.Test;
@@ -118,6 +123,12 @@ public class OrchestrationSwitch<T> extends Switch<T> {
 			case OrchestrationPackage.ORCHESTRATOR: {
 				Orchestrator orchestrator = (Orchestrator)theEObject;
 				T result = caseOrchestrator(orchestrator);
+				if (result == null) result = defaultCase(theEObject);
+				return result;
+			}
+			case OrchestrationPackage.GENOME_SNAPSHOT: {
+				GenomeSnapshot genomeSnapshot = (GenomeSnapshot)theEObject;
+				T result = caseGenomeSnapshot(genomeSnapshot);
 				if (result == null) result = defaultCase(theEObject);
 				return result;
 			}
@@ -335,6 +346,30 @@ public class OrchestrationSwitch<T> extends Switch<T> {
 				if (result == null) result = defaultCase(theEObject);
 				return result;
 			}
+			case OrchestrationPackage.FORGE_SESSION: {
+				ForgeSession forgeSession = (ForgeSession)theEObject;
+				T result = caseForgeSession(forgeSession);
+				if (result == null) result = defaultCase(theEObject);
+				return result;
+			}
+			case OrchestrationPackage.SESSION_MODEL_STATE: {
+				SessionModelState sessionModelState = (SessionModelState)theEObject;
+				T result = caseSessionModelState(sessionModelState);
+				if (result == null) result = defaultCase(theEObject);
+				return result;
+			}
+			case OrchestrationPackage.SESSION_EXPERIMENT: {
+				SessionExperiment sessionExperiment = (SessionExperiment)theEObject;
+				T result = caseSessionExperiment(sessionExperiment);
+				if (result == null) result = defaultCase(theEObject);
+				return result;
+			}
+			case OrchestrationPackage.SESSION_SNAPSHOT: {
+				SessionSnapshot sessionSnapshot = (SessionSnapshot)theEObject;
+				T result = caseSessionSnapshot(sessionSnapshot);
+				if (result == null) result = defaultCase(theEObject);
+				return result;
+			}
 			default: return defaultCase(theEObject);
 		}
 	}
@@ -381,6 +416,21 @@ public class OrchestrationSwitch<T> extends Switch<T> {
 	 * @generated
 	 */
 	public T caseOrchestrator(Orchestrator object) {
+		return null;
+	}
+
+	/**
+	 * Returns the result of interpreting the object as an instance of '<em>Genome Snapshot</em>'.
+	 * <!-- begin-user-doc -->
+	 * This implementation returns null;
+	 * returning a non-null result will terminate the switch.
+	 * <!-- end-user-doc -->
+	 * @param object the target of the switch.
+	 * @return the result of interpreting the object as an instance of '<em>Genome Snapshot</em>'.
+	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
+	 * @generated
+	 */
+	public T caseGenomeSnapshot(GenomeSnapshot object) {
 		return null;
 	}
 
@@ -906,6 +956,66 @@ public class OrchestrationSwitch<T> extends Switch<T> {
 	 * @generated
 	 */
 	public T casePromptInstructions(PromptInstructions object) {
+		return null;
+	}
+
+	/**
+	 * Returns the result of interpreting the object as an instance of '<em>Forge Session</em>'.
+	 * <!-- begin-user-doc -->
+	 * This implementation returns null;
+	 * returning a non-null result will terminate the switch.
+	 * <!-- end-user-doc -->
+	 * @param object the target of the switch.
+	 * @return the result of interpreting the object as an instance of '<em>Forge Session</em>'.
+	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
+	 * @generated
+	 */
+	public T caseForgeSession(ForgeSession object) {
+		return null;
+	}
+
+	/**
+	 * Returns the result of interpreting the object as an instance of '<em>Session Model State</em>'.
+	 * <!-- begin-user-doc -->
+	 * This implementation returns null;
+	 * returning a non-null result will terminate the switch.
+	 * <!-- end-user-doc -->
+	 * @param object the target of the switch.
+	 * @return the result of interpreting the object as an instance of '<em>Session Model State</em>'.
+	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
+	 * @generated
+	 */
+	public T caseSessionModelState(SessionModelState object) {
+		return null;
+	}
+
+	/**
+	 * Returns the result of interpreting the object as an instance of '<em>Session Experiment</em>'.
+	 * <!-- begin-user-doc -->
+	 * This implementation returns null;
+	 * returning a non-null result will terminate the switch.
+	 * <!-- end-user-doc -->
+	 * @param object the target of the switch.
+	 * @return the result of interpreting the object as an instance of '<em>Session Experiment</em>'.
+	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
+	 * @generated
+	 */
+	public T caseSessionExperiment(SessionExperiment object) {
+		return null;
+	}
+
+	/**
+	 * Returns the result of interpreting the object as an instance of '<em>Session Snapshot</em>'.
+	 * <!-- begin-user-doc -->
+	 * This implementation returns null;
+	 * returning a non-null result will terminate the switch.
+	 * <!-- end-user-doc -->
+	 * @param object the target of the switch.
+	 * @return the result of interpreting the object as an instance of '<em>Session Snapshot</em>'.
+	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
+	 * @generated
+	 */
+	public T caseSessionSnapshot(SessionSnapshot object) {
 		return null;
 	}
 

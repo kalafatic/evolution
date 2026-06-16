@@ -1,8 +1,9 @@
 package eu.kalafatic.evolution.forge.controller.service;
 
-import eu.kalafatic.evolution.forge.controller.api.TrainingStatus;
 import java.util.List;
 import java.util.Map;
+
+import eu.kalafatic.evolution.forge.controller.api.TrainingStatus;
 
 public interface TrainingService {
     void startTraining(String sessionId);

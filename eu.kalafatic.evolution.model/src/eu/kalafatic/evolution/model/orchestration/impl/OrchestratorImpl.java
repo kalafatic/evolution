@@ -9,6 +9,8 @@ import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.Database;
 import eu.kalafatic.evolution.model.orchestration.Eclipse;
 import eu.kalafatic.evolution.model.orchestration.FileConfig;
+import eu.kalafatic.evolution.model.orchestration.ForgeSession;
+import eu.kalafatic.evolution.model.orchestration.GenomeSnapshot;
 import eu.kalafatic.evolution.model.orchestration.Git;
 import eu.kalafatic.evolution.model.orchestration.LLM;
 import eu.kalafatic.evolution.model.orchestration.Maven;
@@ -83,6 +85,7 @@ import org.eclipse.emf.ecore.util.InternalEList;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getNetworkEntries <em>Network Entries</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getDefaultTarget <em>Default Target</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getGenomeSnapshots <em>Genome Snapshots</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.OrchestratorImpl#getForgeSessions <em>Forge Sessions</em>}</li>
  * </ul>
  *
  * @generated
@@ -556,12 +559,12 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 * @generated
 	 * @ordered
 	 */
-	protected EList<eu.kalafatic.evolution.model.orchestration.GenomeSnapshot> genomeSnapshots;
+	protected EList<GenomeSnapshot> genomeSnapshots;
 
 	/**
 	 * @generated
 	 */
-	protected EList<eu.kalafatic.evolution.model.orchestration.ForgeSession> forgeSessions;
+	protected EList<ForgeSession> forgeSessions;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -1563,9 +1566,9 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 * @generated
 	 */
 	@Override
-	public EList<eu.kalafatic.evolution.model.orchestration.GenomeSnapshot> getGenomeSnapshots() {
+	public EList<GenomeSnapshot> getGenomeSnapshots() {
 		if (genomeSnapshots == null) {
-			genomeSnapshots = new EObjectContainmentEList<eu.kalafatic.evolution.model.orchestration.GenomeSnapshot>(eu.kalafatic.evolution.model.orchestration.GenomeSnapshot.class, this, OrchestrationPackage.ORCHESTRATOR__GENOME_SNAPSHOTS);
+			genomeSnapshots = new EObjectContainmentEList<GenomeSnapshot>(GenomeSnapshot.class, this, OrchestrationPackage.ORCHESTRATOR__GENOME_SNAPSHOTS);
 		}
 		return genomeSnapshots;
 	}
@@ -1574,9 +1577,9 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 	 * @generated
 	 */
 	@Override
-	public EList<eu.kalafatic.evolution.model.orchestration.ForgeSession> getForgeSessions() {
+	public EList<ForgeSession> getForgeSessions() {
 		if (forgeSessions == null) {
-			forgeSessions = new EObjectContainmentEList<eu.kalafatic.evolution.model.orchestration.ForgeSession>(eu.kalafatic.evolution.model.orchestration.ForgeSession.class, this, OrchestrationPackage.ORCHESTRATOR__FORGE_SESSIONS);
+			forgeSessions = new EObjectContainmentEList<ForgeSession>(ForgeSession.class, this, OrchestrationPackage.ORCHESTRATOR__FORGE_SESSIONS);
 		}
 		return forgeSessions;
 	}
@@ -1836,11 +1839,11 @@ public class OrchestratorImpl extends MinimalEObjectImpl.Container implements Or
 				return;
 			case OrchestrationPackage.ORCHESTRATOR__GENOME_SNAPSHOTS:
 				getGenomeSnapshots().clear();
-				getGenomeSnapshots().addAll((Collection<? extends eu.kalafatic.evolution.model.orchestration.GenomeSnapshot>)newValue);
+				getGenomeSnapshots().addAll((Collection<? extends GenomeSnapshot>)newValue);
 				return;
 			case OrchestrationPackage.ORCHESTRATOR__FORGE_SESSIONS:
 				getForgeSessions().clear();
-				getForgeSessions().addAll((Collection<? extends eu.kalafatic.evolution.model.orchestration.ForgeSession>)newValue);
+				getForgeSessions().addAll((Collection<? extends ForgeSession>)newValue);
 				return;
 		}
 		super.eSet(featureID, newValue);

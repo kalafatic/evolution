@@ -18,6 +18,8 @@ import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
 import eu.kalafatic.evolution.model.orchestration.EvoProject;
 import eu.kalafatic.evolution.model.orchestration.FileChange;
 import eu.kalafatic.evolution.model.orchestration.FileConfig;
+import eu.kalafatic.evolution.model.orchestration.ForgeSession;
+import eu.kalafatic.evolution.model.orchestration.GenomeSnapshot;
 import eu.kalafatic.evolution.model.orchestration.Git;
 import eu.kalafatic.evolution.model.orchestration.Iteration;
 import eu.kalafatic.evolution.model.orchestration.LLM;
@@ -37,6 +39,9 @@ import eu.kalafatic.evolution.model.orchestration.SecretRule;
 import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
 import eu.kalafatic.evolution.model.orchestration.ServerSession;
 import eu.kalafatic.evolution.model.orchestration.ServerSettings;
+import eu.kalafatic.evolution.model.orchestration.SessionExperiment;
+import eu.kalafatic.evolution.model.orchestration.SessionModelState;
+import eu.kalafatic.evolution.model.orchestration.SessionSnapshot;
 import eu.kalafatic.evolution.model.orchestration.SupervisorSettings;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.model.orchestration.Test;
@@ -115,6 +120,10 @@ public class OrchestrationAdapterFactory extends AdapterFactoryImpl {
 			@Override
 			public Adapter caseOrchestrator(Orchestrator object) {
 				return createOrchestratorAdapter();
+			}
+			@Override
+			public Adapter caseGenomeSnapshot(GenomeSnapshot object) {
+				return createGenomeSnapshotAdapter();
 			}
 			@Override
 			public Adapter caseServerSettings(ServerSettings object) {
@@ -257,6 +266,22 @@ public class OrchestrationAdapterFactory extends AdapterFactoryImpl {
 				return createPromptInstructionsAdapter();
 			}
 			@Override
+			public Adapter caseForgeSession(ForgeSession object) {
+				return createForgeSessionAdapter();
+			}
+			@Override
+			public Adapter caseSessionModelState(SessionModelState object) {
+				return createSessionModelStateAdapter();
+			}
+			@Override
+			public Adapter caseSessionExperiment(SessionExperiment object) {
+				return createSessionExperimentAdapter();
+			}
+			@Override
+			public Adapter caseSessionSnapshot(SessionSnapshot object) {
+				return createSessionSnapshotAdapter();
+			}
+			@Override
 			public Adapter defaultCase(EObject object) {
 				return createEObjectAdapter();
 			}
@@ -315,6 +340,20 @@ public class OrchestrationAdapterFactory extends AdapterFactoryImpl {
 	 * @generated
 	 */
 	public Adapter createOrchestratorAdapter() {
+		return null;
+	}
+
+	/**
+	 * Creates a new adapter for an object of class '{@link eu.kalafatic.evolution.model.orchestration.GenomeSnapshot <em>Genome Snapshot</em>}'.
+	 * <!-- begin-user-doc -->
+	 * This default implementation returns null so that we can easily ignore cases;
+	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
+	 * <!-- end-user-doc -->
+	 * @return the new adapter.
+	 * @see eu.kalafatic.evolution.model.orchestration.GenomeSnapshot
+	 * @generated
+	 */
+	public Adapter createGenomeSnapshotAdapter() {
 		return null;
 	}
 
@@ -805,6 +844,62 @@ public class OrchestrationAdapterFactory extends AdapterFactoryImpl {
 	 * @generated
 	 */
 	public Adapter createPromptInstructionsAdapter() {
+		return null;
+	}
+
+	/**
+	 * Creates a new adapter for an object of class '{@link eu.kalafatic.evolution.model.orchestration.ForgeSession <em>Forge Session</em>}'.
+	 * <!-- begin-user-doc -->
+	 * This default implementation returns null so that we can easily ignore cases;
+	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
+	 * <!-- end-user-doc -->
+	 * @return the new adapter.
+	 * @see eu.kalafatic.evolution.model.orchestration.ForgeSession
+	 * @generated
+	 */
+	public Adapter createForgeSessionAdapter() {
+		return null;
+	}
+
+	/**
+	 * Creates a new adapter for an object of class '{@link eu.kalafatic.evolution.model.orchestration.SessionModelState <em>Session Model State</em>}'.
+	 * <!-- begin-user-doc -->
+	 * This default implementation returns null so that we can easily ignore cases;
+	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
+	 * <!-- end-user-doc -->
+	 * @return the new adapter.
+	 * @see eu.kalafatic.evolution.model.orchestration.SessionModelState
+	 * @generated
+	 */
+	public Adapter createSessionModelStateAdapter() {
+		return null;
+	}
+
+	/**
+	 * Creates a new adapter for an object of class '{@link eu.kalafatic.evolution.model.orchestration.SessionExperiment <em>Session Experiment</em>}'.
+	 * <!-- begin-user-doc -->
+	 * This default implementation returns null so that we can easily ignore cases;
+	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
+	 * <!-- end-user-doc -->
+	 * @return the new adapter.
+	 * @see eu.kalafatic.evolution.model.orchestration.SessionExperiment
+	 * @generated
+	 */
+	public Adapter createSessionExperimentAdapter() {
+		return null;
+	}
+
+	/**
+	 * Creates a new adapter for an object of class '{@link eu.kalafatic.evolution.model.orchestration.SessionSnapshot <em>Session Snapshot</em>}'.
+	 * <!-- begin-user-doc -->
+	 * This default implementation returns null so that we can easily ignore cases;
+	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
+	 * <!-- end-user-doc -->
+	 * @return the new adapter.
+	 * @see eu.kalafatic.evolution.model.orchestration.SessionSnapshot
+	 * @generated
+	 */
+	public Adapter createSessionSnapshotAdapter() {
 		return null;
 	}
 

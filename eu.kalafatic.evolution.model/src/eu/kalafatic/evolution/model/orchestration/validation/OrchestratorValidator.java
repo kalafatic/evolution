@@ -11,6 +11,8 @@ import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.Database;
 import eu.kalafatic.evolution.model.orchestration.Eclipse;
 import eu.kalafatic.evolution.model.orchestration.FileConfig;
+import eu.kalafatic.evolution.model.orchestration.ForgeSession;
+import eu.kalafatic.evolution.model.orchestration.GenomeSnapshot;
 import eu.kalafatic.evolution.model.orchestration.Git;
 import eu.kalafatic.evolution.model.orchestration.LLM;
 import eu.kalafatic.evolution.model.orchestration.Maven;
@@ -68,4 +70,10 @@ public interface OrchestratorValidator {
 	boolean validateMonitoringHistory(EList<MonitoringData> value);
 	boolean validateSupervisorSettings(SupervisorSettings value);
 	boolean validateNetworkEntries(EList<NetworkEntry> value);
+
+	boolean validateDefaultTarget(String value);
+
+	boolean validateGenomeSnapshots(EList<GenomeSnapshot> value);
+
+	boolean validateForgeSessions(EList<ForgeSession> value);
 }

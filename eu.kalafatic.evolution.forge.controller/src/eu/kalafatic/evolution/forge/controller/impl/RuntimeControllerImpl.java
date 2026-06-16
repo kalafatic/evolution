@@ -2,7 +2,6 @@ package eu.kalafatic.evolution.forge.controller.impl;
 
 import eu.kalafatic.evolution.forge.controller.api.RuntimeController;
 import eu.kalafatic.evolution.forge.controller.service.OllamaService;
-import java.util.function.Consumer;
 
 public class RuntimeControllerImpl implements RuntimeController {
     private final OllamaService ollamaService;

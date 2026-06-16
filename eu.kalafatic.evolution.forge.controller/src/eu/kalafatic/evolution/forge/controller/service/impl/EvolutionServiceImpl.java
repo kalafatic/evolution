@@ -1,12 +1,10 @@
 package eu.kalafatic.evolution.forge.controller.service.impl;
 
-import eu.kalafatic.evolution.forge.controller.service.EvolutionService;
-import eu.kalafatic.evolution.forge.controller.service.EvolutionPolicyEngine;
 import eu.kalafatic.evolution.forge.controller.repository.ForgeRepository;
-import eu.kalafatic.evolution.forge.model.*;
-import java.util.ArrayList;
-
 import eu.kalafatic.evolution.forge.controller.service.EvolutionPolicy;
+import eu.kalafatic.evolution.forge.controller.service.EvolutionPolicyEngine;
+import eu.kalafatic.evolution.forge.controller.service.EvolutionService;
+import eu.kalafatic.evolution.forge.model.*;
 
 public class EvolutionServiceImpl implements EvolutionService {
     private final EvolutionPolicyEngine policyEngine;

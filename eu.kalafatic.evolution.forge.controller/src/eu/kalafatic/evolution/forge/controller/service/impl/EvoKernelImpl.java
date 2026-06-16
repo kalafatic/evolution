@@ -1,10 +1,10 @@
 package eu.kalafatic.evolution.forge.controller.service.impl;
 
-import eu.kalafatic.evolution.forge.model.api.ModelLifecycleState;
-import eu.kalafatic.evolution.forge.controller.service.EvoKernel;
 import eu.kalafatic.evolution.forge.controller.repository.ForgeRepository;
+import eu.kalafatic.evolution.forge.controller.service.EvoKernel;
 import eu.kalafatic.evolution.forge.model.ForgeModel;
 import eu.kalafatic.evolution.forge.model.ForgeSession;
+import eu.kalafatic.evolution.forge.model.api.ModelLifecycleState;
 
 public class EvoKernelImpl implements EvoKernel {
     private final ForgeRepository repository;

@@ -113,10 +113,6 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 	@Override
 	public EObject create(EClass eClass) {
 		switch (eClass.getClassifierID()) {
-			case OrchestrationPackage.FORGE_SESSION: return createForgeSession();
-			case OrchestrationPackage.SESSION_MODEL_STATE: return createSessionModelState();
-			case OrchestrationPackage.SESSION_EXPERIMENT: return createSessionExperiment();
-			case OrchestrationPackage.SESSION_SNAPSHOT: return createSessionSnapshot();
 			case OrchestrationPackage.TASK: return createTask();
 			case OrchestrationPackage.AGENT: return createAgent();
 			case OrchestrationPackage.ORCHESTRATOR: return createOrchestrator();
@@ -155,6 +151,10 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 			case OrchestrationPackage.CHAT_MESSAGE: return createChatMessage();
 			case OrchestrationPackage.NETWORK_ENTRY: return createNetworkEntry();
 			case OrchestrationPackage.PROMPT_INSTRUCTIONS: return createPromptInstructions();
+			case OrchestrationPackage.FORGE_SESSION: return createForgeSession();
+			case OrchestrationPackage.SESSION_MODEL_STATE: return createSessionModelState();
+			case OrchestrationPackage.SESSION_EXPERIMENT: return createSessionExperiment();
+			case OrchestrationPackage.SESSION_SNAPSHOT: return createSessionSnapshot();
 			default:
 				throw new IllegalArgumentException("The class '" + eClass.getName() + "' is not a valid classifier");
 		}
@@ -168,8 +168,6 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 	@Override
 	public Object createFromString(EDataType eDataType, String initialValue) {
 		switch (eDataType.getClassifierID()) {
-			case OrchestrationPackage.FORGE_STATUS:
-				return createForgeStatusFromString(eDataType, initialValue);
 			case OrchestrationPackage.TASK_STATUS:
 				return createTaskStatusFromString(eDataType, initialValue);
 			case OrchestrationPackage.LOG_LEVEL:
@@ -196,6 +194,8 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 				return createTestStatusFromString(eDataType, initialValue);
 			case OrchestrationPackage.REVIEW_DECISION:
 				return createReviewDecisionFromString(eDataType, initialValue);
+			case OrchestrationPackage.FORGE_STATUS:
+				return createForgeStatusFromString(eDataType, initialValue);
 			default:
 				throw new IllegalArgumentException("The datatype '" + eDataType.getName() + "' is not a valid classifier");
 		}
@@ -209,8 +209,6 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 	@Override
 	public String convertToString(EDataType eDataType, Object instanceValue) {
 		switch (eDataType.getClassifierID()) {
-			case OrchestrationPackage.FORGE_STATUS:
-				return convertForgeStatusToString(eDataType, instanceValue);
 			case OrchestrationPackage.TASK_STATUS:
 				return convertTaskStatusToString(eDataType, instanceValue);
 			case OrchestrationPackage.LOG_LEVEL:
@@ -237,6 +235,8 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 				return convertTestStatusToString(eDataType, instanceValue);
 			case OrchestrationPackage.REVIEW_DECISION:
 				return convertReviewDecisionToString(eDataType, instanceValue);
+			case OrchestrationPackage.FORGE_STATUS:
+				return convertForgeStatusToString(eDataType, instanceValue);
 			default:
 				throw new IllegalArgumentException("The datatype '" + eDataType.getName() + "' is not a valid classifier");
 		}

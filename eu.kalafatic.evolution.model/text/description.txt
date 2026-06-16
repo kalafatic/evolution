@@ -83,6 +83,17 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
     Reference monitoringHistory : MonitoringData<<0..*>>
     Reference supervisorSettings : SupervisorSettings
     Reference networkEntries : NetworkEntry<<0..*>>
+    Attribute defaultTarget : EString
+    Reference genomeSnapshots : GenomeSnapshot<<0..*>>
+    Reference forgeSessions : ForgeSession<<0..*>>
+
+  Class GenomeSnapshot
+    Attribute timestamp : EString
+    Attribute architectureArtifact : EString
+    Attribute useCaseArtifact : EString
+    Attribute milestoneArtifact : EString
+    Attribute genomeArtifact : EString
+    Attribute dashboardArtifact : EString
 
   Class ServerSettings
     Attribute port : EInt
@@ -339,6 +350,40 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
     Attribute selfIterativeMode : EBoolean
     Attribute stepMode : EBoolean
 
+  Class ForgeSession
+    Attribute sessionId : EString
+    Attribute name : EString
+    Attribute createdAt : ELong
+    Attribute lastModified : ELong
+    Attribute status : ForgeStatus
+    Attribute activeModelId : EString
+    Attribute selectedModelType : EString
+    Reference modelState : SessionModelState
+    Reference experiments : SessionExperiment<<0..*>>
+    Reference snapshots : SessionSnapshot<<0..*>>
+
+  Class SessionModelState
+    Attribute sessionId : EString
+    Attribute modelGraph : EString
+    Attribute hyperparameters : EString
+    Attribute datasetBindings : EString
+    Attribute runtimeState : EString
+
+  Class SessionExperiment
+    Attribute id : EString
+    Attribute sessionId : EString
+    Attribute modelId : EString
+    Attribute datasetId : EString
+    Attribute metrics : EString
+    Attribute logs : EString
+
+  Class SessionSnapshot
+    Attribute id : EString
+    Attribute sessionId : EString
+    Attribute genomeSnapshotId : EString
+    Attribute fullSerializedState : EString
+    Attribute timestamp : ELong
+
   Enum TaskStatus
     Literal READY = 0
     Literal PENDING = 1
@@ -420,3 +465,9 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
     Literal APPROVED = 2
     Literal REJECTED = 3
     Literal CHANGES_REQUESTED = 4
+
+  Enum ForgeStatus
+    Literal IDLE = 0
+    Literal TRAINING = 1
+    Literal RUNNING = 2
+    Literal ERROR = 3

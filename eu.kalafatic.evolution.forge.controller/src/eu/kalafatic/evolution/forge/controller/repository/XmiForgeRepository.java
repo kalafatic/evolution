@@ -1,11 +1,9 @@
 package eu.kalafatic.evolution.forge.controller.repository;
 
-import eu.kalafatic.evolution.forge.model.ForgeSession;
-import eu.kalafatic.evolution.forge.model.ForgeModel;
-import eu.kalafatic.evolution.forge.model.SubModel;
-import eu.kalafatic.evolution.forge.model.ModelConnection;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
+
+import eu.kalafatic.evolution.forge.model.ForgeSession;
 
 public class XmiForgeRepository implements ForgeRepository {
     @Override

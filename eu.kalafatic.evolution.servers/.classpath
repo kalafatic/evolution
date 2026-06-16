@@ -7,5 +7,11 @@
 	</classpathentry>
 	<classpathentry kind="con" path="org.eclipse.pde.CoreSearchPathContainer"/>
 	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="lib" path="lib/jackson-annotations-2.20.jar"/>
+	<classpathentry kind="lib" path="lib/jackson-core-2.20.0.jar"/>
+	<classpathentry kind="lib" path="lib/jackson-databind-2.20.0.jar"/>
+	<classpathentry kind="lib" path="lib/jbcrypt-0.4.jar"/>
+	<classpathentry kind="lib" path="lib/json-20140107.jar"/>
+	<classpathentry kind="lib" path="lib/nanohttpd-2.3.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

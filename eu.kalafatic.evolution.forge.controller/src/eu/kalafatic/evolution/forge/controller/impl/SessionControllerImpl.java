@@ -1,9 +1,10 @@
 package eu.kalafatic.evolution.forge.controller.impl;
 
+import java.util.List;
+
 import eu.kalafatic.evolution.forge.controller.api.SessionController;
 import eu.kalafatic.evolution.forge.controller.api.SessionInfo;
 import eu.kalafatic.evolution.forge.controller.service.SessionService;
-import java.util.List;
 
 public class SessionControllerImpl implements SessionController {
     private final SessionService sessionService;

@@ -8,12 +8,6 @@ Bundle-ClassPath: .
 Bundle-Vendor: %providerName
 Bundle-Localization: plugin
 Bundle-RequiredExecutionEnvironment: JavaSE-21
-Export-Package: eu.kalafatic.evolution.model.forge,
- eu.kalafatic.evolution.model.forge.impl,
- eu.kalafatic.evolution.model.forge.util,
- forge-model.forge,
- forge-model.forge.impl,
- forge-model.forge.util
 Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.emf.ecore;visibility:=reexport
 Bundle-ActivationPolicy: lazy

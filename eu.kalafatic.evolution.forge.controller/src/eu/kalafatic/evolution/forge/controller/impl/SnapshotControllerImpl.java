@@ -1,12 +1,12 @@
 package eu.kalafatic.evolution.forge.controller.impl;
 
-import eu.kalafatic.evolution.forge.controller.api.SnapshotController;
-import eu.kalafatic.evolution.forge.controller.api.SnapshotInfo;
-import eu.kalafatic.evolution.forge.controller.service.SnapshotService;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import eu.kalafatic.evolution.forge.controller.api.SnapshotController;
+import eu.kalafatic.evolution.forge.controller.service.SnapshotService;
 
 public class SnapshotControllerImpl implements SnapshotController {
     private final SnapshotService snapshotService;

@@ -1,7 +1,8 @@
 package eu.kalafatic.evolution.forge.controller.service;
 
-import eu.kalafatic.evolution.forge.controller.api.SessionInfo;
 import java.util.List;
+
+import eu.kalafatic.evolution.forge.controller.api.SessionInfo;
 
 public interface SessionService {
     String createSession(String name);

@@ -2,7 +2,17 @@ package eu.kalafatic.evolution.forge.controller.bridge;
 
 import org.eclipse.swt.browser.Browser;
 import org.eclipse.swt.browser.BrowserFunction;
-import eu.kalafatic.evolution.forge.controller.api.*;
+
+import eu.kalafatic.evolution.forge.controller.api.DatasetController;
+import eu.kalafatic.evolution.forge.controller.api.ExporterController;
+import eu.kalafatic.evolution.forge.controller.api.ForgeEvolutionController;
+import eu.kalafatic.evolution.forge.controller.api.LLMController;
+import eu.kalafatic.evolution.forge.controller.api.ModelController;
+import eu.kalafatic.evolution.forge.controller.api.ObservabilityController;
+import eu.kalafatic.evolution.forge.controller.api.RuntimeController;
+import eu.kalafatic.evolution.forge.controller.api.SessionController;
+import eu.kalafatic.evolution.forge.controller.api.SnapshotController;
+import eu.kalafatic.evolution.forge.controller.api.TrainingController;
 
 public class ForgeFunction extends BrowserFunction {
 
