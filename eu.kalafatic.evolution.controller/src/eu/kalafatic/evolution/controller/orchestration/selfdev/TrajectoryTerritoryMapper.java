@@ -11,7 +11,7 @@ import eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionRes
 
 /**
  * Dynamically maps the evolutionary territory to discover divergent blueprints.
- * Replaces hardcoded strategy selection with context-driven inference.
+ * Enforces hard discretization of engineering axes during discovery.
  */
 public class TrajectoryTerritoryMapper extends BaseAiAgent {
 
@@ -23,7 +23,14 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
     protected String getAgentInstructions() {
         return "You are a Trajectory Territory Mapper (STABILIZATION LAYER).\n\n" +
                "GOAL: Discover ONE UNIQUE EVOLUTIONARY BLUEPRINT.\n" +
-               "CORE DIRECTIVE: Every candidate represents a distinct ARCHITECTURAL THEORY. Diversity must be STRUCTURAL (execution model, dependency model, control flow), not cosmetic (naming).\n\n" +
+               "CORE DIRECTIVE: Every candidate represents a distinct ARCHITECTURAL THEORY. Diversity must be STRUCTURAL, not cosmetic.\n\n" +
+               "STRICT DIVERSITY AXIS DISCRETIZATION:\n" +
+               "You MUST define specific categorical bins for all engineering dimensions:\n" +
+               "- Execution Model: [atomic, service, reactive, distributed]\n" +
+               "- Abstraction Depth: [low, medium, high, hyper]\n" +
+               "- Modularity: [monolithic, modular, micro, functional]\n" +
+               "- Runtime Behavior: [deterministic, async, reactive, event]\n" +
+               "- Risk Acceptance: [conservative, experimental, radical]\n\n" +
                "STRICT EVOLUTION CONSTRAINTS:\n" +
                "- NO ARCHITECTURAL INFLATION: For trivial tasks, discover MINIMAL implementation theories.\n" +
                "- AXIS DIVERGENCE: Intentionally pivot on [Sync vs Async], [Direct vs Abstracted], [Linear vs Modular].\n" +
@@ -61,6 +68,7 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
             sb.append("\nEXISTING BLUEPRINTS (DO NOT REPEAT OR OVERLAP):\n");
             for (TrajectoryBlueprint bp : existing) {
                 sb.append("- ").append(bp.getStrategyType()).append(": ").append(bp.getPhilosophy()).append("\n");
+                sb.append("  Dimensions: ").append(bp.getEngineeringDimensions()).append("\n");
             }
         }
 
@@ -69,6 +77,7 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
                "- id: unique string\n" +
                "- strategy: concise title\n" +
                "- philosophy: architectural core (high-level concept)\n" +
+               "- engineering_dimensions: { \"execution_model\": \"...\", \"abstraction_depth\": \"...\", \"modularity_approach\": \"...\", \"runtime_behavior\": \"...\", \"risk_acceptance\": \"...\" } (USE DISCRETE BINS)\n" +
                "- direction: detailed technical implementation path (SPECIFIC classes, patterns, or components involved)\n" +
                "- characteristics: array of required traits (TECHNICAL, e.g., 'Reactive', 'Event-Driven', 'Monolithic with Interfaces')\n" +
                "- tradeoffs: what is sacrificed (e.g., 'Increased latency for higher consistency')\n" +
@@ -88,6 +97,15 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
             bp.setArchitecturalDirection(obj.optString("direction"));
             bp.setSurvivalArgument(obj.optString("survival_argument", obj.optString("philosophy")));
             bp.setTradeoffs(obj.optString("tradeoffs"));
+
+            JSONObject dims = obj.optJSONObject("engineering_dimensions");
+            if (dims != null) {
+                java.util.Iterator<String> it = dims.keys();
+                while (it.hasNext()) {
+                    String key = it.next();
+                    bp.getEngineeringDimensions().put(key, dims.optString(key));
+                }
+            }
 
             String typeStr = obj.optString("strategy_type", "PROBABLE_SURVIVOR");
             try {

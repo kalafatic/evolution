@@ -2,24 +2,25 @@ package eu.kalafatic.evolution.controller.orchestration.selfdev;
 
 /**
  * Represents a trajectory as a point in multidimensional evolutionary space.
- * Each dimension is a continuous coefficient from 0.0 to 1.0.
+ * Each dimension is a discrete categorical bin from 0 to 3.
  */
 public class TrajectoryVector {
-    private double modularity = 0.5;
-    private double resilience = 0.5;
-    private double architecturalDepth = 0.5;
-    private double serviceOrientation = 0.5;
-    private double persistence = 0.5;
-    private double determinism = 0.5;
-    private double extensibility = 0.5;
-    private double coupling = 0.5;
-    private double abstraction = 0.5;
-    private double riskAcceptance = 0.5;
+    private int modularity = 1;
+    private int resilience = 1;
+    private int architecturalDepth = 1;
+    private int serviceOrientation = 1;
+    private int persistence = 1;
+    private int determinism = 1;
+    private int extensibility = 1;
+    private int coupling = 1;
+    private int abstraction = 1;
+    private int riskAcceptance = 1;
 
     public TrajectoryVector() {}
 
     /**
      * Calculates weighted Euclidean distance between this vector and another.
+     * Normalized to 0.0-1.0 range.
      */
     public double distance(TrajectoryVector other) {
         if (other == null) return 1.0;
@@ -36,43 +37,62 @@ public class TrajectoryVector {
         sum += Math.pow(this.abstraction - other.abstraction, 2);
         sum += Math.pow(this.riskAcceptance - other.riskAcceptance, 2);
 
-        return Math.sqrt(sum) / Math.sqrt(10.0); // Normalized to 0.0-1.0 range
+        return Math.sqrt(sum) / Math.sqrt(90.0); // Normalized (max sum is 10 * 3^2 = 90)
+    }
+
+    /**
+     * Counts the number of unique axes that differ between this vector and another.
+     */
+    public int countAxisDifferences(TrajectoryVector other) {
+        if (other == null) return 10;
+        int count = 0;
+        if (this.modularity != other.modularity) count++;
+        if (this.resilience != other.resilience) count++;
+        if (this.architecturalDepth != other.architecturalDepth) count++;
+        if (this.serviceOrientation != other.serviceOrientation) count++;
+        if (this.persistence != other.persistence) count++;
+        if (this.determinism != other.determinism) count++;
+        if (this.extensibility != other.extensibility) count++;
+        if (this.coupling != other.coupling) count++;
+        if (this.abstraction != other.abstraction) count++;
+        if (this.riskAcceptance != other.riskAcceptance) count++;
+        return count;
     }
 
     // Getters and Setters
-    public double getModularity() { return modularity; }
-    public void setModularity(double modularity) { this.modularity = modularity; }
+    public int getModularity() { return modularity; }
+    public void setModularity(int modularity) { this.modularity = modularity; }
 
-    public double getResilience() { return resilience; }
-    public void setResilience(double resilience) { this.resilience = resilience; }
+    public int getResilience() { return resilience; }
+    public void setResilience(int resilience) { this.resilience = resilience; }
 
-    public double getArchitecturalDepth() { return architecturalDepth; }
-    public void setArchitecturalDepth(double architecturalDepth) { this.architecturalDepth = architecturalDepth; }
+    public int getArchitecturalDepth() { return architecturalDepth; }
+    public void setArchitecturalDepth(int architecturalDepth) { this.architecturalDepth = architecturalDepth; }
 
-    public double getServiceOrientation() { return serviceOrientation; }
-    public void setServiceOrientation(double serviceOrientation) { this.serviceOrientation = serviceOrientation; }
+    public int getServiceOrientation() { return serviceOrientation; }
+    public void setServiceOrientation(int serviceOrientation) { this.serviceOrientation = serviceOrientation; }
 
-    public double getPersistence() { return persistence; }
-    public void setPersistence(double persistence) { this.persistence = persistence; }
+    public int getPersistence() { return persistence; }
+    public void setPersistence(int persistence) { this.persistence = persistence; }
 
-    public double getDeterminism() { return determinism; }
-    public void setDeterminism(double determinism) { this.determinism = determinism; }
+    public int getDeterminism() { return determinism; }
+    public void setDeterminism(int determinism) { this.determinism = determinism; }
 
-    public double getExtensibility() { return extensibility; }
-    public void setExtensibility(double extensibility) { this.extensibility = extensibility; }
+    public int getExtensibility() { return extensibility; }
+    public void setExtensibility(int extensibility) { this.extensibility = extensibility; }
 
-    public double getCoupling() { return coupling; }
-    public void setCoupling(double coupling) { this.coupling = coupling; }
+    public int getCoupling() { return coupling; }
+    public void setCoupling(int coupling) { this.coupling = coupling; }
 
-    public double getAbstraction() { return abstraction; }
-    public void setAbstraction(double abstraction) { this.abstraction = abstraction; }
+    public int getAbstraction() { return abstraction; }
+    public void setAbstraction(int abstraction) { this.abstraction = abstraction; }
 
-    public double getRiskAcceptance() { return riskAcceptance; }
-    public void setRiskAcceptance(double riskAcceptance) { this.riskAcceptance = riskAcceptance; }
+    public int getRiskAcceptance() { return riskAcceptance; }
+    public void setRiskAcceptance(int riskAcceptance) { this.riskAcceptance = riskAcceptance; }
 
     @Override
     public String toString() {
-        return String.format("TV[mod=%.2f, res=%.2f, depth=%.2f, svc=%.2f, pers=%.2f, det=%.2f, ext=%.2f, coup=%.2f, abs=%.2f, risk=%.2f]",
+        return String.format("TV[mod=%d, res=%d, depth=%d, svc=%d, pers=%d, det=%d, ext=%d, coup=%d, abs=%d, risk=%d]",
             modularity, resilience, architecturalDepth, serviceOrientation, persistence,
             determinism, extensibility, coupling, abstraction, riskAcceptance);
     }
