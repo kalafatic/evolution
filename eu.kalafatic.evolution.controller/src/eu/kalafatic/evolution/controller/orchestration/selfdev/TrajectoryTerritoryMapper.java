@@ -40,48 +40,64 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
         context.log("[TERRITORY] Sequentially discovering next unique evolutionary trajectory for: " + goal);
 
         StringBuilder sb = new StringBuilder();
-        sb.append("GOAL: ").append(goal).append("\n\n");
-
-        if (mutationContext != null && !mutationContext.isEmpty()) {
-            sb.append("### SEQUENTIAL MUTATION CONSTRAINTS ###\n")
-              .append(mutationContext).append("\n")
-              .append("GENERATE A SOLUTION THAT IS MAXIMALLY DIFFERENT IN STRUCTURE AND PHILOSOPHY FROM ALL PREVIOUS BRANCHES.\n\n");
-        }
+        sb.append("🔴 SYSTEM / ROLE\n\n")
+          .append("You are a single-path evolutionary territory mapper.\n\n")
+          .append("You do NOT generate multiple solutions.\n")
+          .append("You perform one controlled discovery of a unique evolutionary blueprint.\n\n")
+          .append("🧠 CORE RULE\n\n")
+          .append("Each response MUST contain exactly ONE blueprint only.\n")
+          .append("This blueprint must be structurally distinct from all previously seen ones.\n\n")
+          .append("📌 INPUT CONTEXT\n\n")
+          .append("GOAL (target task): ").append(goal).append("\n\n");
 
         String projectStructure = (String) context.getOrchestrationState().getMetadata().get("projectStructure");
-        if (projectStructure != null) sb.append("STRUCTURE: ").append(projectStructure).append("\n");
+        if (projectStructure != null) {
+            sb.append("WORKSPACE STRUCTURE:\n").append(projectStructure).append("\n\n");
+        }
 
         eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel realityModel = (eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel) context.getOrchestrationState().getMetadata().get("targetRealityModel");
         if (realityModel != null) {
-            sb.append("\nTARGET REALITY GROUNDING:\n");
-            sb.append("Domain: ").append(realityModel.getDomain()).append("\n");
-            sb.append("Hotspots: ").append(realityModel.getHotspots().stream().map(h -> h.getName()).collect(java.util.stream.Collectors.joining(", "))).append("\n");
+            sb.append("TARGET REALITY GROUNDING:\n")
+              .append("Domain: ").append(realityModel.getDomain()).append("\n")
+              .append("Hotspots: ").append(realityModel.getHotspots().stream().map(h -> h.getName()).collect(java.util.stream.Collectors.joining(", "))).append("\n\n");
         }
 
-        IntentExpansionResult expansion = (IntentExpansionResult) context.getMetadata().get("intentExpansion");
-        if (expansion != null) {
-            sb.append("INTENT: ").append(expansion.getDominantIntent()).append("\n");
-        }
-
+        sb.append("PREVIOUS BLUEPRINTS (FORBIDDEN):\n");
         if (!existing.isEmpty()) {
-            sb.append("\nEXISTING BLUEPRINTS (FORBIDDEN STRATEGIES):\n");
             for (TrajectoryBlueprint bp : existing) {
-                sb.append("- FORBIDDEN: ").append(bp.getStrategy()).append(" (Philosophy: ").append(bp.getPhilosophy()).append(")\n");
+                sb.append("- ").append(bp.getStrategy()).append(" (Philosophy: ").append(bp.getPhilosophy()).append(")\n");
             }
+        } else {
+            sb.append("- None\n");
         }
 
-        String prompt = sb.toString() + "\n\n" +
-               "Output exactly ONE JSON object for a unique blueprint. The object MUST have:\n" +
-               "- id: unique string\n" +
-               "- strategy: concise title\n" +
-               "- philosophy: architectural core (high-level concept)\n" +
-               "- direction: detailed technical implementation path (SPECIFIC classes, patterns, or components involved)\n" +
-               "- characteristics: array of required traits (TECHNICAL, e.g., 'Reactive', 'Event-Driven', 'Monolithic with Interfaces')\n" +
-               "- tradeoffs: what is sacrificed (e.g., 'Increased latency for higher consistency')\n" +
-               "- survival_argument: why this path is technically viable\n" +
-               "- strategy_type: one of [PROBABLE_SURVIVOR, PHILOSOPHY_MUTATION, MAXIMAL_DIVERGENCE, STABILIZATION_RECOVERY, ARCHITECTURE_MAPPING, REFACTOR_HOTSPOT_ANALYSIS]";
+        if (mutationContext != null && !mutationContext.isEmpty()) {
+            sb.append("\nSEQUENTIAL MUTATION CONSTRAINTS (FORBIDDEN):\n")
+              .append(mutationContext).append("\n");
+        }
 
-        String response = aiService.sendRequest(context.getOrchestrator(), getAgentInstructions() + "\n\n" + prompt, context);
+        sb.append("\n🔥 DIVERGENCE REQUIREMENT\n\n")
+          .append("Your blueprint MUST intentionally diverge from prior ones in philosophy and execution model.\n\n")
+          .append("🎯 OUTPUT FORMAT (STRICT)\n\n")
+          .append("Return ONLY one JSON object:\n\n")
+          .append("{\n")
+          .append("  \"id\": \"unique-blueprint-id\",\n")
+          .append("  \"strategy\": \"(Concise title for this path)\",\n")
+          .append("  \"philosophy\": \"(Architectural core concept)\",\n")
+          .append("  \"direction\": \"(Detailed technical implementation path: SPECIFIC patterns or components)\",\n")
+          .append("  \"characteristics\": [\"Required Trait 1\", \"Required Trait 2\"],\n")
+          .append("  \"tradeoffs\": \"what is sacrificed\",\n")
+          .append("  \"survival_argument\": \"why this path is technically viable\",\n")
+          .append("  \"strategy_type\": \"PROBABLE_SURVIVOR | PHILOSOPHY_MUTATION | MAXIMAL_DIVERGENCE | STABILIZATION_RECOVERY | ARCHITECTURE_MAPPING | REFACTOR_HOTSPOT_ANALYSIS\"\n")
+          .append("}\n\n")
+          .append("⚠️ CRITICAL OUTPUT CONSTRAINT\n")
+          .append("ONLY ONE JSON OBJECT\n")
+          .append("NO explanation outside JSON\n")
+          .append("NO markdown\n\n")
+          .append("CONTEXT:\n")
+          .append(getAgentInstructions());
+
+        String response = aiService.sendRequest(context.getOrchestrator(), sb.toString(), context);
         JSONObject obj = JsonUtils.extractJsonObject(response);
 
         if (obj != null) {
