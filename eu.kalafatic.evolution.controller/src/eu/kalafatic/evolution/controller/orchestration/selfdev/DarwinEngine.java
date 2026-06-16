@@ -429,8 +429,9 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             uniqueVariants = diversityAnalyzer.analyze(mutationVariants, currentBlueprints.isEmpty() ? null : currentBlueprints, policy.getEvolutionaryStrictness(), modelCapability, context);
 
             if (uniqueVariants.isEmpty()) {
-                context.log("[DARWIN] CRITICAL: All LLM variants failed diversity analysis. Evolution stalled.");
-                break;
+                context.log("[DARWIN] All LLM variants failed diversity analysis. Retrying with FORCED_DIVERGENCE.");
+                divergenceDirective = "\n[FORCED_DIVERGENCE_DIRECTIVE] Previous candidates were REJECTED for lack of structural diversity. You MUST radically PIVOT your architectural assumptions. Change at least ONE primary axis (Execution Model, Modularity, or Runtime Behavior).";
+                continue;
             }
 
             // Diagnostic Overrides: Detect evolutionary collapse

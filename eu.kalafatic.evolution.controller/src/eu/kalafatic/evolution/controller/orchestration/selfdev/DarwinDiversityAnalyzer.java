@@ -12,6 +12,7 @@ import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 
 /**
  * Analyzer to ensure conceptual and architectural diversity among Darwin trajectories.
+ * Enforces Hard Discretization and Forced One-Axis Difference rules.
  */
 public class DarwinDiversityAnalyzer {
 
@@ -21,8 +22,9 @@ public class DarwinDiversityAnalyzer {
     public List<JSONObject> analyze(List<JSONObject> variants, List<TrajectoryBlueprint> blueprints, double strictness, double modelCapability, TaskContext context) {
         if (variants.isEmpty()) return variants;
 
+        // Normalize strictness for discretized space
         double effectiveStrictness = strictness * modelCapability;
-        context.log(String.format("[DIVERSITY] Starting vector analysis. Strictness: %.2f, Model Capability: %.2f, Effective Threshold: %.2f",
+        context.log(String.format("[DIVERSITY] Starting discrete vector analysis. Strictness: %.2f, Model Capability: %.2f, Effective Threshold: %.2f",
                 strictness, modelCapability, effectiveStrictness));
 
         List<JSONObject> unique = new ArrayList<>();
@@ -56,13 +58,13 @@ public class DarwinDiversityAnalyzer {
                 if (adherence == DiversityResultType.REJECTED_FATAL) return DiversityResultType.REJECTED_FATAL;
 
                 double diversity = calculateDiversity(v, unique);
-                if (diversity < 0.05) { // EXACT DUPLICATE (dist near 0)
-                    context.log(String.format("[DIVERSITY] COLLAPSE FATAL: %s is an exact evolutionary duplicate (dist=%.2f).", v.optString("id"), diversity));
+                if (diversity <= 0.0) { // HARD DISCRETIZATION RULE: Zero difference = immediate rejection
+                    context.log(String.format("[DIVERSITY] COLLAPSE FATAL: %s has zero structural axis difference (dist=0.00).", v.optString("id")));
                     return DiversityResultType.REJECTED_FATAL;
                 }
 
                 if (diversity < threshold) {
-                    context.log(String.format("[DIVERSITY] REJECTED_SIBLING_OVERLAP: %s (dist=%.2f) below threshold %.2f.", v.optString("id"), diversity, threshold));
+                    context.log(String.format("[DIVERSITY] REJECTED_SIBLING_OVERLAP: %s (score=%.2f) below threshold %.2f.", v.optString("id"), diversity, threshold));
                     return DiversityResultType.REJECTED_FATAL;
                 }
 
@@ -71,8 +73,13 @@ public class DarwinDiversityAnalyzer {
         }
 
         double diversity = calculateDiversity(v, unique);
+        if (diversity <= 0.0) {
+             context.log(String.format("[DIVERSITY] COLLAPSE FATAL: %s has zero structural axis difference.", v.optString("id")));
+             return DiversityResultType.REJECTED_FATAL;
+        }
+
         if (diversity < threshold) {
-             context.log(String.format("[DIVERSITY] COLLAPSE FATAL: %s diversity (dist=%.2f) insufficient (threshold=%.2f).", v.optString("id"), diversity, threshold));
+             context.log(String.format("[DIVERSITY] COLLAPSE FATAL: %s diversity (score=%.2f) insufficient (threshold=%.2f).", v.optString("id"), diversity, threshold));
              return DiversityResultType.REJECTED_FATAL;
         }
 
@@ -127,39 +134,43 @@ public class DarwinDiversityAnalyzer {
         if (existing.isEmpty()) return 1.0;
 
         TrajectoryVector cVector = mapToVector(candidate);
-        double minDistance = 1.0;
+        double minScore = Double.MAX_VALUE;
 
         for (JSONObject other : existing) {
             TrajectoryVector oVector = mapToVector(other);
             double dist = cVector.distance(oVector);
+            int axisDiff = cVector.countAxisDifferences(oVector);
+
+            // final_diversity_score = vector_distance × number_of_unique_axes
+            double score = dist * axisDiff;
 
             // 1. Penalize for operational redundancy (same target files)
             if (getActionTargets(candidate).equals(getActionTargets(other))) {
-                dist *= 0.4; // Heavier penalty for same targets
+                score *= 0.4; // Heavier penalty for same targets
             }
 
             // 2. Penalize for cosmetic similarity (naming)
             double semanticSim = computeSimilarity(candidate.optString("strategy"), other.optString("strategy"));
             if (semanticSim > 0.8) {
-                dist *= 0.3; // Harder penalty for cosmetic similarity
+                score *= 0.3; // Harder penalty for cosmetic similarity
             }
 
             // 3. Structural overlap (projected steps)
             double stepSim = computeJaccard(getProjectedSteps(candidate), getProjectedSteps(other));
             if (stepSim > 0.6) {
-                dist *= 0.5;
+                score *= 0.5;
             }
 
             // 4. Engineering Dimension Collapse Check
             double dimSim = computeDimensionSimilarity(candidate.optJSONObject("engineering_dimensions"), other.optJSONObject("engineering_dimensions"));
             if (dimSim > 0.8) {
-                dist *= 0.2; // Fatal collapse if engineering dimensions are near identical
+                score *= 0.2; // Fatal collapse if engineering dimensions are near identical
             }
 
-            if (dist < minDistance) minDistance = dist;
+            if (score < minScore) minScore = score;
         }
 
-        return minDistance;
+        return minScore;
     }
 
     private TrajectoryVector mapToVector(JSONObject variant) {
@@ -174,27 +185,28 @@ public class DarwinDiversityAnalyzer {
         v.setPersistence(mapDimension(dims.optString("persistence_orientation")));
         v.setDeterminism(mapDimension(dims.optString("runtime_behavior")));
         v.setExtensibility(mapDimension(dims.optString("extensibility")));
-        v.setCoupling(1.0 - mapDimension(dims.optString("dependency_assumptions"))); // High internal deps => low coupling coefficient
+        v.setCoupling(3 - mapDimension(dims.optString("dependency_assumptions"))); // Inverse: High external deps => lower internal coupling coefficient
         v.setAbstraction(mapDimension(dims.optString("abstraction_depth")));
         v.setRiskAcceptance(mapDimension(dims.optString("risk_acceptance")));
 
         return v;
     }
 
-    private double mapDimension(String value) {
-        if (value == null) return 0.5;
+    private int mapDimension(String value) {
+        if (value == null) return 1;
         String val = value.toLowerCase();
 
-        // High intensity signals
-        if (matches(val, "high", "service", "modular", "extensible", "persistent", "async", "experimental", "reactive", "external")) return 0.9;
+        // Level 3: Extreme/Experimental
+        if (matches(val, "micro", "distributed", "hyper", "event", "experimental", "reactive")) return 3;
 
-        // Low intensity signals
-        if (matches(val, "low", "monolithic", "atomic", "none", "conservative", "deterministic", "smoke", "internal", "direct")) return 0.1;
+        // Level 2: High/Modular
+        if (matches(val, "high", "service", "modular", "extensible", "persistent", "async", "external")) return 2;
 
-        // Medium
-        if (matches(val, "medium", "standard", "balanced", "hybrid")) return 0.5;
+        // Level 0: Monolithic/Atomic/Low
+        if (matches(val, "low", "monolithic", "atomic", "none", "conservative", "deterministic", "smoke", "internal", "direct")) return 0;
 
-        return 0.5;
+        // Level 1: Standard/Medium
+        return 1;
     }
 
     private boolean matches(String text, String... keywords) {
@@ -253,32 +265,6 @@ public class DarwinDiversityAnalyzer {
         union.addAll(s2);
 
         return (double) intersection.size() / union.size();
-    }
-
-    private double computeArchitecturalDirectionSimilarity(JSONObject c1, JSONObject c2) {
-        // Evaluate diversity in abstraction depth and operational behavior
-        double sim = 0.0;
-
-        // Compare strategy types
-        if (c1.optString("strategy_type").equals(c2.optString("strategy_type"))) {
-            sim += 0.3;
-        }
-
-        // Compare expected effects (Short-term vs Long-term focus)
-        JSONObject e1 = c1.optJSONObject("expected_effect");
-        JSONObject e2 = c2.optJSONObject("expected_effect");
-        if (e1 != null && e2 != null) {
-            double stSim = computeSimilarity(e1.optString("short_term"), e2.optString("short_term"));
-            double ltSim = computeSimilarity(e1.optString("long_term"), e2.optString("long_term"));
-            sim += (stSim * 0.2) + (ltSim * 0.2);
-        }
-
-        // Compare projected steps (Operational path)
-        Set<String> steps1 = getProjectedSteps(c1);
-        Set<String> steps2 = getProjectedSteps(c2);
-        sim += computeJaccard(steps1, steps2) * 0.3;
-
-        return sim;
     }
 
     private double computeSimilarity(String s1, String s2) {

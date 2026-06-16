@@ -14,6 +14,7 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 /**
  * Spawner for Darwin evolutionary branch variants.
  * Executes isolated generation requests for each strategy seed.
+ * Enforces categorical discretization and forced axis mutation.
  */
 public class DarwinVariantSpawner {
     private final AiService aiService;
@@ -302,14 +303,14 @@ public class DarwinVariantSpawner {
           .append("  \"reasoning_focus\": \"(Specific architectural focus)\",\n")
           .append("  \"engineering_dimensions\": {\n")
           .append("    \"philosophy\": \"").append(bp.getPhilosophy()).append("\",\n")
-          .append("    \"execution_model\": \"atomic/service/reactive/etc\",\n")
-          .append("    \"abstraction_depth\": \"low/medium/high\",\n")
-          .append("    \"modularity_approach\": \"monolithic/modular/etc\",\n")
-          .append("    \"testing_strategy\": \"unit/integration/etc\",\n")
-          .append("    \"extensibility\": \"low/medium/high\",\n")
-          .append("    \"dependency_assumptions\": \"none/internal/external\",\n")
-          .append("    \"runtime_behavior\": \"deterministic/async/etc\",\n")
-          .append("    \"risk_acceptance\": \"conservative/experimental/etc\"\n")
+          .append("    \"execution_model\": \"atomic/service/reactive/distributed\",\n")
+          .append("    \"abstraction_depth\": \"low/medium/high/hyper\",\n")
+          .append("    \"modularity_approach\": \"monolithic/modular/micro/functional\",\n")
+          .append("    \"testing_strategy\": \"unit/integration/tdd/smoke\",\n")
+          .append("    \"extensibility\": \"low/medium/high/extreme\",\n")
+          .append("    \"dependency_assumptions\": \"none/internal/external/direct\",\n")
+          .append("    \"runtime_behavior\": \"deterministic/async/reactive/event\",\n")
+          .append("    \"risk_acceptance\": \"conservative/experimental/radical\"\n")
           .append("  },\n");
 
         if (isMediated) {
@@ -539,14 +540,14 @@ public class DarwinVariantSpawner {
                .append("  \"selected_files\": [\"path/to/artifact\"],\n")
                .append("  \"engineering_dimensions\": {\n")
                .append("    \"philosophy\": \"specific philosophy for this branch\",\n")
-               .append("    \"execution_model\": \"atomic/service/reactive/etc\",\n")
-               .append("    \"abstraction_depth\": \"low/medium/high\",\n")
-               .append("    \"modularity_approach\": \"monolithic/modular/functional/etc\",\n")
-               .append("    \"testing_strategy\": \"unit/integration/tdd/etc\",\n")
-               .append("    \"extensibility\": \"low/medium/high\",\n")
-               .append("    \"dependency_assumptions\": \"none/internal/external\",\n")
-               .append("    \"runtime_behavior\": \"deterministic/async/etc\",\n")
-               .append("    \"risk_acceptance\": \"conservative/experimental/etc\"\n")
+               .append("    \"execution_model\": \"atomic/service/reactive/distributed\",\n")
+               .append("    \"abstraction_depth\": \"low/medium/high/hyper\",\n")
+               .append("    \"modularity_approach\": \"monolithic/modular/micro/functional\",\n")
+               .append("    \"testing_strategy\": \"unit/integration/tdd/smoke\",\n")
+               .append("    \"extensibility\": \"low/medium/high/extreme\",\n")
+               .append("    \"dependency_assumptions\": \"none/internal/external/direct\",\n")
+               .append("    \"runtime_behavior\": \"deterministic/async/reactive/event\",\n")
+               .append("    \"risk_acceptance\": \"conservative/experimental/radical\"\n")
                .append("  },\n");
 
         if (isMediated) {
