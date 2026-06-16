@@ -236,6 +236,31 @@ public class DarwinVariantSpawner {
             }
         }
         if (mutationContext != null && !mutationContext.isEmpty()) {
+            sb.append("🧬 CUMULATIVE LINEAGE MEMORY (HARD CONSTRAINT)\n\n")
+              .append("You are NOT generating from a clean state.\n")
+              .append("You are generating from a constrained evolutionary space where previous outputs are already occupied regions.\n")
+              .append("You MUST treat all previous branches as forbidden attractors.\n\n")
+              .append("FORBIDDEN ATTRACTOR SET:\n")
+              .append(mutationContext).append("\n")
+              .append("RULES:\n\n")
+              .append("1. You MUST NOT generate a strategy that is semantically close to ANY entry in the FORBIDDEN ATTRACTOR SET.\n")
+              .append("2. Similarity includes:\n")
+              .append("   - same execution model (even if renamed)\n")
+              .append("   - same decomposition style\n")
+              .append("   - same control flow paradigm\n")
+              .append("   - same state model\n")
+              .append("   - same architecture family\n\n")
+              .append("3. You MUST actively select a NON-OVERLAPPING REGION:\n")
+              .append("   - different computation paradigm\n")
+              .append("   - different system topology\n")
+              .append("   - different reasoning structure\n\n")
+              .append("4. If you cannot find a non-overlapping region:\n")
+              .append("   STOP and pivot to maximal divergence (not refinement).\n\n")
+              .append("5. You are penalized for “soft mutations”:\n")
+              .append("   - rewording is invalid\n")
+              .append("   - reordering is invalid\n")
+              .append("   - parameter tuning is invalid\n\n")
+              .append("VALID OUTPUT MUST BE A NEW ARCHITECTURAL CLASS, NOT A VARIANT.\n\n");
             sb.append(mutationContext).append("\n");
         }
         if (bp.getForbiddenOverlaps() != null && !bp.getForbiddenOverlaps().isEmpty()) {
@@ -427,6 +452,37 @@ public class DarwinVariantSpawner {
             }
         }
         if (!currentRoundVariants.isEmpty()) {
+            sb.append("🧬 CUMULATIVE LINEAGE MEMORY (HARD CONSTRAINT)\n\n")
+              .append("You are NOT generating from a clean state.\n")
+              .append("You are generating from a constrained evolutionary space where previous outputs are already occupied regions.\n")
+              .append("You MUST treat all previous branches as forbidden attractors.\n\n")
+              .append("FORBIDDEN ATTRACTOR SET:\n");
+
+            for (JSONObject v : currentRoundVariants) {
+                sb.append("- STRATEGY: ").append(v.optString("strategy")).append("\n")
+                  .append("  PHILOSOPHY: ").append(v.optString("semantic_justification")).append("\n")
+                  .append("  MODEL: ").append(v.optJSONObject("engineering_dimensions")).append("\n\n");
+            }
+
+            sb.append("RULES:\n\n")
+              .append("1. You MUST NOT generate a strategy that is semantically close to ANY entry in the FORBIDDEN ATTRACTOR SET.\n")
+              .append("2. Similarity includes:\n")
+              .append("   - same execution model (even if renamed)\n")
+              .append("   - same decomposition style\n")
+              .append("   - same control flow paradigm\n")
+              .append("   - same state model\n")
+              .append("   - same architecture family\n\n")
+              .append("3. You MUST actively select a NON-OVERLAPPING REGION:\n")
+              .append("   - different computation paradigm\n")
+              .append("   - different system topology\n")
+              .append("   - different reasoning structure\n\n")
+              .append("4. If you cannot find a non-overlapping region:\n")
+              .append("   STOP and pivot to maximal divergence (not refinement).\n\n")
+              .append("5. You are penalized for “soft mutations”:\n")
+              .append("   - rewording is invalid\n")
+              .append("   - reordering is invalid\n")
+              .append("   - parameter tuning is invalid\n\n")
+              .append("VALID OUTPUT MUST BE A NEW ARCHITECTURAL CLASS, NOT A VARIANT.\n\n");
             for (JSONObject v : currentRoundVariants) {
                 sb.append("- ").append(v.optString("strategy")).append(" (Philosophy: ").append(v.optString("semantic_justification")).append(")\n");
             }
