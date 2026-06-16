@@ -281,7 +281,10 @@
         <div id="sidebar">
             <div class="sidebar-header">
                 SESSIONS
-                <button class="btn btn-sm btn-primary" onclick="createNewSession()">NEW</button>
+                <div style="display: flex; gap: 4px;">
+                    <button class="btn btn-sm" onclick="showDemoDialog()" title="Load Demo Template">🎁</button>
+                    <button class="btn btn-sm btn-primary" onclick="createNewSession()">NEW</button>
+                </div>
             </div>
             <div id="session-list">
                 <!-- Sessions populated here -->
@@ -304,6 +307,7 @@
                 <div style="margin-left: auto; display: flex; gap: 10px;">
                     <button class="btn btn-sm" onclick="toggleTheme()" title="Toggle Dark/Light Theme">🌓</button>
                     <button class="btn btn-sm" onclick="toggleJsonEditor()">JSON Editor</button>
+                    <button class="btn btn-sm" onclick="saveAllSessions()" title="Persist all sessions to disk">💾 Save All</button>
                     <button class="btn btn-sm" onclick="cloneActiveSession()">Clone</button>
                     <button class="btn btn-sm" onclick="saveActiveModel()">Save Architecture</button>
                     <button class="btn btn-sm btn-danger" onclick="deleteActiveSession()">Delete</button>
@@ -545,28 +549,60 @@
             }
 
             const session = sessions.find(s => s.id === activeSessionId);
+            const type = session ? session.modelType : 'NEURON';
             const nodeCount = (model && model.nodes) ? model.nodes.length : 0;
             const status = session ? session.status : 'IDLE';
 
-            let tips = [];
+            let steps = [];
+
+            // Step 1: Architecture
             if (nodeCount === 0) {
-                tips.push("Your architecture is empty. <b>Drag nodes</b> from the palette into the canvas.");
-            } else if (nodeCount < 3) {
-                tips.push("Add more layers or neurons to increase model capacity.");
+                steps.push({text: "<b>BUILD:</b> Drag nodes from the palette to define your model.", active: true});
+            } else {
+                steps.push({text: "<b>BUILD:</b> Architecture defined (" + nodeCount + " nodes).", active: false});
             }
 
-            if (status === 'IDLE' && nodeCount > 0) {
-                tips.push("Model looks ready. Click <b>START</b> to begin training.");
-            } else if (status === 'TRAINING') {
-                tips.push("Training in progress. Monitor <b>Loss and Accuracy</b> in the Observability panel.");
-                tips.push("Try switching to <b>Training Monitor</b> visualization for real-time graphs.");
+            // Step 2: Configuration
+            steps.push({text: "<b>CONFIG:</b> Adjust Learning Rate and Optimizer in the right panel.", active: nodeCount > 0 && status === 'IDLE'});
+
+            // Step 3: Dataset
+            steps.push({text: "<b>DATA:</b> Select a compatible dataset (e.g., MNIST for MLP/CNN).", active: nodeCount > 0 && status === 'IDLE'});
+
+            // Step 4: Training
+            if (status === 'TRAINING') {
+                steps.push({text: "<b>TRAIN:</b> Training in progress... monitor metrics below.", active: true});
+            } else {
+                steps.push({text: "<b>TRAIN:</b> Click START to begin training.", active: nodeCount > 0 && status === 'IDLE'});
             }
 
-            if (nodeCount > 0 && status !== 'TRAINING') {
-                tips.push("Don't forget to <b>Save Architecture</b> before closing.");
+            // Step 5: Evolution/Export
+            steps.push({text: "<b>EVOLVE:</b> Create snapshots to track progress or export to Ollama.", active: status !== 'TRAINING' && nodeCount > 0});
+
+            let html = '<div style="display:flex; flex-direction:column; gap:8px;">';
+            steps.forEach((s, i) => {
+                const color = s.active ? 'var(--accent)' : 'var(--text-dim)';
+                const weight = s.active ? 'bold' : 'normal';
+                html += `<div style="color:${color}; font-weight:${weight}; display:flex; gap:10px;">
+                            <span style="min-width:20px;">${i+1}.</span>
+                            <span>${s.text}</span>
+                         </div>`;
+            });
+
+            // Model Specific Link
+            const guideMap = {
+                'NEURON': 'neuron_guide.md',
+                'MLP': 'mlp_guide.md',
+                'CNN': 'cnn_guide.md',
+                'TRANSFORMER': 'transformer_guide.md'
+            };
+            if (guideMap[type]) {
+                html += `<div style="margin-top:10px; border-top:1px solid var(--border); padding-top:10px;">
+                            <a href="#" style="color:var(--accent); font-size:0.8em;" onclick="log('Refer to docs/forge/${guideMap[type]} for full details.')">View Detailed ${type} Manual</a>
+                         </div>`;
             }
 
-            content.innerHTML = tips.length > 0 ? `<ul style="padding-left: 15px; margin: 0;">${tips.map(t => `<li style="margin-bottom: 5px;">${t}</li>`).join('')}</ul>` : "Continue refining your model.";
+            html += '</div>';
+            content.innerHTML = html;
         }
 
         async function selectSession(id) {
@@ -718,6 +754,38 @@
                 await loadSessions();
                 selectSession(data.id);
             } catch (e) { log(`Error: ${e.message}`); }
+        }
+
+        async function showDemoDialog() {
+            const type = prompt("Select Demo Type (NEURON, MLP, CNN, TRANSFORMER):", "MLP");
+            if (!type) return;
+
+            const name = prompt("Enter Demo Session Name:", "Demo " + type);
+            if (!name) return;
+
+            try {
+                const res = await fetch(`http://localhost:${serverPort}/forge/session`, {
+                    method: 'POST',
+                    body: JSON.stringify({ name: name, modelType: type.toUpperCase(), isDemo: true })
+                });
+                const data = await res.json();
+                await loadSessions();
+                selectSession(data.id);
+                log(`Demo ${type} loaded.`);
+            } catch (e) { log(`Error loading demo: ${e.message}`); }
+        }
+
+        async function saveAllSessions() {
+            try {
+                const res = await fetch(`http://localhost:${serverPort}/forge/save-all`, { method: 'POST' });
+                const data = await res.json();
+                if (data.status === 'ok') {
+                    log("All Forge sessions persisted to disk.");
+                    alert("All sessions saved successfully!");
+                } else {
+                    log("Save error: " + data.error);
+                }
+            } catch (e) { log(`Error saving all: ${e.message}`); }
         }
 
         async function saveActiveModel() {
