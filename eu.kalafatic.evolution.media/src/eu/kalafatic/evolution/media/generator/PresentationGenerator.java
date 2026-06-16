@@ -1,7 +1,7 @@
 package eu.kalafatic.evolution.media.generator;
 
-import eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel;
 import eu.kalafatic.evolution.controller.mediation.model.Subsystem;
+import eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel;
 
 public class PresentationGenerator {
 

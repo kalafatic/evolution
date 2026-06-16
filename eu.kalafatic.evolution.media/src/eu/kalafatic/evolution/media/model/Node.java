@@ -1,7 +1,7 @@
 package eu.kalafatic.evolution.media.model;
 
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 public class Node {
     private String id;

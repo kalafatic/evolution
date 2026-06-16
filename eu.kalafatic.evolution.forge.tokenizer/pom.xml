@@ -16,4 +16,6 @@
     <build>
         <sourceDirectory>src</sourceDirectory>
     </build>
+    <groupId>eu.kalafatic.evolution</groupId>
+    <version>2.6.5-SNAPSHOT</version>
 </project>

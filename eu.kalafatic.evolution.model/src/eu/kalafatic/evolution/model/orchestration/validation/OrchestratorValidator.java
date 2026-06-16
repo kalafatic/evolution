@@ -4,6 +4,8 @@
  */
 package eu.kalafatic.evolution.model.orchestration.validation;
 
+import org.eclipse.emf.common.util.EList;
+
 import eu.kalafatic.evolution.model.orchestration.AIProvider;
 import eu.kalafatic.evolution.model.orchestration.Agent;
 import eu.kalafatic.evolution.model.orchestration.AiChat;
@@ -26,8 +28,6 @@ import eu.kalafatic.evolution.model.orchestration.ServerSettings;
 import eu.kalafatic.evolution.model.orchestration.SupervisorSettings;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.model.orchestration.Test;
-
-import org.eclipse.emf.common.util.EList;
 
 /**
  * A sample validator interface for {@link eu.kalafatic.evolution.model.orchestration.Orchestrator}.

@@ -5,10 +5,10 @@ Bundle-SymbolicName: eu.kalafatic.evolution.creatic;singleton:=true
 Bundle-Version: 2.6.5.qualifier
 Bundle-Vendor: Kalafatic
 Bundle-RequiredExecutionEnvironment: JavaSE-21
-Export-Package: eu.kalafatic.evolution.creatic.api,
- eu.kalafatic.evolution.creatic.model,
+Export-Package: eu.kalafatic.evolution.creatic.adapter,
+ eu.kalafatic.evolution.creatic.api,
  eu.kalafatic.evolution.creatic.engine,
- eu.kalafatic.evolution.creatic.adapter
+ eu.kalafatic.evolution.creatic.model
 Require-Bundle: org.eclipse.core.runtime,
  eu.kalafatic.utils;bundle-version="2.6.5",
  org.junit;bundle-version="4.13.2"

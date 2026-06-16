@@ -16,4 +16,5 @@
     <build>
         <sourceDirectory>src</sourceDirectory>
     </build>
+    <version>2.6.5-SNAPSHOT</version>
 </project>

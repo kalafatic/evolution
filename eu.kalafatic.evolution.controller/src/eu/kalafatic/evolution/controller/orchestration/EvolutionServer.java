@@ -29,6 +29,7 @@ import eu.kalafatic.evolution.forge.controller.api.TrainingController;
 import eu.kalafatic.evolution.controller.manager.OllamaModel;
 import eu.kalafatic.evolution.controller.manager.OllamaService;
 import eu.kalafatic.evolution.controller.tools.GitTool;
+import eu.kalafatic.evolution.creatic.api.CreaticAgent;
 import eu.kalafatic.evolution.model.orchestration.ChatMessage;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
@@ -834,7 +835,7 @@ public class EvolutionServer extends NanoHTTPD {
         JSONObject json = new JSONObject(postData != null ? postData : "{}");
         String pageId = json.optString("pageId", "general");
 
-        Object response = eu.kalafatic.evolution.creatic.api.CreaticAgent.getInstance().analyze(pageId);
+        Object response = CreaticAgent.getInstance().analyze(pageId);
         if (response == null) return newFixedLengthResponse(Response.Status.OK, "application/json", "{}");
 
         // Convert GuidanceResponse to JSON via Reflection to avoid compile-time dependency issues

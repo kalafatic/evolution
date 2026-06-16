@@ -4,12 +4,12 @@
  */
 package eu.kalafatic.evolution.model.orchestration.validation;
 
+import org.eclipse.emf.common.util.EList;
+
 import eu.kalafatic.evolution.model.orchestration.FeedbackLevel;
 import eu.kalafatic.evolution.model.orchestration.LogLevel;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.model.orchestration.TaskStatus;
-
-import org.eclipse.emf.common.util.EList;
 
 /**
  * A sample validator interface for {@link eu.kalafatic.evolution.model.orchestration.Task}.

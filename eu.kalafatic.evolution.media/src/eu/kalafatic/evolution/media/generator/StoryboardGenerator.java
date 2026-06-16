@@ -1,8 +1,8 @@
 package eu.kalafatic.evolution.media.generator;
 
-import eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel;
 import eu.kalafatic.evolution.controller.mediation.model.Subsystem;
-import eu.kalafatic.evolution.media.model.Storyboard;
+import eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel;
+import src.eu.kalafatic.evolution.media.model.Storyboard;
 
 public class StoryboardGenerator {
 

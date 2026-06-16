@@ -144,10 +144,20 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 		// configurer
 		// .configureEditorAreaDropListener(new
 		// EditorAreaDropAdapter(configurer.getWindow()));
+		
+		    
+	    // Safe product name retrieval
+	    String productName = "Evolution View"; // Default fallback
+	    IProduct product = Platform.getProduct();
+	    if (product != null && product.getName() != null) {
+	        productName = product.getName();
+	    }
+	    
+	    configurer.setTitle(productName);
 
-		final String product = Platform.getProduct().getName();
-		Version version = Version.parseVersion(Platform.getProduct().getDefiningBundle().getHeaders().get(org.osgi.framework.Constants.BUNDLE_VERSION));
-		configurer.setTitle(product + " v" + version.getMajor() + "." + version.getMinor() + "." + version.getMicro());
+//		final String product = Platform.getProduct().getName();
+//		Version version = Version.parseVersion(Platform.getProduct().getDefiningBundle().getHeaders().get(org.osgi.framework.Constants.BUNDLE_VERSION));
+//		configurer.setTitle(product + " v" + version.getMajor() + "." + version.getMinor() + "." + version.getMicro());
 
 		apiStore = PlatformUI.getPreferenceStore();
 		apiStore.setValue(IWorkbenchPreferenceConstants.DOCK_PERSPECTIVE_BAR, "TOP_LEFT");

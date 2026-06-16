@@ -4,7 +4,9 @@ Bundle-Name: Forge Controller
 Bundle-SymbolicName: eu.kalafatic.evolution.forge.controller
 Bundle-Version: 2.6.5.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-21
-Require-Bundle: eu.kalafatic.evolution.forge.model,
+Require-Bundle: org.eclipse.core.runtime,
+ org.eclipse.ui,
+ org.eclipse.swt,
  eu.kalafatic.evolution.forge.math,
  eu.kalafatic.evolution.forge.runtime,
  eu.kalafatic.evolution.forge.tokenizer,
@@ -19,8 +21,8 @@ Require-Bundle: eu.kalafatic.evolution.forge.model,
  org.eclipse.ui.views,
  org.eclipse.emf.ecore,
  org.eclipse.emf.ecore.xmi,
- org.eclipse.swt,
- org.eclipse.jface
+ org.eclipse.jface,
+ eu.kalafatic.evolution.forge.model
 Export-Package: eu.kalafatic.evolution.forge.controller.api,
  eu.kalafatic.evolution.forge.controller.bridge,
  eu.kalafatic.evolution.forge.controller.impl,

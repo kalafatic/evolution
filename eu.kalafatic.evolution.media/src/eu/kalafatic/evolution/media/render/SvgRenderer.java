@@ -1,9 +1,13 @@
 package eu.kalafatic.evolution.media.render;
 
-import eu.kalafatic.evolution.media.model.*;
-import java.util.List;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+
+import eu.kalafatic.evolution.media.model.*;
+import src.eu.kalafatic.evolution.media.model.Diagram;
+import src.eu.kalafatic.evolution.media.model.Edge;
+import src.eu.kalafatic.evolution.media.model.Node;
 
 public class SvgRenderer {
 

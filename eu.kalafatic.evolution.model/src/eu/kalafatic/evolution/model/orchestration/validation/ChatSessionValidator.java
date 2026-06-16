@@ -4,10 +4,10 @@
  */
 package eu.kalafatic.evolution.model.orchestration.validation;
 
+import org.eclipse.emf.common.util.EList;
+
 import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.ChatMessage;
-
-import org.eclipse.emf.common.util.EList;
 
 /**
  * A sample validator interface for {@link eu.kalafatic.evolution.model.orchestration.ChatSession}.

@@ -1,11 +1,20 @@
 package eu.kalafatic.evolution.media.render;
 
-import eu.kalafatic.evolution.media.model.*;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
-import java.util.ArrayList;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import eu.kalafatic.evolution.media.model.*;
+import eu.kalafatic.evolution.media.model.Diagram;
+import eu.kalafatic.evolution.media.model.Edge;
+import eu.kalafatic.evolution.media.model.ImageBlock;
+import eu.kalafatic.evolution.media.model.Node;
+import eu.kalafatic.evolution.media.model.Section;
+import eu.kalafatic.evolution.media.model.TableBlock;
+import eu.kalafatic.evolution.media.model.TextBlock;
 
 public class HtmlRenderer {
 

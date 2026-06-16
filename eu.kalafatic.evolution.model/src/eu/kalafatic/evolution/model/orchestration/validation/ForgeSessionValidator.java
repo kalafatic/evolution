@@ -4,12 +4,12 @@
  */
 package eu.kalafatic.evolution.model.orchestration.validation;
 
+import org.eclipse.emf.common.util.EList;
+
 import eu.kalafatic.evolution.model.orchestration.ForgeStatus;
 import eu.kalafatic.evolution.model.orchestration.SessionExperiment;
 import eu.kalafatic.evolution.model.orchestration.SessionModelState;
 import eu.kalafatic.evolution.model.orchestration.SessionSnapshot;
-
-import org.eclipse.emf.common.util.EList;
 
 /**
  * A sample validator interface for {@link eu.kalafatic.evolution.model.orchestration.ForgeSession}.

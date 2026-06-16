@@ -4,9 +4,9 @@
  */
 package eu.kalafatic.evolution.model.orchestration.validation;
 
-import eu.kalafatic.evolution.model.orchestration.Orchestrator;
-
 import org.eclipse.emf.common.util.EList;
+
+import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 
 /**
  * A sample validator interface for {@link eu.kalafatic.evolution.model.orchestration.EvoProject}.

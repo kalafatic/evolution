@@ -1,7 +1,7 @@
 package eu.kalafatic.evolution.forge.trainer.impl;
 
-import eu.kalafatic.evolution.forge.trainer.api.Trainer;
 import eu.kalafatic.evolution.forge.controller.service.EvolutionService;
+import eu.kalafatic.evolution.forge.trainer.api.Trainer;
 
 public class EvolutionaryTrainer implements Trainer {
     private final EvolutionService evolutionService;

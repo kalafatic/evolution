@@ -1,22 +1,34 @@
 package eu.kalafatic.evolution.media;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.*;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+
 import eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel;
-import eu.kalafatic.evolution.controller.orchestration.design.DesignModel;
 import eu.kalafatic.evolution.controller.orchestration.design.ComponentRecord;
+import eu.kalafatic.evolution.controller.orchestration.design.DesignModel;
 import eu.kalafatic.evolution.controller.orchestration.design.RelationshipRecord;
 import eu.kalafatic.evolution.media.generator.*;
 import eu.kalafatic.evolution.media.model.*;
 import eu.kalafatic.evolution.media.render.*;
 import eu.kalafatic.evolution.media.video.*;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
+import eu.kalafatic.evolution.media.generator.PresentationGenerator;
+import eu.kalafatic.evolution.media.generator.StoryboardGenerator;
+import eu.kalafatic.evolution.media.model.Diagram;
+import eu.kalafatic.evolution.media.model.Edge;
+import eu.kalafatic.evolution.media.model.Node;
+import eu.kalafatic.evolution.media.model.Section;
+import eu.kalafatic.evolution.media.model.TableBlock;
+import eu.kalafatic.evolution.media.model.TextBlock;
+import eu.kalafatic.evolution.media.render.HtmlRenderer;
+import eu.kalafatic.evolution.media.render.SvgRenderer;
+import eu.kalafatic.evolution.media.video.NoOpVideoGenerator;
+import eu.kalafatic.evolution.media.video.VideoGenerator;
 
 public class MediaService {
 

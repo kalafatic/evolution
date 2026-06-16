@@ -7,6 +7,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-21
 Require-Bundle: eu.kalafatic.evolution.forge.model,
  eu.kalafatic.evolution.forge.math,
  eu.kalafatic.evolution.forge.runtime,
- eu.kalafatic.evolution.forge.controller
+ eu.kalafatic.evolution.forge.controller,
+ eu.kalafatic.evolution.forge.observability;bundle-version="2.6.5"
 Export-Package: eu.kalafatic.evolution.forge.trainer.api,
  eu.kalafatic.evolution.forge.trainer.impl

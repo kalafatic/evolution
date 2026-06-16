@@ -4,11 +4,11 @@
  */
 package eu.kalafatic.evolution.model.orchestration.validation;
 
+import org.eclipse.emf.common.util.EList;
+
 import eu.kalafatic.evolution.model.orchestration.ExecutionMode;
 import eu.kalafatic.evolution.model.orchestration.Rule;
 import eu.kalafatic.evolution.model.orchestration.Task;
-
-import org.eclipse.emf.common.util.EList;
 
 /**
  * A sample validator interface for {@link eu.kalafatic.evolution.model.orchestration.Agent}.
