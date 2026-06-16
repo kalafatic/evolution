@@ -297,20 +297,33 @@ public class DarwinFlow implements IOrchestrationFlow {
 
             if (result.isSuccess() || selectedVariant != null) {
                 String completedPhase = context.getOrchestrationState().getCurrentPhase();
-                IterationRecord record = new IterationRecord();
-                record.setIteration(context.getOrchestrationState().getIterationCount());
-                record.setGoal(goal);
-                record.setStrategy(selectedVariant.getStrategy());
-                record.setStrategyType(selectedVariant.getStrategyType() != null ? selectedVariant.getStrategyType().toString() : null);
-                record.setSemanticAnchor(selectedVariant.getSemanticAnchor());
-                record.setMutationTrace(selectedVariant.getMutationTrace());
-                record.setInheritedContext(selectedVariant.getInheritedContext());
-                record.setRejectedSiblings(selectedVariant.getRejectedSiblings());
-                record.setBranchId(selectedVariant.getId());
-                record.setResult(result.isSuccess() ? "SUCCESS" : "SUCCESS_WITH_BUILD_ERROR");
-                record.setActivationState("ACTIVE");
-                record.setTimestamp(System.currentTimeMillis());
-                context.getKernelContext().getMemoryService().saveRecord(record);
+
+                // SAVE LINEAGE: Persist ACTIVE winner and any KEPT survivors (Milestone Requirement)
+                for (BranchVariant v : variants) {
+                    if (v.getActivationState() == BranchVariant.ActivationState.ACTIVE || v.getActivationState() == BranchVariant.ActivationState.KEPT) {
+                        IterationRecord record = new IterationRecord();
+                        record.setIteration(context.getOrchestrationState().getIterationCount());
+                        record.setGoal(goal);
+                        record.setStrategy(v.getStrategy());
+                        record.setStrategyType(v.getStrategyType() != null ? v.getStrategyType().toString() : null);
+                        record.setSemanticAnchor(v.getSemanticAnchor());
+                        record.setMutationTrace(v.getMutationTrace());
+                        record.setInheritedContext(v.getInheritedContext());
+                        record.setRejectedSiblings(v.getRejectedSiblings());
+                        record.setBranchId(v.getId());
+
+                        if (v.getId().equals(selectedVariant.getId())) {
+                            record.setResult(result.isSuccess() ? "SUCCESS" : "SUCCESS_WITH_BUILD_ERROR");
+                            record.setActivationState("ACTIVE");
+                        } else {
+                            record.setResult("KEPT_FOR_DIVERSITY");
+                            record.setActivationState("KEPT");
+                        }
+
+                        record.setTimestamp(System.currentTimeMillis());
+                        context.getKernelContext().getMemoryService().saveRecord(record);
+                    }
+                }
 
                 manager.checkStep(selectedVariant.getId(), "GIT_COMMIT", "Committing evolutionary changes for phase: " + completedPhase);
                 manager.getGitManager().commit("Darwin Evolution Phase " + completedPhase, context);

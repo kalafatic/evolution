@@ -452,6 +452,25 @@ public class MediatedExportManager {
             .collect(java.util.stream.Collectors.toList())));
 
         addStringToZip(zos, "observability/summaries/overview.json", serializeToJson(obs.getSummaries()));
+
+        // LINEAGE PRESERVATION: Capture rejected philosophies and failure memory (Milestone Requirement)
+        if (obs.getMemoryService() != null) {
+            var memory = obs.getMemoryService();
+            StringBuilder lineageLossSb = new StringBuilder("# Evolutionary Lineage Preservation\n\n");
+            lineageLossSb.append("## Rejected Engineering Philosophies (Avoid Rediscovery)\n");
+            memory.getRecords().stream()
+                .filter(r -> !"ACTIVE".equals(r.getActivationState()) && !"KEPT".equals(r.getActivationState()))
+                .map(r -> "- **" + r.getStrategy() + "**: " + r.getSemanticAnchor())
+                .distinct()
+                .forEach(line -> lineageLossSb.append(line).append("\n"));
+
+            lineageLossSb.append("\n## Engineering Dead-ends (Failure Memory)\n");
+            memory.getFailureMemory().getFingerprints().forEach((fp, count) -> {
+                lineageLossSb.append("- **Failure Pattern**: `").append(fp).append("` (Occurrences: ").append(count).append(")\n");
+            });
+
+            addStringToZip(zos, "observability/lineage_preservation.md", lineageLossSb.toString());
+        }
     }
 
     public File generateGenomeProjection(eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel model, File projectRoot) throws IOException {

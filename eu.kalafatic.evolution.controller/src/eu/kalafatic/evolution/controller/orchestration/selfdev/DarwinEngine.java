@@ -300,7 +300,23 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         else if (modelName.contains("llama3")) modelCapability = 0.75;
         else if (modelName.contains("claude") || modelName.contains("gpt-4") || modelName.contains("o1")) modelCapability = 0.95;
 
-        int branchingLimit = modelCapability < 0.6 ? 2 : 4;
+        // 1. Expansion-Based Population Scaling (Milestone Requirement)
+        int expansionValue = 5; // Default Medium
+        if (context.getOrchestrator() != null && context.getOrchestrator().getAiChat() != null) {
+            String sessionId = context.getSessionId();
+            eu.kalafatic.evolution.model.orchestration.ChatSession chatSession = context.getOrchestrator().getAiChat().getSessions().stream()
+                .filter(s -> s.getId().equals(sessionId)).findFirst().orElse(null);
+            if (chatSession != null) {
+                expansionValue = chatSession.getExpansion();
+            }
+        }
+
+        int branchingLimit = 3; // Default Balanced
+        if (expansionValue <= 3) branchingLimit = 2; // Conservative
+        else if (expansionValue >= 8) branchingLimit = 4; // Experimental
+
+        // Scale by model capability if extremely low
+        if (modelCapability < 0.4) branchingLimit = Math.min(branchingLimit, 2);
 
         // DYNAMIC TERRITORY DISCOVERY: Replace hardcoded blueprints with LLM-driven territory mapping
         TrajectoryTerritoryMapper mapper = new TrajectoryTerritoryMapper(getSessionContainer());
@@ -366,47 +382,57 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         }
 
 
-        // 1. Lineage Retrieval: Find the winner of the previous iteration
-        IterationRecord lastWinner = records.stream()
-                .filter(r -> "ACTIVE".equals(r.getActivationState()))
-                .reduce((first, second) -> second)
-                .orElse(null);
+        // 1. MULTI-LINEAGE RETRIEVAL: Retrieve both ACTIVE and KEPT survivors (Milestone Requirement)
+        List<IterationRecord> survivors = records.stream()
+                .filter(r -> "ACTIVE".equals(r.getActivationState()) || "KEPT".equals(r.getActivationState()))
+                .filter(r -> r.getIteration() == currentIteration - 1)
+                .collect(Collectors.toList());
 
-        String lineageContext = "";
+        // If no survivors in last iteration, fallback to overall active lineage
+        if (survivors.isEmpty()) {
+            survivors = activeRecords;
+        }
+
+        StringBuilder lineageBuilder = new StringBuilder();
         List<String> rejectedSiblings = new ArrayList<>();
-        if (lastWinner != null) {
-            lineageContext = "SURVIVING TRAJECTORY (ANCESTOR): " + lastWinner.getStrategy() + "\n" +
-                             "PHILOSOPHY: " + lastWinner.getSemanticAnchor() + "\n" +
-                             "MUTATION HISTORY: " + lastWinner.getMutationTrace() + "\n";
+        if (!survivors.isEmpty()) {
+            lineageBuilder.append("### EVOLUTIONARY ANCESTORS (COMPETING LINEAGES) ###\n");
+            for (IterationRecord ancestor : survivors) {
+                lineageBuilder.append("ANCESTOR LINEAGE: ").append(ancestor.getBranchId()).append("\n");
+                lineageBuilder.append("STRATEGY: ").append(ancestor.getStrategy()).append("\n");
+                lineageBuilder.append("PHILOSOPHY: ").append(ancestor.getSemanticAnchor()).append("\n");
+                lineageBuilder.append("MUTATION TRACE: ").append(ancestor.getMutationTrace()).append("\n\n");
+            }
 
             // REFINEMENT: Inject evolved mediation context if present (Understanding Refinement)
             Object winningMedCandidate = context.getOrchestrationState().getMetadata().get("winningMediationCandidate");
             if (winningMedCandidate instanceof eu.kalafatic.evolution.controller.mediation.model.MediationCandidate) {
                 eu.kalafatic.evolution.controller.mediation.model.MediationCandidate med = (eu.kalafatic.evolution.controller.mediation.model.MediationCandidate) winningMedCandidate;
-                lineageContext += "\n--- EVOLVED UNDERSTANDING (ANCESTOR) ---\n";
-                lineageContext += "ARCHITECTURE: " + med.getArchitectureSummary() + "\n";
+                lineageBuilder.append("\n--- EVOLVED UNDERSTANDING (COMMON ANCESTOR) ---\n");
+                lineageBuilder.append("ARCHITECTURE: ").append(med.getArchitectureSummary()).append("\n");
 
                 if (med.getSubsystems() != null && !med.getSubsystems().isEmpty()) {
-                    lineageContext += "DISCOVERED SUBSYSTEMS:\n";
-                    for (var s : med.getSubsystems()) lineageContext += "- " + s.getName() + ": " + s.getPurpose() + "\n";
+                    lineageBuilder.append("DISCOVERED SUBSYSTEMS:\n");
+                    for (var s : med.getSubsystems()) lineageBuilder.append("- ").append(s.getName()).append(": ").append(s.getPurpose()).append("\n");
                 }
 
                 if (med.getArchitecturalFacts() != null && !med.getArchitecturalFacts().isEmpty()) {
-                    lineageContext += "ARCHITECTURAL FACTS:\n";
-                    for (var f : med.getArchitecturalFacts()) lineageContext += "- " + f.toString() + "\n";
+                    lineageBuilder.append("ARCHITECTURAL FACTS:\n");
+                    for (var f : med.getArchitecturalFacts()) lineageBuilder.append("- ").append(f.toString()).append("\n");
                 }
 
-                lineageContext += "DEPENDENCIES: " + med.getDependencies() + "\n";
-                lineageContext += "INSTRUCTIONS: " + med.getExecutionInstructions() + "\n";
+                lineageBuilder.append("DEPENDENCIES: ").append(med.getDependencies()).append("\n");
+                lineageBuilder.append("INSTRUCTIONS: ").append(med.getExecutionInstructions()).append("\n");
             }
 
             // CUMULATIVE REJECTED LINEAGE: Collect all rejected philosophies from ALL previous iterations
             rejectedSiblings = records.stream()
-                    .filter(r -> !"ACTIVE".equals(r.getActivationState()))
+                    .filter(r -> !"ACTIVE".equals(r.getActivationState()) && !"KEPT".equals(r.getActivationState()))
                     .map(r -> r.getStrategy() + " (Iteration " + r.getIteration() + ")")
                     .distinct()
                     .collect(Collectors.toList());
         }
+        String lineageContext = lineageBuilder.toString();
 
         List<JSONObject> uniqueVariants = new ArrayList<>();
         String divergenceDirective = "";
@@ -479,7 +505,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         List<BranchVariant> variants = new ArrayList<>();
         for (JSONObject obj : uniqueVariants) {
             BranchVariant v = mapToBranchVariant(obj, goal, "TRAJECTORY_EVOLUTION", trajectory, context);
-            if (lastWinner != null) {
+            if (!survivors.isEmpty()) {
                 v.setInheritedContext(lineageContext);
                 v.setRejectedSiblings(rejectedSiblings);
             }

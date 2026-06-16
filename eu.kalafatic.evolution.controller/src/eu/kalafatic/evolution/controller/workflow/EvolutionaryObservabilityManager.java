@@ -212,4 +212,15 @@ public class EvolutionaryObservabilityManager implements RuntimeEventListener {
         summaries.put("failureCount", eventLog.stream().filter(e -> "CRITICAL".equals(e.getSeverity())).count());
         return summaries;
     }
+
+    public eu.kalafatic.evolution.controller.orchestration.selfdev.IterationMemoryService getMemoryService() {
+        SessionContainer session = SessionManager.getInstance().getSession(sessionId);
+        if (session != null) {
+            // Observability manager is passive, so we use a null project root check
+            // or retrieve it from the session context if possible.
+            // In most cases, the SessionContext already has the memory service initialized.
+            return session.getMemoryService(null);
+        }
+        return null;
+    }
 }
