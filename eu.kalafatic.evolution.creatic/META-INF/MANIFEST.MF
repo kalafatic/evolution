@@ -1,0 +1,17 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Creatic Core
+Bundle-SymbolicName: eu.kalafatic.evolution.creatic;singleton:=true
+Bundle-Version: 2.6.5.qualifier
+Bundle-Vendor: Kalafatic
+Bundle-RequiredExecutionEnvironment: JavaSE-21
+Export-Package: eu.kalafatic.evolution.creatic.api,
+ eu.kalafatic.evolution.creatic.model,
+ eu.kalafatic.evolution.creatic.engine,
+ eu.kalafatic.evolution.creatic.adapter
+Require-Bundle: org.eclipse.core.runtime,
+ eu.kalafatic.utils;bundle-version="2.6.5",
+ org.junit;bundle-version="4.13.2"
+DynamicImport-Package: *
+Bundle-ActivationPolicy: lazy
+Automatic-Module-Name: eu.kalafatic.evolution.creatic

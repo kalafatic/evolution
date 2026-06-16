@@ -141,6 +141,12 @@ public class EvolutionServer extends NanoHTTPD {
                 } else if (id.endsWith("/clone")) {
                     return handleCloneForgeSession(id.substring(0, id.length() - 6), session);
                 }
+            } else if (Method.POST.equals(method) && "/creatic/analyze".equals(uri)) {
+                return handleCreaticAnalyze(session);
+            } else if (Method.GET.equals(method) && "/creatic.js".equals(uri)) {
+                return handleGetResource("creatic.js", "application/javascript");
+            } else if (Method.GET.equals(method) && "/creatic.css".equals(uri)) {
+                return handleGetResource("creatic.css", "text/css");
             } else if (Method.DELETE.equals(method) && uri.startsWith("/forge/session/")) {
                 return handleDeleteForgeSession(uri.substring("/forge/session/".length()));
             } else if (Method.POST.equals(method) && uri.startsWith("/forge/dataset/generate")) {
@@ -819,6 +825,73 @@ public class EvolutionServer extends NanoHTTPD {
         JSONArray array = new JSONArray(branches);
 
         return newFixedLengthResponse(Response.Status.OK, "application/json", array.toString());
+    }
+
+    private Response handleCreaticAnalyze(IHTTPSession session) throws IOException, ResponseException {
+        Map<String, String> files = new HashMap<>();
+        session.parseBody(files);
+        String postData = files.get("postData");
+        JSONObject json = new JSONObject(postData != null ? postData : "{}");
+        String pageId = json.optString("pageId", "general");
+
+        Object response = eu.kalafatic.evolution.creatic.api.CreaticAgent.getInstance().analyze(pageId);
+        if (response == null) return newFixedLengthResponse(Response.Status.OK, "application/json", "{}");
+
+        // Convert GuidanceResponse to JSON via Reflection to avoid compile-time dependency issues
+        JSONObject res = new JSONObject();
+        try {
+            res.put("summary", (String) response.getClass().getMethod("getSummary").invoke(response));
+
+            JSONArray actions = new JSONArray();
+            List<?> actionsList = (List<?>) response.getClass().getMethod("getActions").invoke(response);
+            for (Object a : actionsList) {
+                actions.put(new JSONObject()
+                    .put("label", a.getClass().getMethod("getLabel").invoke(a))
+                    .put("actionId", a.getClass().getMethod("getActionId").invoke(a))
+                    .put("description", a.getClass().getMethod("getDescription").invoke(a)));
+            }
+            res.put("actions", actions);
+
+            JSONArray insights = new JSONArray();
+            List<?> insightsList = (List<?>) response.getClass().getMethod("getInsights").invoke(response);
+            for (Object i : insightsList) {
+                insights.put(new JSONObject().put("text", i.getClass().getMethod("getText").invoke(i)));
+            }
+            res.put("insights", insights);
+
+            JSONArray warnings = new JSONArray();
+            List<?> warningsList = (List<?>) response.getClass().getMethod("getWarnings").invoke(response);
+            for (Object w : warningsList) {
+                warnings.put(new JSONObject().put("text", w.getClass().getMethod("getText").invoke(w)));
+            }
+            res.put("warnings", warnings);
+
+            JSONArray tips = new JSONArray();
+            List<?> tipsList = (List<?>) response.getClass().getMethod("getTips").invoke(response);
+            for (Object t : tipsList) {
+                tips.put(new JSONObject().put("text", t.getClass().getMethod("getText").invoke(t)));
+            }
+            res.put("tips", tips);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return newFixedLengthResponse(Response.Status.OK, "application/json", res.toString());
+    }
+
+    private Response handleGetResource(String name, String mimeType) {
+        try (InputStream is = getClass().getResourceAsStream(name)) {
+            if (is == null) {
+                return newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", name + " not found");
+            }
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+                String content = reader.lines().collect(Collectors.joining("\n"));
+                return newFixedLengthResponse(Response.Status.OK, mimeType, content);
+            }
+        } catch (IOException e) {
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", e.getMessage());
+        }
     }
 
     public static void main(String[] args) {
