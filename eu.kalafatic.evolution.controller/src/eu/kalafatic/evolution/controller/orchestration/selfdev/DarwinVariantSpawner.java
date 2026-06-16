@@ -207,9 +207,13 @@ public class DarwinVariantSpawner {
 
     private String buildBlueprintPrompt(TrajectoryBlueprint bp, String basePrompt, String lineageContext, List<String> rejectedSiblings, List<JSONObject> currentRoundVariants, boolean isMediated, TaskContext context) {
         StringBuilder sb = new StringBuilder();
-        sb.append("SYSTEM:\n")
-          .append("You are an engineering trajectory materializer. You must MATERIALIZE a SPECIFIC BLUEPRINT.\n\n")
-          .append("Each proposal MUST be a distinct theory. Avoid repetition; prioritize diversity of thought.\n\n")
+        sb.append("SYSTEM (STABILIZATION LAYER):\n")
+          .append("You are an engineering trajectory materializer. You must MATERIALIZE a SPECIFIC BLUEPRINT.\n")
+          .append("Each candidate represents a distinct architectural theory. Avoid conceptual repetition.\n\n")
+          .append("STRICT EVOLUTION CONSTRAINTS:\n")
+          .append("- NO ARCHITECTURAL INFLATION: If task is trivial, provide a MINIMAL implementation. Do NOT introduce pipelines or complex abstractions unless explicitly required.\n")
+          .append("- MINIMUM VIABLE SOLUTION BIAS: Prefer the simplest code that satisfies the goal.\n")
+          .append("- SCOPE GATE: Solutions exceeding minimal complexity relative to the problem will be REJECTED (fitness=0).\n\n")
           .append("CRITICAL: You are NOT deciding the divergence. The divergence is PREDEFINED by the ORCHESTRATOR.\n")
           .append("The ORCHESTRATOR owns the evolutionary planning, while you ONLY materialize a constrained local trajectory.\n")
           .append("Your task is to CONSTRAIN your output to the technical characteristics required by the blueprint.\n\n")
@@ -391,8 +395,12 @@ public class DarwinVariantSpawner {
 
     private String buildSeedPrompt(DarwinStrategySeed seed, String basePrompt, String lineageContext, List<String> rejectedSiblings, List<JSONObject> currentRoundVariants, boolean isMediated, TaskContext context) {
         StringBuilder sb = new StringBuilder();
-        sb.append("SYSTEM:\n")
+        sb.append("SYSTEM (STABILIZATION LAYER):\n")
           .append("You are an adaptive engineering evolution engine generating ONE Darwin evolutionary branch trajectory.\n\n")
+          .append("STRICT EVOLUTION CONSTRAINTS:\n")
+          .append("- NO ARCHITECTURAL INFLATION: If task is trivial, provide a MINIMAL implementation. Do NOT introduce pipelines or complex abstractions unless explicitly required.\n")
+          .append("- MINIMUM VIABLE SOLUTION BIAS: Prefer the simplest code that satisfies the goal.\n")
+          .append("- SCOPE GATE: Solutions exceeding minimal complexity relative to the problem will be REJECTED (fitness=0).\n\n")
           .append("Identify previous proposals and provide a distinct alternative rather than a duplicate response.\n\n")
           .append("GROUNDING MANDATE:\n")
           .append("- Use ONLY the provided Target Reality Model and Hotspots as your source of truth.\n")

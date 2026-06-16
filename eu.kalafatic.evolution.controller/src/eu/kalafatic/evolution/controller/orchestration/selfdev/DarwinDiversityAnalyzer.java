@@ -62,8 +62,8 @@ public class DarwinDiversityAnalyzer {
                 }
 
                 if (diversity < threshold) {
-                    context.log(String.format("[DIVERSITY] SIBLING OVERLAP: %s (dist=%.2f) preserved with low-confidence warning.", v.optString("id"), diversity));
-                    return DiversityResultType.ACCEPTED_WITH_WARNINGS;
+                    context.log(String.format("[DIVERSITY] REJECTED_SIBLING_OVERLAP: %s (dist=%.2f) below threshold %.2f.", v.optString("id"), diversity, threshold));
+                    return DiversityResultType.REJECTED_FATAL;
                 }
 
                 return adherence;
@@ -71,18 +71,12 @@ public class DarwinDiversityAnalyzer {
         }
 
         double diversity = calculateDiversity(v, unique);
-        if (diversity < 0.05) {
-             context.log(String.format("[DIVERSITY] COLLAPSE FATAL: %s is an exact duplicate (dist=%.2f).", v.optString("id"), diversity));
+        if (diversity < threshold) {
+             context.log(String.format("[DIVERSITY] COLLAPSE FATAL: %s diversity (dist=%.2f) insufficient (threshold=%.2f).", v.optString("id"), diversity, threshold));
              return DiversityResultType.REJECTED_FATAL;
         }
 
-        if (diversity >= threshold) {
-            return DiversityResultType.ACCEPTED;
-        } else {
-            // Adaptive Graceful Degradation: preserve weak variants instead of fatal rejection
-            context.log(String.format("[DIVERSITY] WEAK DIVERGENCE: %s (dist=%.2f) preserved for evolutionary richness.", v.optString("id"), diversity));
-            return DiversityResultType.ACCEPTED_WITH_WARNINGS;
-        }
+        return DiversityResultType.ACCEPTED;
     }
 
     private DiversityResultType checkBlueprintAdherence(JSONObject variant, TrajectoryBlueprint bp, double threshold, TaskContext context) {
@@ -129,7 +123,7 @@ public class DarwinDiversityAnalyzer {
         return keys;
     }
 
-    private double calculateDiversity(JSONObject candidate, List<JSONObject> existing) {
+    public double calculateDiversity(JSONObject candidate, List<JSONObject> existing) {
         if (existing.isEmpty()) return 1.0;
 
         TrajectoryVector cVector = mapToVector(candidate);
@@ -139,9 +133,27 @@ public class DarwinDiversityAnalyzer {
             TrajectoryVector oVector = mapToVector(other);
             double dist = cVector.distance(oVector);
 
-            // Penalize for operational redundancy
+            // 1. Penalize for operational redundancy (same target files)
             if (getActionTargets(candidate).equals(getActionTargets(other))) {
+                dist *= 0.4; // Heavier penalty for same targets
+            }
+
+            // 2. Penalize for cosmetic similarity (naming)
+            double semanticSim = computeSimilarity(candidate.optString("strategy"), other.optString("strategy"));
+            if (semanticSim > 0.8) {
+                dist *= 0.3; // Harder penalty for cosmetic similarity
+            }
+
+            // 3. Structural overlap (projected steps)
+            double stepSim = computeJaccard(getProjectedSteps(candidate), getProjectedSteps(other));
+            if (stepSim > 0.6) {
                 dist *= 0.5;
+            }
+
+            // 4. Engineering Dimension Collapse Check
+            double dimSim = computeDimensionSimilarity(candidate.optJSONObject("engineering_dimensions"), other.optJSONObject("engineering_dimensions"));
+            if (dimSim > 0.8) {
+                dist *= 0.2; // Fatal collapse if engineering dimensions are near identical
             }
 
             if (dist < minDistance) minDistance = dist;
@@ -191,6 +203,7 @@ public class DarwinDiversityAnalyzer {
     }
 
     private double computeDimensionSimilarity(JSONObject d1, JSONObject d2) {
+        if (d1 == null || d2 == null) return 0.0;
         String[] dimensions = {
             "philosophy", "execution_model", "abstraction_depth", "modularity_approach",
             "testing_strategy", "extensibility", "dependency_assumptions", "runtime_behavior", "risk_acceptance"

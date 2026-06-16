@@ -6,6 +6,8 @@ import java.util.List;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import eu.kalafatic.evolution.controller.orchestration.intent.AtomicIntentAnalysis;
+
 /**
  * Ranker for Darwin trajectories based on structural completeness and architectural divergence.
  */
@@ -15,14 +17,14 @@ public class DarwinFitnessRanker {
      * Ranks variants by fitness score.
      */
     public void rank(List<JSONObject> variants) {
-        rank(variants, false, 0);
+        rank(variants, (AtomicIntentAnalysis)null, 0, null);
     }
 
     /**
      * Ranks variants by fitness score with optional atomic priority.
      */
     public void rank(List<JSONObject> variants, boolean isAtomicRound) {
-        rank(variants, isAtomicRound, 0);
+        rank(variants, isAtomicRound, 0, null);
     }
 
     /**
@@ -36,65 +38,133 @@ public class DarwinFitnessRanker {
      * Ranks variants by fitness score with pressure awareness.
      */
     public void rank(List<JSONObject> variants, boolean isAtomicRound, int generation, EvolutionaryPressureVector pressure) {
+        AtomicIntentAnalysis synthetic = null;
+        if (isAtomicRound) {
+            synthetic = new AtomicIntentAnalysis();
+            synthetic.setAtomic(true);
+            synthetic.getComplexityVector().determinismConfidence = 0.95;
+        }
+        rank(variants, synthetic, generation, pressure);
+    }
+
+    /**
+     * Ranks variants by fitness score with atomic intent awareness.
+     */
+    public void rank(List<JSONObject> variants, AtomicIntentAnalysis atomic, int generation, EvolutionaryPressureVector pressure) {
+        boolean isAtomicRound = atomic != null && atomic.isAtomic() && atomic.getComplexityVector().determinismConfidence > 0.8;
         for (JSONObject v : variants) {
             double score = calculateFitness(v, generation, pressure);
+
+            // Hard scope gate
+            double scopeRatio = calculateScopeRatio(v, atomic);
+            if (scopeRatio > 3.0) {
+                score = 0.0;
+                v.put("rejected_reason", "Scope ratio exceeded: " + String.format("%.2f", scopeRatio));
+                v.put("fitness_gate", "REJECTED_SCOPE_INFLATION");
+            }
+
+            // Fallback exclusion
+            String id = v.optString("id", "");
+            if (id.contains("fallback-")) {
+                score = Math.min(score, 0.05); // Scaffolding only, cannot win
+                v.put("isControlArtifact", true);
+            }
+
             if (isAtomicRound && DarwinStrategyType.PROBABLE_SURVIVOR.name().equals(v.optString("strategy_type"))) {
-                score = Math.max(score, 0.95);
+                if (score > 0) {
+                    score = Math.max(score, 0.95);
+                }
             }
 
             v.put("score", score);
+            v.put("scope_ratio", scopeRatio);
         }
 
         variants.sort(Comparator.comparingDouble((JSONObject v) -> v.optDouble("score")).reversed());
     }
 
     private double calculateFitness(JSONObject variant, int generation, EvolutionaryPressureVector pressure) {
-        double score = 0.4; // Base
-
-        if (pressure != null) {
-            // Adjust base score based on pressure intensity
-            score += (pressure.getTotalPressure() * 0.1);
-        }
-
-        // 0. Specialized Mediation Fitness (High Density focus)
-        if (variant.has("mediation_candidate")) {
-            score += calculateMediationFitness(variant.optJSONObject("mediation_candidate"));
-        }
-
-        // 1. Structural Completeness
-        if (variant.has("tradeoffs") && variant.optString("tradeoffs").length() > 20) score += 0.1;
-        if (variant.has("failure_risks") && variant.optString("failure_risks").length() > 20) score += 0.1;
-        if (variant.has("semantic_justification") && variant.optString("semantic_justification").length() > 20) score += 0.1;
-        if (variant.has("expected_effect")) score += 0.05;
-
-        // 2. Action Specificity
+        // 1. Correctness (40%) - structural completeness & action specificity
+        double correctness = 0.5;
+        if (variant.has("tradeoffs")) correctness += 0.1;
+        if (variant.has("failure_risks")) correctness += 0.1;
         JSONArray actions = variant.optJSONArray("actions");
         if (actions != null && actions.length() > 0) {
-            score += Math.min(0.2, actions.length() * 0.05);
-
-            boolean specific = false;
+            correctness += 0.2;
+            boolean hasTarget = false;
             for (int i = 0; i < actions.length(); i++) {
-                String target = actions.getJSONObject(i).optString("target");
-                if (target != null && !target.equals(".") && !target.isEmpty()) {
-                    specific = true;
-                    break;
-                }
+                if (!actions.getJSONObject(i).optString("target", ".").equals(".")) hasTarget = true;
             }
-            if (specific) score += 0.05;
+            if (hasTarget) correctness += 0.1;
+        }
+        correctness = Math.min(1.0, correctness);
+
+        // 2. Simplicity (20%) - anti-complexity
+        double simplicity = 1.0;
+        if (actions != null && actions.length() > 4) simplicity -= 0.2;
+        JSONObject dims = variant.optJSONObject("engineering_dimensions");
+        if (dims != null) {
+            if ("high".equalsIgnoreCase(dims.optString("abstraction_depth"))) simplicity -= 0.3;
+            if ("service".equalsIgnoreCase(dims.optString("execution_model"))) simplicity -= 0.2;
+        }
+        simplicity = Math.max(0.0, simplicity);
+
+        // 3. Extensibility (20%)
+        double extensibility = 0.5;
+        if (dims != null) {
+            String ext = dims.optString("extensibility");
+            if ("high".equalsIgnoreCase(ext)) extensibility = 1.0;
+            else if ("medium".equalsIgnoreCase(ext)) extensibility = 0.7;
         }
 
-        // 3. Trajectory Type weighting (Balanced with generational pressure)
-        String type = variant.optString("strategy_type");
-        if (DarwinStrategyType.PROBABLE_SURVIVOR.name().equals(type)) score += 0.05;
-        if (DarwinStrategyType.PHILOSOPHY_MUTATION.name().equals(type)) score += 0.05;
-        if (DarwinStrategyType.MAXIMAL_DIVERGENCE.name().equals(type)) score += 0.04;
-
-        // Increase value of stabilization in later generations (Convergence Pressure)
-        if (DarwinStrategyType.STABILIZATION_RECOVERY.name().equals(type)) {
-            score += 0.03 + (generation * 0.02);
+        // 4. Performance (10%)
+        double performance = 0.5;
+        if (dims != null) {
+            if ("async".equalsIgnoreCase(dims.optString("runtime_behavior"))) performance = 0.8;
+            if ("reactive".equalsIgnoreCase(dims.optString("execution_model"))) performance = 0.9;
         }
 
-        return Math.min(1.0, score);
+        // 5. Maintainability (10%)
+        double maintainability = 0.5;
+        if (dims != null) {
+            if ("modular".equalsIgnoreCase(dims.optString("modularity_approach"))) maintainability = 0.9;
+        }
+
+        double total = (0.4 * correctness) + (0.2 * simplicity) + (0.2 * extensibility) + (0.1 * performance) + (0.1 * maintainability);
+
+        if (pressure != null) {
+            total += (pressure.getTotalPressure() * 0.05);
+        }
+
+        if (variant.has("mediation_candidate")) {
+            total += calculateMediationFitness(variant.optJSONObject("mediation_candidate")) * 0.1;
+        }
+
+        return Math.min(1.0, total);
+    }
+
+    private double calculateScopeRatio(JSONObject variant, AtomicIntentAnalysis atomic) {
+        if (atomic == null) return 1.0;
+
+        double problemComplexity = 1.0;
+        if (!atomic.isAtomic()) problemComplexity += 1.0;
+        if (atomic.isMultiStep()) problemComplexity += 1.0;
+
+        double solutionComplexity = 1.0;
+        JSONArray actions = variant.optJSONArray("actions");
+        if (actions != null) {
+            solutionComplexity += (actions.length() * 0.5);
+        }
+
+        JSONObject dims = variant.optJSONObject("engineering_dimensions");
+        if (dims != null) {
+            if ("high".equalsIgnoreCase(dims.optString("abstraction_depth"))) solutionComplexity += 2.0;
+            if ("modular".equalsIgnoreCase(dims.optString("modularity_approach"))) solutionComplexity += 1.0;
+            if ("service".equalsIgnoreCase(dims.optString("execution_model"))) solutionComplexity += 2.0;
+            if ("reactive".equalsIgnoreCase(dims.optString("execution_model"))) solutionComplexity += 1.5;
+        }
+
+        return solutionComplexity / problemComplexity;
     }
 
     private double calculateMediationFitness(JSONObject med) {
