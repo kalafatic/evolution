@@ -656,9 +656,26 @@ public class IterationManager {
         int safetyCounter = 0;
         DarwinFlow darwinFlow = new DarwinFlow(aiService, this);
 
+        // expansion-based iteration limit
+        int expansionValue = 5;
+        if (context.getOrchestrator() != null && context.getOrchestrator().getAiChat() != null) {
+            String sessionId = context.getSessionId();
+            eu.kalafatic.evolution.model.orchestration.ChatSession chatSession = context.getOrchestrator().getAiChat().getSessions().stream()
+                .filter(s -> s.getId().equals(sessionId)).findFirst().orElse(null);
+            if (chatSession != null) {
+                expansionValue = chatSession.getExpansion();
+            }
+        }
+
+        int maxIterationsLimit = 5; // Default Medium
+        if (expansionValue <= 3) maxIterationsLimit = 2; // Conservative
+        else if (expansionValue >= 8) maxIterationsLimit = 10; // Research/High
+
+        context.log("[KERNEL] Dynamic Expansion Control: Target Max Iterations = " + maxIterationsLimit);
+
         // 1. Recursive Evolutionary Loop
         context.log("[KERNEL] Phase: Recursive Evolutionary Trajectory System.");
-        while (safetyCounter < 10 && !context.isPaused()) {
+        while (safetyCounter < maxIterationsLimit && !context.isPaused()) {
             // RECURSIVE ARCHITECTURAL DISCOVERY: Refine model in each iteration
             if (safetyCounter > 0) {
                 refineTargetReality(request, context);

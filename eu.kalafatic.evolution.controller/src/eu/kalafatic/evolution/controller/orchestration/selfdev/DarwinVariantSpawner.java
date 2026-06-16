@@ -267,8 +267,8 @@ public class DarwinVariantSpawner {
         }
 
         if (lineageContext != null && !lineageContext.isEmpty()) {
-            sb.append("LINEAGE CONTINUITY (PERSISTENT EVOLUTION):\n")
-              .append("You are evolving a surviving lineage. Inherit the successes and avoid the failures of your ancestors.\n")
+            sb.append("LINEAGE CONTINUITY (MULTI-LINEAGE EVOLUTION):\n")
+              .append("You are evolving from multiple surviving engineering trajectories. Your goal is to refine, cross-pollinate, or radically mutate these established ideas.\n")
               .append(lineageContext).append("\n");
 
             if (rejectedSiblings != null && !rejectedSiblings.isEmpty()) {
@@ -466,8 +466,8 @@ public class DarwinVariantSpawner {
         }
 
         if (lineageContext != null && !lineageContext.isEmpty()) {
-            sb.append("LINEAGE CONTINUITY (PERSISTENT EVOLUTION):\n")
-              .append("You are evolving a surviving lineage. Inherit the successes and avoid the failures of your ancestors.\n")
+            sb.append("LINEAGE CONTINUITY (MULTI-LINEAGE EVOLUTION):\n")
+              .append("You are evolving from multiple surviving engineering trajectories. Your goal is to refine, cross-pollinate, or radically mutate these established ideas.\n")
               .append(lineageContext).append("\n");
 
             sb.append("FORBIDDEN ARCHITECTURAL ASSUMPTIONS (LINEAGE PRESSURE):\n")
