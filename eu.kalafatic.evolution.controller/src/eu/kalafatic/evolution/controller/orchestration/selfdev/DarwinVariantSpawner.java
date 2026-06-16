@@ -25,58 +25,51 @@ public class DarwinVariantSpawner {
     }
 
     /**
-     * Spawns variants based on blueprints.
+     * Spawns a single variant based on a blueprint and sequential mutation context.
      */
-    public List<JSONObject> spawnBlueprints(String goal, List<TrajectoryBlueprint> blueprints, String basePrompt, String lineageContext, List<String> rejectedSiblings, boolean isMediated, TaskContext context) {
-        List<JSONObject> variants = new ArrayList<>();
+    public JSONObject spawnSingleBlueprint(String goal, TrajectoryBlueprint bp, String basePrompt, String lineageContext, List<String> rejectedSiblings, String mutationContext, boolean isMediated, TaskContext context) {
         Orchestrator orchestrator = context.getOrchestrator();
 
-        List<JSONObject> currentRoundVariants = new ArrayList<>();
+        context.log("[SPAWNER] Materializing trajectory from blueprint: " + bp.getId());
+        EvolutionProgressPublisher.updateBranchStatus(context, bp.getId(), bp.getPhilosophy(), "active", null);
+        EvolutionProgressPublisher.updateActiveModel(context, orchestrator != null ? (orchestrator.getOllama() != null ? orchestrator.getOllama().getModel() : "local") : "local", "Materializing Branch " + bp.getId());
 
-        for (TrajectoryBlueprint bp : blueprints) {
-            context.log("[SPAWNER] Materializing trajectory from blueprint: " + bp.getId());
-            EvolutionProgressPublisher.updateBranchStatus(context, bp.getId(), bp.getPhilosophy(), "active", null);
-            EvolutionProgressPublisher.updateActiveModel(context, orchestrator != null ? (orchestrator.getOllama() != null ? orchestrator.getOllama().getModel() : "local") : "local", "Generating Branch " + (variants.size() + 1) + " of " + blueprints.size());
+        String bpPrompt = buildBlueprintPrompt(bp, basePrompt, lineageContext, rejectedSiblings, mutationContext, isMediated, context);
+        JSONObject validated = null;
 
-            String bpPrompt = buildBlueprintPrompt(bp, basePrompt, lineageContext, rejectedSiblings, currentRoundVariants, isMediated, context);
-            JSONObject validated = null;
-
-            // Materialization Retries: The branch topology (blueprint) is preserved; only the implementation details are retried.
-            for (int retry = 0; retry < 3; retry++) {
-                try {
-                    String response = aiService.sendRequest(orchestrator, bpPrompt, context);
-                    validated = validator.validate(response, bp.getStrategyType(), context); // Blueprints are technical mutations
-                    if (validated != null) {
-                        // ORCHESTRATOR SCHEMA COMPLETION: Inject metadata into semantic fragment
-                        validated = completeTrajectorySchema(validated, bp, context);
-                        break;
-                    }
-
-                    context.log("[SPAWNER] Materialization failed for blueprint " + bp.getId() + ". Retry " + (retry + 1) + "/3...");
-                } catch (Exception e) {
-                    context.log("[SPAWNER] Error during blueprint materialization for " + bp.getId() + ": " + e.getMessage());
+        // Materialization Retries: The branch topology (blueprint) is preserved; only the implementation details are retried.
+        for (int retry = 0; retry < 3; retry++) {
+            try {
+                String response = aiService.sendRequest(orchestrator, bpPrompt, context);
+                validated = validator.validate(response, bp.getStrategyType(), context); // Blueprints are technical mutations
+                if (validated != null) {
+                    // ORCHESTRATOR SCHEMA COMPLETION: Inject metadata into semantic fragment
+                    validated = completeTrajectorySchema(validated, bp, context);
+                    break;
                 }
-            }
 
-            if (validated != null) {
-                variants.add(validated);
-                currentRoundVariants.add(validated);
-                context.log("[SPAWNER] Successfully materialized blueprint: " + bp.getId());
-                double score = validated.optDouble("score", 0.0);
-                EvolutionProgressPublisher.updateBranchStatus(context, bp.getId(), bp.getPhilosophy(), "complete", Double.isNaN(score) ? null : score);
-            } else {
-                context.log("[SPAWNER] Materialization retries failed for " + bp.getId() + ". Attempting deterministic auto-repair.");
-                JSONObject repaired = autoRepair(bp, context);
-                if (repaired != null) {
-                    variants.add(repaired);
-                    currentRoundVariants.add(repaired);
-                    context.log("[SPAWNER] Successfully auto-repaired blueprint: " + bp.getId());
-                } else {
-                    context.log("[SPAWNER] CRITICAL: Failed to materialize or repair mandatory blueprint: " + bp.getId());
-                }
+                context.log("[SPAWNER] Materialization failed for blueprint " + bp.getId() + ". Retry " + (retry + 1) + "/3...");
+            } catch (Exception e) {
+                context.log("[SPAWNER] Error during blueprint materialization for " + bp.getId() + ": " + e.getMessage());
             }
         }
-        return variants;
+
+        if (validated != null) {
+            context.log("[SPAWNER] Successfully materialized blueprint: " + bp.getId());
+            double score = validated.optDouble("score", 0.0);
+            EvolutionProgressPublisher.updateBranchStatus(context, bp.getId(), bp.getPhilosophy(), "complete", Double.isNaN(score) ? null : score);
+            return validated;
+        } else {
+            context.log("[SPAWNER] Materialization retries failed for " + bp.getId() + ". Attempting deterministic auto-repair.");
+            JSONObject repaired = autoRepair(bp, context);
+            if (repaired != null) {
+                context.log("[SPAWNER] Successfully auto-repaired blueprint: " + bp.getId());
+                return repaired;
+            } else {
+                context.log("[SPAWNER] CRITICAL: Failed to materialize or repair mandatory blueprint: " + bp.getId());
+                return null;
+            }
+        }
     }
 
     private JSONObject completeTrajectorySchema(JSONObject fragment, TrajectoryBlueprint bp, TaskContext context) {
@@ -205,7 +198,7 @@ public class DarwinVariantSpawner {
         }
     }
 
-    private String buildBlueprintPrompt(TrajectoryBlueprint bp, String basePrompt, String lineageContext, List<String> rejectedSiblings, List<JSONObject> currentRoundVariants, boolean isMediated, TaskContext context) {
+    private String buildBlueprintPrompt(TrajectoryBlueprint bp, String basePrompt, String lineageContext, List<String> rejectedSiblings, String mutationContext, boolean isMediated, TaskContext context) {
         StringBuilder sb = new StringBuilder();
         sb.append("SYSTEM (STABILIZATION LAYER):\n")
           .append("You are an engineering trajectory materializer. You must MATERIALIZE a SPECIFIC BLUEPRINT.\n")
@@ -281,15 +274,11 @@ public class DarwinVariantSpawner {
             }
         }
 
-        if (!currentRoundVariants.isEmpty()) {
-            sb.append("FORBIDDEN PHILOSOPHIES (SIBLING MUTATION PRESSURE):\n")
-              .append("The following engineering philosophies have already been claimed in this generation. You MUST intentionally mutate AGAINST them to ensure maximum divergence.\n\n");
-            for (JSONObject v : currentRoundVariants) {
-                sb.append("--- OCCUPIED: ").append(v.optString("id")).append(" ---\n")
-                  .append("Strategy: ").append(v.optString("strategy")).append("\n")
-                  .append("Philosophy: ").append(v.optString("semantic_justification")).append("\n")
-                  .append("Engineering Dimensions: ").append(v.optJSONObject("engineering_dimensions")).append("\n\n");
-            }
+        if (mutationContext != null && !mutationContext.isEmpty()) {
+            sb.append("### SEQUENTIAL MUTATION CONSTRAINTS (FORBIDDEN STRATEGIES) ###\n")
+              .append("The following strategies and architectural assumptions have already been used in this round. You ARE STRICTLY PROHIBITED from re-using them.\n")
+              .append(mutationContext).append("\n")
+              .append("GENERATE A SOLUTION THAT IS MAXIMALLY DIFFERENT IN STRUCTURE AND PHILOSOPHY FROM ALL PREVIOUS BRANCHES.\n\n");
         }
 
         sb.append("CONTEXT:\n")

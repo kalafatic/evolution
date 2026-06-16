@@ -36,11 +36,17 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
         return mapSequential(goal, context, limit, new ArrayList<>());
     }
 
-    public TrajectoryBlueprint discoverNext(String goal, TaskContext context, List<TrajectoryBlueprint> existing) throws Exception {
+    public TrajectoryBlueprint discoverNext(String goal, TaskContext context, List<TrajectoryBlueprint> existing, String mutationContext) throws Exception {
         context.log("[TERRITORY] Sequentially discovering next unique evolutionary trajectory for: " + goal);
 
         StringBuilder sb = new StringBuilder();
         sb.append("GOAL: ").append(goal).append("\n\n");
+
+        if (mutationContext != null && !mutationContext.isEmpty()) {
+            sb.append("### SEQUENTIAL MUTATION CONSTRAINTS ###\n")
+              .append(mutationContext).append("\n")
+              .append("GENERATE A SOLUTION THAT IS MAXIMALLY DIFFERENT IN STRUCTURE AND PHILOSOPHY FROM ALL PREVIOUS BRANCHES.\n\n");
+        }
 
         String projectStructure = (String) context.getOrchestrationState().getMetadata().get("projectStructure");
         if (projectStructure != null) sb.append("STRUCTURE: ").append(projectStructure).append("\n");
@@ -58,9 +64,9 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
         }
 
         if (!existing.isEmpty()) {
-            sb.append("\nEXISTING BLUEPRINTS (DO NOT REPEAT OR OVERLAP):\n");
+            sb.append("\nEXISTING BLUEPRINTS (FORBIDDEN STRATEGIES):\n");
             for (TrajectoryBlueprint bp : existing) {
-                sb.append("- ").append(bp.getStrategyType()).append(": ").append(bp.getPhilosophy()).append("\n");
+                sb.append("- FORBIDDEN: ").append(bp.getStrategy()).append(" (Philosophy: ").append(bp.getPhilosophy()).append(")\n");
             }
         }
 

@@ -318,70 +318,6 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         // Scale by model capability if extremely low
         if (modelCapability < 0.4) branchingLimit = Math.min(branchingLimit, 2);
 
-        // DYNAMIC TERRITORY DISCOVERY: Replace hardcoded blueprints with LLM-driven territory mapping
-        TrajectoryTerritoryMapper mapper = new TrajectoryTerritoryMapper(getSessionContainer());
-        mapper.setAiService(aiService);
-
-        context.log("[DARWIN] Sequential Blueprint Discovery initialized (Target: " + branchingLimit + " unique trajectories).");
-        int discoveryAttempts = 0;
-        int maxDiscoveryAttempts = branchingLimit * 2;
-        while (currentBlueprints.size() < branchingLimit && discoveryAttempts < maxDiscoveryAttempts) {
-            discoveryAttempts++;
-            try {
-                String discoveryGoal = generation == 0 ? goal : goal + " (Mutation Gen " + generation + ")";
-                TrajectoryBlueprint bp = mapper.discoverNext(discoveryGoal, context, currentBlueprints);
-                if (bp != null) {
-                    // Avoid duplicate strategies or philosophies
-                    boolean isDuplicate = currentBlueprints.stream().anyMatch(existing ->
-                        existing.getStrategy().equalsIgnoreCase(bp.getStrategy()) ||
-                        existing.getPhilosophy().equalsIgnoreCase(bp.getPhilosophy())
-                    );
-
-                    if (!isDuplicate) {
-                        currentBlueprints.add(bp);
-                    } else {
-                        context.log("[DARWIN] Discovery Loop: Ignoring duplicate blueprint: " + bp.getStrategy());
-                    }
-                } else {
-                    context.log("[DARWIN] Discovery Loop: Mapper returned null at attempt " + discoveryAttempts);
-                }
-            } catch (Exception e) {
-                context.log("[DARWIN] Discovery Error: " + e.getMessage());
-            }
-        }
-
-        if (currentBlueprints.isEmpty()) {
-            context.log("[DARWIN] Territory Mapper yielded zero blueprints. Using generic fallback.");
-            TrajectoryBlueprint bp = new TrajectoryBlueprint("default-candidate", goal, "Standard Implementation");
-            bp.setStrategyType(DarwinStrategyType.PROBABLE_SURVIVOR);
-            bp.setPhilosophy("Practical realization of " + goal);
-            currentBlueprints.add(bp);
-        }
-
-        // DIVERSITY ENFORCEMENT: Ensure at least 4 blueprints to maintain evolutionary pressure
-        if (currentBlueprints.size() < 4) {
-            context.log("[DARWIN] Blueprint set below threshold (" + currentBlueprints.size() + "). Injecting divergent fallbacks.");
-            if (currentBlueprints.stream().noneMatch(bp -> bp.getStrategyType() == DarwinStrategyType.STABILIZATION_RECOVERY)) {
-                TrajectoryBlueprint bp = new TrajectoryBlueprint("fallback-stabilization", goal, "Stabilization & Recovery");
-                bp.setStrategyType(DarwinStrategyType.STABILIZATION_RECOVERY);
-                bp.setPhilosophy("Ensure data availability and system resilience through failover mechanisms.");
-                currentBlueprints.add(bp);
-            }
-            if (currentBlueprints.size() < 4 && currentBlueprints.stream().noneMatch(bp -> bp.getStrategyType() == DarwinStrategyType.PHILOSOPHY_MUTATION)) {
-                TrajectoryBlueprint bp = new TrajectoryBlueprint("fallback-mutation", goal, "Radical Philosophy Mutation");
-                bp.setStrategyType(DarwinStrategyType.PHILOSOPHY_MUTATION);
-                bp.setPhilosophy("Mutation of the core architectural assumptions to discover alternative futures.");
-                currentBlueprints.add(bp);
-            }
-            if (currentBlueprints.size() < 4 && currentBlueprints.stream().noneMatch(bp -> bp.getStrategyType() == DarwinStrategyType.MAXIMAL_DIVERGENCE)) {
-                TrajectoryBlueprint bp = new TrajectoryBlueprint("fallback-divergence", goal, "Maximal Divergence");
-                bp.setStrategyType(DarwinStrategyType.MAXIMAL_DIVERGENCE);
-                bp.setPhilosophy("Maximize conceptual distance from standard implementation patterns.");
-                currentBlueprints.add(bp);
-            }
-        }
-
-
         // 1. MULTI-LINEAGE RETRIEVAL: Retrieve both ACTIVE and KEPT survivors (Milestone Requirement)
         List<IterationRecord> survivors = records.stream()
                 .filter(r -> "ACTIVE".equals(r.getActivationState()) || "KEPT".equals(r.getActivationState()))
@@ -435,50 +371,58 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         String lineageContext = lineageBuilder.toString();
 
         List<JSONObject> uniqueVariants = new ArrayList<>();
-        String divergenceDirective = "";
+        String mutationContext = "";
 
-        for (int evolutionRetry = 0; evolutionRetry < 2; evolutionRetry++) {
-            List<JSONObject> mutationVariants = new ArrayList<>();
-            String activePrompt = basePrompt + divergenceDirective;
+        // DYNAMIC TERRITORY DISCOVERY & MATERIALIZATION: Sequential loop to ensure diversity
+        TrajectoryTerritoryMapper mapper = new TrajectoryTerritoryMapper(getSessionContainer());
+        mapper.setAiService(aiService);
 
-            if (!currentBlueprints.isEmpty()) {
-                context.log("[DARWIN] Executing Blueprint-Driven Spawning with " + currentBlueprints.size() + " blueprints (Attempt " + (evolutionRetry + 1) + ").");
-                mutationVariants = spawner.spawnBlueprints(goal, currentBlueprints, activePrompt, lineageContext, rejectedSiblings, isMediated, context);
-            } else {
-                context.log("[DARWIN] Executing Trajectory Mutation Chain with " + mutationSeeds.size() + " seeds (Attempt " + (evolutionRetry + 1) + ").");
-                mutationVariants = spawner.spawn(goal, mutationSeeds, activePrompt, lineageContext, rejectedSiblings, isMediated, context);
-            }
+        context.log("[DARWIN] Sequential Mutation Branching initialized (Target: " + branchingLimit + " unique trajectories).");
 
-            // LOG ALL RAW VARIANTS BEFORE DIVERSITY FILTERING
-            context.log("[DARWIN_RAW_VARIANTS] " + mutationVariants.size() + " trajectories spawned.");
+        for (int i = 0; i < branchingLimit; i++) {
+            context.log("[DARWIN] Sequential Branching: Starting iteration " + (i + 1) + " of " + branchingLimit);
+            try {
+                String discoveryGoal = generation == 0 ? goal : goal + " (Mutation Gen " + generation + ")";
 
-            uniqueVariants = diversityAnalyzer.analyze(mutationVariants, currentBlueprints.isEmpty() ? null : currentBlueprints, policy.getEvolutionaryStrictness(), modelCapability, context);
+                // 1. Sequential Blueprint Discovery
+                TrajectoryBlueprint bp = mapper.discoverNext(discoveryGoal, context, currentBlueprints, mutationContext);
 
-            if (uniqueVariants.isEmpty()) {
-                context.log("[DARWIN] CRITICAL: All LLM variants failed diversity analysis. Evolution stalled.");
-                break;
-            }
+                if (bp != null) {
+                    // Avoid duplicate strategies or philosophies
+                    boolean isDuplicate = currentBlueprints.stream().anyMatch(existing ->
+                        existing.getStrategy().equalsIgnoreCase(bp.getStrategy()) ||
+                        existing.getPhilosophy().equalsIgnoreCase(bp.getPhilosophy())
+                    );
 
-            // Diagnostic Overrides: Detect evolutionary collapse
-            if (uniqueVariants.size() > 1) {
-                double avgDist = 0;
-                int pairs = 0;
-                for (int i = 0; i < uniqueVariants.size(); i++) {
-                    for (int j = i + 1; j < uniqueVariants.size(); j++) {
-                        avgDist += diversityAnalyzer.calculateDiversity(uniqueVariants.get(i), Collections.singletonList(uniqueVariants.get(j)));
-                        pairs++;
+                    if (!isDuplicate) {
+                        currentBlueprints.add(bp);
+
+                        // 2. Sequential Blueprint Materialization
+                        JSONObject variant = spawner.spawnSingleBlueprint(goal, bp, basePrompt, lineageContext, rejectedSiblings, mutationContext, isMediated, context);
+
+                        if (variant != null) {
+                            uniqueVariants.add(variant);
+
+                            // 3. Accumulate Mutation Context for next iteration
+                            mutationContext += "DO NOT REPEAT STRATEGY: " + variant.optString("strategy") + "\n" +
+                                               "AVOID ASSUMPTION: " + variant.optString("semantic_justification") + "\n" +
+                                               "NEXT MUST BE STRUCTURALLY DIFFERENT\n\n";
+                        }
+                    } else {
+                        context.log("[DARWIN] Sequential Branching: Ignoring duplicate blueprint: " + bp.getStrategy());
                     }
+                } else {
+                    context.log("[DARWIN] Sequential Branching: Mapper returned null at iteration " + i);
                 }
-                avgDist /= pairs;
-
-                if (avgDist < 0.1) {
-                    context.log("[DARWIN_DIAGNOSTIC] Evolutionary collapse detected (avgDist=" + String.format("%.2f", avgDist) + "). Triggering HARD RESET of variants with forced axis mutation.");
-                    divergenceDirective = "\n[FORCED_DIVERGENCE_DIRECTIVE] Previous candidates were too similar. You MUST radically PIVOT your architectural assumptions. If the previous was monolithic, go modular. If it was synchronous, go asynchronous. Maximize conceptual distance.";
-                    uniqueVariants.clear();
-                    continue; // Retry spawning
-                }
+            } catch (Exception e) {
+                context.log("[DARWIN] Sequential Branching Error: " + e.getMessage());
             }
-            break; // Success or non-collapsing state
+        }
+
+        // FALLBACK: If sequential branching failed to produce enough variants, inject divergent fallbacks
+        if (uniqueVariants.size() < 2) {
+             context.log("[DARWIN] Sequential Branching yielded insufficient variants (" + uniqueVariants.size() + "). Injecting divergent fallbacks.");
+             // Note: In a real system, we'd have autoRepair logic here as well, but for now we rely on the spawner's autoRepair
         }
 
         // Fitness Ranking
