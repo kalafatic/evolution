@@ -46,12 +46,18 @@ public class DarwinVariantValidator {
         }
 
         // 4. Validate Required Fields (ID is injected by Spawner if missing)
-        List<String> requiredFields = List.of("strategy_type", "strategy", "survival_argument", "semantic_justification", "tradeoffs", "failure_risks", "actions");
+        List<String> requiredFields = List.of("strategy_type", "strategy", "survival_argument", "tradeoffs", "failure_risks", "actions");
         for (String field : requiredFields) {
             if (!json.has(field)) {
                 if (context != null) context.log("[VALIDATOR] Error: Missing required field: " + field);
                 return null;
             }
+        }
+
+        // Semantic field flexibility
+        if (!json.has("semantic_justification") && !json.has("semantic_anchor")) {
+            if (context != null) context.log("[VALIDATOR] Error: Missing semantic field (semantic_justification or semantic_anchor).");
+            return null;
         }
 
         // 5. Validate strategy_type
@@ -86,9 +92,9 @@ public class DarwinVariantValidator {
             return null;
         }
 
-        String philosophy = json.optString("semantic_justification");
+        String philosophy = json.has("semantic_justification") ? json.optString("semantic_justification") : json.optString("semantic_anchor");
         if (philosophy.length() < 10 || philosophy.contains("<") || philosophy.contains(">")) {
-            if (context != null) context.log("[VALIDATOR] Error: Invalid or placeholder semantic_justification.");
+            if (context != null) context.log("[VALIDATOR] Error: Invalid or placeholder semantic field.");
             return null;
         }
 
