@@ -275,10 +275,31 @@ public class DarwinVariantSpawner {
         }
 
         if (mutationContext != null && !mutationContext.isEmpty()) {
-            sb.append("### SEQUENTIAL MUTATION CONSTRAINTS (FORBIDDEN STRATEGIES) ###\n")
-              .append("The following strategies and architectural assumptions have already been used in this round. You ARE STRICTLY PROHIBITED from re-using them.\n")
+            sb.append("🧬 CUMULATIVE LINEAGE MEMORY (HARD CONSTRAINT)\n\n")
+              .append("You are NOT generating from a clean state.\n")
+              .append("You are generating from a constrained evolutionary space where previous outputs are already occupied regions.\n")
+              .append("You MUST treat all previous branches as forbidden attractors.\n\n")
+              .append("FORBIDDEN ATTRACTOR SET:\n")
               .append(mutationContext).append("\n")
-              .append("GENERATE A SOLUTION THAT IS MAXIMALLY DIFFERENT IN STRUCTURE AND PHILOSOPHY FROM ALL PREVIOUS BRANCHES.\n\n");
+              .append("RULES:\n\n")
+              .append("1. You MUST NOT generate a strategy that is semantically close to ANY entry in the FORBIDDEN ATTRACTOR SET.\n")
+              .append("2. Similarity includes:\n")
+              .append("   - same execution model (even if renamed)\n")
+              .append("   - same decomposition style\n")
+              .append("   - same control flow paradigm\n")
+              .append("   - same state model\n")
+              .append("   - same architecture family\n\n")
+              .append("3. You MUST actively select a NON-OVERLAPPING REGION:\n")
+              .append("   - different computation paradigm\n")
+              .append("   - different system topology\n")
+              .append("   - different reasoning structure\n\n")
+              .append("4. If you cannot find a non-overlapping region:\n")
+              .append("   STOP and pivot to maximal divergence (not refinement).\n\n")
+              .append("5. You are penalized for “soft mutations”:\n")
+              .append("   - rewording is invalid\n")
+              .append("   - reordering is invalid\n")
+              .append("   - parameter tuning is invalid\n\n")
+              .append("VALID OUTPUT MUST BE A NEW ARCHITECTURAL CLASS, NOT A VARIANT.\n\n");
         }
 
         sb.append("CONTEXT:\n")
@@ -490,19 +511,37 @@ public class DarwinVariantSpawner {
         }
 
         if (!currentRoundVariants.isEmpty()) {
-            sb.append("FORBIDDEN PHILOSOPHIES (SIBLING MUTATION PRESSURE):\n")
-              .append("The following engineering philosophies have already been claimed in this generation. You ARE STRICTLY PROHIBITED from proposing a semantic variation of these. You MUST intentionally mutate AGAINST them.\n\n");
+            sb.append("🧬 CUMULATIVE LINEAGE MEMORY (HARD CONSTRAINT)\n\n")
+              .append("You are NOT generating from a clean state.\n")
+              .append("You are generating from a constrained evolutionary space where previous outputs are already occupied regions.\n")
+              .append("You MUST treat all previous branches as forbidden attractors.\n\n")
+              .append("FORBIDDEN ATTRACTOR SET:\n");
+
             for (JSONObject v : currentRoundVariants) {
-                sb.append("--- OCCUPIED: ").append(v.optString("strategy_type")).append(" ---\n")
-                  .append("Strategy: ").append(v.optString("strategy")).append("\n")
-                  .append("Philosophy: ").append(v.optString("semantic_justification")).append("\n")
-                  .append("Tradeoffs: ").append(v.optString("tradeoffs")).append("\n")
-                  .append("Operational Behavior: ").append(v.optJSONArray("projected_steps")).append("\n\n");
+                sb.append("- STRATEGY: ").append(v.optString("strategy")).append("\n")
+                  .append("  PHILOSOPHY: ").append(v.optString("semantic_justification")).append("\n")
+                  .append("  MODEL: ").append(v.optJSONObject("engineering_dimensions")).append("\n\n");
             }
-            sb.append("INSTRUCTION FOR THIS BRANCH:\n")
-              .append("- Identify the 'DIVERGENCE AXIS' (e.g., Abstraction Depth, State Management, Runtime Strategy, Dependency Complexity).\n")
-              .append("- PIVOT to an unexplored technical quadrant.\n")
-              .append("- Maximize TECHNICAL CONTRAST from the occupied space above.\n\n");
+
+            sb.append("RULES:\n\n")
+              .append("1. You MUST NOT generate a strategy that is semantically close to ANY entry in the FORBIDDEN ATTRACTOR SET.\n")
+              .append("2. Similarity includes:\n")
+              .append("   - same execution model (even if renamed)\n")
+              .append("   - same decomposition style\n")
+              .append("   - same control flow paradigm\n")
+              .append("   - same state model\n")
+              .append("   - same architecture family\n\n")
+              .append("3. You MUST actively select a NON-OVERLAPPING REGION:\n")
+              .append("   - different computation paradigm\n")
+              .append("   - different system topology\n")
+              .append("   - different reasoning structure\n\n")
+              .append("4. If you cannot find a non-overlapping region:\n")
+              .append("   STOP and pivot to maximal divergence (not refinement).\n\n")
+              .append("5. You are penalized for “soft mutations”:\n")
+              .append("   - rewording is invalid\n")
+              .append("   - reordering is invalid\n")
+              .append("   - parameter tuning is invalid\n\n")
+              .append("VALID OUTPUT MUST BE A NEW ARCHITECTURAL CLASS, NOT A VARIANT.\n\n");
         }
 
         if (seed.getInterpretation() != null) {
