@@ -61,6 +61,10 @@ public class ForgeSessionManager {
     }
 
     public ForgeSession createSession(String name, String modelType) {
+        return createSession(name, modelType, false);
+    }
+
+    public ForgeSession createSession(String name, String modelType, boolean isDemo) {
         if (orchestrator == null) return null;
 
         ForgeSession session = OrchestrationFactory.eINSTANCE.createForgeSession();
@@ -79,9 +83,32 @@ public class ForgeSessionManager {
 
         orchestrator.getForgeSessions().add(session);
 
+        if (isDemo) {
+            applyDemoTemplate(session, modelType);
+        }
+
         publishEvent(session, RuntimeEventType.FORGE_SESSION_CREATED, "SESSION_CREATED");
 
         return session;
+    }
+
+    private void applyDemoTemplate(ForgeSession session, String modelType) {
+        String graph = "{}";
+        switch (modelType) {
+            case "NEURON":
+                graph = "{\"nodes\":[{\"id\":\"n1\",\"name\":\"input_1\",\"type\":\"NEURON\",\"x\":100,\"y\":100},{\"id\":\"n2\",\"name\":\"bias\",\"type\":\"NEURON\",\"x\":100,\"y\":200},{\"id\":\"n3\",\"name\":\"output\",\"type\":\"NEURON\",\"x\":300,\"y\":150}],\"links\":[{\"source\":\"n1\",\"target\":\"n3\"},{\"source\":\"n2\",\"target\":\"n3\"}]}";
+                break;
+            case "MLP":
+                graph = "{\"nodes\":[{\"id\":\"m1\",\"name\":\"input\",\"type\":\"LAYER\",\"x\":50,\"y\":150},{\"id\":\"m2\",\"name\":\"hidden_1\",\"type\":\"LAYER\",\"x\":200,\"y\":150},{\"id\":\"m3\",\"name\":\"output\",\"type\":\"LAYER\",\"x\":350,\"y\":150}],\"links\":[{\"source\":\"m1\",\"target\":\"m2\"},{\"source\":\"m2\",\"target\":\"m3\"}]}";
+                break;
+            case "CNN":
+                graph = "{\"nodes\":[{\"id\":\"c1\",\"name\":\"conv_2d\",\"type\":\"LAYER\",\"x\":100,\"y\":100},{\"id\":\"c2\",\"name\":\"max_pool\",\"type\":\"LAYER\",\"x\":100,\"y\":200},{\"id\":\"c3\",\"name\":\"flatten\",\"type\":\"LAYER\",\"x\":300,\"y\":100},{\"id\":\"c4\",\"name\":\"dense_out\",\"type\":\"LAYER\",\"x\":300,\"y\":200}],\"links\":[{\"source\":\"c1\",\"target\":\"c2\"},{\"source\":\"c2\",\"target\":\"c3\"},{\"source\":\"c3\",\"target\":\"c4\"}]}";
+                break;
+            case "TRANSFORMER":
+                graph = "{\"nodes\":[{\"id\":\"t1\",\"name\":\"embedding\",\"type\":\"LAYER\",\"x\":50,\"y\":200},{\"id\":\"t2\",\"name\":\"attn_block_1\",\"type\":\"ATTENTION\",\"x\":200,\"y\":200},{\"id\":\"t3\",\"name\":\"ffn_1\",\"type\":\"LAYER\",\"x\":350,\"y\":200},{\"id\":\"t4\",\"name\":\"head\",\"type\":\"LAYER\",\"x\":500,\"y\":200}],\"links\":[{\"source\":\"t1\",\"target\":\"t2\"},{\"source\":\"t2\",\"target\":\"t3\"},{\"source\":\"t3\",\"target\":\"t4\"}]}";
+                break;
+        }
+        session.getModelState().setModelGraph(graph);
     }
 
     public boolean deleteSession(String sessionId) {

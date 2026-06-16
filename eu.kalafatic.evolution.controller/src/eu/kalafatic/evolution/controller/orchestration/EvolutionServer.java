@@ -26,6 +26,7 @@ import eu.kalafatic.evolution.forge.controller.api.ModelController;
 import eu.kalafatic.evolution.forge.controller.api.SessionController;
 import eu.kalafatic.evolution.forge.controller.api.SnapshotController;
 import eu.kalafatic.evolution.forge.controller.api.TrainingController;
+import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
 import eu.kalafatic.evolution.controller.manager.OllamaModel;
 import eu.kalafatic.evolution.controller.manager.OllamaService;
 import eu.kalafatic.evolution.controller.tools.GitTool;
@@ -129,6 +130,8 @@ public class EvolutionServer extends NanoHTTPD {
                 return handleGetForgeSessions();
             } else if (Method.POST.equals(method) && "/forge/session".equals(uri)) {
                 return handleCreateForgeSession(session);
+            } else if (Method.POST.equals(method) && "/forge/save-all".equals(uri)) {
+                return handleForgeSaveAll();
             } else if (Method.GET.equals(method) && uri.startsWith("/forge/session/")) {
                 String id = uri.substring("/forge/session/".length());
                 if (id.endsWith("/model")) {
@@ -686,10 +689,24 @@ public class EvolutionServer extends NanoHTTPD {
         String postData = files.get("postData");
         JSONObject body = new JSONObject(postData);
 
+        boolean isDemo = body.optBoolean("isDemo", false);
         eu.kalafatic.evolution.model.orchestration.ForgeSession s = ForgeSessionManager.getInstance().createSession(
-            body.getString("name"), body.getString("modelType"));
+            body.getString("name"), body.getString("modelType"), isDemo);
 
         return newFixedLengthResponse(Response.Status.OK, "application/json", new JSONObject().put("id", s.getSessionId()).toString());
+    }
+
+    private Response handleForgeSaveAll() {
+        try {
+            Orchestrator orch = OrchestratorServiceImpl.getInstance().getOrchestrator();
+            if (orch != null && orch.eResource() != null) {
+                ProjectModelManager.getInstance().saveResource(orch.eResource());
+                return newFixedLengthResponse(Response.Status.OK, "application/json", "{\"status\": \"ok\"}");
+            }
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", "{\"error\": \"No active resource to save\"}");
+        } catch (IOException e) {
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", "{\"error\": \"" + e.getMessage() + "\"}");
+        }
     }
 
     private Response handleDeleteForgeSession(String id) {
