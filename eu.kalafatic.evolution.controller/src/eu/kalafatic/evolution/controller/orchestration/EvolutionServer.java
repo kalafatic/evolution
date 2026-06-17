@@ -58,6 +58,7 @@ public class EvolutionServer extends NanoHTTPD {
     private final AuthService authService;
     private final AuthController authController;
     private final ArchitectureController architectureController;
+    private final EvolutionDashboardController evolutionDashboardController;
 
     private SessionController sessionController;
     private ModelController modelController;
@@ -73,6 +74,7 @@ public class EvolutionServer extends NanoHTTPD {
         this.authService = new AuthService(userRepository, sessionRepository);
         this.authController = new AuthController(authService);
         this.architectureController = new ArchitectureController();
+        this.evolutionDashboardController = new EvolutionDashboardController();
     }
 
     public void setForgeControllers(SessionController sc, ModelController mc, DatasetController dc, TrainingController tc, SnapshotController snc) {
@@ -136,6 +138,10 @@ public class EvolutionServer extends NanoHTTPD {
                 return handleGetForge();
             } else if (Method.GET.equals(method) && "/experimental/architecture".equals(uri)) {
                 return handleGetArchitecture(session);
+            } else if (Method.GET.equals(method) && "/experimental/evolution/tree".equals(uri)) {
+                return handleGetEvolutionTreePage();
+            } else if (Method.GET.equals(method) && "/evolution/tree".equals(uri)) {
+                return handleGetEvolutionTreeJson(session);
             } else if (Method.GET.equals(method) && "/server/status".equals(uri)) {
                 return handleGetServerStatus();
             } else if (Method.GET.equals(method) && "/server/system/state".equals(uri)) {
@@ -476,6 +482,37 @@ public class EvolutionServer extends NanoHTTPD {
         } catch (IOException e) {
             return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", e.getMessage());
         }
+    }
+
+    private Response handleGetEvolutionTreePage() {
+        try (InputStream is = getClass().getResourceAsStream("evolution_tree.html")) {
+            if (is == null) {
+                return newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "evolution_tree.html not found");
+            }
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+                String content = reader.lines().collect(Collectors.joining("\n"));
+                return newFixedLengthResponse(Response.Status.OK, "text/html", content);
+            }
+        } catch (IOException e) {
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", e.getMessage());
+        }
+    }
+
+    private Response handleGetEvolutionTreeJson(IHTTPSession session) {
+        String sessionId = session.getParms().get("sessionId");
+        if (sessionId == null) {
+            Orchestrator orch = OrchestratorServiceImpl.getInstance().getOrchestrator();
+            if (orch != null && orch.getSelfDevSession() != null) {
+                sessionId = orch.getSelfDevSession().getId();
+            }
+        }
+
+        if (sessionId == null) {
+            return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", "{\"error\": \"Missing sessionId\"}");
+        }
+
+        String json = evolutionDashboardController.getEvolutionTreeJson(sessionId);
+        return newFixedLengthResponse(Response.Status.OK, "application/json", json);
     }
 
     private Response handleGetArchitecture(IHTTPSession session) {
