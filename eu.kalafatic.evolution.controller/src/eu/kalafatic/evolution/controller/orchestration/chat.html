@@ -205,15 +205,15 @@
         <div id="sidebar">
             <div class="sidebar-header">
                 🧬 EVO MIRROR
-                <button class="btn btn-sm btn-primary" onclick="toggleTheme()">🌓</button>
+                <button class="btn btn-sm btn-primary" onclick="toggleTheme()" data-guidance="Toggle between Dark and Light UI themes.">🌓</button>
             </div>
 
             <div id="sidebar-scroll">
                 <div class="sidebar-section">
                     <h2>Chat Management</h2>
                     <div class="control-group">
-                        <button class="btn btn-primary" onclick="newSession()">New Session</button>
-                        <button class="btn" onclick="cleanChat()" style="margin-top:5px;">Clean Chat</button>
+                        <button class="btn btn-primary" onclick="newSession()" data-guidance="Start a fresh chat session with a new context.">New Session</button>
+                        <button class="btn" onclick="cleanChat()" style="margin-top:5px;" data-guidance="Clear the current message log without resetting the session context.">Clean Chat</button>
                     </div>
                 </div>
 
@@ -222,7 +222,7 @@
                     <div class="control-group">
                         <div class="control-item">
                             <label>Mode:</label>
-                            <select id="mode-select" onchange="updateSettings()">
+                            <select id="mode-select" onchange="updateSettings()" data-guidance="Select execution strategy. Local uses Ollama. Remote uses cloud APIs. Mediated uses specialized orchestration logic.">
                                 <option value="LOCAL">Local</option>
                                 <option value="HYBRID">Hybrid</option>
                                 <option value="REMOTE">Remote</option>
@@ -232,13 +232,13 @@
                         </div>
                         <div class="control-item">
                             <label>Local:</label>
-                            <select id="local-model-select" onchange="updateSettings()">
+                            <select id="local-model-select" onchange="updateSettings()" data-guidance="Choose which local model to use for the next task.">
                                 <option value="">Loading...</option>
                             </select>
                         </div>
                         <div class="control-item">
                             <label>Remote:</label>
-                            <select id="remote-model-select" onchange="updateSettings()">
+                            <select id="remote-model-select" onchange="updateSettings()" data-guidance="Choose which remote LLM provider to use for high-complexity tasks.">
                                 <option value="GPT-4o">GPT-4o</option>
                                 <option value="Claude-3.5-Sonnet">Claude-3.5-Sonnet</option>
                                 <option value="Llama-3-70b">Llama-3-70b</option>
@@ -310,8 +310,8 @@
             <div id="header">
                 <div style="font-weight: 600; font-size: 14px;">Mirroring: <span id="current-task-name" style="color: var(--accent);">Idle</span></div>
                 <div style="display: flex; gap: 10px;">
-                    <div id="ollama-status" class="status-badge status-offline">OLLAMA OFFLINE</div>
-                    <div class="status-badge status-online">SERVER ONLINE</div>
+                    <div id="ollama-status" class="status-badge status-offline" data-guidance="Connection status to the local Ollama LLM server. Green means active.">OLLAMA OFFLINE</div>
+                    <div class="status-badge status-online" data-guidance="Connection status to the primary Evolution backend server.">SERVER ONLINE</div>
                 </div>
             </div>
 
@@ -325,8 +325,8 @@
             </div>
 
             <div id="input-area">
-                <input type="text" id="user-input" placeholder="Type a message or response..." onkeypress="if(event.key==='Enter') sendMessage()">
-                <button onclick="sendMessage()">Send</button>
+                <input type="text" id="user-input" placeholder="Type a message or response..." data-guidance="Describe the task or architectural change you want Evo to perform." onkeypress="if(event.key==='Enter') sendMessage()">
+                <button onclick="sendMessage()" data-guidance="Submit your prompt to the current AI session.">Send</button>
             </div>
         </div>
 

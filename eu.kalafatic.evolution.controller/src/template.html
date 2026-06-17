@@ -232,36 +232,36 @@
                 <h2>Target</h2>
                 <div class="control-group">
                     <div style="display:flex; gap:5px;">
-                        <select id="target-select" onchange="javaAction(this.value, 'SET_TARGET')" style="flex:1;">
+                        <select id="target-select" onchange="javaAction(this.value, 'SET_TARGET')" style="flex:1;" data-guidance="Select the target project or directory for architectural analysis.">
                             <!-- Populated by JS -->
                         </select>
-                        <button class="btn btn-sm" onclick="javaAction('', 'BROWSE_TARGET')" style="width:auto;">📁</button>
+                        <button class="btn btn-sm" onclick="javaAction('', 'BROWSE_TARGET')" style="width:auto;" data-guidance="Open a file browser to select a new target directory.">📁</button>
                     </div>
-                    <button class="btn btn-primary" onclick="javaAction('', 'DISCOVER')">🔍 Discover Architecture</button>
+                    <button class="btn btn-primary" onclick="javaAction('', 'DISCOVER')" data-guidance="Initiate a deep discovery scan of the target project to build the component map.">🔍 Discover Architecture</button>
                 </div>
             </div>
 
             <div class="sidebar-section">
                 <h2>View</h2>
                 <div class="control-group">
-                    <select id="mode-select" onchange="javaAction(this.value, 'SET_VIEW_MODE')">
+                    <select id="mode-select" onchange="javaAction(this.value, 'SET_VIEW_MODE')" data-guidance="Choose how to visualize the architecture. Components (low-level), Subsystems (high-level), Use Cases (flow), or Knowledge Graph (relationships).">
                         <option value="COMPONENTS">Components Map</option>
                         <option value="SUBSYSTEMS">Subsystems View</option>
                         <option value="USE_CASES">Use Cases Trace</option>
                         <option value="KNOWLEDGE_GRAPH">Knowledge Graph</option>
                     </select>
 
-                    <button class="btn" onclick="javaAction('', 'REFRESH')">🔄 Refresh View</button>
+                    <button class="btn" onclick="javaAction('', 'REFRESH')" data-guidance="Re-render the current visualization based on the latest architectural model.">🔄 Refresh View</button>
                 </div>
             </div>
 
             <div class="sidebar-section">
                 <h2>Tools</h2>
                 <div class="control-group">
-                    <button class="btn" onclick="javaAction('', 'GENERATE_METADATA')">📝 Generate AI Metadata</button>
-                    <button class="btn" onclick="javaAction('', 'EXPORT_HTML')">📤 Export as HTML</button>
-                    <button class="btn" onclick="javaAction('', 'SAVE_JSON')">💾 Save Design JSON</button>
-                    <button class="btn btn-sm" onclick="toggleTheme()" style="margin-top:5px; text-align:center;">🌓 Toggle Theme</button>
+                    <button class="btn" onclick="javaAction('', 'GENERATE_METADATA')" data-guidance="Use AI to generate descriptive metadata for all identified components.">📝 Generate AI Metadata</button>
+                    <button class="btn" onclick="javaAction('', 'EXPORT_HTML')" data-guidance="Export the current architectural map as a standalone interactive HTML file.">📤 Export as HTML</button>
+                    <button class="btn" onclick="javaAction('', 'SAVE_JSON')" data-guidance="Persist the analyzed design to a JSON file for future loading.">💾 Save Design JSON</button>
+                    <button class="btn btn-sm" onclick="toggleTheme()" style="margin-top:5px; text-align:center;" data-guidance="Toggle between Dark and Light UI themes.">🌓 Toggle Theme</button>
                 </div>
             </div>
 

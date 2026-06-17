@@ -8,6 +8,8 @@
         constructor() {
             this.container = null;
             this.content = null;
+            this.tooltip = null;
+            this.contextMenu = null;
             this.pageId = this.detectPage();
             this.isCollapsed = true;
             this.isEnabled = true;
@@ -24,6 +26,10 @@
         async init() {
             if (!this.isEnabled) return;
             this.renderBaseStructure();
+            this.renderTooltip();
+            this.renderContextMenu();
+            this.setupGuidanceListeners();
+            this.setupContextMenuListeners();
             await this.refresh();
         }
 
@@ -74,6 +80,110 @@
             this.isCollapsed = !this.isCollapsed;
             this.container.classList.toggle('collapsed', this.isCollapsed);
             this.container.querySelector('.creatic-toggle').textContent = this.isCollapsed ? '◀' : '▶';
+        }
+
+        renderTooltip() {
+            if (document.getElementById('creatic-tooltip')) return;
+            const tooltip = document.createElement('div');
+            tooltip.id = 'creatic-tooltip';
+            tooltip.className = 'creatic-tooltip';
+            tooltip.style.display = 'none';
+            document.body.appendChild(tooltip);
+            this.tooltip = tooltip;
+        }
+
+        setupGuidanceListeners() {
+            document.addEventListener('mouseover', (e) => {
+                const target = e.target.closest('[data-guidance]');
+                if (target) {
+                    this.showTooltip(target, target.getAttribute('data-guidance'));
+                }
+            });
+
+            document.addEventListener('mouseout', (e) => {
+                const target = e.target.closest('[data-guidance]');
+                if (target) {
+                    this.hideTooltip();
+                }
+            });
+        }
+
+        showTooltip(element, text) {
+            if (!this.tooltip) return;
+
+            const rect = element.getBoundingClientRect();
+            this.tooltip.innerHTML = `
+                <div class="tooltip-header">✨ Guidance</div>
+                <div class="tooltip-content">${text.split('.').map(s => s.trim()).filter(s => s).map(s => `• ${s}`).join('<br>')}</div>
+            `;
+
+            this.tooltip.style.display = 'block';
+
+            let top = rect.top + window.scrollY - this.tooltip.offsetHeight - 10;
+            let left = rect.left + window.scrollX + (rect.width / 2) - (this.tooltip.offsetWidth / 2);
+
+            // Bounds check
+            if (top < 0) top = rect.bottom + window.scrollY + 10;
+            if (left < 10) left = 10;
+            if (left + this.tooltip.offsetWidth > window.innerWidth - 10) left = window.innerWidth - this.tooltip.offsetWidth - 10;
+
+            this.tooltip.style.top = top + 'px';
+            this.tooltip.style.left = left + 'px';
+        }
+
+        hideTooltip() {
+            if (this.tooltip) this.tooltip.style.display = 'none';
+        }
+
+        renderContextMenu() {
+            if (document.getElementById('creatic-context-menu')) return;
+            const menu = document.createElement('div');
+            menu.id = 'creatic-context-menu';
+            menu.className = 'creatic-context-menu';
+            menu.style.display = 'none';
+            menu.innerHTML = `
+                <div class="context-item" id="context-help">✨ Get Help</div>
+                <div class="context-divider"></div>
+                <div class="context-item" onclick="window.Creatic.toggle()">🛠 Toggle Assistant</div>
+            `;
+            document.body.appendChild(menu);
+            this.contextMenu = menu;
+        }
+
+        setupContextMenuListeners() {
+            document.addEventListener('contextmenu', (e) => {
+                const target = e.target.closest('[data-guidance]');
+                if (!target && !e.target.closest('.creatic-root')) return;
+
+                e.preventDefault();
+                this.showContextMenu(e.pageX, e.pageY, target);
+            });
+
+            document.addEventListener('click', () => this.hideContextMenu());
+        }
+
+        showContextMenu(x, y, target) {
+            if (!this.contextMenu) return;
+
+            const helpItem = document.getElementById('context-help');
+            if (target) {
+                helpItem.style.display = 'block';
+                helpItem.onclick = (e) => {
+                    e.stopPropagation();
+                    this.showTooltip(target, target.getAttribute('data-guidance'));
+                    this.hideContextMenu();
+                };
+            } else {
+                helpItem.style.display = 'none';
+            }
+
+            this.contextMenu.style.display = 'block';
+            this.contextMenu.style.left = x + 'px';
+            this.contextMenu.style.top = y + 'px';
+        }
+
+        hideContextMenu() {
+            if (this.contextMenu) this.contextMenu.style.display = 'none';
         }
 
         async refresh() {
