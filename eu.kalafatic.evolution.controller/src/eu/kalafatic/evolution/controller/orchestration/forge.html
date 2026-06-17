@@ -6,18 +6,6 @@
     <title>Forge Models</title>
     <style>
         :root {
-            --bg-primary: #1e1e1e;
-            --bg-secondary: #252526;
-            --border: #3c3c3c;
-            --text: #d4d4d4;
-            --text-dim: #858585;
-            --accent: #007acc;
-            --accent-hover: #1177bb;
-            --error: #f48771;
-            --success: #89d185;
-        }
-
-        body.light-theme {
             --bg-primary: #ffffff;
             --bg-secondary: #f3f3f3;
             --border: #cccccc;
@@ -25,6 +13,8 @@
             --text-dim: #666666;
             --accent: #007acc;
             --accent-hover: #1177bb;
+            --error: #f48771;
+            --success: #89d185;
         }
 
         body, html {
@@ -283,8 +273,8 @@
             <div class="sidebar-header">
                 SESSIONS
                 <div style="display: flex; gap: 4px;">
-                    <button class="btn btn-sm" onclick="showDemoDialog()" title="Load Demo Template">🎁</button>
-                    <button class="btn btn-sm btn-primary" onclick="createNewSession()">NEW</button>
+                    <button class="btn btn-sm" onclick="showDemoDialog()" title="Load Demo Template" data-guidance="Load a pre-configured architecture template (Neuron, MLP, CNN, or Transformer) to start quickly.">🎁</button>
+                    <button class="btn btn-sm btn-primary" onclick="createNewSession()" data-guidance="Create a new blank Forge session for custom model architecture development.">NEW</button>
                 </div>
             </div>
             <div id="session-list">
@@ -293,7 +283,7 @@
             <div class="panel" style="border-top: 1px solid var(--border); border-bottom: none;">
                 <h3>Genome Milestones</h3>
                 <div id="snapshot-list" class="session-info">No snapshots created</div>
-                <button class="btn btn-sm" style="width: 100%; margin-top: 10px;" onclick="createSessionSnapshot()">SNAPSHOT</button>
+                <button class="btn btn-sm" style="width: 100%; margin-top: 10px;" onclick="createSessionSnapshot()" data-guidance="Capture a frozen milestone of your current model's genome for versioning and evolution tracking.">SNAPSHOT</button>
             </div>
         </div>
 
@@ -306,12 +296,11 @@
                 </div>
 
                 <div style="margin-left: auto; display: flex; gap: 10px;">
-                    <button class="btn btn-sm" onclick="toggleTheme()" title="Toggle Dark/Light Theme">🌓</button>
-                    <button class="btn btn-sm" onclick="toggleJsonEditor()">JSON Editor</button>
-                    <button class="btn btn-sm" onclick="saveAllSessions()" title="Persist all sessions to disk">💾 Save All</button>
-                    <button class="btn btn-sm" onclick="cloneActiveSession()">Clone</button>
-                    <button class="btn btn-sm" onclick="saveActiveModel()">Save Architecture</button>
-                    <button class="btn btn-sm btn-danger" onclick="deleteActiveSession()">Delete</button>
+                    <button class="btn btn-sm" onclick="toggleJsonEditor()" data-guidance="Switch to manual JSON editing mode for direct structural modifications.">JSON Editor</button>
+                    <button class="btn btn-sm" onclick="saveAllSessions()" title="Persist all sessions to disk" data-guidance="Save all open Forge sessions and their current states to the permanent repository.">💾 Save All</button>
+                    <button class="btn btn-sm" onclick="cloneActiveSession()" data-guidance="Duplicate the current session to experiment with architectural variations without affecting the original.">Clone</button>
+                    <button class="btn btn-sm" onclick="saveActiveModel()" data-guidance="Commit the current graph architecture to the session model state.">Save Architecture</button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteActiveSession()" data-guidance="Permanently remove this session and all its associated data.">Delete</button>
                 </div>
             </div>
 
@@ -324,13 +313,13 @@
                     </defs>
                 </svg>
 
-                <div id="node-palette">
+                <div id="node-palette" data-guidance="Drag these components onto the canvas to construct your neural network architecture.">
                     <div style="font-size: 0.7em; color: var(--text-dim); margin-bottom: 5px;">DRAG NODES</div>
-                    <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'NEURON')">Neuron</button>
-                    <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'LAYER')">Layer</button>
-                    <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'ATTENTION')">Attention</button>
-                    <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'TRANSFORMER')">Transformer</button>
-                    <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'CUSTOM')">Custom</button>
+                    <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'NEURON')" data-guidance="The fundamental unit of neural computation. Suitable for basic logic and simple regression.">Neuron</button>
+                    <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'LAYER')" data-guidance="A collection of neurons or a standard processing layer (e.g., Dense, Conv2D, Pooling).">Layer</button>
+                    <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'ATTENTION')" data-guidance="Implements a self-attention mechanism to allow the model to focus on different parts of the input sequence.">Attention</button>
+                    <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'TRANSFORMER')" data-guidance="A high-level block containing encoder/decoder stacks for sequence-to-sequence tasks.">Transformer</button>
+                    <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'CUSTOM')" data-guidance="Define your own custom logic or script-based processing node.">Custom</button>
                 </div>
 
                 <textarea id="json-fallback"></textarea>
@@ -341,7 +330,7 @@
                 <div id="viz-header">
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <span style="font-size: 0.8em; font-weight: bold; color: var(--text-dim);">VISUALIZATION</span>
-                        <select id="viz-selector" style="background: #3c3c3c; border: 1px solid #555; color: white; padding: 2px;" onchange="onVizChange()">
+                        <select id="viz-selector" style="background: #3c3c3c; border: 1px solid #555; color: white; padding: 2px;" onchange="onVizChange()" data-guidance="Switch between different visualization modes to monitor architecture, data, training metrics, or evolutionary history.">
                             <option value="ARCHITECTURE">Architecture Graph</option>
                             <option value="DATASET">Dataset Explorer</option>
                             <option value="TRAINING">Training Monitor</option>
@@ -427,10 +416,10 @@
             <div class="panel">
                 <h3>Training & Execution</h3>
                 <div style="display: flex; gap: 5px;">
-                    <button id="train-btn" class="btn btn-primary" style="flex: 1;" onclick="startTraining()">START</button>
-                    <button id="stop-btn" class="btn" style="flex: 1;" onclick="stopTraining()" disabled>STOP</button>
+                    <button id="train-btn" class="btn btn-primary" style="flex: 1;" onclick="startTraining()" data-guidance="Initiate the model training process using the selected dataset and configuration.">START</button>
+                    <button id="stop-btn" class="btn" style="flex: 1;" onclick="stopTraining()" disabled data-guidance="Gracefully halt the current training session and preserve the latest weights.">STOP</button>
                 </div>
-                <button class="btn btn-sm" style="width: 100%; margin-top: 8px;">Evaluate Now</button>
+                <button class="btn btn-sm" style="width: 100%; margin-top: 8px;" data-guidance="Run an immediate evaluation pass on the test dataset to verify current performance.">Evaluate Now</button>
             </div>
 
             <!-- OBSERVABILITY PANEL -->
@@ -483,20 +472,8 @@
             serverPort = port;
             log(`Connecting to Forge Server on port ${port}...`);
 
-            // Initialize Theme
-            if (localStorage.getItem('forge-theme') === 'light') {
-                document.body.classList.add('light-theme');
-            }
-
             loadSessions();
         };
-
-        function toggleTheme() {
-            document.body.classList.toggle('light-theme');
-            const isLight = document.body.classList.contains('light-theme');
-            localStorage.setItem('forge-theme', isLight ? 'light' : 'dark');
-            log(`Theme switched to ${isLight ? 'light' : 'dark'}.`);
-        }
 
         function getBaseUrl() {
             if (window.location.protocol === 'file:') {

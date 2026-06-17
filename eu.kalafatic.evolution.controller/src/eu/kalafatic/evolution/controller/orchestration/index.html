@@ -5,22 +5,13 @@
     <title>Evolution AI</title>
     <style>
         :root {
-            --bg-canvas: #f1f5f9;
-            --sidebar-bg: #1e293b;
-            --sidebar-text: #f8fafc;
-            --accent: #3b82f6;
-            --chat-bg: #ffffff;
-            --text-main: #334155;
-            --border: #e2e8f0;
-        }
-
-        body.light-theme {
             --bg-canvas: #ffffff;
             --sidebar-bg: #f3f3f3;
             --sidebar-text: #333333;
             --chat-bg: #ffffff;
             --text-main: #333333;
             --border: #cccccc;
+            --accent: #3b82f6;
         }
 
         body {
@@ -95,7 +86,6 @@
     <div id="sidebar">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
             <h1 style="margin: 0;">🧬 Evolution</h1>
-            <button onclick="toggleTheme()" style="background: none; border: 1px solid rgba(255,255,255,0.2); color: inherit; cursor: pointer; border-radius: 4px; padding: 2px 6px;" data-guidance="Toggle between Dark and Light UI themes.">🌓</button>
         </div>
         <div class="nav-item active"><span>💬</span> Chat</div>
         <div class="nav-item"><span>📂</span> Workspace</div>
@@ -151,18 +141,6 @@
 
     <script src="/creatic.js"></script>
     <script>
-        // Theme Toggle
-        function toggleTheme() {
-            document.body.classList.toggle('light-theme');
-            const isLight = document.body.classList.contains('light-theme');
-            localStorage.setItem('forge-theme', isLight ? 'light' : 'dark');
-        }
-
-        // Initialize Theme
-        if (localStorage.getItem('forge-theme') === 'light') {
-            document.body.classList.add('light-theme');
-        }
-
         const chatArea = document.getElementById('chat-area');
         const userInput = document.getElementById('user-input');
         let currentTaskId = null;
