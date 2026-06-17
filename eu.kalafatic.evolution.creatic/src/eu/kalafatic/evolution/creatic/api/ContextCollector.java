@@ -8,6 +8,7 @@ import eu.kalafatic.evolution.creatic.model.ContextGraph;
 import eu.kalafatic.evolution.creatic.adapter.ForgeModelCreaticAdapter;
 import eu.kalafatic.evolution.creatic.adapter.AIChatCreaticAdapter;
 import eu.kalafatic.evolution.creatic.adapter.ArchitectureCreaticAdapter;
+import eu.kalafatic.evolution.creatic.adapter.DarwinCreaticAdapter;
 
 public class ContextCollector {
 
@@ -21,6 +22,8 @@ public class ContextCollector {
                 new AIChatCreaticAdapter().adapt(graph);
             } else if (pageId.contains("architecture")) {
                 new ArchitectureCreaticAdapter().adapt(graph);
+            } else if (pageId.contains("darwin")) {
+                new DarwinCreaticAdapter().adapt(graph);
             }
         } catch (Exception e) {
             // Degrade silently

@@ -32,6 +32,18 @@ public class ForgeModelCreaticAdapter {
                         for (Map.Entry<String, Object> entry : state.entrySet()) {
                             graph.put(entry.getKey(), entry.getValue());
                         }
+
+                        // Ensure structured workflow fields are present
+                        String[] structuredFields = {
+                            "architecture.status", "dataset.status", "training.status",
+                            "evaluation.status", "snapshot.status", "export.status",
+                            "deployment.status", "last.action.status", "last.error", "current.goal"
+                        };
+                        for (String field : structuredFields) {
+                            if (!graph.getAll().containsKey(field)) {
+                                graph.put(field, state.getOrDefault(field, "UNKNOWN"));
+                            }
+                        }
                     }
                 }
             }

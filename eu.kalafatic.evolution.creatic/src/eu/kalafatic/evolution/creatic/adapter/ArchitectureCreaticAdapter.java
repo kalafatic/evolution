@@ -30,6 +30,18 @@ public class ArchitectureCreaticAdapter {
                         for (java.util.Map.Entry<String, Object> entry : state.entrySet()) {
                             graph.put(entry.getKey(), entry.getValue());
                         }
+
+                        // Propagate structured workflow context to Architecture
+                        String[] structuredFields = {
+                            "architecture.status", "dataset.status", "training.status",
+                            "evaluation.status", "snapshot.status", "export.status",
+                            "deployment.status", "last.action.status", "last.error", "current.goal"
+                        };
+                        for (String field : structuredFields) {
+                            if (!graph.getAll().containsKey(field)) {
+                                graph.put(field, state.getOrDefault(field, "UNKNOWN"));
+                            }
+                        }
                     }
                 }
             }

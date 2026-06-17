@@ -7,6 +7,7 @@ public interface TrainingController {
     void startTraining(String sessionId);
     void pauseTraining(String sessionId);
     void stopTraining(String sessionId);
+    void configureTraining(String sessionId, String configJson);
     TrainingStatus getTrainingStatus(String sessionId);
     Map<String, Object> getTrainingMetrics(String sessionId);
     List<String> getRecentEvents(String sessionId);

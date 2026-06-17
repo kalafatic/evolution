@@ -2,11 +2,11 @@ package eu.kalafatic.evolution.creatic.adapter;
 
 import eu.kalafatic.evolution.creatic.model.ContextGraph;
 import java.lang.reflect.Method;
+import java.util.Map;
 
-public class AIChatCreaticAdapter {
+public class DarwinCreaticAdapter {
     public void adapt(ContextGraph graph) {
         try {
-            // Event-driven context
             Class<?> sessionManagerClass = Class.forName("eu.kalafatic.evolution.controller.orchestration.SessionManager");
             Method getSmInstance = sessionManagerClass.getMethod("getInstance");
             Object sm = getSmInstance.invoke(null);
@@ -27,12 +27,12 @@ public class AIChatCreaticAdapter {
 
                     if (collector != null) {
                         Method getState = collector.getClass().getMethod("getWorkflowState");
-                        java.util.Map<String, Object> state = (java.util.Map<String, Object>) getState.invoke(collector);
-                        for (java.util.Map.Entry<String, Object> entry : state.entrySet()) {
+                        Map<String, Object> state = (Map<String, Object>) getState.invoke(collector);
+                        for (Map.Entry<String, Object> entry : state.entrySet()) {
                             graph.put(entry.getKey(), entry.getValue());
                         }
 
-                        // Propagate structured workflow context to Chat
+                        // Darwin specific structured fields
                         String[] structuredFields = {
                             "architecture.status", "dataset.status", "training.status",
                             "evaluation.status", "snapshot.status", "export.status",
@@ -46,24 +46,8 @@ public class AIChatCreaticAdapter {
                     }
                 }
             }
-
-            // Legacy/Direct discovery fallback
-            if (graph.get("darwin.active") == null) {
-                Class<?> serviceClass = Class.forName("eu.kalafatic.evolution.controller.orchestration.OrchestratorServiceImpl");
-                Method getInstance = serviceClass.getMethod("getInstance");
-                Object service = getInstance.invoke(null);
-
-                Method getOrchestrator = serviceClass.getMethod("getOrchestrator");
-                Object orchestrator = getOrchestrator.invoke(service);
-
-                if (orchestrator != null) {
-                    Method isDarwinMode = orchestrator.getClass().getMethod("isDarwinMode");
-                    graph.put("darwin.active", isDarwinMode.invoke(orchestrator));
-                }
-            }
-
         } catch (Exception e) {
-            if (graph.get("darwin.active") == null) graph.put("darwin.active", false);
+            // Silently fail
         }
     }
 }

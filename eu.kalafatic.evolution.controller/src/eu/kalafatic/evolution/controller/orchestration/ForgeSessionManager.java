@@ -216,7 +216,7 @@ public class ForgeSessionManager {
         snapshot.setFullSerializedState(session.getModelState().getModelGraph());
 
         session.getSnapshots().add(snapshot);
-        publishEvent(session, RuntimeEventType.VIEW_UPDATED, "SNAPSHOT_CREATED");
+        publishEvent(session, RuntimeEventType.FORGE_SNAPSHOT_CREATED, "SNAPSHOT_CREATED");
         return snapshot;
     }
 
