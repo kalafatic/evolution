@@ -45,11 +45,27 @@ public class ForgePage extends AEvoPage {
     }
 
     private void initBrowser() {
-        String html = eu.kalafatic.evolution.controller.tools.FileTool.readResource("/eu/kalafatic/evolution/controller/orchestration/forge.html");
-        if (html != null) {
-            browser.setText(html);
-        } else {
-            browser.setText("<html><body><h1>Forge UI Template Not Found</h1></body></html>");
+        try {
+            org.osgi.framework.Bundle bundle = org.eclipse.core.runtime.Platform.getBundle("eu.kalafatic.evolution.controller");
+            if (bundle != null) {
+                java.net.URL entry = bundle.getEntry("eu/kalafatic/evolution/controller/orchestration/forge.html");
+                if (entry == null) {
+                    // Fallback for development where it might be in src
+                    entry = bundle.getEntry("src/eu/kalafatic/evolution/controller/orchestration/forge.html");
+                }
+                
+                if (entry != null) {
+                    java.net.URL forgeUrl = org.eclipse.core.runtime.FileLocator.toFileURL(entry);
+                    browser.setUrl(forgeUrl.toString());
+                } else {
+                     browser.setText("<html><body><h1>forge.html not found in bundle</h1></body></html>");
+                }
+            } else {
+                 browser.setText("<html><body><h1>Controller bundle not found</h1></body></html>");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            browser.setText("<html><body><h1>Error loading forge.html</h1></body></html>");
         }
     }
 

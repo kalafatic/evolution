@@ -57,6 +57,7 @@ public class EvolutionServer extends NanoHTTPD {
     private final Map<String, ServerSession> activeSessions = new ConcurrentHashMap<>();
     private final AuthService authService;
     private final AuthController authController;
+    private final ArchitectureController architectureController;
 
     private SessionController sessionController;
     private ModelController modelController;
@@ -71,6 +72,7 @@ public class EvolutionServer extends NanoHTTPD {
         SessionRepository sessionRepository = new SessionRepository(dbManager);
         this.authService = new AuthService(userRepository, sessionRepository);
         this.authController = new AuthController(authService);
+        this.architectureController = new ArchitectureController();
     }
 
     public void setForgeControllers(SessionController sc, ModelController mc, DatasetController dc, TrainingController tc, SnapshotController snc) {
@@ -106,10 +108,18 @@ public class EvolutionServer extends NanoHTTPD {
 
         // 3. Environment-Aware Authorization Check
         if (!isAuthorized(session)) {
-            // If it's a browser requesting an HTML page, we might want to redirect to login.html
-            // but the auth-integration.js will handle that on the client side.
+            // If it's a GET request for an HTML page or experimental route, redirect to login
+            if (Method.GET.equals(method) && (
+                "/".equals(uri) || "/index.html".equals(uri) || "/dashboard.html".equals(uri) ||
+                uri.startsWith("/experimental/")
+            )) {
+                Response response = newFixedLengthResponse(Response.Status.REDIRECT, NanoHTTPD.MIME_HTML, "");
+                response.addHeader("Location", "/login.html");
+                return response;
+            }
+
             // For API calls, return 401.
-            if (uri.startsWith("/server/") || uri.startsWith("/task") || uri.startsWith("/forge/") || uri.startsWith("/experimental/")) {
+            if (uri.startsWith("/server/") || uri.startsWith("/task") || uri.startsWith("/forge/") || uri.startsWith("/api/")) {
                 return newFixedLengthResponse(Response.Status.UNAUTHORIZED, "application/json",
                     new JSONObject().put("error", "Unauthorized").toString());
             }
@@ -124,6 +134,8 @@ public class EvolutionServer extends NanoHTTPD {
                 return handleGetChat();
             } else if (Method.GET.equals(method) && "/experimental/forge".equals(uri)) {
                 return handleGetForge();
+            } else if (Method.GET.equals(method) && "/experimental/architecture".equals(uri)) {
+                return handleGetArchitecture(session);
             } else if (Method.GET.equals(method) && "/server/status".equals(uri)) {
                 return handleGetServerStatus();
             } else if (Method.GET.equals(method) && "/server/system/state".equals(uri)) {
@@ -466,6 +478,20 @@ public class EvolutionServer extends NanoHTTPD {
         }
     }
 
+    private Response handleGetArchitecture(IHTTPSession session) {
+        String path = session.getParms().get("path");
+        String mode = session.getParms().get("mode");
+
+        Orchestrator orch = OrchestratorServiceImpl.getInstance().getOrchestrator();
+        String html = architectureController.renderArchitecture(orch, path, mode);
+
+        if (html == null || "Error: Template not found".equals(html)) {
+            return newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "Architecture template not found.");
+        }
+
+        return newFixedLengthResponse(Response.Status.OK, "text/html", html);
+    }
+
     private Response handleGetForge() {
         try (InputStream is = getClass().getResourceAsStream("forge.html")) {
             if (is == null) {
@@ -521,7 +547,8 @@ public class EvolutionServer extends NanoHTTPD {
     private boolean isAuthorized(IHTTPSession session) {
         // SWT Browser bypass
         String runtimeHeader = session.getHeaders().get("x-evo-runtime");
-        if ("SWT".equalsIgnoreCase(runtimeHeader)) {
+        String runtimeParam = session.getParms().get("runtime");
+        if ("SWT".equalsIgnoreCase(runtimeHeader) || "SWT".equalsIgnoreCase(runtimeParam)) {
             return true;
         }
 

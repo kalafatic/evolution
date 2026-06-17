@@ -203,14 +203,17 @@ public class ServerPage extends AEvoPage {
 
     private void updateBanner() {
         if (modeIndicatorLabel == null || modeIndicatorLabel.isDisposed()) return;
-        boolean running = ServerManager.getInstance().isRunning();
-        int port = ServerManager.getInstance().getPort();
-        if (running) {
-            setTextSafe(modeIndicatorLabel, "SERVER RUNNING ON PORT " + port);
-            setBackgroundSafe(modeIndicatorLabel, lightGreen);
-        } else {
-            setTextSafe(modeIndicatorLabel, "SERVER STOPPED");
+        java.util.Map<Integer, Boolean> statuses = ServerManager.getInstance().getServerStatuses();
+        
+        if (statuses.isEmpty()) {
+            setTextSafe(modeIndicatorLabel, "NO SERVERS RUNNING");
             setBackgroundSafe(modeIndicatorLabel, colorWaiting);
+        } else {
+            String text = statuses.entrySet().stream()
+                .map(e -> "PORT " + e.getKey() + ": " + (e.getValue() ? "RUNNING" : "STOPPED"))
+                .collect(java.util.stream.Collectors.joining(" | "));
+            setTextSafe(modeIndicatorLabel, text);
+            setBackgroundSafe(modeIndicatorLabel, lightGreen);
         }
     }
 

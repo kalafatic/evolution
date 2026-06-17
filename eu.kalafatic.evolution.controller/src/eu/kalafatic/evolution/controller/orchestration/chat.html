@@ -197,7 +197,7 @@
         @keyframes blink { 0%, 80%, 100% { opacity: 0; } 40% { opacity: 1; } }
 
     </style>
-    <script src="/auth-integration.js"></script>
+    <script src="auth-integration.js"></script>
 </head>
 <body>
     <div id="layout">
@@ -205,15 +205,15 @@
         <div id="sidebar">
             <div class="sidebar-header">
                 🧬 EVO MIRROR
-                <button class="btn btn-sm btn-primary" onclick="toggleTheme()" data-guidance="Toggle between Dark and Light UI themes.">🌓</button>
+                <button class="btn btn-sm btn-primary" onclick="toggleTheme()">🌓</button>
             </div>
 
             <div id="sidebar-scroll">
                 <div class="sidebar-section">
                     <h2>Chat Management</h2>
                     <div class="control-group">
-                        <button class="btn btn-primary" onclick="newSession()" data-guidance="Start a fresh chat session with a new context.">New Session</button>
-                        <button class="btn" onclick="cleanChat()" style="margin-top:5px;" data-guidance="Clear the current message log without resetting the session context.">Clean Chat</button>
+                        <button class="btn btn-primary" onclick="newSession()">New Session</button>
+                        <button class="btn" onclick="cleanChat()" style="margin-top:5px;">Clean Chat</button>
                     </div>
                 </div>
 
@@ -222,7 +222,7 @@
                     <div class="control-group">
                         <div class="control-item">
                             <label>Mode:</label>
-                            <select id="mode-select" onchange="updateSettings()" data-guidance="Select execution strategy. Local uses Ollama. Remote uses cloud APIs. Mediated uses specialized orchestration logic.">
+                            <select id="mode-select" onchange="updateSettings()">
                                 <option value="LOCAL">Local</option>
                                 <option value="HYBRID">Hybrid</option>
                                 <option value="REMOTE">Remote</option>
@@ -232,13 +232,13 @@
                         </div>
                         <div class="control-item">
                             <label>Local:</label>
-                            <select id="local-model-select" onchange="updateSettings()" data-guidance="Choose which local model to use for the next task.">
+                            <select id="local-model-select" onchange="updateSettings()">
                                 <option value="">Loading...</option>
                             </select>
                         </div>
                         <div class="control-item">
                             <label>Remote:</label>
-                            <select id="remote-model-select" onchange="updateSettings()" data-guidance="Choose which remote LLM provider to use for high-complexity tasks.">
+                            <select id="remote-model-select" onchange="updateSettings()">
                                 <option value="GPT-4o">GPT-4o</option>
                                 <option value="Claude-3.5-Sonnet">Claude-3.5-Sonnet</option>
                                 <option value="Llama-3-70b">Llama-3-70b</option>
@@ -310,8 +310,8 @@
             <div id="header">
                 <div style="font-weight: 600; font-size: 14px;">Mirroring: <span id="current-task-name" style="color: var(--accent);">Idle</span></div>
                 <div style="display: flex; gap: 10px;">
-                    <div id="ollama-status" class="status-badge status-offline" data-guidance="Connection status to the local Ollama LLM server. Green means active.">OLLAMA OFFLINE</div>
-                    <div class="status-badge status-online" data-guidance="Connection status to the primary Evolution backend server.">SERVER ONLINE</div>
+                    <div id="ollama-status" class="status-badge status-offline">OLLAMA OFFLINE</div>
+                    <div class="status-badge status-online">SERVER ONLINE</div>
                 </div>
             </div>
 
@@ -325,8 +325,8 @@
             </div>
 
             <div id="input-area">
-                <input type="text" id="user-input" placeholder="Type a message or response..." data-guidance="Describe the task or architectural change you want Evo to perform." onkeypress="if(event.key==='Enter') sendMessage()">
-                <button onclick="sendMessage()" data-guidance="Submit your prompt to the current AI session.">Send</button>
+                <input type="text" id="user-input" placeholder="Type a message or response..." onkeypress="if(event.key==='Enter') sendMessage()">
+                <button onclick="sendMessage()">Send</button>
             </div>
         </div>
 
@@ -354,8 +354,8 @@
         <div id="popup-content"></div>
     </div>
 
-    <link rel="stylesheet" href="/creatic.css">
-    <script src="/creatic.js"></script>
+    <link rel="stylesheet" href="creatic.css">
+    <script src="creatic.js"></script>
     <script>
         const chatArea = document.getElementById('chat-area');
         const userInput = document.getElementById('user-input');
@@ -371,9 +371,16 @@
             else console.log(msg);
         }
 
+        function getBaseUrl() {
+            if (window.location.protocol === 'file:') {
+                return `http://localhost:48080`;
+            }
+            return '';
+        }
+
         async function fetchSettings() {
             try {
-                const response = await fetch('/server/orchestrator/settings');
+                const response = await fetch(getBaseUrl() + '/server/orchestrator/settings?runtime=SWT');
                 const data = await response.json();
 
                 const updateElement = (id, property, value) => {
@@ -414,7 +421,7 @@
             };
 
             try {
-                await fetch('/server/orchestrator/settings', {
+                await fetch(getBaseUrl() + '/server/orchestrator/settings?runtime=SWT', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(settings)
@@ -490,7 +497,7 @@
             if (isPolling) return;
             isPolling = true;
             try {
-                const response = await fetch('/server/conversation/' + currentSessionId);
+                const response = await fetch(getBaseUrl() + '/server/conversation/' + currentSessionId + '?runtime=SWT');
                 const messages = await response.json();
                 messages.forEach(appendMessage);
             } catch (err) {
@@ -511,7 +518,7 @@
                 const payload = { prompt: text, sessionId: currentSessionId };
                 if (branch) payload.branch = branch;
 
-                await fetch('/task', {
+                await fetch(getBaseUrl() + '/task?runtime=SWT', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
@@ -524,14 +531,14 @@
 
         async function provideApproval(turnId, approved) {
             try {
-                let response = await fetch('/task/' + turnId + '/approve', {
+                let response = await fetch(getBaseUrl() + '/task/' + turnId + '/approve?runtime=SWT', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ approved })
                 });
 
                 if (response.status === 404) {
-                    await fetch('/conversation/' + currentSessionId + '/approve', {
+                    await fetch(getBaseUrl() + '/conversation/' + currentSessionId + '/approve?runtime=SWT', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ approved })
@@ -544,7 +551,7 @@
 
         async function pollStatus() {
             try {
-                const response = await fetch('/server/status');
+                const response = await fetch(getBaseUrl() + '/server/status?runtime=SWT');
                 const data = await response.json();
 
                 const ollamaBadge = document.getElementById('ollama-status');
@@ -571,7 +578,7 @@
 
         async function refreshBranches() {
             try {
-                const response = await fetch('/git/branches');
+                const response = await fetch(getBaseUrl() + '/git/branches?runtime=SWT');
                 const branches = await response.json();
                 const select = document.getElementById('branch-select');
                 select.innerHTML = '<option value="">Auto-create</option>';
@@ -709,7 +716,7 @@
 
         async function pollSystemState() {
             try {
-                const response = await fetch('/server/system/state');
+                const response = await fetch(getBaseUrl() + '/server/system/state?runtime=SWT');
                 const state = await response.json();
                 renderSystemState(state);
             } catch (err) {}

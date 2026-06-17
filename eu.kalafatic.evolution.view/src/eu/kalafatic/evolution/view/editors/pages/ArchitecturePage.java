@@ -828,35 +828,40 @@ public class ArchitecturePage extends AEvoPage {
             if (browser == null || browser.isDisposed() || showingSnapshot) return;
 
             DesignModel model = extractModel();
-            boolean targetChanged = currentTargetPath != null && !currentTargetPath.equals(lastTargetPath);
-
-            // Re-render full template only if target path changed or it's the first load
-            if (lastJson.isEmpty() || targetChanged) {
-                eu.kalafatic.evolution.controller.log.Log.log("[ARCH_PAGE] Full browser reload triggered for: " + currentTargetPath);
-                isJsReady = false; // Reset readiness as we are loading a new page
-                browser.setText(renderer.render(model, currentMode.name(), currentTargetPath, defaultTargetPath, targetHistory));
-                lastJson = renderer.serializeModel(model);
-                lastTargetPath = currentTargetPath;
-                return;
-            }
+            String json = renderer.serializeModel(model);
 
             if (!isJsReady) {
-                eu.kalafatic.evolution.controller.log.Log.log("[ARCH_PAGE] Skipping update - JS not ready yet.");
-                return;
+                 // Push initial context variables if possible or just wait
+                 browser.execute("window.INITIAL_MODEL = " + json + "; " +
+                                 "window.CURRENT_VIEW_MODE = '" + currentMode.name() + "'; " +
+                                 "window.TARGET_PATH = '" + (currentTargetPath != null ? currentTargetPath.replace("\\", "\\\\") : "") + "'; " +
+                                 "window.DEFAULT_PATH = '" + (defaultTargetPath != null ? defaultTargetPath.replace("\\", "\\\\") : "") + "'; " +
+                                 "window.TARGET_HISTORY = " + new org.json.JSONArray(targetHistory).toString() + ";");
+                 return;
             }
 
-            String json = renderer.serializeModel(model);
-            if (json.equals(lastJson)) return;
-
-            eu.kalafatic.evolution.controller.log.Log.log("[ARCH_PAGE] Updating graph with new JSON (" + (model != null ? model.getComponents().size() : 0) + " components)");
-            lastJson = json;
-            browser.execute("if(window.updateGraph) { window.updateGraph(" + json + "); } else { console.log('window.updateGraph not found'); }");
+            browser.execute("if(window.updateGraph) { window.updateGraph(" + json + "); }");
         });
     }
 
     private void initBrowser() {
         if (browser == null || browser.isDisposed()) return;
-        browser.setText(renderer.render(null, currentMode.name(), currentTargetPath, defaultTargetPath, targetHistory));
+        try {
+            org.osgi.framework.Bundle bundle = org.eclipse.core.runtime.Platform.getBundle("eu.kalafatic.evolution.controller");
+            if (bundle != null) {
+                java.net.URL entry = bundle.getEntry("eu/kalafatic/evolution/controller/orchestration/template.html");
+                if (entry == null) {
+                    entry = bundle.getEntry("src/eu/kalafatic/evolution/controller/orchestration/template.html");
+                }
+                
+                if (entry != null) {
+                    java.net.URL archUrl = org.eclipse.core.runtime.FileLocator.toFileURL(entry);
+                    browser.setUrl(archUrl.toString());
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public enum ViewMode {

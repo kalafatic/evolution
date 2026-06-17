@@ -27,7 +27,7 @@ public class DesignRenderer {
         if (model != null) {
             eu.kalafatic.evolution.controller.log.Log.log("[DESIGN_RENDERER] Rendering model: " + model.getName() + " with " + model.getComponents().size() + " components. Mode: " + viewMode);
         }
-        String template = eu.kalafatic.evolution.controller.tools.FileTool.readResource("/template.html");
+        String template = eu.kalafatic.evolution.controller.tools.FileTool.readResource("/eu/kalafatic/evolution/controller/orchestration/template.html");
         if (template == null) {
             eu.kalafatic.evolution.controller.log.Log.log("[DESIGN_RENDERER] ERROR: template.html not found in bundle resources!");
             return "Error: Template not found";

@@ -274,7 +274,7 @@
         .diff-removed { color: var(--error); }
 
     </style>
-    <script src="/auth-integration.js"></script>
+    <script src="auth-integration.js"></script>
 </head>
 <body>
     <div id="layout">
@@ -293,7 +293,7 @@
             <div class="panel" style="border-top: 1px solid var(--border); border-bottom: none;">
                 <h3>Genome Milestones</h3>
                 <div id="snapshot-list" class="session-info">No snapshots created</div>
-                <button class="btn btn-sm" style="width: 100%; margin-top: 10px;" onclick="createSessionSnapshot()" data-guidance="Create a point-in-time snapshot of the current model state and metrics.">SNAPSHOT</button>
+                <button class="btn btn-sm" style="width: 100%; margin-top: 10px;" onclick="createSessionSnapshot()">SNAPSHOT</button>
             </div>
         </div>
 
@@ -306,11 +306,11 @@
                 </div>
 
                 <div style="margin-left: auto; display: flex; gap: 10px;">
-                    <button class="btn btn-sm" onclick="toggleTheme()" title="Toggle Dark/Light Theme" data-guidance="Switch between Dark and Light UI themes.">🌓</button>
-                    <button class="btn btn-sm" onclick="toggleJsonEditor()" data-guidance="Open raw JSON editor for manual architecture configuration.">JSON Editor</button>
-                    <button class="btn btn-sm" onclick="saveAllSessions()" title="Persist all sessions to disk" data-guidance="Persist all current sessions and their states to the server disk.">💾 Save All</button>
-                    <button class="btn btn-sm" onclick="cloneActiveSession()" data-guidance="Create an exact copy of the active session for experimentation.">Clone</button>
-                    <button class="btn btn-sm" onclick="saveActiveModel()" data-guidance="Save the current architecture layout to the active session.">Save Architecture</button>
+                    <button class="btn btn-sm" onclick="toggleTheme()" title="Toggle Dark/Light Theme">🌓</button>
+                    <button class="btn btn-sm" onclick="toggleJsonEditor()">JSON Editor</button>
+                    <button class="btn btn-sm" onclick="saveAllSessions()" title="Persist all sessions to disk">💾 Save All</button>
+                    <button class="btn btn-sm" onclick="cloneActiveSession()">Clone</button>
+                    <button class="btn btn-sm" onclick="saveActiveModel()">Save Architecture</button>
                     <button class="btn btn-sm btn-danger" onclick="deleteActiveSession()">Delete</button>
                 </div>
             </div>
@@ -326,11 +326,11 @@
 
                 <div id="node-palette">
                     <div style="font-size: 0.7em; color: var(--text-dim); margin-bottom: 5px;">DRAG NODES</div>
-                    <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'NEURON')" data-guidance="Drag to workspace. Simple computational unit. Connect to layers.">Neuron</button>
-                    <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'LAYER')" data-guidance="Drag to workspace. Add dense or functional layers. Configure parameters.">Layer</button>
-                    <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'ATTENTION')" data-guidance="Drag to workspace. Add self-attention mechanisms. Essential for transformers.">Attention</button>
-                    <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'TRANSFORMER')" data-guidance="Drag to workspace. Add complex transformer blocks. Run. Generate. Save. Export.">Transformer</button>
-                    <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'CUSTOM')" data-guidance="Drag to workspace. Implement custom logic. Define specialized behaviors.">Custom</button>
+                    <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'NEURON')">Neuron</button>
+                    <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'LAYER')">Layer</button>
+                    <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'ATTENTION')">Attention</button>
+                    <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'TRANSFORMER')">Transformer</button>
+                    <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'CUSTOM')">Custom</button>
                 </div>
 
                 <textarea id="json-fallback"></textarea>
@@ -427,10 +427,10 @@
             <div class="panel">
                 <h3>Training & Execution</h3>
                 <div style="display: flex; gap: 5px;">
-                    <button id="train-btn" class="btn btn-primary" style="flex: 1;" onclick="startTraining()" data-guidance="Begin the training process for the current model architecture and dataset.">START</button>
-                    <button id="stop-btn" class="btn" style="flex: 1;" onclick="stopTraining()" disabled data-guidance="Halt the training process immediately.">STOP</button>
+                    <button id="train-btn" class="btn btn-primary" style="flex: 1;" onclick="startTraining()">START</button>
+                    <button id="stop-btn" class="btn" style="flex: 1;" onclick="stopTraining()" disabled>STOP</button>
                 </div>
-                <button class="btn btn-sm" style="width: 100%; margin-top: 8px;" data-guidance="Run immediate evaluation on the test subset of the active dataset.">Evaluate Now</button>
+                <button class="btn btn-sm" style="width: 100%; margin-top: 8px;">Evaluate Now</button>
             </div>
 
             <!-- OBSERVABILITY PANEL -->
@@ -451,8 +451,8 @@
         </div>
     </div>
 
-    <link rel="stylesheet" href="/creatic.css">
-    <script src="/creatic.js"></script>
+    <link rel="stylesheet" href="creatic.css">
+    <script src="creatic.js"></script>
     <script>
         let serverPort = 48080;
         let activeSessionId = null;
@@ -498,9 +498,16 @@
             log(`Theme switched to ${isLight ? 'light' : 'dark'}.`);
         }
 
+        function getBaseUrl() {
+            if (window.location.protocol === 'file:') {
+                return `http://localhost:48080`;
+            }
+            return '';
+        }
+
         async function loadSessions() {
             try {
-                const res = await fetch(`http://localhost:${serverPort}/forge/sessions`);
+                const res = await fetch(getBaseUrl() + `/forge/sessions?runtime=SWT`);
                 sessions = await res.json();
                 renderSessionList();
                 if (sessions.length > 0 && !activeSessionId) {
@@ -655,7 +662,7 @@
 
         async function fetchModel(id) {
             try {
-                const res = await fetch(`http://localhost:${serverPort}/forge/session/${id}/model`);
+                const res = await fetch(getBaseUrl() + `/forge/session/${id}/model?runtime=SWT`);
                 model = await res.json();
                 if (!model.nodes) model = { nodes: [], links: [] };
 
@@ -747,7 +754,7 @@
             const name = prompt("Enter Session Name:");
             if (!name) return;
             try {
-                const res = await fetch(`http://localhost:${serverPort}/forge/session`, {
+                const res = await fetch(getBaseUrl() + `/forge/session?runtime=SWT`, {
                     method: 'POST',
                     body: JSON.stringify({ name: name, modelType: 'MLP' })
                 });
@@ -765,7 +772,7 @@
             if (!name) return;
 
             try {
-                const res = await fetch(`http://localhost:${serverPort}/forge/session`, {
+                const res = await fetch(`/forge/session?runtime=SWT`, {
                     method: 'POST',
                     body: JSON.stringify({ name: name, modelType: type.toUpperCase(), isDemo: true })
                 });
@@ -778,7 +785,7 @@
 
         async function saveAllSessions() {
             try {
-                const res = await fetch(`http://localhost:${serverPort}/forge/save-all`, { method: 'POST' });
+                const res = await fetch(getBaseUrl() + `/forge/save-all?runtime=SWT`, { method: 'POST' });
                 const data = await res.json();
                 if (data.status === 'ok') {
                     log("All Forge sessions persisted to disk.");
@@ -792,7 +799,7 @@
         async function saveActiveModel() {
             if (!activeSessionId) return;
             try {
-                await fetch(`http://localhost:${serverPort}/forge/session/${activeSessionId}/model`, {
+                await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/model?runtime=SWT`, {
                     method: 'POST',
                     body: JSON.stringify(model)
                 });
@@ -866,7 +873,7 @@
             if (!activeSessionId) return;
             if (!confirm("Delete this session?")) return;
             try {
-                await fetch(`http://localhost:${serverPort}/forge/session/${activeSessionId}`, { method: 'DELETE' });
+                await fetch(getBaseUrl() + `/forge/session/${activeSessionId}?runtime=SWT`, { method: 'DELETE' });
                 log("Session deleted.");
                 activeSessionId = null;
                 await loadSessions();
@@ -951,23 +958,23 @@
 
             try {
                 if (currentViz === 'ARCHITECTURE') {
-                    const res = await fetch(`http://localhost:${serverPort}/forge/session/${activeSessionId}/structure`);
+                    const res = await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/structure?runtime=SWT`);
                     const data = await res.json();
                     renderArchitectureViz(data);
                 } else if (currentViz === 'DATASET') {
-                    const statsRes = await fetch(`http://localhost:${serverPort}/forge/session/${activeSessionId}/dataset/stats`);
+                    const statsRes = await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/dataset/stats?runtime=SWT`);
                     const stats = await statsRes.json();
-                    const sampleRes = await fetch(`http://localhost:${serverPort}/forge/session/${activeSessionId}/dataset/sample/${currentSampleIndex}`);
+                    const sampleRes = await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/dataset/sample/${currentSampleIndex}?runtime=SWT`);
                     const sample = await sampleRes.json();
                     renderDatasetViz(stats, sample);
                 } else if (currentViz === 'TRAINING') {
-                    const metricsRes = await fetch(`http://localhost:${serverPort}/forge/session/${activeSessionId}/training/metrics`);
+                    const metricsRes = await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/training/metrics?runtime=SWT`);
                     const metrics = await metricsRes.json();
-                    const eventsRes = await fetch(`http://localhost:${serverPort}/forge/session/${activeSessionId}/training/events`);
+                    const eventsRes = await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/training/events?runtime=SWT`);
                     const events = await eventsRes.json();
                     renderTrainingViz(metrics, events);
                 } else if (currentViz === 'EVOLUTION') {
-                    const res = await fetch(`http://localhost:${serverPort}/forge/session/${activeSessionId}/snapshots`);
+                    const res = await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/snapshots?runtime=SWT`);
                     const snapshots = await res.json();
                     renderEvolutionViz(snapshots);
                 }
@@ -1132,7 +1139,7 @@
         async function persistUiState(key, value) {
             if (!activeSessionId) return;
             try {
-                await fetch(`http://localhost:${serverPort}/forge/session/${activeSessionId}/uistate/${key}`, {
+                await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/uistate/${key}?runtime=SWT`, {
                     method: 'POST',
                     body: JSON.stringify({ value: value })
                 });
@@ -1151,7 +1158,7 @@
         async function compareSnapshot(id) {
             log(`Comparing active session with snapshot: ${id}`);
             try {
-                const res = await fetch(`http://localhost:${serverPort}/forge/session/${activeSessionId}/snapshots/compare/active/${id}`);
+                const res = await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/snapshots/compare/active/${id}?runtime=SWT`);
                 const diff = await res.json();
 
                 document.getElementById('viz-details-content').innerHTML = `

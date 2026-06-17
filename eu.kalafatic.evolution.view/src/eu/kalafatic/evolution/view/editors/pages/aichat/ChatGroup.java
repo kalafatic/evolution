@@ -184,7 +184,7 @@ public class ChatGroup extends AEvoGroup {
                 // to handle relative paths (./js/...) and security origins correctly.
                 URL bundleRoot = FileLocator.toFileURL(bundle.getEntry("/"));
                 URL chatUrl = new URL(bundleRoot, "chat.html");
-                
+
                 // Using setUrl(String) instead of setText(String) to ensure the base URL
                 // is correctly set to the file system path of the extracted bundle.
                 browser.setUrl(chatUrl.toString());
