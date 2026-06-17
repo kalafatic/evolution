@@ -80,7 +80,13 @@ public enum RuntimeEventType {
     FORGE_SESSION_SWITCHED(EventCategory.UI),
     FORGE_MODEL_CHANGED(EventCategory.UI),
     FORGE_TRAINING_STARTED(EventCategory.EXECUTION),
-    FORGE_TRAINING_STOPPED(EventCategory.EXECUTION);
+    FORGE_TRAINING_STOPPED(EventCategory.EXECUTION),
+    FORGE_TRAINING_CONFIGURED(EventCategory.EXECUTION),
+    FORGE_TRAINING_FAILED(EventCategory.EXECUTION),
+    FORGE_DATASET_IMPORTED(EventCategory.EXECUTION),
+    FORGE_SNAPSHOT_CREATED(EventCategory.EXECUTION),
+    EVALUATION_COMPLETED(EventCategory.AGENT),
+    DEPLOYMENT_STARTED(EventCategory.EXECUTION);
 
     private final EventCategory category;
 

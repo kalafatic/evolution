@@ -3,6 +3,8 @@ package eu.kalafatic.evolution.controller.services;
 import org.json.JSONObject;
 import eu.kalafatic.evolution.controller.orchestration.AiService;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
 import eu.kalafatic.evolution.model.orchestration.AIProvider;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 
@@ -49,6 +51,12 @@ public class ModelEvaluationService {
 
             // Calculate overall rating (average)
             provider.setRating((analyzeRating + chatRating + progRating) / 3);
+
+            if (context.getSessionId() != null) {
+                context.getSessionContainer().getEventBus().publish(
+                    new RuntimeEvent(RuntimeEventType.EVALUATION_COMPLETED, context.getSessionId(), "ModelEvaluationService", provider.getName())
+                );
+            }
 
         } finally {
             orchestrator.setRemoteModel(originalRemoteModel);

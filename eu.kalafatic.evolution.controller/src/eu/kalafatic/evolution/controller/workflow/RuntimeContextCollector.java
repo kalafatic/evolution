@@ -25,6 +25,18 @@ public class RuntimeContextCollector implements RuntimeEventListener {
         workflowState.put("chat.empty", true);
         workflowState.put("system.busy", false);
         workflowState.put("graph.empty", true);
+
+        // Structured Workflow State
+        workflowState.put("architecture.status", "PENDING");
+        workflowState.put("dataset.status", "PENDING");
+        workflowState.put("training.status", "IDLE");
+        workflowState.put("evaluation.status", "PENDING");
+        workflowState.put("snapshot.status", "NONE");
+        workflowState.put("export.status", "PENDING");
+        workflowState.put("deployment.status", "PENDING");
+        workflowState.put("last.action.status", "SUCCESS");
+        workflowState.put("last.error", "");
+        workflowState.put("current.goal", "NONE");
     }
 
     @Override
@@ -40,23 +52,52 @@ public class RuntimeContextCollector implements RuntimeEventListener {
             case FORGE_SESSION_CREATED:
                 workflowState.put("model.exists", true);
                 workflowState.put("model.trained", false);
+                workflowState.put("architecture.status", "CREATED");
                 break;
             case FORGE_MODEL_CHANGED:
                 workflowState.put("model.exists", true);
                 workflowState.put("model.trained", false);
+                workflowState.put("architecture.status", "MODIFIED");
+                break;
+            case FORGE_TRAINING_CONFIGURED:
+                workflowState.put("training.status", "CONFIGURED");
                 break;
             case FORGE_TRAINING_STARTED:
                 workflowState.put("training.active", true);
+                workflowState.put("training.status", "RUNNING");
                 break;
             case FORGE_TRAINING_STOPPED:
                 workflowState.put("training.active", false);
                 workflowState.put("model.trained", true);
+                workflowState.put("training.status", "COMPLETED");
+                break;
+            case FORGE_TRAINING_FAILED:
+                workflowState.put("training.active", false);
+                workflowState.put("training.status", "FAILED");
+                workflowState.put("last.action.status", "FAILED");
+                workflowState.put("last.error", event.getPayload() != null ? event.getPayload().toString() : "Unknown training error");
+                break;
+            case FORGE_DATASET_IMPORTED:
+                workflowState.put("dataset.status", "IMPORTED");
+                break;
+            case FORGE_SNAPSHOT_CREATED:
+                workflowState.put("snapshot.status", "CREATED");
+                break;
+            case EVALUATION_COMPLETED:
+                workflowState.put("evaluation.status", "COMPLETED");
                 break;
             case EXPORT_READY:
                 workflowState.put("model.exported", true);
+                workflowState.put("export.status", "READY");
+                break;
+            case DEPLOYMENT_STARTED:
+                workflowState.put("deployment.status", "IN_PROGRESS");
                 break;
             case FLOW_STARTED:
                 workflowState.put("system.busy", true);
+                if (event.getPayload() != null) {
+                    workflowState.put("current.goal", event.getPayload().toString());
+                }
                 break;
             case FLOW_COMPLETED:
                 workflowState.put("system.busy", false);
@@ -69,10 +110,21 @@ public class RuntimeContextCollector implements RuntimeEventListener {
                     workflowState.put("darwin.active", true);
                 }
                 break;
+            case ITERATION_COMPLETED:
+                if (workflowState.containsKey("darwin.active") && (Boolean)workflowState.get("darwin.active")) {
+                    workflowState.put("last.action.status", "SUCCESS");
+                }
+                break;
             case VIEW_UPDATED:
                 if ("ARCH_DISCOVERED".equals(event.getPayload())) {
                     workflowState.put("graph.empty", false);
+                    workflowState.put("architecture.status", "DISCOVERED");
                 }
+                break;
+            case COMMAND_FAILED:
+            case TASK_FAILED:
+                workflowState.put("last.action.status", "FAILED");
+                workflowState.put("last.error", event.getPayload() != null ? event.getPayload().toString() : "Operation failed");
                 break;
             default:
                 break;

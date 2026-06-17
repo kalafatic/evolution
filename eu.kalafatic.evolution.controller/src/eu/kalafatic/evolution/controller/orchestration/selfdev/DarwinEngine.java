@@ -33,6 +33,8 @@ import eu.kalafatic.evolution.controller.orchestration.selfdev.adaptive.Diversit
 import eu.kalafatic.evolution.controller.orchestration.selfdev.adaptive.EvolutionaryPenaltyModel;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.adaptive.RejectionPatternAnalyzer;
 import eu.kalafatic.evolution.controller.trajectory.Trajectory;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
 import eu.kalafatic.evolution.controller.mediation.model.MediationCandidate;
 
 import eu.kalafatic.evolution.controller.orchestration.SessionManager;
@@ -428,6 +430,10 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         // Fitness Ranking
         DarwinFitnessRanker ranker = new DarwinFitnessRanker();
         ranker.rank(uniqueVariants, atomicAnalysis, currentIteration, pressure);
+
+        getSessionContainer().getEventBus().publish(
+            new RuntimeEvent(RuntimeEventType.ITERATION_COMPLETED, context.getSessionId(), "DarwinEngine", "Iteration " + currentIteration)
+        );
 
         JSONObject branchesJson = new JSONObject();
         branchesJson.put("iteration", currentIteration);

@@ -7,4 +7,5 @@ public interface DatasetController {
     List<DatasetInfo> getDatasets(String sessionId);
     Map<String, Object> getDatasetStatistics(String sessionId);
     Map<String, Object> getDatasetSample(String sessionId, int index);
+    String importDataset(String sessionId, String path);
 }

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.lang.reflect.Method;
 
 import eu.kalafatic.evolution.forge.controller.api.TrainingController;
 import eu.kalafatic.evolution.forge.controller.api.TrainingStatus;
@@ -18,17 +19,31 @@ public class TrainingControllerImpl implements TrainingController {
 
     @Override
     public void startTraining(String sessionId) {
-        if (trainingService != null) trainingService.startTraining(sessionId);
+        try {
+            if (trainingService != null) trainingService.startTraining(sessionId);
+            publishEvent(sessionId, "FORGE_TRAINING_STARTED", "Training started");
+        } catch (Exception e) {
+            publishEvent(sessionId, "FORGE_TRAINING_FAILED", e.getMessage());
+            throw e;
+        }
     }
 
     @Override
     public void pauseTraining(String sessionId) {
         if (trainingService != null) trainingService.pauseTraining(sessionId);
+        publishEvent(sessionId, "VIEW_UPDATED", "Training paused");
     }
 
     @Override
     public void stopTraining(String sessionId) {
         if (trainingService != null) trainingService.stopTraining(sessionId);
+        publishEvent(sessionId, "FORGE_TRAINING_STOPPED", "Training stopped");
+    }
+
+    @Override
+    public void configureTraining(String sessionId, String configJson) {
+        // Configuration logic would normally be in trainingService
+        publishEvent(sessionId, "FORGE_TRAINING_CONFIGURED", configJson);
     }
 
     @Override
@@ -58,5 +73,35 @@ public class TrainingControllerImpl implements TrainingController {
             return events;
         }
         return trainingService.getRecentEvents(sessionId);
+    }
+
+    private void publishEvent(String sessionId, String typeName, Object payload) {
+        try {
+            Class<?> sessionManagerClass = Class.forName("eu.kalafatic.evolution.controller.orchestration.SessionManager");
+            Method getInstance = sessionManagerClass.getMethod("getInstance");
+            Object sm = getInstance.invoke(null);
+
+            Method getSession = sm.getClass().getMethod("getSession", String.class);
+            Object session = getSession.invoke(sm, sessionId);
+
+            if (session != null) {
+                Method getEventBus = session.getClass().getMethod("getEventBus");
+                Object bus = getEventBus.invoke(session);
+
+                if (bus != null) {
+                    Class<?> eventTypeClass = Class.forName("eu.kalafatic.evolution.controller.workflow.RuntimeEventType");
+                    Object type = Enum.valueOf((Class<Enum>)eventTypeClass, typeName);
+
+                    Class<?> eventClass = Class.forName("eu.kalafatic.evolution.controller.workflow.RuntimeEvent");
+                    Object event = eventClass.getConstructor(eventTypeClass, String.class, String.class, Object.class)
+                                             .newInstance(type, sessionId, "TrainingController", payload);
+
+                    Method publish = bus.getClass().getMethod("publish", eventClass);
+                    publish.invoke(bus, event);
+                }
+            }
+        } catch (Exception e) {
+            // Decoupled: fail silently if controller bundle is not present
+        }
     }
 }

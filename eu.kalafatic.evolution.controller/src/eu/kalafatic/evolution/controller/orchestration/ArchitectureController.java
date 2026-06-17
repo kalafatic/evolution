@@ -12,6 +12,9 @@ import java.util.stream.Collectors;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEventBus;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
 import eu.kalafatic.evolution.controller.orchestration.design.ComponentRecord;
 import eu.kalafatic.evolution.controller.orchestration.design.DesignModel;
 import eu.kalafatic.evolution.controller.orchestration.design.DesignRenderer;
@@ -78,11 +81,26 @@ public class ArchitectureController {
 
         model.setName(root.getName() + " Architecture");
 
+        if (!model.getComponents().isEmpty()) {
+            publishDiscoveryEvent(orchestrator);
+        }
+
         if (model.getComponents().isEmpty()) {
             return createDefaultModel(orchestrator);
         }
 
         return filterModel(model, mode);
+    }
+
+    private void publishDiscoveryEvent(Orchestrator orchestrator) {
+        if (orchestrator == null) return;
+        SessionContainer session = SessionManager.getInstance().getSession(orchestrator.getId());
+        if (session != null) {
+            RuntimeEventBus bus = session.getEventBus();
+            if (bus != null) {
+                bus.publish(new RuntimeEvent(RuntimeEventType.VIEW_UPDATED, orchestrator.getId(), "ArchitectureController", "ARCH_DISCOVERED"));
+            }
+        }
     }
 
     private DesignModel loadModelFromCache(Orchestrator orchestrator, String targetPath, ViewMode mode) {
