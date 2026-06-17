@@ -27,6 +27,7 @@ public class DashboardTemplate {
                 "        .active:after { content: ' \\25B2'; }\n" +
                 "        .content { display: block; overflow: hidden; }\n" +
                 "    </style>\n" +
+                "    <script src=\"/auth-integration.js\"></script>\n" +
                 "</head>\n" +
                 "<body>\n" +
                 "    <header>\n" +
