@@ -832,9 +832,17 @@ public class ArchitecturePage extends AEvoPage {
                 port = orchestrator.getServerSettings().getPort();
             }
 
-            String url = "http://localhost:" + port + "/experimental/architecture";
+            if (!eu.kalafatic.evolution.controller.orchestration.ServerManager.getInstance().isRunning(port)) {
+                try {
+                    eu.kalafatic.evolution.controller.orchestration.ServerManager.getInstance().start(port);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+
+            String url = "http://localhost:" + port + "/experimental/architecture?runtime=SWT";
             if (currentTargetPath != null) {
-                url += "?path=" + java.net.URLEncoder.encode(currentTargetPath, java.nio.charset.StandardCharsets.UTF_8);
+                url += "&path=" + java.net.URLEncoder.encode(currentTargetPath, java.nio.charset.StandardCharsets.UTF_8);
                 url += "&mode=" + currentMode.name();
             }
 

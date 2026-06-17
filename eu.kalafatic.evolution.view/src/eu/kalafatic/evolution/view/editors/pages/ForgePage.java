@@ -49,7 +49,16 @@ public class ForgePage extends AEvoPage {
         if (orchestrator != null && orchestrator.getServerSettings() != null) {
             port = orchestrator.getServerSettings().getPort();
         }
-        String url = "http://localhost:" + port + "/experimental/forge";
+
+        if (!eu.kalafatic.evolution.controller.orchestration.ServerManager.getInstance().isRunning(port)) {
+            try {
+                eu.kalafatic.evolution.controller.orchestration.ServerManager.getInstance().start(port);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        String url = "http://localhost:" + port + "/experimental/forge?runtime=SWT";
         System.out.println("[FORGE_PAGE] Routing to internal server: " + url);
         browser.setUrl(url);
     }

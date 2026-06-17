@@ -177,7 +177,16 @@ public class ChatGroup extends AEvoGroup {
         if (orchestrator != null && orchestrator.getServerSettings() != null) {
             port = orchestrator.getServerSettings().getPort();
         }
-        String url = "http://localhost:" + port + "/experimental/chat";
+
+        if (!eu.kalafatic.evolution.controller.orchestration.ServerManager.getInstance().isRunning(port)) {
+            try {
+                eu.kalafatic.evolution.controller.orchestration.ServerManager.getInstance().start(port);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        String url = "http://localhost:" + port + "/experimental/chat?runtime=SWT";
         System.out.println("[CHAT_PAGE] Routing to internal server: " + url);
         browser.setUrl(url);
     }
