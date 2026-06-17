@@ -13,6 +13,8 @@
             this.pageId = this.detectPage();
             this.isCollapsed = true;
             this.isEnabled = true;
+            this.refreshInterval = 5000;
+            this.refreshTimer = null;
         }
 
         detectPage() {
@@ -31,6 +33,12 @@
             this.setupGuidanceListeners();
             this.setupContextMenuListeners();
             await this.refresh();
+            this.startAutoRefresh();
+        }
+
+        startAutoRefresh() {
+            if (this.refreshTimer) clearInterval(this.refreshTimer);
+            this.refreshTimer = setInterval(() => this.refresh(), this.refreshInterval);
         }
 
         renderBaseStructure() {
@@ -203,42 +211,82 @@
         updateUI(data) {
             const loader = document.getElementById('creatic-loader');
             const content = document.getElementById('creatic-content');
-            if (!loader || !content) return;
+            if (loader) loader.style.display = 'none';
+            if (content) content.style.display = 'block';
 
-            loader.style.display = 'none';
-            content.style.display = 'block';
+            if (content) {
+                const summary = content.querySelector('.creatic-summary');
+                if (summary) summary.textContent = data.summary || 'Contextual Guidance';
 
-            content.querySelector('.creatic-summary').textContent = data.summary || 'Contextual Guidance';
+                this.renderList(content.querySelector('.creatic-actions'), data.actions, (a) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'creatic-btn';
+                    btn.textContent = a.label;
+                    btn.title = a.description;
+                    btn.onclick = () => alert('Action: ' + a.label + '\n' + a.description);
+                    return btn;
+                });
 
-            this.renderList(content.querySelector('.creatic-actions'), data.actions, (a) => {
-                const btn = document.createElement('button');
-                btn.className = 'creatic-btn';
-                btn.textContent = a.label;
-                btn.title = a.description;
-                btn.onclick = () => alert('Action: ' + a.label + '\n' + a.description);
-                return btn;
-            });
+                this.renderList(content.querySelector('.creatic-insights'), data.insights, (i) => {
+                    const div = document.createElement('div');
+                    div.className = 'creatic-item insight';
+                    div.textContent = i.text;
+                    return div;
+                });
 
-            this.renderList(content.querySelector('.creatic-insights'), data.insights, (i) => {
-                const div = document.createElement('div');
-                div.className = 'creatic-item insight';
-                div.textContent = i.text;
-                return div;
-            });
+                this.renderList(content.querySelector('.creatic-warnings'), data.warnings, (w) => {
+                    const div = document.createElement('div');
+                    div.className = 'creatic-item warning';
+                    div.textContent = w.text;
+                    return div;
+                });
 
-            this.renderList(content.querySelector('.creatic-warnings'), data.warnings, (w) => {
-                const div = document.createElement('div');
-                div.className = 'creatic-item warning';
-                div.textContent = w.text;
-                return div;
-            });
+                this.renderList(content.querySelector('.creatic-tips'), data.tips, (t) => {
+                    const div = document.createElement('div');
+                    div.className = 'creatic-item tip';
+                    div.textContent = t.text;
+                    return div;
+                });
+            }
 
-            this.renderList(content.querySelector('.creatic-tips'), data.tips, (t) => {
-                const div = document.createElement('div');
-                div.className = 'creatic-item tip';
-                div.textContent = t.text;
-                return div;
-            });
+            // Integrated Page Guidance (if element exists)
+            const integrated = document.getElementById('guidance-content');
+            if (integrated) {
+                this.renderIntegratedGuidance(integrated, data);
+            }
+        }
+
+        renderIntegratedGuidance(container, data) {
+            let html = `<div style="display:flex; flex-direction:column; gap:10px;">`;
+
+            if (data.actions && data.actions.length > 0) {
+                html += `<div><label style="font-size:0.7em; color:var(--text-dim); text-transform:uppercase;">Actions</label>`;
+                data.actions.forEach(a => {
+                    html += `<div style="margin-top:5px; padding:8px; background:rgba(0,122,204,0.1); border-left:3px solid var(--accent); font-size:0.9em;">
+                                <b>${a.label}</b>: ${a.description}
+                             </div>`;
+                });
+                html += `</div>`;
+            }
+
+            if (data.insights && data.insights.length > 0) {
+                html += `<div><label style="font-size:0.7em; color:var(--text-dim); text-transform:uppercase;">Insights</label>`;
+                data.insights.forEach(i => {
+                    html += `<div style="margin-top:5px; font-size:0.85em; color:var(--text);">• ${i.text}</div>`;
+                });
+                html += `</div>`;
+            }
+
+            if (data.tips && data.tips.length > 0) {
+                html += `<div><label style="font-size:0.7em; color:var(--text-dim); text-transform:uppercase;">Tips</label>`;
+                data.tips.forEach(t => {
+                    html += `<div style="margin-top:5px; font-size:0.85em; font-style:italic; color:var(--success);">💡 ${t.text}</div>`;
+                });
+                html += `</div>`;
+            }
+
+            html += `</div>`;
+            container.innerHTML = html;
         }
 
         renderList(container, items, renderer) {

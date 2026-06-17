@@ -8,9 +8,13 @@
         constructor() {
             this.container = null;
             this.content = null;
+            this.tooltip = null;
+            this.contextMenu = null;
             this.pageId = this.detectPage();
             this.isCollapsed = true;
             this.isEnabled = true;
+            this.refreshInterval = 5000;
+            this.refreshTimer = null;
         }
 
         detectPage() {
@@ -24,7 +28,17 @@
         async init() {
             if (!this.isEnabled) return;
             this.renderBaseStructure();
+            this.renderTooltip();
+            this.renderContextMenu();
+            this.setupGuidanceListeners();
+            this.setupContextMenuListeners();
             await this.refresh();
+            this.startAutoRefresh();
+        }
+
+        startAutoRefresh() {
+            if (this.refreshTimer) clearInterval(this.refreshTimer);
+            this.refreshTimer = setInterval(() => this.refresh(), this.refreshInterval);
         }
 
         renderBaseStructure() {
@@ -76,6 +90,110 @@
             this.container.querySelector('.creatic-toggle').textContent = this.isCollapsed ? '◀' : '▶';
         }
 
+        renderTooltip() {
+            if (document.getElementById('creatic-tooltip')) return;
+            const tooltip = document.createElement('div');
+            tooltip.id = 'creatic-tooltip';
+            tooltip.className = 'creatic-tooltip';
+            tooltip.style.display = 'none';
+            document.body.appendChild(tooltip);
+            this.tooltip = tooltip;
+        }
+
+        setupGuidanceListeners() {
+            document.addEventListener('mouseover', (e) => {
+                const target = e.target.closest('[data-guidance]');
+                if (target) {
+                    this.showTooltip(target, target.getAttribute('data-guidance'));
+                }
+            });
+
+            document.addEventListener('mouseout', (e) => {
+                const target = e.target.closest('[data-guidance]');
+                if (target) {
+                    this.hideTooltip();
+                }
+            });
+        }
+
+        showTooltip(element, text) {
+            if (!this.tooltip) return;
+
+            const rect = element.getBoundingClientRect();
+            this.tooltip.innerHTML = `
+                <div class="tooltip-header">✨ Guidance</div>
+                <div class="tooltip-content">${text.split('.').map(s => s.trim()).filter(s => s).map(s => `• ${s}`).join('<br>')}</div>
+            `;
+
+            this.tooltip.style.display = 'block';
+
+            let top = rect.top + window.scrollY - this.tooltip.offsetHeight - 10;
+            let left = rect.left + window.scrollX + (rect.width / 2) - (this.tooltip.offsetWidth / 2);
+
+            // Bounds check
+            if (top < 0) top = rect.bottom + window.scrollY + 10;
+            if (left < 10) left = 10;
+            if (left + this.tooltip.offsetWidth > window.innerWidth - 10) left = window.innerWidth - this.tooltip.offsetWidth - 10;
+
+            this.tooltip.style.top = top + 'px';
+            this.tooltip.style.left = left + 'px';
+        }
+
+        hideTooltip() {
+            if (this.tooltip) this.tooltip.style.display = 'none';
+        }
+
+        renderContextMenu() {
+            if (document.getElementById('creatic-context-menu')) return;
+            const menu = document.createElement('div');
+            menu.id = 'creatic-context-menu';
+            menu.className = 'creatic-context-menu';
+            menu.style.display = 'none';
+            menu.innerHTML = `
+                <div class="context-item" id="context-help">✨ Get Help</div>
+                <div class="context-divider"></div>
+                <div class="context-item" onclick="window.Creatic.toggle()">🛠 Toggle Assistant</div>
+            `;
+            document.body.appendChild(menu);
+            this.contextMenu = menu;
+        }
+
+        setupContextMenuListeners() {
+            document.addEventListener('contextmenu', (e) => {
+                const target = e.target.closest('[data-guidance]');
+                if (!target && !e.target.closest('.creatic-root')) return;
+
+                e.preventDefault();
+                this.showContextMenu(e.pageX, e.pageY, target);
+            });
+
+            document.addEventListener('click', () => this.hideContextMenu());
+        }
+
+        showContextMenu(x, y, target) {
+            if (!this.contextMenu) return;
+
+            const helpItem = document.getElementById('context-help');
+            if (target) {
+                helpItem.style.display = 'block';
+                helpItem.onclick = (e) => {
+                    e.stopPropagation();
+                    this.showTooltip(target, target.getAttribute('data-guidance'));
+                    this.hideContextMenu();
+                };
+            } else {
+                helpItem.style.display = 'none';
+            }
+
+            this.contextMenu.style.display = 'block';
+            this.contextMenu.style.left = x + 'px';
+            this.contextMenu.style.top = y + 'px';
+        }
+
+        hideContextMenu() {
+            if (this.contextMenu) this.contextMenu.style.display = 'none';
+        }
+
         async refresh() {
             try {
                 const response = await fetch('/creatic/analyze', {
@@ -93,42 +211,82 @@
         updateUI(data) {
             const loader = document.getElementById('creatic-loader');
             const content = document.getElementById('creatic-content');
-            if (!loader || !content) return;
+            if (loader) loader.style.display = 'none';
+            if (content) content.style.display = 'block';
 
-            loader.style.display = 'none';
-            content.style.display = 'block';
+            if (content) {
+                const summary = content.querySelector('.creatic-summary');
+                if (summary) summary.textContent = data.summary || 'Contextual Guidance';
 
-            content.querySelector('.creatic-summary').textContent = data.summary || 'Contextual Guidance';
+                this.renderList(content.querySelector('.creatic-actions'), data.actions, (a) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'creatic-btn';
+                    btn.textContent = a.label;
+                    btn.title = a.description;
+                    btn.onclick = () => alert('Action: ' + a.label + '\n' + a.description);
+                    return btn;
+                });
 
-            this.renderList(content.querySelector('.creatic-actions'), data.actions, (a) => {
-                const btn = document.createElement('button');
-                btn.className = 'creatic-btn';
-                btn.textContent = a.label;
-                btn.title = a.description;
-                btn.onclick = () => alert('Action: ' + a.label + '\n' + a.description);
-                return btn;
-            });
+                this.renderList(content.querySelector('.creatic-insights'), data.insights, (i) => {
+                    const div = document.createElement('div');
+                    div.className = 'creatic-item insight';
+                    div.textContent = i.text;
+                    return div;
+                });
 
-            this.renderList(content.querySelector('.creatic-insights'), data.insights, (i) => {
-                const div = document.createElement('div');
-                div.className = 'creatic-item insight';
-                div.textContent = i.text;
-                return div;
-            });
+                this.renderList(content.querySelector('.creatic-warnings'), data.warnings, (w) => {
+                    const div = document.createElement('div');
+                    div.className = 'creatic-item warning';
+                    div.textContent = w.text;
+                    return div;
+                });
 
-            this.renderList(content.querySelector('.creatic-warnings'), data.warnings, (w) => {
-                const div = document.createElement('div');
-                div.className = 'creatic-item warning';
-                div.textContent = w.text;
-                return div;
-            });
+                this.renderList(content.querySelector('.creatic-tips'), data.tips, (t) => {
+                    const div = document.createElement('div');
+                    div.className = 'creatic-item tip';
+                    div.textContent = t.text;
+                    return div;
+                });
+            }
 
-            this.renderList(content.querySelector('.creatic-tips'), data.tips, (t) => {
-                const div = document.createElement('div');
-                div.className = 'creatic-item tip';
-                div.textContent = t.text;
-                return div;
-            });
+            // Integrated Page Guidance (if element exists)
+            const integrated = document.getElementById('guidance-content');
+            if (integrated) {
+                this.renderIntegratedGuidance(integrated, data);
+            }
+        }
+
+        renderIntegratedGuidance(container, data) {
+            let html = `<div style="display:flex; flex-direction:column; gap:10px;">`;
+
+            if (data.actions && data.actions.length > 0) {
+                html += `<div><label style="font-size:0.7em; color:var(--text-dim); text-transform:uppercase;">Actions</label>`;
+                data.actions.forEach(a => {
+                    html += `<div style="margin-top:5px; padding:8px; background:rgba(0,122,204,0.1); border-left:3px solid var(--accent); font-size:0.9em;">
+                                <b>${a.label}</b>: ${a.description}
+                             </div>`;
+                });
+                html += `</div>`;
+            }
+
+            if (data.insights && data.insights.length > 0) {
+                html += `<div><label style="font-size:0.7em; color:var(--text-dim); text-transform:uppercase;">Insights</label>`;
+                data.insights.forEach(i => {
+                    html += `<div style="margin-top:5px; font-size:0.85em; color:var(--text);">• ${i.text}</div>`;
+                });
+                html += `</div>`;
+            }
+
+            if (data.tips && data.tips.length > 0) {
+                html += `<div><label style="font-size:0.7em; color:var(--text-dim); text-transform:uppercase;">Tips</label>`;
+                data.tips.forEach(t => {
+                    html += `<div style="margin-top:5px; font-size:0.85em; font-style:italic; color:var(--success);">💡 ${t.text}</div>`;
+                });
+                html += `</div>`;
+            }
+
+            html += `</div>`;
+            container.innerHTML = html;
         }
 
         renderList(container, items, renderer) {

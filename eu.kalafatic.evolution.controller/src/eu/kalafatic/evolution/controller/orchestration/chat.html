@@ -210,10 +210,17 @@
 
             <div id="sidebar-scroll">
                 <div class="sidebar-section">
+                    <h2>✨ Recommended Actions</h2>
+                    <div id="guidance-content" style="font-size: 0.85em; color: var(--text-dim); line-height: 1.4;">
+                        Analyzing context...
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
                     <h2>Chat Management</h2>
                     <div class="control-group">
-                        <button class="btn btn-primary" onclick="newSession()">New Session</button>
-                        <button class="btn" onclick="cleanChat()" style="margin-top:5px;">Clean Chat</button>
+                        <button class="btn btn-primary" onclick="newSession()" data-guidance="Starts a new independent chat session. All previous context is cleared.">New Session</button>
+                        <button class="btn" onclick="cleanChat()" style="margin-top:5px;" data-guidance="Clears the chat history from the current view. Local state is preserved.">Clean Chat</button>
                     </div>
                 </div>
 
@@ -222,7 +229,7 @@
                     <div class="control-group">
                         <div class="control-item">
                             <label>Mode:</label>
-                            <select id="mode-select" onchange="updateSettings()">
+                            <select id="mode-select" onchange="updateSettings()" data-guidance="Switch between local, hybrid, and remote execution. 'Mediated' mode provides high-integrity architectural reasoning.">
                                 <option value="LOCAL">Local</option>
                                 <option value="HYBRID">Hybrid</option>
                                 <option value="REMOTE">Remote</option>
@@ -252,7 +259,7 @@
                     <div class="control-group">
                         <label class="checkbox-group"><input type="checkbox" id="iterative-check" onchange="updateSettings()"> Iterative Mode</label>
                         <label class="checkbox-group"><input type="checkbox" id="self-iterative-check" onchange="updateSettings()"> Self-Development</label>
-                        <label class="checkbox-group"><input type="checkbox" id="darwin-check" onchange="updateSettings()"> Darwin Mode</label>
+                        <label class="checkbox-group" data-guidance="Darwin evolutionary branching. AI will propose multiple competing strategies for every task."><input type="checkbox" id="darwin-check" onchange="updateSettings()"> Darwin Mode</label>
                         <label class="checkbox-group"><input type="checkbox" id="step-check" onchange="updateSettings()"> Step Mode</label>
                         <label class="checkbox-group"><input type="checkbox" id="git-check" onchange="updateSettings()"> Git Automation</label>
                         <label class="checkbox-group"><input type="checkbox" id="auto-approve-check" onchange="updateSettings()"> Auto-Approve</label>
