@@ -54,9 +54,9 @@
             cursor: pointer;
             position: relative;
         }
-        .session-item:hover { background-color: #2a2d2e; }
+        .session-item:hover { background-color: #e0e0e0; }
         .session-item.active {
-            background-color: #37373d;
+            background-color: #e8f0fe;
             border-left: 3px solid var(--accent);
         }
         .session-name { display: block; font-weight: bold; margin-bottom: 4px; }
@@ -119,32 +119,32 @@
         .control-group label { display: block; font-size: 0.8em; margin-bottom: 4px; color: var(--text-dim); }
         .control-group input, .control-group select {
             width: 100%;
-            background: #3c3c3c;
-            border: 1px solid #555;
-            color: white;
+            background: #ffffff;
+            border: 1px solid var(--border);
+            color: #333333;
             padding: 4px;
             box-sizing: border-box;
         }
 
         /* Buttons */
         .btn {
-            background-color: #3a3d41;
-            color: white;
-            border: none;
+            background-color: #ffffff;
+            color: #333333;
+            border: 1px solid var(--border);
             padding: 6px 12px;
             cursor: pointer;
             border-radius: 2px;
             font-size: 0.85em;
         }
-        .btn:hover { background-color: #45494e; }
-        .btn-primary { background-color: var(--accent); }
+        .btn:hover { background-color: #f0f0f0; }
+        .btn-primary { background-color: var(--accent); color: white; border-color: var(--accent); }
         .btn-primary:hover { background-color: var(--accent-hover); }
-        .btn-danger { color: var(--error); }
+        .btn-danger { color: #d32f2f; border-color: #d32f2f; }
         .btn-sm { padding: 2px 6px; font-size: 0.75em; }
 
         /* Graph Elements */
-        .node circle { stroke: #555; stroke-width: 2px; }
-        .node text { font-size: 11px; fill: var(--text); pointer-events: none; }
+        .node circle { stroke: #333333; stroke-width: 2px; }
+        .node text { font-size: 11px; fill: #333333; pointer-events: none; }
         .link { stroke: #444; stroke-width: 2px; fill: none; marker-end: url(#arrowhead); }
 
         /* Node Types Colors */
@@ -157,8 +157,8 @@
         /* Logs/Metrics */
         #log-view {
             height: 150px;
-            background: #000;
-            color: #aaa;
+            background: #ffffff;
+            color: #333333;
             font-family: monospace;
             font-size: 0.75em;
             padding: 5px;
@@ -171,13 +171,13 @@
             position: absolute;
             top: 20px;
             left: 20px;
-            background: rgba(37, 37, 38, 0.9);
+            background: rgba(255, 255, 255, 0.95);
             border: 1px solid var(--border);
             padding: 10px;
             display: flex;
             flex-direction: column;
             gap: 5px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
 
         #json-fallback {
@@ -207,6 +207,11 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+        }
+        #viz-selector {
+            background: #ffffff !important;
+            color: #333333 !important;
+            border: 1px solid var(--border) !important;
         }
         #viz-container {
             display: flex;
@@ -239,7 +244,7 @@
 
         /* Dataset Explorer */
         .sample-nav { display: flex; gap: 5px; margin-bottom: 10px; }
-        .data-block { background: #000; padding: 10px; font-family: monospace; font-size: 0.8em; margin-top: 5px; }
+        .data-block { background: #f8f8f8; color: #333; border: 1px solid var(--border); padding: 10px; font-family: monospace; font-size: 0.8em; margin-top: 5px; }
 
         /* Timeline */
         .timeline-item {
@@ -257,8 +262,8 @@
             position: absolute;
             left: -6px; top: 15px;
         }
-        .timeline-item:hover { background: #333; }
-        .timeline-item.active { background: #37373d; font-weight: bold; }
+        .timeline-item:hover { background: #f0f0f0; }
+        .timeline-item.active { background: #e8f0fe; font-weight: bold; }
 
         .diff-added { color: var(--success); }
         .diff-removed { color: var(--error); }
@@ -1065,8 +1070,8 @@
                 </div>
                 <div style="margin-top:15px;">
                     <label style="font-size:0.7em; color:var(--text-dim); text-transform:uppercase;">Event Stream</label>
-                    <div id="viz-event-stream" style="background:#000; padding:10px; height:80px; overflow-y:auto; font-family:monospace; margin-top:5px; border:1px solid var(--border);">
-                        ${eventsHtml || '<div style="color:#555">No events recorded.</div>'}
+                    <div id="viz-event-stream" style="background:#ffffff; color:#333333; padding:10px; height:80px; overflow-y:auto; font-family:monospace; margin-top:5px; border:1px solid var(--border);">
+                        ${eventsHtml || '<div style="color:#888">No events recorded.</div>'}
                     </div>
                 </div>
             `;
@@ -1141,7 +1146,7 @@
                 document.getElementById('viz-details-content').innerHTML = `
                     <h4>Comparison Result</h4>
                     <p><b>Snapshot:</b> ${id}</p>
-                    <div style="margin-top:10px; padding:10px; background:#1a1a1a; border-radius:4px;">
+                    <div style="margin-top:10px; padding:10px; background:#f0f0f0; border:1px solid var(--border); border-radius:4px;">
                         <div>Layers Added: <span class="diff-added">${diff.layersAdded || 0}</span></div>
                         <div>Layers Removed: <span class="diff-removed">${diff.layersRemoved || 0}</span></div>
                         <div>Parameter Delta: <span class="${(diff.paramDelta || 0) >= 0 ? 'diff-added' : 'diff-removed'}">${diff.paramDelta || 0}</span></div>
