@@ -18,6 +18,16 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+import org.eclipse.core.runtime.FileLocator;
+import org.eclipse.core.runtime.Platform;
+import org.osgi.framework.Bundle;
+
+import eu.kalafatic.evolution.servers.database.DatabaseManager;
+import eu.kalafatic.evolution.servers.repository.SessionRepository;
+import eu.kalafatic.evolution.servers.repository.UserRepository;
+import eu.kalafatic.evolution.servers.service.AuthService;
+import eu.kalafatic.evolution.servers.controller.AuthController;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -45,6 +55,9 @@ import fi.iki.elonen.NanoHTTPD;
 public class EvolutionServer extends NanoHTTPD {
 
     private final Map<String, ServerSession> activeSessions = new ConcurrentHashMap<>();
+    private final AuthService authService;
+    private final AuthController authController;
+
     private SessionController sessionController;
     private ModelController modelController;
     private DatasetController datasetController;
@@ -53,6 +66,11 @@ public class EvolutionServer extends NanoHTTPD {
 
     public EvolutionServer(int port) {
         super(port);
+        DatabaseManager dbManager = new DatabaseManager();
+        UserRepository userRepository = new UserRepository(dbManager);
+        SessionRepository sessionRepository = new SessionRepository(dbManager);
+        this.authService = new AuthService(userRepository, sessionRepository);
+        this.authController = new AuthController(authService);
     }
 
     public void setForgeControllers(SessionController sc, ModelController mc, DatasetController dc, TrainingController tc, SnapshotController snc) {
@@ -75,6 +93,27 @@ public class EvolutionServer extends NanoHTTPD {
     public Response serve(IHTTPSession session) {
         String uri = session.getUri();
         Method method = session.getMethod();
+
+        // 1. Authentication Routing
+        if (uri.startsWith("/api/auth")) {
+            return authController.handle(session);
+        }
+
+        // 2. Static Resources from eu.kalafatic.evolution.servers (Login, Dashboard, etc.)
+        if ("/login.html".equals(uri) || "/dashboard.html".equals(uri) || uri.startsWith("/css/") || uri.startsWith("/js/")) {
+            return serveExternalResource(uri);
+        }
+
+        // 3. Environment-Aware Authorization Check
+        if (!isAuthorized(session)) {
+            // If it's a browser requesting an HTML page, we might want to redirect to login.html
+            // but the auth-integration.js will handle that on the client side.
+            // For API calls, return 401.
+            if (uri.startsWith("/server/") || uri.startsWith("/task") || uri.startsWith("/forge/") || uri.startsWith("/experimental/")) {
+                return newFixedLengthResponse(Response.Status.UNAUTHORIZED, "application/json",
+                    new JSONObject().put("error", "Unauthorized").toString());
+            }
+        }
 
         trackHttpSession(session);
 
@@ -151,6 +190,8 @@ public class EvolutionServer extends NanoHTTPD {
                 return handleGetResource("creatic.js", "application/javascript");
             } else if (Method.GET.equals(method) && "/creatic.css".equals(uri)) {
                 return handleGetResource("creatic.css", "text/css");
+            } else if (Method.GET.equals(method) && "/auth-integration.js".equals(uri)) {
+                return handleGetResource("auth-integration.js", "application/javascript");
             } else if (Method.DELETE.equals(method) && uri.startsWith("/forge/session/")) {
                 return handleDeleteForgeSession(uri.substring("/forge/session/".length()));
             } else if (Method.POST.equals(method) && uri.startsWith("/forge/dataset/generate")) {
@@ -475,6 +516,61 @@ public class EvolutionServer extends NanoHTTPD {
         }
 
         return newFixedLengthResponse(Response.Status.OK, "application/json", new JSONObject().put("status", "ok").toString());
+    }
+
+    private boolean isAuthorized(IHTTPSession session) {
+        // SWT Browser bypass
+        String runtimeHeader = session.getHeaders().get("x-evo-runtime");
+        if ("SWT".equalsIgnoreCase(runtimeHeader)) {
+            return true;
+        }
+
+        // Validate session via AuthService
+        String authHeader = session.getHeaders().get("authorization");
+        String sessionId = null;
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            sessionId = authHeader.substring(7);
+        } else {
+            sessionId = session.getParms().get("sessionId");
+        }
+
+        if (sessionId != null) {
+            try {
+                return authService.validateSession(sessionId).isPresent();
+            } catch (Exception e) {
+                return false;
+            }
+        }
+
+        // Localhost bypass for internal tools if needed (careful with this)
+        // String remoteAddr = session.getRemoteIpAddress();
+        // if ("127.0.0.1".equals(remoteAddr) || "0:0:0:0:0:0:0:1".equals(remoteAddr)) return true;
+
+        return false;
+    }
+
+    private Response serveExternalResource(String uri) {
+        Bundle bundle = Platform.getBundle("eu.kalafatic.evolution.servers");
+        if (bundle == null) return newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "Bundle not found");
+
+        String path = "/eu/kalafatic/evolution/servers/web" + uri;
+        try (InputStream is = bundle.getResource(path).openStream()) {
+            String mimeType = getMimeType(uri);
+            byte[] data = is.readAllBytes();
+            return newFixedLengthResponse(Response.Status.OK, mimeType, new java.io.ByteArrayInputStream(data), data.length);
+        } catch (Exception e) {
+            return newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "Resource not found: " + uri);
+        }
+    }
+
+    private String getMimeType(String uri) {
+        if (uri.endsWith(".html")) return "text/html";
+        if (uri.endsWith(".css")) return "text/css";
+        if (uri.endsWith(".js")) return "application/javascript";
+        if (uri.endsWith(".png")) return "image/png";
+        if (uri.endsWith(".jpg") || uri.endsWith(".jpeg")) return "image/jpeg";
+        if (uri.endsWith(".svg")) return "image/svg+xml";
+        return "application/octet-stream";
     }
 
     private void trackHttpSession(IHTTPSession session) {

@@ -53,6 +53,11 @@
 			<artifactId>eu.kalafatic.evolution.forge.controller</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>eu.kalafatic.evolution</groupId>
+			<artifactId>eu.kalafatic.evolution.servers</artifactId>
+			<version>${project.version}</version>
+		</dependency>
 
 		<dependency>
 			<groupId>eu.kalafatic.evolution</groupId>
