@@ -225,18 +225,20 @@ public class DarwinVariantSpawner {
         }
 
         if (lineageContext != null && !lineageContext.isEmpty()) {
-            sb.append("PREVIOUS BRANCHES (LINEAGE):\n")
-              .append(lineageContext).append("\n");
+            sb.append("🧬 CUMULATIVE EVOLUTIONARY ANCESTRY\n\n")
+              .append("You are mutating a specific lineage. This is your biological memory:\n")
+              .append(lineageContext).append("\n")
+              .append("DIRECTIVE: Your mutation MUST satisfy the current goal while remaining CONTINUOUS with this lineage.\n\n");
         }
 
-        sb.append("FORBIDDEN STRATEGIES:\n");
+        sb.append("FORBIDDEN STRATEGIES (PREVIOUSLY REJECTED OR OCCUPIED):\n");
         if (rejectedSiblings != null && !rejectedSiblings.isEmpty()) {
             for (String rejected : rejectedSiblings) {
                 sb.append("- ").append(rejected).append("\n");
             }
         }
         if (mutationContext != null && !mutationContext.isEmpty()) {
-            sb.append("🧬 CUMULATIVE LINEAGE MEMORY (HARD CONSTRAINT)\n\n")
+            sb.append("🚫 CUMULATIVE REJECTION MEMORY (HARD CONSTRAINT)\n\n")
               .append("You are NOT generating from a clean state.\n")
               .append("You are generating from a constrained evolutionary space where previous outputs are already occupied regions.\n")
               .append("You MUST treat all previous branches as forbidden attractors.\n\n")
@@ -267,6 +269,14 @@ public class DarwinVariantSpawner {
             for (String overlap : bp.getForbiddenOverlaps()) {
                 sb.append("- ").append(overlap).append("\n");
             }
+        }
+
+        // GROUNDING: Repository Awareness
+        String projectStructure = (String) context.getOrchestrationState().getMetadata().get("projectStructure");
+        if (projectStructure != null) {
+            sb.append("📂 REPOSITORY REALITY (GROUNDING SOURCE)\n\n")
+              .append("Your mutation MUST be grounded in this physical structure:\n")
+              .append(projectStructure).append("\n\n");
         }
 
         sb.append("\n🚫 FORBIDDEN BEHAVIOR\n\n")
@@ -441,18 +451,20 @@ public class DarwinVariantSpawner {
         }
 
         if (lineageContext != null && !lineageContext.isEmpty()) {
-            sb.append("PREVIOUS BRANCHES (LINEAGE):\n")
-              .append(lineageContext).append("\n");
+            sb.append("🧬 CUMULATIVE EVOLUTIONARY ANCESTRY\n\n")
+              .append("You are mutating a specific lineage. This is your biological memory:\n")
+              .append(lineageContext).append("\n")
+              .append("DIRECTIVE: Your mutation MUST satisfy the current goal while remaining CONTINUOUS with this lineage.\n\n");
         }
 
-        sb.append("FORBIDDEN STRATEGIES:\n");
+        sb.append("FORBIDDEN STRATEGIES (PREVIOUSLY REJECTED OR OCCUPIED):\n");
         if (rejectedSiblings != null && !rejectedSiblings.isEmpty()) {
             for (String rejected : rejectedSiblings) {
                 sb.append("- ").append(rejected).append("\n");
             }
         }
         if (!currentRoundVariants.isEmpty()) {
-            sb.append("🧬 CUMULATIVE LINEAGE MEMORY (HARD CONSTRAINT)\n\n")
+            sb.append("🚫 CUMULATIVE REJECTION MEMORY (HARD CONSTRAINT)\n\n")
               .append("You are NOT generating from a clean state.\n")
               .append("You are generating from a constrained evolutionary space where previous outputs are already occupied regions.\n")
               .append("You MUST treat all previous branches as forbidden attractors.\n\n")
@@ -486,6 +498,14 @@ public class DarwinVariantSpawner {
             for (JSONObject v : currentRoundVariants) {
                 sb.append("- ").append(v.optString("strategy")).append(" (Philosophy: ").append(v.optString("semantic_justification")).append(")\n");
             }
+        }
+
+        // GROUNDING: Repository Awareness
+        String projectStructure = (String) context.getOrchestrationState().getMetadata().get("projectStructure");
+        if (projectStructure != null) {
+            sb.append("📂 REPOSITORY REALITY (GROUNDING SOURCE)\n\n")
+              .append("Your mutation MUST be grounded in this physical structure:\n")
+              .append(projectStructure).append("\n\n");
         }
 
         sb.append("\n🚫 FORBIDDEN BEHAVIOR\n\n")

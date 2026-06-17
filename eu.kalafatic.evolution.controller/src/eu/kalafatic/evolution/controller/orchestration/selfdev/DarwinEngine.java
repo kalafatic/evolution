@@ -375,6 +375,12 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         List<JSONObject> uniqueVariants = new ArrayList<>();
         String mutationContext = "";
 
+        EvolutionTree tree = context.getKernelContext().getMemoryService().getEvolutionTree();
+        String currentParentId = tree.getCurrentWinnerId();
+        if (currentParentId == null && tree.getRootId() != null) {
+            currentParentId = tree.getRootId();
+        }
+
         // DYNAMIC TERRITORY DISCOVERY & MATERIALIZATION: Sequential loop to ensure diversity
         TrajectoryTerritoryMapper mapper = new TrajectoryTerritoryMapper(getSessionContainer());
         mapper.setAiService(aiService);
@@ -386,8 +392,11 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             try {
                 String discoveryGoal = generation == 0 ? goal : goal + " (Mutation Gen " + generation + ")";
 
-                // 1. Sequential Blueprint Discovery
-                TrajectoryBlueprint bp = mapper.discoverNext(discoveryGoal, context, currentBlueprints, mutationContext);
+                // 1. Reconstruct Lineage Context from EvolutionTree
+                String fullLineagePrompt = tree.reconstructLineagePrompt(currentParentId);
+
+                // 2. Sequential Blueprint Discovery
+                TrajectoryBlueprint bp = mapper.discoverNext(discoveryGoal, context, currentBlueprints, fullLineagePrompt + mutationContext);
 
                 if (bp != null) {
                     // Avoid duplicate strategies or philosophies
@@ -399,13 +408,28 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
                     if (!isDuplicate) {
                         currentBlueprints.add(bp);
 
-                        // 2. Sequential Blueprint Materialization
-                        JSONObject variant = spawner.spawnSingleBlueprint(goal, bp, basePrompt, lineageContext, rejectedSiblings, mutationContext, isMediated, context);
+                        // 3. Sequential Blueprint Materialization
+                        JSONObject variant = spawner.spawnSingleBlueprint(goal, bp, basePrompt, fullLineagePrompt + lineageContext, rejectedSiblings, mutationContext, isMediated, context);
 
                         if (variant != null) {
                             uniqueVariants.add(variant);
 
-                            // 3. Accumulate Mutation Context for next iteration
+                            // 4. Update EvolutionTree with new mutation node
+                            EvolutionNode node = new EvolutionNode();
+                            node.setId(variant.optString("id"));
+                            node.setParentId(currentParentId);
+                            node.setIteration(currentIteration);
+                            node.setGeneration(generation);
+                            node.setStrategy(variant.optString("strategy"));
+                            node.setSemanticPhilosophy(variant.optString("semantic_anchor"));
+                            node.setLlmPrompt(basePrompt); // Simplified for now
+                            node.setLlmResponse(variant.toString());
+                            node.setStatus("KEPT");
+
+                            tree.addNode(node);
+                            context.getKernelContext().getMemoryService().saveEvolutionTree();
+
+                            // 5. Accumulate Mutation Context for next iteration
                             mutationContext += "DO NOT REPEAT STRATEGY: " + variant.optString("strategy") + "\n" +
                                                "AVOID ASSUMPTION: " + variant.optString("semantic_justification") + "\n" +
                                                "NEXT MUST BE STRUCTURALLY DIFFERENT\n\n";
@@ -418,6 +442,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
                 }
             } catch (Exception e) {
                 context.log("[DARWIN] Sequential Branching Error: " + e.getMessage());
+                e.printStackTrace();
             }
         }
 
