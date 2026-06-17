@@ -827,46 +827,41 @@ public class ArchitecturePage extends AEvoPage {
         Display.getDefault().asyncExec(() -> {
             if (browser == null || browser.isDisposed() || showingSnapshot) return;
 
-            int port = 48080;
-            if (orchestrator != null && orchestrator.getServerSettings() != null) {
-                port = orchestrator.getServerSettings().getPort();
-            }
-
-            if (!eu.kalafatic.evolution.controller.orchestration.ServerManager.getInstance().isRunning(port)) {
-                try {
-                    eu.kalafatic.evolution.controller.orchestration.ServerManager.getInstance().start(port);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-
-            String url = "http://localhost:" + port + "/experimental/architecture?runtime=SWT";
-            if (currentTargetPath != null) {
-                url += "&path=" + java.net.URLEncoder.encode(currentTargetPath, java.nio.charset.StandardCharsets.UTF_8);
-                url += "&mode=" + currentMode.name();
-            }
-
-            boolean targetChanged = currentTargetPath != null && !currentTargetPath.equals(lastTargetPath);
-
-            if (lastJson.isEmpty() || targetChanged) {
-                eu.kalafatic.evolution.controller.log.Log.log("[ARCH_PAGE] Routing to internal server: " + url);
-                browser.setUrl(url);
-                lastJson = "sent";
-                lastTargetPath = currentTargetPath;
-                return;
-            }
-
-            if (!isJsReady) return;
-
             DesignModel model = extractModel();
             String json = renderer.serializeModel(model);
+
+            if (!isJsReady) {
+                 // Push initial context variables if possible or just wait
+                 browser.execute("window.INITIAL_MODEL = " + json + "; " +
+                                 "window.CURRENT_VIEW_MODE = '" + currentMode.name() + "'; " +
+                                 "window.TARGET_PATH = '" + (currentTargetPath != null ? currentTargetPath.replace("\\", "\\\\") : "") + "'; " +
+                                 "window.DEFAULT_PATH = '" + (defaultTargetPath != null ? defaultTargetPath.replace("\\", "\\\\") : "") + "'; " +
+                                 "window.TARGET_HISTORY = " + new org.json.JSONArray(targetHistory).toString() + ";");
+                 return;
+            }
+
             browser.execute("if(window.updateGraph) { window.updateGraph(" + json + "); }");
         });
     }
 
     private void initBrowser() {
         if (browser == null || browser.isDisposed()) return;
-        refreshBrowser();
+        try {
+            org.osgi.framework.Bundle bundle = org.eclipse.core.runtime.Platform.getBundle("eu.kalafatic.evolution.controller");
+            if (bundle != null) {
+                java.net.URL entry = bundle.getEntry("eu/kalafatic/evolution/controller/orchestration/template.html");
+                if (entry == null) {
+                    entry = bundle.getEntry("src/eu/kalafatic/evolution/controller/orchestration/template.html");
+                }
+
+                if (entry != null) {
+                    java.net.URL archUrl = org.eclipse.core.runtime.FileLocator.toFileURL(entry);
+                    browser.setUrl(archUrl.toString());
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public enum ViewMode {

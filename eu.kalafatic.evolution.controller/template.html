@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Evolution Architecture Map</title>
-    <script src="/auth-integration.js"></script>
+    <script src="auth-integration.js"></script>
 	<script>
 	       // Diagnostic JavaLog Bridge
 	       window.onerror = function(msg, url, line, col, error) {
@@ -314,10 +314,17 @@
         <div id="popup-content"></div>
     </div>
 
-    <link rel="stylesheet" href="/creatic.css">
-    <script src="/creatic.js"></script>
+    <link rel="stylesheet" href="creatic.css">
+    <script src="creatic.js"></script>
     <script>
         function log(msg) { if (window.logFunction) window.logFunction(msg); else console.log(msg); }
+
+        function getBaseUrl() {
+            if (window.location.protocol === 'file:') {
+                return `http://localhost:48080`;
+            }
+            return '';
+        }
 
         window.INITIAL_MODEL = {{MODEL_JSON}};
         window.CURRENT_VIEW_MODE = {{VIEW_MODE_JSON}};

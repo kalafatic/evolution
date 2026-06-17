@@ -173,22 +173,30 @@ public class ChatGroup extends AEvoGroup {
     private void setupBrowser(Browser browser) {
         setupJavaScriptBridges();
 
-        int port = 48080;
-        if (orchestrator != null && orchestrator.getServerSettings() != null) {
-            port = orchestrator.getServerSettings().getPort();
-        }
-
-        if (!eu.kalafatic.evolution.controller.orchestration.ServerManager.getInstance().isRunning(port)) {
-            try {
-                eu.kalafatic.evolution.controller.orchestration.ServerManager.getInstance().start(port);
-            } catch (Exception e) {
-                e.printStackTrace();
+        try {
+            Bundle bundle = Platform.getBundle("eu.kalafatic.evolution.view");
+            if (bundle == null) {
+                bundle = FrameworkUtil.getBundle(getClass());
             }
-        }
 
-        String url = "http://localhost:" + port + "/experimental/chat?runtime=SWT";
-        System.out.println("[CHAT_PAGE] Routing to internal server: " + url);
-        browser.setUrl(url);
+            if (bundle != null) {
+                // We use setUrl with a file:// URL because it's the most reliable way for SWT Browser
+                // to handle relative paths (./js/...) and security origins correctly.
+                URL bundleRoot = FileLocator.toFileURL(bundle.getEntry("/"));
+                URL chatUrl = new URL(bundleRoot, "chat.html");
+
+                // Using setUrl(String) instead of setText(String) to ensure the base URL
+                // is correctly set to the file system path of the extracted bundle.
+                browser.setUrl(chatUrl.toString());
+            } else {
+                throw new Exception("Bundle not found");
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to load chat.html via setUrl: " + e.getMessage());
+            // Fallback to setText if URL resolution fails, though this may break relative resource loading
+            String html = GUIFactory.INSTANCE.loadHtmlTemplate(getClass(), "/chat.html");
+            browser.setText(html);
+        }
     }
 
     public void refreshGitStatus() {

@@ -45,22 +45,28 @@ public class ForgePage extends AEvoPage {
     }
 
     private void initBrowser() {
-        int port = 48080;
-        if (orchestrator != null && orchestrator.getServerSettings() != null) {
-            port = orchestrator.getServerSettings().getPort();
-        }
+        try {
+            org.osgi.framework.Bundle bundle = org.eclipse.core.runtime.Platform.getBundle("eu.kalafatic.evolution.controller");
+            if (bundle != null) {
+                java.net.URL entry = bundle.getEntry("eu/kalafatic/evolution/controller/orchestration/forge.html");
+                if (entry == null) {
+                    // Fallback for development where it might be in src
+                    entry = bundle.getEntry("src/eu/kalafatic/evolution/controller/orchestration/forge.html");
+                }
 
-        if (!eu.kalafatic.evolution.controller.orchestration.ServerManager.getInstance().isRunning(port)) {
-            try {
-                eu.kalafatic.evolution.controller.orchestration.ServerManager.getInstance().start(port);
-            } catch (Exception e) {
-                e.printStackTrace();
+                if (entry != null) {
+                    java.net.URL forgeUrl = org.eclipse.core.runtime.FileLocator.toFileURL(entry);
+                    browser.setUrl(forgeUrl.toString());
+                } else {
+                     browser.setText("<html><body><h1>forge.html not found in bundle</h1></body></html>");
+                }
+            } else {
+                 browser.setText("<html><body><h1>Controller bundle not found</h1></body></html>");
             }
+        } catch (Exception e) {
+            e.printStackTrace();
+            browser.setText("<html><body><h1>Error loading forge.html</h1></body></html>");
         }
-
-        String url = "http://localhost:" + port + "/experimental/forge?runtime=SWT";
-        System.out.println("[FORGE_PAGE] Routing to internal server: " + url);
-        browser.setUrl(url);
     }
 
     private void setupJavaScriptBridges() {

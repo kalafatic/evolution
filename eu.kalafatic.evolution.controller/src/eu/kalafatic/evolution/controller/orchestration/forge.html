@@ -274,7 +274,7 @@
         .diff-removed { color: var(--error); }
 
     </style>
-    <script src="/auth-integration.js"></script>
+    <script src="auth-integration.js"></script>
 </head>
 <body>
     <div id="layout">
@@ -451,8 +451,8 @@
         </div>
     </div>
 
-    <link rel="stylesheet" href="/creatic.css">
-    <script src="/creatic.js"></script>
+    <link rel="stylesheet" href="creatic.css">
+    <script src="creatic.js"></script>
     <script>
         let serverPort = 48080;
         let activeSessionId = null;
@@ -498,9 +498,16 @@
             log(`Theme switched to ${isLight ? 'light' : 'dark'}.`);
         }
 
+        function getBaseUrl() {
+            if (window.location.protocol === 'file:') {
+                return `http://localhost:48080`;
+            }
+            return '';
+        }
+
         async function loadSessions() {
             try {
-                const res = await fetch(`/forge/sessions`);
+                const res = await fetch(getBaseUrl() + `/forge/sessions?runtime=SWT`);
                 sessions = await res.json();
                 renderSessionList();
                 if (sessions.length > 0 && !activeSessionId) {
@@ -655,7 +662,7 @@
 
         async function fetchModel(id) {
             try {
-                const res = await fetch(`/forge/session/${id}/model`);
+                const res = await fetch(getBaseUrl() + `/forge/session/${id}/model?runtime=SWT`);
                 model = await res.json();
                 if (!model.nodes) model = { nodes: [], links: [] };
 
@@ -747,7 +754,7 @@
             const name = prompt("Enter Session Name:");
             if (!name) return;
             try {
-                const res = await fetch(`/forge/session`, {
+                const res = await fetch(getBaseUrl() + `/forge/session?runtime=SWT`, {
                     method: 'POST',
                     body: JSON.stringify({ name: name, modelType: 'MLP' })
                 });
@@ -765,7 +772,7 @@
             if (!name) return;
 
             try {
-                const res = await fetch(`/forge/session`, {
+                const res = await fetch(`/forge/session?runtime=SWT`, {
                     method: 'POST',
                     body: JSON.stringify({ name: name, modelType: type.toUpperCase(), isDemo: true })
                 });
@@ -778,7 +785,7 @@
 
         async function saveAllSessions() {
             try {
-                const res = await fetch(`/forge/save-all`, { method: 'POST' });
+                const res = await fetch(getBaseUrl() + `/forge/save-all?runtime=SWT`, { method: 'POST' });
                 const data = await res.json();
                 if (data.status === 'ok') {
                     log("All Forge sessions persisted to disk.");
@@ -792,7 +799,7 @@
         async function saveActiveModel() {
             if (!activeSessionId) return;
             try {
-                await fetch(`/forge/session/${activeSessionId}/model`, {
+                await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/model?runtime=SWT`, {
                     method: 'POST',
                     body: JSON.stringify(model)
                 });
@@ -866,7 +873,7 @@
             if (!activeSessionId) return;
             if (!confirm("Delete this session?")) return;
             try {
-                await fetch(`/forge/session/${activeSessionId}`, { method: 'DELETE' });
+                await fetch(getBaseUrl() + `/forge/session/${activeSessionId}?runtime=SWT`, { method: 'DELETE' });
                 log("Session deleted.");
                 activeSessionId = null;
                 await loadSessions();
@@ -951,23 +958,23 @@
 
             try {
                 if (currentViz === 'ARCHITECTURE') {
-                    const res = await fetch(`/forge/session/${activeSessionId}/structure`);
+                    const res = await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/structure?runtime=SWT`);
                     const data = await res.json();
                     renderArchitectureViz(data);
                 } else if (currentViz === 'DATASET') {
-                    const statsRes = await fetch(`/forge/session/${activeSessionId}/dataset/stats`);
+                    const statsRes = await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/dataset/stats?runtime=SWT`);
                     const stats = await statsRes.json();
-                    const sampleRes = await fetch(`/forge/session/${activeSessionId}/dataset/sample/${currentSampleIndex}`);
+                    const sampleRes = await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/dataset/sample/${currentSampleIndex}?runtime=SWT`);
                     const sample = await sampleRes.json();
                     renderDatasetViz(stats, sample);
                 } else if (currentViz === 'TRAINING') {
-                    const metricsRes = await fetch(`/forge/session/${activeSessionId}/training/metrics`);
+                    const metricsRes = await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/training/metrics?runtime=SWT`);
                     const metrics = await metricsRes.json();
-                    const eventsRes = await fetch(`/forge/session/${activeSessionId}/training/events`);
+                    const eventsRes = await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/training/events?runtime=SWT`);
                     const events = await eventsRes.json();
                     renderTrainingViz(metrics, events);
                 } else if (currentViz === 'EVOLUTION') {
-                    const res = await fetch(`/forge/session/${activeSessionId}/snapshots`);
+                    const res = await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/snapshots?runtime=SWT`);
                     const snapshots = await res.json();
                     renderEvolutionViz(snapshots);
                 }
@@ -1132,7 +1139,7 @@
         async function persistUiState(key, value) {
             if (!activeSessionId) return;
             try {
-                await fetch(`/forge/session/${activeSessionId}/uistate/${key}`, {
+                await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/uistate/${key}?runtime=SWT`, {
                     method: 'POST',
                     body: JSON.stringify({ value: value })
                 });
@@ -1151,7 +1158,7 @@
         async function compareSnapshot(id) {
             log(`Comparing active session with snapshot: ${id}`);
             try {
-                const res = await fetch(`/forge/session/${activeSessionId}/snapshots/compare/active/${id}`);
+                const res = await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/snapshots/compare/active/${id}?runtime=SWT`);
                 const diff = await res.json();
 
                 document.getElementById('viz-details-content').innerHTML = `

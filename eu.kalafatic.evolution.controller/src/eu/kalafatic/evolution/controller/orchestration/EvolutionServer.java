@@ -485,8 +485,8 @@ public class EvolutionServer extends NanoHTTPD {
         Orchestrator orch = OrchestratorServiceImpl.getInstance().getOrchestrator();
         String html = architectureController.renderArchitecture(orch, path, mode);
 
-        if ("Error: Template not found".equals(html)) {
-            return newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", html);
+        if (html == null || "Error: Template not found".equals(html)) {
+            return newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "Architecture template not found.");
         }
 
         return newFixedLengthResponse(Response.Status.OK, "text/html", html);
