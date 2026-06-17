@@ -9,17 +9,6 @@
     --input-focus: #4a90e2;
 }
 
-[data-theme="dark"] {
-    --bg-color: #1a1a1a;
-    --card-bg: #2d2d2d;
-    --text-color: #e0e0e0;
-    --primary-color: #3498db;
-    --primary-hover: #2980b9;
-    --error-color: #c0392b;
-    --input-border: #444444;
-    --input-focus: #3498db;
-}
-
 * {
     box-sizing: border-box;
     margin: 0;

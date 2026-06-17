@@ -298,11 +298,12 @@ public class DarwinFlow implements IOrchestrationFlow {
             WorkspaceDeltaAnalyzer.DeltaAnalysis reality = analyzer.analyze(baseCommit);
             context.log("[KERNEL] Reality Check: Winner variant applied. Analysis: " + reality.toString());
 
+        final BranchVariant finalSelectedVariant = selectedVariant;
             reality.getChangedFileMap().forEach((path, type) -> {
                 context.getFileChangeTracker().recordChange(path, type);
-                if (selectedVariant != null) {
+            if (finalSelectedVariant != null) {
                     EvolutionTree tree = context.getKernelContext().getMemoryService().getEvolutionTree();
-                    EvolutionNode node = tree.getNode(selectedVariant.getId());
+                    EvolutionNode node = tree.getNode(finalSelectedVariant.getId());
                     if (node != null) {
                         if (type == FileChangeTracker.ChangeType.NEW) node.getCreatedFiles().add(path);
                         else if (type == FileChangeTracker.ChangeType.REMOVED) node.getDeletedFiles().add(path);

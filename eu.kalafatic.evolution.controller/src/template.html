@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Evolution Architecture Map</title>
+    <script src="auth-integration.js"></script>
 	<script>
 	       // Diagnostic JavaLog Bridge
 	       window.onerror = function(msg, url, line, col, error) {
@@ -19,18 +20,6 @@
 	   </script>
     <style>
         :root {
-            --bg-primary: #1e1e1e;
-            --bg-secondary: #252526;
-            --border: #3c3c3c;
-            --text: #d4d4d4;
-            --text-dim: #858585;
-            --accent: #007acc;
-            --accent-hover: #1177bb;
-            --error: #f48771;
-            --success: #89d185;
-        }
-
-        body.light-theme {
             --bg-primary: #ffffff;
             --bg-secondary: #f3f3f3;
             --border: #cccccc;
@@ -38,6 +27,8 @@
             --text-dim: #666666;
             --accent: #007acc;
             --accent-hover: #1177bb;
+            --error: #f48771;
+            --success: #89d185;
         }
 
         body, html {
@@ -232,36 +223,35 @@
                 <h2>Target</h2>
                 <div class="control-group">
                     <div style="display:flex; gap:5px;">
-                        <select id="target-select" onchange="javaAction(this.value, 'SET_TARGET')" style="flex:1;" data-guidance="Select the target project or directory for architectural analysis.">
+                        <select id="target-select" onchange="javaAction(this.value, 'SET_TARGET')" style="flex:1;">
                             <!-- Populated by JS -->
                         </select>
-                        <button class="btn btn-sm" onclick="javaAction('', 'BROWSE_TARGET')" style="width:auto;" data-guidance="Open a file browser to select a new target directory.">📁</button>
+                        <button class="btn btn-sm" onclick="javaAction('', 'BROWSE_TARGET')" style="width:auto;">📁</button>
                     </div>
-                    <button class="btn btn-primary" onclick="javaAction('', 'DISCOVER')" data-guidance="Initiate a deep discovery scan of the target project to build the component map.">🔍 Discover Architecture</button>
+                    <button class="btn btn-primary" onclick="javaAction('', 'DISCOVER')">🔍 Discover Architecture</button>
                 </div>
             </div>
 
             <div class="sidebar-section">
                 <h2>View</h2>
                 <div class="control-group">
-                    <select id="mode-select" onchange="javaAction(this.value, 'SET_VIEW_MODE')" data-guidance="Choose how to visualize the architecture. Components (low-level), Subsystems (high-level), Use Cases (flow), or Knowledge Graph (relationships).">
+                    <select id="mode-select" onchange="javaAction(this.value, 'SET_VIEW_MODE')">
                         <option value="COMPONENTS">Components Map</option>
                         <option value="SUBSYSTEMS">Subsystems View</option>
                         <option value="USE_CASES">Use Cases Trace</option>
                         <option value="KNOWLEDGE_GRAPH">Knowledge Graph</option>
                     </select>
 
-                    <button class="btn" onclick="javaAction('', 'REFRESH')" data-guidance="Re-render the current visualization based on the latest architectural model.">🔄 Refresh View</button>
+                    <button class="btn" onclick="javaAction('', 'REFRESH')">🔄 Refresh View</button>
                 </div>
             </div>
 
             <div class="sidebar-section">
                 <h2>Tools</h2>
                 <div class="control-group">
-                    <button class="btn" onclick="javaAction('', 'GENERATE_METADATA')" data-guidance="Use AI to generate descriptive metadata for all identified components.">📝 Generate AI Metadata</button>
-                    <button class="btn" onclick="javaAction('', 'EXPORT_HTML')" data-guidance="Export the current architectural map as a standalone interactive HTML file.">📤 Export as HTML</button>
-                    <button class="btn" onclick="javaAction('', 'SAVE_JSON')" data-guidance="Persist the analyzed design to a JSON file for future loading.">💾 Save Design JSON</button>
-                    <button class="btn btn-sm" onclick="toggleTheme()" style="margin-top:5px; text-align:center;" data-guidance="Toggle between Dark and Light UI themes.">🌓 Toggle Theme</button>
+                    <button class="btn" onclick="javaAction('', 'GENERATE_METADATA')">📝 Generate AI Metadata</button>
+                    <button class="btn" onclick="javaAction('', 'EXPORT_HTML')">📤 Export as HTML</button>
+                    <button class="btn" onclick="javaAction('', 'SAVE_JSON')">💾 Save Design JSON</button>
                 </div>
             </div>
 
@@ -313,10 +303,17 @@
         <div id="popup-content"></div>
     </div>
 
-    <link rel="stylesheet" href="http://localhost:48080/creatic.css">
-    <script src="http://localhost:48080/creatic.js"></script>
+    <link rel="stylesheet" href="creatic.css">
+    <script src="creatic.js"></script>
     <script>
         function log(msg) { if (window.logFunction) window.logFunction(msg); else console.log(msg); }
+
+        function getBaseUrl() {
+            if (window.location.protocol === 'file:') {
+                return `http://localhost:48080`;
+            }
+            return '';
+        }
 
         window.INITIAL_MODEL = {{MODEL_JSON}};
         window.CURRENT_VIEW_MODE = {{VIEW_MODE_JSON}};
@@ -326,11 +323,6 @@
 
         function initUI() {
             log('Initializing UI elements...');
-
-            // Initialize Theme
-            if (localStorage.getItem('forge-theme') === 'light') {
-                document.body.classList.add('light-theme');
-            }
 
             // Sync select dropdown
             const modeSelect = document.getElementById('mode-select');
@@ -358,12 +350,6 @@
             }
         }
 
-        function toggleTheme() {
-            document.body.classList.toggle('light-theme');
-            const isLight = document.body.classList.contains('light-theme');
-            localStorage.setItem('forge-theme', isLight ? 'light' : 'dark');
-            log(`Theme switched to ${isLight ? 'light' : 'dark'}.`);
-        }
     </script>
     <script>{{NAVIGATOR_JS}}</script>
     <script>

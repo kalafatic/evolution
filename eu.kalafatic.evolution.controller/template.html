@@ -20,18 +20,6 @@
 	   </script>
     <style>
         :root {
-            --bg-primary: #1e1e1e;
-            --bg-secondary: #252526;
-            --border: #3c3c3c;
-            --text: #d4d4d4;
-            --text-dim: #858585;
-            --accent: #007acc;
-            --accent-hover: #1177bb;
-            --error: #f48771;
-            --success: #89d185;
-        }
-
-        body.light-theme {
             --bg-primary: #ffffff;
             --bg-secondary: #f3f3f3;
             --border: #cccccc;
@@ -39,6 +27,8 @@
             --text-dim: #666666;
             --accent: #007acc;
             --accent-hover: #1177bb;
+            --error: #f48771;
+            --success: #89d185;
         }
 
         body, html {
@@ -262,7 +252,6 @@
                     <button class="btn" onclick="javaAction('', 'GENERATE_METADATA')">📝 Generate AI Metadata</button>
                     <button class="btn" onclick="javaAction('', 'EXPORT_HTML')">📤 Export as HTML</button>
                     <button class="btn" onclick="javaAction('', 'SAVE_JSON')">💾 Save Design JSON</button>
-                    <button class="btn btn-sm" onclick="toggleTheme()" style="margin-top:5px; text-align:center;">🌓 Toggle Theme</button>
                 </div>
             </div>
 
@@ -335,11 +324,6 @@
         function initUI() {
             log('Initializing UI elements...');
 
-            // Initialize Theme
-            if (localStorage.getItem('forge-theme') === 'light') {
-                document.body.classList.add('light-theme');
-            }
-
             // Sync select dropdown
             const modeSelect = document.getElementById('mode-select');
             if (modeSelect) modeSelect.value = window.CURRENT_VIEW_MODE;
@@ -366,12 +350,6 @@
             }
         }
 
-        function toggleTheme() {
-            document.body.classList.toggle('light-theme');
-            const isLight = document.body.classList.contains('light-theme');
-            localStorage.setItem('forge-theme', isLight ? 'light' : 'dark');
-            log(`Theme switched to ${isLight ? 'light' : 'dark'}.`);
-        }
     </script>
     <script>{{NAVIGATOR_JS}}</script>
     <script>

@@ -5,21 +5,6 @@
     <title>Evolution Mirrored Chat</title>
     <style>
         :root {
-            --bg-primary: #1e1e1e;
-            --bg-secondary: #252526;
-            --border: #3c3c3c;
-            --text: #d4d4d4;
-            --text-dim: #858585;
-            --accent: #007acc;
-            --accent-hover: #1177bb;
-            --error: #f48771;
-            --success: #89d185;
-
-            --user-msg-bg: #007acc;
-            --ai-msg-bg: #2d2d2d;
-        }
-
-        body.light-theme {
             --bg-primary: #ffffff;
             --bg-secondary: #f3f3f3;
             --border: #cccccc;
@@ -27,6 +12,8 @@
             --text-dim: #666666;
             --accent: #007acc;
             --accent-hover: #1177bb;
+            --error: #f48771;
+            --success: #89d185;
 
             --user-msg-bg: #007acc;
             --ai-msg-bg: #f0f0f0;
@@ -205,15 +192,14 @@
         <div id="sidebar">
             <div class="sidebar-header">
                 🧬 EVO MIRROR
-                <button class="btn btn-sm btn-primary" onclick="toggleTheme()">🌓</button>
             </div>
 
             <div id="sidebar-scroll">
                 <div class="sidebar-section">
                     <h2>Chat Management</h2>
                     <div class="control-group">
-                        <button class="btn btn-primary" onclick="newSession()">New Session</button>
-                        <button class="btn" onclick="cleanChat()" style="margin-top:5px;">Clean Chat</button>
+                        <button class="btn btn-primary" onclick="newSession()" data-guidance="Start a fresh evolutionary chat session with a clean context.">New Session</button>
+                        <button class="btn" onclick="cleanChat()" style="margin-top:5px;" data-guidance="Clear all messages from the current chat view without resetting the session.">Clean Chat</button>
                     </div>
                 </div>
 
@@ -222,7 +208,7 @@
                     <div class="control-group">
                         <div class="control-item">
                             <label>Mode:</label>
-                            <select id="mode-select" onchange="updateSettings()">
+                            <select id="mode-select" onchange="updateSettings()" data-guidance="Select the execution mode: LOCAL (Ollama), HYBRID (Shared), REMOTE (Cloud APIs), or MEDIATED (Expert-guided).">
                                 <option value="LOCAL">Local</option>
                                 <option value="HYBRID">Hybrid</option>
                                 <option value="REMOTE">Remote</option>
@@ -232,7 +218,7 @@
                         </div>
                         <div class="control-item">
                             <label>Local:</label>
-                            <select id="local-model-select" onchange="updateSettings()">
+                            <select id="local-model-select" onchange="updateSettings()" data-guidance="Choose a model from your local Ollama instance.">
                                 <option value="">Loading...</option>
                             </select>
                         </div>
@@ -250,12 +236,12 @@
                 <div class="sidebar-section">
                     <h2>Instructions</h2>
                     <div class="control-group">
-                        <label class="checkbox-group"><input type="checkbox" id="iterative-check" onchange="updateSettings()"> Iterative Mode</label>
-                        <label class="checkbox-group"><input type="checkbox" id="self-iterative-check" onchange="updateSettings()"> Self-Development</label>
-                        <label class="checkbox-group"><input type="checkbox" id="darwin-check" onchange="updateSettings()"> Darwin Mode</label>
-                        <label class="checkbox-group"><input type="checkbox" id="step-check" onchange="updateSettings()"> Step Mode</label>
-                        <label class="checkbox-group"><input type="checkbox" id="git-check" onchange="updateSettings()"> Git Automation</label>
-                        <label class="checkbox-group"><input type="checkbox" id="auto-approve-check" onchange="updateSettings()"> Auto-Approve</label>
+                        <label class="checkbox-group" data-guidance="Allow the AI to perform multiple rounds of refinement to improve output quality."><input type="checkbox" id="iterative-check" onchange="updateSettings()"> Iterative Mode</label>
+                        <label class="checkbox-group" data-guidance="Enable the AI to modify its own codebase and optimize its performance."><input type="checkbox" id="self-iterative-check" onchange="updateSettings()"> Self-Development</label>
+                        <label class="checkbox-group" data-guidance="Activate the Darwin Evolutionary Engine for structural mutation and selection of engineering strategies."><input type="checkbox" id="darwin-check" onchange="updateSettings()"> Darwin Mode</label>
+                        <label class="checkbox-group" data-guidance="Require manual confirmation for each step in the AI's execution plan."><input type="checkbox" id="step-check" onchange="updateSettings()"> Step Mode</label>
+                        <label class="checkbox-group" data-guidance="Automatically create branches and commit changes to the Git repository."><input type="checkbox" id="git-check" onchange="updateSettings()"> Git Automation</label>
+                        <label class="checkbox-group" data-guidance="Bypass manual approval for non-critical code changes and execution steps."><input type="checkbox" id="auto-approve-check" onchange="updateSettings()"> Auto-Approve</label>
                         <div class="control-item" style="margin-top:5px;">
                             <label>Max Iterations:</label>
                             <input type="number" id="max-iter-input" value="5" min="1" max="20" onchange="updateSettings()">
@@ -325,8 +311,8 @@
             </div>
 
             <div id="input-area">
-                <input type="text" id="user-input" placeholder="Type a message or response..." onkeypress="if(event.key==='Enter') sendMessage()">
-                <button onclick="sendMessage()">Send</button>
+                    <input type="text" id="user-input" placeholder="Type a message or response..." onkeypress="if(event.key==='Enter') sendMessage()" data-guidance="Enter your instructions for the evolutionary engine. You can ask to implement features, fix bugs, or evolve the architecture.">
+                    <button onclick="sendMessage()" data-guidance="Send your command to the Evolution Orchestrator.">Send</button>
             </div>
         </div>
 
@@ -604,12 +590,6 @@
             lastSequenceNumber = 0;
         }
 
-        function toggleTheme() {
-            document.body.classList.toggle('light-theme');
-            const isLight = document.body.classList.contains('light-theme');
-            localStorage.setItem('forge-theme', isLight ? 'light' : 'dark');
-            log(`Theme switched to ${isLight ? 'light' : 'dark'}.`);
-        }
 
         function getIconForAgentType(type) {
             const icons = {
@@ -703,11 +683,6 @@
         async function sendBypass(text) {
             userInput.value = text;
             await sendMessage();
-        }
-
-        // Initialize Theme from Storage
-        if (localStorage.getItem('forge-theme') === 'light') {
-            document.body.classList.add('light-theme');
         }
 
         fetchSettings();
