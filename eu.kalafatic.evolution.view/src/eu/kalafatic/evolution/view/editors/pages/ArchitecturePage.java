@@ -827,38 +827,36 @@ public class ArchitecturePage extends AEvoPage {
         Display.getDefault().asyncExec(() -> {
             if (browser == null || browser.isDisposed() || showingSnapshot) return;
 
-            int port = 48080;
-            if (orchestrator != null && orchestrator.getServerSettings() != null) {
-                port = orchestrator.getServerSettings().getPort();
-            }
-
-            String url = "http://localhost:" + port + "/experimental/architecture";
-            if (currentTargetPath != null) {
-                url += "?path=" + java.net.URLEncoder.encode(currentTargetPath, java.nio.charset.StandardCharsets.UTF_8);
-                url += "&mode=" + currentMode.name();
-            }
-
+            DesignModel model = extractModel();
             boolean targetChanged = currentTargetPath != null && !currentTargetPath.equals(lastTargetPath);
 
+            // Re-render full template only if target path changed or it's the first load
             if (lastJson.isEmpty() || targetChanged) {
-                eu.kalafatic.evolution.controller.log.Log.log("[ARCH_PAGE] Routing to internal server: " + url);
-                browser.setUrl(url);
-                lastJson = "sent";
+                eu.kalafatic.evolution.controller.log.Log.log("[ARCH_PAGE] Full browser reload triggered for: " + currentTargetPath);
+                isJsReady = false; // Reset readiness as we are loading a new page
+                browser.setText(renderer.render(model, currentMode.name(), currentTargetPath, defaultTargetPath, targetHistory));
+                lastJson = renderer.serializeModel(model);
                 lastTargetPath = currentTargetPath;
                 return;
             }
 
-            if (!isJsReady) return;
+            if (!isJsReady) {
+                eu.kalafatic.evolution.controller.log.Log.log("[ARCH_PAGE] Skipping update - JS not ready yet.");
+                return;
+            }
 
-            DesignModel model = extractModel();
             String json = renderer.serializeModel(model);
-            browser.execute("if(window.updateGraph) { window.updateGraph(" + json + "); }");
+            if (json.equals(lastJson)) return;
+
+            eu.kalafatic.evolution.controller.log.Log.log("[ARCH_PAGE] Updating graph with new JSON (" + (model != null ? model.getComponents().size() : 0) + " components)");
+            lastJson = json;
+            browser.execute("if(window.updateGraph) { window.updateGraph(" + json + "); } else { console.log('window.updateGraph not found'); }");
         });
     }
 
     private void initBrowser() {
         if (browser == null || browser.isDisposed()) return;
-        refreshBrowser();
+        browser.setText(renderer.render(null, currentMode.name(), currentTargetPath, defaultTargetPath, targetHistory));
     }
 
     public enum ViewMode {

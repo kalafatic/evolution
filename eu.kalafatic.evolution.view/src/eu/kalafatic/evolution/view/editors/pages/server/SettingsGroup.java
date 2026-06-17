@@ -58,8 +58,7 @@ public class SettingsGroup extends AToolGroup {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 try {
-                    int port = Integer.parseInt(portText.getText());
-                    ServerManager.getInstance().start(port);
+                    ServerManager.getInstance().start(Integer.parseInt(portText.getText()));
                     if (onStateChange != null) onStateChange.run();
                 } catch (Exception ex) {
                     ex.printStackTrace();
@@ -71,13 +70,8 @@ public class SettingsGroup extends AToolGroup {
         stopBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                try {
-                    int port = Integer.parseInt(portText.getText());
-                    ServerManager.getInstance().stop(port);
-                    if (onStateChange != null) onStateChange.run();
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
+                ServerManager.getInstance().stop();
+                if (onStateChange != null) onStateChange.run();
             }
         });
 
@@ -86,8 +80,7 @@ public class SettingsGroup extends AToolGroup {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 try {
-                    int port = Integer.parseInt(portText.getText());
-                    ServerManager.getInstance().restart(port);
+                    ServerManager.getInstance().restart();
                     if (onStateChange != null) onStateChange.run();
                 } catch (Exception ex) {
                     ex.printStackTrace();

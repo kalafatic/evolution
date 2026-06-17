@@ -45,13 +45,12 @@ public class ForgePage extends AEvoPage {
     }
 
     private void initBrowser() {
-        int port = 48080;
-        if (orchestrator != null && orchestrator.getServerSettings() != null) {
-            port = orchestrator.getServerSettings().getPort();
+        String html = eu.kalafatic.evolution.controller.tools.FileTool.readResource("/eu/kalafatic/evolution/controller/orchestration/forge.html");
+        if (html != null) {
+            browser.setText(html);
+        } else {
+            browser.setText("<html><body><h1>Forge UI Template Not Found</h1></body></html>");
         }
-        String url = "http://localhost:" + port + "/experimental/forge";
-        System.out.println("[FORGE_PAGE] Routing to internal server: " + url);
-        browser.setUrl(url);
     }
 
     private void setupJavaScriptBridges() {

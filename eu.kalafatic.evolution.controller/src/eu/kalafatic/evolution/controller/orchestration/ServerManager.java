@@ -1,9 +1,6 @@
 package eu.kalafatic.evolution.controller.orchestration;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import eu.kalafatic.evolution.forge.controller.api.DatasetController;
 import eu.kalafatic.evolution.forge.controller.api.ModelController;
@@ -17,12 +14,12 @@ import eu.kalafatic.evolution.forge.controller.impl.SnapshotControllerImpl;
 import eu.kalafatic.evolution.forge.controller.impl.TrainingControllerImpl;
 
 /**
- * Singleton manager for multi-port EvolutionServer lifecycle.
+ * Singleton manager for EvolutionServer lifecycle.
  */
 public class ServerManager {
     private static ServerManager instance;
-    private final Map<Integer, EvolutionServer> activeServers = new ConcurrentHashMap<>();
-    private int primaryPort = 48080;
+    private EvolutionServer server;
+    private int currentPort = 48080;
 
     private ServerManager() {}
 
@@ -34,11 +31,11 @@ public class ServerManager {
     }
 
     public synchronized void start(int port) throws IOException {
-        if (activeServers.containsKey(port)) {
-            stop(port);
+        if (server != null) {
+            stop();
         }
-
-        EvolutionServer server = new EvolutionServer(port);
+        this.currentPort = port;
+        server = new EvolutionServer(port);
 
         // Wire Controllers
         SessionController sc = new SessionControllerImpl(null);
@@ -49,51 +46,25 @@ public class ServerManager {
         server.setForgeControllers(sc, mc, dc, tc, snc);
 
         server.startServer();
-        activeServers.put(port, server);
-        this.primaryPort = port;
-    }
-
-    public synchronized void stop(int port) {
-        EvolutionServer server = activeServers.get(port);
-        if (server != null) {
-            server.stop();
-            activeServers.remove(port);
-        }
     }
 
     public synchronized void stop() {
-        stop(primaryPort);
-    }
-
-    public synchronized void stopAll() {
-        for (Integer port : new java.util.HashSet<>(activeServers.keySet())) {
-            stop(port);
+        if (server != null) {
+            server.stop();
+            server = null;
         }
     }
 
-    public synchronized void restart(int port) throws IOException {
-        stop(port);
-        start(port);
+    public synchronized void restart() throws IOException {
+        stop();
+        start(currentPort);
     }
 
-    public synchronized boolean isRunning(int port) {
-        EvolutionServer server = activeServers.get(port);
+    public synchronized boolean isRunning() {
         return server != null && server.isAlive();
     }
 
-    public synchronized boolean isAnyRunning() {
-        return !activeServers.isEmpty();
-    }
-
-    public int getPort() {
-        return primaryPort;
-    }
-
-    public Map<Integer, Boolean> getServerStatuses() {
-        Map<Integer, Boolean> statuses = new HashMap<>();
-        for (Map.Entry<Integer, EvolutionServer> entry : activeServers.entrySet()) {
-            statuses.put(entry.getKey(), entry.getValue().isAlive());
-        }
-        return statuses;
+    public synchronized int getPort() {
+        return currentPort;
     }
 }
