@@ -102,7 +102,9 @@ public class AuthController {
                 response.put("role", user.getRole());
                 response.put("sessionId", sessionId);
                 if (sessOpt.isPresent()) {
-                    response.put("loginTimestamp", sessOpt.get().getCreatedAt().toString());
+                    Session sess = sessOpt.get();
+                    response.put("loginTimestamp", sess.getCreatedAt().toString());
+                    response.put("workflowType", sess.getWorkflowType());
                 }
                 return jsonResponse(Response.Status.OK, response);
             } else {

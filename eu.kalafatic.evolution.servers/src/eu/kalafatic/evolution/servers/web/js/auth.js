@@ -91,6 +91,11 @@ async function loadUserInfo() {
             document.getElementById('displayRole').textContent = data.role;
             document.getElementById('displaySessionId').textContent = data.sessionId;
             document.getElementById('displayTimestamp').textContent = data.loginTimestamp;
+
+            const workflowEl = document.getElementById('displayWorkflow');
+            if (workflowEl) {
+                workflowEl.textContent = data.workflowType || 'GENERAL';
+            }
         } else {
             localStorage.removeItem('sessionId');
             sessionStorage.removeItem('sessionId');

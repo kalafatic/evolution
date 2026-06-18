@@ -64,12 +64,22 @@ public class DatabaseManager {
                 "created_at TEXT NOT NULL," +
                 "last_access TEXT NOT NULL," +
                 "client_ip TEXT," +
+                "workflow_type TEXT," +
+                "metadata TEXT," +
                 "FOREIGN KEY (user_id) REFERENCES users(id)" +
                 ");";
 
         try (Statement stmt = conn.createStatement()) {
             stmt.execute(usersTable);
             stmt.execute(sessionsTable);
+
+            // Migration: Check if columns exist and add them if not
+            try {
+                stmt.execute("ALTER TABLE sessions ADD COLUMN workflow_type TEXT;");
+            } catch (SQLException e) { /* Column already exists */ }
+            try {
+                stmt.execute("ALTER TABLE sessions ADD COLUMN metadata TEXT;");
+            } catch (SQLException e) { /* Column already exists */ }
         }
     }
 

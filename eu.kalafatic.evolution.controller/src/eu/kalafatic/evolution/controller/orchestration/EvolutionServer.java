@@ -133,10 +133,13 @@ public class EvolutionServer extends NanoHTTPD {
             if (Method.GET.equals(method) && ("/".equals(uri) || "/index.html".equals(uri))) {
                 return handleGetIndex();
             } else if (Method.GET.equals(method) && "/experimental/chat".equals(uri)) {
+                updateSessionWorkflow(session, "CHAT");
                 return handleGetChat();
             } else if (Method.GET.equals(method) && "/experimental/forge".equals(uri)) {
+                updateSessionWorkflow(session, "FORGE");
                 return handleGetForge();
             } else if (Method.GET.equals(method) && "/experimental/architecture".equals(uri)) {
+                updateSessionWorkflow(session, "ARCHITECTURE");
                 return handleGetArchitecture(session);
             } else if (Method.GET.equals(method) && "/experimental/evolution/tree".equals(uri)) {
                 return handleGetEvolutionTreePage();
@@ -641,6 +644,24 @@ public class EvolutionServer extends NanoHTTPD {
         if (uri.endsWith(".jpg") || uri.endsWith(".jpeg")) return "image/jpeg";
         if (uri.endsWith(".svg")) return "image/svg+xml";
         return "application/octet-stream";
+    }
+
+    private void updateSessionWorkflow(IHTTPSession session, String workflowType) {
+        String authHeader = session.getHeaders().get("authorization");
+        String sessionId = null;
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            sessionId = authHeader.substring(7);
+        } else {
+            sessionId = session.getParms().get("sessionId");
+        }
+
+        if (sessionId != null) {
+            try {
+                authService.updateWorkflowType(sessionId, workflowType);
+            } catch (Exception e) {
+                // Ignore update errors
+            }
+        }
     }
 
     private void trackHttpSession(IHTTPSession session) {
