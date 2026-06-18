@@ -941,7 +941,9 @@ public class IterationManager {
             context.log("[KERNEL] Committing selected trajectory via Force Solution.");
         }
 
+        transition(SystemState.EXECUTING, context);
         EvaluationResult result = darwinFlow.executeWinner(context, decision, variants, goal);
+        transition(SystemState.VERIFYING, context);
 
         if (result.isSuccess()) {
             EvolutionPhase currentPhaseEnum = EvolutionPhase.fromString(state.getCurrentPhase());
