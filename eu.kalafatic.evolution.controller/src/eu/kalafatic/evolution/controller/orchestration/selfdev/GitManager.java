@@ -167,6 +167,12 @@ public class GitManager {
         worktreeRegistry.remove(path);
     }
 
+    public void pruneWorktrees() {
+        try {
+            gitTool.execute("worktree prune", root, null);
+        } catch (Exception e) {}
+    }
+
     public void cleanupWorktrees() {
         for (String path : worktreeRegistry) {
             try {

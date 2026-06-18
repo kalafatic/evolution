@@ -401,6 +401,12 @@ public class DarwinFlow implements IOrchestrationFlow {
                 tempDir = context.getProjectRoot();
             } else {
                 tempDir = Files.createTempDirectory("evo-variant-" + variant.getId()).toFile();
+                // Ensure worktree is clean before starting
+                try {
+                    manager.getGitManager().removeWorktree(tempDir.getAbsolutePath());
+                    manager.getGitManager().pruneWorktrees();
+                } catch (Exception e) {}
+
                 manager.getBranchManager().createWorktree(variant.getBranchName(), tempDir.getAbsolutePath());
             }
             TaskContext variantContext = new TaskContext(context.getOrchestrator(), tempDir);

@@ -194,6 +194,7 @@ public class IterationMemoryService {
         Log.log("[MEMORY] saveRecord: ID=" + record.getBranchId() + ", Result=" + record.getResult() + ", Strategy=" + record.getStrategy());
         records.add(record);
         indexRecordTo(record, errorIndex);
+        if (!memoryDir.exists()) memoryDir.mkdirs();
         String fileName = String.format("iteration_%d_%d.json", record.getIteration(), record.getTimestamp());
         File file = new File(memoryDir, fileName);
         try {
@@ -209,6 +210,7 @@ public class IterationMemoryService {
     public void saveTrajectoryAnalysis(TrajectoryAnalysisRecord record) {
         Log.log("[MEMORY] saveTrajectoryAnalysis: Branch=" + record.getBranchId() + ", Fitness=" + record.getFitnessScore());
         trajectoryAnalyses.add(record);
+        if (!memoryDir.exists()) memoryDir.mkdirs();
         String fileName = String.format("trajectory_%s_%s_%d.json",
             record.getIterationId(), record.getBranchId(), record.getTimestamp());
         File file = new File(memoryDir, fileName);
@@ -259,6 +261,7 @@ public class IterationMemoryService {
     public void saveCheckpoint(Checkpoint checkpoint) {
         if (checkpoint == null || checkpoint.getSessionId() == null) return;
 
+        if (!memoryDir.exists()) memoryDir.mkdirs();
         File checkpointFile = new File(memoryDir, "checkpoint_" + checkpoint.getSessionId() + ".json");
         checkpoint.setTimestamp(System.currentTimeMillis());
         try {
@@ -381,6 +384,7 @@ public class IterationMemoryService {
     }
 
     public synchronized void saveEvolutionTree() {
+        if (!memoryDir.exists()) memoryDir.mkdirs();
         File treeFile = new File(memoryDir, "evolution_tree.json");
         try {
             mapper.writeValue(treeFile, evolutionTree.getNodes());
