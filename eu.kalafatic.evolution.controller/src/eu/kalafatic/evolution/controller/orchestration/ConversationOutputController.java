@@ -69,7 +69,7 @@ public class ConversationOutputController {
         msg.setPriority(priority.getLevel());
         msg.setSequenceNumber(seq);
         msg.setTurnId(turnId);
-        msg.setIsTerminal(isTerminal || priority == MessagePriority.FINAL || priority == MessagePriority.USER_ACTION_REQUIRED);
+        msg.setIsTerminal(isTerminal || priority == MessagePriority.FINAL);
 
         synchronized (buffer) {
             // Drop late noise if turn is already finalized
