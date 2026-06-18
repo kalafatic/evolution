@@ -79,6 +79,13 @@ public class DefaultStabilityPolicy implements IStabilityPolicy {
 
         if (isConverged(trajectory, context, pressure)) return true;
 
+        // Force progression for architecture phase after at least one successful generation
+        // to prevent permanent stalls in architectural cognition.
+        if (current == EvolutionPhase.ARCHITECTURE_VARIANTS && trajectory.getGeneration() >= 1) {
+            context.log("[STABILITY] Architectural variant generation complete (Gen " + trajectory.getGeneration() + "). Forcing progression to refinement.");
+            return true;
+        }
+
         int generation = trajectory.getGeneration();
         int maxGen = context.getOrchestrationState().getMetadata().containsKey("maxEvolutionaryDepth") ?
             (Integer) context.getOrchestrationState().getMetadata().get("maxEvolutionaryDepth") : 8;

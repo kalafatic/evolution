@@ -945,11 +945,23 @@ public class AiChatPage extends AEvoPage {
 	}
 
 	public void handleSimpleSolution() {
-		handleExecuteProposal("Execute the simplest working solution.");
+		String sid = getCurrentSessionName();
+		RuntimeProjection projection = ProjectionService.getInstance().getProjection(sid);
+		if (projection.isRunning() && projection.isWaitingForUser()) {
+			provideInput(sid, "Execute the simplest working solution.");
+		} else {
+			handleExecuteProposal("Execute the simplest working solution.");
+		}
 	}
 
 	public void handleForceSolution() {
-		handleExecuteProposal("Force Solution");
+		String sid = getCurrentSessionName();
+		RuntimeProjection projection = ProjectionService.getInstance().getProjection(sid);
+		if (projection.isRunning() && projection.isWaitingForUser()) {
+			provideInput(sid, "Force Solution");
+		} else {
+			handleExecuteProposal("Force Solution");
+		}
 	}
 
 	public void handleEditDarwinVariant(int index, String variantId, String text) {

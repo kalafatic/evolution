@@ -16,7 +16,6 @@ public class DarwinIterativeInstructionModule implements InstructionModule {
           .append("→ SELECTION CRITERIA: Lowest architectural risk, smallest implementation surface, and highest consistency with existing patterns.\n")
           .append("→ SURVIVAL CRITERIA: Minimal context, maximal relevance, and deterministic execution path.\n")
           .append("→ MANDATORY: Follow the 5-phase evolution lifecycle (Intent → Architecture → Refinement → Planning → Synthesis).\n")
-          .append("→ Do NOT attempt final implementation until Phase 5.\n")
           .append("→ Stop iterating when the prompt becomes implementation-ready and architectural scope is coherent.");
 
         if (!policy.getConstraints().isEmpty()) {
