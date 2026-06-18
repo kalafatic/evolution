@@ -53,7 +53,9 @@ public class DarwinFitnessRanker {
     public void rank(List<JSONObject> variants, AtomicIntentAnalysis atomic, int generation, EvolutionaryPressureVector pressure) {
         boolean isAtomicRound = atomic != null && atomic.isAtomic() && atomic.getComplexityVector().determinismConfidence > 0.8;
         for (JSONObject v : variants) {
-            double score = calculateFitness(v, generation, pressure);
+            FitnessRecord fitness = calculateFitnessRecord(v, generation, pressure, atomic);
+            double score = fitness.getTotalScore();
+            v.put("fitness_record", fitness); // Store for wrapping later
 
             // Hard scope gate
             double scopeRatio = calculateScopeRatio(v, atomic);
@@ -83,7 +85,9 @@ public class DarwinFitnessRanker {
         variants.sort(Comparator.comparingDouble((JSONObject v) -> v.optDouble("score")).reversed());
     }
 
-    private double calculateFitness(JSONObject variant, int generation, EvolutionaryPressureVector pressure) {
+    private FitnessRecord calculateFitnessRecord(JSONObject variant, int generation, EvolutionaryPressureVector pressure, AtomicIntentAnalysis atomic) {
+        FitnessRecord fr = new FitnessRecord();
+
         // 1. Correctness (40%) - structural completeness & action specificity
         double correctness = 0.5;
         if (variant.has("tradeoffs")) correctness += 0.1;
@@ -98,6 +102,7 @@ public class DarwinFitnessRanker {
             if (hasTarget) correctness += 0.1;
         }
         correctness = Math.min(1.0, correctness);
+        fr.setImplementationCompleteness(correctness);
 
         // 2. Simplicity (20%) - anti-complexity
         double simplicity = 1.0;
@@ -129,6 +134,7 @@ public class DarwinFitnessRanker {
         if (dims != null) {
             if ("modular".equalsIgnoreCase(dims.optString("modularity_approach"))) maintainability = 0.9;
         }
+        fr.setArchitecturalQuality((0.2 * extensibility) + (0.1 * performance) + (0.1 * maintainability) + (0.2 * simplicity));
 
         double total = (0.4 * correctness) + (0.2 * simplicity) + (0.2 * extensibility) + (0.1 * performance) + (0.1 * maintainability);
 
@@ -140,7 +146,10 @@ public class DarwinFitnessRanker {
             total += calculateMediationFitness(variant.optJSONObject("mediation_candidate")) * 0.1;
         }
 
-        return Math.min(1.0, total);
+        fr.setGoalSatisfaction(atomic != null && atomic.isAtomic() ? 0.9 : 0.7);
+        fr.setTotalScore(Math.min(1.0, total));
+
+        return fr;
     }
 
     private double calculateScopeRatio(JSONObject variant, AtomicIntentAnalysis atomic) {

@@ -30,6 +30,11 @@ public enum RuntimeEventType {
     REASONING_STEP(EventCategory.AGENT),
     EVALUATION_SIGNAL_CREATED(EventCategory.AGENT),
     VARIANT_EVALUATED(EventCategory.AGENT),
+    SIBLING_GENERATED(EventCategory.AGENT),
+    SIBLING_REJECTED(EventCategory.AGENT),
+    WINNER_SELECTED(EventCategory.AGENT),
+    FITNESS_UPDATED(EventCategory.AGENT),
+    TREE_UPDATED(EventCategory.AGENT),
 
     // 4. EXECUTION (Tools & Side Effects)
     TOOL_EXECUTION_STARTED(EventCategory.EXECUTION),

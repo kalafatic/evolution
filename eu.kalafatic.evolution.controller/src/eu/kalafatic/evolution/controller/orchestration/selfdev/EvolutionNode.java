@@ -21,10 +21,15 @@ public class EvolutionNode {
     private String semanticPhilosophy;
     private Map<String, String> engineeringDimensions = new HashMap<>();
 
+    private MutationRecord mutationRecord;
+    private ExecutionRecord executionRecord;
+    private VerificationRecord verificationRecord;
+    private FitnessRecord fitnessRecord;
+
     private double fitnessScore;
     private double verificationScore;
 
-    // Repository Changes
+    // Repository Changes (Legacy/Shortcut)
     private List<String> createdFiles = new ArrayList<>();
     private List<String> modifiedFiles = new ArrayList<>();
     private List<String> deletedFiles = new ArrayList<>();
@@ -91,6 +96,18 @@ public class EvolutionNode {
 
     public List<String> getDeletedFiles() { return deletedFiles; }
     public void setDeletedFiles(List<String> deletedFiles) { this.deletedFiles = deletedFiles; }
+
+    public MutationRecord getMutationRecord() { return mutationRecord; }
+    public void setMutationRecord(MutationRecord mutationRecord) { this.mutationRecord = mutationRecord; }
+
+    public ExecutionRecord getExecutionRecord() { return executionRecord; }
+    public void setExecutionRecord(ExecutionRecord executionRecord) { this.executionRecord = executionRecord; }
+
+    public VerificationRecord getVerificationRecord() { return verificationRecord; }
+    public void setVerificationRecord(VerificationRecord verificationRecord) { this.verificationRecord = verificationRecord; }
+
+    public FitnessRecord getFitnessRecord() { return fitnessRecord; }
+    public void setFitnessRecord(FitnessRecord fitnessRecord) { this.fitnessRecord = fitnessRecord; }
 
     public String getLlmPrompt() { return llmPrompt; }
     public void setLlmPrompt(String llmPrompt) { this.llmPrompt = llmPrompt; }
