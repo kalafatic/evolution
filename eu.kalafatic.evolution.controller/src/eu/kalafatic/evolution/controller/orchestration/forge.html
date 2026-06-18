@@ -268,6 +268,27 @@
         .diff-added { color: var(--success); }
         .diff-removed { color: var(--error); }
 
+        /* Demo Animations */
+        @keyframes march {
+            to { stroke-dashoffset: -20; }
+        }
+        .link.animating {
+            stroke: var(--accent);
+            stroke-dasharray: 5, 5;
+            animation: march 1s linear infinite;
+        }
+
+        #demo-panel {
+            background: #fff9c4;
+            border: 1px solid #fbc02d;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+        .demo-step { font-size: 0.8em; margin: 4px 0; color: #555; }
+        .demo-step.active { font-weight: bold; color: var(--accent); }
+        .demo-step.completed { text-decoration: line-through; color: var(--success); }
+
     </style>
     <script src="auth-integration.js"></script>
 </head>
@@ -363,6 +384,18 @@
 
         <!-- RIGHT PANELS -->
         <div id="panels-container">
+            <!-- DEMO PANEL -->
+            <div id="demo-panel" style="display:none">
+                <h3 style="font-size: 0.85em; margin: 0 0 10px 0;">🚀 E2E Demo Progress</h3>
+                <div id="demo-steps">
+                    <div class="demo-step" id="step-init">Initializing Architecture...</div>
+                    <div class="demo-step" id="step-data">Loading Training Data...</div>
+                    <div class="demo-step" id="step-train">Training Model...</div>
+                    <div class="demo-step" id="step-export">Exporting to Ollama...</div>
+                    <div class="demo-step" id="step-final">Finalizing & Saving...</div>
+                </div>
+            </div>
+
             <!-- GUIDANCE PANEL -->
             <div class="panel" id="guidance-panel">
                 <h3>Recommended Next Steps</h3>
@@ -1101,6 +1134,111 @@
                 alert("Error fetching comparison: " + e.message);
             }
         }
+
+        // E2E Demo Logic
+        window.startE2EDemo = async function() {
+            if (!activeSessionId) {
+                alert("Please select or create a session first.");
+                return;
+            }
+
+            document.getElementById('demo-panel').style.display = 'block';
+            resetDemoSteps();
+            updateDemoStep('step-init', 'active');
+
+            try {
+                const res = await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/demo?runtime=SWT`, { method: 'POST' });
+                log("E2E Demo started on backend...");
+            } catch (e) {
+                log("Demo error: " + e.message);
+            }
+        };
+
+        function resetDemoSteps() {
+            const steps = ['step-init', 'step-data', 'step-train', 'step-export', 'step-final'];
+            steps.forEach(id => {
+                const el = document.getElementById(id);
+                el.className = 'demo-step';
+            });
+        }
+
+        function updateDemoStep(id, status) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.remove('active', 'completed');
+            if (status) el.classList.add(status);
+        }
+
+        function setLinksAnimating(animating) {
+            const links = document.querySelectorAll('.link');
+            links.forEach(l => {
+                if (animating) l.classList.add('animating');
+                else l.classList.remove('animating');
+            });
+        }
+
+        // Event Handling from Backend
+        async function handleRuntimeEvent(event) {
+            if (event.entityId !== activeSessionId) return;
+
+            switch(event.type) {
+                case 'FORGE_MODEL_CHANGED':
+                    await fetchModel(activeSessionId);
+                    break;
+                case 'FORGE_DATASET_IMPORTED':
+                    updateDemoStep('step-init', 'completed');
+                    updateDemoStep('step-data', 'active');
+                    setTimeout(() => updateDemoStep('step-data', 'completed'), 1000);
+                    break;
+                case 'FORGE_TRAINING_STARTED':
+                    updateDemoStep('step-train', 'active');
+                    setLinksAnimating(true);
+                    currentViz = 'TRAINING';
+                    document.getElementById('viz-selector').value = 'TRAINING';
+                    onVizChange();
+                    break;
+                case 'EVOLUTION_PROGRESS':
+                    // Training simulation updates via viz
+                    refreshViz();
+                    break;
+                case 'EXPORT_READY':
+                    setLinksAnimating(false);
+                    updateDemoStep('step-train', 'completed');
+                    updateDemoStep('step-export', 'active');
+                    setTimeout(() => {
+                        updateDemoStep('step-export', 'completed');
+                        updateDemoStep('step-final', 'active');
+                    }, 2000);
+                    break;
+                case 'VIEW_UPDATED':
+                    if (event.action === 'DEMO_COMPLETED') {
+                        updateDemoStep('step-final', 'completed');
+                        log("E2E Demo Finished Successfully!");
+                        setTimeout(() => {
+                            document.getElementById('demo-panel').style.display = 'none';
+                        }, 5000);
+                    }
+                    break;
+            }
+        }
+
+        // Simple poll for demo events if no real-time bus
+        let lastProcessedEventTime = 0;
+        setInterval(async () => {
+            if (document.getElementById('demo-panel').style.display === 'block') {
+                 // In a real system, we'd listen to the EventBus. Here we poll a recent events endpoint.
+                 try {
+                     const res = await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/events?runtime=SWT`);
+                     const events = await res.json();
+                     events.filter(e => e.timestamp > lastProcessedEventTime).forEach(e => {
+                         handleRuntimeEvent(e);
+                         lastProcessedEventTime = Math.max(lastProcessedEventTime, e.timestamp);
+                     });
+                 } catch(e) {}
+            } else {
+                 lastProcessedEventTime = Date.now();
+            }
+        }, 1000);
 
         // Notify SWT ready
         if (window.logFunction) logFunction("ready");

@@ -235,6 +235,12 @@ public class EvolutionServer extends NanoHTTPD {
                 } else if (id.contains("/uistate/")) {
                     String[] parts = id.split("/");
                     return handleUpdateUiState(parts[0], parts[2], session);
+                } else if (id.endsWith("/demo") && Method.POST.equals(method)) {
+                    String[] parts = id.split("/");
+                    return handleRunForgeDemo(parts[0]);
+                } else if (id.endsWith("/events")) {
+                    String[] parts = id.split("/");
+                    return handleGetForgeEvents(parts[0]);
                 }
             }
         } catch (Exception e) {
@@ -984,6 +990,24 @@ public class EvolutionServer extends NanoHTTPD {
 
         ForgeSessionManager.getInstance().updateUiState(sessionId, key, value);
         return newFixedLengthResponse(Response.Status.OK, "application/json", "{\"status\": \"ok\"}");
+    }
+
+    private Response handleRunForgeDemo(String sessionId) {
+        ForgeSessionManager.getInstance().runE2EDemo(sessionId);
+        return newFixedLengthResponse(Response.Status.OK, "application/json", "{\"status\": \"started\"}");
+    }
+
+    private Response handleGetForgeEvents(String sessionId) {
+        List<eu.kalafatic.evolution.controller.workflow.RuntimeEvent> events = ForgeSessionManager.getInstance().getRecentEvents(sessionId);
+        JSONArray array = new JSONArray();
+        for (eu.kalafatic.evolution.controller.workflow.RuntimeEvent e : events) {
+            array.put(new JSONObject()
+                .put("type", e.getType().name())
+                .put("entityId", e.getEntityId())
+                .put("action", e.getAction())
+                .put("timestamp", e.getTimestamp()));
+        }
+        return newFixedLengthResponse(Response.Status.OK, "application/json", array.toString());
     }
 
     private Response handleGetGitBranches(IHTTPSession session) {
