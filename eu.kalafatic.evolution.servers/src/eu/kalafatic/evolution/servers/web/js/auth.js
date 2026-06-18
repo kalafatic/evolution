@@ -72,17 +72,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function loadUserInfo() {
     const sessionId = localStorage.getItem('sessionId') || sessionStorage.getItem('sessionId');
-    if (!sessionId) {
-        window.location.href = '/login.html';
-        return;
+    const headers = {};
+    if (sessionId) {
+        headers['Authorization'] = `Bearer ${sessionId}`;
     }
 
     try {
         const response = await fetch('/api/auth/me', {
             method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${sessionId}`
-            }
+            headers: headers
         });
 
         if (response.ok) {
