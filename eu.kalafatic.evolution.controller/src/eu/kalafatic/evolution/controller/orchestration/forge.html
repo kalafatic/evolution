@@ -318,13 +318,13 @@
                     </defs>
                 </svg>
 
-                <div id="node-palette" data-guidance="Drag these components onto the canvas to construct your neural network architecture.">
+                <div id="node-palette" data-guidance="Drag components onto the canvas to design your AI model architecture. Connect nodes to define data flow.">
                     <div style="font-size: 0.7em; color: var(--text-dim); margin-bottom: 5px;">DRAG NODES</div>
-                    <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'NEURON')" data-guidance="The fundamental unit of neural computation. Suitable for basic logic and simple regression.">Neuron</button>
-                    <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'LAYER')" data-guidance="A collection of neurons or a standard processing layer (e.g., Dense, Conv2D, Pooling).">Layer</button>
-                    <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'ATTENTION')" data-guidance="Implements a self-attention mechanism to allow the model to focus on different parts of the input sequence.">Attention</button>
-                    <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'TRANSFORMER')" data-guidance="A high-level block containing encoder/decoder stacks for sequence-to-sequence tasks.">Transformer</button>
-                    <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'CUSTOM')" data-guidance="Define your own custom logic or script-based processing node.">Custom</button>
+                    <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'NEURON')" data-guidance="Basic computational unit. Performs weighted sum and activation.">Neuron</button>
+                    <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'LAYER')" data-guidance="Generic neural network layer. Can represent Dense, Convolutional, or Pooling layers.">Layer</button>
+                    <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'ATTENTION')" data-guidance="Self-attention mechanism. Core component of Transformer architectures.">Attention</button>
+                    <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'TRANSFORMER')" data-guidance="Complete Transformer block including Multi-Head Attention and Feed-Forward networks.">Transformer</button>
+                    <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'CUSTOM')" data-guidance="Define a custom architectural component using Evo-Domain logic.">Custom</button>
                 </div>
 
                 <textarea id="json-fallback"></textarea>
@@ -421,10 +421,10 @@
             <div class="panel">
                 <h3>Training & Execution</h3>
                 <div style="display: flex; gap: 5px;">
-                    <button id="train-btn" class="btn btn-primary" style="flex: 1;" onclick="startTraining()" data-guidance="Initiate the model training process using the selected dataset and configuration.">START</button>
-                    <button id="stop-btn" class="btn" style="flex: 1;" onclick="stopTraining()" disabled data-guidance="Gracefully halt the current training session and preserve the latest weights.">STOP</button>
+                    <button id="train-btn" class="btn btn-primary" style="flex: 1;" onclick="startTraining()" data-guidance="Initialize and start the training process for the current model architecture. Ensure a dataset is selected first.">START</button>
+                    <button id="stop-btn" class="btn" style="flex: 1;" onclick="stopTraining()" disabled data-guidance="Immediately halt the current training run. Current weights will be preserved but training progress will stop.">STOP</button>
                 </div>
-                <button class="btn btn-sm" style="width: 100%; margin-top: 8px;" data-guidance="Run an immediate evaluation pass on the test dataset to verify current performance.">Evaluate Now</button>
+                <button class="btn btn-sm" style="width: 100%; margin-top: 8px;" data-guidance="Trigger an evaluation run to measure the model's performance on the validation set.">Evaluate Now</button>
             </div>
 
             <!-- OBSERVABILITY PANEL -->
@@ -532,67 +532,10 @@
         }
 
         function updateGuidance() {
-            const content = document.getElementById('guidance-content');
-            if (!activeSessionId) {
-                content.innerHTML = "Select a session from the left sidebar to start modeling.";
-                return;
+            // Replaced by Creatic integrated guidance
+            if (window.Creatic && window.Creatic.refresh) {
+                window.Creatic.refresh();
             }
-
-            const session = sessions.find(s => s.id === activeSessionId);
-            const type = session ? session.modelType : 'NEURON';
-            const nodeCount = (model && model.nodes) ? model.nodes.length : 0;
-            const status = session ? session.status : 'IDLE';
-
-            let steps = [];
-
-            // Step 1: Architecture
-            if (nodeCount === 0) {
-                steps.push({text: "<b>BUILD:</b> Drag nodes from the palette to define your model.", active: true});
-            } else {
-                steps.push({text: "<b>BUILD:</b> Architecture defined (" + nodeCount + " nodes).", active: false});
-            }
-
-            // Step 2: Configuration
-            steps.push({text: "<b>CONFIG:</b> Adjust Learning Rate and Optimizer in the right panel.", active: nodeCount > 0 && status === 'IDLE'});
-
-            // Step 3: Dataset
-            steps.push({text: "<b>DATA:</b> Select a compatible dataset (e.g., MNIST for MLP/CNN).", active: nodeCount > 0 && status === 'IDLE'});
-
-            // Step 4: Training
-            if (status === 'TRAINING') {
-                steps.push({text: "<b>TRAIN:</b> Training in progress... monitor metrics below.", active: true});
-            } else {
-                steps.push({text: "<b>TRAIN:</b> Click START to begin training.", active: nodeCount > 0 && status === 'IDLE'});
-            }
-
-            // Step 5: Evolution/Export
-            steps.push({text: "<b>EVOLVE:</b> Create snapshots to track progress or export to Ollama.", active: status !== 'TRAINING' && nodeCount > 0});
-
-            let html = '<div style="display:flex; flex-direction:column; gap:8px;">';
-            steps.forEach((s, i) => {
-                const color = s.active ? 'var(--accent)' : 'var(--text-dim)';
-                const weight = s.active ? 'bold' : 'normal';
-                html += `<div style="color:${color}; font-weight:${weight}; display:flex; gap:10px;">
-                            <span style="min-width:20px;">${i+1}.</span>
-                            <span>${s.text}</span>
-                         </div>`;
-            });
-
-            // Model Specific Link
-            const guideMap = {
-                'NEURON': 'neuron_guide.md',
-                'MLP': 'mlp_guide.md',
-                'CNN': 'cnn_guide.md',
-                'TRANSFORMER': 'transformer_guide.md'
-            };
-            if (guideMap[type]) {
-                html += `<div style="margin-top:10px; border-top:1px solid var(--border); padding-top:10px;">
-                            <a href="#" style="color:var(--accent); font-size:0.8em;" onclick="log('Refer to docs/forge/${guideMap[type]} for full details.')">View Detailed ${type} Manual</a>
-                         </div>`;
-            }
-
-            html += '</div>';
-            content.innerHTML = html;
         }
 
         async function selectSession(id) {

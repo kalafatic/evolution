@@ -220,22 +220,29 @@
             <h1>🧬 Architecture</h1>
 
             <div class="sidebar-section">
+                <h2>✨ Guidance</h2>
+                <div id="guidance-content" style="font-size: 0.85em; color: var(--text-dim); line-height: 1.4;">
+                    Analyzing context...
+                </div>
+            </div>
+
+            <div class="sidebar-section">
                 <h2>Target</h2>
                 <div class="control-group">
-                    <div style="display:flex; gap:5px;">
+                    <div style="display:flex; gap:5px;" data-guidance="Select the target repository or module directory to analyze. Use the folder icon to browse the local filesystem.">
                         <select id="target-select" onchange="javaAction(this.value, 'SET_TARGET')" style="flex:1;">
                             <!-- Populated by JS -->
                         </select>
                         <button class="btn btn-sm" onclick="javaAction('', 'BROWSE_TARGET')" style="width:auto;">📁</button>
                     </div>
-                    <button class="btn btn-primary" onclick="javaAction('', 'DISCOVER')">🔍 Discover Architecture</button>
+                    <button class="btn btn-primary" onclick="javaAction('', 'DISCOVER')" data-guidance="Trigger architecture discovery. EVO will scan the target directory for components, dependencies, and metadata.">🔍 Discover Architecture</button>
                 </div>
             </div>
 
             <div class="sidebar-section">
                 <h2>View</h2>
                 <div class="control-group">
-                    <select id="mode-select" onchange="javaAction(this.value, 'SET_VIEW_MODE')">
+                    <select id="mode-select" onchange="javaAction(this.value, 'SET_VIEW_MODE')" data-guidance="Switch between different architectural perspectives: components, subsystems, use cases, or the full knowledge graph.">
                         <option value="COMPONENTS">Components Map</option>
                         <option value="SUBSYSTEMS">Subsystems View</option>
                         <option value="USE_CASES">Use Cases Trace</option>
