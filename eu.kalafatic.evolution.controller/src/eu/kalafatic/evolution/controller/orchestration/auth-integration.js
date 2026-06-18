@@ -20,13 +20,15 @@ async function checkAuthentication() {
     }
 
     const sessionId = localStorage.getItem('sessionId') || sessionStorage.getItem('sessionId');
+    const headers = {};
+    if (sessionId) {
+        headers['Authorization'] = `Bearer ${sessionId}`;
+    }
 
     try {
         const response = await fetch('/api/auth/me', {
             method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${sessionId}`
-            }
+            headers: headers
         });
 
         if (!response.ok) {
