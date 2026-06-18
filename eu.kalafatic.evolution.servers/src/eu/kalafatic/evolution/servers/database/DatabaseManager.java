@@ -16,6 +16,15 @@ public class DatabaseManager {
     private static final String DB_FILE = DB_DIR + "/evolution.db";
     private static final String URL = "jdbc:sqlite:" + DB_FILE;
 
+    static {
+        try {
+            Class.forName("org.sqlite.JDBC");
+        } catch (ClassNotFoundException e) {
+            System.err.println("Failed to load SQLite JDBC driver");
+            e.printStackTrace();
+        }
+    }
+
     public DatabaseManager() {
         initialize();
     }

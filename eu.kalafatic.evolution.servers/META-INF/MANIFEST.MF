@@ -55,4 +55,5 @@ Bundle-ClassPath: .,
  lib/jackson-databind-2.20.0.jar,
  lib/jbcrypt-0.4.jar,
  lib/nanohttpd-2.3.1.jar,
+ lib/slf4j-api-1.7.36.jar,
  lib/sqlite-jdbc-3.45.2.0.jar
