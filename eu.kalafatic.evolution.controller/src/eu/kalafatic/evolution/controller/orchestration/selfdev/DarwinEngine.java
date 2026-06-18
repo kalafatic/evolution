@@ -282,7 +282,8 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
         List<DarwinStrategySeed> mutationSeeds = new ArrayList<>();
         int currentIteration = context.getOrchestrationState().getIterationCount();
-        boolean isMediated = policy.getExecutionMode() == ExecutionPolicy.ExecutionMode.MEDIATED;
+        boolean isMediated = policy.getExecutionMode() == ExecutionPolicy.ExecutionMode.MEDIATED ||
+                             context.getBehaviorProfile().hasTrait(eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait.WORKFLOW_EXPORT_ONLY);
 
         List<TrajectoryBlueprint> currentBlueprints = new ArrayList<>();
         int generation = trajectory != null ? trajectory.getGeneration() : 0;
@@ -387,8 +388,11 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
         context.log("[DARWIN] Sequential Mutation Branching initialized (Target: " + branchingLimit + " unique trajectories).");
 
-        for (int i = 0; i < branchingLimit; i++) {
-            context.log("[DARWIN] Sequential Branching: Starting iteration " + (i + 1) + " of " + branchingLimit);
+        int attempts = 0;
+        int maxAttempts = branchingLimit * 3;
+        while (uniqueVariants.size() < branchingLimit && attempts < maxAttempts) {
+            attempts++;
+            context.log("[DARWIN] Sequential Branching: Attempt " + attempts + " (Targets: " + uniqueVariants.size() + "/" + branchingLimit + ")");
             try {
                 String discoveryGoal = generation == 0 ? goal : goal + " (Mutation Gen " + generation + ")";
 
@@ -465,7 +469,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
                         context.log("[DARWIN] Sequential Branching: Ignoring duplicate blueprint: " + bp.getStrategy());
                     }
                 } else {
-                    context.log("[DARWIN] Sequential Branching: Mapper returned null at iteration " + i);
+                    context.log("[DARWIN] Sequential Branching: Mapper returned null at attempt " + attempts);
                 }
             } catch (Exception e) {
                 context.log("[DARWIN] Sequential Branching Error: " + e.getMessage());
@@ -476,7 +480,13 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         // FALLBACK: If sequential branching failed to produce enough variants, inject divergent fallbacks
         if (uniqueVariants.size() < 2) {
              context.log("[DARWIN] Sequential Branching yielded insufficient variants (" + uniqueVariants.size() + "). Injecting divergent fallbacks.");
-             // Note: In a real system, we'd have autoRepair logic here as well, but for now we rely on the spawner's autoRepair
+             DarwinSyntheticVariantFactory factory = new DarwinSyntheticVariantFactory();
+             if (uniqueVariants.isEmpty()) {
+                 uniqueVariants.add(factory.synthesizeImplementation(goal, atomicAnalysis));
+             }
+             if (uniqueVariants.size() < 2) {
+                 uniqueVariants.add(factory.synthesizeSemanticAlternative(uniqueVariants.get(0), goal, atomicAnalysis));
+             }
         }
 
         // Fitness Ranking

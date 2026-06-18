@@ -30,10 +30,12 @@ public class DarwinSyntheticVariantFactory {
         String refStrategy = reference.optString("strategy", "").toLowerCase();
         if (refStrategy.contains("service") || refStrategy.contains("abstraction")) {
             alternative.put("strategy", "Minimal Atomic Utility: " + goal);
+            alternative.put("semantic_anchor", "Prioritizes zero-dependency minimalism and direct execution over complex service abstractions.");
             alternative.put("semantic_justification", "Prioritizes zero-dependency minimalism and direct execution over complex service abstractions.");
             alternative.put("suffix", "alt-minimalist");
         } else {
             alternative.put("strategy", "Reusable Service Abstraction: " + goal);
+            alternative.put("semantic_anchor", "Prioritizes extensibility, interface-driven design, and long-term reusability over atomic execution.");
             alternative.put("semantic_justification", "Prioritizes extensibility, interface-driven design, and long-term reusability over atomic execution.");
             alternative.put("suffix", "alt-extensible");
         }
@@ -81,6 +83,7 @@ public class DarwinSyntheticVariantFactory {
         impl.put("survival_argument", "Provides a deterministic implementation path for simple/atomic tasks.");
         impl.put("tradeoffs", "Prioritizes immediate results over complex architectural abstraction.");
         impl.put("failure_risks", "Minimal risks for scoped implementation.");
+        impl.put("semantic_anchor", "Direct probable implementation path.");
         impl.put("semantic_justification", "Direct probable implementation path.");
         impl.put("suffix", "probable-direct");
         impl.put("score", 0.85);

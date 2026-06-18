@@ -49,6 +49,11 @@ public class DarwinVariantSpawner {
                 }
 
                 context.log("[SPAWNER] Materialization failed for blueprint " + bp.getId() + ". Retry " + (retry + 1) + "/3...");
+
+                // ADJUST PROMPT: If validation failed, add a strict JSON hint to the prompt for the next retry
+                if (retry == 0) {
+                    bpPrompt += "\n\nCRITICAL: Your previous response was invalid. Ensure you return a single JSON object with all required fields (strategy, survival_argument, tradeoffs, failure_risks, actions). DO NOT use placeholders.";
+                }
             } catch (Exception e) {
                 context.log("[SPAWNER] Error during blueprint materialization for " + bp.getId() + ": " + e.getMessage());
             }
@@ -140,7 +145,7 @@ public class DarwinVariantSpawner {
                 writeAction.put("target", target);
 
                 try {
-                    String bootstrapPrompt = "Generate a minimal valid bootstrap implementation for " + target + " given the goal: " + bp.getGoal() + ". Return ONLY the content.";
+                    String bootstrapPrompt = "Generate a minimal valid bootstrap implementation for " + target + " given the goal: " + bp.getGoal() + ". This is an evolutionary mutation with philosophy: " + bp.getPhilosophy() + ". Return ONLY the content.";
                     String content = aiService.sendRequest(context.getOrchestrator(), bootstrapPrompt, context);
                     writeAction.put("description", content);
                 } catch (Exception e) {
@@ -148,13 +153,13 @@ public class DarwinVariantSpawner {
                 }
 
                 actions.put(writeAction);
-                repair.put("strategy", "Dynamic auto-repair: bootstrapping " + target);
+                repair.put("strategy", "Dynamic auto-repair: bootstrapping " + target + " (Philosophy: " + bp.getPhilosophy() + ")");
             } else {
                 JSONObject action = new JSONObject();
                 action.put("domain", "kernel");
                 action.put("operation", "ANALYZE");
                 action.put("target", "workspace");
-                action.put("description", "Bootstrap " + bp.getId() + " architectural strategy.");
+                action.put("description", "Bootstrap " + bp.getId() + " architectural strategy (Philosophy: " + bp.getPhilosophy() + "). Direction: " + bp.getArchitecturalDirection());
                 actions.put(action);
             }
             repair.put("actions", actions);

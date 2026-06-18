@@ -45,8 +45,8 @@ public class DarwinVariantValidator {
             return null;
         }
 
-        // 4. Validate Required Fields (ID is injected by Spawner if missing)
-        List<String> requiredFields = List.of("strategy_type", "strategy", "survival_argument", "tradeoffs", "failure_risks", "actions");
+        // 4. Validate Required Fields (ID and strategy_type are injected by Spawner if missing)
+        List<String> requiredFields = List.of("strategy", "survival_argument", "tradeoffs", "failure_risks", "actions");
         for (String field : requiredFields) {
             if (!json.has(field)) {
                 if (context != null) context.log("[VALIDATOR] Error: Missing required field: " + field);
@@ -60,17 +60,19 @@ public class DarwinVariantValidator {
             return null;
         }
 
-        // 5. Validate strategy_type
-        String actualTypeStr = json.optString("strategy_type");
-        try {
-            DarwinStrategyType actualType = DarwinStrategyType.valueOf(actualTypeStr.toUpperCase());
-            if (actualType != expectedType) {
-                if (context != null) context.log("[VALIDATOR] Error: Strategy type mismatch. Expected " + expectedType + " but got " + actualType);
+        // 5. Validate strategy_type if present
+        if (json.has("strategy_type")) {
+            String actualTypeStr = json.optString("strategy_type");
+            try {
+                DarwinStrategyType actualType = DarwinStrategyType.valueOf(actualTypeStr.toUpperCase());
+                if (actualType != expectedType) {
+                    if (context != null) context.log("[VALIDATOR] Error: Strategy type mismatch. Expected " + expectedType + " but got " + actualType);
+                    return null;
+                }
+            } catch (IllegalArgumentException e) {
+                if (context != null) context.log("[VALIDATOR] Error: Invalid strategy type: " + actualTypeStr);
                 return null;
             }
-        } catch (IllegalArgumentException e) {
-            if (context != null) context.log("[VALIDATOR] Error: Invalid strategy type: " + actualTypeStr);
-            return null;
         }
 
         // 6. Validate minimum completeness and PROHIBIT PLACEHOLDERS
