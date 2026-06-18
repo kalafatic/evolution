@@ -5,21 +5,6 @@
     <title>Evolution Mirrored Chat</title>
     <style>
         :root {
-            --bg-primary: #1e1e1e;
-            --bg-secondary: #252526;
-            --border: #3c3c3c;
-            --text: #d4d4d4;
-            --text-dim: #858585;
-            --accent: #007acc;
-            --accent-hover: #1177bb;
-            --error: #f48771;
-            --success: #89d185;
-
-            --user-msg-bg: #007acc;
-            --ai-msg-bg: #2d2d2d;
-        }
-
-        body.light-theme {
             --bg-primary: #ffffff;
             --bg-secondary: #f3f3f3;
             --border: #cccccc;
@@ -27,6 +12,8 @@
             --text-dim: #666666;
             --accent: #007acc;
             --accent-hover: #1177bb;
+            --error: #f48771;
+            --success: #89d185;
 
             --user-msg-bg: #007acc;
             --ai-msg-bg: #f0f0f0;
@@ -77,22 +64,22 @@
 
         /* Buttons */
         .btn {
-            background-color: #3a3d41;
-            color: white;
-            border: none;
+            background-color: #ffffff;
+            color: #333333;
+            border: 1px solid var(--border);
             padding: 6px 12px;
             cursor: pointer;
             border-radius: 2px;
             font-size: 0.8em;
             text-align: center;
         }
-        .btn:hover { background-color: #45494e; }
-        .btn-primary { background-color: var(--accent); font-weight: bold; }
+        .btn:hover { background-color: #f0f0f0; }
+        .btn-primary { background-color: var(--accent); color: white; font-weight: bold; border-color: var(--accent); }
         .btn-primary:hover { background-color: var(--accent-hover); }
         .btn-sm { padding: 3px 6px; font-size: 0.75em; }
 
         select, input[type="text"], input[type="number"] {
-            width: 100%; padding: 5px; border-radius: 2px; border: 1px solid #555; background: #3c3c3c; color: white; font-size: 0.85em; box-sizing: border-box;
+            width: 100%; padding: 5px; border-radius: 2px; border: 1px solid var(--border); background: #ffffff; color: #333333; font-size: 0.85em; box-sizing: border-box;
         }
 
         .checkbox-group { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.8em; color: var(--text); }
@@ -115,7 +102,7 @@
 
         #chat-area {
             flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px;
-            background-image: radial-gradient(circle, var(--border) 0.5px, transparent 0.5px);
+            background-image: radial-gradient(circle, #e0e0e0 0.5px, transparent 0.5px);
             background-size: 20px 20px;
         }
 
@@ -145,7 +132,7 @@
             display: flex; gap: 10px; overflow-x: auto; padding: 5px 0 10px 0; margin-top: 5px; width: 100%;
         }
         .branch-column {
-            flex: 0 0 280px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 4px;
+            flex: 0 0 280px; background: #ffffff; border: 1px solid var(--border); border-radius: 4px;
             display: flex; flex-direction: column; transition: all 0.2s; position: relative;
         }
         .branch-column.best { border-color: var(--accent); box-shadow: 0 0 8px rgba(0, 122, 204, 0.3); }
@@ -165,7 +152,7 @@
         .decision-stamp {
             position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%) rotate(-15deg);
             font-size: 20px; font-weight: 900; padding: 4px 8px; border-radius: 4px;
-            pointer-events: none; z-index: 10; user-select: none; opacity: 0.7; background: rgba(0,0,0,0.5);
+            pointer-events: none; z-index: 10; user-select: none; opacity: 0.7; background: rgba(255,255,255,0.8);
         }
         .decision-stamp.approved { color: var(--success); border: 3px solid var(--success); }
         .decision-stamp.rejected { color: var(--error); border: 3px solid var(--error); }
@@ -184,7 +171,7 @@
         }
         .viz-panel-header { padding: 10px 15px; border-bottom: 1px solid var(--border); font-size: 0.8em; font-weight: bold; color: var(--text-dim); text-transform: uppercase; background: var(--bg-secondary); }
 
-        #system-tree { padding: 15px; font-size: 12px; color: var(--text); border-bottom: 1px solid var(--border); }
+        #system-tree { padding: 15px; font-size: 12px; color: #333333; border-bottom: 1px solid var(--border); }
         #graph-container { height: 280px; padding: 10px; position: relative; }
         #visual-svg { width: 100%; height: 100%; }
 
@@ -205,7 +192,6 @@
         <div id="sidebar">
             <div class="sidebar-header">
                 🧬 EVO MIRROR
-                <button class="btn btn-sm btn-primary" onclick="toggleTheme()">🌓</button>
             </div>
 
             <div id="sidebar-scroll">
@@ -239,7 +225,7 @@
                         </div>
                         <div class="control-item">
                             <label>Local:</label>
-                            <select id="local-model-select" onchange="updateSettings()">
+                            <select id="local-model-select" onchange="updateSettings()" data-guidance="Choose a model from your local Ollama instance.">
                                 <option value="">Loading...</option>
                             </select>
                         </div>
@@ -332,8 +318,8 @@
             </div>
 
             <div id="input-area">
-                <input type="text" id="user-input" placeholder="Type a message or response..." onkeypress="if(event.key==='Enter') sendMessage()">
-                <button onclick="sendMessage()">Send</button>
+                    <input type="text" id="user-input" placeholder="Type a message or response..." onkeypress="if(event.key==='Enter') sendMessage()" data-guidance="Enter your instructions for the evolutionary engine. You can ask to implement features, fix bugs, or evolve the architecture.">
+                    <button onclick="sendMessage()" data-guidance="Send your command to the Evolution Orchestrator.">Send</button>
             </div>
         </div>
 
@@ -611,12 +597,6 @@
             lastSequenceNumber = 0;
         }
 
-        function toggleTheme() {
-            document.body.classList.toggle('light-theme');
-            const isLight = document.body.classList.contains('light-theme');
-            localStorage.setItem('forge-theme', isLight ? 'light' : 'dark');
-            log(`Theme switched to ${isLight ? 'light' : 'dark'}.`);
-        }
 
         function getIconForAgentType(type) {
             const icons = {
@@ -710,11 +690,6 @@
         async function sendBypass(text) {
             userInput.value = text;
             await sendMessage();
-        }
-
-        // Initialize Theme from Storage
-        if (localStorage.getItem('forge-theme') === 'light') {
-            document.body.classList.add('light-theme');
         }
 
         fetchSettings();

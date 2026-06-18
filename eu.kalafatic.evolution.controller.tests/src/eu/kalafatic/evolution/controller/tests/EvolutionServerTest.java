@@ -33,7 +33,7 @@ public class EvolutionServerTest {
 
     @Test
     public void testServerStatus() throws Exception {
-        HttpURLConnection conn = (HttpURLConnection) new URL("http://localhost:" + port + "/server/status").openConnection();
+        HttpURLConnection conn = (HttpURLConnection) new URL("http://localhost:" + port + "/server/status?runtime=SWT").openConnection();
         conn.setRequestMethod("GET");
 
         assertEquals(200, conn.getResponseCode());
@@ -51,7 +51,7 @@ public class EvolutionServerTest {
 
     @Test
     public void testGitBranches() throws Exception {
-        HttpURLConnection conn = (HttpURLConnection) new URL("http://localhost:" + port + "/git/branches").openConnection();
+        HttpURLConnection conn = (HttpURLConnection) new URL("http://localhost:" + port + "/git/branches?runtime=SWT").openConnection();
         conn.setRequestMethod("GET");
 
         // This might fail if the current directory is not a git repo, but in Tycho test it usually is or at least it doesn't crash

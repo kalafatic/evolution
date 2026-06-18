@@ -54,6 +54,7 @@ public class NetworkSettingsGroup extends AEvoGroup {
         createColumn("Address", 250, NetworkEntry::getAddress);
         createColumn("Host", 150, NetworkEntry::getHost);
         createColumn("Port", 80, ent -> String.valueOf(ent.getPort()));
+        createColumn("Domain", 150, NetworkEntry::getPath);
         createColumn("Type", 100, NetworkEntry::getType);
         createColumn("Note", 300, NetworkEntry::getNote);
 
@@ -65,6 +66,18 @@ public class NetworkSettingsGroup extends AEvoGroup {
         TableViewerColumn col = new TableViewerColumn(networkViewer, SWT.NONE);
         col.getColumn().setText(title);
         col.getColumn().setWidth(width);
+
+        String tooltip = switch(title) {
+            case "Address" -> "The full connection URI or IP address of the remote node.";
+            case "Host" -> "The hostname or DNS entry for this network node.";
+            case "Port" -> "The TCP port on which the service is listening.";
+            case "Domain" -> "The specific URI path or endpoint domain (e.g., /api/v1).";
+            case "Type" -> "The protocol or service type (REST, SSH, OLLAMA).";
+            case "Note" -> "Additional context or description for this address.";
+            default -> null;
+        };
+        if (tooltip != null) col.getColumn().setToolTipText(tooltip);
+
         col.setLabelProvider(new ColumnLabelProvider() {
             @Override
             public String getText(Object element) {

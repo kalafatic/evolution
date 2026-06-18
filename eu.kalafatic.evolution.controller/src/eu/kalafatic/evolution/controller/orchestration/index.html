@@ -5,22 +5,13 @@
     <title>Evolution AI</title>
     <style>
         :root {
-            --bg-canvas: #f1f5f9;
-            --sidebar-bg: #1e293b;
-            --sidebar-text: #f8fafc;
-            --accent: #3b82f6;
-            --chat-bg: #ffffff;
-            --text-main: #334155;
-            --border: #e2e8f0;
-        }
-
-        body.light-theme {
             --bg-canvas: #ffffff;
             --sidebar-bg: #f3f3f3;
             --sidebar-text: #333333;
             --chat-bg: #ffffff;
             --text-main: #333333;
             --border: #cccccc;
+            --accent: #3b82f6;
         }
 
         body {
@@ -50,7 +41,7 @@
         }
 
         #header {
-            height: auto; min-height: 60px; background: white; border-bottom: 1px solid var(--border);
+            height: auto; min-height: 60px; background: #ffffff; border-bottom: 1px solid var(--border);
             display: flex; flex-direction: column; padding: 10px 20px;
         }
 
@@ -68,12 +59,12 @@
         .message.ai { align-self: flex-start; background: white; border: 1px solid var(--border); border-bottom-left-radius: 2px; }
 
         #input-area {
-            padding: 20px; background: white; border-top: 1px solid var(--border);
+            padding: 20px; background: #ffffff; border-top: 1px solid var(--border);
             display: flex; gap: 10px;
         }
 
         #input-area input {
-            flex: 1; padding: 12px; border: 1px solid var(--border); border-radius: 8px; outline: none;
+            flex: 1; padding: 12px; border: 1px solid var(--border); border-radius: 8px; outline: none; background: #ffffff; color: #333333;
         }
         #input-area input:focus { border-color: var(--accent); }
         #input-area button {
@@ -95,7 +86,6 @@
     <div id="sidebar">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
             <h1 style="margin: 0;">🧬 Evolution</h1>
-            <button onclick="toggleTheme()" style="background: none; border: 1px solid rgba(255,255,255,0.2); color: inherit; cursor: pointer; border-radius: 4px; padding: 2px 6px;" data-guidance="Toggle between Dark and Light UI themes.">🌓</button>
         </div>
         <div class="nav-item active"><span>💬</span> Chat</div>
         <div class="nav-item"><span>📂</span> Workspace</div>
@@ -151,18 +141,6 @@
 
     <script src="/creatic.js"></script>
     <script>
-        // Theme Toggle
-        function toggleTheme() {
-            document.body.classList.toggle('light-theme');
-            const isLight = document.body.classList.contains('light-theme');
-            localStorage.setItem('forge-theme', isLight ? 'light' : 'dark');
-        }
-
-        // Initialize Theme
-        if (localStorage.getItem('forge-theme') === 'light') {
-            document.body.classList.add('light-theme');
-        }
-
         const chatArea = document.getElementById('chat-area');
         const userInput = document.getElementById('user-input');
         let currentTaskId = null;

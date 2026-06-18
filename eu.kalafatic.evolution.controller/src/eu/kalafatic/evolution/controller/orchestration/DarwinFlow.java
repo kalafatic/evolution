@@ -17,6 +17,8 @@ import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait;
 import eu.kalafatic.evolution.controller.orchestration.capability.contracts.ISchedulingContract;
 import eu.kalafatic.evolution.controller.orchestration.diagnostics.CausalNode;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionNode;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionTree;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.Evaluator;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.FailureMemory;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationRecord;
@@ -96,6 +98,19 @@ public class DarwinFlow implements IOrchestrationFlow {
             trajectory = new Trajectory("traj-" + iterId, goal);
             context.getSemanticWorkspace().getTrajectoryMemory().recordTrajectory(trajectory);
             context.log("[COGNITION] Starting new evolutionary lineage trajectory: " + trajectory.getTrajectoryId());
+
+            // Initialize Root Node in EvolutionTree if empty
+            EvolutionTree tree = context.getKernelContext().getMemoryService().getEvolutionTree();
+            if (tree.getRootId() == null) {
+                EvolutionNode root = new EvolutionNode();
+                root.setId("root-" + iterId);
+                root.setStrategy("ROOT: " + goal);
+                root.setSemanticPhilosophy("Initial evolutionary root");
+                root.setIteration(0);
+                root.setStatus("ROOT");
+                tree.addNode(root);
+                context.getKernelContext().getMemoryService().saveEvolutionTree();
+            }
         }
 
         FailureMemory failureMemory = context.getKernelContext().getMemoryService().getFailureMemory();
@@ -283,8 +298,18 @@ public class DarwinFlow implements IOrchestrationFlow {
             WorkspaceDeltaAnalyzer.DeltaAnalysis reality = analyzer.analyze(baseCommit);
             context.log("[KERNEL] Reality Check: Winner variant applied. Analysis: " + reality.toString());
 
+        final BranchVariant finalSelectedVariant = selectedVariant;
             reality.getChangedFileMap().forEach((path, type) -> {
                 context.getFileChangeTracker().recordChange(path, type);
+            if (finalSelectedVariant != null) {
+                    EvolutionTree tree = context.getKernelContext().getMemoryService().getEvolutionTree();
+                    EvolutionNode node = tree.getNode(finalSelectedVariant.getId());
+                    if (node != null) {
+                        if (type == FileChangeTracker.ChangeType.NEW) node.getCreatedFiles().add(path);
+                        else if (type == FileChangeTracker.ChangeType.REMOVED) node.getDeletedFiles().add(path);
+                        else node.getModifiedFiles().add(path);
+                    }
+                }
             });
 
             boolean isSignificant = reality.isSignificant();
@@ -322,8 +347,19 @@ public class DarwinFlow implements IOrchestrationFlow {
 
                         record.setTimestamp(System.currentTimeMillis());
                         context.getKernelContext().getMemoryService().saveRecord(record);
+
+                        // Update EvolutionTree status
+                        EvolutionTree tree = context.getKernelContext().getMemoryService().getEvolutionTree();
+                        EvolutionNode node = tree.getNode(v.getId());
+                        if (node != null) {
+                            node.setStatus(v.getActivationState().name());
+                            if (v.getActivationState() == BranchVariant.ActivationState.ACTIVE) {
+                                tree.setCurrentWinnerId(v.getId());
+                            }
+                        }
                     }
                 }
+                context.getKernelContext().getMemoryService().saveEvolutionTree();
 
                 manager.checkStep(selectedVariant.getId(), "GIT_COMMIT", "Committing evolutionary changes for phase: " + completedPhase);
                 manager.getGitManager().commit("Darwin Evolution Phase " + completedPhase, context);

@@ -53,7 +53,7 @@ public class ModelEvaluationService {
             provider.setRating((analyzeRating + chatRating + progRating) / 3);
 
             if (context.getSessionId() != null) {
-                context.getSessionContainer().getEventBus().publish(
+                context.getKernelContext().getEventBus().publish(
                     new RuntimeEvent(RuntimeEventType.EVALUATION_COMPLETED, context.getSessionId(), "ModelEvaluationService", provider.getName())
                 );
             }

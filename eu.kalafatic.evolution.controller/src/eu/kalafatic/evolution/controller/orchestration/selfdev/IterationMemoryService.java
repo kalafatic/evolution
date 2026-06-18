@@ -32,6 +32,7 @@ public class IterationMemoryService {
     private final FailureMemory failureMemory = new FailureMemory();
     private final TrajectoryMemory trajectoryMemory = new TrajectoryMemory();
     private final EvolutionMemoryGraph evolutionGraph = new EvolutionMemoryGraph();
+    private final EvolutionTree evolutionTree = new EvolutionTree();
 
     private long lastMemoryDirModified = 0;
     private long lastIterationsDirModified = 0;
@@ -65,6 +66,7 @@ public class IterationMemoryService {
 
             this.records = newRecords;
             this.errorIndex = newErrorIndex;
+            loadEvolutionTree();
 
             lastMemoryDirModified = currentMemoryMod;
             lastIterationsDirModified = currentIterationsMod;
@@ -351,6 +353,41 @@ public class IterationMemoryService {
 
     public EvolutionMemoryGraph getEvolutionGraph() {
         return evolutionGraph;
+    }
+
+    public EvolutionTree getEvolutionTree() {
+        return evolutionTree;
+    }
+
+    private void loadEvolutionTree() {
+        File treeFile = new File(memoryDir, "evolution_tree.json");
+        if (treeFile.exists()) {
+            try {
+                Map<String, EvolutionNode> nodes = mapper.readValue(treeFile,
+                    mapper.getTypeFactory().constructMapType(HashMap.class, String.class, EvolutionNode.class));
+                evolutionTree.setNodes(nodes);
+
+                // Reconstruct root and current winner
+                nodes.values().forEach(node -> {
+                    if (node.getParentId() == null) evolutionTree.setRootId(node.getId());
+                    if ("ACTIVE".equals(node.getStatus())) evolutionTree.setCurrentWinnerId(node.getId());
+                });
+
+                Log.log("[MEMORY] EvolutionTree loaded with " + nodes.size() + " nodes.");
+            } catch (IOException e) {
+                System.err.println("Failed to load evolution tree: " + e.getMessage());
+            }
+        }
+    }
+
+    public synchronized void saveEvolutionTree() {
+        File treeFile = new File(memoryDir, "evolution_tree.json");
+        try {
+            mapper.writeValue(treeFile, evolutionTree.getNodes());
+            Log.log("[MEMORY] EvolutionTree persisted to disk.");
+        } catch (IOException e) {
+            System.err.println("Failed to save evolution tree: " + e.getMessage());
+        }
     }
 
     public String getHistoryAnalysis() {

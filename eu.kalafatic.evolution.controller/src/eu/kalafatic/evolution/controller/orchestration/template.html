@@ -20,18 +20,6 @@
 	   </script>
     <style>
         :root {
-            --bg-primary: #1e1e1e;
-            --bg-secondary: #252526;
-            --border: #3c3c3c;
-            --text: #d4d4d4;
-            --text-dim: #858585;
-            --accent: #007acc;
-            --accent-hover: #1177bb;
-            --error: #f48771;
-            --success: #89d185;
-        }
-
-        body.light-theme {
             --bg-primary: #ffffff;
             --bg-secondary: #f3f3f3;
             --border: #cccccc;
@@ -39,6 +27,8 @@
             --text-dim: #666666;
             --accent: #007acc;
             --accent-hover: #1177bb;
+            --error: #f48771;
+            --success: #89d185;
         }
 
         body, html {
@@ -90,25 +80,25 @@
 
         /* Buttons */
         .btn {
-            background-color: #3a3d41;
-            color: white;
-            border: none;
+            background-color: #ffffff;
+            color: #333333;
+            border: 1px solid var(--border);
             padding: 6px 12px;
             cursor: pointer;
             border-radius: 2px;
             font-size: 0.85em;
             text-align: left;
         }
-        .btn:hover { background-color: #45494e; }
-        .btn-primary { background-color: var(--accent); text-align: center; font-weight: bold; }
+        .btn:hover { background-color: #f0f0f0; }
+        .btn-primary { background-color: var(--accent); color: white; text-align: center; font-weight: bold; border-color: var(--accent); }
         .btn-primary:hover { background-color: var(--accent-hover); }
         .btn-sm { padding: 4px 8px; font-size: 0.75em; }
 
         select, input {
             width: 100%;
-            background: #3c3c3c;
-            border: 1px solid #555;
-            color: white;
+            background: #ffffff;
+            border: 1px solid var(--border);
+            color: #333333;
             padding: 6px;
             box-sizing: border-box;
             font-size: 0.85em;
@@ -183,9 +173,9 @@
         #empty-state.active { display: block; }
 
         /* Graph Elements */
-        .node circle { stroke: #555; stroke-width: 2px; cursor: pointer; }
-        .node rect { stroke: #555; stroke-width: 2px; cursor: pointer; fill: var(--bg-secondary); }
-        .node text { font-size: 11px; fill: var(--text); pointer-events: none; font-weight: 600; }
+        .node circle { stroke: #333333; stroke-width: 2px; cursor: pointer; }
+        .node rect { stroke: #333333; stroke-width: 2px; cursor: pointer; fill: #ffffff; }
+        .node text { font-size: 11px; fill: #333333; pointer-events: none; font-weight: 600; }
         .link { stroke: #444; stroke-width: 2px; fill: none; marker-end: url(#arrowhead); }
 
         /* Context Menu */
@@ -198,7 +188,7 @@
         .menu-item {
             padding: 8px 15px; font-size: 13px; cursor: pointer; transition: background 0.2s; color: var(--text);
         }
-        .menu-item:hover { background: #37373d; color: var(--accent); }
+        .menu-item:hover { background: #e0e0e0; color: var(--accent); }
         .menu-item hr { border: none; border-top: 1px solid var(--border); margin: 5px 0; }
 
         /* Popup Panel */
@@ -269,7 +259,6 @@
                     <button class="btn" onclick="javaAction('', 'GENERATE_METADATA')">📝 Generate AI Metadata</button>
                     <button class="btn" onclick="javaAction('', 'EXPORT_HTML')">📤 Export as HTML</button>
                     <button class="btn" onclick="javaAction('', 'SAVE_JSON')">💾 Save Design JSON</button>
-                    <button class="btn btn-sm" onclick="toggleTheme()" style="margin-top:5px; text-align:center;">🌓 Toggle Theme</button>
                 </div>
             </div>
 
@@ -342,11 +331,6 @@
         function initUI() {
             log('Initializing UI elements...');
 
-            // Initialize Theme
-            if (localStorage.getItem('forge-theme') === 'light') {
-                document.body.classList.add('light-theme');
-            }
-
             // Sync select dropdown
             const modeSelect = document.getElementById('mode-select');
             if (modeSelect) modeSelect.value = window.CURRENT_VIEW_MODE;
@@ -373,12 +357,6 @@
             }
         }
 
-        function toggleTheme() {
-            document.body.classList.toggle('light-theme');
-            const isLight = document.body.classList.contains('light-theme');
-            localStorage.setItem('forge-theme', isLight ? 'light' : 'dark');
-            log(`Theme switched to ${isLight ? 'light' : 'dark'}.`);
-        }
     </script>
     <script>{{NAVIGATOR_JS}}</script>
     <script>
