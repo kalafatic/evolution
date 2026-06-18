@@ -667,21 +667,31 @@ public class IterationManager {
             }
         }
 
-        int maxIterationsLimit = 5; // Default Medium
-        if (expansionValue <= 3) maxIterationsLimit = 2; // Conservative
-        else if (expansionValue >= 8) maxIterationsLimit = 10; // Research/High
+        int maxIterationsLimit = 20; // Default Medium
+        if (expansionValue <= 3) maxIterationsLimit = 10; // Conservative
+        else if (expansionValue >= 8) maxIterationsLimit = 50; // Research/High
 
         context.log("[KERNEL] Dynamic Expansion Control: Target Max Iterations = " + maxIterationsLimit);
 
         // 1. Recursive Evolutionary Loop
         context.log("[KERNEL] Phase: Recursive Evolutionary Trajectory System.");
         while (safetyCounter < maxIterationsLimit && !context.isPaused()) {
+            context.log("[KERNEL] [LOOP] Starting Iteration " + (safetyCounter + 1) + " (Phase: " + state.getCurrentPhase() + ")");
+
             // RECURSIVE ARCHITECTURAL DISCOVERY: Refine model in each iteration
             if (safetyCounter > 0) {
                 refineTargetReality(request, context);
             }
 
-            result = runDarwinIteration(context, darwinFlow);
+            try {
+                result = runDarwinIteration(context, darwinFlow);
+            } catch (Exception e) {
+                context.log("[KERNEL] [CRITICAL] Darwin iteration failed with exception: " + e.getMessage());
+                java.io.StringWriter sw = new java.io.StringWriter();
+                e.printStackTrace(new java.io.PrintWriter(sw));
+                context.log(sw.toString());
+                throw e;
+            }
             safetyCounter++;
 
             // Evaluate Stability and Evolutionary Pressure
@@ -689,7 +699,7 @@ public class IterationManager {
             if (activeTrajectory != null && !isIntentExpansionPhase(context)) {
                 boolean stabilized = evolutionaryTrajectoryEngine.evolve(activeTrajectory, context);
                 if (stabilized) {
-                    context.log("[KERNEL] Evolutionary equilibrium detected. Converging.");
+                    context.log("[KERNEL] [LOOP] Evolutionary equilibrium detected for trajectory " + activeTrajectory.getTrajectoryId() + ". Converging.");
                 }
             }
 

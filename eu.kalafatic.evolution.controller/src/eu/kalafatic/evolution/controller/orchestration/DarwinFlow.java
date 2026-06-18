@@ -72,6 +72,7 @@ public class DarwinFlow implements IOrchestrationFlow {
     }
 
     public List<BranchVariant> generateProposals(TaskContext context, String goal) throws Exception {
+        context.log("[DARWIN_FLOW] Entering generateProposals for goal: " + goal);
         Iteration currentIterationModelImpl = manager.getCurrentIterationModel();
         String iterId = currentIterationModelImpl != null ? currentIterationModelImpl.getId() : "default";
 
@@ -178,6 +179,7 @@ public class DarwinFlow implements IOrchestrationFlow {
     }
 
     public EvaluationResult executeWinner(TaskContext context, eu.kalafatic.evolution.controller.supervision.EvolutionDecision decision, List<BranchVariant> variants, String goal) throws Exception {
+        context.log("[DARWIN_FLOW] Entering executeWinner for variant: " + decision.getSelectedVariantId());
         VariantExecutionContext winningContext = null;
         String originalBranch = manager.getGitManager().getCurrentBranch();
         String baseCommit = manager.getGitManager().getHeadCommit();
@@ -247,7 +249,7 @@ public class DarwinFlow implements IOrchestrationFlow {
             mergeHybridInsights(variants, selectedVariant, context);
 
             if (!selectedVariant.isSuccess()) {
-                context.log("[KERNEL] Winner variant execution failed.");
+                context.log("[KERNEL] Winner variant execution failed: " + selectedVariant.getId());
                 if (!isExportOnly && !isTestMode) {
                     manager.getGitManager().forceCheckout(originalBranch);
                     manager.getGitManager().rollback();
