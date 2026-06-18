@@ -725,7 +725,7 @@ public class IterationManager {
 
             // If we reached a terminal phase during the iteration, break the loop if min iterations met
             if (state.getCurrentPhase().contains("TERMINAL")) {
-                if (safetyCounter < minIterations) {
+                if (safetyCounter < minIterations && !state.getCurrentPhase().contains("SUCCESS")) {
                     context.log("[KERNEL] Terminal phase reached, but Min Iterations not met. Continuing evolution.");
                 } else {
                     break;
@@ -975,6 +975,13 @@ public class IterationManager {
             }
 
             state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(nextPhase));
+
+            if (nextPhase == EvolutionPhase.DESIGN_SATISFIED) {
+                handleSatisfactionReview(context, getActiveTrajectory(context));
+                // Reload phase in case it was changed by satisfaction review
+                nextPhase = EvolutionPhase.fromString(state.getCurrentPhase());
+            }
+
             result.setDecision(phaseMachine.determineDecision(nextPhase));
 
             if (!handlePhaseConfirmation(context, state)) {
@@ -1320,6 +1327,58 @@ public class IterationManager {
         EvolutionPhase current = EvolutionPhase.fromString(state.getCurrentPhase());
         EvolutionPhase next = evolutionaryTrajectoryEngine.determineNextPhase(current, getActiveTrajectory(context), context);
         state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(next));
+    }
+
+    private void handleSatisfactionReview(TaskContext context, Trajectory activeTrajectory) throws Exception {
+        if (activeTrajectory == null) return;
+
+        context.log("[KERNEL] Design Satisfaction Review: Objective quality targets met. Pausing for final optimization decision.");
+        transition(SystemState.CLARIFYING, context);
+
+        int gen = activeTrajectory.getGeneration();
+        List<Double> history = activeTrajectory.getFitnessHistory();
+        double trend = 0.0;
+        if (history != null && history.size() >= 2) {
+            trend = history.get(history.size() - 1) - history.get(history.size() - 2);
+        }
+
+        double uncertainty = 100 * (1.0 - activeTrajectory.getConfidenceLevel());
+        String trendStr = trend > 0.05 ? "HIGH" : (trend > 0.01 ? "MEDIUM" : "LOW");
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("──────────────────────────────────\n");
+        sb.append("Current design satisfies the goal.\n\n");
+        sb.append("Evolution can continue searching\n");
+        sb.append("for potentially better solutions.\n\n");
+        sb.append("Current generation: ").append(gen).append("\n\n");
+        sb.append("Improvement trend: ").append(trendStr).append("\n\n");
+        sb.append("Remaining uncertainty: ").append(String.format("%.0f%%", uncertainty)).append("\n\n");
+        sb.append("What would you like to do?\n\n");
+        sb.append("[PROPOSAL: Show Current Result | Show Current Result]\n");
+        sb.append("[PROPOSAL: Continue Refinement | Continue Refinement]\n");
+        sb.append("[PROPOSAL: Stop Evolution | Stop Evolution]\n");
+        sb.append("──────────────────────────────────");
+
+        while (true) {
+            String input = context.requestInput(sb.toString()).get();
+            String trimmed = (input != null) ? input.trim() : "";
+
+            if ("Show Current Result".equalsIgnoreCase(trimmed)) {
+                context.log("[KERNEL] Displaying current winning implementation.");
+                // We stay in the loop to allow further decision after viewing
+                continue;
+            } else if ("Continue Refinement".equalsIgnoreCase(trimmed)) {
+                context.log("[KERNEL] User requested continued refinement. Resuming evolutionary search.");
+                context.getOrchestrationState().setCurrentPhase(EvolutionPhaseMachine.toLegacyString(EvolutionPhase.SELECTION_REFINEMENT));
+                break;
+            } else if ("Stop Evolution".equalsIgnoreCase(trimmed) || "Approved".equalsIgnoreCase(trimmed) || "Yes".equalsIgnoreCase(trimmed)) {
+                context.log("[KERNEL] Design satisfied. Terminating Darwin loop.");
+                context.getOrchestrationState().setCurrentPhase(EvolutionPhaseMachine.toLegacyString(EvolutionPhase.TERMINAL_SUCCESS));
+                break;
+            } else {
+                context.log("[KERNEL] Unrecognized satisfaction command: " + trimmed);
+            }
+        }
     }
 
     private void saveFullCheckpoint() {

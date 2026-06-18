@@ -30,6 +30,9 @@ public class EvolutionPhaseMachine {
                 nextPhase = EvolutionPhase.FINAL_SYNTHESIS;
                 break;
             case FINAL_SYNTHESIS:
+                nextPhase = EvolutionPhase.DESIGN_SATISFIED;
+                break;
+            case DESIGN_SATISFIED:
                 nextPhase = EvolutionPhase.TERMINAL_SUCCESS;
                 break;
             default:

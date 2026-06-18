@@ -34,14 +34,14 @@ public class DefaultStabilityPolicy implements IStabilityPolicy {
 
         // Convergence logic is now driven by abstract signals found in metadata/context
         double threshold = context.getOrchestrationState().getMetadata().containsKey("convergenceThreshold") ?
-            (Double) context.getOrchestrationState().getMetadata().get("convergenceThreshold") : 0.92;
+            (Double) context.getOrchestrationState().getMetadata().get("convergenceThreshold") : 0.95;
 
         int minGen = context.getOrchestrationState().getMetadata().containsKey("minEvolutionaryDepth") ?
-            (Integer) context.getOrchestrationState().getMetadata().get("minEvolutionaryDepth") : 2;
+            (Integer) context.getOrchestrationState().getMetadata().get("minEvolutionaryDepth") : 3;
 
         // MEDIATED MODE: Demand deeper refinement for architectural discovery
         if (context.getBehaviorProfile().hasTrait(eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait.WORKFLOW_EXPORT_ONLY)) {
-            minGen = Math.max(minGen, 3);
+            minGen = Math.max(minGen, 4);
         }
 
         // DIAGNOSTIC OPTIMIZATION: Early convergence for analytical tasks in Mediated Mode
@@ -79,9 +79,9 @@ public class DefaultStabilityPolicy implements IStabilityPolicy {
 
         if (isConverged(trajectory, context, pressure)) return true;
 
-        // Force progression for architecture phase after at least one successful generation
-        // to prevent permanent stalls in architectural cognition.
-        if (current == EvolutionPhase.ARCHITECTURE_VARIANTS && trajectory.getGeneration() >= 1) {
+        // Force progression for architecture phase after at least two generations
+        // to ensure multi-lineage exploration even in early phases.
+        if (current == EvolutionPhase.ARCHITECTURE_VARIANTS && trajectory.getGeneration() >= 2) {
             context.log("[STABILITY] Architectural variant generation complete (Gen " + trajectory.getGeneration() + "). Forcing progression to refinement.");
             return true;
         }
