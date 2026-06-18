@@ -35,10 +35,12 @@ public class DarwinVariantSpawner {
         EvolutionProgressPublisher.updateActiveModel(context, orchestrator != null ? (orchestrator.getOllama() != null ? orchestrator.getOllama().getModel() : "local") : "local", "Materializing Branch " + bp.getId());
 
         String bpPrompt = buildBlueprintPrompt(bp, basePrompt, lineageContext, rejectedSiblings, mutationContext, isMediated, context);
+        context.log("Stage: PromptComposer\nPrompt length: " + bpPrompt.length() + "\nPrompt hash: " + bpPrompt.hashCode());
         JSONObject validated = null;
 
         // Materialization Retries: The branch topology (blueprint) is preserved; only the implementation details are retried.
         for (int retry = 0; retry < 3; retry++) {
+            context.log("Stage: Retry\nRetry count: " + retry);
             try {
                 String response = aiService.sendRequest(orchestrator, bpPrompt, context);
                 validated = validator.validate(response, bp.getStrategyType(), context); // Blueprints are technical mutations
@@ -60,17 +62,21 @@ public class DarwinVariantSpawner {
         }
 
         if (validated != null) {
+            context.log("Stage: Variant accepted");
             context.log("[SPAWNER] Successfully materialized blueprint: " + bp.getId());
             double score = validated.optDouble("score", 0.0);
             EvolutionProgressPublisher.updateBranchStatus(context, bp.getId(), bp.getPhilosophy(), "complete", Double.isNaN(score) ? null : score);
             return validated;
         } else {
+            context.log("Stage: Fallback\nReason: Materialization retries failed");
             context.log("[SPAWNER] Materialization retries failed for " + bp.getId() + ". Attempting deterministic auto-repair.");
             JSONObject repaired = autoRepair(bp, context);
             if (repaired != null) {
+                context.log("Stage: Repair\nRepair attempted: true\nResult: Success");
                 context.log("[SPAWNER] Successfully auto-repaired blueprint: " + bp.getId());
                 return repaired;
             } else {
+                context.log("Stage: Repair\nRepair attempted: true\nResult: Failed");
                 context.log("[SPAWNER] CRITICAL: Failed to materialize or repair mandatory blueprint: " + bp.getId());
                 return null;
             }

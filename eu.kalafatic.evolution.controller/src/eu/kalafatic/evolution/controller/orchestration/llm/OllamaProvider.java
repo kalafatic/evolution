@@ -44,7 +44,11 @@ public class OllamaProvider implements ILlmProvider {
         try {
             String sessionId = context.getSessionId();
             if (sessionId == null) sessionId = "Default";
-            return service.chat(prompt, sessionId);
+            String response = service.chat(prompt, sessionId);
+            if (context != null) {
+                context.log("Stage: LLM\nProvider: Ollama\nModel: " + model + "\nToken count: (estimated) " + (prompt.length() / 4) + "\nRaw response length: " + response.length());
+            }
+            return response;
         } catch (Exception e) {
             String errorBody = e.getMessage();
             if (errorBody != null && errorBody.contains("requires more system memory") && errorBody.contains("than is available")) {

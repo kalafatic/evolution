@@ -41,23 +41,26 @@ public class DarwinVariantValidator {
         // 3. Parse JSON
         JSONObject json = JsonUtils.extractJsonObject(rawResponse);
         if (json == null) {
-            if (context != null) context.log("[VALIDATOR] Error: Failed to parse JSON from response.");
+            if (context != null) {
+                context.log("Stage: Parser\nJSON parsed: false\nFailure reason: Failed to parse JSON from response.");
+                context.log("[VALIDATOR] Error: Failed to parse JSON from response.");
+            }
             return null;
         }
+        if (context != null) context.log("Stage: Parser\nJSON parsed: true");
 
         // 4. Validate Required Fields (ID and strategy_type are injected by Spawner if missing)
         List<String> requiredFields = List.of("strategy", "survival_argument", "tradeoffs", "failure_risks", "actions");
+        List<String> errors = new java.util.ArrayList<>();
         for (String field : requiredFields) {
             if (!json.has(field)) {
-                if (context != null) context.log("[VALIDATOR] Error: Missing required field: " + field);
-                return null;
+                errors.add("Missing required field: " + field);
             }
         }
 
         // Semantic field flexibility
         if (!json.has("semantic_justification") && !json.has("semantic_anchor")) {
-            if (context != null) context.log("[VALIDATOR] Error: Missing semantic field (semantic_justification or semantic_anchor).");
-            return null;
+            errors.add("Missing semantic field (semantic_justification or semantic_anchor)");
         }
 
         // 5. Validate strategy_type if present
@@ -66,44 +69,56 @@ public class DarwinVariantValidator {
             try {
                 DarwinStrategyType actualType = DarwinStrategyType.valueOf(actualTypeStr.toUpperCase());
                 if (actualType != expectedType) {
-                    if (context != null) context.log("[VALIDATOR] Error: Strategy type mismatch. Expected " + expectedType + " but got " + actualType);
-                    return null;
+                    errors.add("Strategy type mismatch. Expected " + expectedType + " but got " + actualType);
                 }
             } catch (IllegalArgumentException e) {
-                if (context != null) context.log("[VALIDATOR] Error: Invalid strategy type: " + actualTypeStr);
-                return null;
+                errors.add("Invalid strategy type: " + actualTypeStr);
             }
         }
 
         // 6. Validate minimum completeness and PROHIBIT PLACEHOLDERS
         String strategy = json.optString("strategy");
         if (strategy.length() < 10 || strategy.contains("<") || strategy.contains(">") || strategy.contains("precise engineering strategy")) {
-            if (context != null) context.log("[VALIDATOR] Error: Invalid or placeholder strategy.");
-            return null;
+            errors.add("Invalid or placeholder strategy: " + strategy);
         }
 
         String reasoningFocus = json.optString("reasoning_focus");
         if (reasoningFocus.contains("<") || reasoningFocus.contains(">") || reasoningFocus.contains("specific architectural focus")) {
-            if (context != null) context.log("[VALIDATOR] Error: Invalid or placeholder reasoning_focus.");
-            return null;
+            errors.add("Invalid or placeholder reasoning_focus: " + reasoningFocus);
         }
 
         String survival = json.optString("survival_argument");
         if (survival.length() < 10 || survival.contains("<") || survival.contains(">")) {
-            if (context != null) context.log("[VALIDATOR] Error: Invalid or placeholder survival_argument.");
-            return null;
+            errors.add("Invalid or placeholder survival_argument: " + survival);
         }
 
         String philosophy = json.has("semantic_justification") ? json.optString("semantic_justification") : json.optString("semantic_anchor");
         if (philosophy.length() < 10 || philosophy.contains("<") || philosophy.contains(">")) {
-            if (context != null) context.log("[VALIDATOR] Error: Invalid or placeholder semantic field.");
-            return null;
+            errors.add("Invalid or placeholder semantic field: " + philosophy);
         }
 
         JSONArray actions = json.optJSONArray("actions");
         if (actions == null || actions.length() == 0) {
-            if (context != null) context.log("[VALIDATOR] Error: 'actions' field must be a non-empty array.");
-            return null;
+            errors.add("'actions' field must be a non-empty array.");
+        } else {
+            for (int i = 0; i < actions.length(); i++) {
+                JSONObject action = actions.optJSONObject(i);
+                if (action != null) {
+                    String op = action.optString("operation", "");
+                    String target = action.optString("target", "");
+                    String domain = action.optString("domain", "");
+
+                    if (op.contains("|") || op.contains("<") || op.contains(">")) {
+                        errors.add("Placeholder detected in action operation: '" + op + "'.");
+                    }
+                    if (target.contains("<") || target.contains(">") || target.contains("actual_file_path")) {
+                        errors.add("Placeholder detected in action target: '" + target + "'.");
+                    }
+                    if (domain.contains("|")) {
+                        errors.add("Placeholder detected in action domain: '" + domain + "'.");
+                    }
+                }
+            }
         }
 
         JSONArray selectedFiles = json.optJSONArray("selected_files");
@@ -111,32 +126,20 @@ public class DarwinVariantValidator {
             for (int i = 0; i < selectedFiles.length(); i++) {
                 String path = selectedFiles.optString(i, "");
                 if (path.contains("<") || path.contains(">") || path.contains("path/to/file")) {
-                    if (context != null) context.log("[VALIDATOR] Error: Placeholder detected in selected_files: '" + path + "'.");
-                    return null;
+                    errors.add("Placeholder detected in selected_files: '" + path + "'.");
                 }
             }
         }
 
-        for (int i = 0; i < actions.length(); i++) {
-            JSONObject action = actions.optJSONObject(i);
-            if (action != null) {
-                String op = action.optString("operation", "");
-                String target = action.optString("target", "");
-                String domain = action.optString("domain", "");
+        if (context != null) {
+            context.log("Stage: Validator\nValid: " + errors.isEmpty() + "\nErrors: " + String.join("; ", errors));
+        }
 
-                if (op.contains("|") || op.contains("<") || op.contains(">")) {
-                    if (context != null) context.log("[VALIDATOR] Error: Placeholder detected in action operation: '" + op + "'. Do not use '|' or '< >'.");
-                    return null;
-                }
-                if (target.contains("<") || target.contains(">") || target.contains("actual_file_path")) {
-                    if (context != null) context.log("[VALIDATOR] Error: Placeholder detected in action target: '" + target + "'. Provide a real path.");
-                    return null;
-                }
-                if (domain.contains("|")) {
-                    if (context != null) context.log("[VALIDATOR] Error: Placeholder detected in action domain: '" + domain + "'.");
-                    return null;
-                }
+        if (!errors.isEmpty()) {
+            for (String err : errors) {
+                if (context != null) context.log("[VALIDATOR] Error: " + err);
             }
+            return null;
         }
 
         return json;

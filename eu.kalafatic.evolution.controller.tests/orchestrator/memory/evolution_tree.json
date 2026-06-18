@@ -1,0 +1,44 @@
+{
+  "v-test" : {
+    "id" : "v-test",
+    "parentId" : null,
+    "iteration" : 0,
+    "generation" : 0,
+    "branchDepth" : 0,
+    "strategy" : "Architectural realization of v-test philosophy: ",
+    "semanticPhilosophy" : "",
+    "engineeringDimensions" : { },
+    "mutationRecord" : {
+      "strategy" : "Architectural realization of v-test philosophy: ",
+      "semanticAnchor" : "",
+      "philosophy" : "",
+      "reasoningFocus" : "Deterministic architectural recovery for v-test",
+      "engineeringDimensions" : {
+        "philosophy" : ""
+      },
+      "executionModel" : "",
+      "tradeoffs" : "Deterministic fallback; lacks LLM-refined implementation nuance.",
+      "survivalArgument" : "Mandatory architectural diversity branch ensured by orchestrator."
+    },
+    "executionRecord" : null,
+    "verificationRecord" : null,
+    "fitnessRecord" : null,
+    "fitnessScore" : 0.0,
+    "verificationScore" : 0.0,
+    "createdFiles" : [ ],
+    "modifiedFiles" : [ ],
+    "deletedFiles" : [ ],
+    "llmPrompt" : "Role: DarwinEngine\n### BEST PRACTICES & GUIDELINES\n#### ROLE: ARCHITECT\n# PACKAGE CONTEXT\n\n## Directory: eu.kalafatic.evolution.controller.tests/orchestrator/best_practices/architect/\n\n## Domain: general\n\n## Components\n* `guidelines.md`: - Design for modularity and high cohesion. - Use EMF-based modeling for core domain entities. - Follow the 'Separation of Concerns' principle between UI and logic. - Prioritize maintainability and extensibility in all design decisions.\n\n\n### ARCHITECT Best Practices\n\n- Design for modularity and high cohesion.\n- Use EMF-based modeling for core domain entities.\n- Follow the 'Separation of Concerns' principle between UI and logic.\n- Prioritize maintainability and extensibility in all design decisions.\n\n\n\n#### ROLE: PLANNER\n# PACKAGE CONTEXT\n\n## Directory: eu.kalafatic.evolution.controller.tests/orchestrator/best_practices/planner/\n\n## Domain: general\n\n## Components\n* `guidelines.md`: - Decompose user requests into atomic, actionable tasks. - Handle ambiguity by generating a clarification task (the 'Evo' way). - Assign specific agent roles (JavaDev, Tester, etc.) to tasks for better accuracy. - Use 'loopToTaskId' for iterative fix-test-improve cycles.\n\n\n# PLANNER Best Practices\n\n- Decompose user requests into atomic, actionable tasks.\n- Handle ambiguity by generating a clarification task (the 'Evo' way).\n- Assign specific agent roles (JavaDev, Tester, etc.) to tasks for better accuracy.\n- Use 'loopToTaskId' for iterative fix-test-improve cycles.\n\n\n\n#### ROLE: AGENT\n# PACKAGE CONTEXT\n\n## Directory: eu.kalafatic.evolution.controller.tests/orchestrator/best_practices/agent/\n\n## Domain: general\n\n## Components\n* `guidelines.md`: - Be concise and professional in all communications. - Prioritize using available tools over general reasoning for technical tasks. - Report errors clearly and suggest potential fixes or workarounds. - Always verify the outcome of tool execution.\n\n\n### AGENT Best Practices\n\n- Be concise and professional in all communications.\n- Prioritize using available tools over general reasoning for technical tasks.\n- Report errors clearly and suggest potential fixes or workarounds.\n- Always verify the outcome of tool execution.\n\n\n\n#### ROLE: TOOLS\n# PACKAGE CONTEXT\n\n## Directory: eu.kalafatic.evolution.controller.tests/orchestrator/best_practices/tools/\n\n## Domain: general\n\n## Components\n* `guidelines.md`: - Ensure all file paths are normalized and relative to the project root. - Request explicit user approval for high-risk actions (e.g., DELETE, SHELL). - Log tool execution results, including partial successes or informative failures. - Clean up temporary resources or side effects after execution.\n\n\n### TOOLS Best Practices\n\n- Ensure all file paths are normalized and relative to the project root.\n- Request explicit user approval for high-risk actions (e.g., DELETE, SHELL).\n- Log tool execution results, including partial successes or informative failures.\n- Clean up temporary resources or side effects after execution.\n\n\n\n\n\nINSTRUCTIONS:\nRole: Darwin Engine. Strategy: Lineage-driven evolutionary mutation.\nEVOLUTIONARY MANDATE:\n- You are a materializer of architectural lineages.\n- You do NOT invent new dimensions or discover recursion depth.\n- You MUST materialize the EXACT blueprint provided by the orchestrator.\n- Preserve lineage continuity: every mutation MUST inherit from the surviving ancestor.\n- Address identified evolutionary pressures (reliability, extensibility, etc.) in your implementation.\n\nCURRENT TASK:\n\uD83D\uDD34 SYSTEM / ROLE\n\nYou are an evolutionary engineering agent. Your goal is to mutate the system state to achieve a target objective while maintaining architectural integrity and lineage continuity.\n\n\uD83E\uDDE0 BEHAVIOR PROFILE\n\nPropose a precise engineering strategy to achieve the user's goal.\n\n\nPROPOSAL GUIDELINES:\n→ CRITICAL: Fulfillment of the current goal is the HIGHEST priority.\n→ IF build == FAIL → focus on build fixes.\n→ ELSE IF tests failing → focus on test fixes.\n→ Avoid repeating failed approaches (anti-loop).\n→ Propose structurally distinct transitions.\n\n\uD83D\uDCC2 CURRENT CONTEXT / REALITY\n\nCurrent Goal: Test Goal\n\n--- ACTIVE LINEAGE HISTORY ---\nNo active lineage history.\n\n\n\n\nFINAL DIRECTIVE:\nCRITICAL: Return a valid JSON object for the requested Darwin evolutionary trajectory.\n[SYSTEM_DIRECTIVE] Evolution Pressure Scalar (EPS): 0.50.\n",
+    "llmResponse" : "{\"expected_outputs\":[],\"tradeoffs\":\"Deterministic fallback; lacks LLM-refined implementation nuance.\",\"engineering_dimensions\":{\"philosophy\":\"\"},\"semantic_justification\":\"\",\"strategy_type\":\"PROBABLE_SURVIVOR\",\"selected_files\":[],\"failure_risks\":\"Lower specificity than materialized variants.\",\"survival_argument\":\"Mandatory architectural diversity branch ensured by orchestrator.\",\"projected_steps\":[],\"score\":0.45,\"reasoning_focus\":\"Deterministic architectural recovery for v-test\",\"id\":\"v-test\",\"strategy\":\"Architectural realization of v-test philosophy: \",\"actions\":[{\"domain\":\"kernel\",\"description\":\"Bootstrap v-test architectural strategy (Philosophy: ). Direction: \",\"operation\":\"ANALYZE\",\"target\":\"workspace\"}]}",
+    "mutationReason" : null,
+    "selectionReason" : null,
+    "rejectionReason" : null,
+    "executionResults" : null,
+    "verificationResults" : null,
+    "runtimeObservations" : null,
+    "childIds" : [ ],
+    "ancestorIds" : [ ],
+    "timestamp" : 1781787178975,
+    "status" : "ROOT"
+  }
+}
