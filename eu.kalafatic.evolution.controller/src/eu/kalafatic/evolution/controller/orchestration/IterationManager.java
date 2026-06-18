@@ -672,7 +672,15 @@ public class IterationManager {
         if (expansionValue <= 3) maxIterationsLimit = 10; // Conservative
         else if (expansionValue >= 8) maxIterationsLimit = 50; // Research/High
 
-        context.log("[KERNEL] Dynamic Expansion Control: Target Max Iterations = " + maxIterationsLimit);
+        int minIterations = 1;
+        PromptInstructions instructions = (context.getOrchestrator() != null && context.getOrchestrator().getAiChat() != null) ?
+                context.getOrchestrator().getAiChat().getPromptInstructions() : null;
+        if (instructions != null) {
+            minIterations = instructions.getPreferredMaxIterations();
+        }
+        if (minIterations < 1) minIterations = 1;
+
+        context.log("[KERNEL] Dynamic Expansion Control: Min Iterations = " + minIterations + ", Target Max Iterations = " + maxIterationsLimit);
 
         // 1. Recursive Evolutionary Loop
         context.log("[KERNEL] Phase: Recursive Evolutionary Trajectory System.");
@@ -707,13 +715,21 @@ public class IterationManager {
             saveFullCheckpoint();
 
             if (result.getDecision() != SelfDevDecision.CONTINUE) {
-                sessionContainer.getEventBus().publish(new RuntimeEvent(RuntimeEventType.FLOW_COMPLETED, context.getSessionId(), "Kernel", result.getDecision().toString()));
-                break;
+                if (safetyCounter < minIterations && result.getDecision() != SelfDevDecision.STOP) {
+                    context.log("[KERNEL] Evolution reached convergence decision (" + result.getDecision() + "), but Min Iterations not met. Continuing evolution.");
+                } else {
+                    sessionContainer.getEventBus().publish(new RuntimeEvent(RuntimeEventType.FLOW_COMPLETED, context.getSessionId(), "Kernel", result.getDecision().toString()));
+                    break;
+                }
             }
 
-            // If we reached a terminal phase during the iteration, break the loop
+            // If we reached a terminal phase during the iteration, break the loop if min iterations met
             if (state.getCurrentPhase().contains("TERMINAL")) {
-                break;
+                if (safetyCounter < minIterations) {
+                    context.log("[KERNEL] Terminal phase reached, but Min Iterations not met. Continuing evolution.");
+                } else {
+                    break;
+                }
             }
         }
 

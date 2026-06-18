@@ -293,12 +293,6 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         List<TrajectoryBlueprint> currentBlueprints = new ArrayList<>();
         int generation = trajectory != null ? trajectory.getGeneration() : 0;
 
-        int preferredMaxIterations = 4;
-        if (context.getOrchestrator() != null && context.getOrchestrator().getAiChat() != null &&
-            context.getOrchestrator().getAiChat().getPromptInstructions() != null) {
-            preferredMaxIterations = context.getOrchestrator().getAiChat().getPromptInstructions().getPreferredMaxIterations();
-        }
-
         // Model Capability Coefficient
         String modelName = (context.getOrchestrator().getOllama() != null) ? context.getOrchestrator().getOllama().getModel() : "unknown";
         double modelCapability = 0.5; // Default

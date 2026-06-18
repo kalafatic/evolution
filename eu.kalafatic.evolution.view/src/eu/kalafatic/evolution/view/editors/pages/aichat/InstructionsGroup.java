@@ -182,16 +182,10 @@ public class InstructionsGroup extends AEvoGroup {
                 if (isUpdating) return;
                 int val = expansionScale.getSelection();
 
-                isUpdating = true;
-                try {
-                    maxIterationsSpinner.setSelection(val);
-                } finally {
-                    isUpdating = false;
-                }
-               
                 java.util.Map<String, Object> settings = new java.util.HashMap<>();
-                settings.put("maxIterations", val);
+                settings.put("expansion", val);
                 page.updateConfiguration(settings);
+                page.saveLastUsedSettings();
             }
         });
 
@@ -289,22 +283,13 @@ public class InstructionsGroup extends AEvoGroup {
                 if (isUpdating) return;
                 int val = maxIterationsSpinner.getSelection();
 
-                isUpdating = true;
-                try {
-                    if (val <= expansionScale.getMaximum()) {
-                        expansionScale.setSelection(val);
-                    }
-                } finally {
-                    isUpdating = false;
-                }
-
                 java.util.Map<String, Object> settings = new java.util.HashMap<>();
                 settings.put("maxIterations", val);
                 page.updateConfiguration(settings);
                 page.saveLastUsedSettings();
             }
         });
-        GUIFactory.INSTANCE.createLabel(settingsComp, "Max Iterations",SWT.NONE,70);
+        GUIFactory.INSTANCE.createLabel(settingsComp, "Min Iterations",SWT.NONE,70);
         
         
         
@@ -360,7 +345,10 @@ public class InstructionsGroup extends AEvoGroup {
 
                 if (expansionScale != null && !expansionScale.isDisposed()) {
                     int defaultExpansion = session != null ? session.getExpansion() : 5;
-                    expansionScale.setSelection((Integer) config.getOrDefault("expansion", defaultExpansion));
+                    int expansion = (Integer) config.getOrDefault("expansion", defaultExpansion);
+                    if (expansionScale.getSelection() != expansion) {
+                        expansionScale.setSelection(expansion);
+                    }
                 }
 
                 int defaultMaxIter = session != null ? session.getMaxIterations() : (pi != null ? pi.getPreferredMaxIterations() : 4);
@@ -369,9 +357,6 @@ public class InstructionsGroup extends AEvoGroup {
                 int maxIter = (Integer) config.getOrDefault("maxIterations", defaultMaxIter);
                 if (maxIterationsSpinner.getSelection() != maxIter) {
                     maxIterationsSpinner.setSelection(maxIter);
-                }
-                if (maxIter <= expansionScale.getMaximum() && expansionScale.getSelection() != maxIter) {
-                    expansionScale.setSelection(maxIter);
                 }
             } finally {
                 isUpdating = false;
