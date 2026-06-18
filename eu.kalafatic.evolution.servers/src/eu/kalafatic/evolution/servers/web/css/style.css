@@ -164,9 +164,9 @@ body {
 
 /* Graphics */
 .hero-graphic {
-    height: 240px;
-    background: #0f172a;
-    border-radius: 16px;
+    height: 280px;
+    background: #020617;
+    border-radius: 12px;
     margin-bottom: 48px;
     position: relative;
     overflow: hidden;
@@ -174,61 +174,91 @@ body {
     justify-content: center;
     align-items: center;
     border: 1px solid #1e293b;
+    box-shadow: inset 0 0 100px rgba(59, 130, 246, 0.1);
 }
 
-.grid-background {
+.cyber-background {
     position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background-image:
-        linear-gradient(rgba(59, 130, 246, 0.1) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(59, 130, 246, 0.1) 1px, transparent 1px);
-    background-size: 30px 30px;
-    mask-image: radial-gradient(circle at 50% 50%, black, transparent);
+    width: 100%;
+    height: 100%;
+    background:
+        radial-gradient(circle at 2px 2px, rgba(59, 130, 246, 0.05) 1px, transparent 0);
+    background-size: 24px 24px;
 }
 
-.neural-network {
+.platform-core {
     position: relative;
-    width: 100%;
-    height: 100%;
-    z-index: 2;
+    width: 200px;
+    height: 200px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
-.neural-node {
+.core-ring {
     position: absolute;
-    width: 12px;
-    height: 12px;
     border-radius: 50%;
-    background: var(--primary-color);
-    box-shadow: 0 0 15px var(--primary-color);
-    z-index: 10;
+    border: 2px solid rgba(59, 130, 246, 0.2);
 }
 
-.node-a { top: 30%; left: 20%; animation: glow 3s infinite; }
-.node-b { top: 50%; left: 50%; animation: glow 3s infinite 0.5s; }
-.node-c { top: 40%; left: 80%; animation: glow 3s infinite 1s; }
-.node-d { top: 80%; left: 40%; animation: glow 3s infinite 1.5s; }
-
-@keyframes glow {
-    0%, 100% { transform: scale(1); opacity: 0.5; box-shadow: 0 0 5px var(--primary-color); }
-    50% { transform: scale(1.3); opacity: 1; box-shadow: 0 0 20px var(--primary-color); }
+.core-outer {
+    width: 180px;
+    height: 180px;
+    border-style: dashed;
+    animation: spin-cw 20s linear infinite;
 }
 
-.neural-connections {
+.core-inner {
+    width: 140px;
+    height: 140px;
+    border: 1px solid rgba(59, 130, 246, 0.4);
+    animation: spin-ccw 15s linear infinite;
+}
+
+.core-hub {
+    width: 80px;
+    height: 80px;
+    background: rgba(59, 130, 246, 0.1);
+    border: 2px solid var(--primary-color);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: var(--primary-color);
+    font-weight: 900;
+    font-size: 18px;
+    letter-spacing: 2px;
+    box-shadow: 0 0 30px rgba(59, 130, 246, 0.4);
+    z-index: 5;
+}
+
+.orbit-node {
     position: absolute;
-    width: 100%;
-    height: 100%;
+    width: 10px;
+    height: 10px;
+    background: var(--primary-color);
+    border-radius: 50%;
+    box-shadow: 0 0 15px var(--primary-color);
 }
 
-.conn-line {
-    stroke: rgba(59, 130, 246, 0.3);
-    stroke-width: 1.5;
-    stroke-dasharray: 5;
-    animation: flow 5s linear infinite;
-}
+.node-1 { animation: orbit-1 8s linear infinite; }
+.node-2 { animation: orbit-2 12s linear infinite; }
+.node-3 { animation: orbit-3 10s linear infinite; }
 
-@keyframes flow {
-    from { stroke-dashoffset: 20; }
-    to { stroke-dashoffset: 0; }
+@keyframes spin-cw { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes spin-ccw { from { transform: rotate(360deg); } to { transform: rotate(0deg); } }
+
+@keyframes orbit-1 {
+    from { transform: rotate(0deg) translateX(90px) rotate(0deg); }
+    to { transform: rotate(360deg) translateX(90px) rotate(-360deg); }
+}
+@keyframes orbit-2 {
+    from { transform: rotate(120deg) translateX(70px) rotate(-120deg); }
+    to { transform: rotate(480deg) translateX(70px) rotate(-480deg); }
+}
+@keyframes orbit-3 {
+    from { transform: rotate(240deg) translateX(90px) rotate(-240deg); }
+    to { transform: rotate(600deg) translateX(90px) rotate(-600deg); }
 }
 
 /* Content */
