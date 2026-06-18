@@ -551,7 +551,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         v.setMutationTrace("Generated in trajectory round.");
         v.setScore(obj.optDouble("score", 0.0));
         String suffix = obj.optString("suffix", "variant");
-        v.setBranchName("exp/" + sanitize(goal) + "/" + sanitize(suffix));
+        v.setBranchName("exp/" + sanitize(goal) + "/" + v.getId() + "-" + System.currentTimeMillis());
         v.setSurvivalArgument(obj.optString("survival_argument", "none"));
         v.setTradeoffs(obj.optString("tradeoffs", "none"));
         v.setFailureRisks(obj.optString("failure_risks", "none"));
