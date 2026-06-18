@@ -9,6 +9,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import eu.kalafatic.evolution.controller.agents.BaseAiAgent;
+import eu.kalafatic.evolution.controller.orchestration.EvolutionProgressPublisher;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.behavior.ConservativeReasoningModule;
 import eu.kalafatic.evolution.controller.orchestration.behavior.DarwinIterativeInstructionModule;
@@ -417,9 +418,15 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
                         currentBlueprints.add(bp);
 
                         // 3. Sequential Blueprint Materialization
+                        // LIFECYCLE: ANALYZING
+                        EvolutionProgressPublisher.updateBranchStatus(context, bp.getId(), bp.getPhilosophy(), "analyzing", null);
+
                         JSONObject variant = spawner.spawnSingleBlueprint(goal, bp, basePrompt, fullLineagePrompt + lineageContext, rejectedSiblings, siblingMemoryBuilder.toString(), isMediated, context);
 
                         if (variant != null) {
+                            // LIFECYCLE: PLANNED
+                            EvolutionProgressPublisher.updateBranchStatus(context, bp.getId(), bp.getPhilosophy(), "planned", null);
+
                             uniqueVariants.add(variant);
 
                             // 4. Update EvolutionTree with new mutation node
@@ -540,7 +547,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         v.setActivationState(BranchVariant.ActivationState.ARCHIVED);
         v.setStrategyType(obj.optString("strategy_type", "UNKNOWN"));
         v.setStrategy(obj.optString("strategy", "unknown"));
-        v.setSemanticAnchor(v.getStrategy());
+        v.setSemanticAnchor(obj.optString("semantic_anchor", v.getStrategy()));
         v.setMutationTrace("Generated in trajectory round.");
         v.setScore(obj.optDouble("score", 0.0));
         String suffix = obj.optString("suffix", "variant");
@@ -570,18 +577,25 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         JSONArray selectedFilesArr = obj.optJSONArray("selected_files");
         if (selectedFilesArr != null) {
             for (int i = 0; i < selectedFilesArr.length(); i++) {
-                v.getSelectedFiles().add(selectedFilesArr.getString(i));
+                String s = selectedFilesArr.optString(i);
+                if (s != null && !s.isEmpty()) v.getSelectedFiles().add(s);
             }
         }
 
         JSONArray stepsArr = obj.optJSONArray("projected_steps");
         if (stepsArr != null) {
-            for (int j = 0; j < stepsArr.length(); j++) v.getProjectedSteps().add(stepsArr.getString(j));
+            for (int j = 0; j < stepsArr.length(); j++) {
+                String s = stepsArr.optString(j);
+                if (s != null && !s.isEmpty()) v.getProjectedSteps().add(s);
+            }
         }
 
         JSONArray outputsArr = obj.optJSONArray("expected_outputs");
         if (outputsArr != null) {
-            for (int j = 0; j < outputsArr.length(); j++) v.getExpectedOutputs().add(outputsArr.getString(j));
+            for (int j = 0; j < outputsArr.length(); j++) {
+                String s = outputsArr.optString(j);
+                if (s != null && !s.isEmpty()) v.getExpectedOutputs().add(s);
+            }
         }
 
         JSONArray actionsArr = obj.optJSONArray("actions");
@@ -590,10 +604,10 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
                 JSONObject aObj = actionsArr.optJSONObject(i);
                 if (aObj == null) continue;
                 BranchVariant.Action action = new BranchVariant.Action();
-                action.setDomain(aObj.optString("domain"));
-                action.setOperation(aObj.optString("operation"));
-                action.setTarget(aObj.optString("target"));
-                action.setDescription(aObj.optString("description"));
+                action.setDomain(aObj.optString("domain", "kernel"));
+                action.setOperation(aObj.optString("operation", "ANALYZE"));
+                action.setTarget(aObj.optString("target", "workspace"));
+                action.setDescription(aObj.optString("description", "Materialize architectural intent"));
                 v.getActions().add(action);
             }
         }

@@ -8,6 +8,7 @@ import java.io.IOException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import eu.kalafatic.evolution.model.orchestration.ForgeSession;

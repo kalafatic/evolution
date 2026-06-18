@@ -17,7 +17,7 @@ public class EvolutionTree {
     private String rootId;
     private String currentWinnerId;
 
-    public void addNode(EvolutionNode node) {
+    public synchronized void addNode(EvolutionNode node) {
         nodes.put(node.getId(), node);
         if (node.getParentId() != null) {
             EvolutionNode parent = nodes.get(node.getParentId());
@@ -36,11 +36,11 @@ public class EvolutionTree {
         }
     }
 
-    public EvolutionNode getNode(String id) {
+    public synchronized EvolutionNode getNode(String id) {
         return nodes.get(id);
     }
 
-    public List<EvolutionNode> getLineage(String nodeId) {
+    public synchronized List<EvolutionNode> getLineage(String nodeId) {
         List<EvolutionNode> lineage = new ArrayList<>();
         EvolutionNode current = nodes.get(nodeId);
         while (current != null) {
@@ -50,7 +50,7 @@ public class EvolutionTree {
         return lineage;
     }
 
-    public List<EvolutionNode> getSiblings(String nodeId) {
+    public synchronized List<EvolutionNode> getSiblings(String nodeId) {
         EvolutionNode node = nodes.get(nodeId);
         if (node == null || node.getParentId() == null) return Collections.emptyList();
         EvolutionNode parent = nodes.get(node.getParentId());
@@ -62,23 +62,23 @@ public class EvolutionTree {
                 .collect(Collectors.toList());
     }
 
-    public String getRootId() { return rootId; }
+    public synchronized String getRootId() { return rootId; }
     public void setRootId(String rootId) { this.rootId = rootId; }
 
-    public String getCurrentWinnerId() { return currentWinnerId; }
+    public synchronized String getCurrentWinnerId() { return currentWinnerId; }
     public void setCurrentWinnerId(String currentWinnerId) { this.currentWinnerId = currentWinnerId; }
 
-    public Map<String, EvolutionNode> getNodes() { return nodes; }
+    public synchronized Map<String, EvolutionNode> getNodes() { return new HashMap<>(nodes); }
     public void setNodes(Map<String, EvolutionNode> nodes) { this.nodes = nodes; }
 
-    public EvolutionNode getWinnerNode() {
+    public synchronized EvolutionNode getWinnerNode() {
         return currentWinnerId != null ? nodes.get(currentWinnerId) : null;
     }
 
     /**
      * Reconstructs the full evolutionary history context for prompting.
      */
-    public String reconstructLineagePrompt(String nodeId) {
+    public synchronized String reconstructLineagePrompt(String nodeId) {
         List<EvolutionNode> lineage = getLineage(nodeId);
         StringBuilder sb = new StringBuilder();
 

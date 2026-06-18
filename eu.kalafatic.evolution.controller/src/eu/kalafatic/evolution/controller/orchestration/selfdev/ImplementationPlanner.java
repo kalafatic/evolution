@@ -31,16 +31,19 @@ public class ImplementationPlanner {
         if (!variant.has("failure_risks") || variant.optString("failure_risks").isEmpty()) {
             variant.put("failure_risks", "Inherent risks associated with " + strategy);
         }
-        if (!variant.has("expected_outputs") || variant.optJSONArray("expected_outputs").length() == 0) {
+        if (!variant.has("expected_outputs") || variant.isNull("expected_outputs") || variant.optJSONArray("expected_outputs").length() == 0) {
             JSONArray outputs = new JSONArray();
             outputs.put("Successful implementation of " + strategy);
             variant.put("expected_outputs", outputs);
         }
-        if (!variant.has("projected_steps") || variant.optJSONArray("projected_steps").length() == 0) {
+        if (!variant.has("projected_steps") || variant.isNull("projected_steps") || variant.optJSONArray("projected_steps").length() == 0) {
             JSONArray steps = new JSONArray();
             steps.put("Initialize " + strategy);
             steps.put("Materialize architectural intent");
             variant.put("projected_steps", steps);
+        }
+        if (!variant.has("survival_argument") || variant.optString("survival_argument").isEmpty()) {
+            variant.put("survival_argument", "Proposed architectural candidate for goal resolution.");
         }
 
         // 2. Synthesize actions if missing or empty
@@ -90,6 +93,16 @@ public class ImplementationPlanner {
             action.put("operation", "ANALYZE");
             action.put("target", "workspace");
             action.put("description", "Bootstrap " + variant.optString("id") + " architectural strategy: " + variant.optString("strategy"));
+            actions.put(action);
+        }
+
+        // Strategy D: FINAL FALLBACK GUARANTEE
+        if (actions.length() == 0) {
+            JSONObject action = new JSONObject();
+            action.put("domain", "kernel");
+            action.put("operation", "ANALYZE");
+            action.put("target", "workspace");
+            action.put("description", "Execute architectural intent for " + variant.optString("id"));
             actions.put(action);
         }
 

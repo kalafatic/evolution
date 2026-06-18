@@ -252,7 +252,7 @@ public class DarwinFlow implements IOrchestrationFlow {
                 context.log("[KERNEL] Winner variant execution failed: " + selectedVariant.getId());
                 if (!isExportOnly && !isTestMode) {
                     manager.getGitManager().forceCheckout(originalBranch);
-                    manager.getGitManager().rollback();
+                    manager.getGitManager().rollback(context);
                 }
                 return manager.failedResult();
             }
@@ -377,8 +377,15 @@ public class DarwinFlow implements IOrchestrationFlow {
                 return result;
             }
         } catch (Exception e) {
-            manager.getGitManager().forceCheckout(originalBranch);
-            manager.getGitManager().rollback();
+            context.log("[KERNEL] DarwinFlow.executeWinner failed: " + e.getMessage());
+            if (!isExportOnly && !isTestMode) {
+                try {
+                    manager.getGitManager().forceCheckout(originalBranch);
+                    manager.getGitManager().rollback(context);
+                } catch (Exception ex) {
+                    context.log("[KERNEL] Failed to rollback after error: " + ex.getMessage());
+                }
+            }
             throw e;
         }
     }
@@ -487,19 +494,33 @@ public class DarwinFlow implements IOrchestrationFlow {
             }
 
             GitTool deltaTool = new GitTool();
-            variant.setMutationTrace(deltaTool.execute("diff " + baseCommit + " HEAD", tempDir, variantContext));
+            try {
+                variant.setMutationTrace(deltaTool.execute("diff " + baseCommit + " HEAD", tempDir, variantContext));
+            } catch (Exception e) {
+                context.log("[DARWIN] Failed to capture mutation trace: " + e.getMessage());
+            }
             variant.setScore(result.isSuccess() ? 0.8 + (result.getTestPassRate() * 0.2) : result.getTestPassRate() * 0.5);
 
             return variantExecContext;
         } catch (Exception e) {
+            context.log("[DARWIN] Parallel evaluation failed for variant " + variant.getId() + ": " + e.getMessage());
+            variant.setSuccess(false);
             variant.setScore(0.0);
+            variant.setErrorMessage(e.getMessage());
+            manager.updateVariantLifecycle(List.of(variant), variant.getId(), BranchVariant.ActivationState.REJECTED, context);
             return variantExecContext;
         } finally {
-            if (tempDir != null && !context.getMetadata().containsKey("testMode")) {
+            if (tempDir != null && !context.getMetadata().containsKey("testMode") && !isMediated) {
                 try {
-                    manager.getBranchManager().removeWorktree(tempDir.getAbsolutePath());
+                    manager.getGitManager().removeWorktree(tempDir.getAbsolutePath());
+                } catch (Exception e) {
+                    context.log("[DARWIN] Worktree removal failed: " + e.getMessage());
+                }
+                try {
                     deleteDirectory(tempDir);
-                } catch (Exception e) {}
+                } catch (Exception e) {
+                    context.log("[DARWIN] Temporary directory deletion failed: " + e.getMessage());
+                }
             }
         }
     }

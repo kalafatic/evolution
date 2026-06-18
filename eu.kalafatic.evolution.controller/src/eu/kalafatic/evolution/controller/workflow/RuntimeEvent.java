@@ -50,4 +50,12 @@ public class RuntimeEvent {
         this.metadata.put("entityId", entityId);
         return this;
     }
+
+    public String getEntityId() {
+        return (String) metadata.get("entityId");
+    }
+
+    public String getAction() {
+        return (String) payload;
+    }
 }
