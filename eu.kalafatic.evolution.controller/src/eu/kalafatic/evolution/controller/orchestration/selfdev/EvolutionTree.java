@@ -90,11 +90,17 @@ public class EvolutionTree {
                 EvolutionNode parent = lineage.get(lineage.size() - 1);
                 sb.append("PARENT STRATEGY: ").append(parent.getStrategy()).append("\n");
                 sb.append("PARENT PHILOSOPHY: ").append(parent.getSemanticPhilosophy()).append("\n");
+                if (parent.getMutationRecord() != null) {
+                    sb.append("PARENT EXECUTION MODEL: ").append(parent.getMutationRecord().getExecutionModel()).append("\n");
+                }
             }
 
             if (lineage.size() > 2) {
                 EvolutionNode grandparent = lineage.get(lineage.size() - 2);
                 sb.append("GRANDPARENT STRATEGY: ").append(grandparent.getStrategy()).append("\n");
+                if (grandparent.getMutationRecord() != null) {
+                    sb.append("GRANDPARENT PHILOSOPHY: ").append(grandparent.getMutationRecord().getPhilosophy()).append("\n");
+                }
             }
         }
 

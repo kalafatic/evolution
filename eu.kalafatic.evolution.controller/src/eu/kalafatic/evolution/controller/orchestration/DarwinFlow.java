@@ -355,11 +355,15 @@ public class DarwinFlow implements IOrchestrationFlow {
                             node.setStatus(v.getActivationState().name());
                             if (v.getActivationState() == BranchVariant.ActivationState.ACTIVE) {
                                 tree.setCurrentWinnerId(v.getId());
+                                sessionContainer.getEventBus().publish(new RuntimeEvent(RuntimeEventType.WINNER_SELECTED, context.getSessionId(), v.getId(), v.getStrategy()));
                             }
+
+                            sessionContainer.getEventBus().publish(new RuntimeEvent(RuntimeEventType.FITNESS_UPDATED, context.getSessionId(), v.getId(), v.getScore()));
                         }
                     }
                 }
                 context.getKernelContext().getMemoryService().saveEvolutionTree();
+                sessionContainer.getEventBus().publish(new RuntimeEvent(RuntimeEventType.TREE_UPDATED, context.getSessionId(), "DarwinFlow", null));
 
                 manager.checkStep(selectedVariant.getId(), "GIT_COMMIT", "Committing evolutionary changes for phase: " + completedPhase);
                 manager.getGitManager().commit("Darwin Evolution Phase " + completedPhase, context);

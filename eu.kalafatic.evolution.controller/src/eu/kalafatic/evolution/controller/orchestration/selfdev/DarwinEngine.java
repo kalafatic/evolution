@@ -373,7 +373,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         String lineageContext = lineageBuilder.toString();
 
         List<JSONObject> uniqueVariants = new ArrayList<>();
-        String mutationContext = "";
+        StringBuilder siblingMemoryBuilder = new StringBuilder();
 
         EvolutionTree tree = context.getKernelContext().getMemoryService().getEvolutionTree();
         String currentParentId = tree.getCurrentWinnerId();
@@ -396,7 +396,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
                 String fullLineagePrompt = tree.reconstructLineagePrompt(currentParentId);
 
                 // 2. Sequential Blueprint Discovery
-                TrajectoryBlueprint bp = mapper.discoverNext(discoveryGoal, context, currentBlueprints, fullLineagePrompt + mutationContext);
+                TrajectoryBlueprint bp = mapper.discoverNext(discoveryGoal, context, currentBlueprints, fullLineagePrompt + siblingMemoryBuilder.toString());
 
                 if (bp != null) {
                     // Avoid duplicate strategies or philosophies
@@ -409,7 +409,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
                         currentBlueprints.add(bp);
 
                         // 3. Sequential Blueprint Materialization
-                        JSONObject variant = spawner.spawnSingleBlueprint(goal, bp, basePrompt, fullLineagePrompt + lineageContext, rejectedSiblings, mutationContext, isMediated, context);
+                        JSONObject variant = spawner.spawnSingleBlueprint(goal, bp, basePrompt, fullLineagePrompt + lineageContext, rejectedSiblings, siblingMemoryBuilder.toString(), isMediated, context);
 
                         if (variant != null) {
                             uniqueVariants.add(variant);
@@ -426,13 +426,40 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
                             node.setLlmResponse(variant.toString());
                             node.setStatus("KEPT");
 
+                            // Populating MutationRecord
+                            MutationRecord mut = new MutationRecord();
+                            mut.setStrategy(variant.optString("strategy"));
+                            mut.setSemanticAnchor(variant.optString("semantic_anchor"));
+                            mut.setPhilosophy(variant.optString("semantic_anchor"));
+                            mut.setReasoningFocus(variant.optString("reasoning_focus"));
+                            mut.setTradeoffs(variant.optString("tradeoffs"));
+                            mut.setSurvivalArgument(variant.optString("survival_argument"));
+                            JSONObject dims = variant.optJSONObject("engineering_dimensions");
+                            if (dims != null) {
+                                for (Object k : dims.keySet()) {
+                                    String key = (String) k;
+                                    mut.getEngineeringDimensions().put(key, String.valueOf(dims.get(key)));
+                                }
+                                mut.setExecutionModel(dims.optString("execution_model"));
+                            }
+                            node.setMutationRecord(mut);
+
+                            Object fitnessObj = variant.opt("fitness_record");
+                            if (fitnessObj instanceof FitnessRecord) {
+                                node.setFitnessRecord((FitnessRecord) fitnessObj);
+                            }
+
                             tree.addNode(node);
                             context.getKernelContext().getMemoryService().saveEvolutionTree();
 
-                            // 5. Accumulate Mutation Context for next iteration
-                            mutationContext += "DO NOT REPEAT STRATEGY: " + variant.optString("strategy") + "\n" +
-                                               "AVOID ASSUMPTION: " + variant.optString("semantic_justification") + "\n" +
-                                               "NEXT MUST BE STRUCTURALLY DIFFERENT\n\n";
+                            getSessionContainer().getEventBus().publish(new RuntimeEvent(RuntimeEventType.SIBLING_GENERATED, context.getSessionId(), node.getId(), node.getStrategy()));
+
+                            // 5. Accumulate Structured Sibling Memory for next iteration
+                            siblingMemoryBuilder.append("SIBLING: ").append(variant.optString("strategy")).append("\n")
+                                               .append("  PHILOSOPHY: ").append(variant.optString("semantic_anchor")).append("\n")
+                                               .append("  EXECUTION MODEL: ").append(mut.getExecutionModel()).append("\n")
+                                               .append("  DIMENSIONS: ").append(mut.getEngineeringDimensions()).append("\n")
+                                               .append("  SELECTED FILES: ").append(variant.optJSONArray("selected_files")).append("\n\n");
                         }
                     } else {
                         context.log("[DARWIN] Sequential Branching: Ignoring duplicate blueprint: " + bp.getStrategy());

@@ -4,12 +4,32 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Responsible for merging instruction modules and injecting context to produce the final prompt.
+ * Responsible for modular prompt composition following the EVO Platform Vision.
  */
 public class PromptComposer {
 
     public String compose(ExecutionPolicy policy, List<InstructionModule> modules, String stateContext) {
         StringBuilder sb = new StringBuilder();
+
+        sb.append(composeSystem(policy)).append("\n\n");
+        sb.append(composeBehavior(policy, modules)).append("\n\n");
+        sb.append(composeContext(stateContext)).append("\n\n");
+
+        return sb.toString();
+    }
+
+    public String composeSystem(ExecutionPolicy policy) {
+        return "🔴 SYSTEM / ROLE\n\n" +
+               "You are an evolutionary engineering agent. Your goal is to mutate the system state to achieve a target objective while maintaining architectural integrity and lineage continuity.";
+    }
+
+    public String composeGoal(String goal) {
+        return "🎯 PRIMARY GOAL\n\n" + goal;
+    }
+
+    public String composeBehavior(ExecutionPolicy policy, List<InstructionModule> modules) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("🧠 BEHAVIOR PROFILE\n\n");
 
         String instructionText = modules.stream()
                 .map(m -> m.getInstructions(policy))
@@ -17,41 +37,46 @@ public class PromptComposer {
                 .collect(Collectors.joining("\n\n"));
 
         if (instructionText.isEmpty()) {
-            sb.append("Your task is to propose the best STRATEGY to fulfill the user's goal by reasoning over STATE and FEEDBACK.\n\n");
+            sb.append("Propose a precise engineering strategy to achieve the user's goal.\n");
         } else {
-            sb.append(instructionText).append("\n\n");
+            sb.append(instructionText);
         }
 
-        sb.append("PRIMARY OBJECTIVE:\n")
-          .append("→ Propose a precise engineering strategy to achieve the user's goal.\n")
+        sb.append("\n\nPROPOSAL GUIDELINES:\n")
           .append("→ CRITICAL: Fulfillment of the current goal is the HIGHEST priority.\n")
-          .append("→ If the goal is ANALYTICAL (e.g., 'analyze project'), use ANALYZE operations in 'structure' or 'test' domains.\n\n");
-
-        sb.append("STATE MODEL:\n")
-          .append("→ Use the provided StateSnapshot (build, tests, coverage) to inform decisions.\n")
-          .append("→ Analyze relationships between elements (files, modules, tests, failures, dependencies).\n")
-          .append("→ Identify weak points (failures, instability, complexity).\n")
-          .append("→ Propose actions that improve overall system health and achieve the target goal.\n\n")
-          .append("FAILURE FINGERPRINTING & ANTI-LOOP:\n")
-          .append("→ Avoid repeating actions that lead to the same failure fingerprints.\n")
-          .append("→ If a failure is REPEATING (count >= 2), you MUST change your strategy.\n\n")
-          .append("HYPOTHESIS-DRIVEN REASONING:\n")
-          .append("→ The variant MUST include a hypothesis: a causal explanation of why the proposed changes will lead to the expected effects.\n")
-          .append("→ Expected effects must be measurable outcomes (e.g., 'build success', 'test X passes', 'new class prints text').\n\n")
-          .append("TRAJECTORY AWARENESS:\n")
-          .append("→ Consider the build/test trends. Prefer changes that improve ANY dimension.\n\n")
-          .append("PRIORITY LOGIC:\n")
           .append("→ IF build == FAIL → focus on build fixes.\n")
           .append("→ ELSE IF tests failing → focus on test fixes.\n")
-          .append("→ ELSE → fulfillment of the current goal.\n\n")
-          .append("STRATEGY GUIDELINE:\n")
-          .append("→ Propose a distinct candidate state transition.\n")
-          .append("→ Avoid cosmetic changes, repeated failed approaches, or low-impact modifications.");
-
-        if (stateContext != null && !stateContext.isEmpty()) {
-            sb.append("\n\n--- CURRENT CONTEXT ---\n").append(stateContext);
-        }
+          .append("→ Avoid repeating failed approaches (anti-loop).\n")
+          .append("→ Propose structurally distinct transitions.");
 
         return sb.toString();
+    }
+
+    public String composeContext(String stateContext) {
+        if (stateContext == null || stateContext.isEmpty()) return "";
+        return "📂 CURRENT CONTEXT / REALITY\n\n" + stateContext;
+    }
+
+    public String composeLineage(String lineageMemory) {
+        if (lineageMemory == null || lineageMemory.isEmpty()) return "";
+        return "🧬 CUMULATIVE LINEAGE MEMORY\n\n" + lineageMemory;
+    }
+
+    public String composeSiblingMemory(String siblingMemory) {
+        if (siblingMemory == null || siblingMemory.isEmpty()) return "";
+        return "🚫 SIBLING REJECTION MEMORY (HARD CONSTRAINT)\n\n" +
+               "The following architectural regions are already occupied by siblings in this iteration. YOU MUST NOT OVERLAP WITH THESE.\n\n" +
+               siblingMemory;
+    }
+
+    public String composeConstraints(String constraints) {
+        if (constraints == null || constraints.isEmpty()) return "";
+        return "⚠️ EVOLUTION CONSTRAINTS\n\n" + constraints;
+    }
+
+    public String composeJsonSchema(String schema) {
+        return "🎯 OUTPUT FORMAT (STRICT JSON)\n\n" +
+               "Return ONLY a JSON object within <BEGIN_DARWIN_JSON> and <END_DARWIN_JSON> tags.\n\n" +
+               schema;
     }
 }

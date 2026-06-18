@@ -200,23 +200,14 @@ public class DarwinVariantSpawner {
     }
 
     private String buildBlueprintPrompt(TrajectoryBlueprint bp, String basePrompt, String lineageContext, List<String> rejectedSiblings, String mutationContext, boolean isMediated, TaskContext context) {
+        eu.kalafatic.evolution.controller.orchestration.behavior.PromptComposer composer = new eu.kalafatic.evolution.controller.orchestration.behavior.PromptComposer();
         StringBuilder sb = new StringBuilder();
-        sb.append("🔴 SYSTEM / ROLE\n\n")
-          .append("You are a single-path evolutionary mutation engine.\n\n")
-          .append("You do NOT generate multiple solutions.\n")
-          .append("You do NOT compare alternatives.\n")
-          .append("You do NOT output sets or lists of strategies.\n\n")
-          .append("You perform one controlled mutation of a prior solution state.\n\n")
-          .append("🧠 CORE RULE\n\n")
-          .append("Each response MUST contain exactly ONE branch only.\n\n")
-          .append("This branch must be:\n\n")
-          .append("structurally distinct from all previously seen branches\n")
-          .append("NOT a variation of earlier strategies\n")
-          .append("NOT a recombination of prior ideas\n")
-          .append("NOT a “better version” of the same approach\n\n")
-          .append("You are evolving a lineage, not generating options.\n\n")
-          .append("📌 INPUT CONTEXT\n\n")
-          .append("GOAL: ").append(bp.getGoal()).append("\n\n");
+
+        sb.append(composer.composeSystem(null)).append("\n\n");
+        sb.append("You are a single-path evolutionary mutation engine.\n")
+          .append("Each response MUST contain exactly ONE branch only.\n\n");
+
+        sb.append(composer.composeGoal(bp.getGoal())).append("\n\n");
 
         if (context != null && context.getOrchestrationState() != null) {
             var metadata = context.getOrchestrationState().getMetadata();
@@ -224,82 +215,30 @@ public class DarwinVariantSpawner {
               .append("- ").append(metadata.getOrDefault("current_understanding", "None")).append("\n\n");
         }
 
-        if (lineageContext != null && !lineageContext.isEmpty()) {
-            sb.append("🧬 CUMULATIVE EVOLUTIONARY ANCESTRY\n\n")
-              .append("You are mutating a specific lineage. This is your biological memory:\n")
-              .append(lineageContext).append("\n")
-              .append("DIRECTIVE: Your mutation MUST satisfy the current goal while remaining CONTINUOUS with this lineage.\n\n");
-        }
+        sb.append(composer.composeLineage(lineageContext)).append("\n\n");
 
-        sb.append("FORBIDDEN STRATEGIES (PREVIOUSLY REJECTED OR OCCUPIED):\n");
+        StringBuilder siblingSb = new StringBuilder();
         if (rejectedSiblings != null && !rejectedSiblings.isEmpty()) {
-            for (String rejected : rejectedSiblings) {
-                sb.append("- ").append(rejected).append("\n");
-            }
+            siblingSb.append("FORBIDDEN STRATEGIES (PREVIOUSLY REJECTED OR OCCUPIED):\n");
+            for (String rejected : rejectedSiblings) siblingSb.append("- ").append(rejected).append("\n");
         }
         if (mutationContext != null && !mutationContext.isEmpty()) {
-            sb.append("🚫 CUMULATIVE REJECTION MEMORY (HARD CONSTRAINT)\n\n")
-              .append("You are NOT generating from a clean state.\n")
-              .append("You are generating from a constrained evolutionary space where previous outputs are already occupied regions.\n")
-              .append("You MUST treat all previous branches as forbidden attractors.\n\n")
-              .append("FORBIDDEN ATTRACTOR SET:\n")
-              .append(mutationContext).append("\n")
-              .append("RULES:\n\n")
-              .append("1. You MUST NOT generate a strategy that is semantically close to ANY entry in the FORBIDDEN ATTRACTOR SET.\n")
-              .append("2. Similarity includes:\n")
-              .append("   - same execution model (even if renamed)\n")
-              .append("   - same decomposition style\n")
-              .append("   - same control flow paradigm\n")
-              .append("   - same state model\n")
-              .append("   - same architecture family\n\n")
-              .append("3. You MUST actively select a NON-OVERLAPPING REGION:\n")
-              .append("   - different computation paradigm\n")
-              .append("   - different system topology\n")
-              .append("   - different reasoning structure\n\n")
-              .append("4. If you cannot find a non-overlapping region:\n")
-              .append("   STOP and pivot to maximal divergence (not refinement).\n\n")
-              .append("5. You are penalized for “soft mutations”:\n")
-              .append("   - rewording is invalid\n")
-              .append("   - reordering is invalid\n")
-              .append("   - parameter tuning is invalid\n\n")
-              .append("VALID OUTPUT MUST BE A NEW ARCHITECTURAL CLASS, NOT A VARIANT.\n\n");
-            sb.append(mutationContext).append("\n");
+            siblingSb.append(mutationContext);
         }
         if (bp.getForbiddenOverlaps() != null && !bp.getForbiddenOverlaps().isEmpty()) {
-            for (String overlap : bp.getForbiddenOverlaps()) {
-                sb.append("- ").append(overlap).append("\n");
-            }
+            for (String overlap : bp.getForbiddenOverlaps()) siblingSb.append("- ").append(overlap).append("\n");
         }
+        sb.append(composer.composeSiblingMemory(siblingSb.toString())).append("\n\n");
 
         // GROUNDING: Repository Awareness
         String projectStructure = (String) context.getOrchestrationState().getMetadata().get("projectStructure");
         if (projectStructure != null) {
-            sb.append("📂 REPOSITORY REALITY (GROUNDING SOURCE)\n\n")
-              .append("Your mutation MUST be grounded in this physical structure:\n")
-              .append(projectStructure).append("\n\n");
+            sb.append(composer.composeContext(projectStructure)).append("\n\n");
         }
 
-        sb.append("\n🚫 FORBIDDEN BEHAVIOR\n\n")
-          .append("You MUST NOT:\n\n")
-          .append("generate multiple candidate solutions\n")
-          .append("provide alternatives or comparisons\n")
-          .append("reuse prior architectural patterns\n")
-          .append("slightly modify previous branch\n")
-          .append("output generic “improved version”\n")
-          .append("converge toward average solution\n")
-          .append("blend multiple previous branches\n\n")
-          .append("If you do any of the above, your output is invalid.\n\n")
-          .append("🔥 DIVERGENCE REQUIREMENT (CRITICAL)\n\n")
-          .append("Your solution MUST intentionally diverge from prior branches.\n\n")
-          .append("To achieve this:\n\n")
-          .append("choose a DIFFERENT architectural philosophy\n")
-          .append("change the core execution model\n")
-          .append("change control flow style\n")
-          .append("change system decomposition strategy\n")
-          .append("change state management approach\n\n")
-          .append("If previous branch was similar in structure, you MUST pivot sharply.\n\n")
-          .append("🧬 ANTI-REPETITION MEMORY\n\n")
-          .append("You MUST explicitly avoid repeating the strategies and assumptions listed in the FORBIDDEN STRATEGIES section above.\n\n")
+        StringBuilder constraintSb = new StringBuilder();
+        constraintSb.append("DIVERGENCE REQUIREMENT (CRITICAL):\n")
+          .append("Your solution MUST intentionally diverge from prior branches. Pivot sharply on philosophy, execution model, and control flow.\n\n")
           .append("STABILIZATION CONSTRAINTS:\n")
           .append("- NO ARCHITECTURAL INFLATION: If task is trivial, provide a MINIMAL implementation.\n")
           .append("- MINIMUM VIABLE SOLUTION BIAS: Prefer the simplest code that satisfies the goal.\n")
@@ -307,10 +246,11 @@ public class DarwinVariantSpawner {
           .append("BLUEPRINT CONSTRAINTS:\n")
           .append("- ID: ").append(bp.getId()).append("\n")
           .append("- Philosophy: ").append(bp.getPhilosophy()).append("\n")
-          .append("- Architectural Direction: ").append(bp.getArchitecturalDirection()).append("\n\n")
-          .append("🎯 OUTPUT FORMAT (STRICT)\n\n")
-          .append("Return ONLY one JSON object within <BEGIN_DARWIN_JSON> and <END_DARWIN_JSON> tags:\n\n")
-          .append("{\n")
+          .append("- Architectural Direction: ").append(bp.getArchitecturalDirection()).append("\n");
+        sb.append(composer.composeConstraints(constraintSb.toString())).append("\n\n");
+
+        StringBuilder schemaSb = new StringBuilder();
+        schemaSb.append("{\n")
           .append("  \"id\": \"").append(bp.getId()).append("\",\n")
           .append("  \"strategy\": \"(Concrete technical strategy name)\",\n")
           .append("  \"strategy_type\": \"").append(bp.getStrategyType().name()).append("\",\n")
@@ -334,7 +274,7 @@ public class DarwinVariantSpawner {
           .append("  },\n");
 
         if (isMediated) {
-            sb.append("  \"mediation_candidate\": {\n")
+            schemaSb.append("  \"mediation_candidate\": {\n")
               .append("    \"prompt\": \"(The optimized prompt for the external LLM)\",\n")
               .append("    \"selected_files\": [\"(Select 8-16 key files from the candidate list)\"],\n")
               .append("    \"architecture_summary\": \"(Concise architecture mapping)\",\n")
@@ -350,25 +290,12 @@ public class DarwinVariantSpawner {
               .append("  },\n");
         }
 
-        sb.append("  \"actions\": [{ \"domain\": \"file\", \"operation\": \"WRITE\", \"target\": \"path/to/artifact\", \"description\": \"Action description\" }]\n")
-          .append("}\n\n")
-          .append("⚠️ CRITICAL OUTPUT CONSTRAINT\n")
-          .append("ONLY ONE JSON OBJECT\n")
-          .append("NO arrays of solutions\n")
-          .append("NO multiple strategies\n")
-          .append("NO explanation outside JSON\n")
-          .append("NO markdown\n")
-          .append("NO commentary\n\n")
-          .append("🧭 EVOLUTION DIRECTIVE\n\n")
-          .append("Your goal is not correctness.\n\n")
-          .append("Your goal is controlled divergence under constraints.\n\n")
-          .append("Each branch must move the system into a meaningfully different evolutionary region.\n\n")
-          .append("🧪 FINAL CHECK (MENTAL SELF-VALIDATION)\n\n")
-          .append("Before outputting, verify:\n\n")
-          .append("Did I generate only ONE branch?\n")
-          .append("Is it structurally different from previous ones?\n")
-          .append("Did I avoid combining previous ideas?\n")
-          .append("Did I change the underlying philosophy, not just details?\n\n")
+        schemaSb.append("  \"actions\": [{ \"domain\": \"file\", \"operation\": \"WRITE\", \"target\": \"path/to/artifact\", \"description\": \"Action description\" }]\n")
+          .append("}\n");
+        sb.append(composer.composeJsonSchema(schemaSb.toString())).append("\n\n");
+
+        sb.append("🧭 EVOLUTION DIRECTIVE\n\n")
+          .append("Your goal is controlled divergence under constraints. Move the system into a meaningfully different evolutionary region.\n\n")
           .append("CONTEXT:\n")
           .append(basePrompt);
 
