@@ -1,5 +1,6 @@
 package eu.kalafatic.evolution.controller.manager;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -537,6 +538,27 @@ public class ProjectModelManager {
                     i.setState("ERR");
                     i.setStateDescription("Model NOT found in Ollama. Please download it.");
                 });
+
+            // 4. Scan local demo models
+            File demoDir = new File("./forge-lab/forge-model/src/main/resources/model/demo/");
+            if (demoDir.exists() && demoDir.isDirectory()) {
+                File[] files = demoDir.listFiles((dir, name) -> name.endsWith(".gguf"));
+                if (files != null) {
+                    for (File f : files) {
+                        String modelName = "demo/" + f.getName().replace(".gguf", "");
+                        if (models.stream().noneMatch(i -> i.getName().equalsIgnoreCase(modelName))) {
+                            AIProvider item = factory.createAIProvider();
+                            item.setName(modelName);
+                            item.setLocal(true);
+                            item.setUrl(f.getAbsolutePath());
+                            item.setState("OK");
+                            item.setFormat("ollama");
+                            item.setStateDescription("Locally forged demo model");
+                            models.add(item);
+                        }
+                    }
+                }
+            }
 
         } catch (Exception e) {
             // If it fails, maybe Ollama is offline

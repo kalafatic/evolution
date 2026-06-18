@@ -1,6 +1,9 @@
 package eu.kalafatic.evolution.controller.orchestration;
 
 import java.util.UUID;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 
 import org.json.JSONObject;
 
@@ -20,6 +23,7 @@ import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
 public class ForgeSessionManager {
     private static ForgeSessionManager instance;
     private Orchestrator orchestrator;
+    private final java.util.Map<String, List<RuntimeEvent>> eventBuffer = new java.util.concurrent.ConcurrentHashMap<>();
 
     private ForgeSessionManager() {}
 
@@ -220,14 +224,69 @@ public class ForgeSessionManager {
         return snapshot;
     }
 
+    public void runE2EDemo(String sessionId) {
+        ForgeSession session = findSession(sessionId);
+        if (session == null) return;
+
+        new Thread(() -> {
+            try {
+                // 1. Initializing Architecture
+                applyDemoTemplate(session, "MLP");
+                publishEvent(session, RuntimeEventType.FORGE_MODEL_CHANGED, "DEMO_INITIALIZED");
+                Thread.sleep(1500);
+
+                // 2. Loading Data
+                publishEvent(session, RuntimeEventType.FORGE_DATASET_IMPORTED, "DEMO_DATA_LOADED");
+                Thread.sleep(1500);
+
+                // 3. Training
+                publishEvent(session, RuntimeEventType.FORGE_TRAINING_STARTED, "DEMO_TRAINING_STARTED");
+                for (int i = 0; i < 5; i++) {
+                    Thread.sleep(1000);
+                    publishEvent(session, RuntimeEventType.EVOLUTION_PROGRESS, "DEMO_TRAINING_PROGRESS_" + i);
+                }
+
+                // 4. Exporting
+                String modelDir = "./forge-lab/forge-model/src/main/resources/model/demo/";
+                File dir = new File(modelDir);
+                if (!dir.exists()) dir.mkdirs();
+
+                File modelFile = new File(dir, "demo_transformer.gguf");
+                try (FileWriter writer = new FileWriter(modelFile)) {
+                    writer.write("DUMMY OLLAMA MODEL CONTENT FOR DEMO");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                publishEvent(session, RuntimeEventType.EXPORT_READY, modelFile.getAbsolutePath());
+                Thread.sleep(2000);
+
+                // 5. Finalizing
+                publishEvent(session, RuntimeEventType.VIEW_UPDATED, "DEMO_COMPLETED");
+
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }).start();
+    }
+
+    public List<RuntimeEvent> getRecentEvents(String sessionId) {
+        return eventBuffer.getOrDefault(sessionId, new ArrayList<>());
+    }
+
     private void publishEvent(ForgeSession session, RuntimeEventType type, String action) {
+        RuntimeEvent event = new RuntimeEvent(type, orchestrator.getId(), "ForgeSessionManager", action)
+                .withEntityId(session.getSessionId())
+                .withMetadata("sessionName", session.getName());
+
+        List<RuntimeEvent> buffer = eventBuffer.computeIfAbsent(session.getSessionId(), k -> Collections.synchronizedList(new ArrayList<>()));
+        buffer.add(event);
+        if (buffer.size() > 50) buffer.remove(0);
+
         SessionContainer container = SessionManager.getInstance().getSession(orchestrator.getId());
         if (container != null) {
             RuntimeEventBus bus = container.getEventBus();
             if (bus != null) {
-                RuntimeEvent event = new RuntimeEvent(type, orchestrator.getId(), "ForgeSessionManager", action)
-                        .withEntityId(session.getSessionId())
-                        .withMetadata("sessionName", session.getName());
                 bus.publish(event);
             }
         }
