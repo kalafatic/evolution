@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import eu.kalafatic.evolution.controller.agents.AgentFactory;
@@ -1214,6 +1215,21 @@ public class IterationManager {
     }
 
     private void emitDarwinBranches(TaskContext context, List<BranchVariant> variants, String approvedId) {
+        JSONObject json = new JSONObject();
+        json.put("iteration", context.getOrchestrationState().getIterationCount());
+        JSONArray variantsArr = new JSONArray();
+        for (BranchVariant v : variants) {
+            JSONObject vObj = new JSONObject();
+            vObj.put("id", v.getId());
+            vObj.put("strategy", v.getStrategy());
+            vObj.put("score", v.getScore());
+            vObj.put("survival_argument", v.getSurvivalArgument());
+            vObj.put("tradeoffs", v.getTradeoffs());
+            vObj.put("status", v.getActivationState().name());
+            variantsArr.put(vObj);
+        }
+        json.put("variants", variantsArr);
+
         StringBuilder outcomeBuilder = new StringBuilder("[DARWIN_BRANCHES] ");
         if (approvedId != null) {
             outcomeBuilder.append("[APPROVED:").append(approvedId).append("] ");
@@ -1228,7 +1244,8 @@ public class IterationManager {
                 outcomeBuilder.append("[").append(status).append(":").append(v.getId()).append("] ");
             }
         }
-        outcomeBuilder.append("[DECISION:MANUAL]");
+        outcomeBuilder.append("[DECISION:MANUAL] ");
+        outcomeBuilder.append(json.toString());
         context.log(outcomeBuilder.toString());
     }
 
@@ -1768,6 +1785,21 @@ public class IterationManager {
         // UI SYNC: Emit centralized [DARWIN_BRANCHES] message for variant status updates
         sessionContainer.getEventBus().publish(new RuntimeEvent(RuntimeEventType.DECISION_UPDATED, context.getSessionId(), manualSelectionId, iterationId, "Kernel", decision.getSelectedVariantId(), System.currentTimeMillis()));
 
+        JSONObject json = new JSONObject();
+        json.put("iteration", context.getOrchestrationState().getIterationCount());
+        JSONArray variantsArr = new JSONArray();
+        for (BranchVariant v : variants) {
+            JSONObject vObj = new JSONObject();
+            vObj.put("id", v.getId());
+            vObj.put("strategy", v.getStrategy());
+            vObj.put("score", v.getScore());
+            vObj.put("survival_argument", v.getSurvivalArgument());
+            vObj.put("tradeoffs", v.getTradeoffs());
+            vObj.put("status", v.getActivationState().name());
+            variantsArr.put(vObj);
+        }
+        json.put("variants", variantsArr);
+
         StringBuilder outcomeBuilder = new StringBuilder("[DARWIN_BRANCHES] ");
         String winnerId = decision.getSelectedVariantId();
         outcomeBuilder.append("[APPROVED:").append(winnerId).append("] ");
@@ -1788,7 +1820,8 @@ public class IterationManager {
 
         // Ensure decision type and variant metadata are logged for visual stamping
         String decisionType = (manualSelectionId != null) ? "MANUAL" : "AUTO";
-        outcomeBuilder.append("[DECISION:").append(decisionType).append("]");
+        outcomeBuilder.append("[DECISION:").append(decisionType).append("] ");
+        outcomeBuilder.append(json.toString());
 
         // STAMPING MANDATE: Always emit branch statuses for the UI to render stamps correctly
         context.log(outcomeBuilder.toString());

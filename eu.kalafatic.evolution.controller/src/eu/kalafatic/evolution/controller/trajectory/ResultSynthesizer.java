@@ -40,7 +40,11 @@ public class ResultSynthesizer {
             double score = v.getScore();
             result.strategyConfidence.put(v.getStrategyType(), score);
 
-            if (v.getActivationState() == BranchVariant.ActivationState.VERIFIED || v.getActivationState() == BranchVariant.ActivationState.SCORING) {
+            if (v.getActivationState() == BranchVariant.ActivationState.VERIFIED ||
+                v.getActivationState() == BranchVariant.ActivationState.SCORING ||
+                v.getActivationState() == BranchVariant.ActivationState.ACTIVE ||
+                v.getActivationState() == BranchVariant.ActivationState.EXECUTING ||
+                v.getActivationState() == BranchVariant.ActivationState.APPROVED) {
                 activeCount++;
             }
 

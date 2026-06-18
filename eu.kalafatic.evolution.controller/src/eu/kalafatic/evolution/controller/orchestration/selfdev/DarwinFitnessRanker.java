@@ -57,8 +57,15 @@ public class DarwinFitnessRanker {
             double score = fitness.getTotalScore();
             v.put("fitness_record", fitness); // Store for wrapping later
 
-            // Hard scope gate
+            // SCOPE PRESSURE: Gradual penalty for over-engineering
             double scopeRatio = calculateScopeRatio(v, atomic);
+            if (scopeRatio > 1.2) {
+                double penalty = Math.max(0.1, 1.0 - (scopeRatio - 1.2) * 0.5);
+                score *= penalty;
+                v.put("scope_penalty", 1.0 - penalty);
+            }
+
+            // Hard scope gate
             if (scopeRatio > 3.0) {
                 score = 0.0;
                 v.put("rejected_reason", "Scope ratio exceeded: " + String.format("%.2f", scopeRatio));

@@ -169,6 +169,18 @@ public class TaskContext {
         inputListeners.add(listener);
     }
 
+    public List<LogListener> getLogListeners() {
+        return listeners;
+    }
+
+    public List<ApprovalListener> getApprovalListeners() {
+        return approvalListeners;
+    }
+
+    public List<InputListener> getInputListeners() {
+        return inputListeners;
+    }
+
     public void addTokenRequestListener(TokenRequestListener listener) {
         tokenRequestListeners.add(listener);
     }
