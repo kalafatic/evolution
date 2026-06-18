@@ -11,11 +11,10 @@ Export-Package: eu.kalafatic.evolution.selfdev.genome.core,
  eu.kalafatic.evolution.selfdev.genome.milestone,
  eu.kalafatic.evolution.selfdev.genome.repository,
  eu.kalafatic.evolution.selfdev.genome.selfupgrade,
- eu.kalafatic.evolution.selfdev.genome.util,
- org.json
+ eu.kalafatic.evolution.selfdev.genome.util
 Require-Bundle: eu.kalafatic.utils;bundle-version="2.6.5",
- eu.kalafatic.evolution.model;bundle-version="2.6.5"
+ eu.kalafatic.evolution.model;bundle-version="2.6.5",
+ eu.kalafatic.evolution.servers;bundle-version="2.6.5"
 Automatic-Module-Name: eu.kalafatic.evolution.selfdev.genome
 Bundle-ActivationPolicy: lazy
-Bundle-ClassPath: .,
- lib/json-20140107.jar
+Bundle-ClassPath: .
