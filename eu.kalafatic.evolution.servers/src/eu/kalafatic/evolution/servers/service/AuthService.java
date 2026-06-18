@@ -21,6 +21,10 @@ public class AuthService {
     }
 
     public Optional<String> login(String username, String password, String clientIp) throws SQLException {
+        return login(username, password, clientIp, "GENERAL");
+    }
+
+    public Optional<String> login(String username, String password, String clientIp, String workflowType) throws SQLException {
         Optional<User> userOpt = userRepository.findByUsername(username);
         if (userOpt.isPresent()) {
             User user = userOpt.get();
@@ -32,6 +36,7 @@ public class AuthService {
                 session.setCreatedAt(LocalDateTime.now());
                 session.setLastAccess(LocalDateTime.now());
                 session.setClientIp(clientIp);
+                session.setWorkflowType(workflowType);
                 sessionRepository.save(session);
                 return Optional.of(sessionId);
             }
@@ -59,6 +64,10 @@ public class AuthService {
 
     public Optional<Session> getSession(String sessionId) throws SQLException {
         return sessionRepository.findBySessionId(sessionId);
+    }
+
+    public void updateWorkflowType(String sessionId, String workflowType) throws SQLException {
+        sessionRepository.updateWorkflowType(sessionId, workflowType);
     }
 
     public void cleanupSessions() throws SQLException {

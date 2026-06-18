@@ -15,7 +15,7 @@ public class SessionRepository {
     }
 
     public void save(Session session) throws SQLException {
-        String sql = "INSERT INTO sessions (session_id, user_id, created_at, last_access, client_ip) VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO sessions (session_id, user_id, created_at, last_access, client_ip, workflow_type, metadata) VALUES (?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = dbManager.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             pstmt.setString(1, session.getSessionId());
@@ -23,6 +23,8 @@ public class SessionRepository {
             pstmt.setString(3, session.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
             pstmt.setString(4, session.getLastAccess().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
             pstmt.setString(5, session.getClientIp());
+            pstmt.setString(6, session.getWorkflowType());
+            pstmt.setString(7, session.getMetadata());
             pstmt.executeUpdate();
 
             try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
@@ -57,6 +59,16 @@ public class SessionRepository {
         }
     }
 
+    public void updateWorkflowType(String sessionId, String workflowType) throws SQLException {
+        String sql = "UPDATE sessions SET workflow_type = ? WHERE session_id = ?";
+        try (Connection conn = dbManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, workflowType);
+            pstmt.setString(2, sessionId);
+            pstmt.executeUpdate();
+        }
+    }
+
     public void deleteBySessionId(String sessionId) throws SQLException {
         String sql = "DELETE FROM sessions WHERE session_id = ?";
         try (Connection conn = dbManager.getConnection();
@@ -83,6 +95,8 @@ public class SessionRepository {
         session.setCreatedAt(LocalDateTime.parse(rs.getString("created_at"), DateTimeFormatter.ISO_LOCAL_DATE_TIME));
         session.setLastAccess(LocalDateTime.parse(rs.getString("last_access"), DateTimeFormatter.ISO_LOCAL_DATE_TIME));
         session.setClientIp(rs.getString("client_ip"));
+        session.setWorkflowType(rs.getString("workflow_type"));
+        session.setMetadata(rs.getString("metadata"));
         return session;
     }
 }

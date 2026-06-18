@@ -9,6 +9,8 @@ public class Session {
     private LocalDateTime createdAt;
     private LocalDateTime lastAccess;
     private String clientIp;
+    private String workflowType;
+    private String metadata;
 
     public Session() {}
 
@@ -19,6 +21,17 @@ public class Session {
         this.createdAt = createdAt;
         this.lastAccess = lastAccess;
         this.clientIp = clientIp;
+    }
+
+    public Session(Long id, String sessionId, Long userId, LocalDateTime createdAt, LocalDateTime lastAccess, String clientIp, String workflowType, String metadata) {
+        this.id = id;
+        this.sessionId = sessionId;
+        this.userId = userId;
+        this.createdAt = createdAt;
+        this.lastAccess = lastAccess;
+        this.clientIp = clientIp;
+        this.workflowType = workflowType;
+        this.metadata = metadata;
     }
 
     public Long getId() { return id; }
@@ -38,4 +51,10 @@ public class Session {
 
     public String getClientIp() { return clientIp; }
     public void setClientIp(String clientIp) { this.clientIp = clientIp; }
+
+    public String getWorkflowType() { return workflowType; }
+    public void setWorkflowType(String workflowType) { this.workflowType = workflowType; }
+
+    public String getMetadata() { return metadata; }
+    public void setMetadata(String metadata) { this.metadata = metadata; }
 }
