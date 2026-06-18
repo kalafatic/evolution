@@ -8,6 +8,7 @@ public class BranchVariant {
     public enum ActivationState {
         CREATED,
         ANALYZING,
+        PLANNED,
         SCORING,
         RECOMMENDED,
         KEPT,

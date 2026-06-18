@@ -91,8 +91,24 @@ public class DarwinVariantSpawner {
         // Ensure core fields exist and are consistent with blueprint
         fragment.put("id", bp.getId());
         fragment.put("strategy_type", bp.getStrategyType().name());
+
+        if (!fragment.has("strategy") || fragment.optString("strategy").isEmpty()) {
+            fragment.put("strategy", "Architectural strategy for " + bp.getPhilosophy());
+        }
+
         fragment.put("semantic_justification", bp.getPhilosophy());
         fragment.put("semantic_anchor", bp.getPhilosophy());
+
+        // Standard Darwin defaults for missing metadata
+        if (!fragment.has("survival_argument") || fragment.optString("survival_argument").isEmpty()) {
+            fragment.put("survival_argument", "Proposed as a divergent architectural candidate for " + bp.getPhilosophy());
+        }
+        if (!fragment.has("tradeoffs") || fragment.optString("tradeoffs").isEmpty()) {
+            fragment.put("tradeoffs", "Standard trade-offs for " + bp.getStrategyType() + " architecture.");
+        }
+        if (!fragment.has("failure_risks") || fragment.optString("failure_risks").isEmpty()) {
+            fragment.put("failure_risks", "Managed risks within " + bp.getStrategyType() + " evolutionary boundaries.");
+        }
 
         // Inject dimensions from blueprint if missing in LLM response
         JSONObject dimensions = fragment.optJSONObject("engineering_dimensions");
@@ -127,8 +143,26 @@ public class DarwinVariantSpawner {
             repair.put("semantic_anchor", bp.getPhilosophy());
             repair.put("semantic_justification", bp.getPhilosophy());
 
+            // Standard Darwin defaults for repair
+            repair.put("survival_argument", "Deterministic architectural recovery for mandatory lineage.");
+            repair.put("tradeoffs", "Synthesized fallback path.");
+            repair.put("failure_risks", "Potential for reduced architectural specificity.");
+
             // Invoke planner to generate executable actions for the blueprint
             repair = implementationPlanner.plan(repair, context);
+
+            // GUARANTEE EXECUTABLE ACTIONS: If planner failed, add fallback ANALYZE action
+            org.json.JSONArray actions = repair.optJSONArray("actions");
+            if (actions == null || actions.length() == 0) {
+                if (actions == null) actions = new org.json.JSONArray();
+                JSONObject fallback = new JSONObject();
+                fallback.put("domain", "kernel");
+                fallback.put("operation", "ANALYZE");
+                fallback.put("target", "workspace");
+                fallback.put("description", "Materialize " + bp.getId() + " architectural intent (Fallback)");
+                actions.put(fallback);
+                repair.put("actions", actions);
+            }
 
             repair.put("reasoning_focus", "Deterministic architectural recovery for " + bp.getId());
 

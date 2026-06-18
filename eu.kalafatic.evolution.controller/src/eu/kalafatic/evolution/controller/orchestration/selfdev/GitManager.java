@@ -153,8 +153,10 @@ public class GitManager {
     }
 
     public void removeWorktree(String path) throws Exception {
-        gitTool.execute("worktree remove " + path, root, null);
-        unregisterWorktree(path);
+        if (worktreeRegistry.contains(path)) {
+            gitTool.execute("worktree remove " + path, root, null);
+            unregisterWorktree(path);
+        }
     }
 
     public void registerWorktree(String path) {
