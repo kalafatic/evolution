@@ -56,10 +56,13 @@ public class AuthController {
         try {
             Optional<String> sessionIdOpt = authService.login(username, password, clientIp);
             if (sessionIdOpt.isPresent()) {
+                String sessionId = sessionIdOpt.get();
                 Map<String, Object> response = new HashMap<>();
                 response.put("success", true);
-                response.put("sessionId", sessionIdOpt.get());
-                return jsonResponse(Response.Status.OK, response);
+                response.put("sessionId", sessionId);
+                Response res = jsonResponse(Response.Status.OK, response);
+                res.addHeader("Set-Cookie", "sessionId=" + sessionId + "; Path=/; HttpOnly; SameSite=Strict");
+                return res;
             } else {
                 Map<String, Object> response = new HashMap<>();
                 response.put("success", false);
@@ -82,7 +85,9 @@ public class AuthController {
         }
         Map<String, Object> response = new HashMap<>();
         response.put("success", true);
-        return jsonResponse(Response.Status.OK, response);
+        Response res = jsonResponse(Response.Status.OK, response);
+        res.addHeader("Set-Cookie", "sessionId=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT");
+        return res;
     }
 
     private Response me(IHTTPSession session) {
@@ -120,6 +125,11 @@ public class AuthController {
         String authHeader = session.getHeaders().get("authorization");
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             return authHeader.substring(7);
+        }
+        // Try cookies
+        String sessionId = session.getCookies().read("sessionId");
+        if (sessionId != null && !sessionId.isEmpty()) {
+            return sessionId;
         }
         // Then query param (fallback)
         return session.getParms().get("sessionId");

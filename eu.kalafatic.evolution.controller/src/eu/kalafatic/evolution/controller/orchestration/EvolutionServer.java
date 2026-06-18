@@ -604,7 +604,10 @@ public class EvolutionServer extends NanoHTTPD {
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             sessionId = authHeader.substring(7);
         } else {
-            sessionId = session.getParms().get("sessionId");
+            sessionId = session.getCookies().read("sessionId");
+            if (sessionId == null || sessionId.isEmpty()) {
+                sessionId = session.getParms().get("sessionId");
+            }
         }
 
         if (sessionId != null) {
@@ -652,7 +655,10 @@ public class EvolutionServer extends NanoHTTPD {
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             sessionId = authHeader.substring(7);
         } else {
-            sessionId = session.getParms().get("sessionId");
+            sessionId = session.getCookies().read("sessionId");
+            if (sessionId == null || sessionId.isEmpty()) {
+                sessionId = session.getParms().get("sessionId");
+            }
         }
 
         if (sessionId != null) {
