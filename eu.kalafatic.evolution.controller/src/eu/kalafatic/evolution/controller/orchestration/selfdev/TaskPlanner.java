@@ -13,6 +13,7 @@ import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Task;
 
 public class TaskPlanner extends BaseAiAgent {
+    private final ImplementationPlanner implementationPlanner = new ImplementationPlanner();
 
     public TaskPlanner(eu.kalafatic.evolution.controller.orchestration.SessionContainer container) {
         super("TaskPlanner", "SelfDevPlanner", container);
@@ -24,6 +25,35 @@ public class TaskPlanner extends BaseAiAgent {
     }
 
     public List<Task> generateTasksFromVariant(TaskContext context, BranchVariant variant) throws Exception {
+        if (variant.getActions() == null || variant.getActions().isEmpty()) {
+            context.log("[PLANNER] Variant actions are empty. Invoking ImplementationPlanner for safety fallback.");
+
+            // Convert variant back to JSONObject for the planner
+            JSONObject vJson = new JSONObject();
+            vJson.put("id", variant.getId());
+            vJson.put("strategy", variant.getStrategy());
+            vJson.put("strategy_type", variant.getStrategyType());
+            JSONArray steps = new JSONArray();
+            for (String s : variant.getProjectedSteps()) steps.put(s);
+            vJson.put("projected_steps", steps);
+
+            JSONObject planned = implementationPlanner.plan(vJson, context);
+
+            // Map planned actions back to variant
+            JSONArray plannedActions = planned.optJSONArray("actions");
+            if (plannedActions != null) {
+                for (int i = 0; i < plannedActions.length(); i++) {
+                    JSONObject aObj = plannedActions.getJSONObject(i);
+                    BranchVariant.Action action = new BranchVariant.Action();
+                    action.setDomain(aObj.optString("domain"));
+                    action.setOperation(aObj.optString("operation"));
+                    action.setTarget(aObj.optString("target"));
+                    action.setDescription(aObj.optString("description"));
+                    variant.getActions().add(action);
+                }
+            }
+        }
+
         if (variant.getActions() == null || variant.getActions().isEmpty()) {
             return generateTasks(context, variant.getStrategy());
         }
@@ -74,8 +104,6 @@ public class TaskPlanner extends BaseAiAgent {
         // PROPAGATE EXPECTED OUTPUTS
         if (variant.getExpectedOutputs() != null && !variant.getExpectedOutputs().isEmpty()) {
             context.log("[PLANNER] Propagating expected outputs to tasks: " + variant.getExpectedOutputs());
-            // No-op for now as Task model doesn't have metadata yet,
-            // but DarwinFlow can still check selectedVariant directly.
         }
 
         return tasks;

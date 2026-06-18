@@ -18,10 +18,12 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 public class DarwinVariantSpawner {
     private final AiService aiService;
     private final DarwinVariantValidator validator;
+    private final ImplementationPlanner implementationPlanner;
 
     public DarwinVariantSpawner(AiService aiService) {
         this.aiService = aiService;
         this.validator = new DarwinVariantValidator();
+        this.implementationPlanner = new ImplementationPlanner();
     }
 
     /**
@@ -38,23 +40,25 @@ public class DarwinVariantSpawner {
         context.log("Stage: PromptComposer\nPrompt length: " + bpPrompt.length() + "\nPrompt hash: " + bpPrompt.hashCode());
         JSONObject validated = null;
 
-        // Materialization Retries: The branch topology (blueprint) is preserved; only the implementation details are retried.
+        // Materialization Retries: Triggered only for fatal structural errors.
         for (int retry = 0; retry < 3; retry++) {
             context.log("Stage: Retry\nRetry count: " + retry);
             try {
                 String response = aiService.sendRequest(orchestrator, bpPrompt, context);
-                validated = validator.validate(response, bp.getStrategyType(), context); // Blueprints are technical mutations
+                validated = validator.validate(response, bp.getStrategyType(), context);
+
                 if (validated != null) {
-                    // ORCHESTRATOR SCHEMA COMPLETION: Inject metadata into semantic fragment
+                    // IMPLEMENTATION PLANNING: Convert architectural reasoning into actions
+                    validated = implementationPlanner.plan(validated, context);
                     validated = completeTrajectorySchema(validated, bp, context);
                     break;
                 }
 
-                context.log("[SPAWNER] Materialization failed for blueprint " + bp.getId() + ". Retry " + (retry + 1) + "/3...");
+                context.log("[SPAWNER] Fatal Materialization error for blueprint " + bp.getId() + ". Retry " + (retry + 1) + "/3...");
 
-                // ADJUST PROMPT: If validation failed, add a strict JSON hint to the prompt for the next retry
+                // ADJUST PROMPT: If validation failed, add a strict hint for the next retry
                 if (retry == 0) {
-                    bpPrompt += "\n\nCRITICAL: Your previous response was invalid. Ensure you return a single JSON object with all required fields (strategy, survival_argument, tradeoffs, failure_risks, actions). DO NOT use placeholders.";
+                    bpPrompt += "\n\nCRITICAL: Your previous response was fatally invalid. Ensure you return a single JSON object with at least 'strategy' and 'semantic_anchor'.";
                 }
             } catch (Exception e) {
                 context.log("[SPAWNER] Error during blueprint materialization for " + bp.getId() + ": " + e.getMessage());
@@ -120,6 +124,11 @@ public class DarwinVariantSpawner {
             // Synthesize valid architectural strategy text
             String synthesizedStrategy = "Architectural realization of " + bp.getId() + " philosophy: " + bp.getArchitecturalDirection();
             repair.put("strategy", synthesizedStrategy);
+            repair.put("semantic_anchor", bp.getPhilosophy());
+            repair.put("semantic_justification", bp.getPhilosophy());
+
+            // Invoke planner to generate executable actions for the blueprint
+            repair = implementationPlanner.plan(repair, context);
 
             repair.put("reasoning_focus", "Deterministic architectural recovery for " + bp.getId());
 
@@ -127,48 +136,8 @@ public class DarwinVariantSpawner {
             repair.put("selected_files", selectedFiles);
 
             repair.put("survival_argument", "Mandatory architectural diversity branch ensured by orchestrator.");
-            repair.put("tradeoffs", "Deterministic fallback; lacks LLM-refined implementation nuance.");
-            repair.put("failure_risks", "Lower specificity than materialized variants.");
-            repair.put("semantic_justification", bp.getPhilosophy());
-
-            org.json.JSONArray steps = new org.json.JSONArray();
-            for (String s : bp.getRequiredCharacteristics()) steps.put("Realize blueprint characteristic: " + s);
-            repair.put("projected_steps", steps);
-
             repair.put("expected_outputs", new org.json.JSONArray());
             repair.put("score", 0.45); // Auto-repaired branches start with lower fitness
-
-            org.json.JSONArray actions = new org.json.JSONArray();
-
-            // GENERIC TASK RECOVERY: Use context-driven bootstrap synthesis instead of hardcoded templates
-            AtomicIntentAnalysis atomic = (AtomicIntentAnalysis) context.getOrchestrationState().getMetadata().get("atomicAnalysis");
-            if (atomic != null && atomic.isAtomic() && atomic.getTargetArtifact() != null && !atomic.getTargetArtifact().isEmpty()) {
-                JSONObject writeAction = new JSONObject();
-                String target = atomic.getTargetArtifact();
-
-                writeAction.put("domain", "semantic");
-                writeAction.put("operation", "BOOTSTRAP");
-                writeAction.put("target", target);
-
-                try {
-                    String bootstrapPrompt = "Generate a minimal valid bootstrap implementation for " + target + " given the goal: " + bp.getGoal() + ". This is an evolutionary mutation with philosophy: " + bp.getPhilosophy() + ". Return ONLY the content.";
-                    String content = aiService.sendRequest(context.getOrchestrator(), bootstrapPrompt, context);
-                    writeAction.put("description", content);
-                } catch (Exception e) {
-                    writeAction.put("description", "// Dynamic bootstrap failed for " + target);
-                }
-
-                actions.put(writeAction);
-                repair.put("strategy", "Dynamic auto-repair: bootstrapping " + target + " (Philosophy: " + bp.getPhilosophy() + ")");
-            } else {
-                JSONObject action = new JSONObject();
-                action.put("domain", "kernel");
-                action.put("operation", "ANALYZE");
-                action.put("target", "workspace");
-                action.put("description", "Bootstrap " + bp.getId() + " architectural strategy (Philosophy: " + bp.getPhilosophy() + "). Direction: " + bp.getArchitecturalDirection());
-                actions.put(action);
-            }
-            repair.put("actions", actions);
 
             JSONObject dimensions = new JSONObject();
             for (java.util.Map.Entry<String, String> entry : bp.getEngineeringDimensions().entrySet()) {
@@ -337,13 +306,16 @@ public class DarwinVariantSpawner {
                     String response = aiService.sendRequest(orchestrator, seedPrompt, context);
                     validated = validator.validate(response, seed.getType(), context);
                     if (validated != null) {
+                        // IMPLEMENTATION PLANNING
+                        validated = implementationPlanner.plan(validated, context);
+
                         // Ensure ID is injected if missing from LLM response
                         if (!validated.has("id")) {
                             validated.put("id", "v-" + seed.getType().name().toLowerCase());
                         }
                         break;
                     }
-                    context.log("[SPAWNER] Validation failed for " + seed.getType() + ". Retry " + (retry + 1) + "/2...");
+                    context.log("[SPAWNER] Fatal Validation error for " + seed.getType() + ". Retry " + (retry + 1) + "/2...");
                 } catch (Exception e) {
                     context.log("[SPAWNER] Error during generation for " + seed.getType() + ": " + e.getMessage());
                 }
@@ -376,7 +348,6 @@ public class DarwinVariantSpawner {
           .append("This branch must be:\n\n")
           .append("structurally distinct from all previously seen branches\n")
           .append("NOT a variation of earlier strategies\n")
-          .append("NOT a recombination of prior ideas\n")
           .append("NOT a “better version” of the same approach\n\n")
           .append("You are evolving a lineage, not generating options.\n\n")
           .append("📌 INPUT CONTEXT\n\n")
