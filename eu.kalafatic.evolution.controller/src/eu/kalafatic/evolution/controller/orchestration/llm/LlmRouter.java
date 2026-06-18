@@ -37,7 +37,12 @@ public class LlmRouter {
      * Routes the request to the appropriate LLM provider.
      */
     public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
-        if (context != null) context.log("LlmRouter: Routing request via dynamic policies.");
+        if (context != null) {
+            String remoteModel = (orchestrator != null) ? orchestrator.getRemoteModel() : "unknown";
+            String localModel = (orchestrator != null && orchestrator.getOllama() != null) ? orchestrator.getOllama().getModel() : "local";
+            context.log("Stage: LLM\nProvider: dynamic\nModel: " + (remoteModel != null ? remoteModel : localModel));
+            context.log("LlmRouter: Routing request via dynamic policies.");
+        }
 
         for (IRoutingPolicy policy : RoutingPolicyRegistry.getPolicies()) {
             if (policy.applies(orchestrator, context)) {

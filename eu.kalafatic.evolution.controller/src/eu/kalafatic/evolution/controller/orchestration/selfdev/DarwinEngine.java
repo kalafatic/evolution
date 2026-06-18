@@ -129,9 +129,13 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
     }
 
     public List<BranchVariant> generateVariants(String goal, StateSnapshot snapshot, FailureMemory failureMemory, Trajectory trajectory, EvolutionaryPressureVector pressure) throws Exception {
+        context.log("Stage: Goal\nGoal: " + goal);
         context.log("[DARWIN] Generating trajectory-driven variants for goal: " + goal);
 
         AtomicIntentAnalysis atomicAnalysis = (AtomicIntentAnalysis) context.getOrchestrationState().getMetadata().get("atomicAnalysis");
+        if (context != null) {
+            context.log("Stage: Intent Analysis\nAtomic: " + (atomicAnalysis != null && atomicAnalysis.isAtomic()) + "\nTarget: " + (atomicAnalysis != null ? atomicAnalysis.getTargetArtifact() : "none"));
+        }
         long bitState = context.getOrchestrationState().getBitState();
         ExecutionPolicy policy = policyResolver.resolve(bitState);
 
