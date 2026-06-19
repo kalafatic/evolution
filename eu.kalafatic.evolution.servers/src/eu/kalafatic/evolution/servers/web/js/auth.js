@@ -74,10 +74,10 @@ document.addEventListener('DOMContentLoaded', () => {
 async function loadUserInfo() {
     const sessionId = localStorage.getItem('sessionId') || sessionStorage.getItem('sessionId');
     const headers = {};
-    if (sessionId) {
+    if (sessionId && sessionId !== 'undefined' && sessionId !== 'null') {
         headers['Authorization'] = `Bearer ${sessionId}`;
     } else {
-        console.log("No sessionId in storage for user info, relying on cookies.");
+        console.log("No valid sessionId in storage for user info, relying on cookies.");
     }
 
     try {
@@ -96,24 +96,24 @@ async function loadUserInfo() {
                 sessionStorage.setItem('sessionId', data.sessionId);
             }
 
-            document.getElementById('displayUsername').textContent = data.username;
-            document.getElementById('displayRole').textContent = data.role;
-            document.getElementById('displaySessionId').textContent = data.sessionId;
-            document.getElementById('displayTimestamp').textContent = data.loginTimestamp;
+            if (document.getElementById('displayUsername')) document.getElementById('displayUsername').textContent = data.username;
+            if (document.getElementById('displayRole')) document.getElementById('displayRole').textContent = data.role;
+            if (document.getElementById('displaySessionId')) document.getElementById('displaySessionId').textContent = data.sessionId;
+            if (document.getElementById('displayTimestamp')) document.getElementById('displayTimestamp').textContent = data.loginTimestamp;
 
             const workflowEl = document.getElementById('displayWorkflow');
             if (workflowEl) {
                 workflowEl.textContent = data.workflowType || 'GENERAL';
             }
-        } else {
+        } else if (response.status === 401) {
+            console.warn("Unauthorized access. Redirecting to login.");
             localStorage.removeItem('sessionId');
             sessionStorage.removeItem('sessionId');
             window.location.href = '/login.html';
+        } else {
+            console.error(`Unexpected response status: ${response.status}`);
         }
     } catch (error) {
         console.error('Failed to load user info', error);
-        localStorage.removeItem('sessionId');
-        sessionStorage.removeItem('sessionId');
-        window.location.href = '/login.html';
     }
 }

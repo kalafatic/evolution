@@ -13,7 +13,7 @@ import eu.kalafatic.evolution.servers.security.BCryptUtils;
 public class AuthService {
     private final UserRepository userRepository;
     private final SessionRepository sessionRepository;
-    private static final int SESSION_TIMEOUT_MINUTES = 5;
+    private static final int SESSION_TIMEOUT_MINUTES = 60;
 
     public AuthService(UserRepository userRepository, SessionRepository sessionRepository) {
         this.userRepository = userRepository;
