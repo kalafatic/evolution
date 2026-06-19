@@ -1120,6 +1120,18 @@ public class IterationManager {
             for (BranchVariant v : variants) {
                 String status = (v.getActivationState() == BranchVariant.ActivationState.KEPT) ? " [KEPT]" : "";
                 sb.append(String.format("- [%s] %s (Predicted Score: %.2f)%s\n", v.getId(), v.getStrategy(), v.getScore(), status));
+
+                // Display snippets of generated implementation
+                if (!v.getActions().isEmpty()) {
+                    for (BranchVariant.Action a : v.getActions()) {
+                        if (a.getImplementation() != null && !a.getImplementation().isEmpty()) {
+                            String code = a.getImplementation();
+                            String snippet = code.length() > 200 ? code.substring(0, 200) + "..." : code;
+                            sb.append("  > ").append(a.getTarget()).append(":\n")
+                              .append("```java\n").append(snippet).append("\n```\n");
+                        }
+                    }
+                }
             }
             sb.append("\nMANUAL MODE: ALL branches preserved. No auto-collapse.\n");
             sb.append("Select a trajectory to execute (e.g. 'Select v0'), Keep to save, or Reject to stop.");

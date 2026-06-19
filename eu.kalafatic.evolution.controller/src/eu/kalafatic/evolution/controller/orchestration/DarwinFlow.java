@@ -76,6 +76,13 @@ public class DarwinFlow implements IOrchestrationFlow {
         Iteration currentIterationModelImpl = manager.getCurrentIterationModel();
         String iterId = currentIterationModelImpl != null ? currentIterationModelImpl.getId() : "default";
 
+        String originalBranch = null;
+        String baseCommit = null;
+        if (manager.getGitManager().isGitRepository()) {
+            originalBranch = manager.getGitManager().getCurrentBranch();
+            baseCommit = manager.getGitManager().getHeadCommit();
+        }
+
         context.log("[COGNITION] Discovering semantic trajectories to resolve goal: " + goal);
         EvolutionProgressPublisher.updateStage(context, EvolutionStage.ANALYZE_PARENT);
 
@@ -143,6 +150,18 @@ public class DarwinFlow implements IOrchestrationFlow {
             return Collections.emptyList();
         }
 
+        context.log("[DARWIN] Parallel Evaluation: Triggering implementation validation for " + rawVariants.size() + " variants.");
+        String baseCommitFinal = baseCommit;
+        eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionaryPressureVector pressureFinal = pressure;
+
+        rawVariants.parallelStream().forEach(variant -> {
+            try {
+                evaluateVariantParallel(variant, manager.getTaskPlanner(), context, baseCommitFinal, pressureFinal);
+            } catch (Exception e) {
+                context.log("[DARWIN] Parallel Evaluation Failed for " + variant.getId() + ": " + e.getMessage());
+            }
+        });
+
         context.getOrchestrationState().getCognitiveTrace().addNode(new CausalNode(
             "darwin-mutation-" + System.currentTimeMillis(),
             "MUTATION",
@@ -150,7 +169,7 @@ public class DarwinFlow implements IOrchestrationFlow {
             List.of(goal),
             rawVariants.stream().map(v -> v.getId()).collect(Collectors.toList()),
             1.0,
-            "Generated " + rawVariants.size() + " variants."
+            "Generated and evaluated " + rawVariants.size() + " variants."
         ));
 
         ISchedulingContract scheduler = sessionContainer.getCapabilityRegistry().getContractImplementation(ISchedulingContract.ID, ISchedulingContract.class);
@@ -239,6 +258,8 @@ public class DarwinFlow implements IOrchestrationFlow {
                 selectedVariant.setSuccess(true);
                 selectedVariant.setScore(0.95);
             } else {
+                // IMPORTANT: We MUST re-evaluate the winner in the target branch context to persist changes,
+                // even if it was pre-evaluated in a temporary worktree.
                 winningContext = evaluateVariantParallel(selectedVariant, manager.getTaskPlanner(), context, baseCommit, decision.getPressure());
             }
 
@@ -510,6 +531,26 @@ public class DarwinFlow implements IOrchestrationFlow {
             variant.setSuccess(result.isSuccess());
             if (result.isSuccess()) {
                 manager.updateVariantLifecycle(List.of(variant), variant.getId(), BranchVariant.ActivationState.SCORING, context);
+
+                // CAPTURE IMPLEMENTATION: Update EvolutionNode with ACTUAL file contents after successful execution
+                EvolutionTree tree = context.getKernelContext().getMemoryService().getEvolutionTree();
+                EvolutionNode node = tree.getNode(variant.getId());
+                if (node != null) {
+                    for (BranchVariant.Action action : variant.getActions()) {
+                        if (("WRITE".equals(action.getOperation()) || "CREATE".equals(action.getOperation())) && action.getTarget() != null) {
+                            File file = new File(tempDir, action.getTarget());
+                            if (file.exists() && file.isFile()) {
+                                try {
+                                    String content = Files.readString(file.toPath());
+                                    node.getCodeSnapshots().put(action.getTarget(), content);
+                                    action.setImplementation(content); // Sync back to variant
+                                } catch (Exception e) {
+                                    context.log("[DARWIN] Failed to read implemented file: " + action.getTarget());
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             GitTool deltaTool = new GitTool();

@@ -438,6 +438,21 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
                             node.setLlmResponse(variant.toString());
                             node.setStatus("KEPT");
 
+                            // Capture Code Snapshots
+                            JSONArray variantActions = variant.optJSONArray("actions");
+                            if (variantActions != null) {
+                                for (int i = 0; i < variantActions.length(); i++) {
+                                    JSONObject vAction = variantActions.optJSONObject(i);
+                                    if (vAction != null && "WRITE".equals(vAction.optString("operation"))) {
+                                        String target = vAction.optString("target");
+                                        String impl = vAction.optString("implementation");
+                                        if (target != null && impl != null) {
+                                            node.getCodeSnapshots().put(target, impl);
+                                        }
+                                    }
+                                }
+                            }
+
                             // Populating MutationRecord
                             MutationRecord mut = new MutationRecord();
                             mut.setStrategy(variant.optString("strategy"));
@@ -612,6 +627,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
                 action.setOperation(aObj.optString("operation", "ANALYZE"));
                 action.setTarget(aObj.optString("target", "workspace"));
                 action.setDescription(aObj.optString("description", "Materialize architectural intent"));
+                action.setImplementation(aObj.optString("implementation", ""));
                 v.getActions().add(action);
             }
         }

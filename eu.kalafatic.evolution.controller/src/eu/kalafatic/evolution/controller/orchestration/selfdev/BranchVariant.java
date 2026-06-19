@@ -152,6 +152,7 @@ public class BranchVariant {
         private String operation;
         private String target;
         private String description;
+        private String implementation;
 
         public String getDomain() { return domain; }
         public void setDomain(String domain) { this.domain = domain; }
@@ -161,6 +162,8 @@ public class BranchVariant {
         public void setTarget(String target) { this.target = target; }
         public String getDescription() { return description; }
         public void setDescription(String description) { this.description = description; }
+        public String getImplementation() { return implementation; }
+        public void setImplementation(String implementation) { this.implementation = implementation; }
     }
 
     public static class ExpectedEffect {
