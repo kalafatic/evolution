@@ -65,6 +65,25 @@ public class ForgeModelCreaticAdapter {
                         Object firstSession = sessionList.get(0);
                         Method getModelType = firstSession.getClass().getMethod("getSelectedModelType");
                         graph.put("model.type", getModelType.invoke(firstSession));
+
+                        try {
+                            Method getUiState = firstSession.getClass().getMethod("getModelState");
+                            Object modelState = getUiState.invoke(firstSession);
+                            Method getHyperparams = modelState.getClass().getMethod("getHyperparameters");
+                            String params = (String) getHyperparams.invoke(modelState);
+                            if (params != null && params.contains("forge.workflow.status")) {
+                                // Extract manually to avoid direct org.json dependency in this module if not available in classpath
+                                String marker = "\"forge.workflow.status\":\"";
+                                int start = params.indexOf(marker);
+                                if (start != -1) {
+                                    start += marker.length();
+                                    int end = params.indexOf("\"", start);
+                                    if (end != -1) {
+                                        graph.put("forge.workflow.status", params.substring(start, end));
+                                    }
+                                }
+                            }
+                        } catch (Exception e2) {}
                     }
                 }
             }

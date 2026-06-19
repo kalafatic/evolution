@@ -27,24 +27,55 @@ public class GuidanceEngine {
     }
 
     private void evaluateForge(ContextGraph context, GuidanceResponse response) {
-        response.setSummary("Forge Model Environment");
+        response.setSummary("Forge Guided Workflow");
+
+        String status = (String) context.get("forge.workflow.status");
+        if (status == null) status = "START";
+
+        switch (status) {
+            case "START":
+                response.setSummary("Step 1: Create Architecture");
+                response.getTips().add(new Tip("Drag a high-level component (MLP, CNN, Transformer...) from the palette to generate an architecture."));
+                break;
+            case "ARCH_GENERATED":
+                response.setSummary("Step 2: Review Properties");
+                response.getTips().add(new Tip("Your architecture has been created. Review and customize the model properties before training."));
+                response.getActions().add(new GuidanceAction("Confirm Properties", "CONFIRM_PROPERTIES", "Proceed to training configuration."));
+                break;
+            case "PROPERTIES_CONFIRMED":
+                response.setSummary("Step 3: Select Dataset");
+                response.getTips().add(new Tip("Choose a dataset appropriate for your architecture."));
+                response.getActions().add(new GuidanceAction("Select Dataset", "SELECT_DATASET", "Open the dataset selector."));
+                break;
+            case "DATASET_SELECTED":
+                response.setSummary("Step 4: Configure Training");
+                response.getTips().add(new Tip("Adjust optimizer, epochs, and learning rate."));
+                response.getActions().add(new GuidanceAction("Start Training", "TRAIN_MODEL", "Begin the training process."));
+                break;
+            case "TRAINING_ACTIVE":
+                response.setSummary("Step 5: Training in Progress");
+                response.getInsights().add(new Insight("Model is learning. Monitor loss and accuracy in the observability panel."));
+                break;
+            case "TRAINING_COMPLETED":
+                response.setSummary("Step 6: Evaluate Model");
+                response.getTips().add(new Tip("Inspect metrics and verify model performance before exporting."));
+                response.getActions().add(new GuidanceAction("Evaluate Now", "EVALUATE_MODEL", "Run evaluation on validation set."));
+                response.getActions().add(new GuidanceAction("Export Model", "EXPORT_MODEL", "Proceed to final model export."));
+                break;
+            case "EVALUATED":
+                response.setSummary("Step 7: Export & Finish");
+                response.getTips().add(new Tip("Generate a deterministic EVO model package for deployment."));
+                response.getActions().add(new GuidanceAction("Export Model", "EXPORT_MODEL", "Save model to forge-lab repository."));
+                break;
+            case "EXPORTED":
+                response.setSummary("Workflow Completed");
+                response.getInsights().add(new Insight("Your model is ready for deployment in the demo gallery."));
+                break;
+        }
 
         Boolean modelExists = (Boolean) context.get("model.exists");
-        Boolean modelTrained = (Boolean) context.get("model.trained");
-        Boolean modelExported = (Boolean) context.get("model.exported");
-
-        if (Boolean.TRUE.equals(modelExists)) {
-             if (!Boolean.TRUE.equals(modelTrained)) {
-                response.getActions().add(new GuidanceAction("Train Model", "TRAIN_MODEL", "Your model is defined but not trained. Start training to see results."));
-             } else if (!Boolean.TRUE.equals(modelExported)) {
-                response.getActions().add(new GuidanceAction("Export Model", "EXPORT_MODEL", "Training is complete. Export your model for deployment."));
-             }
-
-             if (Boolean.TRUE.equals(modelTrained)) {
-                 response.getActions().add(new GuidanceAction("Create Snapshot", "SNAPSHOT_CREATE", "Save the current trained state as a stable milestone."));
-             }
-        } else {
-             response.getTips().add(new Tip("Start by creating a new session or dragging nodes from the palette."));
+        if (!Boolean.TRUE.equals(modelExists) && "START".equals(status)) {
+             response.getTips().add(new Tip("You can also load a pre-configured demo template from the sidebar."));
         }
 
         response.getInsights().add(new Insight("Ensure your architecture is saved before starting long training runs."));

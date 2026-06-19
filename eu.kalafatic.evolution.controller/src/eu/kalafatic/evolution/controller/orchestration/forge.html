@@ -179,6 +179,22 @@
             gap: 5px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
+        #palette-context-menu {
+            position: absolute;
+            display: none;
+            background: white;
+            border: 1px solid var(--border);
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+            z-index: 1000;
+            font-size: 0.8em;
+        }
+        .menu-item {
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+        .menu-item:hover {
+            background: var(--bg-secondary);
+        }
 
         #json-fallback {
             display: none;
@@ -245,6 +261,46 @@
         /* Dataset Explorer */
         .sample-nav { display: flex; gap: 5px; margin-bottom: 10px; }
         .data-block { background: #f8f8f8; color: #333; border: 1px solid var(--border); padding: 10px; font-family: monospace; font-size: 0.8em; margin-top: 5px; }
+
+        /* Guided Workflow Steps */
+        #workflow-panel {
+            background: #e1f5fe;
+            border: 1px solid #03a9f4;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+        .workflow-step {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.8em;
+            margin: 6px 0;
+            color: #777;
+        }
+        .workflow-step.active {
+            font-weight: bold;
+            color: var(--accent);
+        }
+        .workflow-step.completed {
+            color: var(--success);
+        }
+        .workflow-step.disabled {
+            opacity: 0.5;
+        }
+        .step-icon {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 1px solid currentColor;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7em;
+        }
+        .workflow-step.completed .step-icon:after {
+            content: '✓';
+        }
 
         /* Timeline */
         .timeline-item {
@@ -339,13 +395,21 @@
                     </defs>
                 </svg>
 
-                <div id="node-palette" data-guidance="Drag components onto the canvas to design your AI model architecture. Connect nodes to define data flow.">
+                <div id="node-palette" data-guidance="Drag components onto the canvas to design your AI model architecture. Connect nodes to define data flow." oncontextmenu="showPaletteMenu(event)">
                     <div style="font-size: 0.7em; color: var(--text-dim); margin-bottom: 5px;">DRAG NODES</div>
-                    <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'NEURON')" data-guidance="Basic computational unit. Performs weighted sum and activation.">Neuron</button>
-                    <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'LAYER')" data-guidance="Generic neural network layer. Can represent Dense, Convolutional, or Pooling layers.">Layer</button>
-                    <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'ATTENTION')" data-guidance="Self-attention mechanism. Core component of Transformer architectures.">Attention</button>
-                    <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'TRANSFORMER')" data-guidance="Complete Transformer block including Multi-Head Attention and Feed-Forward networks.">Transformer</button>
-                    <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'CUSTOM')" data-guidance="Define a custom architectural component using Evo-Domain logic.">Custom</button>
+                    <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'NEURON')" data-guidance="Generate a basic computational unit architecture.">Neuron</button>
+                    <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'MLP')" data-guidance="Generate a Multi-Layer Perceptron architecture.">MLP</button>
+                    <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'CNN')" data-guidance="Generate a Convolutional Neural Network architecture.">CNN</button>
+                    <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'TRANSFORMER')" data-guidance="Generate a Transformer architecture.">Transformer</button>
+                    <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'LLM')" data-guidance="Generate a Large Language Model architecture.">LLM</button>
+                </div>
+
+                <div id="palette-context-menu">
+                    <div class="menu-item" onclick="loadTemplate('NEURON')">Load Neuron Demo</div>
+                    <div class="menu-item" onclick="loadTemplate('MLP')">Load MLP Demo</div>
+                    <div class="menu-item" onclick="loadTemplate('CNN')">Load CNN Demo</div>
+                    <div class="menu-item" onclick="loadTemplate('TRANSFORMER')">Load Transformer Demo</div>
+                    <div class="menu-item" onclick="loadTemplate('LLM')">Load LLM Demo</div>
                 </div>
 
                 <textarea id="json-fallback"></textarea>
@@ -384,6 +448,19 @@
 
         <!-- RIGHT PANELS -->
         <div id="panels-container">
+            <!-- WORKFLOW PANEL -->
+            <div id="workflow-panel" style="display:none">
+                <h3 style="font-size: 0.85em; margin: 0 0 10px 0;">🛠️ Forge Workflow</h3>
+                <div id="workflow-steps">
+                    <div class="workflow-step" id="w-arch"><div class="step-icon"></div> Architecture Generated</div>
+                    <div class="workflow-step" id="w-props"><div class="step-icon"></div> Review Properties</div>
+                    <div class="workflow-step" id="w-data"><div class="step-icon"></div> Select Dataset</div>
+                    <div class="workflow-step" id="w-train"><div class="step-icon"></div> Train Model</div>
+                    <div class="workflow-step" id="w-eval"><div class="step-icon"></div> Evaluate</div>
+                    <div class="workflow-step" id="w-export"><div class="step-icon"></div> Export Model</div>
+                </div>
+            </div>
+
             <!-- DEMO PANEL -->
             <div id="demo-panel" style="display:none">
                 <h3 style="font-size: 0.85em; margin: 0 0 10px 0;">🚀 E2E Demo Progress</h3>
@@ -404,35 +481,33 @@
                 </div>
             </div>
 
-            <!-- CONFIGURATION PANEL -->
-            <div class="panel">
-                <h3>Configuration</h3>
-                <div class="control-group">
-                    <label>Model Type</label>
-                    <select id="model-type" onchange="updateActiveSessionInfo()">
-                        <option value="NEURON">Single Neuron</option>
-                        <option value="MLP">Multi-Layer Perceptron</option>
-                        <option value="CNN">Convolutional Neural Network</option>
-                        <option value="TRANSFORMER">Transformer Architecture</option>
-                        <option value="EXPERIMENTAL">Evolutionary Variant</option>
-                    </select>
+            <!-- CONFIGURATION PANEL (MODEL PROPERTIES) -->
+            <div class="panel" id="properties-panel">
+                <h3>Model Properties</h3>
+                <div id="dynamic-properties">
+                    <!-- Populated based on architecture -->
                 </div>
                 <div class="control-group">
                     <label>Learning Rate</label>
-                    <input type="number" id="lr" step="0.0001" value="0.001">
+                    <input type="number" id="lr" step="0.0001" value="0.001" onchange="persistProperty('lr', this.value)">
                 </div>
                 <div class="control-group">
                     <label>Batch Size</label>
-                    <input type="number" id="batch" value="32">
+                    <input type="number" id="batch" value="32" onchange="persistProperty('batch', this.value)">
                 </div>
                 <div class="control-group">
                     <label>Optimizer</label>
-                    <select id="optimizer">
+                    <select id="optimizer" onchange="persistProperty('optimizer', this.value)">
                         <option value="adam">Adam</option>
                         <option value="sgd">SGD</option>
                         <option value="rmsprop">RMSprop</option>
                     </select>
                 </div>
+                <div class="control-group">
+                    <label>Epochs</label>
+                    <input type="number" id="epochs" value="10" onchange="persistProperty('epochs', this.value)">
+                </div>
+                <button class="btn btn-sm btn-primary" style="width: 100%; margin-top: 10px;" onclick="confirmProperties()" id="confirm-props-btn">Confirm Properties</button>
             </div>
 
             <!-- DATASET PANEL -->
@@ -440,7 +515,8 @@
                 <h3>Dataset</h3>
                 <div class="control-group">
                     <label>Active Dataset</label>
-                    <select id="dataset-selector">
+                    <select id="dataset-selector" onchange="onDatasetSelect(this.value)">
+                        <option value="">Select...</option>
                         <option value="mnist">MNIST (Digits)</option>
                         <option value="cifar10">CIFAR-10</option>
                         <option value="wiki">Wikipedia-Small</option>
@@ -457,7 +533,7 @@
                     <button id="train-btn" class="btn btn-primary" style="flex: 1;" onclick="startTraining()" data-guidance="Initialize and start the training process for the current model architecture. Ensure a dataset is selected first.">START</button>
                     <button id="stop-btn" class="btn" style="flex: 1;" onclick="stopTraining()" disabled data-guidance="Immediately halt the current training run. Current weights will be preserved but training progress will stop.">STOP</button>
                 </div>
-                <button class="btn btn-sm" style="width: 100%; margin-top: 8px;" data-guidance="Trigger an evaluation run to measure the model's performance on the validation set.">Evaluate Now</button>
+                <button class="btn btn-sm" style="width: 100%; margin-top: 8px;" data-guidance="Trigger an evaluation run to measure the model's performance on the validation set." onclick="runEvaluation()">Evaluate Now</button>
             </div>
 
             <!-- OBSERVABILITY PANEL -->
@@ -576,13 +652,13 @@
             const session = sessions.find(s => s.id === id);
 
             document.getElementById('active-session-name').textContent = session ? session.name : "Unknown";
-            document.getElementById('model-type').value = session ? session.modelType : "NEURON";
 
             const state = (session && session.lifecycleState) ? session.lifecycleState : 'CREATED';
             updateLifecycleUI(state);
 
             renderSessionList();
             await fetchModel(id);
+            await updateModelPropertiesUI();
             log(`Switched to session: ${session ? session.name : id}`);
 
             if (window.forgeAction) forgeAction("SESSION_SWITCHED", id);
@@ -626,9 +702,134 @@
 
                 document.getElementById('json-fallback').value = JSON.stringify(model, null, 2);
                 initGraph();
+
+                // Also fetch session details for UI state
+                const sres = await fetch(getBaseUrl() + `/forge/session/${id}?runtime=SWT`);
+                const sessionDetails = await sres.json();
+                updateWorkflowUI(sessionDetails.uiState);
             } catch (e) {
                 log(`Error fetching model: ${e.message}`);
             }
+        }
+
+        function updateWorkflowUI(uiState) {
+            const status = uiState['forge.workflow.status'] || 'START';
+            const panel = document.getElementById('workflow-panel');
+            panel.style.display = activeSessionId ? 'block' : 'none';
+
+            const steps = ['w-arch', 'w-props', 'w-data', 'w-train', 'w-eval', 'w-export'];
+            const statusMap = {
+                'START': -1,
+                'ARCH_GENERATED': 0,
+                'PROPERTIES_CONFIRMED': 1,
+                'DATASET_SELECTED': 2,
+                'TRAINING_ACTIVE': 3,
+                'TRAINING_COMPLETED': 4,
+                'EVALUATED': 5,
+                'EXPORTED': 6
+            };
+
+            const currentIndex = statusMap[status];
+
+            steps.forEach((id, idx) => {
+                const el = document.getElementById(id);
+                el.classList.remove('active', 'completed', 'disabled');
+                if (idx < currentIndex) el.classList.add('completed');
+                else if (idx === currentIndex) el.classList.add('active');
+                else el.classList.add('disabled');
+            });
+
+            // UI locking based on workflow
+            document.getElementById('confirm-props-btn').disabled = (currentIndex !== 1 && currentIndex !== 0);
+            document.getElementById('train-btn').disabled = (currentIndex < 3);
+        }
+
+        async function updateModelPropertiesUI() {
+            if (!activeSessionId) return;
+            try {
+                const res = await fetch(getBaseUrl() + `/forge/session/${activeSessionId}?runtime=SWT`);
+                const session = await res.json();
+                const uiState = session.uiState || {};
+
+                document.getElementById('lr').value = uiState.lr || 0.001;
+                document.getElementById('batch').value = uiState.batch || 32;
+                document.getElementById('optimizer').value = uiState.optimizer || 'adam';
+                document.getElementById('epochs').value = uiState.epochs || 10;
+
+                const dynamic = document.getElementById('dynamic-properties');
+                dynamic.innerHTML = '';
+
+                const type = session.modelType;
+                if (type === 'MLP') {
+                    addDynamicProp('layers', 'Hidden Layers', uiState.layers || 1, 'number');
+                    addDynamicProp('hidden_size', 'Hidden Size', uiState.hidden_size || 64, 'number');
+                } else if (type === 'CNN') {
+                    addDynamicProp('filters', 'Filters', uiState.filters || 32, 'number');
+                    addDynamicProp('kernel_size', 'Kernel Size', uiState.kernel_size || 3, 'number');
+                } else if (type === 'TRANSFORMER') {
+                    addDynamicProp('heads', 'Attention Heads', uiState.heads || 8, 'number');
+                    addDynamicProp('d_model', 'Model Dim', uiState.d_model || 512, 'number');
+                } else if (type === 'LLM') {
+                    addDynamicProp('vocab_size', 'Vocab Size', uiState.vocab_size || 32000, 'number');
+                    addDynamicProp('context_length', 'Context Length', uiState.context_length || 2048, 'number');
+                }
+            } catch (e) { log(`Error updating properties UI: ${e.message}`); }
+        }
+
+        function addDynamicProp(id, label, value, type) {
+            const group = document.createElement('div');
+            group.className = 'control-group';
+            group.innerHTML = `
+                <label>${label}</label>
+                <input type="${type}" id="prop-${id}" value="${value}" onchange="persistProperty('${id}', this.value)">
+            `;
+            document.getElementById('dynamic-properties').appendChild(group);
+        }
+
+        async function persistProperty(key, value) {
+            if (!activeSessionId) return;
+            await persistUiState(key, value);
+            // If it's a structural property, we might want to regenerate architecture
+            const structuralProps = ['layers', 'hidden_size', 'filters', 'heads'];
+            if (structuralProps.includes(key)) {
+                 log(`Structural property ${key} changed. Regenerating architecture...`);
+                 // This would call handleGenerateArchitecture on backend
+                 const session = sessions.find(s => s.id === activeSessionId);
+                 await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/generate-architecture?runtime=SWT`, {
+                    method: 'POST',
+                    body: JSON.stringify({ modelType: session.modelType })
+                 });
+            }
+        }
+
+        async function confirmProperties() {
+            if (!activeSessionId) return;
+            log("Properties confirmed. Moving to dataset selection.");
+            await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/uistate/forge.workflow.status?runtime=SWT`, {
+                method: 'POST',
+                body: JSON.stringify({ value: 'PROPERTIES_CONFIRMED' })
+            });
+            await fetchModel(activeSessionId);
+        }
+
+        async function runEvaluation() {
+            if (!activeSessionId) return;
+            log("Running model evaluation...");
+            await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/uistate/forge.workflow.status?runtime=SWT`, {
+                method: 'POST',
+                body: JSON.stringify({ value: 'EVALUATED' })
+            });
+            await fetchModel(activeSessionId);
+        }
+
+        async function onDatasetSelect(val) {
+            if (!activeSessionId || !val) return;
+            log(`Dataset ${val} selected.`);
+            await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/uistate/forge.workflow.status?runtime=SWT`, {
+                method: 'POST',
+                body: JSON.stringify({ value: 'DATASET_SELECTED' })
+            });
+            await fetchModel(activeSessionId);
         }
 
         function initGraph() {
@@ -687,25 +888,35 @@
 
         const canvasEl = document.getElementById('canvas');
         canvasEl.addEventListener('dragover', e => e.preventDefault());
-        canvasEl.addEventListener('drop', e => {
+        canvasEl.addEventListener('drop', async e => {
             e.preventDefault();
             const type = e.dataTransfer.getData("nodeType");
             if (!type) return;
 
-            const rect = canvasEl.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
+            if (activeSessionId) {
+                log(`Generating full ${type} architecture...`);
+                try {
+                    await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/generate-architecture?runtime=SWT`, {
+                        method: 'POST',
+                        body: JSON.stringify({ modelType: type })
+                    });
+                } catch (e) { log(`Error generating architecture: ${e.message}`); }
+            } else {
+                const rect = canvasEl.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
 
-            const newNode = {
-                id: "node_" + Date.now(),
-                name: type.toLowerCase() + "_" + (model.nodes.length + 1),
-                type: type,
-                x: x, y: y
-            };
+                const newNode = {
+                    id: "node_" + Date.now(),
+                    name: type.toLowerCase() + "_" + (model.nodes.length + 1),
+                    type: type,
+                    x: x, y: y
+                };
 
-            model.nodes.push(newNode);
-            initGraph();
-            log(`Added ${type} node.`);
+                model.nodes.push(newNode);
+                initGraph();
+                log(`Added ${type} node to local state.`);
+            }
         });
 
         async function createNewSession() {
@@ -780,11 +991,16 @@
             }
         }
 
-        function startTraining() {
+        async function startTraining() {
             isTraining = true;
             document.getElementById('train-btn').disabled = true;
             document.getElementById('stop-btn').disabled = false;
             log("Training started...");
+
+            await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/uistate/forge.workflow.status?runtime=SWT`, {
+                method: 'POST',
+                body: JSON.stringify({ value: 'TRAINING_ACTIVE' })
+            });
 
             if (window.forgeAction) forgeAction("UPDATE_STATUS", JSON.stringify({ sessionId: activeSessionId, status: "TRAINING" }));
 
@@ -792,10 +1008,11 @@
             const session = sessions.find(s => s.id === activeSessionId);
             if (session) session.status = 'TRAINING';
             updateGuidance();
+            await fetchModel(activeSessionId);
 
             // Mock metrics
             let epoch = 0;
-            const interval = setInterval(() => {
+            const interval = setInterval(async () => {
                 if (!isTraining) {
                     clearInterval(interval);
                     return;
@@ -806,6 +1023,17 @@
                 document.getElementById('metric-loss').textContent = loss;
                 document.getElementById('metric-acc').textContent = acc;
                 if (epoch % 5 === 0) log(`Epoch ${epoch}: loss=${loss}, acc=${acc}`);
+
+                if (epoch >= 20) {
+                     isTraining = false;
+                     clearInterval(interval);
+                     log("Training completed automatically.");
+                     await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/uistate/forge.workflow.status?runtime=SWT`, {
+                        method: 'POST',
+                        body: JSON.stringify({ value: 'TRAINING_COMPLETED' })
+                     });
+                     await fetchModel(activeSessionId);
+                }
             }, 1000);
         }
 
@@ -1110,6 +1338,12 @@
                 const path = await forgeAction("exportModel", activeSessionId, activeSessionId, snapshotId);
                 log(`Export complete: ${path}`);
                 alert(`Model exported to: ${path}\nYou can now deploy it to Ollama.`);
+
+                await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/uistate/forge.workflow.status?runtime=SWT`, {
+                    method: 'POST',
+                    body: JSON.stringify({ value: 'EXPORTED' })
+                });
+                await fetchModel(activeSessionId);
             }
         }
 
@@ -1183,7 +1417,10 @@
 
             switch(event.type) {
                 case 'FORGE_MODEL_CHANGED':
+                case 'UI_STATE_UPDATED':
+                case 'FORGE_SESSION_CREATED':
                     await fetchModel(activeSessionId);
+                    await updateModelPropertiesUI();
                     break;
                 case 'FORGE_DATASET_IMPORTED':
                     updateDemoStep('step-init', 'completed');
@@ -1239,6 +1476,42 @@
                  lastProcessedEventTime = Date.now();
             }
         }, 1000);
+
+        function showPaletteMenu(e) {
+            e.preventDefault();
+            const menu = document.getElementById('palette-context-menu');
+            menu.style.display = 'block';
+            menu.style.left = e.pageX + 'px';
+            menu.style.top = e.pageY + 'px';
+
+            window.onclick = () => menu.style.display = 'none';
+        }
+
+        async function loadTemplate(type) {
+            if (!activeSessionId) {
+                await createNewSessionWithTemplate(type);
+                return;
+            }
+            log(`Loading ${type} template into current session...`);
+            await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/generate-architecture?runtime=SWT`, {
+                method: 'POST',
+                body: JSON.stringify({ modelType: type })
+            });
+        }
+
+        async function createNewSessionWithTemplate(type) {
+             const name = prompt("Enter Session Name for " + type + " Demo:", type + " Demo");
+             if (!name) return;
+             try {
+                const res = await fetch(getBaseUrl() + `/forge/session?runtime=SWT`, {
+                    method: 'POST',
+                    body: JSON.stringify({ name: name, modelType: type, isDemo: true })
+                });
+                const data = await res.json();
+                await loadSessions();
+                selectSession(data.id);
+            } catch (e) { log(`Error: ${e.message}`); }
+        }
 
         // Notify SWT ready
         if (window.logFunction) logFunction("ready");

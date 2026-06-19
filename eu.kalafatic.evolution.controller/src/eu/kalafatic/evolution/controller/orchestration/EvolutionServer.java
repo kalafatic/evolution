@@ -201,6 +201,9 @@ public class EvolutionServer extends NanoHTTPD {
                 return handleGetForgeSessions();
             } else if (Method.POST.equals(method) && "/forge/session".equals(uri)) {
                 return handleCreateForgeSession(session);
+            } else if (Method.POST.equals(method) && uri.startsWith("/forge/session/") && uri.endsWith("/generate-architecture")) {
+                String id = uri.substring("/forge/session/".length(), uri.length() - "/generate-architecture".length());
+                return handleGenerateArchitecture(id, session);
             } else if (Method.POST.equals(method) && "/forge/save-all".equals(uri)) {
                 return handleForgeSaveAll();
             } else if (Method.GET.equals(method) && uri.startsWith("/forge/session/")) {
@@ -957,6 +960,20 @@ public class EvolutionServer extends NanoHTTPD {
         String postData = files.get("postData");
 
         ForgeSessionManager.getInstance().updateModel(id, postData);
+        return newFixedLengthResponse(Response.Status.OK, "application/json", "{\"status\": \"ok\"}");
+    }
+
+    private Response handleGenerateArchitecture(String id, IHTTPSession session) throws IOException, ResponseException {
+        Map<String, String> files = new HashMap<>();
+        session.parseBody(files);
+        String postData = files.get("postData");
+        JSONObject body = new JSONObject(postData);
+        String modelType = body.getString("modelType");
+
+        eu.kalafatic.evolution.model.orchestration.ForgeSession s = ForgeSessionManager.getInstance().findSession(id);
+        if (s == null) return newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "Session not found");
+
+        ForgeSessionManager.getInstance().generateArchitecture(s, modelType);
         return newFixedLengthResponse(Response.Status.OK, "application/json", "{\"status\": \"ok\"}");
     }
 
