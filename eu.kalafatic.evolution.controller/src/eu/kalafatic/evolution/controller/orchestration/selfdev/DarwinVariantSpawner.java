@@ -315,12 +315,13 @@ public class DarwinVariantSpawner {
               .append("  },\n");
         }
 
-        schemaSb.append("  \"actions\": [{ \"domain\": \"file\", \"operation\": \"WRITE\", \"target\": \"path/to/artifact\", \"description\": \"Action description\" }]\n")
+        schemaSb.append("  \"actions\": [{ \"domain\": \"file\", \"operation\": \"WRITE\", \"target\": \"path/to/artifact\", \"description\": \"Action description\", \"implementation\": \"(Full source code for the file)\" }]\n")
           .append("}\n");
         sb.append(composer.composeJsonSchema(schemaSb.toString())).append("\n\n");
 
         sb.append("🧭 EVOLUTION DIRECTIVE\n\n")
           .append("Your goal is controlled divergence under constraints. Move the system into a meaningfully different evolutionary region.\n\n")
+          .append("Mandatory: For every 'WRITE' action, you MUST provide the FULL, FUNCTIONAL source code in the 'implementation' field.\n\n")
           .append("CONTEXT:\n")
           .append(basePrompt);
 
@@ -483,6 +484,7 @@ public class DarwinVariantSpawner {
           .append("If previous branch was similar in structure, you MUST pivot sharply.\n\n")
           .append("🧬 ANTI-REPETITION MEMORY\n\n")
           .append("You MUST explicitly avoid repeating the strategies and assumptions listed in the FORBIDDEN STRATEGIES section above.\n\n")
+          .append("Mandatory: For every 'WRITE' action, you MUST provide the FULL, FUNCTIONAL source code in the 'implementation' field.\n\n")
           .append("STABILIZATION CONSTRAINTS:\n")
           .append("- NO ARCHITECTURAL INFLATION: If task is trivial, provide a MINIMAL implementation.\n")
           .append("- MINIMUM VIABLE SOLUTION BIAS: Prefer the simplest code that satisfies the goal.\n")
@@ -546,7 +548,7 @@ public class DarwinVariantSpawner {
               .append("  },\n");
         }
 
-        sb.append("  \"actions\": [{ \"domain\": \"file\", \"operation\": \"WRITE\", \"target\": \"path/to/artifact\", \"description\": \"Action description\" }]\n")
+        sb.append("  \"actions\": [{ \"domain\": \"file\", \"operation\": \"WRITE\", \"target\": \"path/to/artifact\", \"description\": \"Action description\", \"implementation\": \"(Full source code for the file)\" }]\n")
           .append("}\n\n")
           .append("⚠️ CRITICAL OUTPUT CONSTRAINT\n")
           .append("ONLY ONE JSON OBJECT\n")

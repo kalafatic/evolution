@@ -98,6 +98,12 @@ public class TaskPlanner extends BaseAiAgent {
             task.setDescription(action.getDescription());
             task.setRationale("Darwin Strategy: " + variant.getStrategy());
             task.setPriority(1);
+
+            // PROPAGATE PRE-GENERATED IMPLEMENTATION
+            if (action.getImplementation() != null && !action.getImplementation().isEmpty()) {
+                task.setResponse(action.getImplementation());
+            }
+
             tasks.add(task);
         }
 

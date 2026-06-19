@@ -20,6 +20,7 @@ public class EvolutionNode {
     private String strategy;
     private String semanticPhilosophy;
     private Map<String, String> engineeringDimensions = new HashMap<>();
+    private Map<String, String> codeSnapshots = new HashMap<>();
 
     private MutationRecord mutationRecord;
     private ExecutionRecord executionRecord;
@@ -81,6 +82,9 @@ public class EvolutionNode {
 
     public Map<String, String> getEngineeringDimensions() { return engineeringDimensions; }
     public void setEngineeringDimensions(Map<String, String> engineeringDimensions) { this.engineeringDimensions = engineeringDimensions; }
+
+    public Map<String, String> getCodeSnapshots() { return codeSnapshots; }
+    public void setCodeSnapshots(Map<String, String> codeSnapshots) { this.codeSnapshots = codeSnapshots; }
 
     public double getFitnessScore() { return fitnessScore; }
     public void setFitnessScore(double fitnessScore) { this.fitnessScore = fitnessScore; }

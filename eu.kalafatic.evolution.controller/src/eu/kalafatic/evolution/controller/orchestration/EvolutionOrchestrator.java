@@ -106,12 +106,18 @@ public class EvolutionOrchestrator implements IOrchestrator {
 
         context.checkPause();
 
-        ContextPackage contextPkg = ContextBuilder.build(task, context, 1, task.getFeedback());
-        String contextPrompt = ContextBuilder.buildPrompt(contextPkg);
+        String result;
+        if ("file".equalsIgnoreCase(task.getType()) && task.getResponse() != null && !task.getResponse().isEmpty()) {
+            context.log("[ORCHESTRATOR] Using pre-generated implementation for task: " + task.getName());
+            result = applyPatch(task, agent, context, task.getFeedback(), task.getResponse());
+        } else {
+            ContextPackage contextPkg = ContextBuilder.build(task, context, 1, task.getFeedback());
+            String contextPrompt = ContextBuilder.buildPrompt(contextPkg);
 
-        String patch = generatePatch(task, agent, context, task.getFeedback(), task.getPlan(), contextPrompt);
-        String result = applyPatch(task, agent, context, task.getFeedback(), patch);
-        task.setResponse(result);
+            String patch = generatePatch(task, agent, context, task.getFeedback(), task.getPlan(), contextPrompt);
+            result = applyPatch(task, agent, context, task.getFeedback(), patch);
+            task.setResponse(result);
+        }
 
         return result;
     }

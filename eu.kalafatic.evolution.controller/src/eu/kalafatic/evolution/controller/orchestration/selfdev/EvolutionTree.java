@@ -93,6 +93,13 @@ public class EvolutionTree {
                 if (parent.getMutationRecord() != null) {
                     sb.append("PARENT EXECUTION MODEL: ").append(parent.getMutationRecord().getExecutionModel()).append("\n");
                 }
+                if (!parent.getCodeSnapshots().isEmpty()) {
+                    sb.append("PARENT IMPLEMENTATION CODE:\n");
+                    parent.getCodeSnapshots().forEach((path, code) -> {
+                        sb.append("FILE: ").append(path).append("\n")
+                          .append("```java\n").append(code).append("\n```\n");
+                    });
+                }
             }
 
             if (lineage.size() > 2) {
@@ -100,6 +107,13 @@ public class EvolutionTree {
                 sb.append("GRANDPARENT STRATEGY: ").append(grandparent.getStrategy()).append("\n");
                 if (grandparent.getMutationRecord() != null) {
                     sb.append("GRANDPARENT PHILOSOPHY: ").append(grandparent.getMutationRecord().getPhilosophy()).append("\n");
+                }
+                if (!grandparent.getCodeSnapshots().isEmpty()) {
+                    sb.append("GRANDPARENT IMPLEMENTATION CODE (FOR HISTORICAL CONTEXT):\n");
+                    grandparent.getCodeSnapshots().forEach((path, code) -> {
+                        sb.append("FILE: ").append(path).append("\n")
+                          .append("```java\n").append(code).append("\n```\n");
+                    });
                 }
             }
         }
