@@ -181,8 +181,12 @@ public class DarwinFlow implements IOrchestrationFlow {
     public EvaluationResult executeWinner(TaskContext context, eu.kalafatic.evolution.controller.supervision.EvolutionDecision decision, List<BranchVariant> variants, String goal) throws Exception {
         context.log("[DARWIN_FLOW] Entering executeWinner for variant: " + decision.getSelectedVariantId());
         VariantExecutionContext winningContext = null;
-        String originalBranch = manager.getGitManager().getCurrentBranch();
-        String baseCommit = manager.getGitManager().getHeadCommit();
+        String originalBranch = null;
+        String baseCommit = null;
+        if (manager.getGitManager().isGitRepository()) {
+            originalBranch = manager.getGitManager().getCurrentBranch();
+            baseCommit = manager.getGitManager().getHeadCommit();
+        }
         Iteration currentIterationModelImpl = manager.getCurrentIterationModel();
         String iterId = currentIterationModelImpl != null ? currentIterationModelImpl.getId() : "default";
         String snapshotBranch = "snapshot/" + iterId + "-" + System.currentTimeMillis();
@@ -367,13 +371,17 @@ public class DarwinFlow implements IOrchestrationFlow {
                 context.getKernelContext().getMemoryService().saveEvolutionTree();
                 sessionContainer.getEventBus().publish(new RuntimeEvent(RuntimeEventType.TREE_UPDATED, context.getSessionId(), "DarwinFlow", null));
 
-                manager.checkStep(selectedVariant.getId(), "GIT_COMMIT", "Committing evolutionary changes for phase: " + completedPhase);
-                manager.getGitManager().commit("Darwin Evolution Phase " + completedPhase, context);
+                if (!isExportOnly && !isTestMode && manager.getGitManager().isGitRepository()) {
+                    manager.checkStep(selectedVariant.getId(), "GIT_COMMIT", "Committing evolutionary changes for phase: " + completedPhase);
+                    manager.getGitManager().commit("Darwin Evolution Phase " + completedPhase, context);
+                }
 
                 result.setSuccess(true);
                 return result;
             } else {
-                manager.getGitManager().rollback();
+                if (!isExportOnly && !isTestMode && manager.getGitManager().isGitRepository()) {
+                    manager.getGitManager().rollback();
+                }
                 return result;
             }
         } catch (Exception e) {
@@ -434,12 +442,17 @@ public class DarwinFlow implements IOrchestrationFlow {
                 variant.setSuccess(true);
                 variant.setScore(0.95);
 
-                for (Task task : tasks) {
-                    try {
-                        variantManager.getTaskExecutor().getOrchestrator().executeTask(task, variantContext);
-                    } catch (Exception e) {
-                        context.log("[KERNEL] [TEST_MODE] Execution failed but continuing: " + e.getMessage());
+                // Mediated mode does NOT execute tasks that modify source code
+                if (!isMediated) {
+                    for (Task task : tasks) {
+                        try {
+                            variantManager.getTaskExecutor().getOrchestrator().executeTask(task, variantContext);
+                        } catch (Exception e) {
+                            context.log("[KERNEL] [TEST_MODE] Execution failed but continuing: " + e.getMessage());
+                        }
                     }
+                } else {
+                    context.log("[DARWIN] Mediated Mode: Skipping task execution to prevent source modification.");
                 }
 
                 manager.updateVariantLifecycle(List.of(variant), variant.getId(), BranchVariant.ActivationState.VERIFIED, context);

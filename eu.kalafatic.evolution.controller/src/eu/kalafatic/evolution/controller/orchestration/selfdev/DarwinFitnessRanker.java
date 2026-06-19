@@ -187,47 +187,58 @@ public class DarwinFitnessRanker {
         if (med == null) return 0.0;
         double medScore = 0.0;
 
-        // 1. File Selection Constraint (4-16 files)
+        // 1. Genome B: File Selection & Context Optimization (4-16 files)
         JSONArray files = med.optJSONArray("selected_files");
         if (files != null) {
             int count = files.length();
             if (count >= 4 && count <= 16) {
-                medScore += 0.2; // Reward ideal range
+                medScore += 0.3; // Reward ideal range (Genome B health)
             } else if (count > 0 && count < 4) {
-                medScore -= 0.15; // Penalize insufficient context
+                medScore -= 0.2; // Penalize insufficient context
             } else if (count > 16) {
-                medScore -= Math.min(0.5, (count - 16) * 0.05); // Penalize bloat
+                medScore -= Math.min(0.6, (count - 16) * 0.1); // Stronger penalty for context bloat
             } else if (count == 0) {
-                medScore -= 0.5; // Fatal penalty for empty packages
+                medScore -= 0.8; // Heavy penalty for empty packages
             }
         }
 
-        // 2. Information Density (Abstract completeness)
-        if (med.optString("architecture_summary").length() > 50) medScore += 0.05;
-        if (med.optString("dependencies").length() > 30) medScore += 0.05;
-        if (med.optString("execution_instructions").length() > 50) medScore += 0.05;
-        if (med.optString("prompt").length() > 100) medScore += 0.05;
+        // 2. Genome A: Prompt Quality & Implementation Probability
+        String prompt = med.optString("prompt");
+        if (prompt.length() > 200) medScore += 0.1;
+        if (prompt.toLowerCase().contains("reasoning") || prompt.toLowerCase().contains("constraints")) medScore += 0.05;
+        if (prompt.toLowerCase().contains("architecture") || prompt.toLowerCase().contains("workflow")) medScore += 0.05;
 
-        // 3. Significance Merit (Self-justification of importance)
+        // 3. Information Density (Understanding / Context Ratio)
+        String summary = med.optString("architecture_summary");
+        if (summary.length() > 100) medScore += 0.1;
+        if (files != null && files.length() > 0) {
+            double ratio = (double) summary.length() / files.length();
+            if (ratio > 80) medScore += 0.15; // High signal per file
+            else if (ratio < 20) medScore -= 0.1; // Redundant or low-signal context
+        }
+
+        // 4. Dependency & Workflow Coverage
+        String deps = med.optString("dependencies").toLowerCase();
+        if (deps.length() > 50) medScore += 0.05;
+        if (deps.contains("interface") || deps.contains("api") || deps.contains("entry")) medScore += 0.05;
+
+        String instructions = med.optString("execution_instructions").toLowerCase();
+        if (instructions.length() > 100) medScore += 0.05;
+        if (instructions.contains("implement") || instructions.contains("verify")) medScore += 0.05;
+
+        // 5. Semantic Authority (Structural Description vs Generic Labels)
+        String lowerSummary = summary.toLowerCase();
+        if (lowerSummary.contains("java") || lowerSummary.contains("maven") || lowerSummary.contains("project")) {
+            medScore -= 0.1; // Discourage generic technology labels
+        }
+        if (lowerSummary.contains("coordinator") || lowerSummary.contains("topology") || lowerSummary.contains("bottleneck") || lowerSummary.contains("orchestration")) {
+            medScore += 0.15; // Reward high-signal architectural concepts
+        }
+
+        // 6. Hallucination Risk (Self-Evaluation Merit)
         String evaluation = med.optString("evaluation").toLowerCase();
-        if (evaluation.contains("density") || evaluation.contains("centrality") || evaluation.contains("influence") || evaluation.contains("connectivity")) {
-            medScore += 0.1; // Reward candidates that justify selection via emergent properties
-        }
-
-        // 4. Divergence Penalty (Penalize generic technology labels in favor of structural descriptions)
-        String summary = med.optString("architecture_summary").toLowerCase();
-        if (summary.contains("java project") || summary.contains("arduino sketch") || summary.contains("spring boot") || summary.contains("maven") || summary.contains("gradle")) {
-            medScore -= 0.1; // Discourage hardcoded technology labels (Low Signal)
-        }
-        if (summary.contains("coordinator") || summary.contains("entry") || summary.contains("topology") || summary.contains("bottleneck") || summary.contains("flow") || summary.contains("core")) {
-            medScore += 0.1; // Reward structural/topological descriptions (High Signal)
-        }
-
-        // 5. Ratio Optimization (Understanding / Context)
-        JSONArray selectedFiles = med.optJSONArray("selected_files");
-        if (selectedFiles != null && selectedFiles.length() > 0) {
-            double ratio = (double) med.optString("architecture_summary").length() / selectedFiles.length();
-            if (ratio > 50) medScore += 0.1; // High information density per file
+        if (evaluation.contains("missing") || evaluation.contains("gap") || evaluation.contains("uncertainty")) {
+            medScore += 0.1; // Reward honesty about architectural gaps (reduces hallucination risk)
         }
 
         return medScore;

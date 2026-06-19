@@ -346,21 +346,24 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             Object winningMedCandidate = context.getOrchestrationState().getMetadata().get("winningMediationCandidate");
             if (winningMedCandidate instanceof eu.kalafatic.evolution.controller.mediation.model.MediationCandidate) {
                 eu.kalafatic.evolution.controller.mediation.model.MediationCandidate med = (eu.kalafatic.evolution.controller.mediation.model.MediationCandidate) winningMedCandidate;
-                lineageBuilder.append("\n--- EVOLVED UNDERSTANDING (COMMON ANCESTOR) ---\n");
-                lineageBuilder.append("ARCHITECTURE: ").append(med.getArchitectureSummary()).append("\n");
+                lineageBuilder.append("\n--- EVOLVED MEDIATION GENOME (COMMON ANCESTOR) ---\n");
+                lineageBuilder.append("GENOME A (PROMPT): ").append(med.getPrompt()).append("\n\n");
+                lineageBuilder.append("GENOME B (PACKAGE/CONTEXT):\n");
+                lineageBuilder.append("- ARCHITECTURE: ").append(med.getArchitectureSummary()).append("\n");
 
                 if (med.getSubsystems() != null && !med.getSubsystems().isEmpty()) {
-                    lineageBuilder.append("DISCOVERED SUBSYSTEMS:\n");
-                    for (var s : med.getSubsystems()) lineageBuilder.append("- ").append(s.getName()).append(": ").append(s.getPurpose()).append("\n");
+                    lineageBuilder.append("- DISCOVERED SUBSYSTEMS:\n");
+                    for (var s : med.getSubsystems()) lineageBuilder.append("  - ").append(s.getName()).append(": ").append(s.getPurpose()).append("\n");
                 }
 
                 if (med.getArchitecturalFacts() != null && !med.getArchitecturalFacts().isEmpty()) {
-                    lineageBuilder.append("ARCHITECTURAL FACTS:\n");
-                    for (var f : med.getArchitecturalFacts()) lineageBuilder.append("- ").append(f.toString()).append("\n");
+                    lineageBuilder.append("- ARCHITECTURAL FACTS:\n");
+                    for (var f : med.getArchitecturalFacts()) lineageBuilder.append("  - ").append(f.toString()).append("\n");
                 }
 
-                lineageBuilder.append("DEPENDENCIES: ").append(med.getDependencies()).append("\n");
-                lineageBuilder.append("INSTRUCTIONS: ").append(med.getExecutionInstructions()).append("\n");
+                lineageBuilder.append("- SELECTED FILES: ").append(med.getSelectedFiles()).append("\n");
+                lineageBuilder.append("- DEPENDENCIES: ").append(med.getDependencies()).append("\n");
+                lineageBuilder.append("- INSTRUCTIONS: ").append(med.getExecutionInstructions()).append("\n");
             }
 
             // CUMULATIVE REJECTED LINEAGE: Collect all rejected philosophies from ALL previous iterations
@@ -467,8 +470,15 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
                             siblingMemoryBuilder.append("SIBLING: ").append(variant.optString("strategy")).append("\n")
                                                .append("  PHILOSOPHY: ").append(variant.optString("semantic_anchor")).append("\n")
                                                .append("  EXECUTION MODEL: ").append(mut.getExecutionModel()).append("\n")
-                                               .append("  DIMENSIONS: ").append(mut.getEngineeringDimensions()).append("\n")
-                                               .append("  SELECTED FILES: ").append(variant.optJSONArray("selected_files")).append("\n\n");
+                                               .append("  DIMENSIONS: ").append(mut.getEngineeringDimensions()).append("\n");
+
+                            if (isMediated && variant.has("mediation_candidate")) {
+                                JSONObject medCand = variant.getJSONObject("mediation_candidate");
+                                siblingMemoryBuilder.append("  MEDIATION GENOME A (PROMPT): ").append(medCand.optString("prompt")).append("\n")
+                                                   .append("  MEDIATION GENOME B (FILES): ").append(medCand.optJSONArray("selected_files")).append("\n");
+                            }
+
+                            siblingMemoryBuilder.append("  SELECTED FILES: ").append(variant.optJSONArray("selected_files")).append("\n\n");
                         }
                     } else {
                         context.log("[DARWIN] Sequential Branching: Ignoring duplicate blueprint: " + bp.getStrategy());

@@ -146,11 +146,17 @@ public class MediatedModeIntegrationTest {
 
         // Verify ZIP content
         try (java.util.zip.ZipFile zip = new java.util.zip.ZipFile(files[0])) {
-            assertNotNull("pom.xml should be in ZIP", zip.getEntry("affected-files/pom.xml"));
-            assertNotNull("sloeber.ino should be in ZIP", zip.getEntry("affected-files/sloeber.ino"));
+            // Unified Export structure puts files under implementation/files/ or similar if using FULL profile
+            // But createExportPackage puts them under affected-files/
+            // createUnifiedExport puts them under implementation/files/
             assertNotNull("prompt.md should be in ZIP", zip.getEntry("prompt.md"));
-            // skipped check
-            // skipped check
+
+            // Check for implementation/files/ prefix (Unified Export) or affected-files/
+            boolean foundPom = zip.getEntry("affected-files/pom.xml") != null || zip.getEntry("implementation/files/pom.xml") != null;
+            boolean foundIno = zip.getEntry("affected-files/sloeber.ino") != null || zip.getEntry("implementation/files/sloeber.ino") != null;
+
+            assertTrue("pom.xml should be in ZIP", foundPom);
+            assertTrue("sloeber.ino should be in ZIP", foundIno);
         }
     }
 
