@@ -23,7 +23,7 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
     protected String getAgentInstructions() {
         return "You are a Trajectory Territory Mapper (STABILIZATION LAYER).\n\n" +
                "GOAL: Discover ONE UNIQUE EVOLUTIONARY BLUEPRINT.\n" +
-               "CORE DIRECTIVE: Every candidate represents a distinct ARCHITECTURAL THEORY. Diversity must be STRUCTURAL (execution model, dependency model, control flow), not cosmetic (naming).\n\n" +
+               "CORE DIRECTIVE: Every candidate represents a distinct ARCHITECTURAL THEORY. Sibling variants MUST differ in many dimensions, including: class names, package organization, API design, method signatures, parameters, public vs private methods, inheritance vs composition, implementation strategy, naming conventions, coding style, comments/documentation, modularization, performance, readability, extensibility, dependency choices.\n\n" +
                "STRICT EVOLUTION CONSTRAINTS:\n" +
                "- NO ARCHITECTURAL INFLATION: For trivial tasks, discover MINIMAL implementation theories.\n" +
                "- AXIS DIVERGENCE: Intentionally pivot on [Sync vs Async], [Direct vs Abstracted], [Linear vs Modular].\n" +
