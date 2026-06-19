@@ -4,31 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Evolution Servers</title>
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="/css/style.css">
 </head>
-<body>
-    <div class="container">
-        <div class="card">
-            <h2>Login</h2>
-            <div id="loader" class="loader"></div>
-            <div id="errorArea" class="error-message"></div>
-            <form id="loginForm">
-                <div class="form-group">
-                    <label for="username">Username</label>
-                    <input type="text" id="username" name="username" required>
-                </div>
-                <div class="form-group">
-                    <label for="password">Password</label>
-                    <input type="password" id="password" name="password" required>
-                </div>
-                <div class="checkbox-group">
-                    <input type="checkbox" id="rememberMe" name="rememberMe">
-                    <label for="rememberMe">Remember Me</label>
-                </div>
-                <button type="submit" id="loginBtn">Login</button>
-            </form>
-        </div>
+<body class="login-body">
+    <div class="login-card">
+        <h2>Login</h2>
+        <div id="loader" style="display:none; margin-bottom: 20px;">Authenticating...</div>
+        <div id="errorArea" style="color: #fa3e3e; margin-bottom: 20px; font-size: 14px; font-weight: 600;"></div>
+        <form id="loginForm">
+            <input type="text" id="username" name="username" class="login-input" placeholder="Username" required>
+            <input type="password" id="password" name="password" class="login-input" placeholder="Password" required>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 24px; justify-content: center; font-size: 14px; color: #606770;">
+                <input type="checkbox" id="rememberMe" name="rememberMe" style="width: 16px; height: 16px;">
+                <label for="rememberMe">Remember Me</label>
+            </div>
+            <button type="submit" id="loginBtn" class="login-btn">Login</button>
+        </form>
     </div>
-    <script src="js/auth.js"></script>
+    <script src="/js/auth.js"></script>
 </body>
 </html>
