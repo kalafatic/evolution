@@ -50,6 +50,7 @@ public class CognitiveStatePublisher {
     }
 
     private void broadcast(TaskContext context, SessionCognitiveSnapshot snapshot) {
+        if (context == null) return;
         JSONObject payload = new JSONObject(snapshot);
 
         // 1. Internal Event Bus

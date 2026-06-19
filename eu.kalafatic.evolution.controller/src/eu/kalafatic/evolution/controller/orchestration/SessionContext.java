@@ -68,6 +68,7 @@ public class SessionContext implements SessionContainer {
         this.fileChangeTracker = new FileChangeTracker();
         this.selectionState = new SelectionState();
         this.cognitiveState = new eu.kalafatic.evolution.controller.orchestration.cognitive.SessionCognitiveState();
+        this.cognitiveState.setSessionId(sessionId);
         this.backpressureController = new BackpressureController();
         this.statusManager = new OrchestrationStatusManager();
         this.runtimeCoordinator = new RuntimeCoordinator(sessionId, this.eventBus, this.signalBus, this.workflowRegistry);
