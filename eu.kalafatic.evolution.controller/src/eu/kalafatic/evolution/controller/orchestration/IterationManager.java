@@ -838,9 +838,12 @@ public class IterationManager {
         Trajectory activeTrajectory = getActiveTrajectory(context);
         int generation = activeTrajectory != null ? activeTrajectory.getGeneration() : 0;
         String lineage = activeTrajectory != null ? activeTrajectory.getTrajectoryId() : "alpha";
-        EvolutionProgressPublisher.startIteration(context, state.getIterationCount(), generation, lineage);
+
+        // Use 1-based iteration count for UI display
+        EvolutionProgressPublisher.startIteration(context, state.getIterationCount() + 1, generation, lineage);
 
         if (phase == EvolutionPhase.INTENT_EXPANSION) {
+            EvolutionProgressPublisher.updateStage(context, EvolutionStage.ANALYSIS);
             transition(SystemState.ANALYZING, context);
             IntentExpansionResult expansion = getIntentExpansionEngine().expand(goal, context);
             state.getMetadata().put("intentExpansion", expansion);
