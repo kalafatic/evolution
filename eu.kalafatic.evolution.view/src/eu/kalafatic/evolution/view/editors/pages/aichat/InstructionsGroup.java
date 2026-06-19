@@ -272,11 +272,15 @@ public class InstructionsGroup extends AEvoGroup {
         });
         
 
+        org.eclipse.swt.widgets.Label minIterLabel = GUIFactory.INSTANCE.createLabel(settingsComp, "Min Iterations",SWT.NONE,70);
+        minIterLabel.setToolTipText("Minimum number of evolutionary iterations to perform before convergence.");
+
         maxIterationsSpinner = new org.eclipse.swt.widgets.Spinner(settingsComp, SWT.BORDER);
         maxIterationsSpinner.setMinimum(1);
         maxIterationsSpinner.setMaximum(100);
         maxIterationsSpinner.setSelection(4);
         maxIterationsSpinner.setIncrement(1);
+        maxIterationsSpinner.setToolTipText("Set the minimum number of generations for Darwin evolution.");
         maxIterationsSpinner.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -289,7 +293,6 @@ public class InstructionsGroup extends AEvoGroup {
                 page.saveLastUsedSettings();
             }
         });
-        GUIFactory.INSTANCE.createLabel(settingsComp, "Min Iterations",SWT.NONE,70);
         
         
         
@@ -355,8 +358,10 @@ public class InstructionsGroup extends AEvoGroup {
                 if (defaultMaxIter <= 0) defaultMaxIter = 4;
 
                 int maxIter = (Integer) config.getOrDefault("maxIterations", defaultMaxIter);
-                if (maxIterationsSpinner.getSelection() != maxIter) {
-                    maxIterationsSpinner.setSelection(maxIter);
+                if (maxIterationsSpinner != null && !maxIterationsSpinner.isDisposed()) {
+                    if (maxIterationsSpinner.getSelection() != maxIter) {
+                        maxIterationsSpinner.setSelection(maxIter);
+                    }
                 }
             } finally {
                 isUpdating = false;

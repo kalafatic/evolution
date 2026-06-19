@@ -527,6 +527,11 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             new RuntimeEvent(RuntimeEventType.ITERATION_COMPLETED, context.getSessionId(), "DarwinEngine", "Iteration " + currentIteration)
         );
 
+        // Mark the best variant for UI highlighting
+        if (!uniqueVariants.isEmpty()) {
+            uniqueVariants.get(0).put("isBest", true);
+        }
+
         JSONObject branchesJson = new JSONObject();
         branchesJson.put("iteration", currentIteration);
         branchesJson.put("variants", new JSONArray(uniqueVariants));

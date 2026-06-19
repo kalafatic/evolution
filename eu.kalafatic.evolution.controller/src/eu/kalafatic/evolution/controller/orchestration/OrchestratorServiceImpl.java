@@ -320,6 +320,12 @@ public class OrchestratorServiceImpl implements OrchestratorService {
 
         session.getExecutorService().submit(() -> {
             bus.publish(new RuntimeEvent(RuntimeEventType.FLOW_STARTED, sessionId, "OrchestratorService", request.getPrompt()));
+
+            // Populate Cognitive State immediately on user interaction
+            if (session instanceof SessionContext) {
+                ((SessionContext)session).getCognitiveState().processInteraction(request.getPrompt());
+            }
+
             try {
                 Orchestrator orchModel = (Orchestrator) request.getContext().get("orchestrator");
                 if (orchModel == null) orchModel = this.orchestrator;
@@ -382,7 +388,8 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                 KernelFacade kernel = new KernelFacade();
                 OrchestratorResponse response = kernel.handle(request, context);
 
-                processLogEntry("Final Response: " + response.getSummary(), sessionId, turnId);
+                // Use content for Final Response to include Markdown and file links
+                processLogEntry("Final Response: " + response.getContent(), sessionId, turnId);
 
                 // Refresh workspace
                 try {
