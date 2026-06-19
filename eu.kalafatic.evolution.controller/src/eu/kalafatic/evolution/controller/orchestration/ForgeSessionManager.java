@@ -87,8 +87,8 @@ public class ForgeSessionManager {
 
         orchestrator.getForgeSessions().add(session);
 
-        if (isDemo) {
-            applyDemoTemplate(session, modelType);
+        if (isDemo || modelType != null) {
+            generateArchitecture(session, modelType);
         }
 
         publishEvent(session, RuntimeEventType.FORGE_SESSION_CREATED, "SESSION_CREATED");
@@ -96,23 +96,76 @@ public class ForgeSessionManager {
         return session;
     }
 
-    private void applyDemoTemplate(ForgeSession session, String modelType) {
+    public void generateArchitecture(ForgeSession session, String modelType) {
+        String currentParams = session.getModelState().getHyperparameters();
+        JSONObject uiState = (currentParams != null && !currentParams.isEmpty() && !currentParams.equals("{}")) ? new JSONObject(currentParams) : new JSONObject();
+
         String graph = "{}";
-        switch (modelType) {
+        JSONObject defaults = new JSONObject();
+
+        switch (modelType != null ? modelType.toUpperCase() : "") {
             case "NEURON":
                 graph = "{\"nodes\":[{\"id\":\"n1\",\"name\":\"input_1\",\"type\":\"NEURON\",\"x\":100,\"y\":100},{\"id\":\"n2\",\"name\":\"bias\",\"type\":\"NEURON\",\"x\":100,\"y\":200},{\"id\":\"n3\",\"name\":\"output\",\"type\":\"NEURON\",\"x\":300,\"y\":150}],\"links\":[{\"source\":\"n1\",\"target\":\"n3\"},{\"source\":\"n2\",\"target\":\"n3\"}]}";
+                defaults.put("lr", 0.01).put("optimizer", "sgd").put("epochs", 10);
                 break;
             case "MLP":
-                graph = "{\"nodes\":[{\"id\":\"m1\",\"name\":\"input\",\"type\":\"LAYER\",\"x\":50,\"y\":150},{\"id\":\"m2\",\"name\":\"hidden_1\",\"type\":\"LAYER\",\"x\":200,\"y\":150},{\"id\":\"m3\",\"name\":\"output\",\"type\":\"LAYER\",\"x\":350,\"y\":150}],\"links\":[{\"source\":\"m1\",\"target\":\"m2\"},{\"source\":\"m2\",\"target\":\"m3\"}]}";
+                int layers = uiState.optInt("layers", 1);
+                int hiddenSize = uiState.optInt("hidden_size", 64);
+                graph = generateMlpGraphJson(layers, hiddenSize);
+                defaults.put("layers", layers).put("hidden_size", hiddenSize).put("activation", "relu").put("lr", 0.001).put("batch", 32).put("optimizer", "adam").put("epochs", 20);
                 break;
             case "CNN":
-                graph = "{\"nodes\":[{\"id\":\"c1\",\"name\":\"conv_2d\",\"type\":\"LAYER\",\"x\":100,\"y\":100},{\"id\":\"c2\",\"name\":\"max_pool\",\"type\":\"LAYER\",\"x\":100,\"y\":200},{\"id\":\"c3\",\"name\":\"flatten\",\"type\":\"LAYER\",\"x\":300,\"y\":100},{\"id\":\"c4\",\"name\":\"dense_out\",\"type\":\"LAYER\",\"x\":300,\"y\":200}],\"links\":[{\"source\":\"c1\",\"target\":\"c2\"},{\"source\":\"c2\",\"target\":\"c3\"},{\"source\":\"c3\",\"target\":\"c4\"}]}";
+                int filters = uiState.optInt("filters", 32);
+                graph = "{\"nodes\":[{\"id\":\"c1\",\"name\":\"conv_2d_" + filters + "\",\"type\":\"LAYER\",\"x\":100,\"y\":100},{\"id\":\"c2\",\"name\":\"max_pool\",\"type\":\"LAYER\",\"x\":100,\"y\":200},{\"id\":\"c3\",\"name\":\"flatten\",\"type\":\"LAYER\",\"x\":300,\"y\":100},{\"id\":\"c4\",\"name\":\"dense_out\",\"type\":\"LAYER\",\"x\":300,\"y\":200}],\"links\":[{\"source\":\"c1\",\"target\":\"c2\"},{\"source\":\"c2\",\"target\":\"c3\"},{\"source\":\"c3\",\"target\":\"c4\"}]}";
+                defaults.put("filters", filters).put("kernel_size", 3).put("lr", 0.001).put("batch", 64).put("optimizer", "adam").put("epochs", 15);
                 break;
             case "TRANSFORMER":
-                graph = "{\"nodes\":[{\"id\":\"t1\",\"name\":\"embedding\",\"type\":\"LAYER\",\"x\":50,\"y\":200},{\"id\":\"t2\",\"name\":\"attn_block_1\",\"type\":\"ATTENTION\",\"x\":200,\"y\":200},{\"id\":\"t3\",\"name\":\"ffn_1\",\"type\":\"LAYER\",\"x\":350,\"y\":200},{\"id\":\"t4\",\"name\":\"head\",\"type\":\"LAYER\",\"x\":500,\"y\":200}],\"links\":[{\"source\":\"t1\",\"target\":\"t2\"},{\"source\":\"t2\",\"target\":\"t3\"},{\"source\":\"t3\",\"target\":\"t4\"}]}";
+                int tLayers = uiState.optInt("layers", 6);
+                int heads = uiState.optInt("heads", 8);
+                graph = "{\"nodes\":[{\"id\":\"t1\",\"name\":\"embedding\",\"type\":\"LAYER\",\"x\":50,\"y\":200},{\"id\":\"t2\",\"name\":\"attn_" + heads + "heads_x" + tLayers + "\",\"type\":\"ATTENTION\",\"x\":200,\"y\":200},{\"id\":\"t3\",\"name\":\"ffn_1\",\"type\":\"LAYER\",\"x\":350,\"y\":200},{\"id\":\"t4\",\"name\":\"head\",\"type\":\"LAYER\",\"x\":500,\"y\":200}],\"links\":[{\"source\":\"t1\",\"target\":\"t2\"},{\"source\":\"t2\",\"target\":\"t3\"},{\"source\":\"t3\",\"target\":\"t4\"}]}";
+                defaults.put("heads", heads).put("d_model", 512).put("layers", tLayers).put("lr", 0.0001).put("batch", 16).put("optimizer", "adam").put("epochs", 10);
+                break;
+            case "LLM":
+                int llmLayers = uiState.optInt("layers", 12);
+                graph = "{\"nodes\":[{\"id\":\"l1\",\"name\":\"tokenizer\",\"type\":\"CUSTOM\",\"x\":50,\"y\":250},{\"id\":\"l2\",\"name\":\"embeddings\",\"type\":\"LAYER\",\"x\":150,\"y\":250},{\"id\":\"l3\",\"name\":\"blocks_x" + llmLayers + "\",\"type\":\"TRANSFORMER\",\"x\":300,\"y\":250},{\"id\":\"l4\",\"name\":\"norm\",\"type\":\"LAYER\",\"x\":450,\"y\":250},{\"id\":\"l5\",\"name\":\"head\",\"type\":\"LAYER\",\"x\":600,\"y\":250}],\"links\":[{\"source\":\"l1\",\"target\":\"l2\"},{\"source\":\"l2\",\"target\":\"l3\"},{\"source\":\"l3\",\"target\":\"l4\"},{\"source\":\"l4\",\"target\":\"l5\"}]}";
+                defaults.put("vocab_size", 32000).put("context_length", 2048).put("layers", llmLayers).put("heads", 12).put("lr", 0.00005).put("batch", 8).put("optimizer", "adam").put("epochs", 5);
                 break;
         }
         session.getModelState().setModelGraph(graph);
+
+        // Merge with existing uiState to preserve workflow status
+        for (Object keyObj : uiState.keySet()) {
+            String key = (String) keyObj;
+            if (!defaults.has(key)) defaults.put(key, uiState.get(key));
+        }
+        session.getModelState().setHyperparameters(defaults.toString());
+        session.setSelectedModelType(modelType);
+        session.setLastModified(System.currentTimeMillis());
+
+        updateWorkflowStatus(session.getSessionId(), "ARCH_GENERATED");
+        publishEvent(session, RuntimeEventType.FORGE_MODEL_CHANGED, "ARCHITECTURE_GENERATED");
+    }
+
+    private String generateMlpGraphJson(int layers, int hiddenSize) {
+        org.json.JSONArray nodes = new org.json.JSONArray();
+        org.json.JSONArray links = new org.json.JSONArray();
+
+        JSONObject inputNode = new JSONObject().put("id", "m_in").put("name", "input").put("type", "LAYER").put("x", 50).put("y", 150);
+        nodes.put(inputNode);
+
+        String lastId = "m_in";
+        for (int i = 0; i < layers; i++) {
+            String currentId = "m_h" + i;
+            nodes.put(new JSONObject().put("id", currentId).put("name", "hidden_" + (i+1) + " (" + hiddenSize + ")").put("type", "LAYER").put("x", 200 + i * 150).put("y", 150));
+            links.put(new JSONObject().put("source", lastId).put("target", currentId));
+            lastId = currentId;
+        }
+
+        String outputId = "m_out";
+        nodes.put(new JSONObject().put("id", outputId).put("name", "output").put("type", "LAYER").put("x", 200 + layers * 150).put("y", 150));
+        links.put(new JSONObject().put("source", lastId).put("target", outputId));
+
+        return new JSONObject().put("nodes", nodes).put("links", links).toString();
     }
 
     public boolean deleteSession(String sessionId) {
@@ -163,8 +216,17 @@ public class ForgeSessionManager {
             RuntimeEventType type = (status == ForgeStatus.TRAINING) ? RuntimeEventType.FORGE_TRAINING_STARTED :
                                    (status == ForgeStatus.IDLE) ? RuntimeEventType.FORGE_TRAINING_STOPPED :
                                    RuntimeEventType.VIEW_UPDATED;
+
+            if (status == ForgeStatus.TRAINING) {
+                updateWorkflowStatus(sessionId, "TRAINING_ACTIVE");
+            }
+
             publishEvent(session, type, "STATUS_CHANGED");
         }
+    }
+
+    public void updateWorkflowStatus(String sessionId, String status) {
+        updateUiState(sessionId, "forge.workflow.status", status);
     }
 
     public void updateUiState(String sessionId, String key, Object value) {
@@ -172,7 +234,22 @@ public class ForgeSessionManager {
         if (session != null && session.getModelState() != null) {
             String current = session.getModelState().getHyperparameters();
             JSONObject json = (current != null && !current.isEmpty() && !current.equals("{}")) ? new JSONObject(current) : new JSONObject();
-            json.put(key, value);
+
+            // Try to parse number if possible for hyperparameters
+            if (value instanceof String) {
+                try {
+                    if (((String) value).contains(".")) {
+                        json.put(key, Double.parseDouble((String) value));
+                    } else {
+                        json.put(key, Integer.parseInt((String) value));
+                    }
+                } catch (NumberFormatException e) {
+                    json.put(key, value);
+                }
+            } else {
+                json.put(key, value);
+            }
+
             session.getModelState().setHyperparameters(json.toString());
             session.setLastModified(System.currentTimeMillis());
             publishEvent(session, RuntimeEventType.VIEW_UPDATED, "UI_STATE_UPDATED");
@@ -231,7 +308,7 @@ public class ForgeSessionManager {
         new Thread(() -> {
             try {
                 // 1. Initializing Architecture
-                applyDemoTemplate(session, "MLP");
+                generateArchitecture(session, "MLP");
                 publishEvent(session, RuntimeEventType.FORGE_MODEL_CHANGED, "DEMO_INITIALIZED");
                 Thread.sleep(1500);
 
@@ -278,6 +355,11 @@ public class ForgeSessionManager {
         RuntimeEvent event = new RuntimeEvent(type, orchestrator.getId(), "ForgeSessionManager", action)
                 .withEntityId(session.getSessionId())
                 .withMetadata("sessionName", session.getName());
+
+        JSONObject uiState = getUiState(session.getSessionId());
+        if (uiState.has("forge.workflow.status")) {
+            event.withMetadata("forge.workflow.status", uiState.getString("forge.workflow.status"));
+        }
 
         List<RuntimeEvent> buffer = eventBuffer.computeIfAbsent(session.getSessionId(), k -> Collections.synchronizedList(new ArrayList<>()));
         buffer.add(event);
