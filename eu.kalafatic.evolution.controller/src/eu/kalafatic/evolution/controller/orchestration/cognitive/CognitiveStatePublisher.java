@@ -23,7 +23,15 @@ public class CognitiveStatePublisher {
     private static final double CONFIDENCE_THRESHOLD = 0.05;
 
     public synchronized void publish(TaskContext context, SessionCognitiveState state) {
-        String sessionId = context.getSessionId();
+        String sessionId = null;
+        if (context != null) {
+            sessionId = context.getSessionId();
+        } else if (state != null) {
+            sessionId = state.getSessionId();
+        }
+
+        if (sessionId == null) return;
+
         SessionCognitiveSnapshot current = new SessionCognitiveSnapshot(state);
         SessionCognitiveSnapshot last = lastSnapshots.get(sessionId);
 
@@ -50,26 +58,39 @@ public class CognitiveStatePublisher {
     }
 
     private void broadcast(TaskContext context, SessionCognitiveSnapshot snapshot) {
-        if (context == null) return;
-        JSONObject payload = new JSONObject(snapshot);
+        String sessionId = snapshot.getSessionId();
+        if (sessionId == null && context != null) sessionId = context.getSessionId();
+        if (sessionId == null) return;
+
+        JSONObject payload = snapshot.toJSON();
 
         // 1. Internal Event Bus
         RuntimeEvent event = new RuntimeEvent(
                 RuntimeEventType.COGNITIVE_STATE_CHANGED,
-                context.getSessionId(),
+                sessionId,
                 "CognitiveStateEngine",
                 payload.toString()
         );
-        if (context.getKernelContext() != null && context.getKernelContext().getEventBus() != null) {
-            context.getKernelContext().getEventBus().publish(event);
+
+        eu.kalafatic.evolution.controller.workflow.RuntimeEventBus bus = null;
+        if (context != null && context.getKernelContext() != null) {
+            bus = context.getKernelContext().getEventBus();
+        } else {
+            eu.kalafatic.evolution.controller.orchestration.SessionContainer session =
+                eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getSession(sessionId);
+            if (session != null) bus = session.getEventBus();
+        }
+
+        if (bus != null) {
+            bus.publish(event);
         }
 
         // 2. Chat UI Bridge
         // Use a consistent turnId to allow UI to update the same sidebar block if needed,
         // although renderer.js currently handles this as a specialized non-rendered message.
         ConversationOutputController.getInstance().submitMessage(
-                context.getSessionId(),
-                context.getSessionId() + "_cognitive_state",
+                sessionId,
+                sessionId + "_cognitive_state",
                 "Cognitive Engine",
                 payload.toString(),
                 "cognitive-state-changed",
