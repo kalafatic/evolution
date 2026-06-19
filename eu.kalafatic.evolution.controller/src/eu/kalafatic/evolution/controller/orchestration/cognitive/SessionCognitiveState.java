@@ -9,6 +9,7 @@ import java.util.Map;
  * Stores the holistic cognitive state of a session.
  */
 public class SessionCognitiveState {
+    private String sessionId;
     private CapabilityType currentCapability = CapabilityType.CHAT;
     private SessionIntent currentIntent = SessionIntent.LEARNING;
     private CognitiveDirection currentDirection = CognitiveDirection.STABLE;
@@ -65,6 +66,22 @@ public class SessionCognitiveState {
 
     public int getCognitiveDepth() { return cognitiveDepth; }
     public void setCognitiveDepth(int cognitiveDepth) { this.cognitiveDepth = cognitiveDepth; }
+
+    public String getSessionId() { return sessionId; }
+    public void setSessionId(String sessionId) { this.sessionId = sessionId; }
+
+    public void processInteraction(String prompt) {
+        CognitiveStateEngine engine = new CognitiveStateEngine();
+        eu.kalafatic.evolution.controller.orchestration.SessionContainer session =
+            eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getSession(sessionId);
+
+        eu.kalafatic.evolution.controller.orchestration.TaskContext context = null;
+        if (session instanceof eu.kalafatic.evolution.controller.orchestration.SessionContext) {
+            context = ((eu.kalafatic.evolution.controller.orchestration.SessionContext)session).getTaskContext();
+        }
+
+        engine.processInteraction(prompt, this, context, null);
+    }
 
     public void addSignal(CapabilitySignal signal) {
         capabilityHistory.add(signal);

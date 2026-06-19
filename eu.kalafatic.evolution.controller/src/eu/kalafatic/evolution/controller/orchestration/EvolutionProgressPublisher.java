@@ -23,7 +23,7 @@ public class EvolutionProgressPublisher {
         event.setLineage(lineage);
         event.setStage(EvolutionStage.ITERATION_START);
         event.setStartTime(System.currentTimeMillis());
-        event.setTotalSteps(8); // Standard stages count
+        event.setTotalSteps(9); // Standard stages count
         event.setCompletedSteps(0);
 
         activeEvents.put(context.getSessionId(), event);

@@ -28,6 +28,9 @@ public class OrchestratorServiceImpl implements OrchestratorService {
         if (sessionId == null) sessionId = UUID.randomUUID().toString();
 
         SessionContainer session = SessionManager.getInstance().getOrCreateSession(sessionId);
+        if (session instanceof SessionContext) {
+            ((SessionContext)session).getCognitiveState().processInteraction(request.getPrompt());
+        }
 
         inputOrchModel = ensureOrchestratorModel(inputOrchModel, sessionId);
 
@@ -64,6 +67,9 @@ public class OrchestratorServiceImpl implements OrchestratorService {
 
         final String finalSessionId = sessionId;
         SessionContainer session = SessionManager.getInstance().getOrCreateSession(finalSessionId);
+        if (session instanceof SessionContext) {
+            ((SessionContext)session).getCognitiveState().processInteraction(request.getPrompt());
+        }
 
         TaskResult result = new TaskResult();
         result.setId(finalSessionId);

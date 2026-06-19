@@ -5,6 +5,7 @@ package eu.kalafatic.evolution.controller.orchestration;
  */
 public enum EvolutionStage {
     ITERATION_START,
+    ANALYSIS,
     ANALYZE_PARENT,
     GENERATE_BRANCH,
     VALIDATE_BRANCH,

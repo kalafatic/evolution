@@ -841,6 +841,7 @@ public class IterationManager {
 
         // Use 1-based iteration count for UI display
         EvolutionProgressPublisher.startIteration(context, state.getIterationCount() + 1, generation, lineage);
+        EvolutionProgressPublisher.updateStage(context, EvolutionStage.ANALYSIS);
 
         if (phase == EvolutionPhase.INTENT_EXPANSION) {
             EvolutionProgressPublisher.updateStage(context, EvolutionStage.ANALYSIS);
