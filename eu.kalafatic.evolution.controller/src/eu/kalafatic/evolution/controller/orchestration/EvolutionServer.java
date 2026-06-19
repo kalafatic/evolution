@@ -18,35 +18,32 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.Platform;
-import org.osgi.framework.Bundle;
-
-import eu.kalafatic.evolution.servers.database.DatabaseManager;
-import eu.kalafatic.evolution.servers.repository.SessionRepository;
-import eu.kalafatic.evolution.servers.repository.UserRepository;
-import eu.kalafatic.evolution.servers.service.AuthService;
-import eu.kalafatic.evolution.servers.controller.AuthController;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.osgi.framework.Bundle;
 
+import eu.kalafatic.evolution.controller.manager.OllamaModel;
+import eu.kalafatic.evolution.controller.manager.OllamaService;
+import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
+import eu.kalafatic.evolution.controller.tools.GitTool;
+import eu.kalafatic.evolution.creatic.api.CreaticAgent;
 import eu.kalafatic.evolution.forge.controller.api.DatasetController;
 import eu.kalafatic.evolution.forge.controller.api.ModelController;
 import eu.kalafatic.evolution.forge.controller.api.SessionController;
 import eu.kalafatic.evolution.forge.controller.api.SnapshotController;
 import eu.kalafatic.evolution.forge.controller.api.TrainingController;
-import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
-import eu.kalafatic.evolution.controller.manager.OllamaModel;
-import eu.kalafatic.evolution.controller.manager.OllamaService;
-import eu.kalafatic.evolution.controller.tools.GitTool;
-import eu.kalafatic.evolution.creatic.api.CreaticAgent;
 import eu.kalafatic.evolution.model.orchestration.ChatMessage;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.PromptInstructions;
 import eu.kalafatic.evolution.model.orchestration.ServerSession;
 import eu.kalafatic.evolution.model.orchestration.SessionType;
+import eu.kalafatic.evolution.servers.controller.AuthController;
+import eu.kalafatic.evolution.servers.database.DatabaseManager;
+import eu.kalafatic.evolution.servers.repository.SessionRepository;
+import eu.kalafatic.evolution.servers.repository.UserRepository;
+import eu.kalafatic.evolution.servers.service.AuthService;
 import fi.iki.elonen.NanoHTTPD;
 
 /**

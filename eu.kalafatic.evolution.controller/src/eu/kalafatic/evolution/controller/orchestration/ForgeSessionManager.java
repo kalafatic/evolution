@@ -1,25 +1,24 @@
 package eu.kalafatic.evolution.controller.orchestration;
 
-import java.util.UUID;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-
-import org.json.JSONObject;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
+import org.json.JSONObject;
+
+import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEventBus;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
 import eu.kalafatic.evolution.model.orchestration.ForgeSession;
 import eu.kalafatic.evolution.model.orchestration.ForgeStatus;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.SessionModelState;
 import eu.kalafatic.evolution.model.orchestration.SessionSnapshot;
-import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
-import eu.kalafatic.evolution.controller.workflow.RuntimeEventBus;
-import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
 
 public class ForgeSessionManager {
     private static ForgeSessionManager instance;
