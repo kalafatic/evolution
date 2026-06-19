@@ -103,9 +103,18 @@ public class EvolutionServer extends NanoHTTPD {
             return authController.handle(session);
         }
 
-        // 2. Static Resources from eu.kalafatic.evolution.servers (Login, Dashboard, etc.)
-        if ("/login.html".equals(uri) || "/dashboard.html".equals(uri) || uri.startsWith("/css/") || uri.startsWith("/js/")) {
+        // 2. Static Resources (Bypass authorization)
+        if ("/login.html".equals(uri) || uri.startsWith("/css/") || uri.startsWith("/js/")) {
             return serveExternalResource(uri);
+        }
+        if ("/auth-integration.js".equals(uri)) {
+            return handleGetResource("auth-integration.js", "application/javascript");
+        }
+        if ("/creatic.js".equals(uri)) {
+            return handleGetResource("creatic.js", "application/javascript");
+        }
+        if ("/creatic.css".equals(uri)) {
+            return handleGetResource("creatic.css", "text/css");
         }
 
         // 3. Environment-Aware Authorization Check
@@ -125,6 +134,11 @@ public class EvolutionServer extends NanoHTTPD {
                 return newFixedLengthResponse(Response.Status.UNAUTHORIZED, "application/json",
                     new JSONObject().put("error", "Unauthorized").toString());
             }
+        }
+
+        // 4. Authorized Static Resources (Dashboard)
+        if ("/dashboard.html".equals(uri)) {
+            return serveExternalResource(uri);
         }
 
         trackHttpSession(session);
@@ -599,16 +613,7 @@ public class EvolutionServer extends NanoHTTPD {
         }
 
         // Validate session via AuthService
-        String authHeader = session.getHeaders().get("authorization");
-        String sessionId = null;
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            sessionId = authHeader.substring(7);
-        } else {
-            sessionId = session.getCookies().read("sessionId");
-            if (sessionId == null || sessionId.isEmpty()) {
-                sessionId = session.getParms().get("sessionId");
-            }
-        }
+        String sessionId = getSessionIdFromRequest(session);
 
         if (sessionId != null) {
             try {
@@ -618,11 +623,55 @@ public class EvolutionServer extends NanoHTTPD {
             }
         }
 
-        // Localhost bypass for internal tools if needed (careful with this)
-        // String remoteAddr = session.getRemoteIpAddress();
-        // if ("127.0.0.1".equals(remoteAddr) || "0:0:0:0:0:0:0:1".equals(remoteAddr)) return true;
-
         return false;
+    }
+
+    private String getSessionIdFromRequest(IHTTPSession session) {
+        Map<String, String> headers = session.getHeaders();
+
+        // 1. Authorization Header (Case-insensitive)
+        String authHeader = headers.get("authorization");
+        if (authHeader == null) authHeader = headers.get("Authorization");
+
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7).trim();
+            if (!token.isEmpty() && !"undefined".equals(token) && !"null".equals(token)) {
+                return token;
+            }
+        }
+
+        // 2. Cookie (via NanoHTTPD CookieHandler)
+        String sessionId = session.getCookies().read("sessionId");
+        if (sessionId != null && !sessionId.isEmpty()) {
+            return trimQuotes(sessionId);
+        }
+
+        // 3. Manual Cookie Header parsing (fallback)
+        String cookieHeader = headers.get("cookie");
+        if (cookieHeader == null) cookieHeader = headers.get("Cookie");
+
+        if (cookieHeader != null) {
+            String[] cookies = cookieHeader.split(";");
+            for (String cookie : cookies) {
+                String[] parts = cookie.trim().split("=");
+                if (parts.length >= 2 && "sessionId".equalsIgnoreCase(parts[0])) {
+                    return trimQuotes(parts[1]);
+                }
+            }
+        }
+
+        // 4. Query Parameter (fallback)
+        String paramId = session.getParms().get("sessionId");
+        return (paramId != null && !paramId.isEmpty()) ? paramId : null;
+    }
+
+    private String trimQuotes(String val) {
+        if (val == null) return null;
+        val = val.trim();
+        if (val.startsWith("\"") && val.endsWith("\"") && val.length() >= 2) {
+            return val.substring(1, val.length() - 1);
+        }
+        return val;
     }
 
     private Response serveExternalResource(String uri) {
@@ -650,17 +699,7 @@ public class EvolutionServer extends NanoHTTPD {
     }
 
     private void updateSessionWorkflow(IHTTPSession session, String workflowType) {
-        String authHeader = session.getHeaders().get("authorization");
-        String sessionId = null;
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            sessionId = authHeader.substring(7);
-        } else {
-            sessionId = session.getCookies().read("sessionId");
-            if (sessionId == null || sessionId.isEmpty()) {
-                sessionId = session.getParms().get("sessionId");
-            }
-        }
-
+        String sessionId = getSessionIdFromRequest(session);
         if (sessionId != null) {
             try {
                 authService.updateWorkflowType(sessionId, workflowType);

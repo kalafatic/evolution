@@ -17,7 +17,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const response = await fetch('/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password })
+                    body: JSON.stringify({ username, password }),
+                    credentials: 'include'
                 });
 
                 const data = await response.json();
@@ -75,16 +76,26 @@ async function loadUserInfo() {
     const headers = {};
     if (sessionId) {
         headers['Authorization'] = `Bearer ${sessionId}`;
+    } else {
+        console.log("No sessionId in storage for user info, relying on cookies.");
     }
 
     try {
         const response = await fetch('/api/auth/me', {
             method: 'GET',
-            headers: headers
+            headers: headers,
+            credentials: 'include'
         });
 
         if (response.ok) {
             const data = await response.json();
+
+            // Sync storage if needed
+            if (!localStorage.getItem('sessionId') && !sessionStorage.getItem('sessionId')) {
+                console.log("Syncing sessionId to sessionStorage from valid cookie.");
+                sessionStorage.setItem('sessionId', data.sessionId);
+            }
+
             document.getElementById('displayUsername').textContent = data.username;
             document.getElementById('displayRole').textContent = data.role;
             document.getElementById('displaySessionId').textContent = data.sessionId;

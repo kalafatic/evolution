@@ -4,69 +4,71 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Evolution Portal</title>
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="/css/style.css">
     <script src="/auth-integration.js"></script>
 </head>
 <body class="portal-body">
     <header class="portal-header">
-        <div class="logo">🧬 Evolution</div>
-        <div class="breadcrumbs">
-            <a href="/dashboard.html">Home</a> &gt; <span id="current-page">Portal</span>
+        <div class="logo-container">
+            <span class="logo-icon">🧬</span>
+            <span class="logo-text">Evolution</span>
         </div>
+        <nav class="breadcrumbs">
+            <a href="/dashboard.html">Home</a> <span class="sep">/</span> <span id="current-page">Intelligence Portal</span>
+        </nav>
         <div class="header-menu">
-            <button class="menu-btn">Help</button>
-            <button class="menu-btn">Update</button>
-            <button id="logoutBtn" class="logout-btn">Logout</button>
+            <a href="#" class="header-link">Info</a>
+            <a href="#" class="header-link">Help</a>
+            <a href="#" class="header-link">Update</a>
+            <button id="logoutBtn" class="logout-btn">Sign Out</button>
         </div>
     </header>
 
     <div class="portal-container">
         <aside class="sidebar-left">
             <nav class="nav-menu">
+                <div class="nav-section-title">Workflow Tools</div>
                 <ul>
-                    <li><a href="/experimental/chat" class="nav-link"><span>💬</span> AI Chat</a></li>
-                    <li><a href="/experimental/architecture" class="nav-link"><span>📐</span> Architecture</a></li>
-                    <li><a href="/experimental/forge" class="nav-link"><span>🛠️</span> Forge</a></li>
-                    <li><a href="/experimental/evolution/tree" class="nav-link"><span>🌳</span> Evolution Tree</a></li>
-                    <li><a href="/server/status" class="nav-link"><span>📊</span> System Status</a></li>
+                    <li><a href="/experimental/chat" class="nav-link"><span class="icon">💬</span> AI Chat</a></li>
+                    <li><a href="/experimental/architecture" class="nav-link"><span class="icon">📐</span> Architecture</a></li>
+                    <li><a href="/experimental/forge" class="nav-link"><span class="icon">🛠️</span> Forge Lab</a></li>
+                    <li><a href="/experimental/evolution/tree" class="nav-link"><span class="icon">🌳</span> Evolution Tree</a></li>
+                </ul>
+                <div class="nav-section-title">Platform</div>
+                <ul>
+                    <li><a href="/server/status" class="nav-link"><span class="icon">📊</span> System Analytics</a></li>
                 </ul>
             </nav>
         </aside>
 
         <main class="portal-main">
             <section class="welcome-section">
-                <h1>Welcome to Evolution Platform</h1>
-                <p class="subtitle">Architecting the future with autonomous AI evolution.</p>
+                <h1>Autonomous Intelligence Portal</h1>
+                <p class="subtitle">Evolving software architectures through iterative AI reasoning.</p>
 
                 <div class="hero-graphic">
-                    <div class="cyber-background"></div>
+                    <div class="cyber-grid"></div>
                     <div class="platform-core">
                         <div class="core-ring core-outer"></div>
                         <div class="core-ring core-inner"></div>
                         <div class="core-hub">EVO</div>
-                        <div class="orbit-node node-1"></div>
-                        <div class="orbit-node node-2"></div>
-                        <div class="orbit-node node-3"></div>
+                        <div class="node node-1"></div>
+                        <div class="node node-2"></div>
                     </div>
                 </div>
 
-                <div class="presentation-text">
-                    <h2>Continuous Self-Improvement</h2>
-                    <p>The Evolution platform leverages Darwinian principles to iteratively improve software architectures. Through mutation, selection, and implementation, our agents explore the optimal solution space for your complex engineering challenges.</p>
-
-                    <div class="features-grid">
-                        <div class="feature-card">
-                            <h3>🤖 Darwin Engine</h3>
-                            <p>Autonomous generation and validation of architectural variants.</p>
-                        </div>
-                        <div class="feature-card">
-                            <h3>⚒️ Forge Lab</h3>
-                            <p>Custom model training and dataset synthesis for domain-specific tasks.</p>
-                        </div>
-                        <div class="feature-card">
-                            <h3>📈 Observability</h3>
-                            <p>Real-time tracking of evolutionary progress and fitness metrics.</p>
-                        </div>
+                <div class="features-summary">
+                    <div class="summary-item">
+                        <h3>Darwinian Synthesis</h3>
+                        <p>Recursive mutation and selection cycles.</p>
+                    </div>
+                    <div class="summary-item">
+                        <h3>Architectural Genome</h3>
+                        <p>Persistent lineage of evolved solutions.</p>
+                    </div>
+                    <div class="summary-item">
+                        <h3>Neural Forge</h3>
+                        <p>Domain-specific model optimization.</p>
                     </div>
                 </div>
             </section>
@@ -74,33 +76,29 @@
 
         <aside class="sidebar-right">
             <div class="session-panel">
-                <h3>Session Details</h3>
+                <h3>Session Context</h3>
                 <div id="userInfo">
                     <div class="info-group">
-                        <span class="label">User</span>
+                        <span class="label">Principal</span>
                         <span id="displayUsername" class="value">...</span>
                     </div>
                     <div class="info-group">
-                        <span class="label">Role</span>
+                        <span class="label">Access Level</span>
                         <span id="displayRole" class="value">...</span>
                     </div>
                     <div class="info-group">
-                        <span class="label">Session ID</span>
-                        <span id="displaySessionId" class="value small">...</span>
+                        <span class="label">Identity Token</span>
+                        <span id="displaySessionId" class="value code">...</span>
                     </div>
                     <div class="info-group">
-                        <span class="label">Started</span>
-                        <span id="displayTimestamp" class="value">...</span>
-                    </div>
-                    <div class="info-group">
-                        <span class="label">Workflow</span>
-                        <span id="displayWorkflow" class="value">GENERAL</span>
+                        <span class="label">Active Workflow</span>
+                        <span id="displayWorkflow" class="value status">GENERAL</span>
                     </div>
                 </div>
             </div>
         </aside>
     </div>
 
-    <script src="js/auth.js"></script>
+    <script src="/js/auth.js"></script>
 </body>
 </html>

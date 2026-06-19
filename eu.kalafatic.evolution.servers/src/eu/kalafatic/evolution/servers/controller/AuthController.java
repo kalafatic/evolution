@@ -61,7 +61,8 @@ public class AuthController {
                 response.put("success", true);
                 response.put("sessionId", sessionId);
                 Response res = jsonResponse(Response.Status.OK, response);
-                res.addHeader("Set-Cookie", "sessionId=" + sessionId + "; Path=/; HttpOnly; SameSite=Strict");
+                // Use SameSite=Lax for better navigation support across links
+                res.addHeader("Set-Cookie", "sessionId=" + sessionId + "; Path=/; HttpOnly; SameSite=Lax");
                 return res;
             } else {
                 Map<String, Object> response = new HashMap<>();
@@ -121,18 +122,51 @@ public class AuthController {
     }
 
     private String getSessionId(IHTTPSession session) {
-        // Try header first
-        String authHeader = session.getHeaders().get("authorization");
+        Map<String, String> headers = session.getHeaders();
+
+        // 1. Authorization Header (Case-insensitive)
+        String authHeader = headers.get("authorization");
+        if (authHeader == null) authHeader = headers.get("Authorization");
+
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            return authHeader.substring(7);
+            String token = authHeader.substring(7).trim();
+            if (!token.isEmpty() && !"undefined".equals(token) && !"null".equals(token)) {
+                return token;
+            }
         }
-        // Try cookies
+
+        // 2. Cookie (via NanoHTTPD CookieHandler)
         String sessionId = session.getCookies().read("sessionId");
         if (sessionId != null && !sessionId.isEmpty()) {
-            return sessionId;
+            return trimQuotes(sessionId);
         }
-        // Then query param (fallback)
-        return session.getParms().get("sessionId");
+
+        // 3. Manual Cookie Header parsing (fallback)
+        String cookieHeader = headers.get("cookie");
+        if (cookieHeader == null) cookieHeader = headers.get("Cookie");
+
+        if (cookieHeader != null) {
+            String[] cookies = cookieHeader.split(";");
+            for (String cookie : cookies) {
+                String[] parts = cookie.trim().split("=");
+                if (parts.length >= 2 && "sessionId".equalsIgnoreCase(parts[0])) {
+                    return trimQuotes(parts[1]);
+                }
+            }
+        }
+
+        // 4. Query Parameter (fallback)
+        String paramId = session.getParms().get("sessionId");
+        return (paramId != null && !paramId.isEmpty()) ? paramId : null;
+    }
+
+    private String trimQuotes(String val) {
+        if (val == null) return null;
+        val = val.trim();
+        if (val.startsWith("\"") && val.endsWith("\"") && val.length() >= 2) {
+            return val.substring(1, val.length() - 1);
+        }
+        return val;
     }
 
     private Response jsonResponse(Response.Status status, Object data) {
