@@ -84,10 +84,18 @@ public class DatabaseManager {
     }
 
     private void insertDefaultAdmin(Connection conn) throws SQLException {
-        String checkAdmin = "SELECT COUNT(*) FROM users WHERE username = 'admin'";
+        String checkAdmin = "SELECT id FROM users WHERE username = 'admin'";
         try (PreparedStatement pstmt = conn.prepareStatement(checkAdmin);
              ResultSet rs = pstmt.executeQuery()) {
-            if (rs.next() && rs.getInt(1) == 0) {
+            if (rs.next()) {
+                // Ensure admin is enabled and has correct password
+                String updateAdmin = "UPDATE users SET password_hash = ?, enabled = ? WHERE username = 'admin'";
+                try (PreparedStatement updatePstmt = conn.prepareStatement(updateAdmin)) {
+                    updatePstmt.setString(1, BCryptUtils.hashPassword("admin"));
+                    updatePstmt.setBoolean(2, true);
+                    updatePstmt.executeUpdate();
+                }
+            } else {
                 String insertAdmin = "INSERT INTO users (username, password_hash, role, enabled, created_at) " +
                         "VALUES (?, ?, ?, ?, ?)";
                 try (PreparedStatement insertPstmt = conn.prepareStatement(insertAdmin)) {
