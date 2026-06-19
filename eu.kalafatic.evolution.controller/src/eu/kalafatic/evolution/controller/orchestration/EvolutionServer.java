@@ -889,12 +889,14 @@ public class EvolutionServer extends NanoHTTPD {
     private Response handleGetForgeSessions() {
         JSONArray array = new JSONArray();
         for (eu.kalafatic.evolution.model.orchestration.ForgeSession s : ForgeSessionManager.getInstance().getSessions()) {
+            JSONObject uiState = ForgeSessionManager.getInstance().getUiState(s.getSessionId());
             array.put(new JSONObject()
                 .put("id", s.getSessionId())
                 .put("name", s.getName())
                 .put("modelType", s.getSelectedModelType())
                 .put("status", s.getStatus().getName())
-                .put("lastModified", s.getLastModified()));
+                .put("lastModified", s.getLastModified())
+                .put("uiState", uiState));
         }
         return newFixedLengthResponse(Response.Status.OK, "application/json", array.toString());
     }
@@ -969,9 +971,14 @@ public class EvolutionServer extends NanoHTTPD {
         String postData = files.get("postData");
         JSONObject body = new JSONObject(postData);
         String modelType = body.getString("modelType");
+        boolean isDemo = body.optBoolean("isDemo", false);
 
         eu.kalafatic.evolution.model.orchestration.ForgeSession s = ForgeSessionManager.getInstance().findSession(id);
         if (s == null) return newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "Session not found");
+
+        if (isDemo) {
+            ForgeSessionManager.getInstance().updateUiState(id, "isDemo", true);
+        }
 
         ForgeSessionManager.getInstance().generateArchitecture(s, modelType);
         return newFixedLengthResponse(Response.Status.OK, "application/json", "{\"status\": \"ok\"}");

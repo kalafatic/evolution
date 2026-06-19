@@ -87,6 +87,10 @@ public class ForgeSessionManager {
 
         orchestrator.getForgeSessions().add(session);
 
+        if (isDemo) {
+            updateUiState(session.getSessionId(), "isDemo", true);
+        }
+
         if (isDemo || modelType != null) {
             generateArchitecture(session, modelType);
         }
@@ -143,6 +147,9 @@ public class ForgeSessionManager {
         session.setLastModified(System.currentTimeMillis());
 
         updateWorkflowStatus(session.getSessionId(), "ARCH_GENERATED");
+        if (uiState.optBoolean("isDemo", false)) {
+            updateUiState(session.getSessionId(), "isDemo", true);
+        }
         publishEvent(session, RuntimeEventType.FORGE_MODEL_CHANGED, "ARCHITECTURE_GENERATED");
     }
 

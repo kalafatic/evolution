@@ -1142,30 +1142,56 @@
             const area = document.getElementById('viz-area');
             const details = document.getElementById('viz-details-content');
 
+            const session = sessions.find(s => s.id === activeSessionId);
+            const isDemo = session && (session.uiState && (session.uiState.isDemo === true || session.uiState.isDemo === 'true'));
+
             try {
                 if (currentViz === 'ARCHITECTURE') {
                     const res = await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/structure?runtime=SWT`);
+                    if (!res.ok) throw new Error("Fetch failed");
                     const data = await res.json();
                     renderArchitectureViz(data);
                 } else if (currentViz === 'DATASET') {
                     const statsRes = await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/dataset/stats?runtime=SWT`);
+                    if (!statsRes.ok) throw new Error("Fetch failed");
                     const stats = await statsRes.json();
                     const sampleRes = await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/dataset/sample/${currentSampleIndex}?runtime=SWT`);
+                    if (!sampleRes.ok) throw new Error("Fetch failed");
                     const sample = await sampleRes.json();
                     renderDatasetViz(stats, sample);
                 } else if (currentViz === 'TRAINING') {
                     const metricsRes = await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/training/metrics?runtime=SWT`);
+                    if (!metricsRes.ok) throw new Error("Fetch failed");
                     const metrics = await metricsRes.json();
                     const eventsRes = await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/training/events?runtime=SWT`);
+                    if (!eventsRes.ok) throw new Error("Fetch failed");
                     const events = await eventsRes.json();
                     renderTrainingViz(metrics, events);
                 } else if (currentViz === 'EVOLUTION') {
                     const res = await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/snapshots?runtime=SWT`);
+                    if (!res.ok) throw new Error("Fetch failed");
                     const snapshots = await res.json();
                     renderEvolutionViz(snapshots);
                 }
             } catch (e) {
-                area.innerHTML = `<div style="padding:20px; color:var(--error)">Error loading visualization: ${e.message}</div>`;
+                if (isDemo) {
+                    renderDemoFallback();
+                } else {
+                    area.innerHTML = `<div style="padding:20px; color:var(--error)">Error loading visualization: ${e.message}</div>`;
+                }
+            }
+        }
+
+        function renderDemoFallback() {
+            const area = document.getElementById('viz-area');
+            if (currentViz === 'TRAINING') {
+                renderTrainingViz({ loss: '0.2451', acc: '0.8920' }, ['Demo started', 'Data loaded', 'Batch 100 processing...']);
+            } else if (currentViz === 'ARCHITECTURE') {
+                renderArchitectureViz(model);
+            } else if (currentViz === 'DATASET') {
+                renderDatasetViz({ size: 10000, vocab: 5000 }, { raw: "This is a demo sample text for visualization fallback.", tokens: [1, 4, 12, 5, 2] });
+            } else {
+                area.innerHTML = `<div style="padding:20px; color:var(--accent)">[DEMO MODE] Visualization simulation active.</div>`;
             }
         }
 
@@ -1495,8 +1521,35 @@
             log(`Loading ${type} template into current session...`);
             await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/generate-architecture?runtime=SWT`, {
                 method: 'POST',
-                body: JSON.stringify({ modelType: type })
+                body: JSON.stringify({ modelType: type, isDemo: true })
             });
+            startDemoAnimation();
+        }
+
+        async function startDemoAnimation() {
+            log("Starting demo flow simulation...");
+            const delay = 2000;
+
+            setTimeout(async () => {
+                log("Demo: Reviewing properties...");
+                await persistUiState('forge.workflow.status', 'ARCH_GENERATED'); // Already set but for UI
+                await fetchModel(activeSessionId);
+
+                setTimeout(async () => {
+                    log("Demo: Confirming properties...");
+                    await confirmProperties();
+
+                    setTimeout(async () => {
+                        log("Demo: Selecting dataset...");
+                        await onDatasetSelect('mnist');
+
+                        setTimeout(async () => {
+                            log("Demo: Starting training...");
+                            await startTraining();
+                        }, delay);
+                    }, delay);
+                }, delay);
+            }, delay);
         }
 
         async function createNewSessionWithTemplate(type) {
