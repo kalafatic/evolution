@@ -288,18 +288,29 @@ public class DarwinVariantSpawner {
           .append("  },\n");
 
         if (isMediated) {
+            sb.append("🔴 MEDIATED MODE: DUAL-GENOME EVOLUTION DIRECTIVE\n\n")
+              .append("Your primary organism is the MEDIATION EXPORT PACKAGE.\n")
+              .append("You are evolving two independent genomes:\n")
+              .append("Genome A: The Prompt (instructional strategy for the external LLM).\n")
+              .append("Genome B: The Package (selected files, architectural summaries, and metadata).\n\n")
+              .append("ITERATIVE MUTATION RULES:\n")
+              .append("- Mutate the prompt wording, task framing, and implementation guidance.\n")
+              .append("- Mutate the file selection: add, remove, or replace files and summaries.\n")
+              .append("- Optimize for: Maximum Understanding ÷ Minimum Context.\n")
+              .append("- Use the provided candidate files list as your primary search space.\n\n");
+
             schemaSb.append("  \"mediation_candidate\": {\n")
-              .append("    \"prompt\": \"(The optimized prompt for the external LLM)\",\n")
-              .append("    \"selected_files\": [\"(Select 8-16 key files from the candidate list)\"],\n")
-              .append("    \"architecture_summary\": \"(Concise architecture mapping)\",\n")
+              .append("    \"prompt\": \"(Genome A: The optimized prompt for the external LLM)\",\n")
+              .append("    \"selected_files\": [\"(Genome B: Select 8-16 key files from the candidate list)\"],\n")
+              .append("    \"architecture_summary\": \"(Genome B: Concise architecture mapping)\",\n")
               .append("    \"subsystems\": [\n")
               .append("      { \"id\": \"s1\", \"name\": \"Subsystem Name\", \"purpose\": \"Subsystem Purpose\", \"description\": \"...\", \"boundaries\": [\"...\"], \"critical_files\": [\"...\"], \"responsibilities\": [\"...\"] }\n")
               .append("    ],\n")
               .append("    \"architectural_facts\": [\n")
               .append("      { \"id\": \"f1\", \"subject\": \"...\", \"predicate\": \"...\", \"description\": \"...\", \"confidence\": 1.0, \"evidence\": [\"...\"] }\n")
               .append("    ],\n")
-              .append("    \"dependencies\": \"(Key module relationships and third-party deps)\",\n")
-              .append("    \"execution_instructions\": \"(Specific instructions for the external LLM)\",\n")
+              .append("    \"dependencies\": \"(Genome B: Key module relationships and third-party deps)\",\n")
+              .append("    \"execution_instructions\": \"(Genome B: Specific instructions for the external LLM)\",\n")
               .append("    \"evaluation\": \"(Self-evaluation of this candidate's quality)\"\n")
               .append("  },\n");
         }
@@ -508,18 +519,29 @@ public class DarwinVariantSpawner {
           .append("  },\n");
 
         if (isMediated) {
+            sb.append("🔴 MEDIATED MODE: DUAL-GENOME EVOLUTION DIRECTIVE\n\n")
+              .append("Your primary organism is the MEDIATION EXPORT PACKAGE.\n")
+              .append("You are evolving two independent genomes:\n")
+              .append("Genome A: The Prompt (instructional strategy for the external LLM).\n")
+              .append("Genome B: The Package (selected files, architectural summaries, and metadata).\n\n")
+              .append("ITERATIVE MUTATION RULES:\n")
+              .append("- Mutate the prompt wording, task framing, and implementation guidance.\n")
+              .append("- Mutate the file selection: add, remove, or replace files and summaries.\n")
+              .append("- Optimize for: Maximum Understanding ÷ Minimum Context.\n")
+              .append("- Use the provided candidate files list as your primary search space.\n\n");
+
             sb.append("  \"mediation_candidate\": {\n")
-              .append("    \"prompt\": \"(The optimized prompt for the external LLM)\",\n")
-              .append("    \"selected_files\": [\"(Select 8-16 key files from the candidate list)\"],\n")
-              .append("    \"architecture_summary\": \"(Concise architecture mapping)\",\n")
+              .append("    \"prompt\": \"(Genome A: The optimized prompt for the external LLM)\",\n")
+              .append("    \"selected_files\": [\"(Genome B: Select 8-16 key files from the candidate list)\"],\n")
+              .append("    \"architecture_summary\": \"(Genome B: Concise architecture mapping)\",\n")
               .append("    \"subsystems\": [\n")
               .append("      { \"id\": \"s1\", \"name\": \"Subsystem Name\", \"purpose\": \"Subsystem Purpose\", \"description\": \"...\", \"boundaries\": [\"...\"], \"critical_files\": [\"...\"], \"responsibilities\": [\"...\"] }\n")
               .append("    ],\n")
               .append("    \"architectural_facts\": [\n")
               .append("      { \"id\": \"f1\", \"subject\": \"...\", \"predicate\": \"...\", \"description\": \"...\", \"confidence\": 1.0, \"evidence\": [\"...\"] }\n")
               .append("    ],\n")
-              .append("    \"dependencies\": \"(Key module relationships and third-party deps)\",\n")
-              .append("    \"execution_instructions\": \"(Specific instructions for the external LLM)\",\n")
+              .append("    \"dependencies\": \"(Genome B: Key module relationships and third-party deps)\",\n")
+              .append("    \"execution_instructions\": \"(Genome B: Specific instructions for the external LLM)\",\n")
               .append("    \"evaluation\": \"(Self-evaluation of this candidate's quality)\"\n")
               .append("  },\n");
         }

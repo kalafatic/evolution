@@ -1718,6 +1718,12 @@ public class IterationManager {
             // POPULATE NEW FIELDS FROM METADATA/HISTORY
             if (model != null) {
                 model.getMetadata().put("sessionId", sessionId);
+                model.getMetadata().put("optimizedPrompt", optimizedPrompt);
+
+                // Ensure model has the selected files for Genome B evolution
+                model.getSelectedFiles().clear();
+                model.getSelectedFiles().addAll(selectedPaths);
+
                 Object impacts = context.getOrchestrationState().getMetadata().get("impactPaths");
                 if (impacts instanceof List) model.getImpactPaths().addAll((List<String>) impacts);
 

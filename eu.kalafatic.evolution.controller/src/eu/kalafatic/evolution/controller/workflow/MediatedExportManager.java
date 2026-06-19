@@ -41,6 +41,11 @@ public class MediatedExportManager {
         File zipFile = new File(targetDir, fileName);
 
         try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(zipFile))) {
+            // Genome A: The Optimized Prompt
+            String prompt = (String) model.getMetadata().get("optimizedPrompt");
+            if (prompt == null) prompt = "Analyze the provided project context.";
+            addStringToZip(zos, "prompt.md", prompt);
+
             addRootReadme(zos, model, profile);
 
             if (profile == ExportProfile.FULL || profile == ExportProfile.ARCHITECTURE) {
