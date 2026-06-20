@@ -133,6 +133,9 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         context.log("Stage: Goal\nGoal: " + goal);
         context.log("[DARWIN] Generating trajectory-driven variants for goal: " + goal);
 
+        // ADAPTIVE KERNEL: Uniform Intensity Calculation
+        int intensity = eu.kalafatic.evolution.controller.kernel.EvolutionIntensityCalculator.calculate(context, trajectory, pressure);
+
         AtomicIntentAnalysis atomicAnalysis = (AtomicIntentAnalysis) context.getOrchestrationState().getMetadata().get("atomicAnalysis");
         if (context != null) {
             context.log("Stage: Intent Analysis\nAtomic: " + (atomicAnalysis != null && atomicAnalysis.isAtomic()) + "\nTarget: " + (atomicAnalysis != null ? atomicAnalysis.getTargetArtifact() : "none"));
@@ -313,12 +316,17 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             }
         }
 
+        // 2. Population Scaling based on Evolution Intensity
         int branchingLimit = 3; // Default Balanced
-        if (expansionValue <= 3) branchingLimit = 2; // Conservative
-        else if (expansionValue >= 8) branchingLimit = 4; // Experimental
+        if (intensity == 1) branchingLimit = 1;
+        else if (intensity == 2) branchingLimit = Math.min(2, expansionValue <= 3 ? 1 : 2);
+        else if (expansionValue <= 3) branchingLimit = 2;
+        else if (expansionValue >= 8) branchingLimit = 4;
 
         // Scale by model capability if extremely low
         if (modelCapability < 0.4) branchingLimit = Math.min(branchingLimit, 2);
+
+        context.log("[DARWIN] Adaptive Kernel Intensity: " + intensity + ". Population Target: " + branchingLimit);
 
         // 1. MULTI-LINEAGE RETRIEVAL: Retrieve both ACTIVE and KEPT survivors (Milestone Requirement)
         List<IterationRecord> survivors = records.stream()
@@ -376,6 +384,12 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         String lineageContext = lineageBuilder.toString();
 
         List<JSONObject> uniqueVariants = new ArrayList<>();
+
+        // ADAPTIVE CAPABILITIES
+        boolean architectureEnabled = intensity >= 3;
+        boolean implementationEnabled = intensity >= 2;
+        BranchVariant.ReasoningLevel reasoningLevel = intensity == 1 ? BranchVariant.ReasoningLevel.MINIMAL :
+                                                      intensity == 4 ? BranchVariant.ReasoningLevel.DEEP : BranchVariant.ReasoningLevel.BALANCED;
         StringBuilder siblingMemoryBuilder = new StringBuilder();
 
         EvolutionTree tree = context.getKernelContext().getMemoryService().getEvolutionTree();
@@ -421,6 +435,9 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
                         JSONObject variant = spawner.spawnSingleBlueprint(goal, bp, basePrompt, fullLineagePrompt + lineageContext, rejectedSiblings, siblingMemoryBuilder.toString(), isMediated, context);
 
                         if (variant != null) {
+                            variant.put("reasoning_level", reasoningLevel.name());
+                            variant.put("architecture_enabled", architectureEnabled);
+                            variant.put("implementation_enabled", implementationEnabled);
                             // LIFECYCLE: PLANNED
                             EvolutionProgressPublisher.updateBranchStatus(context, bp.getId(), bp.getPhilosophy(), "planned", null);
 
@@ -570,6 +587,9 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         v.setLineageId(context.getSessionId());
         v.setActivationState(BranchVariant.ActivationState.ARCHIVED);
         v.setStrategyType(obj.optString("strategy_type", "UNKNOWN"));
+        v.setReasoningLevel(BranchVariant.ReasoningLevel.valueOf(obj.optString("reasoning_level", "BALANCED")));
+        v.setArchitectureEnabled(obj.optBoolean("architecture_enabled", true));
+        v.setImplementationEnabled(obj.optBoolean("implementation_enabled", true));
         v.setStrategy(obj.optString("strategy", "unknown"));
         v.setSemanticAnchor(obj.optString("semantic_anchor", v.getStrategy()));
         v.setMutationTrace("Generated in trajectory round.");

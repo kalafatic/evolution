@@ -20,11 +20,20 @@ public class BranchVariant {
         ARCHIVED
     }
 
+    public enum ReasoningLevel {
+        MINIMAL,
+        BALANCED,
+        DEEP
+    }
+
     private String id;
     private String branchName;
     private List<String> changedFiles = new ArrayList<>();
     private String strategy; // description of approach
     private String strategyType; // IMPLEMENTATION, ANALYTICAL, CURIOSITY, STABILIZATION, EXPLORATION
+    private ReasoningLevel reasoningLevel = ReasoningLevel.BALANCED;
+    private boolean architectureEnabled = true;
+    private boolean implementationEnabled = true;
     private List<String> selectedFiles = new ArrayList<>();
     private String reasoningFocus;
     private List<Action> actions = new ArrayList<>();
@@ -70,6 +79,15 @@ public class BranchVariant {
 
     public String getStrategyType() { return strategyType; }
     public void setStrategyType(String strategyType) { this.strategyType = strategyType; }
+
+    public ReasoningLevel getReasoningLevel() { return reasoningLevel; }
+    public void setReasoningLevel(ReasoningLevel reasoningLevel) { this.reasoningLevel = reasoningLevel; }
+
+    public boolean isArchitectureEnabled() { return architectureEnabled; }
+    public void setArchitectureEnabled(boolean architectureEnabled) { this.architectureEnabled = architectureEnabled; }
+
+    public boolean isImplementationEnabled() { return implementationEnabled; }
+    public void setImplementationEnabled(boolean implementationEnabled) { this.implementationEnabled = implementationEnabled; }
 
     public double getScore() { return score; }
     public void setScore(double score) { this.score = score; }

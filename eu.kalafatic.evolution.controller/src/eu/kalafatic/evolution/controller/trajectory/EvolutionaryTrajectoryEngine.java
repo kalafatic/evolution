@@ -56,12 +56,22 @@ public class EvolutionaryTrajectoryEngine {
      * Determines the next phase based on trajectory stability and progression rules.
      */
     public EvolutionPhase determineNextPhase(EvolutionPhase current, Trajectory trajectory, TaskContext context) {
-        // Compute pressure for informed decision making
+        // 1. Compute pressure for informed decision making
         EvolutionaryPressureVector pressure = null;
         if (trajectory != null) {
             pressure = pressureEngine.analyze(trajectory, context);
         }
 
+        // 2. ADAPTIVE KERNEL: Phase selection based on Evolution Intensity
+        int intensity = eu.kalafatic.evolution.controller.kernel.EvolutionIntensityCalculator.calculate(context, trajectory, pressure);
+
+        EvolutionPhase nextCandidate = phaseMachine.next(current);
+        while (nextCandidate != null && getMinimumIntensity(nextCandidate) > intensity && nextCandidate.ordinal() < EvolutionPhase.FINAL_SYNTHESIS.ordinal()) {
+            context.log("[EVOLUTION] Skipping phase " + nextCandidate + " (Min intensity " + getMinimumIntensity(nextCandidate) + " > current " + intensity + ")");
+            nextCandidate = phaseMachine.next(nextCandidate);
+        }
+
+        // 3. Early Convergence
         if (stabilityAnalyzer.isConverged(trajectory, context, pressure)) {
              // If converged, we can skip to FINAL_SYNTHESIS if not already there or further
              if (current.ordinal() < EvolutionPhase.FINAL_SYNTHESIS.ordinal()) {
@@ -70,10 +80,10 @@ public class EvolutionaryTrajectoryEngine {
              }
         }
 
+        // 4. Progression Decision
         if (stabilityAnalyzer.shouldProgress(current, trajectory, context, pressure)) {
-            EvolutionPhase next = phaseMachine.next(current);
-            context.log("[EVOLUTION] Progression allowed. Next phase: " + next);
-            return next;
+            context.log("[EVOLUTION] Progression allowed. Next phase: " + nextCandidate);
+            return nextCandidate;
         } else {
             context.log("[EVOLUTION] Stability not yet reached. Recursing in phase: " + current);
             return current;
@@ -82,5 +92,19 @@ public class EvolutionaryTrajectoryEngine {
 
     public StabilityAnalyzer getStabilityAnalyzer() {
         return stabilityAnalyzer;
+    }
+
+    private int getMinimumIntensity(EvolutionPhase phase) {
+        switch (phase) {
+            case INTENT_EXPANSION: return 1;
+            case ARCHITECTURE_VARIANTS: return 3;
+            case SELECTION_REFINEMENT: return 2;
+            case IMPLEMENTATION_PLAN: return 2;
+            case FINAL_SYNTHESIS: return 1;
+            case DESIGN_SATISFIED: return 3;
+            case TERMINAL_SUCCESS: return 1;
+            case TERMINAL_FAILURE: return 1;
+            default: return 1;
+        }
     }
 }
