@@ -301,6 +301,12 @@
             content: '✓';
         }
 
+        .highlight-focus {
+            box-shadow: 0 0 10px 2px var(--accent);
+            border: 2px solid var(--accent) !important;
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+
         /* Timeline */
         .timeline-item {
             padding: 10px;
@@ -411,11 +417,12 @@
                 </svg>
 
                 <div id="palette-context-menu">
-                    <div class="menu-item" onclick="loadTemplate('NEURON')">Load Neuron Demo</div>
-                    <div class="menu-item" onclick="loadTemplate('MLP')">Load MLP Demo</div>
-                    <div class="menu-item" onclick="loadTemplate('CNN')">Load CNN Demo</div>
-                    <div class="menu-item" onclick="loadTemplate('TRANSFORMER')">Load Transformer Demo</div>
-                    <div class="menu-item" onclick="loadTemplate('LLM')">Load LLM Demo</div>
+                    <div style="padding: 5px 12px; font-weight: bold; font-size: 0.9em; border-bottom: 1px solid var(--border); color: var(--text-dim);">DEMO TEMPLATES</div>
+                    <div class="menu-item" onclick="loadTemplate('NEURON')">🎁 Load Neuron Demo</div>
+                    <div class="menu-item" onclick="loadTemplate('MLP')">🎁 Load MLP Demo</div>
+                    <div class="menu-item" onclick="loadTemplate('CNN')">🎁 Load CNN Demo</div>
+                    <div class="menu-item" onclick="loadTemplate('TRANSFORMER')">🎁 Load Transformer Demo</div>
+                    <div class="menu-item" onclick="loadTemplate('LLM')">🎁 Load LLM Demo</div>
                 </div>
 
                 <textarea id="json-fallback"></textarea>
@@ -546,6 +553,13 @@
             <!-- OBSERVABILITY PANEL -->
             <div class="panel" style="flex-grow: 1; border-bottom: none;">
                 <h3>Observability</h3>
+                <div id="training-progress-container" style="display:none; margin-bottom: 10px;">
+                    <div style="font-size: 0.75em; color: var(--text-dim); margin-bottom: 4px;">TRAINING PROGRESS</div>
+                    <div style="height: 10px; background: #eee; border-radius: 5px; overflow: hidden; border: 1px solid var(--border);">
+                        <div id="training-progress-bar" style="width: 0%; height: 100%; background: var(--accent); transition: width 0.3s;"></div>
+                    </div>
+                    <div id="training-progress-text" style="font-size: 0.7em; text-align: right; margin-top: 2px;">0%</div>
+                </div>
                 <div style="font-size: 0.8em; margin-bottom: 10px;">
                     <div style="display: flex; justify-content: space-between;">
                         <span>Loss:</span> <span id="metric-loss" style="color: var(--accent);">--</span>
@@ -753,7 +767,16 @@
 
             // UI locking based on workflow
             document.getElementById('confirm-props-btn').disabled = (currentIndex !== 1 && currentIndex !== 0);
+            document.getElementById('dataset-selector').disabled = (currentIndex < 2);
             document.getElementById('train-btn').disabled = (currentIndex < 3);
+
+            // Highlight properties panel if review is mandatory
+            const propPanel = document.getElementById('properties-panel');
+            if (status === 'ARCH_GENERATED' || status === 'START' && model.nodes.length > 0) {
+                propPanel.classList.add('highlight-focus');
+            } else {
+                propPanel.classList.remove('highlight-focus');
+            }
         }
 
         async function updateModelPropertiesUI() {
@@ -1007,6 +1030,7 @@
             isTraining = true;
             document.getElementById('train-btn').disabled = true;
             document.getElementById('stop-btn').disabled = false;
+            document.getElementById('training-progress-container').style.display = 'block';
             log("Training started...");
 
             await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/uistate/forge.workflow.status?runtime=SWT`, {
@@ -1021,32 +1045,6 @@
             if (session) session.status = 'TRAINING';
             updateGuidance();
             await fetchModel(activeSessionId);
-
-            // Mock metrics
-            let epoch = 0;
-            const interval = setInterval(async () => {
-                if (!isTraining) {
-                    clearInterval(interval);
-                    return;
-                }
-                epoch++;
-                const loss = (1.0 / (1 + epoch * 0.1)).toFixed(4);
-                const acc = (0.5 + (0.45 * (1 - 1/(1+epoch)))).toFixed(4);
-                document.getElementById('metric-loss').textContent = loss;
-                document.getElementById('metric-acc').textContent = acc;
-                if (epoch % 5 === 0) log(`Epoch ${epoch}: loss=${loss}, acc=${acc}`);
-
-                if (epoch >= 20) {
-                     isTraining = false;
-                     clearInterval(interval);
-                     log("Training completed automatically.");
-                     await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/uistate/forge.workflow.status?runtime=SWT`, {
-                        method: 'POST',
-                        body: JSON.stringify({ value: 'TRAINING_COMPLETED' })
-                     });
-                     await fetchModel(activeSessionId);
-                }
-            }, 1000);
         }
 
         function stopTraining() {
@@ -1378,6 +1376,13 @@
                 case 'EVOLUTION_PROGRESS':
                     // Training simulation updates via viz
                     refreshViz();
+                    // Update progress bar
+                    if (event.action && event.action.startsWith("DEMO_TRAINING_PROGRESS_")) {
+                        const step = parseInt(event.action.substring("DEMO_TRAINING_PROGRESS_".length));
+                        const percent = Math.min(100, (step + 1) * 20);
+                        document.getElementById('training-progress-bar').style.width = percent + '%';
+                        document.getElementById('training-progress-text').textContent = percent + '%';
+                    }
                     break;
                 case 'EXPORT_READY':
                     setLinksAnimating(false);
@@ -1400,10 +1405,10 @@
             }
         }
 
-        // Simple poll for demo events if no real-time bus
+        // Simple poll for events
         let lastProcessedEventTime = 0;
         setInterval(async () => {
-            if (document.getElementById('demo-panel').style.display === 'block') {
+            if (activeSessionId) {
                  // In a real system, we'd listen to the EventBus. Here we poll a recent events endpoint.
                  try {
                      const res = await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/events?runtime=SWT`);

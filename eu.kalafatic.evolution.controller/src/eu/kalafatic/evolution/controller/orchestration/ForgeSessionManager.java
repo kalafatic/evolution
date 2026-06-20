@@ -24,6 +24,7 @@ public class ForgeSessionManager {
     private static ForgeSessionManager instance;
     private Orchestrator orchestrator;
     private final java.util.Map<String, List<RuntimeEvent>> eventBuffer = new java.util.concurrent.ConcurrentHashMap<>();
+    private final AutomaticArchitectureGenerator architectureGenerator = new AutomaticArchitectureGenerator();
 
     private ForgeSessionManager() {}
 
@@ -104,40 +105,11 @@ public class ForgeSessionManager {
         String currentParams = session.getModelState().getHyperparameters();
         JSONObject uiState = (currentParams != null && !currentParams.isEmpty() && !currentParams.equals("{}")) ? new JSONObject(currentParams) : new JSONObject();
 
-        String graph = "{}";
-        JSONObject defaults = new JSONObject();
-
-        switch (modelType != null ? modelType.toUpperCase() : "") {
-            case "NEURON":
-                graph = "{\"nodes\":[{\"id\":\"n1\",\"name\":\"input_1\",\"type\":\"NEURON\",\"x\":100,\"y\":100},{\"id\":\"n2\",\"name\":\"bias\",\"type\":\"NEURON\",\"x\":100,\"y\":200},{\"id\":\"n3\",\"name\":\"output\",\"type\":\"NEURON\",\"x\":300,\"y\":150}],\"links\":[{\"source\":\"n1\",\"target\":\"n3\"},{\"source\":\"n2\",\"target\":\"n3\"}]}";
-                defaults.put("lr", 0.01).put("optimizer", "sgd").put("epochs", 10);
-                break;
-            case "MLP":
-                int layers = uiState.optInt("layers", 1);
-                int hiddenSize = uiState.optInt("hidden_size", 64);
-                graph = generateMlpGraphJson(layers, hiddenSize);
-                defaults.put("layers", layers).put("hidden_size", hiddenSize).put("activation", "relu").put("lr", 0.001).put("batch", 32).put("optimizer", "adam").put("epochs", 20);
-                break;
-            case "CNN":
-                int filters = uiState.optInt("filters", 32);
-                graph = "{\"nodes\":[{\"id\":\"c1\",\"name\":\"conv_2d_" + filters + "\",\"type\":\"LAYER\",\"x\":100,\"y\":100},{\"id\":\"c2\",\"name\":\"max_pool\",\"type\":\"LAYER\",\"x\":100,\"y\":200},{\"id\":\"c3\",\"name\":\"flatten\",\"type\":\"LAYER\",\"x\":300,\"y\":100},{\"id\":\"c4\",\"name\":\"dense_out\",\"type\":\"LAYER\",\"x\":300,\"y\":200}],\"links\":[{\"source\":\"c1\",\"target\":\"c2\"},{\"source\":\"c2\",\"target\":\"c3\"},{\"source\":\"c3\",\"target\":\"c4\"}]}";
-                defaults.put("filters", filters).put("kernel_size", 3).put("lr", 0.001).put("batch", 64).put("optimizer", "adam").put("epochs", 15);
-                break;
-            case "TRANSFORMER":
-                int tLayers = uiState.optInt("layers", 6);
-                int heads = uiState.optInt("heads", 8);
-                graph = "{\"nodes\":[{\"id\":\"t1\",\"name\":\"embedding\",\"type\":\"LAYER\",\"x\":50,\"y\":200},{\"id\":\"t2\",\"name\":\"attn_" + heads + "heads_x" + tLayers + "\",\"type\":\"ATTENTION\",\"x\":200,\"y\":200},{\"id\":\"t3\",\"name\":\"ffn_1\",\"type\":\"LAYER\",\"x\":350,\"y\":200},{\"id\":\"t4\",\"name\":\"head\",\"type\":\"LAYER\",\"x\":500,\"y\":200}],\"links\":[{\"source\":\"t1\",\"target\":\"t2\"},{\"source\":\"t2\",\"target\":\"t3\"},{\"source\":\"t3\",\"target\":\"t4\"}]}";
-                defaults.put("heads", heads).put("d_model", 512).put("layers", tLayers).put("lr", 0.0001).put("batch", 16).put("optimizer", "adam").put("epochs", 10);
-                break;
-            case "LLM":
-                int llmLayers = uiState.optInt("layers", 12);
-                graph = "{\"nodes\":[{\"id\":\"l1\",\"name\":\"tokenizer\",\"type\":\"CUSTOM\",\"x\":50,\"y\":250},{\"id\":\"l2\",\"name\":\"embeddings\",\"type\":\"LAYER\",\"x\":150,\"y\":250},{\"id\":\"l3\",\"name\":\"blocks_x" + llmLayers + "\",\"type\":\"TRANSFORMER\",\"x\":300,\"y\":250},{\"id\":\"l4\",\"name\":\"norm\",\"type\":\"LAYER\",\"x\":450,\"y\":250},{\"id\":\"l5\",\"name\":\"head\",\"type\":\"LAYER\",\"x\":600,\"y\":250}],\"links\":[{\"source\":\"l1\",\"target\":\"l2\"},{\"source\":\"l2\",\"target\":\"l3\"},{\"source\":\"l3\",\"target\":\"l4\"},{\"source\":\"l4\",\"target\":\"l5\"}]}";
-                defaults.put("vocab_size", 32000).put("context_length", 2048).put("layers", llmLayers).put("heads", 12).put("lr", 0.00005).put("batch", 8).put("optimizer", "adam").put("epochs", 5);
-                break;
-        }
-        session.getModelState().setModelGraph(graph);
+        AutomaticArchitectureGenerator.ArchitectureResult result = architectureGenerator.generate(modelType, uiState);
+        session.getModelState().setModelGraph(result.graph);
 
         // Merge with existing uiState to preserve workflow status
+        JSONObject defaults = result.defaults;
         for (Object keyObj : uiState.keySet()) {
             String key = (String) keyObj;
             if (!defaults.has(key)) defaults.put(key, uiState.get(key));
@@ -151,28 +123,6 @@ public class ForgeSessionManager {
             updateUiState(session.getSessionId(), "isDemo", true);
         }
         publishEvent(session, RuntimeEventType.FORGE_MODEL_CHANGED, "ARCHITECTURE_GENERATED");
-    }
-
-    private String generateMlpGraphJson(int layers, int hiddenSize) {
-        org.json.JSONArray nodes = new org.json.JSONArray();
-        org.json.JSONArray links = new org.json.JSONArray();
-
-        JSONObject inputNode = new JSONObject().put("id", "m_in").put("name", "input").put("type", "LAYER").put("x", 50).put("y", 150);
-        nodes.put(inputNode);
-
-        String lastId = "m_in";
-        for (int i = 0; i < layers; i++) {
-            String currentId = "m_h" + i;
-            nodes.put(new JSONObject().put("id", currentId).put("name", "hidden_" + (i+1) + " (" + hiddenSize + ")").put("type", "LAYER").put("x", 200 + i * 150).put("y", 150));
-            links.put(new JSONObject().put("source", lastId).put("target", currentId));
-            lastId = currentId;
-        }
-
-        String outputId = "m_out";
-        nodes.put(new JSONObject().put("id", outputId).put("name", "output").put("type", "LAYER").put("x", 200 + layers * 150).put("y", 150));
-        links.put(new JSONObject().put("source", lastId).put("target", outputId));
-
-        return new JSONObject().put("nodes", nodes).put("links", links).toString();
     }
 
     public boolean deleteSession(String sessionId) {
@@ -243,22 +193,29 @@ public class ForgeSessionManager {
             JSONObject json = (current != null && !current.isEmpty() && !current.equals("{}")) ? new JSONObject(current) : new JSONObject();
 
             // Try to parse number if possible for hyperparameters
+            Object finalValue = value;
             if (value instanceof String) {
                 try {
                     if (((String) value).contains(".")) {
-                        json.put(key, Double.parseDouble((String) value));
+                        finalValue = Double.parseDouble((String) value);
                     } else {
-                        json.put(key, Integer.parseInt((String) value));
+                        finalValue = Integer.parseInt((String) value);
                     }
                 } catch (NumberFormatException e) {
-                    json.put(key, value);
+                    // Stay as string
                 }
-            } else {
-                json.put(key, value);
             }
+            json.put(key, finalValue);
 
             session.getModelState().setHyperparameters(json.toString());
             session.setLastModified(System.currentTimeMillis());
+
+            // If structural property changed, regenerate architecture
+            java.util.List<String> structuralProps = java.util.Arrays.asList("layers", "hidden_size", "filters", "heads", "vocab_size", "context_length", "d_model", "kernel_size");
+            if (structuralProps.contains(key)) {
+                generateArchitecture(session, session.getSelectedModelType());
+            }
+
             publishEvent(session, RuntimeEventType.UI_STATE_UPDATED, "UI_STATE_UPDATED");
         }
     }
