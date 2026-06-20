@@ -19,6 +19,7 @@ import eu.kalafatic.evolution.controller.agents.PlannerAgent;
 import eu.kalafatic.evolution.controller.agents.RealityDiscoveryAgent;
 import eu.kalafatic.evolution.controller.agents.StructureAgent;
 import eu.kalafatic.evolution.controller.kernel.AuthorityEngine;
+import eu.kalafatic.evolution.controller.kernel.EvolutionExecutionProfile;
 import eu.kalafatic.evolution.controller.kernel.BranchManager;
 import eu.kalafatic.evolution.controller.kernel.DefaultAuthorityEngine;
 import eu.kalafatic.evolution.controller.kernel.DefaultBranchManager;

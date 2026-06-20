@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import eu.kalafatic.evolution.controller.kernel.EvolutionExecutionProfile;
 import eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent;
 import eu.kalafatic.evolution.controller.orchestration.diagnostics.CognitiveTrace;
 import eu.kalafatic.evolution.controller.orchestration.workspace.SemanticWorkspace;
@@ -31,6 +32,7 @@ public class OrchestrationState {
     private List<String> rejectionHistory = new ArrayList<>();
     private long bitState = 0;
     private String currentPhase;
+    private EvolutionExecutionProfile executionProfile;
     private SemanticWorkspace semanticWorkspace;
     private CognitiveTrace cognitiveTrace;
     private final String sessionId;
@@ -131,6 +133,14 @@ public class OrchestrationState {
 
     public void setCurrentPhase(String currentPhase) {
         this.currentPhase = currentPhase;
+    }
+
+    public EvolutionExecutionProfile getExecutionProfile() {
+        return executionProfile;
+    }
+
+    public void setExecutionProfile(EvolutionExecutionProfile executionProfile) {
+        this.executionProfile = executionProfile;
     }
 
     public SemanticWorkspace getSemanticWorkspace() {
