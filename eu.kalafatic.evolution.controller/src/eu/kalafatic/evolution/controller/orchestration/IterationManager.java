@@ -476,7 +476,7 @@ public class IterationManager {
 
 
             // ADAPTIVE KERNEL: Intensity-based analysis gating
-            int intensity = eu.kalafatic.evolution.controller.kernel.EvolutionIntensityCalculator.calculate(context, getActiveTrajectory(context), null);
+            int intensity = context.getExecutionProfile().getIntensity();
             EvolutionAssessment initialAssessment = null;
 
             if (intensity > 1) {
@@ -642,7 +642,7 @@ public class IterationManager {
 
     public OrchestratorResponse evolve(String request, TaskContext context, EvolutionAssessment initialAssessment) throws Exception {
         // ADAPTIVE KERNEL: Intensity-based phase pre-selection
-        int intensity = eu.kalafatic.evolution.controller.kernel.EvolutionIntensityCalculator.calculate(context, getActiveTrajectory(context), null);
+        int intensity = context.getExecutionProfile().getIntensity();
         if (intensity == 1 && context.getOrchestrationState().getCurrentPhase() == null) {
             context.log("[KERNEL] Low Intensity detected. Jumping directly to FINAL_SYNTHESIS.");
             context.getOrchestrationState().setCurrentPhase(EvolutionPhaseMachine.toLegacyString(EvolutionPhase.FINAL_SYNTHESIS));
@@ -679,7 +679,7 @@ public class IterationManager {
         }
 
         // 2. ADAPTIVE KERNEL: Intensity Scaling
-        int intensity_val = eu.kalafatic.evolution.controller.kernel.EvolutionIntensityCalculator.calculate(context, getActiveTrajectory(context), null);
+        int intensity_val = context.getExecutionProfile().getIntensity();
 
         int maxIterationsLimit = 20; // Default Medium
         if (intensity_val == 1) maxIterationsLimit = 1; // Strict 1 for chat
@@ -765,7 +765,7 @@ public class IterationManager {
                 summary = "Evolution completed (Test Mode).";
             } else {
                 // ADAPTIVE KERNEL: Use winning trajectory mutation trace for simple responses
-                int intensity_res = eu.kalafatic.evolution.controller.kernel.EvolutionIntensityCalculator.calculate(context, getActiveTrajectory(context), null);
+                int intensity_res = context.getExecutionProfile().getIntensity();
 
                 if (intensity_res == 1) {
                     IterationRecord winner = context.getKernelContext().getMemoryService().getRecords().stream()
@@ -843,6 +843,13 @@ public class IterationManager {
             transition(SystemState.INIT, context);
         }
 
+        // ADAPTIVE KERNEL: Freshly calculate iteration-scoped profile from current capability/pressure
+        eu.kalafatic.evolution.controller.kernel.EvolutionExecutionProfile executionProfile =
+            eu.kalafatic.evolution.controller.kernel.EvolutionIntensityCalculator.calculate(context, getActiveTrajectory(context), null);
+        context.log("[KERNEL] Darwin Profile derived for Iteration " + (context.getOrchestrationState().getIterationCount() + 1) +
+                    ": Capability=" + executionProfile.getCapability() + ", Intensity=" + executionProfile.getIntensity());
+        context.getOrchestrationState().setExecutionProfile(executionProfile);
+
         BehaviorProfile profile = context.getBehaviorProfile();
         OrchestrationState state = context.getOrchestrationState();
         String goal = state.getRawInput();
@@ -877,7 +884,7 @@ public class IterationManager {
 
         if (phase == EvolutionPhase.INTENT_EXPANSION) {
             // ADAPTIVE KERNEL: Intensity-based phase bypass
-            int intensity = eu.kalafatic.evolution.controller.kernel.EvolutionIntensityCalculator.calculate(context, getActiveTrajectory(context), null);
+            int intensity = context.getExecutionProfile().getIntensity();
             if (intensity == 1) {
                 context.log("[KERNEL] Low Intensity detected. Bypassing INTENT_EXPANSION.");
                 state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(EvolutionPhase.FINAL_SYNTHESIS));
@@ -979,14 +986,22 @@ public class IterationManager {
         }
 
         if (manualId == null && !context.isAutoApprove()) {
-            manualId = handleVariantSelection(context, variants, goal);
-            if ("REGENERATE".equals(manualId)) {
-                return runDarwinIteration(context, darwinFlow);
-            }
-            if (manualId == null || "STOP".equals(manualId) || "FAILED".equals(manualId)) {
-                EvaluationResult res = failedResult();
-                res.setDecision(SelfDevDecision.STOP);
-                return res;
+            if (executionProfile.requireUserSelection()) {
+                manualId = handleVariantSelection(context, variants, goal);
+                if ("REGENERATE".equals(manualId)) {
+                    return runDarwinIteration(context, darwinFlow);
+                }
+                if (manualId == null || "STOP".equals(manualId) || "FAILED".equals(manualId)) {
+                    EvaluationResult res = failedResult();
+                    res.setDecision(SelfDevDecision.STOP);
+                    return res;
+                }
+            } else {
+                context.log("[KERNEL] Adaptive Kernel: Auto-selecting best trajectory (User selection disabled for profile).");
+                manualId = variants.stream()
+                        .max((v1, v2) -> Double.compare(v1.getScore(), v2.getScore()))
+                        .map(v -> v.getId())
+                        .orElse(null);
             }
         }
 

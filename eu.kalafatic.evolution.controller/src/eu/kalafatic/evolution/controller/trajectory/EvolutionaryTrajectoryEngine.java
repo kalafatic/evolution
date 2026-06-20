@@ -62,16 +62,33 @@ public class EvolutionaryTrajectoryEngine {
             pressure = pressureEngine.analyze(trajectory, context);
         }
 
-        // 2. ADAPTIVE KERNEL: Phase selection based on Evolution Intensity
-        int intensity = eu.kalafatic.evolution.controller.kernel.EvolutionIntensityCalculator.calculate(context, trajectory, pressure);
+        // 2. ADAPTIVE KERNEL: Phase selection based on Evolution Intensity Profile
+        eu.kalafatic.evolution.controller.kernel.EvolutionExecutionProfile profile =
+            context.getExecutionProfile();
+        int intensity = profile.getIntensity();
 
         EvolutionPhase nextCandidate = phaseMachine.next(current);
-        while (nextCandidate != null && getMinimumIntensity(nextCandidate) > intensity && nextCandidate.ordinal() < EvolutionPhase.FINAL_SYNTHESIS.ordinal()) {
-            context.log("[EVOLUTION] Skipping phase " + nextCandidate + " (Min intensity " + getMinimumIntensity(nextCandidate) + " > current " + intensity + ")");
-            nextCandidate = phaseMachine.next(nextCandidate);
-        }
+        while (nextCandidate != null && nextCandidate.ordinal() < EvolutionPhase.FINAL_SYNTHESIS.ordinal()) {
+            boolean skip = false;
 
-        // 3. Early Convergence
+            // Intensity-based skipping
+            if (getMinimumIntensity(nextCandidate) > intensity) {
+                context.log("[EVOLUTION] Skipping phase " + nextCandidate + " (Min intensity " + getMinimumIntensity(nextCandidate) + " > current " + intensity + ")");
+                skip = true;
+            }
+
+            // Capability-based skipping (from Profile)
+            if (!skip && nextCandidate == EvolutionPhase.IMPLEMENTATION_PLAN && !profile.useImplementation()) {
+                context.log("[EVOLUTION] Skipping phase IMPLEMENTATION_PLAN (Implementation disabled for profile)");
+                skip = true;
+            }
+
+            if (skip) {
+                nextCandidate = phaseMachine.next(nextCandidate);
+            } else {
+                break;
+            }
+        }
         if (stabilityAnalyzer.isConverged(trajectory, context, pressure)) {
              // If converged, we can skip to FINAL_SYNTHESIS if not already there or further
              if (current.ordinal() < EvolutionPhase.FINAL_SYNTHESIS.ordinal()) {

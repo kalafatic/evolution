@@ -76,9 +76,10 @@ public class DarwinFlow implements IOrchestrationFlow {
         Iteration currentIterationModelImpl = manager.getCurrentIterationModel();
         String iterId = currentIterationModelImpl != null ? currentIterationModelImpl.getId() : "default";
 
+        eu.kalafatic.evolution.controller.kernel.EvolutionExecutionProfile profile = context.getExecutionProfile();
         String originalBranch = null;
         String baseCommit = null;
-        if (manager.getGitManager().isGitRepository()) {
+        if (profile.useGit() && manager.getGitManager().isGitRepository()) {
             originalBranch = manager.getGitManager().getCurrentBranch();
             baseCommit = manager.getGitManager().getHeadCommit();
         }
@@ -150,17 +151,25 @@ public class DarwinFlow implements IOrchestrationFlow {
             return Collections.emptyList();
         }
 
-        context.log("[DARWIN] Parallel Evaluation: Triggering implementation validation for " + rawVariants.size() + " variants.");
-        String baseCommitFinal = baseCommit;
-        eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionaryPressureVector pressureFinal = pressure;
+        if (profile.useImplementation()) {
+            context.log("[DARWIN] Parallel Evaluation: Triggering implementation validation for " + rawVariants.size() + " variants.");
+            String baseCommitFinal = baseCommit;
+            eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionaryPressureVector pressureFinal = pressure;
 
-        rawVariants.parallelStream().forEach(variant -> {
-            try {
-                evaluateVariantParallel(variant, manager.getTaskPlanner(), context, baseCommitFinal, pressureFinal);
-            } catch (Exception e) {
-                context.log("[DARWIN] Parallel Evaluation Failed for " + variant.getId() + ": " + e.getMessage());
+            rawVariants.parallelStream().forEach(variant -> {
+                try {
+                    evaluateVariantParallel(variant, manager.getTaskPlanner(), context, baseCommitFinal, pressureFinal);
+                } catch (Exception e) {
+                    context.log("[DARWIN] Parallel Evaluation Failed for " + variant.getId() + ": " + e.getMessage());
+                }
+            });
+        } else {
+            context.log("[DARWIN] Adaptive Kernel: Implementation validation disabled for current profile.");
+            for (BranchVariant variant : rawVariants) {
+                variant.setSuccess(true);
+                variant.setScore(0.95);
             }
-        });
+        }
 
         context.getOrchestrationState().getCognitiveTrace().addNode(new CausalNode(
             "darwin-mutation-" + System.currentTimeMillis(),
@@ -198,11 +207,12 @@ public class DarwinFlow implements IOrchestrationFlow {
     }
 
     public EvaluationResult executeWinner(TaskContext context, eu.kalafatic.evolution.controller.supervision.EvolutionDecision decision, List<BranchVariant> variants, String goal) throws Exception {
+        eu.kalafatic.evolution.controller.kernel.EvolutionExecutionProfile profile = context.getExecutionProfile();
         context.log("[DARWIN_FLOW] Entering executeWinner for variant: " + decision.getSelectedVariantId());
         VariantExecutionContext winningContext = null;
         String originalBranch = null;
         String baseCommit = null;
-        if (manager.getGitManager().isGitRepository()) {
+        if (profile.useGit() && manager.getGitManager().isGitRepository()) {
             originalBranch = manager.getGitManager().getCurrentBranch();
             baseCommit = manager.getGitManager().getHeadCommit();
         }
@@ -239,13 +249,13 @@ public class DarwinFlow implements IOrchestrationFlow {
 
         boolean isTestMode = context.getMetadata().containsKey("testMode");
         try {
-            if (!isExportOnly && !isTestMode) {
+            if (profile.useGit() && !isExportOnly && !isTestMode) {
                 manager.getGitManager().createBranchFrom(originalBranch, snapshotBranch);
                 manager.getGitManager().forceCheckout(snapshotBranch);
             }
 
             context.log("[KERNEL] Executing winner variant: " + selectedVariant.getId() + " (" + selectedVariant.getStrategy() + ")");
-            if (!isExportOnly && !isTestMode) {
+            if (profile.useGit() && !isExportOnly && !isTestMode) {
                 manager.getGitManager().createBranchFrom(originalBranch, selectedVariant.getBranchName());
             }
 
@@ -290,7 +300,7 @@ public class DarwinFlow implements IOrchestrationFlow {
                 return manager.failedResult();
             }
 
-            if (!isExportOnly && !isTestMode) {
+            if (profile.useGit() && !isExportOnly && !isTestMode) {
                 manager.getGitManager().forceCheckout(originalBranch);
                 manager.getGitManager().merge(selectedVariant.getBranchName());
             } else if (isExportOnly) {
@@ -400,7 +410,7 @@ public class DarwinFlow implements IOrchestrationFlow {
                 context.getKernelContext().getMemoryService().saveEvolutionTree();
                 sessionContainer.getEventBus().publish(new RuntimeEvent(RuntimeEventType.TREE_UPDATED, context.getSessionId(), "DarwinFlow", null));
 
-                if (!isExportOnly && !isTestMode && manager.getGitManager().isGitRepository()) {
+                if (profile.useGit() && !isExportOnly && !isTestMode && manager.getGitManager().isGitRepository()) {
                     manager.checkStep(selectedVariant.getId(), "GIT_COMMIT", "Committing evolutionary changes for phase: " + completedPhase);
                     manager.getGitManager().commit("Darwin Evolution Phase " + completedPhase, context);
                 }
@@ -415,7 +425,7 @@ public class DarwinFlow implements IOrchestrationFlow {
             }
         } catch (Exception e) {
             context.log("[KERNEL] DarwinFlow.executeWinner failed: " + e.getMessage());
-            if (!isExportOnly && !isTestMode) {
+            if (profile.useGit() && !isExportOnly && !isTestMode && manager.getGitManager().isGitRepository()) {
                 try {
                     manager.getGitManager().forceCheckout(originalBranch);
                     manager.getGitManager().rollback(context);

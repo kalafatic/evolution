@@ -127,12 +127,21 @@ public class Evaluator implements ICapability, IEvaluationContract {
         EvaluationResult result = OrchestrationFactory.eINSTANCE.createEvaluationResult();
         StateSnapshot snapshot = new StateSnapshot();
 
+        eu.kalafatic.evolution.controller.kernel.EvolutionExecutionProfile profile = context.getExecutionProfile();
+        boolean useCompiler = profile != null ? profile.useCompiler() : true;
+        boolean useTests = profile != null ? profile.useTests() : true;
+
         try {
             String output;
-            try {
-                output = mavenTool.execute("clean install", projectRoot, context);
-            } catch (Exception e) {
-                output = e.getMessage();
+            if (useCompiler || useTests) {
+                try {
+                    output = mavenTool.execute("clean install", projectRoot, context);
+                } catch (Exception e) {
+                    output = e.getMessage();
+                }
+            } else {
+                if (context != null) context.log("[EVALUATOR] Adaptive Kernel: Skipping Maven/Compiler run for current profile.");
+                output = "BUILD SUCCESS (Profile Skip)";
             }
 
             boolean isTestMode = context != null && context.getMetadata().containsKey("testMode");
