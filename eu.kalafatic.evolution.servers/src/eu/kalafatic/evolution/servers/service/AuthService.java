@@ -48,25 +48,34 @@ public class AuthService {
         sessionRepository.deleteBySessionId(sessionId);
     }
 
-    public Optional<User> validateSession(String sessionId) throws SQLException {
-        Optional<Session> sessionOpt = sessionRepository.findBySessionId(sessionId);
-        if (sessionOpt.isPresent()) {
-            Session session = sessionOpt.get();
-            LocalDateTime now = LocalDateTime.now();
-            if (session.getLastAccess().isAfter(now.minusMinutes(SESSION_TIMEOUT_MINUTES))) {
-                // Throttle updates: only update DB if last access was more than 1 minute ago
-                if (session.getLastAccess().isBefore(now.minusMinutes(1))) {
+    public Optional<User> validateSession(String sessionId) {
+        try {
+            Optional<Session> sessionOpt = sessionRepository.findBySessionId(sessionId);
+            if (sessionOpt.isPresent()) {
+                Session session = sessionOpt.get();
+                LocalDateTime now = LocalDateTime.now();
+                if (session.getLastAccess().isAfter(now.minusMinutes(SESSION_TIMEOUT_MINUTES))) {
+                    // Throttle updates: only update DB if last access was more than 1 minute ago
+                    if (session.getLastAccess().isBefore(now.minusMinutes(1))) {
+                        try {
+                            sessionRepository.updateLastAccess(sessionId, now);
+                        } catch (SQLException e) {
+                            // Log but continue - don't fail validation just because of a throttle write failure (busy DB)
+                            System.err.println("Warning: Failed to update last access (likely DB busy): " + e.getMessage());
+                        }
+                    }
+                    return userRepository.findById(session.getUserId());
+                } else {
                     try {
-                        sessionRepository.updateLastAccess(sessionId, now);
+                        sessionRepository.deleteBySessionId(sessionId);
                     } catch (SQLException e) {
-                        // Log but continue - don't fail validation just because of a throttle write failure (busy DB)
-                        System.err.println("Warning: Failed to update last access (likely DB busy): " + e.getMessage());
+                        System.err.println("Warning: Failed to delete expired session: " + e.getMessage());
                     }
                 }
-                return userRepository.findById(session.getUserId());
-            } else {
-                sessionRepository.deleteBySessionId(sessionId);
             }
+        } catch (SQLException e) {
+            // Distinguish database busy/errors from "unauthorized" by throwing a RuntimeException
+            throw new RuntimeException("Database error during session validation", e);
         }
         return Optional.empty();
     }

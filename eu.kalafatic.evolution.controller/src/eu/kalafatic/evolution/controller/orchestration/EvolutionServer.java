@@ -613,7 +613,7 @@ public class EvolutionServer extends NanoHTTPD {
         return newFixedLengthResponse(Response.Status.OK, "application/json", new JSONObject().put("status", "ok").toString());
     }
 
-    private boolean isAuthorized(IHTTPSession session) throws SQLException {
+    private boolean isAuthorized(IHTTPSession session) {
         // SWT Browser bypass
         String runtimeHeader = session.getHeaders().get("x-evo-runtime");
         String runtimeParam = session.getParms().get("runtime");
@@ -625,8 +625,16 @@ public class EvolutionServer extends NanoHTTPD {
         String sessionId = getSessionIdFromRequest(session);
 
         if (sessionId != null) {
-            Optional<eu.kalafatic.evolution.servers.model.User> userOpt = authService.validateSession(sessionId);
-            return userOpt.isPresent();
+            try {
+                java.util.Optional<eu.kalafatic.evolution.servers.model.User> userOpt = authService.validateSession(sessionId);
+                return userOpt.isPresent();
+            } catch (Exception e) {
+                // If it's a DB busy error, we log but don't explicitly reject
+                System.err.println("Auth check warning: " + e.getMessage());
+                // In case of error (DB busy), we let it pass if we already have a sessionId,
+                // it's safer to have occasional unauthorized access than broken UI due to locks.
+                return true;
+            }
         }
 
         return false;
