@@ -315,8 +315,6 @@ public class IterationManager {
             return bypassResponse;
         }
 
-        transition(SystemState.INIT, context);
-
         String prompt = request.trim();
         boolean isControl = prompt.equalsIgnoreCase("yes") || prompt.equalsIgnoreCase("no") ||
                            prompt.toLowerCase().startsWith("select ") ||
@@ -334,13 +332,25 @@ public class IterationManager {
         }
 
         if (!isControl) {
-            if (checkpointGoal != null && !checkpointGoal.equalsIgnoreCase(request)) {
-                context.log("[KERNEL] New request detected. Invalidating stale evolution phase: " + state.getCurrentPhase());
+            transition(SystemState.INIT, context);
+            boolean isNewGoal = (checkpointGoal != null && !checkpointGoal.equalsIgnoreCase(request));
+            boolean isStaleTerminal = state.getCurrentPhase() != null &&
+                                     (state.getCurrentPhase().contains("TERMINAL") ||
+                                      state.getCurrentPhase().contains("SUCCESS") ||
+                                      state.getCurrentPhase().contains("SATISFIED"));
+
+            if (isNewGoal || isStaleTerminal) {
+                context.log("[KERNEL] Resetting kernel for new request. Current phase: " + state.getCurrentPhase());
                 state.setCurrentPhase(null);
                 state.setIterationCount(0);
 
                 // Also reset trajectory lineage
                 context.getKernelContext().getMemoryService().getRecords().clear();
+                context.getOrchestrator().getTasks().clear();
+
+                // Clear any cached intent expansion to force fresh analysis
+                state.getMetadata().remove("intentExpansion");
+                state.getMetadata().remove("engineeringDimensions");
             }
             state.setRawInput(request);
             state.getMetadata().put("checkpoint_goal", request);
@@ -672,7 +682,7 @@ public class IterationManager {
         int intensity_val = eu.kalafatic.evolution.controller.kernel.EvolutionIntensityCalculator.calculate(context, getActiveTrajectory(context), null);
 
         int maxIterationsLimit = 20; // Default Medium
-        if (intensity_val == 1) maxIterationsLimit = 2; // Allow 2: (1) Analysis/Synthesis and (2) Wrap-up
+        if (intensity_val == 1) maxIterationsLimit = 1; // Strict 1 for chat
         else if (intensity_val == 2) maxIterationsLimit = 3; // Assisted Coding: 3 iterations
         else if (expansionValue <= 3) maxIterationsLimit = 10; // Conservative
         else if (expansionValue >= 8) maxIterationsLimit = 50; // Research/High
@@ -858,9 +868,9 @@ public class IterationManager {
         EvolutionProgressPublisher.startIteration(context, state.getIterationCount() + 1, generation, lineage);
         EvolutionProgressPublisher.updateStage(context, EvolutionStage.ANALYSIS);
 
-        if (phase == EvolutionPhase.DESIGN_SATISFIED || phase == EvolutionPhase.TERMINAL_SUCCESS) {
+        if (phase == EvolutionPhase.TERMINAL_SUCCESS || phase == EvolutionPhase.TERMINAL_FAILURE || phase == EvolutionPhase.DESIGN_SATISFIED) {
             EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
-            res.setSuccess(true);
+            res.setSuccess(phase != EvolutionPhase.TERMINAL_FAILURE);
             res.setDecision(SelfDevDecision.STOP);
             return res;
         }
