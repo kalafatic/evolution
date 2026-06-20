@@ -464,21 +464,6 @@ public class IterationManager {
                         context.getSessionId(), "Kernel", mode.getType().toString()));
             }
 
-            if (profile.hasTrait(BehaviorTrait.COGNITIVE_SIMPLE_CHAT)) {
-                PlatformMode fastMode = router.routeFast(request, context.getOrchestrator());
-                if (fastMode != null && fastMode.getType() == PlatformType.SIMPLE_CHAT) {
-                    context.log("[KERNEL] Fast-track greeting detected via cognitive trait. Bypassing evolutionary kernel.");
-                    IOrchestrationFlow flow = (IOrchestrationFlow) getInternalAgent(EvolutionConstants.AGENT_GENERAL);
-                    String resultStr = ((eu.kalafatic.evolution.controller.agents.GeneralAgent)flow).process(request, context, null);
-                    response.setResultType(ResultType.CHAT);
-                    response.setSummary(resultStr);
-                    response.setContent(resultStr);
-                    transition(SystemState.DONE, context);
-                    FinalResponseAssembler assembler = new FinalResponseAssembler();
-                    response.setFinalResponse(assembler.assemble(context, resultStr, true, context.getStartTime()));
-                    return response;
-                }
-            }
 
             context.log("[KERNEL] Inspecting goal for unresolved semantic uncertainty.");
             EvolutionAssessment initialAssessment = dimensionInferenceEngine.analyze(request, context);
@@ -668,8 +653,14 @@ public class IterationManager {
             }
         }
 
+        // 2. Cognitive Depth Driven Intensity Scaling (ADAPTIVE KERNEL)
+        int cognitiveDepth_val = sessionContainer.getCognitiveState().getCognitiveDepth();
+        int intensity_val = eu.kalafatic.evolution.controller.orchestration.cognitive.CognitiveStateEngine.getEvolutionIntensity(cognitiveDepth_val);
+
         int maxIterationsLimit = 20; // Default Medium
-        if (expansionValue <= 3) maxIterationsLimit = 10; // Conservative
+        if (intensity_val == 1) maxIterationsLimit = 1; // Simple Chat: 1 iteration
+        else if (intensity_val == 2) maxIterationsLimit = 3; // Assisted Coding: 3 iterations
+        else if (expansionValue <= 3) maxIterationsLimit = 10; // Conservative
         else if (expansionValue >= 8) maxIterationsLimit = 50; // Research/High
 
         int minIterations = 1;
@@ -749,7 +740,18 @@ public class IterationManager {
             } else if (context.getMetadata().containsKey("testMode")) {
                 summary = "Evolution completed (Test Mode).";
             } else {
-                summary = getFinalResponseAgent().generateFinalResponse(request, context.getOrchestrator().getTasks(), context);
+                // ADAPTIVE KERNEL: Use winning trajectory mutation trace for simple responses
+                int cognitiveDepth_res = sessionContainer.getCognitiveState().getCognitiveDepth();
+                int intensity_res = eu.kalafatic.evolution.controller.orchestration.cognitive.CognitiveStateEngine.getEvolutionIntensity(cognitiveDepth_res);
+
+                if (intensity_res == 1) {
+                    IterationRecord winner = context.getKernelContext().getMemoryService().getRecords().stream()
+                            .filter(r -> "ACTIVE".equals(r.getActivationState()))
+                            .reduce((first, second) -> second).orElse(null);
+                    summary = (winner != null && winner.getMutationTrace() != null) ? winner.getMutationTrace() : "Evolution complete.";
+                } else {
+                    summary = getFinalResponseAgent().generateFinalResponse(request, context.getOrchestrator().getTasks(), context);
+                }
             }
             transition(SystemState.DONE, context);
         } else {

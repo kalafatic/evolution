@@ -133,6 +133,34 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         context.log("Stage: Goal\nGoal: " + goal);
         context.log("[DARWIN] Generating trajectory-driven variants for goal: " + goal);
 
+        // 1. FAST PATH: Intensity-based bypass for simple chat
+        int cognitiveDepth = 1;
+        eu.kalafatic.evolution.controller.orchestration.SessionContainer session = getSessionContainer();
+        if (session instanceof eu.kalafatic.evolution.controller.orchestration.SessionContext) {
+            cognitiveDepth = ((eu.kalafatic.evolution.controller.orchestration.SessionContext)session).getCognitiveState().getCognitiveDepth();
+        }
+        int intensity = eu.kalafatic.evolution.controller.orchestration.cognitive.CognitiveStateEngine.getEvolutionIntensity(cognitiveDepth);
+
+        if (intensity == 1) {
+            context.log("[DARWIN] Adaptive Kernel: Low Intensity detected. Materializing single-trajectory response.");
+            BranchVariant v = new BranchVariant();
+            v.setId("chat-" + System.currentTimeMillis());
+            v.setStrategy("Direct Chat Response");
+            v.setStrategyType("CHAT_RESPONSE");
+            v.setScore(1.0);
+            v.setActivationState(BranchVariant.ActivationState.ACTIVE);
+
+            // Register in trajectory memory to satisfy kernel invariants
+            Trajectory t = new Trajectory(v.getId(), v.getStrategy());
+            t.setFitnessScore(v.getScore());
+            v.setTrajectoryId(t.getTrajectoryId());
+            if (memoryService != null && memoryService.getTrajectoryMemory() != null) {
+                memoryService.getTrajectoryMemory().recordTrajectory(t);
+            }
+
+            return List.of(v);
+        }
+
         AtomicIntentAnalysis atomicAnalysis = (AtomicIntentAnalysis) context.getOrchestrationState().getMetadata().get("atomicAnalysis");
         if (context != null) {
             context.log("Stage: Intent Analysis\nAtomic: " + (atomicAnalysis != null && atomicAnalysis.isAtomic()) + "\nTarget: " + (atomicAnalysis != null ? atomicAnalysis.getTargetArtifact() : "none"));
@@ -313,12 +341,26 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             }
         }
 
+        // 2. Cognitive Depth Driven Intensity Scaling (ADAPTIVE KERNEL)
+        int cognitiveDepth_val = 1;
+        eu.kalafatic.evolution.controller.orchestration.SessionContainer session_val = getSessionContainer();
+        if (session_val instanceof eu.kalafatic.evolution.controller.orchestration.SessionContext) {
+            cognitiveDepth_val = ((eu.kalafatic.evolution.controller.orchestration.SessionContext)session_val).getCognitiveState().getCognitiveDepth();
+        }
+        int intensity_val = eu.kalafatic.evolution.controller.orchestration.cognitive.CognitiveStateEngine.getEvolutionIntensity(cognitiveDepth_val);
+
         int branchingLimit = 3; // Default Balanced
-        if (expansionValue <= 3) branchingLimit = 2; // Conservative
+        if (intensity_val == 1) branchingLimit = 1; // Simple Chat: No branching
+        else if (intensity_val == 2) branchingLimit = Math.min(2, expansionValue <= 3 ? 1 : 2); // Assisted Coding: Low branching
+        else if (expansionValue <= 3) branchingLimit = 2; // Conservative
         else if (expansionValue >= 8) branchingLimit = 4; // Experimental
 
         // Scale by model capability if extremely low
         if (modelCapability < 0.4) branchingLimit = Math.min(branchingLimit, 2);
+
+        if (intensity_val == 1) {
+            context.log("[DARWIN] Adaptive Kernel: Low Intensity detected. Materializing single-trajectory response.");
+        }
 
         // 1. MULTI-LINEAGE RETRIEVAL: Retrieve both ACTIVE and KEPT survivors (Milestone Requirement)
         List<IterationRecord> survivors = records.stream()

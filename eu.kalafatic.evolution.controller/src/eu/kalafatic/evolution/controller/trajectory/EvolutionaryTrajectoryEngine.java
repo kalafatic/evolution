@@ -56,6 +56,20 @@ public class EvolutionaryTrajectoryEngine {
      * Determines the next phase based on trajectory stability and progression rules.
      */
     public EvolutionPhase determineNextPhase(EvolutionPhase current, Trajectory trajectory, TaskContext context) {
+        // ADAPTIVE KERNEL: Phase acceleration based on Evolution Intensity
+        int intensity = 4; // Default high
+        eu.kalafatic.evolution.controller.orchestration.SessionContainer session =
+            eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getSession(context.getSessionId());
+        if (session instanceof eu.kalafatic.evolution.controller.orchestration.SessionContext) {
+            int depth = ((eu.kalafatic.evolution.controller.orchestration.SessionContext)session).getCognitiveState().getCognitiveDepth();
+            intensity = eu.kalafatic.evolution.controller.orchestration.cognitive.CognitiveStateEngine.getEvolutionIntensity(depth);
+        }
+
+        if (intensity == 1 && current.ordinal() < EvolutionPhase.FINAL_SYNTHESIS.ordinal()) {
+            context.log("[EVOLUTION] Low Intensity detected. Accelerating directly to FINAL_SYNTHESIS.");
+            return EvolutionPhase.FINAL_SYNTHESIS;
+        }
+
         // Compute pressure for informed decision making
         EvolutionaryPressureVector pressure = null;
         if (trajectory != null) {

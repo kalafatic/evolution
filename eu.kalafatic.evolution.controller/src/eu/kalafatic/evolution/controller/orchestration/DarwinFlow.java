@@ -249,12 +249,24 @@ public class DarwinFlow implements IOrchestrationFlow {
                 manager.getGitManager().createBranchFrom(originalBranch, selectedVariant.getBranchName());
             }
 
-            // DIAGNOSTIC OPTIMIZATION: Bypassing task generation for analytical variants in Mediated Mode
+            // ADAPTIVE KERNEL: Intensity-based implementation delegation
+            int cognitiveDepth = sessionContainer.getCognitiveState().getCognitiveDepth();
+            int intensity = eu.kalafatic.evolution.controller.orchestration.cognitive.CognitiveStateEngine.getEvolutionIntensity(cognitiveDepth);
+
+            // DIAGNOSTIC OPTIMIZATION: Bypassing task generation for analytical variants in Mediated Mode or Simple Chat
             boolean isAnalyticalVariant = selectedVariant.getStrategyType() != null &&
                 (selectedVariant.getStrategyType().equals("ANALYTICAL") ||
+                 selectedVariant.getStrategyType().equals("CHAT_RESPONSE") ||
                  selectedVariant.getStrategyType().equals(eu.kalafatic.evolution.controller.orchestration.selfdev.DarwinStrategyType.ARCHITECTURE_MAPPING.name()));
-            if (isExportOnly && isAnalyticalVariant) {
-                context.log("[DARWIN] Fast-tracking analytical variant without sub-task execution.");
+
+            if (intensity == 1 || (isExportOnly && isAnalyticalVariant)) {
+                context.log("[DARWIN] Adaptive Kernel: Executing variant via General Agent (Intensity: " + intensity + ")");
+
+                eu.kalafatic.evolution.controller.agents.GeneralAgent generalAgent = (eu.kalafatic.evolution.controller.agents.GeneralAgent)
+                    sessionContainer.getAgentRegistry().get(eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants.AGENT_GENERAL);
+
+                String finalResult = generalAgent.process(goal + "\nStrategy: " + selectedVariant.getStrategy(), context, null);
+                selectedVariant.setMutationTrace(finalResult);
                 selectedVariant.setSuccess(true);
                 selectedVariant.setScore(0.95);
             } else {
