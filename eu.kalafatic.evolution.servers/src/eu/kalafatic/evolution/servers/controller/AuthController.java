@@ -5,6 +5,7 @@ import fi.iki.elonen.NanoHTTPD.IHTTPSession;
 import fi.iki.elonen.NanoHTTPD.Response;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -114,8 +115,12 @@ public class AuthController {
                 }
                 return jsonResponse(Response.Status.OK, response);
             } else {
-                return errorResponse(Response.Status.UNAUTHORIZED, "Session expired");
+                return errorResponse(Response.Status.UNAUTHORIZED, "Session expired or invalid");
             }
+        } catch (SQLException e) {
+            // Distinguish database locks from unauthorized access
+            System.err.println("Auth DB Error: " + e.getMessage());
+            return errorResponse(Response.Status.INTERNAL_ERROR, "Database busy. Please retry.");
         } catch (Exception e) {
             return errorResponse(Response.Status.INTERNAL_ERROR, e.getMessage());
         }

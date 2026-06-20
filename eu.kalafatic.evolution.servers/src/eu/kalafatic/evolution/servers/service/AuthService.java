@@ -52,8 +52,17 @@ public class AuthService {
         Optional<Session> sessionOpt = sessionRepository.findBySessionId(sessionId);
         if (sessionOpt.isPresent()) {
             Session session = sessionOpt.get();
-            if (session.getLastAccess().isAfter(LocalDateTime.now().minusMinutes(SESSION_TIMEOUT_MINUTES))) {
-                sessionRepository.updateLastAccess(sessionId, LocalDateTime.now());
+            LocalDateTime now = LocalDateTime.now();
+            if (session.getLastAccess().isAfter(now.minusMinutes(SESSION_TIMEOUT_MINUTES))) {
+                // Throttle updates: only update DB if last access was more than 1 minute ago
+                if (session.getLastAccess().isBefore(now.minusMinutes(1))) {
+                    try {
+                        sessionRepository.updateLastAccess(sessionId, now);
+                    } catch (SQLException e) {
+                        // Log but continue - don't fail validation just because of a throttle write failure (busy DB)
+                        System.err.println("Warning: Failed to update last access (likely DB busy): " + e.getMessage());
+                    }
+                }
                 return userRepository.findById(session.getUserId());
             } else {
                 sessionRepository.deleteBySessionId(sessionId);

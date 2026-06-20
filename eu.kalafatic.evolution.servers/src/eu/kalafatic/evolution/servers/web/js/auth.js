@@ -71,16 +71,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+let isUserInfoLoading = false;
+
 async function loadUserInfo() {
+    if (isUserInfoLoading) return;
     const sessionId = localStorage.getItem('sessionId') || sessionStorage.getItem('sessionId');
     const headers = {};
-    if (sessionId) {
+    if (sessionId && sessionId !== 'null' && sessionId !== 'undefined') {
         headers['Authorization'] = `Bearer ${sessionId}`;
     } else {
         console.log("No sessionId in storage for user info, relying on cookies.");
     }
 
     try {
+        isUserInfoLoading = true;
         const response = await fetch('/api/auth/me', {
             method: 'GET',
             headers: headers,
@@ -96,24 +100,28 @@ async function loadUserInfo() {
                 sessionStorage.setItem('sessionId', data.sessionId);
             }
 
-            document.getElementById('displayUsername').textContent = data.username;
-            document.getElementById('displayRole').textContent = data.role;
-            document.getElementById('displaySessionId').textContent = data.sessionId;
-            document.getElementById('displayTimestamp').textContent = data.loginTimestamp;
+            const setEl = (id, val) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = val;
+            };
 
-            const workflowEl = document.getElementById('displayWorkflow');
-            if (workflowEl) {
-                workflowEl.textContent = data.workflowType || 'GENERAL';
-            }
-        } else {
+            setEl('displayUsername', data.username);
+            setEl('displayRole', data.role);
+            setEl('displaySessionId', data.sessionId);
+            setEl('displayTimestamp', data.loginTimestamp);
+            setEl('displayWorkflow', data.workflowType || 'GENERAL');
+
+        } else if (response.status === 401) {
+            console.warn('Unauthorized. Redirecting to login.');
             localStorage.removeItem('sessionId');
             sessionStorage.removeItem('sessionId');
             window.location.href = '/login.html';
+        } else {
+            console.error('Failed to load user info with status:', response.status);
         }
     } catch (error) {
-        console.error('Failed to load user info', error);
-        localStorage.removeItem('sessionId');
-        sessionStorage.removeItem('sessionId');
-        window.location.href = '/login.html';
+        console.error('Network error while loading user info:', error);
+    } finally {
+        isUserInfoLoading = false;
     }
 }

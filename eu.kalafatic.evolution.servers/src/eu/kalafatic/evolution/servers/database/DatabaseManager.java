@@ -44,7 +44,17 @@ public class DatabaseManager {
     }
 
     public Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(URL);
+        Connection conn = DriverManager.getConnection(URL);
+        try (Statement stmt = conn.createStatement()) {
+            // High concurrency SQLite optimization
+            stmt.execute("PRAGMA busy_timeout = 30000;"); // Increase to 30 seconds
+            stmt.execute("PRAGMA journal_mode = WAL;");
+            stmt.execute("PRAGMA synchronous = NORMAL;");
+            stmt.execute("PRAGMA cache_size = -2000;");   // 2MB cache
+        } catch (SQLException e) {
+            System.err.println("Warning: Failed to set PRAGMAs: " + e.getMessage());
+        }
+        return conn;
     }
 
     private void createTables(Connection conn) throws SQLException {
