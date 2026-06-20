@@ -258,7 +258,10 @@ public class DarwinFlow implements IOrchestrationFlow {
                 eu.kalafatic.evolution.controller.agents.GeneralAgent generalAgent = (eu.kalafatic.evolution.controller.agents.GeneralAgent)
                     sessionContainer.getAgentRegistry().get(eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants.AGENT_GENERAL);
 
-                String finalResult = generalAgent.process(goal + "\nStrategy: " + selectedVariant.getStrategy(), context, null);
+                // For minimal reasoning levels (chat), provide only the goal to prevent confusing the agent with internal Darwin strategies
+                boolean isMinimal = selectedVariant.getReasoningLevel() == BranchVariant.ReasoningLevel.MINIMAL;
+                String input = isMinimal ? goal : goal + "\nStrategy: " + selectedVariant.getStrategy();
+                String finalResult = generalAgent.process(input, context, null);
                 selectedVariant.setMutationTrace(finalResult);
                 selectedVariant.setSuccess(true);
                 selectedVariant.setScore(0.95);

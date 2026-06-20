@@ -16,6 +16,13 @@ public class EvolutionIntensityCalculator {
     public static int calculate(TaskContext context, Trajectory trajectory, EvolutionaryPressureVector pressure) {
         double intensity = 1.0;
 
+        // 0. FAST RULE BYPASS (Greetings/Simple Chat)
+        eu.kalafatic.evolution.controller.orchestration.ModeRouter router = new eu.kalafatic.evolution.controller.orchestration.ModeRouter();
+        eu.kalafatic.evolution.controller.orchestration.PlatformMode fastMode = router.routeFast(context.getOrchestrationState().getRawInput(), context.getOrchestrator());
+        if (fastMode != null && fastMode.getType() == eu.kalafatic.evolution.controller.orchestration.PlatformType.SIMPLE_CHAT) {
+            return 1;
+        }
+
         // 1. Capability & Depth Signal
         CapabilityType cap = CapabilityType.CHAT;
         int depth = 1;
@@ -29,12 +36,13 @@ public class EvolutionIntensityCalculator {
 
         switch (cap) {
             case EVOLUTION: intensity += 2.0; break;
-            case ARCHITECTURE: intensity += 1.5; break;
-            case CODE: intensity += 1.0; break;
+            case ARCHITECTURE: intensity += 1.0; break;
+            case CODE: intensity += 0.5; break;
+            case CHAT: intensity = 0.0; break; // Reset for chat
             default: break;
         }
 
-        intensity += (depth / 10.0) * 1.5;
+        intensity += (depth / 10.0) * 1.0;
 
         // 2. Pressure Signal
         if (pressure != null) {
