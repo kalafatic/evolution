@@ -8,13 +8,15 @@
     --xp-border: #ACA899;
     --xp-title-gradient: linear-gradient(to right, #0058EE 0%, #3B93FF 100%);
     --xp-btn-gradient: linear-gradient(to bottom, #FFFFFF 0%, #ECE9D8 100%);
+    --xp-sidebar-bg: #7BA2E7;
 }
 
-.xp-bg {
-    background-color: #5A7EDC; /* Classic Blue Desktop Color */
+body {
     font-family: "Tahoma", "Segoe UI", sans-serif;
+    background-color: #5A7EDC; /* Classic Blue Desktop Color */
     margin: 0;
     padding: 0;
+    font-size: 12px;
 }
 
 /* Window Frame Structure */
@@ -76,7 +78,7 @@
 }
 
 /* Professional XP Elements */
-button {
+button, .xp-button {
     background: var(--xp-btn-gradient);
     border: 1px solid #003399;
     padding: 4px 12px;
@@ -84,13 +86,14 @@ button {
     border-radius: 3px;
     cursor: pointer;
     box-shadow: 1px 1px 1px rgba(0,0,0,0.2);
+    color: black;
 }
 
-button:hover {
+button:hover, .xp-button:hover {
     background: #E1E1E1;
 }
 
-button:active {
+button:active, .xp-button:active {
     box-shadow: inset 1px 1px 2px rgba(0,0,0,0.2);
 }
 
@@ -101,40 +104,154 @@ input[type="text"], input[type="password"], select, textarea {
     background: white;
 }
 
-/* Sidebars and Panels */
-.sidebar-xp {
-    background-color: #ECE9D8;
-    border-right: 2px solid #ACA899;
-    padding: 10px;
-}
-
-.panel-xp {
-    border: 2px inset #ACA899;
+/* Layout for Dashboard */
+.portal-container {
+    display: grid;
+    grid-template-columns: 200px 1fr 250px;
+    height: calc(100vh - 31px); /* minus title bar */
     background: white;
-    padding: 10px;
 }
 
-/* Portal Specific Overrides */
+.sidebar-left {
+    background: var(--xp-sidebar-bg);
+    color: white;
+    padding: 10px;
+    border-right: 1px solid #003399;
+}
+
+.sidebar-right {
+    background: #ECE9D8;
+    border-left: 1px solid #ACA899;
+    padding: 15px;
+}
+
+.portal-main {
+    padding: 20px;
+    overflow-y: auto;
+    background: white;
+}
+
+/* Header & Breadcrumbs */
 .portal-header {
-    background: #ECE9D8 !important;
-    border-bottom: 1px solid #ACA899 !important;
+    background: #ECE9D8;
+    border-bottom: 1px solid #ACA899;
+    padding: 5px 10px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: bold;
+    color: #003399;
+}
+
+.breadcrumbs {
+    color: #333;
+    font-size: 11px;
+}
+
+.breadcrumbs a {
+    color: #0058EE;
+    text-decoration: none;
+}
+
+.breadcrumbs a:hover {
+    text-decoration: underline;
+}
+
+/* Nav Menu */
+.nav-section-title {
+    font-weight: bold;
+    margin: 15px 0 5px 0;
+    color: #003399;
+    border-bottom: 1px solid rgba(255,255,255,0.3);
+}
+
+.nav-menu ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.nav-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 5px 10px;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
 }
 
 .nav-link:hover {
-    background: #316AC5 !important;
-    color: white !important;
+    background: #316AC5;
 }
 
-/* Chat Bubbles Professional */
-.message.ai {
-    background: #FFFFFF !important;
-    border: 1px solid #ACA899 !important;
-    border-radius: 4px !important;
+/* Session Panel */
+.session-panel {
+    border: 1px solid #ACA899;
+    background: white;
+    padding: 10px;
+    border-radius: 4px;
 }
 
-.message.user {
-    background: #E1E1E1 !important;
-    border: 1px solid #316AC5 !important;
-    border-radius: 4px !important;
-    color: black !important;
+.session-panel h3 {
+    margin-top: 0;
+    font-size: 13px;
+    color: #003399;
+}
+
+.info-group {
+    margin-bottom: 8px;
+}
+
+.info-group .label {
+    display: block;
+    font-size: 10px;
+    color: #666;
+}
+
+.info-group .value {
+    font-weight: bold;
+    font-size: 11px;
+}
+
+.value.code {
+    font-family: monospace;
+    font-size: 9px;
+    word-break: break-all;
+}
+
+.value.status {
+    color: #008000;
+}
+
+/* Hero Section */
+.welcome-section h1 {
+    color: #003399;
+    border-bottom: 2px solid #0058EE;
+    padding-bottom: 5px;
+}
+
+.features-summary {
+    display: flex;
+    gap: 20px;
+    margin-top: 30px;
+}
+
+.summary-item {
+    flex: 1;
+    border: 1px solid #ECE9D8;
+    background: #F5F5F5;
+    padding: 15px;
+    border-radius: 5px;
+}
+
+.summary-item h3 {
+    color: #003399;
+    margin-top: 0;
 }

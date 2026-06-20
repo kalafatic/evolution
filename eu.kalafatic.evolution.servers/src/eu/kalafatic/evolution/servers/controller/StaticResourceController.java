@@ -25,10 +25,21 @@ public class StaticResourceController {
 
         String mimeType = getMimeType(uri);
         try {
-            return NanoHTTPD.newFixedLengthResponse(Response.Status.OK, mimeType, is, is.available());
+            byte[] data = readAllBytes(is);
+            return NanoHTTPD.newFixedLengthResponse(Response.Status.OK, mimeType, new java.io.ByteArrayInputStream(data), data.length);
         } catch (IOException e) {
-            return NanoHTTPD.newFixedLengthResponse(Response.Status.INTERNAL_ERROR, NanoHTTPD.MIME_PLAINTEXT, "Internal Error");
+            return NanoHTTPD.newFixedLengthResponse(Response.Status.INTERNAL_ERROR, NanoHTTPD.MIME_PLAINTEXT, "Internal Error: " + e.getMessage());
         }
+    }
+
+    private byte[] readAllBytes(InputStream is) throws IOException {
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        int nRead;
+        byte[] data = new byte[16384];
+        while ((nRead = is.read(data, 0, data.length)) != -1) {
+            buffer.write(data, 0, nRead);
+        }
+        return buffer.toByteArray();
     }
 
     private String getMimeType(String uri) {

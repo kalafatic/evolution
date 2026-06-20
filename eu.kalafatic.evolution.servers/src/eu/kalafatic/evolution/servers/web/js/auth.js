@@ -71,6 +71,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+function isSWTEnvironment() {
+    return typeof JavaHandler !== 'undefined' ||
+           typeof JavaLog !== 'undefined' ||
+           window.location.search.includes('runtime=SWT') ||
+           window.location.protocol === 'file:';
+}
+
 let isUserInfoLoading = false;
 
 async function loadUserInfo() {
@@ -98,6 +105,13 @@ async function loadUserInfo() {
             if (!localStorage.getItem('sessionId') && !sessionStorage.getItem('sessionId')) {
                 console.log("Syncing sessionId to sessionStorage from valid cookie.");
                 sessionStorage.setItem('sessionId', data.sessionId);
+            } else if (data.sessionId && data.sessionId !== localStorage.getItem('sessionId') && data.sessionId !== sessionStorage.getItem('sessionId')) {
+                console.log("Session mismatch detected. Updating storage with server-provided ID.");
+                if (localStorage.getItem('sessionId')) {
+                    localStorage.setItem('sessionId', data.sessionId);
+                } else {
+                    sessionStorage.setItem('sessionId', data.sessionId);
+                }
             }
 
             const setEl = (id, val) => {
@@ -112,10 +126,15 @@ async function loadUserInfo() {
             setEl('displayWorkflow', data.workflowType || 'GENERAL');
 
         } else if (response.status === 401) {
-            console.warn('Unauthorized. Redirecting to login.');
-            localStorage.removeItem('sessionId');
-            sessionStorage.removeItem('sessionId');
-            window.location.href = '/login.html';
+            console.warn('Unauthorized detected.');
+            if (!isSWTEnvironment()) {
+                console.warn('Redirecting to login.');
+                localStorage.removeItem('sessionId');
+                sessionStorage.removeItem('sessionId');
+                window.location.href = '/login.html';
+            } else {
+                console.log('SWT Environment: Suppressing redirect.');
+            }
         } else {
             console.error('Failed to load user info with status:', response.status);
         }

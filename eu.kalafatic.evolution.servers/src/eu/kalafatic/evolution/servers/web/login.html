@@ -3,49 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Evolution Servers</title>
+    <title>Log On to Evolution</title>
     <link rel="stylesheet" href="/css/style.css">
 </head>
-<body class="xp-bg">
-    <div class="window-frame" style="width: 400px; margin: 100px auto;">
+<body style="display: flex; justify-content: center; align-items: center; height: 100vh;">
+    <div class="window-frame" style="width: 420px;">
         <div class="title-bar">
             <div class="title-text">Log On to Evolution</div>
             <div class="title-controls">
-                <button class="control-btn close">X</button>
+                <div class="control-btn">?</div>
+                <div class="control-btn close">X</div>
             </div>
         </div>
-        <div style="padding: 20px; background: #ECE9D8; text-align: center;">
-            <div style="margin-bottom: 20px;">
-                <h1 style="color: #003399; margin: 0; font-size: 24px;">Evolution</h1>
-                <p style="font-size: 11px; margin: 0;">Professional Intelligence Platform</p>
+        <div style="background: var(--xp-bg); padding: 20px;">
+            <div style="display: flex; gap: 20px; align-items: flex-start; margin-bottom: 20px;">
+                <div style="font-size: 40px;">🧬</div>
+                <div>
+                    <h2 style="margin: 0; color: #003399;">Evolution</h2>
+                    <p style="margin: 0; font-size: 11px;">Professional Intelligence Platform</p>
+                    <p style="margin: 10px 0 0 0; font-size: 12px; font-weight: bold;">Enter your credentials to access the portal.</p>
+                </div>
             </div>
 
-            <div id="loader" style="display:none; margin-bottom: 10px; font-size: 12px;">Authenticating...</div>
-            <div id="errorArea" style="color: #D32F2F; margin-bottom: 10px; font-size: 12px; height: 15px;"></div>
+            <div id="errorArea" style="color: #D32F2F; margin-bottom: 10px; font-size: 11px; height: 15px; text-align: center;"></div>
 
-            <form id="loginForm" style="text-align: left;">
-                <div style="margin-bottom: 15px;">
-                    <label for="username" style="display: block; font-size: 12px; margin-bottom: 5px;">User name:</label>
-                    <input type="text" id="username" name="username" style="width: 100%; padding: 4px; border: 2px inset #ACA899; box-sizing: border-box;" required>
-                </div>
-                <div style="margin-bottom: 15px;">
-                    <label for="password" style="display: block; font-size: 12px; margin-bottom: 5px;">Password:</label>
-                    <input type="password" id="password" name="password" style="width: 100%; padding: 4px; border: 2px inset #ACA899; box-sizing: border-box;" required>
-                </div>
+            <form id="loginForm">
+                <table style="width: 100%; border-spacing: 0 10px;">
+                    <tr>
+                        <td style="width: 100px; font-size: 12px;">User name:</td>
+                        <td><input type="text" id="username" name="username" style="width: 100%;" required autofocus></td>
+                    </tr>
+                    <tr>
+                        <td style="font-size: 12px;">Password:</td>
+                        <td><input type="password" id="password" name="password" style="width: 100%;" required></td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <input type="checkbox" id="rememberMe" name="rememberMe">
+                                <label for="rememberMe" style="font-size: 11px;">Remember my credentials</label>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
 
-                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 20px; font-size: 11px;">
-                    <input type="checkbox" id="rememberMe" name="rememberMe">
-                    <label for="rememberMe">Remember me</label>
-                </div>
-
-                <hr style="border: none; border-top: 1px solid #ACA899; margin-bottom: 15px;">
-
-                <div style="display: flex; justify-content: flex-end; gap: 10px;">
-                    <button type="submit" id="loginBtn" style="padding: 2px 15px; font-size: 12px; min-width: 60px;">OK</button>
-                    <button type="button" style="padding: 2px 15px; font-size: 12px; min-width: 60px;">Cancel</button>
+                <div style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 8px;">
+                    <button type="submit" id="loginBtn" style="min-width: 75px;">OK</button>
+                    <button type="button" style="min-width: 75px;">Cancel</button>
+                    <button type="button" style="min-width: 75px;">Options >></button>
                 </div>
             </form>
+
+            <div id="loader" style="display:none; margin-top: 10px; text-align: center; font-size: 11px; color: #666;">
+                Verifying credentials...
+            </div>
         </div>
+        <div style="background: #003399; height: 4px;"></div>
     </div>
     <script src="/js/auth.js"></script>
 </body>
