@@ -259,7 +259,7 @@ public class ForgeSessionManager {
 
             session.getModelState().setHyperparameters(json.toString());
             session.setLastModified(System.currentTimeMillis());
-            publishEvent(session, RuntimeEventType.VIEW_UPDATED, "UI_STATE_UPDATED");
+            publishEvent(session, RuntimeEventType.UI_STATE_UPDATED, "UI_STATE_UPDATED");
         }
     }
 
