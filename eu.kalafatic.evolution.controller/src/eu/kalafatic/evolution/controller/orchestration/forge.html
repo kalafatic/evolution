@@ -166,18 +166,14 @@
             border: 1px solid var(--border);
         }
 
-        /* Floating Palette */
+        /* Node Palette */
         #node-palette {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            background: rgba(255, 255, 255, 0.95);
-            border: 1px solid var(--border);
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
             padding: 10px;
             display: flex;
-            flex-direction: column;
+            flex-wrap: wrap;
             gap: 5px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
         #palette-context-menu {
             position: absolute;
@@ -232,7 +228,7 @@
         #viz-container {
             display: flex;
             gap: 15px;
-            height: 350px;
+            height: 450px;
         }
         #viz-area {
             flex-grow: 1;
@@ -241,6 +237,9 @@
             position: relative;
             overflow: auto;
             padding: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
         #viz-details {
             width: 250px;
@@ -328,10 +327,16 @@
         @keyframes march {
             to { stroke-dashoffset: -20; }
         }
+        @keyframes pulse-glow {
+            0% { filter: drop-shadow(0 0 2px var(--accent)); }
+            50% { filter: drop-shadow(0 0 8px var(--accent)); }
+            100% { filter: drop-shadow(0 0 2px var(--accent)); }
+        }
         .link.animating {
             stroke: var(--accent);
             stroke-dasharray: 5, 5;
-            animation: march 1s linear infinite;
+            animation: march 0.5s linear infinite, pulse-glow 2s ease-in-out infinite;
+            stroke-width: 3px;
         }
 
         #demo-panel {
@@ -359,6 +364,16 @@
                     <button class="btn btn-sm btn-primary" onclick="createNewSession()" data-guidance="Create a new blank Forge session for custom model architecture development.">NEW</button>
                 </div>
             </div>
+
+            <div id="node-palette" data-guidance="Drag components onto the canvas to design your AI model architecture. Connect nodes to define data flow." oncontextmenu="showPaletteMenu(event)">
+                <div style="font-size: 0.7em; color: var(--text-dim); width: 100%; margin-bottom: 2px;">DRAG NODES</div>
+                <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'NEURON')" data-guidance="Generate a basic computational unit architecture.">Neuron</button>
+                <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'MLP')" data-guidance="Generate a Multi-Layer Perceptron architecture.">MLP</button>
+                <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'CNN')" data-guidance="Generate a Convolutional Neural Network architecture.">CNN</button>
+                <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'TRANSFORMER')" data-guidance="Generate a Transformer architecture.">Transformer</button>
+                <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'LLM')" data-guidance="Generate a Large Language Model architecture.">LLM</button>
+            </div>
+
             <div id="session-list">
                 <!-- Sessions populated here -->
             </div>
@@ -395,15 +410,6 @@
                     </defs>
                 </svg>
 
-                <div id="node-palette" data-guidance="Drag components onto the canvas to design your AI model architecture. Connect nodes to define data flow." oncontextmenu="showPaletteMenu(event)">
-                    <div style="font-size: 0.7em; color: var(--text-dim); margin-bottom: 5px;">DRAG NODES</div>
-                    <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'NEURON')" data-guidance="Generate a basic computational unit architecture.">Neuron</button>
-                    <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'MLP')" data-guidance="Generate a Multi-Layer Perceptron architecture.">MLP</button>
-                    <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'CNN')" data-guidance="Generate a Convolutional Neural Network architecture.">CNN</button>
-                    <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'TRANSFORMER')" data-guidance="Generate a Transformer architecture.">Transformer</button>
-                    <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'LLM')" data-guidance="Generate a Large Language Model architecture.">LLM</button>
-                </div>
-
                 <div id="palette-context-menu">
                     <div class="menu-item" onclick="loadTemplate('NEURON')">Load Neuron Demo</div>
                     <div class="menu-item" onclick="loadTemplate('MLP')">Load MLP Demo</div>
@@ -425,6 +431,7 @@
                             <option value="DATASET">Dataset Explorer</option>
                             <option value="TRAINING">Training Monitor</option>
                             <option value="EVOLUTION">Evolution Timeline</option>
+                            <option value="WALKTHROUGH">Study Walkthrough</option>
                         </select>
                     </div>
                     <div id="viz-controls" style="display: flex; gap: 5px;">
@@ -556,6 +563,11 @@
 
     <link rel="stylesheet" href="/creatic.css">
     <script src="/creatic.js"></script>
+    <script src="/forge-viz/viz-architecture.js"></script>
+    <script src="/forge-viz/viz-dataset.js"></script>
+    <script src="/forge-viz/viz-training.js"></script>
+    <script src="/forge-viz/viz-evolution.js"></script>
+    <script src="/forge-viz/viz-walkthrough.js"></script>
     <script>
         let serverPort = 48080;
         let activeSessionId = null;
@@ -1127,6 +1139,35 @@
                 nextBtn.onclick = () => { currentSampleIndex++; refreshViz(); };
                 controls.appendChild(nextBtn);
             }
+
+            if (currentViz === 'WALKTHROUGH') {
+                const playBtn = document.createElement('button');
+                playBtn.className = 'btn btn-sm btn-primary';
+                playBtn.innerHTML = '▶ Play';
+                playBtn.onclick = startWalkthroughAutoPlay;
+                controls.appendChild(playBtn);
+
+                const stepBtn = document.createElement('button');
+                stepBtn.className = 'btn btn-sm';
+                stepBtn.textContent = 'Next Step';
+                stepBtn.onclick = () => {
+                    const steps = [walkthroughStep1Create, walkthroughStep2Forward, walkthroughStep3Train, walkthroughStep4Generate];
+                    const next = steps[walkthroughStep % 4];
+                    next();
+                };
+                controls.appendChild(stepBtn);
+
+                const studyBtn = document.createElement('button');
+                studyBtn.className = 'btn btn-sm';
+                studyBtn.textContent = isStudyMode ? 'Close Study' : 'Study Mode';
+                studyBtn.onclick = () => {
+                    isStudyMode = !isStudyMode;
+                    studyBtn.textContent = isStudyMode ? 'Close Study' : 'Study Mode';
+                    const editArea = document.getElementById('study-messages');
+                    if (editArea) editArea.style.display = isStudyMode ? 'block' : 'none';
+                };
+                controls.appendChild(studyBtn);
+            }
         }
 
         function setupAutoRefresh() {
@@ -1172,6 +1213,8 @@
                     if (!res.ok) throw new Error("Fetch failed");
                     const snapshots = await res.json();
                     renderEvolutionViz(snapshots);
+                } else if (currentViz === 'WALKTHROUGH') {
+                    renderWalkthroughViz();
                 }
             } catch (e) {
                 if (isDemo) {
@@ -1196,156 +1239,28 @@
         }
 
         function renderArchitectureViz(data) {
-            const area = document.getElementById('viz-area');
-            area.innerHTML = '';
-
-            const nodes = data.nodes && data.nodes.length > 0 ? data.nodes : [
-                {id: 'in', name: 'Input', type: 'DATA'},
-                {id: 'emb', name: 'Embedding', type: 'LAYER'},
-                {id: 't1', name: 'Transformer Block #1', type: 'TRANSFORMER'},
-                {id: 'out', name: 'Output Head', type: 'LAYER'}
-            ];
-
-            const container = document.createElement('div');
-            container.style.padding = '20px';
-            container.style.display = 'flex';
-            container.style.flexDirection = 'column';
-            container.style.alignItems = 'center';
-            container.style.gap = '20px';
-
-            nodes.forEach((n, i) => {
-                const card = document.createElement('div');
-                card.className = 'viz-card';
-                card.style.width = '200px';
-                card.style.cursor = 'pointer';
-                card.onclick = () => {
-                    document.getElementById('viz-details-content').innerHTML = `
-                        <h4>${n.name}</h4>
-                        <p>Type: ${n.type}</p>
-                        <p>Params: 1.2M</p>
-                        <p>Input: [Batch, 512]</p>
-                        <p>Output: [Batch, 512]</p>
-                        <p>Status: OK</p>
-                    `;
-                };
-
-                const title = document.createElement('h4');
-                title.textContent = n.name;
-                card.appendChild(title);
-
-                const type = document.createElement('div');
-                type.style.fontSize = '0.7em';
-                type.textContent = n.type;
-                card.appendChild(type);
-
-                container.appendChild(card);
-
-                if (i < nodes.length - 1) {
-                    const arrow = document.createElement('div');
-                    arrow.innerHTML = `
-                        <svg width="20" height="30">
-                            <line x1="10" y1="0" x2="10" y2="25" stroke="#555" stroke-width="2" />
-                            <path d="M 5,20 L 10,25 L 15,20" fill="none" stroke="#555" stroke-width="2" />
-                        </svg>
-                    `;
-                    container.appendChild(arrow);
-                }
-            });
-
-            area.appendChild(container);
+            // Moved to /forge-viz/viz-architecture.js
+            if (window.renderArchitectureViz) window.renderArchitectureViz(data);
         }
 
         function renderDatasetViz(stats, sample) {
-            const area = document.getElementById('viz-area');
-            area.innerHTML = `
-                <div class="sample-nav">
-                    <span>Sample #${currentSampleIndex}</span>
-                </div>
-                <div>
-                    <label>Raw Text:</label>
-                    <div class="data-block">${sample.raw || 'N/A'}</div>
-                </div>
-                <div style="margin-top:10px;">
-                    <label>Tokenized Form:</label>
-                    <div class="data-block">${JSON.stringify(sample.tokens || [])}</div>
-                </div>
-                <div style="margin-top:10px;">
-                    <label>Training Pair:</label>
-                    <div class="data-block">[${(sample.tokens || []).slice(0,-1)}] -> [${(sample.tokens || []).slice(-1)}]</div>
-                </div>
-            `;
-
-            document.getElementById('viz-details-content').innerHTML = `
-                <h4>Dataset Stats</h4>
-                <p>Size: ${stats.size || 0}</p>
-                <p>Vocab: ${stats.vocab || 0}</p>
-                <p>Tokens: ${stats.size * 100}</p>
-            `;
+            // Moved to /forge-viz/viz-dataset.js
+            if (window.renderDatasetViz) window.renderDatasetViz(stats, sample);
         }
 
         function renderTrainingViz(metrics, events) {
-            const area = document.getElementById('viz-area');
-            let eventsHtml = (events || []).map(e => `<div style="font-size:0.8em; margin-bottom:2px; border-bottom:1px solid #333; padding-bottom:2px;">${e}</div>`).join('');
+            // Moved to /forge-viz/viz-training.js
+            if (window.renderTrainingViz) window.renderTrainingViz(metrics, events);
+        }
 
-            area.innerHTML = `
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <div class="viz-card"><h4>Loss</h4><div style="font-size:1.5em;color:var(--accent)">${metrics.loss || '0.000'}</div></div>
-                    <div class="viz-card"><h4>Accuracy</h4><div style="font-size:1.5em;color:var(--success)">${metrics.acc || '0.000'}</div></div>
-                </div>
-                <div style="margin-top:20px; height: 120px; border: 1px solid var(--border); position: relative;">
-                    <svg width="100%" height="100%">
-                         <path d="M 0 120 L 50 100 L 100 110 L 150 70 L 200 80 L 250 40 L 300 50" fill="none" stroke="var(--accent)" stroke-width="2" />
-                    </svg>
-                    <div style="position:absolute; bottom:5px; right:5px; font-size:0.7em; color:var(--text-dim)">Loss over time (Simulated)</div>
-                </div>
-                <div style="margin-top:15px;">
-                    <label style="font-size:0.7em; color:var(--text-dim); text-transform:uppercase;">Event Stream</label>
-                    <div id="viz-event-stream" style="background:#ffffff; color:#333333; padding:10px; height:80px; overflow-y:auto; font-family:monospace; margin-top:5px; border:1px solid var(--border);">
-                        ${eventsHtml || '<div style="color:#888">No events recorded.</div>'}
-                    </div>
-                </div>
-            `;
-
-            document.getElementById('viz-details-content').innerHTML = `
-                <h4>Training Status</h4>
-                <p>Epoch: 5</p>
-                <p>Batch: 128/1000</p>
-                <p>LR: 0.0001</p>
-                <p>Elapsed: 00:12:45</p>
-            `;
+        function renderWalkthroughViz() {
+            // Moved to /forge-viz/viz-walkthrough.js
+            if (window.renderWalkthroughViz) window.renderWalkthroughViz();
         }
 
         function renderEvolutionViz(snapshots) {
-            const area = document.getElementById('viz-area');
-            area.innerHTML = '';
-
-            if (snapshots.length === 0) {
-                area.innerHTML = '<div style="padding:20px; color:var(--text-dim)">No snapshots found for this session.</div>';
-                return;
-            }
-
-            snapshots.forEach((s, i) => {
-                const item = document.createElement('div');
-                item.className = 'timeline-item';
-                item.innerHTML = `
-                    <div style="font-weight:bold">${s.name || 'Snapshot ' + (i+1)}</div>
-                    <div style="font-size:0.8em; color:var(--text-dim)">${new Date(s.timestamp).toLocaleString()}</div>
-                `;
-                item.onclick = () => {
-                    document.getElementById('viz-details-content').innerHTML = `
-                        <h4>Snapshot Info</h4>
-                        <p>ID: ${s.id}</p>
-                        <p>Generation: ${s.generation || 0}</p>
-                        <p>Model Type: MLP</p>
-                        <p>Loss: 0.42</p>
-                        <div style="display:flex; flex-direction:column; gap:5px; margin-top:10px;">
-                            <button class="btn btn-sm" style="width:100%" onclick="compareSnapshot('${s.id}')">Compare with Active</button>
-                            <button class="btn btn-sm btn-primary" style="width:100%" onclick="exportSnapshot('${s.id}')">EXPORT FOR OLLAMA</button>
-                        </div>
-                    `;
-                };
-                area.appendChild(item);
-            });
+            // Moved to /forge-viz/viz-evolution.js
+            if (window.renderEvolutionViz) window.renderEvolutionViz(snapshots);
         }
 
         async function persistUiState(key, value) {

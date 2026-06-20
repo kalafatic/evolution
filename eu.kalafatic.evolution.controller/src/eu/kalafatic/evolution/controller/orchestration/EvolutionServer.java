@@ -107,6 +107,10 @@ public class EvolutionServer extends NanoHTTPD {
         if ("/auth-integration.js".equals(uri)) {
             return handleGetResource("auth-integration.js", "application/javascript");
         }
+        if (uri.startsWith("/forge-viz/")) {
+            String fileName = uri.substring("/forge-viz/".length());
+            return handleGetResource("forge-viz/" + fileName, "application/javascript");
+        }
         if ("/creatic.js".equals(uri)) {
             return handleGetResource("creatic.js", "application/javascript");
         }
@@ -134,12 +138,14 @@ public class EvolutionServer extends NanoHTTPD {
                 }
             }
         } catch (Exception e) {
-            // Catching auth service failures (like DB locks) specifically to prevent accidental 401 redirects
-            System.err.println("Critical Auth Error: " + e.getMessage());
-            if (uri.startsWith("/server/") || uri.startsWith("/task") || uri.startsWith("/forge/") || uri.startsWith("/api/")) {
-                return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json",
-                    new JSONObject().put("error", "Security subsystem busy").toString());
+            System.err.println("Auth validation failure: " + e.getMessage());
+            // If it's an HTML page request, return a 500 error page instead of redirecting to login
+            if (Method.GET.equals(method) && (uri.endsWith(".html") || uri.startsWith("/experimental/"))) {
+                return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, NanoHTTPD.MIME_HTML,
+                    "<html><body style='font-family:Tahoma;background:#ECE9D8;padding:50px;'><h1>Security Subsystem Busy</h1><p>The authentication database is currently locked. Please refresh the page in a few seconds.</p></body></html>");
             }
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json",
+                new JSONObject().put("error", "Security subsystem busy").toString());
         }
 
         // 4. Authorized Static Resources (Dashboard)
@@ -625,16 +631,9 @@ public class EvolutionServer extends NanoHTTPD {
         String sessionId = getSessionIdFromRequest(session);
 
         if (sessionId != null) {
-            try {
-                java.util.Optional<eu.kalafatic.evolution.servers.model.User> userOpt = authService.validateSession(sessionId);
-                return userOpt.isPresent();
-            } catch (Exception e) {
-                // If it's a DB busy error, we log but don't explicitly reject
-                System.err.println("Auth check warning: " + e.getMessage());
-                // In case of error (DB busy), we let it pass if we already have a sessionId,
-                // it's safer to have occasional unauthorized access than broken UI due to locks.
-                return true;
-            }
+            // validateSession throws RuntimeException(SQLException) if DB is busy
+            java.util.Optional<eu.kalafatic.evolution.servers.model.User> userOpt = authService.validateSession(sessionId);
+            return userOpt.isPresent();
         }
 
         return false;

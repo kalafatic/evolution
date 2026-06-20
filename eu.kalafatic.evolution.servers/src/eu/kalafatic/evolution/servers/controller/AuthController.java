@@ -5,7 +5,6 @@ import fi.iki.elonen.NanoHTTPD.IHTTPSession;
 import fi.iki.elonen.NanoHTTPD.Response;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -63,7 +62,8 @@ public class AuthController {
                 response.put("sessionId", sessionId);
                 Response res = jsonResponse(Response.Status.OK, response);
                 // Use SameSite=Lax for better navigation support across links
-                res.addHeader("Set-Cookie", "sessionId=" + sessionId + "; Path=/; HttpOnly; SameSite=Lax");
+                // Removing HttpOnly to support embedded browsers that might have trouble with it in some contexts
+                res.addHeader("Set-Cookie", "sessionId=" + sessionId + "; Path=/; SameSite=Lax");
                 return res;
             } else {
                 Map<String, Object> response = new HashMap<>();
@@ -88,7 +88,7 @@ public class AuthController {
         Map<String, Object> response = new HashMap<>();
         response.put("success", true);
         Response res = jsonResponse(Response.Status.OK, response);
-        res.addHeader("Set-Cookie", "sessionId=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT");
+        res.addHeader("Set-Cookie", "sessionId=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax");
         return res;
     }
 
@@ -117,10 +117,12 @@ public class AuthController {
             } else {
                 return errorResponse(Response.Status.UNAUTHORIZED, "Session expired or invalid");
             }
-        } catch (SQLException e) {
-            // Distinguish database locks from unauthorized access
-            System.err.println("Auth DB Error: " + e.getMessage());
-            return errorResponse(Response.Status.INTERNAL_ERROR, "Database busy. Please retry.");
+        } catch (RuntimeException e) {
+            if (e.getCause() instanceof java.sql.SQLException) {
+                System.err.println("Auth DB busy error: " + e.getMessage());
+                return errorResponse(Response.Status.INTERNAL_ERROR, "Database busy. Please retry.");
+            }
+            return errorResponse(Response.Status.INTERNAL_ERROR, e.getMessage());
         } catch (Exception e) {
             return errorResponse(Response.Status.INTERNAL_ERROR, e.getMessage());
         }
