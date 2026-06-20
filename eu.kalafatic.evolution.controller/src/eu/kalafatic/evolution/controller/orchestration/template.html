@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <title>Evolution Architecture Map</title>
-    <link rel="stylesheet" href="/css/style.css">
     <script src="auth-integration.js"></script>
 	<script>
 	       // Diagnostic JavaLog Bridge
@@ -22,22 +21,25 @@
     <style>
         :root {
             --bg-primary: #ffffff;
-            --bg-secondary: #ECE9D8;
-            --border: #ACA899;
+            --bg-secondary: #f3f3f3;
+            --border: #cccccc;
             --text: #333333;
             --text-dim: #666666;
-            --accent: #316AC5;
-            --accent-hover: #428eff;
+            --accent: #007acc;
+            --accent-hover: #1177bb;
             --error: #f48771;
             --success: #89d185;
         }
 
         body, html {
             margin: 0; padding: 0; height: 100%;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text);
             overflow: hidden;
         }
 
-        #layout { display: flex; height: 100%; background: #ECE9D8; }
+        #layout { display: flex; height: 100%; }
 
         /* Sidebar */
         #sidebar {
@@ -212,17 +214,8 @@
         .zoom-btn:hover { background: #37373d; border-color: var(--accent); color: var(--accent); }
     </style>
 </head>
-<body class="xp-bg">
-    <div class="window-frame" style="width: 98vw; height: 98vh; margin: 1vh auto; display: flex; flex-direction: column;">
-        <div class="title-bar">
-            <div class="title-text">Evolution Architecture Map</div>
-            <div class="title-controls">
-                <button class="control-btn minimize">_</button>
-                <button class="control-btn maximize">□</button>
-                <button class="control-btn close">X</button>
-            </div>
-        </div>
-        <div id="layout">
+<body>
+    <div id="layout">
         <div id="sidebar">
             <h1>🧬 Architecture</h1>
 
@@ -304,7 +297,6 @@
                     <!-- Populated by JS -->
                 </div>
             </div>
-        </div>
         </div>
     </div>
 
