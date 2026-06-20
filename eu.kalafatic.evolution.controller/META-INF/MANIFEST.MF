@@ -25,6 +25,7 @@ Require-Bundle: org.eclipse.swt,
  eu.kalafatic.evolution.forge.controller;bundle-version="2.6.5",
  eu.kalafatic.evolution.creatic;bundle-version="2.6.5",
  eu.kalafatic.evolution.servers;bundle-version="2.6.5";visibility:=reexport
+Import-Package: java.sql
 Automatic-Module-Name: eu.kalafatic.evolution.controller
 Bundle-RequiredExecutionEnvironment: JavaSE-21
 Export-Package: eu.kalafatic.evolution.controller,

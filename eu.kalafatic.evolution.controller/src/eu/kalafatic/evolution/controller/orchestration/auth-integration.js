@@ -3,22 +3,21 @@
  * Handles environment detection and session verification.
  */
 
-let isAuthChecking = false;
-
 function isSWTBrowser() {
     return typeof JavaHandler !== 'undefined' || typeof JavaLog !== 'undefined';
 }
 
 async function checkAuthentication() {
-    if (isAuthChecking) return;
+    if (window.isEvoAuthChecking) return;
     if (isSWTBrowser() || window.location.protocol === 'file:' || window.location.search.includes('runtime=SWT')) {
         return;
     }
 
     const currentPath = window.location.pathname;
-    if (currentPath.endsWith('login.html')) return;
+    // Skip login and dashboard (dashboard handled by auth.js)
+    if (currentPath.endsWith('login.html') || currentPath.endsWith('dashboard.html')) return;
 
-    isAuthChecking = true;
+    window.isEvoAuthChecking = true;
 
     const sessionId = localStorage.getItem('sessionId') || sessionStorage.getItem('sessionId');
     const headers = {};
@@ -59,7 +58,7 @@ async function checkAuthentication() {
     } catch (error) {
         console.error('Auth check failed:', error);
     } finally {
-        isAuthChecking = false;
+        window.isEvoAuthChecking = false;
     }
 }
 

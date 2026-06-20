@@ -47,6 +47,7 @@ Export-Package: eu.kalafatic.evolution.servers.server,
  org.json,
  org.mindrot.jbcrypt,
  org.sqlite
+Import-Package: java.sql
 Require-Bundle: org.eclipse.core.runtime
 Bundle-ClassPath: .,
  lib/json-20140107.jar,
