@@ -47,6 +47,7 @@ public enum RuntimeEventType {
 
     // 5. UI (Presentation Layer)
     VIEW_UPDATED(EventCategory.UI),
+    UI_STATE_UPDATED(EventCategory.UI),
     NODE_RENDERED(EventCategory.UI),
     USER_INTERACTION_RECEIVED(EventCategory.UI),
     EXPORT_READY(EventCategory.UI),
