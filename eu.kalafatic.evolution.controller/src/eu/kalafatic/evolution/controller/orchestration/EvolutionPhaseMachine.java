@@ -1,5 +1,7 @@
 package eu.kalafatic.evolution.controller.orchestration;
 
+import eu.kalafatic.evolution.controller.kernel.EvolutionProfile;
+import eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType;
 import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants;
 import eu.kalafatic.evolution.model.orchestration.SelfDevDecision;
 
@@ -15,6 +17,18 @@ public class EvolutionPhaseMachine {
     }
 
     public EvolutionPhase next(EvolutionPhase current) {
+        return next(current, null);
+    }
+
+    public EvolutionPhase next(EvolutionPhase current, EvolutionProfile profile) {
+        if (profile != null && profile.getCapability() == CapabilityType.CHAT) {
+            if (current == EvolutionPhase.INTENT_EXPANSION) {
+                return EvolutionPhase.FINAL_SYNTHESIS;
+            } else if (current == EvolutionPhase.FINAL_SYNTHESIS) {
+                return EvolutionPhase.TERMINAL_SUCCESS;
+            }
+        }
+
         EvolutionPhase nextPhase;
         switch (current) {
             case INTENT_EXPANSION:

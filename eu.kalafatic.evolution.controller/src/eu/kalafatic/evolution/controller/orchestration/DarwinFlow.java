@@ -76,10 +76,10 @@ public class DarwinFlow implements IOrchestrationFlow {
         Iteration currentIterationModelImpl = manager.getCurrentIterationModel();
         String iterId = currentIterationModelImpl != null ? currentIterationModelImpl.getId() : "default";
 
-        eu.kalafatic.evolution.controller.kernel.EvolutionExecutionProfile profile = context.getExecutionProfile();
+        eu.kalafatic.evolution.controller.kernel.EvolutionProfile profile = context.getExecutionProfile();
         String originalBranch = null;
         String baseCommit = null;
-        if (profile.useGit() && manager.getGitManager().isGitRepository()) {
+        if (profile.requiresRepository() && manager.getGitManager().isGitRepository()) {
             originalBranch = manager.getGitManager().getCurrentBranch();
             baseCommit = manager.getGitManager().getHeadCommit();
         }
@@ -207,12 +207,12 @@ public class DarwinFlow implements IOrchestrationFlow {
     }
 
     public EvaluationResult executeWinner(TaskContext context, eu.kalafatic.evolution.controller.supervision.EvolutionDecision decision, List<BranchVariant> variants, String goal) throws Exception {
-        eu.kalafatic.evolution.controller.kernel.EvolutionExecutionProfile profile = context.getExecutionProfile();
+        eu.kalafatic.evolution.controller.kernel.EvolutionProfile profile = context.getExecutionProfile();
         context.log("[DARWIN_FLOW] Entering executeWinner for variant: " + decision.getSelectedVariantId());
         VariantExecutionContext winningContext = null;
         String originalBranch = null;
         String baseCommit = null;
-        if (profile.useGit() && manager.getGitManager().isGitRepository()) {
+        if (profile.requiresRepository() && manager.getGitManager().isGitRepository()) {
             originalBranch = manager.getGitManager().getCurrentBranch();
             baseCommit = manager.getGitManager().getHeadCommit();
         }
@@ -249,13 +249,13 @@ public class DarwinFlow implements IOrchestrationFlow {
 
         boolean isTestMode = context.getMetadata().containsKey("testMode");
         try {
-            if (profile.useGit() && !isExportOnly && !isTestMode) {
+            if (profile.requiresRepository() && !isExportOnly && !isTestMode) {
                 manager.getGitManager().createBranchFrom(originalBranch, snapshotBranch);
                 manager.getGitManager().forceCheckout(snapshotBranch);
             }
 
             context.log("[KERNEL] Executing winner variant: " + selectedVariant.getId() + " (" + selectedVariant.getStrategy() + ")");
-            if (profile.useGit() && !isExportOnly && !isTestMode) {
+            if (profile.requiresRepository() && !isExportOnly && !isTestMode) {
                 manager.getGitManager().createBranchFrom(originalBranch, selectedVariant.getBranchName());
             }
 
@@ -300,7 +300,7 @@ public class DarwinFlow implements IOrchestrationFlow {
                 return manager.failedResult();
             }
 
-            if (profile.useGit() && !isExportOnly && !isTestMode) {
+            if (profile.requiresRepository() && !isExportOnly && !isTestMode) {
                 manager.getGitManager().forceCheckout(originalBranch);
                 manager.getGitManager().merge(selectedVariant.getBranchName());
             } else if (isExportOnly) {
@@ -339,29 +339,31 @@ public class DarwinFlow implements IOrchestrationFlow {
                 return res;
             }
 
-            WorkspaceDeltaAnalyzer analyzer = new WorkspaceDeltaAnalyzer(context.getProjectRoot(), context);
-            WorkspaceDeltaAnalyzer.DeltaAnalysis reality = analyzer.analyze(baseCommit);
-            context.log("[KERNEL] Reality Check: Winner variant applied. Analysis: " + reality.toString());
+            if (profile.shouldPerformRealityCheck()) {
+                WorkspaceDeltaAnalyzer analyzer = new WorkspaceDeltaAnalyzer(context.getProjectRoot(), context);
+                WorkspaceDeltaAnalyzer.DeltaAnalysis reality = analyzer.analyze(baseCommit);
+                context.log("[KERNEL] Reality Check: Winner variant applied. Analysis: " + reality.toString());
 
-        final BranchVariant finalSelectedVariant = selectedVariant;
-            reality.getChangedFileMap().forEach((path, type) -> {
-                context.getFileChangeTracker().recordChange(path, type);
-            if (finalSelectedVariant != null) {
-                    EvolutionTree tree = context.getKernelContext().getMemoryService().getEvolutionTree();
-                    EvolutionNode node = tree.getNode(finalSelectedVariant.getId());
-                    if (node != null) {
-                        if (type == FileChangeTracker.ChangeType.NEW) node.getCreatedFiles().add(path);
-                        else if (type == FileChangeTracker.ChangeType.REMOVED) node.getDeletedFiles().add(path);
-                        else node.getModifiedFiles().add(path);
+                final BranchVariant finalSelectedVariant = selectedVariant;
+                reality.getChangedFileMap().forEach((path, type) -> {
+                    context.getFileChangeTracker().recordChange(path, type);
+                    if (finalSelectedVariant != null) {
+                        EvolutionTree tree = context.getKernelContext().getMemoryService().getEvolutionTree();
+                        EvolutionNode node = tree.getNode(finalSelectedVariant.getId());
+                        if (node != null) {
+                            if (type == FileChangeTracker.ChangeType.NEW) node.getCreatedFiles().add(path);
+                            else if (type == FileChangeTracker.ChangeType.REMOVED) node.getDeletedFiles().add(path);
+                            else node.getModifiedFiles().add(path);
+                        }
                     }
-                }
-            });
+                });
 
-            boolean isSignificant = reality.isSignificant();
-            if (!isSignificant) {
-                context.log("[KERNEL] Reality Check WARNING: Winner variant resulted in NO physical changes.");
+                boolean isSignificant = reality.isSignificant();
+                if (!isSignificant) {
+                    context.log("[KERNEL] Reality Check WARNING: Winner variant resulted in NO physical changes.");
+                }
+                context.getOrchestrationState().getMetadata().put("lastRealityCheckSignificant", isSignificant);
             }
-            context.getOrchestrationState().getMetadata().put("lastRealityCheckSignificant", isSignificant);
 
             EvaluationResult result = manager.getFitnessEngine().evaluate(context.getProjectRoot(), context, decision.getPressure());
 
@@ -410,7 +412,7 @@ public class DarwinFlow implements IOrchestrationFlow {
                 context.getKernelContext().getMemoryService().saveEvolutionTree();
                 sessionContainer.getEventBus().publish(new RuntimeEvent(RuntimeEventType.TREE_UPDATED, context.getSessionId(), "DarwinFlow", null));
 
-                if (profile.useGit() && !isExportOnly && !isTestMode && manager.getGitManager().isGitRepository()) {
+                if (profile.requiresRepository() && !isExportOnly && !isTestMode && manager.getGitManager().isGitRepository()) {
                     manager.checkStep(selectedVariant.getId(), "GIT_COMMIT", "Committing evolutionary changes for phase: " + completedPhase);
                     manager.getGitManager().commit("Darwin Evolution Phase " + completedPhase, context);
                 }
@@ -425,7 +427,7 @@ public class DarwinFlow implements IOrchestrationFlow {
             }
         } catch (Exception e) {
             context.log("[KERNEL] DarwinFlow.executeWinner failed: " + e.getMessage());
-            if (profile.useGit() && !isExportOnly && !isTestMode && manager.getGitManager().isGitRepository()) {
+            if (profile.requiresRepository() && !isExportOnly && !isTestMode && manager.getGitManager().isGitRepository()) {
                 try {
                     manager.getGitManager().forceCheckout(originalBranch);
                     manager.getGitManager().rollback(context);

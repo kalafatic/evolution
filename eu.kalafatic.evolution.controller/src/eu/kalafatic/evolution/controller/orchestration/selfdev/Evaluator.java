@@ -127,7 +127,7 @@ public class Evaluator implements ICapability, IEvaluationContract {
         EvaluationResult result = OrchestrationFactory.eINSTANCE.createEvaluationResult();
         StateSnapshot snapshot = new StateSnapshot();
 
-        eu.kalafatic.evolution.controller.kernel.EvolutionExecutionProfile profile = context.getExecutionProfile();
+        eu.kalafatic.evolution.controller.kernel.EvolutionProfile profile = context.getExecutionProfile();
         boolean useCompiler = profile != null ? profile.useCompiler() : true;
         boolean useTests = profile != null ? profile.useTests() : true;
 

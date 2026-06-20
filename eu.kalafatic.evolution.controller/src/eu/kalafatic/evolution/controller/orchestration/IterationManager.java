@@ -19,7 +19,7 @@ import eu.kalafatic.evolution.controller.agents.PlannerAgent;
 import eu.kalafatic.evolution.controller.agents.RealityDiscoveryAgent;
 import eu.kalafatic.evolution.controller.agents.StructureAgent;
 import eu.kalafatic.evolution.controller.kernel.AuthorityEngine;
-import eu.kalafatic.evolution.controller.kernel.EvolutionExecutionProfile;
+import eu.kalafatic.evolution.controller.kernel.EvolutionProfile;
 import eu.kalafatic.evolution.controller.kernel.BranchManager;
 import eu.kalafatic.evolution.controller.kernel.DefaultAuthorityEngine;
 import eu.kalafatic.evolution.controller.kernel.DefaultBranchManager;
@@ -477,7 +477,7 @@ public class IterationManager {
 
             // ADAPTIVE KERNEL: Ensure execution profile is initialized before access
             if (context.getExecutionProfile() == null) {
-                eu.kalafatic.evolution.controller.kernel.EvolutionExecutionProfile profile_init =
+                eu.kalafatic.evolution.controller.kernel.EvolutionProfile profile_init =
                     eu.kalafatic.evolution.controller.kernel.EvolutionIntensityCalculator.calculate(context, getActiveTrajectory(context), null);
                 context.getOrchestrationState().setExecutionProfile(profile_init);
             }
@@ -650,7 +650,7 @@ public class IterationManager {
     public OrchestratorResponse evolve(String request, TaskContext context, EvolutionAssessment initialAssessment) throws Exception {
         // ADAPTIVE KERNEL: Ensure execution profile is initialized before access
         if (context.getExecutionProfile() == null) {
-            eu.kalafatic.evolution.controller.kernel.EvolutionExecutionProfile profile_init =
+            eu.kalafatic.evolution.controller.kernel.EvolutionProfile profile_init =
                 eu.kalafatic.evolution.controller.kernel.EvolutionIntensityCalculator.calculate(context, getActiveTrajectory(context), null);
             context.getOrchestrationState().setExecutionProfile(profile_init);
         }
@@ -858,7 +858,7 @@ public class IterationManager {
         }
 
         // ADAPTIVE KERNEL: Freshly calculate iteration-scoped profile from current capability/pressure
-        eu.kalafatic.evolution.controller.kernel.EvolutionExecutionProfile executionProfile =
+        eu.kalafatic.evolution.controller.kernel.EvolutionProfile executionProfile =
             eu.kalafatic.evolution.controller.kernel.EvolutionIntensityCalculator.calculate(context, getActiveTrajectory(context), null);
         context.log("[KERNEL] Darwin Profile derived for Iteration " + (context.getOrchestrationState().getIterationCount() + 1) +
                     ": Capability=" + executionProfile.getCapability() + ", Intensity=" + executionProfile.getIntensity());

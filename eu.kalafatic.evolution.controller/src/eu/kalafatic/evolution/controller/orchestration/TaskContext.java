@@ -13,7 +13,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.json.JSONObject;
 
-import eu.kalafatic.evolution.controller.kernel.EvolutionExecutionProfile;
+import eu.kalafatic.evolution.controller.kernel.EvolutionProfile;
 import eu.kalafatic.evolution.controller.log.Log;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.SelfDevProtocol;
 import eu.kalafatic.evolution.controller.orchestration.workspace.SemanticWorkspace;
@@ -398,7 +398,7 @@ public class TaskContext {
         return orchestrationState;
     }
 
-    public EvolutionExecutionProfile getExecutionProfile() {
+    public EvolutionProfile getExecutionProfile() {
         return getOrchestrationState().getExecutionProfile();
     }
 
