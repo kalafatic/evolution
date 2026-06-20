@@ -166,18 +166,14 @@
             border: 1px solid var(--border);
         }
 
-        /* Floating Palette */
+        /* Node Palette */
         #node-palette {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            background: rgba(255, 255, 255, 0.95);
-            border: 1px solid var(--border);
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
             padding: 10px;
             display: flex;
-            flex-direction: column;
+            flex-wrap: wrap;
             gap: 5px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
         #palette-context-menu {
             position: absolute;
@@ -232,7 +228,7 @@
         #viz-container {
             display: flex;
             gap: 15px;
-            height: 350px;
+            height: 450px;
         }
         #viz-area {
             flex-grow: 1;
@@ -241,6 +237,9 @@
             position: relative;
             overflow: auto;
             padding: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
         #viz-details {
             width: 250px;
@@ -328,10 +327,16 @@
         @keyframes march {
             to { stroke-dashoffset: -20; }
         }
+        @keyframes pulse-glow {
+            0% { filter: drop-shadow(0 0 2px var(--accent)); }
+            50% { filter: drop-shadow(0 0 8px var(--accent)); }
+            100% { filter: drop-shadow(0 0 2px var(--accent)); }
+        }
         .link.animating {
             stroke: var(--accent);
             stroke-dasharray: 5, 5;
-            animation: march 1s linear infinite;
+            animation: march 0.5s linear infinite, pulse-glow 2s ease-in-out infinite;
+            stroke-width: 3px;
         }
 
         #demo-panel {
@@ -359,6 +364,16 @@
                     <button class="btn btn-sm btn-primary" onclick="createNewSession()" data-guidance="Create a new blank Forge session for custom model architecture development.">NEW</button>
                 </div>
             </div>
+
+            <div id="node-palette" data-guidance="Drag components onto the canvas to design your AI model architecture. Connect nodes to define data flow." oncontextmenu="showPaletteMenu(event)">
+                <div style="font-size: 0.7em; color: var(--text-dim); width: 100%; margin-bottom: 2px;">DRAG NODES</div>
+                <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'NEURON')" data-guidance="Generate a basic computational unit architecture.">Neuron</button>
+                <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'MLP')" data-guidance="Generate a Multi-Layer Perceptron architecture.">MLP</button>
+                <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'CNN')" data-guidance="Generate a Convolutional Neural Network architecture.">CNN</button>
+                <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'TRANSFORMER')" data-guidance="Generate a Transformer architecture.">Transformer</button>
+                <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'LLM')" data-guidance="Generate a Large Language Model architecture.">LLM</button>
+            </div>
+
             <div id="session-list">
                 <!-- Sessions populated here -->
             </div>
@@ -395,15 +410,6 @@
                     </defs>
                 </svg>
 
-                <div id="node-palette" data-guidance="Drag components onto the canvas to design your AI model architecture. Connect nodes to define data flow." oncontextmenu="showPaletteMenu(event)">
-                    <div style="font-size: 0.7em; color: var(--text-dim); margin-bottom: 5px;">DRAG NODES</div>
-                    <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'NEURON')" data-guidance="Generate a basic computational unit architecture.">Neuron</button>
-                    <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'MLP')" data-guidance="Generate a Multi-Layer Perceptron architecture.">MLP</button>
-                    <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'CNN')" data-guidance="Generate a Convolutional Neural Network architecture.">CNN</button>
-                    <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'TRANSFORMER')" data-guidance="Generate a Transformer architecture.">Transformer</button>
-                    <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'LLM')" data-guidance="Generate a Large Language Model architecture.">LLM</button>
-                </div>
-
                 <div id="palette-context-menu">
                     <div class="menu-item" onclick="loadTemplate('NEURON')">Load Neuron Demo</div>
                     <div class="menu-item" onclick="loadTemplate('MLP')">Load MLP Demo</div>
@@ -425,6 +431,7 @@
                             <option value="DATASET">Dataset Explorer</option>
                             <option value="TRAINING">Training Monitor</option>
                             <option value="EVOLUTION">Evolution Timeline</option>
+                            <option value="WALKTHROUGH">Study Walkthrough</option>
                         </select>
                     </div>
                     <div id="viz-controls" style="display: flex; gap: 5px;">
@@ -1127,6 +1134,35 @@
                 nextBtn.onclick = () => { currentSampleIndex++; refreshViz(); };
                 controls.appendChild(nextBtn);
             }
+
+            if (currentViz === 'WALKTHROUGH') {
+                const playBtn = document.createElement('button');
+                playBtn.className = 'btn btn-sm btn-primary';
+                playBtn.innerHTML = '▶ Play';
+                playBtn.onclick = startWalkthroughAutoPlay;
+                controls.appendChild(playBtn);
+
+                const stepBtn = document.createElement('button');
+                stepBtn.className = 'btn btn-sm';
+                stepBtn.textContent = 'Next Step';
+                stepBtn.onclick = () => {
+                    const steps = [walkthroughStep1Create, walkthroughStep2Forward, walkthroughStep3Train, walkthroughStep4Generate];
+                    const next = steps[walkthroughStep % 4];
+                    next();
+                };
+                controls.appendChild(stepBtn);
+
+                const studyBtn = document.createElement('button');
+                studyBtn.className = 'btn btn-sm';
+                studyBtn.textContent = isStudyMode ? 'Close Study' : 'Study Mode';
+                studyBtn.onclick = () => {
+                    isStudyMode = !isStudyMode;
+                    studyBtn.textContent = isStudyMode ? 'Close Study' : 'Study Mode';
+                    const editArea = document.getElementById('study-messages');
+                    if (editArea) editArea.style.display = isStudyMode ? 'block' : 'none';
+                };
+                controls.appendChild(studyBtn);
+            }
         }
 
         function setupAutoRefresh() {
@@ -1172,6 +1208,8 @@
                     if (!res.ok) throw new Error("Fetch failed");
                     const snapshots = await res.json();
                     renderEvolutionViz(snapshots);
+                } else if (currentViz === 'WALKTHROUGH') {
+                    renderWalkthroughViz();
                 }
             } catch (e) {
                 if (isDemo) {
@@ -1288,23 +1326,51 @@
             let eventsHtml = (events || []).map(e => `<div style="font-size:0.8em; margin-bottom:2px; border-bottom:1px solid #333; padding-bottom:2px;">${e}</div>`).join('');
 
             area.innerHTML = `
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px; width:100%;">
                     <div class="viz-card"><h4>Loss</h4><div style="font-size:1.5em;color:var(--accent)">${metrics.loss || '0.000'}</div></div>
                     <div class="viz-card"><h4>Accuracy</h4><div style="font-size:1.5em;color:var(--success)">${metrics.acc || '0.000'}</div></div>
                 </div>
-                <div style="margin-top:20px; height: 120px; border: 1px solid var(--border); position: relative;">
+                <div style="margin-top:10px; height: 150px; width:100%; border: 1px solid var(--border); position: relative; background:#111; overflow:hidden;">
+                    <svg width="100%" height="100%" id="training-anim-svg">
+                         <!-- Multi-layer propagation simulation -->
+                         <g id="layer-signals"></g>
+                    </svg>
+                </div>
+                <div style="margin-top:10px; height: 100px; width:100%; border: 1px solid var(--border); position: relative;">
                     <svg width="100%" height="100%">
-                         <path d="M 0 120 L 50 100 L 100 110 L 150 70 L 200 80 L 250 40 L 300 50" fill="none" stroke="var(--accent)" stroke-width="2" />
+                         <path d="M 0 100 L 50 80 L 100 90 L 150 50 L 200 60 L 250 20 L 300 30" fill="none" stroke="var(--accent)" stroke-width="2" />
                     </svg>
                     <div style="position:absolute; bottom:5px; right:5px; font-size:0.7em; color:var(--text-dim)">Loss over time (Simulated)</div>
                 </div>
-                <div style="margin-top:15px;">
+                <div style="margin-top:15px; width:100%;">
                     <label style="font-size:0.7em; color:var(--text-dim); text-transform:uppercase;">Event Stream</label>
                     <div id="viz-event-stream" style="background:#ffffff; color:#333333; padding:10px; height:80px; overflow-y:auto; font-family:monospace; margin-top:5px; border:1px solid var(--border);">
                         ${eventsHtml || '<div style="color:#888">No events recorded.</div>'}
                     </div>
                 </div>
             `;
+
+            // Start propagation animation in Training Monitor
+            setTimeout(() => {
+                const g = document.getElementById('layer-signals');
+                if (!g) return;
+                const layers = [4, 6, 6, 4];
+                const width = g.closest('svg').clientWidth;
+                const height = g.closest('svg').clientHeight;
+
+                layers.forEach((count, lIdx) => {
+                    const x = 50 + lIdx * ((width-100) / (layers.length - 1));
+                    for (let i = 0; i < count; i++) {
+                        const y = (height / (count + 1)) * (i + 1);
+                        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                        circle.setAttribute("cx", x);
+                        circle.setAttribute("cy", y);
+                        circle.setAttribute("r", 4);
+                        circle.setAttribute("fill", "#444");
+                        g.appendChild(circle);
+                    }
+                });
+            }, 100);
 
             document.getElementById('viz-details-content').innerHTML = `
                 <h4>Training Status</h4>
@@ -1313,6 +1379,216 @@
                 <p>LR: 0.0001</p>
                 <p>Elapsed: 00:12:45</p>
             `;
+        }
+
+        // ============== WALKTHROUGH DEMO LOGIC ==============
+        let walkthroughNeurons = [];
+        let walkthroughConnections = [];
+        let walkthroughAnimationFrame = null;
+        let isStudyMode = false;
+        let walkthroughStep = 0;
+
+        class WalkthroughNeuron {
+            constructor(x, y, layer) {
+                this.x = x;
+                this.y = y;
+                this.layer = layer;
+                this.activation = 0;
+                this.targetActivation = 0;
+            }
+        }
+
+        function renderWalkthroughViz() {
+            const area = document.getElementById('viz-area');
+            area.innerHTML = `
+                <div style="display:flex; flex-direction:column; align-items:center; width:100%;">
+                    <canvas id="walkthrough-canvas" width="800" height="400" style="border:1px solid var(--border); background:#111; box-shadow: 0 0 10px rgba(0,255,0,0.2);"></canvas>
+                    <div id="walkthrough-info" class="data-block" style="width:90%; margin-top:10px; min-height:50px;">
+                        Click "Step" or "Play" to begin the neural network evolution walkthrough.
+                    </div>
+                    <div id="study-messages" style="display:${isStudyMode ? 'block' : 'none'}; width:90%; margin-top:10px;">
+                        <textarea id="study-msg-edit" class="control-group" style="width:100%; height:60px; font-size:0.8em;" onchange="saveStudyMessage(this.value)"></textarea>
+                    </div>
+                </div>
+            `;
+
+            drawWalkthrough();
+            updateStudyMessageUI();
+        }
+
+        function saveStudyMessage(val) {
+            if (!activeSessionId) return;
+            const messages = getStudyMessages();
+            messages[walkthroughStep] = val;
+            persistUiState('walkthrough_messages', JSON.stringify(messages));
+
+            const info = document.getElementById('walkthrough-info');
+            if (info) info.innerHTML = val;
+        }
+
+        function getStudyMessages() {
+            const session = sessions.find(s => s.id === activeSessionId);
+            const saved = session && session.uiState && session.uiState.walkthrough_messages;
+            if (saved) {
+                try { return JSON.parse(saved); } catch(e) { return {}; }
+            }
+            return {
+                0: "Welcome to the Neural Network Walkthrough. Here we see how information flows and evolves.",
+                1: "STEP 1: ARCHITECTURE. We define layers of neurons. Input layer receives data, Hidden layers process features, Output layer gives predictions.",
+                2: "STEP 2: FORWARD PASS. Data flows from left to right. Each neuron calculates a weighted sum of its inputs and applies an activation function.",
+                3: "STEP 3: TRAINING. We compare output to target and adjust weights. Notice how signals propagate across multiple hidden layers.",
+                4: "STEP 4: GENERATION. Once trained, the network can predict the next token in a sequence, effectively 'thinking'."
+            };
+        }
+
+        function updateStudyMessageUI() {
+            const info = document.getElementById('walkthrough-info');
+            const edit = document.getElementById('study-msg-edit');
+            const messages = getStudyMessages();
+            const msg = messages[walkthroughStep] || "Proceed to the next step...";
+
+            if (info) info.innerHTML = msg;
+            if (edit) edit.value = msg;
+        }
+
+        function drawWalkthrough() {
+            const canvas = document.getElementById('walkthrough-canvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw connections
+            walkthroughConnections.forEach(c => {
+                const from = walkthroughNeurons[c.from];
+                const to = walkthroughNeurons[c.to];
+                const intensity = Math.abs(c.weight) * 0.8 + 0.2;
+                ctx.strokeStyle = to.activation > 0.1 ? `rgba(0, 255, 100, ${intensity})` : '#334';
+                ctx.lineWidth = Math.abs(c.weight) * 3 + 1;
+                ctx.beginPath();
+                ctx.moveTo(from.x, from.y);
+                ctx.lineTo(to.x, to.y);
+                ctx.stroke();
+            });
+
+            // Draw neurons
+            walkthroughNeurons.forEach((n, i) => {
+                const size = 15;
+                ctx.fillStyle = n.activation > 0.3 ? '#0f0' : '#4488ff';
+                ctx.beginPath();
+                ctx.arc(n.x, n.y, size, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#fff';
+                ctx.font = '8px monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText(n.activation.toFixed(1), n.x, n.y + 3);
+            });
+        }
+
+        function walkthroughStep1Create() {
+            if (walkthroughAnimationFrame) cancelAnimationFrame(walkthroughAnimationFrame);
+            walkthroughNeurons = [];
+            walkthroughConnections = [];
+            walkthroughStep = 1;
+
+            const layers = [3, 5, 4, 2]; // Multiple hidden layers
+            const xStep = 200;
+            const canvas = document.getElementById('walkthrough-canvas');
+            const width = canvas ? canvas.width : 800;
+            const height = canvas ? canvas.height : 400;
+
+            layers.forEach((count, lIdx) => {
+                const x = 100 + lIdx * xStep;
+                for (let i = 0; i < count; i++) {
+                    const y = (height / (count + 1)) * (i + 1);
+                    walkthroughNeurons.push(new WalkthroughNeuron(x, y, lIdx));
+                }
+            });
+
+            for (let i = 0; i < walkthroughNeurons.length; i++) {
+                const n = walkthroughNeurons[i];
+                if (n.layer === 0) continue;
+                for (let j = 0; j < walkthroughNeurons.length; j++) {
+                    if (walkthroughNeurons[j].layer === n.layer - 1) {
+                        walkthroughConnections.push({
+                            from: j, to: i, weight: Math.random() * 2 - 1
+                        });
+                    }
+                }
+            }
+            drawWalkthrough();
+            updateStudyMessageUI();
+        }
+
+        function walkthroughStep2Forward() {
+            if (walkthroughNeurons.length === 0) walkthroughStep1Create();
+            walkthroughStep = 2;
+
+            // Input values
+            walkthroughNeurons.filter(n => n.layer === 0).forEach(n => n.activation = Math.random());
+
+            let currentLayer = 1;
+            const animate = () => {
+                const layerNeurons = walkthroughNeurons.filter(n => n.layer === currentLayer);
+                layerNeurons.forEach(n => {
+                    let sum = 0;
+                    walkthroughConnections.filter(c => walkthroughNeurons[c.to] === n).forEach(c => {
+                        sum += walkthroughNeurons[c.from].activation * c.weight;
+                    });
+                    n.activation = 1 / (1 + Math.exp(-sum));
+                });
+
+                drawWalkthrough();
+                currentLayer++;
+                if (currentLayer < 4) {
+                    setTimeout(animate, 500);
+                } else {
+                    updateStudyMessageUI();
+                }
+            };
+            animate();
+        }
+
+        function walkthroughStep3Train() {
+            if (walkthroughNeurons.length === 0) walkthroughStep1Create();
+            walkthroughStep = 3;
+
+            // Nudge weights
+            walkthroughConnections.forEach(c => {
+                c.weight += (Math.random() - 0.5) * 0.4;
+            });
+
+            walkthroughStep2Forward();
+            updateStudyMessageUI();
+        }
+
+        function walkthroughStep4Generate() {
+            walkthroughStep = 4;
+            updateStudyMessageUI();
+            const info = document.getElementById('walkthrough-info');
+            const responses = [
+                "Neural Evolution: Success. Model converged.",
+                "Cognition level rising. Patterns identified.",
+                "Intelligence synthesized. Ready for deployment."
+            ];
+            info.innerHTML += `<br><br><b style="color:var(--accent)">LLM OUTPUT:</b> ${responses[Math.floor(Math.random()*responses.length)]}`;
+        }
+
+        async function startWalkthroughAutoPlay() {
+            log("Starting automated walkthrough sequence...");
+            const delay = 3000;
+
+            walkthroughStep1Create();
+            await new Promise(r => setTimeout(r, delay));
+
+            walkthroughStep2Forward();
+            await new Promise(r => setTimeout(r, delay + 2000)); // Extra time for signal propagation
+
+            walkthroughStep3Train();
+            await new Promise(r => setTimeout(r, delay + 2000));
+
+            walkthroughStep4Generate();
+            log("Automated walkthrough complete.");
         }
 
         function renderEvolutionViz(snapshots) {
