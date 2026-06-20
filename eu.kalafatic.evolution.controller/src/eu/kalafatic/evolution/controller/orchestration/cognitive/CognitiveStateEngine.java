@@ -7,7 +7,7 @@ import eu.kalafatic.evolution.controller.orchestration.ConfidenceLevel;
  * Orchestrates the cognitive state transitions and routing.
  */
 public class CognitiveStateEngine {
-    private final MessageClassifier classifier = new MessageClassifier();
+    private final CognitiveAnalysisPipeline pipeline = new CognitiveAnalysisPipeline();
     private final CapabilityScoringEngine scoringEngine = new CapabilityScoringEngine();
     private final CognitiveTrajectoryEngine trajectoryEngine = new CognitiveTrajectoryEngine();
     private final CognitiveStatePublisher publisher = new CognitiveStatePublisher();
@@ -15,13 +15,14 @@ public class CognitiveStateEngine {
     public void processInteraction(String prompt, SessionCognitiveState state,
                                    eu.kalafatic.evolution.controller.orchestration.TaskContext context,
                                    eu.kalafatic.evolution.controller.orchestration.ContextAssistResult assistResult) {
-        // 1. Classify current message
-        CapabilitySignal signal = classifier.classify(prompt);
+        // 1. Analyze current message through the cognitive pipeline
+        CapabilityAnalysis analysis = pipeline.analyze(prompt);
+        CapabilitySignal signal = analysis.getWinner();
 
         // 2. Influence by ContextAssist if high confidence
         if (assistResult != null && assistResult.getConfidence() == ConfidenceLevel.HIGH) {
             CapabilityType assistCap = mapToCapability(assistResult.getMode());
-            signal = new CapabilitySignal(assistCap, 10.0, signal.getIntent(), "CONTEXT_ASSIST");
+            signal = new CapabilitySignal(assistCap, 10.0, 1.0, signal.getIntent(), null, "CONTEXT_ASSIST");
         }
 
         // 3. Update scores and current capability
@@ -65,6 +66,7 @@ public class CognitiveStateEngine {
         // Capability Base Depth
         int targetDepth = 1;
         switch (cap) {
+            case SELF_DEV: targetDepth = 10; break;
             case EVOLUTION: targetDepth = 9; break;
             case ARCHITECTURE: targetDepth = 6; break;
             case CODE: targetDepth = 3; break;

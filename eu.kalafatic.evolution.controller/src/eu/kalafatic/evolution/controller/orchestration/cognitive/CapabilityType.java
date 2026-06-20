@@ -7,5 +7,6 @@ public enum CapabilityType {
     CHAT,
     CODE,
     ARCHITECTURE,
-    EVOLUTION
+    EVOLUTION,
+    SELF_DEV
 }

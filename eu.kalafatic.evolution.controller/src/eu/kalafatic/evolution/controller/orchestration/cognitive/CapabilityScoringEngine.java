@@ -51,6 +51,6 @@ public class CapabilityScoringEngine {
     }
 
     private boolean isDeepCapability(CapabilityType type) {
-        return type == CapabilityType.ARCHITECTURE || type == CapabilityType.EVOLUTION;
+        return type == CapabilityType.ARCHITECTURE || type == CapabilityType.EVOLUTION || type == CapabilityType.SELF_DEV;
     }
 }
