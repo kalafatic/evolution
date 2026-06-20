@@ -50,7 +50,11 @@ public class DecisionResolver {
         // If manual selection is provided, we bypass standard resolution for the winner
         if (manualSelectionId != null) {
             String resolvedId = resolveFuzzyId(manualSelectionId, variants, context);
-            context.log("[AUTHORITY] Manual selection override: " + manualSelectionId + (resolvedId.equals(manualSelectionId) ? "" : " (Resolved to: " + resolvedId + ")"));
+            String logMsg = context.getExecutionProfile().requireUserSelection() ?
+                "[AUTHORITY] Manual selection override: " + manualSelectionId :
+                "[AUTHORITY] Trajectory automatically selected: " + manualSelectionId;
+
+            context.log(logMsg + (resolvedId.equals(manualSelectionId) ? "" : " (Resolved to: " + resolvedId + ")"));
             return createManualDecision(iterationId, resolvedId, variants, signals);
         }
 

@@ -48,92 +48,107 @@ public class FinalResponseAssembler {
 
         String executionStatus = buildExecutionStatus(context, success);
         String accomplishments = buildAccomplishments(context);
+        eu.kalafatic.evolution.controller.kernel.EvolutionProfile profile = context.getExecutionProfile();
+        boolean isChat = profile.getCapability() == eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType.CHAT;
 
         // Standardized Summary Construction
         StringBuilder sb = new StringBuilder();
 
         // A. Status & Accomplishments
-        if (executionStatus != null && !executionStatus.isEmpty()) {
-            sb.append(executionStatus).append(" ");
+        if (!isChat) {
+            if (executionStatus != null && !executionStatus.isEmpty()) {
+                sb.append(executionStatus).append(" ");
+            }
+            if (accomplishments != null && !accomplishments.isEmpty()) {
+                sb.append(accomplishments).append(" ");
+            }
         }
-        if (accomplishments != null && !accomplishments.isEmpty()) {
-            sb.append(accomplishments).append(" ");
-        }
+
         if (summary != null && !summary.isEmpty() && !sb.toString().contains(summary)) {
             sb.append(summary);
         }
 
         // B. Mediated Context Injection (if applicable)
-        Object mediatedTarget = state.getMetadata().get("mediatedTarget");
-        if (mediatedTarget instanceof eu.kalafatic.evolution.controller.mediation.model.TargetDescriptor) {
-            eu.kalafatic.evolution.controller.mediation.model.TargetDescriptor target = (eu.kalafatic.evolution.controller.mediation.model.TargetDescriptor) mediatedTarget;
-            sb.append("\n\n---\n### 🧠 Mediated Target Intelligence\n");
-            sb.append("**Target Path:** `").append(target.getRootPath()).append("`\n");
-            sb.append("**Detected Technologies:** ").append(target.getDetectedTechnologies().stream().sorted().collect(Collectors.joining(", "))).append("\n");
-            sb.append("**Inferred Architecture:** ").append(target.getArchitectureInference()).append("\n");
+        if (!isChat) {
+            Object mediatedTarget = state.getMetadata().get("mediatedTarget");
+            if (mediatedTarget instanceof eu.kalafatic.evolution.controller.mediation.model.TargetDescriptor) {
+                eu.kalafatic.evolution.controller.mediation.model.TargetDescriptor target = (eu.kalafatic.evolution.controller.mediation.model.TargetDescriptor) mediatedTarget;
+                sb.append("\n\n---\n### 🧠 Mediated Target Intelligence\n");
+                sb.append("**Target Path:** `").append(target.getRootPath()).append("`\n");
+                sb.append("**Detected Technologies:** ").append(target.getDetectedTechnologies().stream().sorted().collect(Collectors.joining(", "))).append("\n");
+                sb.append("**Inferred Architecture:** ").append(target.getArchitectureInference()).append("\n");
 
-            Object curated = state.getMetadata().get("mediatedCuratedFiles");
-            if (curated instanceof List) {
-                List<?> curatedList = (List<?>) curated;
-                sb.append("**Curated Context:** ").append(curatedList.size()).append(" high-signal files selected for synthesis.\n");
-            }
+                Object curated = state.getMetadata().get("mediatedCuratedFiles");
+                if (curated instanceof List) {
+                    List<?> curatedList = (List<?>) curated;
+                    sb.append("**Curated Context:** ").append(curatedList.size()).append(" high-signal files selected for synthesis.\n");
+                }
 
-            Object synthesized = state.getMetadata().get("mediatedSynthesizedPrompt");
-            if (synthesized instanceof String && !((String) synthesized).isEmpty()) {
-                sb.append("\n#### 📝 Proposed Evolution Prompt\n```markdown\n").append(synthesized).append("\n```\n");
+                Object synthesized = state.getMetadata().get("mediatedSynthesizedPrompt");
+                if (synthesized instanceof String && !((String) synthesized).isEmpty()) {
+                    sb.append("\n#### 📝 Proposed Evolution Prompt\n```markdown\n").append(synthesized).append("\n```\n");
+                }
             }
         }
 
         // C. COMPREHENSIVE EVOLUTIONARY REPORTING
-        sb.append("\n\n---\n### 🧬 Evolution Summary\n");
-        IterationRecord lastWinner = context.getKernelContext().getMemoryService().getRecords().stream()
-                .filter(r -> "ACTIVE".equals(r.getActivationState()))
-                .reduce((first, second) -> second)
-                .orElse(null);
+        if (profile.shouldShowEvolutionSummary()) {
+            sb.append("\n\n---\n### 🧬 Evolution Summary\n");
+            IterationRecord lastWinner = context.getKernelContext().getMemoryService().getRecords().stream()
+                    .filter(r -> "ACTIVE".equals(r.getActivationState()))
+                    .reduce((first, second) -> second)
+                    .orElse(null);
 
-        if (lastWinner != null) {
-            sb.append("**Executed Trajectory:** ").append(lastWinner.getStrategy()).append("\n");
-            sb.append("**Survivor Philosophy:** ").append(lastWinner.getSemanticAnchor()).append("\n");
+            if (lastWinner != null) {
+                sb.append("**Executed Trajectory:** ").append(lastWinner.getStrategy()).append("\n");
+                sb.append("**Survivor Philosophy:** ").append(lastWinner.getSemanticAnchor()).append("\n");
+            }
+            sb.append("**Iteration Count:** ").append(state.getIterationCount()).append("\n");
+            sb.append("**Lineage History:**\n").append(context.getKernelContext().getMemoryService().getHistoryAnalysis()).append("\n");
         }
-        sb.append("**Iteration Count:** ").append(state.getIterationCount()).append("\n");
-        sb.append("**Lineage History:**\n").append(context.getKernelContext().getMemoryService().getHistoryAnalysis()).append("\n");
 
-        sb.append("\n### 📂 Repository Changes\n");
-        if (files.isEmpty()) {
-            sb.append("_No physical changes detected._\n");
-        } else {
-            for (FileReference ref : files) {
-                sb.append("- [").append(ref.getPath()).append("](").append(ref.getEclipseUri()).append(")\n");
+        if (profile.shouldShowRepositoryChanges()) {
+            sb.append("\n### 📂 Repository Changes\n");
+            if (files.isEmpty()) {
+                sb.append("_No physical changes detected._\n");
+            } else {
+                for (FileReference ref : files) {
+                    sb.append("- [").append(ref.getPath()).append("](").append(ref.getEclipseUri()).append(")\n");
+                }
             }
         }
 
-        sb.append("\n### 🔍 Verification\n");
-        Object lastDecisionObj = state.getMetadata().get("lastDecisionSnapshot");
-        DecisionSnapshot lastDecision = null;
-        if (lastDecisionObj instanceof DecisionSnapshot) {
-            lastDecision = (DecisionSnapshot) lastDecisionObj;
-        } else if (lastDecisionObj instanceof Map) {
+        if (profile.shouldPerformRealityCheck()) {
+            sb.append("\n### 🔍 Verification\n");
+            Object lastDecisionObj = state.getMetadata().get("lastDecisionSnapshot");
+            DecisionSnapshot lastDecision = null;
+            if (lastDecisionObj instanceof DecisionSnapshot) {
+                lastDecision = (DecisionSnapshot) lastDecisionObj;
+            } else if (lastDecisionObj instanceof Map) {
+                try {
+                    lastDecision = DecisionSnapshot.fromJson(new org.json.JSONObject((Map<?, ?>) lastDecisionObj));
+                } catch (Exception e) {}
+            }
+            if (lastDecision != null && lastDecision.getAggregatedScores() != null) {
+                Double winnerScore = lastDecision.getAggregatedScores().get(selectedVariantId);
+                if (winnerScore != null) {
+                    sb.append("**Execution Validation Score:** ").append(String.format("%.2f", winnerScore)).append("\n");
+                }
+            }
+            sb.append("**Status:** ").append(success ? "SUCCESS" : "FAILED").append("\n");
+        }
+
+        if (profile.requiresRepository()) {
+            sb.append("\n### ⚖️ Git State\n");
             try {
-                lastDecision = DecisionSnapshot.fromJson(new org.json.JSONObject((Map<?, ?>) lastDecisionObj));
+                eu.kalafatic.evolution.controller.orchestration.selfdev.GitManager git = context.getKernelContext().getGitManager();
+                if (git != null && git.isGitRepository()) {
+                    sb.append("**Branch:** `").append(git.getCurrentBranch()).append("`\n");
+                    sb.append("**Staged Changes:** ").append(files.size()).append(" files\n");
+                    sb.append("**Commit-Ready Status:** READY\n");
+                }
             } catch (Exception e) {}
         }
-        if (lastDecision != null && lastDecision.getAggregatedScores() != null) {
-            Double winnerScore = lastDecision.getAggregatedScores().get(selectedVariantId);
-            if (winnerScore != null) {
-                sb.append("**Execution Validation Score:** ").append(String.format("%.2f", winnerScore)).append("\n");
-            }
-        }
-        sb.append("**Status:** ").append(success ? "SUCCESS" : "FAILED").append("\n");
-
-        sb.append("\n### ⚖️ Git State\n");
-        try {
-            eu.kalafatic.evolution.controller.orchestration.selfdev.GitManager git = context.getKernelContext().getGitManager();
-            if (git != null && git.isGitRepository()) {
-                sb.append("**Branch:** `").append(git.getCurrentBranch()).append("`\n");
-                sb.append("**Staged Changes:** ").append(files.size()).append(" files\n");
-                sb.append("**Commit-Ready Status:** READY\n");
-            }
-        } catch (Exception e) {}
 
         String finalSummary = sb.toString().trim();
 

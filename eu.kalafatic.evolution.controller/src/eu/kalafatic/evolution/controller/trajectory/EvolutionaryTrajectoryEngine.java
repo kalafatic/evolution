@@ -63,11 +63,11 @@ public class EvolutionaryTrajectoryEngine {
         }
 
         // 2. ADAPTIVE KERNEL: Phase selection based on Evolution Intensity Profile
-        eu.kalafatic.evolution.controller.kernel.EvolutionExecutionProfile profile =
+        eu.kalafatic.evolution.controller.kernel.EvolutionProfile profile =
             context.getExecutionProfile();
         int intensity = profile.getIntensity();
 
-        EvolutionPhase nextCandidate = phaseMachine.next(current);
+        EvolutionPhase nextCandidate = phaseMachine.next(current, profile);
         while (nextCandidate != null && nextCandidate.ordinal() < EvolutionPhase.FINAL_SYNTHESIS.ordinal()) {
             boolean skip = false;
 

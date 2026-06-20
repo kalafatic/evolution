@@ -134,7 +134,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         context.log("[DARWIN] Generating trajectory-driven variants for goal: " + goal);
 
         // ADAPTIVE KERNEL: Uniform Intensity Calculation
-        eu.kalafatic.evolution.controller.kernel.EvolutionExecutionProfile profile =
+        eu.kalafatic.evolution.controller.kernel.EvolutionProfile profile =
             context.getExecutionProfile();
         int intensity = profile.getIntensity();
 
