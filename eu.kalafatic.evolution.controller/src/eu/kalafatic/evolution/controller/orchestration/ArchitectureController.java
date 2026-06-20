@@ -23,6 +23,7 @@ import eu.kalafatic.evolution.model.orchestration.Iteration;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
 import eu.kalafatic.evolution.model.orchestration.Task;
+import eu.kalafatic.evolution.selfdev.genome.agent.GenomeUpdateAgent;
 
 /**
  * Headless controller for repository architecture discovery and rendering.
@@ -105,7 +106,7 @@ public class ArchitectureController {
         if (orchestrator != null) {
             SessionContainer session = SessionManager.getInstance().getSession(orchestrator.getId());
             if (session != null) {
-                eu.kalafatic.evolution.selfdev.genome.agent.GenomeUpdateAgent agent = new eu.kalafatic.evolution.selfdev.genome.agent.GenomeUpdateAgent(session);
+                GenomeUpdateAgent agent = new GenomeUpdateAgent(session);
                 agent.runUpdate(root, root.getName());
 
                 session.getEventBus().publish(new RuntimeEvent(RuntimeEventType.FORGE_SNAPSHOT_CREATED, orchestrator.getId(), "ArchitectureController", "GENOME_UPDATED"));

@@ -5,12 +5,14 @@ import java.io.File;
 import eu.kalafatic.evolution.selfdev.genome.core.GenomeArtifact;
 import eu.kalafatic.evolution.selfdev.genome.core.MediatedPackageArtifact;
 import eu.kalafatic.evolution.selfdev.genome.event.GenomeEvent;
-import eu.kalafatic.evolution.selfdev.genome.event.GenomeEventBus;
 import eu.kalafatic.evolution.selfdev.genome.mediation.MediatedPackageProcessor;
 import eu.kalafatic.evolution.selfdev.genome.repository.GenomeRepository;
+import eu.kalafatic.evolution.selfdev.genome.repository.LocalGenomeRepository;
 import eu.kalafatic.evolution.selfdev.genome.selfupgrade.SecondhandUpgradeEngine;
 import eu.kalafatic.evolution.selfdev.genome.selfupgrade.UpgradeContext;
 import eu.kalafatic.evolution.selfdev.genome.selfupgrade.UpgradePlan;
+
+
 
 public class SelfDevGenomeHub {
 
@@ -19,10 +21,10 @@ public class SelfDevGenomeHub {
     public static synchronized SelfDevGenomeHub getInstance() {
         if (instance == null) {
             instance = new SelfDevGenomeHub(
-                new eu.kalafatic.evolution.selfdev.genome.repository.LocalGenomeRepository(),
-                new eu.kalafatic.evolution.selfdev.genome.event.GenomeEventBus(),
-                new eu.kalafatic.evolution.selfdev.genome.mediation.MediatedPackageProcessor(),
-                new eu.kalafatic.evolution.selfdev.genome.selfupgrade.SecondhandUpgradeEngine()
+                new LocalGenomeRepository(),
+                new GenomeEventBus(),
+                new MediatedPackageProcessor(),
+                new SecondhandUpgradeEngine()
             );
         }
         return instance;
