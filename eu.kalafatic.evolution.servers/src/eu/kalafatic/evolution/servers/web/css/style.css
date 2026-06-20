@@ -1,170 +1,140 @@
+/* Windows XP "Luna" Theme - Professional Evolution UI */
+
 :root {
-    --bg-color: #f0f2f5;
-    --card-bg: #ffffff;
-    --text-color: #1c1e21;
-    --text-muted: #606770;
-    --primary-color: #0066ff;
-    --primary-hover: #0052cc;
-    --border-color: #dddfe2;
-    --sidebar-bg: #ffffff;
-    --header-bg: #ffffff;
+    --xp-blue: #0058EE;
+    --xp-blue-dark: #003399;
+    --xp-bg: #ECE9D8;
+    --xp-window-bg: #FFFFFF;
+    --xp-border: #ACA899;
+    --xp-title-gradient: linear-gradient(to right, #0058EE 0%, #3B93FF 100%);
+    --xp-btn-gradient: linear-gradient(to bottom, #FFFFFF 0%, #ECE9D8 100%);
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
-
-body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background-color: var(--bg-color);
-    color: var(--text-color);
-    line-height: 1.5;
+.xp-bg {
+    background-color: #5A7EDC; /* Classic Blue Desktop Color */
+    font-family: "Tahoma", "Segoe UI", sans-serif;
+    margin: 0;
+    padding: 0;
 }
 
-.portal-body {
+/* Window Frame Structure */
+.window-frame {
+    background-color: var(--xp-bg);
+    border: 3px solid #0058EE;
+    border-radius: 8px 8px 0 0;
+    box-shadow: 2px 2px 10px rgba(0,0,0,0.3);
     display: flex;
     flex-direction: column;
-    height: 100vh;
     overflow: hidden;
 }
 
-.portal-header {
-    height: 60px;
-    background: var(--header-bg);
-    border-bottom: 1px solid var(--border-color);
+.title-bar {
+    background: var(--xp-title-gradient);
+    padding: 3px 10px;
     display: flex;
-    align-items: center;
-    padding: 0 24px;
     justify-content: space-between;
-    z-index: 100;
-}
-
-.logo-container {
-    display: flex;
     align-items: center;
-    gap: 8px;
-    font-weight: 700;
-    font-size: 18px;
-    color: var(--primary-color);
+    color: white;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    height: 25px;
 }
 
-.breadcrumbs {
+.title-text {
     font-size: 13px;
-    color: var(--text-muted);
-}
-
-.breadcrumbs a { color: var(--primary-color); text-decoration: none; }
-.breadcrumbs .sep { margin: 0 8px; color: #ccd0d5; }
-
-.header-menu { display: flex; align-items: center; gap: 20px; }
-.header-link { font-size: 13px; font-weight: 600; color: var(--text-muted); text-decoration: none; }
-.header-link:hover { color: var(--primary-color); }
-
-.logout-btn {
-    padding: 6px 16px;
-    font-size: 13px;
-    font-weight: 600;
-    background: #e4e6eb;
-    border: none;
-    border-radius: 6px;
-    color: var(--text-color);
-    cursor: pointer;
-}
-
-.logout-btn:hover { background: #d8dadf; }
-
-.portal-container { display: flex; flex: 1; overflow: hidden; }
-
-.sidebar-left {
-    width: 240px;
-    background: var(--sidebar-bg);
-    border-right: 1px solid var(--border-color);
-    padding: 16px 0;
-}
-
-.nav-section-title {
-    padding: 12px 24px 8px;
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--text-muted);
-    text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
-.nav-link {
+.title-controls {
     display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 8px 24px;
-    color: var(--text-color);
-    text-decoration: none;
-    font-size: 14px;
-    font-weight: 500;
+    gap: 2px;
 }
 
-.nav-link:hover { background: #f2f2f2; }
-.nav-link .icon { width: 20px; text-align: center; }
-
-.portal-main {
-    flex: 1;
-    background: #fff;
-    overflow-y: auto;
-    padding: 60px 80px;
-}
-
-.welcome-section h1 { font-size: 32px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.5px; }
-.subtitle { font-size: 16px; color: var(--text-muted); margin-bottom: 48px; }
-
-.hero-graphic {
-    height: 300px;
-    background: #f8f9fa;
-    border-radius: 12px;
-    border: 1px solid var(--border-color);
-    margin-bottom: 48px;
-    position: relative;
+.control-btn {
+    width: 21px;
+    height: 21px;
+    background: #E1E1E1;
+    border: 1px solid #FFFFFF;
+    box-shadow: inset -1px -1px 1px #808080;
+    border-radius: 2px;
     display: flex;
     justify-content: center;
     align-items: center;
-    overflow: hidden;
+    font-size: 14px;
+    font-weight: bold;
+    color: #333;
+    cursor: pointer;
 }
 
-.cyber-grid {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    background-image:
-        linear-gradient(rgba(0,102,255,0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0,102,255,0.03) 1px, transparent 1px);
-    background-size: 40px 40px;
+.control-btn.close {
+    background: #E81123;
+    color: white;
 }
 
-.platform-core { position: relative; width: 200px; height: 200px; display: flex; justify-content: center; align-items: center; }
-.core-ring { position: absolute; border-radius: 50%; border: 1px solid #dddfe2; }
-.core-outer { width: 200px; height: 200px; border-top-color: var(--primary-color); animation: spin 10s linear infinite; }
-.core-inner { width: 150px; height: 150px; border-bottom-color: var(--primary-color); animation: spin 15s linear reverse infinite; }
-.core-hub { width: 80px; height: 80px; background: #fff; border: 1px solid var(--border-color); border-radius: 50%; display: flex; justify-content: center; align-items: center; color: var(--primary-color); font-weight: 800; font-size: 18px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); z-index: 10; }
+.control-btn:active {
+    box-shadow: inset 1px 1px 1px #808080;
+}
 
-.node { position: absolute; width: 6px; height: 6px; background: var(--primary-color); border-radius: 50%; }
-.node-1 { top: 10px; left: 50%; }
-.node-2 { bottom: 10px; left: 50%; }
+/* Professional XP Elements */
+button {
+    background: var(--xp-btn-gradient);
+    border: 1px solid #003399;
+    padding: 4px 12px;
+    font-size: 12px;
+    border-radius: 3px;
+    cursor: pointer;
+    box-shadow: 1px 1px 1px rgba(0,0,0,0.2);
+}
 
-@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+button:hover {
+    background: #E1E1E1;
+}
 
-.features-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; }
-.summary-item h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; color: var(--primary-color); }
-.summary-item p { font-size: 14px; color: var(--text-muted); }
+button:active {
+    box-shadow: inset 1px 1px 2px rgba(0,0,0,0.2);
+}
 
-.sidebar-right { width: 280px; background: #fff; border-left: 1px solid var(--border-color); padding: 24px; }
-.session-panel h3 { font-size: 14px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; }
+input[type="text"], input[type="password"], select, textarea {
+    border: 2px inset var(--xp-border);
+    padding: 3px 5px;
+    font-size: 12px;
+    background: white;
+}
 
-.info-group { margin-bottom: 20px; }
-.info-group .label { display: block; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px; }
-.info-group .value { display: block; font-size: 14px; font-weight: 600; color: var(--text-color); }
-.value.code { font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace; font-size: 12px; color: var(--text-muted); }
-.value.status { color: var(--success-color); font-weight: 700; }
+/* Sidebars and Panels */
+.sidebar-xp {
+    background-color: #ECE9D8;
+    border-right: 2px solid #ACA899;
+    padding: 10px;
+}
 
-/* Login Page overrides */
-.login-body { display: flex; justify-content: center; align-items: center; height: 100vh; background: #f0f2f5; }
-.login-card { width: 400px; background: #fff; padding: 40px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1), 0 8px 16px rgba(0,0,0,0.1); text-align: center; }
-.login-card h2 { margin-bottom: 24px; font-size: 24px; font-weight: 800; }
-.login-input { width: 100%; padding: 12px; margin-bottom: 16px; border: 1px solid #dddfe2; border-radius: 6px; font-size: 16px; }
-.login-btn { width: 100%; padding: 12px; background: #0066ff; color: #fff; border: none; border-radius: 6px; font-size: 18px; font-weight: 700; cursor: pointer; }
-.login-btn:hover { background: #0052cc; }
+.panel-xp {
+    border: 2px inset #ACA899;
+    background: white;
+    padding: 10px;
+}
+
+/* Portal Specific Overrides */
+.portal-header {
+    background: #ECE9D8 !important;
+    border-bottom: 1px solid #ACA899 !important;
+}
+
+.nav-link:hover {
+    background: #316AC5 !important;
+    color: white !important;
+}
+
+/* Chat Bubbles Professional */
+.message.ai {
+    background: #FFFFFF !important;
+    border: 1px solid #ACA899 !important;
+    border-radius: 4px !important;
+}
+
+.message.user {
+    background: #E1E1E1 !important;
+    border: 1px solid #316AC5 !important;
+    border-radius: 4px !important;
+    color: black !important;
+}
