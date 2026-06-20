@@ -115,21 +115,30 @@ public class EvolutionServer extends NanoHTTPD {
         }
 
         // 3. Environment-Aware Authorization Check
-        if (!isAuthorized(session)) {
-            // If it's a GET request for an HTML page or experimental route, redirect to login
-            if (Method.GET.equals(method) && (
-                "/".equals(uri) || "/index.html".equals(uri) || "/dashboard.html".equals(uri) ||
-                uri.startsWith("/experimental/")
-            )) {
-                Response response = newFixedLengthResponse(Response.Status.REDIRECT, NanoHTTPD.MIME_HTML, "");
-                response.addHeader("Location", "/login.html");
-                return response;
-            }
+        try {
+            if (!isAuthorized(session)) {
+                // If it's a GET request for an HTML page or experimental route, redirect to login
+                if (Method.GET.equals(method) && (
+                    "/".equals(uri) || "/index.html".equals(uri) || "/dashboard.html".equals(uri) ||
+                    uri.startsWith("/experimental/")
+                )) {
+                    Response response = newFixedLengthResponse(Response.Status.REDIRECT, NanoHTTPD.MIME_HTML, "");
+                    response.addHeader("Location", "/login.html");
+                    return response;
+                }
 
-            // For API calls, return 401.
+                // For API calls, return 401.
+                if (uri.startsWith("/server/") || uri.startsWith("/task") || uri.startsWith("/forge/") || uri.startsWith("/api/")) {
+                    return newFixedLengthResponse(Response.Status.UNAUTHORIZED, "application/json",
+                        new JSONObject().put("error", "Unauthorized").toString());
+                }
+            }
+        } catch (Exception e) {
+            // Catching auth service failures (like DB locks) specifically to prevent accidental 401 redirects
+            System.err.println("Critical Auth Error: " + e.getMessage());
             if (uri.startsWith("/server/") || uri.startsWith("/task") || uri.startsWith("/forge/") || uri.startsWith("/api/")) {
-                return newFixedLengthResponse(Response.Status.UNAUTHORIZED, "application/json",
-                    new JSONObject().put("error", "Unauthorized").toString());
+                return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json",
+                    new JSONObject().put("error", "Security subsystem busy").toString());
             }
         }
 
@@ -604,7 +613,7 @@ public class EvolutionServer extends NanoHTTPD {
         return newFixedLengthResponse(Response.Status.OK, "application/json", new JSONObject().put("status", "ok").toString());
     }
 
-    private boolean isAuthorized(IHTTPSession session) {
+    private boolean isAuthorized(IHTTPSession session) throws SQLException {
         // SWT Browser bypass
         String runtimeHeader = session.getHeaders().get("x-evo-runtime");
         String runtimeParam = session.getParms().get("runtime");
@@ -616,11 +625,8 @@ public class EvolutionServer extends NanoHTTPD {
         String sessionId = getSessionIdFromRequest(session);
 
         if (sessionId != null) {
-            try {
-                return authService.validateSession(sessionId).isPresent();
-            } catch (Exception e) {
-                return false;
-            }
+            Optional<eu.kalafatic.evolution.servers.model.User> userOpt = authService.validateSession(sessionId);
+            return userOpt.isPresent();
         }
 
         return false;

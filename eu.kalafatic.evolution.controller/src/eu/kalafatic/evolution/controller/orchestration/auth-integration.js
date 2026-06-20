@@ -3,11 +3,14 @@
  * Handles environment detection and session verification.
  */
 
+let isAuthChecking = false;
+
 function isSWTBrowser() {
     return typeof JavaHandler !== 'undefined' || typeof JavaLog !== 'undefined';
 }
 
 async function checkAuthentication() {
+    if (isAuthChecking) return;
     if (isSWTBrowser() || window.location.protocol === 'file:' || window.location.search.includes('runtime=SWT')) {
         return;
     }
@@ -15,9 +18,11 @@ async function checkAuthentication() {
     const currentPath = window.location.pathname;
     if (currentPath.endsWith('login.html')) return;
 
+    isAuthChecking = true;
+
     const sessionId = localStorage.getItem('sessionId') || sessionStorage.getItem('sessionId');
     const headers = {};
-    if (sessionId) {
+    if (sessionId && sessionId !== 'null' && sessionId !== 'undefined') {
         headers['Authorization'] = `Bearer ${sessionId}`;
     }
 
@@ -34,9 +39,9 @@ async function checkAuthentication() {
             if (!localStorage.getItem('sessionId') && !sessionStorage.getItem('sessionId')) {
                 sessionStorage.setItem('sessionId', data.sessionId);
             }
-        } else {
+        } else if (response.status === 401) {
             // If we sent a sessionId and it failed, clear it and try one more time (maybe cookie works)
-            if (sessionId) {
+            if (sessionId && sessionId !== 'null' && sessionId !== 'undefined') {
                 console.log("Stored session ID invalid. Clearing and retrying with cookies...");
                 localStorage.removeItem('sessionId');
                 sessionStorage.removeItem('sessionId');
@@ -48,10 +53,13 @@ async function checkAuthentication() {
                     return;
                 }
             }
+            console.warn('Unauthorized. Redirecting to login.');
             window.location.href = '/login.html';
         }
     } catch (error) {
         console.error('Auth check failed:', error);
+    } finally {
+        isAuthChecking = false;
     }
 }
 
