@@ -14,6 +14,20 @@ import eu.kalafatic.evolution.selfdev.genome.selfupgrade.UpgradePlan;
 
 public class SelfDevGenomeHub {
 
+    private static SelfDevGenomeHub instance;
+
+    public static synchronized SelfDevGenomeHub getInstance() {
+        if (instance == null) {
+            instance = new SelfDevGenomeHub(
+                new eu.kalafatic.evolution.selfdev.genome.repository.LocalGenomeRepository(),
+                new eu.kalafatic.evolution.selfdev.genome.event.GenomeEventBus(),
+                new eu.kalafatic.evolution.selfdev.genome.mediation.MediatedPackageProcessor(),
+                new eu.kalafatic.evolution.selfdev.genome.selfupgrade.SecondhandUpgradeEngine()
+            );
+        }
+        return instance;
+    }
+
     private final GenomeRepository repository;
     private final GenomeEventBus eventBus;
     private final MediatedPackageProcessor processor;
@@ -79,5 +93,10 @@ public class SelfDevGenomeHub {
 
     public SecondhandUpgradeEngine getUpgradeEngine() {
         return upgradeEngine;
+    }
+
+    public void updateGenome(File root, String projectName, String version) {
+        eu.kalafatic.evolution.selfdev.genome.milestone.MilestoneGenerator mg = new eu.kalafatic.evolution.selfdev.genome.milestone.MilestoneGenerator();
+        mg.generateMilestone(root, projectName, version);
     }
 }
