@@ -13,14 +13,14 @@ import eu.kalafatic.utils.semantic.EvolutionComponent;
 @EvolutionComponent(domain = "kernel", role = "intensity-authority")
 public class EvolutionIntensityCalculator {
 
-    public static int calculate(TaskContext context, Trajectory trajectory, EvolutionaryPressureVector pressure) {
+    public static EvolutionExecutionProfile calculate(TaskContext context, Trajectory trajectory, EvolutionaryPressureVector pressure) {
         double intensity = 1.0;
 
         // 0. FAST RULE BYPASS (Greetings/Simple Chat)
         eu.kalafatic.evolution.controller.orchestration.ModeRouter router = new eu.kalafatic.evolution.controller.orchestration.ModeRouter();
         eu.kalafatic.evolution.controller.orchestration.PlatformMode fastMode = router.routeFast(context.getOrchestrationState().getRawInput(), context.getOrchestrator());
         if (fastMode != null && fastMode.getType() == eu.kalafatic.evolution.controller.orchestration.PlatformType.SIMPLE_CHAT) {
-            return 1;
+            return EvolutionExecutionProfile.create(CapabilityType.CHAT, 1);
         }
 
         // 1. Capability & Depth Signal
@@ -75,6 +75,7 @@ public class EvolutionIntensityCalculator {
         }
         intensity += (expansion - 5) * 0.2;
 
-        return (int) Math.max(1, Math.min(4, Math.round(intensity)));
+        int finalIntensity = (int) Math.max(1, Math.min(4, Math.round(intensity)));
+        return EvolutionExecutionProfile.create(cap, finalIntensity);
     }
 }
