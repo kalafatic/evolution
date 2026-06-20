@@ -18,11 +18,12 @@ public class SelfDevGenomeHub {
 
     public static synchronized SelfDevGenomeHub getInstance() {
         if (instance == null) {
+            eu.kalafatic.evolution.selfdev.genome.repository.LocalGenomeRepository repo = new eu.kalafatic.evolution.selfdev.genome.repository.LocalGenomeRepository();
             instance = new SelfDevGenomeHub(
-                new eu.kalafatic.evolution.selfdev.genome.repository.LocalGenomeRepository(),
-                new eu.kalafatic.evolution.selfdev.genome.event.GenomeEventBus(),
+                repo,
+                new eu.kalafatic.evolution.selfdev.genome.event.DefaultGenomeEventBus(),
                 new eu.kalafatic.evolution.selfdev.genome.mediation.MediatedPackageProcessor(),
-                new eu.kalafatic.evolution.selfdev.genome.selfupgrade.SecondhandUpgradeEngine()
+                new eu.kalafatic.evolution.selfdev.genome.selfupgrade.SecondhandUpgradeEngine(repo)
             );
         }
         return instance;
