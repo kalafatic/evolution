@@ -5,25 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Evolution Portal</title>
     <link rel="stylesheet" href="/css/style.css">
+    <script src="/auth-integration.js"></script>
 </head>
 <body class="portal-body">
     <header class="portal-header">
         <div class="logo-container">
             <span class="logo-icon">🧬</span>
-            <span class="logo-text">Evolution Intelligence Portal</span>
+            <span class="logo-text">Evolution</span>
         </div>
         <nav class="breadcrumbs">
             <a href="/dashboard.html">Home</a> <span class="sep">/</span> <span id="current-page">Intelligence Portal</span>
         </nav>
         <div class="header-menu">
-            <a href="#" class="header-link">Help and Support</a>
-            <button id="logoutBtn" class="logout-btn">Log Off</button>
+            <a href="#" class="header-link">Info</a>
+            <a href="#" class="header-link">Help</a>
+            <a href="#" class="header-link">Update</a>
+            <button id="logoutBtn" class="logout-btn">Sign Out</button>
         </div>
     </header>
 
     <div class="portal-container">
-        <aside class="sidebar-left window-frame">
-            <div class="title-bar"><span>Evolution Tasks</span></div>
+        <aside class="sidebar-left">
             <nav class="nav-menu">
                 <div class="nav-section-title">Workflow Tools</div>
                 <ul>
@@ -32,22 +34,26 @@
                     <li><a href="/experimental/forge" class="nav-link"><span class="icon">🛠️</span> Forge Lab</a></li>
                     <li><a href="/experimental/evolution/tree" class="nav-link"><span class="icon">🌳</span> Evolution Tree</a></li>
                 </ul>
-                <div class="nav-section-title">System</div>
+                <div class="nav-section-title">Platform</div>
                 <ul>
                     <li><a href="/server/status" class="nav-link"><span class="icon">📊</span> System Analytics</a></li>
                 </ul>
             </nav>
         </aside>
 
-        <main class="portal-main window-frame">
-            <div class="title-bar"><span>Autonomous Intelligence Center</span></div>
+        <main class="portal-main">
             <section class="welcome-section">
-                <h1>Welcome to Evolution</h1>
-                <p class="subtitle">Architecting tomorrow's software through iterative AI reasoning.</p>
+                <h1>Autonomous Intelligence Portal</h1>
+                <p class="subtitle">Evolving software architectures through iterative AI reasoning.</p>
 
                 <div class="hero-graphic">
+                    <div class="cyber-grid"></div>
                     <div class="platform-core">
+                        <div class="core-ring core-outer"></div>
+                        <div class="core-ring core-inner"></div>
                         <div class="core-hub">EVO</div>
+                        <div class="node node-1"></div>
+                        <div class="node node-2"></div>
                     </div>
                 </div>
 
@@ -68,29 +74,25 @@
             </section>
         </main>
 
-        <aside class="sidebar-right window-frame">
-            <div class="title-bar"><span>Session Information</span></div>
+        <aside class="sidebar-right">
             <div class="session-panel">
+                <h3>Session Context</h3>
                 <div id="userInfo">
                     <div class="info-group">
-                        <span class="label">User:</span>
+                        <span class="label">Principal</span>
                         <span id="displayUsername" class="value">...</span>
                     </div>
                     <div class="info-group">
-                        <span class="label">Access Level:</span>
+                        <span class="label">Access Level</span>
                         <span id="displayRole" class="value">...</span>
                     </div>
                     <div class="info-group">
-                        <span class="label">Session ID:</span>
+                        <span class="label">Identity Token</span>
                         <span id="displaySessionId" class="value code">...</span>
                     </div>
                     <div class="info-group">
-                        <span class="label">Active Workflow:</span>
+                        <span class="label">Active Workflow</span>
                         <span id="displayWorkflow" class="value status">GENERAL</span>
-                    </div>
-                    <div class="info-group">
-                        <span class="label">Logon Time:</span>
-                        <span id="displayTimestamp" class="value">...</span>
                     </div>
                 </div>
             </div>

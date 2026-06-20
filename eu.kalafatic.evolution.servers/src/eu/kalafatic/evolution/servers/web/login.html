@@ -6,35 +6,43 @@
     <title>Login - Evolution Servers</title>
     <link rel="stylesheet" href="/css/style.css">
 </head>
-<body class="login-body">
-    <div class="login-card window-frame">
+<body class="xp-bg">
+    <div class="window-frame" style="width: 400px; margin: 100px auto;">
         <div class="title-bar">
-            <span>Log On to Evolution</span>
+            <div class="title-text">Log On to Evolution</div>
+            <div class="title-controls">
+                <button class="control-btn close">X</button>
+            </div>
         </div>
-        <div class="login-content">
+        <div style="padding: 20px; background: #ECE9D8; text-align: center;">
             <div style="margin-bottom: 20px;">
-                <span style="font-size: 24px; color: #003399; font-weight: 700;">Evolution</span>
-                <p style="font-size: 10px; color: #4D4E4F;">Professional Intelligence Platform</p>
+                <h1 style="color: #003399; margin: 0; font-size: 24px;">Evolution</h1>
+                <p style="font-size: 11px; margin: 0;">Professional Intelligence Platform</p>
             </div>
 
-            <div id="loader" style="display:none; margin-bottom: 10px;">Authenticating...</div>
-            <div id="errorArea" style="color: #FF0000; font-size: 11px; font-weight: 700;"></div>
+            <div id="loader" style="display:none; margin-bottom: 10px; font-size: 12px;">Authenticating...</div>
+            <div id="errorArea" style="color: #D32F2F; margin-bottom: 10px; font-size: 12px; height: 15px;"></div>
 
-            <form id="loginForm">
-                <div style="text-align: left; margin-bottom: 5px;">User name:</div>
-                <input type="text" id="username" name="username" class="login-input" required>
+            <form id="loginForm" style="text-align: left;">
+                <div style="margin-bottom: 15px;">
+                    <label for="username" style="display: block; font-size: 12px; margin-bottom: 5px;">User name:</label>
+                    <input type="text" id="username" name="username" style="width: 100%; padding: 4px; border: 2px inset #ACA899; box-sizing: border-box;" required>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label for="password" style="display: block; font-size: 12px; margin-bottom: 5px;">Password:</label>
+                    <input type="password" id="password" name="password" style="width: 100%; padding: 4px; border: 2px inset #ACA899; box-sizing: border-box;" required>
+                </div>
 
-                <div style="text-align: left; margin-bottom: 5px;">Password:</div>
-                <input type="password" id="password" name="password" class="login-input" required>
-
-                <div style="display: flex; align-items: center; gap: 5px; margin: 15px 0; font-size: 11px;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 20px; font-size: 11px;">
                     <input type="checkbox" id="rememberMe" name="rememberMe">
                     <label for="rememberMe">Remember me</label>
                 </div>
 
-                <div style="text-align: right; margin-top: 20px; border-top: 1px solid #D8D2BD; padding-top: 10px;">
-                    <button type="submit" id="loginBtn" class="login-btn">OK</button>
-                    <button type="reset" class="login-btn" style="margin-left: 5px;">Cancel</button>
+                <hr style="border: none; border-top: 1px solid #ACA899; margin-bottom: 15px;">
+
+                <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="submit" id="loginBtn" style="padding: 2px 15px; font-size: 12px; min-width: 60px;">OK</button>
+                    <button type="button" style="padding: 2px 15px; font-size: 12px; min-width: 60px;">Cancel</button>
                 </div>
             </form>
         </div>
