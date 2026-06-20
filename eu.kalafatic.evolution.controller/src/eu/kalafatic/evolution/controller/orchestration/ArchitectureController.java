@@ -23,7 +23,7 @@ import eu.kalafatic.evolution.model.orchestration.Iteration;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
 import eu.kalafatic.evolution.model.orchestration.Task;
-import eu.kalafatic.evolution.selfdev.genome.agent.GenomeUpdateAgent;
+import eu.kalafatic.evolution.controller.agents.GenomeUpdateAgent;
 
 /**
  * Headless controller for repository architecture discovery and rendering.
