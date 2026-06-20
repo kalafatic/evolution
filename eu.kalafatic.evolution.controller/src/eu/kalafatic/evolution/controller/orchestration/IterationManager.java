@@ -465,13 +465,21 @@ public class IterationManager {
             }
 
 
-            context.log("[KERNEL] Inspecting goal for unresolved semantic uncertainty.");
-            EvolutionAssessment initialAssessment = dimensionInferenceEngine.analyze(request, context);
-            if (initialAssessment.hasUnresolvedDimensions()) {
-                context.log("[KERNEL] Unresolved dimensions detected: " +
-                    initialAssessment.getUnresolvedDimensions().stream().map(d -> d.getId()).collect(Collectors.joining(", ")));
+            // ADAPTIVE KERNEL: Intensity-based analysis gating
+            int intensity = eu.kalafatic.evolution.controller.kernel.EvolutionIntensityCalculator.calculate(context, getActiveTrajectory(context), null);
+            EvolutionAssessment initialAssessment = null;
+
+            if (intensity > 1) {
+                context.log("[KERNEL] Inspecting goal for unresolved semantic uncertainty.");
+                initialAssessment = dimensionInferenceEngine.analyze(request, context);
+                if (initialAssessment != null && initialAssessment.hasUnresolvedDimensions()) {
+                    context.log("[KERNEL] Unresolved dimensions detected: " +
+                        initialAssessment.getUnresolvedDimensions().stream().map(d -> d.getId()).collect(Collectors.joining(", ")));
+                } else {
+                    context.log("[KERNEL] No significant semantic uncertainty detected. Evolution will proceed with discovery grounding.");
+                }
             } else {
-                context.log("[KERNEL] No significant semantic uncertainty detected. Evolution will proceed with discovery grounding.");
+                context.log("[KERNEL] Low Intensity detected. Bypassing deep semantic analysis.");
             }
 
             context.log("[KERNEL] Routing to unified iterative evolutionary kernel.");
@@ -623,6 +631,13 @@ public class IterationManager {
     }
 
     public OrchestratorResponse evolve(String request, TaskContext context, EvolutionAssessment initialAssessment) throws Exception {
+        // ADAPTIVE KERNEL: Intensity-based phase pre-selection
+        int intensity = eu.kalafatic.evolution.controller.kernel.EvolutionIntensityCalculator.calculate(context, getActiveTrajectory(context), null);
+        if (intensity == 1 && context.getOrchestrationState().getCurrentPhase() == null) {
+            context.log("[KERNEL] Low Intensity detected. Jumping directly to FINAL_SYNTHESIS.");
+            context.getOrchestrationState().setCurrentPhase(EvolutionPhaseMachine.toLegacyString(EvolutionPhase.FINAL_SYNTHESIS));
+        }
+
         context.log("[KERNEL] Starting Recursive Evolutionary Cognition Loop.");
 
         sessionContainer.getEventBus().publish(new RuntimeEvent(RuntimeEventType.FLOW_STARTED, context.getSessionId(), "Kernel", request));
@@ -654,11 +669,11 @@ public class IterationManager {
         }
 
         // 2. ADAPTIVE KERNEL: Intensity Scaling
-        int intensity = eu.kalafatic.evolution.controller.kernel.EvolutionIntensityCalculator.calculate(context, getActiveTrajectory(context), null);
+        int intensity_val = eu.kalafatic.evolution.controller.kernel.EvolutionIntensityCalculator.calculate(context, getActiveTrajectory(context), null);
 
         int maxIterationsLimit = 20; // Default Medium
-        if (intensity == 1) maxIterationsLimit = 1; // Simple Chat: 1 iteration
-        else if (intensity == 2) maxIterationsLimit = 3; // Assisted Coding: 3 iterations
+        if (intensity_val == 1) maxIterationsLimit = 2; // Allow 2: (1) Analysis/Synthesis and (2) Wrap-up
+        else if (intensity_val == 2) maxIterationsLimit = 3; // Assisted Coding: 3 iterations
         else if (expansionValue <= 3) maxIterationsLimit = 10; // Conservative
         else if (expansionValue >= 8) maxIterationsLimit = 50; // Research/High
 
@@ -843,7 +858,22 @@ public class IterationManager {
         EvolutionProgressPublisher.startIteration(context, state.getIterationCount() + 1, generation, lineage);
         EvolutionProgressPublisher.updateStage(context, EvolutionStage.ANALYSIS);
 
+        if (phase == EvolutionPhase.DESIGN_SATISFIED || phase == EvolutionPhase.TERMINAL_SUCCESS) {
+            EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
+            res.setSuccess(true);
+            res.setDecision(SelfDevDecision.STOP);
+            return res;
+        }
+
         if (phase == EvolutionPhase.INTENT_EXPANSION) {
+            // ADAPTIVE KERNEL: Intensity-based phase bypass
+            int intensity = eu.kalafatic.evolution.controller.kernel.EvolutionIntensityCalculator.calculate(context, getActiveTrajectory(context), null);
+            if (intensity == 1) {
+                context.log("[KERNEL] Low Intensity detected. Bypassing INTENT_EXPANSION.");
+                state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(EvolutionPhase.FINAL_SYNTHESIS));
+                return runDarwinIteration(context, darwinFlow);
+            }
+
             EvolutionProgressPublisher.updateStage(context, EvolutionStage.ANALYSIS);
             transition(SystemState.ANALYZING, context);
             IntentExpansionResult expansion = getIntentExpansionEngine().expand(goal, context);
