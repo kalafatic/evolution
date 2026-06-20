@@ -465,16 +465,22 @@ public class IterationManager {
                 context.setPlatformMode(mode);
                 context.log("Platform Mode: " + mode.getType());
 
-            if (sessionContainer == null) {
-                throw new IllegalStateException("IterationManager: sessionContainer is null. Cannot publish mode change event.");
-            }
-            RuntimeEventBus bus = sessionContainer.getEventBus();
+                if (sessionContainer == null) {
+                    throw new IllegalStateException("IterationManager: sessionContainer is null. Cannot publish mode change event.");
+                }
+                RuntimeEventBus bus = sessionContainer.getEventBus();
                 bus.publish(
                     new eu.kalafatic.evolution.controller.workflow.RuntimeEvent(
                         eu.kalafatic.evolution.controller.workflow.RuntimeEventType.MODE_CHANGED,
                         context.getSessionId(), "Kernel", mode.getType().toString()));
             }
 
+            // ADAPTIVE KERNEL: Ensure execution profile is initialized before access
+            if (context.getExecutionProfile() == null) {
+                eu.kalafatic.evolution.controller.kernel.EvolutionExecutionProfile profile_init =
+                    eu.kalafatic.evolution.controller.kernel.EvolutionIntensityCalculator.calculate(context, getActiveTrajectory(context), null);
+                context.getOrchestrationState().setExecutionProfile(profile_init);
+            }
 
             // ADAPTIVE KERNEL: Intensity-based analysis gating
             int intensity = context.getExecutionProfile().getIntensity();
@@ -642,6 +648,13 @@ public class IterationManager {
     }
 
     public OrchestratorResponse evolve(String request, TaskContext context, EvolutionAssessment initialAssessment) throws Exception {
+        // ADAPTIVE KERNEL: Ensure execution profile is initialized before access
+        if (context.getExecutionProfile() == null) {
+            eu.kalafatic.evolution.controller.kernel.EvolutionExecutionProfile profile_init =
+                eu.kalafatic.evolution.controller.kernel.EvolutionIntensityCalculator.calculate(context, getActiveTrajectory(context), null);
+            context.getOrchestrationState().setExecutionProfile(profile_init);
+        }
+
         // ADAPTIVE KERNEL: Intensity-based phase pre-selection
         int intensity = context.getExecutionProfile().getIntensity();
         if (intensity == 1 && context.getOrchestrationState().getCurrentPhase() == null) {
