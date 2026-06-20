@@ -20,6 +20,7 @@ public class SelfDevGenomeHub {
 
     public static synchronized SelfDevGenomeHub getInstance() {
         if (instance == null) {
+            eu.kalafatic.evolution.selfdev.genome.repository.LocalGenomeRepository repo = new eu.kalafatic.evolution.selfdev.genome.repository.LocalGenomeRepository();
             instance = new SelfDevGenomeHub(
                 new LocalGenomeRepository(),
                 new GenomeEventBus(),
