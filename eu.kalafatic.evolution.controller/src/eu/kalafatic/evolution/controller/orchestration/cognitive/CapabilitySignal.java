@@ -1,23 +1,43 @@
 package eu.kalafatic.evolution.controller.orchestration.cognitive;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Represents a single cognitive signal detected from an interaction.
+ * Refactored for evidence-based cognitive analysis.
  */
 public class CapabilitySignal {
-    private CapabilityType capability;
-    private double weight;
-    private SessionIntent intent;
-    private String source;
+    private final CapabilityType capability;
+    private final double score;
+    private final double confidence;
+    private final SessionIntent intent;
+    private final List<Evidence> evidence;
+    private final String explanation;
 
-    public CapabilitySignal(CapabilityType capability, double weight, SessionIntent intent, String source) {
+    public CapabilitySignal(CapabilityType capability, double score, double confidence, SessionIntent intent, List<Evidence> evidence, String explanation) {
         this.capability = capability;
-        this.weight = weight;
+        this.score = score;
+        this.confidence = confidence;
         this.intent = intent;
-        this.source = source;
+        this.evidence = (evidence != null) ? evidence : new ArrayList<>();
+        this.explanation = explanation;
     }
 
     public CapabilityType getCapability() { return capability; }
-    public double getWeight() { return weight; }
+    public double getScore() { return score; }
+    public double getConfidence() { return confidence; }
     public SessionIntent getIntent() { return intent; }
-    public String getSource() { return source; }
+    public List<Evidence> getEvidence() { return evidence; }
+    public String getExplanation() { return explanation; }
+
+    /**
+     * Legacy support for weight (maps to score).
+     */
+    public double getWeight() { return score; }
+
+    /**
+     * Legacy support for source (maps to explanation).
+     */
+    public String getSource() { return explanation; }
 }

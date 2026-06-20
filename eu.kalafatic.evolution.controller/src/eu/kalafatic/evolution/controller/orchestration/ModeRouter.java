@@ -52,34 +52,6 @@ public class ModeRouter {
         return route(prompt, orchestrator, null);
     }
 
-    /**
-     * Attempts to determine the mode using fast, rule-based logic without an LLM.
-     * @return PlatformMode if determined, null otherwise.
-     */
-    public PlatformMode routeFast(String prompt, Orchestrator orchestrator) {
-        if (prompt == null) prompt = "";
-        String lowerPrompt = prompt.toLowerCase().trim();
-
-        // Support for explicit mode overrides
-        if (lowerPrompt.contains("mode: chat")) return createSimpleChatMode();
-        if (lowerPrompt.contains("mode: assisted")) return createAssistedCodingMode();
-        if (lowerPrompt.contains("mode: darwin")) return createDarwinMode();
-        if (lowerPrompt.contains("mode: self-dev")) return createSelfDevMode();
-        if (lowerPrompt.contains("mode: mediated") || lowerPrompt.contains("analyze target")) return createHybridManualExportMode();
-
-        // Greetings and simple chat detection
-        if (lowerPrompt.matches("^(hi|hello|hey|greetings|good morning|good afternoon|good evening)\\s*[!.]*$") ||
-            lowerPrompt.equals("tell me a joke")) {
-            return createSimpleChatMode();
-        }
-
-        // Fast keyword detection for legacy test support
-        if (lowerPrompt.contains("create a java class") || lowerPrompt.contains("implement method")) {
-            return createAssistedCodingMode();
-        }
-
-        return null; // Let the cognitive state engine decide
-    }
 
     /**
      * Detects or assigns PlatformMode based on user input, orchestrator state, and optional context assist result.
@@ -108,9 +80,15 @@ public class ModeRouter {
             return mapToPlatformMode(cogState.getCurrentCapability());
         }
 
-        // 2. Try explicit overrides or fast classification if no session context (Fast Rules)
-        PlatformMode fastMode = routeFast(prompt, orchestrator);
-        if (fastMode != null) return fastMode;
+        // 2. Try explicit overrides (Manual Routing)
+        if (prompt != null) {
+            String lower = prompt.toLowerCase();
+            if (lower.contains("mode: chat")) return createSimpleChatMode();
+            if (lower.contains("mode: assisted")) return createAssistedCodingMode();
+            if (lower.contains("mode: darwin")) return createDarwinMode();
+            if (lower.contains("mode: self-dev")) return createSelfDevMode();
+            if (lower.contains("mode: mediated") || lower.contains("analyze target")) return createHybridManualExportMode();
+        }
 
         // 3. Fallback to model-based routing if no session exists (legacy support)
         if (orchestrator != null) {
@@ -131,6 +109,8 @@ public class ModeRouter {
 
     private PlatformMode mapToPlatformMode(CapabilityType capability) {
         switch (capability) {
+            case SELF_DEV:
+                return createSelfDevMode();
             case EVOLUTION:
                 return createDarwinMode();
             case ARCHITECTURE:
