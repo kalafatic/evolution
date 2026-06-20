@@ -653,13 +653,12 @@ public class IterationManager {
             }
         }
 
-        // 2. Cognitive Depth Driven Intensity Scaling (ADAPTIVE KERNEL)
-        int cognitiveDepth_val = sessionContainer.getCognitiveState().getCognitiveDepth();
-        int intensity_val = eu.kalafatic.evolution.controller.orchestration.cognitive.CognitiveStateEngine.getEvolutionIntensity(cognitiveDepth_val);
+        // 2. ADAPTIVE KERNEL: Intensity Scaling
+        int intensity = eu.kalafatic.evolution.controller.kernel.EvolutionIntensityCalculator.calculate(context, getActiveTrajectory(context), null);
 
         int maxIterationsLimit = 20; // Default Medium
-        if (intensity_val == 1) maxIterationsLimit = 1; // Simple Chat: 1 iteration
-        else if (intensity_val == 2) maxIterationsLimit = 3; // Assisted Coding: 3 iterations
+        if (intensity == 1) maxIterationsLimit = 1; // Simple Chat: 1 iteration
+        else if (intensity == 2) maxIterationsLimit = 3; // Assisted Coding: 3 iterations
         else if (expansionValue <= 3) maxIterationsLimit = 10; // Conservative
         else if (expansionValue >= 8) maxIterationsLimit = 50; // Research/High
 
@@ -741,8 +740,7 @@ public class IterationManager {
                 summary = "Evolution completed (Test Mode).";
             } else {
                 // ADAPTIVE KERNEL: Use winning trajectory mutation trace for simple responses
-                int cognitiveDepth_res = sessionContainer.getCognitiveState().getCognitiveDepth();
-                int intensity_res = eu.kalafatic.evolution.controller.orchestration.cognitive.CognitiveStateEngine.getEvolutionIntensity(cognitiveDepth_res);
+                int intensity_res = eu.kalafatic.evolution.controller.kernel.EvolutionIntensityCalculator.calculate(context, getActiveTrajectory(context), null);
 
                 if (intensity_res == 1) {
                     IterationRecord winner = context.getKernelContext().getMemoryService().getRecords().stream()

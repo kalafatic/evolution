@@ -249,18 +249,11 @@ public class DarwinFlow implements IOrchestrationFlow {
                 manager.getGitManager().createBranchFrom(originalBranch, selectedVariant.getBranchName());
             }
 
-            // ADAPTIVE KERNEL: Intensity-based implementation delegation
-            int cognitiveDepth = sessionContainer.getCognitiveState().getCognitiveDepth();
-            int intensity = eu.kalafatic.evolution.controller.orchestration.cognitive.CognitiveStateEngine.getEvolutionIntensity(cognitiveDepth);
+            // ADAPTIVE KERNEL: Capability-based implementation delegation
+            boolean skipHeavyImplementation = !selectedVariant.isImplementationEnabled();
 
-            // DIAGNOSTIC OPTIMIZATION: Bypassing task generation for analytical variants in Mediated Mode or Simple Chat
-            boolean isAnalyticalVariant = selectedVariant.getStrategyType() != null &&
-                (selectedVariant.getStrategyType().equals("ANALYTICAL") ||
-                 selectedVariant.getStrategyType().equals("CHAT_RESPONSE") ||
-                 selectedVariant.getStrategyType().equals(eu.kalafatic.evolution.controller.orchestration.selfdev.DarwinStrategyType.ARCHITECTURE_MAPPING.name()));
-
-            if (intensity == 1 || (isExportOnly && isAnalyticalVariant)) {
-                context.log("[DARWIN] Adaptive Kernel: Executing variant via General Agent (Intensity: " + intensity + ")");
+            if (skipHeavyImplementation) {
+                context.log("[DARWIN] Adaptive Kernel: Implementation disabled for variant. Executing via General Agent.");
 
                 eu.kalafatic.evolution.controller.agents.GeneralAgent generalAgent = (eu.kalafatic.evolution.controller.agents.GeneralAgent)
                     sessionContainer.getAgentRegistry().get(eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants.AGENT_GENERAL);
