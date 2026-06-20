@@ -11,6 +11,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import eu.kalafatic.evolution.selfdev.genome.model.KnowledgeMetadata;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -24,30 +25,42 @@ public class MilestoneGenerator {
     public String generateMilestone(File root, String projectName, String version) {
         List<EvoMetadata> allMetadata = scanAllMetadata(root);
         
-        String baseTimestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("ddMMyy"));
-        String timestamp = baseTimestamp;
-        File milestonesDir = new File(root, "milestones");
-        File milestoneDir = new File(milestonesDir, "genome_" + timestamp);
+        LocalDateTime now = LocalDateTime.now();
+        String year = String.valueOf(now.getYear());
+        String date = now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        String timestamp = now.format(DateTimeFormatter.ofPattern("ddMMyy_HHmmss"));
 
-        // Handle collisions if multiple milestones are generated on the same day
-        int counter = 1;
-        while (milestoneDir.exists()) {
-            timestamp = baseTimestamp + "_" + counter++;
-            milestoneDir = new File(milestonesDir, "genome_" + timestamp);
-        }
-
-        milestoneDir.mkdirs();
-
-        generateGenomeJson(milestoneDir, projectName, version, timestamp, allMetadata);
-        generateArchitectureMd(milestoneDir, allMetadata);
-        generateUseCasesMd(milestoneDir, allMetadata);
-        generateMilestoneV1Md(milestoneDir, allMetadata);
+        File genomeRoot = new File(root, "genome");
+        File currentDir = new File(genomeRoot, "current");
+        File historyDir = new File(new File(genomeRoot, "history"), year);
+        File dailyDir = new File(historyDir, date);
         
-        generateDashboardHtml(milestoneDir, projectName, timestamp);
+        currentDir.mkdirs();
+        dailyDir.mkdirs();
 
-        applyRetentionPolicy(milestonesDir);
+        // 1. Generate artifacts in 'current' directory (Latest state)
+        generateArtifacts(currentDir, projectName, version, timestamp, allMetadata);
+
+        // 2. Preserve historical snapshot (Never overwritten)
+        // If dailyDir exists, we might want a subfolder with timestamp if multiple updates per day
+        File snapshotDir = new File(dailyDir, timestamp);
+        snapshotDir.mkdirs();
+        generateArtifacts(snapshotDir, projectName, version, timestamp, allMetadata);
+
+        // 3. Handle Milestones if requested (can be expanded later)
+        // For now, use the old milestone logic to keep it compatible but within the new structure
+        File milestonesDir = new File(genomeRoot, "milestones");
+        milestonesDir.mkdirs();
 
         return timestamp;
+    }
+
+    private void generateArtifacts(File dir, String projectName, String version, String timestamp, List<EvoMetadata> allMetadata) {
+        generateGenomeJson(dir, projectName, version, timestamp, allMetadata);
+        generateArchitectureMd(dir, allMetadata);
+        generateUseCasesMd(dir, allMetadata);
+        generateMilestoneV1Md(dir, allMetadata);
+        generateDashboardHtml(dir, projectName, timestamp);
     }
 
     private void generateDashboardHtml(File dir, String projectName, String timestamp) {
@@ -135,7 +148,17 @@ public class MilestoneGenerator {
     }
 
     private void generateArchitectureMd(File dir, List<EvoMetadata> metadata) {
-        StringBuilder sb = new StringBuilder("# Architecture Overview\n\n");
+        KnowledgeMetadata km = new KnowledgeMetadata();
+        km.setId("arch-overview");
+        km.setTitle("Architecture Overview");
+        km.setDocumentType("ARCHITECTURE");
+        km.setSummaryLevel("HIGH");
+        km.setCreated(LocalDateTime.now().toString());
+        km.setStatus("PUBLISHED");
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(km.toMarkdownHeader());
+        sb.append("# Architecture Overview\n\n");
         sb.append("## Major Modules\n");
         metadata.stream()
             .collect(Collectors.groupingBy(m -> m.getDomain() != null ? m.getDomain() : "unknown"))
@@ -158,7 +181,17 @@ public class MilestoneGenerator {
     }
 
     private void generateUseCasesMd(File dir, List<EvoMetadata> metadata) {
-        StringBuilder sb = new StringBuilder("# Use Cases and Behaviors\n\n");
+        KnowledgeMetadata km = new KnowledgeMetadata();
+        km.setId("use-cases");
+        km.setTitle("Use Cases and Behaviors");
+        km.setDocumentType("REQUIREMENTS");
+        km.setSummaryLevel("DETAILED");
+        km.setCreated(LocalDateTime.now().toString());
+        km.setStatus("PUBLISHED");
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(km.toMarkdownHeader());
+        sb.append("# Use Cases and Behaviors\n\n");
         
         metadata.stream()
             .filter(m -> m.getCapabilities() != null && !m.getCapabilities().isEmpty())
@@ -174,7 +207,17 @@ public class MilestoneGenerator {
     }
 
     private void generateMilestoneV1Md(File dir, List<EvoMetadata> metadata) {
-        StringBuilder sb = new StringBuilder("# Milestone Freezepoint v1\n\n");
+        KnowledgeMetadata km = new KnowledgeMetadata();
+        km.setId("milestone-v1");
+        km.setTitle("Milestone Freezepoint v1");
+        km.setDocumentType("MILESTONE");
+        km.setSummaryLevel("HIGH");
+        km.setCreated(LocalDateTime.now().toString());
+        km.setStatus("STABLE");
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(km.toMarkdownHeader());
+        sb.append("# Milestone Freezepoint v1\n\n");
         
         sb.append("## Stable Core\n");
         metadata.stream()

@@ -8,6 +8,14 @@ public class SimpleMarkdownConverter {
     public static String toHtml(String markdown) {
         if (markdown == null) return "";
 
+        // Strip YAML Metadata header if present
+        if (markdown.startsWith("---")) {
+            int secondDash = markdown.indexOf("---", 3);
+            if (secondDash > 0) {
+                markdown = markdown.substring(secondDash + 3).trim();
+            }
+        }
+
         // 1. Escape HTML special characters FIRST to avoid XSS and literal text issues
         String html = escapeHtml(markdown);
 

@@ -36,6 +36,11 @@ public class ArchitectureController {
     }
 
     public String renderArchitecture(Orchestrator orchestrator, String targetPath, String modeStr) {
+        if ("UPDATE_GENOME".equals(modeStr)) {
+            handleUpdateGenome(orchestrator, targetPath);
+            return renderArchitecture(orchestrator, targetPath, "COMPONENTS");
+        }
+
         ViewMode mode = ViewMode.COMPONENTS;
         try {
             if (modeStr != null) mode = ViewMode.valueOf(modeStr.toUpperCase());
@@ -90,6 +95,25 @@ public class ArchitectureController {
         }
 
         return filterModel(model, mode);
+    }
+
+    private void handleUpdateGenome(Orchestrator orchestrator, String targetPath) {
+        if (targetPath == null || targetPath.isEmpty()) return;
+        File root = new File(targetPath);
+        if (!root.exists()) return;
+
+        if (orchestrator != null) {
+            SessionContainer session = SessionManager.getInstance().getSession(orchestrator.getId());
+            if (session != null) {
+                eu.kalafatic.evolution.selfdev.genome.agent.GenomeUpdateAgent agent = new eu.kalafatic.evolution.selfdev.genome.agent.GenomeUpdateAgent(session);
+                agent.runUpdate(root, root.getName());
+
+                session.getEventBus().publish(new RuntimeEvent(RuntimeEventType.FORGE_SNAPSHOT_CREATED, orchestrator.getId(), "ArchitectureController", "GENOME_UPDATED"));
+            }
+        } else {
+            eu.kalafatic.evolution.selfdev.genome.hub.SelfDevGenomeHub hub = eu.kalafatic.evolution.selfdev.genome.hub.SelfDevGenomeHub.getInstance();
+            hub.updateGenome(root, root.getName(), "v1.0.0");
+        }
     }
 
     private void publishDiscoveryEvent(Orchestrator orchestrator) {
