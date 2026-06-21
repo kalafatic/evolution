@@ -28,6 +28,7 @@ import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityStat
 import eu.kalafatic.evolution.controller.orchestration.capability.ICapability;
 import eu.kalafatic.evolution.controller.orchestration.capability.contracts.IMutationContract;
 import eu.kalafatic.evolution.controller.orchestration.goal.GoalModel;
+import eu.kalafatic.evolution.controller.orchestration.goal.SemanticEnvelope;
 import eu.kalafatic.evolution.controller.orchestration.intent.AtomicIntentAnalysis;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionResult;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentHypothesis;
@@ -564,9 +565,19 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
              }
         }
 
+        Object envObj = context.getOrchestrationState().getMetadata().get("semanticEnvelope");
+        SemanticEnvelope envelope = null;
+        if (envObj instanceof SemanticEnvelope) {
+            envelope = (SemanticEnvelope) envObj;
+        } else if (envObj instanceof Map) {
+            envelope = new com.fasterxml.jackson.databind.ObjectMapper()
+                .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                .convertValue(envObj, SemanticEnvelope.class);
+        }
+
         // 1. Goal-Driven Validation: Semantic Distance and Domain Matching
         uniqueVariants.removeIf(variant -> {
-            double distance = semanticDistance(goal, variant);
+            double distance = semanticDistance(goal, variant, envelope);
             boolean domainMatch = variant.optString("domain", goal.getDomain()).equalsIgnoreCase(goal.getDomain());
             boolean artifactMatch = variant.optString("requestedArtifact", goal.getRequestedArtifact()).equalsIgnoreCase(goal.getRequestedArtifact());
 
@@ -637,6 +648,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         v.setImplementationEnabled(obj.optBoolean("implementation_enabled", true));
         v.setStrategy(obj.optString("strategy", "unknown"));
         v.setSemanticAnchor(obj.optString("semantic_anchor", v.getStrategy()));
+        v.setMutationPhilosophy(obj.optString("mutation_philosophy"));
         v.setMutationTrace("Generated in trajectory round.");
         v.setScore(obj.optDouble("score", 0.0));
         String suffix = obj.optString("suffix", "variant");
@@ -779,34 +791,53 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         return v;
     }
 
-    private double semanticDistance(GoalModel goal, JSONObject variant) {
+    private double semanticDistance(GoalModel goal, JSONObject variant, SemanticEnvelope envelope) {
         String strategy = variant.optString("strategy", "").toLowerCase();
         String philosophy = variant.optString("semantic_anchor", "").toLowerCase();
         String primaryAction = goal.getPrimaryAction().toLowerCase();
         String artifact = goal.getRequestedArtifact().toLowerCase();
 
-        // 1. Exact Match Heuristic
-        if (strategy.contains(primaryAction) || philosophy.contains(primaryAction)) {
-            return 0.05;
+        double distance = 0.0;
+
+        // 1. Mandatory Concepts Check
+        if (envelope != null && !envelope.getMandatoryConcepts().isEmpty()) {
+            int missed = 0;
+            for (String concept : envelope.getMandatoryConcepts()) {
+                String c = concept.toLowerCase();
+                if (!strategy.contains(c) && !philosophy.contains(c)) {
+                    missed++;
+                }
+            }
+            distance += (double) missed / envelope.getMandatoryConcepts().size() * 0.5;
         }
 
-        // 2. Keyword Overlap
-        String[] keywords = primaryAction.split(" ");
-        int matches = 0;
-        for (String k : keywords) {
-            if (k.length() > 3 && (strategy.contains(k) || philosophy.contains(k))) {
-                matches++;
+        // 2. Exact Match Heuristic
+        if (strategy.contains(primaryAction) || philosophy.contains(primaryAction)) {
+            distance += 0.05;
+        } else {
+            // 3. Keyword Overlap
+            String[] keywords = primaryAction.split(" ");
+            int matches = 0;
+            for (String k : keywords) {
+                if (k.length() > 3 && (strategy.contains(k) || philosophy.contains(k))) {
+                    matches++;
+                }
+            }
+            double overlap = keywords.length > 0 ? (double) matches / keywords.length : 0.0;
+            distance += (1.0 - overlap) * 0.5;
+        }
+
+        // 4. Forbidden Regions Check
+        if (envelope != null && !envelope.getForbiddenRegions().isEmpty()) {
+            for (String region : envelope.getForbiddenRegions()) {
+                String r = region.toLowerCase();
+                if (strategy.contains(r) || philosophy.contains(r)) {
+                    distance += 0.5; // Heavy penalty
+                }
             }
         }
-        double overlap = (double) matches / keywords.length;
 
-        // 3. Artifact Grounding
-        boolean hasArtifact = strategy.contains(artifact) || philosophy.contains(artifact);
-        
-        double distance = 1.0 - overlap;
-        if (hasArtifact) distance *= 0.8;
-        
-        // 4. Hallucination Detection (Penalty for unrelated concepts)
+        // 5. Hallucination Detection (Legacy / Domain specific)
         if (goal.getGoalType().equals("CODE_GENERATION") && goal.getDomain().equals("JAVA")) {
             if (strategy.contains("reactive") || strategy.contains("kafka") || strategy.contains("microservice")) {
                 if (!primaryAction.contains("reactive") && !primaryAction.contains("kafka")) {

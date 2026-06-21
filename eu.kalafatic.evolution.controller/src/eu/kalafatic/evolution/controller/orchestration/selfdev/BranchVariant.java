@@ -51,6 +51,7 @@ public class BranchVariant {
     private String rank; // winner / runner-up / noise
     private ActivationState activationState = ActivationState.CREATED;
     private String semanticAnchor;
+    private String mutationPhilosophy;
     private String mutationTrace;
     private String inheritedContext;
     private List<String> rejectedSiblings = new ArrayList<>();
@@ -131,6 +132,9 @@ public class BranchVariant {
 
     public String getSemanticAnchor() { return semanticAnchor; }
     public void setSemanticAnchor(String semanticAnchor) { this.semanticAnchor = semanticAnchor; }
+
+    public String getMutationPhilosophy() { return mutationPhilosophy; }
+    public void setMutationPhilosophy(String mutationPhilosophy) { this.mutationPhilosophy = mutationPhilosophy; }
 
     public String getMutationTrace() { return mutationTrace; }
     public void setMutationTrace(String mutationTrace) { this.mutationTrace = mutationTrace; }

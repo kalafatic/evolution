@@ -18,6 +18,7 @@ public class TrajectoryBlueprint {
     private List<String> forbiddenOverlaps = new ArrayList<>();
     private String mutationPressure;
     private String architecturalDirection;
+    private String mutationPhilosophy;
     private DarwinStrategyType strategyType = DarwinStrategyType.PHILOSOPHY_MUTATION;
     private TrajectoryVector targetVector = new TrajectoryVector();
     private java.util.Map<String, String> engineeringDimensions = new java.util.HashMap<>();
@@ -90,6 +91,14 @@ public class TrajectoryBlueprint {
 
     public void setArchitecturalDirection(String architecturalDirection) {
         this.architecturalDirection = architecturalDirection;
+    }
+
+    public String getMutationPhilosophy() {
+        return mutationPhilosophy;
+    }
+
+    public void setMutationPhilosophy(String mutationPhilosophy) {
+        this.mutationPhilosophy = mutationPhilosophy;
     }
 
     public java.util.Map<String, String> getEngineeringDimensions() {

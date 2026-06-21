@@ -9,6 +9,7 @@ import eu.kalafatic.evolution.controller.orchestration.AiService;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionProgressPublisher;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.goal.GoalModel;
+import eu.kalafatic.evolution.controller.orchestration.goal.SemanticEnvelope;
 import eu.kalafatic.evolution.controller.orchestration.intent.AtomicIntentAnalysis;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 
@@ -233,9 +234,27 @@ public class DarwinVariantSpawner {
               .append("Requested Artifact: ").append(goalModel.getRequestedArtifact()).append("\n")
               .append("Primary Action: ").append(goalModel.getPrimaryAction()).append("\n")
               .append("Complexity: ").append(goalModel.getComplexity()).append("\n")
-              .append("Required Outputs: ").append(goalModel.getRequiredOutputs()).append("\n\n")
-              .append("MANDATE: You MUST stay within these semantic boundaries. Do NOT invent new problems or unrequested architectural complexity.\n\n");
+              .append("Required Outputs: ").append(goalModel.getRequiredOutputs()).append("\n\n");
         }
+
+        Object envObj = context.getOrchestrationState().getMetadata().get("semanticEnvelope");
+        SemanticEnvelope envelope = null;
+        if (envObj instanceof SemanticEnvelope) {
+            envelope = (SemanticEnvelope) envObj;
+        } else if (envObj instanceof Map) {
+            envelope = new com.fasterxml.jackson.databind.ObjectMapper()
+                .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                .convertValue(envObj, SemanticEnvelope.class);
+        }
+        if (envelope != null) {
+            sb.append("--- SEMANTIC ENVELOPE (EVOLUTIONARY BOUNDARIES) ---\n")
+              .append("Mandatory Concepts: ").append(envelope.getMandatoryConcepts()).append("\n")
+              .append("Allowed Mutation Dimensions: ").append(envelope.getAllowedMutationDimensions()).append("\n")
+              .append("Discouraged Regions: ").append(envelope.getDiscouragedRegions()).append("\n")
+              .append("Forbidden Regions: ").append(envelope.getForbiddenRegions()).append("\n")
+              .append("Max Abstraction Depth: ").append(envelope.getMaxAbstractionDepth()).append("\n\n");
+        }
+        sb.append("MANDATE: You MUST stay within these semantic boundaries. Do NOT invent new problems or unrequested architectural complexity.\n\n");
 
         if (context != null && context.getOrchestrationState() != null) {
             var metadata = context.getOrchestrationState().getMetadata();
@@ -274,6 +293,7 @@ public class DarwinVariantSpawner {
           .append("BLUEPRINT CONSTRAINTS:\n")
           .append("- ID: ").append(bp.getId()).append("\n")
           .append("- Philosophy: ").append(bp.getPhilosophy()).append("\n")
+          .append("- Mutation Philosophy (ENGINEERING STYLE): ").append(bp.getMutationPhilosophy()).append("\n")
           .append("- Architectural Direction: ").append(bp.getArchitecturalDirection()).append("\n");
         sb.append(composer.composeConstraints(constraintSb.toString())).append("\n\n");
 
@@ -282,6 +302,7 @@ public class DarwinVariantSpawner {
           .append("  \"id\": \"").append(bp.getId()).append("\",\n")
           .append("  \"strategy\": \"(Concrete technical strategy name)\",\n")
           .append("  \"strategy_type\": \"").append(bp.getStrategyType().name()).append("\",\n")
+          .append("  \"mutation_philosophy\": \"").append(bp.getMutationPhilosophy()).append("\",\n")
           .append("  \"semantic_anchor\": \"").append(bp.getPhilosophy()).append("\",\n")
           .append("  \"survival_argument\": \"why this branch is better in this context\",\n")
           .append("  \"tradeoffs\": \"what is sacrificed\",\n")
@@ -417,6 +438,23 @@ public class DarwinVariantSpawner {
             var metadata = context.getOrchestrationState().getMetadata();
             sb.append("CURRENT BEST UNDERSTANDING:\n")
               .append("- ").append(metadata.getOrDefault("current_understanding", "None")).append("\n\n");
+
+            Object envObjSeed = metadata.get("semanticEnvelope");
+            SemanticEnvelope envelope = null;
+            if (envObjSeed instanceof SemanticEnvelope) {
+                envelope = (SemanticEnvelope) envObjSeed;
+            } else if (envObjSeed instanceof Map) {
+                envelope = new com.fasterxml.jackson.databind.ObjectMapper()
+                    .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                    .convertValue(envObjSeed, SemanticEnvelope.class);
+            }
+            if (envelope != null) {
+                sb.append("SEMANTIC ENVELOPE (STRICT BOUNDARIES):\n")
+                  .append("- Mandatory Concepts: ").append(envelope.getMandatoryConcepts()).append("\n")
+                  .append("- Allowed Mutation Dimensions: ").append(envelope.getAllowedMutationDimensions()).append("\n")
+                  .append("- Forbidden Regions: ").append(envelope.getForbiddenRegions()).append("\n")
+                  .append("- Max Abstraction Depth: ").append(envelope.getMaxAbstractionDepth()).append("\n\n");
+            }
         }
 
         if (lineageContext != null && !lineageContext.isEmpty()) {
@@ -515,6 +553,7 @@ public class DarwinVariantSpawner {
           .append("  \"id\": \"v-").append(seed.getType().name().toLowerCase()).append("\",\n")
           .append("  \"strategy\": \"(Concrete technical strategy name)\",\n")
           .append("  \"strategy_type\": \"").append(seed.getType()).append("\",\n")
+          .append("  \"mutation_philosophy\": \"(Engineering philosophy: minimalism | extensibility | performance | robustness | idiomatic | etc.)\",\n")
           .append("  \"semantic_anchor\": \"(Core idea or philosophy)\",\n")
           .append("  \"survival_argument\": \"why this branch is better in this context\",\n")
           .append("  \"tradeoffs\": \"what is sacrificed\",\n")

@@ -7,6 +7,7 @@ import org.json.JSONObject;
 import eu.kalafatic.evolution.controller.agents.BaseAiAgent;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.parsers.JsonUtils;
+import eu.kalafatic.evolution.controller.orchestration.goal.SemanticEnvelope;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionResult;
 
 /**
@@ -55,6 +56,27 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
 
         sb.append(composer.composeGoal(goal)).append("\n\n");
 
+        Object envObj = context.getOrchestrationState().getMetadata().get("semanticEnvelope");
+        SemanticEnvelope envelope = null;
+        if (envObj instanceof SemanticEnvelope) {
+            envelope = (SemanticEnvelope) envObj;
+        } else if (envObj instanceof Map) {
+            envelope = new com.fasterxml.jackson.databind.ObjectMapper()
+                .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                .convertValue(envObj, SemanticEnvelope.class);
+        }
+        if (envelope != null) {
+            StringBuilder envSb = new StringBuilder();
+            envSb.append("SEMANTIC ENVELOPE (STRICT BOUNDARIES):\n")
+              .append("- Core Intent: ").append(envelope.getCoreIntent()).append("\n")
+              .append("- Mandatory Concepts: ").append(envelope.getMandatoryConcepts()).append("\n")
+              .append("- Allowed Mutation Dimensions: ").append(envelope.getAllowedMutationDimensions()).append("\n")
+              .append("- Discouraged Regions: ").append(envelope.getDiscouragedRegions()).append("\n")
+              .append("- Forbidden Regions: ").append(envelope.getForbiddenRegions()).append("\n")
+              .append("- Max Abstraction Depth: ").append(envelope.getMaxAbstractionDepth()).append("\n");
+            sb.append(composer.composeContext(envSb.toString())).append("\n\n");
+        }
+
         String projectStructure = (String) context.getOrchestrationState().getMetadata().get("projectStructure");
         StringBuilder contextSb = new StringBuilder();
         if (projectStructure != null) {
@@ -85,12 +107,13 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
         }
         sb.append(composer.composeSiblingMemory(siblingSb.toString())).append("\n\n");
 
-        sb.append(composer.composeConstraints("Your blueprint MUST intentionally diverge from prior ones in philosophy and execution model.")).append("\n\n");
+        sb.append(composer.composeConstraints("Your blueprint MUST intentionally diverge from prior ones in philosophy and execution model. You MUST pick a distinct engineering philosophy.")).append("\n\n");
 
         String schema = "{\n" +
           "  \"id\": \"unique-blueprint-id\",\n" +
           "  \"strategy\": \"(Concise title for this path)\",\n" +
           "  \"philosophy\": \"(Architectural core concept)\",\n" +
+          "  \"mutation_philosophy\": \"(Engineering philosophy: minimalism | extensibility | performance | robustness | idiomatic | etc.)\",\n" +
           "  \"direction\": \"(Detailed technical implementation path: SPECIFIC patterns or components)\",\n" +
           "  \"characteristics\": [\"Required Trait 1\", \"Required Trait 2\"],\n" +
           "  \"tradeoffs\": \"what is sacrificed\",\n" +
@@ -112,6 +135,7 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
             }
             TrajectoryBlueprint bp = new TrajectoryBlueprint(id, goal, obj.optString("strategy"));
             bp.setPhilosophy(obj.optString("philosophy"));
+            bp.setMutationPhilosophy(obj.optString("mutation_philosophy"));
             bp.setArchitecturalDirection(obj.optString("direction"));
             bp.setSurvivalArgument(obj.optString("survival_argument", obj.optString("philosophy")));
             bp.setTradeoffs(obj.optString("tradeoffs"));
