@@ -179,12 +179,6 @@ public class ConversationState {
                     for (int i = 0; i < history.length(); i++) {
                         JSONObject sig = history.getJSONObject(i);
                         scs.addSignal(new eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilitySignal(
-                            CapabilityType.valueOf(sig.getString("capability")),
-                            sig.getDouble("weight"),
-                            1.0, // default confidence
-                            SessionIntent.valueOf(sig.getString("intent")),
-                            null, // no evidence list from JSON
-                            sig.getString("source")
                             CapabilityType.valueOf(sig.optString("capability", "CHAT")),
                             sig.optDouble("score", sig.optDouble("weight", 0.0)),
                             sig.optDouble("confidence", 1.0),

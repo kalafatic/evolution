@@ -75,6 +75,18 @@
             flex-grow: 1;
             display: flex;
             flex-direction: column;
+            min-width: 300px;
+        }
+
+        #panel-resizer {
+            width: 4px;
+            cursor: col-resize;
+            background: transparent;
+            transition: background 0.2s;
+            z-index: 100;
+        }
+        #panel-resizer:hover, #panel-resizer.resizing {
+            background: var(--accent);
         }
         #top-toolbar {
             height: 40px;
@@ -99,6 +111,8 @@
         /* Right Panels */
         #panels-container {
             width: 320px;
+            min-width: 200px;
+            max-width: 600px;
             background-color: var(--bg-secondary);
             border-left: 1px solid var(--border);
             display: flex;
@@ -418,6 +432,7 @@
 
                 <div id="palette-context-menu">
                     <div style="padding: 5px 12px; font-weight: bold; font-size: 0.9em; border-bottom: 1px solid var(--border); color: var(--text-dim);">DEMO TEMPLATES</div>
+                    <div class="menu-item" onclick="loadTemplate('SEED')">🌱 Load Seed Model</div>
                     <div class="menu-item" onclick="loadTemplate('NEURON')">🎁 Load Neuron Demo</div>
                     <div class="menu-item" onclick="loadTemplate('MLP')">🎁 Load MLP Demo</div>
                     <div class="menu-item" onclick="loadTemplate('CNN')">🎁 Load CNN Demo</div>
@@ -459,6 +474,8 @@
                 </div>
             </div>
         </div>
+
+        <div id="panel-resizer"></div>
 
         <!-- RIGHT PANELS -->
         <div id="panels-container">
@@ -589,6 +606,16 @@
         let model = { nodes: [], links: [] };
         let isTraining = false;
 
+        // Canvas interaction state
+        let isPanning = false;
+        let panX = 0;
+        let panY = 0;
+        let startX, startY;
+        let draggedNode = null;
+
+        // Panel Resizing
+        let isResizing = false;
+
         // Viz State
         let currentViz = 'ARCHITECTURE';
         let currentSampleIndex = 0;
@@ -614,7 +641,36 @@
 
             loadSessions();
             updateButtonState();
+            initResizer();
         };
+
+        function initResizer() {
+            const resizer = document.getElementById('panel-resizer');
+            const container = document.getElementById('panels-container');
+
+            resizer.onmousedown = (e) => {
+                isResizing = true;
+                resizer.classList.add('resizing');
+                document.body.style.cursor = 'col-resize';
+                e.preventDefault();
+            };
+
+            window.addEventListener('mousemove', (e) => {
+                if (!isResizing) return;
+                const width = window.innerWidth - e.clientX;
+                if (width >= 200 && width <= 600) {
+                    container.style.width = width + 'px';
+                }
+            });
+
+            window.addEventListener('mouseup', () => {
+                if (isResizing) {
+                    isResizing = false;
+                    resizer.classList.remove('resizing');
+                    document.body.style.cursor = 'default';
+                }
+            });
+        }
 
         function getBaseUrl() {
             if (window.location.protocol === 'file:' || window.location.protocol.startsWith('bundle')) {
@@ -624,15 +680,17 @@
         }
 
         async function loadSessions() {
+            const url = getBaseUrl() + `/forge/sessions?runtime=SWT`;
             try {
-                const res = await fetch(getBaseUrl() + `/forge/sessions?runtime=SWT`);
+                const res = await fetch(url);
+                if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
                 sessions = await res.json();
                 renderSessionList();
                 if (sessions.length > 0 && !activeSessionId) {
                     selectSession(sessions[0].id);
                 }
             } catch (e) {
-                log(`Error loading sessions: ${e.message}`);
+                log(`Error loading sessions from ${url}: ${e.message}`);
             }
         }
 
@@ -736,8 +794,11 @@
         }
 
         async function fetchModel(id) {
+            const modelUrl = getBaseUrl() + `/forge/session/${id}/model?runtime=SWT`;
+            const sessionUrl = getBaseUrl() + `/forge/session/${id}?runtime=SWT`;
             try {
-                const res = await fetch(getBaseUrl() + `/forge/session/${id}/model?runtime=SWT`);
+                const res = await fetch(modelUrl);
+                if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
                 model = await res.json();
                 if (!model.nodes) model = { nodes: [], links: [] };
 
@@ -745,11 +806,12 @@
                 initGraph();
 
                 // Also fetch session details for UI state
-                const sres = await fetch(getBaseUrl() + `/forge/session/${id}?runtime=SWT`);
+                const sres = await fetch(sessionUrl);
+                if (!sres.ok) throw new Error(`HTTP ${sres.status}: ${sres.statusText}`);
                 const sessionDetails = await sres.json();
                 updateWorkflowUI(sessionDetails.uiState);
             } catch (e) {
-                log(`Error fetching model: ${e.message}`);
+                log(`Error fetching model/session details: ${e.message} (URLs: ${modelUrl}, ${sessionUrl})`);
             }
         }
 
@@ -894,7 +956,20 @@
 
             const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
             g.setAttribute("class", "graph-root");
+            g.setAttribute("transform", `translate(${panX}, ${panY})`);
             svg.appendChild(g);
+
+            // Background for panning
+            const bg = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+            bg.setAttribute("width", "2000");
+            bg.setAttribute("height", "2000");
+            bg.setAttribute("fill", "transparent");
+            bg.onmousedown = (e) => {
+                isPanning = true;
+                startX = e.clientX - panX;
+                startY = e.clientY - panY;
+            };
+            g.appendChild(bg);
 
             model.links.forEach(l => {
                 const source = model.nodes.find(n => n.id === (l.source.id || l.source));
@@ -914,6 +989,14 @@
                 const nodeG = document.createElementNS("http://www.w3.org/2000/svg", "g");
                 nodeG.setAttribute("class", `node node-${n.type || 'CUSTOM'}`);
                 nodeG.setAttribute("transform", `translate(${n.x || 100},${n.y || 100})`);
+                nodeG.setAttribute("style", "cursor: grab;");
+                nodeG.onmousedown = (e) => {
+                    e.stopPropagation();
+                    draggedNode = n;
+                    startX = e.clientX - n.x;
+                    startY = e.clientY - n.y;
+                    nodeG.style.cursor = 'grabbing';
+                };
                 nodeG.onclick = () => inspectNode(n);
 
                 const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
@@ -928,6 +1011,32 @@
 
                 g.appendChild(nodeG);
             });
+
+            svg.onmousemove = (e) => {
+                if (isPanning) {
+                    const nextX = e.clientX - startX;
+                    const nextY = e.clientY - startY;
+                    if (Number.isFinite(nextX) && Number.isFinite(nextY)) {
+                        panX = nextX;
+                        panY = nextY;
+                        g.setAttribute("transform", `translate(${panX}, ${panY})`);
+                    }
+                } else if (draggedNode) {
+                    const nextX = e.clientX - startX;
+                    const nextY = e.clientY - startY;
+                    if (Number.isFinite(nextX) && Number.isFinite(nextY)) {
+                        draggedNode.x = nextX;
+                        draggedNode.y = nextY;
+                        initGraph();
+                    }
+                }
+            };
+
+            svg.onmouseup = () => {
+                isPanning = false;
+                draggedNode = null;
+            };
+
             updateGuidance();
         }
 
