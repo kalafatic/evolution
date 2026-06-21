@@ -128,6 +128,10 @@ public class ArchitecturePage extends AEvoPage {
             }
         }
 
+        if (currentTargetPath == null) {
+            currentTargetPath = System.getProperty("user.home");
+        }
+
         if (currentTargetPath != null && !targetHistory.contains(currentTargetPath)) {
             targetHistory.add(0, currentTargetPath);
         }
@@ -771,22 +775,16 @@ public class ArchitecturePage extends AEvoPage {
         if (browser == null || browser.isDisposed()) return;
         try {
             DesignModel model = extractModel();
-            String html = renderer.render(model, currentMode.name(), currentTargetPath, defaultTargetPath, targetHistory, orchestrator.getGenomeSnapshots(), currentSnapshotTimestamp);
 
-            // Use a proper base URL for resource resolution (js/css)
+            String baseUrl = "";
             org.osgi.framework.Bundle bundle = org.eclipse.core.runtime.Platform.getBundle("eu.kalafatic.evolution.controller");
             if (bundle != null) {
-            	 // We use setUrl with a file:// URL because it's the most reliable way for SWT Browser
-                // to handle relative paths (./js/...) and security origins correctly.
                 URL bundleRoot = FileLocator.toFileURL(bundle.getEntry("/"));
-                URL chatUrl = new URL(bundleRoot, "template.html");
-
-                // Using setUrl(String) instead of setText(String) to ensure the base URL
-                // is correctly set to the file system path of the extracted bundle.
-                browser.setUrl(chatUrl.toString());
-            } else {
-                browser.setText(html);
+                baseUrl = bundleRoot.toString();
             }
+
+            String html = renderer.render(model, currentMode.name(), currentTargetPath, defaultTargetPath, targetHistory, orchestrator.getGenomeSnapshots(), currentSnapshotTimestamp, baseUrl);
+            browser.setText(html);
         } catch (Exception e) {
             e.printStackTrace();
         }

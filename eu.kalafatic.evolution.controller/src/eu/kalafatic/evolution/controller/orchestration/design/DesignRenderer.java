@@ -29,10 +29,14 @@ public class DesignRenderer {
     }
 
     public String render(DesignModel model, String viewMode, String targetPath, String defaultPath, java.util.List<String> history, java.util.List<GenomeSnapshot> snapshots, String currentSnapshot) {
+        return render(model, viewMode, targetPath, defaultPath, history, snapshots, currentSnapshot, "");
+    }
+
+    public String render(DesignModel model, String viewMode, String targetPath, String defaultPath, java.util.List<String> history, java.util.List<GenomeSnapshot> snapshots, String currentSnapshot, String baseUrl) {
         if (model != null) {
             eu.kalafatic.evolution.controller.log.Log.log("[DESIGN_RENDERER] Rendering model: " + model.getName() + " with " + model.getComponents().size() + " components. Mode: " + viewMode);
         }
-        String template = eu.kalafatic.evolution.controller.tools.FileTool.readResource("/eu/kalafatic/evolution/controller/orchestration/template.html");
+        String template = eu.kalafatic.evolution.controller.tools.FileTool.readResource("/template.html");
         if (template == null) {
             eu.kalafatic.evolution.controller.log.Log.log("[DESIGN_RENDERER] ERROR: template.html not found in bundle resources!");
             return "Error: Template not found";
@@ -60,6 +64,7 @@ public class DesignRenderer {
         }
 
         return template
+            .replace("{{BASE_URL}}", baseUrl)
             .replace("{{MODEL_JSON}}", serializeModel(model))
             .replace("{{VIEW_MODE_JSON}}", viewModeJson)
             .replace("{{TARGET_PATH_JSON}}", targetPathJson)

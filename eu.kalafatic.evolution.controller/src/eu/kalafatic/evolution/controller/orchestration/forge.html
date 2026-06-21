@@ -4,28 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Forge Models</title>
+    <link rel="stylesheet" href="shared.css">
     <style>
-        :root {
-            --bg-primary: #ffffff;
-            --bg-secondary: #f3f3f3;
-            --border: #cccccc;
-            --text: #333333;
-            --text-dim: #666666;
-            --accent: #007acc;
-            --accent-hover: #1177bb;
-            --error: #f48771;
-            --success: #89d185;
-        }
-
-        body, html {
-            margin: 0; padding: 0; height: 100%;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-primary);
-            color: var(--text);
-            overflow: hidden;
-        }
-
-        #layout { display: flex; height: 100%; }
 
         /* Session Bar */
         #sidebar {
@@ -131,30 +111,9 @@
 
         .control-group { margin-bottom: 10px; }
         .control-group label { display: block; font-size: 0.8em; margin-bottom: 4px; color: var(--text-dim); }
-        .control-group input, .control-group select {
-            width: 100%;
-            background: #ffffff;
-            border: 1px solid var(--border);
-            color: #333333;
-            padding: 4px;
-            box-sizing: border-box;
-        }
 
         /* Buttons */
-        .btn {
-            background-color: #ffffff;
-            color: #333333;
-            border: 1px solid var(--border);
-            padding: 6px 12px;
-            cursor: pointer;
-            border-radius: 2px;
-            font-size: 0.85em;
-        }
-        .btn:hover { background-color: #f0f0f0; }
-        .btn-primary { background-color: var(--accent); color: white; border-color: var(--accent); }
-        .btn-primary:hover { background-color: var(--accent-hover); }
         .btn-danger { color: #d32f2f; border-color: #d32f2f; }
-        .btn-sm { padding: 2px 6px; font-size: 0.75em; }
 
         /* Graph Elements */
         .node circle { stroke: #333333; stroke-width: 2px; }

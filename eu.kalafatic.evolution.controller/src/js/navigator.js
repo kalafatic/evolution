@@ -14,12 +14,26 @@
     let zoomX = 0;
     let zoomY = 0;
 
-    // Panning state
+    // Panning/Dragging state
     let isPanning = false;
+    let draggedNode = null;
     let startX, startY;
 
     container.addEventListener('mousedown', (e) => {
-        if (e.button === 0) { // Left click for pan
+        if (e.button === 0) { // Left click
+            // Check if we clicked a node
+            const nodeElement = e.target.closest('.node');
+            if (nodeElement) {
+                const nodeId = nodeElement.getAttribute('data-id');
+                draggedNode = graphData.nodes.find(n => n.id === nodeId);
+                if (draggedNode) {
+                    startX = (e.clientX - zoomX) / zoomScale - draggedNode.x;
+                    startY = (e.clientY - zoomY) / zoomScale - draggedNode.y;
+                    container.style.cursor = 'grabbing';
+                    return;
+                }
+            }
+
             isPanning = true;
             startX = e.clientX - zoomX;
             startY = e.clientY - zoomY;
@@ -32,11 +46,34 @@
             zoomX = e.clientX - startX;
             zoomY = e.clientY - startY;
             updateTransform();
+        } else if (draggedNode) {
+            draggedNode.x = (e.clientX - zoomX) / zoomScale - startX;
+            draggedNode.y = (e.clientY - zoomY) / zoomScale - startY;
+
+            // Optimization: Only update the dragged node's position in the DOM
+            const nodeEl = document.querySelector(`.node[data-id="${draggedNode.id}"]`);
+            if (nodeEl) {
+                nodeEl.setAttribute("transform", `translate(${draggedNode.x}, ${draggedNode.y})`);
+
+                // Also update connected links
+                const links = document.querySelectorAll('.link');
+                links.forEach((line, i) => {
+                    const l = graphData.links[i];
+                    if (l.source.id === draggedNode.id) {
+                        line.setAttribute("x1", draggedNode.x);
+                        line.setAttribute("y1", draggedNode.y);
+                    } else if (l.target.id === draggedNode.id) {
+                        line.setAttribute("x2", draggedNode.x);
+                        line.setAttribute("y2", draggedNode.y);
+                    }
+                });
+            }
         }
     });
 
     window.addEventListener('mouseup', () => {
         isPanning = false;
+        draggedNode = null;
         container.style.cursor = 'grab';
     });
 
@@ -146,6 +183,7 @@
         graphData.nodes.forEach(n => {
             const nodeG = document.createElementNS("http://www.w3.org/2000/svg", "g");
             nodeG.setAttribute("class", "node");
+            nodeG.setAttribute("data-id", n.id);
             nodeG.setAttribute("transform", `translate(${n.x}, ${n.y})`);
             nodeG.onclick = (e) => {
                 e.stopPropagation();
