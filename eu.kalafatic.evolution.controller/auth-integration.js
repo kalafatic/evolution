@@ -4,43 +4,62 @@
  */
 
 function isSWTBrowser() {
-    // Detect Eclipse SWT Browser environment by checking for injected Java bridges
     return typeof JavaHandler !== 'undefined' || typeof JavaLog !== 'undefined';
 }
 
 async function checkAuthentication() {
+    if (window.isEvoAuthChecking) return;
     if (isSWTBrowser() || window.location.protocol === 'file:' || window.location.search.includes('runtime=SWT')) {
-        console.log("SWT environment or runtime bypass detected. Skipping authentication.");
         return;
     }
 
     const currentPath = window.location.pathname;
-    if (currentPath.endsWith('login.html')) {
-        return;
-    }
+    // Skip login and dashboard (dashboard handled by auth.js)
+    if (currentPath.endsWith('login.html') || currentPath.endsWith('dashboard.html')) return;
+
+    window.isEvoAuthChecking = true;
 
     const sessionId = localStorage.getItem('sessionId') || sessionStorage.getItem('sessionId');
+    const headers = {};
+    if (sessionId && sessionId !== 'null' && sessionId !== 'undefined') {
+        headers['Authorization'] = `Bearer ${sessionId}`;
+    }
 
     try {
         const response = await fetch('/api/auth/me', {
             method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${sessionId}`
-            }
+            headers: headers,
+            credentials: 'include'
         });
 
-        if (!response.ok) {
-            console.log("Unauthorized or session expired. Redirecting to login.");
+        if (response.ok) {
+            const data = await response.json();
+            // Sync storage if needed
+            if (!localStorage.getItem('sessionId') && !sessionStorage.getItem('sessionId')) {
+                sessionStorage.setItem('sessionId', data.sessionId);
+            }
+        } else if (response.status === 401) {
+            // If we sent a sessionId and it failed, clear it and try one more time (maybe cookie works)
+            if (sessionId && sessionId !== 'null' && sessionId !== 'undefined') {
+                console.log("Stored session ID invalid. Clearing and retrying with cookies...");
+                localStorage.removeItem('sessionId');
+                sessionStorage.removeItem('sessionId');
+                // Second attempt will rely only on cookies
+                const retryResponse = await fetch('/api/auth/me', { method: 'GET', credentials: 'include' });
+                if (retryResponse.ok) {
+                    const data = await retryResponse.json();
+                    sessionStorage.setItem('sessionId', data.sessionId);
+                    return;
+                }
+            }
+            console.warn('Unauthorized. Redirecting to login.');
             window.location.href = '/login.html';
         }
     } catch (error) {
-        console.error('Authentication check failed:', error);
-        // If the server is down or auth endpoint is missing, we might still want to redirect
-        // but for robustness in dev we only redirect on 401/403.
+        console.error('Auth check failed:', error);
+    } finally {
+        window.isEvoAuthChecking = false;
     }
 }
 
-// Auto-run on load
-document.addEventListener('DOMContentLoaded', () => {
-    checkAuthentication();
-});
+document.addEventListener('DOMContentLoaded', checkAuthentication);

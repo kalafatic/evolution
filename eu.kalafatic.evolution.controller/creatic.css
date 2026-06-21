@@ -136,7 +136,7 @@
 .creatic-tooltip {
     position: absolute;
     z-index: 20000;
-    background: var(--bg-secondary);
+    background: #ffffff;
     border: 1px solid var(--accent);
     border-radius: 6px;
     box-shadow: 0 4px 15px rgba(0,0,0,0.5);
@@ -166,7 +166,7 @@
 .creatic-context-menu {
     position: absolute;
     z-index: 21000;
-    background: var(--bg-secondary);
+    background: #ffffff;
     border: 1px solid var(--border);
     border-radius: 4px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.5);

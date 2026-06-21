@@ -151,6 +151,7 @@
             menu.style.display = 'none';
             menu.innerHTML = `
                 <div class="context-item" id="context-help">✨ Get Help</div>
+                <div class="context-item" id="context-demo" style="display:none">🚀 Run E2E Demo</div>
                 <div class="context-divider"></div>
                 <div class="context-item" onclick="window.Creatic.toggle()">🛠 Toggle Assistant</div>
             `;
@@ -160,7 +161,7 @@
 
         setupContextMenuListeners() {
             document.addEventListener('contextmenu', (e) => {
-                const target = e.target.closest('[data-guidance]');
+                const target = e.target.closest('[data-guidance]') || e.target.closest('#model-type');
                 if (!target && !e.target.closest('.creatic-root')) return;
 
                 e.preventDefault();
@@ -174,15 +175,33 @@
             if (!this.contextMenu) return;
 
             const helpItem = document.getElementById('context-help');
+            const demoItem = document.getElementById('context-demo');
+
             if (target) {
-                helpItem.style.display = 'block';
-                helpItem.onclick = (e) => {
-                    e.stopPropagation();
-                    this.showTooltip(target, target.getAttribute('data-guidance'));
-                    this.hideContextMenu();
-                };
+                if (target.getAttribute('data-guidance')) {
+                    helpItem.style.display = 'block';
+                    helpItem.onclick = (e) => {
+                        e.stopPropagation();
+                        this.showTooltip(target, target.getAttribute('data-guidance'));
+                        this.hideContextMenu();
+                    };
+                } else {
+                    helpItem.style.display = 'none';
+                }
+
+                if (target.id === 'model-type') {
+                    demoItem.style.display = 'block';
+                    demoItem.onclick = (e) => {
+                        e.stopPropagation();
+                        if (window.startE2EDemo) window.startE2EDemo();
+                        this.hideContextMenu();
+                    };
+                } else {
+                    demoItem.style.display = 'none';
+                }
             } else {
                 helpItem.style.display = 'none';
+                demoItem.style.display = 'none';
             }
 
             this.contextMenu.style.display = 'block';
