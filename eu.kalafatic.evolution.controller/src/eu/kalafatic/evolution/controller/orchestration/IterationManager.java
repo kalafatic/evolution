@@ -54,6 +54,8 @@ import eu.kalafatic.evolution.controller.orchestration.diagnostics.CognitiveTrac
 import eu.kalafatic.evolution.controller.orchestration.diagnostics.ReplayEngine;
 import eu.kalafatic.evolution.controller.orchestration.goal.GoalModel;
 import eu.kalafatic.evolution.controller.orchestration.goal.GoalUnderstandingEngine;
+import eu.kalafatic.evolution.controller.orchestration.goal.SemanticEnvelope;
+import eu.kalafatic.evolution.controller.orchestration.goal.SemanticEnvelopeEngine;
 import eu.kalafatic.evolution.controller.orchestration.intent.AtomicIntentAnalysis;
 import eu.kalafatic.evolution.controller.orchestration.intent.ClarificationManager;
 import eu.kalafatic.evolution.controller.orchestration.intent.ClarificationPlanner;
@@ -121,6 +123,7 @@ public class IterationManager {
     private final DarwinEngine darwinEngine;
     private final IterationMemoryService memoryService;
     private final GoalUnderstandingEngine goalUnderstandingEngine;
+    private final SemanticEnvelopeEngine semanticEnvelopeEngine;
 
     // Kernel Components
     private final PhaseEngine phaseEngine;
@@ -196,6 +199,7 @@ public class IterationManager {
         this.darwinEngine = darwinEngine;
         this.memoryService = memoryService;
         this.goalUnderstandingEngine = new GoalUnderstandingEngine(sessionContainer);
+        this.semanticEnvelopeEngine = new SemanticEnvelopeEngine(sessionContainer);
 
         if (sessionContainer != null) {
             Map<String, IAgent> registry = (sessionContainer instanceof SessionContext) ? ((SessionContext)sessionContainer).getAgentRegistry() : new java.util.HashMap<>();
@@ -289,6 +293,7 @@ public class IterationManager {
         });
         goalUnderstandingEngine.setAiService(aiService);
         darwinEngine.setAiService(aiService);
+        semanticEnvelopeEngine.setAiService(aiService);
         taskExecutor.getOrchestrator().setAiService(aiService);
     }
 
@@ -886,10 +891,36 @@ public class IterationManager {
 
         context.log("[KERNEL] Darwin Evolution Phase: " + state.getCurrentPhase());
 
-        GoalModel goalModel = (GoalModel) state.getMetadata().get("goalModel");
+        Object goalModelObj = state.getMetadata().get("goalModel");
+        GoalModel goalModel = null;
+        if (goalModelObj instanceof GoalModel) {
+            goalModel = (GoalModel) goalModelObj;
+        } else if (goalModelObj instanceof Map) {
+            goalModel = new com.fasterxml.jackson.databind.ObjectMapper()
+                .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                .convertValue(goalModelObj, GoalModel.class);
+            state.getMetadata().put("goalModel", goalModel);
+        }
+
         if (goalModel == null) {
             goalModel = goalUnderstandingEngine.understand(goal, context);
             state.getMetadata().put("goalModel", goalModel);
+        }
+
+        Object envelopeObj = state.getMetadata().get("semanticEnvelope");
+        SemanticEnvelope envelope = null;
+        if (envelopeObj instanceof SemanticEnvelope) {
+            envelope = (SemanticEnvelope) envelopeObj;
+        } else if (envelopeObj instanceof Map) {
+            envelope = new com.fasterxml.jackson.databind.ObjectMapper()
+                .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                .convertValue(envelopeObj, SemanticEnvelope.class);
+            state.getMetadata().put("semanticEnvelope", envelope);
+        }
+
+        if (envelope == null && executionProfile.getIntensity() > 1) {
+            envelope = semanticEnvelopeEngine.derive(goalModel, context);
+            state.getMetadata().put("semanticEnvelope", envelope);
         }
 
         Trajectory activeTrajectory = getActiveTrajectory(context);
@@ -1275,7 +1306,17 @@ public class IterationManager {
                 return "FAILED";
             } else if (trimmed.startsWith("Propose:") || trimmed.startsWith("{")) {
                 context.log("[KERNEL] User injected a new trajectory. Integrating as a first-class candidate.");
-                GoalModel goalModel = (GoalModel) context.getOrchestrationState().getMetadata().get("goalModel");
+
+                Object gmObj = context.getOrchestrationState().getMetadata().get("goalModel");
+                GoalModel goalModel = null;
+                if (gmObj instanceof GoalModel) {
+                    goalModel = (GoalModel) gmObj;
+                } else if (gmObj instanceof Map) {
+                    goalModel = new com.fasterxml.jackson.databind.ObjectMapper()
+                        .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                        .convertValue(gmObj, GoalModel.class);
+                }
+
                 BranchVariant userVariant = createUserVariant(trimmed, goalModel, context);
                 variants.add(userVariant);
                 context.log("[KERNEL] User trajectory " + userVariant.getId() + " added to the evolutionary pool.");
