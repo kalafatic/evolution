@@ -25,10 +25,10 @@ public class CapabilitySignal {
     }
 
     /**
-     * Compatibility constructor for legacy calls.
+     * Legacy constructor for 4-argument calls.
      */
-    public CapabilitySignal(CapabilityType capability, double score, SessionIntent intent, String explanation) {
-        this(capability, score, 1.0, intent, null, explanation);
+    public CapabilitySignal(CapabilityType capability, double weight, SessionIntent intent, String source) {
+        this(capability, weight, 0.5, intent, new ArrayList<>(), source);
     }
 
     public CapabilityType getCapability() { return capability; }
