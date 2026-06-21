@@ -22,6 +22,6 @@ function renderDatasetViz(stats, sample) {
         <h4>Dataset Stats</h4>
         <p>Size: ${stats.size || 0}</p>
         <p>Vocab: ${stats.vocab || 0}</p>
-        <p>Tokens: ${stats.size * 100}</p>
+        <p>Tokens: ${(stats.size || 0) * 100}</p>
     `;
 }

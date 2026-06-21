@@ -24,6 +24,10 @@ public class AutomaticArchitectureGenerator {
         JSONObject defaults = new JSONObject();
 
         switch (modelType != null ? modelType.toUpperCase() : "") {
+            case "SEED":
+                graph = generateSeedGraph();
+                defaults.put("lr", 0.001).put("optimizer", "adam").put("epochs", 5);
+                break;
             case "NEURON":
                 graph = generateNeuronGraph();
                 defaults.put("lr", 0.01).put("optimizer", "sgd").put("epochs", 10);
@@ -58,6 +62,17 @@ public class AutomaticArchitectureGenerator {
         }
 
         return new ArchitectureResult(graph, defaults);
+    }
+
+    private String generateSeedGraph() {
+        return "{\"nodes\":[" +
+                "{\"id\":\"s_in\",\"name\":\"seed_input\",\"type\":\"LAYER\",\"x\":100,\"y\":200}," +
+                "{\"id\":\"s_h\",\"name\":\"seed_hidden\",\"type\":\"LAYER\",\"x\":300,\"y\":200}," +
+                "{\"id\":\"s_out\",\"name\":\"seed_output\",\"type\":\"LAYER\",\"x\":500,\"y\":200}" +
+                "],\"links\":[" +
+                "{\"source\":\"s_in\",\"target\":\"s_h\"}," +
+                "{\"source\":\"s_h\",\"target\":\"s_out\"}" +
+                "]}";
     }
 
     private String generateNeuronGraph() {
