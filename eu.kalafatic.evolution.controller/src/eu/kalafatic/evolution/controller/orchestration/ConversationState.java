@@ -109,8 +109,11 @@ public class ConversationState {
             cognitiveState.getCapabilityHistory().forEach(s -> {
                 JSONObject sig = new JSONObject();
                 sig.put("capability", s.getCapability().name());
+                sig.put("score", s.getScore());
                 sig.put("weight", s.getWeight());
+                sig.put("confidence", s.getConfidence());
                 sig.put("intent", s.getIntent().name());
+                sig.put("explanation", s.getExplanation());
                 sig.put("source", s.getSource());
                 history.put(sig);
             });
@@ -182,6 +185,12 @@ public class ConversationState {
                             SessionIntent.valueOf(sig.getString("intent")),
                             null, // no evidence list from JSON
                             sig.getString("source")
+                            CapabilityType.valueOf(sig.optString("capability", "CHAT")),
+                            sig.optDouble("score", sig.optDouble("weight", 0.0)),
+                            sig.optDouble("confidence", 1.0),
+                            SessionIntent.valueOf(sig.optString("intent", "LEARNING")),
+                            null,
+                            sig.optString("explanation", sig.optString("source", ""))
                         ));
                     }
                 }
