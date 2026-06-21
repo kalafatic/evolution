@@ -24,6 +24,13 @@ public class CapabilitySignal {
         this.explanation = explanation;
     }
 
+    /**
+     * Compatibility constructor for legacy calls.
+     */
+    public CapabilitySignal(CapabilityType capability, double score, SessionIntent intent, String explanation) {
+        this(capability, score, 1.0, intent, null, explanation);
+    }
+
     public CapabilityType getCapability() { return capability; }
     public double getScore() { return score; }
     public double getConfidence() { return confidence; }
