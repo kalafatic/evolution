@@ -5,6 +5,7 @@ import java.util.Map;
 import eu.kalafatic.evolution.controller.orchestration.design.ComponentRecord;
 import eu.kalafatic.evolution.controller.orchestration.design.DesignModel;
 import eu.kalafatic.evolution.controller.orchestration.design.RelationshipRecord;
+import eu.kalafatic.evolution.model.orchestration.GenomeSnapshot;
 
 /**
  * @evo:20:A reason=rich-design-renderer
@@ -16,14 +17,18 @@ public class DesignRenderer {
     }
 
     public String render(DesignModel model, String viewMode) {
-        return render(model, viewMode, null, new java.util.ArrayList<>());
+        return render(model, viewMode, null, null, new java.util.ArrayList<String>(), new java.util.ArrayList<GenomeSnapshot>(), null);
     }
 
     public String render(DesignModel model, String viewMode, String targetPath, java.util.List<String> history) {
-        return render(model, viewMode, targetPath, null, history);
+        return render(model, viewMode, targetPath, null, history, new java.util.ArrayList<GenomeSnapshot>(), null);
     }
 
     public String render(DesignModel model, String viewMode, String targetPath, String defaultPath, java.util.List<String> history) {
+        return render(model, viewMode, targetPath, defaultPath, history, new java.util.ArrayList<GenomeSnapshot>(), null);
+    }
+
+    public String render(DesignModel model, String viewMode, String targetPath, String defaultPath, java.util.List<String> history, java.util.List<GenomeSnapshot> snapshots, String currentSnapshot) {
         if (model != null) {
             eu.kalafatic.evolution.controller.log.Log.log("[DESIGN_RENDERER] Rendering model: " + model.getName() + " with " + model.getComponents().size() + " components. Mode: " + viewMode);
         }
@@ -43,6 +48,16 @@ public class DesignRenderer {
         String viewModeJson = org.json.JSONObject.quote(viewMode != null ? viewMode : "COMPONENTS");
         String targetPathJson = org.json.JSONObject.quote(targetPath != null ? targetPath : "");
         String defaultPathJson = org.json.JSONObject.quote(defaultPath != null ? defaultPath : "");
+        String currentSnapshotJson = org.json.JSONObject.quote(currentSnapshot != null ? currentSnapshot : "");
+
+        org.json.JSONArray snapArray = new org.json.JSONArray();
+        if (snapshots != null) {
+            for (GenomeSnapshot s : snapshots) {
+                snapArray.put(new org.json.JSONObject()
+                    .put("timestamp", s.getTimestamp())
+                    .put("dashboard", s.getDashboardArtifact()));
+            }
+        }
 
         return template
             .replace("{{MODEL_JSON}}", serializeModel(model))
@@ -50,6 +65,8 @@ public class DesignRenderer {
             .replace("{{TARGET_PATH_JSON}}", targetPathJson)
             .replace("{{DEFAULT_PATH_JSON}}", defaultPathJson)
             .replace("{{TARGET_HISTORY_JSON}}", new org.json.JSONArray(history).toString())
+            .replace("{{SNAPSHOTS_JSON}}", snapArray.toString())
+            .replace("{{CURRENT_SNAPSHOT_JSON}}", currentSnapshotJson)
             .replace("{{NAVIGATOR_JS}}", navigatorJs);
     }
 

@@ -254,6 +254,16 @@
             </div>
 
             <div class="sidebar-section">
+                <h2>Milestones</h2>
+                <div class="control-group">
+                    <select id="snapshot-select" onchange="javaAction(this.value, 'SELECT_SNAPSHOT')" data-guidance="Switch between the current live architecture and historical genome milestones.">
+                        <option value="">Current (Live Architecture)</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="javaAction('', 'GENERATE_MILESTONE')" data-guidance="Generate a new genome milestone, creating a historical snapshot of the current architecture and AI documentation.">🏁 Generate Milestone</button>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
                 <h2>Tools</h2>
                 <div class="control-group">
                     <button class="btn btn-primary" onclick="javaAction('', 'UPDATE_GENOME')" data-guidance="Trigger the Genome Update Agent to synchronize documentation with the current project state, create a historical snapshot, and update AI indexes.">🧬 Update genome</button>
@@ -328,35 +338,65 @@
         window.TARGET_PATH = {{TARGET_PATH_JSON}};
         window.DEFAULT_PATH = {{DEFAULT_PATH_JSON}};
         window.TARGET_HISTORY = {{TARGET_HISTORY_JSON}};
+        window.SNAPSHOTS = {{SNAPSHOTS_JSON}};
+        window.CURRENT_SNAPSHOT = {{CURRENT_SNAPSHOT_JSON}};
 
         function initUI() {
             log('Initializing UI elements...');
-
-            // Sync select dropdown
-            const modeSelect = document.getElementById('mode-select');
-            if (modeSelect) modeSelect.value = window.CURRENT_VIEW_MODE;
-
-            const targetSelect = document.getElementById('target-select');
-            if (targetSelect) {
-                targetSelect.innerHTML = '';
-                window.TARGET_HISTORY.forEach(path => {
-                    const opt = document.createElement('option');
-                    opt.value = path;
-                    let displayPath = path;
-                    if (path === window.DEFAULT_PATH) {
-                        displayPath = "EVO (default): " + path;
-                    }
-                    opt.text = displayPath;
-                    if (path === window.TARGET_PATH) opt.selected = true;
-                    targetSelect.appendChild(opt);
-                });
-            }
+            updateSidebar({
+                mode: window.CURRENT_VIEW_MODE,
+                target: window.TARGET_PATH,
+                defaultTarget: window.DEFAULT_PATH,
+                history: window.TARGET_HISTORY,
+                snapshots: window.SNAPSHOTS,
+                currentSnapshot: window.CURRENT_SNAPSHOT
+            });
 
             if (window.INITIAL_MODEL && window.INITIAL_MODEL.name) {
                 const projectTitle = document.getElementById('project-title');
                 if (projectTitle) projectTitle.innerText = window.INITIAL_MODEL.name;
             }
         }
+
+        window.updateSidebar = function(data) {
+            log('Updating sidebar...');
+            if (data.mode) {
+                const modeSelect = document.getElementById('mode-select');
+                if (modeSelect) modeSelect.value = data.mode;
+            }
+
+            if (data.history) {
+                const targetSelect = document.getElementById('target-select');
+                if (targetSelect) {
+                    targetSelect.innerHTML = '';
+                    data.history.forEach(path => {
+                        const opt = document.createElement('option');
+                        opt.value = path;
+                        let displayPath = path;
+                        if (path === data.defaultTarget) {
+                            displayPath = "EVO (default): " + path;
+                        }
+                        opt.text = displayPath;
+                        if (path === data.target) opt.selected = true;
+                        targetSelect.appendChild(opt);
+                    });
+                }
+            }
+
+            if (data.snapshots) {
+                const snapSelect = document.getElementById('snapshot-select');
+                if (snapSelect) {
+                    snapSelect.innerHTML = '<option value="">Current (Live Architecture)</option>';
+                    data.snapshots.forEach(s => {
+                        const opt = document.createElement('option');
+                        opt.value = s.timestamp;
+                        opt.text = "genome_" + s.timestamp;
+                        if (s.timestamp === data.currentSnapshot) opt.selected = true;
+                        snapSelect.appendChild(opt);
+                    });
+                }
+            }
+        };
 
     </script>
     <script>{{NAVIGATOR_JS}}</script>
