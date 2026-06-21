@@ -24,6 +24,13 @@ public class CapabilitySignal {
         this.explanation = explanation;
     }
 
+    /**
+     * Legacy constructor for 4-argument calls.
+     */
+    public CapabilitySignal(CapabilityType capability, double weight, SessionIntent intent, String source) {
+        this(capability, weight, 0.5, intent, new java.util.ArrayList<>(), source);
+    }
+
     public CapabilityType getCapability() { return capability; }
     public double getScore() { return score; }
     public double getConfidence() { return confidence; }
