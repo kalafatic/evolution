@@ -52,10 +52,32 @@ public class ModeRouter {
         return route(prompt, orchestrator, null);
     }
 
+    /**
+     * Attempts to determine the mode using the cognitive pipeline without session state.
+     * @return PlatformMode determined by the pipeline or explicit overrides.
+     */
+    public PlatformMode routeFast(String prompt, Orchestrator orchestrator) {
+        if (prompt == null) prompt = "";
+        String lower = prompt.toLowerCase().trim();
+
+        // 1. Try explicit overrides (Manual Routing)
+        if (lower.contains("mode: chat")) return createSimpleChatMode();
+        if (lower.contains("mode: assisted")) return createAssistedCodingMode();
+        if (lower.contains("mode: darwin")) return createDarwinMode();
+        if (lower.contains("mode: self-dev")) return createSelfDevMode();
+        if (lower.contains("mode: mediated") || lower.contains("analyze target")) return createHybridManualExportMode();
+
+        // 2. Use the cognitive pipeline for evidence-based detection
+        eu.kalafatic.evolution.controller.orchestration.cognitive.CognitiveAnalysisPipeline pipeline =
+            new eu.kalafatic.evolution.controller.orchestration.cognitive.CognitiveAnalysisPipeline();
+        eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityAnalysis analysis = pipeline.analyze(prompt);
+
+        return mapToPlatformMode(analysis.getWinner().getCapability());
+    }
 
     /**
      * Detects or assigns PlatformMode based on user input, orchestrator state, and optional context assist result.
-     * Priority: 1. Session Cognitive State (grounded in history), 2. Fast Rule Classification, 3. Model Fallback.
+     * Priority: 1. Session Cognitive State (grounded in history), 2. Pipeline Analysis/Overrides, 3. Model Fallback.
      */
     public PlatformMode route(String prompt, Orchestrator orchestrator, ContextAssistResult assistResult) {
         if (prompt == null) prompt = "";
@@ -80,15 +102,9 @@ public class ModeRouter {
             return mapToPlatformMode(cogState.getCurrentCapability());
         }
 
-        // 2. Try explicit overrides (Manual Routing)
-        if (prompt != null) {
-            String lower = prompt.toLowerCase();
-            if (lower.contains("mode: chat")) return createSimpleChatMode();
-            if (lower.contains("mode: assisted")) return createAssistedCodingMode();
-            if (lower.contains("mode: darwin")) return createDarwinMode();
-            if (lower.contains("mode: self-dev")) return createSelfDevMode();
-            if (lower.contains("mode: mediated") || lower.contains("analyze target")) return createHybridManualExportMode();
-        }
+        // 2. Try explicit overrides or Pipeline analysis (Non-Session Path)
+        PlatformMode fastMode = routeFast(prompt, orchestrator);
+        if (fastMode.getType() != PlatformType.SIMPLE_CHAT) return fastMode;
 
         // 3. Fallback to model-based routing if no session exists (legacy support)
         if (orchestrator != null) {
@@ -104,7 +120,7 @@ public class ModeRouter {
             }
         }
 
-        return createSimpleChatMode();
+        return fastMode; // This is SIMPLE_CHAT
     }
 
     private PlatformMode mapToPlatformMode(CapabilityType capability) {
