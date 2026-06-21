@@ -3,6 +3,7 @@ package eu.kalafatic.evolution.controller.orchestration.selfdev;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.json.JSONArray;
@@ -566,17 +567,21 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         }
 
         Object envObj = context.getOrchestrationState().getMetadata().get("semanticEnvelope");
-        SemanticEnvelope envelope = null;
+        final SemanticEnvelope envelope;
         if (envObj instanceof SemanticEnvelope) {
             envelope = (SemanticEnvelope) envObj;
+            
         } else if (envObj instanceof Map) {
             envelope = new com.fasterxml.jackson.databind.ObjectMapper()
                 .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                 .convertValue(envObj, SemanticEnvelope.class);
+        } else {
+        	envelope=null;
+			context.log("[DARWIN] WARNING: No valid SemanticEnvelope found in orchestration state metadata	. Goal-driven validation will be skipped.");
         }
 
         // 1. Goal-Driven Validation: Semantic Distance and Domain Matching
-        uniqueVariants.removeIf(variant -> {
+        uniqueVariants.removeIf(variant -> {        	
             double distance = semanticDistance(goal, variant, envelope);
             boolean domainMatch = variant.optString("domain", goal.getDomain()).equalsIgnoreCase(goal.getDomain());
             boolean artifactMatch = variant.optString("requestedArtifact", goal.getRequestedArtifact()).equalsIgnoreCase(goal.getRequestedArtifact());

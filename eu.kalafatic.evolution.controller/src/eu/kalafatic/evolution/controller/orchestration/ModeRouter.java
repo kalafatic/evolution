@@ -74,6 +74,12 @@ public class ModeRouter {
 
         return mapToPlatformMode(analysis.getWinner().getCapability());
     }
+    /**
+     * Legacy support for routeFast.
+     */
+//    public PlatformMode routeFast(String prompt, Orchestrator orchestrator) {
+//        return route(prompt, orchestrator);
+//    }
 
     /**
      * Detects or assigns PlatformMode based on user input, orchestrator state, and optional context assist result.
@@ -163,11 +169,6 @@ public class ModeRouter {
         return new PlatformMode(PlatformType.HYBRID_MANUAL_EXPORT, AutonomyLevel.LOW, 1, false);
     }
 
-    /**
-     * Legacy support for routeFast.
-     */
-    public PlatformMode routeFast(String prompt, Orchestrator orchestrator) {
-        return route(prompt, orchestrator);
-    }
+   
 
 }
