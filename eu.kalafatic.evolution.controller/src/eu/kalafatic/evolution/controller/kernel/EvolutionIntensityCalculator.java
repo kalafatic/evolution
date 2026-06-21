@@ -49,11 +49,18 @@ public class EvolutionIntensityCalculator {
             intensity += (pressure.getTotalPressure() * 2.0);
         }
 
-        // 3. Goal Complexity (Heuristic)
+        // 3. Goal Complexity (Formal & Heuristic)
+        eu.kalafatic.evolution.controller.orchestration.goal.GoalModel goalModel = (eu.kalafatic.evolution.controller.orchestration.goal.GoalModel) context.getOrchestrationState().getMetadata().get("goalModel");
+        if (goalModel != null) {
+            String complexity = goalModel.getComplexity() != null ? goalModel.getComplexity().toUpperCase() : "MEDIUM";
+            if ("SIMPLE".equals(complexity)) intensity -= 0.5;
+            else if ("HIGH".equals(complexity)) intensity += 1.0;
+        }
+
         String goal = context.getOrchestrationState().getRawInput();
         if (goal != null) {
             if (goal.length() > 500) intensity += 1.0;
-            if (goal.contains("{") || goal.contains("class") || goal.contains("interface")) intensity += 1.0;
+            if (goal.contains("{") || (goal.contains("class") && !goal.contains("create java class")) || goal.contains("interface")) intensity += 1.0;
         }
 
         // 4. Trajectory Stability (Inverse)

@@ -50,6 +50,8 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
     public TrajectoryBlueprint discoverNext(String goal, TaskContext context, List<TrajectoryBlueprint> existing, String mutationContext) throws Exception {
         context.log("[TERRITORY] Sequentially discovering next unique evolutionary trajectory for: " + goal);
 
+        AbstractionLevel lockedLevel = context.getOrchestrationState().getLockedAbstractionLevel();
+
         eu.kalafatic.evolution.controller.orchestration.behavior.PromptComposer composer = new eu.kalafatic.evolution.controller.orchestration.behavior.PromptComposer();
         StringBuilder sb = new StringBuilder();
 
@@ -126,6 +128,16 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
 
         sb.append("CONTEXT:\n")
           .append(getAgentInstructions());
+
+        if (lockedLevel != null) {
+            sb.append("\n[LOCKED_ABSTRACTION_LEVEL] You MUST operate strictly at the " + lockedLevel + " level.\n");
+            if (lockedLevel == AbstractionLevel.IMPLEMENTATION) {
+                sb.append("- DO NOT propose new architectures or complex patterns.\n");
+                sb.append("- Focus on concrete implementation variations of the SAME core design.\n");
+            } else if (lockedLevel == AbstractionLevel.DESIGN) {
+                sb.append("- Focus on internal component design and API signatures.\n");
+            }
+        }
 
         String response = aiService.sendRequest(context.getOrchestrator(), sb.toString(), context);
         JSONObject obj = JsonUtils.extractJsonObject(response);

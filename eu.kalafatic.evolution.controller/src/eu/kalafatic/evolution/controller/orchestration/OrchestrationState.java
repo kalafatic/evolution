@@ -10,6 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import eu.kalafatic.evolution.controller.kernel.EvolutionProfile;
 import eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent;
 import eu.kalafatic.evolution.controller.orchestration.diagnostics.CognitiveTrace;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.AbstractionLevel;
 import eu.kalafatic.evolution.controller.orchestration.workspace.SemanticWorkspace;
 import eu.kalafatic.evolution.model.orchestration.Task;
 
@@ -33,6 +34,7 @@ public class OrchestrationState {
     private long bitState = 0;
     private String currentPhase;
     private EvolutionProfile executionProfile;
+    private AbstractionLevel lockedAbstractionLevel;
     private SemanticWorkspace semanticWorkspace;
     private CognitiveTrace cognitiveTrace;
     private final String sessionId;
@@ -141,6 +143,14 @@ public class OrchestrationState {
 
     public void setExecutionProfile(EvolutionProfile executionProfile) {
         this.executionProfile = executionProfile;
+    }
+
+    public AbstractionLevel getLockedAbstractionLevel() {
+        return lockedAbstractionLevel;
+    }
+
+    public void setLockedAbstractionLevel(AbstractionLevel lockedAbstractionLevel) {
+        this.lockedAbstractionLevel = lockedAbstractionLevel;
     }
 
     public SemanticWorkspace getSemanticWorkspace() {

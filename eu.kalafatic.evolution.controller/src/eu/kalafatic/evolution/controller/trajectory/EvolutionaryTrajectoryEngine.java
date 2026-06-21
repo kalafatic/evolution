@@ -6,6 +6,7 @@ import eu.kalafatic.evolution.controller.kernel.TrajectoryMutationEngine;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionPhase;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionPhaseMachine;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.AbstractionLevel;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionaryPressureVector;
 import eu.kalafatic.utils.semantic.EvolutionComponent;
@@ -81,6 +82,20 @@ public class EvolutionaryTrajectoryEngine {
             if (!skip && nextCandidate == EvolutionPhase.IMPLEMENTATION_PLAN && !profile.useImplementation()) {
                 context.log("[EVOLUTION] Skipping phase IMPLEMENTATION_PLAN (Implementation disabled for profile)");
                 skip = true;
+            }
+
+            // Abstraction Level-based skipping (LOCKED Problem Space)
+            AbstractionLevel lockedLevel = context.getOrchestrationState().getLockedAbstractionLevel();
+            if (!skip && lockedLevel != null) {
+                if (nextCandidate == EvolutionPhase.ARCHITECTURE_VARIANTS &&
+                    (lockedLevel == AbstractionLevel.DESIGN || lockedLevel == AbstractionLevel.IMPLEMENTATION)) {
+                    context.log("[EVOLUTION] Skipping phase ARCHITECTURE_VARIANTS (Locked to " + lockedLevel + ")");
+                    skip = true;
+                } else if (nextCandidate == EvolutionPhase.SELECTION_REFINEMENT &&
+                           lockedLevel == AbstractionLevel.IMPLEMENTATION) {
+                    context.log("[EVOLUTION] Skipping phase SELECTION_REFINEMENT (Locked to IMPLEMENTATION)");
+                    skip = true;
+                }
             }
 
             if (skip) {
