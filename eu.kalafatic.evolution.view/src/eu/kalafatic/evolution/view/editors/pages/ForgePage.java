@@ -122,22 +122,30 @@ public class ForgePage extends AEvoPage {
                 case "UPDATE_MODEL":
                     if (data instanceof String) {
                         JSONObject json = new JSONObject((String) data);
-                        ForgeSessionManager.getInstance().updateModel(json.getString("sessionId"), json.getString("modelGraph"));
+                        String sid = json.optString("sessionId");
+                        if (sid != null && !sid.isEmpty()) {
+                            ForgeSessionManager.getInstance().updateModel(sid, json.getString("modelGraph"));
+                        }
                     }
                     break;
                 case "UPDATE_STATUS":
                     if (data instanceof String) {
                         JSONObject json = new JSONObject((String) data);
-                        String sid = json.getString("sessionId");
-                        String statusStr = json.getString("status");
-                        eu.kalafatic.evolution.model.orchestration.ForgeStatus status = eu.kalafatic.evolution.model.orchestration.ForgeStatus.getByName(statusStr);
-                        ForgeSessionManager.getInstance().updateStatus(sid, status);
+                        String sid = json.optString("sessionId");
+                        if (sid != null && !sid.isEmpty()) {
+                            String statusStr = json.getString("status");
+                            eu.kalafatic.evolution.model.orchestration.ForgeStatus status = eu.kalafatic.evolution.model.orchestration.ForgeStatus.getByName(statusStr);
+                            ForgeSessionManager.getInstance().updateStatus(sid, status);
+                        }
                     }
                     break;
                 case "CREATE_SNAPSHOT":
                      if (data instanceof String) {
                         JSONObject json = new JSONObject((String) data);
-                        ForgeSessionManager.getInstance().createSnapshot(json.getString("sessionId"), json.optString("genomeId", "auto-milestone"));
+                        String sid = json.optString("sessionId");
+                        if (sid != null && !sid.isEmpty()) {
+                            ForgeSessionManager.getInstance().createSnapshot(sid, json.optString("genomeId", "auto-milestone"));
+                        }
                     }
                     break;
             }

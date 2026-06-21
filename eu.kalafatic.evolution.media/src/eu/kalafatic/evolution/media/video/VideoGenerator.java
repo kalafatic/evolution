@@ -3,7 +3,7 @@ package eu.kalafatic.evolution.media.video;
 import java.io.File;
 import java.util.concurrent.CompletableFuture;
 
-import src.eu.kalafatic.evolution.media.model.Storyboard;
+import eu.kalafatic.evolution.media.model.Storyboard;
 
 /**
  * Interface for future video generation from storyboards.
