@@ -49,15 +49,13 @@ public class ArchitecturePage extends AEvoPage {
     private String lastJson = "";
     private String lastTargetPath = "";
     private boolean showingSnapshot = false;
+    private String currentSnapshotTimestamp = null;
 
     private String currentTargetPath;
     private String defaultTargetPath;
     private List<String> targetHistory = new ArrayList<>();
-    private org.eclipse.swt.widgets.Combo targetCombo;
-    private org.eclipse.swt.widgets.Combo snapshotCombo;
     private MilestoneGenerator milestoneGenerator = new MilestoneGenerator();
 	private Composite content;
-	private Label modeIndicatorLabel;
 
     public ArchitecturePage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
         super(parent, editor, orchestrator);
@@ -70,12 +68,6 @@ public class ArchitecturePage extends AEvoPage {
 		content.setLayout(new GridLayout(1, false));
 		this.setContent(content);
 		
-		modeIndicatorLabel = new Label(content, SWT.CENTER);
-		modeIndicatorLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		modeIndicatorLabel.setFont(bannerFont);
-		setTextSafe(modeIndicatorLabel, "INITIALIZING...");
-		
-		createControlPanel(content);
 		createBrowser(content);
 	}
 
@@ -139,8 +131,6 @@ public class ArchitecturePage extends AEvoPage {
         }
 
         synchronizeSnapshotsWithDisk();
-        updateTargetCombo();
-        populateSnapshotCombo();
     }
 
     private String findEvoRepository() {
@@ -206,6 +196,15 @@ public class ArchitecturePage extends AEvoPage {
                 case "DISCOVER":
                     handleDiscover();
                     break;
+                case "UPDATE_GENOME":
+                    handleUpdateGenome();
+                    break;
+                case "GENERATE_MILESTONE":
+                    handleGenerateMilestone();
+                    break;
+                case "SELECT_SNAPSHOT":
+                    handleSelectSnapshot(id);
+                    break;
                 case "GENERATE_METADATA":
                     handleGenerateMetadata();
                     break;
@@ -245,6 +244,30 @@ public class ArchitecturePage extends AEvoPage {
         });
     }
 
+    private void handleUpdateGenome() {
+        if (currentTargetPath == null) return;
+        new eu.kalafatic.evolution.controller.orchestration.ArchitectureController().renderArchitecture(orchestrator, currentTargetPath, "UPDATE_GENOME");
+        scheduleRefresh();
+    }
+
+    private void handleSelectSnapshot(String timestamp) {
+        if (timestamp == null || timestamp.isEmpty()) {
+            showingSnapshot = false;
+            currentSnapshotTimestamp = null;
+        } else {
+            GenomeSnapshot snapshot = orchestrator.getGenomeSnapshots().stream()
+                    .filter(s -> timestamp.equals(s.getTimestamp()))
+                    .findFirst().orElse(null);
+            if (snapshot != null) {
+                showingSnapshot = true;
+                currentSnapshotTimestamp = timestamp;
+                loadMilestoneDashboard(snapshot);
+                return;
+            }
+        }
+        scheduleRefresh();
+    }
+
     private void handleBrowseTarget() {
         org.eclipse.swt.widgets.DirectoryDialog dialog = new org.eclipse.swt.widgets.DirectoryDialog(getShell());
         dialog.setText("Select Architecture Target");
@@ -278,8 +301,6 @@ public class ArchitecturePage extends AEvoPage {
         }
 
         synchronizeSnapshotsWithDisk();
-        updateTargetCombo();
-        populateSnapshotCombo();
         invalidateCache();
         scheduleRefresh();
     }
@@ -319,14 +340,6 @@ public class ArchitecturePage extends AEvoPage {
         java.util.Collections.sort(orchestrator.getGenomeSnapshots(), (a, b) -> a.getTimestamp().compareTo(b.getTimestamp()));
         while (orchestrator.getGenomeSnapshots().size() > 8) {
             orchestrator.getGenomeSnapshots().remove(0);
-        }
-    }
-
-    private void updateTargetCombo() {
-        if (targetCombo == null || targetCombo.isDisposed()) return;
-        targetCombo.setItems(targetHistory.toArray(new String[0]));
-        if (currentTargetPath != null) {
-            targetCombo.setText(currentTargetPath);
         }
     }
 
@@ -479,109 +492,6 @@ public class ArchitecturePage extends AEvoPage {
         super.scheduleRefresh();
     }
 
-    private void createControlPanel(Composite parent) {
-        Composite toolbarComp = new Composite(parent, SWT.NONE);
-        GridLayout layout = new GridLayout(4, false);
-        layout.marginHeight = 0;
-        toolbarComp.setLayout(layout);
-        toolbarComp.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
-
-        Combo modeCombo = GUIFactory.INSTANCE.createCombo(toolbarComp, "", "Use Cases", "Subsystems", "Components", "Knowledge Graph");       
-      
-        modeCombo.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
-            @Override
-            public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
-                switch (modeCombo.getSelectionIndex()) {
-                    case 0: setViewMode(ViewMode.USE_CASES); break;
-                    case 1: setViewMode(ViewMode.SUBSYSTEMS); break;
-                    case 2: setViewMode(ViewMode.COMPONENTS); break;
-                    case 3: setViewMode(ViewMode.KNOWLEDGE_GRAPH); break;
-                }
-            }
-        });
-        targetCombo = GUIFactory.INSTANCE.createCombo(toolbarComp);    
-        ((GridData)targetCombo.getLayoutData()).widthHint = 400;
-        targetCombo.setToolTipText("Select Target Project to analyze");
-        updateTargetCombo();
-        targetCombo.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
-            @Override
-            public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
-                setTargetPath(targetCombo.getText());
-            }
-            @Override
-            public void widgetDefaultSelected(org.eclipse.swt.events.SelectionEvent e) {
-                setTargetPath(targetCombo.getText());
-            }
-        });
-
-        Button browseBtn = new Button(toolbarComp, SWT.PUSH);
-        browseBtn.setText("Browse...");
-        browseBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
-            @Override
-            public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
-                handleBrowseTarget();
-            }
-        });
-
-        org.eclipse.jface.action.ToolBarManager mgr = new org.eclipse.jface.action.ToolBarManager(SWT.FLAT | SWT.RIGHT);
-        mgr.createControl(toolbarComp);
-
-        mgr.add(new org.eclipse.jface.action.Action("Refresh") { @Override public void run() { scheduleRefresh(); } });
-        mgr.add(new org.eclipse.jface.action.Separator());
-        mgr.add(new org.eclipse.jface.action.Action("Discover") { @Override public void run() { handleDiscover(); } });
-        mgr.add(new org.eclipse.jface.action.Separator());
-        mgr.add(new org.eclipse.jface.action.Action("Export HTML") { @Override public void run() { handleExport(); } });
-        mgr.add(new org.eclipse.jface.action.Action("Save JSON") { @Override public void run() { handleSaveModel(); } });
-        mgr.add(new org.eclipse.jface.action.Separator());
-        mgr.add(new org.eclipse.jface.action.Action("Generate Metadata") { @Override public void run() { handleGenerateMetadata(); } });
-
-        mgr.update(true);
-
-        Composite milestoneComp = new Composite(this, SWT.NONE);
-        milestoneComp.setLayout(new GridLayout(3, false));
-        milestoneComp.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
-
-        new org.eclipse.swt.widgets.Label(milestoneComp, SWT.NONE).setText("Genome Milestones:");
-
-        snapshotCombo = new org.eclipse.swt.widgets.Combo(milestoneComp, SWT.READ_ONLY);
-        snapshotCombo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
-        populateSnapshotCombo();
-        snapshotCombo.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
-            @Override
-            public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
-                int index = snapshotCombo.getSelectionIndex();
-                if (index > 0) { // Index 0 is "Current"
-                    showingSnapshot = true;
-                    loadMilestoneDashboard(orchestrator.getGenomeSnapshots().get(index - 1));
-                } else {
-                    showingSnapshot = false;
-                    scheduleRefresh();
-                }
-            }
-        });
-
-        Button genMilestoneBtn = new Button(milestoneComp, SWT.PUSH);
-        genMilestoneBtn.setText("Generate Milestone");
-        genMilestoneBtn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
-            @Override
-            public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
-                handleGenerateMilestone();
-            }
-        });
-    }
-
-    private void populateSnapshotCombo() {
-        if (snapshotCombo == null || snapshotCombo.isDisposed()) return;
-        List<String> items = new ArrayList<>();
-        items.add("Current (Live Architecture)");
-        if (orchestrator != null) {
-            for (GenomeSnapshot snapshot : orchestrator.getGenomeSnapshots()) {
-                items.add("genome_" + snapshot.getTimestamp());
-            }
-        }
-        snapshotCombo.setItems(items.toArray(new String[0]));
-        snapshotCombo.select(0);
-    }
 
     private void handleGenerateMilestone() {
         if (currentTargetPath == null) {
@@ -634,8 +544,8 @@ public class ArchitecturePage extends AEvoPage {
                             orchestrator.getGenomeSnapshots().remove(0);
                         }
 
-                        populateSnapshotCombo();
-                        snapshotCombo.select(snapshotCombo.getItemCount() - 1);
+                        currentSnapshotTimestamp = timestamp;
+                        showingSnapshot = true;
                         loadMilestoneDashboard(snapshot);
                     });
 
@@ -831,33 +741,44 @@ public class ArchitecturePage extends AEvoPage {
             String json = renderer.serializeModel(model);
 
             if (!isJsReady) {
-                 // Push initial context variables if possible or just wait
-                 browser.execute("window.INITIAL_MODEL = " + json + "; " +
-                                 "window.CURRENT_VIEW_MODE = '" + currentMode.name() + "'; " +
-                                 "window.TARGET_PATH = '" + (currentTargetPath != null ? currentTargetPath.replace("\\", "\\\\") : "") + "'; " +
-                                 "window.DEFAULT_PATH = '" + (defaultTargetPath != null ? defaultTargetPath.replace("\\", "\\\\") : "") + "'; " +
-                                 "window.TARGET_HISTORY = " + new org.json.JSONArray(targetHistory).toString() + ";");
+                 // Initial values are already in INITIAL_MODEL via initBrowser's renderer.render()
                  return;
             }
 
             browser.execute("if(window.updateGraph) { window.updateGraph(" + json + "); }");
+
+            // Also update sidebar state
+            JSONObject sidebarData = new JSONObject();
+            sidebarData.put("mode", currentMode.name());
+            sidebarData.put("target", currentTargetPath);
+            sidebarData.put("defaultTarget", defaultTargetPath);
+            sidebarData.put("history", new JSONArray(targetHistory));
+
+            JSONArray snapArray = new JSONArray();
+            for (GenomeSnapshot s : orchestrator.getGenomeSnapshots()) {
+                snapArray.put(new JSONObject().put("timestamp", s.getTimestamp()).put("dashboard", s.getDashboardArtifact()));
+            }
+            sidebarData.put("snapshots", snapArray);
+            sidebarData.put("currentSnapshot", currentSnapshotTimestamp != null ? currentSnapshotTimestamp : "");
+
+            browser.execute("if(window.updateSidebar) { window.updateSidebar(" + sidebarData.toString() + "); }");
         });
     }
 
     private void initBrowser() {
         if (browser == null || browser.isDisposed()) return;
         try {
+            DesignModel model = extractModel();
+            String html = renderer.render(model, currentMode.name(), currentTargetPath, defaultTargetPath, targetHistory, orchestrator.getGenomeSnapshots(), currentSnapshotTimestamp);
+
+            // Use a proper base URL for resource resolution (js/css)
             org.osgi.framework.Bundle bundle = org.eclipse.core.runtime.Platform.getBundle("eu.kalafatic.evolution.controller");
             if (bundle != null) {
-                java.net.URL entry = bundle.getEntry("eu/kalafatic/evolution/controller/orchestration/template.html");
-                if (entry == null) {
-                    entry = bundle.getEntry("src/eu/kalafatic/evolution/controller/orchestration/template.html");
-                }
-                
-                if (entry != null) {
-                    java.net.URL archUrl = org.eclipse.core.runtime.FileLocator.toFileURL(entry);
-                    browser.setUrl(archUrl.toString());
-                }
+                java.net.URL entry = bundle.getEntry("/");
+                java.net.URL baseUrl = org.eclipse.core.runtime.FileLocator.toFileURL(entry);
+                browser.setText(html, baseUrl.toString());
+            } else {
+                browser.setText(html);
             }
         } catch (Exception e) {
             e.printStackTrace();
