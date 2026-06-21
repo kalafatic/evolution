@@ -415,9 +415,10 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
         List<JSONObject> uniqueVariants = new ArrayList<>();
 
-        // ADAPTIVE CAPABILITIES
-        boolean architectureEnabled = intensity >= 3;
-        boolean implementationEnabled = intensity >= 2;
+        // ADAPTIVE CAPABILITIES (Respecting LOCKED Abstraction Level)
+        AbstractionLevel lockedLevel = context.getOrchestrationState().getLockedAbstractionLevel();
+        boolean architectureEnabled = intensity >= 3 && (lockedLevel == null || lockedLevel == AbstractionLevel.ARCHITECTURE);
+        boolean implementationEnabled = intensity >= 2 || (lockedLevel == AbstractionLevel.IMPLEMENTATION);
         BranchVariant.ReasoningLevel reasoningLevel = intensity == 1 ? BranchVariant.ReasoningLevel.MINIMAL :
                                                       intensity == 4 ? BranchVariant.ReasoningLevel.DEEP : BranchVariant.ReasoningLevel.BALANCED;
         StringBuilder siblingMemoryBuilder = new StringBuilder();
@@ -446,7 +447,36 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
                 String fullLineagePrompt = tree.reconstructLineagePrompt(currentParentId);
 
                 // 2. Sequential Blueprint Discovery
-                TrajectoryBlueprint bp = mapper.discoverNext(discoveryGoal, context, currentBlueprints, fullLineagePrompt + siblingMemoryBuilder.toString());
+                TrajectoryBlueprint bp = null;
+
+                // PRE-CONSTRAINT: Use existing blueprints from intent expansion if available for Gen 0
+                if (generation == 0 && expansion != null && expansion.getActiveDimensionId() != null) {
+                    EvolutionDimension activeDim = expansion.getUnresolvedDimensions().stream()
+                        .filter(d -> d.getId().equals(expansion.getActiveDimensionId()))
+                        .findFirst().orElse(null);
+
+                    if (activeDim != null && !activeDim.getCandidateBranches().isEmpty()) {
+                        // Use pre-defined blueprints from intent expansion if available
+                        for (BranchVariant bv : activeDim.getCandidateBranches()) {
+                            boolean alreadyUsed = currentBlueprints.stream().anyMatch(existingBp ->
+                                existingBp.getStrategy().equalsIgnoreCase(bv.getStrategy()));
+
+                            if (!alreadyUsed) {
+                                context.log("[DARWIN] Seeding blueprint from intent expansion dimension: " + activeDim.getId() + " -> " + bv.getStrategy());
+                                bp = new TrajectoryBlueprint("bp-seed-" + bv.getId(), goal.getPrimaryAction(), bv.getStrategy());
+                                bp.setPhilosophy(bv.getSurvivalArgument());
+                                bp.setSurvivalArgument(bv.getSurvivalArgument());
+                                bp.setTradeoffs(bv.getTradeoffs());
+                                bp.setStrategyType(DarwinStrategyType.PROBABLE_SURVIVOR);
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if (bp == null) {
+                    bp = mapper.discoverNext(discoveryGoal, context, currentBlueprints, fullLineagePrompt + siblingMemoryBuilder.toString());
+                }
 
                 if (bp != null) {
                     // Avoid duplicate strategies or philosophies

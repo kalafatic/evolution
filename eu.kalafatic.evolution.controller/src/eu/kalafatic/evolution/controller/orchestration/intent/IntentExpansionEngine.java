@@ -155,7 +155,17 @@ public class IntentExpansionEngine extends BaseAiAgent {
         }
 
         String systemPrompt = getAgentInstructions() + "\n\n" + getFooterInstructions();
-        String userPrompt = "Analyze the following user request and expand the intent space:\n\n" + prompt + priorContext;
+
+        StringBuilder userPromptBuilder = new StringBuilder();
+        userPromptBuilder.append("Analyze the following user request and expand the intent space:\n\n").append(prompt).append(priorContext);
+
+        eu.kalafatic.evolution.controller.orchestration.selfdev.AbstractionLevel lockedLevel = context.getOrchestrationState().getLockedAbstractionLevel();
+        if (lockedLevel != null) {
+            userPromptBuilder.append("\n\n[LOCKED_ABSTRACTION_LEVEL] This task is locked to the ").append(lockedLevel).append(" level.\n");
+            userPromptBuilder.append("Ensure identified dimensions and blueprints do not exceed this level of abstraction.");
+        }
+
+        String userPrompt = userPromptBuilder.toString();
 
         String response = aiService.sendRequest(context.getOrchestrator(), systemPrompt + "\n\n" + userPrompt, context);
 

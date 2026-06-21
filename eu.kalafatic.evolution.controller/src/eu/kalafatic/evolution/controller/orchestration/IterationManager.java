@@ -56,6 +56,7 @@ import eu.kalafatic.evolution.controller.orchestration.goal.GoalModel;
 import eu.kalafatic.evolution.controller.orchestration.goal.GoalUnderstandingEngine;
 import eu.kalafatic.evolution.controller.orchestration.goal.SemanticEnvelope;
 import eu.kalafatic.evolution.controller.orchestration.goal.SemanticEnvelopeEngine;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.AbstractionLevel;
 import eu.kalafatic.evolution.controller.orchestration.intent.AtomicIntentAnalysis;
 import eu.kalafatic.evolution.controller.orchestration.intent.ClarificationManager;
 import eu.kalafatic.evolution.controller.orchestration.intent.ClarificationPlanner;
@@ -485,6 +486,31 @@ public class IterationManager {
                         context.getSessionId(), "Kernel", mode.getType().toString()));
             }
 
+            // GROUNDING: Establish Goal Model and Locked Abstraction Level BEFORE Intensity Calculation
+            Object goalModelObj = state.getMetadata().get("goalModel");
+            GoalModel goalModel = null;
+            if (goalModelObj instanceof GoalModel) {
+                goalModel = (GoalModel) goalModelObj;
+            }
+            if (goalModel == null) {
+                goalModel = goalUnderstandingEngine.understand(request, context);
+                state.getMetadata().put("goalModel", goalModel);
+            }
+
+            if (state.getLockedAbstractionLevel() == null) {
+                AbstractionLevel lockedLevel = AbstractionLevel.DESIGN; // Default
+                String complexity = goalModel.getComplexity() != null ? goalModel.getComplexity().toUpperCase() : "MEDIUM";
+
+                if ("SIMPLE".equals(complexity)) {
+                    lockedLevel = AbstractionLevel.IMPLEMENTATION;
+                } else if ("HIGH".equals(complexity)) {
+                    lockedLevel = AbstractionLevel.ARCHITECTURE;
+                }
+
+                state.setLockedAbstractionLevel(lockedLevel);
+                context.log("[KERNEL] Abstraction level LOCKED to: " + lockedLevel + " based on complexity: " + complexity);
+            }
+
             // ADAPTIVE KERNEL: Ensure execution profile is initialized before access
             if (context.getExecutionProfile() == null) {
                 eu.kalafatic.evolution.controller.kernel.EvolutionProfile profile_init =
@@ -905,6 +931,21 @@ public class IterationManager {
         if (goalModel == null) {
             goalModel = goalUnderstandingEngine.understand(goal, context);
             state.getMetadata().put("goalModel", goalModel);
+        }
+
+        // 1. ABSTRACTION LEVEL SELECTION & LOCKING
+        if (state.getLockedAbstractionLevel() == null) {
+            AbstractionLevel lockedLevel = AbstractionLevel.DESIGN; // Default
+            String complexity = goalModel.getComplexity() != null ? goalModel.getComplexity().toUpperCase() : "MEDIUM";
+
+            if ("SIMPLE".equals(complexity)) {
+                lockedLevel = AbstractionLevel.IMPLEMENTATION;
+            } else if ("HIGH".equals(complexity)) {
+                lockedLevel = AbstractionLevel.ARCHITECTURE;
+            }
+
+            state.setLockedAbstractionLevel(lockedLevel);
+            context.log("[KERNEL] Abstraction level LOCKED to: " + lockedLevel + " based on complexity: " + complexity);
         }
 
         Object envelopeObj = state.getMetadata().get("semanticEnvelope");
