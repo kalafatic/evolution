@@ -7,7 +7,7 @@ import eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel;
 import eu.kalafatic.evolution.controller.orchestration.design.ComponentRecord;
 import eu.kalafatic.evolution.controller.orchestration.design.DesignModel;
 import eu.kalafatic.evolution.controller.orchestration.design.RelationshipRecord;
-import src.eu.kalafatic.evolution.media.MediaService;
+import eu.kalafatic.evolution.media.MediaService;
 
 public class MediaServiceManualTest {
     public static void main(String[] args) throws IOException {

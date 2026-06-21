@@ -5,9 +5,9 @@ import java.util.List;
 import java.util.Map;
 
 import eu.kalafatic.evolution.media.model.*;
-import src.eu.kalafatic.evolution.media.model.Diagram;
-import src.eu.kalafatic.evolution.media.model.Edge;
-import src.eu.kalafatic.evolution.media.model.Node;
+import eu.kalafatic.evolution.media.model.Diagram;
+import eu.kalafatic.evolution.media.model.Edge;
+import eu.kalafatic.evolution.media.model.Node;
 
 public class SvgRenderer {
 

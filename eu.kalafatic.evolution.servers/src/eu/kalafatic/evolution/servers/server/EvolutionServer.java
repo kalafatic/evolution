@@ -36,6 +36,23 @@ public class EvolutionServer extends NanoHTTPD {
 
     @Override
     public Response serve(IHTTPSession session) {
+        Response response;
+        if (Method.OPTIONS.equals(session.getMethod())) {
+            response = newFixedLengthResponse(Response.Status.OK, NanoHTTPD.MIME_PLAINTEXT, "");
+        } else {
+            response = handleInternal(session);
+        }
+        addCorsHeaders(response);
+        return response;
+    }
+
+    private void addCorsHeaders(Response res) {
+        res.addHeader("Access-Control-Allow-Origin", "*");
+        res.addHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, OPTIONS");
+        res.addHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, x-evo-runtime");
+    }
+
+    private Response handleInternal(IHTTPSession session) {
         String uri = session.getUri();
 
         if (uri.startsWith("/api/auth")) {

@@ -178,7 +178,9 @@ public class ConversationState {
                         scs.addSignal(new eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilitySignal(
                             CapabilityType.valueOf(sig.getString("capability")),
                             sig.getDouble("weight"),
+                            1.0, // default confidence
                             SessionIntent.valueOf(sig.getString("intent")),
+                            null, // no evidence list from JSON
                             sig.getString("source")
                         ));
                     }

@@ -357,7 +357,7 @@
         .demo-step.completed { text-decoration: line-through; color: var(--success); }
 
     </style>
-    <script src="/auth-integration.js"></script>
+    <script src="auth-integration.js"></script>
 </head>
 <body>
     <div id="layout">
@@ -386,7 +386,7 @@
             <div class="panel" style="border-top: 1px solid var(--border); border-bottom: none;">
                 <h3>Genome Milestones</h3>
                 <div id="snapshot-list" class="session-info">No snapshots created</div>
-                <button class="btn btn-sm" style="width: 100%; margin-top: 10px;" onclick="createSessionSnapshot()" data-guidance="Capture a frozen milestone of your current model's genome for versioning and evolution tracking.">SNAPSHOT</button>
+                <button class="btn btn-sm" id="snapshot-btn" style="width: 100%; margin-top: 10px;" onclick="createSessionSnapshot()" data-guidance="Capture a frozen milestone of your current model's genome for versioning and evolution tracking.">SNAPSHOT</button>
             </div>
         </div>
 
@@ -399,11 +399,11 @@
                 </div>
 
                 <div style="margin-left: auto; display: flex; gap: 10px;">
-                    <button class="btn btn-sm" onclick="toggleJsonEditor()" data-guidance="Switch to manual JSON editing mode for direct structural modifications.">JSON Editor</button>
-                    <button class="btn btn-sm" onclick="saveAllSessions()" title="Persist all sessions to disk" data-guidance="Save all open Forge sessions and their current states to the permanent repository.">💾 Save All</button>
-                    <button class="btn btn-sm" onclick="cloneActiveSession()" data-guidance="Duplicate the current session to experiment with architectural variations without affecting the original.">Clone</button>
-                    <button class="btn btn-sm" onclick="saveActiveModel()" data-guidance="Commit the current graph architecture to the session model state.">Save Architecture</button>
-                    <button class="btn btn-sm btn-danger" onclick="deleteActiveSession()" data-guidance="Permanently remove this session and all its associated data.">Delete</button>
+                    <button class="btn btn-sm" id="json-editor-btn" onclick="toggleJsonEditor()" data-guidance="Switch to manual JSON editing mode for direct structural modifications.">JSON Editor</button>
+                    <button class="btn btn-sm" id="save-all-btn" onclick="saveAllSessions()" title="Persist all sessions to disk" data-guidance="Save all open Forge sessions and their current states to the permanent repository.">💾 Save All</button>
+                    <button class="btn btn-sm" id="clone-btn" onclick="cloneActiveSession()" data-guidance="Duplicate the current session to experiment with architectural variations without affecting the original.">Clone</button>
+                    <button class="btn btn-sm" id="save-arch-btn" onclick="saveActiveModel()" data-guidance="Commit the current graph architecture to the session model state.">Save Architecture</button>
+                    <button class="btn btn-sm btn-danger" id="delete-btn" onclick="deleteActiveSession()" data-guidance="Permanently remove this session and all its associated data.">Delete</button>
                 </div>
             </div>
 
@@ -575,13 +575,13 @@
         </div>
     </div>
 
-    <link rel="stylesheet" href="/creatic.css">
-    <script src="/creatic.js"></script>
-    <script src="/forge-viz/viz-architecture.js"></script>
-    <script src="/forge-viz/viz-dataset.js"></script>
-    <script src="/forge-viz/viz-training.js"></script>
-    <script src="/forge-viz/viz-evolution.js"></script>
-    <script src="/forge-viz/viz-walkthrough.js"></script>
+    <link rel="stylesheet" href="creatic.css">
+    <script src="creatic.js"></script>
+    <script src="forge-viz/viz-architecture.js"></script>
+    <script src="forge-viz/viz-dataset.js"></script>
+    <script src="forge-viz/viz-training.js"></script>
+    <script src="forge-viz/viz-evolution.js"></script>
+    <script src="forge-viz/viz-walkthrough.js"></script>
     <script>
         let serverPort = 48080;
         let activeSessionId = null;
@@ -613,11 +613,12 @@
             log(`Connecting to Forge Server on port ${port}...`);
 
             loadSessions();
+            updateButtonState();
         };
 
         function getBaseUrl() {
-            if (window.location.protocol === 'file:') {
-                return `http://localhost:48080`;
+            if (window.location.protocol === 'file:' || window.location.protocol.startsWith('bundle')) {
+                return `http://localhost:${serverPort}`;
             }
             return '';
         }
@@ -681,6 +682,7 @@
 
             const state = (session && session.lifecycleState) ? session.lifecycleState : 'CREATED';
             updateLifecycleUI(state);
+            updateButtonState();
 
             renderSessionList();
             await fetchModel(id);
@@ -715,9 +717,22 @@
             badge.style.color = colors[state] || '#aaa';
             badge.style.borderColor = colors[state] || '#333';
             badge.style.border = '1px solid';
+        }
 
-            // Button locking
-            document.getElementById('train-btn').disabled = (state === 'FROZEN' || state === 'COMPILING');
+        function updateButtonState() {
+            const hasSession = activeSessionId !== null;
+            const session = sessions.find(s => s.id === activeSessionId);
+            const state = (session && session.lifecycleState) ? session.lifecycleState : 'CREATED';
+
+            document.getElementById('train-btn').disabled = !hasSession || (state === 'FROZEN' || state === 'COMPILING');
+            document.getElementById('stop-btn').disabled = !hasSession || !isTraining;
+
+            if (document.getElementById('json-editor-btn')) document.getElementById('json-editor-btn').disabled = !hasSession;
+            if (document.getElementById('clone-btn')) document.getElementById('clone-btn').disabled = !hasSession;
+            if (document.getElementById('save-arch-btn')) document.getElementById('save-arch-btn').disabled = !hasSession;
+            if (document.getElementById('delete-btn')) document.getElementById('delete-btn').disabled = !hasSession;
+            if (document.getElementById('snapshot-btn')) document.getElementById('snapshot-btn').disabled = !hasSession;
+            if (document.getElementById('dataset-selector')) document.getElementById('dataset-selector').disabled = !hasSession;
         }
 
         async function fetchModel(id) {
@@ -1001,7 +1016,10 @@
         }
 
         async function saveActiveModel() {
-            if (!activeSessionId) return;
+            if (!activeSessionId) {
+                log("No active session to save.");
+                return;
+            }
             try {
                 await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/model?runtime=SWT`, {
                     method: 'POST',
@@ -1027,6 +1045,10 @@
         }
 
         async function startTraining() {
+            if (!activeSessionId) {
+                log("No active session to train.");
+                return;
+            }
             isTraining = true;
             document.getElementById('train-btn').disabled = true;
             document.getElementById('stop-btn').disabled = false;
@@ -1048,6 +1070,7 @@
         }
 
         function stopTraining() {
+            if (!activeSessionId) return;
             isTraining = false;
             document.getElementById('train-btn').disabled = false;
             document.getElementById('stop-btn').disabled = true;
