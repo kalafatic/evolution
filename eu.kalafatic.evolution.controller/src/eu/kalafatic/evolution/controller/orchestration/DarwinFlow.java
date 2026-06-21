@@ -15,6 +15,7 @@ import eu.kalafatic.evolution.controller.execution.ExecutionBudget;
 import eu.kalafatic.evolution.controller.execution.ScheduledExecutionPlan;
 import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait;
 import eu.kalafatic.evolution.controller.orchestration.capability.contracts.ISchedulingContract;
+import eu.kalafatic.evolution.controller.orchestration.goal.GoalModel;
 import eu.kalafatic.evolution.controller.orchestration.diagnostics.CausalNode;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.Evaluator;
@@ -71,8 +72,8 @@ public class DarwinFlow implements IOrchestrationFlow {
         return manager.evolve(request, context);
     }
 
-    public List<BranchVariant> generateProposals(TaskContext context, String goal) throws Exception {
-        context.log("[DARWIN_FLOW] Entering generateProposals for goal: " + goal);
+    public List<BranchVariant> generateProposals(TaskContext context, GoalModel goal) throws Exception {
+        context.log("[DARWIN_FLOW] Entering generateProposals for goal: " + goal.getPrimaryAction());
         Iteration currentIterationModelImpl = manager.getCurrentIterationModel();
         String iterId = currentIterationModelImpl != null ? currentIterationModelImpl.getId() : "default";
 
@@ -104,7 +105,7 @@ public class DarwinFlow implements IOrchestrationFlow {
         }
 
         if (trajectory == null) {
-            trajectory = new Trajectory("traj-" + iterId, goal);
+            trajectory = new Trajectory("traj-" + iterId, goal.getPrimaryAction());
             context.getSemanticWorkspace().getTrajectoryMemory().recordTrajectory(trajectory);
             context.log("[COGNITION] Starting new evolutionary lineage trajectory: " + trajectory.getTrajectoryId());
 
@@ -113,7 +114,7 @@ public class DarwinFlow implements IOrchestrationFlow {
             if (tree.getRootId() == null) {
                 EvolutionNode root = new EvolutionNode();
                 root.setId("root-" + iterId);
-                root.setStrategy("ROOT: " + goal);
+                root.setStrategy("ROOT: " + goal.getPrimaryAction());
                 root.setSemanticPhilosophy("Initial evolutionary root");
                 root.setIteration(0);
                 root.setStatus("ROOT");
@@ -124,7 +125,7 @@ public class DarwinFlow implements IOrchestrationFlow {
 
         FailureMemory failureMemory = context.getKernelContext().getMemoryService().getFailureMemory();
 
-        sessionContainer.getEventBus().publish(new RuntimeEvent(RuntimeEventType.MUTATING, context.getSessionId(), "DarwinFlow", goal));
+        sessionContainer.getEventBus().publish(new RuntimeEvent(RuntimeEventType.MUTATING, context.getSessionId(), "DarwinFlow", goal.getPrimaryAction()));
 
         eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionaryPressureVector pressure = null;
         if (trajectory != null) {
@@ -175,7 +176,7 @@ public class DarwinFlow implements IOrchestrationFlow {
             "darwin-mutation-" + System.currentTimeMillis(),
             "MUTATION",
             "DarwinEngine",
-            List.of(goal),
+            List.of(goal.getPrimaryAction()),
             rawVariants.stream().map(v -> v.getId()).collect(Collectors.toList()),
             1.0,
             "Generated and evaluated " + rawVariants.size() + " variants."
@@ -206,7 +207,7 @@ public class DarwinFlow implements IOrchestrationFlow {
         return variants;
     }
 
-    public EvaluationResult executeWinner(TaskContext context, eu.kalafatic.evolution.controller.supervision.EvolutionDecision decision, List<BranchVariant> variants, String goal) throws Exception {
+    public EvaluationResult executeWinner(TaskContext context, eu.kalafatic.evolution.controller.supervision.EvolutionDecision decision, List<BranchVariant> variants, GoalModel goal) throws Exception {
         eu.kalafatic.evolution.controller.kernel.EvolutionProfile profile = context.getExecutionProfile();
         context.log("[DARWIN_FLOW] Entering executeWinner for variant: " + decision.getSelectedVariantId());
         VariantExecutionContext winningContext = null;
@@ -270,7 +271,7 @@ public class DarwinFlow implements IOrchestrationFlow {
 
                 // For minimal reasoning levels (chat), provide only the goal to prevent confusing the agent with internal Darwin strategies
                 boolean isMinimal = selectedVariant.getReasoningLevel() == BranchVariant.ReasoningLevel.MINIMAL;
-                String input = isMinimal ? goal : goal + "\nStrategy: " + selectedVariant.getStrategy();
+                String input = isMinimal ? goal.getPrimaryAction() : goal.getPrimaryAction() + "\nStrategy: " + selectedVariant.getStrategy();
                 String finalResult = generalAgent.process(input, context, null);
                 selectedVariant.setMutationTrace(finalResult);
                 selectedVariant.setSuccess(true);
@@ -375,7 +376,7 @@ public class DarwinFlow implements IOrchestrationFlow {
                     if (v.getActivationState() == BranchVariant.ActivationState.ACTIVE || v.getActivationState() == BranchVariant.ActivationState.KEPT) {
                         IterationRecord record = new IterationRecord();
                         record.setIteration(context.getOrchestrationState().getIterationCount());
-                        record.setGoal(goal);
+                        record.setGoal(goal.getPrimaryAction());
                         record.setStrategy(v.getStrategy());
                         record.setStrategyType(v.getStrategyType() != null ? v.getStrategyType().toString() : null);
                         record.setSemanticAnchor(v.getSemanticAnchor());
@@ -605,7 +606,7 @@ public class DarwinFlow implements IOrchestrationFlow {
         }
     }
 
-    private BranchVariant createUserVariant(String input, String goal, TaskContext context) {
+    private BranchVariant createUserVariant(String input, GoalModel goal, TaskContext context) {
         BranchVariant v = new BranchVariant();
         v.setId("v-user-" + System.currentTimeMillis());
         v.setBranchId(v.getId());

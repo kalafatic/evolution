@@ -27,6 +27,7 @@ import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityHeal
 import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityStatus;
 import eu.kalafatic.evolution.controller.orchestration.capability.ICapability;
 import eu.kalafatic.evolution.controller.orchestration.capability.contracts.IMutationContract;
+import eu.kalafatic.evolution.controller.orchestration.goal.GoalModel;
 import eu.kalafatic.evolution.controller.orchestration.intent.AtomicIntentAnalysis;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionResult;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentHypothesis;
@@ -129,9 +130,10 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         return "CRITICAL: Return a valid JSON object for the requested Darwin evolutionary trajectory.";
     }
 
-    public List<BranchVariant> generateVariants(String goal, StateSnapshot snapshot, FailureMemory failureMemory, Trajectory trajectory, EvolutionaryPressureVector pressure) throws Exception {
-        context.log("Stage: Goal\nGoal: " + goal);
-        context.log("[DARWIN] Generating trajectory-driven variants for goal: " + goal);
+    @Override
+    public List<BranchVariant> generateVariants(GoalModel goal, StateSnapshot snapshot, FailureMemory failureMemory, Trajectory trajectory, EvolutionaryPressureVector pressure) throws Exception {
+        context.log("Stage: Goal\nGoalModel: " + goal);
+        context.log("[DARWIN] Generating trajectory-driven variants for goal: " + goal.getPrimaryAction());
 
         // ADAPTIVE KERNEL: Uniform Intensity Calculation
         eu.kalafatic.evolution.controller.kernel.EvolutionProfile profile =
@@ -178,7 +180,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         if (policy.getInteractionMode() == ExecutionPolicy.InteractionMode.STEP) modules.add(new StepModeInstructionModule());
 
         StringBuilder state = new StringBuilder();
-        state.append("Current Goal: ").append(goal).append("\n");
+        state.append("Current Goal: ").append(goal.getPrimaryAction()).append("\n");
 
         if (snapshot != null) {
             state.append("\n--- CURRENT STATE SNAPSHOT ---\n");
@@ -247,7 +249,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
             // File Selection Assistance: Provide a curated list of candidate paths for the LLM to choose from
             eu.kalafatic.evolution.controller.mediation.analysis.ContextCurator curator = new eu.kalafatic.evolution.controller.mediation.analysis.ContextCurator();
-            List<String> candidates = curator.selectContext(snapshotMed, goal, 32);
+            List<String> candidates = curator.selectContext(snapshotMed, goal.getPrimaryAction(), 32);
             state.append("\n--- HIGH-VALUE CANDIDATE FILES (4-16 MUST BE SELECTED) ---\n");
             candidates.forEach(path -> state.append("- ").append(path).append("\n"));
         }
@@ -436,7 +438,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             attempts++;
             context.log("[DARWIN] Sequential Branching: Attempt " + attempts + " (Targets: " + uniqueVariants.size() + "/" + branchingLimit + ")");
             try {
-                String discoveryGoal = generation == 0 ? goal : goal + " (Mutation Gen " + generation + ")";
+                String discoveryGoal = generation == 0 ? goal.getPrimaryAction() : goal.getPrimaryAction() + " (Mutation Gen " + generation + ")";
 
                 // 1. Reconstruct Lineage Context from EvolutionTree
                 String fullLineagePrompt = tree.reconstructLineagePrompt(currentParentId);
@@ -555,12 +557,29 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
              context.log("[DARWIN] Sequential Branching yielded insufficient variants (" + uniqueVariants.size() + "). Injecting divergent fallbacks.");
              DarwinSyntheticVariantFactory factory = new DarwinSyntheticVariantFactory();
              if (uniqueVariants.isEmpty()) {
-                 uniqueVariants.add(factory.synthesizeImplementation(goal, atomicAnalysis));
+                 uniqueVariants.add(factory.synthesizeImplementation(goal.getPrimaryAction(), atomicAnalysis));
              }
              if (uniqueVariants.size() < 2) {
-                 uniqueVariants.add(factory.synthesizeSemanticAlternative(uniqueVariants.get(0), goal, atomicAnalysis));
+                 uniqueVariants.add(factory.synthesizeSemanticAlternative(uniqueVariants.get(0), goal.getPrimaryAction(), atomicAnalysis));
              }
         }
+
+        // 1. Goal-Driven Validation: Semantic Distance and Domain Matching
+        uniqueVariants.removeIf(variant -> {
+            double distance = semanticDistance(goal, variant);
+            boolean domainMatch = variant.optString("domain", goal.getDomain()).equalsIgnoreCase(goal.getDomain());
+            boolean artifactMatch = variant.optString("requestedArtifact", goal.getRequestedArtifact()).equalsIgnoreCase(goal.getRequestedArtifact());
+
+            if (distance > 0.30) {
+                context.log("[DARWIN] REJECTED: Semantic distance (" + String.format("%.2f", distance) + ") exceeds threshold (0.30) for variant: " + variant.optString("strategy"));
+                return true;
+            }
+            if (!domainMatch) {
+                context.log("[DARWIN] REJECTED: Domain mismatch (Expected " + goal.getDomain() + ") for variant: " + variant.optString("strategy"));
+                return true;
+            }
+            return false;
+        });
 
         // Fitness Ranking
         DarwinFitnessRanker ranker = new DarwinFitnessRanker();
@@ -594,7 +613,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
         List<BranchVariant> variants = new ArrayList<>();
         for (JSONObject obj : uniqueVariants) {
-            BranchVariant v = mapToBranchVariant(obj, goal, "TRAJECTORY_EVOLUTION", trajectory, context);
+            BranchVariant v = mapToBranchVariant(obj, goal.getPrimaryAction(), "TRAJECTORY_EVOLUTION", trajectory, context);
             if (!survivors.isEmpty()) {
                 v.setInheritedContext(lineageContext);
                 v.setRejectedSiblings(rejectedSiblings);
@@ -758,6 +777,45 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         }
 
         return v;
+    }
+
+    private double semanticDistance(GoalModel goal, JSONObject variant) {
+        String strategy = variant.optString("strategy", "").toLowerCase();
+        String philosophy = variant.optString("semantic_anchor", "").toLowerCase();
+        String primaryAction = goal.getPrimaryAction().toLowerCase();
+        String artifact = goal.getRequestedArtifact().toLowerCase();
+
+        // 1. Exact Match Heuristic
+        if (strategy.contains(primaryAction) || philosophy.contains(primaryAction)) {
+            return 0.05;
+        }
+
+        // 2. Keyword Overlap
+        String[] keywords = primaryAction.split(" ");
+        int matches = 0;
+        for (String k : keywords) {
+            if (k.length() > 3 && (strategy.contains(k) || philosophy.contains(k))) {
+                matches++;
+            }
+        }
+        double overlap = (double) matches / keywords.length;
+
+        // 3. Artifact Grounding
+        boolean hasArtifact = strategy.contains(artifact) || philosophy.contains(artifact);
+        
+        double distance = 1.0 - overlap;
+        if (hasArtifact) distance *= 0.8;
+        
+        // 4. Hallucination Detection (Penalty for unrelated concepts)
+        if (goal.getGoalType().equals("CODE_GENERATION") && goal.getDomain().equals("JAVA")) {
+            if (strategy.contains("reactive") || strategy.contains("kafka") || strategy.contains("microservice")) {
+                if (!primaryAction.contains("reactive") && !primaryAction.contains("kafka")) {
+                    distance += 0.5; // Heavy penalty for unrequested complex architectures
+                }
+            }
+        }
+
+        return Math.min(1.0, distance);
     }
 
     private String sanitize(String s) {

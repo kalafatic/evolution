@@ -8,6 +8,7 @@ import org.json.JSONObject;
 import eu.kalafatic.evolution.controller.orchestration.AiService;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionProgressPublisher;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.orchestration.goal.GoalModel;
 import eu.kalafatic.evolution.controller.orchestration.intent.AtomicIntentAnalysis;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 
@@ -29,7 +30,7 @@ public class DarwinVariantSpawner {
     /**
      * Spawns a single variant based on a blueprint and sequential mutation context.
      */
-    public JSONObject spawnSingleBlueprint(String goal, TrajectoryBlueprint bp, String basePrompt, String lineageContext, List<String> rejectedSiblings, String mutationContext, boolean isMediated, TaskContext context) {
+    public JSONObject spawnSingleBlueprint(GoalModel goal, TrajectoryBlueprint bp, String basePrompt, String lineageContext, List<String> rejectedSiblings, String mutationContext, boolean isMediated, TaskContext context) {
         Orchestrator orchestrator = context.getOrchestrator();
 
         context.log("[SPAWNER] Materializing trajectory from blueprint: " + bp.getId());
@@ -222,6 +223,19 @@ public class DarwinVariantSpawner {
           .append("Each response MUST contain exactly ONE branch only.\n\n");
 
         sb.append(composer.composeGoal(bp.getGoal())).append("\n\n");
+        
+        GoalModel goalModel = (GoalModel) context.getOrchestrationState().getMetadata().get("goalModel");
+        if (goalModel != null) {
+            sb.append("--- SEMANTIC ANCHOR (STRICT BOUNDARY) ---\n")
+              .append("Goal Type: ").append(goalModel.getGoalType()).append("\n")
+              .append("Domain: ").append(goalModel.getDomain()).append("\n")
+              .append("Intent: ").append(goalModel.getIntent()).append("\n")
+              .append("Requested Artifact: ").append(goalModel.getRequestedArtifact()).append("\n")
+              .append("Primary Action: ").append(goalModel.getPrimaryAction()).append("\n")
+              .append("Complexity: ").append(goalModel.getComplexity()).append("\n")
+              .append("Required Outputs: ").append(goalModel.getRequiredOutputs()).append("\n\n")
+              .append("MANDATE: You MUST stay within these semantic boundaries. Do NOT invent new problems or unrequested architectural complexity.\n\n");
+        }
 
         if (context != null && context.getOrchestrationState() != null) {
             var metadata = context.getOrchestrationState().getMetadata();
@@ -331,7 +345,7 @@ public class DarwinVariantSpawner {
     /**
      * Spawns variants for the given strategies.
      */
-    public List<JSONObject> spawn(String goal, List<DarwinStrategySeed> seeds, String basePrompt, String lineageContext, List<String> rejectedSiblings, boolean isMediated, TaskContext context) {
+    public List<JSONObject> spawn(GoalModel goal, List<DarwinStrategySeed> seeds, String basePrompt, String lineageContext, List<String> rejectedSiblings, boolean isMediated, TaskContext context) {
         List<JSONObject> variants = new ArrayList<>();
         Orchestrator orchestrator = context.getOrchestrator();
 

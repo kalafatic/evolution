@@ -52,6 +52,8 @@ import eu.kalafatic.evolution.controller.orchestration.capability.contracts.ISch
 import eu.kalafatic.evolution.controller.orchestration.diagnostics.CausalNode;
 import eu.kalafatic.evolution.controller.orchestration.diagnostics.CognitiveTrace;
 import eu.kalafatic.evolution.controller.orchestration.diagnostics.ReplayEngine;
+import eu.kalafatic.evolution.controller.orchestration.goal.GoalModel;
+import eu.kalafatic.evolution.controller.orchestration.goal.GoalUnderstandingEngine;
 import eu.kalafatic.evolution.controller.orchestration.intent.AtomicIntentAnalysis;
 import eu.kalafatic.evolution.controller.orchestration.intent.ClarificationManager;
 import eu.kalafatic.evolution.controller.orchestration.intent.ClarificationPlanner;
@@ -118,6 +120,7 @@ public class IterationManager {
     private final Evaluator evaluator;
     private final DarwinEngine darwinEngine;
     private final IterationMemoryService memoryService;
+    private final GoalUnderstandingEngine goalUnderstandingEngine;
 
     // Kernel Components
     private final PhaseEngine phaseEngine;
@@ -192,6 +195,7 @@ public class IterationManager {
         this.evaluator = evaluator;
         this.darwinEngine = darwinEngine;
         this.memoryService = memoryService;
+        this.goalUnderstandingEngine = new GoalUnderstandingEngine(sessionContainer);
 
         if (sessionContainer != null) {
             Map<String, IAgent> registry = (sessionContainer instanceof SessionContext) ? ((SessionContext)sessionContainer).getAgentRegistry() : new java.util.HashMap<>();
@@ -283,6 +287,7 @@ public class IterationManager {
                 ((eu.kalafatic.evolution.controller.agents.BaseAiAgent)a).setAiService(aiService);
             }
         });
+        goalUnderstandingEngine.setAiService(aiService);
         darwinEngine.setAiService(aiService);
         taskExecutor.getOrchestrator().setAiService(aiService);
     }
@@ -881,6 +886,12 @@ public class IterationManager {
 
         context.log("[KERNEL] Darwin Evolution Phase: " + state.getCurrentPhase());
 
+        GoalModel goalModel = (GoalModel) state.getMetadata().get("goalModel");
+        if (goalModel == null) {
+            goalModel = goalUnderstandingEngine.understand(goal, context);
+            state.getMetadata().put("goalModel", goalModel);
+        }
+
         Trajectory activeTrajectory = getActiveTrajectory(context);
         int generation = activeTrajectory != null ? activeTrajectory.getGeneration() : 0;
         String lineage = activeTrajectory != null ? activeTrajectory.getTrajectoryId() : "alpha";
@@ -972,7 +983,7 @@ public class IterationManager {
         final IntentExpansionResult intentExpansion = intentExpansionFinal;
 
         checkStep(state.getCurrentPhase(), "BRANCH_GENERATION", "Spawning competing trajectories for: " + goal);
-        List<BranchVariant> variants = darwinFlow.generateProposals(context, goal);
+        List<BranchVariant> variants = darwinFlow.generateProposals(context, goalModel);
 
         if (variants.isEmpty()) {
             context.log("[KERNEL] CRITICAL: No trajectories survived diversity analysis. Evolution blocked.");
@@ -1032,7 +1043,7 @@ public class IterationManager {
         }
 
         transition(SystemState.EXECUTING, context);
-        EvaluationResult result = darwinFlow.executeWinner(context, decision, variants, goal);
+        EvaluationResult result = darwinFlow.executeWinner(context, decision, variants, goalModel);
         transition(SystemState.VERIFYING, context);
 
         if (result.isSuccess()) {
@@ -1150,6 +1161,7 @@ public class IterationManager {
         } else {
             String newGoal = goal + " (Clarification: " + userResponse + ")";
             context.getOrchestrationState().setRawInput(newGoal);
+            context.getOrchestrationState().getMetadata().remove("goalModel");
             if (context.getOrchestrator().getSelfDevSession() != null) {
                  context.getOrchestrator().getSelfDevSession().setInitialRequest(newGoal);
             }
@@ -1263,13 +1275,15 @@ public class IterationManager {
                 return "FAILED";
             } else if (trimmed.startsWith("Propose:") || trimmed.startsWith("{")) {
                 context.log("[KERNEL] User injected a new trajectory. Integrating as a first-class candidate.");
-                BranchVariant userVariant = createUserVariant(trimmed, goal, context);
+                GoalModel goalModel = (GoalModel) context.getOrchestrationState().getMetadata().get("goalModel");
+                BranchVariant userVariant = createUserVariant(trimmed, goalModel, context);
                 variants.add(userVariant);
                 context.log("[KERNEL] User trajectory " + userVariant.getId() + " added to the evolutionary pool.");
             } else {
                 context.log("[KERNEL] User provided guidance: " + trimmed + ". Refining intent and regenerating trajectories.");
                 String newGoal = goal + " (Guidance: " + trimmed + ")";
                 context.getOrchestrationState().setRawInput(newGoal);
+                context.getOrchestrationState().getMetadata().remove("goalModel");
                 if (context.getOrchestrator().getSelfDevSession() != null) {
                      context.getOrchestrator().getSelfDevSession().setInitialRequest(newGoal);
                 }
@@ -1278,7 +1292,7 @@ public class IterationManager {
         }
     }
 
-    private BranchVariant createUserVariant(String input, String goal, TaskContext context) {
+    private BranchVariant createUserVariant(String input, GoalModel goal, TaskContext context) {
         BranchVariant v = new BranchVariant();
         v.setId("v-user-" + System.currentTimeMillis());
         v.setBranchId(v.getId());

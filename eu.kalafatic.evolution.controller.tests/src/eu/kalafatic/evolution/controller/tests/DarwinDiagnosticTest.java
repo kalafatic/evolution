@@ -8,6 +8,7 @@ import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.controller.orchestration.SessionManager;
 import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
 import eu.kalafatic.evolution.controller.orchestration.AiService;
+import eu.kalafatic.evolution.controller.orchestration.goal.GoalModel;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationMemoryService;
 
 public class DarwinDiagnosticTest {
@@ -37,8 +38,14 @@ public class DarwinDiagnosticTest {
         engine.setAiService(ai);
 
         context.log("TEST_LOG: Starting Darwin diagnostic...");
+        GoalModel goalModel = new GoalModel();
+        goalModel.setPrimaryAction("Test Goal");
+        goalModel.setDomain("JAVA");
+        goalModel.setGoalType("CODE_GENERATION");
+        goalModel.setRequestedArtifact("Java Class");
+        
         try {
-            engine.generateVariants("Test Goal", null, null, null, null);
+            engine.generateVariants(goalModel, null, null, null, null);
         } catch (Exception e) {
              context.log("TEST_LOG: Darwin engine execution completed with error: " + e.getMessage());
         }

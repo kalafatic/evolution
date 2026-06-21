@@ -1,11 +1,13 @@
 package eu.kalafatic.evolution.view.editors.pages;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.Browser;
 import org.eclipse.swt.browser.BrowserFunction;
@@ -774,9 +776,14 @@ public class ArchitecturePage extends AEvoPage {
             // Use a proper base URL for resource resolution (js/css)
             org.osgi.framework.Bundle bundle = org.eclipse.core.runtime.Platform.getBundle("eu.kalafatic.evolution.controller");
             if (bundle != null) {
-                java.net.URL entry = bundle.getEntry("/");
-                java.net.URL baseUrl = org.eclipse.core.runtime.FileLocator.toFileURL(entry);
-                browser.setText(html, baseUrl.toString());
+            	 // We use setUrl with a file:// URL because it's the most reliable way for SWT Browser
+                // to handle relative paths (./js/...) and security origins correctly.
+                URL bundleRoot = FileLocator.toFileURL(bundle.getEntry("/"));
+                URL chatUrl = new URL(bundleRoot, "template.html");
+
+                // Using setUrl(String) instead of setText(String) to ensure the base URL
+                // is correctly set to the file system path of the extracted bundle.
+                browser.setUrl(chatUrl.toString());
             } else {
                 browser.setText(html);
             }

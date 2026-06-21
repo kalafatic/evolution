@@ -158,15 +158,21 @@ public class FeedbackGroup extends AEvoGroup {
         
 
         // 1. Satisfaction Box
-        satisfactionBox = GUIFactory.INSTANCE.createComposite(group, 2);
+        satisfactionBox = GUIFactory.INSTANCE.createComposite(group, 2, SWT.BORDER);
+        ((GridData)satisfactionBox.getLayoutData()).widthHint = 200; // Set a fixed width for the satisfaction box
         GUIFactory.INSTANCE.createLabel(satisfactionBox, "Rate Session (1-10):");
-        satisfactionScale = new Scale(satisfactionBox, SWT.HORIZONTAL);
+        satisfactionScale = new Scale(satisfactionBox, SWT.NO);
+       
         satisfactionScale.setMinimum(1);
         satisfactionScale.setMaximum(10);
         satisfactionScale.setIncrement(1);
         satisfactionScale.setSelection(5);       
-        satisfactionScale.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));        
-       
+        
+        GridData gridData = new GridData(GridData.FILL_HORIZONTAL);        
+        gridData.widthHint = 100; // Set a fixed width for the satisfaction box
+        satisfactionScale.setLayoutData(gridData);      
+        
+        satisfactionBox.layout(true, true);
         
         feedbackBox = GUIFactory.INSTANCE.createComposite(group, 3);
         GUIFactory.INSTANCE.createLabel(feedbackBox, "Session Feedback:");
