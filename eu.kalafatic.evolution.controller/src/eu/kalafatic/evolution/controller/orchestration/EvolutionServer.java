@@ -526,15 +526,19 @@ public class EvolutionServer extends NanoHTTPD {
     }
 
     private Response handleGetChat() {
-        try (InputStream is = getClass().getResourceAsStream("chat.html")) {
-            if (is == null) {
-                return newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "chat.html not found");
-            }
+        Bundle bundle = Platform.getBundle("eu.kalafatic.evolution.view");
+        if (bundle == null) return newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "View bundle not found");
+
+        try (InputStream is = bundle.getResource("/chat.html").openStream()) {
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
                 String content = reader.lines().collect(Collectors.joining("\n"));
+                // Inject HTTP bridge for non-SWT environments
+                if (content.contains("</body>")) {
+                    content = content.replace("</body>", "<script src=\"js/http-bridge.js\"></script></body>");
+                }
                 return newFixedLengthResponse(Response.Status.OK, "text/html", content);
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", e.getMessage());
         }
     }
@@ -705,11 +709,29 @@ public class EvolutionServer extends NanoHTTPD {
     }
 
     private Response serveExternalResource(String uri) {
-        Bundle bundle = Platform.getBundle("eu.kalafatic.evolution.servers");
-        if (bundle == null) return newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "Bundle not found");
+        // Attempt to serve from the modern View bundle first
+        Bundle viewBundle = Platform.getBundle("eu.kalafatic.evolution.view");
+        if (viewBundle != null) {
+            try {
+                java.net.URL resourceUrl = viewBundle.getResource(uri);
+                if (resourceUrl != null) {
+                    try (InputStream is = resourceUrl.openStream()) {
+                        String mimeType = getMimeType(uri);
+                        byte[] data = is.readAllBytes();
+                        return newFixedLengthResponse(Response.Status.OK, mimeType, new java.io.ByteArrayInputStream(data), data.length);
+                    }
+                }
+            } catch (Exception e) {
+                // Fallback
+            }
+        }
+
+        // Fallback to Servers bundle
+        Bundle serverBundle = Platform.getBundle("eu.kalafatic.evolution.servers");
+        if (serverBundle == null) return newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "Bundle not found");
 
         String path = "/eu/kalafatic/evolution/servers/web" + uri;
-        try (InputStream is = bundle.getResource(path).openStream()) {
+        try (InputStream is = serverBundle.getResource(path).openStream()) {
             String mimeType = getMimeType(uri);
             byte[] data = is.readAllBytes();
             return newFixedLengthResponse(Response.Status.OK, mimeType, new java.io.ByteArrayInputStream(data), data.length);

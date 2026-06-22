@@ -56,7 +56,17 @@ public enum FeedbackLevel implements Enumerator {
 	 * @generated
 	 * @ordered
 	 */
-	FULL(3, "FULL", "FULL");
+	FULL(3, "FULL", "FULL"),
+
+	/**
+	 * The '<em><b>DEBUG</b></em>' literal object.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #DEBUG_VALUE
+	 * @generated
+	 * @ordered
+	 */
+	DEBUG(4, "DEBUG", "DEBUG");
 
 	/**
 	 * The '<em><b>SIMPLE</b></em>' literal value.
@@ -103,6 +113,17 @@ public enum FeedbackLevel implements Enumerator {
 	public static final int FULL_VALUE = 3;
 
 	/**
+	 * The '<em><b>DEBUG</b></em>' literal value.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #DEBUG
+	 * @model
+	 * @generated
+	 * @ordered
+	 */
+	public static final int DEBUG_VALUE = 4;
+
+	/**
 	 * An array of all the '<em><b>Feedback Level</b></em>' enumerators.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -114,6 +135,7 @@ public enum FeedbackLevel implements Enumerator {
 			INTERACTIVE,
 			ADVANCED,
 			FULL,
+			DEBUG,
 		};
 
 	/**
@@ -174,6 +196,7 @@ public enum FeedbackLevel implements Enumerator {
 			case INTERACTIVE_VALUE: return INTERACTIVE;
 			case ADVANCED_VALUE: return ADVANCED;
 			case FULL_VALUE: return FULL;
+			case DEBUG_VALUE: return DEBUG;
 		}
 		return null;
 	}

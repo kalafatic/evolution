@@ -123,7 +123,7 @@ public class FeedbackGroup extends AEvoGroup {
 
         GUIFactory.INSTANCE.createLabel(levelBox, "Feedback Depth:");
 
-        Composite segmentedControl = GUIFactory.INSTANCE.createComposite(levelBox, 4, SWT.BORDER);
+        Composite segmentedControl = GUIFactory.INSTANCE.createComposite(levelBox, 5, SWT.BORDER);
         
         FeedbackLevel[] levels = FeedbackLevel.values();
         levelButtons = new Button[levels.length];
