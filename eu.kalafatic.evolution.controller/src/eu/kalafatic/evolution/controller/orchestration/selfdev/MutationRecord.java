@@ -7,6 +7,10 @@ import java.util.Map;
  * Captures technical details of a specific evolutionary mutation.
  */
 public class MutationRecord {
+    public MutationRecord() {
+        // Default constructor for Jackson
+    }
+
     private String strategy;
     private String semanticAnchor;
     private String philosophy;

@@ -47,7 +47,7 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
         return mapSequential(goal, context, limit, new ArrayList<>());
     }
 
-    public TrajectoryBlueprint discoverNext(String goal, TaskContext context, List<TrajectoryBlueprint> existing, String mutationContext) throws Exception {
+    public TrajectoryBlueprint discoverNext(String goal, TaskContext context, List<TrajectoryBlueprint> existing, String mutationContext, EvolutionDimension activeDimension) throws Exception {
         context.log("[TERRITORY] Sequentially discovering next unique evolutionary trajectory for: " + goal);
 
         AbstractionLevel lockedLevel = context.getOrchestrationState().getLockedAbstractionLevel();
@@ -59,6 +59,14 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
         sb.append("You are a single-path evolutionary territory mapper. You perform one controlled discovery of a unique evolutionary blueprint.\n\n");
 
         sb.append(composer.composeGoal(goal)).append("\n\n");
+
+        if (activeDimension != null) {
+            sb.append("### ACTIVE MUTATION DIMENSION ###\n")
+              .append("ID: ").append(activeDimension.getId()).append("\n")
+              .append("DESCRIPTION: ").append(activeDimension.getDescription()).append("\n")
+              .append("ABSTRACTION LEVEL: ").append(activeDimension.getAbstractionLevel()).append("\n")
+              .append("MANDATE: Propose a unique implementation strategy strictly for THIS dimension. Keep other architectural decisions fixed.\n\n");
+        }
 
         Object envObj = context.getOrchestrationState().getMetadata().get("semanticEnvelope");
         SemanticEnvelope envelope = null;
@@ -108,6 +116,23 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
         if (mutationContext != null && !mutationContext.isEmpty()) {
             siblingSb.append("\nSEQUENTIAL MUTATION CONSTRAINTS (FORBIDDEN):\n")
               .append(mutationContext).append("\n");
+        }
+
+        Object genomeObj = context.getOrchestrationState().getMetadata().get("semanticGenome");
+        if (genomeObj instanceof SemanticGenome) {
+            SemanticGenome genome = (SemanticGenome) genomeObj;
+            if (!genome.getRejectedMutations().isEmpty()) {
+                siblingSb.append("\nFORBIDDEN MUTATIONS (REJECTED BY SEMANTIC VALIDATOR):\n");
+                for (MutationRecord rejected : genome.getRejectedMutations()) {
+                    siblingSb.append("- ").append(rejected.getStrategy()).append(" (Reason: ").append(rejected.getTradeoffs()).append(")\n");
+                }
+            }
+            if (!genome.getDiscoveredMutations().isEmpty()) {
+                siblingSb.append("\nEXPLORED MUTATIONS (ALREADY ATTEMPTED):\n");
+                for (MutationRecord explored : genome.getDiscoveredMutations()) {
+                    siblingSb.append("- ").append(explored.getStrategy()).append("\n");
+                }
+            }
         }
         sb.append(composer.composeSiblingMemory(siblingSb.toString())).append("\n\n");
 

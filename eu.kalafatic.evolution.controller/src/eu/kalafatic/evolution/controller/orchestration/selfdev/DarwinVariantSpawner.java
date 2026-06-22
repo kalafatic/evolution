@@ -32,14 +32,14 @@ public class DarwinVariantSpawner {
     /**
      * Spawns a single variant based on a blueprint and sequential mutation context.
      */
-    public JSONObject spawnSingleBlueprint(GoalModel goal, TrajectoryBlueprint bp, String basePrompt, String lineageContext, List<String> rejectedSiblings, String mutationContext, boolean isMediated, TaskContext context) {
+    public JSONObject spawnSingleBlueprint(GoalModel goal, TrajectoryBlueprint bp, String basePrompt, String lineageContext, List<String> rejectedSiblings, String mutationContext, boolean isMediated, TaskContext context, EvolutionDimension activeDimension, SemanticGenome genome) {
         Orchestrator orchestrator = context.getOrchestrator();
 
         context.log("[SPAWNER] Materializing trajectory from blueprint: " + bp.getId());
         EvolutionProgressPublisher.updateBranchStatus(context, bp.getId(), bp.getPhilosophy(), "active", null);
         EvolutionProgressPublisher.updateActiveModel(context, orchestrator != null ? (orchestrator.getOllama() != null ? orchestrator.getOllama().getModel() : "local") : "local", "Materializing Branch " + bp.getId());
 
-        String bpPrompt = buildBlueprintPrompt(bp, basePrompt, lineageContext, rejectedSiblings, mutationContext, isMediated, context);
+        String bpPrompt = buildBlueprintPrompt(bp, basePrompt, lineageContext, rejectedSiblings, mutationContext, isMediated, context, activeDimension, genome);
         context.log("Stage: PromptComposer\nPrompt length: " + bpPrompt.length() + "\nPrompt hash: " + bpPrompt.hashCode());
         JSONObject validated = null;
 
@@ -216,14 +216,15 @@ public class DarwinVariantSpawner {
         }
     }
 
-    private String buildBlueprintPrompt(TrajectoryBlueprint bp, String basePrompt, String lineageContext, List<String> rejectedSiblings, String mutationContext, boolean isMediated, TaskContext context) {
+    private String buildBlueprintPrompt(TrajectoryBlueprint bp, String basePrompt, String lineageContext, List<String> rejectedSiblings, String mutationContext, boolean isMediated, TaskContext context, EvolutionDimension activeDimension, SemanticGenome genome) {
         eu.kalafatic.evolution.controller.orchestration.behavior.PromptComposer composer = new eu.kalafatic.evolution.controller.orchestration.behavior.PromptComposer();
         StringBuilder sb = new StringBuilder();
 
         sb.append(composer.composeSystem(null)).append("\n\n");
         sb.append("You are a single-path evolutionary mutation engine.\n")
           .append("Your goal is to perform a BOUNDED LOCAL MUTATION on the provided parent implementation.\n")
-          .append("Do NOT redesign the complete architecture. Focus only on the active mutation dimension.\n")
+          .append("MANDATE: You MUST preserve the parent implementation. You are ONLY allowed to mutate the specific dimension identified below.\n")
+          .append("Do NOT redesign the complete architecture. Do NOT start from scratch. Focus only on the active mutation dimension.\n")
           .append("Each response MUST contain exactly ONE branch only.\n\n");
 
         sb.append(composer.composeGoal(bp.getGoal())).append("\n\n");
@@ -271,6 +272,22 @@ public class DarwinVariantSpawner {
             siblingSb.append("FORBIDDEN STRATEGIES (PREVIOUSLY REJECTED OR OCCUPIED):\n");
             for (String rejected : rejectedSiblings) siblingSb.append("- ").append(rejected).append("\n");
         }
+
+        if (genome != null) {
+            if (!genome.getRejectedMutations().isEmpty()) {
+                siblingSb.append("FORBIDDEN MUTATIONS (REJECTED BY SEMANTIC VALIDATOR):\n");
+                for (MutationRecord rejected : genome.getRejectedMutations()) {
+                    siblingSb.append("- ").append(rejected.getStrategy()).append(" (Reason: ").append(rejected.getTradeoffs()).append(")\n");
+                }
+            }
+            if (!genome.getDiscoveredMutations().isEmpty()) {
+                siblingSb.append("EXPLORED MUTATIONS (ALREADY ATTEMPTED):\n");
+                for (MutationRecord explored : genome.getDiscoveredMutations()) {
+                    siblingSb.append("- ").append(explored.getStrategy()).append("\n");
+                }
+            }
+        }
+
         if (mutationContext != null && !mutationContext.isEmpty()) {
             siblingSb.append(mutationContext);
         }
