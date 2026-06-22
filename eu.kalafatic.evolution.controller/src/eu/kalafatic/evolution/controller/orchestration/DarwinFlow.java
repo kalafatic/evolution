@@ -390,6 +390,22 @@ public class DarwinFlow implements IOrchestrationFlow {
                         if (v.getId().equals(selectedVariant.getId())) {
                             record.setResult(result.isSuccess() ? "SUCCESS" : "SUCCESS_WITH_BUILD_ERROR");
                             record.setActivationState("ACTIVE");
+
+                            // Evolution Ledger Metadata (Requirement 8)
+                            List<String> rejected = variants.stream()
+                                    .filter(other -> !other.getId().equals(v.getId()))
+                                    .map(other -> other.getStrategy())
+                                    .collect(Collectors.toList());
+                            record.setRejectedSiblings(rejected);
+
+                            List<String> reasons = variants.stream()
+                                    .filter(other -> !other.getId().equals(v.getId()))
+                                    .map(other -> {
+                                        EvolutionNode n = context.getKernelContext().getMemoryService().getEvolutionTree().getNode(other.getId());
+                                        return n != null ? n.getRejectionReason() : "Lower fitness score";
+                                    })
+                                    .collect(Collectors.toList());
+                            record.setRejectionReasons(reasons);
                         } else {
                             record.setResult("KEPT_FOR_DIVERSITY");
                             record.setActivationState("KEPT");
@@ -405,6 +421,7 @@ public class DarwinFlow implements IOrchestrationFlow {
                             node.setStatus(v.getActivationState().name());
                             if (v.getActivationState() == BranchVariant.ActivationState.ACTIVE) {
                                 tree.setCurrentWinnerId(v.getId());
+                                node.setWinner(true); // Frozen Snapshot Mark (Requirement 3)
                                 sessionContainer.getEventBus().publish(new RuntimeEvent(RuntimeEventType.WINNER_SELECTED, context.getSessionId(), v.getId(), v.getStrategy()));
 
                                 // If a dimension was being mutated, and we have a winner, lock it in the genome
@@ -417,7 +434,14 @@ public class DarwinFlow implements IOrchestrationFlow {
                                 }
 
                                 if (genome != null) {
-                                    String activeDimId = node.getEngineeringDimensions().get("active_dimension");
+                                    String activeDimId = node.getActiveDimension();
+                                    if (activeDimId == null) {
+                                        activeDimId = node.getEngineeringDimensions().get("active_dimension");
+                                    }
+
+                                    record.setActiveDimension(activeDimId);
+                                    record.setLockedDimensions(new java.util.ArrayList<>(genome.getLockedDimensions()));
+
                                     if (activeDimId != null && !activeDimId.isEmpty()) {
                                         genome.lockDimension(activeDimId);
                                         context.log("[DARWIN] Dimension LOCKED: " + activeDimId);

@@ -19,6 +19,7 @@ public class EvolutionNode {
 
     private String strategy;
     private String semanticPhilosophy;
+    private String activeDimension;
     private Map<String, String> engineeringDimensions = new HashMap<>();
     private Map<String, String> codeSnapshots = new HashMap<>();
 
@@ -50,6 +51,7 @@ public class EvolutionNode {
     private String executionResults;
     private String verificationResults;
     private String runtimeObservations;
+    private List<String> mutationJournal = new ArrayList<>();
 
     // Lineage
     private List<String> childIds = new ArrayList<>();
@@ -57,6 +59,7 @@ public class EvolutionNode {
 
     private long timestamp;
     private String status; // ACTIVE, KEPT, REJECTED, ROOT
+    private boolean winner;
 
     public EvolutionNode() {
         this.id = UUID.randomUUID().toString();
@@ -83,6 +86,9 @@ public class EvolutionNode {
 
     public String getSemanticPhilosophy() { return semanticPhilosophy; }
     public void setSemanticPhilosophy(String semanticPhilosophy) { this.semanticPhilosophy = semanticPhilosophy; }
+
+    public String getActiveDimension() { return activeDimension; }
+    public void setActiveDimension(String activeDimension) { this.activeDimension = activeDimension; }
 
     public Map<String, String> getEngineeringDimensions() { return engineeringDimensions; }
     public void setEngineeringDimensions(Map<String, String> engineeringDimensions) { this.engineeringDimensions = engineeringDimensions; }
@@ -153,6 +159,9 @@ public class EvolutionNode {
     public String getRuntimeObservations() { return runtimeObservations; }
     public void setRuntimeObservations(String runtimeObservations) { this.runtimeObservations = runtimeObservations; }
 
+    public List<String> getMutationJournal() { return mutationJournal; }
+    public void setMutationJournal(List<String> mutationJournal) { this.mutationJournal = mutationJournal; }
+
     public List<String> getChildIds() { return childIds; }
     public void setChildIds(List<String> childIds) { this.childIds = childIds; }
 
@@ -164,4 +173,7 @@ public class EvolutionNode {
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public boolean isWinner() { return winner; }
+    public void setWinner(boolean winner) { this.winner = winner; }
 }

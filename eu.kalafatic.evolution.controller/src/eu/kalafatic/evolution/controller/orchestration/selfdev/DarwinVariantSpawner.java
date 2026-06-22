@@ -330,6 +330,11 @@ public class DarwinVariantSpawner {
           .append("- Architectural Direction: ").append(bp.getArchitecturalDirection()).append("\n");
         sb.append(composer.composeConstraints(constraintSb.toString())).append("\n\n");
 
+        sb.append("--- MUTATION JOURNAL DIRECTIVE ---\n")
+          .append("You MUST provide a step-by-step 'mutation_journal' of your technical decisions.\n")
+          .append("Format: [Step Name]: [Reasoning]\n")
+          .append("Example: \"Added overload: To support flexible input\", \"Rejected logging: Unnecessary complexity\"\n\n");
+
         StringBuilder schemaSb = new StringBuilder();
         schemaSb.append("{\n")
           .append("  \"id\": \"").append(bp.getId()).append("\",\n")
@@ -343,6 +348,7 @@ public class DarwinVariantSpawner {
           .append("  \"expected_outputs\": [\"result 1\"],\n")
           .append("  \"reasoning_focus\": \"what this branch prioritizes\",\n")
           .append("  \"projected_steps\": [\"step 1\", \"step 2\"],\n")
+          .append("  \"mutation_journal\": [\"(Step 1)\", \"(Step 2)\"],\n")
           .append("  \"engineering_dimensions\": {\n")
           .append("    \"philosophy\": \"").append(bp.getPhilosophy()).append("\",\n")
           .append("    \"execution_model\": \"atomic/service/reactive/etc\",\n")
