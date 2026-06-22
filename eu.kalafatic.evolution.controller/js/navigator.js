@@ -14,12 +14,26 @@
     let zoomX = 0;
     let zoomY = 0;
 
-    // Panning state
+    // Panning/Dragging state
     let isPanning = false;
+    let draggedNode = null;
     let startX, startY;
 
     container.addEventListener('mousedown', (e) => {
-        if (e.button === 0) { // Left click for pan
+        if (e.button === 0) { // Left click
+            // Check if we clicked a node
+            const nodeElement = e.target.closest('.node');
+            if (nodeElement) {
+                const nodeId = nodeElement.getAttribute('data-id');
+                draggedNode = graphData.nodes.find(n => n.id === nodeId);
+                if (draggedNode) {
+                    startX = (e.clientX - zoomX) / zoomScale - draggedNode.x;
+                    startY = (e.clientY - zoomY) / zoomScale - draggedNode.y;
+                    container.style.cursor = 'grabbing';
+                    return;
+                }
+            }
+
             isPanning = true;
             startX = e.clientX - zoomX;
             startY = e.clientY - zoomY;
@@ -32,11 +46,34 @@
             zoomX = e.clientX - startX;
             zoomY = e.clientY - startY;
             updateTransform();
+        } else if (draggedNode) {
+            draggedNode.x = (e.clientX - zoomX) / zoomScale - startX;
+            draggedNode.y = (e.clientY - zoomY) / zoomScale - startY;
+
+            // Optimization: Only update the dragged node's position in the DOM
+            const nodeEl = document.querySelector(`.node[data-id="${draggedNode.id}"]`);
+            if (nodeEl) {
+                nodeEl.setAttribute("transform", `translate(${draggedNode.x}, ${draggedNode.y})`);
+
+                // Also update connected links
+                const links = document.querySelectorAll('.link');
+                links.forEach((line, i) => {
+                    const l = graphData.links[i];
+                    if (l.source.id === draggedNode.id) {
+                        line.setAttribute("x1", draggedNode.x);
+                        line.setAttribute("y1", draggedNode.y);
+                    } else if (l.target.id === draggedNode.id) {
+                        line.setAttribute("x2", draggedNode.x);
+                        line.setAttribute("y2", draggedNode.y);
+                    }
+                });
+            }
         }
     });
 
     window.addEventListener('mouseup', () => {
         isPanning = false;
+        draggedNode = null;
         container.style.cursor = 'grab';
     });
 
@@ -98,7 +135,7 @@
             keyClasses: c.keyClasses || [],
             // Grid layout
             x: 150 + (i % 3) * 300,
-            y: 150 + Math.floor(i / 3) * 200
+            y: 150 + Math.floor(i / 3) * 250
         }));
 
         const nodeIds = new Set(nodes.map(n => n.id));
@@ -146,6 +183,7 @@
         graphData.nodes.forEach(n => {
             const nodeG = document.createElementNS("http://www.w3.org/2000/svg", "g");
             nodeG.setAttribute("class", "node");
+            nodeG.setAttribute("data-id", n.id);
             nodeG.setAttribute("transform", `translate(${n.x}, ${n.y})`);
             nodeG.onclick = (e) => {
                 e.stopPropagation();
@@ -158,7 +196,7 @@
 
             const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
             const w = 200 + (n.importance * 50);
-            const h = 60;
+            const h = 100;
             rect.setAttribute("width", w);
             rect.setAttribute("height", h);
             rect.setAttribute("x", -w/2);
@@ -167,11 +205,20 @@
             rect.setAttribute("stroke", getRoleColor(n.type));
             nodeG.appendChild(rect);
 
-            const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-            text.setAttribute("text-anchor", "middle");
-            text.setAttribute("dy", "0.35em");
-            text.textContent = n.name.length > 25 ? n.name.substring(0, 22) + '...' : n.name;
-            nodeG.appendChild(text);
+            const nameText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            nameText.setAttribute("text-anchor", "middle");
+            nameText.setAttribute("dy", "-0.5em");
+            nameText.setAttribute("style", "font-weight: bold; font-size: 12px;");
+            nameText.textContent = n.name.length > 25 ? n.name.substring(0, 22) + '...' : n.name;
+            nodeG.appendChild(nameText);
+
+            const descText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            descText.setAttribute("text-anchor", "middle");
+            descText.setAttribute("dy", "1.5em");
+            descText.setAttribute("style", "font-size: 10px; fill: #666;");
+            let desc = n.description || "";
+            descText.textContent = desc.length > 40 ? desc.substring(0, 37) + '...' : desc;
+            nodeG.appendChild(descText);
 
             gRoot.appendChild(nodeG);
         });

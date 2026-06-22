@@ -135,7 +135,7 @@
             keyClasses: c.keyClasses || [],
             // Grid layout
             x: 150 + (i % 3) * 300,
-            y: 150 + Math.floor(i / 3) * 200
+            y: 150 + Math.floor(i / 3) * 250
         }));
 
         const nodeIds = new Set(nodes.map(n => n.id));
@@ -196,7 +196,7 @@
 
             const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
             const w = 200 + (n.importance * 50);
-            const h = 60;
+            const h = 100;
             rect.setAttribute("width", w);
             rect.setAttribute("height", h);
             rect.setAttribute("x", -w/2);
@@ -205,11 +205,20 @@
             rect.setAttribute("stroke", getRoleColor(n.type));
             nodeG.appendChild(rect);
 
-            const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-            text.setAttribute("text-anchor", "middle");
-            text.setAttribute("dy", "0.35em");
-            text.textContent = n.name.length > 25 ? n.name.substring(0, 22) + '...' : n.name;
-            nodeG.appendChild(text);
+            const nameText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            nameText.setAttribute("text-anchor", "middle");
+            nameText.setAttribute("dy", "-0.5em");
+            nameText.setAttribute("style", "font-weight: bold; font-size: 12px;");
+            nameText.textContent = n.name.length > 25 ? n.name.substring(0, 22) + '...' : n.name;
+            nodeG.appendChild(nameText);
+
+            const descText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            descText.setAttribute("text-anchor", "middle");
+            descText.setAttribute("dy", "1.5em");
+            descText.setAttribute("style", "font-size: 10px; fill: #666;");
+            let desc = n.description || "";
+            descText.textContent = desc.length > 40 ? desc.substring(0, 37) + '...' : desc;
+            nodeG.appendChild(descText);
 
             gRoot.appendChild(nodeG);
         });
