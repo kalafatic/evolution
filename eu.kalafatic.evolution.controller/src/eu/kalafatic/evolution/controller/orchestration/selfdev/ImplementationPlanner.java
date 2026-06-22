@@ -31,12 +31,14 @@ public class ImplementationPlanner {
         if (!variant.has("failure_risks") || variant.optString("failure_risks").isEmpty()) {
             variant.put("failure_risks", "Inherent risks associated with " + strategy);
         }
-        if (!variant.has("expected_outputs") || variant.isNull("expected_outputs") || variant.optJSONArray("expected_outputs").length() == 0) {
+        JSONArray expectedOutputs = variant.optJSONArray("expected_outputs");
+        if (expectedOutputs == null || expectedOutputs.length() == 0) {
             JSONArray outputs = new JSONArray();
             outputs.put("Successful implementation of " + strategy);
             variant.put("expected_outputs", outputs);
         }
-        if (!variant.has("projected_steps") || variant.isNull("projected_steps") || variant.optJSONArray("projected_steps").length() == 0) {
+        JSONArray projectedSteps = variant.optJSONArray("projected_steps");
+        if (projectedSteps == null || projectedSteps.length() == 0) {
             JSONArray steps = new JSONArray();
             steps.put("Initialize " + strategy);
             steps.put("Materialize architectural intent");
