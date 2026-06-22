@@ -1,0 +1,101 @@
+:root {
+    --bg-canvas: #f1f5f9;
+    --user-bg: #dcfce7; /* Light Green for user prompts to differentiate from default AI */
+    --user-border: #86efac;
+    --user-text: #14532d;
+    --ai-bg: #ffffff;
+    --ai-text: #1e293b;
+    --border: #e2e8f0;
+
+    --planner-bg: #ecfeff;
+    --planner-border: #a5f3fc;
+    --planner-text: #155e75;
+
+    --architect-bg: #f0fdf4;
+    --architect-border: #bbf7d0;
+    --architect-text: #166534;
+
+    --javadev-bg: #f5f3ff;
+    --javadev-border: #ddd6fe;
+    --javadev-text: #5b21b6;
+
+    --tester-bg: #fffbeb;
+    --tester-border: #fef3c7;
+    --tester-text: #92400e;
+
+    --reviewer-bg: #fff1f2;
+    --reviewer-border: #fecdd3;
+    --reviewer-text: #9f1239;
+
+    --analytic-bg: #ffffff;
+    --analytic-border: #e2e8f0;
+    --analytic-text: #1e293b;
+
+    --general-bg: #fdf4ff;
+    --general-border: #fae8ff;
+    --general-text: #86198f;
+
+    --terminal-bg: #f1f5f9;
+    --terminal-border: #e2e8f0;
+    --terminal-text: #334155;
+
+    --file-bg: #ecfdf5;
+    --file-border: #d1fae5;
+    --file-text: #065f46;
+
+    --maven-bg: #fff7ed;
+    --maven-border: #ffedd5;
+    --maven-text: #9a3412;
+
+    --git-bg: #eff6ff;
+    --git-border: #dbeafe;
+    --git-text: #1e40af;
+
+    --structure-bg: #f0f9ff;
+    --structure-border: #e0f2fe;
+    --structure-text: #075985;
+
+    --websearch-bg: #f5f3ff;
+    --websearch-border: #ede9fe;
+    --websearch-text: #5b21b6;
+
+    --quality-bg: #fdf2f8;
+    --quality-border: #fce7f3;
+    --quality-text: #9d174d;
+
+    --observability-bg: #fff7ed;
+    --observability-border: #ffedd5;
+    --observability-text: #9a3412;
+
+    --orchestrator-bg: #f8fafc;
+    --orchestrator-border: #cbd5e1;
+    --orchestrator-text: #1e293b;
+
+    --final-response-bg: #dcfce7;
+    --final-response-border: #15803d;
+    --final-response-text: #14532d;
+
+    --result-summary-bg: #eff6ff;
+    --result-summary-border: #3b82f6;
+    --result-summary-text: #1e40af;
+
+    --tool-bg: #f8fafc;
+    --tool-border: #e2e8f0;
+    --tool-text: #475569;
+
+    --waiting-bg: #f97316;
+    --waiting-border: #ea580c;
+    --waiting-text: #ffffff;
+
+    --error-bg: #fee2e2;
+    --error-border: #dc2626;
+    --error-text: #991b1b;
+
+    --thinking-bg: #f8fafc;
+    --thinking-border: #94a3b8;
+    --thinking-text: #475569;
+
+    --response-bg: #f1f5f9;
+    --response-border: #64748b;
+    --response-text: #1e293b;
+}
