@@ -145,3 +145,14 @@ body.advanced .section-timeline { display: none; }
 body.full .section-debug,
 body.full .section-plan,
 body.full .section-timeline { display: block; }
+
+body.debug .section-debug,
+body.debug .section-plan,
+body.debug .section-timeline,
+body.debug .think-block,
+body.debug .non-essential,
+body.debug .message.ai,
+body.debug .message.tool,
+body.debug .message.orchestrator {
+    display: block !important;
+}
