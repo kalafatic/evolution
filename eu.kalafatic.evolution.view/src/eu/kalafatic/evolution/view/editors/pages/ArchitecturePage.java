@@ -299,6 +299,15 @@ public class ArchitecturePage extends AEvoPage {
         }
 
         this.currentTargetPath = path;
+        if (orchestrator != null) {
+            orchestrator.setDefaultTarget(path);
+            try {
+                ProjectModelManager.getInstance().saveResource(orchestrator.eResource());
+            } catch (java.io.IOException e) {
+                eu.kalafatic.evolution.controller.log.Log.log("[ARCH] Failed to save orchestrator resource: " + e.getMessage());
+            }
+        }
+
         if (!targetHistory.contains(path)) {
             targetHistory.add(0, path);
         } else {
@@ -921,6 +930,22 @@ public class ArchitecturePage extends AEvoPage {
             o.setType("OBJECTIVE");
             model.getComponents().add(o);
         }
+
+        // Ensure all targets of relationships exist as components so they are drawn
+        java.util.Set<String> existingIds = model.getComponents().stream().map(ComponentRecord::getId).collect(java.util.stream.Collectors.toSet());
+        List<ComponentRecord> missingComps = new ArrayList<>();
+        for (RelationshipRecord rel : model.getRelationships()) {
+            if (!existingIds.contains(rel.getTo())) {
+                ComponentRecord missing = new ComponentRecord();
+                missing.setId(rel.getTo());
+                missing.setName(new java.io.File(rel.getTo()).getName());
+                missing.setType("ARTIFACT");
+                missing.setDescription("Architectural artifact discovered via relationship");
+                missingComps.add(missing);
+                existingIds.add(rel.getTo());
+            }
+        }
+        model.getComponents().addAll(missingComps);
     }
 
     private DesignModel discoverArchitectureNodes(java.io.File root) {
