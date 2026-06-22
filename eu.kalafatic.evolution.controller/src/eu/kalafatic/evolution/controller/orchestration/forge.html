@@ -394,6 +394,13 @@
                 <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'LLM')" data-guidance="Generate a Large Language Model architecture.">LLM</button>
             </div>
 
+            <div id="interactive-demos-palette" style="background: var(--bg-secondary); border-bottom: 1px solid var(--border); padding: 10px; display: flex; flex-wrap: wrap; gap: 5px;">
+                <div style="font-size: 0.7em; color: var(--text-dim); width: 100%; margin-bottom: 2px;">INTERACTIVE DEMOS</div>
+                <button class="btn btn-sm" onclick="setInteractiveDemo('NEURON')">Neuron</button>
+                <button class="btn btn-sm" onclick="setInteractiveDemo('LLM')">LLM</button>
+                <button class="btn btn-sm" onclick="setInteractiveDemo('CNN')">CNN</button>
+            </div>
+
             <div id="session-list">
                 <!-- Sessions populated here -->
             </div>
@@ -454,6 +461,9 @@
                             <option value="TRAINING">Training Monitor</option>
                             <option value="EVOLUTION">Evolution Timeline</option>
                             <option value="WALKTHROUGH">Study Walkthrough</option>
+                            <option value="INTERACTIVE_NEURON">Interactive Neuron</option>
+                            <option value="INTERACTIVE_LLM">Interactive LLM</option>
+                            <option value="INTERACTIVE_CNN">Interactive CNN</option>
                         </select>
                     </div>
                     <div id="viz-controls" style="display: flex; gap: 5px;">
@@ -599,6 +609,7 @@
     <script src="forge-viz/viz-training.js"></script>
     <script src="forge-viz/viz-evolution.js"></script>
     <script src="forge-viz/viz-walkthrough.js"></script>
+    <script src="forge-viz/viz-interactive-demos.js"></script>
     <script>
         let serverPort = 48080;
         let activeSessionId = null;
@@ -1308,7 +1319,19 @@
         }
 
         async function refreshViz() {
-            if (!activeSessionId) return;
+            if (!activeSessionId) {
+                if (currentViz === 'INTERACTIVE_NEURON') {
+                    renderInteractiveNeuronDemo();
+                    return;
+                } else if (currentViz === 'INTERACTIVE_LLM') {
+                    renderInteractiveLlmDemo();
+                    return;
+                } else if (currentViz === 'INTERACTIVE_CNN') {
+                    renderInteractiveCnnDemo();
+                    return;
+                }
+                return;
+            }
 
             const area = document.getElementById('viz-area');
             const details = document.getElementById('viz-details-content');
@@ -1345,6 +1368,12 @@
                     renderEvolutionViz(snapshots);
                 } else if (currentViz === 'WALKTHROUGH') {
                     renderWalkthroughViz();
+                } else if (currentViz === 'INTERACTIVE_NEURON') {
+                    renderInteractiveNeuronDemo();
+                } else if (currentViz === 'INTERACTIVE_LLM') {
+                    renderInteractiveLlmDemo();
+                } else if (currentViz === 'INTERACTIVE_CNN') {
+                    renderInteractiveCnnDemo();
                 }
             } catch (e) {
                 if (isDemo) {
@@ -1391,6 +1420,12 @@
         function renderEvolutionViz(snapshots) {
             // Moved to /forge-viz/viz-evolution.js
             if (window.renderEvolutionViz) window.renderEvolutionViz(snapshots);
+        }
+
+        function setInteractiveDemo(type) {
+            currentViz = 'INTERACTIVE_' + type;
+            document.getElementById('viz-selector').value = currentViz;
+            onVizChange();
         }
 
         async function persistUiState(key, value) {
