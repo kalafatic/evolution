@@ -421,17 +421,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         }
 
         // SEMANTIC GENOME: Initialize or retrieve from orchestration state
-        SemanticGenome genome = (SemanticGenome) context.getOrchestrationState().getMetadata().get("semanticGenome");
-        if (genome == null) {
-            genome = new SemanticGenome(goal.getPrimaryAction());
-            // Populate dimensions from intent expansion if available
-            if (expansion != null) {
-                for (EvolutionDimension dim : expansion.getUnresolvedDimensions()) {
-                    genome.addDimension(dim);
-                }
-            }
-            context.getOrchestrationState().getMetadata().put("semanticGenome", genome);
-        }
+        SemanticGenome genome = createGenome(goal, expansion);
 
         // Select the next mutable dimension
         EvolutionDimension activeDimension = dimensionScheduler.selectNextDimension(genome);
@@ -673,6 +663,21 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
         return variants;
     }
+
+	private SemanticGenome createGenome(GoalModel goal, IntentExpansionResult expansion) {
+		SemanticGenome genome = (SemanticGenome) context.getOrchestrationState().getMetadata().get("semanticGenome");
+        if (genome == null) {
+            genome = new SemanticGenome(goal.getPrimaryAction());
+            // Populate dimensions from intent expansion if available
+            if (expansion != null) {
+                for (EvolutionDimension dim : expansion.getUnresolvedDimensions()) {
+                    genome.addDimension(dim);
+                }
+            }
+            context.getOrchestrationState().getMetadata().put("semanticGenome", genome);
+        }
+		return genome;
+	}
 
 	private TrajectoryBlueprint constructTrajectoryBlueprint(GoalModel goal, IntentExpansionResult expansion,
 			List<TrajectoryBlueprint> currentBlueprints, int generation, StringBuilder siblingMemoryBuilder,
