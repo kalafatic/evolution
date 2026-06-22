@@ -142,29 +142,6 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             context.getExecutionProfile();
         int intensity = profile.getIntensity();
 
-        // 1. FAST PATH: Intensity-based bypass for simple chat
-        if (intensity == 1) {
-            context.log("[DARWIN] Adaptive Kernel: Low Intensity detected. Materializing single-trajectory response.");
-            BranchVariant v = new BranchVariant();
-            v.setId("chat-" + System.currentTimeMillis());
-            v.setStrategy("Direct Chat Response");
-            v.setStrategyType("CHAT_RESPONSE");
-            v.setReasoningLevel(BranchVariant.ReasoningLevel.MINIMAL);
-            v.setArchitectureEnabled(false);
-            v.setImplementationEnabled(false);
-            v.setScore(1.0);
-            v.setActivationState(BranchVariant.ActivationState.ACTIVE);
-
-            // Register in trajectory memory to satisfy kernel invariants
-            Trajectory t = new Trajectory(v.getId(), v.getStrategy());
-            t.setFitnessScore(v.getScore());
-            v.setTrajectoryId(t.getTrajectoryId());
-            if (memoryService != null && memoryService.getTrajectoryMemory() != null) {
-                memoryService.getTrajectoryMemory().recordTrajectory(t);
-            }
-
-            return List.of(v);
-        }
 
         AtomicIntentAnalysis atomicAnalysis = (AtomicIntentAnalysis) context.getOrchestrationState().getMetadata().get("atomicAnalysis");
         if (context != null) {

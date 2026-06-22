@@ -691,13 +691,6 @@ public class IterationManager {
             context.getOrchestrationState().setExecutionProfile(profile_init);
         }
 
-        // ADAPTIVE KERNEL: Intensity-based phase pre-selection
-        int intensity = context.getExecutionProfile().getIntensity();
-        if (intensity == 1 && context.getOrchestrationState().getCurrentPhase() == null) {
-            context.log("[KERNEL] Low Intensity detected. Jumping directly to FINAL_SYNTHESIS.");
-            context.getOrchestrationState().setCurrentPhase(EvolutionPhaseMachine.toLegacyString(EvolutionPhase.FINAL_SYNTHESIS));
-        }
-
         context.log("[KERNEL] Starting Recursive Evolutionary Cognition Loop.");
 
         sessionContainer.getEventBus().publish(new RuntimeEvent(RuntimeEventType.FLOW_STARTED, context.getSessionId(), "Kernel", request));
@@ -731,12 +724,6 @@ public class IterationManager {
         // 2. ADAPTIVE KERNEL: Intensity Scaling
         int intensity_val = context.getExecutionProfile().getIntensity();
 
-        int maxIterationsLimit = 20; // Default Medium
-        if (intensity_val == 1) maxIterationsLimit = 1; // Strict 1 for chat
-        else if (intensity_val == 2) maxIterationsLimit = 3; // Assisted Coding: 3 iterations
-        else if (expansionValue <= 3) maxIterationsLimit = 10; // Conservative
-        else if (expansionValue >= 8) maxIterationsLimit = 50; // Research/High
-
         int minIterations = 1;
         PromptInstructions instructions = (context.getOrchestrator() != null && context.getOrchestrator().getAiChat() != null) ?
                 context.getOrchestrator().getAiChat().getPromptInstructions() : null;
@@ -744,6 +731,15 @@ public class IterationManager {
             minIterations = instructions.getPreferredMaxIterations();
         }
         if (minIterations < 1) minIterations = 1;
+
+        int maxIterationsLimit = 20; // Default Medium
+        if (intensity_val == 1) maxIterationsLimit = 10; // Simple tasks still need to complete phases
+        else if (intensity_val == 2) maxIterationsLimit = 15;
+        else if (expansionValue <= 3) maxIterationsLimit = 25;
+        else if (expansionValue >= 8) maxIterationsLimit = 100;
+
+        // Ensure max is never less than min
+        maxIterationsLimit = Math.max(maxIterationsLimit, minIterations);
 
         context.log("[KERNEL] Dynamic Expansion Control: Min Iterations = " + minIterations + ", Target Max Iterations = " + maxIterationsLimit);
 
@@ -980,14 +976,6 @@ public class IterationManager {
         }
 
         if (phase == EvolutionPhase.INTENT_EXPANSION) {
-            // ADAPTIVE KERNEL: Intensity-based phase bypass
-            int intensity = context.getExecutionProfile().getIntensity();
-            if (intensity == 1) {
-                context.log("[KERNEL] Low Intensity detected. Bypassing INTENT_EXPANSION.");
-                state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(EvolutionPhase.FINAL_SYNTHESIS));
-                return runDarwinIteration(context, darwinFlow);
-            }
-
             EvolutionProgressPublisher.updateStage(context, EvolutionStage.ANALYSIS);
             transition(SystemState.ANALYZING, context);
             IntentExpansionResult expansion = getIntentExpansionEngine().expand(goal, context);

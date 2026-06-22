@@ -113,9 +113,14 @@ public final class EvolutionProfile {
         if (intensity == 1) {
             useParallelBranches = false;
             requireUserSelection = false;
-            useImplementation = false; // Intensity 1 is always text-only
-            if (capability != CapabilityType.CHAT) {
-                 shouldPerformRealityCheck = false;
+
+            // Intensity 1 is text-only ONLY for CHAT capability.
+            // For CODE/ARCHITECTURE/EVOLUTION, we still want implementation (validation).
+            if (capability == CapabilityType.CHAT) {
+                useImplementation = false;
+            } else {
+                useImplementation = true;
+                shouldPerformRealityCheck = true;
             }
         }
 
