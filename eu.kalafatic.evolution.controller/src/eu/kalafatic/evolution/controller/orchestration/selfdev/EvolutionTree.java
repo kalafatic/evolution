@@ -94,7 +94,8 @@ public class EvolutionTree {
                     sb.append("PARENT EXECUTION MODEL: ").append(parent.getMutationRecord().getExecutionModel()).append("\n");
                 }
                 if (!parent.getCodeSnapshots().isEmpty()) {
-                    sb.append("PARENT IMPLEMENTATION CODE:\n");
+                    sb.append("### PARENT SOURCE CODE (CURRENT SPECIES ANCESTOR) ###\n");
+                    sb.append("MANDATE: You MUST mutate this code to achieve the next evolutionary step. DO NOT start from scratch.\n");
                     parent.getCodeSnapshots().forEach((path, code) -> {
                         sb.append("FILE: ").append(path).append("\n")
                           .append("```java\n").append(code).append("\n```\n");

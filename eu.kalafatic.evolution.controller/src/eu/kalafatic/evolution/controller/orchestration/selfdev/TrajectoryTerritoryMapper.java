@@ -28,16 +28,16 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
                "GOAL: Discover ONE UNIQUE EVOLUTIONARY BLUEPRINT.\n" +
                "CORE DIRECTIVE: Every candidate represents a distinct ARCHITECTURAL SPECIES. Sibling variants MUST differ significantly in their technical essence, not just wording.\n\n" +
                "DIVERSITY EXAMPLES (Species Level):\n" +
-               "- Species A: Single static utility class (Procedural)\n" +
-               "- Species B: Interface + Concrete Implementation (Abstraction)\n" +
-               "- Species C: Strategy Pattern with dynamic selection (Behavioral)\n" +
-               "- Species D: Reactive/Event-driven service (Async)\n" +
-               "- Species E: Spring-managed component (Framework-integrated)\n" +
-               "- Species F: Lightweight Lambda/Function (Serverless style)\n\n" +
+               "- Species A: Single static utility class (Minimalist/Procedural)\n" +
+               "- Species B: Instance-based class with constructor (Object-Oriented)\n" +
+               "- Species C: Interface + Concrete Implementation (Decoupled)\n" +
+               "- Species D: Static Factory Method pattern (Pattern-oriented)\n" +
+               "- Species E: Minimalist Main method implementation (Executable)\n" +
+               "- Species F: Reusable Library-style utility (Modular)\n\n" +
                "Every blueprint MUST specify: class names, package organization, API design, and core technical mechanism.\n\n" +
                "STRICT EVOLUTION CONSTRAINTS:\n" +
-               "- NO ARCHITECTURAL INFLATION: For trivial tasks, discover MINIMAL implementation theories.\n" +
-               "- AXIS DIVERGENCE: Intentionally pivot on [Sync vs Async], [Direct vs Abstracted], [Linear vs Modular].\n" +
+               "- NO ARCHITECTURAL INFLATION: If the task is simple (e.g., printing text), DO NOT introduce frameworks (Spring), buses (Kafka), or distributed patterns (Microservices). Discover MINIMAL implementation theories.\n" +
+               "- AXIS DIVERGENCE: Intentionally pivot on [Static vs Instance], [Minimal vs Extensible], [Direct vs Abstracted].\n" +
                "- GROUNDING: All blueprints MUST be descendants of the discovered Target Reality and hotspots.\n\n" +
                "MANDATORY: You MUST generate a blueprint that is CONCEPTUALLY and TECHNICALLY DISTINCT from any provided existing blueprints. Focus on an unexplored technical quadrant of the target reality.\n" +
                "TECHNICAL SPECIFICITY: Blueprints MUST contain specific technical mechanisms and patterns. Avoid generic descriptions.";
