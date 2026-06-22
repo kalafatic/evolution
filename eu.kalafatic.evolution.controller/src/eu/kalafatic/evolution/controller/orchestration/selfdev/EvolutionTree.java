@@ -92,6 +92,13 @@ public class EvolutionTree {
                 sb.append("PARENT PHILOSOPHY: ").append(parent.getSemanticPhilosophy()).append("\n");
                 if (parent.getMutationRecord() != null) {
                     sb.append("PARENT EXECUTION MODEL: ").append(parent.getMutationRecord().getExecutionModel()).append("\n");
+                    sb.append("PARENT REASONING: ").append(parent.getMutationRecord().getReasoningFocus()).append("\n");
+                    sb.append("PARENT FITNESS: ").append(parent.getFitnessScore()).append("\n");
+                }
+                if (parent.getGenomeSnapshot() != null) {
+                    SemanticGenome genome = parent.getGenomeSnapshot();
+                    sb.append("LOCKED DIMENSIONS: ").append(genome.getLockedDimensions()).append("\n");
+                    sb.append("EXPLORED MUTATIONS: ").append(genome.getDiscoveredMutations().stream().map(m -> m.getStrategy()).collect(Collectors.toList())).append("\n");
                 }
                 if (!parent.getCodeSnapshots().isEmpty()) {
                     sb.append("### PARENT SOURCE CODE (CURRENT SPECIES ANCESTOR) ###\n");

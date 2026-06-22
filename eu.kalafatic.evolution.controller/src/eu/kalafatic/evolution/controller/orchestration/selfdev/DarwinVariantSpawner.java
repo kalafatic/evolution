@@ -222,7 +222,8 @@ public class DarwinVariantSpawner {
 
         sb.append(composer.composeSystem(null)).append("\n\n");
         sb.append("You are a single-path evolutionary mutation engine.\n")
-          .append("Your goal is to generate another implementation PHILOSOPHY that satisfies the user's request while diverging from ancestors.\n")
+          .append("Your goal is to perform a BOUNDED LOCAL MUTATION on the provided parent implementation.\n")
+          .append("Do NOT redesign the complete architecture. Focus only on the active mutation dimension.\n")
           .append("Each response MUST contain exactly ONE branch only.\n\n");
 
         sb.append(composer.composeGoal(bp.getGoal())).append("\n\n");
@@ -285,6 +286,15 @@ public class DarwinVariantSpawner {
         }
 
         StringBuilder constraintSb = new StringBuilder();
+        String activeDimensionId = bp.getEngineeringDimensions().get("active_dimension");
+        String activeDimensionDesc = bp.getEngineeringDimensions().get("active_dimension_description");
+
+        if (activeDimensionId != null) {
+            constraintSb.append("ACTIVE MUTATION DIMENSION: ").append(activeDimensionId).append("\n")
+              .append("DIMENSION DESCRIPTION: ").append(activeDimensionDesc).append("\n")
+              .append("INSTRUCTION: Mutate ONLY this dimension. Keep all other winning decisions from the parent unchanged.\n\n");
+        }
+
         constraintSb.append("DIVERGENCE REQUIREMENT (CRITICAL):\n")
           .append("Your solution MUST intentionally diverge from prior branches. Pivot sharply on philosophy, execution model, and control flow.\n\n")
           .append("STABILIZATION CONSTRAINTS:\n")

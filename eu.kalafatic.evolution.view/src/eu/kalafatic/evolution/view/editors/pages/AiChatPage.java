@@ -1220,7 +1220,7 @@ public class AiChatPage extends AEvoPage {
 	 * @evo:14:A reason=categorized-assist
 	 */
 	private String getCategory() {
-		if (instructionsGroup != null && !instructionsGroup.isDisposed()) {
+		if (instructionsGroup != null && instructionsGroup.getGroup() != null && !instructionsGroup.getGroup().isDisposed()) {
 			if (instructionsGroup.isSelfIterative() || instructionsGroup.isIterative() || instructionsGroup.isDarwin()) return "coding";
 		} else if (currentSession != null) {
 			if (currentSession.isSelfIterativeMode() || currentSession.isIterativeMode() || currentSession.isDarwinMode()) return "coding";

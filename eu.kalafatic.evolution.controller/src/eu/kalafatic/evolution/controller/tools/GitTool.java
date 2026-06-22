@@ -149,6 +149,19 @@ public class GitTool implements ITool {
                 metadata = String.format("[EVO-META] [Iteration: %s] [Task: %s]",
                     iterationId != null ? iterationId : "unknown",
                     taskId != null ? taskId : "none");
+
+                // Evolutionary Lineage Injection
+                eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionTree tree = context.getKernelContext().getMemoryService().getEvolutionTree();
+                if (tree != null && tree.getCurrentWinnerId() != null) {
+                    eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionNode node = tree.getWinnerNode();
+                    if (node != null) {
+                        String lineageMeta = String.format("[EVO-LINEAGE] [Parent: %s] [Mutation: %s] [Fitness: %.2f]",
+                            node.getParentId() != null ? node.getParentId() : "root",
+                            node.getStrategy(),
+                            node.getFitnessScore());
+                        metadata += " -m \"" + lineageMeta + "\"";
+                    }
+                }
             }
 
             String commitMsg = command.contains("-m") ? "" : " -m \"Darwin evolution step\"";

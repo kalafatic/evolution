@@ -54,6 +54,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
     private final PolicyResolver policyResolver = new PolicyResolver();
     private final PromptComposer promptComposer = new PromptComposer();
+    private final GenomeDimensionScheduler dimensionScheduler = new GenomeDimensionScheduler();
     private CapabilityStatus status = CapabilityStatus.STOPPED;
 
     public DarwinEngine(TaskContext context, IterationMemoryService memoryService, SystemStateSignalProvider stateProvider) {
@@ -419,6 +420,25 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             currentParentId = tree.getRootId();
         }
 
+        // SEMANTIC GENOME: Initialize or retrieve from orchestration state
+        SemanticGenome genome = (SemanticGenome) context.getOrchestrationState().getMetadata().get("semanticGenome");
+        if (genome == null) {
+            genome = new SemanticGenome(goal.getPrimaryAction());
+            // Populate dimensions from intent expansion if available
+            if (expansion != null) {
+                for (EvolutionDimension dim : expansion.getUnresolvedDimensions()) {
+                    genome.addDimension(dim);
+                }
+            }
+            context.getOrchestrationState().getMetadata().put("semanticGenome", genome);
+        }
+
+        // Select the next mutable dimension
+        EvolutionDimension activeDimension = dimensionScheduler.selectNextDimension(genome);
+        if (activeDimension != null) {
+            context.log("[DARWIN] Scheduled Mutation Dimension: " + activeDimension.getId());
+        }
+
         // DYNAMIC TERRITORY DISCOVERY & MATERIALIZATION: Sequential loop to ensure diversity
         TrajectoryTerritoryMapper mapper = new TrajectoryTerritoryMapper(getSessionContainer());
         mapper.setAiService(aiService);
@@ -441,6 +461,10 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 						siblingMemoryBuilder, mapper, discoveryGoal, fullLineagePrompt);
 
                 if (bp != null) {
+                    if (activeDimension != null) {
+                        bp.getEngineeringDimensions().put("active_dimension", activeDimension.getId());
+                        bp.getEngineeringDimensions().put("active_dimension_description", activeDimension.getDescription());
+                    }
                     // Avoid duplicate strategies or philosophies
                     boolean isDuplicate = currentBlueprints.stream().anyMatch(existing ->
                         existing.getStrategy().equalsIgnoreCase(bp.getStrategy()) ||
@@ -515,8 +539,12 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
                                 node.setFitnessRecord((FitnessRecord) fitnessObj);
                             }
 
+                            node.setGenomeSnapshot(genome.copy()); // Snapshotted for lineage history
                             tree.addNode(node);
                             context.getKernelContext().getMemoryService().saveEvolutionTree();
+
+                            // Record mutation in genome
+                            genome.recordMutation(mut);
 
                             getSessionContainer().getEventBus().publish(new RuntimeEvent(RuntimeEventType.SIBLING_GENERATED, context.getSessionId(), node.getId(), node.getStrategy()));
 
@@ -580,6 +608,13 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
             if (distance > 0.30) {
                 context.log("[DARWIN] REJECTED: Semantic distance (" + String.format("%.2f", distance) + ") exceeds threshold (0.30) for variant: " + variant.optString("strategy"));
+
+                // Record rejection in genome
+                MutationRecord reject = new MutationRecord();
+                reject.setStrategy(variant.optString("strategy"));
+                reject.setTradeoffs("Semantic distance: " + distance);
+                genome.recordRejection(reject);
+
                 return true;
             }
             if (!domainMatch) {
@@ -599,7 +634,14 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
         // Mark the best variant for UI highlighting
         if (!uniqueVariants.isEmpty()) {
-            uniqueVariants.get(0).put("isBest", true);
+            JSONObject best = uniqueVariants.get(0);
+            best.put("isBest", true);
+
+            // If a dimension was being mutated, and we have a winner, lock it in the genome
+            if (activeDimension != null) {
+                genome.lockDimension(activeDimension.getId());
+                context.log("[DARWIN] Dimension LOCKED: " + activeDimension.getId());
+            }
         }
 
         JSONObject branchesJson = new JSONObject();
