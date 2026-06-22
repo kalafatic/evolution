@@ -85,6 +85,8 @@ public class EvolutionaryTrajectoryEngine {
             }
 
             // Abstraction Level-based skipping (LOCKED Problem Space)
+            // DISABLED: Small implementation tasks should still have multiple iterations/phases
+            /*
             AbstractionLevel lockedLevel = context.getOrchestrationState().getLockedAbstractionLevel();
             if (!skip && lockedLevel != null) {
                 if (nextCandidate == EvolutionPhase.ARCHITECTURE_VARIANTS &&
@@ -97,6 +99,7 @@ public class EvolutionaryTrajectoryEngine {
                     skip = true;
                 }
             }
+            */
 
             if (skip) {
                 nextCandidate = phaseMachine.next(nextCandidate);
