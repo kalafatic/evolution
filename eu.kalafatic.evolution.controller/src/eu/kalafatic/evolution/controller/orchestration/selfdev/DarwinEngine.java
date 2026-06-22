@@ -447,36 +447,8 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
                 String fullLineagePrompt = tree.reconstructLineagePrompt(currentParentId);
 
                 // 2. Sequential Blueprint Discovery
-                TrajectoryBlueprint bp = null;
-
-                // PRE-CONSTRAINT: Use existing blueprints from intent expansion if available for Gen 0
-                if (generation == 0 && expansion != null && expansion.getActiveDimensionId() != null) {
-                    EvolutionDimension activeDim = expansion.getUnresolvedDimensions().stream()
-                        .filter(d -> d.getId().equals(expansion.getActiveDimensionId()))
-                        .findFirst().orElse(null);
-
-                    if (activeDim != null && !activeDim.getCandidateBranches().isEmpty()) {
-                        // Use pre-defined blueprints from intent expansion if available
-                        for (BranchVariant bv : activeDim.getCandidateBranches()) {
-                            boolean alreadyUsed = currentBlueprints.stream().anyMatch(existingBp ->
-                                existingBp.getStrategy().equalsIgnoreCase(bv.getStrategy()));
-
-                            if (!alreadyUsed) {
-                                context.log("[DARWIN] Seeding blueprint from intent expansion dimension: " + activeDim.getId() + " -> " + bv.getStrategy());
-                                bp = new TrajectoryBlueprint("bp-seed-" + bv.getId(), goal.getPrimaryAction(), bv.getStrategy());
-                                bp.setPhilosophy(bv.getSurvivalArgument());
-                                bp.setSurvivalArgument(bv.getSurvivalArgument());
-                                bp.setTradeoffs(bv.getTradeoffs());
-                                bp.setStrategyType(DarwinStrategyType.PROBABLE_SURVIVOR);
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                if (bp == null) {
-                    bp = mapper.discoverNext(discoveryGoal, context, currentBlueprints, fullLineagePrompt + siblingMemoryBuilder.toString());
-                }
+                TrajectoryBlueprint bp = constructTrajectoryBlueprint(goal, expansion, currentBlueprints, generation,
+						siblingMemoryBuilder, mapper, discoveryGoal, fullLineagePrompt);
 
                 if (bp != null) {
                     // Avoid duplicate strategies or philosophies
@@ -669,6 +641,42 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
         return variants;
     }
+
+	private TrajectoryBlueprint constructTrajectoryBlueprint(GoalModel goal, IntentExpansionResult expansion,
+			List<TrajectoryBlueprint> currentBlueprints, int generation, StringBuilder siblingMemoryBuilder,
+			TrajectoryTerritoryMapper mapper, String discoveryGoal, String fullLineagePrompt) throws Exception {
+		TrajectoryBlueprint bp = null;
+
+		// PRE-CONSTRAINT: Use existing blueprints from intent expansion if available for Gen 0
+		if (generation == 0 && expansion != null && expansion.getActiveDimensionId() != null) {
+		    EvolutionDimension activeDim = expansion.getUnresolvedDimensions().stream()
+		        .filter(d -> d.getId().equals(expansion.getActiveDimensionId()))
+		        .findFirst().orElse(null);
+
+		    if (activeDim != null && !activeDim.getCandidateBranches().isEmpty()) {
+		        // Use pre-defined blueprints from intent expansion if available
+		        for (BranchVariant bv : activeDim.getCandidateBranches()) {
+		            boolean alreadyUsed = currentBlueprints.stream().anyMatch(existingBp ->
+		                existingBp.getStrategy().equalsIgnoreCase(bv.getStrategy()));
+
+		            if (!alreadyUsed) {
+		                context.log("[DARWIN] Seeding blueprint from intent expansion dimension: " + activeDim.getId() + " -> " + bv.getStrategy());
+		                bp = new TrajectoryBlueprint("bp-seed-" + bv.getId(), goal.getPrimaryAction(), bv.getStrategy());
+		                bp.setPhilosophy(bv.getSurvivalArgument());
+		                bp.setSurvivalArgument(bv.getSurvivalArgument());
+		                bp.setTradeoffs(bv.getTradeoffs());
+		                bp.setStrategyType(DarwinStrategyType.PROBABLE_SURVIVOR);
+		                break;
+		            }
+		        }
+		    }
+		}
+
+		if (bp == null) {
+		    bp = mapper.discoverNext(discoveryGoal, context, currentBlueprints, fullLineagePrompt + siblingMemoryBuilder.toString());
+		}
+		return bp;
+	}
 
 
     private BranchVariant mapToBranchVariant(JSONObject obj, String goal, String currentPhase, Trajectory trajectory, TaskContext context) {
