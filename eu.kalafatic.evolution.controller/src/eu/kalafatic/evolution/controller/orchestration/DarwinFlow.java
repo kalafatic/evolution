@@ -389,8 +389,14 @@ public class DarwinFlow implements IOrchestrationFlow {
 
                                 // If a dimension was being mutated, and we have a winner, lock it in the genome
                                 Object genomeObj = context.getOrchestrationState().getMetadata().get("semanticGenome");
-                                if (genomeObj instanceof eu.kalafatic.evolution.controller.orchestration.selfdev.SemanticGenome) {
-                                    eu.kalafatic.evolution.controller.orchestration.selfdev.SemanticGenome genome = (eu.kalafatic.evolution.controller.orchestration.selfdev.SemanticGenome) genomeObj;
+                                eu.kalafatic.evolution.controller.orchestration.selfdev.SemanticGenome genome =
+                                    eu.kalafatic.evolution.controller.parsers.JsonUtils.restoreFromMetadata(genomeObj,
+                                        eu.kalafatic.evolution.controller.orchestration.selfdev.SemanticGenome.class, "semanticGenome", context);
+                                if (genome != null && genome != genomeObj) {
+                                    context.getOrchestrationState().getMetadata().put("semanticGenome", genome);
+                                }
+
+                                if (genome != null) {
                                     String activeDimId = node.getEngineeringDimensions().get("active_dimension");
                                     if (activeDimId != null && !activeDimId.isEmpty()) {
                                         genome.lockDimension(activeDimId);

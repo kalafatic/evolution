@@ -273,6 +273,11 @@ public class DarwinVariantSpawner {
             for (String rejected : rejectedSiblings) siblingSb.append("- ").append(rejected).append("\n");
         }
 
+        if (genome == null) {
+            Object genomeObj = context.getOrchestrationState().getMetadata().get("semanticGenome");
+            genome = eu.kalafatic.evolution.controller.parsers.JsonUtils.restoreFromMetadata(genomeObj, SemanticGenome.class, "semanticGenome", context);
+        }
+
         if (genome != null) {
             if (!genome.getRejectedMutations().isEmpty()) {
                 siblingSb.append("FORBIDDEN MUTATIONS (REJECTED BY SEMANTIC VALIDATOR):\n");

@@ -677,7 +677,12 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
     }
 
 	private SemanticGenome createGenome(GoalModel goal, IntentExpansionResult expansion) {
-		SemanticGenome genome = (SemanticGenome) context.getOrchestrationState().getMetadata().get("semanticGenome");
+		Object genomeObj = context.getOrchestrationState().getMetadata().get("semanticGenome");
+        SemanticGenome genome = eu.kalafatic.evolution.controller.parsers.JsonUtils.restoreFromMetadata(genomeObj, SemanticGenome.class, "semanticGenome", context);
+        if (genome != null && genome != genomeObj) {
+            context.getOrchestrationState().getMetadata().put("semanticGenome", genome);
+        }
+
         if (genome == null) {
             genome = new SemanticGenome(goal.getPrimaryAction());
             // Populate dimensions from intent expansion if available
