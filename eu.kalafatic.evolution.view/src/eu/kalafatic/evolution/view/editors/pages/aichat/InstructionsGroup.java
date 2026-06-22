@@ -32,7 +32,7 @@ import eu.kalafatic.utils.factories.GUIFactory;
 public class InstructionsGroup extends AEvoGroup {
     private StyledText requestText;
     private Button iterativeCheck, selfIterativeCheck, darwinCheck, autoApproveCheck, gitAutomationCheck, stepModeCheck;
-    private org.eclipse.swt.widgets.Spinner maxIterationsSpinner;
+    private org.eclipse.swt.widgets.Combo maxIterationsCombo;
     private Scale expansionScale;
     private Button sendButton, pauseButton, stopButton, attachButton;
     private Composite attachmentArea;
@@ -275,22 +275,26 @@ public class InstructionsGroup extends AEvoGroup {
         org.eclipse.swt.widgets.Label minIterLabel = GUIFactory.INSTANCE.createLabel(settingsComp, "Min Iterations",SWT.NONE,70);
         minIterLabel.setToolTipText("Minimum number of evolutionary iterations to perform before convergence.");
 
-        maxIterationsSpinner = new org.eclipse.swt.widgets.Spinner(settingsComp, SWT.BORDER);
-        maxIterationsSpinner.setMinimum(1);
-        maxIterationsSpinner.setMaximum(100);
-        maxIterationsSpinner.setSelection(4);
-        maxIterationsSpinner.setIncrement(1);
-        maxIterationsSpinner.setToolTipText("Set the minimum number of generations for Darwin evolution.");
-        maxIterationsSpinner.addSelectionListener(new SelectionAdapter() {
+        maxIterationsCombo = new org.eclipse.swt.widgets.Combo(settingsComp, SWT.BORDER | SWT.READ_ONLY);
+        for (int i = 1; i <= 20; i++) {
+            maxIterationsCombo.add(String.valueOf(i));
+        }
+        maxIterationsCombo.select(3); // Default to 4 (index 3)
+        maxIterationsCombo.setToolTipText("Set the minimum number of generations for Darwin evolution.");
+        maxIterationsCombo.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 if (isUpdating) return;
-                int val = maxIterationsSpinner.getSelection();
-
-                java.util.Map<String, Object> settings = new java.util.HashMap<>();
-                settings.put("maxIterations", val);
-                page.updateConfiguration(settings);
-                page.saveLastUsedSettings();
+                String text = maxIterationsCombo.getText();
+                try {
+                    int val = Integer.parseInt(text);
+                    java.util.Map<String, Object> settings = new java.util.HashMap<>();
+                    settings.put("maxIterations", val);
+                    page.updateConfiguration(settings);
+                    page.saveLastUsedSettings();
+                } catch (NumberFormatException ex) {
+                    // Ignore
+                }
             }
         });
         
@@ -358,9 +362,15 @@ public class InstructionsGroup extends AEvoGroup {
                 if (defaultMaxIter <= 0) defaultMaxIter = 4;
 
                 int maxIter = (Integer) config.getOrDefault("maxIterations", defaultMaxIter);
-                if (maxIterationsSpinner != null && !maxIterationsSpinner.isDisposed()) {
-                    if (maxIterationsSpinner.getSelection() != maxIter) {
-                        maxIterationsSpinner.setSelection(maxIter);
+                if (maxIterationsCombo != null && !maxIterationsCombo.isDisposed()) {
+                    String valStr = String.valueOf(maxIter);
+                    if (!maxIterationsCombo.getText().equals(valStr)) {
+                        int index = maxIterationsCombo.indexOf(valStr);
+                        if (index >= 0) {
+                            maxIterationsCombo.select(index);
+                        } else {
+                            maxIterationsCombo.setText(valStr);
+                        }
                     }
                 }
             } finally {
@@ -415,9 +425,21 @@ public class InstructionsGroup extends AEvoGroup {
         darwinCheck.setSelection(darwin);
     }
     public boolean isAutoApprove() { return autoApproveCheck.getSelection(); }
-    public int getMaxIterations() { return maxIterationsSpinner.getSelection(); }
+    public int getMaxIterations() {
+        try {
+            return Integer.parseInt(maxIterationsCombo.getText());
+        } catch (NumberFormatException e) {
+            return 4;
+        }
+    }
     public void setMaxIterations(int maxIterations) {
-        maxIterationsSpinner.setSelection(maxIterations);
+        String valStr = String.valueOf(maxIterations);
+        int index = maxIterationsCombo.indexOf(valStr);
+        if (index >= 0) {
+            maxIterationsCombo.select(index);
+        } else {
+            maxIterationsCombo.setText(valStr);
+        }
     }
     public boolean isGitAutomationCheck() { return gitAutomationCheck.getSelection(); }
     public void setGitAutomation(boolean gitAutomation) {

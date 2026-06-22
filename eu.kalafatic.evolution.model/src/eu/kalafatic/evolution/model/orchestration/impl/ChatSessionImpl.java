@@ -167,7 +167,7 @@ public class ChatSessionImpl extends MinimalEObjectImpl.Container implements Cha
 	 * @generated
 	 * @ordered
 	 */
-	protected static final int MAX_ITERATIONS_EDEFAULT = 1;
+	protected static final int MAX_ITERATIONS_EDEFAULT = 4;
 
 	/**
 	 * The cached value of the '{@link #getMaxIterations() <em>Max Iterations</em>}' attribute.

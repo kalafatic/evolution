@@ -449,7 +449,7 @@
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="gitAutomation" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
         defaultValueLiteral="false"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="maxIterations" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"
-        defaultValueLiteral="1"/>
+        defaultValueLiteral="4"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="stepMode" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
         defaultValueLiteral="false"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="targetPath" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>

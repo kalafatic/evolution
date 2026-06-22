@@ -1220,13 +1220,21 @@ public class AiChatPage extends AEvoPage {
 	 * @evo:14:A reason=categorized-assist
 	 */
 	private String getCategory() {
-		if (instructionsGroup != null) {
+		if (instructionsGroup != null && !instructionsGroup.isDisposed()) {
 			if (instructionsGroup.isSelfIterative() || instructionsGroup.isIterative() || instructionsGroup.isDarwin()) return "coding";
+		} else if (currentSession != null) {
+			if (currentSession.isSelfIterativeMode() || currentSession.isIterativeMode() || currentSession.isDarwinMode()) return "coding";
+		} else if (orchestrator != null) {
+			if (orchestrator.isDarwinMode()) return "coding";
 		}
 		return "chat";
 	}
 
 	public void setupContextAssist(StyledText text) {
+		if (orchestrator != null && orchestrator.getNeuronAI() == null) {
+			orchestrator.setNeuronAI(eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createNeuronAI());
+		}
+
 		IContentProposalProvider proposalProvider = (contents, position) -> {
 			String prefix = contents.substring(0, position);
 			int lastSpace = prefix.lastIndexOf(' '); if (lastSpace != -1) prefix = prefix.substring(lastSpace + 1);
@@ -1295,7 +1303,7 @@ public class AiChatPage extends AEvoPage {
 		assistAdapter = new ContentProposalAdapter(text, contentAdapter, proposalProvider, ks, null);
 		assistAdapter.setProposalAcceptanceStyle(ContentProposalAdapter.PROPOSAL_INSERT);
 		assistAdapter.setAutoActivationDelay(100);
-		assistAdapter.setAutoActivationCharacters("abcdefghijklmnopqrstuvwxyz/".toCharArray());
+		assistAdapter.setAutoActivationCharacters("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ/".toCharArray());
 	}
 
 
