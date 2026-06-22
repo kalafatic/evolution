@@ -260,27 +260,9 @@ public class DarwinFlow implements IOrchestrationFlow {
                 manager.getGitManager().createBranchFrom(originalBranch, selectedVariant.getBranchName());
             }
 
-            // ADAPTIVE KERNEL: Capability-based implementation delegation
-            boolean skipHeavyImplementation = !selectedVariant.isImplementationEnabled();
-
-            if (skipHeavyImplementation) {
-                context.log("[DARWIN] Adaptive Kernel: Implementation disabled for variant. Executing via General Agent.");
-
-                eu.kalafatic.evolution.controller.agents.GeneralAgent generalAgent = (eu.kalafatic.evolution.controller.agents.GeneralAgent)
-                    sessionContainer.getAgentRegistry().get(eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants.AGENT_GENERAL);
-
-                // For minimal reasoning levels (chat), provide only the goal to prevent confusing the agent with internal Darwin strategies
-                boolean isMinimal = selectedVariant.getReasoningLevel() == BranchVariant.ReasoningLevel.MINIMAL;
-                String input = isMinimal ? goal.getPrimaryAction() : goal.getPrimaryAction() + "\nStrategy: " + selectedVariant.getStrategy();
-                String finalResult = generalAgent.process(input, context, null);
-                selectedVariant.setMutationTrace(finalResult);
-                selectedVariant.setSuccess(true);
-                selectedVariant.setScore(0.95);
-            } else {
-                // IMPORTANT: We MUST re-evaluate the winner in the target branch context to persist changes,
-                // even if it was pre-evaluated in a temporary worktree.
-                winningContext = evaluateVariantParallel(selectedVariant, manager.getTaskPlanner(), context, baseCommit, decision.getPressure());
-            }
+            // IMPORTANT: We MUST re-evaluate the winner in the target branch context to persist changes,
+            // even if it was pre-evaluated in a temporary worktree.
+            winningContext = evaluateVariantParallel(selectedVariant, manager.getTaskPlanner(), context, baseCommit, decision.getPressure());
 
             // Merge discovered architectural facts from the winner back into the session in Mediated Mode
             if (isExportOnly && selectedVariant.getMediationCandidate() != null) {
@@ -414,8 +396,15 @@ public class DarwinFlow implements IOrchestrationFlow {
                 sessionContainer.getEventBus().publish(new RuntimeEvent(RuntimeEventType.TREE_UPDATED, context.getSessionId(), "DarwinFlow", null));
 
                 if (profile.requiresRepository() && !isExportOnly && !isTestMode && manager.getGitManager().isGitRepository()) {
-                    manager.checkStep(selectedVariant.getId(), "GIT_COMMIT", "Committing evolutionary changes for phase: " + completedPhase);
-                    manager.getGitManager().commit("Darwin Evolution Phase " + completedPhase, context);
+                    boolean hasPhysicalChanges = context.getOrchestrationState().getMetadata().get("lastRealityCheckSignificant") != null &&
+                                               (Boolean)context.getOrchestrationState().getMetadata().get("lastRealityCheckSignificant");
+
+                    if (hasPhysicalChanges) {
+                        manager.checkStep(selectedVariant.getId(), "GIT_COMMIT", "Committing evolutionary changes for phase: " + completedPhase);
+                        manager.getGitManager().commit("Darwin Evolution Phase " + completedPhase, context);
+                    } else {
+                        context.log("[KERNEL] Skipping Git commit: No physical changes detected in repository.");
+                    }
                 }
 
                 result.setSuccess(true);

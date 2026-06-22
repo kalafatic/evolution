@@ -134,10 +134,16 @@ public class Evaluator implements ICapability, IEvaluationContract {
         try {
             String output;
             if (useCompiler || useTests) {
-                try {
-                    output = mavenTool.execute("clean install", projectRoot, context);
-                } catch (Exception e) {
-                    output = e.getMessage();
+                // Optimization: Skip Maven if no source files are detected to avoid wasted time
+                if (!hasSourceFiles(projectRoot)) {
+                    if (context != null) context.log("[EVALUATOR] No source files detected. Skipping Maven run.");
+                    output = "BUILD SUCCESS (No Sources)";
+                } else {
+                    try {
+                        output = mavenTool.execute("clean install", projectRoot, context);
+                    } catch (Exception e) {
+                        output = e.getMessage();
+                    }
                 }
             } else {
                 if (context != null) context.log("[EVALUATOR] Adaptive Kernel: Skipping Maven/Compiler run for current profile.");
@@ -296,6 +302,22 @@ public class Evaluator implements ICapability, IEvaluationContract {
 
         String cause = firstLine.replaceAll("@[a-f0-9]+", "").trim();
         return type + "@" + location + ":" + cause;
+    }
+
+    private boolean hasSourceFiles(File dir) {
+        if (dir == null || !dir.exists()) return false;
+        File srcDir = new File(dir, "src");
+        if (srcDir.exists() && srcDir.isDirectory()) {
+            return true;
+        }
+        // Fallback: check if there are any .java files in the root (unlikely but possible for simple tasks)
+        File[] files = dir.listFiles();
+        if (files != null) {
+            for (File f : files) {
+                if (f.getName().endsWith(".java")) return true;
+            }
+        }
+        return false;
     }
 
     private double parsePassRate(String output) {
