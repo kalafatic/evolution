@@ -222,10 +222,11 @@ public class DarwinVariantSpawner {
 
         sb.append(composer.composeSystem(null)).append("\n\n");
         sb.append("You are a single-path evolutionary mutation engine.\n")
+          .append("Your goal is to generate another implementation PHILOSOPHY that satisfies the user's request while diverging from ancestors.\n")
           .append("Each response MUST contain exactly ONE branch only.\n\n");
 
         sb.append(composer.composeGoal(bp.getGoal())).append("\n\n");
-        
+
         GoalModel goalModel = (GoalModel) context.getOrchestrationState().getMetadata().get("goalModel");
         if (goalModel != null) {
             sb.append("--- SEMANTIC ANCHOR (STRICT BOUNDARY) ---\n")
@@ -248,14 +249,13 @@ public class DarwinVariantSpawner {
                 .convertValue(envObj, SemanticEnvelope.class);
         }
         if (envelope != null) {
-            sb.append("--- SEMANTIC ENVELOPE (EVOLUTIONARY BOUNDARIES) ---\n")
-              .append("Mandatory Concepts: ").append(envelope.getMandatoryConcepts()).append("\n")
-              .append("Allowed Mutation Dimensions: ").append(envelope.getAllowedMutationDimensions()).append("\n")
-              .append("Discouraged Regions: ").append(envelope.getDiscouragedRegions()).append("\n")
-              .append("Forbidden Regions: ").append(envelope.getForbiddenRegions()).append("\n")
-              .append("Max Abstraction Depth: ").append(envelope.getMaxAbstractionDepth()).append("\n\n");
+            sb.append("--- SEMANTIC ENVELOPE (EVOLUTIONARY MANDATE) ---\n")
+              .append("MANDATORY CONCEPTS: ").append(envelope.getMandatoryConcepts()).append("\n")
+              .append("ALLOWED MUTATION DIMENSIONS: ").append(envelope.getAllowedMutationDimensions()).append("\n")
+              .append("FORBIDDEN SEMANTIC REGIONS (VIOLATION = FAILURE): ").append(envelope.getForbiddenRegions()).append("\n")
+              .append("MAX ABSTRACTION DEPTH: ").append(envelope.getMaxAbstractionDepth()).append("\n\n");
         }
-        sb.append("MANDATE: You MUST stay within these semantic boundaries. Do NOT invent new problems or unrequested architectural complexity.\n\n");
+        sb.append("MANDATE: You MUST stay within these semantic boundaries. Do NOT invent new problems, do NOT introduce frameworks unless requested, and do NOT increase architectural complexity beyond the minimum required.\n\n");
 
         if (context != null && context.getOrchestrationState() != null) {
             var metadata = context.getOrchestrationState().getMetadata();
@@ -420,7 +420,8 @@ public class DarwinVariantSpawner {
     private String buildSeedPrompt(DarwinStrategySeed seed, String basePrompt, String lineageContext, List<String> rejectedSiblings, List<JSONObject> currentRoundVariants, boolean isMediated, TaskContext context) {
         StringBuilder sb = new StringBuilder();
         sb.append("🔴 SYSTEM / ROLE\n\n")
-          .append("You are a single-path evolutionary mutation engine.\n\n")
+          .append("You are a single-path evolutionary mutation engine.\n")
+          .append("Your goal is to generate another implementation PHILOSOPHY that satisfies the user's request while diverging from ancestors.\n\n")
           .append("You do NOT generate multiple solutions.\n")
           .append("You do NOT compare alternatives.\n")
           .append("You do NOT output sets or lists of strategies.\n\n")
@@ -450,11 +451,11 @@ public class DarwinVariantSpawner {
                     .convertValue(envObjSeed, SemanticEnvelope.class);
             }
             if (envelope != null) {
-                sb.append("SEMANTIC ENVELOPE (STRICT BOUNDARIES):\n")
-                  .append("- Mandatory Concepts: ").append(envelope.getMandatoryConcepts()).append("\n")
-                  .append("- Allowed Mutation Dimensions: ").append(envelope.getAllowedMutationDimensions()).append("\n")
-                  .append("- Forbidden Regions: ").append(envelope.getForbiddenRegions()).append("\n")
-                  .append("- Max Abstraction Depth: ").append(envelope.getMaxAbstractionDepth()).append("\n\n");
+                sb.append("SEMANTIC ENVELOPE (EVOLUTIONARY MANDATE):\n")
+                  .append("- MANDATORY CONCEPTS: ").append(envelope.getMandatoryConcepts()).append("\n")
+                  .append("- ALLOWED MUTATION DIMENSIONS: ").append(envelope.getAllowedMutationDimensions()).append("\n")
+                  .append("- FORBIDDEN SEMANTIC REGIONS (VIOLATION = FAILURE): ").append(envelope.getForbiddenRegions()).append("\n")
+                  .append("- MAX ABSTRACTION DEPTH: ").append(envelope.getMaxAbstractionDepth()).append("\n\n");
             }
         }
 

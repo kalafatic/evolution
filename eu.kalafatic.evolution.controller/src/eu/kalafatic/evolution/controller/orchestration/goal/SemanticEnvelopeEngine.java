@@ -23,7 +23,11 @@ public class SemanticEnvelopeEngine extends BaseAiAgent {
     protected String getAgentInstructions() {
         return "You are a Semantic Envelope Engine. Your role is to define strict boundaries for evolutionary trajectory generation.\n" +
                "Given a GoalModel, you must extract mandatory concepts, derive allowed mutation dimensions, define abstraction limits, and compute forbidden semantic regions.\n" +
-               "GOAL: Prevent 'architectural inflation' and 'semantic drift' where simple tasks (like printing text) evolve into unrelated complex systems (like quantum resonance or distributed pipelines).";
+               "GOAL: Prevent 'architectural inflation' and 'semantic drift'.\n" +
+               "STRICT BOUNDARIES FOR SIMPLE TASKS:\n" +
+               "- If the goal is a simple Java task (e.g., 'print text', 'calculate sum'), you MUST identify frameworks (Spring), messaging (Kafka), and distributed patterns (Microservices) as FORBIDDEN regions.\n" +
+               "- Allowed mutation dimensions for simple tasks: Class structure, API design (static vs instance), Naming, Documentation style.\n" +
+               "- Mandatory concepts must include the core domain objects mentioned in the goal.";
     }
 
     @Override

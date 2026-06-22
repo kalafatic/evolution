@@ -323,14 +323,25 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             }
         }
 
-        // 2. Population Scaling based on Evolution Intensity
-        int branchingLimit = 3; // Default Balanced
-        if (intensity == 1) {
-            branchingLimit = (profile.getCapability() == eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType.CHAT) ? 1 : 2;
+        // 2. Population Scaling based on Capability and Intensity
+        int branchingLimit = 2; // Default
+        eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType capType = profile.getCapability();
+
+        switch (capType) {
+            case CHAT: branchingLimit = 2; break;
+            case CODE: branchingLimit = 2; break; // IMPLEMENTATION
+            case EVOLUTION: branchingLimit = 3; break; // REFACTOR
+            case ARCHITECTURE: branchingLimit = 4; break; // DESIGN
+            case SELF_DEV: branchingLimit = 6; break; // RESEARCH
+            default: branchingLimit = 2; break;
         }
-        else if (intensity == 2) branchingLimit = Math.min(2, expansionValue <= 3 ? 1 : 2);
-        else if (expansionValue <= 3) branchingLimit = 2;
-        else if (expansionValue >= 8) branchingLimit = 4;
+
+        // Expand based on intensity if pressure is high
+        if (intensity >= 3) branchingLimit += 1;
+        if (intensity == 4) branchingLimit += 1;
+
+        // Respect expansionValue from UI if high
+        if (expansionValue >= 8) branchingLimit = Math.max(branchingLimit, 4);
 
         // Scale by model capability if extremely low
         if (modelCapability < 0.4) branchingLimit = Math.min(branchingLimit, 2);
