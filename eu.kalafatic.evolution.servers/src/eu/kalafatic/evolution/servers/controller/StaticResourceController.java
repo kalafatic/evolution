@@ -16,6 +16,21 @@ public class StaticResourceController {
             uri = "/login.html";
         }
 
+        if (uri.endsWith("/evolution.css") || uri.endsWith("/evolution.js")) {
+            String fileName = uri.substring(uri.lastIndexOf('/') + 1);
+            InputStream is = getClass().getResourceAsStream("/eu/kalafatic/evolution/controller/orchestration/" + fileName);
+            if (is == null) {
+                // Fallback to absolute if needed
+                is = getClass().getResourceAsStream("/" + fileName);
+            }
+            if (is != null) {
+                try {
+                    byte[] data = readAllBytes(is);
+                    return NanoHTTPD.newFixedLengthResponse(Response.Status.OK, getMimeType(uri), new java.io.ByteArrayInputStream(data), data.length);
+                } catch (IOException e) {}
+            }
+        }
+
         String resourcePath = BASE_PATH + uri;
         InputStream is = getClass().getResourceAsStream(resourcePath);
 
