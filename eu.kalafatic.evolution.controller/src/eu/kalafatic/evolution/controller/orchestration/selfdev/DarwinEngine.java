@@ -325,7 +325,9 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
         // 2. Population Scaling based on Evolution Intensity
         int branchingLimit = 3; // Default Balanced
-        if (intensity == 1) branchingLimit = 1;
+        if (intensity == 1) {
+            branchingLimit = (profile.getCapability() == eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType.CHAT) ? 1 : 2;
+        }
         else if (intensity == 2) branchingLimit = Math.min(2, expansionValue <= 3 ? 1 : 2);
         else if (expansionValue <= 3) branchingLimit = 2;
         else if (expansionValue >= 8) branchingLimit = 4;

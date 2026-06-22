@@ -116,6 +116,12 @@ public class FinalResponseAssembler {
                     sb.append("- [").append(ref.getPath()).append("](").append(ref.getEclipseUri()).append(")\n");
                 }
             }
+        } else if (!isChat && !files.isEmpty()) {
+            // Mandate file links for small implementation tasks as requested
+            sb.append("\n### 📂 Created/Edited Files\n");
+            for (FileReference ref : files) {
+                sb.append("- [").append(ref.getPath()).append("](").append(ref.getEclipseUri()).append(")\n");
+            }
         }
 
         if (profile.shouldPerformRealityCheck()) {

@@ -76,9 +76,9 @@ public class FinalResponse {
         }
 
         if (files != null && !files.isEmpty()) {
-            sb.append("**Files**\n");
+            sb.append("#### 📂 Modified Files\n\n");
             for (FileReference f : files) {
-                sb.append("- [").append(f.getDisplayName()).append("](").append(f.getEclipseUri()).append(") [FILE: ").append(f.getPath()).append("]\n");
+                sb.append("- [").append(f.getPath()).append("](").append(f.getEclipseUri()).append(")\n");
             }
             sb.append("\n");
         }

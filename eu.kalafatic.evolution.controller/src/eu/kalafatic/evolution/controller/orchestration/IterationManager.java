@@ -730,6 +730,12 @@ public class IterationManager {
         if (instructions != null) {
             minIterations = instructions.getPreferredMaxIterations();
         }
+
+        // Enforce multiple iterations for non-CHAT tasks as requested
+        if (minIterations < 2 && intensity_val >= 1 && context.getExecutionProfile().getCapability() != eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType.CHAT) {
+            minIterations = 2;
+        }
+
         if (minIterations < 1) minIterations = 1;
 
         int maxIterationsLimit = 20; // Default Medium
@@ -776,8 +782,8 @@ public class IterationManager {
             saveFullCheckpoint();
 
             if (result.getDecision() != SelfDevDecision.CONTINUE) {
-                if (safetyCounter < minIterations && result.getDecision() != SelfDevDecision.STOP) {
-                    context.log("[KERNEL] Evolution reached convergence decision (" + result.getDecision() + "), but Min Iterations not met. Continuing evolution.");
+                if (safetyCounter < minIterations) {
+                    context.log("[KERNEL] Evolution reached decision (" + result.getDecision() + "), but Min Iterations (" + minIterations + ") not met. Continuing evolution.");
                 } else {
                     sessionContainer.getEventBus().publish(new RuntimeEvent(RuntimeEventType.FLOW_COMPLETED, context.getSessionId(), "Kernel", result.getDecision().toString()));
                     break;
@@ -785,9 +791,9 @@ public class IterationManager {
             }
 
             // If we reached a terminal phase during the iteration, break the loop if min iterations met
-            if (state.getCurrentPhase().contains("TERMINAL")) {
-                if (safetyCounter < minIterations && !state.getCurrentPhase().contains("SUCCESS")) {
-                    context.log("[KERNEL] Terminal phase reached, but Min Iterations not met. Continuing evolution.");
+            if (state.getCurrentPhase().contains("TERMINAL") || state.getCurrentPhase().contains("SATISFIED")) {
+                if (safetyCounter < minIterations) {
+                    context.log("[KERNEL] Terminal phase (" + state.getCurrentPhase() + ") reached, but Min Iterations (" + minIterations + ") not met. Continuing evolution.");
                 } else {
                     break;
                 }
