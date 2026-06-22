@@ -42,6 +42,9 @@ public class EvolutionNode {
 
     // Reasoning and Results
     private String mutationReason;
+    private String mutationIdentity;
+    private String parentStrengths;
+    private String parentWeaknesses;
     private String selectionReason;
     private String rejectionReason;
     private String executionResults;
@@ -125,6 +128,15 @@ public class EvolutionNode {
 
     public String getMutationReason() { return mutationReason; }
     public void setMutationReason(String mutationReason) { this.mutationReason = mutationReason; }
+
+    public String getMutationIdentity() { return mutationIdentity; }
+    public void setMutationIdentity(String mutationIdentity) { this.mutationIdentity = mutationIdentity; }
+
+    public String getParentStrengths() { return parentStrengths; }
+    public void setParentStrengths(String parentStrengths) { this.parentStrengths = parentStrengths; }
+
+    public String getParentWeaknesses() { return parentWeaknesses; }
+    public void setParentWeaknesses(String parentWeaknesses) { this.parentWeaknesses = parentWeaknesses; }
 
     public String getSelectionReason() { return selectionReason; }
     public void setSelectionReason(String selectionReason) { this.selectionReason = selectionReason; }

@@ -475,6 +475,20 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
                             variant.put("reasoning_level", reasoningLevel.name());
                             variant.put("architecture_enabled", architectureEnabled);
                             variant.put("implementation_enabled", implementationEnabled);
+
+                            // Evolutionary Identity
+                            String branchSuffix = String.valueOf((char)('A' + uniqueVariants.size()));
+                            String parentIdentity = "ROOT";
+                            EvolutionNode parentNode = tree.getNode(currentParentId);
+                            if (parentNode != null && parentNode.getMutationIdentity() != null) {
+                                parentIdentity = parentNode.getMutationIdentity();
+                                branchSuffix = parentIdentity + (uniqueVariants.size() + 1);
+                            } else {
+                                branchSuffix = "Branch " + branchSuffix;
+                            }
+                            variant.put("mutation_identity", branchSuffix);
+                            variant.put("parent_identity", parentIdentity);
+
                             // LIFECYCLE: PLANNED
                             EvolutionProgressPublisher.updateBranchStatus(context, bp.getId(), bp.getPhilosophy(), "planned", null);
 
@@ -488,9 +502,16 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
                             node.setGeneration(generation);
                             node.setStrategy(variant.optString("strategy"));
                             node.setSemanticPhilosophy(variant.optString("semantic_anchor"));
+                            node.setMutationIdentity(branchSuffix);
                             node.setLlmPrompt(basePrompt); // Simplified for now
                             node.setLlmResponse(variant.toString());
                             node.setStatus("KEPT");
+
+                            if (parentNode != null) {
+                                node.setParentStrengths(parentNode.getSelectionReason());
+                                // In a real scenario, weaknesses might come from a CriticAgent or previous failure analysis
+                                node.setParentWeaknesses("Mutation required to satisfy dimension: " + (activeDimension != null ? activeDimension.getId() : "Implementation"));
+                            }
 
                             // Capture Code Snapshots
                             JSONArray variantActions = variant.optJSONArray("actions");
@@ -543,6 +564,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
                             // 5. Accumulate Structured Sibling Memory for next iteration
                             siblingMemoryBuilder.append("SIBLING: ").append(variant.optString("strategy")).append("\n")
+                                               .append("  IDENTITY: ").append(branchSuffix).append("\n")
                                                .append("  PHILOSOPHY: ").append(variant.optString("semantic_anchor")).append("\n")
                                                .append("  EXECUTION MODEL: ").append(mut.getExecutionModel()).append("\n")
                                                .append("  DIMENSIONS: ").append(mut.getEngineeringDimensions()).append("\n");
@@ -594,43 +616,27 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         }
 
         // 1. Goal-Driven Validation: Semantic Distance and Domain Matching
-        uniqueVariants.removeIf(variant -> {        	
+        // [DARWIN IMPROVEMENT] Delayed Semantic Filtering: Do NOT removeIf. Just mark status in tree.
+        for (JSONObject variant : uniqueVariants) {
             double distance = semanticDistance(goal, variant, envelope);
             boolean domainMatch = variant.optString("domain", goal.getDomain()).equalsIgnoreCase(goal.getDomain());
-            boolean artifactMatch = variant.optString("requestedArtifact", goal.getRequestedArtifact()).equalsIgnoreCase(goal.getRequestedArtifact());
+            variant.put("semantic_distance", distance);
+            variant.put("domain_match", domainMatch);
 
-            if (distance > 0.60) {
-                context.log("[DARWIN] REJECTED: Semantic distance (" + String.format("%.2f", distance) + ") exceeds threshold (0.60) for variant: " + variant.optString("strategy"));
+            if (distance > 0.60 || !domainMatch) {
+                String reason = distance > 0.60 ? "Semantic distance (" + String.format("%.2f", distance) + ") exceeds threshold (0.60)"
+                                               : "Domain mismatch (Expected " + goal.getDomain() + ")";
+                context.log("[DARWIN] Semantic Validation WARNING for " + variant.optString("mutation_identity") + ": " + reason);
 
-                // Record rejection in genome
-                MutationRecord reject = new MutationRecord();
-                reject.setStrategy(variant.optString("strategy"));
-                reject.setTradeoffs("Semantic distance: " + distance);
-                genome.recordRejection(reject);
-
-                // Update EvolutionTree status
+                // Update EvolutionTree status but KEEP the node
                 EvolutionNode node = tree.getNode(variant.optString("id"));
                 if (node != null) {
-                    node.setStatus("REJECTED");
-                    node.setRejectionReason("Semantic distance (" + distance + ") exceeds threshold.");
+                    node.setStatus("REJECTED_SEMANTIC");
+                    node.setRejectionReason(reason);
                     context.getKernelContext().getMemoryService().saveEvolutionTree();
                 }
-
-                return true;
             }
-            if (!domainMatch) {
-                context.log("[DARWIN] REJECTED: Domain mismatch (Expected " + goal.getDomain() + ") for variant: " + variant.optString("strategy"));
-                // Update EvolutionTree status
-                EvolutionNode node = tree.getNode(variant.optString("id"));
-                if (node != null) {
-                    node.setStatus("REJECTED");
-                    node.setRejectionReason("Domain mismatch (Expected " + goal.getDomain() + ").");
-                    context.getKernelContext().getMemoryService().saveEvolutionTree();
-                }
-                return true;
-            }
-            return false;
-        });
+        }
 
         // Fitness Ranking
         DarwinFitnessRanker ranker = new DarwinFitnessRanker();
@@ -892,53 +898,63 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         String strategy = variant.optString("strategy", "").toLowerCase();
         String philosophy = variant.optString("semantic_anchor", "").toLowerCase();
         String primaryAction = goal.getPrimaryAction().toLowerCase();
-        String artifact = goal.getRequestedArtifact().toLowerCase();
+
+        // Technical keywords that are often semantically identical for the same goal
+        String[] identicalTechnicalConcepts = {"static", "instance", "constructor", "overloads", "logger", "system.out", "varargs", "library", "utility"};
 
         double distance = 0.0;
 
-        // 1. Mandatory Concepts Check
+        // 1. Mandatory Concepts Check (Goal Relative)
         if (envelope != null && !envelope.getMandatoryConcepts().isEmpty()) {
             int missed = 0;
             for (String concept : envelope.getMandatoryConcepts()) {
                 String c = concept.toLowerCase();
+                // If it's a technical variety keyword, we are lenient
+                boolean isTechnicalVariety = false;
+                for (String tech : identicalTechnicalConcepts) {
+                    if (c.contains(tech)) { isTechnicalVariety = true; break; }
+                }
+
                 if (!strategy.contains(c) && !philosophy.contains(c)) {
-                    missed++;
+                    if (!isTechnicalVariety) missed++;
                 }
             }
-            distance += (double) missed / envelope.getMandatoryConcepts().size() * 0.5;
+            distance += (double) missed / envelope.getMandatoryConcepts().size() * 0.4;
         }
 
-        // 2. Exact Match Heuristic
+        // 2. Exact Match or Intent Overlap
         if (strategy.contains(primaryAction) || philosophy.contains(primaryAction)) {
-            distance += 0.05;
+            distance += 0.0; // Perfect intent match
         } else {
-            // 3. Keyword Overlap
+            // 3. Keyword Overlap (Weighted toward intent keywords)
             String[] keywords = primaryAction.split(" ");
             int matches = 0;
+            int significantKeywords = 0;
             for (String k : keywords) {
-                if (k.length() > 3 && (strategy.contains(k) || philosophy.contains(k))) {
-                    matches++;
+                if (k.length() <= 3) continue;
+
+                boolean isTechnical = false;
+                for (String tech : identicalTechnicalConcepts) {
+                    if (k.equalsIgnoreCase(tech)) { isTechnical = true; break; }
+                }
+
+                if (!isTechnical) {
+                    significantKeywords++;
+                    if (strategy.contains(k) || philosophy.contains(k)) {
+                        matches++;
+                    }
                 }
             }
-            double overlap = keywords.length > 0 ? (double) matches / keywords.length : 0.0;
-            distance += (1.0 - overlap) * 0.5;
+            double overlap = significantKeywords > 0 ? (double) matches / significantKeywords : 1.0;
+            distance += (1.0 - overlap) * 0.6;
         }
 
-        // 4. Forbidden Regions Check
+        // 4. Forbidden Regions Check (Architectural Inflation)
         if (envelope != null && !envelope.getForbiddenRegions().isEmpty()) {
             for (String region : envelope.getForbiddenRegions()) {
                 String r = region.toLowerCase();
                 if (strategy.contains(r) || philosophy.contains(r)) {
-                    distance += 0.5; // Heavy penalty
-                }
-            }
-        }
-
-        // 5. Hallucination Detection (Legacy / Domain specific)
-        if (goal.getGoalType().equals("CODE_GENERATION") && goal.getDomain().equals("JAVA")) {
-            if (strategy.contains("reactive") || strategy.contains("kafka") || strategy.contains("microservice")) {
-                if (!primaryAction.contains("reactive") && !primaryAction.contains("kafka")) {
-                    distance += 0.5; // Heavy penalty for unrequested complex architectures
+                    distance += 0.8; // Heavy penalty for architectural inflation
                 }
             }
         }

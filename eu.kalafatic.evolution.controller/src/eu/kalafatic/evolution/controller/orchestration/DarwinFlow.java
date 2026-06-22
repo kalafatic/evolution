@@ -152,12 +152,22 @@ public class DarwinFlow implements IOrchestrationFlow {
             return Collections.emptyList();
         }
 
+        // [DARWIN IMPROVEMENT] Preservation of all branches:
+        // We filter out only those that are technically UNVIABLE before evaluation,
+        // but we keep those that are semantically divergent for historical record.
+        List<BranchVariant> evaluationCandidates = rawVariants.stream()
+                .filter(v -> {
+                    EvolutionNode node = context.getKernelContext().getMemoryService().getEvolutionTree().getNode(v.getId());
+                    return node != null && !"REJECTED_SEMANTIC".equals(node.getStatus());
+                })
+                .collect(Collectors.toList());
+
         if (profile.useImplementation()) {
-            context.log("[DARWIN] Parallel Evaluation: Triggering implementation validation for " + rawVariants.size() + " variants.");
+            context.log("[DARWIN] Parallel Evaluation: Triggering implementation validation for " + evaluationCandidates.size() + " variants.");
             String baseCommitFinal = baseCommit;
             eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionaryPressureVector pressureFinal = pressure;
 
-            rawVariants.parallelStream().forEach(variant -> {
+            evaluationCandidates.parallelStream().forEach(variant -> {
                 try {
                     evaluateVariantParallel(variant, manager.getTaskPlanner(), context, baseCommitFinal, pressureFinal);
                 } catch (Exception e) {
@@ -166,9 +176,19 @@ public class DarwinFlow implements IOrchestrationFlow {
             });
         } else {
             context.log("[DARWIN] Adaptive Kernel: Implementation validation disabled for current profile.");
-            for (BranchVariant variant : rawVariants) {
+            for (BranchVariant variant : evaluationCandidates) {
                 variant.setSuccess(true);
                 variant.setScore(0.95);
+            }
+        }
+
+        // [DARWIN IMPROVEMENT] After evaluation, ensure all raw variants (including REJECTED_SEMANTIC)
+        // are preserved in the list passed to the scheduler, but with differentiated scores.
+        for (BranchVariant v : rawVariants) {
+            EvolutionNode node = context.getKernelContext().getMemoryService().getEvolutionTree().getNode(v.getId());
+            if (node != null && "REJECTED_SEMANTIC".equals(node.getStatus())) {
+                v.setSuccess(false);
+                v.setScore(Math.min(v.getScore(), 0.1)); // Penalize but don't delete
             }
         }
 
