@@ -129,11 +129,11 @@ public class EvolutionaryTrajectoryEngine {
     private int getMinimumIntensity(EvolutionPhase phase) {
         switch (phase) {
             case INTENT_EXPANSION: return 1;
-            case ARCHITECTURE_VARIANTS: return 3;
-            case SELECTION_REFINEMENT: return 2;
-            case IMPLEMENTATION_PLAN: return 2;
+            case ARCHITECTURE_VARIANTS: return 1;
+            case SELECTION_REFINEMENT: return 1;
+            case IMPLEMENTATION_PLAN: return 1;
             case FINAL_SYNTHESIS: return 1;
-            case DESIGN_SATISFIED: return 3;
+            case DESIGN_SATISFIED: return 1;
             case TERMINAL_SUCCESS: return 1;
             case TERMINAL_FAILURE: return 1;
             default: return 1;

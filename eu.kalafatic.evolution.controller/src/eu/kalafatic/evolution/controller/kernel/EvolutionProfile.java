@@ -111,14 +111,13 @@ public final class EvolutionProfile {
 
         // 2. Intensity-based overrides
         if (intensity == 1) {
-            useParallelBranches = false;
-            requireUserSelection = false;
-
-            // Intensity 1 is text-only ONLY for CHAT capability.
-            // For CODE/ARCHITECTURE/EVOLUTION, we still want implementation (validation).
             if (capability == CapabilityType.CHAT) {
+                useParallelBranches = false;
+                requireUserSelection = false;
                 useImplementation = false;
             } else {
+                useParallelBranches = true;
+                requireUserSelection = true;
                 useImplementation = true;
                 shouldPerformRealityCheck = true;
             }
