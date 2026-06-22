@@ -313,15 +313,23 @@ window.ChatApp.Renderer = {
             let text = (m.text || '').trim();
 
             // Strip Log Contamination (e.g., [Default] [80ff...])
-            // We strip leading brackets that don't look like the start of a JSON array/object
-            text = text.replace(/^(\[[^\{\"\[]+\]\s*)+/g, '');
+            // We strip leading tags [...] or (...) that don't look like the start of JSON
+            text = text.replace(/^(\s*\[[^\{\"\[\]\n]+\]|\s*\([^\{\"\[\)\n]+\)|\s*(INFO|WARNING|SEVERE|ERROR|DEBUG):)+/gi, '').trim();
 
             if (text.startsWith('```')) text = text.replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/i, '').trim();
 
             let data;
+            // Robust JSON extraction: find the first { or [ that isn't part of a tag
+            // and the last corresponding } or ]
             const jsonMatch = text.match(/[\{\[][\s\S]*[\}\]]/);
             if (jsonMatch) {
-                data = JSON.parse(jsonMatch[0]);
+                let candidate = jsonMatch[0];
+                // If it still looks like it has leading tags (e.g. from greedy match), strip them again
+                if (candidate.startsWith('[') && !candidate.startsWith('[{') && !candidate.startsWith('["')) {
+                     const nestedMatch = candidate.substring(1).match(/[\{\[][\s\S]*[\}\]]/);
+                     if (nestedMatch) candidate = nestedMatch[0];
+                }
+                data = JSON.parse(candidate);
             } else {
                 data = JSON.parse(text);
             }

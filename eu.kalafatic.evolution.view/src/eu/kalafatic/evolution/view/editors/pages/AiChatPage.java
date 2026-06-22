@@ -1087,6 +1087,27 @@ public class AiChatPage extends AEvoPage {
 		if (log == null || log.isEmpty()) return;
 		
 		String trimmedText = log.trim();
+
+		// Robust cleaning of contamination from standard Java/Evolution logs
+		trimmedText = trimmedText.replaceAll("^[A-Z][a-z]{2} \\d{2}, \\d{4} \\d{1,2}:\\d{2}:\\d{2} [AP]M .*$", "") // Date markers
+				.replaceAll("^INFO: ", "")
+				.replaceAll("^WARNING: ", "")
+				.replaceAll("^SEVERE: ", "")
+				.trim();
+
+		// Strip leading [Default], [KERNEL], etc. repeated tags that contaminate the sender detection
+		while (trimmedText.startsWith("[") && trimmedText.contains("]")) {
+			int end = trimmedText.indexOf("]");
+			String tag = trimmedText.substring(1, end);
+			if (tag.equals("Default") || tag.equals("KERNEL") || tag.equals("CONTEXT") || tag.equals("MEMORY") || tag.equals("PIPELINE") || tag.equals("LOOP")) {
+				trimmedText = trimmedText.substring(end + 1).trim();
+			} else {
+				break;
+			}
+		}
+
+		if (trimmedText.isEmpty()) return;
+
         String sender = "Evo";
         String content = trimmedText;
         String agentType = "ai";
