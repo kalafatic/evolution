@@ -386,6 +386,17 @@ public class DarwinFlow implements IOrchestrationFlow {
                             if (v.getActivationState() == BranchVariant.ActivationState.ACTIVE) {
                                 tree.setCurrentWinnerId(v.getId());
                                 sessionContainer.getEventBus().publish(new RuntimeEvent(RuntimeEventType.WINNER_SELECTED, context.getSessionId(), v.getId(), v.getStrategy()));
+
+                                // If a dimension was being mutated, and we have a winner, lock it in the genome
+                                Object genomeObj = context.getOrchestrationState().getMetadata().get("semanticGenome");
+                                if (genomeObj instanceof eu.kalafatic.evolution.controller.orchestration.selfdev.SemanticGenome) {
+                                    eu.kalafatic.evolution.controller.orchestration.selfdev.SemanticGenome genome = (eu.kalafatic.evolution.controller.orchestration.selfdev.SemanticGenome) genomeObj;
+                                    String activeDimId = node.getEngineeringDimensions().get("active_dimension");
+                                    if (activeDimId != null && !activeDimId.isEmpty()) {
+                                        genome.lockDimension(activeDimId);
+                                        context.log("[DARWIN] Dimension LOCKED: " + activeDimId);
+                                    }
+                                }
                             }
 
                             sessionContainer.getEventBus().publish(new RuntimeEvent(RuntimeEventType.FITNESS_UPDATED, context.getSessionId(), v.getId(), v.getScore()));

@@ -8,6 +8,10 @@ import java.util.List;
  * Evolution proceeds by resolving exactly one dimension per iteration.
  */
 public class EvolutionDimension {
+    public EvolutionDimension() {
+        // Default constructor for Jackson
+    }
+
     private String id;
     private String description;
     private AbstractionLevel abstractionLevel;
@@ -22,6 +26,14 @@ public class EvolutionDimension {
 
     private List<String> dependencyDimensions = new ArrayList<>();
     private List<BranchVariant> candidateBranches = new ArrayList<>();
+
+    public void setDependencyDimensions(List<String> dependencyDimensions) {
+        this.dependencyDimensions = dependencyDimensions;
+    }
+
+    public void setCandidateBranches(List<BranchVariant> candidateBranches) {
+        this.candidateBranches = candidateBranches;
+    }
 
     @com.fasterxml.jackson.annotation.JsonCreator
     public EvolutionDimension(@com.fasterxml.jackson.annotation.JsonProperty("id") String id,

@@ -155,11 +155,20 @@ public class GitTool implements ITool {
                 if (tree != null && tree.getCurrentWinnerId() != null) {
                     eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionNode node = tree.getWinnerNode();
                     if (node != null) {
-                        String lineageMeta = String.format("[EVO-LINEAGE] [Parent: %s] [Mutation: %s] [Fitness: %.2f]",
+                        String lineageMeta = String.format("[EVO-LINEAGE] [Node: %s] [Parent: %s] [Mutation: %s] [Fitness: %.2f]",
+                            node.getId(),
                             node.getParentId() != null ? node.getParentId() : "root",
                             node.getStrategy(),
                             node.getFitnessScore());
                         metadata += " -m \"" + lineageMeta + "\"";
+
+                        // Inject affected dimensions if available
+                        if (node.getMutationRecord() != null && !node.getMutationRecord().getEngineeringDimensions().isEmpty()) {
+                            String dims = node.getMutationRecord().getEngineeringDimensions().entrySet().stream()
+                                .map(e -> e.getKey() + "=" + e.getValue())
+                                .collect(java.util.stream.Collectors.joining(", "));
+                            metadata += " -m \"[EVO-DIMENSIONS] " + dims + "\"";
+                        }
                     }
                 }
             }

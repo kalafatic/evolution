@@ -352,7 +352,6 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         // 1. MULTI-LINEAGE RETRIEVAL: Retrieve both ACTIVE and KEPT survivors (Milestone Requirement)
         List<IterationRecord> survivors = records.stream()
                 .filter(r -> "ACTIVE".equals(r.getActivationState()) || "KEPT".equals(r.getActivationState()))
-                .filter(r -> r.getIteration() == currentIteration - 1)
                 .collect(Collectors.toList());
 
         // If no survivors in last iteration, fallback to overall active lineage
@@ -427,6 +426,8 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         EvolutionDimension activeDimension = dimensionScheduler.selectNextDimension(genome);
         if (activeDimension != null) {
             context.log("[DARWIN] Scheduled Mutation Dimension: " + activeDimension.getId());
+        } else {
+            context.log("[DARWIN] No active dimension selected. Evolution may have converged or all dimensions are locked.");
         }
 
         // DYNAMIC TERRITORY DISCOVERY & MATERIALIZATION: Sequential loop to ensure diversity
@@ -448,7 +449,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
                 // 2. Sequential Blueprint Discovery
                 TrajectoryBlueprint bp = constructTrajectoryBlueprint(goal, expansion, currentBlueprints, generation,
-						siblingMemoryBuilder, mapper, discoveryGoal, fullLineagePrompt);
+						siblingMemoryBuilder, mapper, discoveryGoal, fullLineagePrompt, activeDimension);
 
                 if (bp != null) {
                     if (activeDimension != null) {
@@ -468,7 +469,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
                         // LIFECYCLE: ANALYZING
                         EvolutionProgressPublisher.updateBranchStatus(context, bp.getId(), bp.getPhilosophy(), "analyzing", null);
 
-                        JSONObject variant = spawner.spawnSingleBlueprint(goal, bp, basePrompt, fullLineagePrompt + lineageContext, rejectedSiblings, siblingMemoryBuilder.toString(), isMediated, context);
+                        JSONObject variant = spawner.spawnSingleBlueprint(goal, bp, basePrompt, fullLineagePrompt + lineageContext, rejectedSiblings, siblingMemoryBuilder.toString(), isMediated, context, activeDimension, genome);
 
                         if (variant != null) {
                             variant.put("reasoning_level", reasoningLevel.name());
@@ -518,7 +519,9 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
                             if (dims != null) {
                                 for (Object k : dims.keySet()) {
                                     String key = (String) k;
-                                    mut.getEngineeringDimensions().put(key, String.valueOf(dims.get(key)));
+                                    String val = String.valueOf(dims.get(key));
+                                    mut.getEngineeringDimensions().put(key, val);
+                                    node.getEngineeringDimensions().put(key, val);
                                 }
                                 mut.setExecutionModel(dims.optString("execution_model"));
                             }
@@ -605,10 +608,25 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
                 reject.setTradeoffs("Semantic distance: " + distance);
                 genome.recordRejection(reject);
 
+                // Update EvolutionTree status
+                EvolutionNode node = tree.getNode(variant.optString("id"));
+                if (node != null) {
+                    node.setStatus("REJECTED");
+                    node.setRejectionReason("Semantic distance (" + distance + ") exceeds threshold.");
+                    context.getKernelContext().getMemoryService().saveEvolutionTree();
+                }
+
                 return true;
             }
             if (!domainMatch) {
                 context.log("[DARWIN] REJECTED: Domain mismatch (Expected " + goal.getDomain() + ") for variant: " + variant.optString("strategy"));
+                // Update EvolutionTree status
+                EvolutionNode node = tree.getNode(variant.optString("id"));
+                if (node != null) {
+                    node.setStatus("REJECTED");
+                    node.setRejectionReason("Domain mismatch (Expected " + goal.getDomain() + ").");
+                    context.getKernelContext().getMemoryService().saveEvolutionTree();
+                }
                 return true;
             }
             return false;
@@ -626,12 +644,6 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         if (!uniqueVariants.isEmpty()) {
             JSONObject best = uniqueVariants.get(0);
             best.put("isBest", true);
-
-            // If a dimension was being mutated, and we have a winner, lock it in the genome
-            if (activeDimension != null) {
-                genome.lockDimension(activeDimension.getId());
-                context.log("[DARWIN] Dimension LOCKED: " + activeDimension.getId());
-            }
         }
 
         JSONObject branchesJson = new JSONObject();
@@ -681,7 +693,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
 	private TrajectoryBlueprint constructTrajectoryBlueprint(GoalModel goal, IntentExpansionResult expansion,
 			List<TrajectoryBlueprint> currentBlueprints, int generation, StringBuilder siblingMemoryBuilder,
-			TrajectoryTerritoryMapper mapper, String discoveryGoal, String fullLineagePrompt) throws Exception {
+			TrajectoryTerritoryMapper mapper, String discoveryGoal, String fullLineagePrompt, EvolutionDimension activeDimension) throws Exception {
 		TrajectoryBlueprint bp = null;
 
 		// PRE-CONSTRAINT: Use existing blueprints from intent expansion if available for Gen 0
@@ -710,7 +722,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 		}
 
 		if (bp == null) {
-		    bp = mapper.discoverNext(discoveryGoal, context, currentBlueprints, fullLineagePrompt + siblingMemoryBuilder.toString());
+		    bp = mapper.discoverNext(discoveryGoal, context, currentBlueprints, fullLineagePrompt + siblingMemoryBuilder.toString(), activeDimension);
 		}
 		return bp;
 	}
