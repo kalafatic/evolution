@@ -52,6 +52,8 @@ import eu.kalafatic.evolution.controller.orchestration.capability.contracts.ISch
 import eu.kalafatic.evolution.controller.orchestration.diagnostics.CausalNode;
 import eu.kalafatic.evolution.controller.orchestration.diagnostics.CognitiveTrace;
 import eu.kalafatic.evolution.controller.orchestration.diagnostics.ReplayEngine;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionNode;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionTree;
 import eu.kalafatic.evolution.controller.orchestration.goal.GoalModel;
 import eu.kalafatic.evolution.controller.orchestration.goal.GoalUnderstandingEngine;
 import eu.kalafatic.evolution.controller.orchestration.goal.SemanticEnvelope;
@@ -1414,8 +1416,12 @@ public class IterationManager {
 
     private void emitDarwinBranches(TaskContext context, List<BranchVariant> variants, String approvedId) {
         JSONObject json = new JSONObject();
-        json.put("iteration", context.getOrchestrationState().getIterationCount());
+        int iteration = context.getOrchestrationState().getIterationCount();
+        json.put("iteration", iteration);
         JSONArray variantsArr = new JSONArray();
+
+        EvolutionTree tree = context.getKernelContext().getMemoryService().getEvolutionTree();
+
         for (BranchVariant v : variants) {
             JSONObject vObj = new JSONObject();
             vObj.put("id", v.getId());
@@ -1424,21 +1430,39 @@ public class IterationManager {
             vObj.put("survival_argument", v.getSurvivalArgument());
             vObj.put("tradeoffs", v.getTradeoffs());
             vObj.put("status", v.getActivationState().name());
+
+            EvolutionNode node = tree.getNode(v.getId());
+            if (node != null) {
+                vObj.put("mutation_identity", node.getMutationIdentity());
+                vObj.put("parent_id", node.getParentId());
+            }
+
             variantsArr.put(vObj);
         }
         json.put("variants", variantsArr);
 
         StringBuilder outcomeBuilder = new StringBuilder("[DARWIN_BRANCHES] ");
+        outcomeBuilder.append("\nIteration ").append(iteration).append("\n");
+
         if (approvedId != null) {
             outcomeBuilder.append("[APPROVED:").append(approvedId).append("] ");
         }
 
         for (BranchVariant v : variants) {
-            if (v.getId().equals(approvedId)) continue;
+            EvolutionNode node = tree.getNode(v.getId());
+            String identity = (node != null && node.getMutationIdentity() != null) ? node.getMutationIdentity() : v.getId();
+            String parentId = (node != null) ? node.getParentId() : "ROOT";
+
+            if (v.getId().equals(approvedId)) {
+                outcomeBuilder.append("\n  ├── ").append(identity).append(" (Winner) Strategy: ").append(v.getStrategy()).append("\n");
+                continue;
+            }
+
             String status = (v.getActivationState() == BranchVariant.ActivationState.KEPT) ? "KEPT" :
                             (v.getActivationState() == BranchVariant.ActivationState.REJECTED) ? "REJECTED" : "PENDING";
 
             if (!"PENDING".equals(status)) {
+                outcomeBuilder.append("  ├── ").append(identity).append(" (").append(status).append(") Strategy: ").append(v.getStrategy()).append("\n");
                 outcomeBuilder.append("[").append(status).append(":").append(v.getId()).append("] ");
             }
         }
@@ -2042,8 +2066,12 @@ public class IterationManager {
         sessionContainer.getEventBus().publish(new RuntimeEvent(RuntimeEventType.DECISION_UPDATED, context.getSessionId(), manualSelectionId, iterationId, "Kernel", decision.getSelectedVariantId(), System.currentTimeMillis()));
 
         JSONObject json = new JSONObject();
-        json.put("iteration", context.getOrchestrationState().getIterationCount());
+        int iteration = context.getOrchestrationState().getIterationCount();
+        json.put("iteration", iteration);
         JSONArray variantsArr = new JSONArray();
+
+        EvolutionTree tree = context.getKernelContext().getMemoryService().getEvolutionTree();
+
         for (BranchVariant v : variants) {
             JSONObject vObj = new JSONObject();
             vObj.put("id", v.getId());
@@ -2052,16 +2080,29 @@ public class IterationManager {
             vObj.put("survival_argument", v.getSurvivalArgument());
             vObj.put("tradeoffs", v.getTradeoffs());
             vObj.put("status", v.getActivationState().name());
+
+            EvolutionNode node = tree.getNode(v.getId());
+            if (node != null) {
+                vObj.put("mutation_identity", node.getMutationIdentity());
+                vObj.put("parent_id", node.getParentId());
+            }
             variantsArr.put(vObj);
         }
         json.put("variants", variantsArr);
 
         StringBuilder outcomeBuilder = new StringBuilder("[DARWIN_BRANCHES] ");
+        outcomeBuilder.append("\nIteration ").append(iteration).append("\n");
         String winnerId = decision.getSelectedVariantId();
         outcomeBuilder.append("[APPROVED:").append(winnerId).append("] ");
 
         for (BranchVariant v : variants) {
-            if (v.getId().equals(winnerId)) continue;
+            EvolutionNode node = tree.getNode(v.getId());
+            String identity = (node != null && node.getMutationIdentity() != null) ? node.getMutationIdentity() : v.getId();
+
+            if (v.getId().equals(winnerId)) {
+                outcomeBuilder.append("\n  ├── ").append(identity).append(" (Winner) Strategy: ").append(v.getStrategy()).append("\n");
+                continue;
+            }
 
             // Survival Rule: If not winner and not manually kept, it is explicitly REJECTED
             String status = (v.getActivationState() == BranchVariant.ActivationState.KEPT) ? "KEPT" : "REJECTED";
@@ -2071,6 +2112,7 @@ public class IterationManager {
                 v.setActivationState(BranchVariant.ActivationState.REJECTED);
             }
 
+            outcomeBuilder.append("  ├── ").append(identity).append(" (").append(status).append(") Strategy: ").append(v.getStrategy()).append("\n");
             outcomeBuilder.append("[").append(status).append(":").append(v.getId()).append("] ");
         }
 
