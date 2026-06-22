@@ -6,6 +6,10 @@ import org.json.JSONException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 
 /**
  * Utility for robustly extracting and parsing JSON from LLM responses.
@@ -14,6 +18,29 @@ import java.util.List;
  * @evo.origin: self
  */
 public class JsonUtils {
+
+    private static final ObjectMapper mapper = new ObjectMapper()
+        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+    /**
+     * Robustly restores a typed object from a metadata value that may be a Map (deserialized from JSON)
+     * or the object itself.
+     */
+    public static <T> T restoreFromMetadata(Object value, Class<T> type, String label, TaskContext context) {
+        if (value == null) return null;
+        if (type.isInstance(value)) return type.cast(value);
+
+        if (value instanceof Map) {
+            try {
+                return mapper.convertValue(value, type);
+            } catch (Exception e) {
+                if (context != null) {
+                    context.log("[JSON_UTILS] Warning: Failed to restore " + label + " from Map: " + e.getMessage());
+                }
+            }
+        }
+        return null;
+    }
 
     /**
      * Extracts a JSONObject from a string that may contain conversational noise.

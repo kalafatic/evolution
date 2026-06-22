@@ -119,8 +119,12 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
         }
 
         Object genomeObj = context.getOrchestrationState().getMetadata().get("semanticGenome");
-        if (genomeObj instanceof SemanticGenome) {
-            SemanticGenome genome = (SemanticGenome) genomeObj;
+        SemanticGenome genome = eu.kalafatic.evolution.controller.parsers.JsonUtils.restoreFromMetadata(genomeObj, SemanticGenome.class, "semanticGenome", context);
+        if (genome != null && genome != genomeObj) {
+            context.getOrchestrationState().getMetadata().put("semanticGenome", genome);
+        }
+
+        if (genome != null) {
             if (!genome.getRejectedMutations().isEmpty()) {
                 siblingSb.append("\nFORBIDDEN MUTATIONS (REJECTED BY SEMANTIC VALIDATOR):\n");
                 for (MutationRecord rejected : genome.getRejectedMutations()) {
