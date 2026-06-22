@@ -1,0 +1,133 @@
+body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: #f8f9fa;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+#workflow-container {
+    width: 100%;
+    height: 100%;
+}
+
+#workflow-svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+/* Chat Bubble Styling for Nodes */
+.node {
+    cursor: pointer;
+}
+
+.node rect {
+    fill: #ffffff;
+    stroke: #e0e0e0;
+    stroke-width: 1px;
+    rx: 18; /* More rounded for bubble look */
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.05));
+    transition: all 0.3s ease;
+}
+
+.node:hover rect {
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
+    stroke: #3b82f6;
+}
+
+.node.active rect {
+    stroke: #3b82f6;
+    stroke-width: 2px;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+}
+
+.node.waiting rect {
+    stroke: #f59e0b;
+    stroke-width: 2px;
+    fill: #fffbeb;
+}
+
+.node.failed rect {
+    stroke: #ef4444;
+    fill: #fef2f2;
+}
+
+/* Text and Icons */
+.node text {
+    font-size: 13px;
+    fill: #374151;
+    pointer-events: none;
+}
+
+.node .node-id {
+    font-weight: 600;
+}
+
+.node .node-type-icon {
+    font-size: 18px;
+}
+
+.runtime-state {
+    font-size: 11px !important;
+    fill: #6b7280 !important;
+    font-style: italic;
+}
+
+/* Links */
+.link {
+    fill: none;
+    stroke: #cbd5e1;
+    stroke-width: 2px;
+    transition: stroke 0.3s ease;
+}
+
+.link.active {
+    stroke: #3b82f6;
+    stroke-width: 3px;
+    stroke-dasharray: 5,5;
+    animation: dash 1s linear infinite;
+}
+
+@keyframes dash {
+    to { stroke-dashoffset: -10; }
+}
+
+/* Actions */
+.action-btn {
+    cursor: pointer;
+    stroke: #ffffff;
+    stroke-width: 1px;
+    transition: transform 0.2s;
+}
+
+.action-btn:hover {
+    transform: scale(1.2);
+}
+
+.action-btn.continue { fill: #10b981; }
+.action-btn.retry { fill: #3b82f6; }
+.action-btn.skip { fill: #6b7280; }
+.action-btn.inspect { fill: #8b5cf6; }
+
+#controls {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    gap: 10px;
+}
+
+#controls button {
+    background: #ffffff;
+    border: 1px solid #e0e0e0;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 12px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+#controls button:hover {
+    background: #f3f4f6;
+}

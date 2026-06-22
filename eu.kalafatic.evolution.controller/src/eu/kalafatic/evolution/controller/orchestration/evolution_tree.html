@@ -1,11 +1,84 @@
-<!--RE-ADD-LATER-->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="stylesheet" href="evolution.css">
-    <script src="evolution.js"></script>
     <meta charset="UTF-8">
     <title>Darwin Evolution Tree</title>
+    <style>
+        :root {
+            --bg: #f8fafc;
+            --text: #334155;
+            --node-bg: #ffffff;
+            --node-border: #cbd5e1;
+            --accent: #3b82f6;
+            --active: #10b981;
+            --kept: #6366f1;
+            --rejected: #ef4444;
+            --root: #f59e0b;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            height: 100vh;
+        }
+
+        #tree-container {
+            flex: 1;
+            position: relative;
+            cursor: grab;
+        }
+
+        #tree-container:active { cursor: grabbing; }
+
+        #sidebar {
+            width: 400px;
+            background: var(--node-bg);
+            border-left: 1px solid var(--node-border);
+            padding: 20px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .node {
+            fill: var(--node-bg);
+            stroke: var(--node-border);
+            stroke-width: 2px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .node:hover { stroke: var(--accent); }
+        .node.selected { stroke: var(--accent); stroke-width: 4px; }
+
+        .link {
+            fill: none;
+            stroke: var(--node-border);
+            stroke-width: 1.5px;
+        }
+
+        .status-ROOT { stroke: var(--root); }
+        .status-ACTIVE { stroke: var(--active); }
+        .status-KEPT { stroke: var(--kept); }
+        .status-REJECTED { stroke: var(--rejected); }
+
+        .label {
+            font-size: 10px;
+            fill: var(--text);
+            pointer-events: none;
+            text-anchor: middle;
+        }
+
+        h2 { margin-top: 0; color: var(--accent); }
+        .detail-item { margin-bottom: 15px; }
+        .detail-label { font-size: 12px; opacity: 0.6; display: block; margin-bottom: 4px; }
+        .detail-value { font-size: 14px; background: #ffffff; border: 1px solid var(--node-border); color: #333; padding: 8px; border-radius: 4px; white-space: pre-wrap; word-break: break-all; }
+
+        pre { background: #f8f8f8; color: #333; border: 1px solid var(--node-border); padding: 10px; border-radius: 4px; font-size: 12px; max-height: 200px; overflow: auto; }
+    </style>
 </head>
 <body>
     <div id="tree-container">
