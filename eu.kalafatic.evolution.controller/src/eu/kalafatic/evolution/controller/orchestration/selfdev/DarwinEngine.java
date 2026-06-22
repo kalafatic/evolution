@@ -599,8 +599,8 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             boolean domainMatch = variant.optString("domain", goal.getDomain()).equalsIgnoreCase(goal.getDomain());
             boolean artifactMatch = variant.optString("requestedArtifact", goal.getRequestedArtifact()).equalsIgnoreCase(goal.getRequestedArtifact());
 
-            if (distance > 0.30) {
-                context.log("[DARWIN] REJECTED: Semantic distance (" + String.format("%.2f", distance) + ") exceeds threshold (0.30) for variant: " + variant.optString("strategy"));
+            if (distance > 0.60) {
+                context.log("[DARWIN] REJECTED: Semantic distance (" + String.format("%.2f", distance) + ") exceeds threshold (0.60) for variant: " + variant.optString("strategy"));
 
                 // Record rejection in genome
                 MutationRecord reject = new MutationRecord();
