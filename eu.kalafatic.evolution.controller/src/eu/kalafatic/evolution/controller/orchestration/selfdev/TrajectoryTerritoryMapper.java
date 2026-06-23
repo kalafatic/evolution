@@ -46,109 +46,33 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
                "MANDATORY: Return a blueprint that is 90% technical divergence from anything previously explored.";
     }
 
-    public List<TrajectoryBlueprint> map(String goal, TaskContext context, int limit) throws Exception {
-        return mapSequential(goal, context, limit, new ArrayList<>());
-    }
-
     public TrajectoryBlueprint discoverNext(String goal, TaskContext context, List<TrajectoryBlueprint> existing, String mutationContext, EvolutionDimension activeDimension) throws Exception {
         context.log("[TERRITORY] Sequentially discovering next unique evolutionary trajectory for: " + goal);
 
         AbstractionLevel lockedLevel = context.getOrchestrationState().getLockedAbstractionLevel();
         eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType capability = context.getExecutionProfile().getCapability();
 
-        eu.kalafatic.evolution.controller.orchestration.behavior.PromptComposer composer = new eu.kalafatic.evolution.controller.orchestration.behavior.PromptComposer();
-        StringBuilder sb = new StringBuilder();
-
-        sb.append(composer.composeSystem(null)).append("\n\n");
-        sb.append("You are a single-path evolutionary territory mapper. You perform one controlled discovery of a unique evolutionary blueprint.\n\n");
-
-        sb.append(composer.composeGoal(goal)).append("\n\n");
-
-        if (activeDimension != null) {
-            sb.append("### ACTIVE MUTATION DIMENSION ###\n")
-              .append("ID: ").append(activeDimension.getId()).append("\n")
-              .append("DESCRIPTION: ").append(activeDimension.getDescription()).append("\n")
-              .append("ABSTRACTION LEVEL: ").append(activeDimension.getAbstractionLevel()).append("\n")
-              .append("MANDATE: Propose a unique implementation strategy strictly for THIS dimension. Keep other architectural decisions fixed.\n\n");
-        }
-
-        Object envObj = context.getOrchestrationState().getMetadata().get("semanticEnvelope");
-        SemanticEnvelope envelope = null;
-        if (envObj instanceof SemanticEnvelope) {
-            envelope = (SemanticEnvelope) envObj;
-        } else if (envObj instanceof Map) {
-            envelope = new com.fasterxml.jackson.databind.ObjectMapper()
-                .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-                .convertValue(envObj, SemanticEnvelope.class);
-        }
-        if (envelope != null) {
-            StringBuilder envSb = new StringBuilder();
-            envSb.append("SEMANTIC ENVELOPE (STRICT BOUNDARIES):\n")
-              .append("- Core Intent: ").append(envelope.getCoreIntent()).append("\n")
-              .append("- Mandatory Concepts: ").append(envelope.getMandatoryConcepts()).append("\n")
-              .append("- Allowed Mutation Dimensions: ").append(envelope.getAllowedMutationDimensions()).append("\n")
-              .append("- Discouraged Regions: ").append(envelope.getDiscouragedRegions()).append("\n")
-              .append("- Forbidden Regions: ").append(envelope.getForbiddenRegions()).append("\n")
-              .append("- Max Abstraction Depth: ").append(envelope.getMaxAbstractionDepth()).append("\n");
-            sb.append(composer.composeContext(envSb.toString())).append("\n\n");
-        }
-
-        String projectStructure = (String) context.getOrchestrationState().getMetadata().get("projectStructure");
-        StringBuilder contextSb = new StringBuilder();
-        if (projectStructure != null) {
-            contextSb.append("WORKSPACE STRUCTURE:\n").append(projectStructure).append("\n\n");
-        }
-
-        eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel realityModel = (eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel) context.getOrchestrationState().getMetadata().get("targetRealityModel");
-        if (realityModel != null) {
-            contextSb.append("TARGET REALITY GROUNDING:\n")
-              .append("Domain: ").append(realityModel.getDomain()).append("\n")
-              .append("Hotspots: ").append(realityModel.getHotspots().stream().map(h -> h.getName()).collect(java.util.stream.Collectors.joining(", "))).append("\n\n");
-        }
-        sb.append(composer.composeContext(contextSb.toString())).append("\n\n");
-
-        StringBuilder siblingSb = new StringBuilder();
-        siblingSb.append("PREVIOUS BLUEPRINTS (FORBIDDEN):\n");
-        if (!existing.isEmpty()) {
-            for (TrajectoryBlueprint bp : existing) {
-                siblingSb.append("- ").append(bp.getStrategy()).append(" (Philosophy: ").append(bp.getPhilosophy()).append(")\n");
-            }
-        } else {
-            siblingSb.append("- None\n");
-        }
-
-        if (mutationContext != null && !mutationContext.isEmpty()) {
-            siblingSb.append("\nSEQUENTIAL MUTATION CONSTRAINTS (FORBIDDEN):\n")
-              .append(mutationContext).append("\n");
-        }
-
         Object genomeObj = context.getOrchestrationState().getMetadata().get("semanticGenome");
         SemanticGenome genome = eu.kalafatic.evolution.controller.parsers.JsonUtils.restoreFromMetadata(genomeObj, SemanticGenome.class, "semanticGenome", context);
-        if (genome != null && genome != genomeObj) {
-            context.getOrchestrationState().getMetadata().put("semanticGenome", genome);
-        }
 
-        if (genome != null) {
-            if (!genome.getRejectedMutations().isEmpty()) {
-                siblingSb.append("\nFORBIDDEN MUTATIONS (REJECTED BY SEMANTIC VALIDATOR):\n");
-                for (MutationRecord rejected : genome.getRejectedMutations()) {
-                    siblingSb.append("- ").append(rejected.getStrategy()).append(" (Reason: ").append(rejected.getTradeoffs()).append(")\n");
-                }
-            }
-            if (!genome.getDiscoveredMutations().isEmpty()) {
-                siblingSb.append("\nEXPLORED MUTATIONS (ALREADY ATTEMPTED):\n");
-                for (MutationRecord explored : genome.getDiscoveredMutations()) {
-                    siblingSb.append("- ").append(explored.getStrategy()).append("\n");
-                }
-            }
-        }
-        sb.append(composer.composeSiblingMemory(siblingSb.toString())).append("\n\n");
+        eu.kalafatic.evolution.controller.orchestration.behavior.DarwinPromptBuilder builder =
+            new eu.kalafatic.evolution.controller.orchestration.behavior.DarwinPromptBuilder(context);
 
+        builder.addSystem("You are a single-path evolutionary territory mapper. You perform one controlled discovery of a unique evolutionary blueprint.")
+               .addGoal(goal)
+               .addMutationDimension(activeDimension)
+               .addSemanticEnvelope()
+               .addReality()
+               .addLineage(mutationContext)
+               .addGenomeMemory(genome);
+
+        String diversityConstraint;
         if (capability == eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType.CHAT) {
-            sb.append(composer.composeConstraints("Discover the NEXT unexplored CONVERSATIONAL territory. Focus on different tones, depths of response, or types of assistance (e.g., 'Concise & Professional', 'Friendly & Elaborate', 'Technical & Precise').")).append("\n\n");
+            diversityConstraint = "Discover the NEXT unexplored CONVERSATIONAL territory. Focus on different tones, depths of response, or types of assistance (e.g., 'Concise & Professional', 'Friendly & Elaborate', 'Technical & Precise').";
         } else {
-            sb.append(composer.composeConstraints("Discover the NEXT unexplored design territory. Do NOT improve existing ones. Do NOT rename existing ones. Return only genuinely new semantic territory.")).append("\n\n");
+            diversityConstraint = "Discover the NEXT unexplored design territory. Do NOT improve existing ones. Do NOT rename existing ones. Return only genuinely new semantic territory.";
         }
+        builder.addConstraints(diversityConstraint);
 
         String schema = "{\n" +
           "  \"id\": \"unique-blueprint-id\",\n" +
@@ -161,22 +85,21 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
           "  \"survival_argument\": \"why this path is technically or conversationally viable\",\n" +
           "  \"strategy_type\": \"PROBABLE_SURVIVOR | PHILOSOPHY_MUTATION | MAXIMAL_DIVERGENCE | STABILIZATION_RECOVERY | ARCHITECTURE_MAPPING | REFACTOR_HOTSPOT_ANALYSIS\"\n" +
           "}";
-        sb.append(composer.composeJsonSchema(schema)).append("\n\n");
+        builder.addJsonSchema(schema);
 
-        sb.append("CONTEXT:\n")
-          .append(getAgentInstructions());
-
+        String directive = getAgentInstructions();
         if (lockedLevel != null) {
-            sb.append("\n[LOCKED_ABSTRACTION_LEVEL] You MUST operate strictly at the " + lockedLevel + " level.\n");
+            directive += "\n[LOCKED_ABSTRACTION_LEVEL] You MUST operate strictly at the " + lockedLevel + " level.\n";
             if (lockedLevel == AbstractionLevel.IMPLEMENTATION) {
-                sb.append("- DO NOT propose new architectures or complex patterns.\n");
-                sb.append("- Focus on concrete implementation variations of the SAME core design.\n");
+                directive += "- DO NOT propose new architectures or complex patterns.\n" +
+                             "- Focus on concrete implementation variations of the SAME core design.";
             } else if (lockedLevel == AbstractionLevel.DESIGN) {
-                sb.append("- Focus on internal component design and API signatures.\n");
+                directive += "- Focus on internal component design and API signatures.";
             }
         }
+        builder.addExecutionDirective(directive);
 
-        String response = aiService.sendRequest(context.getOrchestrator(), sb.toString(), context);
+        String response = aiService.sendRequest(context.getOrchestrator(), builder.build(), context);
         JSONObject obj = JsonUtils.extractJsonObject(response);
 
         if (obj != null) {
@@ -208,9 +131,4 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
         return null;
     }
 
-    @Deprecated
-    public List<TrajectoryBlueprint> mapSequential(String goal, TaskContext context, int limit, List<TrajectoryBlueprint> existing) throws Exception {
-        // This is now handled by DarwinEngine's sequential loop
-        return existing;
-    }
 }

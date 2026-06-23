@@ -49,46 +49,72 @@ public class DarwinFitnessRanker {
 
     /**
      * Ranks variants by fitness score with atomic intent awareness.
+     * Centralized fitness orchestration logic.
      */
     public void rank(List<JSONObject> variants, AtomicIntentAnalysis atomic, int generation, EvolutionaryPressureVector pressure) {
-        boolean isAtomicRound = atomic != null && atomic.isAtomic() && atomic.getComplexityVector().determinismConfidence > 0.8;
         for (JSONObject v : variants) {
-            FitnessRecord fitness = calculateFitnessRecord(v, generation, pressure, atomic);
+            // Stage 1: Pure Quality Score
+            FitnessRecord fitness = scoreQuality(v, generation, atomic);
             double score = fitness.getTotalScore();
-            v.put("fitness_record", fitness); // Store for wrapping later
+            v.put("fitness_record", fitness);
 
-            // SCOPE PRESSURE: Gradual penalty for over-engineering
-            double scopeRatio = calculateScopeRatio(v, atomic);
-            if (scopeRatio > 1.2) {
-                double penalty = Math.max(0.1, 1.0 - (scopeRatio - 1.2) * 0.5);
-                score *= penalty;
-                v.put("scope_penalty", 1.0 - penalty);
-            }
+            // Stage 2: Evolutionary Pressure (Scope, Pressure Vector)
+            score = applyPressure(v, score, atomic, pressure);
 
-            // Hard scope gate
-            if (scopeRatio > 3.0) {
-                score = 0.0;
-                v.put("rejected_reason", "Scope ratio exceeded: " + String.format("%.2f", scopeRatio));
-                v.put("fitness_gate", "REJECTED_SCOPE_INFLATION");
-            }
-
-            // Fallback exclusion
-            String id = v.optString("id", "");
-            if (id.contains("fallback-")) {
-                score = Math.min(score, 0.05); // Scaffolding only, cannot win
-                v.put("isControlArtifact", true);
-            }
-
-            if (isAtomicRound && DarwinStrategyType.PROBABLE_SURVIVOR.name().equals(v.optString("strategy_type"))) {
-                if (score > 0) {
-                    score = Math.max(score, 0.95);
-                }
-            }
+            // Stage 3: Constraint Gates
+            score = applyGates(v, score, atomic);
 
             v.put("score", score);
-            v.put("scope_ratio", scopeRatio);
         }
 
+        // Stage 4: Selection (Sorting)
+        sortSelection(variants);
+    }
+
+    private FitnessRecord scoreQuality(JSONObject variant, int generation, AtomicIntentAnalysis atomic) {
+        return calculateFitnessRecord(variant, generation, null, atomic);
+    }
+
+    private double applyPressure(JSONObject variant, double score, AtomicIntentAnalysis atomic, EvolutionaryPressureVector pressure) {
+        // SCOPE PRESSURE: Smoother adaptive pressure for over-engineering
+        double scopeRatio = calculateScopeRatio(variant, atomic);
+        variant.put("scope_ratio", scopeRatio);
+
+        if (scopeRatio > 1.1) {
+            // Smoother sigmoid-like penalty: starts slow, accelerates
+            double penalty = 1.0 / (1.0 + Math.exp(5.0 * (scopeRatio - 2.0)));
+            score *= penalty;
+            variant.put("scope_penalty", 1.0 - penalty);
+        }
+
+        if (pressure != null) {
+            score += (pressure.getTotalPressure() * 0.05);
+        }
+
+        return Math.min(1.0, score);
+    }
+
+    private double applyGates(JSONObject variant, double score, AtomicIntentAnalysis atomic) {
+        double scopeRatio = variant.optDouble("scope_ratio", 1.0);
+
+        // Massive over-engineering gate
+        if (scopeRatio > 4.0) {
+            variant.put("rejected_reason", "Massive scope inflation: " + String.format("%.2f", scopeRatio));
+            variant.put("fitness_gate", "REJECTED_SCOPE_INFLATION");
+            return 0.0;
+        }
+
+        // Fallback exclusion
+        String id = variant.optString("id", "");
+        if (id.contains("fallback-")) {
+            variant.put("isControlArtifact", true);
+            return Math.min(score, 0.05);
+        }
+
+        return score;
+    }
+
+    private void sortSelection(List<JSONObject> variants) {
         variants.sort(Comparator.comparingDouble((JSONObject v) -> v.optDouble("score")).reversed());
     }
 
