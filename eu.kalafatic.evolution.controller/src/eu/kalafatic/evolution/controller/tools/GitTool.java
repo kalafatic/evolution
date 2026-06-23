@@ -146,7 +146,7 @@ public class GitTool implements ITool {
             if (context != null && context.getOrchestrationState() != null) {
                 String iterationId = context.getOrchestrationState().getCurrentIterationId();
                 String taskId = context.getCurrentTaskId();
-                metadata = String.format("[EVO-META] [Iteration: %s] [Task: %s]",
+                metadata = String.format("-m \"[EVO-META] [Iteration: %s] [Task: %s]\"",
                     iterationId != null ? iterationId : "unknown",
                     taskId != null ? taskId : "none");
 
@@ -155,10 +155,11 @@ public class GitTool implements ITool {
                 if (tree != null && tree.getCurrentWinnerId() != null) {
                     eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionNode node = tree.getWinnerNode();
                     if (node != null) {
+                        String strategy = node.getStrategy() != null ? node.getStrategy().replace("\"", "\\\"") : "none";
                         String lineageMeta = String.format("[EVO-LINEAGE] [Node: %s] [Parent: %s] [Mutation: %s] [Fitness: %.2f]",
                             node.getId(),
                             node.getParentId() != null ? node.getParentId() : "root",
-                            node.getStrategy(),
+                            strategy,
                             node.getFitnessScore());
                         metadata += " -m \"" + lineageMeta + "\"";
 
@@ -174,7 +175,7 @@ public class GitTool implements ITool {
             }
 
             String commitMsg = command.contains("-m") ? "" : " -m \"Darwin evolution step\"";
-            String fullCommand = "git " + command + commitMsg + (metadata.isEmpty() ? "" : " -m \"" + metadata + "\"");
+            String fullCommand = "git " + command + commitMsg + (metadata.isEmpty() ? "" : " " + metadata);
             return executeWithRetry(shell, fullCommand, gitWorkingDir, context);
         }
 

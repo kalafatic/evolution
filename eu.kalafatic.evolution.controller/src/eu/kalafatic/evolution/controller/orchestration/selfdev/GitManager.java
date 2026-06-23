@@ -148,7 +148,13 @@ public class GitManager {
     }
 
     public void createWorktree(String branch, String path) throws Exception {
-        gitTool.execute("worktree add " + path + " " + branch, root, null);
+        try {
+            gitTool.execute("rev-parse --verify " + branch, root, null);
+            gitTool.execute("worktree add " + path + " " + branch, root, null);
+        } catch (Exception e) {
+            // Branch doesn't exist, create it as part of worktree addition
+            gitTool.execute("worktree add -b " + branch + " " + path, root, null);
+        }
         registerWorktree(path);
     }
 
