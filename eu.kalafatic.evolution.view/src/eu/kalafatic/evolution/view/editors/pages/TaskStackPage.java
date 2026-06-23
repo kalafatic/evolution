@@ -136,6 +136,15 @@ public class TaskStackPage extends AEvoPage {
     }
 
 
+    @Override
+    public void setVisible(boolean visible) {
+        super.setVisible(visible);
+        if (visible) {
+            scheduleRefresh();
+        }
+    }
+
+    @Override
     public void setOrchestrator(Orchestrator orchestrator) {
         if (this.orchestrator != null) {
             this.orchestrator.eAdapters().remove(modelAdapter);
