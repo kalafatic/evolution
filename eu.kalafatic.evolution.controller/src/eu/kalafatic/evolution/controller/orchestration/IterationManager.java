@@ -738,6 +738,11 @@ public class IterationManager {
             minIterations = 2;
         }
 
+        // Cap iterations for CHAT capability to avoid over-evolution of simple interactions
+        if (context.getExecutionProfile().getCapability() == eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType.CHAT) {
+            if (minIterations > 1) minIterations = 1;
+        }
+
         if (minIterations < 1) minIterations = 1;
 
         int maxIterationsLimit = 20; // Default Medium
