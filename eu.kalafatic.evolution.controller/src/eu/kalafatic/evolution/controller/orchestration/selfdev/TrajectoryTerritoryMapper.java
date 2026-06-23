@@ -31,6 +31,10 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
                "SEARCH MEMORY MANDATE:\n" +
                "- You will be provided with currently explored territories.\n" +
                "- Your task is to identify a technical philosophy that has NOT been touched.\n\n" +
+               "DIVERGENCE MANDATE (CRITICAL):\n" +
+               "- You MUST NOT use the same execution model, computation paradigm, or API style as any previous sibling in this iteration.\n" +
+               "- If siblings used 'Functional', you MUST pivot to 'Reactive' or 'Minimalist OO'.\n" +
+               "- If siblings used 'Command Pattern', you MUST pivot to 'Pipeline' or 'Direct Abstraction'.\n\n" +
                "DIVERSITY EXAMPLES (Species Level):\n" +
                "- Minimalist OO: Direct, simple object-oriented approach.\n" +
                "- Functional Utility: Stateless, pure functions, often static.\n" +
