@@ -100,13 +100,15 @@ public class ShellTool implements ITool {
 
     private List<String> parseArguments(String command) {
         List<String> list = new ArrayList<>();
-        // Improved regex to handle both single and double quotes
-        Matcher m = Pattern.compile("([^\"'\\s]\\S*|\".+?\"|'.+?')\\s*").matcher(command);
+        // Improved regex to handle both single and double quotes, including escaped quotes
+        Matcher m = Pattern.compile("([^\"'\\s]\\S*|\"(?:\\\\\"|[^\"])*?\"|'(?:\\\\'|[^'])*?')\\s*").matcher(command);
         while (m.find()) {
             String arg = m.group(1);
             if ((arg.startsWith("\"") && arg.endsWith("\"")) || (arg.startsWith("'") && arg.endsWith("'"))) {
                 arg = arg.substring(1, arg.length() - 1);
             }
+            // Unescape escaped quotes
+            arg = arg.replace("\\\"", "\"").replace("\\'", "'");
             list.add(arg);
         }
         return list;

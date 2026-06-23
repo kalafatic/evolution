@@ -154,7 +154,7 @@ public class GitManager {
 
     public void removeWorktree(String path) throws Exception {
         if (worktreeRegistry.contains(path)) {
-            gitTool.execute("worktree remove " + path, root, null);
+            gitTool.execute("worktree remove --force " + path, root, null);
             unregisterWorktree(path);
         }
     }
@@ -176,7 +176,7 @@ public class GitManager {
     public void cleanupWorktrees() {
         for (String path : worktreeRegistry) {
             try {
-                gitTool.execute("worktree remove " + path, root, null);
+                gitTool.execute("worktree remove --force " + path, root, null);
                 // Also attempt physical deletion of the directory if git didn't do it
                 File dir = new File(path);
                 if (dir.exists()) {
