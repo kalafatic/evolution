@@ -265,12 +265,20 @@ public class DarwinVariantSpawner {
               .append("- ").append(metadata.getOrDefault("current_understanding", "None")).append("\n\n");
         }
 
-        sb.append(composer.composeLineage(lineageContext)).append("\n\n");
+        // Optimization: Truncate lineageContext to only include most recent ancestors if too large
+        String optimizedLineage = lineageContext;
+        if (lineageContext != null && lineageContext.length() > 3000) {
+            optimizedLineage = lineageContext.substring(lineageContext.length() - 3000);
+        }
+        sb.append(composer.composeLineage(optimizedLineage)).append("\n\n");
 
         StringBuilder siblingSb = new StringBuilder();
         if (rejectedSiblings != null && !rejectedSiblings.isEmpty()) {
             siblingSb.append("FORBIDDEN STRATEGIES (PREVIOUSLY REJECTED OR OCCUPIED):\n");
-            for (String rejected : rejectedSiblings) siblingSb.append("- ").append(rejected).append("\n");
+            // Only include top 5 most relevant rejections
+            for (int i = 0; i < Math.min(5, rejectedSiblings.size()); i++) {
+                siblingSb.append("- ").append(rejectedSiblings.get(i)).append("\n");
+            }
         }
 
         if (genome == null) {
@@ -299,11 +307,18 @@ public class DarwinVariantSpawner {
         if (bp.getForbiddenOverlaps() != null && !bp.getForbiddenOverlaps().isEmpty()) {
             for (String overlap : bp.getForbiddenOverlaps()) siblingSb.append("- ").append(overlap).append("\n");
         }
-        sb.append(composer.composeSiblingMemory(siblingSb.toString())).append("\n\n");
+        // Limit sibling memory to last 2000 chars
+        String siblingMemory = siblingSb.toString();
+        if (siblingMemory.length() > 2000) siblingMemory = siblingMemory.substring(siblingMemory.length() - 2000);
+        sb.append(composer.composeSiblingMemory(siblingMemory)).append("\n\n");
 
         // GROUNDING: Repository Awareness
         String projectStructure = (String) context.getOrchestrationState().getMetadata().get("projectStructure");
         if (projectStructure != null) {
+            // Optimization: Truncate structure if it exceeds 2000 chars
+            if (projectStructure.length() > 2000) {
+                projectStructure = projectStructure.substring(0, 2000) + "\n... (truncated)";
+            }
             sb.append(composer.composeContext(projectStructure)).append("\n\n");
         }
 

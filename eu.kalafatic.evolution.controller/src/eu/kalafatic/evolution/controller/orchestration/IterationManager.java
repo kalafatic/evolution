@@ -786,6 +786,7 @@ public class IterationManager {
             if (result.getDecision() != SelfDevDecision.CONTINUE) {
                 if (safetyCounter < minIterations) {
                     context.log("[KERNEL] Evolution reached decision (" + result.getDecision() + "), but Min Iterations (" + minIterations + ") not met. Continuing evolution.");
+                    state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(EvolutionPhase.SELECTION_REFINEMENT));
                 } else {
                     sessionContainer.getEventBus().publish(new RuntimeEvent(RuntimeEventType.FLOW_COMPLETED, context.getSessionId(), "Kernel", result.getDecision().toString()));
                     break;
@@ -796,6 +797,7 @@ public class IterationManager {
             if (state.getCurrentPhase().contains("TERMINAL") || state.getCurrentPhase().contains("SATISFIED")) {
                 if (safetyCounter < minIterations) {
                     context.log("[KERNEL] Terminal phase (" + state.getCurrentPhase() + ") reached, but Min Iterations (" + minIterations + ") not met. Continuing evolution.");
+                    state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(EvolutionPhase.SELECTION_REFINEMENT));
                 } else {
                     break;
                 }
@@ -1921,6 +1923,18 @@ public class IterationManager {
 
             // DRIVE UNIFIED PROJECTIONS
             TargetRealityModel model = (TargetRealityModel) realityModelObj;
+
+            if (model == null) {
+                context.log("[KERNEL] Mediated Mode: Target Reality Model missing. Creating fallback model.");
+                model = new TargetRealityModel();
+                Object gmObj = context.getOrchestrationState().getMetadata().get("goalModel");
+                if (gmObj instanceof GoalModel) {
+                    GoalModel gm = (GoalModel) gmObj;
+                    model.setDomain(gm.getDomain());
+                    model.setPurpose(gm.getPrimaryAction());
+                }
+            }
+
             context.log("[KERNEL] Mediated Mode: Generating Unified Reality Projections.");
 
             // POPULATE NEW FIELDS FROM METADATA/HISTORY
