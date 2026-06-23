@@ -496,6 +496,11 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
                 }
 
                 if (bp != null) {
+                    // STABILIZATION: Ensure unique BP ID across iterations/attempts to prevent tree & git conflicts
+                    if (bp.getId() == null || bp.getId().equals("unique-blueprint-id") || bp.getId().contains("seed")) {
+                        bp.setId("bp-iter" + currentIteration + "-v" + uniqueVariants.size() + "-" + System.currentTimeMillis());
+                    }
+
                     if (activeDimension != null) {
                         bp.getEngineeringDimensions().put("active_dimension", activeDimension.getId());
                         bp.getEngineeringDimensions().put("active_dimension_description", activeDimension.getDescription());
