@@ -759,6 +759,7 @@ public class IterationManager {
         // 1. Recursive Evolutionary Loop
         context.log("[KERNEL] Phase: Recursive Evolutionary Trajectory System.");
         while (safetyCounter < maxIterationsLimit && !context.isPaused()) {
+            state.setIterationCount(safetyCounter);
             context.log("[KERNEL] [LOOP] Starting Iteration " + (safetyCounter + 1) + " (Phase: " + state.getCurrentPhase() + ")");
 
             // RECURSIVE ARCHITECTURAL DISCOVERY: Refine model in each iteration
