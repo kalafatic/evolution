@@ -150,6 +150,9 @@ public class TaskStackPage extends AEvoPage {
     protected void refreshUI() {
         if (isUpdating || orchestrator == null || body == null || body.isDisposed()) return;
         isUpdating = true;
+        if (taskStackGroup != null && taskStackGroup.getTreeViewer() != null && taskStackGroup.getTreeViewer().getInput() == null) {
+            taskStackGroup.getTreeViewer().setInput(orchestrator);
+        }
         taskStackGroup.refreshUI();
         body.layout(true, true);
         this.setMinSize(body.computeSize(SWT.DEFAULT, SWT.DEFAULT));

@@ -227,9 +227,20 @@ public class InstructionsGroup extends AEvoGroup {
         autoApproveCheck.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
+                boolean sel = autoApproveCheck.getSelection();
                 java.util.Map<String, Object> settings = new java.util.HashMap<>();
-                settings.put("autoApprove", autoApproveCheck.getSelection());
+                settings.put("autoApprove", sel);
                 page.updateConfiguration(settings);
+
+                ChatSession session = page.getCurrentSession();
+                if (session != null) {
+                    session.setAutoApprove(sel);
+                }
+                PromptInstructions pi = (orchestrator != null && orchestrator.getAiChat() != null) ? orchestrator.getAiChat().getPromptInstructions() : null;
+                if (pi != null) {
+                    pi.setAutoApprove(sel);
+                }
+
                 page.saveLastUsedSettings();
             }
         });
@@ -425,6 +436,20 @@ public class InstructionsGroup extends AEvoGroup {
         darwinCheck.setSelection(darwin);
     }
     public boolean isAutoApprove() { return autoApproveCheck.getSelection(); }
+    public void setAutoApprove(boolean autoApprove) {
+        if (autoApproveCheck != null && !autoApproveCheck.isDisposed()) {
+            autoApproveCheck.setSelection(autoApprove);
+
+            java.util.Map<String, Object> settings = new java.util.HashMap<>();
+            settings.put("autoApprove", autoApprove);
+            page.updateConfiguration(settings);
+
+            ChatSession session = page.getCurrentSession();
+            if (session != null) {
+                session.setAutoApprove(autoApprove);
+            }
+        }
+    }
     public int getMaxIterations() {
         try {
             return Integer.parseInt(maxIterationsCombo.getText());

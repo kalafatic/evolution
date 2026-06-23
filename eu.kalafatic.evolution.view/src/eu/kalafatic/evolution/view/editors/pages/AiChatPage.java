@@ -712,6 +712,19 @@ public class AiChatPage extends AEvoPage {
 		outputController.submitMessage(sessionId, currentTurnId, "User [" + modeLabel + "]", finalRequest, "user", MessagePriority.NORMAL, false);
 		String loopSuffix = (isSelfDev) ? " Supervisor loop" : " loop";
 		outputController.submitMessage(sessionId, currentTurnId, "Evo", "Initializing " + modeLabel + loopSuffix + "...", "ai", MessagePriority.PROGRESS, false);
+
+		// Initialize progress panel in webview
+		org.json.JSONObject progressInit = new org.json.JSONObject();
+		progressInit.put("iterationCount", 0);
+		progressInit.put("generation", 1);
+		progressInit.put("lineage", "initial");
+		progressInit.put("stage", "ITERATION_START");
+		progressInit.put("autoApprove", currentSession != null ? currentSession.isAutoApprove() : false);
+		progressInit.put("gitAutomation", currentSession != null ? currentSession.isGitAutomation() : false);
+		progressInit.put("maxIterations", currentSession != null ? currentSession.getMaxIterations() : 1);
+		progressInit.put("startTime", System.currentTimeMillis());
+		progressInit.put("currentTask", finalRequest);
+		outputController.submitMessage(sessionId, currentTurnId, "Evo", progressInit.toString(), "evolution-progress", MessagePriority.PROGRESS, false);
 		instructionsGroup.setRequest("");
 
 		TaskRequest taskRequest = new TaskRequest(finalRequest, getProjectRoot());
@@ -1028,6 +1041,7 @@ public class AiChatPage extends AEvoPage {
 		instructionsGroup.setDarwin(task.isDarwinMode());
 		instructionsGroup.setGitAutomation(task.isGitAutomation());
 		instructionsGroup.setMaxIterations(task.getMaxIterations());
+		instructionsGroup.setAutoApprove(!task.isApprovalRequired());
 
 		if ("SELF_DEV_MODE".equals(task.getType())) {
 			instructionsGroup.setSelfIterative(true);
