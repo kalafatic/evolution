@@ -138,10 +138,10 @@ public class TaskStackGroup extends AEvoGroup {
                     }
                     if (column == 0) { // Run
                         page.runSingleTask(task);
-                    } else if (column == 12) { // Result
-                        editor.openTaskResult(task);
                     } else if (column == 1) { // Edit
                         openTaskEditDialog(task);
+                    } else if (column >= 0 && tree.getColumn(column).getText().equals("Result")) { // Result
+                        editor.openTaskResult(task);
                     }
                 }
             }
@@ -412,6 +412,24 @@ public class TaskStackGroup extends AEvoGroup {
                     treeViewer.update(element, null);
                     page.setDirty(true);
                 } catch (NumberFormatException e) {}
+            }
+        });
+
+        // Auto-Approve Column
+        TreeViewerColumn autoApproveCol = new TreeViewerColumn(treeViewer, SWT.CENTER);
+        autoApproveCol.getColumn().setText("Auto-Approve");
+        autoApproveCol.getColumn().setWidth(90);
+        autoApproveCol.setLabelProvider(new ColumnLabelProvider() {
+            @Override public String getText(Object element) { return !((Task) element).isApprovalRequired() ? "YES" : "NO"; }
+        });
+        autoApproveCol.setEditingSupport(new EditingSupport(treeViewer) {
+            @Override protected CellEditor getCellEditor(Object element) { return new CheckboxCellEditor(treeViewer.getTree()); }
+            @Override protected boolean canEdit(Object element) { return true; }
+            @Override protected Object getValue(Object element) { return !((Task) element).isApprovalRequired(); }
+            @Override protected void setValue(Object element, Object value) {
+                ((Task) element).setApprovalRequired(!((Boolean) value));
+                treeViewer.update(element, null);
+                page.setDirty(true);
             }
         });
 
