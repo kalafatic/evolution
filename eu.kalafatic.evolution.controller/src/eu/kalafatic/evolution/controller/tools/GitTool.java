@@ -142,40 +142,39 @@ public class GitTool implements ITool {
         if (command.startsWith("commit")) {
             executeWithRetry(shell, "git add .", gitWorkingDir, context);
 
-            String metadata = "";
+            StringBuilder metadata = new StringBuilder();
             if (context != null && context.getOrchestrationState() != null) {
                 String iterationId = context.getOrchestrationState().getCurrentIterationId();
                 String taskId = context.getCurrentTaskId();
-                metadata = String.format("-m \"[EVO-META] [Iteration: %s] [Task: %s]\"",
+                metadata.append(String.format("[EVO-META] [Iteration: %s] [Task: %s]",
                     iterationId != null ? iterationId : "unknown",
-                    taskId != null ? taskId : "none");
+                    taskId != null ? taskId : "none"));
 
                 // Evolutionary Lineage Injection
                 eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionTree tree = context.getKernelContext().getMemoryService().getEvolutionTree();
                 if (tree != null && tree.getCurrentWinnerId() != null) {
                     eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionNode node = tree.getWinnerNode();
                     if (node != null) {
-                        String strategy = node.getStrategy() != null ? node.getStrategy().replace("\"", "\\\"") : "none";
-                        String lineageMeta = String.format("[EVO-LINEAGE] [Node: %s] [Parent: %s] [Mutation: %s] [Fitness: %.2f]",
+                        metadata.append(String.format("\n[EVO-LINEAGE] [Node: %s] [Parent: %s] [Mutation: %s] [Fitness: %.2f]",
                             node.getId(),
                             node.getParentId() != null ? node.getParentId() : "root",
-                            strategy,
-                            node.getFitnessScore());
-                        metadata += " -m \"" + lineageMeta + "\"";
+                            node.getStrategy(),
+                            node.getFitnessScore()));
 
                         // Inject affected dimensions if available
                         if (node.getMutationRecord() != null && !node.getMutationRecord().getEngineeringDimensions().isEmpty()) {
                             String dims = node.getMutationRecord().getEngineeringDimensions().entrySet().stream()
                                 .map(e -> e.getKey() + "=" + e.getValue())
                                 .collect(java.util.stream.Collectors.joining(", "));
-                            metadata += " -m \"[EVO-DIMENSIONS] " + dims + "\"";
+                            metadata.append("\n[EVO-DIMENSIONS] ").append(dims);
                         }
                     }
                 }
             }
 
             String commitMsg = command.contains("-m") ? "" : " -m \"Darwin evolution step\"";
-            String fullCommand = "git " + command + commitMsg + (metadata.isEmpty() ? "" : " " + metadata);
+            String metadataArg = metadata.length() > 0 ? " -m \"" + metadata.toString().replace("\"", "\\\"") + "\"" : "";
+            String fullCommand = "git " + command + commitMsg + metadataArg;
             return executeWithRetry(shell, fullCommand, gitWorkingDir, context);
         }
 
