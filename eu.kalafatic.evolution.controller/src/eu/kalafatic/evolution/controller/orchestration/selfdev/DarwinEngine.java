@@ -40,6 +40,7 @@ import eu.kalafatic.evolution.controller.trajectory.Trajectory;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
 import eu.kalafatic.evolution.controller.mediation.model.MediationCandidate;
+import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 
 import eu.kalafatic.evolution.controller.orchestration.SessionManager;
 
@@ -135,6 +136,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
     @Override
     public List<BranchVariant> generateVariants(GoalModel goal, StateSnapshot snapshot, FailureMemory failureMemory, Trajectory trajectory, EvolutionaryPressureVector pressure) throws Exception {
+        Orchestrator orchestrator = context.getOrchestrator();
         context.log("Stage: Goal\nGoalModel: " + goal);
         context.log("[DARWIN] Generating trajectory-driven variants for goal: " + goal.getPrimaryAction());
 
@@ -468,7 +470,8 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         context.log("[DARWIN] Sequential Mutation Branching initialized (Target: " + branchingLimit + " unique trajectories).");
 
         int attempts = 0;
-        int maxAttempts = branchingLimit * 3;
+        // Search budget: more flexible than fixed constants
+        int maxAttempts = branchingLimit * 5;
         int targetPopulation = branchingLimit;
 
         context.log("[DARWIN] Coverage-Driven Discovery active. Target: " + targetPopulation);
@@ -482,9 +485,15 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
                 // 1. Reconstruct Lineage Context from EvolutionTree
                 String fullLineagePrompt = tree.reconstructLineagePrompt(currentParentId);
 
-                // 2. Sequential Blueprint Discovery
-                TrajectoryBlueprint bp = constructTrajectoryBlueprint(goal, expansion, currentBlueprints, generation,
-                        siblingMemoryBuilder.toString(), mapper, discoveryGoal, fullLineagePrompt, activeDimension);
+                // 2. Sequential Blueprint Discovery (Owned by DarwinEngine)
+                TrajectoryBlueprint bp = null;
+                // Centralized retry policy for blueprint discovery
+                for (int bpRetry = 0; bpRetry < 3; bpRetry++) {
+                     bp = constructTrajectoryBlueprint(goal, expansion, currentBlueprints, generation,
+                            siblingMemoryBuilder.toString(), mapper, discoveryGoal, fullLineagePrompt, activeDimension);
+                     if (bp != null) break;
+                     context.log("[DARWIN] Blueprint discovery failed. Retry " + (bpRetry + 1) + "/3...");
+                }
 
                 if (bp != null) {
                     if (activeDimension != null) {
@@ -500,12 +509,33 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
                     currentBlueprints.add(bp);
 
-                    // 4. Sequential Blueprint Materialization
+                    // 4. Sequential Blueprint Materialization (Orchestrated by DarwinEngine)
                     EvolutionProgressPublisher.updateBranchStatus(context, bp.getId(), bp.getPhilosophy(), "analyzing", null);
+                    EvolutionProgressPublisher.updateActiveModel(context, orchestrator != null ? (orchestrator.getOllama() != null ? orchestrator.getOllama().getModel() : "local") : "local", "Materializing Branch " + bp.getId());
 
-                    JSONObject variant = spawner.spawnSingleBlueprint(goal, bp, basePrompt, fullLineagePrompt + lineageContext, rejectedSiblings, siblingMemoryBuilder.toString(), isMediated, context, activeDimension, genome);
+                    JSONObject variant = null;
+                    // Materialization Retries owned by DarwinEngine
+                    for (int retry = 0; retry < 3; retry++) {
+                        context.log("[DARWIN] Materialization Attempt " + (retry + 1) + " for " + bp.getId());
+                        variant = spawner.spawnSingleBlueprint(goal, bp, basePrompt, fullLineagePrompt + lineageContext, rejectedSiblings, siblingMemoryBuilder.toString(), isMediated, context, activeDimension, genome);
+
+                        if (variant != null) break;
+
+                        context.log("[DARWIN] Materialization failed for " + bp.getId() + ". Retrying...");
+                    }
+
+                    // Repair Orchestration owned by DarwinEngine
+                    if (variant == null) {
+                        context.log("[DARWIN] All materialization retries failed for " + bp.getId() + ". Triggering repair orchestration.");
+                        variant = spawner.autoRepair(bp, context);
+                    }
 
                     if (variant != null) {
+                        // IMPLEMENTATION PLANNING: Convert architectural reasoning into actions
+                        ImplementationPlanner planner = new ImplementationPlanner();
+                        variant = planner.plan(variant, context);
+                        variant = completeTrajectorySchema(variant, bp, context);
+
                         // 5. Semantic Vector Divergence Validation
                         if (isTechnicallyIdentical(variant, uniqueVariants)) {
                             context.log("[DARWIN] Territory Rejected: Materialized variant 90% identical to existing sibling.");
@@ -1021,6 +1051,50 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             }
         }
         return false;
+    }
+
+    private JSONObject completeTrajectorySchema(JSONObject fragment, TrajectoryBlueprint bp, TaskContext context) {
+        // Ensure core fields exist and are consistent with blueprint
+        fragment.put("id", bp.getId());
+        fragment.put("strategy_type", bp.getStrategyType().name());
+
+        if (!fragment.has("strategy") || fragment.optString("strategy").isEmpty()) {
+            fragment.put("strategy", "Architectural strategy for " + bp.getPhilosophy());
+        }
+
+        fragment.put("semantic_justification", bp.getPhilosophy());
+        fragment.put("semantic_anchor", bp.getPhilosophy());
+
+        // Standard Darwin defaults for missing metadata
+        if (!fragment.has("survival_argument") || fragment.optString("survival_argument").isEmpty()) {
+            fragment.put("survival_argument", "Proposed as a divergent architectural candidate for " + bp.getPhilosophy());
+        }
+        if (!fragment.has("tradeoffs") || fragment.optString("tradeoffs").isEmpty()) {
+            fragment.put("tradeoffs", "Standard trade-offs for " + bp.getStrategyType() + " architecture.");
+        }
+        if (!fragment.has("failure_risks") || fragment.optString("failure_risks").isEmpty()) {
+            fragment.put("failure_risks", "Managed risks within " + bp.getStrategyType() + " evolutionary boundaries.");
+        }
+
+        // Inject dimensions from blueprint if missing in LLM response
+        JSONObject dimensions = fragment.optJSONObject("engineering_dimensions");
+        if (dimensions == null) {
+            dimensions = new JSONObject();
+            fragment.put("engineering_dimensions", dimensions);
+        }
+
+        for (java.util.Map.Entry<String, String> entry : bp.getEngineeringDimensions().entrySet()) {
+            String dimKey = entry.getKey();
+            if (!dimensions.has(dimKey)) {
+                dimensions.put(dimKey, entry.getValue());
+            }
+        }
+
+        if (!dimensions.has("philosophy")) {
+            dimensions.put("philosophy", bp.getPhilosophy());
+        }
+
+        return fragment;
     }
 
     private String sanitize(String s) {
