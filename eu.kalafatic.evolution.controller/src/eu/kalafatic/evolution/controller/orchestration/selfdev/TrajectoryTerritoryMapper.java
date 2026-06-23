@@ -54,6 +54,7 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
         context.log("[TERRITORY] Sequentially discovering next unique evolutionary trajectory for: " + goal);
 
         AbstractionLevel lockedLevel = context.getOrchestrationState().getLockedAbstractionLevel();
+        eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType capability = context.getExecutionProfile().getCapability();
 
         eu.kalafatic.evolution.controller.orchestration.behavior.PromptComposer composer = new eu.kalafatic.evolution.controller.orchestration.behavior.PromptComposer();
         StringBuilder sb = new StringBuilder();
@@ -143,17 +144,21 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
         }
         sb.append(composer.composeSiblingMemory(siblingSb.toString())).append("\n\n");
 
-        sb.append(composer.composeConstraints("Discover the NEXT unexplored design territory. Do NOT improve existing ones. Do NOT rename existing ones. Return only genuinely new semantic territory.")).append("\n\n");
+        if (capability == eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType.CHAT) {
+            sb.append(composer.composeConstraints("Discover the NEXT unexplored CONVERSATIONAL territory. Focus on different tones, depths of response, or types of assistance (e.g., 'Concise & Professional', 'Friendly & Elaborate', 'Technical & Precise').")).append("\n\n");
+        } else {
+            sb.append(composer.composeConstraints("Discover the NEXT unexplored design territory. Do NOT improve existing ones. Do NOT rename existing ones. Return only genuinely new semantic territory.")).append("\n\n");
+        }
 
         String schema = "{\n" +
           "  \"id\": \"unique-blueprint-id\",\n" +
           "  \"strategy\": \"(Concise title for this path)\",\n" +
-          "  \"philosophy\": \"(Architectural core concept)\",\n" +
-          "  \"mutation_philosophy\": \"(Engineering philosophy: minimalism | extensibility | performance | robustness | idiomatic | etc.)\",\n" +
-          "  \"direction\": \"(Detailed technical implementation path: SPECIFIC patterns or components)\",\n" +
+          "  \"philosophy\": \"(Architectural core concept or conversational tone)\",\n" +
+          "  \"mutation_philosophy\": \"(Engineering or linguistic philosophy)\",\n" +
+          "  \"direction\": \"(Detailed technical or conversational implementation path)\",\n" +
           "  \"characteristics\": [\"Required Trait 1\", \"Required Trait 2\"],\n" +
           "  \"tradeoffs\": \"what is sacrificed\",\n" +
-          "  \"survival_argument\": \"why this path is technically viable\",\n" +
+          "  \"survival_argument\": \"why this path is technically or conversationally viable\",\n" +
           "  \"strategy_type\": \"PROBABLE_SURVIVOR | PHILOSOPHY_MUTATION | MAXIMAL_DIVERGENCE | STABILIZATION_RECOVERY | ARCHITECTURE_MAPPING | REFACTOR_HOTSPOT_ANALYSIS\"\n" +
           "}";
         sb.append(composer.composeJsonSchema(schema)).append("\n\n");

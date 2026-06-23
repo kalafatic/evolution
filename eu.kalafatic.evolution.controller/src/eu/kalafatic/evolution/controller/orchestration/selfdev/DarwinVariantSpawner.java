@@ -219,13 +219,21 @@ public class DarwinVariantSpawner {
     private String buildBlueprintPrompt(TrajectoryBlueprint bp, String basePrompt, String lineageContext, List<String> rejectedSiblings, String mutationContext, boolean isMediated, TaskContext context, EvolutionDimension activeDimension, SemanticGenome genome) {
         eu.kalafatic.evolution.controller.orchestration.behavior.PromptComposer composer = new eu.kalafatic.evolution.controller.orchestration.behavior.PromptComposer();
         StringBuilder sb = new StringBuilder();
+        eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType capability = context.getExecutionProfile().getCapability();
 
         sb.append(composer.composeSystem(null)).append("\n\n");
-        sb.append("You are a single-path evolutionary mutation engine.\n")
-          .append("Your goal is to perform a BOUNDED LOCAL MUTATION on the provided parent implementation.\n")
-          .append("MANDATE: You MUST preserve the parent implementation. You are ONLY allowed to mutate the specific dimension identified below.\n")
-          .append("Do NOT redesign the complete architecture. Do NOT start from scratch. Focus only on the active mutation dimension.\n")
-          .append("Each response MUST contain exactly ONE branch only.\n\n");
+        if (capability == eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType.CHAT) {
+            sb.append("You are a conversational evolutionary mutation engine.\n")
+              .append("Your goal is to perform a BOUNDED LOCAL MUTATION on the conversational response.\n")
+              .append("MANDATE: You are ONLY allowed to mutate the specific dimension (tone, depth, etc.) identified below.\n")
+              .append("Each response MUST contain exactly ONE branch only.\n\n");
+        } else {
+            sb.append("You are a single-path evolutionary mutation engine.\n")
+              .append("Your goal is to perform a BOUNDED LOCAL MUTATION on the provided parent implementation.\n")
+              .append("MANDATE: You MUST preserve the parent implementation. You are ONLY allowed to mutate the specific dimension identified below.\n")
+              .append("Do NOT redesign the complete architecture. Do NOT start from scratch. Focus only on the active mutation dimension.\n")
+              .append("Each response MUST contain exactly ONE branch only.\n\n");
+        }
 
         sb.append(composer.composeGoal(bp.getGoal())).append("\n\n");
 
@@ -394,9 +402,15 @@ public class DarwinVariantSpawner {
         sb.append(composer.composeJsonSchema(schemaSb.toString())).append("\n\n");
 
         sb.append("🧭 EVOLUTION DIRECTIVE\n\n")
-          .append("Your goal is controlled divergence under constraints. Move the system into a meaningfully different evolutionary region.\n\n")
-          .append("Mandatory: For every 'WRITE' action, you MUST provide the FULL, FUNCTIONAL source code in the 'implementation' field.\n\n")
-          .append("CONTEXT:\n")
+          .append("Your goal is controlled divergence under constraints. Move the system into a meaningfully different evolutionary region.\n\n");
+
+        if (capability == eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType.CHAT) {
+            sb.append("Mandatory: For simple chat, use the 'TALK' operation in 'actions' to provide your response in the 'implementation' field.\n\n");
+        } else {
+            sb.append("Mandatory: For every 'WRITE' action, you MUST provide the FULL, FUNCTIONAL source code in the 'implementation' field.\n\n");
+        }
+
+        sb.append("CONTEXT:\n")
           .append(basePrompt);
 
         return sb.toString();

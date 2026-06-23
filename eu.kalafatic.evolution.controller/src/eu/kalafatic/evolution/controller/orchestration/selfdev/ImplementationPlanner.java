@@ -63,9 +63,17 @@ public class ImplementationPlanner {
         JSONArray actions = new JSONArray();
 
         AtomicIntentAnalysis atomic = null;
+        eu.kalafatic.evolution.controller.orchestration.goal.GoalModel goalModel = null;
         if (context != null && context.getOrchestrationState() != null) {
             atomic = (AtomicIntentAnalysis) context.getOrchestrationState().getMetadata().get("atomicAnalysis");
+            goalModel = (eu.kalafatic.evolution.controller.orchestration.goal.GoalModel) context.getOrchestrationState().getMetadata().get("goalModel");
         }
+
+        eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType capability =
+            context != null ? context.getExecutionProfile().getCapability() : eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType.CODE;
+
+        boolean isChat = (capability == eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType.CHAT) ||
+                        (goalModel != null && "GENERAL".equalsIgnoreCase(goalModel.getDomain()));
 
         // Strategy A: Use projected_steps if available
         JSONArray steps = variant.optJSONArray("projected_steps");
@@ -73,7 +81,7 @@ public class ImplementationPlanner {
             for (int i = 0; i < steps.length(); i++) {
                 String step = steps.optString(i);
                 if (step != null && !step.isEmpty() && !step.startsWith("Initialize") && !step.startsWith("Materialize")) {
-                    actions.put(createActionFromStep(step, atomic));
+                    actions.put(createActionFromStep(step, atomic, isChat));
                 }
             }
         }
@@ -112,12 +120,21 @@ public class ImplementationPlanner {
     }
 
     private JSONObject createActionFromStep(String step, AtomicIntentAnalysis atomic) {
+        return createActionFromStep(step, atomic, false);
+    }
+
+    private JSONObject createActionFromStep(String step, AtomicIntentAnalysis atomic, boolean isChat) {
         JSONObject action = new JSONObject();
         String lowerStep = step.toLowerCase();
 
         if (lowerStep.contains("write") || lowerStep.contains("create") || lowerStep.contains("implement") || lowerStep.contains("add")) {
-            action.put("domain", "file");
-            action.put("operation", "WRITE");
+            if (isChat) {
+                action.put("domain", "kernel");
+                action.put("operation", "TALK");
+            } else {
+                action.put("domain", "file");
+                action.put("operation", "WRITE");
+            }
         } else if (lowerStep.contains("delete") || lowerStep.contains("remove")) {
             action.put("domain", "file");
             action.put("operation", "DELETE");
