@@ -25,22 +25,25 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
     @Override
     protected String getAgentInstructions() {
         return "You are a Trajectory Territory Mapper (STABILIZATION LAYER).\n\n" +
-               "GOAL: Discover ONE UNIQUE EVOLUTIONARY BLUEPRINT.\n" +
-               "CORE DIRECTIVE: Every candidate represents a distinct ARCHITECTURAL SPECIES. Sibling variants MUST differ significantly in their technical essence, not just wording.\n\n" +
+               "GOAL: Discover the NEXT UNEXPLORED DESIGN TERRITORY.\n" +
+               "CORE DIRECTIVE: Do NOT improve existing territories. Do NOT rename existing ones. Return only genuinely NEW semantic territory.\n" +
+               "Every candidate represents a distinct ARCHITECTURAL SPECIES. Sibling variants MUST differ significantly in their technical essence, not just wording.\n\n" +
+               "SEARCH MEMORY MANDATE:\n" +
+               "- You will be provided with currently explored territories.\n" +
+               "- Your task is to identify a technical philosophy that has NOT been touched.\n\n" +
                "DIVERSITY EXAMPLES (Species Level):\n" +
-               "- Species A: Single static utility class (Minimalist/Procedural)\n" +
-               "- Species B: Instance-based class with constructor (Object-Oriented)\n" +
-               "- Species C: Interface + Concrete Implementation (Decoupled)\n" +
-               "- Species D: Static Factory Method pattern (Pattern-oriented)\n" +
-               "- Species E: Minimalist Main method implementation (Executable)\n" +
-               "- Species F: Reusable Library-style utility (Modular)\n\n" +
-               "Every blueprint MUST specify: class names, package organization, API design, and core technical mechanism.\n\n" +
+               "- Minimalist OO: Direct, simple object-oriented approach.\n" +
+               "- Functional Utility: Stateless, pure functions, often static.\n" +
+               "- Reactive/Event-Driven: Decoupled via callbacks or streams.\n" +
+               "- Dependency Injection: Focus on loose coupling and testability.\n" +
+               "- Console/CLI Abstraction: Focus on terminal interaction and formatting.\n" +
+               "- Strategy/Command Pattern: Focus on behavior encapsulation.\n" +
+               "- Decorator/Pipeline: Focus on incremental processing.\n\n" +
                "STRICT EVOLUTION CONSTRAINTS:\n" +
-               "- NO ARCHITECTURAL INFLATION: If the task is simple (e.g., printing text), DO NOT introduce frameworks (Spring), buses (Kafka), or distributed patterns (Microservices). Discover MINIMAL implementation theories.\n" +
-               "- AXIS DIVERGENCE: Intentionally pivot on [Static vs Instance], [Minimal vs Extensible], [Direct vs Abstracted].\n" +
+               "- NO ARCHITECTURAL INFLATION: If the task is simple, DO NOT introduce unnecessary complexity. Discover MINIMAL implementation theories for distinct philosophies.\n" +
+               "- AXIS DIVERGENCE: Intentionally pivot on [State], [Lifecycle], [Dependency Model], [API Style], [Execution Model], [Abstraction].\n" +
                "- GROUNDING: All blueprints MUST be descendants of the discovered Target Reality and hotspots.\n\n" +
-               "MANDATORY: You MUST generate a blueprint that is CONCEPTUALLY and TECHNICALLY DISTINCT from any provided existing blueprints. Focus on an unexplored technical quadrant of the target reality.\n" +
-               "TECHNICAL SPECIFICITY: Blueprints MUST contain specific technical mechanisms and patterns. Avoid generic descriptions.";
+               "MANDATORY: Return a blueprint that is 90% technical divergence from anything previously explored.";
     }
 
     public List<TrajectoryBlueprint> map(String goal, TaskContext context, int limit) throws Exception {
@@ -140,7 +143,7 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
         }
         sb.append(composer.composeSiblingMemory(siblingSb.toString())).append("\n\n");
 
-        sb.append(composer.composeConstraints("Your blueprint MUST intentionally diverge from prior ones in philosophy and execution model. You MUST pick a distinct engineering philosophy.")).append("\n\n");
+        sb.append(composer.composeConstraints("Discover the NEXT unexplored design territory. Do NOT improve existing ones. Do NOT rename existing ones. Return only genuinely new semantic territory.")).append("\n\n");
 
         String schema = "{\n" +
           "  \"id\": \"unique-blueprint-id\",\n" +

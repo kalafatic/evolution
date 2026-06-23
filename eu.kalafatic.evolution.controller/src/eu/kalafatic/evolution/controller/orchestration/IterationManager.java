@@ -1050,6 +1050,15 @@ public class IterationManager {
 
         final IntentExpansionResult intentExpansion = intentExpansionFinal;
 
+        // Hierarchical Node Selection: Determine which node to expand
+        EvolutionTree tree = context.getKernelContext().getMemoryService().getEvolutionTree();
+        String nodeToExpandId = tree.getCurrentWinnerId();
+        if (nodeToExpandId == null && tree.getRootId() != null) {
+            nodeToExpandId = tree.getRootId();
+        }
+
+        context.log("[KERNEL] Hierarchical Expansion: Targeting node " + (nodeToExpandId != null ? nodeToExpandId : "ROOT") + " for semantic discovery.");
+
         checkStep(state.getCurrentPhase(), "BRANCH_GENERATION", "Spawning competing trajectories for: " + goal);
         List<BranchVariant> variants = darwinFlow.generateProposals(context, goalModel);
 

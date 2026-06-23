@@ -280,6 +280,9 @@ public class DarwinFlow implements IOrchestrationFlow {
                 manager.getGitManager().createBranchFrom(originalBranch, selectedVariant.getBranchName());
             }
 
+            // Materialize Territory: Materialization into code happens only AFTER a semantic territory has been selected.
+            context.log("[DARWIN] Materializing selected semantic territory: " + selectedVariant.getStrategy());
+
             // IMPORTANT: We MUST re-evaluate the winner in the target branch context to persist changes,
             // even if it was pre-evaluated in a temporary worktree.
             winningContext = evaluateVariantParallel(selectedVariant, manager.getTaskPlanner(), context, baseCommit, decision.getPressure());
@@ -295,7 +298,7 @@ public class DarwinFlow implements IOrchestrationFlow {
             mergeHybridInsights(variants, selectedVariant, context);
 
             if (!selectedVariant.isSuccess()) {
-                context.log("[KERNEL] Winner variant execution failed: " + selectedVariant.getId());
+                context.log("[KERNEL] Winner variant execution failed during materialization: " + selectedVariant.getId());
                 if (!isExportOnly && !isTestMode) {
                     manager.getGitManager().forceCheckout(originalBranch);
                     manager.getGitManager().rollback(context);
