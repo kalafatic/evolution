@@ -793,6 +793,9 @@ public class IterationManager {
                     context.log("[KERNEL] Evolution reached decision (" + result.getDecision() + "), but Min Iterations (" + minIterations + ") not met. Continuing evolution.");
                     // RESET PHASE to force continued evolution instead of spinning
                     state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(EvolutionPhase.SELECTION_REFINEMENT));
+                    if (context.getStateHolder().getState() == SystemState.DONE) {
+                        transition(SystemState.INIT, context);
+                    }
                 } else {
                     sessionContainer.getEventBus().publish(new RuntimeEvent(RuntimeEventType.FLOW_COMPLETED, context.getSessionId(), "Kernel", result.getDecision().toString()));
                     break;
@@ -800,11 +803,15 @@ public class IterationManager {
             }
 
             // If we reached a terminal phase during the iteration, break the loop if min iterations met
-            if (state.getCurrentPhase().contains("TERMINAL") || state.getCurrentPhase().contains("SATISFIED")) {
+            String currentPhaseStr = state.getCurrentPhase();
+            if (currentPhaseStr != null && (currentPhaseStr.contains("TERMINAL") || currentPhaseStr.contains("SATISFIED"))) {
                 if (safetyCounter < minIterations) {
                     context.log("[KERNEL] Terminal phase (" + state.getCurrentPhase() + ") reached, but Min Iterations (" + minIterations + ") not met. Continuing evolution.");
                     // RESET PHASE to force continued evolution instead of spinning
                     state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(EvolutionPhase.SELECTION_REFINEMENT));
+                    if (context.getStateHolder().getState() == SystemState.DONE) {
+                        transition(SystemState.INIT, context);
+                    }
                 } else {
                     break;
                 }

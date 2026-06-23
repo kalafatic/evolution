@@ -132,8 +132,8 @@ public class EvolutionaryTrajectoryEngine {
     private int getMinimumIntensity(EvolutionPhase phase) {
         switch (phase) {
             case INTENT_EXPANSION: return 1;
-            case ARCHITECTURE_VARIANTS: return 1;
-            case SELECTION_REFINEMENT: return 1;
+            case ARCHITECTURE_VARIANTS: return 3; // Require high intensity for architectural branching
+            case SELECTION_REFINEMENT: return 2;  // Require at least medium intensity for selection cycles
             case IMPLEMENTATION_PLAN: return 1;
             case FINAL_SYNTHESIS: return 1;
             case DESIGN_SATISFIED: return 1;
