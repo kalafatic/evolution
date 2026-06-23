@@ -338,7 +338,10 @@ public class IterationManager {
                            prompt.equalsIgnoreCase("force solution") ||
                            prompt.equalsIgnoreCase("approved") ||
                            prompt.equalsIgnoreCase("rejected") ||
-                           prompt.equalsIgnoreCase("proceed");
+                           prompt.equalsIgnoreCase("proceed") ||
+                           prompt.equalsIgnoreCase("ok") ||
+                           prompt.equalsIgnoreCase("okay") ||
+                           prompt.matches("^(yes|y|ok|okay|approve|proceed|go ahead|yep|sure)$");
 
         String checkpointGoal = (String) state.getMetadata().get("checkpoint_goal");
         if (isControl) {
@@ -762,7 +765,8 @@ public class IterationManager {
             context.log("[KERNEL] [LOOP] Starting Iteration " + (safetyCounter + 1) + " (Phase: " + state.getCurrentPhase() + ")");
 
             // RECURSIVE ARCHITECTURAL DISCOVERY: Refine model in each iteration
-            if (safetyCounter > 0) {
+            // ADAPTIVE KERNEL: Only refine reality in subsequent iterations if intensity is high
+            if (safetyCounter > 0 && intensity_val >= 3) {
                 refineTargetReality(request, context);
             }
 

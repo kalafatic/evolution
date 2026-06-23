@@ -303,8 +303,9 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                                    prompt.equalsIgnoreCase("ok") ||
                                    prompt.equalsIgnoreCase("okay") ||
                                    prompt.equalsIgnoreCase("proceed") ||
-                                   prompt.toLowerCase().startsWith("approve variant ") ||
-                                   prompt.matches("^(yes|y|ok|okay|approve|proceed|go ahead|yep|sure)$");
+                                   prompt.matches("^(yes|y|ok|okay|approve|proceed|go ahead|yep|sure)$") ||
+                                   prompt.toLowerCase().contains("approve variant") ||
+                                   prompt.toLowerCase().contains("select variant");
 
                 if (isControl) {
                     Log.log("[SERVICE] Continuation detected: " + prompt + ". Routing to existing wait.");

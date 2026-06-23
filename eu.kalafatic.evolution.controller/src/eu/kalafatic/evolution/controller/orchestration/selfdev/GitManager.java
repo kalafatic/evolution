@@ -159,8 +159,12 @@ public class GitManager {
     }
 
     public void removeWorktree(String path) throws Exception {
-        if (worktreeRegistry.contains(path)) {
+        try {
             gitTool.execute("worktree remove --force " + path, root, null);
+        } catch (Exception e) {
+            // If git fails, path might already be gone or not a worktree.
+            // That's acceptable for cleanup.
+        } finally {
             unregisterWorktree(path);
         }
     }

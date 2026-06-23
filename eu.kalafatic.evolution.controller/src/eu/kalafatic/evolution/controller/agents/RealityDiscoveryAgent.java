@@ -59,30 +59,44 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
         TargetSnapshot.TargetType type = targetPath.contains("evolution") ? TargetSnapshot.TargetType.SELF : TargetSnapshot.TargetType.PROJECT;
         TargetSnapshot snapshot = scanner.scanToSnapshot(root, type);
 
+        int intensity = context.getExecutionProfile().getIntensity();
+
         // PASS 1 - METADATA LOADING
         context.log("[DISCOVERY] Pass 1: Metadata Loading.");
         loadAllMetadata(snapshot, context, model);
 
         // PASS 2 - LOCAL RESPONSIBILITY DISCOVERY
-        discoverLocalResponsibilities(snapshot, model, context);
+        if (intensity >= 2) {
+            discoverLocalResponsibilities(snapshot, model, context);
+        }
 
         // PASS 3 - RELATIONSHIP DISCOVERY & EVOLUTIONARY INFLUENCE
-        discoverRelationships(snapshot, model, context);
+        if (intensity >= 3) {
+            discoverRelationships(snapshot, model, context);
+        }
 
         // PASS 4 - SUBSYSTEM DISCOVERY
-        discoverSubsystems(snapshot, model, context);
+        if (intensity >= 3) {
+            discoverSubsystems(snapshot, model, context);
+        }
 
         // PASS 5 - REALITY DISCOVERY (Synthesis & Completeness Tracking)
         synthesizeReality(goal, snapshot, model, context);
 
         // PASS 6 - GENOME DISCOVERY (Portable Patterns)
-        discoverGenome(model, context);
+        if (intensity >= 4) {
+            discoverGenome(model, context);
+        }
 
         // PASS 7 - ARCHITECTURAL COMPRESSION
-        compressUnderstanding(model, context);
+        if (intensity >= 2) {
+            compressUnderstanding(model, context);
+        }
 
         // PASS 8 - USE CASE DISCOVERY
-        discoverUseCases(model, context);
+        if (intensity >= 3) {
+            discoverUseCases(model, context);
+        }
 
         // POPULATE CANONICAL PROJECTIONS
         populateCanonicalFields(snapshot, model, context, goal);
@@ -111,30 +125,32 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
         }
 
         // 2. Flows & Decision Centers (Derived from Pass 5 synthesis or explicit analysis)
-        StringBuilder sb = new StringBuilder();
-        sb.append("FACTS: ").append(model.getArchitecturalFacts().size()).append("\n");
-        sb.append("SUBSYSTEMS: ").append(model.getSubsystems().size()).append("\n");
-        sb.append("\nIdentify core Execution Flows and Decision Flows (3-5 high-level steps each).");
+        if (context.getExecutionProfile().getIntensity() >= 2) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("FACTS: ").append(model.getArchitecturalFacts().size()).append("\n");
+            sb.append("SUBSYSTEMS: ").append(model.getSubsystems().size()).append("\n");
+            sb.append("\nIdentify core Execution Flows and Decision Flows (3-5 high-level steps each).");
 
-        String prompt = sb.toString() + "\n\n" +
-                "Output a JSON object:\n" +
-                "{\n" +
-                "  \"execution_flows\": [\"string\"],\n" +
-                "  \"decision_flows\": [\"string\"]\n" +
-                "}";
+            String prompt = sb.toString() + "\n\n" +
+                    "Output a JSON object:\n" +
+                    "{\n" +
+                    "  \"execution_flows\": [\"string\"],\n" +
+                    "  \"decision_flows\": [\"string\"]\n" +
+                    "}";
 
-        String response = aiService.sendRequest(context.getOrchestrator(), getAgentInstructions() + "\n\n" + prompt, context);
-        JSONObject obj = JsonUtils.extractJsonObject(response);
-        if (obj != null) {
-            JSONArray execs = obj.optJSONArray("execution_flows");
-            if (execs != null) {
-                model.getExecutionFlows().clear();
-                for (int i = 0; i < execs.length(); i++) model.getExecutionFlows().add(execs.getString(i));
-            }
-            JSONArray decs = obj.optJSONArray("decision_flows");
-            if (decs != null) {
-                model.getDecisionFlows().clear();
-                for (int i = 0; i < decs.length(); i++) model.getDecisionFlows().add(decs.getString(i));
+            String response = aiService.sendRequest(context.getOrchestrator(), getAgentInstructions() + "\n\n" + prompt, context);
+            JSONObject obj = JsonUtils.extractJsonObject(response);
+            if (obj != null) {
+                JSONArray execs = obj.optJSONArray("execution_flows");
+                if (execs != null) {
+                    model.getExecutionFlows().clear();
+                    for (int i = 0; i < execs.length(); i++) model.getExecutionFlows().add(execs.getString(i));
+                }
+                JSONArray decs = obj.optJSONArray("decision_flows");
+                if (decs != null) {
+                    model.getDecisionFlows().clear();
+                    for (int i = 0; i < decs.length(); i++) model.getDecisionFlows().add(decs.getString(i));
+                }
             }
         }
 
