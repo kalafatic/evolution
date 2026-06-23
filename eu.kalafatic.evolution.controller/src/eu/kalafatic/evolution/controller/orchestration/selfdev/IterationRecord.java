@@ -28,6 +28,9 @@ public class IterationRecord {
     private String mutationTrace;
     private String inheritedContext;
     private List<String> rejectedSiblings;
+    private List<String> rejectionReasons;
+    private String activeDimension;
+    private List<String> lockedDimensions;
 
     public int getIteration() { return iteration; }
     public void setIteration(int iteration) { this.iteration = iteration; }
@@ -101,4 +104,13 @@ public class IterationRecord {
 
     public List<String> getRejectedSiblings() { return rejectedSiblings; }
     public void setRejectedSiblings(List<String> rejectedSiblings) { this.rejectedSiblings = rejectedSiblings; }
+
+    public List<String> getRejectionReasons() { return rejectionReasons; }
+    public void setRejectionReasons(List<String> rejectionReasons) { this.rejectionReasons = rejectionReasons; }
+
+    public String getActiveDimension() { return activeDimension; }
+    public void setActiveDimension(String activeDimension) { this.activeDimension = activeDimension; }
+
+    public List<String> getLockedDimensions() { return lockedDimensions; }
+    public void setLockedDimensions(List<String> lockedDimensions) { this.lockedDimensions = lockedDimensions; }
 }

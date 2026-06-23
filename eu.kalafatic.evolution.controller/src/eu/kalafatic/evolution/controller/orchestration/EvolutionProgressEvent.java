@@ -17,6 +17,10 @@ public class EvolutionProgressEvent {
     private String currentBranch;
     private String currentModel;
     private String currentTask;
+    private String goal;
+    private String winnerId;
+    private String currentDimension;
+    private int lockedDecisionCount;
     private boolean autoApprove;
     private boolean gitAutomation;
     private boolean stepMode;
@@ -58,6 +62,18 @@ public class EvolutionProgressEvent {
 
     public String getCurrentTask() { return currentTask; }
     public void setCurrentTask(String currentTask) { this.currentTask = currentTask; }
+
+    public String getGoal() { return goal; }
+    public void setGoal(String goal) { this.goal = goal; }
+
+    public String getWinnerId() { return winnerId; }
+    public void setWinnerId(String winnerId) { this.winnerId = winnerId; }
+
+    public String getCurrentDimension() { return currentDimension; }
+    public void setCurrentDimension(String currentDimension) { this.currentDimension = currentDimension; }
+
+    public int getLockedDecisionCount() { return lockedDecisionCount; }
+    public void setLockedDecisionCount(int lockedDecisionCount) { this.lockedDecisionCount = lockedDecisionCount; }
 
     public boolean isAutoApprove() { return autoApprove; }
     public void setAutoApprove(boolean autoApprove) { this.autoApprove = autoApprove; }

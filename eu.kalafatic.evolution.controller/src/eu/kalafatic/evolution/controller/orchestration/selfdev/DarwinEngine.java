@@ -415,6 +415,28 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
         EvolutionTree tree = context.getKernelContext().getMemoryService().getEvolutionTree();
         String currentParentId = tree.getCurrentWinnerId();
+
+        // REALITY GRAPH: Branch Revival Logic (Requirement 6)
+        if (currentParentId != null) {
+            EvolutionNode winnerNode = tree.getNode(currentParentId);
+            if (winnerNode != null && winnerNode.getFitnessScore() < 0.3) {
+                context.log("[DARWIN] Current lineage fitness low (" + winnerNode.getFitnessScore() + "). Attempting Branch Revival...");
+
+                // Search for a rejected sibling with higher potential fitness (or simply any sibling)
+                List<EvolutionNode> siblings = tree.getSiblings(currentParentId);
+                EvolutionNode bestAlternative = siblings.stream()
+                        .filter(s -> !"REJECTED_SEMANTIC".equals(s.getStatus()))
+                        .sorted((a, b) -> Double.compare(b.getFitnessScore(), a.getFitnessScore()))
+                        .findFirst().orElse(null);
+
+                if (bestAlternative != null && (bestAlternative.getFitnessScore() > winnerNode.getFitnessScore())) {
+                    context.log("[DARWIN] REVIVING BRANCH: " + bestAlternative.getMutationIdentity() + " (Fitness: " + bestAlternative.getFitnessScore() + ")");
+                    currentParentId = bestAlternative.getId();
+                    // We don't set currentWinnerId yet, we just start the mutation from here
+                }
+            }
+        }
+
         if (currentParentId == null && tree.getRootId() != null) {
             currentParentId = tree.getRootId();
         }
@@ -424,11 +446,20 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
         // Select the next mutable dimension
         EvolutionDimension activeDimension = dimensionScheduler.selectNextDimension(genome);
-        if (activeDimension != null) {
-            context.log("[DARWIN] Scheduled Mutation Dimension: " + activeDimension.getId());
-        } else {
-            context.log("[DARWIN] No active dimension selected. Evolution may have converged or all dimensions are locked.");
+        if (activeDimension == null) {
+            // FALLBACK: Default Implementation dimension
+            activeDimension = new EvolutionDimension("IMPLEMENTATION", "General implementation and refinement", AbstractionLevel.IMPLEMENTATION, SemanticDomain.EXECUTION);
         }
+
+        context.getOrchestrationState().getMetadata().put("current_dimension", activeDimension.getId());
+        context.log("[DARWIN] Scheduled Mutation Dimension: " + activeDimension.getId());
+
+        // EXPLICIT EVOLUTION STATE (Milestone Requirement 7)
+        context.log("[EVOLUTION_STATE] Goal: " + goal.getPrimaryAction());
+        context.log("[EVOLUTION_STATE] Winner: " + (currentParentId != null ? currentParentId : "ROOT"));
+        context.log("[EVOLUTION_STATE] Dimension: " + activeDimension.getId());
+        context.log("[EVOLUTION_STATE] Iteration: " + currentIteration);
+        context.log("[EVOLUTION_STATE] Locked Decisions: " + genome.getLockedDimensions().size());
 
         // DYNAMIC TERRITORY DISCOVERY & MATERIALIZATION: Sequential loop to ensure diversity
         TrajectoryTerritoryMapper mapper = new TrajectoryTerritoryMapper(getSessionContainer());
@@ -502,10 +533,18 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
                             node.setGeneration(generation);
                             node.setStrategy(variant.optString("strategy"));
                             node.setSemanticPhilosophy(variant.optString("semantic_anchor"));
+                            node.setActiveDimension(activeDimension != null ? activeDimension.getId() : "IMPLEMENTATION");
                             node.setMutationIdentity(branchSuffix);
                             node.setLlmPrompt(basePrompt); // Simplified for now
                             node.setLlmResponse(variant.toString());
                             node.setStatus("KEPT");
+
+                            JSONArray journalArr = variant.optJSONArray("mutation_journal");
+                            if (journalArr != null) {
+                                for (int i = 0; i < journalArr.length(); i++) {
+                                    node.getMutationJournal().add(journalArr.optString(i));
+                                }
+                            }
 
                             if (parentNode != null) {
                                 node.setParentStrengths(parentNode.getSelectionReason());
