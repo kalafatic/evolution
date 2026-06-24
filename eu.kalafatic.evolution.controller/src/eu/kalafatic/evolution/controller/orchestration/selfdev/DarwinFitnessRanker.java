@@ -6,6 +6,8 @@ import java.util.List;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import eu.kalafatic.evolution.controller.orchestration.goal.GoalModel;
+import eu.kalafatic.evolution.controller.orchestration.goal.SemanticEnvelope;
 import eu.kalafatic.evolution.controller.orchestration.intent.AtomicIntentAnalysis;
 
 /**
@@ -14,65 +16,118 @@ import eu.kalafatic.evolution.controller.orchestration.intent.AtomicIntentAnalys
 public class DarwinFitnessRanker {
 
     /**
-     * Ranks variants by fitness score.
-     */
-    public void rank(List<JSONObject> variants) {
-        rank(variants, (AtomicIntentAnalysis)null, 0, null);
-    }
-
-    /**
-     * Ranks variants by fitness score with optional atomic priority.
-     */
-    public void rank(List<JSONObject> variants, boolean isAtomicRound) {
-        rank(variants, isAtomicRound, 0, null);
-    }
-
-    /**
-     * Ranks variants by fitness score with optional atomic priority.
-     */
-    public void rank(List<JSONObject> variants, boolean isAtomicRound, int generation) {
-        rank(variants, isAtomicRound, generation, null);
-    }
-
-    /**
-     * Ranks variants by fitness score with pressure awareness.
-     */
-    public void rank(List<JSONObject> variants, boolean isAtomicRound, int generation, EvolutionaryPressureVector pressure) {
-        AtomicIntentAnalysis synthetic = null;
-        if (isAtomicRound) {
-            synthetic = new AtomicIntentAnalysis();
-            synthetic.setAtomic(true);
-            synthetic.getComplexityVector().determinismConfidence = 0.95;
-        }
-        rank(variants, synthetic, generation, pressure);
-    }
-
-    /**
      * Ranks variants by fitness score with atomic intent awareness.
      * Centralized fitness orchestration logic.
      */
-    public void rank(List<JSONObject> variants, AtomicIntentAnalysis atomic, int generation, EvolutionaryPressureVector pressure) {
+    public void rank(List<JSONObject> variants, GoalModel goal, SemanticEnvelope envelope, AtomicIntentAnalysis atomic, int generation, EvolutionaryPressureVector pressure) {
         for (JSONObject v : variants) {
-            // Stage 1: Pure Quality Score
+            // Stage 1: Goal Alignment (Mandatory Semantic Anchoring)
+            double semanticDistance = calculateSemanticDistance(goal, v, envelope);
+            v.put("semantic_distance", semanticDistance);
+            double goalSatisfaction = 1.0 - semanticDistance;
+
+            // Stage 2: Pure Quality Score
             FitnessRecord fitness = scoreQuality(v, generation, atomic);
-            double score = fitness.getTotalScore();
+            fitness.setGoalSatisfaction(goalSatisfaction);
+
+            // STABILIZATION: Goal Alignment accounts for 80% of the total fitness score.
+            // This ensures semantic continuity and prevents over-engineering from surviving if it drifts from the goal.
+            double qualityScore = fitness.getTotalScore();
+            double finalScore = (0.8 * goalSatisfaction) + (0.2 * qualityScore);
+
+            fitness.setTotalScore(finalScore);
             v.put("fitness_record", fitness);
 
-            // Stage 2: Evolutionary Pressure (Scope, Pressure Vector)
-            score = applyPressure(v, score, atomic, pressure);
+            // Stage 3: Evolutionary Pressure (Scope, Pressure Vector)
+            finalScore = applyPressure(v, finalScore, atomic, pressure);
 
-            // Stage 3: Constraint Gates
-            score = applyGates(v, score, atomic);
+            // Stage 4: Constraint Gates
+            finalScore = applyGates(v, finalScore, atomic);
 
-            v.put("score", score);
+            v.put("score", finalScore);
         }
 
-        // Stage 4: Selection (Sorting)
+        // Stage 5: Selection (Sorting)
         sortSelection(variants);
+    }
+
+    @Deprecated
+    public void rank(List<JSONObject> variants, AtomicIntentAnalysis atomic, int generation, EvolutionaryPressureVector pressure) {
+        rank(variants, null, null, atomic, generation, pressure);
     }
 
     private FitnessRecord scoreQuality(JSONObject variant, int generation, AtomicIntentAnalysis atomic) {
         return calculateFitnessRecord(variant, generation, null, atomic);
+    }
+
+    public double calculateSemanticDistance(GoalModel goal, JSONObject variant, SemanticEnvelope envelope) {
+        if (goal == null) return 0.5; // Default if goal is missing during legacy ranking
+
+        String strategy = variant.optString("strategy", "").toLowerCase();
+        String philosophy = variant.optString("semantic_anchor", "").toLowerCase();
+        String primaryAction = goal.getPrimaryAction().toLowerCase();
+
+        // Technical keywords that are often semantically identical for the same goal
+        String[] identicalTechnicalConcepts = {"static", "instance", "constructor", "overloads", "logger", "system.out", "varargs", "library", "utility"};
+
+        double distance = 0.0;
+
+        // 1. Mandatory Concepts Check (Goal Relative)
+        if (envelope != null && !envelope.getMandatoryConcepts().isEmpty()) {
+            int missed = 0;
+            for (String concept : envelope.getMandatoryConcepts()) {
+                String c = concept.toLowerCase();
+                // If it's a technical variety keyword, we are lenient
+                boolean isTechnicalVariety = false;
+                for (String tech : identicalTechnicalConcepts) {
+                    if (c.contains(tech)) { isTechnicalVariety = true; break; }
+                }
+
+                if (!strategy.contains(c) && !philosophy.contains(c)) {
+                    if (!isTechnicalVariety) missed++;
+                }
+            }
+            distance += (double) missed / envelope.getMandatoryConcepts().size() * 0.4;
+        }
+
+        // 2. Exact Match or Intent Overlap
+        if (strategy.contains(primaryAction) || philosophy.contains(primaryAction)) {
+            distance += 0.0; // Perfect intent match
+        } else {
+            // 3. Keyword Overlap (Weighted toward intent keywords)
+            String[] keywords = primaryAction.split(" ");
+            int matches = 0;
+            int significantKeywords = 0;
+            for (String k : keywords) {
+                if (k.length() <= 3) continue;
+
+                boolean isTechnical = false;
+                for (String tech : identicalTechnicalConcepts) {
+                    if (k.equalsIgnoreCase(tech)) { isTechnical = true; break; }
+                }
+
+                if (!isTechnical) {
+                    significantKeywords++;
+                    if (strategy.contains(k) || philosophy.contains(k)) {
+                        matches++;
+                    }
+                }
+            }
+            double overlap = significantKeywords > 0 ? (double) matches / significantKeywords : 1.0;
+            distance += (1.0 - overlap) * 0.6;
+        }
+
+        // 4. Forbidden Regions Check (Architectural Inflation)
+        if (envelope != null && !envelope.getForbiddenRegions().isEmpty()) {
+            for (String region : envelope.getForbiddenRegions()) {
+                String r = region.toLowerCase();
+                if (strategy.contains(r) || philosophy.contains(r)) {
+                    distance += 0.8; // Heavy penalty for architectural inflation
+                }
+            }
+        }
+
+        return Math.min(1.0, distance);
     }
 
     private double applyPressure(JSONObject variant, double score, AtomicIntentAnalysis atomic, EvolutionaryPressureVector pressure) {
