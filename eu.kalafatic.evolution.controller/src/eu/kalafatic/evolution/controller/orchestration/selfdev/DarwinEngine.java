@@ -332,11 +332,11 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
         switch (capType) {
             case CHAT: branchingLimit = 2; break;
-            case CODE: branchingLimit = 3; break; // IMPLEMENTATION
-            case EVOLUTION: branchingLimit = 3; break; // REFACTOR
+            case CODE: branchingLimit = 4; break; // IMPLEMENTATION
+            case EVOLUTION: branchingLimit = 4; break; // REFACTOR
             case ARCHITECTURE: branchingLimit = 4; break; // DESIGN
-            case SELF_DEV: branchingLimit = 6; break; // RESEARCH
-            default: branchingLimit = 2; break;
+            case SELF_DEV: branchingLimit = 4; break; // RESEARCH
+            default: branchingLimit = 4; break;
         }
 
         // Expand based on intensity if pressure is high
