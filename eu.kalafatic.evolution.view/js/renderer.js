@@ -15,6 +15,7 @@ window.ChatApp.Renderer = {
         const div = document.createElement('div');
         div.className = 'message ' + (isUser ? 'user' : 'ai') + ' ' + role;
         div.dataset.index = m.index;
+        if (m.isTerminal) div.classList.add('final-response');
         if (role.includes('approved')) div.classList.add('approved');
         if (!role.includes('waiting') && (role.includes('darwin') || role.includes('branch'))) div.classList.add('sealed');
 
@@ -36,10 +37,10 @@ window.ChatApp.Renderer = {
 
         if (role.includes('evolution-progress')) {
             this.updateProgressPanel(m);
-            if (document.body.className !== 'debug') return null; // Don't render in main chat stream unless debug
+            if (!document.body.classList.contains('debug')) return null; // Don't render in main chat stream unless debug
         } else if (role.includes('cognitive-state-changed')) {
             this.updateCognitiveStatePanel(m);
-            if (document.body.className !== 'debug') return null;
+            if (!document.body.classList.contains('debug')) return null;
         } else if (isDarwin) {
             content.style.flexDirection = 'column';
             content.appendChild(this.renderDarwin(m));

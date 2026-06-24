@@ -115,6 +115,9 @@
         .message.final-response { align-self: flex-start; border-width: 2px; border-color: var(--success); display: flex; }
 
         /* Feedback Level Visibility Rules (Mirrored from Eclipse View) */
+        .message.ai, .think-block { display: none; }
+        .message.user, .message.final-response, .message.error, .message.waiting { display: flex !important; }
+
         body.interactive .message.darwin,
         body.interactive .message.branch,
         body.interactive .message.darwin-branches { display: flex; }
@@ -122,11 +125,13 @@
         body.advanced .message.darwin,
         body.advanced .message.branch,
         body.advanced .message.darwin-branches,
-        body.advanced .message.thinking { display: flex; }
+        body.advanced .think-block { display: flex; }
 
-        body.full .message.ai { display: flex; }
+        body.full .message.ai,
+        body.full .think-block { display: flex; }
 
         body.debug .message.ai,
+        body.debug .think-block,
         body.debug .message.progress { display: flex !important; }
 
         .message-meta { font-size: 0.7em; color: var(--text-dim); margin-bottom: 4px; display: flex; justify-content: space-between; gap: 10px; }
@@ -464,6 +469,7 @@
             if (msg.priority === 3) className += ' waiting';
             if (msg.priority === 1) className += ' progress';
             if (agentType === 'error') className += ' error';
+            if (msg.isTerminal) className += ' final-response';
 
             div.className = className;
 
@@ -632,18 +638,17 @@
             const levels = ['simple', 'interactive', 'advanced', 'full', 'debug'];
             levels.forEach(l => document.body.classList.remove(l));
             document.body.classList.add(level);
-            // Also sync to server if possible, but for now local UI filtering
+            // Local state persistence if desired, for now just UI switch
         }
 
         async function fetchInitialSettings() {
              await fetchSettings();
-             // Set initial feedback level from body class if it exists, or default to full
-             const level = document.body.className || 'full';
+             // Set initial feedback level
+             const select = document.getElementById('feedback-level-select');
+             const level = select ? select.value : 'full';
              const levels = ['simple', 'interactive', 'advanced', 'full', 'debug'];
              levels.forEach(l => document.body.classList.remove(l));
              document.body.classList.add(level);
-             const select = document.getElementById('feedback-level-select');
-             if (select) select.value = level;
         }
 
 
