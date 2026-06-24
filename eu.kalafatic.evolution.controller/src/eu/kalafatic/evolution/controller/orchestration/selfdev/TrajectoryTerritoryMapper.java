@@ -80,16 +80,18 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
 
         String schema = "{\n" +
           "  \"id\": \"unique-blueprint-id\",\n" +
-          "  \"strategy\": \"(Concise title for this path)\",\n" +
-          "  \"philosophy\": \"(Architectural core concept or conversational tone)\",\n" +
-          "  \"mutation_philosophy\": \"(Engineering or linguistic philosophy)\",\n" +
-          "  \"direction\": \"(Detailed technical or conversational implementation path)\",\n" +
-          "  \"characteristics\": [\"Required Trait 1\", \"Required Trait 2\"],\n" +
+          "  \"strategy\": \"(Concise technical title, e.g., 'Asynchronous Logger Service'. NEVER use 'ROOT', 'create', or 'bootstrap')\",\n" +
+          "  \"philosophy\": \"(Architectural core concept, e.g., 'Event-driven decoupling for performance')\",\n" +
+          "  \"mutation_philosophy\": \"(Engineering style, e.g., 'Functional reactive')\",\n" +
+          "  \"direction\": \"(Detailed implementation path)\",\n" +
+          "  \"characteristics\": [\"Trait 1\", \"Trait 2\"],\n" +
           "  \"tradeoffs\": \"what is sacrificed\",\n" +
-          "  \"survival_argument\": \"why this path is technically or conversationally viable\",\n" +
-          "  \"strategy_type\": \"PROBABLE_SURVIVOR | PHILOSOPHY_MUTATION | MAXIMAL_DIVERGENCE | STABILIZATION_RECOVERY | ARCHITECTURE_MAPPING | REFACTOR_HOTSPOT_ANALYSIS\"\n" +
+          "  \"survival_argument\": \"why this path is viable\",\n" +
+          "  \"strategy_type\": \"PROBABLE_SURVIVOR\"\n" +
           "}";
         builder.addJsonSchema(schema);
+        builder.addConstraints("MANDATORY: Wrap your JSON response in <BEGIN_DARWIN_JSON> and <END_DARWIN_JSON> tags.\n" +
+                               "MANDATORY: 'strategy' MUST be a specific architectural name. NEVER use 'ROOT', 'create', or 'bootstrap'.");
 
         String directive = getAgentInstructions();
         if (lockedLevel != null) {

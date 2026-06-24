@@ -117,7 +117,7 @@ public class DarwinFlow implements IOrchestrationFlow {
             if (tree.getRootId() == null) {
                 EvolutionNode root = new EvolutionNode();
                 root.setId("root-" + iterId);
-                root.setStrategy("ROOT: " + goal.getPrimaryAction());
+                root.setStrategy("Evolutionary Root: " + goal.getPrimaryAction());
                 root.setSemanticPhilosophy("Initial evolutionary root");
                 root.setIteration(0);
                 root.setStatus("ROOT");

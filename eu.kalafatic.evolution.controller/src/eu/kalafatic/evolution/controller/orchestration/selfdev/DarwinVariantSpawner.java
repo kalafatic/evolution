@@ -100,27 +100,27 @@ public class DarwinVariantSpawner {
         StringBuilder schemaSb = new StringBuilder();
         schemaSb.append("{\n")
           .append("  \"id\": \"").append(bp.getId()).append("\",\n")
-          .append("  \"strategy\": \"(Concrete technical strategy name)\",\n")
+          .append("  \"strategy\": \"(Specific title, e.g. 'Standard Console Printer'. DO NOT USE 'ROOT' or 'create')\",\n")
           .append("  \"strategy_type\": \"").append(bp.getStrategyType().name()).append("\",\n")
           .append("  \"mutation_philosophy\": \"").append(bp.getMutationPhilosophy()).append("\",\n")
           .append("  \"semantic_anchor\": \"").append(bp.getPhilosophy()).append("\",\n")
-          .append("  \"survival_argument\": \"why this branch is better in this context\",\n")
+          .append("  \"survival_argument\": \"why this branch is better\",\n")
           .append("  \"tradeoffs\": \"what is sacrificed\",\n")
           .append("  \"failure_risks\": \"how it might fail\",\n")
-          .append("  \"expected_outputs\": [\"result 1\"],\n")
-          .append("  \"reasoning_focus\": \"what this branch prioritizes\",\n")
-          .append("  \"projected_steps\": [\"step 1\", \"step 2\"],\n")
-          .append("  \"mutation_journal\": [\"(Step 1)\", \"(Step 2)\"],\n")
+          .append("  \"expected_outputs\": [\"stdout message\"],\n")
+          .append("  \"reasoning_focus\": \"priority\",\n")
+          .append("  \"projected_steps\": [\"Implement class\", \"Add main method\"],\n")
+          .append("  \"mutation_journal\": [\"Applied philosophy\"],\n")
           .append("  \"engineering_dimensions\": {\n")
           .append("    \"philosophy\": \"").append(bp.getPhilosophy()).append("\",\n")
-          .append("    \"execution_model\": \"atomic/service/reactive/etc\",\n")
-          .append("    \"abstraction_depth\": \"low/medium/high\",\n")
-          .append("    \"modularity_approach\": \"monolithic/modular/etc\",\n")
-          .append("    \"testing_strategy\": \"unit/integration/etc\",\n")
-          .append("    \"extensibility\": \"low/medium/high\",\n")
-          .append("    \"dependency_assumptions\": \"none/internal/external\",\n")
-          .append("    \"runtime_behavior\": \"deterministic/async/etc\",\n")
-          .append("    \"risk_acceptance\": \"conservative/experimental/etc\"\n")
+          .append("    \"execution_model\": \"atomic\",\n")
+          .append("    \"abstraction_depth\": \"low\",\n")
+          .append("    \"modularity_approach\": \"monolithic\",\n")
+          .append("    \"testing_strategy\": \"unit\",\n")
+          .append("    \"extensibility\": \"low\",\n")
+          .append("    \"dependency_assumptions\": \"none\",\n")
+          .append("    \"runtime_behavior\": \"deterministic\",\n")
+          .append("    \"risk_acceptance\": \"conservative\"\n")
           .append("  },\n");
 
         if (isMediated) {
@@ -140,10 +140,15 @@ public class DarwinVariantSpawner {
               .append("  },\n");
         }
 
-        schemaSb.append("  \"actions\": [{ \"domain\": \"file\", \"operation\": \"WRITE\", \"target\": \"path/to/artifact\", \"description\": \"Action description\", \"implementation\": \"(Full source code for the file)\" }]\n")
+        schemaSb.append("  \"actions\": [\n")
+          .append("    { \"domain\": \"file\", \"operation\": \"WRITE\", \"target\": \"src/main/java/com/example/App.java\", \"description\": \"Create class\", \"implementation\": \"public class App { ... }\" }\n")
+          .append("  ]\n")
           .append("}\n");
 
         builder.addJsonSchema(schemaSb.toString());
+        builder.addConstraints("MANDATORY: Wrap your JSON response in <BEGIN_DARWIN_JSON> and <END_DARWIN_JSON> tags.\n" +
+                               "MANDATORY: 'strategy' MUST be a specific architectural name. NEVER use 'ROOT', 'create', or 'bootstrap'.\n" +
+                               "MANDATORY: The 'actions' array MUST NOT be empty. It must contain at least one WRITE action with FULL source code.");
 
         String directive = "Your goal is controlled divergence under constraints. Move the system into a meaningfully different evolutionary region.\n\n";
         if (capability == eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType.CHAT) {

@@ -319,27 +319,37 @@ window.ChatApp.Renderer = {
             if (text.startsWith('```')) text = text.replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/i, '').trim();
 
             let data;
-            // Robust JSON extraction: find the first { or [ that isn't part of a tag
-            // and the last corresponding } or ]
-            const jsonMatch = text.match(/[\{\[][\s\S]*[\}\]]/);
-            if (jsonMatch) {
-                let candidate = jsonMatch[0];
-                // If it still looks like it has leading tags (e.g. from greedy match), strip them again
-                if (candidate.startsWith('[') && !candidate.startsWith('[{') && !candidate.startsWith('["')) {
-                     const nestedMatch = candidate.substring(1).match(/[\{\[][\s\S]*[\}\]]/);
-                     if (nestedMatch) candidate = nestedMatch[0];
-                }
-                data = JSON.parse(candidate);
+            // Robust JSON extraction: look for explicit Darwin tags first
+            if (text.includes('<BEGIN_DARWIN_JSON>') && text.includes('<END_DARWIN_JSON>')) {
+                const start = text.indexOf('<BEGIN_DARWIN_JSON>') + '<BEGIN_DARWIN_JSON>'.length;
+                const end = text.indexOf('<END_DARWIN_JSON>');
+                data = JSON.parse(text.substring(start, end).trim());
             } else {
-                data = JSON.parse(text);
+                // Fallback to regex: find the first { or [ and the last corresponding } or ]
+                const jsonMatch = text.match(/[\{\[][\s\S]*[\}\]]/);
+                if (jsonMatch) {
+                    let candidate = jsonMatch[0];
+                    // If it still looks like it has leading tags (e.g. from greedy match), strip them again
+                    if (candidate.startsWith('[') && !candidate.startsWith('[{') && !candidate.startsWith('["')) {
+                         const nestedMatch = candidate.substring(1).match(/[\{\[][\s\S]*[\}\]]/);
+                         if (nestedMatch) candidate = nestedMatch[0];
+                    }
+                    data = JSON.parse(candidate);
+                } else {
+                    data = JSON.parse(text);
+                }
             }
 
             const variants = Array.isArray(data) ? data : (data.variants || data.proposals || data.hypotheses || []);
-            if (!Array.isArray(variants)) {
-                 throw new Error("Darwin message must contain an array of variants/proposals/hypotheses");
-            }
-
             const iteration = data.iteration !== undefined ? data.iteration : null;
+
+            if (!Array.isArray(variants) || variants.length === 0) {
+                 container.innerHTML = `<div class="bubble error">
+                    <div style="font-weight:bold; margin-bottom: 4px;">Evolution Stalled (Iteration ${iteration !== null ? iteration : '?'})</div>
+                    <div>The model failed to produce valid evolutionary trajectories. Diversity requirements were not met.</div>
+                 </div>`;
+                 return container;
+            }
 
             const role = (m.agentType || '').toLowerCase();
             const isApproved = role.includes('approved');
