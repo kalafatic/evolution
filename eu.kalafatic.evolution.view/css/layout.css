@@ -126,7 +126,7 @@ mark.search-match {
 
 /* Feedback Level Visibility Rules */
 
-/* Reset: Hide most AI-generated content by default, opt-in via levels */
+/* Reset: Hide AI-generated content by default, opt-in via levels */
 .message.ai, .think-block, .non-essential, .section-plan, .section-debug, .section-timeline {
     display: none;
 }
@@ -137,34 +137,33 @@ mark.search-match {
 .message.error,
 .message.result-summary,
 .message.waiting {
-    display: flex;
+    display: flex !important;
 }
 
 /* 1. SIMPLE: USER PROMPT AND SYSTEM FINAL ANSWERS ONLY (Handled by base visibility) */
 
-/* 2. INTERACTIVE: SIMPLE + BRANCHES */
+/* 2. INTERACTIVE: SIMPLE + BRANCHES - NOTHING ELSE */
 body.interactive .message.darwin,
 body.interactive .message.branch,
 body.interactive .message.darwin-branches {
     display: flex;
 }
 
-/* 3. ADVANCED: INTERACTIVE + THINKING */
+/* 3. ADVANCED: INTERACTIVE + THINKING - NOTHING ELSE */
 body.advanced .message.darwin,
 body.advanced .message.branch,
 body.advanced .message.darwin-branches,
-body.advanced .message.thinking,
 body.advanced .think-block {
     display: flex;
 }
 
-/* 4. FULL: ADVANCED + LOGS (All AI agents) */
+/* 4. FULL: ADVANCED + LOGS - NOTHING ELSE */
 body.full .message.ai,
 body.full .think-block {
     display: flex;
 }
 
-/* 5. DEBUG: NO FILTERING - EVERYTHING VISIBLE */
+/* 5. DEBUG: NOTHING FILTERED - ALL VISIBLE */
 body.debug .message.ai,
 body.debug .think-block,
 body.debug .non-essential,
