@@ -179,8 +179,14 @@ public class DarwinFitnessRanker {
             total += calculateMediationFitness(variant.optJSONObject("mediation_candidate")) * 0.1;
         }
 
-        fr.setGoalSatisfaction(atomic != null && atomic.isAtomic() ? 0.9 : 0.7);
-        fr.setTotalScore(Math.min(1.0, total));
+        // 6. Semantic Alignment (Goal Satisfaction - Dominant 80%)
+        double semanticAlignment = variant.optDouble("semantic_distance", 1.0); // 0.0 is perfect, 1.0 is far
+        double alignmentScore = 1.0 - semanticAlignment;
+
+        fr.setGoalSatisfaction(alignmentScore);
+
+        double totalWithSemantic = (0.8 * alignmentScore) + (0.2 * total);
+        fr.setTotalScore(Math.min(1.0, totalWithSemantic));
 
         return fr;
     }

@@ -96,25 +96,8 @@ public class ImplementationPlanner {
             actions.put(action);
         }
 
-        // Strategy C: Generic workspace analysis fallback
-        if (actions.length() == 0) {
-            JSONObject action = new JSONObject();
-            action.put("domain", "kernel");
-            action.put("operation", "ANALYZE");
-            action.put("target", "workspace");
-            action.put("description", "Bootstrap " + variant.optString("id") + " architectural strategy: " + variant.optString("strategy"));
-            actions.put(action);
-        }
-
-        // Strategy D: FINAL FALLBACK GUARANTEE
-        if (actions.length() == 0) {
-            JSONObject action = new JSONObject();
-            action.put("domain", "kernel");
-            action.put("operation", "ANALYZE");
-            action.put("target", "workspace");
-            action.put("description", "Execute architectural intent for " + variant.optString("id"));
-            actions.put(action);
-        }
+        // Strategy C: NO GENERIC FALLBACKS. If no actions could be derived from projected_steps or atomic intent,
+        // the planner returns an empty array, which will be caught as a fatal error by the Validator.
 
         return actions;
     }
