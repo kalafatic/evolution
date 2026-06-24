@@ -101,19 +101,8 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
         }
         builder.addExecutionDirective(directive);
 
-        JSONObject obj = null;
-        for (int retry = 0; retry < 3; retry++) {
-            String response = aiService.sendRequest(context.getOrchestrator(), retry > 0 ? builder.build() + "\n\nCRITICAL: Your previous response used a forbidden placeholder strategy name. Choose a specific technical name." : builder.build(), context);
-            obj = JsonUtils.extractJsonObject(response);
-            if (obj != null) {
-                String strategy = obj.optString("strategy", "").toUpperCase();
-                if (!strategy.equals("ROOT") && !strategy.equals("CREATE") && !strategy.equals("BOOTSTRAP") && !strategy.equals("ANALYZE") && !strategy.equals("EXECUTE") && !strategy.isEmpty()) {
-                    break;
-                }
-                context.log("[TERRITORY] Placeholder detected in strategy: " + strategy + ". Retrying discovery...");
-                obj = null;
-            }
-        }
+        String response = aiService.sendRequest(context.getOrchestrator(), builder.build(), context);
+        JSONObject obj = JsonUtils.extractJsonObject(response);
 
         if (obj != null) {
             String id = obj.optString("id");

@@ -177,7 +177,13 @@ public class IterationManager {
     public ClarificationPlanner getClarificationPlanner() { return clarificationPlanner; }
     public IterationMemoryService getMemoryService() { return memoryService; }
     public AnalyticAgent getAnalyticAgent() { return analyticAgent; }
+    public RealityDiscoveryAgent getRealityDiscoveryAgent() { return realityDiscoveryAgent; }
+    public StructureAgent getStructureAgent() { return structureAgent; }
     public FinalResponseAgent getFinalResponseAgent() { return finalResponseAgent; }
+    public GoalUnderstandingEngine getGoalUnderstandingEngine() { return goalUnderstandingEngine; }
+    public SemanticEnvelopeEngine getSemanticEnvelopeEngine() { return semanticEnvelopeEngine; }
+    public DimensionInferenceEngine getDimensionInferenceEngine() { return dimensionInferenceEngine; }
+    public EvolutionaryTrajectoryEngine getEvolutionaryTrajectoryEngine() { return evolutionaryTrajectoryEngine; }
     public SessionContainer getSessionContainer() { return sessionContainer; }
     public eu.kalafatic.evolution.model.orchestration.Iteration getCurrentIterationModel() { return currentIterationModel; }
 
@@ -310,290 +316,7 @@ public class IterationManager {
     }
 
     private OrchestratorResponse handleInternal(TaskRequest taskRequest) throws Exception {
-        context.setStartTime(Instant.now());
-        String request = taskRequest.getPrompt();
-        OrchestrationState state = context.getOrchestrationState();
-
-        Map<String, Object> contextMap = taskRequest.getContext();
-        if (contextMap != null) {
-            state.getMetadata().putAll(contextMap);
-        }
-
-        if (context.getStateHolder().getState() == SystemState.EXECUTING && !context.getOrchestrator().getTasks().isEmpty()) {
-            context.log("[KERNEL] Pre-populated tasks detected in EXECUTING state. Bypassing orchestration for direct execution.");
-            boolean success = executeTasksWithRetries(context.getOrchestrator().getTasks());
-            OrchestratorResponse bypassResponse = new OrchestratorResponse();
-            bypassResponse.setResultType(ResultType.CHAT);
-            bypassResponse.setSummary(success ? "Execution completed successfully." : "Execution failed.");
-            transition(success ? SystemState.DONE : SystemState.FAILED, context);
-            return bypassResponse;
-        }
-
-        String prompt = request.trim();
-        boolean isControl = prompt.equalsIgnoreCase("yes") || prompt.equalsIgnoreCase("no") ||
-                           prompt.toLowerCase().startsWith("select ") ||
-                           prompt.toLowerCase().startsWith("approve variant ") ||
-                           prompt.toLowerCase().startsWith("reject variant ") ||
-                           prompt.toLowerCase().startsWith("keep variant ") ||
-                           prompt.equalsIgnoreCase("force solution") ||
-                           prompt.equalsIgnoreCase("approved") ||
-                           prompt.equalsIgnoreCase("rejected") ||
-                           prompt.equalsIgnoreCase("proceed") ||
-                           prompt.equalsIgnoreCase("ok") ||
-                           prompt.equalsIgnoreCase("okay") ||
-                           prompt.matches("^(yes|y|ok|okay|approve|proceed|go ahead|yep|sure)$");
-
-        String checkpointGoal = (String) state.getMetadata().get("checkpoint_goal");
-        if (isControl) {
-            state.getMetadata().put("pendingControlCommand", prompt);
-        }
-
-        if (!isControl) {
-            transition(SystemState.INIT, context);
-            boolean isNewGoal = (checkpointGoal != null && !checkpointGoal.equalsIgnoreCase(request));
-            boolean isStaleTerminal = state.getCurrentPhase() != null &&
-                                     (state.getCurrentPhase().contains("TERMINAL") ||
-                                      state.getCurrentPhase().contains("SUCCESS") ||
-                                      state.getCurrentPhase().contains("SATISFIED"));
-
-            if (isNewGoal || isStaleTerminal) {
-                context.log("[KERNEL] Resetting kernel for new request. Current phase: " + state.getCurrentPhase());
-                state.setCurrentPhase(null);
-                state.setIterationCount(0);
-
-                // Also reset trajectory lineage
-                context.getKernelContext().getMemoryService().getRecords().clear();
-                context.getOrchestrator().getTasks().clear();
-
-                // Clear any cached intent expansion to force fresh analysis
-                state.getMetadata().remove("intentExpansion");
-                state.getMetadata().remove("engineeringDimensions");
-            }
-            state.setRawInput(request);
-            state.getMetadata().put("checkpoint_goal", request);
-        } else if (state.getRawInput() == null || state.getRawInput().isEmpty()) {
-            state.setRawInput(request);
-            state.getMetadata().put("checkpoint_goal", request);
-        }
-
-        OrchestratorResponse response = new OrchestratorResponse();
-        response.setResultType(ResultType.CHAT);
-
-        BehaviorProfile profile = context.getBehaviorProfile();
-        ModeRouter router = new ModeRouter();
-
-        try {
-            context.getOrchestrator().getTasks().clear();
-            context.setCurrentTaskName("Initialization");
-            context.log("[KERNEL] Strategic Initialization: " + request);
-
-            ConversationState convState = ConversationState.load(context.getSharedMemory(), context.getSessionId());
-            convState.addMessage("User: " + request);
-
-            // Restore cognitive state from history if present
-            if (convState.getCognitiveState() != null) {
-                context.log("[KERNEL] Restoring cognitive state from conversation history.");
-                sessionContainer.getCognitiveState().setCurrentCapability(convState.getCognitiveState().getCurrentCapability());
-                sessionContainer.getCognitiveState().setCurrentIntent(convState.getCognitiveState().getCurrentIntent());
-                sessionContainer.getCognitiveState().setCurrentDirection(convState.getCognitiveState().getCurrentDirection());
-                sessionContainer.getCognitiveState().setConfidence(convState.getCognitiveState().getConfidence());
-                sessionContainer.getCognitiveState().setCognitiveDepth(convState.getCognitiveState().getCognitiveDepth());
-                sessionContainer.getCognitiveState().setVelocity(convState.getCognitiveState().getVelocity());
-                sessionContainer.getCognitiveState().setAcceleration(convState.getCognitiveState().getAcceleration());
-                sessionContainer.getCognitiveState().setDominantTrend(convState.getCognitiveState().getDominantTrend());
-                sessionContainer.getCognitiveState().setTrendStability(convState.getCognitiveState().getTrendStability());
-                sessionContainer.getCognitiveState().setTrajectory(new ArrayList<>(convState.getCognitiveState().getTrajectory()));
-                sessionContainer.getCognitiveState().getCapabilityScores().putAll(convState.getCognitiveState().getCapabilityScores());
-                sessionContainer.getCognitiveState().getCapabilityHistory().addAll(convState.getCognitiveState().getCapabilityHistory());
-            }
-
-            // 1. DISCOVERY phase
-            if (!profile.hasTrait(BehaviorTrait.REASONING_ATOMIC)) {
-                if (gitManager.isGitRepository()) {
-                    transition(SystemState.ANALYZING, context);
-                    context.log("[KERNEL] Discovery: Inspecting repository structure.");
-                    String projectStructure = structureAgent.process("Provide a concise summary of the project structure and technology stack.", context, null);
-                    state.getMetadata().put("projectStructure", projectStructure);
-
-                    WorkspaceArtifact archArtifact = new WorkspaceArtifact("arch-summary-" + System.currentTimeMillis(), "architecture-summary");
-                    archArtifact.setContent(projectStructure);
-                    archArtifact.getSemanticTags().add("architecture");
-                    archArtifact.getSemanticTags().add("structure");
-                    context.getSemanticWorkspace().addArtifact(archArtifact);
-
-                    // Formal Reality Discovery
-                    context.log("[KERNEL] Discovery: Building semantic repository snapshot.");
-                    TargetScanner scanner = new TargetScanner();
-                    TargetSnapshot.TargetType type = context.getProjectRoot().getAbsolutePath().contains("evolution") ? TargetSnapshot.TargetType.SELF : TargetSnapshot.TargetType.PROJECT;
-                    TargetSnapshot snapshot = scanner.scanToSnapshot(context.getProjectRoot(), type);
-
-                    // TWO-STAGE SELECTION: Heuristic pick 32 candidates for deep analysis
-                    ContextCurator curator = new ContextCurator();
-                    List<String> candidates = curator.selectContext(snapshot, request, 32);
-
-                    context.log("[KERNEL] Discovery: Selective deep analysis of " + candidates.size() + " high-signal candidates.");
-                    SemanticExtractor extractor = new SemanticExtractor();
-                    extractor.extractToSnapshot(snapshot, candidates);
-
-                    state.getMetadata().put("mediatedSnapshot", snapshot);
-
-                    // Construct formal TargetRealityModel
-                    context.log("[KERNEL] Discovery: Formalizing Target Reality Model.");
-                    eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel realityModel = realityDiscoveryAgent.discover(request, context, context.getProjectRoot().getAbsolutePath());
-                    state.getMetadata().put("targetRealityModel", realityModel);
-
-                    if (profile.hasTrait(BehaviorTrait.WORKFLOW_EXPORT_ONLY)) {
-                        context.log("[KERNEL] Mediated Mode: Triggering MetadataAgent repository cognition.");
-                        eu.kalafatic.evolution.controller.agents.MetadataAgent metadataAgent = new eu.kalafatic.evolution.controller.agents.MetadataAgent();
-                        metadataAgent.generate(context.getProjectRoot());
-                    }
-
-                    context.getOrchestrationState().addDiagnostic("[OrchestrationTrace] Discovery complete. Target Reality Model initialized.");
-                }
-            }
-
-            // 2. ANALYZING stage
-            transition(SystemState.ANALYZING, context);
-            if (gitManager.isGitRepository() || context.getMetadata().containsKey("testMode")) {
-                gitManager.ensureInitialCommit();
-
-                PromptInstructions instructions = (context.getOrchestrator() != null && context.getOrchestrator().getAiChat() != null) ?
-                        context.getOrchestrator().getAiChat().getPromptInstructions() : null;
-
-                if (instructions != null && instructions.isGitAutomation()) {
-                    String requestedBranch = (String) state.getMetadata().get("branch");
-                    String branchName = (requestedBranch != null && !requestedBranch.isEmpty()) ?
-                                         requestedBranch : "evo-" + context.getSessionId().substring(0, Math.min(context.getSessionId().length(), 8));
-
-                    context.log("[KERNEL] Git Automation enabled. Creating/Switching to branch: " + branchName);
-                    try {
-                        if (!gitManager.getCurrentBranch().equals(branchName)) {
-                            gitManager.createBranch(branchName);
-                        }
-                    } catch (Exception e) {
-                        context.log("[KERNEL] Git Warning: Could not manage branch " + branchName + ": " + e.getMessage());
-                    }
-                }
-            }
-
-            if (context.getPlatformMode() == null) {
-                PlatformMode mode = router.route(request, context.getOrchestrator());
-                context.setPlatformMode(mode);
-                context.log("Platform Mode: " + mode.getType());
-
-                if (sessionContainer == null) {
-                    throw new IllegalStateException("IterationManager: sessionContainer is null. Cannot publish mode change event.");
-                }
-                RuntimeEventBus bus = sessionContainer.getEventBus();
-                bus.publish(
-                    new eu.kalafatic.evolution.controller.workflow.RuntimeEvent(
-                        eu.kalafatic.evolution.controller.workflow.RuntimeEventType.MODE_CHANGED,
-                        context.getSessionId(), "Kernel", mode.getType().toString()));
-            }
-
-            // GROUNDING: Establish Goal Model and Locked Abstraction Level BEFORE Intensity Calculation
-            Object goalModelObj = state.getMetadata().get("goalModel");
-            GoalModel goalModel = null;
-            if (goalModelObj instanceof GoalModel) {
-                goalModel = (GoalModel) goalModelObj;
-            }
-            if (goalModel == null) {
-                goalModel = goalUnderstandingEngine.understand(request, context);
-                state.getMetadata().put("goalModel", goalModel);
-            }
-
-            if (state.getLockedAbstractionLevel() == null) {
-                AbstractionLevel lockedLevel = AbstractionLevel.DESIGN; // Default
-                String complexity = goalModel.getComplexity() != null ? goalModel.getComplexity().toUpperCase() : "MEDIUM";
-
-                if ("SIMPLE".equals(complexity)) {
-                    lockedLevel = AbstractionLevel.IMPLEMENTATION;
-                } else if ("HIGH".equals(complexity)) {
-                    lockedLevel = AbstractionLevel.ARCHITECTURE;
-                }
-
-                state.setLockedAbstractionLevel(lockedLevel);
-                context.log("[KERNEL] Abstraction level LOCKED to: " + lockedLevel + " based on complexity: " + complexity);
-            }
-
-            // ADAPTIVE KERNEL: Ensure execution profile is initialized before access
-            if (context.getExecutionProfile() == null) {
-                eu.kalafatic.evolution.controller.kernel.EvolutionProfile profile_init =
-                    eu.kalafatic.evolution.controller.kernel.EvolutionIntensityCalculator.calculate(context, getActiveTrajectory(context), null);
-                context.getOrchestrationState().setExecutionProfile(profile_init);
-            }
-
-            // ADAPTIVE KERNEL: Intensity-based analysis gating
-            int intensity = context.getExecutionProfile().getIntensity();
-            EvolutionAssessment initialAssessment = null;
-
-            if (intensity > 1) {
-                context.log("[KERNEL] Inspecting goal for unresolved semantic uncertainty.");
-                initialAssessment = dimensionInferenceEngine.analyze(request, context);
-                if (initialAssessment != null && initialAssessment.hasUnresolvedDimensions()) {
-                    context.log("[KERNEL] Unresolved dimensions detected: " +
-                        initialAssessment.getUnresolvedDimensions().stream().map(d -> d.getId()).collect(Collectors.joining(", ")));
-                } else {
-                    context.log("[KERNEL] No significant semantic uncertainty detected. Evolution will proceed with discovery grounding.");
-                }
-            } else {
-                context.log("[KERNEL] Low Intensity detected. Bypassing deep semantic analysis.");
-            }
-
-            context.log("[KERNEL] Routing to unified iterative evolutionary kernel.");
-            OrchestratorResponse result = evolve(request, context, initialAssessment);
-
-            boolean isError = result != null && result.getResultType() == ResultType.ERROR;
-
-            if (isError) {
-                transition(SystemState.FAILED, context);
-            } else {
-                // Final response handled inside evolve if terminal phase reached
-                if (!context.getStateHolder().getState().equals(SystemState.DONE)) {
-                    transition(SystemState.DONE, context);
-                }
-            }
-
-            if (!isError) {
-                PromptInstructions instructions = (context.getOrchestrator() != null && context.getOrchestrator().getAiChat() != null) ?
-                        context.getOrchestrator().getAiChat().getPromptInstructions() : null;
-
-                if (instructions != null && instructions.isGitAutomation() && gitManager.isGitRepository()) {
-                    context.log("[KERNEL] Git Automation: Committing changes.");
-                    try {
-                        gitManager.commit("Evolution Task: " + request.substring(0, Math.min(request.length(), 50)), context);
-                    } catch (Exception e) {
-                        context.log("[KERNEL] Git Warning: Could not commit changes: " + e.getMessage());
-                    }
-                }
-            }
-
-            FinalResponseAssembler assembler = new FinalResponseAssembler();
-            FinalResponse finalResponse = assembler.assemble(context, result.getSummary(), !isError, context.getStartTime());
-            result.setFinalResponse(finalResponse);
-
-            return result;
-
-        } catch (Exception e) {
-            context.log("[KERNEL] [CRITICAL] Orchestration failed: " + e.getMessage());
-            if (System.getProperty("evolution.test.debug") != null || context.getMetadata().containsKey("testMode")) {
-                e.printStackTrace();
-            }
-            state.addDiagnostic("Critical error: " + e.getMessage());
-            transition(SystemState.FAILED, context);
-
-            FinalResponseAssembler assembler = new FinalResponseAssembler();
-            FinalResponse finalResponse = assembler.assemble(context, "Error: " + e.getMessage(), false, context.getStartTime());
-            OrchestratorResponse errorResponse = new OrchestratorResponse();
-            errorResponse.setResultType(ResultType.ERROR);
-            errorResponse.setFinalResponse(finalResponse);
-
-            if (context.getMetadata().containsKey("testMode")) {
-                throw e;
-            }
-
-            return errorResponse;
-        }
+	return darwinEngine.orchestrateEvolution(taskRequest, this);
     }
 
     public void checkStep(String entityId, String type, String description) throws Exception {
@@ -684,187 +407,21 @@ public class IterationManager {
         ));
     }
 
+    @Deprecated
     public OrchestratorResponse evolve(String request, TaskContext context) throws Exception {
         return evolve(request, context, null);
     }
 
+    @Deprecated
     public OrchestratorResponse evolve(String request, TaskContext context, EvolutionAssessment initialAssessment) throws Exception {
-        // ADAPTIVE KERNEL: Ensure execution profile is initialized before access
-        if (context.getExecutionProfile() == null) {
-            eu.kalafatic.evolution.controller.kernel.EvolutionProfile profile_init =
-                eu.kalafatic.evolution.controller.kernel.EvolutionIntensityCalculator.calculate(context, getActiveTrajectory(context), null);
-            context.getOrchestrationState().setExecutionProfile(profile_init);
-        }
-
-        context.log("[KERNEL] Starting Recursive Evolutionary Cognition Loop.");
-
-        sessionContainer.getEventBus().publish(new RuntimeEvent(RuntimeEventType.FLOW_STARTED, context.getSessionId(), "Kernel", request));
-
-        OrchestrationState state = context.getOrchestrationState();
-        state.getCognitiveTrace().addNode(new CausalNode(
-            "evolution-start-" + System.currentTimeMillis(),
-            "EVOLUTION_INIT",
-            "IterationManager",
-            List.of(),
-            List.of("DarwinFlow"),
-            1.0,
-            "Recursive evolutionary cognition kernel active."
-        ));
-
-        EvaluationResult result = null;
-        int safetyCounter = 0;
-        DarwinFlow darwinFlow = new DarwinFlow(aiService, this);
-
-        // expansion-based iteration limit
-        int expansionValue = 5;
-        if (context.getOrchestrator() != null && context.getOrchestrator().getAiChat() != null) {
-            String sessionId = context.getSessionId();
-            eu.kalafatic.evolution.model.orchestration.ChatSession chatSession = context.getOrchestrator().getAiChat().getSessions().stream()
-                .filter(s -> s.getId().equals(sessionId)).findFirst().orElse(null);
-            if (chatSession != null) {
-                expansionValue = chatSession.getExpansion();
-            }
-        }
-
-        // 2. ADAPTIVE KERNEL: Intensity Scaling
-        int intensity_val = context.getExecutionProfile().getIntensity();
-
-        int minIterations = 1;
-        PromptInstructions instructions = (context.getOrchestrator() != null && context.getOrchestrator().getAiChat() != null) ?
-                context.getOrchestrator().getAiChat().getPromptInstructions() : null;
-        if (instructions != null) {
-            minIterations = instructions.getPreferredMaxIterations();
-        }
-
-        // Enforce multiple iterations for non-CHAT tasks as requested
-        if (minIterations < 2 && intensity_val >= 1 && context.getExecutionProfile().getCapability() != eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType.CHAT) {
-            minIterations = 2;
-        }
-
-        // Cap iterations for CHAT capability to avoid over-evolution of simple interactions
-        if (context.getExecutionProfile().getCapability() == eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType.CHAT) {
-            if (minIterations > 1) minIterations = 1;
-        }
-
-        if (minIterations < 1) minIterations = 1;
-
-        int maxIterationsLimit = 20; // Default Medium
-        if (intensity_val == 1) maxIterationsLimit = 10; // Simple tasks still need to complete phases
-        else if (intensity_val == 2) maxIterationsLimit = 15;
-        else if (expansionValue <= 3) maxIterationsLimit = 25;
-        else if (expansionValue >= 8) maxIterationsLimit = 100;
-
-        // Ensure max is never less than min
-        maxIterationsLimit = Math.max(maxIterationsLimit, minIterations);
-
-        context.log("[KERNEL] Dynamic Expansion Control: Min Iterations = " + minIterations + ", Target Max Iterations = " + maxIterationsLimit);
-
-        // 1. Recursive Evolutionary Loop
-        context.log("[KERNEL] Phase: Recursive Evolutionary Trajectory System.");
-        while (safetyCounter < maxIterationsLimit && !context.isPaused()) {
-            state.setIterationCount(safetyCounter);
-            context.log("[KERNEL] [LOOP] Starting Iteration " + (safetyCounter + 1) + " (Phase: " + state.getCurrentPhase() + ")");
-
-            // RECURSIVE ARCHITECTURAL DISCOVERY: Refine model in each iteration
-            // ADAPTIVE KERNEL: Only refine reality in subsequent iterations if intensity is high
-            if (safetyCounter > 0 && intensity_val >= 3) {
-                refineTargetReality(request, context);
-            }
-
-            try {
-                result = runDarwinIteration(context, darwinFlow);
-            } catch (Exception e) {
-                context.log("[KERNEL] [CRITICAL] Darwin iteration failed with exception: " + e.getMessage());
-                java.io.StringWriter sw = new java.io.StringWriter();
-                e.printStackTrace(new java.io.PrintWriter(sw));
-                context.log(sw.toString());
-                throw e;
-            }
-            safetyCounter++;
-
-            // Evaluate Stability and Evolutionary Pressure
-            Trajectory activeTrajectory = getActiveTrajectory(context);
-            if (activeTrajectory != null && !isIntentExpansionPhase(context)) {
-                boolean stabilized = evolutionaryTrajectoryEngine.evolve(activeTrajectory, context);
-                if (stabilized) {
-                    context.log("[KERNEL] [LOOP] Evolutionary equilibrium detected for trajectory " + activeTrajectory.getTrajectoryId() + ". Converging.");
-                }
-            }
-
-            saveFullCheckpoint();
-
-            if (result.getDecision() != SelfDevDecision.CONTINUE) {
-                if (safetyCounter < minIterations) {
-                    context.log("[KERNEL] Evolution reached decision (" + result.getDecision() + "), but Min Iterations (" + minIterations + ") not met. Continuing evolution.");
-                    // RESET PHASE to force continued evolution instead of spinning
-                    state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(EvolutionPhase.SELECTION_REFINEMENT));
-                    if (context.getStateHolder().getState() == SystemState.DONE) {
-                        transition(SystemState.INIT, context);
-                    }
-                } else {
-                    sessionContainer.getEventBus().publish(new RuntimeEvent(RuntimeEventType.FLOW_COMPLETED, context.getSessionId(), "Kernel", result.getDecision().toString()));
-                    break;
-                }
-            }
-
-            // If we reached a terminal phase during the iteration, break the loop if min iterations met
-            String currentPhaseStr = state.getCurrentPhase();
-            if (currentPhaseStr != null && (currentPhaseStr.contains("TERMINAL") || currentPhaseStr.contains("SATISFIED"))) {
-                if (safetyCounter < minIterations) {
-                    context.log("[KERNEL] Terminal phase (" + state.getCurrentPhase() + ") reached, but Min Iterations (" + minIterations + ") not met. Continuing evolution.");
-                    // RESET PHASE to force continued evolution instead of spinning
-                    state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(EvolutionPhase.SELECTION_REFINEMENT));
-                    if (context.getStateHolder().getState() == SystemState.DONE) {
-                        transition(SystemState.INIT, context);
-                    }
-                } else {
-                    break;
-                }
-            }
-        }
-
-        OrchestratorResponse response = new OrchestratorResponse();
-        response.setResultType(ResultType.CHAT);
-
-        // FAILURE PROPAGATION: If the loop exited without reaching a terminal phase, it might be a failure
-        if (result != null && !result.isSuccess()) {
-            response.setResultType(ResultType.ERROR);
-            context.log("[KERNEL] Evolution loop terminated due to iteration failure.");
-        }
-
-        String summary;
-        if ((state.getCurrentPhase().contains("TERMINAL") || state.getCurrentPhase().contains("SYNTHESIS")) && response.getResultType() != ResultType.ERROR) {
-            if (context.getBehaviorProfile().hasTrait(BehaviorTrait.WORKFLOW_EXPORT_ONLY)) {
-                summary = performMediatedExportConvergence(request, context);
-            } else if (context.getMetadata().containsKey("testMode")) {
-                summary = "Evolution completed (Test Mode).";
-            } else {
-                // ADAPTIVE KERNEL: Use winning trajectory mutation trace for simple responses
-                int intensity_res = context.getExecutionProfile().getIntensity();
-
-                if (intensity_res == 1) {
-                    IterationRecord winner = context.getKernelContext().getMemoryService().getRecords().stream()
-                            .filter(r -> "ACTIVE".equals(r.getActivationState()))
-                            .reduce((first, second) -> second).orElse(null);
-                    summary = (winner != null && winner.getMutationTrace() != null) ? winner.getMutationTrace() : "Evolution complete.";
-                } else {
-                    summary = getFinalResponseAgent().generateFinalResponse(request, context.getOrchestrator().getTasks(), context);
-                }
-            }
-            transition(SystemState.DONE, context);
-        } else {
-            summary = "Evolution completed at phase: " + state.getCurrentPhase();
-        }
-
-        response.setSummary(summary);
-        return response;
+	return darwinEngine.evolve(request, this, initialAssessment);
     }
 
     public EvaluationResult runIteration(Iteration iteration) {
         this.currentIterationModel = iteration;
 
         try {
-            return runDarwinIteration(context, new DarwinFlow(aiService, this));
+            return darwinEngine.runDarwinIteration(context, this);
         } catch (Exception e) {
             context.log("[KERNEL] Critical error in iteration: " + e.getMessage());
             if (System.getProperty("evolution.test.debug") != null) {
@@ -912,273 +469,6 @@ public class IterationManager {
         memoryService.flush();
     }
 
-    public EvaluationResult runDarwinIteration(TaskContext context, DarwinFlow darwinFlow) throws Exception {
-        SystemState currentState = context.getStateHolder().getState();
-        if (currentState == SystemState.DONE || currentState == SystemState.FAILED) {
-            transition(SystemState.INIT, context);
-        }
-
-        // ADAPTIVE KERNEL: Freshly calculate iteration-scoped profile from current capability/pressure
-        eu.kalafatic.evolution.controller.kernel.EvolutionProfile executionProfile =
-            eu.kalafatic.evolution.controller.kernel.EvolutionIntensityCalculator.calculate(context, getActiveTrajectory(context), null);
-        context.log("[KERNEL] Darwin Profile derived for Iteration " + (context.getOrchestrationState().getIterationCount() + 1) +
-                    ": Capability=" + executionProfile.getCapability() + ", Intensity=" + executionProfile.getIntensity());
-        context.getOrchestrationState().setExecutionProfile(executionProfile);
-
-        BehaviorProfile profile = context.getBehaviorProfile();
-        OrchestrationState state = context.getOrchestrationState();
-        String goal = state.getRawInput();
-        if (goal == null || goal.isEmpty()) {
-            goal = context.getOrchestrator().getSelfDevSession() != null ? context.getOrchestrator().getSelfDevSession().getInitialRequest() : "Autonomous Improvement";
-        }
-
-        EvolutionPhaseMachine phaseMachine = new EvolutionPhaseMachine();
-        EvolutionPhase phase = state.getCurrentPhase() != null ? EvolutionPhase.fromString(state.getCurrentPhase()) : phaseMachine.getInitialPhase();
-
-        state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(phase));
-        if (currentIterationModel != null) {
-            currentIterationModel.setPhase(state.getCurrentPhase());
-        }
-
-        context.log("[KERNEL] Darwin Evolution Phase: " + state.getCurrentPhase());
-
-        Object goalModelObj = state.getMetadata().get("goalModel");
-        GoalModel goalModel = null;
-        if (goalModelObj instanceof GoalModel) {
-            goalModel = (GoalModel) goalModelObj;
-        } else if (goalModelObj instanceof Map) {
-            goalModel = new com.fasterxml.jackson.databind.ObjectMapper()
-                .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-                .convertValue(goalModelObj, GoalModel.class);
-            state.getMetadata().put("goalModel", goalModel);
-        }
-
-        if (goalModel == null) {
-            goalModel = goalUnderstandingEngine.understand(goal, context);
-            state.getMetadata().put("goalModel", goalModel);
-        }
-
-        // 1. ABSTRACTION LEVEL SELECTION & LOCKING
-        if (state.getLockedAbstractionLevel() == null) {
-            AbstractionLevel lockedLevel = AbstractionLevel.DESIGN; // Default
-            String complexity = goalModel.getComplexity() != null ? goalModel.getComplexity().toUpperCase() : "MEDIUM";
-
-            if ("SIMPLE".equals(complexity)) {
-                lockedLevel = AbstractionLevel.IMPLEMENTATION;
-            } else if ("HIGH".equals(complexity)) {
-                lockedLevel = AbstractionLevel.ARCHITECTURE;
-            }
-
-            state.setLockedAbstractionLevel(lockedLevel);
-            context.log("[KERNEL] Abstraction level LOCKED to: " + lockedLevel + " based on complexity: " + complexity);
-        }
-
-        Object envelopeObj = state.getMetadata().get("semanticEnvelope");
-        SemanticEnvelope envelope = null;
-        if (envelopeObj instanceof SemanticEnvelope) {
-            envelope = (SemanticEnvelope) envelopeObj;
-        } else if (envelopeObj instanceof Map) {
-            envelope = new com.fasterxml.jackson.databind.ObjectMapper()
-                .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-                .convertValue(envelopeObj, SemanticEnvelope.class);
-            state.getMetadata().put("semanticEnvelope", envelope);
-        }
-
-        if (envelope == null) {
-            envelope = semanticEnvelopeEngine.derive(goalModel, context);
-            state.getMetadata().put("semanticEnvelope", envelope);
-        }
-
-        Trajectory activeTrajectory = getActiveTrajectory(context);
-        int generation = activeTrajectory != null ? activeTrajectory.getGeneration() : 0;
-        String lineage = activeTrajectory != null ? activeTrajectory.getTrajectoryId() : "alpha";
-
-        // Use 1-based iteration count for UI display
-        EvolutionProgressPublisher.startIteration(context, state.getIterationCount() + 1, generation, lineage);
-        EvolutionProgressPublisher.updateStage(context, EvolutionStage.ANALYSIS);
-
-        if (phase == EvolutionPhase.TERMINAL_SUCCESS || phase == EvolutionPhase.TERMINAL_FAILURE || phase == EvolutionPhase.DESIGN_SATISFIED) {
-            EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
-            res.setSuccess(phase != EvolutionPhase.TERMINAL_FAILURE);
-            res.setDecision(SelfDevDecision.STOP);
-            return res;
-        }
-
-        if (phase == EvolutionPhase.INTENT_EXPANSION) {
-            EvolutionProgressPublisher.updateStage(context, EvolutionStage.ANALYSIS);
-            transition(SystemState.ANALYZING, context);
-            IntentExpansionResult expansion = getIntentExpansionEngine().expand(goal, context);
-            state.getMetadata().put("intentExpansion", expansion);
-
-            context.consoleLog("[KERNEL] Intent Interpretation: " + expansion.getState());
-
-            if (!handleIntentReview(context, expansion, goal)) {
-                return failedResult();
-            }
-
-            ClarificationPlanner planner = getClarificationPlanner();
-            ClarificationPlanner.Strategy strategy = planner.determineStrategy(expansion, context);
-            context.consoleLog("[KERNEL] Clarification Strategy: " + strategy);
-
-            boolean isStepMode = context.getOrchestrator().getAiChat() != null &&
-                               context.getOrchestrator().getAiChat().getPromptInstructions() != null &&
-                               context.getOrchestrator().getAiChat().getPromptInstructions().isStepMode();
-
-            if (strategy == ClarificationPlanner.Strategy.CLARIFY_USER && !isStepMode) {
-                if (context.isAutoApprove()) {
-                    context.log("[KERNEL] AUTO Mode: Downgrading CLARIFY_USER to AUTO_INFER.");
-                    strategy = ClarificationPlanner.Strategy.AUTO_INFER;
-                } else {
-                    context.log("[KERNEL] MANUAL Mode: Downgrading CLARIFY_USER to BRANCH_PARALLEL for evolutionary steering.");
-                    strategy = ClarificationPlanner.Strategy.BRANCH_PARALLEL;
-                }
-            }
-
-            if (strategy == ClarificationPlanner.Strategy.CLARIFY_USER) {
-                if (!handleClarification(context, planner, expansion, goal)) {
-                    return failedResult();
-                }
-                EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
-                res.setSuccess(true);
-                res.setDecision(SelfDevDecision.CONTINUE);
-                return res;
-            }
-
-            // Progression from INTENT_EXPANSION is now unified.
-            // Dimension discovery and pressure injection are handled in the following architectural phases.
-            EvolutionPhase nextPhase = evolutionaryTrajectoryEngine.determineNextPhase(phase, null, context);
-            state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(nextPhase));
-
-            context.log("[KERNEL] Intent grounding complete. Progressing to " + nextPhase);
-            state.setIterationCount(state.getIterationCount() + 1);
-
-            EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
-            res.setSuccess(true);
-            res.setDecision(SelfDevDecision.CONTINUE);
-            return res;
-        }
-
-        Object intentExpansionObj = state.getMetadata().get("intentExpansion");
-        IntentExpansionResult intentExpansionFinal = null;
-        if (intentExpansionObj instanceof IntentExpansionResult) {
-            intentExpansionFinal = (IntentExpansionResult) intentExpansionObj;
-        } else if (intentExpansionObj instanceof Map) {
-            intentExpansionFinal = new com.fasterxml.jackson.databind.ObjectMapper()
-                .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-                .convertValue(intentExpansionObj, IntentExpansionResult.class);
-            state.getMetadata().put("intentExpansion", intentExpansionFinal);
-        }
-
-        final IntentExpansionResult intentExpansion = intentExpansionFinal;
-
-        // Hierarchical Node Selection: Determine which node to expand
-        EvolutionTree tree = context.getKernelContext().getMemoryService().getEvolutionTree();
-        String nodeToExpandId = tree.getCurrentWinnerId();
-        if (nodeToExpandId == null && tree.getRootId() != null) {
-            nodeToExpandId = tree.getRootId();
-        }
-
-        context.log("[KERNEL] Hierarchical Expansion: Targeting node " + (nodeToExpandId != null ? nodeToExpandId : "ROOT") + " for semantic discovery.");
-
-        checkStep(state.getCurrentPhase(), "BRANCH_GENERATION", "Spawning competing trajectories for: " + goal);
-        List<BranchVariant> variants = darwinFlow.generateProposals(context, goalModel);
-
-        if (variants.isEmpty()) {
-            context.log("[KERNEL] CRITICAL: No trajectories survived diversity analysis. Evolution blocked.");
-            return failedResult();
-        }
-
-        String manualId = null;
-
-        if (state.getMetadata().containsKey("pendingControlCommand")) {
-            String pendingCommand = (String) state.getMetadata().remove("pendingControlCommand");
-            if (pendingCommand.toLowerCase().startsWith("select ") || pendingCommand.toLowerCase().startsWith("approve variant ")) {
-                manualId = pendingCommand.toLowerCase().startsWith("select ") ? pendingCommand.substring(7).trim() : pendingCommand.substring(16).trim();
-                context.log("[KERNEL] Auto-resolving variant selection from initial command: " + manualId);
-            } else if (pendingCommand.equalsIgnoreCase("approved") || pendingCommand.equalsIgnoreCase("proceed") || pendingCommand.equalsIgnoreCase("yes") || pendingCommand.equalsIgnoreCase("force solution")) {
-                manualId = variants.stream()
-                        .max((v1, v2) -> Double.compare(v1.getScore(), v2.getScore()))
-                        .map(v -> v.getId())
-                        .orElse(null);
-                context.log("[KERNEL] Auto-approving best variant from initial command: " + manualId);
-            }
-        }
-
-        if (variants.size() < 4 && state.getIterationCount() < 2) {
-            context.log("[KERNEL] EVOLUTIONARY MANDATE: Attempting to maximize vector diversity within capability envelope.");
-        }
-
-        if (manualId == null && !context.isAutoApprove()) {
-            if (executionProfile.requireUserSelection()) {
-                manualId = handleVariantSelection(context, variants, goal);
-                if ("REGENERATE".equals(manualId)) {
-                    return runDarwinIteration(context, darwinFlow);
-                }
-                if (manualId == null || "STOP".equals(manualId) || "FAILED".equals(manualId)) {
-                    EvaluationResult res = failedResult();
-                    res.setDecision(SelfDevDecision.STOP);
-                    return res;
-                }
-            } else {
-                context.log("[KERNEL] Adaptive Kernel: Auto-selecting best trajectory (User selection disabled for profile).");
-                manualId = variants.stream()
-                        .max((v1, v2) -> Double.compare(v1.getScore(), v2.getScore()))
-                        .map(v -> v.getId())
-                        .orElse(null);
-            }
-        }
-
-        String iterId = currentIterationModel != null ? currentIterationModel.getId() : "default";
-        eu.kalafatic.evolution.controller.supervision.EvolutionDecision decision = decide(iterId, variants, context, manualId);
-
-        // Propagate pressure to decision for consistent evaluation      
-        if (activeTrajectory != null) {
-            decision.setPressure(pressureEngine.analyze(activeTrajectory, context));
-        }
-
-        if ("force solution".equalsIgnoreCase(manualId)) {
-            context.log("[KERNEL] Committing selected trajectory via Force Solution.");
-        }
-
-        transition(SystemState.EXECUTING, context);
-        EvaluationResult result = darwinFlow.executeWinner(context, decision, variants, goalModel);
-        transition(SystemState.VERIFYING, context);
-
-        if (result.isSuccess()) {
-            EvolutionPhase currentPhaseEnum = EvolutionPhase.fromString(state.getCurrentPhase());
-
-            EvolutionPhase nextPhase = evolutionaryTrajectoryEngine.determineNextPhase(currentPhaseEnum, getActiveTrajectory(context), context);
-            state.setIterationCount(state.getIterationCount() + 1);
-
-            if (nextPhase == currentPhaseEnum) {
-                context.log("[KERNEL] Evolution continuing in current phase: " + nextPhase + " (Generation: " + state.getIterationCount() + ")");
-            } else {
-                context.log("[KERNEL] Evolution transitioning to phase: " + nextPhase + " (Generation: " + state.getIterationCount() + ")");
-            }
-
-            state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(nextPhase));
-
-            if (nextPhase == EvolutionPhase.DESIGN_SATISFIED) {
-                handleSatisfactionReview(context, getActiveTrajectory(context));
-                // Reload phase in case it was changed by satisfaction review
-                nextPhase = EvolutionPhase.fromString(state.getCurrentPhase());
-            }
-
-            result.setDecision(phaseMachine.determineDecision(nextPhase));
-
-            if (!handlePhaseConfirmation(context, state)) {
-                result.setDecision(SelfDevDecision.STOP);
-            }
-
-            EvolutionProgressPublisher.completeIteration(context);
-            transition(SystemState.DONE, context);
-        } else {
-            EvolutionProgressPublisher.completeIteration(context);
-            transition(SystemState.FAILED, context);
-        }
-
-        return result;
-    }
 
     private boolean hasStateChangeIntent(TaskContext context) {
         OrchestrationState state = context.getOrchestrationState();
@@ -1191,7 +481,7 @@ public class IterationManager {
         );
     }
 
-    private boolean handleIntentReview(TaskContext context, IntentExpansionResult expansion, String goal) throws Exception {
+    public boolean handleIntentReview(TaskContext context, IntentExpansionResult expansion, String goal) throws Exception {
         boolean isStepMode = context.getOrchestrator().getAiChat() != null &&
                            context.getOrchestrator().getAiChat().getPromptInstructions() != null &&
                            context.getOrchestrator().getAiChat().getPromptInstructions().isStepMode();
@@ -1241,7 +531,7 @@ public class IterationManager {
         return true;
     }
 
-    private boolean handleClarification(TaskContext context, ClarificationPlanner planner, IntentExpansionResult expansion, String goal) throws Exception {
+    public boolean handleClarification(TaskContext context, ClarificationPlanner planner, IntentExpansionResult expansion, String goal) throws Exception {
         String clarificationRequest = planner.formatClarificationRequest(expansion);
         context.log(clarificationRequest);
         String userResponse = context.requestInput(clarificationRequest).get();
@@ -1267,7 +557,7 @@ public class IterationManager {
         }
     }
 
-    private boolean handlePhaseConfirmation(TaskContext context, OrchestrationState state) {
+    public boolean handlePhaseConfirmation(TaskContext context, OrchestrationState state) {
         boolean isStepModeConfirmation = context.getOrchestrator().getAiChat() != null &&
                                        context.getOrchestrator().getAiChat().getPromptInstructions() != null &&
                                        context.getOrchestrator().getAiChat().getPromptInstructions().isStepMode();
@@ -1439,7 +729,7 @@ public class IterationManager {
         return v;
     }
 
-    private boolean isIntentExpansionPhase(TaskContext context) {
+    public boolean isIntentExpansionPhase(TaskContext context) {
         String phaseStr = context.getOrchestrationState().getCurrentPhase();
         return EvolutionPhase.INTENT_EXPANSION.name().equals(phaseStr) || "INTENT_EXPANSION".equals(phaseStr);
     }
@@ -1540,7 +830,7 @@ public class IterationManager {
         return KernelFactory.create(variantContext, sessionContainer, aiService);
     }
 
-    private Trajectory getActiveTrajectory(TaskContext context) {
+    public Trajectory getActiveTrajectory(TaskContext context) {
         IterationRecord lastWinner = context.getKernelContext().getMemoryService().getRecords().stream()
                 .filter(r -> "ACTIVE".equals(r.getActivationState()))
                 .reduce((first, second) -> second)
@@ -1558,7 +848,7 @@ public class IterationManager {
         state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(next));
     }
 
-    private void handleSatisfactionReview(TaskContext context, Trajectory activeTrajectory) throws Exception {
+    public void handleSatisfactionReview(TaskContext context, Trajectory activeTrajectory) throws Exception {
         if (activeTrajectory == null) return;
 
         context.log("[KERNEL] Design Satisfaction Review: Objective quality targets met. Pausing for final optimization decision.");
@@ -1610,7 +900,7 @@ public class IterationManager {
         }
     }
 
-    private void saveFullCheckpoint() {
+    public void saveFullCheckpoint() {
         if (memoryService == null) return;
 
         OrchestrationState state = context.getOrchestrationState();
@@ -1742,7 +1032,7 @@ public class IterationManager {
     }
 
 
-    private void refineTargetReality(String goal, TaskContext context) throws Exception {
+    public void refineTargetReality(String goal, TaskContext context) throws Exception {
         context.log("[KERNEL] Recursive Discovery: Refining Target Reality Model based on new iteration evidence.");
         TargetSnapshot snapshot = (TargetSnapshot) context.getOrchestrationState().getMetadata().get("mediatedSnapshot");
         TargetRealityModel existingModel = (TargetRealityModel) context.getOrchestrationState().getMetadata().get("targetRealityModel");
@@ -1799,7 +1089,7 @@ public class IterationManager {
         }
     }
 
-    private String performMediatedExportConvergence(String request, TaskContext context) {
+    public String performMediatedExportConvergence(String request, TaskContext context) {
         try {
             context.log("[KERNEL] Mediated Mode: Converging understanding into export package.");
             checkStep(context.getSessionId(), "MEDIATION_EXPORT", "Preparing final repository-grounded cognition export.");

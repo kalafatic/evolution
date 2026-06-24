@@ -61,4 +61,9 @@ public final class EvolutionConstants {
     public static final String PHASE_SELECTION_REFINEMENT = "SELECTION_REFINEMENT";
     public static final String PHASE_IMPLEMENTATION_PLAN = "IMPLEMENTATION_PLAN";
     public static final String PHASE_FINAL_SYNTHESIS = "FINAL_SYNTHESIS";
+
+    // Darwin Limits
+    public static final int MAX_DISCOVERY_RETRIES = 3;
+    public static final int MAX_MATERIALIZATION_RETRIES = 3;
+    public static final int MAX_ITERATIONS_LIMIT_MEDIUM = 20;
 }
