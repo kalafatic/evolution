@@ -26,6 +26,9 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
     protected String getAgentInstructions() {
         return "You are a Trajectory Territory Mapper (STABILIZATION LAYER).\n\n" +
                "GOAL: Generate ONE additional sibling for the current generation.\n" +
+               "DIMENSION MANDATE:\n" +
+               "Your task is to generate a sibling that competes EXCLUSIVELY on the active mutation dimension.\n" +
+               "ALL other architectural decisions must remain identical to the parent or common lineage.\n\n" +
                "RULES:\n" +
                "1. Same parent.\n" +
                "2. Same semantic goal.\n" +
@@ -33,7 +36,7 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
                "4. Different mutation than every existing sibling.\n" +
                "5. Do NOT regenerate any existing mutation.\n\n" +
                "TASK:\n" +
-               "Generate another technical philosophy that has NOT been touched.\n" +
+               "Generate another technical philosophy for the ACTIVE DIMENSION that has NOT been touched.\n" +
                "MANDATORY: 'strategy' MUST be a specific technical architectural name. NEVER use generic placeholders like 'ROOT', 'create', 'bootstrap', 'ANALYZE', or 'EXECUTE'.\n" +
                "EXAMPLES OF GOOD STRATEGY NAMES:\n" +
                "- Asynchronous Buffer Service\n" +
@@ -82,7 +85,8 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
 
         String taskDirective = "TASK: Generate ONE additional sibling.\n" +
                                "Rule: mutation MUST NOT equal any previous sibling.\n" +
-                               "Complete the sibling population for dimension: " + ctx.getDimension().getId();
+                               "Complete the sibling population for dimension: " + ctx.getDimension().getId() + " (" + ctx.getDimension().getDomain() + ")\n" +
+                               "MANDATE: The sibling MUST vary ONLY on this dimension. Do NOT introduce variations in other regions of the architecture.";
         builder.addConstraints(taskDirective);
 
         String schema = "{\n" +
