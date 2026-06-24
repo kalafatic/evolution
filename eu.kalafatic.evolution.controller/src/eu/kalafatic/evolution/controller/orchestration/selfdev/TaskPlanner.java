@@ -39,10 +39,6 @@ public class TaskPlanner extends BaseAiAgent {
 
             JSONObject planned = implementationPlanner.plan(vJson, context);
 
-            if (planned == null) {
-                return generateTasks(context, variant.getStrategy());
-            }
-
             // Map planned actions back to variant
             JSONArray plannedActions = planned.optJSONArray("actions");
             if (plannedActions != null) {

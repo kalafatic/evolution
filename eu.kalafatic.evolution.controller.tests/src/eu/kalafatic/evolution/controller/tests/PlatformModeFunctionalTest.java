@@ -65,36 +65,19 @@ public class PlatformModeFunctionalTest {
     public void testSimpleChatMode() throws Exception {
         TaskContext context = new TaskContext(orchestrator, tempDir);
         context.setPlatformMode(new PlatformMode(PlatformType.SIMPLE_CHAT, AutonomyLevel.LOW, 1, false));
-        context.getMetadata().put("testMode", true);
 
         mockLlm.setResponse("The project is a Tycho-based RCP application. I am in chat mode.");
 
-        // Stabilize metadata for test
-        orchestrator.setId(context.getSessionId());
-        eu.kalafatic.evolution.controller.orchestration.goal.SemanticEnvelope envelope = new eu.kalafatic.evolution.controller.orchestration.goal.SemanticEnvelope();
-        envelope.setCoreIntent("Tell me about the project");
-        context.getOrchestrationState().getMetadata().put("semanticEnvelope", envelope);
-
         String result = engine.execute("Tell me about the project", context);
         assertNotNull(result);
-        // Stabilized Darwin results in Winner Mutation Trace if intensity is 1
-        assertTrue(result.contains("Generated") || result.contains("chat mode") || result.contains("Evolution complete"));
+        assertTrue(result.contains("chat mode"));
     }
 
     @Test
     public void testAssistedCodingMode() throws Exception {
         TaskContext context = new TaskContext(orchestrator, tempDir);
         context.setAutoApprove(true);
-        // Use intensity 1 to avoid worktree complexity in this functional test
-        context.setPlatformMode(new PlatformMode(PlatformType.ASSISTED_CODING, AutonomyLevel.LOW, 1, false));
-        context.getMetadata().put("testMode", true);
-
-        // Stabilize metadata for test
-        orchestrator.setId(context.getSessionId());
-        eu.kalafatic.evolution.controller.orchestration.goal.SemanticEnvelope envelope = new eu.kalafatic.evolution.controller.orchestration.goal.SemanticEnvelope();
-        envelope.setCoreIntent("Create a readme");
-        envelope.getMandatoryConcepts().add("README");
-        context.getOrchestrationState().getMetadata().put("semanticEnvelope", envelope);
+        context.setPlatformMode(new PlatformMode(PlatformType.ASSISTED_CODING, AutonomyLevel.LOW, 2, false));
 
         // Add a task manually since we are using the orchestrator directly
         eu.kalafatic.evolution.model.orchestration.Task task = eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createTask();
@@ -112,11 +95,7 @@ public class PlatformModeFunctionalTest {
 
         String result = engine.execute("Create a readme", context);
         assertNotNull(result);
-
-        // In this functional test environment, FileTool may target a different temp location
-        // due to TaskContext root resolution or internal task execution paths.
-        // We verify the result string contains the completion marker.
-        assertTrue("Output should contain completion marker", result.contains("Generated") || result.contains("Evolution complete"));
+        assertTrue(new File(tempDir, "README.md").exists());
     }
 
     @Test
@@ -229,27 +208,16 @@ public class PlatformModeFunctionalTest {
 
         @Override
         public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
-            if (prompt.contains("Semantic Envelope Engine")) return "{\"coreIntent\": \"Goal\", \"mandatoryConcepts\": [\"Concept\"], \"allowedMutationDimensions\": [\"Implementation\"], \"forbiddenRegions\": [], \"maxAbstractionDepth\": 3, \"semanticDistanceThreshold\": 0.3}";
             if (prompt.contains("summary of the project structure")) return "Structure: Java";
             if (prompt.contains("user intent")) return "{\"state\": \"CLEAR\", \"dominantIntent\": \"Goal\", \"dimensions\": [], \"hypotheses\": [], \"confidence\": {\"overallConfidence\": 1.0}}";
             if (prompt.contains("Reviewer") || prompt.contains("TECHNICAL task")) return "{\"success\": true, \"comment\": \"Verified\"}";
             if (prompt.contains("SINGLE deterministic artifact")) return "{\"atomic\": false, \"confidence\": 0.1}";
             if (prompt.contains("Final Response Agent")) return "Finalized summary.";
 
-            // Territory Mapper (Blueprint Discovery)
-            if (prompt.contains("TERRITORY_MAPPING") || prompt.contains("discovery of solution territories")) {
-                return "{\"id\": \"bp-test-1\", \"strategy\": \"Standard implementation\", \"philosophy\": \"Direct fulfillment of requirements\", \"strategy_type\": \"PROBABLE_SURVIVOR\"}";
-            }
-
-            // Variant Spawner (Materialization)
-            if (prompt.contains("Darwin Engine") || prompt.contains("materializer of architectural lineages")) {
-                return "{\"id\": \"v-test\", \"strategy\": \"Test Strategy\", \"semantic_anchor\": \"Standard implementation\", \"survival_argument\": \"Test survival argument\", \"tradeoffs\": \"None\", \"failure_risks\": \"None\", \"projected_steps\": [], \"actions\": [{\"domain\":\"file\", \"operation\":\"WRITE\", \"target\":\"README.md\", \"description\":\"test\", \"implementation\": \"# README\"}]}";
-            }
-
             if (prompt.contains("strategy_type is FIXED to:")) {
                 String type = "PROBABLE_SURVIVOR";
                 if (prompt.contains("PHILOSOPHY_MUTATION")) type = "PHILOSOPHY_MUTATION";
-                return "{\"id\": \"v-test\", \"strategy_type\": \"" + type + "\", \"strategy\": \"Test Strategy\", \"survival_argument\": \"Test survival argument for validation.\", \"semantic_justification\": \"Test philosophy justification.\", \"tradeoffs\": \"Test tradeoffs description.\", \"failure_risks\": \"Test failure risks.\", \"actions\": [{\"domain\":\"file\", \"operation\":\"WRITE\", \"target\":\"README.md\", \"description\":\"test\", \"implementation\": \"# README\"}]}";
+                return "{\"id\": \"v-test\", \"strategy_type\": \"" + type + "\", \"strategy\": \"Test Strategy\", \"survival_argument\": \"Test survival argument for validation.\", \"semantic_justification\": \"Test philosophy justification.\", \"tradeoffs\": \"Test tradeoffs description.\", \"failure_risks\": \"Test failure risks.\", \"actions\": [{\"domain\":\"file\", \"operation\":\"WRITE\", \"target\":\"README.md\", \"description\":\"test\"}]}";
             }
 
             int current = callCount.getAndIncrement();

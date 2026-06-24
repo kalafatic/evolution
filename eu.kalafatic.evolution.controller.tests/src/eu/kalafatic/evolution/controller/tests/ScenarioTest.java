@@ -60,10 +60,8 @@ public class ScenarioTest {
 
         String javaCode = "public class Example {}";
         String evalResponse = "{\"success\": true, \"comment\": \"Looks good\"}";
-        String variantResponse1 = "{\"id\": \"v-probable\", \"strategy_type\": \"PROBABLE_SURVIVOR\", \"strategy\": \"Direct minimal implementation\", \"semantic_anchor\": \"Standard implementation\", \"actions\": [{\"domain\": \"file\", \"operation\": \"WRITE\", \"target\": \"Example.java\", \"description\": \"Write Example.java\", \"implementation\": \"public class Example {}\"}]}";
-        String envelopeResponse = "{\"coreIntent\": \"create java class Example\", \"mandatoryConcepts\": [\"Example\"], \"allowedMutationDimensions\": [\"Implementation\"], \"forbiddenRegions\": [], \"maxAbstractionDepth\": 3, \"semanticDistanceThreshold\": 0.3}";
+        String variantResponse1 = "{\"id\": \"v-probable\", \"strategy_type\": \"PROBABLE_SURVIVOR\", \"strategy\": \"Direct minimal implementation\", \"actions\": [{\"domain\": \"file\", \"operation\": \"WRITE\", \"target\": \"Example.java\", \"description\": \"Write Example.java\"}]}";
 
-        mockLlm.addResponseMapping("Semantic Envelope Engine", envelopeResponse);
         mockLlm.addResponseMapping("Provide a concise summary", "Tycho project.");
         mockLlm.addResponseMapping("PROBABLE_SURVIVOR", variantResponse1);
         mockLlm.addResponseMapping("Role: File", javaCode);

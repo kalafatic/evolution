@@ -984,7 +984,7 @@ public class IterationManager {
             state.getMetadata().put("semanticEnvelope", envelope);
         }
 
-        if (envelope == null) {
+        if (envelope == null && executionProfile.getIntensity() > 1) {
             envelope = semanticEnvelopeEngine.derive(goalModel, context);
             state.getMetadata().put("semanticEnvelope", envelope);
         }

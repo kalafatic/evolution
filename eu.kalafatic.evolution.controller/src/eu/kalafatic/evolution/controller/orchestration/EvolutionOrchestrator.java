@@ -135,8 +135,8 @@ public class EvolutionOrchestrator implements IOrchestrator {
             String path = taskName.replaceFirst("(?i)^(Write|Create|Update|MKDIR|DELETE)\\s+", "").trim().split(" ")[0];
             path = path.replaceFirst("^([a-zA-Z]:)?[/\\\\]+", "").replace('\\', '/');
 
-            if (path == null || path.isEmpty() || "null".equals(path) || ".".equals(path) || "workspace".equalsIgnoreCase(path)) {
-                throw new Exception("Kernel Violation: Attempted a file operation on a generic or invalid path: " + path + " (Task: " + taskName + ")");
+            if (path == null || path.isEmpty() || "null".equals(path)) {
+                throw new Exception("Kernel Violation: Attempted to write to a null or empty path: " + taskName);
             }
 
             String extractedCode = CodeExtractor.extractCode(patch);

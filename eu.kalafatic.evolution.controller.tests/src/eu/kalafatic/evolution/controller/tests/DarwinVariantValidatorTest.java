@@ -24,8 +24,7 @@ public class DarwinVariantValidatorTest {
                 "      \"domain\": \"file\",\n" +
                 "      \"operation\": \"WRITE\",\n" +
                 "      \"target\": \"src/Main.java\",\n" +
-                "      \"description\": \"Write main class\",\n" +
-                "      \"implementation\": \"public class Main {}\"\n" +
+                "      \"description\": \"Write main class\"\n" +
                 "    }\n" +
                 "  ]\n" +
                 "}";
@@ -52,8 +51,7 @@ public class DarwinVariantValidatorTest {
                 "      \"domain\": \"file\",\n" +
                 "      \"operation\": \"WRITE\",\n" +
                 "      \"target\": \"src/Main.java\",\n" +
-                "      \"description\": \"Write main class\",\n" +
-                "      \"implementation\": \"public class Main {}\"\n" +
+                "      \"description\": \"Write main class\"\n" +
                 "    }\n" +
                 "  ]\n" +
                 "}";
@@ -80,8 +78,7 @@ public class DarwinVariantValidatorTest {
                 "      \"domain\": \"file\",\n" +
                 "      \"operation\": \"WRITE\",\n" +
                 "      \"target\": \"src/Main.java\",\n" +
-                "      \"description\": \"Write main class\",\n" +
-                "      \"implementation\": \"public class Main {}\"\n" +
+                "      \"description\": \"Write main class\"\n" +
                 "    }\n" +
                 "  ]\n" +
                 "}";

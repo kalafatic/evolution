@@ -103,14 +103,13 @@ public class MediatedModeIntegrationTest {
         mockLlm.addResponseMapping("IntentExpansionEngine", "{\"state\": \"CLEAR\", \"dominantIntent\": \"Analysis\", \"confidence\": {\"overallConfidence\": 1.0}}");
 
         String darwinVariant = "{" +
-            "  \"id\": \"v-mediated\"," +
             "  \"strategy_type\": \"ARCHITECTURE_MAPPING\"," +
-            "  \"strategy\": \"Test mediated strategy description that is long enough\"," +
-            "  \"survival_argument\": \"Test survival argument for this variant\"," +
-            "  \"semantic_anchor\": \"Test justification for the semantic anchor\"," +
-            "  \"tradeoffs\": \"Test tradeoffs description for the variant\"," +
-            "  \"failure_risks\": \"Test risks description for the variant\"," +
-            "  \"actions\": [{ \"domain\": \"file\", \"operation\": \"WRITE\", \"target\": \"pom.xml\", \"description\": \"Test action description\", \"implementation\": \"<project></project>\" }]," +
+            "  \"strategy\": \"Test mediated strategy\"," +
+            "  \"survival_argument\": \"Test survival\"," +
+            "  \"semantic_justification\": \"Test justification\"," +
+            "  \"tradeoffs\": \"Test tradeoffs\"," +
+            "  \"failure_risks\": \"Test risks\"," +
+            "  \"actions\": [{ \"domain\": \"kernel\", \"operation\": \"ANALYZE\", \"target\": \"workspace\", \"description\": \"Test action\" }]," +
             "  \"score\": 0.95," +
             "  \"mediation_candidate\": {" +
             "    \"prompt\": \"Optimized prompt for big LLM\"," +
@@ -124,18 +123,11 @@ public class MediatedModeIntegrationTest {
             "}";
 
         mockLlm.addResponseMapping("BLUEPRINT TO MATERIALIZE", "<BEGIN_DARWIN_JSON>" + darwinVariant + "<END_DARWIN_JSON>");
-        mockLlm.addResponseMapping("TERRITORY_MAPPING", "{\"id\": \"bp-mediated\", \"strategy\": \"Test mediated strategy description that is long enough\", \"philosophy\": \"Test justification for the semantic anchor\", \"strategy_type\": \"ARCHITECTURE_MAPPING\"}");
     }
 
     @Test
     public void testMediatedDarwinToZipExport() throws Exception {
         eu.kalafatic.evolution.controller.orchestration.SessionContainer session = eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getOrCreateSession(context.getSessionId());
-
-        // Stabilize execution profile for mediated test
-        eu.kalafatic.evolution.controller.kernel.EvolutionProfile profile = eu.kalafatic.evolution.controller.kernel.EvolutionProfile.create(
-            eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType.EVOLUTION, 1);
-        context.getOrchestrationState().setExecutionProfile(profile);
-
         IterationManager manager = KernelFactory.create(context, session, aiService);
 
         TaskRequest request = new TaskRequest();
@@ -170,49 +162,12 @@ public class MediatedModeIntegrationTest {
 
     private static class MockLlmProvider {
         private final java.util.Map<String, String> responseMappings = new java.util.concurrent.ConcurrentHashMap<>();
-        private final java.util.concurrent.atomic.AtomicInteger territoryCount = new java.util.concurrent.atomic.AtomicInteger(0);
-        private final java.util.concurrent.atomic.AtomicInteger variantCount = new java.util.concurrent.atomic.AtomicInteger(0);
 
         public void addResponseMapping(String keyword, String response) {
             responseMappings.put(keyword, response);
         }
 
         public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
-            // Semantic Envelope Engine call
-            if (prompt.contains("Semantic Envelope Engine")) {
-                return "{\"coreIntent\": \"Analyze my project\", \"mandatoryConcepts\": [], \"allowedMutationDimensions\": [], \"forbiddenRegions\": [], \"maxAbstractionDepth\": 3, \"semanticDistanceThreshold\": 0.3}";
-            }
-
-            if (prompt.contains("TERRITORY_MAPPING") || prompt.contains("controlled discovery of a unique evolutionary blueprint") || prompt.contains("Trajectory Territory Mapper")) {
-                int count = territoryCount.getAndIncrement();
-                return "{\"id\": \"bp-mediated-" + count + "\", \"strategy\": \"Test mediated strategy " + count + " with long enough description\", \"philosophy\": \"Test justification " + count + " for the semantic anchor\", \"strategy_type\": \"ARCHITECTURE_MAPPING\"}";
-            }
-
-            if (prompt.contains("BLUEPRINT TO MATERIALIZE") || prompt.contains("Materializing trajectory from blueprint") || prompt.contains("Darwin Engine")) {
-                int count = variantCount.getAndIncrement();
-                String variant = "{" +
-                        "  \"id\": \"v-mediated-" + count + "\"," +
-                        "  \"strategy_type\": \"ARCHITECTURE_MAPPING\"," +
-                        "  \"strategy\": \"Test mediated strategy " + count + " description that is long enough\"," +
-                        "  \"survival_argument\": \"Test survival argument for this variant " + count + "\"," +
-                        "  \"semantic_anchor\": \"Test justification " + count + " for the semantic anchor\"," +
-                        "  \"tradeoffs\": \"Test tradeoffs description for the variant " + count + "\"," +
-                        "  \"failure_risks\": \"Test risks description for the variant " + count + "\"," +
-                        "  \"actions\": [{ \"domain\": \"file\", \"operation\": \"WRITE\", \"target\": \"pom.xml\", \"description\": \"Test action description\", \"implementation\": \"<project></project>\" }]," +
-                        "  \"score\": 0.95," +
-                        "  \"mediation_candidate\": {" +
-                        "    \"prompt\": \"Optimized prompt for big LLM\"," +
-                        "    \"selected_files\": [\"pom.xml\", \"sloeber.ino\"]," +
-                        "    \"architecture_summary\": \"Test arch\"," +
-                        "    \"subsystems\": [{\"id\":\"s1\",\"name\":\"TestSubsystem\",\"purpose\":\"Test purpose\",\"description\":\"Test desc\",\"boundaries\":[],\"critical_files\":[],\"responsibilities\":[] }]," +
-                        "    \"architectural_facts\": [{\"id\":\"f1\",\"subject\":\"TestSubsystem\",\"predicate\":\"exists\",\"description\":\"Verified existence\",\"confidence\":1.0,\"evidence\":[] }]," +
-                        "    \"dependencies\": \"Test deps\"," +
-                        "    \"execution_instructions\": \"Test instructions\"" +
-                        "  }" +
-                        "}";
-                return "<BEGIN_DARWIN_JSON>" + variant + "<END_DARWIN_JSON>";
-            }
-
             for (java.util.Map.Entry<String, String> entry : responseMappings.entrySet()) {
                 if (prompt.contains(entry.getKey())) {
                     return entry.getValue();
