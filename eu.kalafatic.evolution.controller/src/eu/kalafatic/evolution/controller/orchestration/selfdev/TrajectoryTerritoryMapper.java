@@ -25,29 +25,24 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
     @Override
     protected String getAgentInstructions() {
         return "You are a Trajectory Territory Mapper (STABILIZATION LAYER).\n\n" +
-               "GOAL: Discover the NEXT UNEXPLORED DESIGN TERRITORY.\n" +
-               "CORE DIRECTIVE: Do NOT improve existing territories. Do NOT rename existing ones. Return only genuinely NEW semantic territory.\n" +
-               "Every candidate represents a distinct ARCHITECTURAL SPECIES. Sibling variants MUST differ significantly in their technical essence, not just wording.\n\n" +
-               "SEARCH MEMORY MANDATE:\n" +
-               "- You will be provided with currently explored territories.\n" +
-               "- Your task is to identify a technical philosophy that has NOT been touched.\n\n" +
-               "DIVERSITY EXAMPLES (Species Level):\n" +
-               "- Minimalist OO: Direct, simple object-oriented approach.\n" +
-               "- Functional Utility: Stateless, pure functions, often static.\n" +
-               "- Reactive/Event-Driven: Decoupled via callbacks or streams.\n" +
-               "- Dependency Injection: Focus on loose coupling and testability.\n" +
-               "- Console/CLI Abstraction: Focus on terminal interaction and formatting.\n" +
-               "- Strategy/Command Pattern: Focus on behavior encapsulation.\n" +
-               "- Decorator/Pipeline: Focus on incremental processing.\n\n" +
+               "GOAL: Generate ONE additional sibling for the current generation.\n" +
+               "RULES:\n" +
+               "1. Same parent.\n" +
+               "2. Same semantic goal.\n" +
+               "3. Same abstraction level.\n" +
+               "4. Different mutation than every existing sibling.\n" +
+               "5. Do NOT regenerate any existing mutation.\n\n" +
+               "TASK:\n" +
+               "Generate another technical philosophy that has NOT been touched.\n" +
+               "Return only the new sibling as a single JSON object.\n\n" +
                "STRICT EVOLUTION CONSTRAINTS:\n" +
-               "- NO ARCHITECTURAL INFLATION: If the task is simple, DO NOT introduce unnecessary complexity. Discover MINIMAL implementation theories for distinct philosophies.\n" +
-               "- AXIS DIVERGENCE: Intentionally pivot on [State], [Lifecycle], [Dependency Model], [API Style], [Execution Model], [Abstraction].\n" +
-               "- GROUNDING: All blueprints MUST be descendants of the discovered Target Reality and hotspots.\n\n" +
-               "MANDATORY: Return a blueprint that is 90% technical divergence from anything previously explored.";
+               "- NO ARCHITECTURAL INFLATION: If the task is simple, DO NOT introduce unnecessary complexity.\n" +
+               "- GROUNDING: All blueprints MUST be descendants of the discovered Target Reality and hotspots.";
     }
 
-    public TrajectoryBlueprint discoverNext(String goal, TaskContext context, List<TrajectoryBlueprint> existing, String mutationContext, EvolutionDimension activeDimension) throws Exception {
-        context.log("[TERRITORY] Sequentially discovering next unique evolutionary trajectory for: " + goal);
+    public TrajectoryBlueprint discoverNextSibling(SiblingGenerationContext ctx, TaskContext context) throws Exception {
+        String goal = ctx.getGoal().getPrimaryAction();
+        context.log("[TERRITORY] Sequentially discovering sibling #" + (ctx.getSiblingIndex() + 1) + " for: " + goal);
 
         AbstractionLevel lockedLevel = context.getOrchestrationState().getLockedAbstractionLevel();
         eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType capability = context.getExecutionProfile().getCapability();
@@ -58,25 +53,35 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
         eu.kalafatic.evolution.controller.orchestration.behavior.DarwinPromptBuilder builder =
             new eu.kalafatic.evolution.controller.orchestration.behavior.DarwinPromptBuilder(context);
 
-        builder.addSystem("You are a single-path evolutionary territory mapper. You perform one controlled discovery of a unique evolutionary blueprint.")
+        builder.addSystem("You are a deterministic evolutionary territory mapper. Your task is to solve a constraint-satisfaction problem to find the next valid sibling.")
                .addGoal(goal)
-               .addMutationDimension(activeDimension)
+               .addMutationDimension(ctx.getDimension())
                .addSemanticEnvelope()
                .addReality()
-               .addLineage(mutationContext)
                .addGenomeMemory(genome);
 
-        String diversityConstraint;
-        if (capability == eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType.CHAT) {
-            diversityConstraint = "Discover the NEXT unexplored CONVERSATIONAL territory. Focus on different tones, depths of response, or types of assistance (e.g., 'Concise & Professional', 'Friendly & Elaborate', 'Technical & Precise').";
-        } else {
-            diversityConstraint = "Discover the NEXT unexplored design territory. Do NOT improve existing ones. Do NOT rename existing ones. Return only genuinely new semantic territory.";
+        // Add Parent info
+        if (ctx.getParent() != null) {
+            builder.addConstraints("PARENT:\n" + ctx.getParent().getStrategy() + " (" + ctx.getParent().getPhilosophy() + ")");
         }
-        builder.addConstraints(diversityConstraint);
+
+        // Add Existing Siblings as exclusion constraints
+        if (!ctx.getOlderSiblings().isEmpty()) {
+            StringBuilder siblingsStr = new StringBuilder("EXISTING SIBLINGS (DO NOT REPEAT):\n");
+            for (TrajectoryBlueprint sibling : ctx.getOlderSiblings()) {
+                siblingsStr.append("- ").append(sibling.getStrategy()).append(" (Mutation: ").append(sibling.getPhilosophy()).append(")\n");
+            }
+            builder.addConstraints(siblingsStr.toString());
+        }
+
+        String taskDirective = "TASK: Generate ONE additional sibling.\n" +
+                               "Rule: mutation MUST NOT equal any previous sibling.\n" +
+                               "Complete the sibling population for dimension: " + ctx.getDimension().getId();
+        builder.addConstraints(taskDirective);
 
         String schema = "{\n" +
           "  \"id\": \"unique-blueprint-id\",\n" +
-          "  \"strategy\": \"(Concise technical title, e.g., 'Asynchronous Logger Service'. NEVER use 'ROOT', 'create', or 'bootstrap')\",\n" +
+          "  \"strategy\": \"(Concise technical title, e.g., 'Asynchronous Logger Service')\",\n" +
           "  \"philosophy\": \"(Architectural core concept, e.g., 'Event-driven decoupling for performance')\",\n" +
           "  \"mutation_philosophy\": \"(Engineering style, e.g., 'Functional reactive')\",\n" +
           "  \"direction\": \"(Detailed implementation path)\",\n" +
@@ -86,18 +91,10 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
           "  \"strategy_type\": \"(Choose EXACTLY ONE: PROBABLE_SURVIVOR, PHILOSOPHY_MAPPING, MAXIMAL_DIVERGENCE, SPECULATIVE_ARCHITECTURE)\"\n" +
           "}";
         builder.addJsonSchema(schema);
-        builder.addConstraints("MANDATORY: Wrap your JSON response in <BEGIN_DARWIN_JSON> and <END_DARWIN_JSON> tags.\n" +
-                               "MANDATORY: 'strategy' MUST be a specific architectural name. NEVER use generic placeholders like 'ROOT', 'create', 'bootstrap', 'ANALYZE', or 'EXECUTE'. Choose a name that reflects the technical species.");
 
         String directive = getAgentInstructions();
         if (lockedLevel != null) {
             directive += "\n[LOCKED_ABSTRACTION_LEVEL] You MUST operate strictly at the " + lockedLevel + " level.\n";
-            if (lockedLevel == AbstractionLevel.IMPLEMENTATION) {
-                directive += "- DO NOT propose new architectures or complex patterns.\n" +
-                             "- Focus on concrete implementation variations of the SAME core design.";
-            } else if (lockedLevel == AbstractionLevel.DESIGN) {
-                directive += "- Focus on internal component design and API signatures.";
-            }
         }
         builder.addExecutionDirective(directive);
 
@@ -105,10 +102,7 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
         JSONObject obj = JsonUtils.extractJsonObject(response);
 
         if (obj != null) {
-            String id = obj.optString("id");
-            if (id == null || id.isEmpty()) {
-                id = "bp-" + System.currentTimeMillis() + "-" + (existing.size() + 1);
-            }
+            String id = "bp-iter" + context.getOrchestrationState().getIterationCount() + "-s" + ctx.getSiblingIndex() + "-" + System.currentTimeMillis();
             TrajectoryBlueprint bp = new TrajectoryBlueprint(id, goal, obj.optString("strategy"));
             bp.setPhilosophy(obj.optString("philosophy"));
             bp.setMutationPhilosophy(obj.optString("mutation_philosophy"));
@@ -131,6 +125,11 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
         }
 
         return null;
+    }
+
+    @Deprecated
+    public TrajectoryBlueprint discoverNext(String goal, TaskContext context, List<TrajectoryBlueprint> existing, String mutationContext, EvolutionDimension activeDimension) throws Exception {
+        return null; // Implementation replaced by discoverNextSibling
     }
 
 }

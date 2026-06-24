@@ -1726,6 +1726,54 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
         context.log("[DARWIN] Adaptive Kernel Intensity: " + intensity + ". Population Budget: " + branchingLimit * 2);
 
+        EvolutionTree tree = context.getKernelContext().getMemoryService().getEvolutionTree();
+        String currentParentId = tree.getCurrentWinnerId();
+
+        // REALITY GRAPH: Branch Revival Logic (Requirement 6)
+        if (currentParentId != null) {
+            EvolutionNode winnerNode = tree.getNode(currentParentId);
+            if (winnerNode != null && winnerNode.getFitnessScore() < 0.3) {
+                context.log("[DARWIN] Current lineage fitness low (" + winnerNode.getFitnessScore() + "). Attempting Branch Revival...");
+
+                // Search for a rejected sibling with higher potential fitness (or simply any sibling)
+                List<EvolutionNode> siblings = tree.getSiblings(currentParentId);
+                EvolutionNode bestAlternative = siblings.stream()
+                        .filter(s -> !"REJECTED_SEMANTIC".equals(s.getStatus()))
+                        .sorted((a, b) -> Double.compare(b.getFitnessScore(), a.getFitnessScore()))
+                        .findFirst().orElse(null);
+
+                if (bestAlternative != null && (bestAlternative.getFitnessScore() > winnerNode.getFitnessScore())) {
+                    context.log("[DARWIN] REVIVING BRANCH: " + bestAlternative.getMutationIdentity() + " (Fitness: " + bestAlternative.getFitnessScore() + ")");
+                    currentParentId = bestAlternative.getId();
+                    // We don't set currentWinnerId yet, we just start the mutation from here
+                }
+            }
+        }
+
+        if (currentParentId == null && tree.getRootId() != null) {
+            currentParentId = tree.getRootId();
+        }
+
+        // SEMANTIC GENOME: Initialize or retrieve from orchestration state
+        SemanticGenome genome = createGenome(goal, expansion);
+
+        // Select the next mutable dimension
+        EvolutionDimension activeDimension = dimensionScheduler.selectNextDimension(genome);
+        if (activeDimension == null) {
+            // FALLBACK: Default Implementation dimension
+            activeDimension = new EvolutionDimension("IMPLEMENTATION", "General implementation and refinement", AbstractionLevel.IMPLEMENTATION, SemanticDomain.EXECUTION);
+        }
+
+        context.getOrchestrationState().getMetadata().put("current_dimension", activeDimension.getId());
+        context.log("[DARWIN] Scheduled Mutation Dimension: " + activeDimension.getId());
+
+        // EXPLICIT EVOLUTION STATE (Milestone Requirement 7)
+        context.log("[EVOLUTION_STATE] Goal: " + goal.getPrimaryAction());
+        context.log("[EVOLUTION_STATE] Winner: " + (currentParentId != null ? currentParentId : "ROOT"));
+        context.log("[EVOLUTION_STATE] Dimension: " + activeDimension.getId());
+        context.log("[EVOLUTION_STATE] Iteration: " + currentIteration);
+        context.log("[EVOLUTION_STATE] Locked Decisions: " + genome.getLockedDimensions().size());
+
         // 1. MULTI-LINEAGE RETRIEVAL: Retrieve both ACTIVE and KEPT survivors (Milestone Requirement)
         List<IterationRecord> survivors = records.stream()
                 .filter(r -> "ACTIVE".equals(r.getActivationState()) || "KEPT".equals(r.getActivationState()))
@@ -1780,251 +1828,35 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         }
         String lineageContext = lineageBuilder.toString();
 
-        List<JSONObject> uniqueVariants = new ArrayList<>();
-
         // ADAPTIVE CAPABILITIES (Respecting LOCKED Abstraction Level)
         AbstractionLevel lockedLevel = context.getOrchestrationState().getLockedAbstractionLevel();
         boolean architectureEnabled = intensity >= 3 && (lockedLevel == null || lockedLevel == AbstractionLevel.ARCHITECTURE);
         boolean implementationEnabled = intensity >= 2 || (lockedLevel == AbstractionLevel.IMPLEMENTATION);
         BranchVariant.ReasoningLevel reasoningLevel = intensity == 1 ? BranchVariant.ReasoningLevel.MINIMAL :
                                                       intensity == 4 ? BranchVariant.ReasoningLevel.DEEP : BranchVariant.ReasoningLevel.BALANCED;
-        StringBuilder siblingMemoryBuilder = new StringBuilder();
 
-        EvolutionTree tree = context.getKernelContext().getMemoryService().getEvolutionTree();
-        String currentParentId = tree.getCurrentWinnerId();
+        List<JSONObject> uniqueVariants = new ArrayList<>();
 
-        // REALITY GRAPH: Branch Revival Logic (Requirement 6)
-        if (currentParentId != null) {
-            EvolutionNode winnerNode = tree.getNode(currentParentId);
-            if (winnerNode != null && winnerNode.getFitnessScore() < 0.3) {
-                context.log("[DARWIN] Current lineage fitness low (" + winnerNode.getFitnessScore() + "). Attempting Branch Revival...");
-
-                // Search for a rejected sibling with higher potential fitness (or simply any sibling)
-                List<EvolutionNode> siblings = tree.getSiblings(currentParentId);
-                EvolutionNode bestAlternative = siblings.stream()
-                        .filter(s -> !"REJECTED_SEMANTIC".equals(s.getStatus()))
-                        .sorted((a, b) -> Double.compare(b.getFitnessScore(), a.getFitnessScore()))
-                        .findFirst().orElse(null);
-
-                if (bestAlternative != null && (bestAlternative.getFitnessScore() > winnerNode.getFitnessScore())) {
-                    context.log("[DARWIN] REVIVING BRANCH: " + bestAlternative.getMutationIdentity() + " (Fitness: " + bestAlternative.getFitnessScore() + ")");
-                    currentParentId = bestAlternative.getId();
-                    // We don't set currentWinnerId yet, we just start the mutation from here
-                }
-            }
-        }
-
-        if (currentParentId == null && tree.getRootId() != null) {
-            currentParentId = tree.getRootId();
-        }
-
-        // SEMANTIC GENOME: Initialize or retrieve from orchestration state
-        SemanticGenome genome = createGenome(goal, expansion);
-
-        // Select the next mutable dimension
-        EvolutionDimension activeDimension = dimensionScheduler.selectNextDimension(genome);
-        if (activeDimension == null) {
-            // FALLBACK: Default Implementation dimension
-            activeDimension = new EvolutionDimension("IMPLEMENTATION", "General implementation and refinement", AbstractionLevel.IMPLEMENTATION, SemanticDomain.EXECUTION);
-        }
-
-        context.getOrchestrationState().getMetadata().put("current_dimension", activeDimension.getId());
-        context.log("[DARWIN] Scheduled Mutation Dimension: " + activeDimension.getId());
-
-        // EXPLICIT EVOLUTION STATE (Milestone Requirement 7)
-        context.log("[EVOLUTION_STATE] Goal: " + goal.getPrimaryAction());
-        context.log("[EVOLUTION_STATE] Winner: " + (currentParentId != null ? currentParentId : "ROOT"));
-        context.log("[EVOLUTION_STATE] Dimension: " + activeDimension.getId());
-        context.log("[EVOLUTION_STATE] Iteration: " + currentIteration);
-        context.log("[EVOLUTION_STATE] Locked Decisions: " + genome.getLockedDimensions().size());
-
-        // DYNAMIC TERRITORY DISCOVERY & MATERIALIZATION: Sequential loop to ensure diversity
-        TrajectoryTerritoryMapper mapper = new TrajectoryTerritoryMapper(getSessionContainer());
-        mapper.setAiService(aiService);
-
-        context.log("[DARWIN] Sequential Mutation Branching initialized (Target: " + branchingLimit + " unique trajectories).");
-
-        int attempts = 0;
-        // Search budget: more flexible than fixed constants
-        int maxAttempts = branchingLimit * 5;
-        int targetPopulation = branchingLimit;
-
-        context.log("[DARWIN] Coverage-Driven Discovery active. Target: " + targetPopulation);
-
-        while (uniqueVariants.size() < targetPopulation && attempts < maxAttempts) {
-            attempts++;
-            context.log("[DARWIN] Territory Exploration: Attempt " + attempts + " (Found: " + uniqueVariants.size() + ")");
-            try {
-                String discoveryGoal = generation == 0 ? goal.getPrimaryAction() : goal.getPrimaryAction() + " (Mutation Gen " + generation + ")";
-
-                // 1. Reconstruct Lineage Context from EvolutionTree
-                String fullLineagePrompt = tree.reconstructLineagePrompt(currentParentId);
-
-                // 2. Sequential Blueprint Discovery (Owned by DarwinEngine)
-                TrajectoryBlueprint bp = null;
-                // Centralized retry policy for blueprint discovery
-        for (int bpRetry = 0; bpRetry < EvolutionConstants.MAX_DISCOVERY_RETRIES; bpRetry++) {
-                     bp = constructTrajectoryBlueprint(goal, expansion, currentBlueprints, generation,
-                            siblingMemoryBuilder.toString(), mapper, discoveryGoal, fullLineagePrompt, activeDimension);
-                     if (bp != null) break;
-             context.log("[DARWIN] Blueprint discovery failed. Retry " + (bpRetry + 1) + "/" + EvolutionConstants.MAX_DISCOVERY_RETRIES + "...");
-                }
-
-                if (bp != null) {
-                    // STABILIZATION: Ensure unique BP ID across iterations/attempts to prevent tree & git conflicts
-                    if (bp.getId() == null || bp.getId().equals("unique-blueprint-id") || bp.getId().contains("seed")) {
-                        bp.setId("bp-iter" + currentIteration + "-v" + uniqueVariants.size() + "-" + System.currentTimeMillis());
-                    }
-
-                    if (activeDimension != null) {
-                        bp.getEngineeringDimensions().put("active_dimension", activeDimension.getId());
-                        bp.getEngineeringDimensions().put("active_dimension_description", activeDimension.getDescription());
-                    }
-
-                    // 3. Rigorous Technical Similarity Check (Search Memory)
-                    if (isTechnicallyDuplicate(bp, currentBlueprints)) {
-                        context.log("[DARWIN] Territory Rejected: Blueprint matches existing design species: " + bp.getStrategy());
-                        continue;
-                    }
-
-                    currentBlueprints.add(bp);
-
-                    // 4. Sequential Blueprint Materialization (Orchestrated by DarwinEngine)
-                    EvolutionProgressPublisher.updateBranchStatus(context, bp.getId(), bp.getPhilosophy(), "analyzing", null);
-                    EvolutionProgressPublisher.updateActiveModel(context, orchestrator != null ? (orchestrator.getOllama() != null ? orchestrator.getOllama().getModel() : "local") : "local", "Materializing Branch " + bp.getId());
-
-                    JSONObject variant = null;
-                    // Materialization Retries owned by DarwinEngine
-            for (int retry = 0; retry < EvolutionConstants.MAX_MATERIALIZATION_RETRIES; retry++) {
-                        context.log("[DARWIN] Materialization Attempt " + (retry + 1) + " for " + bp.getId());
-                        variant = spawner.spawnSingleBlueprint(goal, bp, basePrompt, fullLineagePrompt + lineageContext, rejectedSiblings, siblingMemoryBuilder.toString(), isMediated, context, activeDimension, genome);
-
-                        if (variant != null) break;
-
-                        context.log("[DARWIN] Materialization failed for " + bp.getId() + ". Retrying...");
-                    }
-
-                    // Repair Orchestration owned by DarwinEngine
-                    if (variant == null) {
-                        context.log("[DARWIN] All materialization retries failed for " + bp.getId() + ". Triggering repair orchestration.");
-                        variant = spawner.autoRepair(bp, context);
-                    }
-
-                    if (variant != null) {
-                        // IMPLEMENTATION PLANNING: Convert architectural reasoning into actions
-                        ImplementationPlanner planner = new ImplementationPlanner();
-                        variant = planner.plan(variant, context);
-                        variant = completeTrajectorySchema(variant, bp, context);
-
-                        // 5. Semantic Vector Divergence Validation
-                        if (isTechnicallyIdentical(variant, uniqueVariants)) {
-                            context.log("[DARWIN] Territory Rejected: Materialized variant 90% identical to existing sibling.");
-                            continue;
-                        }
-
-                        variant.put("reasoning_level", reasoningLevel.name());
-                        variant.put("architecture_enabled", architectureEnabled);
-                        variant.put("implementation_enabled", implementationEnabled);
-
-                        // Evolutionary Identity
-                        String branchSuffix = String.valueOf((char)('A' + uniqueVariants.size()));
-                        String parentIdentity = "ROOT";
-                        EvolutionNode parentNode = tree.getNode(currentParentId);
-                        if (parentNode != null && parentNode.getMutationIdentity() != null) {
-                            parentIdentity = parentNode.getMutationIdentity();
-                            branchSuffix = parentIdentity + (uniqueVariants.size() + 1);
-                        } else {
-                            branchSuffix = "Branch " + branchSuffix;
-                        }
-                        variant.put("mutation_identity", branchSuffix);
-                        variant.put("parent_identity", parentIdentity);
-
-                        EvolutionProgressPublisher.updateBranchStatus(context, bp.getId(), bp.getPhilosophy(), "planned", null);
-                        uniqueVariants.add(variant);
-
-                        // 6. Update EvolutionTree with new mutation node
-                        EvolutionNode node = new EvolutionNode();
-                        node.setId(variant.optString("id"));
-                        node.setParentId(currentParentId);
-                        node.setIteration(currentIteration);
-                        node.setGeneration(generation);
-                        node.setStrategy(variant.optString("strategy"));
-                        node.setSemanticPhilosophy(variant.optString("semantic_anchor"));
-                        node.setActiveDimension(activeDimension != null ? activeDimension.getId() : "IMPLEMENTATION");
-                        node.setMutationIdentity(branchSuffix);
-                        node.setLlmPrompt(basePrompt);
-                        node.setLlmResponse(variant.toString());
-                        node.setStatus("KEPT");
-
-                        JSONArray journalArr = variant.optJSONArray("mutation_journal");
-                        if (journalArr != null) {
-                            for (int i = 0; i < journalArr.length(); i++) {
-                                node.getMutationJournal().add(journalArr.optString(i));
-                            }
-                        }
-
-                        if (parentNode != null) {
-                            node.setParentStrengths(parentNode.getSelectionReason());
-                            node.setParentWeaknesses("Mutation required to satisfy dimension: " + (activeDimension != null ? activeDimension.getId() : "Implementation"));
-                        }
-
-                        // Capture Code Snapshots
-                        JSONArray variantActions = variant.optJSONArray("actions");
-                        if (variantActions != null) {
-                            for (int i = 0; i < variantActions.length(); i++) {
-                                JSONObject vAction = variantActions.optJSONObject(i);
-                                if (vAction != null && ("WRITE".equals(vAction.optString("operation")) || "CREATE".equals(vAction.optString("operation")))) {
-                                    String target = vAction.optString("target");
-                                    String impl = vAction.optString("implementation");
-                                    if (target != null && impl != null) {
-                                        node.getCodeSnapshots().put(target, impl);
-                                    }
-                                }
-                            }
-                        }
-
-                        MutationRecord mut = new MutationRecord();
-                        mut.setStrategy(variant.optString("strategy"));
-                        mut.setSemanticAnchor(variant.optString("semantic_anchor"));
-                        mut.setPhilosophy(variant.optString("semantic_anchor"));
-                        mut.setReasoningFocus(variant.optString("reasoning_focus"));
-                        mut.setTradeoffs(variant.optString("tradeoffs"));
-                        mut.setSurvivalArgument(variant.optString("survival_argument"));
-                        JSONObject dims = variant.optJSONObject("engineering_dimensions");
-                        if (dims != null) {
-                            for (Object k : dims.keySet()) {
-                                String key = (String) k;
-                                String val = String.valueOf(dims.get(key));
-                                mut.getEngineeringDimensions().put(key, val);
-                                node.getEngineeringDimensions().put(key, val);
-                            }
-                            mut.setExecutionModel(dims.optString("execution_model"));
-                        }
-                        node.setMutationRecord(mut);
-
-                        Object fitnessObj = variant.opt("fitness_record");
-                        if (fitnessObj instanceof FitnessRecord) {
-                            node.setFitnessRecord((FitnessRecord) fitnessObj);
-                        }
-
-                        node.setGenomeSnapshot(genome.copy());
-                        tree.addNode(node);
-                        context.getKernelContext().getMemoryService().saveEvolutionTree();
-                        genome.recordMutation(mut);
-
-                        getSessionContainer().getEventBus().publish(new RuntimeEvent(RuntimeEventType.SIBLING_GENERATED, context.getSessionId(), node.getId(), node.getStrategy()));
-
-                        // 7. Accumulate Structured Sibling Memory for NEXT sequential discovery
-                        siblingMemoryBuilder.append("EXPLORED TERRITORY: ").append(variant.optString("strategy")).append("\n")
-                                           .append("  PHILOSOPHY: ").append(variant.optString("semantic_anchor")).append("\n")
-                                           .append("  TECHNICAL_QUADRANT: ").append(mut.getEngineeringDimensions().get("execution_model")).append("\n")
-                                           .append("  DIMENSIONS: ").append(mut.getEngineeringDimensions()).append("\n\n");
-                    }
-                }
-            } catch (Exception e) {
-                context.log("[DARWIN] Territory Exploration Error: " + e.getMessage());
-            }
-        }
+        // DYNAMIC TERRITORY DISCOVERY & MATERIALIZATION: Sequential branching managed by SiblingGenerationManager
+        SiblingGenerationManager siblingManager = new SiblingGenerationManager(getSessionContainer(), aiService);
+        uniqueVariants = siblingManager.generateSiblings(
+                goal,
+                activeDimension,
+                branchingLimit,
+                basePrompt,
+                lineageContext,
+                rejectedSiblings,
+                context,
+                genome,
+                tree,
+                currentParentId,
+                generation,
+                reasoningLevel,
+                architectureEnabled,
+                implementationEnabled,
+                expansion,
+                orchestrator
+        );
 
         // FALLBACK: If sequential branching failed to produce enough variants, inject divergent fallbacks
         if (uniqueVariants.size() < 2) {
@@ -2137,43 +1969,6 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         }
 		return genome;
 	}
-
-	private TrajectoryBlueprint constructTrajectoryBlueprint(GoalModel goal, IntentExpansionResult expansion,
-			List<TrajectoryBlueprint> currentBlueprints, int generation, String siblingMemoryBuilder,
-			TrajectoryTerritoryMapper mapper, String discoveryGoal, String fullLineagePrompt, EvolutionDimension activeDimension) throws Exception {
-		TrajectoryBlueprint bp = null;
-
-		// PRE-CONSTRAINT: Use existing blueprints from intent expansion if available for Gen 0
-		if (generation == 0 && expansion != null && expansion.getActiveDimensionId() != null) {
-		    EvolutionDimension activeDim = expansion.getUnresolvedDimensions().stream()
-		        .filter(d -> d.getId().equals(expansion.getActiveDimensionId()))
-		        .findFirst().orElse(null);
-
-		    if (activeDim != null && !activeDim.getCandidateBranches().isEmpty()) {
-		        // Use pre-defined blueprints from intent expansion if available
-		        for (BranchVariant bv : activeDim.getCandidateBranches()) {
-		            boolean alreadyUsed = currentBlueprints.stream().anyMatch(existingBp ->
-		                existingBp.getStrategy().equalsIgnoreCase(bv.getStrategy()));
-
-		            if (!alreadyUsed) {
-		                context.log("[DARWIN] Seeding blueprint from intent expansion dimension: " + activeDim.getId() + " -> " + bv.getStrategy());
-		                bp = new TrajectoryBlueprint("bp-seed-" + bv.getId(), goal.getPrimaryAction(), bv.getStrategy());
-		                bp.setPhilosophy(bv.getSurvivalArgument());
-		                bp.setSurvivalArgument(bv.getSurvivalArgument());
-		                bp.setTradeoffs(bv.getTradeoffs());
-		                bp.setStrategyType(DarwinStrategyType.PROBABLE_SURVIVOR);
-		                break;
-		            }
-		        }
-		    }
-		}
-
-		if (bp == null) {
-		    bp = mapper.discoverNext(discoveryGoal, context, currentBlueprints, fullLineagePrompt + siblingMemoryBuilder, activeDimension);
-		}
-		return bp;
-	}
-
 
     private BranchVariant mapToBranchVariant(JSONObject obj, String goal, String currentPhase, Trajectory trajectory, TaskContext context) {
         BranchVariant v = new BranchVariant();
@@ -2398,83 +2193,6 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         return Math.min(1.0, distance);
     }
 
-    private boolean isTechnicallyDuplicate(TrajectoryBlueprint bp, List<TrajectoryBlueprint> existing) {
-        for (TrajectoryBlueprint other : existing) {
-            if (bp.getStrategy().equalsIgnoreCase(other.getStrategy())) return true;
-            if (bp.getPhilosophy() != null && other.getPhilosophy() != null &&
-                bp.getPhilosophy().equalsIgnoreCase(other.getPhilosophy())) return true;
-        }
-        return false;
-    }
-
-    private boolean isTechnicallyIdentical(JSONObject variant, List<JSONObject> existing) {
-        for (JSONObject other : existing) {
-            // Compare philosophy
-            if (variant.optString("semantic_anchor").equalsIgnoreCase(other.optString("semantic_anchor"))) return true;
-
-            // Compare engineering dimensions
-            JSONObject dims1 = variant.optJSONObject("engineering_dimensions");
-            JSONObject dims2 = other.optJSONObject("engineering_dimensions");
-            if (dims1 != null && dims2 != null) {
-                int matches = 0;
-                int total = 0;
-                for (String key : (java.util.Set<String>)(java.util.Set<?>)dims1.keySet()) {
-                    if (dims2.has(key)) {
-                        total++;
-                        if (String.valueOf(dims1.get(key)).equalsIgnoreCase(String.valueOf(dims2.get(key)))) {
-                            matches++;
-                        }
-                    }
-                }
-                if (total > 0 && (double) matches / total >= 0.9) return true; // 90% identical dimensions
-            }
-        }
-        return false;
-    }
-
-    private JSONObject completeTrajectorySchema(JSONObject fragment, TrajectoryBlueprint bp, TaskContext context) {
-        // Ensure core fields exist and are consistent with blueprint
-        fragment.put("id", bp.getId());
-        fragment.put("strategy_type", bp.getStrategyType().name());
-
-        if (!fragment.has("strategy") || fragment.optString("strategy").isEmpty()) {
-            fragment.put("strategy", "Architectural strategy for " + bp.getPhilosophy());
-        }
-
-        fragment.put("semantic_justification", bp.getPhilosophy());
-        fragment.put("semantic_anchor", bp.getPhilosophy());
-
-        // Standard Darwin defaults for missing metadata
-        if (!fragment.has("survival_argument") || fragment.optString("survival_argument").isEmpty()) {
-            fragment.put("survival_argument", "Proposed as a divergent architectural candidate for " + bp.getPhilosophy());
-        }
-        if (!fragment.has("tradeoffs") || fragment.optString("tradeoffs").isEmpty()) {
-            fragment.put("tradeoffs", "Standard trade-offs for " + bp.getStrategyType() + " architecture.");
-        }
-        if (!fragment.has("failure_risks") || fragment.optString("failure_risks").isEmpty()) {
-            fragment.put("failure_risks", "Managed risks within " + bp.getStrategyType() + " evolutionary boundaries.");
-        }
-
-        // Inject dimensions from blueprint if missing in LLM response
-        JSONObject dimensions = fragment.optJSONObject("engineering_dimensions");
-        if (dimensions == null) {
-            dimensions = new JSONObject();
-            fragment.put("engineering_dimensions", dimensions);
-        }
-
-        for (java.util.Map.Entry<String, String> entry : bp.getEngineeringDimensions().entrySet()) {
-            String dimKey = entry.getKey();
-            if (!dimensions.has(dimKey)) {
-                dimensions.put(dimKey, entry.getValue());
-            }
-        }
-
-        if (!dimensions.has("philosophy")) {
-            dimensions.put("philosophy", bp.getPhilosophy());
-        }
-
-        return fragment;
-    }
 
     private String sanitize(String s) {
         if (s == null || s.isEmpty()) return "unnamed";

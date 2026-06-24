@@ -125,16 +125,13 @@ public class DarwinVariantSpawner {
 
         String role;
         if (capability == eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType.CHAT) {
-            role = "You are a conversational evolutionary mutation engine.\n" +
-                   "Your goal is to perform a BOUNDED LOCAL MUTATION on the conversational response.\n" +
-                   "MANDATE: You are ONLY allowed to mutate the specific dimension (tone, depth, etc.) identified below.\n" +
-                   "Each response MUST contain exactly ONE branch only.";
+            role = "You are a conversational materialization engine.\n" +
+                   "Your goal is to MATERIALIZE the provided architectural blueprint into a conversational response.\n" +
+                   "MANDATE: Strictly follow the philosophy and direction of the blueprint.";
         } else {
-            role = "You are a single-path evolutionary mutation engine.\n" +
-                   "Your goal is to perform a BOUNDED LOCAL MUTATION on the provided parent implementation.\n" +
-                   "MANDATE: You MUST preserve the parent implementation. You are ONLY allowed to mutate the specific dimension identified below.\n" +
-                   "Do NOT redesign the complete architecture. Do NOT start from scratch. Focus only on the active mutation dimension.\n" +
-                   "Each response MUST contain exactly ONE branch only.";
+            role = "You are a technical materialization engine.\n" +
+                   "Your goal is to MATERIALIZE the provided architectural blueprint into a functional implementation.\n" +
+                   "MANDATE: Strictly follow the philosophy and direction of the blueprint.";
         }
 
         builder.addSystem(role)
@@ -149,8 +146,6 @@ public class DarwinVariantSpawner {
         constraintSb.append("MATERIALIZATION MANDATE (CRITICAL):\n")
           .append("You are MATERIALIZING the provided blueprint. You MUST NOT reinterpret the original user goal from scratch.\n")
           .append("Your solution MUST be a direct refinement of the 'Philosophy' and 'Architectural Direction' provided below.\n\n")
-          .append("DIVERGENCE REQUIREMENT:\n")
-          .append("While following the blueprint, ensure your implementation is technically distinct from the lineage context.\n\n")
           .append("STABILIZATION CONSTRAINTS:\n")
           .append("- NO ARCHITECTURAL INFLATION: If task is trivial, provide a MINIMAL implementation.\n")
           .append("- MINIMUM VIABLE SOLUTION BIAS: Prefer the simplest code that satisfies the goal.\n")
