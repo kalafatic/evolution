@@ -83,11 +83,11 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
           "  \"characteristics\": [\"Trait 1\", \"Trait 2\"],\n" +
           "  \"tradeoffs\": \"what is sacrificed\",\n" +
           "  \"survival_argument\": \"why this path is viable\",\n" +
-          "  \"strategy_type\": \"PROBABLE_SURVIVOR\"\n" +
+          "  \"strategy_type\": \"(Choose EXACTLY ONE: PROBABLE_SURVIVOR, PHILOSOPHY_MAPPING, MAXIMAL_DIVERGENCE, SPECULATIVE_ARCHITECTURE)\"\n" +
           "}";
         builder.addJsonSchema(schema);
         builder.addConstraints("MANDATORY: Wrap your JSON response in <BEGIN_DARWIN_JSON> and <END_DARWIN_JSON> tags.\n" +
-                               "MANDATORY: 'strategy' MUST be a specific architectural name. NEVER use 'ROOT', 'create', or 'bootstrap'.");
+                               "MANDATORY: 'strategy' MUST be a specific architectural name. NEVER use generic placeholders like 'ROOT', 'create', 'bootstrap', 'ANALYZE', or 'EXECUTE'. Choose a name that reflects the technical species.");
 
         String directive = getAgentInstructions();
         if (lockedLevel != null) {
@@ -101,8 +101,19 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
         }
         builder.addExecutionDirective(directive);
 
-        String response = aiService.sendRequest(context.getOrchestrator(), builder.build(), context);
-        JSONObject obj = JsonUtils.extractJsonObject(response);
+        JSONObject obj = null;
+        for (int retry = 0; retry < 3; retry++) {
+            String response = aiService.sendRequest(context.getOrchestrator(), retry > 0 ? builder.build() + "\n\nCRITICAL: Your previous response used a forbidden placeholder strategy name. Choose a specific technical name." : builder.build(), context);
+            obj = JsonUtils.extractJsonObject(response);
+            if (obj != null) {
+                String strategy = obj.optString("strategy", "").toUpperCase();
+                if (!strategy.equals("ROOT") && !strategy.equals("CREATE") && !strategy.equals("BOOTSTRAP") && !strategy.equals("ANALYZE") && !strategy.equals("EXECUTE") && !strategy.isEmpty()) {
+                    break;
+                }
+                context.log("[TERRITORY] Placeholder detected in strategy: " + strategy + ". Retrying discovery...");
+                obj = null;
+            }
+        }
 
         if (obj != null) {
             String id = obj.optString("id");

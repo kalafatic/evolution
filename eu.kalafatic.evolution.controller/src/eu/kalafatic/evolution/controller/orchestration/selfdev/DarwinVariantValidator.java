@@ -63,11 +63,16 @@ public class DarwinVariantValidator {
             warnings.add("Missing semantic field (semantic_justification or semantic_anchor) (Recoverable)");
         }
 
-        List<String> recoverableFields = List.of("survival_argument", "tradeoffs", "failure_risks", "actions", "projected_steps");
+        List<String> recoverableFields = List.of("survival_argument", "tradeoffs", "failure_risks", "projected_steps");
         for (String field : recoverableFields) {
             if (!json.has(field) || json.isNull(field) || (json.get(field) instanceof String && ((String)json.get(field)).isEmpty())) {
                 warnings.add("Missing field: " + field + " (Recoverable)");
             }
+        }
+
+        // 5.5 Validate Mandatory Action Field (Fatal if missing or empty)
+        if (!json.has("actions") || json.isNull("actions") || json.optJSONArray("actions").length() == 0) {
+            fatalErrors.add("Missing or empty required field: actions. Variants must contain at least one explicit action.");
         }
 
         // 6. Validate strategy_type if present (Recoverable - Spawner/Planner can fix)
