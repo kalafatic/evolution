@@ -178,7 +178,7 @@ window.ChatApp = window.ChatApp || {};
 
     window.showThinking = function(show) {
         const t = document.getElementById('thinking');
-        if (t) t.style.display = show ? 'block' : 'none';
+        if (t) t.style.display = show ? 'flex' : 'none';
         if (show) window.ChatApp.UI.scrollToBottom();
     };
 

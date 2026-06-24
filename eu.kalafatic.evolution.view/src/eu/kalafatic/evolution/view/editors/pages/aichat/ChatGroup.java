@@ -766,7 +766,8 @@ public class ChatGroup extends AEvoGroup {
                     ChatMessage existingProgress = null;
                     if (newAgentType != null && newAgentType.contains("evolution-progress")) {
                         for (ChatMessage m : s.getMessages()) {
-                            if (msg.getTurnId() != null && msg.getTurnId().equals(m.getTurnId())) {
+                            if (msg.getTurnId() != null && msg.getTurnId().equals(m.getTurnId()) &&
+                                m.getAgentType() != null && m.getAgentType().contains("evolution-progress")) {
                                 existingProgress = m;
                                 break;
                             }
@@ -884,13 +885,13 @@ public class ChatGroup extends AEvoGroup {
             }
         }
 
+        String sid = currentSession != null ? currentSession.getId() : "";
         String json = array.toString();
-        if (json.equals(lastJson)) {
+        String cacheKey = sid + ":" + json;
+        if (cacheKey.equals(lastJson)) {
             return; // Skip redundant bridge calls
         }
-        lastJson = json;
-
-        String sid = currentSession != null ? currentSession.getId() : "";
+        lastJson = cacheKey;
         browser.execute(
                 "if(window.updateMessages) {" +
                 "  window.updateMessages(" + json + ", '" + sid + "');" +
