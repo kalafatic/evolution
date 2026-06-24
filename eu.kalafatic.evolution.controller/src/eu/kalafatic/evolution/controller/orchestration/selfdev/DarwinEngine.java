@@ -672,7 +672,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
                 .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                 .convertValue(envObj, SemanticEnvelope.class);
         } else {
-            throw new CapabilityException("MANDATORY_SEMANTIC_ENVELOPE_MISSING", "No valid SemanticEnvelope found in orchestration state metadata. Evolution cannot proceed without a mandatory semantic envelope.");
+            throw new CapabilityException("MANDATORY_SEMANTIC_ENVELOPE_MISSING: No valid SemanticEnvelope found in orchestration state metadata. Evolution cannot proceed without a mandatory semantic envelope.");
         }
 
         // STABILIZATION: Always emit branches block to UI even if empty or stalled
