@@ -230,56 +230,11 @@ public class DarwinVariantSpawner {
 
     /**
      * Spawns variants for the given strategies.
+     * @deprecated Use generateVariants or spawnSingleBlueprint through DarwinEngine orchestration.
      */
+    @Deprecated
     public List<JSONObject> spawn(GoalModel goal, List<DarwinStrategySeed> seeds, String basePrompt, String lineageContext, List<String> rejectedSiblings, boolean isMediated, TaskContext context) {
-        List<JSONObject> variants = new ArrayList<>();
-        Orchestrator orchestrator = context.getOrchestrator();
-
-        // Sequential Evolution: Collect full JSON of already generated variants in this round
-        List<JSONObject> currentRoundVariants = new ArrayList<>();
-
-        for (DarwinStrategySeed seed : seeds) {
-            context.log("[SPAWNER] Generating " + seed.getType() + " trajectory...");
-            String branchId = "v-" + seed.getType().name().toLowerCase();
-            EvolutionProgressPublisher.updateBranchStatus(context, branchId, seed.getType().name(), "active", null);
-            EvolutionProgressPublisher.updateActiveModel(context, orchestrator != null ? (orchestrator.getOllama() != null ? orchestrator.getOllama().getModel() : "local") : "local", "Generating Branch " + (variants.size() + 1) + " of " + seeds.size());
-
-            String seedPrompt = buildSeedPrompt(seed, basePrompt, lineageContext, rejectedSiblings, currentRoundVariants, isMediated, context);
-            JSONObject validated = null;
-
-            for (int retry = 0; retry < 2; retry++) {
-                try {
-                    String response = aiService.sendRequest(orchestrator, seedPrompt, context);
-                    validated = validator.validate(response, seed.getType(), context);
-                    if (validated != null) {
-                        // IMPLEMENTATION PLANNING
-                        ImplementationPlanner implementationPlanner = new ImplementationPlanner();
-                        validated = implementationPlanner.plan(validated, context);
-
-                        // Ensure ID is injected if missing from LLM response
-                        if (!validated.has("id")) {
-                            validated.put("id", "v-" + seed.getType().name().toLowerCase());
-                        }
-                        break;
-                    }
-                    context.log("[SPAWNER] Fatal Validation error for " + seed.getType() + ". Retry " + (retry + 1) + "/2...");
-                } catch (Exception e) {
-                    context.log("[SPAWNER] Error during generation for " + seed.getType() + ": " + e.getMessage());
-                }
-            }
-
-            if (validated != null) {
-                variants.add(validated);
-                currentRoundVariants.add(validated);
-                context.log("[SPAWNER] Successfully generated " + seed.getType() + " trajectory.");
-                double score = validated.optDouble("score", 0.0);
-                EvolutionProgressPublisher.updateBranchStatus(context, validated.optString("id"), seed.getType().name(), "complete", Double.isNaN(score) ? null : score);
-            } else if (seed.isMandatory()) {
-                context.log("[SPAWNER] FAILED to generate mandatory " + seed.getType() + " trajectory after retries.");
-            }
-        }
-
-        return variants;
+        return new ArrayList<>();
     }
 
     private String buildSeedPrompt(DarwinStrategySeed seed, String basePrompt, String lineageContext, List<String> rejectedSiblings, List<JSONObject> currentRoundVariants, boolean isMediated, TaskContext context) {
