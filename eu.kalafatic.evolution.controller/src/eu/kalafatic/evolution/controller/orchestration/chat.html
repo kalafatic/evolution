@@ -106,12 +106,28 @@
             background-size: 20px 20px;
         }
 
-        .message { max-width: 90%; padding: 10px 12px; border-radius: 4px; line-height: 1.5; font-size: 0.9em; position: relative; border: 1px solid var(--border); }
-        .message.user { align-self: flex-end; background: var(--user-msg-bg); color: white; border-color: transparent; }
+        .message { max-width: 90%; padding: 10px 12px; border-radius: 4px; line-height: 1.5; font-size: 0.9em; position: relative; border: 1px solid var(--border); display: none; }
+        .message.user { align-self: flex-end; background: var(--user-msg-bg); color: white; border-color: transparent; display: flex; }
         .message.ai { align-self: flex-start; background: var(--ai-msg-bg); color: var(--text); }
         .message.progress { align-self: flex-start; background: transparent; border-style: dashed; font-style: italic; color: var(--text-dim); }
-        .message.waiting { align-self: flex-start; border-color: #dcdcaa; background: rgba(220, 220, 170, 0.1); }
-        .message.error { align-self: center; border-color: var(--error); color: var(--error); background: rgba(244, 135, 113, 0.1); }
+        .message.waiting { align-self: flex-start; border-color: #dcdcaa; background: rgba(220, 220, 170, 0.1); display: flex; }
+        .message.error { align-self: center; border-color: var(--error); color: var(--error); background: rgba(244, 135, 113, 0.1); display: flex; }
+        .message.final-response { align-self: flex-start; border-width: 2px; border-color: var(--success); display: flex; }
+
+        /* Feedback Level Visibility Rules (Mirrored from Eclipse View) */
+        body.interactive .message.darwin,
+        body.interactive .message.branch,
+        body.interactive .message.darwin-branches { display: flex; }
+
+        body.advanced .message.darwin,
+        body.advanced .message.branch,
+        body.advanced .message.darwin-branches,
+        body.advanced .message.thinking { display: flex; }
+
+        body.full .message.ai { display: flex; }
+
+        body.debug .message.ai,
+        body.debug .message.progress { display: flex !important; }
 
         .message-meta { font-size: 0.7em; color: var(--text-dim); margin-bottom: 4px; display: flex; justify-content: space-between; gap: 10px; }
 
@@ -237,6 +253,19 @@
                                 <option value="Llama-3-70b">Llama-3-70b</option>
                             </select>
                         </div>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h2>Feedback Depth</h2>
+                    <div class="control-group">
+                        <select id="feedback-level-select" onchange="updateFeedbackLevel()">
+                            <option value="simple">Simple</option>
+                            <option value="interactive">Interactive</option>
+                            <option value="advanced">Advanced</option>
+                            <option value="full" selected>Full</option>
+                            <option value="debug">Debug</option>
+                        </select>
                     </div>
                 </div>
 
@@ -430,7 +459,8 @@
 
             const div = document.createElement('div');
             let agentType = msg.agentType || 'ai';
-            let className = 'message ' + agentType;
+            let isUser = agentType.includes('user') || (msg.sender && msg.sender.toLowerCase().includes('you'));
+            let className = 'message ' + (isUser ? 'user' : 'ai') + ' ' + agentType;
             if (msg.priority === 3) className += ' waiting';
             if (msg.priority === 1) className += ' progress';
             if (agentType === 'error') className += ' error';
@@ -597,6 +627,25 @@
             lastSequenceNumber = 0;
         }
 
+        function updateFeedbackLevel() {
+            const level = document.getElementById('feedback-level-select').value;
+            const levels = ['simple', 'interactive', 'advanced', 'full', 'debug'];
+            levels.forEach(l => document.body.classList.remove(l));
+            document.body.classList.add(level);
+            // Also sync to server if possible, but for now local UI filtering
+        }
+
+        async function fetchInitialSettings() {
+             await fetchSettings();
+             // Set initial feedback level from body class if it exists, or default to full
+             const level = document.body.className || 'full';
+             const levels = ['simple', 'interactive', 'advanced', 'full', 'debug'];
+             levels.forEach(l => document.body.classList.remove(l));
+             document.body.classList.add(level);
+             const select = document.getElementById('feedback-level-select');
+             if (select) select.value = level;
+        }
+
 
         function getIconForAgentType(type) {
             const icons = {
@@ -692,7 +741,7 @@
             await sendMessage();
         }
 
-        fetchSettings();
+        fetchInitialSettings();
         pollStatus();
         refreshBranches();
 

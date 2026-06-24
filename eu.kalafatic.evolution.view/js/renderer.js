@@ -36,10 +36,10 @@ window.ChatApp.Renderer = {
 
         if (role.includes('evolution-progress')) {
             this.updateProgressPanel(m);
-            return null; // Don't render in main chat stream
+            if (document.body.className !== 'debug') return null; // Don't render in main chat stream unless debug
         } else if (role.includes('cognitive-state-changed')) {
             this.updateCognitiveStatePanel(m);
-            return null;
+            if (document.body.className !== 'debug') return null;
         } else if (isDarwin) {
             content.style.flexDirection = 'column';
             content.appendChild(this.renderDarwin(m));

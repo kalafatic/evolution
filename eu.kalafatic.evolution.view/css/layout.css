@@ -125,34 +125,51 @@ mark.search-match {
 ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
 
 /* Feedback Level Visibility Rules */
-body.simple .section-plan,
-body.simple .section-debug,
-body.simple .section-timeline,
-body.simple .think-block,
-body.simple .non-essential { display: none; }
 
-body.simple .message.ai:not(.user):not(.final-response):not(.waiting):not(.error):not(.result-summary) {
+/* Reset: Hide most AI-generated content by default, opt-in via levels */
+.message.ai, .think-block, .non-essential, .section-plan, .section-debug, .section-timeline {
     display: none;
 }
 
-body.interactive .section-debug,
-body.interactive .section-timeline,
-body.interactive .message.tool,
-body.interactive .message.orchestrator { display: none; }
+/* Base visibility: User messages, terminal AI responses, and active prompts must always be visible */
+.message.user,
+.message.final-response,
+.message.error,
+.message.result-summary,
+.message.waiting {
+    display: flex;
+}
 
-body.advanced .section-timeline { display: none; }
+/* 1. SIMPLE: USER PROMPT AND SYSTEM FINAL ANSWERS ONLY (Handled by base visibility) */
 
-body.full .section-debug,
-body.full .section-plan,
-body.full .section-timeline { display: block; }
+/* 2. INTERACTIVE: SIMPLE + BRANCHES */
+body.interactive .message.darwin,
+body.interactive .message.branch,
+body.interactive .message.darwin-branches {
+    display: flex;
+}
 
-body.debug .section-debug,
-body.debug .section-plan,
-body.debug .section-timeline,
+/* 3. ADVANCED: INTERACTIVE + THINKING */
+body.advanced .message.darwin,
+body.advanced .message.branch,
+body.advanced .message.darwin-branches,
+body.advanced .message.thinking,
+body.advanced .think-block {
+    display: flex;
+}
+
+/* 4. FULL: ADVANCED + LOGS (All AI agents) */
+body.full .message.ai,
+body.full .think-block {
+    display: flex;
+}
+
+/* 5. DEBUG: NO FILTERING - EVERYTHING VISIBLE */
+body.debug .message.ai,
 body.debug .think-block,
 body.debug .non-essential,
-body.debug .message.ai,
-body.debug .message.tool,
-body.debug .message.orchestrator {
-    display: block !important;
+body.debug .section-plan,
+body.debug .section-debug,
+body.debug .section-timeline {
+    display: flex !important;
 }
