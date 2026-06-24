@@ -75,8 +75,8 @@ public final class EvolutionProfile {
                 useCompiler = false;
                 useTests = false;
                 useImplementation = false;
-                useParallelBranches = false;
-                requireUserSelection = false;
+                useParallelBranches = true;
+                requireUserSelection = true;
                 persistBranches = false;
                 requiresRepository = false;
                 shouldPerformRealityCheck = false;
@@ -112,8 +112,8 @@ public final class EvolutionProfile {
         // 2. Intensity-based overrides
         if (intensity == 1) {
             if (capability == CapabilityType.CHAT) {
-                useParallelBranches = false;
-                requireUserSelection = false;
+                useParallelBranches = true;
+                requireUserSelection = true;
                 useImplementation = false;
             } else {
                 useParallelBranches = true;
