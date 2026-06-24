@@ -1,6 +1,7 @@
 package eu.kalafatic.evolution.controller.tests;
 
 import static org.junit.Assert.*;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Test;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.DarwinStrategyType;
@@ -15,16 +16,19 @@ public class DarwinVariantValidatorTest {
                 "  \"strategy_type\": \"PROBABLE_SURVIVOR\",\n" +
                 "  \"strategy\": \"Implement a simple direct execution path.\",\n" +
                 "  \"reasoning_focus\": \"Direct execution\",\n" +
-                "  \"survival_argument\": \"Most practical path\",\n" +
-                "  \"semantic_justification\": \"Minimalist philosophy\",\n" +
+                "  \"survival_argument\": \"Most practical path and long enough.\",\n" +
+                "  \"semantic_anchor\": \"Minimalist philosophy and long enough.\",\n" +
                 "  \"tradeoffs\": \"Lacks extensibility\",\n" +
                 "  \"failure_risks\": \"Monolithic\",\n" +
+                "  \"projected_steps\": [\"Step 1\"],\n" +
+                "  \"expected_outputs\": [\"Output 1\"],\n" +
                 "  \"actions\": [\n" +
                 "    {\n" +
                 "      \"domain\": \"file\",\n" +
                 "      \"operation\": \"WRITE\",\n" +
                 "      \"target\": \"src/Main.java\",\n" +
-                "      \"description\": \"Write main class\"\n" +
+                "      \"description\": \"Write main class\",\n" +
+                "      \"implementation\": \"public class Main {}\"\n" +
                 "    }\n" +
                 "  ]\n" +
                 "}";
@@ -35,44 +39,71 @@ public class DarwinVariantValidatorTest {
     }
 
     @Test
-    public void testValidateWithIdPasses() {
+    public void testValidateMissingMandatoryFieldFails() {
         DarwinVariantValidator validator = new DarwinVariantValidator();
+        // Missing projected_steps
         String rawResponse = "{\n" +
-                "  \"id\": \"direct_minimal\",\n" +
                 "  \"strategy_type\": \"PROBABLE_SURVIVOR\",\n" +
                 "  \"strategy\": \"Implement a simple direct execution path.\",\n" +
-                "  \"reasoning_focus\": \"Direct execution\",\n" +
-                "  \"survival_argument\": \"Most practical path\",\n" +
-                "  \"semantic_justification\": \"Minimalist philosophy\",\n" +
+                "  \"survival_argument\": \"Most practical path and long enough.\",\n" +
+                "  \"semantic_anchor\": \"Minimalist philosophy and long enough.\",\n" +
                 "  \"tradeoffs\": \"Lacks extensibility\",\n" +
                 "  \"failure_risks\": \"Monolithic\",\n" +
+                "  \"expected_outputs\": [\"Output 1\"],\n" +
                 "  \"actions\": [\n" +
                 "    {\n" +
                 "      \"domain\": \"file\",\n" +
                 "      \"operation\": \"WRITE\",\n" +
                 "      \"target\": \"src/Main.java\",\n" +
-                "      \"description\": \"Write main class\"\n" +
+                "      \"description\": \"Write main class\",\n" +
+                "      \"implementation\": \"public class Main {}\"\n" +
                 "    }\n" +
                 "  ]\n" +
                 "}";
 
         JSONObject result = validator.validate(rawResponse, DarwinStrategyType.PROBABLE_SURVIVOR, null);
-        assertNotNull("Validation should pass when 'id' is present", result);
-        assertEquals("direct_minimal", result.getString("id"));
+        assertNull("Validation should fail when mandatory field 'projected_steps' is missing", result);
     }
 
     @Test
-    public void testValidateWithSemanticAnchorPasses() {
+    public void testValidateGenericTargetFails() {
         DarwinVariantValidator validator = new DarwinVariantValidator();
         String rawResponse = "{\n" +
-                "  \"id\": \"anchor_test\",\n" +
                 "  \"strategy_type\": \"PROBABLE_SURVIVOR\",\n" +
                 "  \"strategy\": \"Implement a simple direct execution path.\",\n" +
-                "  \"reasoning_focus\": \"Direct execution\",\n" +
-                "  \"survival_argument\": \"Most practical path\",\n" +
-                "  \"semantic_anchor\": \"Divergent philosophy anchor\",\n" +
+                "  \"survival_argument\": \"Most practical path and long enough.\",\n" +
+                "  \"semantic_anchor\": \"Minimalist philosophy and long enough.\",\n" +
                 "  \"tradeoffs\": \"Lacks extensibility\",\n" +
                 "  \"failure_risks\": \"Monolithic\",\n" +
+                "  \"projected_steps\": [\"Step 1\"],\n" +
+                "  \"expected_outputs\": [\"Output 1\"],\n" +
+                "  \"actions\": [\n" +
+                "    {\n" +
+                "      \"domain\": \"file\",\n" +
+                "      \"operation\": \"WRITE\",\n" +
+                "      \"target\": \".\",\n" +
+                "      \"description\": \"Write main class\",\n" +
+                "      \"implementation\": \"public class Main {}\"\n" +
+                "    }\n" +
+                "  ]\n" +
+                "}";
+
+        JSONObject result = validator.validate(rawResponse, DarwinStrategyType.PROBABLE_SURVIVOR, null);
+        assertNull("Validation should fail when 'target' is '.' for WRITE action", result);
+    }
+
+    @Test
+    public void testValidateMissingImplementationFails() {
+        DarwinVariantValidator validator = new DarwinVariantValidator();
+        String rawResponse = "{\n" +
+                "  \"strategy_type\": \"PROBABLE_SURVIVOR\",\n" +
+                "  \"strategy\": \"Implement a simple direct execution path.\",\n" +
+                "  \"survival_argument\": \"Most practical path and long enough.\",\n" +
+                "  \"semantic_anchor\": \"Minimalist philosophy and long enough.\",\n" +
+                "  \"tradeoffs\": \"Lacks extensibility\",\n" +
+                "  \"failure_risks\": \"Monolithic\",\n" +
+                "  \"projected_steps\": [\"Step 1\"],\n" +
+                "  \"expected_outputs\": [\"Output 1\"],\n" +
                 "  \"actions\": [\n" +
                 "    {\n" +
                 "      \"domain\": \"file\",\n" +
@@ -84,7 +115,6 @@ public class DarwinVariantValidatorTest {
                 "}";
 
         JSONObject result = validator.validate(rawResponse, DarwinStrategyType.PROBABLE_SURVIVOR, null);
-        assertNotNull("Validation should pass when 'semantic_anchor' is used instead of 'semantic_justification'", result);
-        assertEquals("Divergent philosophy anchor", result.getString("semantic_anchor"));
+        assertNull("Validation should fail when 'implementation' is missing for WRITE action", result);
     }
 }
