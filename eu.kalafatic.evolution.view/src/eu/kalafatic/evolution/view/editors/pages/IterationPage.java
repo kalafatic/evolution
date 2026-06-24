@@ -1,6 +1,8 @@
 package eu.kalafatic.evolution.view.editors.pages;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -20,11 +22,13 @@ import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.custom.StyledText;
+import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
@@ -32,6 +36,7 @@ import org.eclipse.swt.widgets.Table;
 import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IFileEditorInput;
 
+import eu.kalafatic.evolution.controller.log.Log;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationMemoryService;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationRecord;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
@@ -51,16 +56,18 @@ public class IterationPage extends AEvoPage {
     private List<Integer> iterationNumbers = new ArrayList<>();
     private int currentIterationIndex = -1;
 
-    private Label iterationLabel;
+    private Combo iterationCombo;
     private Label goalLabel;
     private Label resultLabel;
     private Label sessionStatusLabel;
     private Label sessionProgressLabel;
-    private Button prevBtn;
-    private Button nextBtn;
 
     private TableViewer branchTable;
+    private Combo logIterationFilter;
+    private Combo logBranchFilter;
+    private Combo logLevelFilter;
     private Composite flowComposite;
+    private StyledText detailsText;
     private StyledText logText;
 
     private ImageRegistry imageRegistry;
@@ -123,52 +130,42 @@ public class IterationPage extends AEvoPage {
         container.setLayoutData(new GridData(GridData.FILL_BOTH));
         this.setContent(container);
 
-        // Top Bar
-        Composite topBar = GUIFactory.INSTANCE.createComposite(container, 6);
+        // Session Status
+        Composite statusLine = GUIFactory.INSTANCE.createComposite(container, 2);
+        statusLine.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        sessionStatusLabel = GUIFactory.INSTANCE.createLabel(statusLine, "Session: READY");
+        sessionProgressLabel = GUIFactory.INSTANCE.createLabel(statusLine, "Progress: 0%");
+        sessionProgressLabel.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, false));
 
-        prevBtn = toolkit.createButton(topBar, "< Prev", SWT.PUSH);
-        iterationLabel = GUIFactory.INSTANCE.createLabel(topBar, "Iteration: N/A");
-        iterationLabel.setFont(org.eclipse.jface.resource.JFaceResources.getBannerFont());
-        nextBtn = toolkit.createButton(topBar, "Next >", SWT.PUSH);
-
-        sessionStatusLabel = GUIFactory.INSTANCE.createLabel(topBar, "Session: READY");
-        sessionStatusLabel.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, false));
-        sessionProgressLabel = GUIFactory.INSTANCE.createLabel(topBar, "Progress: 0%");
-
-        prevBtn.addSelectionListener(new SelectionAdapter() {
+        // 1. Iterations Section
+        Composite iterComp = GUIFactory.INSTANCE.createExpandableGroup(toolkit, container, "Iterations", 1, true);
+        Composite iterHeader = GUIFactory.INSTANCE.createComposite(iterComp, 2);
+        iterHeader.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        GUIFactory.INSTANCE.createLabel(iterHeader, "Select Iteration:");
+        iterationCombo = new Combo(iterHeader, SWT.READ_ONLY | SWT.DROP_DOWN);
+        iterationCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        iterationCombo.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                if (currentIterationIndex > 0) {
-                    currentIterationIndex--;
-                    updateUI();
-                }
+                currentIterationIndex = iterationCombo.getSelectionIndex();
+                syncFiltersWithSelection();
+                updateUI();
             }
         });
 
-        nextBtn.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                if (currentIterationIndex < iterationNumbers.size() - 1) {
-                    currentIterationIndex++;
-                    updateUI();
-                }
-            }
-        });
-
-        // 1. Branches Section
-        Composite branchesComp = GUIFactory.INSTANCE.createExpandableGroup(toolkit, container, "Branches", 1, true);
-
-        goalLabel = GUIFactory.INSTANCE.createLabel(branchesComp, "Goal: ");
+        goalLabel = GUIFactory.INSTANCE.createLabel(iterComp, "Goal: ");
         goalLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        resultLabel = GUIFactory.INSTANCE.createLabel(branchesComp, "Result: ");
+        resultLabel = GUIFactory.INSTANCE.createLabel(iterComp, "Result: ");
         resultLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
+        // 2. Branches Section
+        Composite branchesComp = GUIFactory.INSTANCE.createExpandableGroup(toolkit, container, "Branches", 1, true);
         branchTable = new TableViewer(branchesComp, SWT.BORDER | SWT.FULL_SELECTION);
         Table table = branchTable.getTable();
         table.setHeaderVisible(true);
         table.setLinesVisible(true);
         GridData gdTable = new GridData(GridData.FILL_HORIZONTAL);
-        gdTable.heightHint = 100;
+        gdTable.heightHint = 120;
         table.setLayoutData(gdTable);
 
         createColumns();
@@ -176,9 +173,17 @@ public class IterationPage extends AEvoPage {
         branchTable.addSelectionChangedListener(new ISelectionChangedListener() {
             @Override
             public void selectionChanged(SelectionChangedEvent event) {
+                syncFiltersWithSelection();
                 updateDetails();
+                refreshLogs();
             }
         });
+
+        detailsText = new StyledText(branchesComp, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.READ_ONLY | SWT.WRAP);
+        GridData gdDetails = new GridData(GridData.FILL_HORIZONTAL);
+        gdDetails.heightHint = 80;
+        detailsText.setLayoutData(gdDetails);
+        detailsText.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_INFO_BACKGROUND));
 
         // Flow View
         GUIFactory.INSTANCE.createLabel(branchesComp, "Evolution Flow:");
@@ -194,12 +199,40 @@ public class IterationPage extends AEvoPage {
             }
         }
 
-        // 2. Logs Section
+        // 3. Logs Section
         Composite logComp = GUIFactory.INSTANCE.createExpandableGroup(toolkit, container, "Logs", 1, true, true);
+
+        // Interactive Filters for Logs
+        Composite filterBar = GUIFactory.INSTANCE.createComposite(logComp, 6);
+        filterBar.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        GUIFactory.INSTANCE.createLabel(filterBar, "Iter:");
+        logIterationFilter = new Combo(filterBar, SWT.READ_ONLY);
+        logIterationFilter.add("All");
+
+        GUIFactory.INSTANCE.createLabel(filterBar, "Branch:");
+        logBranchFilter = new Combo(filterBar, SWT.READ_ONLY);
+        logBranchFilter.add("All");
+
+        GUIFactory.INSTANCE.createLabel(filterBar, "Level:");
+        logLevelFilter = new Combo(filterBar, SWT.READ_ONLY);
+        logLevelFilter.setItems("All", "INFO", "WARNING", "SEVERE");
+        logLevelFilter.select(0);
+
+        SelectionAdapter logFilterListener = new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                refreshLogs();
+            }
+        };
+        logIterationFilter.addSelectionListener(logFilterListener);
+        logBranchFilter.addSelectionListener(logFilterListener);
+        logLevelFilter.addSelectionListener(logFilterListener);
 
         logText = new StyledText(logComp, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL | SWT.READ_ONLY);
         logText.setLayoutData(new GridData(GridData.FILL_BOTH));
         logText.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_LIST_BACKGROUND));
+        logText.setFont(org.eclipse.jface.resource.JFaceResources.getTextFont());
     }
 
     public void setDirty(boolean dirty) {
@@ -296,13 +329,34 @@ public class IterationPage extends AEvoPage {
         } else if (currentIterationIndex >= iterationNumbers.size()) {
             currentIterationIndex = iterationNumbers.size() - 1;
         }
+
+        // Update Iteration Combo
+        if (iterationCombo != null && !iterationCombo.isDisposed()) {
+            String[] items = iterationNumbers.stream()
+                .map(n -> "Iteration " + n)
+                .toArray(String[]::new);
+            iterationCombo.setItems(items);
+            if (currentIterationIndex >= 0 && currentIterationIndex < items.length) {
+                iterationCombo.select(currentIterationIndex);
+            }
+        }
+
+        // Update Log Iteration Filter
+        if (logIterationFilter != null && !logIterationFilter.isDisposed()) {
+            String selected = logIterationFilter.getText();
+            logIterationFilter.removeAll();
+            logIterationFilter.add("All");
+            for (Integer num : iterationNumbers) {
+                logIterationFilter.add(String.valueOf(num));
+            }
+            logIterationFilter.setText(selected.isEmpty() ? "All" : selected);
+        }
     }
 
     private void updateUI() {
         if (currentIterationIndex < 0 || currentIterationIndex >= iterationNumbers.size()) {
-            iterationLabel.setText("Iteration: N/A");
-            goalLabel.setText("Goal: ");
-            resultLabel.setText("Result: ");
+            goalLabel.setText("Goal: N/A");
+            resultLabel.setText("Result: N/A");
             branchTable.setInput(Collections.emptyList());
             return;
         }
@@ -310,9 +364,9 @@ public class IterationPage extends AEvoPage {
         int itNum = iterationNumbers.get(currentIterationIndex);
         List<IterationRecord> variants = iterationsMap.get(itNum);
 
-        iterationLabel.setText("Iteration: " + itNum);
-        prevBtn.setEnabled(currentIterationIndex > 0);
-        nextBtn.setEnabled(currentIterationIndex < iterationNumbers.size() - 1);
+        if (iterationCombo.getSelectionIndex() != currentIterationIndex) {
+            iterationCombo.select(currentIterationIndex);
+        }
 
         if (!variants.isEmpty()) {
             IterationRecord first = variants.get(0);
@@ -324,6 +378,7 @@ public class IterationPage extends AEvoPage {
         }
 
         branchTable.setInput(variants);
+        syncFiltersWithSelection();
         if (!variants.isEmpty()) {
             IterationRecord selected = variants.stream().filter(v -> "SUCCESS".equals(v.getResult())).findFirst().orElse(variants.get(0));
             branchTable.setSelection(new org.eclipse.jface.viewers.StructuredSelection(selected));
@@ -336,7 +391,7 @@ public class IterationPage extends AEvoPage {
         IterationRecord selected = (IterationRecord) selection.getFirstElement();
 
         if (selected == null) {
-            logText.setText("");
+            detailsText.setText("");
             updateFlow(false);
             return;
         }
@@ -355,9 +410,93 @@ public class IterationPage extends AEvoPage {
                 sb.append("- ").append(f).append("\n");
             }
         }
-        logText.setText(sb.toString());
+        detailsText.setText(sb.toString());
 
         updateFlow("SUCCESS".equals(selected.getResult()));
+    }
+
+    private void syncFiltersWithSelection() {
+        if (currentIterationIndex >= 0 && currentIterationIndex < iterationNumbers.size()) {
+            int itNum = iterationNumbers.get(currentIterationIndex);
+            logIterationFilter.setText(String.valueOf(itNum));
+
+            // Update branch filter list
+            List<IterationRecord> variants = iterationsMap.get(itNum);
+            String selectedBranch = logBranchFilter.getText();
+            logBranchFilter.removeAll();
+            logBranchFilter.add("All");
+            if (variants != null) {
+                for (IterationRecord r : variants) {
+                    logBranchFilter.add(r.getBranch());
+                }
+            }
+
+            IStructuredSelection selection = (IStructuredSelection) branchTable.getSelection();
+            IterationRecord selectedRecord = (IterationRecord) selection.getFirstElement();
+            if (selectedRecord != null) {
+                logBranchFilter.setText(selectedRecord.getBranch());
+            } else {
+                logBranchFilter.setText("All");
+            }
+        }
+    }
+
+    private void refreshLogs() {
+        if (projectRoot == null) return;
+
+        String iterFilter = logIterationFilter.getText();
+        String branchFilter = logBranchFilter.getText();
+        String levelFilter = logLevelFilter.getText();
+
+        File logFile = new File(Log.getLogFile());
+        if (!logFile.exists()) {
+            logText.setText("Log file not found: " + logFile.getAbsolutePath());
+            return;
+        }
+
+        StringBuilder sb = new StringBuilder();
+        try (BufferedReader reader = new BufferedReader(new FileReader(logFile))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (filterLogLine(line, iterFilter, branchFilter, levelFilter)) {
+                    sb.append(line).append("\n");
+                }
+            }
+        } catch (Exception e) {
+            sb.append("Error reading logs: ").append(e.getMessage());
+        }
+
+        if (sb.length() == 0) {
+            sb.append("No logs found matching the current filters.");
+        }
+
+        logText.setText(sb.toString());
+        logText.setSelection(logText.getCharCount()); // Scroll to bottom
+    }
+
+    private boolean filterLogLine(String line, String iter, String branch, String level) {
+        // Level filter
+        if (!"All".equals(level)) {
+            // Standard Java logging levels or common tags
+            if (!line.toUpperCase().contains(level.toUpperCase())) return false;
+        }
+
+        // Iteration filter
+        if (!"All".equals(iter)) {
+            String itTag = "it-" + iter;
+            // Matches [it-1], it-1, Iteration 1
+            boolean found = line.contains("[" + itTag + "]")
+                         || line.contains(" " + itTag + " ")
+                         || line.contains("Iteration " + iter);
+            if (!found) return false;
+        }
+
+        // Branch filter
+        if (!"All".equals(branch)) {
+            if (!line.contains(branch)) return false;
+        }
+
+        return true;
     }
 
     private void updateFlow(boolean success) {
