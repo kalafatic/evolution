@@ -332,7 +332,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
         switch (capType) {
             case CHAT: branchingLimit = 2; break;
-            case CODE: branchingLimit = 2; break; // IMPLEMENTATION
+            case CODE: branchingLimit = 3; break; // IMPLEMENTATION
             case EVOLUTION: branchingLimit = 3; break; // REFACTOR
             case ARCHITECTURE: branchingLimit = 4; break; // DESIGN
             case SELF_DEV: branchingLimit = 6; break; // RESEARCH
@@ -347,7 +347,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         if (expansionValue >= 8) branchingLimit = Math.max(branchingLimit, 4);
 
         // Scale by model capability if extremely low
-        if (modelCapability < 0.4) branchingLimit = Math.min(branchingLimit, 2);
+        if (modelCapability < 0.4) branchingLimit = Math.min(branchingLimit, 3);
 
         context.log("[DARWIN] Adaptive Kernel Intensity: " + intensity + ". Population Budget: " + branchingLimit * 2);
 

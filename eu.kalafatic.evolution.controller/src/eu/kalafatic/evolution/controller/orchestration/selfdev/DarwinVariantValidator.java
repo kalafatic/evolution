@@ -112,9 +112,11 @@ public class DarwinVariantValidator {
                 if (action != null) {
                     String op = action.optString("operation", "");
                     String target = action.optString("target", "");
-                    if (op.contains("<") || op.contains(">") || target.contains("<") || target.contains(">") || target.contains("actual_file_path")) {
-                        warnings.add("Placeholder detected in action (Recoverable)");
-                        break;
+                    if (op.contains("<") || op.contains(">") || target.contains("<") || target.contains(">") || target.contains("actual_file_path") || target.equals(".") || target.equals("workspace")) {
+                        fatalErrors.add("Placeholder or generic target detected in action: " + target);
+                    }
+                    if ("WRITE".equals(op) && (!action.has("implementation") || action.optString("implementation").isEmpty())) {
+                        fatalErrors.add("WRITE operation missing implementation code for target: " + target);
                     }
                 }
             }
