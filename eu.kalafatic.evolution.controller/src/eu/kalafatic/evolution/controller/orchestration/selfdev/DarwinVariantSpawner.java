@@ -131,7 +131,8 @@ public class DarwinVariantSpawner {
         } else {
             role = "You are a technical materialization engine.\n" +
                    "Your goal is to MATERIALIZE the provided architectural blueprint into a functional implementation.\n" +
-                   "MANDATE: Strictly follow the philosophy and direction of the blueprint.";
+                   "MANDATE: Strictly follow the philosophy and direction of the blueprint.\n" +
+                   "MANDATORY: 'strategy' MUST be a specific technical architectural name. NEVER use generic placeholders like 'ROOT', 'create', or 'bootstrap'.";
         }
 
         builder.addSystem(role)

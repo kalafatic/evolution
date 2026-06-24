@@ -60,14 +60,14 @@ public class SiblingGenerationManager {
         boolean isMediated = context.getBehaviorProfile().hasTrait(BehaviorTrait.WORKFLOW_EXPORT_ONLY);
 
         int attempts = 0;
-        int maxAttempts = targetPopulation * 5;
+        int maxAttempts = targetPopulation * 3; // Refined search budget
 
         context.log("[SIBLING_MANAGER] Sequential Sibling Generation active. Target: " + targetPopulation);
 
         while (uniqueVariants.size() < targetPopulation && attempts < maxAttempts) {
             attempts++;
             int i = uniqueVariants.size();
-            context.log("[SIBLING_MANAGER] Territory Exploration: Attempt " + attempts + " (Found: " + i + ")");
+            context.log("[SIBLING_MANAGER] Territory Exploration: Attempt " + attempts + " (Current Population: " + i + ")");
 
             try {
                 String discoveryGoal = generation == 0 ? goal.getPrimaryAction() : goal.getPrimaryAction() + " (Mutation Gen " + generation + ")";
@@ -79,6 +79,7 @@ public class SiblingGenerationManager {
                         currentParentId, targetPopulation);
 
                 if (bp != null) {
+                    context.log("[AI_PROMPT] Sibling Blueprint Discovery Prompt:\n" + discoveryGoal + "\n" + fullLineagePrompt + siblingMemoryBuilder.toString());
                     // STABILIZATION: Ensure unique BP ID across iterations/attempts to prevent tree & git conflicts
                     if (bp.getId() == null || bp.getId().equals("unique-blueprint-id") || bp.getId().contains("seed")) {
                         bp.setId("bp-iter" + context.getOrchestrationState().getIterationCount() + "-v" + i + "-" + System.currentTimeMillis());
@@ -91,7 +92,7 @@ public class SiblingGenerationManager {
 
                     // 2. Rigorous Technical Similarity Check (Search Memory)
                     if (isTechnicallyDuplicate(bp, currentBlueprints)) {
-                        context.log("[SIBLING_MANAGER] Territory Rejected: Blueprint matches existing design species: " + bp.getStrategy());
+                        context.log("[SIBLING_MANAGER] Territory Rejected: Blueprint strategy matches existing sibling: " + bp.getStrategy());
                         continue;
                     }
 
@@ -104,6 +105,8 @@ public class SiblingGenerationManager {
                     JSONObject variant = null;
                     for (int retry = 0; retry < EvolutionConstants.MAX_MATERIALIZATION_RETRIES; retry++) {
                         context.log("[SIBLING_MANAGER] Materialization Attempt " + (retry + 1) + " for " + bp.getId());
+                        String materializationPrompt = basePrompt + "\n" + fullLineagePrompt + lineageContext + "\n" + siblingMemoryBuilder.toString();
+                        context.log("[AI_PROMPT] Sibling Materialization Prompt:\n" + materializationPrompt);
                         variant = spawner.spawnSingleBlueprint(goal, bp, basePrompt, fullLineagePrompt + lineageContext, rejectedSiblings, siblingMemoryBuilder.toString(), isMediated, context, activeDimension, genome);
                         if (variant != null) break;
                     }
@@ -121,7 +124,7 @@ public class SiblingGenerationManager {
 
                         // 4. Semantic Vector Divergence Validation
                         if (isTechnicallyIdentical(variant, uniqueVariants)) {
-                            context.log("[SIBLING_MANAGER] Territory Rejected: Materialized variant 90% identical to existing sibling.");
+                            context.log("[SIBLING_MANAGER] Territory Rejected: Materialized variant strategy matches existing sibling: " + variant.optString("strategy"));
                             continue;
                         }
 
@@ -283,16 +286,20 @@ public class SiblingGenerationManager {
 
     private boolean isTechnicallyDuplicate(TrajectoryBlueprint bp, List<TrajectoryBlueprint> existing) {
         for (TrajectoryBlueprint other : existing) {
+            // Strict match on strategy name is good, but allow different philosophies if name differs
             if (bp.getStrategy().equalsIgnoreCase(other.getStrategy())) return true;
-            if (bp.getPhilosophy() != null && other.getPhilosophy() != null &&
-                bp.getPhilosophy().equalsIgnoreCase(other.getPhilosophy())) return true;
+
+            // Allow similar philosophies if strategy names are meaningfully different,
+            // as small models often hover around similar conceptual buckets.
         }
         return false;
     }
 
     private boolean isTechnicallyIdentical(JSONObject variant, List<JSONObject> existing) {
         for (JSONObject other : existing) {
-            if (variant.optString("semantic_anchor").equalsIgnoreCase(other.optString("semantic_anchor"))) return true;
+            // Match on strategy name to prevent redundant proposals
+            if (variant.optString("strategy").equalsIgnoreCase(other.optString("strategy"))) return true;
+
             JSONObject dims1 = variant.optJSONObject("engineering_dimensions");
             JSONObject dims2 = other.optJSONObject("engineering_dimensions");
             if (dims1 != null && dims2 != null) {
@@ -306,7 +313,8 @@ public class SiblingGenerationManager {
                         }
                     }
                 }
-                if (total > 0 && (double) matches / total >= 0.9) return true;
+                // Relaxed threshold: only reject if dimensions are almost identical (95%)
+                if (total > 0 && (double) matches / total >= 0.95) return true;
             }
         }
         return false;

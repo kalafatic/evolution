@@ -1702,29 +1702,27 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         }
 
         // 2. Population Scaling based on Capability and Intensity
-        int branchingLimit = 2; // Default
+        int branchingLimit = 4; // Refined Default: Aim for 4 branches
         eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType capType = profile.getCapability();
 
         switch (capType) {
             case CHAT: branchingLimit = 2; break;
-            case CODE: branchingLimit = 4; break; // IMPLEMENTATION
-            case EVOLUTION: branchingLimit = 4; break; // REFACTOR
-            case ARCHITECTURE: branchingLimit = 4; break; // DESIGN
-            case SELF_DEV: branchingLimit = 4; break; // RESEARCH
+            case CODE:
+            case EVOLUTION:
+            case ARCHITECTURE:
+            case SELF_DEV:
+                branchingLimit = 4; break;
             default: branchingLimit = 4; break;
         }
 
-        // Expand based on intensity if pressure is high
-        if (intensity >= 3) branchingLimit += 1;
-        if (intensity == 4) branchingLimit += 1;
+        // Respect expansionValue from UI
+        if (expansionValue <= 3) branchingLimit = Math.max(branchingLimit, 2);
+        else if (expansionValue >= 8) branchingLimit = Math.max(branchingLimit, 6);
 
-        // Respect expansionValue from UI if high
-        if (expansionValue >= 8) branchingLimit = Math.max(branchingLimit, 4);
+        // Scale by model capability - allow 4 even for small models to ensure diversity
+        if (modelCapability < 0.4) branchingLimit = Math.max(branchingLimit, 3);
 
-        // Scale by model capability if extremely low
-        if (modelCapability < 0.4) branchingLimit = Math.min(branchingLimit, 3);
-
-        context.log("[DARWIN] Adaptive Kernel Intensity: " + intensity + ". Population Budget: " + branchingLimit * 2);
+        context.log("[DARWIN] Adaptive Kernel Intensity: " + intensity + ". Population Target: " + branchingLimit);
 
         EvolutionTree tree = context.getKernelContext().getMemoryService().getEvolutionTree();
         String currentParentId = tree.getCurrentWinnerId();
