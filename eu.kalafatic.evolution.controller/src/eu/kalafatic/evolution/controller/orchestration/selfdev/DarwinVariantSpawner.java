@@ -65,22 +65,9 @@ public class DarwinVariantSpawner {
             repair.put("tradeoffs", "Synthesized fallback path.");
             repair.put("failure_risks", "Potential for reduced architectural specificity.");
 
-            // Invoke planner to generate executable actions for the blueprint
-            ImplementationPlanner implementationPlanner = new ImplementationPlanner();
-            repair = implementationPlanner.plan(repair, context);
-
-            // GUARANTEE EXECUTABLE ACTIONS: If planner failed, add fallback ANALYZE action
-            org.json.JSONArray actions = repair.optJSONArray("actions");
-            if (actions == null || actions.length() == 0) {
-                if (actions == null) actions = new org.json.JSONArray();
-                JSONObject fallback = new JSONObject();
-                fallback.put("domain", "kernel");
-                fallback.put("operation", "ANALYZE");
-                fallback.put("target", "workspace");
-                fallback.put("description", "Materialize " + bp.getId() + " architectural intent (Fallback)");
-                actions.put(fallback);
-                repair.put("actions", actions);
-            }
+            // Darwin Mandate: autoRepair no longer synthesizes missing actions.
+            // Repaired variants MUST still satisfy the structural contract or fail.
+            repair.put("actions", new org.json.JSONArray());
 
             repair.put("reasoning_focus", "Deterministic architectural recovery for " + bp.getId());
 
@@ -227,7 +214,8 @@ public class DarwinVariantSpawner {
         builder.addJsonSchema(schemaSb.toString());
         builder.addConstraints("MANDATORY: Wrap your JSON response in <BEGIN_DARWIN_JSON> and <END_DARWIN_JSON> tags.\n" +
                                "MANDATORY: 'strategy' MUST be a specific architectural name. NEVER use 'ROOT', 'create', or 'bootstrap'.\n" +
-                               "MANDATORY: The 'actions' array MUST NOT be empty. It must contain at least one WRITE action with FULL source code.");
+                               "MANDATORY: The 'actions' array MUST NOT be empty. It must contain at least one WRITE action with FULL source code.\n" +
+                               "MANDATORY: Every 'WRITE' operation MUST specify a concrete file path in 'target' (e.g. 'src/main/java/.../App.java') and the FULL implementation.");
 
         String directive = "Your goal is controlled divergence under constraints. Move the system into a meaningfully different evolutionary region.\n\n";
         if (capability == eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType.CHAT) {
@@ -381,6 +369,11 @@ public class DarwinVariantSpawner {
           .append("}\n");
 
         builder.addJsonSchema(schemaSb.toString());
+        builder.addConstraints("MANDATORY: Wrap your JSON response in <BEGIN_DARWIN_JSON> and <END_DARWIN_JSON> tags.\n" +
+                               "MANDATORY: 'strategy' MUST be a specific architectural name. NEVER use 'ROOT', 'create', or 'bootstrap'.\n" +
+                               "MANDATORY: The 'actions' array MUST NOT be empty. It must contain at least one WRITE action with FULL source code.\n" +
+                               "MANDATORY: Every 'WRITE' operation MUST specify a concrete file path in 'target' (e.g. 'src/main/java/.../App.java') and the FULL implementation.");
+
         builder.addExecutionDirective("Each branch must move the system into a meaningfully different evolutionary region.");
 
         return builder.build() + "\n\nCONTEXT:\n" + basePrompt;
