@@ -24,8 +24,11 @@ import eu.kalafatic.evolution.controller.workflow.GraphActionExecutor;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
+import eu.kalafatic.evolution.view.projection.ProjectionService;
+import eu.kalafatic.evolution.view.projection.RuntimeProjection;
 import eu.kalafatic.utils.factories.GUIFactory;
 import eu.kalafatic.evolution.view.application.Activator;
+import java.util.function.Consumer;
 
 public class InteractiveWorkflowGroup extends AEvoGroup {
     private Browser browser;
@@ -33,10 +36,20 @@ public class InteractiveWorkflowGroup extends AEvoGroup {
     private GraphActionExecutor executor;
     private boolean isLoaded = false;
 
+    private final Consumer<RuntimeProjection> projectionObserver = projection -> {
+        if (browser == null || browser.isDisposed()) return;
+        String activeSid = (editor != null && editor.getAiChatPage() != null) ?
+                editor.getAiChatPage().getCurrentSessionName() : sessionId;
+        if (projection.getSessionId().equals(activeSid)) {
+            scheduleRefresh();
+        }
+    };
+
     public InteractiveWorkflowGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, String sessionId) {
         super(editor, orchestrator);
         this.sessionId = sessionId;
         this.executor = new GraphActionExecutor(editor.getCurrentContext());
+        ProjectionService.getInstance().subscribe(projectionObserver);
         createControl(toolkit, parent);
     }
 
@@ -46,9 +59,56 @@ public class InteractiveWorkflowGroup extends AEvoGroup {
         gd.heightHint = 700;
         group.setLayoutData(gd);
 
+        // Add toolbar buttons if group is a Section
+        if (group.getParent() instanceof Section) {
+            Section section = (Section) group.getParent();
+            Composite toolbar = toolkit.createComposite(section);
+            toolbar.setLayout(new org.eclipse.swt.layout.GridLayout(6, false));
+
+            org.eclipse.swt.widgets.Button refresh = toolkit.createButton(toolbar, "Ref", SWT.PUSH);
+            refresh.setToolTipText("Refresh");
+            refresh.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
+                @Override public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) { scheduleRefresh(); }
+            });
+
+            org.eclipse.swt.widgets.Button zoomIn = toolkit.createButton(toolbar, "+", SWT.PUSH);
+            zoomIn.setToolTipText("Zoom In");
+            zoomIn.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
+                @Override public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) { if (browser != null) browser.execute("if(window.applyZoom) window.applyZoom(1.2);"); }
+            });
+
+            org.eclipse.swt.widgets.Button zoomOut = toolkit.createButton(toolbar, "-", SWT.PUSH);
+            zoomOut.setToolTipText("Zoom Out");
+            zoomOut.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
+                @Override public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) { if (browser != null) browser.execute("if(window.applyZoom) window.applyZoom(0.8);"); }
+            });
+
+            org.eclipse.swt.widgets.Button reset = toolkit.createButton(toolbar, "R", SWT.PUSH);
+            reset.setToolTipText("Reset Zoom");
+            reset.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
+                @Override public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) { if (browser != null) browser.execute("if(window.resetZoom) window.resetZoom();"); }
+            });
+
+            org.eclipse.swt.widgets.Button fit = toolkit.createButton(toolbar, "Fit", SWT.PUSH);
+            fit.setToolTipText("Fit to Screen");
+            fit.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
+                @Override public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) { if (browser != null) browser.execute("if(window.fitToScreen) window.fitToScreen();"); }
+            });
+
+            GUIFactory.INSTANCE.createMaximizeButton(toolbar, section, false);
+            section.setTextClient(toolbar);
+        }
+
         Composite browserContainer = toolkit.createComposite(group);
         browserContainer.setLayout(new FillLayout());
         browserContainer.setLayoutData(new GridData(GridData.FILL_BOTH));
+
+        browserContainer.addListener(SWT.Resize, event -> {
+            if (browser != null && !browser.isDisposed()) {
+                // Trigger JS resize
+                browser.execute("if(window.dispatchEvent) window.dispatchEvent(new Event('resize'));");
+            }
+        });
 
         try {
             browser = GUIFactory.INSTANCE.createBrowser(browserContainer, 700);
@@ -140,6 +200,7 @@ public class InteractiveWorkflowGroup extends AEvoGroup {
 
     @Override
     public void dispose() {
+        ProjectionService.getInstance().unsubscribe(projectionObserver);
         String sid = sessionId != null ? sessionId : "Default";
         SessionContainer session = SessionManager.getInstance().getSession(sid);
         if (session != null) {

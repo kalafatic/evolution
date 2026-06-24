@@ -292,6 +292,12 @@ public class DevelopmentPage extends AEvoPage {
 
     @Override
     protected String getCurrentSessionName() {
+        if (editor != null && editor.getAiChatPage() != null) {
+            String chatSid = editor.getAiChatPage().getCurrentSessionName();
+            if (chatSid != null && !chatSid.equals("Default")) {
+                return chatSid;
+            }
+        }
         return (orchestrator != null && orchestrator.getSelfDevSession() != null) ?
                 orchestrator.getSelfDevSession().getId() : super.getCurrentSessionName();
     }
@@ -380,7 +386,8 @@ public class DevelopmentPage extends AEvoPage {
 
     @Override
     protected void refreshUI() {
-        RuntimeProjection projection = ProjectionService.getInstance().getProjection(getCurrentSessionName());
+        String currentSid = getCurrentSessionName();
+        RuntimeProjection projection = ProjectionService.getInstance().getProjection(currentSid);
         updateRowStatus(SelfDevRow.SELF_DEV_LOOP, projection.getStatus().toLowerCase());
 
         sessionStatusLabel.setText("Session: " + projection.getStatus());
@@ -396,7 +403,9 @@ public class DevelopmentPage extends AEvoPage {
     private void syncWorkflowSession() {
         if (editor != null && editor.getAiChatPage() != null && workflowGroup != null) {
             String currentChatSessionId = editor.getAiChatPage().getCurrentSessionName();
-            workflowGroup.setSessionId(currentChatSessionId);
+            if (currentChatSessionId != null && !currentChatSessionId.isEmpty()) {
+                workflowGroup.setSessionId(currentChatSessionId);
+            }
         }
     }
 
@@ -519,7 +528,7 @@ public class DevelopmentPage extends AEvoPage {
                 + ".loop-node.active { animation: pulse 2s infinite ease-in-out; }"
                 + "</style></head><body>"
                 + "<div class='session-info' id='info'>AI Network Structure</div>"
-                + "<svg id='canvas' viewBox='0 0 1000 650' preserveAspectRatio='xMidYMid meet'><defs>"
+        + "<svg id='canvas' width='100%' height='100%' viewBox='0 0 1000 650' preserveAspectRatio='xMidYMid meet'><defs>"
                 + "<marker id='arrowhead' markerWidth='10' markerHeight='7' refX='10' refY='3.5' orient='auto'><polygon points='0 0, 10 3.5, 0 7' fill='#94a3b8'/></marker>"
                 + "<marker id='loop-arrow' markerWidth='6' markerHeight='4' refX='6' refY='2' orient='auto'><polygon points='0 0, 6 2, 0 4' fill='#94a3b8'/></marker>"
                 + "</defs>"
@@ -529,14 +538,35 @@ public class DevelopmentPage extends AEvoPage {
                 + "<script>"
                 + "var viewport = document.getElementById('viewport');"
                 + "var currentZoom = 1.0;"
+        + "var translateX = 260, translateY = 20;"
+        + "var isDragging = false, startX, startY;"
                 + "function applyZoom(factor) {"
                 + "  currentZoom *= factor;"
-                + "  viewport.setAttribute('transform', 'translate(260, 20) scale(' + currentZoom + ')');"
+        + "  updateTransform();"
                 + "}"
                 + "function resetZoom() {"
-                + "  currentZoom = 1.0;"
-                + "  viewport.setAttribute('transform', 'translate(260, 20)');"
+        + "  currentZoom = 1.0; translateX = 260; translateY = 20;"
+        + "  updateTransform();"
+        + "}"
+        + "function updateTransform() {"
+        + "  viewport.setAttribute('transform', 'translate(' + translateX + ', ' + translateY + ') scale(' + currentZoom + ')');"
                 + "}"
+        + "function fitToScreen() {"
+        + "  resetZoom();"
+        + "}"
+        + "document.getElementById('canvas').addEventListener('mousedown', function(e) {"
+        + "  isDragging = true;"
+        + "  startX = e.clientX - translateX;"
+        + "  startY = e.clientY - translateY;"
+        + "});"
+        + "window.addEventListener('mousemove', function(e) {"
+        + "  if (isDragging) {"
+        + "    translateX = e.clientX - startX;"
+        + "    translateY = e.clientY - startY;"
+        + "    updateTransform();"
+        + "  }"
+        + "});"
+        + "window.addEventListener('mouseup', function() { isDragging = false; });"
                 + "window.addEventListener('resize', function() {"
                 + "  /* SVG with viewBox and 100% size resizes automatically */"
                 + "});"

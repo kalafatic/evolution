@@ -11,6 +11,9 @@ import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.Section;
 import eu.kalafatic.evolution.view.editors.pages.DevelopmentPage;
 import eu.kalafatic.utils.factories.GUIFactory;
+import eu.kalafatic.evolution.view.projection.ProjectionService;
+import eu.kalafatic.evolution.view.projection.RuntimeProjection;
+import java.util.function.Consumer;
 
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
@@ -18,9 +21,18 @@ import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
 
 public class VizGroup extends AEvoGroup {
     private Browser browser;
+    private final Consumer<RuntimeProjection> projectionObserver = projection -> {
+        if (browser == null || browser.isDisposed()) return;
+        String activeSid = (editor != null && editor.getAiChatPage() != null) ?
+                editor.getAiChatPage().getCurrentSessionName() : "Default";
+        if (projection.getSessionId().equals(activeSid)) {
+            scheduleRefresh();
+        }
+    };
 
     public VizGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, DevelopmentPage page) {
         super(editor, orchestrator);
+        ProjectionService.getInstance().subscribe(projectionObserver);
         createControl(toolkit, parent, page);
     }
 
@@ -65,6 +77,12 @@ public class VizGroup extends AEvoGroup {
                 @Override public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) { if (browser != null) browser.execute("resetZoom();"); }
             });
 
+            Button fit = toolkit.createButton(toolbar, "Fit", SWT.PUSH);
+            fit.setToolTipText("Fit to Screen");
+            fit.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
+                @Override public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) { if (browser != null) browser.execute("if(window.fitToScreen) window.fitToScreen();"); }
+            });
+
             Button export = toolkit.createButton(toolbar, "Exp", SWT.PUSH);
             export.setToolTipText("Export (Log to Console)");
             export.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {
@@ -84,6 +102,12 @@ public class VizGroup extends AEvoGroup {
         Composite browserContainer = toolkit.createComposite(group);
         browserContainer.setLayout(new FillLayout());
         browserContainer.setLayoutData(new GridData(GridData.FILL_BOTH));
+
+        browserContainer.addListener(SWT.Resize, event -> {
+            if (browser != null && !browser.isDisposed()) {
+                browser.execute("if(window.dispatchEvent) window.dispatchEvent(new Event('resize'));");
+            }
+        });
 
         try {
 		browser = GUIFactory.INSTANCE.createBrowser(browserContainer,700);
@@ -112,4 +136,10 @@ public class VizGroup extends AEvoGroup {
     }
 
     public Browser getBrowser() { return browser; }
+
+    @Override
+    public void dispose() {
+        ProjectionService.getInstance().unsubscribe(projectionObserver);
+        super.dispose();
+    }
 }
