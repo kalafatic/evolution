@@ -327,16 +327,16 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         }
 
         // 2. Population Scaling based on Capability and Intensity
-        int branchingLimit = 2; // Default
+        int branchingLimit = 3; // Default
         eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType capType = profile.getCapability();
 
         switch (capType) {
-            case CHAT: branchingLimit = 2; break;
-            case CODE: branchingLimit = 2; break; // IMPLEMENTATION
-            case EVOLUTION: branchingLimit = 3; break; // REFACTOR
-            case ARCHITECTURE: branchingLimit = 4; break; // DESIGN
+            case CHAT: branchingLimit = 3; break;
+            case CODE: branchingLimit = 3; break; // IMPLEMENTATION
+            case EVOLUTION: branchingLimit = 4; break; // REFACTOR
+            case ARCHITECTURE: branchingLimit = 5; break; // DESIGN
             case SELF_DEV: branchingLimit = 6; break; // RESEARCH
-            default: branchingLimit = 2; break;
+            default: branchingLimit = 3; break;
         }
 
         // Expand based on intensity if pressure is high
@@ -529,16 +529,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
                         context.log("[DARWIN] Materialization failed for " + bp.getId() + ". Retrying...");
                     }
 
-                    // Repair Orchestration owned by DarwinEngine
-                    if (variant == null) {
-                        context.log("[DARWIN] All materialization retries failed for " + bp.getId() + ". Triggering repair orchestration.");
-                        variant = spawner.autoRepair(bp, context);
-                    }
-
                     if (variant != null) {
-                        // IMPLEMENTATION PLANNING: Convert architectural reasoning into actions
-                        ImplementationPlanner planner = new ImplementationPlanner();
-                        variant = planner.plan(variant, context);
                         variant = completeTrajectorySchema(variant, bp, context);
 
                         // 5. Semantic Vector Divergence Validation
@@ -651,16 +642,9 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             }
         }
 
-        // FALLBACK: If sequential branching failed to produce enough variants, inject divergent fallbacks
-        if (uniqueVariants.size() < 2) {
-             context.log("[DARWIN] Sequential Branching yielded insufficient variants (" + uniqueVariants.size() + "). Injecting divergent fallbacks.");
-             DarwinSyntheticVariantFactory factory = new DarwinSyntheticVariantFactory();
-             if (uniqueVariants.isEmpty()) {
-                 uniqueVariants.add(factory.synthesizeImplementation(goal.getPrimaryAction(), atomicAnalysis));
-             }
-             if (uniqueVariants.size() < 2) {
-                 uniqueVariants.add(factory.synthesizeSemanticAlternative(uniqueVariants.get(0), goal.getPrimaryAction(), atomicAnalysis));
-             }
+        // FALLBACK: If sequential branching failed to produce enough variants, notify but do NOT synthesize.
+        if (uniqueVariants.size() < targetPopulation) {
+             context.log("[DARWIN] Sequential Branching yielded only " + uniqueVariants.size() + " variants. Proceeding without synthetic repair.");
         }
 
         Object envObj = context.getOrchestrationState().getMetadata().get("semanticEnvelope");
@@ -869,10 +853,10 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
                 JSONObject aObj = actionsArr.optJSONObject(i);
                 if (aObj == null) continue;
                 BranchVariant.Action action = new BranchVariant.Action();
-                action.setDomain(aObj.optString("domain", "kernel"));
-                action.setOperation(aObj.optString("operation", "ANALYZE"));
-                action.setTarget(aObj.optString("target", "workspace"));
-                action.setDescription(aObj.optString("description", "Materialize architectural intent"));
+                action.setDomain(aObj.optString("domain"));
+                action.setOperation(aObj.optString("operation"));
+                action.setTarget(aObj.optString("target"));
+                action.setDescription(aObj.optString("description"));
                 action.setImplementation(aObj.optString("implementation", ""));
                 v.getActions().add(action);
             }
@@ -1062,23 +1046,8 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         fragment.put("id", bp.getId());
         fragment.put("strategy_type", bp.getStrategyType().name());
 
-        if (!fragment.has("strategy") || fragment.optString("strategy").isEmpty()) {
-            fragment.put("strategy", "Architectural strategy for " + bp.getPhilosophy());
-        }
-
-        fragment.put("semantic_justification", bp.getPhilosophy());
+        // We only map the philosophy to semantic_anchor
         fragment.put("semantic_anchor", bp.getPhilosophy());
-
-        // Standard Darwin defaults for missing metadata
-        if (!fragment.has("survival_argument") || fragment.optString("survival_argument").isEmpty()) {
-            fragment.put("survival_argument", "Proposed as a divergent architectural candidate for " + bp.getPhilosophy());
-        }
-        if (!fragment.has("tradeoffs") || fragment.optString("tradeoffs").isEmpty()) {
-            fragment.put("tradeoffs", "Standard trade-offs for " + bp.getStrategyType() + " architecture.");
-        }
-        if (!fragment.has("failure_risks") || fragment.optString("failure_risks").isEmpty()) {
-            fragment.put("failure_risks", "Managed risks within " + bp.getStrategyType() + " evolutionary boundaries.");
-        }
 
         // Inject dimensions from blueprint if missing in LLM response
         JSONObject dimensions = fragment.optJSONObject("engineering_dimensions");

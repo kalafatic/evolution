@@ -25,87 +25,13 @@ public class TaskPlanner extends BaseAiAgent {
     }
 
     public List<Task> generateTasksFromVariant(TaskContext context, BranchVariant variant) throws Exception {
-        if (variant.getActions() == null || variant.getActions().isEmpty()) {
-            context.log("[PLANNER] Variant actions are empty. Invoking ImplementationPlanner for safety fallback.");
-
-            // Convert variant back to JSONObject for the planner
-            JSONObject vJson = new JSONObject();
-            vJson.put("id", variant.getId());
-            vJson.put("strategy", variant.getStrategy());
-            vJson.put("strategy_type", variant.getStrategyType());
-            JSONArray steps = new JSONArray();
-            for (String s : variant.getProjectedSteps()) steps.put(s);
-            vJson.put("projected_steps", steps);
-
-            JSONObject planned = implementationPlanner.plan(vJson, context);
-
-            // Map planned actions back to variant
-            JSONArray plannedActions = planned.optJSONArray("actions");
-            if (plannedActions != null) {
-                for (int i = 0; i < plannedActions.length(); i++) {
-                    JSONObject aObj = plannedActions.getJSONObject(i);
-                    BranchVariant.Action action = new BranchVariant.Action();
-                    action.setDomain(aObj.optString("domain"));
-                    action.setOperation(aObj.optString("operation"));
-                    action.setTarget(aObj.optString("target"));
-                    action.setDescription(aObj.optString("description"));
-                    variant.getActions().add(action);
-                }
-            }
+        if (!implementationPlanner.validate(variant)) {
+            context.log("[PLANNER] FATAL: BranchVariant failed final structural validation. Actions are missing or incomplete.");
+            throw new Exception("Incomplete BranchVariant: Mandatory actions or metadata missing. Darwin rules violated.");
         }
 
-        if (variant.getActions() == null || variant.getActions().isEmpty()) {
-            return generateTasks(context, variant.getStrategy());
-        }
-
-        context.log("[PLANNER] Generating tasks from structured variant actions...");
-        List<Task> tasks = new ArrayList<>();
-        OrchestrationFactory factory = OrchestrationFactory.eINSTANCE;
-
-        for (BranchVariant.Action action : variant.getActions()) {
-            Task task = factory.createTask();
-            task.setId("sd-task-" + System.currentTimeMillis() + "-" + tasks.size());
-
-            String op = action.getOperation().toUpperCase();
-            String target = action.getTarget();
-
-            if (target == null || target.isEmpty() || "null".equals(target)) {
-                target = "GeneratedArtifact";
-            }
-
-            String domain = action.getDomain() != null ? action.getDomain().toLowerCase() : "";
-
-            // Dynamic Target Normalization: Use semantic intent instead of hardcoded rules
-            task.setName(op + " " + target);
-
-            String type = "llm";
-            if ("file".equalsIgnoreCase(domain) || "class".equalsIgnoreCase(domain) || "java".equalsIgnoreCase(domain)) {
-                type = "file";
-                if (op.equals("DELETE") || op.equals("REMOVE")) {
-                    task.setName("DELETE " + target);
-                    task.setType("shell");
-                } else if (op.equals("MKDIR")) {
-                    task.setName("MKDIR " + target);
-                    task.setType("shell");
-                }
-            }
-            else if ("build".equalsIgnoreCase(action.getDomain())) type = "maven";
-            else if ("structure".equalsIgnoreCase(action.getDomain())) type = "structure";
-            else if ("test".equalsIgnoreCase(action.getDomain())) type = "maven"; // usually 'mvn test'
-            else if ("git".equalsIgnoreCase(action.getDomain())) type = "git";
-
-            task.setType(type);
-            task.setDescription(action.getDescription());
-            task.setRationale("Darwin Strategy: " + variant.getStrategy());
-            task.setPriority(1);
-
-            // PROPAGATE PRE-GENERATED IMPLEMENTATION
-            if (action.getImplementation() != null && !action.getImplementation().isEmpty()) {
-                task.setResponse(action.getImplementation());
-            }
-
-            tasks.add(task);
-        }
+        context.log("[PLANNER] Converting variant actions to tasks...");
+        List<Task> tasks = implementationPlanner.planTasks(variant);
 
         // PROPAGATE EXPECTED OUTPUTS
         if (variant.getExpectedOutputs() != null && !variant.getExpectedOutputs().isEmpty()) {

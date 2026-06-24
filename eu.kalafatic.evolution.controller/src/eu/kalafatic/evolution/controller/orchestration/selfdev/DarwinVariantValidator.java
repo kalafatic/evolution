@@ -58,21 +58,50 @@ public class DarwinVariantValidator {
             fatalErrors.add("Missing required field: strategy");
         }
 
-        // 5. Validate Recoverable Fields (Warning if missing)
-        if (!json.has("semantic_justification") && !json.has("semantic_anchor")) {
-            warnings.add("Missing semantic field (semantic_justification or semantic_anchor) (Recoverable)");
+        if (!json.has("semantic_anchor") || json.optString("semantic_anchor").isEmpty()) {
+            fatalErrors.add("Missing required field: semantic_anchor");
         }
 
-        List<String> recoverableFields = List.of("survival_argument", "tradeoffs", "failure_risks", "projected_steps");
-        for (String field : recoverableFields) {
-            if (!json.has(field) || json.isNull(field) || (json.get(field) instanceof String && ((String)json.get(field)).isEmpty())) {
-                warnings.add("Missing field: " + field + " (Recoverable)");
+        List<String> mandatoryFields = List.of("survival_argument", "tradeoffs", "failure_risks", "projected_steps", "expected_outputs");
+        for (String field : mandatoryFields) {
+            if (!json.has(field) || json.isNull(field) || (json.get(field) instanceof String && ((String)json.get(field)).isEmpty()) ||
+                (json.get(field) instanceof JSONArray && ((JSONArray)json.get(field)).length() == 0)) {
+                fatalErrors.add("Missing or empty mandatory field: " + field);
             }
         }
 
-        // 5.5 Validate Mandatory Action Field (Fatal if missing or empty)
-        if (!json.has("actions") || json.isNull("actions") || json.optJSONArray("actions").length() == 0) {
+        // 5. Validate Mandatory Action Field (Fatal if missing or empty)
+        JSONArray actions = json.optJSONArray("actions");
+        if (actions == null || actions.length() == 0) {
             fatalErrors.add("Missing or empty required field: actions. Variants must contain at least one explicit action.");
+        } else {
+            for (int i = 0; i < actions.length(); i++) {
+                JSONObject action = actions.optJSONObject(i);
+                if (action == null) {
+                    fatalErrors.add("Action at index " + i + " is not a valid object.");
+                    continue;
+                }
+
+                String domain = action.optString("domain");
+                String operation = action.optString("operation");
+                String target = action.optString("target");
+                String description = action.optString("description");
+
+                if (domain.isEmpty()) fatalErrors.add("Action at index " + i + " is missing 'domain'.");
+                if (operation.isEmpty()) fatalErrors.add("Action at index " + i + " is missing 'operation'.");
+                if (target.isEmpty()) fatalErrors.add("Action at index " + i + " is missing 'target'.");
+                if (description.isEmpty()) fatalErrors.add("Action at index " + i + " is missing 'description'.");
+
+                if ("WRITE".equalsIgnoreCase(operation)) {
+                    String implementation = action.optString("implementation");
+                    if (implementation.isEmpty()) {
+                        fatalErrors.add("WRITE action at index " + i + " is missing 'implementation'.");
+                    }
+                    if (".".equals(target) || "workspace".equalsIgnoreCase(target)) {
+                        fatalErrors.add("WRITE action at index " + i + " uses prohibited generic target: " + target);
+                    }
+                }
+            }
         }
 
         // 6. Validate strategy_type if present (Recoverable - Spawner/Planner can fix)
@@ -94,18 +123,17 @@ public class DarwinVariantValidator {
             fatalErrors.add("Invalid or placeholder strategy: " + strategy);
         }
 
-        String philosophy = json.has("semantic_justification") ? json.optString("semantic_justification") : json.optString("semantic_anchor");
+        String philosophy = json.optString("semantic_anchor");
         if (philosophy != null && (philosophy.length() < 10 || philosophy.contains("<") || philosophy.contains(">"))) {
             fatalErrors.add("Invalid or placeholder semantic field: " + philosophy);
         }
 
-        // 8. Validate Recoverable field quality (Warnings)
+        // 8. Validate mandatory field quality (Fatal)
         String survival = json.optString("survival_argument");
-        if (!survival.isEmpty() && (survival.length() < 10 || survival.contains("<") || survival.contains(">"))) {
-            warnings.add("Invalid or placeholder survival_argument (Recoverable)");
+        if (survival.length() < 10 || survival.contains("<") || survival.contains(">")) {
+            fatalErrors.add("Invalid or placeholder survival_argument: " + survival);
         }
 
-        JSONArray actions = json.optJSONArray("actions");
         if (actions != null) {
             for (int i = 0; i < actions.length(); i++) {
                 JSONObject action = actions.optJSONObject(i);
@@ -113,7 +141,7 @@ public class DarwinVariantValidator {
                     String op = action.optString("operation", "");
                     String target = action.optString("target", "");
                     if (op.contains("<") || op.contains(">") || target.contains("<") || target.contains(">") || target.contains("actual_file_path")) {
-                        warnings.add("Placeholder detected in action (Recoverable)");
+                        fatalErrors.add("Placeholder detected in action: " + target);
                         break;
                     }
                 }
