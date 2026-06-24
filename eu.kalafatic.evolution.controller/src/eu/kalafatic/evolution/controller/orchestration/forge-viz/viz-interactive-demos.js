@@ -353,3 +353,193 @@ function highlightCnnFilter(index) {
     const oi = y*5 + x;
     if(outputs[oi]) outputs[oi].style.background = "var(--accent)";
 }
+
+// ============== INTERACTIVE MLP DEMO ==============
+
+let mlpW1=[], mlpW2=[], mlpb1=[], mlpb2=[];
+let mlpH=3;
+
+function renderInteractiveMlpDemo() {
+    const area = document.getElementById('viz-area');
+    area.innerHTML = `
+        <div id="demo-mlp-container" style="padding:20px; text-align:center; height:100%; width:100%; background:#1f232b; color:white; overflow:auto;">
+            <h2 style="margin:0 0 10px 0;">Mini MLP (Feedforward Neural Network)</h2>
+            <div id="demo-mlp-net" style="text-align:center; padding:20px;"></div>
+            <div style="display:flex; gap:15px; padding:15px; text-align:left;">
+                <div style="flex:1; background:#2d3340; padding:15px; border-radius:8px;">
+                    <h3 style="margin-top:0;">Input</h3>
+                    x1 <input id="demo-mlp-x1" type="number" value="1" style="width:100%; margin:5px 0 10px; background:#fff; color:#000; padding:4px; box-sizing:border-box;">
+                    x2 <input id="demo-mlp-x2" type="number" value="0" style="width:100%; margin:5px 0 10px; background:#fff; color:#000; padding:4px; box-sizing:border-box;">
+                    <button class="btn btn-primary" onclick="forwardMlp()" style="width:100%;">Forward</button>
+                    <h3 style="margin-top:15px; margin-bottom:5px;">Output</h3>
+                    <div id="demo-mlp-out" style="font-size:1.2em; font-weight:bold; color:#4CAF50;">-</div>
+                </div>
+                <div style="flex:1; background:#2d3340; padding:15px; border-radius:8px;">
+                    <h3 style="margin-top:0;">Model</h3>
+                    Hidden neurons:
+                    <input id="demo-mlp-hidden" type="number" value="3" style="width:100%; margin:5px 0 10px; background:#fff; color:#000; padding:4px; box-sizing:border-box;">
+                    <button class="btn" onclick="buildMlp()" style="width:100%;">Rebuild Network</button>
+                    <p style="font-size:0.8em; margin-top:10px; color:#aaa;">Activation: Sigmoid</p>
+                </div>
+            </div>
+            <style>
+                .demo-mlp-node {
+                    width:40px; height:40px; border-radius:50%; background:#444;
+                    display:flex; align-items:center; justify-content:center;
+                    margin:10px auto; transition:.3s; font-size:0.8em;
+                }
+                .demo-mlp-node.active { background:#4CAF50; box-shadow: 0 0 10px #4CAF50; }
+                .demo-mlp-layer { display:inline-block; margin:0 20px; vertical-align:top; }
+            </style>
+        </div>
+    `;
+    buildMlp();
+}
+
+function mlpSigmoid(x){ return 1/(1+Math.exp(-x)); }
+function mlpRand(){ return Math.random()*2-1; }
+
+function buildMlp() {
+    const hiddenInput = document.getElementById('demo-mlp-hidden');
+    if (!hiddenInput) return;
+    mlpH = parseInt(hiddenInput.value);
+    mlpW1=[]; mlpb1=[]; mlpW2=[]; 
+    for(let i=0; i<mlpH; i++){
+        mlpW1[i]=[mlpRand(), mlpRand()];
+        mlpb1[i]=mlpRand();
+        mlpW2[i]=mlpRand();
+    }
+    mlpb2=mlpRand();
+    renderMlp();
+}
+
+function renderMlp() {
+    const net = document.getElementById('demo-mlp-net');
+    if (!net) return;
+    let html = "";
+    html += "<div class='demo-mlp-layer'><div>Input</div>";
+    html += "<div class='demo-mlp-node'>x1</div>";
+    html += "<div class='demo-mlp-node'>x2</div></div>";
+    html += "<div class='demo-mlp-layer'><div>Hidden</div>";
+    for(let i=0; i<mlpH; i++){ html += "<div class='demo-mlp-node'>h"+i+"</div>"; }
+    html += "</div>";
+    html += "<div class='demo-mlp-layer'><div>Output</div><div class='demo-mlp-node'>y</div></div>";
+    net.innerHTML = html;
+}
+
+function forwardMlp() {
+    const x1Val = parseFloat(document.getElementById('demo-mlp-x1').value);
+    const x2Val = parseFloat(document.getElementById('demo-mlp-x2').value);
+    let h = [];
+    for(let i=0; i<mlpH; i++){
+        let z = mlpW1[i][0]*x1Val + mlpW1[i][1]*x2Val + mlpb1[i];
+        h[i] = mlpSigmoid(z);
+    }
+    let y = 0;
+    for(let i=0; i<mlpH; i++){ y += h[i]*mlpW2[i]; }
+    y += mlpb2;
+    y = mlpSigmoid(y);
+    const nodes = document.querySelectorAll(".demo-mlp-node");
+    nodes.forEach(n => n.classList.add("active"));
+    setTimeout(() => { nodes.forEach(n => n.classList.remove("active")); }, 300);
+    document.getElementById('demo-mlp-out').innerText = y.toFixed(4);
+}
+
+// ============== INTERACTIVE TRANSFORMER DEMO ==============
+
+function renderInteractiveTransformerDemo() {
+    const area = document.getElementById('viz-area');
+    area.innerHTML = `
+        <div id="demo-tf-container" style="padding:20px; text-align:center; height:100%; width:100%; background:#20242b; color:white; overflow:auto;">
+            <h2 style="margin:0 0 10px 0;">Mini Transformer Demo</h2>
+            <div id="demo-tf-pipeline" style="display:flex; justify-content:center; align-items:center; gap:12px; padding:20px; flex-wrap:wrap;"></div>
+            <div style="display:flex; gap:15px; padding:15px; text-align:left;">
+                <div style="flex:1; background:#2d323b; border-radius:8px; padding:15px;">
+                    <h3 style="margin-top:0;">Prompt</h3>
+                    <textarea id="demo-tf-prompt" rows="4" style="width:100%; box-sizing:border-box; background:#fff; color:#000; padding:8px; border-radius:4px; font-family:inherit;">The quick brown fox</textarea>
+                    <button class="btn btn-primary" onclick="runTransformer()" style="margin-top:10px; width:100%;">Run Transformer</button>
+                    <h3 style="margin-top:15px;">Tokens</h3>
+                    <div id="demo-tf-tokens" style="min-height:40px; border:1px solid #444; padding:5px; border-radius:4px; background:#1a1d23;"></div>
+                </div>
+                <div style="flex:1; background:#2d323b; border-radius:8px; padding:15px;">
+                    <h3 style="margin-top:0;">Configuration</h3>
+                    <div style="margin-bottom:10px;">
+                        <div style="font-size:0.8em; color:#aaa; margin-bottom:4px;">Transformer Layers</div>
+                        <input id="demo-tf-layers" type="number" value="2" min="1" max="8" style="width:100%; background:#fff; color:#000; padding:4px; box-sizing:border-box;">
+                    </div>
+                    <div style="margin-bottom:10px;">
+                        <div style="font-size:0.8em; color:#aaa; margin-bottom:4px;">Attention Heads</div>
+                        <input id="demo-tf-heads" type="number" value="4" style="width:100%; background:#fff; color:#000; padding:4px; box-sizing:border-box;">
+                    </div>
+                    <div style="margin-bottom:10px;">
+                        <div style="font-size:0.8em; color:#aaa; margin-bottom:4px;">Hidden Size</div>
+                        <input id="demo-tf-hidden" type="number" value="256" style="width:100%; background:#fff; color:#000; padding:4px; box-sizing:border-box;">
+                    </div>
+                    <button class="btn" onclick="buildTransformer()" style="width:100%;">Apply</button>
+                    <h3 style="margin-top:15px;">Output</h3>
+                    <div id="demo-tf-output" style="margin-top:10px; font-style:italic; color:#ff9800;">-</div>
+                </div>
+            </div>
+            <style>
+                .demo-tf-block {
+                    width:110px; height:50px; background:#394150; border-radius:8px;
+                    display:flex; justify-content:center; align-items:center;
+                    text-align:center; transition:.3s; font-size:0.75em; font-weight:bold;
+                    border: 1px solid #555;
+                }
+                .demo-tf-block.active { background:#4CAF50; transform:scale(1.1); box-shadow: 0 0 10px #4CAF50; border-color:white; }
+                .demo-tf-arrow { font-size:18px; color:#888; }
+                .demo-tf-token {
+                    display:inline-block; padding:4px 8px; margin:4px;
+                    border-radius:4px; background:#444; transition:.3s; font-size:0.8em;
+                    border: 1px solid #555;
+                }
+                .demo-tf-token.active { background:#ff9800; color:black; border-color:white; }
+            </style>
+        </div>
+    `;
+    buildTransformer();
+}
+
+function tfBlock(name){ return "<div class='demo-tf-block'>"+name+"</div>"; }
+function tfArrow(){ return "<div class='demo-tf-arrow'>➜</div>"; }
+
+function buildTransformer(){
+    const pipeline = document.getElementById('demo-tf-pipeline');
+    if (!pipeline) return;
+    let html="";
+    html+=tfBlock("Tokenizer"); html+=tfArrow();
+    html+=tfBlock("Embedding"); html+=tfArrow();
+    html+=tfBlock("Attention"); html+=tfArrow();
+    html+=tfBlock("FFN"); html+=tfArrow();
+    html+=tfBlock("LayerNorm"); html+=tfArrow();
+    html+=tfBlock("Output");
+    pipeline.innerHTML=html;
+}
+
+async function runTransformer(){
+    const prompt = document.getElementById('demo-tf-prompt');
+    const tokens = document.getElementById('demo-tf-tokens');
+    const output = document.getElementById('demo-tf-output');
+    if (!prompt || !tokens || !output) return;
+
+    let words = prompt.value.trim().split(/\s+/);
+    tokens.innerHTML="";
+    for(let w of words){
+        const span = document.createElement("span");
+        span.className = "demo-tf-token";
+        span.textContent = w;
+        tokens.appendChild(span);
+    }
+
+    let blocks = document.querySelectorAll(".demo-tf-block");
+    for(let b of blocks){
+        b.classList.add("active");
+        let t = document.querySelectorAll(".demo-tf-token");
+        for(let x of t){ x.classList.add("active"); }
+        await new Promise(r => setTimeout(r, 400));
+        b.classList.remove("active");
+        for(let x of t){ x.classList.remove("active"); }
+    }
+    output.textContent = "Generated: " + prompt.value + " ...";
+}

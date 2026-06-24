@@ -397,8 +397,10 @@
             <div id="interactive-demos-palette" style="background: var(--bg-secondary); border-bottom: 1px solid var(--border); padding: 10px; display: flex; flex-wrap: wrap; gap: 5px;">
                 <div style="font-size: 0.7em; color: var(--text-dim); width: 100%; margin-bottom: 2px;">INTERACTIVE DEMOS</div>
                 <button class="btn btn-sm" onclick="setInteractiveDemo('NEURON')">Neuron</button>
-                <button class="btn btn-sm" onclick="setInteractiveDemo('LLM')">LLM</button>
+                <button class="btn btn-sm" onclick="setInteractiveDemo('MLP')">MLP</button>
                 <button class="btn btn-sm" onclick="setInteractiveDemo('CNN')">CNN</button>
+                <button class="btn btn-sm" onclick="setInteractiveDemo('TRANSFORMER')">Transformer</button>
+                <button class="btn btn-sm" onclick="setInteractiveDemo('LLM')">LLM</button>
             </div>
 
             <div id="session-list">
@@ -462,8 +464,10 @@
                             <option value="EVOLUTION">Evolution Timeline</option>
                             <option value="WALKTHROUGH">Study Walkthrough</option>
                             <option value="INTERACTIVE_NEURON">Interactive Neuron</option>
-                            <option value="INTERACTIVE_LLM">Interactive LLM</option>
+                            <option value="INTERACTIVE_MLP">Interactive MLP</option>
                             <option value="INTERACTIVE_CNN">Interactive CNN</option>
+                            <option value="INTERACTIVE_TRANSFORMER">Interactive Transformer</option>
+                            <option value="INTERACTIVE_LLM">Interactive LLM</option>
                         </select>
                     </div>
                     <div id="viz-controls" style="display: flex; gap: 5px;">
@@ -1323,11 +1327,17 @@
                 if (currentViz === 'INTERACTIVE_NEURON') {
                     renderInteractiveNeuronDemo();
                     return;
-                } else if (currentViz === 'INTERACTIVE_LLM') {
-                    renderInteractiveLlmDemo();
+                } else if (currentViz === 'INTERACTIVE_MLP') {
+                    renderInteractiveMlpDemo();
                     return;
                 } else if (currentViz === 'INTERACTIVE_CNN') {
                     renderInteractiveCnnDemo();
+                    return;
+                } else if (currentViz === 'INTERACTIVE_TRANSFORMER') {
+                    renderInteractiveTransformerDemo();
+                    return;
+                } else if (currentViz === 'INTERACTIVE_LLM') {
+                    renderInteractiveLlmDemo();
                     return;
                 }
                 return;
@@ -1370,10 +1380,14 @@
                     renderWalkthroughViz();
                 } else if (currentViz === 'INTERACTIVE_NEURON') {
                     renderInteractiveNeuronDemo();
-                } else if (currentViz === 'INTERACTIVE_LLM') {
-                    renderInteractiveLlmDemo();
+                } else if (currentViz === 'INTERACTIVE_MLP') {
+                    renderInteractiveMlpDemo();
                 } else if (currentViz === 'INTERACTIVE_CNN') {
                     renderInteractiveCnnDemo();
+                } else if (currentViz === 'INTERACTIVE_TRANSFORMER') {
+                    renderInteractiveTransformerDemo();
+                } else if (currentViz === 'INTERACTIVE_LLM') {
+                    renderInteractiveLlmDemo();
                 }
             } catch (e) {
                 if (isDemo) {
