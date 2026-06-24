@@ -13,6 +13,9 @@ import org.json.JSONObject;
 
 import eu.kalafatic.evolution.controller.execution.ExecutionBudget;
 import eu.kalafatic.evolution.controller.execution.ScheduledExecutionPlan;
+import eu.kalafatic.evolution.controller.orchestration.goal.GoalUnderstandingEngine;
+import eu.kalafatic.evolution.controller.orchestration.goal.SemanticEnvelope;
+import eu.kalafatic.evolution.controller.orchestration.goal.SemanticEnvelopeEngine;
 import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait;
 import eu.kalafatic.evolution.controller.orchestration.capability.contracts.ISchedulingContract;
 import eu.kalafatic.evolution.controller.orchestration.goal.GoalModel;
@@ -118,6 +121,28 @@ public class DarwinFlow implements IOrchestrationFlow {
                 root.setSemanticPhilosophy("Initial evolutionary root");
                 root.setIteration(0);
                 root.setStatus("ROOT");
+
+                // MANDATORY: Ensure SemanticEnvelope exists for Root initialization
+                Object envelopeObj = context.getOrchestrationState().getMetadata().get("semanticEnvelope");
+                if (envelopeObj == null) {
+                    context.log("[DARWIN] Root initialization: SemanticEnvelope missing. Deriving...");
+                    try {
+                        GoalModel goalModel = (GoalModel) context.getOrchestrationState().getMetadata().get("goalModel");
+                        if (goalModel == null) {
+                            GoalUnderstandingEngine goalEngine = new GoalUnderstandingEngine(sessionContainer);
+                            goalEngine.setAiService(aiService);
+                            goalModel = goalEngine.understand(goal.getPrimaryAction(), context);
+                            context.getOrchestrationState().getMetadata().put("goalModel", goalModel);
+                        }
+                        SemanticEnvelopeEngine envEngine = new SemanticEnvelopeEngine(sessionContainer);
+                        envEngine.setAiService(aiService);
+                        SemanticEnvelope envelope = envEngine.derive(goalModel, context);
+                        context.getOrchestrationState().getMetadata().put("semanticEnvelope", envelope);
+                    } catch (Exception e) {
+                        context.log("[DARWIN] Failed to derive SemanticEnvelope for Root: " + e.getMessage());
+                    }
+                }
+
                 tree.addNode(root);
                 context.getKernelContext().getMemoryService().saveEvolutionTree();
             }

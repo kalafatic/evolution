@@ -58,19 +58,24 @@ public class DarwinVariantValidator {
             fatalErrors.add("Missing required field: strategy");
         }
 
-        // 5. Validate Recoverable Fields (Warning if missing)
+        // 5. Validate Mandatory Structural Fields (Fatal if missing or empty)
+        if (!json.has("actions") || json.isNull("actions") || json.optJSONArray("actions").length() == 0) {
+            fatalErrors.add("Missing or empty required field: actions");
+        }
+
+        // 6. Validate Recoverable Fields (Warning if missing)
         if (!json.has("semantic_justification") && !json.has("semantic_anchor")) {
             warnings.add("Missing semantic field (semantic_justification or semantic_anchor) (Recoverable)");
         }
 
-        List<String> recoverableFields = List.of("survival_argument", "tradeoffs", "failure_risks", "actions", "projected_steps");
+        List<String> recoverableFields = List.of("survival_argument", "tradeoffs", "failure_risks", "projected_steps");
         for (String field : recoverableFields) {
             if (!json.has(field) || json.isNull(field) || (json.get(field) instanceof String && ((String)json.get(field)).isEmpty())) {
                 warnings.add("Missing field: " + field + " (Recoverable)");
             }
         }
 
-        // 6. Validate strategy_type if present (Recoverable - Spawner/Planner can fix)
+        // 7. Validate strategy_type if present (Recoverable - Spawner/Planner can fix)
         if (json.has("strategy_type")) {
             String actualTypeStr = json.optString("strategy_type");
             try {
@@ -83,32 +88,39 @@ public class DarwinVariantValidator {
             }
         }
 
-        // 7. Validate architectural completeness and PROHIBIT PLACEHOLDERS (Fatal)
+        // 8. Validate architectural completeness and PROHIBIT PLACEHOLDERS (Fatal)
         String strategy = json.optString("strategy");
-        if (strategy.length() < 10 || strategy.contains("<") || strategy.contains(">") || strategy.contains("precise engineering strategy")) {
+        if (strategy.length() < 10 || strategy.contains("<") || strategy.contains(">") || strategy.contains("precise engineering strategy") || strategy.contains("ROOT") || strategy.equalsIgnoreCase("create")) {
             fatalErrors.add("Invalid or placeholder strategy: " + strategy);
         }
 
         String philosophy = json.has("semantic_justification") ? json.optString("semantic_justification") : json.optString("semantic_anchor");
-        if (philosophy != null && (philosophy.length() < 10 || philosophy.contains("<") || philosophy.contains(">"))) {
+        if (philosophy != null && (philosophy.length() < 10 || philosophy.contains("<") || philosophy.contains(">") || philosophy.contains("ROOT"))) {
             fatalErrors.add("Invalid or placeholder semantic field: " + philosophy);
         }
 
-        // 8. Validate Recoverable field quality (Warnings)
+        // 9. Validate Recoverable field quality (Warnings)
         String survival = json.optString("survival_argument");
         if (!survival.isEmpty() && (survival.length() < 10 || survival.contains("<") || survival.contains(">"))) {
             warnings.add("Invalid or placeholder survival_argument (Recoverable)");
         }
 
-        JSONArray actions = json.optJSONArray("actions");
-        if (actions != null) {
-            for (int i = 0; i < actions.length(); i++) {
-                JSONObject action = actions.optJSONObject(i);
+        JSONArray actionsArr = json.optJSONArray("actions");
+        if (actionsArr != null) {
+            for (int i = 0; i < actionsArr.length(); i++) {
+                JSONObject action = actionsArr.optJSONObject(i);
                 if (action != null) {
                     String op = action.optString("operation", "");
                     String target = action.optString("target", "");
-                    if (op.contains("<") || op.contains(">") || target.contains("<") || target.contains(">") || target.contains("actual_file_path")) {
-                        warnings.add("Placeholder detected in action (Recoverable)");
+                    String impl = action.optString("implementation", "");
+
+                    if (op.contains("<") || op.contains(">") || target.contains("<") || target.contains(">") || target.contains("actual_file_path") || target.equals(".") || target.equalsIgnoreCase("workspace") || target.equalsIgnoreCase("GeneratedArtifact")) {
+                        fatalErrors.add("Placeholder or generic target detected in action: " + target);
+                        break;
+                    }
+
+                    if ("WRITE".equals(op) && (impl == null || impl.trim().isEmpty())) {
+                        fatalErrors.add("WRITE operation missing implementation content for target: " + target);
                         break;
                     }
                 }

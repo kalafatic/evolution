@@ -28,6 +28,9 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
                "GOAL: Discover the NEXT UNEXPLORED DESIGN TERRITORY.\n" +
                "CORE DIRECTIVE: Do NOT improve existing territories. Do NOT rename existing ones. Return only genuinely NEW semantic territory.\n" +
                "Every candidate represents a distinct ARCHITECTURAL SPECIES. Sibling variants MUST differ significantly in their technical essence, not just wording.\n\n" +
+               "STRICT FORBIDDEN PLACEHOLDERS:\n" +
+               "- Never use generic labels like 'ROOT', 'create', 'bootstrap', or 'workspace' as a territory name.\n" +
+               "- Every territory MUST have a specific technical philosophy (e.g., 'Asynchronous Event-Driven', 'Minimalist Functional Utility').\n\n" +
                "SEARCH MEMORY MANDATE:\n" +
                "- You will be provided with currently explored territories.\n" +
                "- Your task is to identify a technical philosophy that has NOT been touched.\n\n" +
@@ -42,7 +45,8 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
                "STRICT EVOLUTION CONSTRAINTS:\n" +
                "- NO ARCHITECTURAL INFLATION: If the task is simple, DO NOT introduce unnecessary complexity. Discover MINIMAL implementation theories for distinct philosophies.\n" +
                "- AXIS DIVERGENCE: Intentionally pivot on [State], [Lifecycle], [Dependency Model], [API Style], [Execution Model], [Abstraction].\n" +
-               "- GROUNDING: All blueprints MUST be descendants of the discovered Target Reality and hotspots.\n\n" +
+               "- GROUNDING: All blueprints MUST be descendants of the discovered Target Reality and hotspots.\n" +
+               "- SEMANTIC ANCHORING: Use mandatory concepts from the Semantic Envelope to name and define the territory.\n\n" +
                "MANDATORY: Return a blueprint that is 90% technical divergence from anything previously explored.";
     }
 
