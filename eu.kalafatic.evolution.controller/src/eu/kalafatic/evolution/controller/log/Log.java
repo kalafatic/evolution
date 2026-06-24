@@ -31,7 +31,7 @@ public class Log {
     private static final String LOG_DIR = getLogDirectory();
     private static final String LOG_FILE = LOG_DIR + "/evo.log";
 
-    private static String getLogDirectory() {
+    public static String getLogDirectory() {
         try {
             // Try to use Eclipse state location
             return Platform.getStateLocation(Platform.getBundle("eu.kalafatic.utils")).toOSString() + "/logs";
@@ -82,6 +82,10 @@ public class Log {
         } catch (IOException e) {
             System.err.println("Failed to initialize file logger: " + e.getMessage());
         }
+    }
+
+    public static String getLogFile() {
+        return LOG_FILE;
     }
 
     public static void log(String msg) {

@@ -338,6 +338,10 @@ public class IterationMemoryService {
         return records;
     }
 
+    public File getAuditFile() {
+        return auditFile;
+    }
+
     public Map<String, List<IterationRecord>> getErrorIndex() {
         return errorIndex;
     }
