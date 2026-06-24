@@ -1446,7 +1446,7 @@ public class IterationManager {
 
     private void emitDarwinBranches(TaskContext context, List<BranchVariant> variants, String approvedId) {
         JSONObject json = new JSONObject();
-        int iteration = context.getOrchestrationState().getIterationCount();
+        int iteration = context.getOrchestrationState().getIterationCount() + 1; // Sync to 1-based for UI
         json.put("iteration", iteration);
         JSONArray variantsArr = new JSONArray();
 
@@ -2096,7 +2096,7 @@ public class IterationManager {
         sessionContainer.getEventBus().publish(new RuntimeEvent(RuntimeEventType.DECISION_UPDATED, context.getSessionId(), manualSelectionId, iterationId, "Kernel", decision.getSelectedVariantId(), System.currentTimeMillis()));
 
         JSONObject json = new JSONObject();
-        int iteration = context.getOrchestrationState().getIterationCount();
+        int iteration = context.getOrchestrationState().getIterationCount() + 1; // Sync to 1-based for UI
         json.put("iteration", iteration);
         JSONArray variantsArr = new JSONArray();
 

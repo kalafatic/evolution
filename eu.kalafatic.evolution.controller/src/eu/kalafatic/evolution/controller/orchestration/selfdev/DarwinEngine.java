@@ -685,6 +685,12 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         DarwinFitnessRanker ranker = new DarwinFitnessRanker();
         ranker.rank(uniqueVariants, goal, envelope, atomicAnalysis, currentIteration, pressure);
 
+        // STABILIZATION: Always emit branches block to UI even if empty or stalled
+        JSONObject branchesJson = new JSONObject();
+        branchesJson.put("iteration", currentIteration + 1); // Sync to 1-based for UI
+        branchesJson.put("variants", new JSONArray(uniqueVariants));
+        context.log("[DARWIN_BRANCHES] " + branchesJson.toString());
+
         // 1. Goal-Driven Validation: Semantic Distance and Domain Matching
         // [DARWIN IMPROVEMENT] Delayed Semantic Filtering: Do NOT removeIf. Just mark status in tree.
         for (JSONObject variant : uniqueVariants) {
@@ -719,11 +725,6 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             JSONObject best = uniqueVariants.get(0);
             best.put("isBest", true);
         }
-
-        JSONObject branchesJson = new JSONObject();
-        branchesJson.put("iteration", currentIteration);
-        branchesJson.put("variants", new JSONArray(uniqueVariants));
-        context.log("[DARWIN_BRANCHES] " + branchesJson.toString());
 
         // Manual override for test stability (only active in testMode)
         if (context.getMetadata().containsKey("testMode")) {

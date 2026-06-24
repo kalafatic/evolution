@@ -500,7 +500,7 @@ public class OrchestratorServiceImpl implements OrchestratorService {
             priority = MessagePriority.FINAL;
         }
 
-        if (content.contains("[DARWIN_BRANCHES]")) {
+        if (content.contains("[DARWIN_BRANCHES]") || (matcher.find(0) && "DARWIN_BRANCHES".equals(matcher.group(2)))) {
             agentType = "darwin-branches waiting";
             content = content.replace("[DARWIN_BRANCHES]", "").trim();
             priority = MessagePriority.USER_ACTION_REQUIRED;
