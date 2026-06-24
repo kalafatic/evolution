@@ -427,7 +427,10 @@ public class IterationPage extends AEvoPage {
             logBranchFilter.add("All");
             if (variants != null) {
                 for (IterationRecord r : variants) {
-                    logBranchFilter.add(r.getBranch());
+                	if(r != null && r.getBranch() != null && !r.getBranch().isEmpty()) {
+                		 logBranchFilter.add(r.getBranch());
+                	}
+                   
                 }
             }
 
