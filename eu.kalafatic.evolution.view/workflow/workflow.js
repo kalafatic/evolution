@@ -25,6 +25,43 @@
         );
     };
 
+    window.fitToScreen = function() {
+        if (!graphData || !graphData.nodes || graphData.nodes.length === 0) return;
+
+        const nodes = graphData.nodes;
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        nodes.forEach(n => {
+            if (n.x < minX) minX = n.x;
+            if (n.y < minY) minY = n.y;
+            if (n.x + 140 > maxX) maxX = n.x + 140;
+            if (n.y + 60 > maxY) maxY = n.y + 60;
+        });
+
+        const graphWidth = maxX - minX;
+        const graphHeight = maxY - minY;
+        const padding = 40;
+
+        const scale = Math.min(
+            (width - padding * 2) / graphWidth,
+            (height - padding * 2) / graphHeight,
+            1.5
+        );
+
+        const translateX = (width - graphWidth * scale) / 2 - minX * scale;
+        const translateY = (height - graphHeight * scale) / 2 - minY * scale;
+
+        svg.transition().duration(750).call(
+            zoom.transform,
+            d3.zoomIdentity.translate(translateX, translateY).scale(scale)
+        );
+    };
+
+    window.applyZoom = function(factor) {
+        svg.transition().duration(300).call(
+            zoom.scaleBy, factor
+        );
+    };
+
     const typeIcons = {
         'USER': '\uD83D\uDC64',        // 👤
         'SUPERVISOR': '\uD83E\uDD16',  // 🤖
@@ -50,6 +87,7 @@
     window.addEventListener('resize', () => {
         width = window.innerWidth;
         height = window.innerHeight;
+        svg.attr("width", width).attr("height", height);
         render();
     });
 
