@@ -34,7 +34,13 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
                "5. Do NOT regenerate any existing mutation.\n\n" +
                "TASK:\n" +
                "Generate another technical philosophy that has NOT been touched.\n" +
-               "Return only the new sibling as a single JSON object.\n\n" +
+               "MANDATORY: 'strategy' MUST be a specific technical architectural name. NEVER use generic placeholders like 'ROOT', 'create', 'bootstrap', 'ANALYZE', or 'EXECUTE'.\n" +
+               "EXAMPLES OF GOOD STRATEGY NAMES:\n" +
+               "- Asynchronous Buffer Service\n" +
+               "- Functional Transformation Pipeline\n" +
+               "- Reactive Event Dispatcher\n" +
+               "- Stateless Utility Pattern\n" +
+               "- Interface-Driven Strategy\n\n" +
                "STRICT EVOLUTION CONSTRAINTS:\n" +
                "- NO ARCHITECTURAL INFLATION: If the task is simple, DO NOT introduce unnecessary complexity.\n" +
                "- GROUNDING: All blueprints MUST be descendants of the discovered Target Reality and hotspots.";
