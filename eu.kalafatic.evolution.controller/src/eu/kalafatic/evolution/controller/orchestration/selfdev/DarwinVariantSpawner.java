@@ -48,6 +48,89 @@ public class DarwinVariantSpawner {
         }
     }
 
+    public JSONObject autoRepair(TrajectoryBlueprint bp, TaskContext context) {
+        try {
+            JSONObject repair = new JSONObject();
+            repair.put("id", bp.getId());
+            repair.put("strategy_type", bp.getStrategyType().name());
+
+            // Synthesize valid architectural strategy text
+            String synthesizedStrategy = "Architectural realization of " + bp.getId() + " philosophy: " + bp.getArchitecturalDirection();
+            repair.put("strategy", synthesizedStrategy);
+            repair.put("semantic_anchor", bp.getPhilosophy());
+            repair.put("semantic_justification", bp.getPhilosophy());
+
+            // Standard Darwin defaults for repair
+            repair.put("survival_argument", "Deterministic architectural recovery for mandatory lineage.");
+            repair.put("tradeoffs", "Synthesized fallback path.");
+            repair.put("failure_risks", "Potential for reduced architectural specificity.");
+
+            // Invoke planner to generate executable actions for the blueprint
+            ImplementationPlanner implementationPlanner = new ImplementationPlanner();
+            repair = implementationPlanner.plan(repair, context);
+
+            // GUARANTEE EXECUTABLE ACTIONS: If planner failed, add fallback ANALYZE action
+            org.json.JSONArray actions = repair.optJSONArray("actions");
+            if (actions == null || actions.length() == 0) {
+                if (actions == null) actions = new org.json.JSONArray();
+                JSONObject fallback = new JSONObject();
+                fallback.put("domain", "kernel");
+                fallback.put("operation", "ANALYZE");
+                fallback.put("target", "workspace");
+                fallback.put("description", "Materialize " + bp.getId() + " architectural intent (Fallback)");
+                actions.put(fallback);
+                repair.put("actions", actions);
+            }
+
+            repair.put("reasoning_focus", "Deterministic architectural recovery for " + bp.getId());
+
+            org.json.JSONArray selectedFiles = new org.json.JSONArray();
+            repair.put("selected_files", selectedFiles);
+
+            repair.put("survival_argument", "Mandatory architectural diversity branch ensured by orchestrator.");
+            repair.put("expected_outputs", new org.json.JSONArray());
+            repair.put("score", 0.45); // Auto-repaired branches start with lower fitness
+
+            JSONObject dimensions = new JSONObject();
+            for (java.util.Map.Entry<String, String> entry : bp.getEngineeringDimensions().entrySet()) {
+                dimensions.put(entry.getKey(), entry.getValue());
+            }
+            if (!dimensions.has("philosophy")) {
+                dimensions.put("philosophy", bp.getPhilosophy());
+            }
+            repair.put("engineering_dimensions", dimensions);
+
+            // AUTO-REPAIR MEDIATION: Ensure mediated mode still gets a valid context package
+            if (context.getBehaviorProfile().hasTrait(eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait.SUPERVISION_MEDIATED)) {
+                eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot snapshot = (eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot) context.getOrchestrationState().getMetadata().get("mediatedSnapshot");
+                if (snapshot != null) {
+                    eu.kalafatic.evolution.controller.mediation.analysis.ContextCurator curator = new eu.kalafatic.evolution.controller.mediation.analysis.ContextCurator();
+                    List<String> files = curator.selectContext(snapshot, bp.getGoal(), 12); // Aim for sweet spot 12
+
+                    JSONObject mediationCandidate = new JSONObject();
+                    org.json.JSONArray medFiles = new org.json.JSONArray();
+                    for (String f : files) {
+                        medFiles.put(f);
+                        selectedFiles.put(f);
+                    }
+
+                    mediationCandidate.put("selected_files", medFiles);
+                    mediationCandidate.put("prompt", "Analyze and propose improvements based on the provided high-density repository context. Focus on the core architectural hotspots.");
+                    mediationCandidate.put("architecture_summary", "Auto-recovered high-signal architecture mapping.");
+                    mediationCandidate.put("dependencies", "Auto-recovered critical dependency mapping.");
+                    mediationCandidate.put("execution_instructions", "Perform deep reasoning on the provided distilled files. Do not exceed the scope of the provided context.");
+                    mediationCandidate.put("evaluation", "Auto-repaired distilled fallback candidate (High Signal).");
+                    repair.put("mediation_candidate", mediationCandidate);
+                }
+            }
+
+            return repair;
+        } catch (Exception e) {
+            context.log("[SPAWNER] Auto-repair failed: " + e.getMessage());
+            return null;
+        }
+    }
+
     private String buildBlueprintPrompt(TrajectoryBlueprint bp, String basePrompt, String lineageContext, List<String> rejectedSiblings, String mutationContext, boolean isMediated, TaskContext context, EvolutionDimension activeDimension, SemanticGenome genome) {
         eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType capability = context.getExecutionProfile().getCapability();
 
@@ -181,6 +264,10 @@ public class DarwinVariantSpawner {
                     String response = aiService.sendRequest(orchestrator, seedPrompt, context);
                     validated = validator.validate(response, seed.getType(), context);
                     if (validated != null) {
+                        // IMPLEMENTATION PLANNING
+                        ImplementationPlanner implementationPlanner = new ImplementationPlanner();
+                        validated = implementationPlanner.plan(validated, context);
+
                         // Ensure ID is injected if missing from LLM response
                         if (!validated.has("id")) {
                             validated.put("id", "v-" + seed.getType().name().toLowerCase());

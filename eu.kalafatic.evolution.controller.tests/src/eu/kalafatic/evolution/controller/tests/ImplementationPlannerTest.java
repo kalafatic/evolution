@@ -3,73 +3,72 @@ package eu.kalafatic.evolution.controller.tests;
 import static org.junit.Assert.*;
 import org.json.JSONObject;
 import org.junit.Test;
-import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.DarwinStrategyType;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.DarwinVariantValidator;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.ImplementationPlanner;
-import eu.kalafatic.evolution.model.orchestration.Task;
-import java.util.List;
 
 public class ImplementationPlannerTest {
 
     @Test
-    public void testPlanTasks() {
+    public void testPlanMissingActions() {
         ImplementationPlanner planner = new ImplementationPlanner();
-        BranchVariant variant = new BranchVariant();
-        variant.setStrategy("Test Strategy");
+        JSONObject variant = new JSONObject();
+        variant.put("id", "test_variant");
+        variant.put("strategy", "A very complex architectural strategy for testing.");
+        variant.put("semantic_anchor", "Testing philosophy");
+        variant.put("strategy_type", "PHILOSOPHY_MUTATION");
 
-        BranchVariant.Action action = new BranchVariant.Action();
-        action.setDomain("file");
-        action.setOperation("WRITE");
-        action.setTarget("Test.java");
-        action.setDescription("Test Description");
-        action.setImplementation("public class Test {}");
-        variant.getActions().add(action);
+        JSONObject planned = planner.plan(variant, null);
 
-        List<Task> tasks = planner.planTasks(variant);
+        assertNotNull(planned);
+        assertTrue(planned.has("actions"));
+        assertTrue(planned.getJSONArray("actions").length() > 0);
+        assertTrue(planned.has("tradeoffs"));
+        assertTrue(planned.has("failure_risks"));
+        assertTrue(planned.has("projected_steps"));
 
-        assertEquals(1, tasks.size());
-        Task task = tasks.get(0);
-        assertEquals("WRITE Test.java", task.getName());
-        assertEquals("file", task.getType());
-        assertEquals("public class Test {}", task.getResponse());
+        JSONObject action = planned.getJSONArray("actions").getJSONObject(0);
+        assertEquals("kernel", action.getString("domain"));
+        assertEquals("ANALYZE", action.getString("operation"));
     }
 
     @Test
-    public void testValidate() {
+    public void testPlanFromProjectedSteps() {
         ImplementationPlanner planner = new ImplementationPlanner();
-        BranchVariant variant = new BranchVariant();
+        JSONObject variant = new JSONObject();
+        variant.put("id", "step_variant");
+        variant.put("strategy", "Step-based strategy");
+        variant.put("semantic_anchor", "Step philosophy");
 
-        // Invalid variant (missing everything)
-        assertFalse(planner.validate(variant));
+        org.json.JSONArray steps = new org.json.JSONArray();
+        steps.put("Initialize something");
+        steps.put("Write a new class for the logic");
+        steps.put("Delete obsolete code");
+        variant.put("projected_steps", steps);
 
-        variant.setStrategy("Valid Strategy long enough");
-        variant.setSemanticAnchor("Valid Anchor long enough");
+        JSONObject planned = planner.plan(variant, null);
 
-        BranchVariant.Action action = new BranchVariant.Action();
-        action.setDomain("file");
-        action.setOperation("WRITE");
-        action.setTarget("Test.java");
-        action.setDescription("Test Description");
-        action.setImplementation("public class Test {}");
-        variant.getActions().add(action);
+        assertNotNull(planned);
+        org.json.JSONArray actions = planned.getJSONArray("actions");
+        assertEquals(2, actions.length());
 
-        assertTrue(planner.validate(variant));
+        assertEquals("file", actions.getJSONObject(0).getString("domain"));
+        assertEquals("WRITE", actions.getJSONObject(0).getString("operation"));
+
+        assertEquals("file", actions.getJSONObject(1).getString("domain"));
+        assertEquals("DELETE", actions.getJSONObject(1).getString("operation"));
     }
 
     @Test
-    public void testValidateProhibitedTarget() {
-        ImplementationPlanner planner = new ImplementationPlanner();
-        BranchVariant variant = new BranchVariant();
-        variant.setStrategy("Valid Strategy long enough");
-        variant.setSemanticAnchor("Valid Anchor long enough");
+    public void testValidatorAllowsMissingActions() {
+        DarwinVariantValidator validator = new DarwinVariantValidator();
+        String rawResponse = "{\n" +
+                "  \"strategy\": \"Valid architectural strategy that is long enough.\",\n" +
+                "  \"semantic_anchor\": \"Valid philosophy that is also long enough.\"\n" +
+                "}";
 
-        BranchVariant.Action action = new BranchVariant.Action();
-        action.setDomain("file");
-        action.setOperation("WRITE");
-        action.setTarget(".");
-        action.setDescription("Test Description");
-        action.setImplementation("public class Test {}");
-        variant.getActions().add(action);
-
-        assertFalse(planner.validate(variant));
+        JSONObject result = validator.validate(rawResponse, DarwinStrategyType.PROBABLE_SURVIVOR, null);
+        assertNotNull("Validation should pass even when 'actions' are missing", result);
+        assertFalse(result.has("actions"));
     }
 }

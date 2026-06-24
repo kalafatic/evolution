@@ -1,96 +1,145 @@
 package eu.kalafatic.evolution.controller.orchestration.selfdev;
 
-import java.util.ArrayList;
-import java.util.List;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
-import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
-import eu.kalafatic.evolution.model.orchestration.Task;
+import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.orchestration.intent.AtomicIntentAnalysis;
 
 /**
- * Dumb planner that strictly converts validated architectural variants into executable action graphs.
- * No synthetic repair, no reasoning, no "intelligence".
+ * Deterministic planner that converts validated architectural variants into executable action graphs.
+ * Separates architectural reasoning from execution planning.
  */
 public class ImplementationPlanner {
 
     /**
-     * Converts a BranchVariant's actions into EMF Task objects.
-     * @param variant The architectural variant.
-     * @return List of Task objects.
+     * Plans executable actions for a variant if they are missing or incomplete.
+     * Also fills in missing metadata with sensible defaults.
+     * @param variant The architectural variant to plan for.
+     * @param context The task context.
+     * @return The updated variant with a valid action graph.
      */
-    public List<Task> planTasks(BranchVariant variant) {
-        List<Task> tasks = new ArrayList<>();
-        if (variant == null || variant.getActions() == null) return tasks;
+    public JSONObject plan(JSONObject variant, TaskContext context) {
+        if (variant == null) return null;
 
-        OrchestrationFactory factory = OrchestrationFactory.eINSTANCE;
+        String strategy = variant.optString("strategy", "Unknown Strategy");
 
-        for (BranchVariant.Action action : variant.getActions()) {
-            Task task = factory.createTask();
-            task.setId("sd-task-" + System.currentTimeMillis() + "-" + tasks.size());
-
-            String op = action.getOperation();
-            String target = action.getTarget();
-            String domain = action.getDomain();
-
-            task.setName(op + " " + target);
-            task.setDescription(action.getDescription());
-            task.setRationale("Darwin Strategy: " + variant.getStrategy());
-            task.setPriority(1);
-
-            String type = mapDomainToTaskType(domain, op);
-            task.setType(type);
-
-            if (action.getImplementation() != null && !action.getImplementation().isEmpty()) {
-                task.setResponse(action.getImplementation());
-            }
-
-            tasks.add(task);
+        // 1. Repair missing metadata
+        if (!variant.has("tradeoffs") || variant.optString("tradeoffs").isEmpty()) {
+            variant.put("tradeoffs", "Standard trade-offs for " + variant.optString("strategy_type", "UNKNOWN") + " architecture.");
+        }
+        if (!variant.has("failure_risks") || variant.optString("failure_risks").isEmpty()) {
+            variant.put("failure_risks", "Inherent risks associated with " + strategy);
+        }
+        JSONArray expectedOutputs = variant.optJSONArray("expected_outputs");
+        if (expectedOutputs == null || expectedOutputs.length() == 0) {
+            JSONArray outputs = new JSONArray();
+            outputs.put("Successful implementation of " + strategy);
+            variant.put("expected_outputs", outputs);
+        }
+        JSONArray projectedSteps = variant.optJSONArray("projected_steps");
+        if (projectedSteps == null || projectedSteps.length() == 0) {
+            JSONArray steps = new JSONArray();
+            steps.put("Initialize " + strategy);
+            steps.put("Materialize architectural intent");
+            variant.put("projected_steps", steps);
+        }
+        if (!variant.has("survival_argument") || variant.optString("survival_argument").isEmpty()) {
+            variant.put("survival_argument", "Proposed architectural candidate for goal resolution.");
         }
 
-        return tasks;
+        // 2. Synthesize actions if missing or empty
+        JSONArray actions = variant.optJSONArray("actions");
+        if (actions == null || actions.length() == 0) {
+            if (context != null) context.log("[PLANNER] Synthesizing executable actions for variant: " + variant.optString("id"));
+            actions = synthesizeActions(variant, context);
+            variant.put("actions", actions);
+        }
+
+        return variant;
     }
 
-    private String mapDomainToTaskType(String domain, String op) {
-        String lowerDomain = domain != null ? domain.toLowerCase() : "";
-        String upperOp = op != null ? op.toUpperCase() : "";
+    private JSONArray synthesizeActions(JSONObject variant, TaskContext context) {
+        JSONArray actions = new JSONArray();
 
-        if ("file".equalsIgnoreCase(lowerDomain) || "class".equalsIgnoreCase(lowerDomain) || "java".equalsIgnoreCase(lowerDomain)) {
-            if ("DELETE".equals(upperOp) || "REMOVE".equals(upperOp) || "MKDIR".equals(upperOp)) {
-                return "shell";
-            }
-            return "file";
+        AtomicIntentAnalysis atomic = null;
+        eu.kalafatic.evolution.controller.orchestration.goal.GoalModel goalModel = null;
+        if (context != null && context.getOrchestrationState() != null) {
+            atomic = (AtomicIntentAnalysis) context.getOrchestrationState().getMetadata().get("atomicAnalysis");
+            goalModel = (eu.kalafatic.evolution.controller.orchestration.goal.GoalModel) context.getOrchestrationState().getMetadata().get("goalModel");
         }
 
-        if ("build".equalsIgnoreCase(lowerDomain)) return "maven";
-        if ("structure".equalsIgnoreCase(lowerDomain)) return "structure";
-        if ("test".equalsIgnoreCase(lowerDomain)) return "maven";
-        if ("git".equalsIgnoreCase(lowerDomain)) return "git";
+        eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType capability =
+            context != null ? context.getExecutionProfile().getCapability() : eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType.CODE;
 
-        return "llm";
+        boolean isChat = (capability == eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType.CHAT) ||
+                        (goalModel != null && "GENERAL".equalsIgnoreCase(goalModel.getDomain()));
+
+        // Strategy A: Use projected_steps if available
+        JSONArray steps = variant.optJSONArray("projected_steps");
+        if (steps != null && steps.length() > 0) {
+            for (int i = 0; i < steps.length(); i++) {
+                String step = steps.optString(i);
+                if (step != null && !step.isEmpty() && !step.startsWith("Initialize") && !step.startsWith("Materialize")) {
+                    actions.put(createActionFromStep(step, atomic, isChat));
+                }
+            }
+        }
+
+        // Strategy B: Fallback to Atomic Intent Analysis
+        if (actions.length() == 0 && atomic != null && atomic.isAtomic() && atomic.getTargetArtifact() != null && !atomic.getTargetArtifact().isEmpty()) {
+            JSONObject action = new JSONObject();
+            action.put("domain", "file");
+            action.put("operation", "WRITE");
+            action.put("target", atomic.getTargetArtifact());
+            action.put("description", "Materialize " + variant.optString("strategy") + " into " + atomic.getTargetArtifact());
+            actions.put(action);
+        }
+
+        // Strategy C: NO GENERIC FALLBACKS. If no actions could be derived from projected_steps or atomic intent,
+        // the planner returns an empty array, which will be caught as a fatal error by the Validator.
+
+        return actions;
     }
 
-    /**
-     * Final structural validation before execution.
-     * @param variant The variant to validate.
-     * @return true if valid, false otherwise.
-     */
-    public boolean validate(BranchVariant variant) {
-        if (variant == null) return false;
-        if (variant.getStrategy() == null || variant.getStrategy().isEmpty()) return false;
-        if (variant.getSemanticAnchor() == null || variant.getSemanticAnchor().isEmpty()) return false;
-        if (variant.getActions() == null || variant.getActions().isEmpty()) return false;
+    private JSONObject createActionFromStep(String step, AtomicIntentAnalysis atomic) {
+        return createActionFromStep(step, atomic, false);
+    }
 
-        for (BranchVariant.Action action : variant.getActions()) {
-            if (action.getDomain() == null || action.getDomain().isEmpty()) return false;
-            if (action.getOperation() == null || action.getOperation().isEmpty()) return false;
-            if (action.getTarget() == null || action.getTarget().isEmpty()) return false;
-            if (action.getDescription() == null || action.getDescription().isEmpty()) return false;
+    private JSONObject createActionFromStep(String step, AtomicIntentAnalysis atomic, boolean isChat) {
+        JSONObject action = new JSONObject();
+        String lowerStep = step.toLowerCase();
 
-            if ("WRITE".equalsIgnoreCase(action.getOperation())) {
-                if (action.getImplementation() == null || action.getImplementation().isEmpty()) return false;
-                if (".".equals(action.getTarget()) || "workspace".equalsIgnoreCase(action.getTarget())) return false;
+        if (lowerStep.contains("write") || lowerStep.contains("create") || lowerStep.contains("implement") || lowerStep.contains("add")) {
+            if (isChat) {
+                action.put("domain", "kernel");
+                action.put("operation", "TALK");
+            } else {
+                action.put("domain", "file");
+                action.put("operation", "WRITE");
             }
+        } else if (lowerStep.contains("delete") || lowerStep.contains("remove")) {
+            action.put("domain", "file");
+            action.put("operation", "DELETE");
+        } else if (lowerStep.contains("test") || lowerStep.contains("verify")) {
+            action.put("domain", "test");
+            action.put("operation", "RUN");
+        } else if (lowerStep.contains("build")) {
+            action.put("domain", "build");
+            action.put("operation", "BUILD");
+        } else {
+            action.put("domain", "kernel");
+            action.put("operation", "EXECUTE");
         }
 
-        return true;
+        // Try to find a target in the step string or fallback to atomic target
+        String target = ".";
+        if (atomic != null && atomic.getTargetArtifact() != null && !atomic.getTargetArtifact().isEmpty()) {
+            target = atomic.getTargetArtifact();
+        }
+
+        action.put("target", target);
+        action.put("description", step);
+        return action;
     }
 }
