@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Darwin Evolution Live Trace</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --connector-color: #cbd5e1;
+            --node-bg: #1e293b;
+            --node-border: #334155;
+            --node-text: #f8fafc;
+            --blue: #3b82f6;
+            --yellow: #eab308;
+            --green: #22c55e;
+            --grey: #64748b;
+            --glow: 0 0 15px rgba(59, 130, 246, 0.5);
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-color);
+            color: var(--node-text);
+            font-family: 'Inter', -apple-system, sans-serif;
+            overflow: hidden;
+        }
+
+        #viz-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            cursor: grab;
+        }
+
+        #viz-container:active {
+            cursor: grabbing;
+        }
+
+        #canvas-area {
+            position: absolute;
+            transform-origin: 0 0;
+            transition: transform 0.1s ease-out;
+        }
+
+        svg#connectors {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .node {
+            position: absolute;
+            width: 160px;
+            padding: 10px;
+            background: var(--node-bg);
+            border: 2px solid var(--node-border);
+            border-radius: 8px;
+            font-size: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+                        border-color 0.3s,
+                        box-shadow 0.3s,
+                        background-color 0.3s;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            user-select: none;
+        }
+
+        .node.active { border-color: var(--blue); box-shadow: var(--glow); }
+        .node.evaluating { border-color: var(--yellow); animation: pulse 1s infinite; }
+        .node.winner { border-color: var(--green); background: rgba(34, 197, 94, 0.1); }
+        .node.rejected { border-color: var(--grey); opacity: 0.6; filter: grayscale(0.8); }
+
+        .node-id { font-weight: 800; font-size: 10px; color: var(--grey); text-transform: uppercase; }
+        .node-strategy { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .node-score { font-family: monospace; color: var(--blue); }
+        .winner .node-score { color: var(--green); }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(234, 179, 8, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); }
+        }
+
+        .connector-line {
+            fill: none;
+            stroke: var(--connector-color);
+            stroke-width: 2;
+            transition: d 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        #controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 100;
+        }
+
+        button {
+            background: #334155;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        button:hover { background: #475569; }
+
+        #iteration-banner {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(4px);
+            padding: 8px 20px;
+            border-radius: 20px;
+            border: 1px solid var(--node-border);
+            font-weight: bold;
+            z-index: 99;
+            transition: opacity 0.3s;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="iteration-banner" style="opacity:0">ITERATION #1</div>
+
+    <div id="controls">
+        <button onclick="simulation.toggle()">Pause/Play</button>
+        <button onclick="evolution.reset()">Reset</button>
+    </div>
+
+    <div id="viz-container">
+        <div id="canvas-area">
+            <svg id="connectors"></svg>
+            <div id="nodes-layer"></div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * MODEL
+         */
+        class TreeNode {
+            constructor(id, parentId, iteration, strategy) {
+                this.id = id;
+                this.parentId = parentId;
+                this.iteration = iteration;
+                this.strategy = strategy || "Darwinian Variant";
+                this.score = 0;
+                this.status = 'active'; // active, evaluating, winner, rejected
+                this.children = [];
+                this.x = 0;
+                this.y = 0;
+                this.width = 160;
+                this.height = 80;
+                this.subtreeWidth = 160;
+            }
+        }
+
+        class EvolutionTree {
+            constructor() {
+                this.root = null;
+                this.nodes = new Map();
+                this.currentIteration = 0;
+            }
+
+            reset() {
+                this.root = null;
+                this.nodes.clear();
+                this.currentIteration = 0;
+                renderer.clear();
+                layout.reset();
+            }
+
+            addNode(node) {
+                this.nodes.set(node.id, node);
+                if (node.parentId && this.nodes.has(node.parentId)) {
+                    this.nodes.get(node.parentId).children.push(node);
+                } else if (!this.root) {
+                    this.root = node;
+                }
+            }
+
+            getNode(id) {
+                return this.nodes.get(id);
+            }
+        }
+
+        /**
+         * LAYOUT ENGINE
+         */
+        class LayoutEngine {
+            constructor() {
+                this.rowHeight = 150;
+                this.nodeSpacing = 40;
+                this.levelPadding = 60;
+            }
+
+            reset() {}
+
+            calculate(tree) {
+                if (!tree.root) return;
+
+                // First pass: Bottom-up to calculate subtree widths
+                this.computeSubtreeWidths(tree.root);
+
+                // Second pass: Top-down to assign positions
+                // Center root at 0, 0 (logical)
+                this.assignPositions(tree.root, 0, 0);
+
+                // Normalize: move everything so top-left is handled or centered
+                this.centerTree(tree);
+            }
+
+            computeSubtreeWidths(node) {
+                if (node.children.length === 0) {
+                    node.subtreeWidth = node.width;
+                    return node.subtreeWidth;
+                }
+
+                let totalChildrenWidth = 0;
+                for (let child of node.children) {
+                    totalChildrenWidth += this.computeSubtreeWidths(child);
+                }
+
+                // Add spacing between children
+                totalChildrenWidth += (node.children.length - 1) * this.nodeSpacing;
+
+                node.subtreeWidth = Math.max(node.width, totalChildrenWidth);
+                return node.subtreeWidth;
+            }
+
+            assignPositions(node, x, y) {
+                node.x = x;
+                node.y = y;
+
+                if (node.children.length > 0) {
+                    let currentX = x - (node.subtreeWidth / 2);
+                    const nextY = y + this.rowHeight;
+
+                    for (let child of node.children) {
+                        const childX = currentX + (child.subtreeWidth / 2);
+                        this.assignPositions(child, childX, nextY);
+                        currentX += child.subtreeWidth + this.nodeSpacing;
+                    }
+                }
+            }
+
+            centerTree(tree) {
+                const container = document.getElementById('viz-container');
+                const centerX = container.clientWidth / 2;
+                const startY = 100;
+
+                // Adjust all nodes relative to center
+                for (let node of tree.nodes.values()) {
+                    node.renderX = node.x + centerX - (node.width / 2);
+                    node.renderY = node.y + startY;
+                }
+            }
+        }
+
+        /**
+         * RENDERER
+         */
+        class TreeRenderer {
+            constructor() {
+                this.nodesLayer = document.getElementById('nodes-layer');
+                this.svgLayer = document.getElementById('connectors');
+                this.domNodes = new Map();
+                this.domConnectors = new Map();
+            }
+
+            clear() {
+                this.nodesLayer.innerHTML = '';
+                this.svgLayer.innerHTML = '';
+                this.domNodes.clear();
+                this.domConnectors.clear();
+            }
+
+            update(tree) {
+                // Resize SVG to match container
+                const canvas = document.getElementById('canvas-area');
+                const bbox = this.nodesLayer.getBoundingClientRect();
+                this.svgLayer.setAttribute('width', Math.max(window.innerWidth, bbox.width + 1000));
+                this.svgLayer.setAttribute('height', Math.max(window.innerHeight, bbox.height + 1000));
+
+                for (let node of tree.nodes.values()) {
+                    this.renderNode(node);
+                    if (node.parentId) {
+                        this.renderConnector(node, tree.getNode(node.parentId));
+                    }
+                }
+            }
+
+            renderNode(node) {
+                let el = this.domNodes.get(node.id);
+                if (!el) {
+                    el = document.createElement('div');
+                    el.className = 'node';
+                    el.id = `node-${node.id}`;
+                    this.nodesLayer.appendChild(el);
+                    this.domNodes.set(node.id, el);
+                }
+
+                el.className = `node ${node.status}`;
+                el.style.transform = `translate(${node.renderX}px, ${node.renderY}px)`;
+
+                el.innerHTML = `
+                    <div class="node-id">#${node.id}</div>
+                    <div class="node-strategy">${node.strategy}</div>
+                    <div class="node-score">Score: ${node.score.toFixed(4)}</div>
+                `;
+            }
+
+            renderConnector(child, parent) {
+                const connectorId = `${parent.id}-${child.id}`;
+                let path = this.domConnectors.get(connectorId);
+
+                if (!path) {
+                    path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                    path.setAttribute("class", "connector-line");
+                    this.svgLayer.appendChild(path);
+                    this.domConnectors.set(connectorId, path);
+                }
+
+                // Calculate points
+                const startX = parent.renderX + (parent.width / 2);
+                const startY = parent.renderY + parent.height;
+                const endX = child.renderX + (child.width / 2);
+                const endY = child.renderY;
+
+                // Step-like connector
+                const midY = startY + (endY - startY) / 2;
+                const d = `M ${startX} ${startY} L ${startX} ${midY} L ${endX} ${midY} L ${endX} ${endY}`;
+                path.setAttribute("d", d);
+            }
+        }
+
+        /**
+         * ANIMATION ENGINE
+         */
+        class AnimationEngine {
+            constructor() {
+                this.isAnimating = false;
+            }
+
+            start() {
+                if (this.isAnimating) return;
+                this.isAnimating = true;
+                this.loop();
+            }
+
+            loop() {
+                if (!this.isAnimating) return;
+
+                layout.calculate(evolution);
+                renderer.update(evolution);
+
+                requestAnimationFrame(() => this.loop());
+            }
+
+            stop() {
+                this.isAnimating = false;
+            }
+
+            scrollToNode(node) {
+                const container = document.getElementById('viz-container');
+                const targetX = node.renderX - (container.clientWidth / 2) + (node.width / 2);
+                const targetY = node.renderY - (container.clientHeight / 2) + (node.height / 2);
+
+                container.scrollTo({
+                    top: Math.max(0, targetY),
+                    left: Math.max(0, targetX),
+                    behavior: 'smooth'
+                });
+            }
+        }
+
+        /**
+         * GLOBAL INSTANCES
+         */
+        const evolution = new EvolutionTree();
+        const layout = new LayoutEngine();
+        const renderer = new TreeRenderer();
+        const animator = new AnimationEngine();
+
+        /**
+         * LIVE API
+         */
+        window.startEvolution = (rootData) => {
+            evolution.reset();
+            const root = new TreeNode(rootData.id || "root", null, 0, rootData.strategy || "Initial State");
+            evolution.addNode(root);
+            animator.start();
+        };
+
+        window.beginIteration = (number) => {
+            evolution.currentIteration = number;
+            const banner = document.getElementById('iteration-banner');
+            banner.innerText = `ITERATION #${number}`;
+            banner.style.opacity = "1";
+        };
+
+        window.addProposal = (parentId, proposal) => {
+            const node = new TreeNode(proposal.id, parentId, evolution.currentIteration, proposal.strategy);
+            node.status = 'active';
+            evolution.addNode(node);
+            return node;
+        };
+
+        window.finishProposal = (parentId, proposalId) => {
+            const node = evolution.getNode(proposalId);
+            if (node) {
+                node.status = 'evaluating';
+                node.score = 0.5 + Math.random() * 0.4;
+            }
+        };
+
+        window.selectWinner = (nodeId) => {
+            const winner = evolution.getNode(nodeId);
+            if (winner) {
+                winner.status = 'winner';
+
+                // Highlight winning lineage?
+                // For now just focus on it
+                animator.scrollToNode(winner);
+            }
+        };
+
+        window.reject = (nodeId) => {
+            const node = evolution.getNode(nodeId);
+            if (node) node.status = 'rejected';
+        };
+
+        window.completeIteration = () => {
+            // Cleanup iteration state if needed
+        };
+
+        window.reset = () => {
+            evolution.reset();
+        };
+
+        /**
+         * SIMULATION (DEMO)
+         */
+        class Simulation {
+            constructor() {
+                this.running = false;
+                this.iter = 1;
+                this.nodeCounter = 1;
+                this.lastWinnerId = "root";
+            }
+
+            toggle() {
+                if (this.running) this.stop();
+                else this.run();
+            }
+
+            async run() {
+                this.running = true;
+                if (evolution.nodes.size === 0) {
+                    startEvolution({ id: "root", strategy: "System Intent" });
+                    await this.delay(1000);
+                }
+
+                while (this.running) {
+                    beginIteration(this.iter);
+                    await this.delay(800);
+
+                    const count = 2 + Math.floor(Math.random() * 3);
+                    const proposals = [];
+
+                    for (let i = 0; i < count; i++) {
+                        const id = "b" + (this.nodeCounter++);
+                        const p = addProposal(this.lastWinnerId, { id, strategy: this.getRandomStrategy() });
+                        proposals.push(id);
+                        await this.delay(600);
+                    }
+
+                    await this.delay(500);
+                    for (let id of proposals) {
+                        finishProposal(this.lastWinnerId, id);
+                        await this.delay(400);
+                    }
+
+                    await this.delay(1000);
+                    const winnerIdx = Math.floor(Math.random() * proposals.length);
+                    const winnerId = proposals[winnerIdx];
+
+                    for (let i = 0; i < proposals.length; i++) {
+                        if (i === winnerIdx) selectWinner(winnerId);
+                        else reject(proposals[i]);
+                    }
+
+                    this.lastWinnerId = winnerId;
+                    this.iter++;
+                    completeIteration();
+                    await this.delay(2000);
+
+                    if (this.nodeCounter > 500) {
+                        this.stop();
+                        alert("Simulation reached node limit.");
+                    }
+                }
+            }
+
+            stop() {
+                this.running = false;
+            }
+
+            delay(ms) {
+                return new Promise(res => setTimeout(res, ms));
+            }
+
+            getRandomStrategy() {
+                const s = ["Optimized Cache", "Async Pipeline", "Parallel Solver", "Lazy Refiner", "Strict Schema", "Adaptive Buffer", "Neural Filter", "Heuristic Search"];
+                return s[Math.floor(Math.random() * s.length)];
+            }
+        }
+
+        const simulation = new Simulation();
+
+        // Start automatically
+        window.onload = () => {
+            simulation.run();
+        };
+
+        /**
+         * INTERACTIVE PANNING
+         */
+        const container = document.getElementById('viz-container');
+        let isDown = false;
+        let startX, startY, scrollLeft, scrollTop;
+
+        container.addEventListener('mousedown', (e) => {
+            isDown = true;
+            startX = e.pageX - container.offsetLeft;
+            startY = e.pageY - container.offsetTop;
+            scrollLeft = container.scrollLeft;
+            scrollTop = container.scrollTop;
+        });
+        container.addEventListener('mouseleave', () => isDown = false);
+        container.addEventListener('mouseup', () => isDown = false);
+        container.addEventListener('mousemove', (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = e.pageX - container.offsetLeft;
+            const y = e.pageY - container.offsetTop;
+            const walkX = (x - startX);
+            const walkY = (y - startY);
+            container.scrollLeft = scrollLeft - walkX;
+            container.scrollTop = scrollTop - walkY;
+        });
+
+    </script>
+</body>
+</html>
