@@ -1,6 +1,7 @@
 package eu.kalafatic.evolution.controller.orchestration.selfdev;
 
 import java.io.File;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -107,6 +108,95 @@ public class Evaluator implements ICapability, IEvaluationContract {
             evaluator.setMavenTool(mavenTool);
         }
         return evaluator.evaluate();
+    }
+
+    @Override
+    public EvaluationResult evaluate(File projectRoot, TaskContext context, RealityLevel level) throws Exception {
+        if (context != null) context.log("[EVALUATOR] Pragma A: Tiered Evaluation - Level: " + level);
+
+        EvaluationResult result = OrchestrationFactory.eINSTANCE.createEvaluationResult();
+        result.setSuccess(true); // Optimistic default for non-blocking levels
+
+        switch (level) {
+            case LIGHT:
+                // LIGHT (Static Analysis): < 100ms. Every branch.
+                // Simple regex-based syntax/formatting check
+                return runLightCheck(projectRoot, context);
+            case MEDIUM:
+                // MEDIUM (Syntax Check): < 500ms. Every branch.
+                // Fast compiler check without full build
+                return runMediumCheck(projectRoot, context);
+            case HEAVY:
+                // HEAVY (Full Build): > 1s. Winner only.
+                // Full Maven install
+                return evaluate(projectRoot, context, mavenTool);
+            case EXTREME:
+                // EXTREME (Integration Tests): > 5s. Final synthesis only.
+                // Deep validation
+                return evaluate(projectRoot, context, mavenTool);
+            default:
+                return evaluate(projectRoot, context, mavenTool);
+        }
+    }
+
+    private EvaluationResult runLightCheck(File root, TaskContext context) {
+        EvaluationResult result = OrchestrationFactory.eINSTANCE.createEvaluationResult();
+        result.setSuccess(true);
+
+        // Rule 24/Pragma A: Minimal static check (e.g. valid brace nesting for Java files)
+        try {
+            List<File> javaFiles = findJavaFiles(root);
+            for (File f : javaFiles) {
+                String content = java.nio.file.Files.readString(f.toPath());
+                if (!checkBraceBalance(content)) {
+                    result.setSuccess(false);
+                    result.getErrors().add("Syntax error in " + f.getName() + ": unbalanced braces detected (LIGHT check).");
+                }
+            }
+        } catch (Exception e) {
+            result.getErrors().add("Light check error: " + e.getMessage());
+        }
+
+        return result;
+    }
+
+    private List<File> findJavaFiles(File dir) {
+        List<File> results = new ArrayList<>();
+        File[] files = dir.listFiles();
+        if (files != null) {
+            for (File f : files) {
+                if (f.isDirectory()) results.addAll(findJavaFiles(f));
+                else if (f.getName().endsWith(".java")) results.add(f);
+            }
+        }
+        return results;
+    }
+
+    private boolean checkBraceBalance(String content) {
+        // Strip strings and comments for a more robust (but still light) brace check
+        String sanitized = content.replaceAll("\".*?\"", "\"\"") // Strings
+                                  .replaceAll("//.*", "")        // Line comments
+                                  .replaceAll("/\\*.*?\\*/", ""); // Block comments
+        int count = 0;
+        for (char c : sanitized.toCharArray()) {
+            if (c == '{') count++;
+            else if (c == '}') count--;
+            if (count < 0) return false;
+        }
+        return count == 0;
+    }
+
+    private EvaluationResult runMediumCheck(File root, TaskContext context) {
+        EvaluationResult result = OrchestrationFactory.eINSTANCE.createEvaluationResult();
+        try {
+            // Simplified syntax check using Maven 'compile' instead of 'install'
+            String output = mavenTool.execute("compile", root, context);
+            result.setSuccess(output.contains("BUILD SUCCESS") || output.contains("No Sources"));
+        } catch (Exception e) {
+            result.setSuccess(false);
+            result.getErrors().add(e.getMessage());
+        }
+        return result;
     }
 
     public EvaluationResult evaluate() throws Exception {

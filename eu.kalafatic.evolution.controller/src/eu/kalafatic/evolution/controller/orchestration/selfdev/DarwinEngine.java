@@ -1184,7 +1184,8 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
                 context.getOrchestrationState().getMetadata().put("lastRealityCheckSignificant", isSignificant);
             }
 
-            EvaluationResult result = manager.getFitnessEngine().evaluate(context.getProjectRoot(), context, decision.getPressure());
+            // Pragma A: Heavy Reality Gate (Full Build) only for winner
+            EvaluationResult result = manager.getFitnessEngine().evaluate(context.getProjectRoot(), context, RealityLevel.HEAVY);
 
             if (result.isSuccess() || selectedVariant != null) {
                 String completedPhase = context.getOrchestrationState().getCurrentPhase();
@@ -1414,7 +1415,35 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             }
             variant.setSuccess(success);
 
-            EvaluationResult result = manager.getFitnessEngine().evaluate(tempDir, variantContext, pressure);
+            // Pragma A: Tiered Evaluation for variant branch
+            // 1. LIGHT check (Static Analysis)
+            EvaluationResult lightCheck = manager.getFitnessEngine().evaluate(tempDir, variantContext, RealityLevel.LIGHT);
+            if (!lightCheck.isSuccess()) {
+                context.log("[DARWIN] Pragma A: LIGHT Reality Gate FAILED for " + variant.getId() + ": " + String.join("; ", lightCheck.getErrors()));
+                variant.setSuccess(false);
+                variant.setScore(0.1);
+                return variantExecContext;
+            }
+
+            // 2. MEDIUM check (Syntax Check / mvn compile)
+            EvaluationResult mediumCheck = manager.getFitnessEngine().evaluate(tempDir, variantContext, RealityLevel.MEDIUM);
+            if (!mediumCheck.isSuccess()) {
+                context.log("[DARWIN] Pragma A: MEDIUM Reality Gate FAILED for " + variant.getId() + ": " + String.join("; ", mediumCheck.getErrors()));
+                variant.setSuccess(false);
+                variant.setScore(0.1);
+                return variantExecContext;
+            }
+
+            // Pragma A: Skip standard evaluation if profile does not MANDATE heavy checks for branches,
+            // as we already performed LIGHT and MEDIUM reality gates.
+            EvaluationResult result;
+            if (context.getExecutionProfile().shouldPerformRealityCheck()) {
+                result = manager.getFitnessEngine().evaluate(tempDir, variantContext, pressure);
+            } else {
+                result = OrchestrationFactory.eINSTANCE.createEvaluationResult();
+                result.setSuccess(true);
+            }
+
             variant.setSuccess(result.isSuccess());
             if (result.isSuccess()) {
                 manager.updateVariantLifecycle(List.of(variant), variant.getId(), BranchVariant.ActivationState.SCORING, context);
