@@ -65,6 +65,11 @@ import eu.kalafatic.evolution.controller.orchestration.TaskRequest;
 import eu.kalafatic.evolution.controller.orchestration.OrchestrationState;
 import eu.kalafatic.evolution.controller.orchestration.FileChangeTracker;
 import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
+import eu.kalafatic.evolution.controller.orchestration.engines.DimensionEngine;
+import eu.kalafatic.evolution.controller.orchestration.engines.ExecutionEngine;
+import eu.kalafatic.evolution.controller.orchestration.engines.FitnessEngine;
+import eu.kalafatic.evolution.controller.orchestration.engines.LineageEngine;
+import eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel;
 import eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceArtifact;
 import eu.kalafatic.evolution.controller.mediation.scanner.TargetScanner;
 import eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot;
@@ -92,7 +97,11 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
     private final PolicyResolver policyResolver = new PolicyResolver();
     private final PromptComposer promptComposer = new PromptComposer();
-    private final GenomeDimensionScheduler dimensionScheduler = new GenomeDimensionScheduler();
+    private final DimensionEngine dimensionEngine = new DimensionEngine();
+    private final LineageEngine lineageEngine = new LineageEngine();
+    private final FitnessEngine fitnessEngine = new FitnessEngine();
+    private final ExecutionEngine executionEngine = new ExecutionEngine();
+    private final eu.kalafatic.evolution.controller.orchestration.engines.SelectionEngine selectionEngine = new eu.kalafatic.evolution.controller.orchestration.engines.SelectionEngine();
     private CapabilityStatus status = CapabilityStatus.STOPPED;
 
     public DarwinEngine(TaskContext context, IterationMemoryService memoryService, SystemStateSignalProvider stateProvider) {
@@ -388,12 +397,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             if (intensity > 1) {
                 context.log("[DARWIN] Inspecting goal for unresolved semantic uncertainty.");
                 initialAssessment = iterationManager.getDimensionInferenceEngine().analyze(request, context);
-                if (initialAssessment != null && initialAssessment.hasUnresolvedDimensions()) {
-                    context.log("[DARWIN] Unresolved dimensions detected: " +
-                        initialAssessment.getUnresolvedDimensions().stream().map(d -> d.getId()).collect(Collectors.joining(", ")));
-                } else {
-                    context.log("[DARWIN] No significant semantic uncertainty detected. Evolution will proceed with discovery grounding.");
-                }
+                dimensionEngine.detectUnresolvedDimensions(initialAssessment, context);
             } else {
                 context.log("[DARWIN] Low Intensity detected. Bypassing deep semantic analysis.");
             }
@@ -778,10 +782,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
         // Hierarchical Node Selection: Determine which node to expand
         EvolutionTree tree = context.getKernelContext().getMemoryService().getEvolutionTree();
-        String nodeToExpandId = tree.getCurrentWinnerId();
-        if (nodeToExpandId == null && tree.getRootId() != null) {
-            nodeToExpandId = tree.getRootId();
-        }
+        String nodeToExpandId = lineageEngine.getParentId(tree);
 
         context.log("[DARWIN] Hierarchical Expansion: Targeting node " + (nodeToExpandId != null ? nodeToExpandId : "ROOT") + " for semantic discovery.");
 
@@ -826,10 +827,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
                 }
             } else {
                 context.log("[DARWIN] Adaptive Kernel: Auto-selecting best trajectory (User selection disabled for profile).");
-                manualId = variants.stream()
-                        .max((v1, v2) -> Double.compare(v1.getScore(), v2.getScore()))
-                        .map(v -> v.getId())
-                        .orElse(null);
+                manualId = selectionEngine.selectWinnerAuto(variants);
             }
         }
 
@@ -1143,13 +1141,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             }
 
             // LOGICAL SYNC: Ensure files from variant actions are always recorded in UI panel
-            for (BranchVariant.Action action : selectedVariant.getActions()) {
-                if (("WRITE".equals(action.getOperation()) || "CREATE".equals(action.getOperation())) && action.getTarget() != null) {
-                    context.getFileChangeTracker().recordChange(action.getTarget(), FileChangeTracker.ChangeType.EDITED);
-                } else if ("DELETE".equals(action.getOperation()) && action.getTarget() != null) {
-                    context.getFileChangeTracker().recordChange(action.getTarget(), FileChangeTracker.ChangeType.REMOVED);
-                }
-            }
+            executionEngine.applyWinner(selectedVariant, context);
 
             if (isExportOnly) {
                 EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
@@ -1159,8 +1151,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             }
 
             if (profile.shouldPerformRealityCheck()) {
-                eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceDeltaAnalyzer analyzer = new eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceDeltaAnalyzer(context.getProjectRoot(), context);
-                eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceDeltaAnalyzer.DeltaAnalysis reality = analyzer.analyze(baseCommit);
+                eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceDeltaAnalyzer.DeltaAnalysis reality = executionEngine.analyzeWorkspace(baseCommit, context);
                 context.log("[DARWIN] Reality Check: Winner variant applied. Analysis: " + reality.toString());
 
                 final BranchVariant finalSelectedVariant = selectedVariant;
@@ -1185,7 +1176,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             }
 
             // Pragma A: Heavy Reality Gate (Full Build) only for winner
-            EvaluationResult result = manager.getFitnessEngine().evaluate(context.getProjectRoot(), context, RealityLevel.HEAVY);
+            EvaluationResult result = manager.getFitnessEngine().evaluate(context.getProjectRoot(), context, eu.kalafatic.evolution.controller.orchestration.selfdev.RealityLevel.HEAVY);
 
             if (result.isSuccess() || selectedVariant != null) {
                 String completedPhase = context.getOrchestrationState().getCurrentPhase();
@@ -1417,7 +1408,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
             // Pragma A: Tiered Evaluation for variant branch
             // 1. LIGHT check (Static Analysis)
-            EvaluationResult lightCheck = manager.getFitnessEngine().evaluate(tempDir, variantContext, RealityLevel.LIGHT);
+            EvaluationResult lightCheck = fitnessEngine.evaluateReality(tempDir, variantContext, RealityLevel.LIGHT, manager);
             if (!lightCheck.isSuccess()) {
                 context.log("[DARWIN] Pragma A: LIGHT Reality Gate FAILED for " + variant.getId() + ": " + String.join("; ", lightCheck.getErrors()));
                 variant.setSuccess(false);
@@ -1426,7 +1417,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             }
 
             // 2. MEDIUM check (Syntax Check / mvn compile)
-            EvaluationResult mediumCheck = manager.getFitnessEngine().evaluate(tempDir, variantContext, RealityLevel.MEDIUM);
+            EvaluationResult mediumCheck = fitnessEngine.evaluateReality(tempDir, variantContext, RealityLevel.MEDIUM, manager);
             if (!mediumCheck.isSuccess()) {
                 context.log("[DARWIN] Pragma A: MEDIUM Reality Gate FAILED for " + variant.getId() + ": " + String.join("; ", mediumCheck.getErrors()));
                 variant.setSuccess(false);
@@ -1475,7 +1466,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             } catch (Exception e) {
                 context.log("[DARWIN] Failed to capture mutation trace: " + e.getMessage());
             }
-            variant.setScore(result.isSuccess() ? 0.8 + (result.getTestPassRate() * 0.2) : result.getTestPassRate() * 0.5);
+            variant.setScore(fitnessEngine.calculateScore(result));
 
             return variantExecContext;
         } catch (Exception e) {
@@ -1763,39 +1754,17 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         String currentParentId = tree.getCurrentWinnerId();
 
         // REALITY GRAPH: Branch Revival Logic (Requirement 6)
-        if (currentParentId != null) {
-            EvolutionNode winnerNode = tree.getNode(currentParentId);
-            if (winnerNode != null && winnerNode.getFitnessScore() < 0.3) {
-                context.log("[DARWIN] Current lineage fitness low (" + winnerNode.getFitnessScore() + "). Attempting Branch Revival...");
-
-                // Search for a rejected sibling with higher potential fitness (or simply any sibling)
-                List<EvolutionNode> siblings = tree.getSiblings(currentParentId);
-                EvolutionNode bestAlternative = siblings.stream()
-                        .filter(s -> !"REJECTED_SEMANTIC".equals(s.getStatus()))
-                        .sorted((a, b) -> Double.compare(b.getFitnessScore(), a.getFitnessScore()))
-                        .findFirst().orElse(null);
-
-                if (bestAlternative != null && (bestAlternative.getFitnessScore() > winnerNode.getFitnessScore())) {
-                    context.log("[DARWIN] REVIVING BRANCH: " + bestAlternative.getMutationIdentity() + " (Fitness: " + bestAlternative.getFitnessScore() + ")");
-                    currentParentId = bestAlternative.getId();
-                    // We don't set currentWinnerId yet, we just start the mutation from here
-                }
-            }
-        }
+        currentParentId = lineageEngine.handleBranchRevival(tree, currentParentId, context);
 
         if (currentParentId == null && tree.getRootId() != null) {
             currentParentId = tree.getRootId();
         }
 
         // SEMANTIC GENOME: Initialize or retrieve from orchestration state
-        SemanticGenome genome = createGenome(goal, expansion);
+        SemanticGenome genome = dimensionEngine.createGenome(goal, expansion, context);
 
         // Select the next mutable dimension
-        EvolutionDimension activeDimension = dimensionScheduler.selectNextDimension(genome);
-        if (activeDimension == null) {
-            // FALLBACK: Default Implementation dimension
-            activeDimension = new EvolutionDimension("IMPLEMENTATION", "General implementation and refinement", AbstractionLevel.IMPLEMENTATION, SemanticDomain.EXECUTION);
-        }
+        EvolutionDimension activeDimension = dimensionEngine.selectNextDimension(genome, context);
 
         context.getOrchestrationState().getMetadata().put("current_dimension", activeDimension.getId());
         context.log("[DARWIN] Scheduled Mutation Dimension: " + activeDimension.getId());

@@ -50,8 +50,14 @@ import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityExce
 import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityRegistry;
 import eu.kalafatic.evolution.controller.orchestration.capability.contracts.ISchedulingContract;
 import eu.kalafatic.evolution.controller.orchestration.diagnostics.CausalNode;
+import eu.kalafatic.evolution.controller.orchestration.adapters.GitAdapter;
+import eu.kalafatic.evolution.controller.orchestration.adapters.LLMAdapter;
+import eu.kalafatic.evolution.controller.orchestration.adapters.MemoryStore;
+import eu.kalafatic.evolution.controller.orchestration.adapters.RealityGateAdapter;
 import eu.kalafatic.evolution.controller.orchestration.diagnostics.CognitiveTrace;
 import eu.kalafatic.evolution.controller.orchestration.diagnostics.ReplayEngine;
+import eu.kalafatic.evolution.controller.orchestration.engines.LineageEngine;
+import eu.kalafatic.evolution.controller.orchestration.engines.SelectionEngine;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionNode;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionTree;
 import eu.kalafatic.evolution.controller.orchestration.goal.GoalModel;
@@ -138,6 +144,13 @@ public class IterationManager {
     private final TrajectoryEngine trajectoryEngine;
     private final EvolutionaryPressureEngine pressureEngine;
     private final GitEvolutionAdapter gitAdapter;
+
+    private final SelectionEngine selectionEngine = new SelectionEngine();
+    private final LineageEngine lineageEngine = new LineageEngine();
+    private final RealityGateAdapter realityEngineAdapter = new RealityGateAdapter();
+    private GitAdapter gitAdapterComponent;
+    private LLMAdapter llmAdapterComponent;
+    private MemoryStore memoryStoreComponent;
     private final ClarificationManager clarificationManager = new ClarificationManager();
     private final IntentExpansionEngine intentExpansionEngine;
     private final DimensionInferenceEngine dimensionInferenceEngine;
@@ -207,6 +220,9 @@ public class IterationManager {
         this.evaluator = evaluator;
         this.darwinEngine = darwinEngine;
         this.memoryService = memoryService;
+        this.gitAdapterComponent = new GitAdapter(gitManager);
+        this.llmAdapterComponent = new LLMAdapter(aiService);
+        this.memoryStoreComponent = new MemoryStore(memoryService);
         this.goalUnderstandingEngine = new GoalUnderstandingEngine(sessionContainer);
         this.semanticEnvelopeEngine = new SemanticEnvelopeEngine(sessionContainer);
 
@@ -442,12 +458,7 @@ public class IterationManager {
     }
 
     public void recordRejection(String goal, String message) {
-        IterationRecord record = createBaseRecord(goal);
-        record.setStrategy("Darwin Variant Selection");
-        record.setResult("FAIL");
-        record.setStatus("REJECTED");
-        record.setErrorMessage(message);
-        memoryService.saveRecord(record);
+        lineageEngine.recordRejection(goal, message, context);
     }
 
     public void recordIterationResult(String goal, String strategy, String branchId, boolean success) {
@@ -585,109 +596,7 @@ public class IterationManager {
     }
 
     public String handleVariantSelection(TaskContext context, List<BranchVariant> variants, String goal) throws Exception {
-        while (true) {
-            transition(SystemState.AWAITING_BRANCH_SELECTION, context);
-            context.log("[COGNITION] Trajectory Competition: Pausing for semantic selection (Manual Mode).");
-
-            StringBuilder sb = new StringBuilder("Darwin evolved " + variants.size() + " trajectories for your review:\n");
-            for (BranchVariant v : variants) {
-                String status = (v.getActivationState() == BranchVariant.ActivationState.KEPT) ? " [KEPT]" : "";
-                sb.append(String.format("- [%s] %s (Predicted Score: %.2f)%s\n", v.getId(), v.getStrategy(), v.getScore(), status));
-
-                // Display snippets of generated implementation
-                if (!v.getActions().isEmpty()) {
-                    for (BranchVariant.Action a : v.getActions()) {
-                        if (a.getImplementation() != null && !a.getImplementation().isEmpty()) {
-                            String code = a.getImplementation();
-                            String snippet = code.length() > 200 ? code.substring(0, 200) + "..." : code;
-                            sb.append("  > ").append(a.getTarget()).append(":\n")
-                              .append("```java\n").append(snippet).append("\n```\n");
-                        }
-                    }
-                }
-            }
-            sb.append("\nMANUAL MODE: ALL branches preserved. No auto-collapse.\n");
-            sb.append("Select a trajectory to execute (e.g. 'Select v0'), Keep to save, or Reject to stop.");
-
-            String input = context.requestInput(sb.toString()).get();
-            String trimmed = (input != null) ? input.trim() : "";
-
-            if (trimmed.isEmpty() || "Approved".equalsIgnoreCase(trimmed) || "Yes".equalsIgnoreCase(trimmed) || "Proceed".equalsIgnoreCase(trimmed) || "OK".equalsIgnoreCase(trimmed)) {
-                context.log("[KERNEL] User approved best trajectory via fast-approval.");
-                return variants.stream()
-                        .max((v1, v2) -> Double.compare(v1.getScore(), v2.getScore()))
-                        .map(v -> v.getId())
-                        .orElse(null);
-            }
-
-            if ("Force Solution".equalsIgnoreCase(trimmed)) {
-                context.log("[KERNEL] Force Solution requested. Picking best variant and enabling final convergence.");
-                context.getOrchestrationState().getMetadata().put("forceSolution", true);
-                context.setAutoApprove(true);
-
-                // Return best variant to proceed with execution immediately
-                return variants.stream()
-                        .max((v1, v2) -> Double.compare(v1.getScore(), v2.getScore()))
-                        .map(v -> v.getId())
-                        .orElse(null);
-            }
-
-            if (trimmed.startsWith("Select ") || trimmed.startsWith("Approve variant ")) {
-                String manualId = trimmed.startsWith("Select ") ? trimmed.substring(7).trim() : trimmed.substring(16).trim();
-                boolean found = variants.stream().anyMatch(v -> v.getId().equals(manualId));
-                if (found) {
-                    context.log("[KERNEL] User selected trajectory: " + manualId);
-                    emitDarwinBranches(context, variants, manualId);
-                    return manualId;
-                } else {
-                    context.log("[KERNEL] Warning: Selected trajectory ID not found: " + manualId);
-                }
-            } else if (trimmed.startsWith("Keep variant ")) {
-                String keepId = trimmed.substring(13).trim();
-                variants.stream().filter(v -> v.getId().equals(keepId)).findFirst().ifPresent(v -> {
-                    v.setActivationState(BranchVariant.ActivationState.KEPT);
-                    context.log("[KERNEL] Trajectory " + keepId + " marked as KEPT for final evaluation.");
-                    emitDarwinBranches(context, variants, null);
-                });
-            } else if (trimmed.startsWith("Reject variant ")) {
-                String rejectedId = trimmed.substring(15).trim();
-                variants.stream().filter(v -> v.getId().equals(rejectedId)).findFirst().ifPresent(v -> {
-                    v.setActivationState(BranchVariant.ActivationState.REJECTED);
-                    context.log("[KERNEL] Trajectory " + rejectedId + " rejected by user.");
-                    sessionContainer.getEvolutionMemoryGraph().recordRejection("MANUAL_SELECTION", rejectedId, "User rejected explicitly.");
-                    emitDarwinBranches(context, variants, null);
-                });
-            } else if ("Rejected".equalsIgnoreCase(trimmed) || "Reject".equalsIgnoreCase(trimmed) || "No".equalsIgnoreCase(trimmed)) {
-                recordRejection(goal, "Darwin trajectories rejected by user.");
-                sessionContainer.getEvolutionMemoryGraph().recordEntropy(1.0);
-                return "FAILED";
-            } else if (trimmed.startsWith("Propose:") || trimmed.startsWith("{")) {
-                context.log("[KERNEL] User injected a new trajectory. Integrating as a first-class candidate.");
-
-                Object gmObj = context.getOrchestrationState().getMetadata().get("goalModel");
-                GoalModel goalModel = null;
-                if (gmObj instanceof GoalModel) {
-                    goalModel = (GoalModel) gmObj;
-                } else if (gmObj instanceof Map) {
-                    goalModel = new com.fasterxml.jackson.databind.ObjectMapper()
-                        .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-                        .convertValue(gmObj, GoalModel.class);
-                }
-
-                BranchVariant userVariant = createUserVariant(trimmed, goalModel, context);
-                variants.add(userVariant);
-                context.log("[KERNEL] User trajectory " + userVariant.getId() + " added to the evolutionary pool.");
-            } else {
-                context.log("[KERNEL] User provided guidance: " + trimmed + ". Refining intent and regenerating trajectories.");
-                String newGoal = goal + " (Guidance: " + trimmed + ")";
-                context.getOrchestrationState().setRawInput(newGoal);
-                context.getOrchestrationState().getMetadata().remove("goalModel");
-                if (context.getOrchestrator().getSelfDevSession() != null) {
-                     context.getOrchestrator().getSelfDevSession().setInitialRequest(newGoal);
-                }
-                return "REGENERATE";
-            }
-        }
+        return selectionEngine.handleManualSelection(context, variants, goal, this);
     }
 
     private BranchVariant createUserVariant(String input, GoalModel goal, TaskContext context) {
@@ -831,15 +740,7 @@ public class IterationManager {
     }
 
     public Trajectory getActiveTrajectory(TaskContext context) {
-        IterationRecord lastWinner = context.getKernelContext().getMemoryService().getRecords().stream()
-                .filter(r -> "ACTIVE".equals(r.getActivationState()))
-                .reduce((first, second) -> second)
-                .orElse(null);
-
-        if (lastWinner != null && lastWinner.getBranchId() != null) {
-             return context.getSemanticWorkspace().getTrajectoryMemory().getTrajectory(lastWinner.getBranchId());
-        }
-        return null;
+        return lineageEngine.getActiveTrajectory(context);
     }
 
     public void advanceEvolutionPhase(OrchestrationState state) {
@@ -1033,29 +934,7 @@ public class IterationManager {
 
 
     public void refineTargetReality(String goal, TaskContext context) throws Exception {
-        context.log("[KERNEL] Recursive Discovery: Refining Target Reality Model based on new iteration evidence.");
-        TargetSnapshot snapshot = (TargetSnapshot) context.getOrchestrationState().getMetadata().get("mediatedSnapshot");
-        TargetRealityModel existingModel = (TargetRealityModel) context.getOrchestrationState().getMetadata().get("targetRealityModel");
-
-        if (snapshot == null || existingModel == null) return;
-
-        // Recursive Reconstruction Loop: iterate discovery until completeness threshold or convergence
-        double lastCompleteness = existingModel.getRealityCompleteness();
-        int pass = 1;
-        while (pass <= 3 && existingModel.getRealityCompleteness() < 0.85) {
-            context.log("[KERNEL] Discovery Loop Pass " + pass + " (Completeness: " + existingModel.getRealityCompleteness() + ")");
-
-            // Targeted Discovery driven by Knowledge Gaps and coverage scores
-            existingModel = realityDiscoveryAgent.discover(goal, context, snapshot.getRootPath(), existingModel);
-            context.getOrchestrationState().getMetadata().put("targetRealityModel", existingModel);
-
-            if (Math.abs(existingModel.getRealityCompleteness() - lastCompleteness) < 0.05) {
-                context.log("[KERNEL] Discovery converged.");
-                break;
-            }
-            lastCompleteness = existingModel.getRealityCompleteness();
-            pass++;
-        }
+        realityEngineAdapter.refineTargetReality(goal, context, realityDiscoveryAgent);
     }
 
     public void mergeArchitecturalDiscovery(BranchVariant winner, TaskContext context) {
