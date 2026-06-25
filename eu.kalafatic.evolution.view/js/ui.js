@@ -12,6 +12,7 @@ window.ChatApp.UI = {
     initResizing: function() {
         this.setupPanelResizing('side-panel', 'resize-handle');
         this.setupPanelResizing('progress-panel', 'progress-resize-handle');
+        this.setupPanelResizing('tree-panel', 'tree-resize-handle');
     },
 
     setupPanelResizing: function(panelId, handleId) {

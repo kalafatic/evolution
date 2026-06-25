@@ -42,6 +42,8 @@ window.ChatApp = window.ChatApp || {};
         if (!wrapper) return;
 
         wrapper.innerHTML = '';
+        window.ChatApp.Renderer.updateTreePanel(messages);
+
         messages.forEach(m => {
             try {
                 const el = window.ChatApp.Renderer.renderMessage(m);
