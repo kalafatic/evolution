@@ -11,5 +11,6 @@ import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionaryPress
  */
 public interface FitnessEngine {
     EvaluationResult evaluate(File projectRoot, TaskContext context, EvolutionaryPressureVector pressure) throws Exception;
+    EvaluationResult evaluate(File projectRoot, TaskContext context, eu.kalafatic.evolution.controller.orchestration.selfdev.RealityLevel level) throws Exception;
     Evaluator.Evaluation evaluateWithSnapshot() throws Exception;
 }

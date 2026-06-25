@@ -85,7 +85,7 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
 
         String taskDirective = "TASK: Generate ONE additional sibling.\n" +
                                "Rule: mutation MUST NOT equal any previous sibling.\n" +
-                               "Complete the sibling population for dimension: " + ctx.getDimension().getId() + " (" + ctx.getDimension().getDomain() + ")\n" +
+                               "Complete the sibling population for dimension: " + ctx.getDimension().getId() + " (" + ctx.getDimension().getSemanticDomain() + ")\n" +
                                "MANDATE: The sibling MUST vary ONLY on this dimension. Do NOT introduce variations in other regions of the architecture.";
         builder.addConstraints(taskDirective);
 

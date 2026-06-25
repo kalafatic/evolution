@@ -29,6 +29,12 @@ public class DefaultFitnessEngine implements FitnessEngine {
     }
 
     @Override
+    public EvaluationResult evaluate(File projectRoot, TaskContext context, eu.kalafatic.evolution.controller.orchestration.selfdev.RealityLevel level) throws Exception {
+        IEvaluationContract contract = sessionContainer.getCapabilityRegistry().getContractImplementation(IEvaluationContract.ID, IEvaluationContract.class);
+        return contract.evaluate(projectRoot, context, level);
+    }
+
+    @Override
     public Evaluator.Evaluation evaluateWithSnapshot() throws Exception {
         return evaluator.evaluateWithSnapshot();
     }

@@ -14,6 +14,11 @@ public interface IEvaluationContract {
 
     EvaluationResult evaluate(File projectRoot, TaskContext context, eu.kalafatic.evolution.controller.tools.ITool mavenTool) throws Exception;
 
+    /**
+     * Pragma A: Tiered Evaluation
+     */
+    EvaluationResult evaluate(File projectRoot, TaskContext context, eu.kalafatic.evolution.controller.orchestration.selfdev.RealityLevel level) throws Exception;
+
     // For signal emission and backward compatibility
     List<EvaluationSignal> evaluate(String variantId);
 }
