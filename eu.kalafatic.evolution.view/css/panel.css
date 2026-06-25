@@ -23,22 +23,131 @@
     border-left: 1px solid var(--border);
     background: #fafafa;
     transition: width 0.3s ease;
+    overflow: auto; /* Handle both vertical and horizontal scroll */
+}
+
+/* HTML Tree Visualization */
+#tree-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    min-width: fit-content;
 }
 
 .tree-node {
-    display: block;
-    padding: 1px 0;
+    width: 120px;
+    border: 2px solid #7aa6ff;
+    border-radius: 6px;
+    background: white;
+    text-align: center;
+    overflow: hidden;
+    margin: 5px 0;
+    box-shadow: 0 2px 5px rgba(0,0,0,.08);
+    flex-shrink: 0;
 }
-.tree-node.active {
-    color: #3b82f6;
+
+.tree-node .node-title {
+    background: #eef4ff;
+    padding: 6px;
     font-weight: bold;
+    font-size: 10px;
+    border-bottom: 1px solid #d8e4ff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
-.tree-node.winner {
-    color: #16a34a;
+
+.tree-node .node-body {
+    padding: 10px;
+    font-size: 10px;
 }
+
+.tree-node.branch {
+    border-color: #86c68a;
+}
+
+.tree-node.branch .node-title {
+    background: #edf8ee;
+    color: #166a27;
+}
+
 .tree-node.failed {
-    color: #dc2626;
-    opacity: 0.7;
+    border-color: #fca5a5;
+    opacity: 0.8;
+}
+
+.tree-node.failed .node-title {
+    background: #fef2f2;
+    color: #991b1b;
+}
+
+.tree-node .winner-label {
+    color: #d88b00;
+    font-weight: bold;
+    margin-top: 4px;
+    font-size: 9px;
+}
+
+.tree-vline {
+    width: 2px;
+    height: 20px;
+    background: #cbd5e1;
+    flex-shrink: 0;
+}
+
+.tree-hline {
+    height: 2px;
+    background: #cbd5e1;
+    margin: 0 10px;
+}
+
+.tree-children {
+    display: flex;
+    justify-content: center;
+    position: relative;
+    padding-top: 20px;
+}
+
+.tree-children::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 2px;
+    height: 20px;
+    background: #cbd5e1;
+}
+
+.tree-child {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 5px;
+    position: relative;
+}
+
+/* Horizontal connectors */
+.tree-child::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #cbd5e1;
+}
+
+.tree-child:first-child::before {
+    left: 50%;
+}
+
+.tree-child:last-child::before {
+    right: 50%;
+}
+
+.tree-child:only-child::before {
+    display: none;
 }
 
 .resize-handle {
