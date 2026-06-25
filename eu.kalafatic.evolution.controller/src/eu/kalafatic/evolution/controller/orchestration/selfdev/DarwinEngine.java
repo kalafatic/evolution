@@ -1558,7 +1558,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         }
 
         Object expansionObj = context.getOrchestrationState().getMetadata().get("intentExpansion");
-        IntentExpansionResult expansion = eu.kalafatic.evolution.controller.parsers.JsonUtils.restoreFromMetadata(expansionObj, IntentExpansionResult.class, "intentExpansion", context);
+        final IntentExpansionResult expansion = eu.kalafatic.evolution.controller.parsers.JsonUtils.restoreFromMetadata(expansionObj, IntentExpansionResult.class, "intentExpansion", context);
         if (expansion != null) {
             state.append("\n--- STRUCTURED INTENT ANALYSIS ---\n");
             state.append("Dominant Intent: ").append(expansion.getDominantIntent()).append("\n");
@@ -1760,12 +1760,6 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
         // SEMANTIC GENOME: Initialize or retrieve from orchestration state
         SemanticGenome genome = createGenome(goal, expansion);
-
-        // SYNC: Ensure expansion used in genome scheduling is typing-safe
-        if (expansion == null) {
-            Object expObj = context.getOrchestrationState().getMetadata().get("intentExpansion");
-            expansion = eu.kalafatic.evolution.controller.parsers.JsonUtils.restoreFromMetadata(expObj, IntentExpansionResult.class, "intentExpansion", context);
-        }
 
         // Select the next mutable dimension
         EvolutionDimension activeDimension = dimensionScheduler.selectNextDimension(genome);
