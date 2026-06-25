@@ -481,9 +481,8 @@ window.ChatApp.Renderer = {
             const data = iterations[iterKey];
 
             let html = `
-                <div class="tree-node">
-                    <div class="node-title">Iteration ${data.iterationCount}</div>
-                    <div class="node-body">${data.currentTask || 'Goal Evaluation'}</div>
+                <div class="tree-node" title="Iteration ${data.iterationCount}: ${data.currentTask || ''}">
+                    <div class="node-title">I${data.iterationCount}</div>
                 </div>
             `;
 
@@ -498,12 +497,8 @@ window.ChatApp.Renderer = {
                     html += `<div class="tree-child">`;
                     html += `<div class="tree-vline"></div>`;
                     html += `
-                        <div class="tree-node branch ${isFailed ? 'failed' : ''}">
-                            <div class="node-title">Branch ${b.id}</div>
-                            <div class="node-body">
-                                Score: ${b.score !== undefined ? Math.round(b.score * 100) : '-'}
-                                ${isWinner ? '<div class="winner-label">🏆 WINNER</div>' : ''}
-                            </div>
+                        <div class="tree-node branch ${isFailed ? 'failed' : ''} ${isWinner ? 'winner' : ''}" title="Branch ${b.id}${b.score !== undefined ? ' - Score: ' + Math.round(b.score*100) : ''}">
+                            <div class="node-title">${isWinner ? '🏆' : 'B' + b.id.split('-').pop()}</div>
                         </div>
                     `;
 
