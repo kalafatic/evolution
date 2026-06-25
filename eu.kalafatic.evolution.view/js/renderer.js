@@ -452,7 +452,7 @@ window.ChatApp.Renderer = {
 
         // Auto-open panel if closed
         if (!panel.style.width || panel.style.width === '0px' || panel.style.width === '0') {
-             panel.style.width = '160px';
+             panel.style.width = '240px'; // Increased default width for HTML tree
              if (window.ChatApp && window.ChatApp.UI) window.ChatApp.UI.updateLayout();
         }
 
@@ -468,45 +468,61 @@ window.ChatApp.Renderer = {
             } catch(e) {}
         });
 
-        const sortedIters = Object.keys(iterations).sort((a, b) => a - b);
-        let html = '<div class="tree-node">|__</div>';
+        const sortedIters = Object.keys(iterations).sort((a, b) => parseInt(a) - parseInt(b));
+        if (sortedIters.length === 0) return;
 
-        sortedIters.forEach((it, idx) => {
-            const data = iterations[it];
-            const isLast = idx === sortedIters.length - 1;
+        let rootHtml = "";
+
+        // Recursive renderer for the lineage
+        const renderIteration = (iterIdx) => {
+            if (iterIdx >= sortedIters.length) return "";
+
+            const iterKey = sortedIters[iterIdx];
+            const data = iterations[iterKey];
+
+            let html = `
+                <div class="tree-node">
+                    <div class="node-title">Iteration ${data.iterationCount}</div>
+                    <div class="node-body">${data.currentTask || 'Goal Evaluation'}</div>
+                </div>
+            `;
 
             if (data.branches && data.branches.length > 0) {
-                let branchLine = '<div class="tree-node">';
-                branchLine += `<span style="opacity: 0.5;">| </span>`; // Left wall
+                html += `<div class="tree-vline"></div>`;
+                html += `<div class="tree-children">`;
 
-                data.branches.forEach((b, bIdx) => {
+                data.branches.forEach(b => {
                     const isWinner = data.winnerId === b.id;
-                    const isActive = b.status === 'active' || b.status === 'executing';
                     const isFailed = b.status === 'failed' || b.status === 'rejected';
 
-                    let cls = '';
-                    if (isWinner) cls = 'winner';
-                    else if (isActive) cls = 'active';
-                    else if (isFailed) cls = 'failed';
+                    html += `<div class="tree-child">`;
+                    html += `<div class="tree-vline"></div>`;
+                    html += `
+                        <div class="tree-node branch ${isFailed ? 'failed' : ''}">
+                            <div class="node-title">Branch ${b.id}</div>
+                            <div class="node-body">
+                                Score: ${b.score !== undefined ? Math.round(b.score * 100) : '-'}
+                                ${isWinner ? '<div class="winner-label">🏆 WINNER</div>' : ''}
+                            </div>
+                        </div>
+                    `;
 
-                    branchLine += `<span class="${cls}">|</span>`;
-                    branchLine += ' ';
+                    // If this branch is the winner, nest the next iteration under it
+                    if (isWinner && iterIdx + 1 < sortedIters.length) {
+                        html += `<div class="tree-vline"></div>`;
+                        html += renderIteration(iterIdx + 1);
+                    }
+
+                    html += `</div>`; // .tree-child
                 });
 
-                // Add closing | for the right wall if needed to match | | | pattern
-                if (data.branches.length < 2) branchLine += '|';
-
-                html += branchLine + '</div>';
+                html += `</div>`; // .tree-children
             }
 
-            if (!isLast) {
-                html += `<div class="tree-node">_|_</div>`;
-            } else {
-                 html += `<div class="tree-node">|_</div>`;
-            }
-        });
+            return html;
+        };
 
-        content.innerHTML = html;
+        content.innerHTML = renderIteration(0);
     },
 
     updateCognitiveStatePanel: function(m) {
