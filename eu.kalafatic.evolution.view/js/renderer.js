@@ -424,6 +424,80 @@ window.ChatApp.Renderer = {
         if (content) {
             content.innerHTML = '<div style="text-align: center; color: #94a3b8; margin-top: 40px; font-size: 11px;">Evolution tracking inactive.</div>';
         }
+        this.resetTreePanel();
+    },
+
+    resetTreePanel: function() {
+        const panel = document.getElementById('tree-panel');
+        const content = document.getElementById('tree-content');
+        if (panel) panel.style.width = '0px';
+        if (content) {
+            content.innerHTML = '<div style="text-align: center; color: #94a3b8; margin-top: 20px;">No lineage.</div>';
+        }
+    },
+
+    updateTreePanel: function(messages) {
+        const panel = document.getElementById('tree-panel');
+        const content = document.getElementById('tree-content');
+        if (!panel || !content) return;
+
+        const progressMessages = (messages || []).filter(m => {
+            const role = (m.agentType || '').toLowerCase();
+            return role.includes('evolution-progress');
+        });
+
+        if (progressMessages.length === 0) return;
+
+        // Auto-open panel if closed
+        if (!panel.style.width || panel.style.width === '0px' || panel.style.width === '0') {
+             panel.style.width = '160px';
+             if (window.ChatApp && window.ChatApp.UI) window.ChatApp.UI.updateLayout();
+        }
+
+        const iterations = {};
+        progressMessages.forEach(m => {
+            try {
+                const data = JSON.parse(m.text);
+                if (data.iterationCount !== undefined) {
+                    if (!iterations[data.iterationCount] || data.timestamp > iterations[data.iterationCount].timestamp) {
+                        iterations[data.iterationCount] = data;
+                    }
+                }
+            } catch(e) {}
+        });
+
+        const sortedIters = Object.keys(iterations).sort((a, b) => a - b);
+        let html = '<div class="tree-node">|__</div>';
+
+        sortedIters.forEach((it, idx) => {
+            const data = iterations[it];
+            const isLast = idx === sortedIters.length - 1;
+
+            if (data.branches && data.branches.length > 0) {
+                let branchLine = '<div class="tree-node">';
+                data.branches.forEach(b => {
+                    const isWinner = data.winnerId === b.id;
+                    const isActive = b.status === 'active' || b.status === 'executing';
+                    const isFailed = b.status === 'failed' || b.status === 'rejected';
+
+                    let cls = '';
+                    if (isWinner) cls = 'winner';
+                    else if (isActive) cls = 'active';
+                    else if (isFailed) cls = 'failed';
+
+                    branchLine += `<span class="${cls}">| </span>`;
+                });
+                html += branchLine.trimEnd() + '</div>';
+            }
+
+            if (!isLast) {
+                html += `<div class="tree-node">_|_</div>`;
+            } else {
+                 html += `<div class="tree-node">|_ _</div>`;
+            }
+        });
+
+        content.innerHTML = html;
     },
 
     updateCognitiveStatePanel: function(m) {

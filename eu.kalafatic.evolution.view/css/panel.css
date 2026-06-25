@@ -18,6 +18,29 @@
     background: #fdfdfd;
 }
 
+#tree-panel {
+    width: 0;
+    border-left: 1px solid var(--border);
+    background: #fafafa;
+    transition: width 0.3s ease;
+}
+
+.tree-node {
+    display: block;
+    padding: 1px 0;
+}
+.tree-node.active {
+    color: #3b82f6;
+    font-weight: bold;
+}
+.tree-node.winner {
+    color: #16a34a;
+}
+.tree-node.failed {
+    color: #dc2626;
+    opacity: 0.7;
+}
+
 .resize-handle {
     position: absolute;
     left: 0;
