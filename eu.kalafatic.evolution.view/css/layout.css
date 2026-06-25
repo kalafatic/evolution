@@ -139,8 +139,9 @@ mark.search-match {
 }
 
 /* 1. SIMPLE: USER PROMPT AND SYSTEM FINAL ANSWERS ONLY (Handled by base visibility) */
-body.simple #progress-panel,
-body.simple #tree-panel {
+body.simple #cognitive-panel,
+body.simple #tree-panel,
+body.simple #side-panel {
     display: none !important;
 }
 
