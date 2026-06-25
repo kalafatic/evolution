@@ -418,11 +418,13 @@ window.ChatApp.Renderer = {
     },
 
     resetProgressPanel: function() {
-        const panel = document.getElementById('progress-panel');
+        const cogPanel = document.getElementById('cognitive-panel');
+        const sidePanel = document.getElementById('side-panel');
         const content = document.getElementById('progress-content');
-        if (panel) panel.style.width = '0px';
+        if (cogPanel) cogPanel.style.width = '0px';
+        // sidePanel might contain changes, so we don't necessarily close it entirely if we only want to reset progress
         if (content) {
-            content.innerHTML = '<div style="text-align: center; color: #94a3b8; margin-top: 40px; font-size: 11px;">Evolution tracking inactive.</div>';
+            content.innerHTML = '<div style="text-align: center; color: #94a3b8; font-size: 11px;">Evolution tracking inactive.</div>';
         }
         this.resetTreePanel();
     },
@@ -475,7 +477,9 @@ window.ChatApp.Renderer = {
 
             if (data.branches && data.branches.length > 0) {
                 let branchLine = '<div class="tree-node">';
-                data.branches.forEach(b => {
+                branchLine += `<span style="opacity: 0.5;">| </span>`; // Left wall
+
+                data.branches.forEach((b, bIdx) => {
                     const isWinner = data.winnerId === b.id;
                     const isActive = b.status === 'active' || b.status === 'executing';
                     const isFailed = b.status === 'failed' || b.status === 'rejected';
@@ -485,15 +489,20 @@ window.ChatApp.Renderer = {
                     else if (isActive) cls = 'active';
                     else if (isFailed) cls = 'failed';
 
-                    branchLine += `<span class="${cls}">| </span>`;
+                    branchLine += `<span class="${cls}">|</span>`;
+                    branchLine += ' ';
                 });
-                html += branchLine.trimEnd() + '</div>';
+
+                // Add closing | for the right wall if needed to match | | | pattern
+                if (data.branches.length < 2) branchLine += '|';
+
+                html += branchLine + '</div>';
             }
 
             if (!isLast) {
                 html += `<div class="tree-node">_|_</div>`;
             } else {
-                 html += `<div class="tree-node">|_ _</div>`;
+                 html += `<div class="tree-node">|_</div>`;
             }
         });
 
@@ -501,7 +510,7 @@ window.ChatApp.Renderer = {
     },
 
     updateCognitiveStatePanel: function(m) {
-        const panel = document.getElementById('progress-panel');
+        const panel = document.getElementById('cognitive-panel');
         const content = document.getElementById('cognitive-state-content');
         if (!panel || !content) return;
 
@@ -576,7 +585,7 @@ window.ChatApp.Renderer = {
     },
 
     updateProgressPanel: function(m) {
-        const panel = document.getElementById('progress-panel');
+        const panel = document.getElementById('side-panel');
         const content = document.getElementById('progress-content');
         if (!panel || !content) return;
 
