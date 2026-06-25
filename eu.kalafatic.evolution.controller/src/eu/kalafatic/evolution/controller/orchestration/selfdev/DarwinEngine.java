@@ -467,6 +467,12 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         getSessionContainer().getEventBus().publish(new RuntimeEvent(RuntimeEventType.FLOW_STARTED, context.getSessionId(), "DarwinEngine", request));
 
         OrchestrationState state = context.getOrchestrationState();
+
+        if (initialAssessment != null && initialAssessment.hasUnresolvedDimensions()) {
+            context.log("[DARWIN] Grounding evolution with initial assessment.");
+            // DefaultDimensionInferenceEngine already put intentExpansion into metadata
+        }
+
         state.getCognitiveTrace().addNode(new CausalNode(
             "evolution-start-" + System.currentTimeMillis(),
             "EVOLUTION_INIT",
@@ -1551,7 +1557,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             state.append(stateProvider.getSystemStateSignal());
         }
 
-        IntentExpansionResult expansion = (IntentExpansionResult) context.getMetadata().get("intentExpansion");
+        IntentExpansionResult expansion = (IntentExpansionResult) context.getOrchestrationState().getMetadata().get("intentExpansion");
         if (expansion != null) {
             state.append("\n--- STRUCTURED INTENT ANALYSIS ---\n");
             state.append("Dominant Intent: ").append(expansion.getDominantIntent()).append("\n");
@@ -1673,7 +1679,6 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         DarwinVariantSpawner spawner = new DarwinVariantSpawner(aiService);
         DarwinDiversityAnalyzer diversityAnalyzer = new DarwinDiversityAnalyzer();
 
-        List<DarwinStrategySeed> mutationSeeds = new ArrayList<>();
         int currentIteration = context.getOrchestrationState().getIterationCount();
         boolean isMediated = policy.getExecutionMode() == ExecutionPolicy.ExecutionMode.MEDIATED ||
                              context.getBehaviorProfile().hasTrait(eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait.WORKFLOW_EXPORT_ONLY);
@@ -1957,15 +1962,18 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
         if (genome == null) {
             genome = new SemanticGenome(goal.getPrimaryAction());
-            // Populate dimensions from intent expansion if available
-            if (expansion != null) {
-                for (EvolutionDimension dim : expansion.getUnresolvedDimensions()) {
-                    genome.addDimension(dim);
-                }
-            }
             context.getOrchestrationState().getMetadata().put("semanticGenome", genome);
         }
-		return genome;
+
+        // Populate dimensions from intent expansion if available and not already present
+        if (expansion != null && genome.getDimensions().isEmpty()) {
+            context.log("[DARWIN] Seeding SemanticGenome with " + expansion.getUnresolvedDimensions().size() + " unresolved dimensions.");
+            for (EvolutionDimension dim : expansion.getUnresolvedDimensions()) {
+                genome.addDimension(dim);
+            }
+        }
+
+        return genome;
 	}
 
     private BranchVariant mapToBranchVariant(JSONObject obj, String goal, String currentPhase, Trajectory trajectory, TaskContext context) {

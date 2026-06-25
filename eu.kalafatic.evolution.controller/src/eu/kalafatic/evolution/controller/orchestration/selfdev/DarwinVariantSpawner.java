@@ -147,6 +147,9 @@ public class DarwinVariantSpawner {
         constraintSb.append("MATERIALIZATION MANDATE (CRITICAL):\n")
           .append("You are MATERIALIZING the provided blueprint. You MUST NOT reinterpret the original user goal from scratch.\n")
           .append("Your solution MUST be a direct refinement of the 'Philosophy' and 'Architectural Direction' provided below.\n\n")
+          .append("DIMENSION MANDATE:\n")
+          .append("This variant MUST compete exclusively on the dimension: ").append(activeDimension != null ? activeDimension.getId() : "Implementation").append(".\n")
+          .append("All other architectural aspects already resolved in the lineage MUST remain fixed.\n\n")
           .append("STABILIZATION CONSTRAINTS:\n")
           .append("- NO ARCHITECTURAL INFLATION: If task is trivial, provide a MINIMAL implementation.\n")
           .append("- MINIMUM VIABLE SOLUTION BIAS: Prefer the simplest code that satisfies the goal.\n")
@@ -211,7 +214,10 @@ public class DarwinVariantSpawner {
         builder.addConstraints("MANDATORY: Wrap your JSON response in <BEGIN_DARWIN_JSON> and <END_DARWIN_JSON> tags.\n" +
                                "MANDATORY: 'strategy' MUST be a specific architectural name. NEVER use 'ROOT', 'create', or 'bootstrap'.\n" +
                                "MANDATORY: The 'actions' array MUST NOT be empty. It must contain at least one WRITE action with FULL source code.\n" +
-                               "MANDATORY: Every 'WRITE' operation MUST specify a concrete file path in 'target' (e.g. 'src/main/java/.../App.java') and the FULL implementation.");
+                               "MANDATORY: Every 'WRITE' operation MUST specify a concrete file path in 'target' (e.g. 'src/main/java/.../App.java') and the FULL implementation.\n" +
+                               "⚠️ DIVERSITY MANDATE:\n" +
+                               "This branch MUST be semantically and technically distinct from other siblings.\n" +
+                               "Avoid strategies already explored: " + mutationContext);
 
         String directive = "Your goal is controlled divergence under constraints. Move the system into a meaningfully different evolutionary region.\n\n";
         if (capability == eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType.CHAT) {
