@@ -8,8 +8,8 @@ package eu.kalafatic.evolution.controller.orchestration;
 public final class TransitionToken {
 
     /**
-     * Public constructor to allow service-based state management.
+     * Package-private constructor to enforce control plane authority.
      */
-    public TransitionToken() {
+    TransitionToken() {
     }
 }

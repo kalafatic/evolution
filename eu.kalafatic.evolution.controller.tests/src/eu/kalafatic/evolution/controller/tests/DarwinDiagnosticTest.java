@@ -24,11 +24,6 @@ public class DarwinDiagnosticTest {
         context.setSessionId(sid);
         context.getMetadata().put("testMode", true);
 
-        // GROUNDING: Ensure execution profile is initialized for the test context
-        eu.kalafatic.evolution.controller.kernel.EvolutionProfile profile =
-            eu.kalafatic.evolution.controller.kernel.EvolutionIntensityCalculator.calculate(context, null, null);
-        context.getOrchestrationState().setExecutionProfile(profile);
-
         AiService ai = new AiService() {
             @Override
             public String sendRequest(Orchestrator o, String p, TaskContext c) throws Exception {
@@ -53,9 +48,6 @@ public class DarwinDiagnosticTest {
             engine.generateVariants(goalModel, null, null, null, null);
         } catch (Exception e) {
              context.log("TEST_LOG: Darwin engine execution completed with error: " + e.getMessage());
-             java.io.StringWriter sw = new java.io.StringWriter();
-             e.printStackTrace(new java.io.PrintWriter(sw));
-             context.log(sw.toString());
         }
 
         System.out.println("FULL_LOG_START");
