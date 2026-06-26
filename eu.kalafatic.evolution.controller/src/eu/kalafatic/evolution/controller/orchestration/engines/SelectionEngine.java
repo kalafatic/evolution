@@ -86,13 +86,9 @@ public class SelectionEngine {
                 context.log("[KERNEL] User injected a new trajectory. Integrating as a first-class candidate.");
 
                 Object gmObj = context.getOrchestrationState().getMetadata().get("goalModel");
-                GoalModel goalModel = null;
-                if (gmObj instanceof GoalModel) {
-                    goalModel = (GoalModel) gmObj;
-                } else if (gmObj instanceof Map) {
-                    goalModel = new com.fasterxml.jackson.databind.ObjectMapper()
-                        .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-                        .convertValue(gmObj, GoalModel.class);
+                GoalModel goalModel = eu.kalafatic.evolution.controller.parsers.JsonUtils.restoreFromMetadata(gmObj, GoalModel.class, "goalModel", context);
+                if (goalModel != null && goalModel != gmObj) {
+                    context.getOrchestrationState().getMetadata().put("goalModel", goalModel);
                 }
 
                 BranchVariant userVariant = createUserVariant(trimmed, goalModel, context);
