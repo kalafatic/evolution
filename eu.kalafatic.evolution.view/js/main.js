@@ -43,6 +43,8 @@ window.ChatApp = window.ChatApp || {};
 
         wrapper.innerHTML = '';
         window.ChatApp.Renderer.updateTreePanel(messages);
+        window.ChatApp.Renderer.updateProgressPanel(messages);
+        window.ChatApp.Renderer.updateCognitiveStatePanel(messages);
 
         messages.forEach(m => {
             try {
