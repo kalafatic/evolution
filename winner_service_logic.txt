@@ -1,0 +1,482 @@
+    public EvaluationResult executeWinner(TaskContext context, eu.kalafatic.evolution.controller.supervision.EvolutionDecision decision, List<BranchVariant> variants, GoalModel goal, IterationManager manager) throws Exception {
+        eu.kalafatic.evolution.controller.kernel.EvolutionProfile profile = context.getExecutionProfile();
+        context.log("[DARWIN] Entering executeWinner for variant: " + decision.getSelectedVariantId());
+        eu.kalafatic.evolution.controller.orchestration.VariantExecutionContext winningContext = null;
+        String originalBranch = null;
+        String baseCommit = null;
+        if (profile.requiresRepository() && manager.getGitManager().isGitRepository()) {
+            originalBranch = manager.getGitManager().getCurrentBranch();
+            baseCommit = manager.getGitManager().getHeadCommit();
+        }
+        Iteration currentIterationModelImpl = manager.getCurrentIterationModel();
+        String iterId = currentIterationModelImpl != null ? currentIterationModelImpl.getId() : "default";
+        String snapshotBranch = "snapshot/" + iterId + "-" + System.currentTimeMillis();
+
+        String finalWinnerId = decision.getSelectedVariantId();
+        BranchVariant selectedVariant = null;
+        if (finalWinnerId != null) {
+            selectedVariant = variants.stream()
+                    .filter(v -> v.getId().equals(finalWinnerId))
+                    .findFirst().orElse(null);
+        }
+
+        double winnerScore = decision.getAggregatedScores().getOrDefault(finalWinnerId, 0.0);
+        getSessionContainer().getEventBus().publish(new RuntimeEvent(RuntimeEventType.VARIANT_EVALUATED, context.getSessionId(), finalWinnerId, iterId, "DarwinEngine", winnerScore, System.currentTimeMillis()));
+
+        if (selectedVariant == null || (selectedVariant.getActivationState() != BranchVariant.ActivationState.ACTIVE && selectedVariant.getScore() < 0.3)) {
+            context.log("[DARWIN] Darwin Evolution: No viable winner selected or winner score too low.");
+            return manager.failedResult();
+        }
+
+        EvolutionProgressPublisher.updateStage(context, EvolutionStage.SAVE_LINEAGE);
+
+        if (currentIterationModelImpl != null) {
+            currentIterationModelImpl.setSurvivalArgument(selectedVariant.getSurvivalArgument());
+            currentIterationModelImpl.setTradeoffs(selectedVariant.getTradeoffs());
+            currentIterationModelImpl.setFailureRisks(selectedVariant.getFailureRisks());
+            currentIterationModelImpl.setJustification(selectedVariant.getStrategy());
+        }
+
+        boolean isExportOnly = context.getBehaviorProfile().hasTrait(BehaviorTrait.WORKFLOW_EXPORT_ONLY);
+
+        boolean isTestMode = context.getMetadata().containsKey("testMode");
+        try {
+            if (profile.requiresRepository() && !isExportOnly && !isTestMode) {
+                manager.getGitManager().createBranchFrom(originalBranch, snapshotBranch);
+                manager.getGitManager().forceCheckout(snapshotBranch);
+            }
+
+            context.log("[DARWIN] Executing winner variant: " + selectedVariant.getId() + " (" + selectedVariant.getStrategy() + ")");
+            if (profile.requiresRepository() && !isExportOnly && !isTestMode) {
+                manager.getGitManager().createBranchFrom(originalBranch, selectedVariant.getBranchName());
+            }
+
+            // Materialize Territory: Materialization into code happens only AFTER a semantic territory has been selected.
+            context.log("[DARWIN] Materializing selected semantic territory: " + selectedVariant.getStrategy());
+
+            // IMPORTANT: We MUST re-evaluate the winner in the target branch context to persist changes,
+            // even if it was pre-evaluated in a temporary worktree.
+            winningContext = evaluateVariantParallel(selectedVariant, manager.getTaskPlanner(), context, baseCommit, decision.getPressure(), manager);
+
+            // Merge discovered architectural facts from the winner back into the session in Mediated Mode
+            if (isExportOnly && selectedVariant.getMediationCandidate() != null) {
+                manager.mergeArchitecturalDiscovery(selectedVariant, context);
+            }
+
+            eu.kalafatic.evolution.controller.trajectory.ResultSynthesizer synthesizer = new eu.kalafatic.evolution.controller.trajectory.ResultSynthesizer();
+            synthesizer.synthesize(List.of(selectedVariant), context);
+
+            mergeHybridInsights(variants, selectedVariant, context);
+
+            if (!selectedVariant.isSuccess()) {
+                context.log("[DARWIN] Winner variant execution failed during materialization: " + selectedVariant.getId());
+                if (!isExportOnly && !isTestMode) {
+                    manager.getGitManager().forceCheckout(originalBranch);
+                    manager.getGitManager().rollback(context);
+                }
+                return manager.failedResult();
+            }
+
+            if (profile.requiresRepository() && !isExportOnly && !isTestMode) {
+                manager.getGitManager().forceCheckout(originalBranch);
+                manager.getGitManager().merge(selectedVariant.getBranchName());
+            } else if (isExportOnly) {
+                context.log("[DARWIN] Applying cognitive winner: " + selectedVariant.getStrategy());
+                context.getOrchestrationState().getMetadata().put("current_understanding", selectedVariant.getStrategy());
+                context.getOrchestrationState().getMetadata().put("current_strategy", selectedVariant.getStrategyType());
+                context.getOrchestrationState().getMetadata().put("current_reasoning_focus", selectedVariant.getReasoningFocus());
+                context.getOrchestrationState().getMetadata().put("current_selected_files", selectedVariant.getSelectedFiles());
+                context.getOrchestrationState().getMetadata().put("current_actions", selectedVariant.getActions());
+                if (selectedVariant.getMediationCandidate() != null) {
+                    context.getOrchestrationState().getMetadata().put("winningMediationCandidate", selectedVariant.getMediationCandidate());
+                }
+            }
+
+            if (winningContext != null) {
+                for (eu.kalafatic.evolution.model.orchestration.Task t : winningContext.getTasks()) {
+                    if (!context.getOrchestrator().getTasks().contains(t)) {
+                        context.getOrchestrator().getTasks().add(t);
+                    }
+                }
+            }
+
+            // LOGICAL SYNC: Ensure files from variant actions are always recorded in UI panel
+            executionEngine.applyWinner(selectedVariant, context);
+
+            if (isExportOnly) {
+                EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
+                res.setSuccess(true);
+                res.setDecision(eu.kalafatic.evolution.model.orchestration.SelfDevDecision.CONTINUE);
+                return res;
+            }
+
+            if (profile.shouldPerformRealityCheck()) {
+                eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceDeltaAnalyzer.DeltaAnalysis reality = executionEngine.analyzeWorkspace(baseCommit, context);
+                context.log("[DARWIN] Reality Check: Winner variant applied. Analysis: " + reality.toString());
+
+                final BranchVariant finalSelectedVariant = selectedVariant;
+                reality.getChangedFileMap().forEach((path, type) -> {
+                    context.getFileChangeTracker().recordChange(path, type);
+                    if (finalSelectedVariant != null) {
+                        EvolutionTree tree = context.getKernelContext().getMemoryService().getEvolutionTree();
+                        EvolutionNode node = tree.getNode(finalSelectedVariant.getId());
+                        if (node != null) {
+                            if (type == FileChangeTracker.ChangeType.NEW) node.getCreatedFiles().add(path);
+                            else if (type == FileChangeTracker.ChangeType.REMOVED) node.getDeletedFiles().add(path);
+                            else node.getModifiedFiles().add(path);
+                        }
+                    }
+                });
+
+                boolean isSignificant = reality.isSignificant();
+                if (!isSignificant) {
+                    context.log("[DARWIN] Reality Check WARNING: Winner variant resulted in NO physical changes.");
+                }
+                context.getOrchestrationState().getMetadata().put("lastRealityCheckSignificant", isSignificant);
+            }
+
+            // Pragma A: Heavy Reality Gate (Full Build) only for winner
+            EvaluationResult result = manager.getFitnessEngine().evaluate(context.getProjectRoot(), context, eu.kalafatic.evolution.controller.orchestration.selfdev.RealityLevel.HEAVY);
+
+            if (result.isSuccess() || selectedVariant != null) {
+                String completedPhase = context.getOrchestrationState().getCurrentPhase();
+
+                // SAVE LINEAGE: Persist ACTIVE winner and any KEPT survivors (Milestone Requirement)
+                for (BranchVariant v : variants) {
+                    if (v.getActivationState() == BranchVariant.ActivationState.ACTIVE || v.getActivationState() == BranchVariant.ActivationState.KEPT) {
+                        IterationRecord record = new IterationRecord();
+                        record.setIteration(context.getOrchestrationState().getIterationCount());
+                        record.setGoal(goal.getPrimaryAction());
+                        record.setStrategy(v.getStrategy());
+                        record.setStrategyType(v.getStrategyType() != null ? v.getStrategyType().toString() : null);
+                        record.setSemanticAnchor(v.getSemanticAnchor());
+                        record.setMutationTrace(v.getMutationTrace());
+                        record.setInheritedContext(v.getInheritedContext());
+                        record.setRejectedSiblings(v.getRejectedSiblings());
+                        record.setBranchId(v.getId());
+
+                        if (v.getId().equals(selectedVariant.getId())) {
+                            record.setResult(result.isSuccess() ? "SUCCESS" : "SUCCESS_WITH_BUILD_ERROR");
+                            record.setActivationState("ACTIVE");
+
+                            // Evolution Ledger Metadata (Requirement 8)
+                            List<String> rejected = variants.stream()
+                                    .filter(other -> !other.getId().equals(v.getId()))
+                                    .map(other -> other.getStrategy())
+                                    .collect(Collectors.toList());
+                            record.setRejectedSiblings(rejected);
+
+                            List<String> reasons = variants.stream()
+                                    .filter(other -> !other.getId().equals(v.getId()))
+                                    .map(other -> {
+                                        EvolutionNode n = context.getKernelContext().getMemoryService().getEvolutionTree().getNode(other.getId());
+                                        return n != null ? n.getRejectionReason() : "Lower fitness score";
+                                    })
+                                    .collect(Collectors.toList());
+                            record.setRejectionReasons(reasons);
+                        } else {
+                            record.setResult("KEPT_FOR_DIVERSITY");
+                            record.setActivationState("KEPT");
+                        }
+
+                        record.setTimestamp(System.currentTimeMillis());
+                        context.getKernelContext().getMemoryService().saveRecord(record);
+
+                        // Update EvolutionTree status
+                        EvolutionTree tree = context.getKernelContext().getMemoryService().getEvolutionTree();
+                        EvolutionNode node = tree.getNode(v.getId());
+                        if (node != null) {
+                            node.setStatus(v.getActivationState().name());
+                            if (v.getActivationState() == BranchVariant.ActivationState.ACTIVE) {
+                                tree.setCurrentWinnerId(v.getId());
+                                node.setWinner(true); // Frozen Snapshot Mark (Requirement 3)
+                                getSessionContainer().getEventBus().publish(new RuntimeEvent(RuntimeEventType.WINNER_SELECTED, context.getSessionId(), v.getId(), v.getStrategy()));
+
+                                // If a dimension was being mutated, and we have a winner, lock it in the genome
+                                Object genomeObj = context.getOrchestrationState().getMetadata().get("semanticGenome");
+                                SemanticGenome genome =
+                                    eu.kalafatic.evolution.controller.parsers.JsonUtils.restoreFromMetadata(genomeObj,
+                                        SemanticGenome.class, "semanticGenome", context);
+                                if (genome != null && genome != genomeObj) {
+                                    context.getOrchestrationState().getMetadata().put("semanticGenome", genome);
+                                }
+
+                                if (genome != null) {
+                                    String activeDimId = node.getActiveDimension();
+                                    if (activeDimId == null) {
+                                        activeDimId = node.getEngineeringDimensions().get("active_dimension");
+                                    }
+
+                                    record.setActiveDimension(activeDimId);
+                                    record.setLockedDimensions(new java.util.ArrayList<>(genome.getLockedDimensions()));
+
+                                    if (activeDimId != null && !activeDimId.isEmpty()) {
+                                        genome.lockDimension(activeDimId);
+                                        context.log("[DARWIN] Dimension LOCKED: " + activeDimId);
+                                    }
+                                }
+                            }
+
+                            getSessionContainer().getEventBus().publish(new RuntimeEvent(RuntimeEventType.FITNESS_UPDATED, context.getSessionId(), v.getId(), v.getScore()));
+                        }
+                    }
+                }
+                context.getKernelContext().getMemoryService().saveEvolutionTree();
+                getSessionContainer().getEventBus().publish(new RuntimeEvent(RuntimeEventType.TREE_UPDATED, context.getSessionId(), "DarwinEngine", null));
+
+                if (profile.requiresRepository() && !isExportOnly && !isTestMode && manager.getGitManager().isGitRepository()) {
+                    boolean hasPhysicalChanges = context.getOrchestrationState().getMetadata().get("lastRealityCheckSignificant") != null &&
+                                               (Boolean)context.getOrchestrationState().getMetadata().get("lastRealityCheckSignificant");
+
+                    if (hasPhysicalChanges) {
+                        manager.checkStep(selectedVariant.getId(), "GIT_COMMIT", "Committing evolutionary changes for phase: " + completedPhase);
+                        manager.getGitManager().commit("Darwin Evolution Phase " + completedPhase, context);
+                    } else {
+                        context.log("[DARWIN] Skipping Git commit: No physical changes detected in repository.");
+                    }
+                }
+
+                result.setSuccess(true);
+                return result;
+            } else {
+                if (!isExportOnly && !isTestMode && manager.getGitManager().isGitRepository()) {
+                    manager.getGitManager().rollback();
+                }
+                return result;
+            }
+        } catch (Exception e) {
+            context.log("[DARWIN] DarwinEngine.executeWinner failed: " + e.getMessage());
+            if (profile.requiresRepository() && !isExportOnly && !isTestMode && manager.getGitManager().isGitRepository()) {
+                try {
+                    manager.getGitManager().forceCheckout(originalBranch);
+                    manager.getGitManager().rollback(context);
+                } catch (Exception ex) {
+                    context.log("[DARWIN] Failed to rollback after error: " + ex.getMessage());
+                }
+            }
+            throw e;
+        }
+    }
+
+    private eu.kalafatic.evolution.controller.orchestration.VariantExecutionContext evaluateVariantParallel(BranchVariant variant, TaskPlanner planner, TaskContext context, String baseCommit, EvolutionaryPressureVector pressure, IterationManager manager) {
+        File tempDir = null;
+        eu.kalafatic.evolution.controller.supervision.AuthorityController authority = context.getKernelContext().getAuthority();
+        eu.kalafatic.evolution.controller.orchestration.VariantExecutionContext variantExecContext = new eu.kalafatic.evolution.controller.orchestration.VariantExecutionContext(variant.getId());
+        boolean isMediated = context.getBehaviorProfile().hasTrait(BehaviorTrait.WORKFLOW_EXPORT_ONLY);
+
+        try {
+            if (context.getMetadata().containsKey("testMode") || isMediated) {
+                tempDir = context.getProjectRoot();
+            } else {
+                tempDir = java.nio.file.Files.createTempDirectory("evo-variant-" + variant.getId()).toFile();
+                // Ensure worktree is clean before starting
+                try {
+                    manager.getGitManager().removeWorktree(tempDir.getAbsolutePath());
+                    manager.getGitManager().pruneWorktrees();
+                } catch (Exception e) {}
+
+                manager.getBranchManager().createWorktree(variant.getBranchName(), tempDir.getAbsolutePath());
+            }
+            TaskContext variantContext = new TaskContext(context.getOrchestrator(), tempDir);
+            variantContext.setSessionId(context.getSessionId());
+            variantContext.setKernelContext(context.getKernelContext());
+            variantContext.getMetadata().put("variantId", variant.getId());
+            variantContext.getMetadata().put("variantExecContext", variantExecContext);
+            variantContext.setPlatformMode(context.getPlatformMode());
+            variantContext.setAutoApprove(true);
+            variantContext.setAiService(aiService);
+
+            // PROPAGATE LISTENERS: Ensure sub-task execution logs are visible in the UI
+            context.getLogListeners().forEach(variantContext::addLogListener);
+            context.getApprovalListeners().forEach(variantContext::addApprovalListener);
+            context.getInputListeners().forEach(variantContext::addInputListener);
+
+            List<eu.kalafatic.evolution.model.orchestration.Task> tasks = planner.generateTasksFromVariant(variantContext, variant);
+            context.log("[DARWIN] Generated " + tasks.size() + " tasks for variant: " + variant.getId());
+            IterationManager variantManager = KernelFactory.create(variantContext, getSessionContainer(), aiService);
+
+            boolean success = true;
+            manager.updateVariantLifecycle(List.of(variant), variant.getId(), BranchVariant.ActivationState.EXECUTING, context);
+
+            if (context.getMetadata().containsKey("testMode") || isMediated) {
+                variant.setSuccess(true);
+                variant.setScore(0.95);
+
+                // Mediated mode does NOT execute tasks that modify source code
+                if (!isMediated) {
+                    for (eu.kalafatic.evolution.model.orchestration.Task task : tasks) {
+                        try {
+                            variantManager.getTaskExecutor().getOrchestrator().executeTask(task, variantContext);
+                        } catch (Exception e) {
+                            context.log("[DARWIN] [TEST_MODE] Execution failed but continuing: " + e.getMessage());
+                        }
+                    }
+                } else {
+                    context.log("[DARWIN] Mediated Mode: Skipping task execution to prevent source modification.");
+                }
+
+                manager.updateVariantLifecycle(List.of(variant), variant.getId(), BranchVariant.ActivationState.VERIFIED, context);
+                manager.updateVariantLifecycle(List.of(variant), variant.getId(), BranchVariant.ActivationState.SCORING, context);
+
+                variant.setMutationTrace(isMediated ? "Cognitive evolution in mediated mode" : "Mocked in test mode");
+                return variantExecContext;
+            }
+
+            for (eu.kalafatic.evolution.model.orchestration.Task task : tasks) {
+                boolean taskSuccess = variantManager.executeTasksWithRetries(List.of(task));
+                if (variantExecContext != null) {
+                    variantExecContext.getTasks().add(task);
+                }
+                if (!taskSuccess) {
+                    success = false;
+                    break;
+                }
+
+                manager.checkStep(task.getId(), "GIT_STAGING", "Staging changes for task: " + task.getName());
+
+                try {
+                    eu.kalafatic.evolution.controller.tools.GitTool gitTool = new eu.kalafatic.evolution.controller.tools.GitTool();
+                    String diff = gitTool.execute("diff HEAD", tempDir, variantContext);
+
+                    RuntimeEvent event = new RuntimeEvent(
+                            eu.kalafatic.evolution.controller.workflow.RuntimeEventType.TOOL_EXECUTION_SUCCEEDED,
+                            "DarwinEngine", "GitTool", diff);
+                    variantExecContext.recordEvent(event);
+
+                    eu.kalafatic.evolution.controller.supervision.ActivationResolver resolver = new eu.kalafatic.evolution.controller.supervision.ActivationResolver(context.getSemanticWorkspace().getTrajectoryMemory());
+                    eu.kalafatic.evolution.controller.supervision.DecisionSnapshot intermediateDecision = resolver.resolve(variantContext.getOrchestrationState().getCurrentIterationId(), List.of(variant), getSessionContainer().getSignalBus().getSignalsForVariant(variant.getId()), variantContext);
+
+                    Trajectory t = context.getSemanticWorkspace().getTrajectoryMemory().getTrajectory(variant.getTrajectoryId());
+                    if (t != null) {
+                        double currentFitness = intermediateDecision.getAggregatedScores().getOrDefault(variant.getId(), 0.5);
+                        t.setFitnessScore(currentFitness);
+                        t.getFitnessHistory().add(currentFitness);
+                        t.setStabilityScore(intermediateDecision.getAvgLongTermStability());
+                    }
+                } catch (Exception e) {
+                    context.log("[DARWIN] Error during dynamic re-evaluation for variant " + variant.getId() + ": " + e.getMessage());
+                }
+            }
+
+            if (success) {
+                variantManager.getGitManager().commit("Darwin Variant Execution: " + variant.getStrategy(), variantContext);
+                manager.updateVariantLifecycle(List.of(variant), variant.getId(), BranchVariant.ActivationState.VERIFIED, context);
+            } else {
+                manager.updateVariantLifecycle(List.of(variant), variant.getId(), BranchVariant.ActivationState.REJECTED, context);
+            }
+            variant.setSuccess(success);
+
+            // Pragma A: Tiered Evaluation for variant branch
+            // 1. LIGHT check (Static Analysis)
+            EvaluationResult lightCheck = fitnessEngine.evaluateReality(tempDir, variantContext, RealityLevel.LIGHT, manager);
+            if (!lightCheck.isSuccess()) {
+                context.log("[DARWIN] Pragma A: LIGHT Reality Gate FAILED for " + variant.getId() + ": " + String.join("; ", lightCheck.getErrors()));
+                variant.setSuccess(false);
+                variant.setScore(0.1);
+                return variantExecContext;
+            }
+
+            // 2. MEDIUM check (Syntax Check / mvn compile)
+            EvaluationResult mediumCheck = fitnessEngine.evaluateReality(tempDir, variantContext, RealityLevel.MEDIUM, manager);
+            if (!mediumCheck.isSuccess()) {
+                context.log("[DARWIN] Pragma A: MEDIUM Reality Gate FAILED for " + variant.getId() + ": " + String.join("; ", mediumCheck.getErrors()));
+                variant.setSuccess(false);
+                variant.setScore(0.1);
+                return variantExecContext;
+            }
+
+            // Pragma A: Skip standard evaluation if profile does not MANDATE heavy checks for branches,
+            // as we already performed LIGHT and MEDIUM reality gates.
+            EvaluationResult result;
+            if (context.getExecutionProfile().shouldPerformRealityCheck()) {
+                result = manager.getFitnessEngine().evaluate(tempDir, variantContext, pressure);
+            } else {
+                result = OrchestrationFactory.eINSTANCE.createEvaluationResult();
+                result.setSuccess(true);
+            }
+
+            variant.setSuccess(result.isSuccess());
+            if (result.isSuccess()) {
+                manager.updateVariantLifecycle(List.of(variant), variant.getId(), BranchVariant.ActivationState.SCORING, context);
+
+                // CAPTURE IMPLEMENTATION: Update EvolutionNode with ACTUAL file contents after successful execution
+                EvolutionTree tree = context.getKernelContext().getMemoryService().getEvolutionTree();
+                EvolutionNode node = tree.getNode(variant.getId());
+                if (node != null) {
+                    for (BranchVariant.Action action : variant.getActions()) {
+                        if (("WRITE".equals(action.getOperation()) || "CREATE".equals(action.getOperation())) && action.getTarget() != null) {
+                            File file = new File(tempDir, action.getTarget());
+                            if (file.exists() && file.isFile()) {
+                                try {
+                                    String content = java.nio.file.Files.readString(file.toPath());
+                                    node.getCodeSnapshots().put(action.getTarget(), content);
+                                    action.setImplementation(content); // Sync back to variant
+                                } catch (Exception e) {
+                                    context.log("[DARWIN] Failed to read implemented file: " + action.getTarget());
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            eu.kalafatic.evolution.controller.tools.GitTool deltaTool = new eu.kalafatic.evolution.controller.tools.GitTool();
+            try {
+                variant.setMutationTrace(deltaTool.execute("diff " + baseCommit + " HEAD", tempDir, variantContext));
+            } catch (Exception e) {
+                context.log("[DARWIN] Failed to capture mutation trace: " + e.getMessage());
+            }
+            variant.setScore(fitnessEngine.calculateScore(result));
+
+            return variantExecContext;
+        } catch (Exception e) {
+            context.log("[DARWIN] Parallel evaluation failed for variant " + variant.getId() + ": " + e.getMessage());
+            variant.setSuccess(false);
+            variant.setScore(0.0);
+            variant.setErrorMessage(e.getMessage());
+            manager.updateVariantLifecycle(List.of(variant), variant.getId(), BranchVariant.ActivationState.REJECTED, context);
+            return variantExecContext;
+        } finally {
+            if (tempDir != null && !context.getMetadata().containsKey("testMode") && !isMediated) {
+                try {
+                    manager.getGitManager().removeWorktree(tempDir.getAbsolutePath());
+                } catch (Exception e) {
+                    context.log("[DARWIN] Worktree removal failed: " + e.getMessage());
+                }
+                try {
+                    deleteDirectory(tempDir);
+                } catch (Exception e) {
+                    context.log("[DARWIN] Temporary directory deletion failed: " + e.getMessage());
+                }
+            }
+        }
+    }
+
+    private void mergeHybridInsights(List<BranchVariant> variants, BranchVariant winner, TaskContext context) {
+        JSONArray analyticalInsights = new JSONArray();
+        JSONArray stabilizationInsights = new JSONArray();
+
+        for (BranchVariant v : variants) {
+            if (v.getId().equals(winner.getId())) continue;
+
+            JSONObject insight = new JSONObject();
+            insight.put("strategy", v.getStrategy());
+            insight.put("risks", v.getFailureRisks());
+            insight.put("tradeoffs", v.getTradeoffs());
+
+            if ("ANALYTICAL".equals(v.getStrategyType())) {
+                analyticalInsights.put(insight);
+            } else if ("STABILIZATION".equals(v.getStrategyType())) {
+                stabilizationInsights.put(insight);
+            }
+        }
+
+        if (analyticalInsights.length() > 0) {
+            context.getOrchestrationState().getMetadata().put("hybrid_analytical_insights", analyticalInsights);
+            context.log("[DARWIN] Merged " + analyticalInsights.length() + " analytical insights into context.");
+        }
+        if (stabilizationInsights.length() > 0) {
+            context.getOrchestrationState().getMetadata().put("hybrid_stabilization_insights", stabilizationInsights);
+            context.log("[DARWIN] Merged " + stabilizationInsights.length() + " stabilization insights into context.");
+        }
+    }

@@ -98,10 +98,15 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
     private final PolicyResolver policyResolver = new PolicyResolver();
     private final PromptComposer promptComposer = new PromptComposer();
     private final DimensionEngine dimensionEngine = new DimensionEngine();
+    public DimensionEngine getDimensionEngine() { return dimensionEngine; }
     private final LineageEngine lineageEngine = new LineageEngine();
     private final FitnessEngine fitnessEngine = new FitnessEngine();
     private final ExecutionEngine executionEngine = new ExecutionEngine();
     private final eu.kalafatic.evolution.controller.orchestration.engines.SelectionEngine selectionEngine = new eu.kalafatic.evolution.controller.orchestration.engines.SelectionEngine();
+
+    private eu.kalafatic.evolution.controller.orchestration.services.GenerationService generationService;
+    private eu.kalafatic.evolution.controller.orchestration.services.EvolutionService evolutionService;
+
     private CapabilityStatus status = CapabilityStatus.STOPPED;
 
     public DarwinEngine(TaskContext context, IterationMemoryService memoryService, SystemStateSignalProvider stateProvider) {
@@ -111,12 +116,21 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         this.stateProvider = stateProvider;
         this.pressureEngine = getSessionContainer().getPressureEngine();
         this.rejectionAnalyzer = new RejectionPatternAnalyzer(getSessionContainer());
+
+        this.generationService = new eu.kalafatic.evolution.controller.orchestration.services.DefaultGenerationService();
+        this.evolutionService = new eu.kalafatic.evolution.controller.orchestration.services.DefaultEvolutionService(
+            generationService,
+            new eu.kalafatic.evolution.controller.orchestration.services.DefaultWinnerService()
+        );
     }
 
     @Override
     public void setAiService(eu.kalafatic.evolution.controller.orchestration.AiService aiService) {
         super.setAiService(aiService);
         rejectionAnalyzer.setAiService(aiService);
+        if (this.generationService != null) {
+            this.generationService.setAiService(aiService);
+        }
     }
 
     @Override
@@ -278,53 +292,8 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
                 getSessionContainer().getCognitiveState().getCapabilityHistory().addAll(convState.getCognitiveState().getCapabilityHistory());
             }
 
-            // 1. DISCOVERY phase
-            if (!profile.hasTrait(BehaviorTrait.REASONING_ATOMIC)) {
-                if (iterationManager.getGitManager().isGitRepository()) {
-                    iterationManager.transition(SystemState.ANALYZING, context);
-                    context.log("[DARWIN] Discovery: Inspecting repository structure.");
-                    String projectStructure = iterationManager.getStructureAgent().process("Provide a concise summary of the project structure and technology stack.", context, null);
-                    state.getMetadata().put("projectStructure", projectStructure);
-
-                    WorkspaceArtifact archArtifact = new WorkspaceArtifact("arch-summary-" + System.currentTimeMillis(), "architecture-summary");
-                    archArtifact.setContent(projectStructure);
-                    archArtifact.getSemanticTags().add("architecture");
-                    archArtifact.getSemanticTags().add("structure");
-                    context.getSemanticWorkspace().addArtifact(archArtifact);
-
-                    // Formal Reality Discovery
-                    context.log("[DARWIN] Discovery: Building semantic repository snapshot.");
-                    TargetScanner scanner = new TargetScanner();
-                    TargetSnapshot.TargetType type = context.getProjectRoot().getAbsolutePath().contains("evolution") ? TargetSnapshot.TargetType.SELF : TargetSnapshot.TargetType.PROJECT;
-                    TargetSnapshot snapshot = scanner.scanToSnapshot(context.getProjectRoot(), type);
-
-                    // TWO-STAGE SELECTION: Heuristic pick 32 candidates for deep analysis
-                    ContextCurator curator = new ContextCurator();
-                    List<String> candidates = curator.selectContext(snapshot, request, 32);
-
-                    context.log("[DARWIN] Discovery: Selective deep analysis of " + candidates.size() + " high-signal candidates.");
-                    SemanticExtractor extractor = new SemanticExtractor();
-                    extractor.extractToSnapshot(snapshot, candidates);
-
-                    state.getMetadata().put("mediatedSnapshot", snapshot);
-
-                    // Construct formal TargetRealityModel
-                    context.log("[DARWIN] Discovery: Formalizing Target Reality Model.");
-                    eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel realityModel = iterationManager.getRealityDiscoveryAgent().discover(request, context, context.getProjectRoot().getAbsolutePath());
-                    state.getMetadata().put("targetRealityModel", realityModel);
-
-                    if (profile.hasTrait(BehaviorTrait.WORKFLOW_EXPORT_ONLY)) {
-                        context.log("[DARWIN] Mediated Mode: Triggering MetadataAgent repository cognition.");
-                        eu.kalafatic.evolution.controller.agents.MetadataAgent metadataAgent = new eu.kalafatic.evolution.controller.agents.MetadataAgent();
-                        metadataAgent.generate(context.getProjectRoot());
-                    }
-
-                    context.getOrchestrationState().addDiagnostic("[DarwinTrace] Discovery complete. Target Reality Model initialized.");
-                }
-            }
-
-            // 2. ANALYZING stage
-            iterationManager.transition(SystemState.ANALYZING, context);
+            // Delegate discovery and intent analysis to IntentService
+            iterationManager.getIntentService().expandIntent(context, iterationManager);
             if (iterationManager.getGitManager().isGitRepository() || context.getMetadata().containsKey("testMode")) {
                 iterationManager.getGitManager().ensureInitialCommit();
 
@@ -403,7 +372,9 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             }
 
             context.log("[DARWIN] Starting Unified Iterative Evolutionary Loop.");
-            OrchestratorResponse result = evolve(request, iterationManager, initialAssessment);
+            evolutionService.evolve(context, iterationManager);
+            OrchestratorResponse result = new OrchestratorResponse();
+            result.setSummary("Evolution complete.");
 
             boolean isError = result != null && result.getResultType() == ResultType.ERROR;
 

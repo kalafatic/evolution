@@ -131,6 +131,15 @@ public class IterationManager {
     private final Evaluator evaluator;
     private final DarwinEngine darwinEngine;
     private final IterationMemoryService memoryService;
+
+    // Services
+    private final eu.kalafatic.evolution.controller.orchestration.services.StateService stateService;
+    private final eu.kalafatic.evolution.controller.orchestration.services.IntentService intentService;
+    private final eu.kalafatic.evolution.controller.orchestration.services.TaskExecutionService taskExecutionService;
+    private final eu.kalafatic.evolution.controller.orchestration.services.CheckpointService checkpointService;
+    private final eu.kalafatic.evolution.controller.orchestration.services.MediationService mediationService;
+    private final eu.kalafatic.evolution.controller.orchestration.services.EvolutionService evolutionService;
+
     private final GoalUnderstandingEngine goalUnderstandingEngine;
     private final SemanticEnvelopeEngine semanticEnvelopeEngine;
 
@@ -147,6 +156,7 @@ public class IterationManager {
 
     private final SelectionEngine selectionEngine = new SelectionEngine();
     private final LineageEngine lineageEngine = new LineageEngine();
+    private final eu.kalafatic.evolution.controller.orchestration.engines.ExecutionEngine executionEngine = new eu.kalafatic.evolution.controller.orchestration.engines.ExecutionEngine();
     private final RealityGateAdapter realityEngineAdapter = new RealityGateAdapter();
     private GitAdapter gitAdapterComponent;
     private LLMAdapter llmAdapterComponent;
@@ -220,6 +230,20 @@ public class IterationManager {
         this.evaluator = evaluator;
         this.darwinEngine = darwinEngine;
         this.memoryService = memoryService;
+
+        // Initialize Services
+        eu.kalafatic.evolution.controller.orchestration.services.WinnerService ws = new eu.kalafatic.evolution.controller.orchestration.services.DefaultWinnerService();
+        eu.kalafatic.evolution.controller.orchestration.services.GenerationService gs = new eu.kalafatic.evolution.controller.orchestration.services.DefaultGenerationService();
+        gs.setWinnerService(ws);
+        gs.setAiService(aiService);
+
+        this.stateService = new eu.kalafatic.evolution.controller.orchestration.services.DefaultStateService();
+        this.intentService = new eu.kalafatic.evolution.controller.orchestration.services.DefaultIntentService();
+        this.taskExecutionService = new eu.kalafatic.evolution.controller.orchestration.services.DefaultTaskExecutionService();
+        this.checkpointService = new eu.kalafatic.evolution.controller.orchestration.services.DefaultCheckpointService();
+        this.mediationService = new eu.kalafatic.evolution.controller.orchestration.services.DefaultMediationService();
+        this.evolutionService = new eu.kalafatic.evolution.controller.orchestration.services.DefaultEvolutionService(gs, ws);
+
         this.gitAdapterComponent = new GitAdapter(gitManager);
         this.llmAdapterComponent = new LLMAdapter(aiService);
         this.memoryStoreComponent = new MemoryStore(memoryService);
@@ -332,7 +356,8 @@ public class IterationManager {
     }
 
     private OrchestratorResponse handleInternal(TaskRequest taskRequest) throws Exception {
-	return darwinEngine.orchestrateEvolution(taskRequest, this);
+        stateService.initializeState(context, this);
+        return darwinEngine.orchestrateEvolution(taskRequest, this);
     }
 
     public void checkStep(String entityId, String type, String description) throws Exception {
@@ -1341,13 +1366,20 @@ public class IterationManager {
         }
     }
 
-    private IAgent getInternalAgent(String type) {
+    public IAgent getInternalAgent(String type) {
         if (sessionContainer != null) {
             Map<String, IAgent> registry = sessionContainer.getAgentRegistry();
             return registry.get(type);
         }
         return null;
     }
+
+    public SelectionEngine getSelectionEngine() { return selectionEngine; }
+    public LineageEngine getLineageEngine() { return lineageEngine; }
+    public eu.kalafatic.evolution.controller.orchestration.engines.ExecutionEngine getExecutionEngine() { return executionEngine; }
+    public eu.kalafatic.evolution.controller.agents.ValidatorAgent getValidator() { return validator; }
+    public eu.kalafatic.evolution.controller.orchestration.services.IntentService getIntentService() { return intentService; }
+    public eu.kalafatic.evolution.controller.orchestration.services.EvolutionService getEvolutionService() { return evolutionService; }
 
     public void updateVariantFromInput(List<BranchVariant> variants, String input) {
         try {
