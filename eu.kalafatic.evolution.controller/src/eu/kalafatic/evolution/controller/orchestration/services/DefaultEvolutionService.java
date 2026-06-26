@@ -57,6 +57,13 @@ public class DefaultEvolutionService implements EvolutionService {
 
     @Override
     public void evolve(TaskContext context, IterationManager iterationManager) throws Exception {
+        // ADAPTIVE KERNEL: Ensure execution profile is initialized before access
+        if (context.getExecutionProfile() == null) {
+            eu.kalafatic.evolution.controller.kernel.EvolutionProfile profile_init =
+                eu.kalafatic.evolution.controller.kernel.EvolutionIntensityCalculator.calculate(context, iterationManager.getActiveTrajectory(context), null);
+            context.getOrchestrationState().setExecutionProfile(profile_init);
+        }
+
         String request = context.getOrchestrationState().getRawInput();
         iterationManager.getSessionContainer().getEventBus().publish(new RuntimeEvent(RuntimeEventType.FLOW_STARTED, context.getSessionId(), "DarwinEngine", request));
 
@@ -165,13 +172,8 @@ public class DefaultEvolutionService implements EvolutionService {
         }
 
         Object goalModelObj = state.getMetadata().get("goalModel");
-        GoalModel goalModel = null;
-        if (goalModelObj instanceof GoalModel) {
-            goalModel = (GoalModel) goalModelObj;
-        } else if (goalModelObj instanceof Map) {
-            goalModel = new com.fasterxml.jackson.databind.ObjectMapper()
-                .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-                .convertValue(goalModelObj, GoalModel.class);
+        GoalModel goalModel = eu.kalafatic.evolution.controller.parsers.JsonUtils.restoreFromMetadata(goalModelObj, GoalModel.class, "goalModel", context);
+        if (goalModel != null && goalModel != goalModelObj) {
             state.getMetadata().put("goalModel", goalModel);
         }
 
@@ -189,13 +191,8 @@ public class DefaultEvolutionService implements EvolutionService {
         }
 
         Object envelopeObj = state.getMetadata().get("semanticEnvelope");
-        SemanticEnvelope envelope = null;
-        if (envelopeObj instanceof SemanticEnvelope) {
-            envelope = (SemanticEnvelope) envelopeObj;
-        } else if (envelopeObj instanceof Map) {
-            envelope = new com.fasterxml.jackson.databind.ObjectMapper()
-                .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-                .convertValue(envelopeObj, SemanticEnvelope.class);
+        SemanticEnvelope envelope = eu.kalafatic.evolution.controller.parsers.JsonUtils.restoreFromMetadata(envelopeObj, SemanticEnvelope.class, "semanticEnvelope", context);
+        if (envelope != null && envelope != envelopeObj) {
             state.getMetadata().put("semanticEnvelope", envelope);
         }
 
