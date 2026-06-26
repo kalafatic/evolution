@@ -329,9 +329,9 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
             // GROUNDING: Establish Goal Model and Locked Abstraction Level BEFORE Intensity Calculation
             Object goalModelObj = state.getMetadata().get("goalModel");
-            GoalModel goalModel = eu.kalafatic.evolution.controller.parsers.JsonUtils.restoreFromMetadata(goalModelObj, GoalModel.class, "goalModel", context);
-            if (goalModel != null && goalModel != goalModelObj) {
-                state.getMetadata().put("goalModel", goalModel);
+            GoalModel goalModel = null;
+            if (goalModelObj instanceof GoalModel) {
+                goalModel = (GoalModel) goalModelObj;
             }
             if (goalModel == null) {
                 goalModel = iterationManager.getGoalUnderstandingEngine().understand(request, context);
@@ -636,8 +636,13 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         context.log("[DARWIN] Evolution Phase: " + state.getCurrentPhase());
 
         Object goalModelObj = state.getMetadata().get("goalModel");
-        GoalModel goalModel = eu.kalafatic.evolution.controller.parsers.JsonUtils.restoreFromMetadata(goalModelObj, GoalModel.class, "goalModel", context);
-        if (goalModel != null && goalModel != goalModelObj) {
+        GoalModel goalModel = null;
+        if (goalModelObj instanceof GoalModel) {
+            goalModel = (GoalModel) goalModelObj;
+        } else if (goalModelObj instanceof Map) {
+            goalModel = new com.fasterxml.jackson.databind.ObjectMapper()
+                .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                .convertValue(goalModelObj, GoalModel.class);
             state.getMetadata().put("goalModel", goalModel);
         }
 
@@ -662,8 +667,13 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         }
 
         Object envelopeObj = state.getMetadata().get("semanticEnvelope");
-        SemanticEnvelope envelope = eu.kalafatic.evolution.controller.parsers.JsonUtils.restoreFromMetadata(envelopeObj, SemanticEnvelope.class, "semanticEnvelope", context);
-        if (envelope != null && envelope != envelopeObj) {
+        SemanticEnvelope envelope = null;
+        if (envelopeObj instanceof SemanticEnvelope) {
+            envelope = (SemanticEnvelope) envelopeObj;
+        } else if (envelopeObj instanceof Map) {
+            envelope = new com.fasterxml.jackson.databind.ObjectMapper()
+                .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                .convertValue(envelopeObj, SemanticEnvelope.class);
             state.getMetadata().put("semanticEnvelope", envelope);
         }
 
