@@ -36,10 +36,10 @@ window.ChatApp.Renderer = {
         }
 
         if (role.includes('evolution-progress')) {
-            this.updateProgressPanel(m);
-            if (!document.body.classList.contains('debug')) return null; // Don't render in main chat stream unless debug
+            // Updated in main.js via list
+            if (!document.body.classList.contains('debug')) return null;
         } else if (role.includes('cognitive-state-changed')) {
-            this.updateCognitiveStatePanel(m);
+            // Updated in main.js via list
             if (!document.body.classList.contains('debug')) return null;
         } else if (isDarwin) {
             content.style.flexDirection = 'column';
@@ -451,7 +451,7 @@ window.ChatApp.Renderer = {
         if (progressMessages.length === 0) return;
 
         // Auto-open panel if closed
-        if (!panel.style.width || panel.style.width === '0px' || panel.style.width === '0') {
+        if ((!panel.style.width || panel.style.width === '0px' || panel.style.width === '0') && !document.body.classList.contains('simple')) {
              panel.style.width = '240px'; // Increased default width for HTML tree
              if (window.ChatApp && window.ChatApp.UI) window.ChatApp.UI.updateLayout();
         }
@@ -486,24 +486,30 @@ window.ChatApp.Renderer = {
                 </div>
             `;
 
-            if (data.branches && data.branches.length > 0) {
+            const branches = data.branches || [];
+            const hasBranches = branches.length > 0;
+            const hasNextIter = iterIdx + 1 < sortedIters.length;
+
+            if (hasBranches) {
                 html += `<div class="tree-vline"></div>`;
                 html += `<div class="tree-children">`;
 
-                data.branches.forEach(b => {
+                let foundWinner = false;
+                branches.forEach(b => {
                     const isWinner = data.winnerId === b.id;
+                    if (isWinner) foundWinner = true;
                     const isFailed = b.status === 'failed' || b.status === 'rejected';
 
                     html += `<div class="tree-child">`;
                     html += `<div class="tree-vline"></div>`;
                     html += `
                         <div class="tree-node branch ${isFailed ? 'failed' : ''} ${isWinner ? 'winner' : ''}" title="Branch ${b.id}${b.score !== undefined ? ' - Score: ' + Math.round(b.score*100) : ''}">
-                            <div class="node-title">${isWinner ? '🏆' : 'B' + b.id.split('-').pop()}</div>
+                            <div class="node-title">${isWinner ? '🏆' : 'B' + String(b.id).split('-').pop()}</div>
                         </div>
                     `;
 
                     // If this branch is the winner, nest the next iteration under it
-                    if (isWinner && iterIdx + 1 < sortedIters.length) {
+                    if (isWinner && hasNextIter) {
                         html += `<div class="tree-vline"></div>`;
                         html += renderIteration(iterIdx + 1);
                     }
@@ -511,7 +517,16 @@ window.ChatApp.Renderer = {
                     html += `</div>`; // .tree-child
                 });
 
+                // If there's a next iteration but no winner found in the branches (linear lineage fallback)
+                if (hasNextIter && !foundWinner) {
+                     html += `<div class="tree-child"><div class="tree-vline"></div><div class="tree-node branch winner"><div class="node-title">🏆</div></div><div class="tree-vline"></div>${renderIteration(iterIdx + 1)}</div>`;
+                }
+
                 html += `</div>`; // .tree-children
+            } else if (hasNextIter) {
+                 // Linear continuation if no branches reported yet for this iteration but a next one exists
+                 html += `<div class="tree-vline"></div>`;
+                 html += renderIteration(iterIdx + 1);
             }
 
             return html;
@@ -520,19 +535,23 @@ window.ChatApp.Renderer = {
         content.innerHTML = renderIteration(0);
     },
 
-    updateCognitiveStatePanel: function(m) {
+    updateCognitiveStatePanel: function(messages) {
         const panel = document.getElementById('cognitive-panel');
         const content = document.getElementById('cognitive-state-content');
         if (!panel || !content) return;
 
+        const cogMessages = (messages || []).filter(m => (m.agentType || '').toLowerCase().includes('cognitive-state-changed'));
+        if (cogMessages.length === 0) return;
+        const lastMsg = cogMessages[cogMessages.length - 1];
+
         // Auto-open panel if closed
-        if (!panel.style.width || panel.style.width === '0px' || panel.style.width === '0') {
+        if ((!panel.style.width || panel.style.width === '0px' || panel.style.width === '0') && !document.body.classList.contains('simple')) {
              panel.style.width = '320px';
              if (window.ChatApp && window.ChatApp.UI) window.ChatApp.UI.updateLayout();
         }
 
         try {
-            const data = JSON.parse(m.text);
+            const data = JSON.parse(lastMsg.text);
             const confPercent = Math.round((data.confidence || 0) * 100);
             const stabilityPercent = Math.round((data.stability || 0) * 100);
 
@@ -595,20 +614,24 @@ window.ChatApp.Renderer = {
         }
     },
 
-    updateProgressPanel: function(m) {
+    updateProgressPanel: function(messages) {
         const panel = document.getElementById('side-panel');
         const content = document.getElementById('progress-content');
         if (!panel || !content) return;
 
+        const progressMessages = (messages || []).filter(m => (m.agentType || '').toLowerCase().includes('evolution-progress'));
+        if (progressMessages.length === 0) return;
+        const lastMsg = progressMessages[progressMessages.length - 1];
+
         // Auto-open panel if closed and iteration is starting
-        if (!panel.style.width || panel.style.width === '0px' || panel.style.width === '0') {
+        if ((!panel.style.width || panel.style.width === '0px' || panel.style.width === '0') && !document.body.classList.contains('simple')) {
              panel.style.width = '320px';
              // Force layout update if in split-view/flexbox
              if (window.ChatApp && window.ChatApp.UI) window.ChatApp.UI.updateLayout();
         }
 
         try {
-            const data = JSON.parse(m.text);
+            const data = JSON.parse(lastMsg.text);
             const stages = [
                 { id: 'ITERATION_START', label: 'Iteration Started' },
                 { id: 'ANALYZE_PARENT', label: 'Parent Analysis' },
