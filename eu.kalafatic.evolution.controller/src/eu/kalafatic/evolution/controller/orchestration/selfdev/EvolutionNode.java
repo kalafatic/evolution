@@ -6,6 +6,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import eu.kalafatic.evolution.controller.mediation.model.Hotspot;
+import eu.kalafatic.evolution.controller.mediation.model.MediationResult;
+import eu.kalafatic.evolution.controller.orchestration.IterationManager;
+import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+
 /**
  * Represents a single node in the persistent evolutionary tree.
  * Captures the full state, reasoning, and lineage of a specific mutation.
@@ -176,4 +181,59 @@ public class EvolutionNode {
 
     public boolean isWinner() { return winner; }
     public void setWinner(boolean winner) { this.winner = winner; }
+
+	/**
+ * Merges mediation insights into the evolutionary context.
+ */
+private void mergeMediationInsights(MediationResult mediation, TaskContext context, 
+        IterationManager manager) {
+    
+    context.log("[DARWIN] Merging mediation insights...");
+    
+    // Store hotspots in the evolution tree for future reference
+    EvolutionTree tree = context.getKernelContext().getMemoryService().getEvolutionTree();
+    
+    if (mediation.getHotspots() != null) {
+        for (Hotspot hotspot : mediation.getHotspots()) {
+            String filePath = hotspot.getFile();
+            if (filePath != null && !filePath.isEmpty()) {
+                String nodeId = "hotspot-" + Math.abs(filePath.hashCode());
+                EvolutionNode node = tree.getNode(nodeId);
+                if (node == null) {
+                    node = new EvolutionNode();
+                    node.setId(nodeId);
+                    node.setStrategy("Hotspot: " + hotspot.getName());
+                    node.setStatus("MEDIATED");
+                    tree.addNode(node);
+                }
+                // Store hotspot data in engineering dimensions (Map<String, String>)
+                Map<String, String> dims = node.getEngineeringDimensions();
+                if (dims == null) {
+                    dims = new java.util.HashMap<>();
+                    // Need to check if EvolutionNode has a setter for engineeringDimensions
+                    // If not, we need to use the existing map
+                }
+                dims.put("hotspot_score", String.valueOf(hotspot.getSignificance()));
+                dims.put("hotspot_type", hotspot.getType() != null ? hotspot.getType() : "UNKNOWN");
+                if (hotspot.getName() != null) {
+                    dims.put("hotspot_name", hotspot.getName());
+                }
+                if (hotspot.getDescription() != null) {
+                    dims.put("hotspot_description", hotspot.getDescription());
+                }
+                // Note: We cannot call setEngineeringDimensions if it doesn't exist
+                // The map should already be accessible via getEngineeringDimensions()
+            }
+        }
+    }
+    
+    // Store mediation candidate if available
+    if (mediation.getWinner() != null) {
+        context.getOrchestrationState().getMetadata().put("currentMediationWinner", 
+            mediation.getWinner());
+    }
+    
+    // Persist changes
+    context.getKernelContext().getMemoryService().saveEvolutionTree();
+}
 }

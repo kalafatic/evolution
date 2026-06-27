@@ -373,7 +373,7 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
                 for (int i = 0; i < hotspots.length(); i++) {
                     JSONObject hObj = hotspots.optJSONObject(i);
                     if (hObj == null) continue;
-                    Hotspot hotspot = new Hotspot(hObj.optString("id"), hObj.optString("name"));
+                    Hotspot hotspot = new Hotspot(hObj.optString("id"), hObj.optString("name"), response, i);
                     hotspot.setDescription(hObj.optString("description"));
                     hotspot.setSignificance(hObj.optDouble("significance", 0.5));
                     model.addHotspot(hotspot);

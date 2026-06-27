@@ -18,14 +18,14 @@ import eu.kalafatic.evolution.model.orchestration.SelfDevStatus;
  *
  * @evo:21:A reason=kernel-refactor-alignment
  */
-public class SelfDevSupervisor {
+public class SelfDevSupervisor implements ISelfDevSupervisor{
     private final SelfDevSession session;
     private final TaskContext context;
     private static final int MAX_FAILURES = 3;
     private final SelfDevBootstrapController bootstrapController;
 
-    public SelfDevSupervisor(SelfDevSession session, TaskContext context) {
-        this.session = session;
+    public SelfDevSupervisor(TaskContext context) {
+        this.session = context.getOrchestrator().getSelfDevSession();
         this.context = context;
         this.bootstrapController = new SelfDevBootstrapController(context.getProjectRoot(), context.getOrchestrator());
     }
@@ -149,4 +149,52 @@ public class SelfDevSupervisor {
         context.log("[SUPERVISOR] Stopping Session: " + session.getId());
         session.setStatus(SelfDevStatus.STOPPED);
     }
+
+	@Override
+	public BranchResult createBranch(String name, String baseBranch) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public BuildResult buildAndTest(String branchName, TaskContext context) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public TestResult runTests(String branchName, TaskContext context) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public FitnessResult evaluateFitness(BuildResult buildResult, TestResult testResult) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public MergeResult mergeIfApproved(String branchName, FitnessResult fitness) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public RollbackResult rollback(String branchName, String reason) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String getMainBranch() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public SupervisorStatus getStatus() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

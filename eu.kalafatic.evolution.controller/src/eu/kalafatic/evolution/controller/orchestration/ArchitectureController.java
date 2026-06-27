@@ -24,6 +24,7 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.controller.agents.GenomeUpdateAgent;
+import eu.kalafatic.evolution.controller.mediation.model.Hotspot;
 
 /**
  * Headless controller for repository architecture discovery and rendering.
@@ -356,7 +357,7 @@ public class ArchitectureController {
             }
         }
 
-        for (eu.kalafatic.evolution.controller.mediation.model.Hotspot h : reality.getHotspots()) {
+        for (Hotspot h : reality.getHotspots()) {
             ComponentRecord hr = new ComponentRecord();
             hr.setId("reality:hotspot:" + h.getId());
             hr.setName(h.getName());

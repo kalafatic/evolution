@@ -206,4 +206,8 @@ public class GitManager {
         }
         directory.delete();
     }
+
+	public GitTool getGitTool() {
+		return gitTool;
+	}
 }
