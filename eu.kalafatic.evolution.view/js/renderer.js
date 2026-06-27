@@ -528,7 +528,7 @@ window.ChatApp.Renderer = {
 
                 html += `
                     <div class="tree-node" title="${window.ChatApp.Utils.escapeHtml(tooltip)}">
-                        <div class="node-title">I${d.iterationCount}</div>
+                        <div class="node-title">v${d.iterationCount}</div>
                     </div>
                 `;
             } else {
@@ -547,11 +547,9 @@ window.ChatApp.Renderer = {
             }
 
             if (node.children.length > 0) {
-                html += `<div class="tree-vline"></div>`;
                 html += `<div class="tree-children">`;
                 node.children.forEach(child => {
                     html += `<div class="tree-child">`;
-                    html += `<div class="tree-vline"></div>`;
                     html += renderNode(child);
                     html += `</div>`;
                 });
@@ -560,7 +558,7 @@ window.ChatApp.Renderer = {
             return html;
         };
 
-        content.innerHTML = rootNodes.map(rn => renderNode(rn)).join('<div class="tree-hline" style="width:100%; margin:20px 0;"></div>');
+        content.innerHTML = rootNodes.map(rn => renderNode(rn)).join('<div class="tree-vline" style="height: 20px;"></div>');
     },
 
     updateCognitiveStatePanel: function(messages) {
