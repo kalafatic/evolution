@@ -515,6 +515,7 @@ public class AiChatPage extends AEvoPage {
 		currentTurnId = sessionId + "__" + System.currentTimeMillis();
 
 		outputController.submitMessage(sessionId, currentTurnId, "You", request, "user", MessagePriority.NORMAL, false);
+		NeuronService.getInstance().train(orchestrator, request, getCategory(), 5);
 		outputController.submitMessage(sessionId, currentTurnId, "Evo", "Initializing orchestration...", "ai", MessagePriority.PROGRESS, false);
 		instructionsGroup.setRequest("");
 		chatGroup.resetLogCount();
@@ -1278,18 +1279,16 @@ public class AiChatPage extends AEvoPage {
 			List<String> allProposals = new java.util.ArrayList<>();
 
 			// Magic Commands
-			if (contents.startsWith("/")) {
-				allProposals.add("/create class ");
-				allProposals.add("/create test for ");
-				allProposals.add("/fix all warnings");
-				allProposals.add("/analyze project structure");
-				allProposals.add("/refactor ");
-				allProposals.add("/explain ");
-				allProposals.add("/apply best practices");
-				allProposals.add("/generate javadoc");
-				allProposals.add("/optimize imports");
-				allProposals.add("/find security vulnerabilities");
-				allProposals.add("/help");
+			if (finalPrefix.startsWith("/")) {
+				String[] magicCommands = {
+					"/create class ", "/create test for ", "/fix all warnings",
+					"/analyze project structure", "/refactor ", "/explain ",
+					"/apply best practices", "/generate javadoc", "/optimize imports",
+					"/find security vulnerabilities", "/help"
+				};
+				for (String cmd : magicCommands) {
+					if (cmd.startsWith(finalPrefix)) allProposals.add(cmd);
+				}
 			}
 
 			// Neuron Proposals
@@ -1331,14 +1330,18 @@ public class AiChatPage extends AEvoPage {
 			}
 			@Override public String getControlContents(org.eclipse.swt.widgets.Control control) { return ((StyledText) control).getText(); }
 			@Override public int getCursorPosition(org.eclipse.swt.widgets.Control control) { return ((StyledText) control).getCaretOffset(); }
-			@Override public org.eclipse.swt.graphics.Rectangle getInsertionBounds(org.eclipse.swt.widgets.Control control) { return ((StyledText) control).getBounds(); }
+			@Override public org.eclipse.swt.graphics.Rectangle getInsertionBounds(org.eclipse.swt.widgets.Control control) {
+				StyledText st = (StyledText) control;
+				org.eclipse.swt.graphics.Point caretPos = st.getLocationAtOffset(st.getCaretOffset());
+				return new org.eclipse.swt.graphics.Rectangle(caretPos.x, caretPos.y + st.getLineHeight(), 0, 0);
+			}
 			@Override public void setCursorPosition(org.eclipse.swt.widgets.Control control, int index) { ((StyledText) control).setSelection(index); }
 		};
 		KeyStroke ks = null; try { ks = KeyStroke.getInstance("Ctrl+Space"); } catch (Exception e) {}
 		assistAdapter = new ContentProposalAdapter(text, contentAdapter, proposalProvider, ks, null);
 		assistAdapter.setProposalAcceptanceStyle(ContentProposalAdapter.PROPOSAL_INSERT);
 		assistAdapter.setAutoActivationDelay(100);
-		assistAdapter.setAutoActivationCharacters("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ/".toCharArray());
+		assistAdapter.setAutoActivationCharacters("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/".toCharArray());
 	}
 
 
