@@ -17,18 +17,17 @@ import eu.kalafatic.evolution.controller.orchestration.util.ModelCapability;
 import eu.kalafatic.evolution.controller.orchestration.util.ModelCapabilityDetector;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionResult;
 import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait;
+
 import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
-import eu.kalafatic.evolution.model.orchestration.Ollama;
-import eu.kalafatic.evolution.model.orchestration.LLM;
 
 /**
  * Manages the sequential generation of siblings in an evolutionary generation.
  * Each sibling is generated based on its older siblings as exclusion constraints.
  * NOW WITH INTELLIGENT MODEL CAPABILITY DETECTION AND DYNAMIC FALLBACK.
  */
-public class SiblingGenerationManager {
+public class SiblingGenerationManager3 {
 
     private final TrajectoryTerritoryMapper mapper;
     private final DarwinVariantSpawner spawner;
@@ -42,7 +41,7 @@ public class SiblingGenerationManager {
     // Cache for model capabilities
     private final Map<String, ModelCapability> capabilityCache = new HashMap<>();
 
-    public SiblingGenerationManager(eu.kalafatic.evolution.controller.orchestration.SessionContainer container, AiService aiService) {
+    public SiblingGenerationManager3(eu.kalafatic.evolution.controller.orchestration.SessionContainer container, AiService aiService) {
         this.container = container;
         this.mapper = new TrajectoryTerritoryMapper(container);
         this.mapper.setAiService(aiService);
@@ -204,7 +203,8 @@ public class SiblingGenerationManager {
 
                     EvolutionProgressPublisher.updateBranchStatus(context, bp.getId(), bp.getPhilosophy(), "analyzing", null);
                     EvolutionProgressPublisher.updateActiveModel(context, 
-                        getModelName(orchestrator, context), 
+                        orchestrator != null && orchestrator.getOllama() != null ? 
+                        orchestrator.getOllama().getModel() : "local", 
                         "Materializing Branch " + bp.getId()
                     );
 
@@ -292,45 +292,31 @@ public class SiblingGenerationManager {
     }
 
     /**
-     * Gets the model name from orchestrator using EMF types.
+     * Gets the model name from orchestrator or context.
      */
     private String getModelName(Orchestrator orchestrator, TaskContext context) {
         if (orchestrator != null) {
-            // Try Ollama first (EMF type)
-            Ollama ollama = orchestrator.getOllama();
-            if (ollama != null) {
-                String model = ollama.getModel();
+            // Try Ollama
+            if (orchestrator.getOllama() != null) {
+                String model = orchestrator.getOllama().getModel();
                 if (model != null && !model.isEmpty()) {
                     return model;
                 }
             }
-            
-            // Try LLM (EMF type)
-            LLM llm = orchestrator.getLlm();
-            if (llm != null) {
-                String model = llm.getModel();
-                if (model != null && !model.isEmpty()) {
-                    return model;
-                }
-            }
-            
-            // Try remote model setting
-            String remoteModel = orchestrator.getRemoteModel();
-            if (remoteModel != null && !remoteModel.isEmpty()) {
-                return remoteModel;
-            }
-            
-            // Try local model setting
-            String localModel = orchestrator.getLocalModel();
-            if (localModel != null && !localModel.isEmpty()) {
-                return localModel;
-            }
-            
-            // Try hybrid model setting
-            String hybridModel = orchestrator.getHybridModel();
-            if (hybridModel != null && !hybridModel.isEmpty()) {
-                return hybridModel;
-            }
+//            // Try Provider
+//            if (orchestrator.getProvider() != null) {
+//                String model = orchestrator.getProvider().getModel();
+//                if (model != null && !model.isEmpty()) {
+//                    return model;
+//                }
+//            }
+//            // Try AiService
+//            if (orchestrator.getAiService() != null) {
+//                String model = orchestrator.getAiService().getModel();
+//                if (model != null && !model.isEmpty()) {
+//                    return model;
+//                }
+//            }
         }
         
         // Fallback: check context metadata
@@ -339,12 +325,6 @@ public class SiblingGenerationManager {
             if (metadata != null && metadata.containsKey("modelName")) {
                 return metadata.get("modelName").toString();
             }
-        }
-        
-        // Check system property
-        String modelFromProperty = System.getProperty("ollama.model");
-        if (modelFromProperty != null && !modelFromProperty.isEmpty()) {
-            return modelFromProperty;
         }
         
         return "unknown";
@@ -363,7 +343,7 @@ public class SiblingGenerationManager {
         return capability;
     }
 
-    // ===== EXISTING HELPER METHODS =====
+    // ===== EXISTING HELPER METHODS (unchanged) =====
     
     private TrajectoryBlueprint constructTrajectoryBlueprint(
             GoalModel goal, IntentExpansionResult expansion,

@@ -157,9 +157,6 @@ public abstract class BaseAiAgent implements IAgent, IOrchestrationFlow {
         return CodeExtractor.extractCode(response);
     }
     
-    /**
-     * Extracts JSON from a response that may contain markdown or text around it.
-     */
     protected JSONObject extractJson(String response) {
         if (response == null || response.isEmpty()) {
             return null;
@@ -177,7 +174,7 @@ public abstract class BaseAiAgent implements IAgent, IOrchestrationFlow {
             }
         }
         
-        // Try to find JSON object directly
+        // Try to find JSON object directly - more robust pattern
         Pattern jsonPattern = Pattern.compile("\\{[^{}]*(?:\\{[^{}]*\\}[^{}]*)*\\}");
         matcher = jsonPattern.matcher(response);
         if (matcher.find()) {
@@ -193,7 +190,28 @@ public abstract class BaseAiAgent implements IAgent, IOrchestrationFlow {
         try {
             return new JSONObject(response.trim());
         } catch (Exception e) {
-            return null;
+            // Fall through
         }
+        
+        // Last resort: try to extract with a more lenient pattern
+        try {
+            // Look for anything that looks like key-value pairs
+            Pattern kvPattern = Pattern.compile("\"([^\"]+)\"\\s*:\\s*\"([^\"]*)\"");
+            matcher = kvPattern.matcher(response);
+            if (matcher.find()) {
+                JSONObject obj = new JSONObject();
+                matcher.reset();
+                while (matcher.find()) {
+                    obj.put(matcher.group(1), matcher.group(2));
+                }
+                if (obj.length() > 0) {
+                    return obj;
+                }
+            }
+        } catch (Exception e) {
+            // Give up
+        }
+        
+        return null;
     }
 }

@@ -13,51 +13,54 @@ import eu.kalafatic.evolution.controller.orchestration.EvolutionProgressPublishe
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.goal.GoalModel;
 import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants;
-import eu.kalafatic.evolution.controller.orchestration.util.ModelCapability;
-import eu.kalafatic.evolution.controller.orchestration.util.ModelCapabilityDetector;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionResult;
 import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
-import eu.kalafatic.evolution.model.orchestration.Ollama;
-import eu.kalafatic.evolution.model.orchestration.LLM;
 
 /**
  * Manages the sequential generation of siblings in an evolutionary generation.
  * Each sibling is generated based on its older siblings as exclusion constraints.
- * NOW WITH INTELLIGENT MODEL CAPABILITY DETECTION AND DYNAMIC FALLBACK.
  */
-public class SiblingGenerationManager {
+public class SiblingGenerationManager2 {
 
     private final TrajectoryTerritoryMapper mapper;
     private final DarwinVariantSpawner spawner;
     private final AiService aiService;
     private final eu.kalafatic.evolution.controller.orchestration.SessionContainer container;
     
-    // Dynamic generation for small models
     private final DynamicSiblingGenerator dynamicGenerator;
-    private final ModelCapabilityDetector capabilityDetector;
-    
-    // Cache for model capabilities
-    private final Map<String, ModelCapability> capabilityCache = new HashMap<>();
 
-    public SiblingGenerationManager(eu.kalafatic.evolution.controller.orchestration.SessionContainer container, AiService aiService) {
+    public SiblingGenerationManager2(eu.kalafatic.evolution.controller.orchestration.SessionContainer container, AiService aiService) {
         this.container = container;
         this.mapper = new TrajectoryTerritoryMapper(container);
         this.mapper.setAiService(aiService);
         this.spawner = new DarwinVariantSpawner(aiService);
         this.aiService = aiService;
         
-        // Initialize dynamic generator for small models
-        this.dynamicGenerator = new DynamicSiblingGenerator(container, aiService);
-        this.capabilityDetector = new ModelCapabilityDetector();
+        dynamicGenerator = new DynamicSiblingGenerator(container, aiService);
     }
+    
+//    public List<JSONObject> generateSiblings(...) throws Exception {
+//        // Check if we should use dynamic generation
+//        String modelName = getModelName(context);
+//        ModelCapability cap = capabilityDetector.detect(modelName);
+//        
+//        if (cap.needsSimplifiedPrompts || true) { // Always use dynamic for now
+//            context.log("[SIBLING_MANAGER] Using Dynamic Sibling Generator");
+//            return dynamicGenerator.generateSiblings(
+//                goal.getPrimaryAction(),
+//                goal,
+//                context,
+//                activeDimension
+//            );
+//        }
+//        
+//        // Fallback to existing generation
+//        return generateSiblingsLegacy(...);
+//    }
 
-    /**
-     * Main entry point for sibling generation.
-     * Intelligently routes to the appropriate generation strategy based on model capability.
-     */
     public List<JSONObject> generateSiblings(
             GoalModel goal,
             EvolutionDimension activeDimension,
@@ -76,83 +79,6 @@ public class SiblingGenerationManager {
             IntentExpansionResult expansion,
             Orchestrator orchestrator) throws Exception {
 
-        // 1. DETECT MODEL CAPABILITY
-        String modelName = getModelName(orchestrator, context);
-        ModelCapability capability = getModelCapability(modelName);
-        
-        context.log("[SIBLING_MANAGER] Model: " + modelName + 
-                    " | Capability: " + capability.size + 
-                    " | Complex JSON: " + capability.canHandleComplexJson +
-                    " | Strategy: " + capability.recommendedStrategy);
-
-        // 2. ROUTE TO APPROPRIATE GENERATION STRATEGY
-        if (capability.needsSimplifiedPrompts || !capability.canHandleComplexJson) {
-            context.log("[SIBLING_MANAGER] Using Dynamic (Simplified) Sibling Generator for small model");
-            return generateSiblingsDynamic(goal, activeDimension, targetPopulation, context, orchestrator);
-        } else {
-            context.log("[SIBLING_MANAGER] Using Legacy (Complex) Sibling Generator for capable model");
-            return generateSiblingsLegacy(
-                goal, activeDimension, targetPopulation, basePrompt, lineageContext,
-                rejectedSiblings, context, genome, tree, currentParentId, generation,
-                reasoningLevel, architectureEnabled, implementationEnabled, expansion, orchestrator
-            );
-        }
-    }
-
-    /**
-     * Dynamic generation path - uses simplified, step-by-step prompts.
-     * Works well with small models (gemma3:1b, phi3, etc.)
-     */
-    private List<JSONObject> generateSiblingsDynamic(
-            GoalModel goal,
-            EvolutionDimension activeDimension,
-            int targetPopulation,
-            TaskContext context,
-            Orchestrator orchestrator) throws Exception {
-        
-        context.log("[SIBLING_MANAGER] Dynamic generation starting...");
-        
-        // Use DynamicSiblingGenerator which handles everything step by step
-        List<JSONObject> variants = dynamicGenerator.generateSiblings(
-            goal.getPrimaryAction(),
-            goal,
-            context,
-            activeDimension
-        );
-        
-        // Adjust target population if needed
-        if (variants.size() < targetPopulation) {
-            context.log("[SIBLING_MANAGER] Dynamic generator produced " + variants.size() + 
-                       " variants, target was " + targetPopulation + ". Using available.");
-        }
-        
-        return variants;
-    }
-
-    /**
-     * Legacy generation path - uses complex JSON prompts.
-     * Only works well with large models (llama3:8b+, gemma3:12b+, etc.)
-     */
-    private List<JSONObject> generateSiblingsLegacy(
-            GoalModel goal,
-            EvolutionDimension activeDimension,
-            int targetPopulation,
-            String basePrompt,
-            String lineageContext,
-            List<String> rejectedSiblings,
-            TaskContext context,
-            SemanticGenome genome,
-            EvolutionTree tree,
-            String currentParentId,
-            int generation,
-            BranchVariant.ReasoningLevel reasoningLevel,
-            boolean architectureEnabled,
-            boolean implementationEnabled,
-            IntentExpansionResult expansion,
-            Orchestrator orchestrator) throws Exception {
-
-        context.log("[SIBLING_MANAGER] Legacy generation starting...");
-        
         List<TrajectoryBlueprint> currentBlueprints = new ArrayList<>();
         List<JSONObject> uniqueVariants = new ArrayList<>();
         StringBuilder siblingMemoryBuilder = new StringBuilder();
@@ -160,33 +86,29 @@ public class SiblingGenerationManager {
         boolean isMediated = context.getBehaviorProfile().hasTrait(BehaviorTrait.WORKFLOW_EXPORT_ONLY);
 
         int attempts = 0;
-        int maxAttempts = targetPopulation * 3;
+        int maxAttempts = targetPopulation * 3; // Refined search budget
+
+        context.log("[SIBLING_MANAGER] Sequential Sibling Generation active. Target: " + targetPopulation);
 
         while (uniqueVariants.size() < targetPopulation && attempts < maxAttempts) {
             attempts++;
             int i = uniqueVariants.size();
-            context.log("[SIBLING_MANAGER] Legacy Territory Exploration: Attempt " + attempts + 
-                       " (Current Population: " + i + ")");
+            context.log("[SIBLING_MANAGER] Territory Exploration: Attempt " + attempts + " (Current Population: " + i + ")");
 
             try {
-                String discoveryGoal = generation == 0 ? goal.getPrimaryAction() : 
-                                      goal.getPrimaryAction() + " (Mutation Gen " + generation + ")";
+                String discoveryGoal = generation == 0 ? goal.getPrimaryAction() : goal.getPrimaryAction() + " (Mutation Gen " + generation + ")";
                 String fullLineagePrompt = tree.reconstructLineagePrompt(currentParentId);
 
                 // 1. Sequential Blueprint Discovery
-                TrajectoryBlueprint bp = constructTrajectoryBlueprint(
-                    goal, expansion, currentBlueprints, generation,
-                    siblingMemoryBuilder.toString(), mapper, discoveryGoal, fullLineagePrompt, 
-                    activeDimension, context, currentParentId, targetPopulation
-                );
+                TrajectoryBlueprint bp = constructTrajectoryBlueprint(goal, expansion, currentBlueprints, generation,
+                        siblingMemoryBuilder.toString(), mapper, discoveryGoal, fullLineagePrompt, activeDimension, context,
+                        currentParentId, targetPopulation);
 
                 if (bp != null) {
-                    context.log("[AI_PROMPT] Sibling Blueprint Discovery Prompt:\n" + 
-                               discoveryGoal + "\n" + fullLineagePrompt + siblingMemoryBuilder.toString());
-                    
+                    context.log("[AI_PROMPT] Sibling Blueprint Discovery Prompt:\n" + discoveryGoal + "\n" + fullLineagePrompt + siblingMemoryBuilder.toString());
+                    // STABILIZATION: Ensure unique BP ID across iterations/attempts to prevent tree & git conflicts
                     if (bp.getId() == null || bp.getId().equals("unique-blueprint-id") || bp.getId().contains("seed")) {
-                        bp.setId("bp-iter" + context.getOrchestrationState().getIterationCount() + 
-                                "-v" + i + "-" + System.currentTimeMillis());
+                        bp.setId("bp-iter" + context.getOrchestrationState().getIterationCount() + "-v" + i + "-" + System.currentTimeMillis());
                     }
 
                     if (activeDimension != null) {
@@ -194,39 +116,29 @@ public class SiblingGenerationManager {
                         bp.getEngineeringDimensions().put("active_dimension_description", activeDimension.getDescription());
                     }
 
+                    // 2. Rigorous Technical Similarity Check (Search Memory)
                     if (isTechnicallyDuplicate(bp, currentBlueprints)) {
-                        context.log("[SIBLING_MANAGER] Territory Rejected: Blueprint strategy matches existing sibling: " + 
-                                   bp.getStrategy());
+                        context.log("[SIBLING_MANAGER] Territory Rejected: Blueprint strategy matches existing sibling: " + bp.getStrategy());
                         continue;
                     }
 
                     currentBlueprints.add(bp);
 
-                    EvolutionProgressPublisher.updateBranchStatus(context, bp.getId(), bp.getPhilosophy(), "analyzing", null);
-                    EvolutionProgressPublisher.updateActiveModel(context, 
-                        getModelName(orchestrator, context), 
-                        "Materializing Branch " + bp.getId()
-                    );
-
                     // 3. Sequential Blueprint Materialization
+                    EvolutionProgressPublisher.updateBranchStatus(context, bp.getId(), bp.getPhilosophy(), "analyzing", null);
+                    EvolutionProgressPublisher.updateActiveModel(context, orchestrator != null ? (orchestrator.getOllama() != null ? orchestrator.getOllama().getModel() : "local") : "local", "Materializing Branch " + bp.getId());
+
                     JSONObject variant = null;
                     for (int retry = 0; retry < EvolutionConstants.MAX_MATERIALIZATION_RETRIES; retry++) {
                         context.log("[SIBLING_MANAGER] Materialization Attempt " + (retry + 1) + " for " + bp.getId());
-                        String materializationPrompt = basePrompt + "\n" + fullLineagePrompt + 
-                                                       lineageContext + "\n" + siblingMemoryBuilder.toString();
+                        String materializationPrompt = basePrompt + "\n" + fullLineagePrompt + lineageContext + "\n" + siblingMemoryBuilder.toString();
                         context.log("[AI_PROMPT] Sibling Materialization Prompt:\n" + materializationPrompt);
-                        
-                        variant = spawner.spawnSingleBlueprint(
-                            goal, bp, basePrompt, fullLineagePrompt + lineageContext, 
-                            rejectedSiblings, siblingMemoryBuilder.toString(), isMediated, 
-                            context, activeDimension, genome
-                        );
+                        variant = spawner.spawnSingleBlueprint(goal, bp, basePrompt, fullLineagePrompt + lineageContext, rejectedSiblings, siblingMemoryBuilder.toString(), isMediated, context, activeDimension, genome);
                         if (variant != null) break;
                     }
 
                     if (variant == null) {
-                        context.log("[SIBLING_MANAGER] All materialization retries failed for " + bp.getId() + 
-                                   ". Triggering repair orchestration.");
+                        context.log("[SIBLING_MANAGER] All materialization retries failed for " + bp.getId() + ". Triggering repair orchestration.");
                         variant = spawner.autoRepair(bp, context);
                     }
 
@@ -238,8 +150,7 @@ public class SiblingGenerationManager {
 
                         // 4. Semantic Vector Divergence Validation
                         if (isTechnicallyIdentical(variant, uniqueVariants)) {
-                            context.log("[SIBLING_MANAGER] Territory Rejected: Materialized variant strategy matches existing sibling: " + 
-                                       variant.optString("strategy"));
+                            context.log("[SIBLING_MANAGER] Territory Rejected: Materialized variant strategy matches existing sibling: " + variant.optString("strategy"));
                             continue;
                         }
 
@@ -264,12 +175,9 @@ public class SiblingGenerationManager {
                         uniqueVariants.add(variant);
 
                         // 5. Update EvolutionTree with new mutation node
-                        registerMutationInTree(
-                            variant, bp, tree, currentParentId, activeDimension, 
-                            branchSuffix, basePrompt, generation, context, genome
-                        );
+                        registerMutationInTree(variant, bp, tree, currentParentId, activeDimension, branchSuffix, basePrompt, generation, context, genome);
 
-                        // 6. Accumulate Structured Sibling Memory
+                        // 6. Accumulate Structured Sibling Memory for NEXT sequential discovery
                         MutationRecord mut = tree.getNode(variant.optString("id")).getMutationRecord();
                         siblingMemoryBuilder.append("EXPLORED TERRITORY: ").append(variant.optString("strategy")).append("\n")
                                            .append("  PHILOSOPHY: ").append(variant.optString("semantic_anchor")).append("\n")
@@ -281,98 +189,13 @@ public class SiblingGenerationManager {
                 context.log("[SIBLING_MANAGER] Territory Exploration Error: " + e.getMessage());
             }
         }
-        
-        // If legacy generation produced nothing, fallback to dynamic
-        if (uniqueVariants.isEmpty()) {
-            context.log("[SIBLING_MANAGER] Legacy generation produced no variants. Falling back to dynamic generation.");
-            return generateSiblingsDynamic(goal, activeDimension, targetPopulation, context, orchestrator);
-        }
-        
         return uniqueVariants;
     }
 
-    /**
-     * Gets the model name from orchestrator using EMF types.
-     */
-    private String getModelName(Orchestrator orchestrator, TaskContext context) {
-        if (orchestrator != null) {
-            // Try Ollama first (EMF type)
-            Ollama ollama = orchestrator.getOllama();
-            if (ollama != null) {
-                String model = ollama.getModel();
-                if (model != null && !model.isEmpty()) {
-                    return model;
-                }
-            }
-            
-            // Try LLM (EMF type)
-            LLM llm = orchestrator.getLlm();
-            if (llm != null) {
-                String model = llm.getModel();
-                if (model != null && !model.isEmpty()) {
-                    return model;
-                }
-            }
-            
-            // Try remote model setting
-            String remoteModel = orchestrator.getRemoteModel();
-            if (remoteModel != null && !remoteModel.isEmpty()) {
-                return remoteModel;
-            }
-            
-            // Try local model setting
-            String localModel = orchestrator.getLocalModel();
-            if (localModel != null && !localModel.isEmpty()) {
-                return localModel;
-            }
-            
-            // Try hybrid model setting
-            String hybridModel = orchestrator.getHybridModel();
-            if (hybridModel != null && !hybridModel.isEmpty()) {
-                return hybridModel;
-            }
-        }
-        
-        // Fallback: check context metadata
-        if (context != null && context.getOrchestrationState() != null) {
-            Map<String, Object> metadata = context.getOrchestrationState().getMetadata();
-            if (metadata != null && metadata.containsKey("modelName")) {
-                return metadata.get("modelName").toString();
-            }
-        }
-        
-        // Check system property
-        String modelFromProperty = System.getProperty("ollama.model");
-        if (modelFromProperty != null && !modelFromProperty.isEmpty()) {
-            return modelFromProperty;
-        }
-        
-        return "unknown";
-    }
-
-    /**
-     * Gets model capability with caching.
-     */
-    private ModelCapability getModelCapability(String modelName) {
-        if (capabilityCache.containsKey(modelName)) {
-            return capabilityCache.get(modelName);
-        }
-        
-        ModelCapability capability = capabilityDetector.getModelCapability(modelName);
-        capabilityCache.put(modelName, capability);
-        return capability;
-    }
-
-    // ===== EXISTING HELPER METHODS =====
-    
-    private TrajectoryBlueprint constructTrajectoryBlueprint(
-            GoalModel goal, IntentExpansionResult expansion,
-            List<TrajectoryBlueprint> currentBlueprints, int generation, 
-            String siblingMemoryBuilder, TrajectoryTerritoryMapper mapper, 
-            String discoveryGoal, String fullLineagePrompt, 
-            EvolutionDimension activeDimension, TaskContext context,
+    private TrajectoryBlueprint constructTrajectoryBlueprint(GoalModel goal, IntentExpansionResult expansion,
+            List<TrajectoryBlueprint> currentBlueprints, int generation, String siblingMemoryBuilder,
+            TrajectoryTerritoryMapper mapper, String discoveryGoal, String fullLineagePrompt, EvolutionDimension activeDimension, TaskContext context,
             String currentParentId, int targetPopulation) throws Exception {
-        
         TrajectoryBlueprint bp = null;
 
         if (generation == 0 && expansion != null && expansion.getActiveDimensionId() != null) {
@@ -386,8 +209,7 @@ public class SiblingGenerationManager {
                         existingBp.getStrategy().equalsIgnoreCase(bv.getStrategy()));
 
                     if (!alreadyUsed) {
-                        context.log("[SIBLING_MANAGER] Seeding blueprint from intent expansion dimension: " + 
-                                   activeDim.getId() + " -> " + bv.getStrategy());
+                        context.log("[SIBLING_MANAGER] Seeding blueprint from intent expansion dimension: " + activeDim.getId() + " -> " + bv.getStrategy());
                         bp = new TrajectoryBlueprint("bp-seed-" + bv.getId(), goal.getPrimaryAction(), bv.getStrategy());
                         bp.setPhilosophy(bv.getSurvivalArgument());
                         bp.setSurvivalArgument(bv.getSurvivalArgument());
@@ -400,8 +222,7 @@ public class SiblingGenerationManager {
         }
 
         if (bp == null) {
-            EvolutionNode parentNode = container.getMemoryService(context.getProjectRoot())
-                .getEvolutionTree().getNode(currentParentId);
+            EvolutionNode parentNode = container.getMemoryService(context.getProjectRoot()).getEvolutionTree().getNode(currentParentId);
             TrajectoryBlueprint parentBp = null;
             if (parentNode != null) {
                 parentBp = new TrajectoryBlueprint(parentNode.getId(), goal.getPrimaryAction(), parentNode.getStrategy());
@@ -416,12 +237,7 @@ public class SiblingGenerationManager {
         return bp;
     }
 
-    private void registerMutationInTree(
-            JSONObject variant, TrajectoryBlueprint bp, EvolutionTree tree, 
-            String currentParentId, EvolutionDimension activeDimension, 
-            String branchSuffix, String basePrompt, int generation, 
-            TaskContext context, SemanticGenome genome) {
-        
+    private void registerMutationInTree(JSONObject variant, TrajectoryBlueprint bp, EvolutionTree tree, String currentParentId, EvolutionDimension activeDimension, String branchSuffix, String basePrompt, int generation, TaskContext context, SemanticGenome genome) {
         EvolutionNode node = new EvolutionNode();
         node.setId(variant.optString("id"));
         node.setParentId(currentParentId);
@@ -445,16 +261,14 @@ public class SiblingGenerationManager {
         EvolutionNode parentNode = tree.getNode(currentParentId);
         if (parentNode != null) {
             node.setParentStrengths(parentNode.getSelectionReason());
-            node.setParentWeaknesses("Mutation required to satisfy dimension: " + 
-                (activeDimension != null ? activeDimension.getId() : "Implementation"));
+            node.setParentWeaknesses("Mutation required to satisfy dimension: " + (activeDimension != null ? activeDimension.getId() : "Implementation"));
         }
 
         JSONArray variantActions = variant.optJSONArray("actions");
         if (variantActions != null) {
             for (int j = 0; j < variantActions.length(); j++) {
                 JSONObject vAction = variantActions.optJSONObject(j);
-                if (vAction != null && ("WRITE".equals(vAction.optString("operation")) || 
-                                        "CREATE".equals(vAction.optString("operation")))) {
+                if (vAction != null && ("WRITE".equals(vAction.optString("operation")) || "CREATE".equals(vAction.optString("operation")))) {
                     String target = vAction.optString("target");
                     String impl = vAction.optString("implementation");
                     if (target != null && impl != null) {
@@ -471,7 +285,6 @@ public class SiblingGenerationManager {
         mut.setReasoningFocus(variant.optString("reasoning_focus"));
         mut.setTradeoffs(variant.optString("tradeoffs"));
         mut.setSurvivalArgument(variant.optString("survival_argument"));
-        
         JSONObject dims = variant.optJSONObject("engineering_dimensions");
         if (dims != null) {
             for (Object k : dims.keySet()) {
@@ -494,23 +307,23 @@ public class SiblingGenerationManager {
         context.getKernelContext().getMemoryService().saveEvolutionTree();
         genome.recordMutation(mut);
 
-        container.getEventBus().publish(new RuntimeEvent(
-            RuntimeEventType.SIBLING_GENERATED, 
-            context.getSessionId(), 
-            node.getId(), 
-            node.getStrategy()
-        ));
+        container.getEventBus().publish(new RuntimeEvent(RuntimeEventType.SIBLING_GENERATED, context.getSessionId(), node.getId(), node.getStrategy()));
     }
 
     private boolean isTechnicallyDuplicate(TrajectoryBlueprint bp, List<TrajectoryBlueprint> existing) {
         for (TrajectoryBlueprint other : existing) {
+            // Strict match on strategy name is good, but allow different philosophies if name differs
             if (bp.getStrategy().equalsIgnoreCase(other.getStrategy())) return true;
+
+            // Allow similar philosophies if strategy names are meaningfully different,
+            // as small models often hover around similar conceptual buckets.
         }
         return false;
     }
 
     private boolean isTechnicallyIdentical(JSONObject variant, List<JSONObject> existing) {
         for (JSONObject other : existing) {
+            // Match on strategy name to prevent redundant proposals
             if (variant.optString("strategy").equalsIgnoreCase(other.optString("strategy"))) return true;
 
             JSONObject dims1 = variant.optJSONObject("engineering_dimensions");
@@ -526,6 +339,7 @@ public class SiblingGenerationManager {
                         }
                     }
                 }
+                // Relaxed threshold: only reject if dimensions are almost identical (95%)
                 if (total > 0 && (double) matches / total >= 0.95) return true;
             }
         }
@@ -535,13 +349,11 @@ public class SiblingGenerationManager {
     private JSONObject completeTrajectorySchema(JSONObject fragment, TrajectoryBlueprint bp, TaskContext context) {
         fragment.put("id", bp.getId());
         fragment.put("strategy_type", bp.getStrategyType().name());
-        
         if (!fragment.has("strategy") || fragment.optString("strategy").isEmpty()) {
             fragment.put("strategy", "Architectural strategy for " + bp.getPhilosophy());
         }
         fragment.put("semantic_justification", bp.getPhilosophy());
         fragment.put("semantic_anchor", bp.getPhilosophy());
-        
         if (!fragment.has("survival_argument") || fragment.optString("survival_argument").isEmpty()) {
             fragment.put("survival_argument", "Proposed as a divergent architectural candidate for " + bp.getPhilosophy());
         }
@@ -551,18 +363,35 @@ public class SiblingGenerationManager {
         if (!fragment.has("failure_risks") || fragment.optString("failure_risks").isEmpty()) {
             fragment.put("failure_risks", "Managed risks within " + bp.getStrategyType() + " evolutionary boundaries.");
         }
-        
         JSONObject dimensions = fragment.optJSONObject("engineering_dimensions");
         if (dimensions == null) {
             dimensions = new JSONObject();
             fragment.put("engineering_dimensions", dimensions);
         }
-        for (Map.Entry<String, String> entry : bp.getEngineeringDimensions().entrySet()) {
+        for (java.util.Map.Entry<String, String> entry : bp.getEngineeringDimensions().entrySet()) {
             String dimKey = entry.getKey();
             if (!dimensions.has(dimKey)) dimensions.put(dimKey, entry.getValue());
         }
         if (!dimensions.has("philosophy")) dimensions.put("philosophy", bp.getPhilosophy());
-        
         return fragment;
+    }
+    
+    private DarwinStrategyType determineStrategyType(int siblingIndex, int totalSiblings) {
+        if (siblingIndex == 0) return DarwinStrategyType.PROBABLE_SURVIVOR;
+        if (siblingIndex == 1) return DarwinStrategyType.MAXIMAL_DIVERGENCE;
+        if (siblingIndex == 2) return DarwinStrategyType.PHILOSOPHY_MAPPING;
+        return DarwinStrategyType.SPECULATIVE_ARCHITECTURE;
+    }
+    
+    private Map<String, String> getDefaultDimensions(String goal, String className) {
+        Map<String, String> dims = new HashMap<>();
+        dims.put("active_dimension", "IMPLEMENTATION");
+        dims.put("active_dimension_description", "Define the core functionality of the class");
+        dims.put("execution_model", "atomic");
+        dims.put("modularity_approach", "monolithic");
+        dims.put("abstraction_depth", "low");
+        dims.put("runtime_behavior", "deterministic");
+        dims.put("extensibility", "low");
+        return dims;
     }
 }

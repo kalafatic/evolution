@@ -28,10 +28,10 @@ public class DynamicSiblingGenerator {
         this.aiService = aiService;
         
         // Initialize the analyzers with the container
-        this.intentAnalyzer = new IntentAnalyzer("IntentAnalyzer", "IntentAnalyzer", container);
+        this.intentAnalyzer = new IntentAnalyzer(container);
         this.intentAnalyzer.setAiService(aiService);
         
-        this.promptOptimizer = new PromptOptimizer("PromptOptimizer", "PromptOptimizer", container);
+        this.promptOptimizer = new PromptOptimizer( container);
         this.promptOptimizer.setAiService(aiService);
         
         this.capabilityDetector = new ModelCapabilityDetector();
@@ -55,7 +55,7 @@ public class DynamicSiblingGenerator {
         
         // STEP 3: Detect model capability
         String modelName = getModelName(context);
-        ModelCapability capability = capabilityDetector.detect(modelName);
+        ModelCapability capability = capabilityDetector.getModelCapability(modelName);
         context.log("[DYNAMIC] Model: " + modelName + " | Capability: " + capability.size);
         
         // STEP 4: Generate siblings using the optimized strategy

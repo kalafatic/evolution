@@ -9,10 +9,9 @@ import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 
 public class PromptOptimizer extends BaseAiAgent {
 	
-	
     
-    public PromptOptimizer(String id, String type, SessionContainer container) {
-		super(id, type, container);
+    public PromptOptimizer(SessionContainer container) {
+		super("PromptOptimizer", "PromptOptimizer", container);
 	}
 
 	public PromptStrategy optimizePrompt(IntentProfile intent, TaskContext context) throws Exception {

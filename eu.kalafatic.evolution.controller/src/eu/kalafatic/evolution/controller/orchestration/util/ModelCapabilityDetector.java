@@ -12,7 +12,7 @@ public class ModelCapabilityDetector {
 	
     private final OllamaModelInfo ollamaFetcher = new OllamaModelInfo();
     
-    public ModelInfo getModelCapability(String modelName) {
+    public ModelInfo getModelInfo(String modelName) {
         // Check cache first
         if (cache.containsKey(modelName)) {
             return cache.get(modelName);
@@ -35,7 +35,7 @@ public class ModelCapabilityDetector {
      * Detects the capability of a model based on its name.
      * Uses caching to avoid repeated lookups.
      */
-    public ModelCapability detect(String modelName) {
+    public ModelCapability getModelCapability(String modelName) {
         // Check cache first
         if (cacheMC.containsKey(modelName)) {
             return cacheMC.get(modelName);

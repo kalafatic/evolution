@@ -1108,6 +1108,20 @@ public class IterationManager {
             MediatedExportManager exportManager = new MediatedExportManager();
 
             Object realityModelObj = context.getOrchestrationState().getMetadata().get("targetRealityModel");
+            if (realityModelObj == null) {
+            	  ChatSession session = context.getOrchestrator().getAiChat().getSessions().stream()
+                          .filter(s -> s != null && s.getId() != null && s.getId().equals(sessionId))
+                          .findFirst().orElse(null);
+            	
+            	  realityModelObj = realityDiscoveryAgent.discover("Analyze repository architecture and key hotspots", context, session.getTargetPath());
+            	  
+					if (realityModelObj != null) {
+						eu.kalafatic.evolution.controller.log.Log
+								.log("[ARCH_PAGE] Reality Model synthesized: " + ((TargetRealityModel) realityModelObj).getDomain());
+						// Save to metadata for extractModel to find it
+						context.getOrchestrationState().getMetadata().put("targetRealityModel", realityModelObj);
+					}
+            }
 
             // DRIVE UNIFIED PROJECTIONS
             TargetRealityModel model = (TargetRealityModel) realityModelObj;
