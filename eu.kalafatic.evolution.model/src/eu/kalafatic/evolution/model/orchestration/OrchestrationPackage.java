@@ -2621,6 +2621,15 @@ public interface OrchestrationPackage extends EPackage {
 	int EVALUATION_RESULT__FITNESS_HISTORY = 6;
 
 	/**
+	 * The feature id for the '<em><b>Summary</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int EVALUATION_RESULT__SUMMARY = 7;
+
+	/**
 	 * The number of structural features of the '<em>Evaluation Result</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -6311,6 +6320,17 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getEvaluationResult_FitnessHistory();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.EvaluationResult#getSummary <em>Summary</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Summary</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.EvaluationResult#getSummary()
+	 * @see #getEvaluationResult()
+	 * @generated
+	 */
+	EAttribute getEvaluationResult_Summary();
+
+	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.Test <em>Test</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -9347,6 +9367,14 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute EVALUATION_RESULT__FITNESS_HISTORY = eINSTANCE.getEvaluationResult_FitnessHistory();
+
+		/**
+		 * The meta object literal for the '<em><b>Summary</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute EVALUATION_RESULT__SUMMARY = eINSTANCE.getEvaluationResult_Summary();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.TestImpl <em>Test</em>}' class.

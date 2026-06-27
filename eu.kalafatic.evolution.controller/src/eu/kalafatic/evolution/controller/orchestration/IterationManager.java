@@ -124,7 +124,7 @@ public class IterationManager {
 	private final TaskPlanner taskPlanner;
 	private final TaskExecutor taskExecutor;
 	private final Evaluator evaluator;
-	private final IBaseDarwinEngine darwinEngine;
+	private IBaseDarwinEngine darwinEngine;
 	private final IterationMemoryService memoryService;
 	private final GoalUnderstandingEngine goalUnderstandingEngine;
 	private final SemanticEnvelopeEngine semanticEnvelopeEngine;
@@ -191,7 +191,7 @@ public class IterationManager {
 		return evaluator;
 	}
 
-	public DarwinEngine getDarwinEngine() {
+	public IBaseDarwinEngine getDarwinEngine() {
 		return darwinEngine;
 	}
 
@@ -301,7 +301,7 @@ public class IterationManager {
 		        context, 
 		        memoryService, 
 		        aiService,
-		        new SystemStateSignalProvider() // or pass the existing one
+		        new SystemStateSignalProvider(context.getProjectRoot(), context)
 		    );
 		    context.log("[KERNEL] Created Darwin Engine: " + darwinEngine.getMode());
 		
@@ -426,7 +426,7 @@ public class IterationManager {
 		
 		
 	    // Create mode-specific Darwin engine
-	    this.darwinEngine = DarwinEngineFactory.create(context, memoryService, aiService);
+	    this.darwinEngine = DarwinEngineFactory.create(context, memoryService, aiService, new SystemStateSignalProvider(context.getProjectRoot(), context));
 	    context.log("[KERNEL] Created Darwin Engine: " + darwinEngine.getMode());
 	}
 
@@ -641,7 +641,7 @@ public class IterationManager {
 	        response.setResultType(ResultType.CHAT);
 	        
 	        if (result.isSuccess()) {
-	            response.setSummary(result.getSummary() != null ? result.getSummary() : "Evolution completed successfully");
+	            response.setSummary(result.getSummary() != null ? result.getSummary() : (context.getOrchestrationState().getMetadata().get("iterationSummary") != null ? (String) context.getOrchestrationState().getMetadata().get("iterationSummary") : "Evolution completed successfully"));
 	            transition(SystemState.DONE, context);
 	        } else {
 	            response.setSummary("Evolution failed: " + String.join("; ", result.getErrors()));
@@ -1459,7 +1459,7 @@ public class IterationManager {
 
 			String sessionId = context.getSessionId();
 			String outputPath = null;
-			if (context.getOrchestrator().getAiChat() != null) {
+			if (context.getOrchestrator() != null && context.getOrchestrator().getAiChat() != null) {
 				ChatSession session = context.getOrchestrator().getAiChat().getSessions().stream()
 						.filter(s -> s != null && s.getId() != null && s.getId().equals(sessionId)).findFirst()
 						.orElse(null);
@@ -1470,12 +1470,16 @@ public class IterationManager {
 
 			Object realityModelObj = context.getOrchestrationState().getMetadata().get("targetRealityModel");
 			if (realityModelObj == null) {
-				ChatSession session = context.getOrchestrator().getAiChat().getSessions().stream()
-						.filter(s -> s != null && s.getId() != null && s.getId().equals(sessionId)).findFirst()
-						.orElse(null);
+				ChatSession session = null;
+				if (context.getOrchestrator() != null && context.getOrchestrator().getAiChat() != null) {
+					session = context.getOrchestrator().getAiChat().getSessions().stream()
+							.filter(s -> s != null && s.getId() != null && s.getId().equals(sessionId)).findFirst()
+							.orElse(null);
+				}
 
+				String targetPath = (session != null) ? session.getTargetPath() : context.getProjectRoot().getAbsolutePath();
 				realityModelObj = realityDiscoveryAgent.discover("Analyze repository architecture and key hotspots",
-						context, session.getTargetPath());
+						context, targetPath);
 
 				if (realityModelObj != null) {
 					eu.kalafatic.evolution.controller.log.Log.log("[ARCH_PAGE] Reality Model synthesized: "
@@ -1497,6 +1501,8 @@ public class IterationManager {
 				// Ensure model has the selected files for Genome B evolution
 				model.getSelectedFiles().clear();
 				model.getSelectedFiles().addAll(selectedPaths);
+				model.getImplementationFrontierFiles().clear();
+				model.getImplementationFrontierFiles().addAll(selectedPaths);
 
 				Object impacts = context.getOrchestrationState().getMetadata().get("impactPaths");
 				if (impacts instanceof List)
@@ -1848,7 +1854,7 @@ public class IterationManager {
 	    response.setResultType(ResultType.CHAT);
 	    
 	    if (result.isSuccess()) {
-	        response.setSummary(result.getSummary() != null ? result.getSummary() : "Evolution completed successfully");
+	        response.setSummary(result.getSummary() != null ? result.getSummary() : (context.getOrchestrationState().getMetadata().get("iterationSummary") != null ? (String) context.getOrchestrationState().getMetadata().get("iterationSummary") : "Evolution completed successfully"));
 	        transition(SystemState.DONE, context);
 	    } else {
 	        response.setSummary("Evolution failed: " + String.join("; ", result.getErrors()));

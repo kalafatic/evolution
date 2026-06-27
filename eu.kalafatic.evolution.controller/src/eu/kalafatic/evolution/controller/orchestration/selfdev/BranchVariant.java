@@ -42,6 +42,7 @@ public class BranchVariant {
     private double score;
     private boolean success;
     private String errorMessage;
+    private String chatResponse;
     private MediationCandidate mediationCandidate;
 
     // Extended Darwin Branch Model fields
@@ -98,6 +99,9 @@ public class BranchVariant {
 
     public String getErrorMessage() { return errorMessage; }
     public void setErrorMessage(String errorMessage) { this.errorMessage = errorMessage; }
+
+    public String getChatResponse() { return chatResponse; }
+    public void setChatResponse(String chatResponse) { this.chatResponse = chatResponse; }
 
     public List<String> getChangedFiles() { return changedFiles; }
     public void setChangedFiles(List<String> changedFiles) { this.changedFiles = changedFiles; }

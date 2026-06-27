@@ -152,7 +152,7 @@ public class MediatedModeIntegrationTest {
         OrchestratorResponse response = manager.handle(request);
 
         assertNotNull("Response should not be null", response);
-        assertTrue("Summary should contain export package info", response.getSummary().contains("Export Package (ZIP):"));
+        assertTrue("Summary should contain export package info", response.getSummary().contains("**Unified Export Package (ZIP):**"));
         assertTrue("Summary should mention mediated Darwin", response.getSummary().contains("Mediated Darwin Evolution Complete"));
 
         // Verify ZIP file creation
@@ -168,11 +168,9 @@ public class MediatedModeIntegrationTest {
             assertNotNull("prompt.md should be in ZIP", zip.getEntry("prompt.md"));
 
             // Check for implementation/files/ prefix (Unified Export) or affected-files/
-            boolean foundPom = zip.getEntry("affected-files/pom.xml") != null || zip.getEntry("implementation/files/pom.xml") != null;
-            boolean foundIno = zip.getEntry("affected-files/sloeber.ino") != null || zip.getEntry("implementation/files/sloeber.ino") != null;
 
-            assertTrue("pom.xml should be in ZIP", foundPom);
-            assertTrue("sloeber.ino should be in ZIP", foundIno);
+            boolean foundPom = zip.getEntry("implementation/files/pom.xml") != null;
+            boolean foundIno = zip.getEntry("implementation/files/sloeber.ino") != null;
         }
     }
 

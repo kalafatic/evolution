@@ -175,4 +175,26 @@ public interface EvaluationResult extends EObject {
 	 */
 	void setFitnessHistory(String value);
 
+	/**
+	 * Returns the value of the '<em><b>Summary</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Summary</em>' attribute.
+	 * @see #setSummary(String)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getEvaluationResult_Summary()
+	 * @model
+	 * @generated
+	 */
+	String getSummary();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.EvaluationResult#getSummary <em>Summary</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Summary</em>' attribute.
+	 * @see #getSummary()
+	 * @generated
+	 */
+	void setSummary(String value);
+
 } // EvaluationResult

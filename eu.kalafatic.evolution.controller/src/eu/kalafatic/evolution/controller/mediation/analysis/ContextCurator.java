@@ -53,7 +53,7 @@ public class ContextCurator {
         if (snapshot == null || snapshot.getNodes().isEmpty()) return new ArrayList<>();
 
         Map<String, Double> scores = new HashMap<>();
-        String lowerQuery = query.toLowerCase();
+        String lowerQuery = (query != null) ? query.toLowerCase() : "";
         String[] keywords = lowerQuery.split("\\s+");
 
         // 1. Calculate Graph Centrality (Abstract Importance)

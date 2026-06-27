@@ -38,4 +38,13 @@ public class DefaultFitnessEngine implements FitnessEngine {
     public Evaluator.Evaluation evaluateWithSnapshot() throws Exception {
         return evaluator.evaluateWithSnapshot();
     }
+
+    @Override
+    public double calculateScore(EvaluationResult result) {
+        if (result == null) return 0.0;
+        double score = 0.0;
+        if (result.isSuccess()) score += 0.5;
+        score += (result.getTestPassRate() * 0.5);
+        return Math.min(1.0, score);
+    }
 }

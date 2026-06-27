@@ -3,8 +3,9 @@ package eu.kalafatic.evolution.controller.orchestration.selfdev;
 import java.io.File;
 import java.util.List;
 
-import eu.kalafatic.evolution.controller.agents.BaseAiAgent;
+import eu.kalafatic.evolution.controller.orchestration.AiService;
 import eu.kalafatic.evolution.controller.orchestration.IterationManager;
+import eu.kalafatic.evolution.controller.orchestration.OrchestratorResponse;
 import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.engines.SelectionEngine;
@@ -13,19 +14,24 @@ import eu.kalafatic.evolution.controller.trajectory.Trajectory;
 import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.SelfDevDecision;
+import eu.kalafatic.evolution.model.orchestration.Task;
+import eu.kalafatic.evolution.model.orchestration.TaskStatus;
+
+import java.util.ArrayList;
 
 /**
  * Abstract base implementation of IBaseDarwinEngine.
  */
-public abstract class BaseDarwinEngine implements IBaseDarwinEngine {
+public abstract class AbstractBaseDarwinEngine implements IBaseDarwinEngine {
     
     protected final TaskContext context;
     protected final IterationMemoryService memoryService;
     protected final SelectionEngine selectionEngine;
     protected Evaluator evaluator;
     protected SessionContainer sessionContainer;
+    protected AiService aiService;
     
-    public BaseDarwinEngine(TaskContext context, IterationMemoryService memoryService) {
+    public AbstractBaseDarwinEngine(TaskContext context, IterationMemoryService memoryService) {
     	
         this.context = context;
         this.memoryService = memoryService;
@@ -47,7 +53,7 @@ public abstract class BaseDarwinEngine implements IBaseDarwinEngine {
         }
     }
     
-    public BaseDarwinEngine(TaskContext context, IterationMemoryService memoryService, 
+    public AbstractBaseDarwinEngine(TaskContext context, IterationMemoryService memoryService,
                             SessionContainer sessionContainer) {
     	    	
         this.context = context;
@@ -73,6 +79,17 @@ public abstract class BaseDarwinEngine implements IBaseDarwinEngine {
     public Evaluator getEvaluator() {
         return this.evaluator;
     }
+
+    @Override
+    public void setAiService(AiService aiService) {
+        this.aiService = aiService;
+    }
+
+    @Override
+    public abstract OrchestratorResponse orchestrateEvolution(eu.kalafatic.evolution.controller.orchestration.TaskRequest taskRequest, IterationManager iterationManager) throws Exception;
+
+    @Override
+    public abstract OrchestratorResponse evolve(String request, IterationManager iterationManager, eu.kalafatic.evolution.controller.orchestration.intent.EvolutionAssessment initialAssessment) throws Exception;
     
     @Override
     public abstract EvaluationResult runIteration(GoalModel goal, IterationManager manager) throws Exception;
@@ -161,5 +178,43 @@ public abstract class BaseDarwinEngine implements IBaseDarwinEngine {
         result.setSuccess(true);
         result.setDecision(SelfDevDecision.CONTINUE);
         return result;
+    }
+
+    protected EvaluationResult successResult(String summary) {
+        EvaluationResult result = successResult();
+        result.setSummary(summary);
+        context.log("[DARWIN] Iteration successful: " + summary);
+        return result;
+    }
+    /**
+     * Converts BranchVariant.Actions to EMF Task objects.
+     */
+    protected List<Task> convertActionsToTasks(List<BranchVariant.Action> actions) {
+        List<Task> tasks = new ArrayList<>();
+
+        if (actions == null || actions.isEmpty()) {
+            return tasks;
+        }
+
+        for (BranchVariant.Action action : actions) {
+            Task task = OrchestrationFactory.eINSTANCE.createTask();
+            task.setId("task-" + System.currentTimeMillis() + "-" + tasks.size());
+            task.setName(action.getDescription() != null ? action.getDescription() : action.getOperation());
+            task.setType(action.getOperation());
+            task.setResponse(action.getImplementation());
+            task.setDescription(action.getDescription());
+            task.setStatus(TaskStatus.READY);
+            task.setPriority(1);
+            task.setApprovalRequired(false);
+
+            // Store the target path
+            if (action.getTarget() != null && !action.getTarget().isEmpty()) {
+                task.getAttachments().add(action.getTarget());
+            }
+
+            tasks.add(task);
+        }
+
+        return tasks;
     }
 }

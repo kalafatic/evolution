@@ -73,8 +73,11 @@ public class DarwinEngineFactory {
             context.log("[DARWIN_FACTORY] Creating Chat Darwin Engine");
             return new ChatDarwinEngine(context, memoryService, aiService);
         } else {
+            // Standard mode - Use new StandardDarwinEngine for clean logic,
+            // but return it via the legacy DarwinEngine wrapper for broad compatibility if needed,
+            // or just use StandardDarwinEngine directly.
             context.log("[DARWIN_FACTORY] Creating Standard Darwin Engine");
-            return new DarwinEngine(context, memoryService, stateProvider, sessionContainer);
+            return new StandardDarwinEngine(context, memoryService, aiService);
         }
     }
 }

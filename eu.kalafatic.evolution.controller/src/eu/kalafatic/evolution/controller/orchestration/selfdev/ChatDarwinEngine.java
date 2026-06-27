@@ -16,7 +16,7 @@ import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
  * CHAT Darwin Engine - Handles conversations, simple Q&A.
  * Does NOT generate code. Focuses on understanding and response.
  */
-public class ChatDarwinEngine extends BaseDarwinEngine {
+public class ChatDarwinEngine extends AbstractBaseDarwinEngine {
     
     private final AiService aiService;
     
@@ -70,10 +70,12 @@ public class ChatDarwinEngine extends BaseDarwinEngine {
             variant.setSemanticAnchor(responseStyles[i]);
             
             // Generate response using AI service
-            String response = aiService.sendSimplePrompt(
+            String response = aiService.sendRequest(
+                context.getOrchestrator(),
                 "User asked: " + goal.getPrimaryAction() + "\n\n" +
                 "Respond with: " + responseStyles[i] + "\n" +
-                "Keep it conversational and helpful."
+                "Keep it conversational and helpful.",
+                context
             );
             
             variant.setChatResponse(response);
@@ -82,6 +84,11 @@ public class ChatDarwinEngine extends BaseDarwinEngine {
         }
         
         return variants;
+    }
+
+    @Override
+    public OrchestratorResponse orchestrateEvolution(eu.kalafatic.evolution.controller.orchestration.TaskRequest taskRequest, IterationManager iterationManager) throws Exception {
+        return evolve(taskRequest.getPrompt(), iterationManager, null);
     }
     
     @Override

@@ -51,8 +51,10 @@ public class PromptSynthesizer {
         }
 
         sb.append("## PROJECT SNAPSHOT (Metadata-Only)\n");
-        sb.append("Architecture: ").append(snapshot.getMetadata().get("architectureInference")).append("\n");
-        sb.append("Technologies: ").append(snapshot.getMetadata().get("detectedTechnologies")).append("\n\n");
+        Object arch = snapshot.getMetadata().get("architectureInference");
+        sb.append("Architecture: ").append(arch != null ? arch : "Unknown").append("\n");
+        Object tech = snapshot.getMetadata().get("detectedTechnologies");
+        sb.append("Technologies: ").append(tech != null ? tech : "Unknown").append("\n\n");
 
         if (realityModel == null) {
             realityModel = (eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel) snapshot.getMetadata().get("targetRealityModel");

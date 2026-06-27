@@ -30,6 +30,7 @@ import eu.kalafatic.evolution.model.orchestration.SelfDevDecision;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.EvaluationResultImpl#getDecision <em>Decision</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.EvaluationResultImpl#getUserSatisfaction <em>User Satisfaction</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.EvaluationResultImpl#getFitnessHistory <em>Fitness History</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.EvaluationResultImpl#getSummary <em>Summary</em>}</li>
  * </ul>
  *
  * @generated
@@ -164,6 +165,26 @@ public class EvaluationResultImpl extends MinimalEObjectImpl.Container implement
 	 * @ordered
 	 */
 	protected String fitnessHistory = FITNESS_HISTORY_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getSummary() <em>Summary</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getSummary()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String SUMMARY_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getSummary() <em>Summary</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getSummary()
+	 * @generated
+	 * @ordered
+	 */
+	protected String summary = SUMMARY_EDEFAULT;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -341,6 +362,29 @@ public class EvaluationResultImpl extends MinimalEObjectImpl.Container implement
 	 * @generated
 	 */
 	@Override
+	public String getSummary() {
+		return summary;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setSummary(String newSummary) {
+		String oldSummary = summary;
+		summary = newSummary;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.EVALUATION_RESULT__SUMMARY, oldSummary, summary));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public Object eGet(int featureID, boolean resolve, boolean coreType) {
 		switch (featureID) {
 			case OrchestrationPackage.EVALUATION_RESULT__SUCCESS:
@@ -357,6 +401,8 @@ public class EvaluationResultImpl extends MinimalEObjectImpl.Container implement
 				return getUserSatisfaction();
 			case OrchestrationPackage.EVALUATION_RESULT__FITNESS_HISTORY:
 				return getFitnessHistory();
+			case OrchestrationPackage.EVALUATION_RESULT__SUMMARY:
+				return getSummary();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -392,6 +438,9 @@ public class EvaluationResultImpl extends MinimalEObjectImpl.Container implement
 			case OrchestrationPackage.EVALUATION_RESULT__FITNESS_HISTORY:
 				setFitnessHistory((String)newValue);
 				return;
+			case OrchestrationPackage.EVALUATION_RESULT__SUMMARY:
+				setSummary((String)newValue);
+				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -425,6 +474,9 @@ public class EvaluationResultImpl extends MinimalEObjectImpl.Container implement
 			case OrchestrationPackage.EVALUATION_RESULT__FITNESS_HISTORY:
 				setFitnessHistory(FITNESS_HISTORY_EDEFAULT);
 				return;
+			case OrchestrationPackage.EVALUATION_RESULT__SUMMARY:
+				setSummary(SUMMARY_EDEFAULT);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -451,6 +503,8 @@ public class EvaluationResultImpl extends MinimalEObjectImpl.Container implement
 				return userSatisfaction != USER_SATISFACTION_EDEFAULT;
 			case OrchestrationPackage.EVALUATION_RESULT__FITNESS_HISTORY:
 				return FITNESS_HISTORY_EDEFAULT == null ? fitnessHistory != null : !FITNESS_HISTORY_EDEFAULT.equals(fitnessHistory);
+			case OrchestrationPackage.EVALUATION_RESULT__SUMMARY:
+				return SUMMARY_EDEFAULT == null ? summary != null : !SUMMARY_EDEFAULT.equals(summary);
 		}
 		return super.eIsSet(featureID);
 	}
@@ -479,6 +533,8 @@ public class EvaluationResultImpl extends MinimalEObjectImpl.Container implement
 		result.append(userSatisfaction);
 		result.append(", fitnessHistory: ");
 		result.append(fitnessHistory);
+		result.append(", summary: ");
+		result.append(summary);
 		result.append(')');
 		return result.toString();
 	}

@@ -5,7 +5,9 @@ import java.util.List;
 
 import eu.kalafatic.evolution.controller.orchestration.AiService;
 import eu.kalafatic.evolution.controller.orchestration.IterationManager;
+import eu.kalafatic.evolution.controller.orchestration.OrchestratorResponse;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.orchestration.TaskRequest;
 import eu.kalafatic.evolution.controller.orchestration.goal.GoalModel;
 import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
@@ -17,8 +19,8 @@ import eu.kalafatic.evolution.model.orchestration.TaskStatus;
  * SELF-DEV Darwin Engine - Handles self-development with external supervisor.
  * Controls builds, tests, git operations, and auto-merge.
  */
-public class SelfDevDarwinEngine extends BaseDarwinEngine {
-    
+public class SelfDevDarwinEngine extends AbstractBaseDarwinEngine {
+
     private final SelfDevSupervisor supervisor;
     private String currentBranch;
     
@@ -26,13 +28,40 @@ public class SelfDevDarwinEngine extends BaseDarwinEngine {
                                SelfDevSupervisor supervisor, AiService aiService) {
         super(context, memoryService);
         this.supervisor = supervisor;
-        this.currentBranch = supervisor.getMainBranch();
+        this.currentBranch = supervisor != null ? supervisor.getMainBranch() : "master";
+        this.aiService = aiService;
+    }
+
+    @Override
+    public OrchestratorResponse orchestrateEvolution(TaskRequest taskRequest, IterationManager iterationManager) throws Exception {
+        return evolve(taskRequest.getPrompt(), iterationManager, null);
+    }
+
+    @Override
+    public OrchestratorResponse evolve(String request, IterationManager manager, eu.kalafatic.evolution.controller.orchestration.intent.EvolutionAssessment initialAssessment) throws Exception {
+        // Get or create goal model
+        GoalModel goal = (GoalModel) context.getOrchestrationState().getMetadata().get("goalModel");
+        if (goal == null) {
+            goal = manager.getGoalUnderstandingEngine().understand(request, context);
+            context.getOrchestrationState().getMetadata().put("goalModel", goal);
+        }
+
+        // Run the iteration
+        EvaluationResult result = runIteration(goal, manager);
+
+        OrchestratorResponse response = new OrchestratorResponse();
+        response.setSummary(result.getSummary() != null ? result.getSummary() : (result.isSuccess() ? "Self-Dev evolution successful" : "Self-Dev evolution failed"));
+        return response;
     }
     
     @Override
     public EvaluationResult runIteration(GoalModel goal, IterationManager manager) throws Exception {
         context.log("[SELF_DEV_DARWIN] Running self-dev iteration for: " + goal.getPrimaryAction());
         
+        if (supervisor == null) {
+            return failedResult("Supervisor not configured for Self-Dev mode");
+        }
+
         // 1. Create branch
         String branchName = "exp/selfdev/" + context.getSessionId().substring(0, 8) + 
                            "-" + System.currentTimeMillis();
@@ -46,7 +75,7 @@ public class SelfDevDarwinEngine extends BaseDarwinEngine {
         context.log("[SELF_DEV_DARWIN] Branch created: " + branchName);
         context.getOrchestrationState().getMetadata().put("selfDevBranch", branchName);
         
-        // 2. Generate code variants using the original DarwinEngine
+        // 2. Generate code variants using the Mutation Engine
         List<BranchVariant> variants = generateVariants(goal, manager);
         
         if (variants.isEmpty()) {
@@ -71,6 +100,11 @@ public class SelfDevDarwinEngine extends BaseDarwinEngine {
         // 5. Execute winner
         EvaluationResult result = executeWinner(winner, manager);
         
+        if (!result.isSuccess()) {
+            supervisor.rollback(branchName, "Execution failed");
+            return result;
+        }
+
         // 6. Build and test (Supervisor)
         context.log("[SELF_DEV_DARWIN] Running build and tests...");
         BuildResult buildResult = supervisor.buildAndTest(branchName, context);
@@ -98,11 +132,13 @@ public class SelfDevDarwinEngine extends BaseDarwinEngine {
                 context.log("[SELF_DEV_DARWIN] Merged successfully: " + mergeResult.commitId);
                 result.setSuccess(true);
                 result.setDecision(SelfDevDecision.CONTINUE);
+                result.setSummary("Merged successfully: " + mergeResult.commitId);
             } else {
                 context.log("[SELF_DEV_DARWIN] Merge failed: " + mergeResult.message);
                 supervisor.rollback(branchName, "Merge failed: " + mergeResult.message);
                 result.setSuccess(false);
                 result.setDecision(SelfDevDecision.ROLLBACK);
+                result.setSummary("Merge failed: " + mergeResult.message);
             }
         } else {
             supervisor.rollback(branchName, "Fitness threshold not met: " + fitness.score);
@@ -110,6 +146,7 @@ public class SelfDevDarwinEngine extends BaseDarwinEngine {
             result.setSuccess(false);
             result.setDecision(SelfDevDecision.ROLLBACK);
             result.getErrors().add("Fitness threshold not met: " + fitness.score);
+            result.setSummary("Fitness threshold not met: " + fitness.score);
         }
         
         return result;
@@ -117,8 +154,14 @@ public class SelfDevDarwinEngine extends BaseDarwinEngine {
     
     @Override
     public List<BranchVariant> generateVariants(GoalModel goal, IterationManager manager) throws Exception {
-        // Delegate to the original DarwinEngine's generateProposals
-        return manager.getDarwinEngine().generateProposals(context, goal, manager);
+        // Delegate variant generation to the Mutation Engine capability
+        IBaseDarwinEngine engine = (manager != null) ? manager.getDarwinEngine() : null;
+        if (engine != null && engine != this) {
+            return engine.generateVariants(goal, manager);
+        }
+        // Fallback to standard mutation logic if we are the primary engine or manager is null
+        StandardDarwinEngine standard = new StandardDarwinEngine(context, memoryService, aiService);
+        return standard.generateVariants(goal, manager);
     }
     
     @Override
@@ -128,6 +171,10 @@ public class SelfDevDarwinEngine extends BaseDarwinEngine {
             if (v.getActions() != null && !v.getActions().isEmpty()) {
                 valid.add(v);
             }
+        }
+        // In Self-Dev, we are more lenient if no actions yet (they might be planned during executeWinner)
+        if (valid.isEmpty() && variants != null) {
+            return variants;
         }
         return valid;
     }
@@ -139,50 +186,23 @@ public class SelfDevDarwinEngine extends BaseDarwinEngine {
         // Convert BranchVariant.Actions to EMF Tasks
         List<Task> tasks = convertActionsToTasks(winner.getActions());
         
+        if (tasks.isEmpty() && manager != null) {
+            tasks = manager.getTaskPlanner().generateTasksFromVariant(context, winner);
+        }
+
         // Apply the code changes
-        boolean success = manager.executeTasksWithRetries(tasks);
+        boolean success = (manager != null) ? manager.executeTasksWithRetries(tasks) : false;
         
-        if (success) {
+        if (success && manager != null) {
             manager.getGitManager().commit("Self-Dev: " + winner.getStrategy(), context);
         }
         
         EvaluationResult result = OrchestrationFactory.eINSTANCE.createEvaluationResult();
         result.setSuccess(success);
         result.setDecision(success ? SelfDevDecision.CONTINUE : SelfDevDecision.ROLLBACK);
+        result.setSummary(success ? "Winner executed successfully" : "Winner execution failed");
         
         return result;
-    }
-    
-    /**
-     * Converts BranchVariant.Actions to EMF Task objects.
-     */
-    private List<Task> convertActionsToTasks(List<BranchVariant.Action> actions) {
-        List<Task> tasks = new ArrayList<>();
-        
-        if (actions == null || actions.isEmpty()) {
-            return tasks;
-        }
-        
-        for (BranchVariant.Action action : actions) {
-            Task task = OrchestrationFactory.eINSTANCE.createTask();
-            task.setId("task-" + System.currentTimeMillis() + "-" + tasks.size());
-            task.setName(action.getDescription() != null ? action.getDescription() : action.getOperation());
-            task.setType(action.getOperation());
-            task.setResponse(action.getImplementation());
-            task.setDescription(action.getDescription());
-            task.setStatus(TaskStatus.READY);
-            task.setPriority(1);
-            task.setApprovalRequired(false);
-            
-            // Store the target path
-            if (action.getTarget() != null && !action.getTarget().isEmpty()) {
-                task.getAttachments().add(action.getTarget());
-            }
-            
-            tasks.add(task);
-        }
-        
-        return tasks;
     }
     
     @Override

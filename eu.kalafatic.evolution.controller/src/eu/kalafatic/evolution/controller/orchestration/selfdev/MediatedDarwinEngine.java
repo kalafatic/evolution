@@ -3,6 +3,7 @@ package eu.kalafatic.evolution.controller.orchestration.selfdev;
 import java.util.ArrayList;
 import java.util.List;
 
+import eu.kalafatic.evolution.controller.orchestration.OrchestratorResponse;
 import eu.kalafatic.evolution.controller.mediation.model.Hotspot;
 import eu.kalafatic.evolution.controller.mediation.model.MediationCandidate;
 import eu.kalafatic.evolution.controller.mediation.model.MediationResult;
@@ -17,7 +18,7 @@ import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
  * MEDIATED Darwin Engine - Handles LLM refinement package generation.
  * Does NOT generate code. Generates: prompt + selected files + context.
  */
-public class MediatedDarwinEngine extends BaseDarwinEngine {
+public class MediatedDarwinEngine extends AbstractBaseDarwinEngine {
     
     private final AiService aiService;
     private final MediationEngine mediationEngine;
@@ -28,6 +29,29 @@ public class MediatedDarwinEngine extends BaseDarwinEngine {
         this.mediationEngine = new MediationEngine();
     }
     
+    @Override
+    public OrchestratorResponse orchestrateEvolution(eu.kalafatic.evolution.controller.orchestration.TaskRequest taskRequest, IterationManager iterationManager) throws Exception {
+        return evolve(taskRequest.getPrompt(), iterationManager, null);
+    }
+
+    @Override
+    public OrchestratorResponse evolve(String request, IterationManager manager, eu.kalafatic.evolution.controller.orchestration.intent.EvolutionAssessment initialAssessment) throws Exception {
+        // Get or create goal model
+        GoalModel goal = (GoalModel) context.getOrchestrationState().getMetadata().get("goalModel");
+        if (goal == null) {
+            goal = manager.getGoalUnderstandingEngine().understand(request, context);
+            context.getOrchestrationState().getMetadata().put("goalModel", goal);
+        }
+
+        // Run the iteration
+        EvaluationResult result = runIteration(goal, manager);
+
+        OrchestratorResponse response = new OrchestratorResponse();
+        response.setResultType(eu.kalafatic.evolution.controller.orchestration.ResultType.CHAT);
+        response.setSummary(result.isSuccess() ? "Mediated evolution successful" : "Mediated evolution failed");
+        return response;
+    }
+
     @Override
     public EvaluationResult runIteration(GoalModel goal, IterationManager manager) throws Exception {
         context.log("[MEDIATED_DARWIN] Running mediation iteration for: " + goal.getPrimaryAction());

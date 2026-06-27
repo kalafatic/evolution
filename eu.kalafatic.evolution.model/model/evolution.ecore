@@ -372,6 +372,7 @@
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="decision" eType="#//SelfDevDecision"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="userSatisfaction" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="fitnessHistory" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="summary" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EEnum" name="TestStatus">
     <eLiterals name="PENDING"/>

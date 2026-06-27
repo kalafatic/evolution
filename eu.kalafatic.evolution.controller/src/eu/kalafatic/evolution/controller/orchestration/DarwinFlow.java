@@ -74,12 +74,24 @@ public class DarwinFlow implements IOrchestrationFlow {
 
     @Deprecated
     public List<BranchVariant> generateProposals(TaskContext context, GoalModel goal) throws Exception {
-	return manager.getDarwinEngine().generateProposals(context, goal, manager);
+	if (manager.getDarwinEngine() instanceof eu.kalafatic.evolution.controller.orchestration.selfdev.DarwinEngine) {
+		return ((eu.kalafatic.evolution.controller.orchestration.selfdev.DarwinEngine) manager.getDarwinEngine()).generateProposals(context, goal, manager);
+	}
+	return manager.getDarwinEngine().generateVariants(goal, manager);
     }
 
     @Deprecated
     public EvaluationResult executeWinner(TaskContext context, eu.kalafatic.evolution.controller.supervision.EvolutionDecision decision, List<BranchVariant> variants, GoalModel goal) throws Exception {
-	return manager.getDarwinEngine().executeWinner(context, decision, variants, goal, manager);
+	if (manager.getDarwinEngine() instanceof eu.kalafatic.evolution.controller.orchestration.selfdev.DarwinEngine) {
+		return ((eu.kalafatic.evolution.controller.orchestration.selfdev.DarwinEngine) manager.getDarwinEngine()).executeWinner(context, decision, variants, goal, manager);
+	}
+
+	String winnerId = decision.getSelectedVariantId();
+	BranchVariant winner = variants.stream().filter(v -> v.getId().equals(winnerId)).findFirst().orElse(null);
+	if (winner != null) {
+		return manager.getDarwinEngine().executeWinner(winner, manager);
+	}
+	return manager.failedResult();
     }
 
     public VariantExecutionContext evaluateVariantParallel(BranchVariant variant, eu.kalafatic.evolution.controller.orchestration.selfdev.TaskPlanner planner, TaskContext context, String baseCommit, eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionaryPressureVector pressure) {

@@ -151,7 +151,7 @@ public class MediatedExportManager {
                 String normalizedPath = path.replace('\\', '/');
                 File file = new File(projectRoot, normalizedPath);
                 if (file.exists() && file.isFile()) {
-                    addFileToZip(zos, "affected-files/" + normalizedPath, file);
+                    addFileToZip(zos, "implementation/files/" + normalizedPath, file);
                 } else {
                     // Try absolute path if relative fails
                     File absFile = new File(normalizedPath);
@@ -160,7 +160,7 @@ public class MediatedExportManager {
                         if (normalizedPath.startsWith(projectRoot.getAbsolutePath())) {
                             zipEntryName = projectRoot.toPath().relativize(absFile.toPath()).toString().replace('\\', '/');
                         }
-                        addFileToZip(zos, "affected-files/" + zipEntryName, absFile);
+                        addFileToZip(zos, "implementation/files/" + zipEntryName, absFile);
                     }
                 }
             }
