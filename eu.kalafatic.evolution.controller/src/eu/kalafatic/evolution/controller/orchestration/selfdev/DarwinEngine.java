@@ -391,7 +391,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             }
 
             // ADAPTIVE KERNEL: Intensity-based analysis gating
-            int intensity = context.getExecutionProfile().getIntensity();
+            int intensity = context.getExecutionProfile() != null ? context.getExecutionProfile().getIntensity() : 2;
             eu.kalafatic.evolution.controller.orchestration.intent.EvolutionAssessment initialAssessment = null;
 
             if (intensity > 1) {
@@ -502,7 +502,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         }
 
         // 2. ADAPTIVE KERNEL: Intensity Scaling
-        int intensity_val = context.getExecutionProfile().getIntensity();
+        int intensity_val = context.getExecutionProfile() != null ? context.getExecutionProfile().getIntensity() : 2;
 
         int minIterations = 1;
         PromptInstructions instructions = (context.getOrchestrator() != null && context.getOrchestrator().getAiChat() != null) ?
@@ -512,12 +512,12 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         }
 
         // Enforce multiple iterations for non-CHAT tasks as requested
-        if (minIterations < 2 && intensity_val >= 1 && context.getExecutionProfile().getCapability() != eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType.CHAT) {
+        if (minIterations < 2 && intensity_val >= 1 && (context.getExecutionProfile() == null || context.getExecutionProfile().getCapability() != eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType.CHAT)) {
             minIterations = 2;
         }
 
         // Cap iterations for CHAT capability to avoid over-evolution of simple interactions
-        if (context.getExecutionProfile().getCapability() == eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType.CHAT) {
+        if (context.getExecutionProfile() != null && context.getExecutionProfile().getCapability() == eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType.CHAT) {
             if (minIterations > 1) minIterations = 1;
         }
 
@@ -1534,10 +1534,17 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         context.log("Stage: Goal\nGoalModel: " + goal);
         context.log("[DARWIN] Generating trajectory-driven variants for goal: " + goal.getPrimaryAction());
 
+        // ADAPTIVE KERNEL: Ensure execution profile is initialized (Diagnostic Safety)
+        if (context.getExecutionProfile() == null) {
+             eu.kalafatic.evolution.controller.kernel.EvolutionProfile profile_init =
+                 eu.kalafatic.evolution.controller.kernel.EvolutionIntensityCalculator.calculate(context, trajectory, null);
+             context.getOrchestrationState().setExecutionProfile(profile_init);
+        }
+
         // ADAPTIVE KERNEL: Uniform Intensity Calculation
         eu.kalafatic.evolution.controller.kernel.EvolutionProfile profile =
             context.getExecutionProfile();
-        int intensity = profile.getIntensity();
+        int intensity = profile != null ? profile.getIntensity() : 2;
 
 
         AtomicIntentAnalysis atomicAnalysis = (AtomicIntentAnalysis) context.getOrchestrationState().getMetadata().get("atomicAnalysis");
@@ -1767,7 +1774,9 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         EvolutionDimension activeDimension = dimensionEngine.selectNextDimension(genome, context);
 
         context.getOrchestrationState().getMetadata().put("current_dimension", activeDimension.getId());
+        context.getOrchestrationState().getMetadata().put("current_dimension_description", activeDimension.getDescription());
         context.log("[DARWIN] Scheduled Mutation Dimension: " + activeDimension.getId());
+
 
         // EXPLICIT EVOLUTION STATE (Milestone Requirement 7)
         context.log("[EVOLUTION_STATE] Goal: " + goal.getPrimaryAction());
@@ -1873,6 +1882,13 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
         }
 
         Object envObj = context.getOrchestrationState().getMetadata().get("semanticEnvelope");
+        if (envObj == null && context.getMetadata().containsKey("testMode")) {
+             SemanticEnvelope defaultEnv = new SemanticEnvelope();
+             defaultEnv.setCoreIntent(goal.getPrimaryAction());
+             context.getOrchestrationState().getMetadata().put("semanticEnvelope", defaultEnv);
+             envObj = defaultEnv;
+        }
+
         final SemanticEnvelope envelope;
         if (envObj instanceof SemanticEnvelope) {
             envelope = (SemanticEnvelope) envObj;

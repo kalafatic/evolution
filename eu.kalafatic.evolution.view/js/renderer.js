@@ -452,7 +452,7 @@ window.ChatApp.Renderer = {
 
         // Auto-open panel if closed
         if ((!panel.style.width || panel.style.width === '0px' || panel.style.width === '0') && !document.body.classList.contains('simple')) {
-             panel.style.width = '240px'; // Increased default width for HTML tree
+             panel.style.width = '240px';
              if (window.ChatApp && window.ChatApp.UI) window.ChatApp.UI.updateLayout();
         }
 
@@ -468,71 +468,99 @@ window.ChatApp.Renderer = {
             } catch(e) {}
         });
 
-        const sortedIters = Object.keys(iterations).sort((a, b) => parseInt(a) - parseInt(b));
-        if (sortedIters.length === 0) return;
+        const sortedIterCounts = Object.keys(iterations).sort((a, b) => parseInt(a) - parseInt(b));
+        if (sortedIterCounts.length === 0) return;
 
-        let rootHtml = "";
+        // Build the hierarchy based on parentId (Sync with Darwin Engine)
+        const rootNodes = [];
+        const iterToNode = {};
 
-        // Recursive renderer for the lineage
-        const renderIteration = (iterIdx) => {
-            if (iterIdx >= sortedIters.length) return "";
-
-            const iterKey = sortedIters[iterIdx];
-            const data = iterations[iterKey];
-
-            let html = `
-                <div class="tree-node" title="Iteration ${data.iterationCount}: ${data.currentTask || ''}">
-                    <div class="node-title">I${data.iterationCount}</div>
-                </div>
-            `;
+        sortedIterCounts.forEach(count => {
+            const data = iterations[count];
+            const iterNodeId = 'iter-' + count;
+            const iterNode = {
+                id: iterNodeId,
+                type: 'iteration',
+                data: data,
+                children: []
+            };
+            iterToNode[count] = iterNode;
 
             const branches = data.branches || [];
-            const hasBranches = branches.length > 0;
-            const hasNextIter = iterIdx + 1 < sortedIters.length;
+            branches.forEach(b => {
+                const branchId = b.id;
+                const branchNode = {
+                    id: branchId,
+                    type: 'branch',
+                    data: b,
+                    iterationData: data,
+                    isWinner: data.winnerId === b.id,
+                    children: []
+                };
+                iterNode.children.push(branchNode);
+            });
 
-            if (hasBranches) {
-                html += `<div class="tree-vline"></div>`;
-                html += `<div class="tree-children">`;
-
-                let foundWinner = false;
-                branches.forEach(b => {
-                    const isWinner = data.winnerId === b.id;
-                    if (isWinner) foundWinner = true;
-                    const isFailed = b.status === 'failed' || b.status === 'rejected';
-
-                    html += `<div class="tree-child">`;
-                    html += `<div class="tree-vline"></div>`;
-                    html += `
-                        <div class="tree-node branch ${isFailed ? 'failed' : ''} ${isWinner ? 'winner' : ''}" title="Branch ${b.id}${b.score !== undefined ? ' - Score: ' + Math.round(b.score*100) : ''}">
-                            <div class="node-title">${isWinner ? '🏆' : 'B' + String(b.id).split('-').pop()}</div>
-                        </div>
-                    `;
-
-                    // If this branch is the winner, nest the next iteration under it
-                    if (isWinner && hasNextIter) {
-                        html += `<div class="tree-vline"></div>`;
-                        html += renderIteration(iterIdx + 1);
+            // Connect iteration to its parent branch if possible
+            if (data.parentId) {
+                let parentFound = false;
+                for (let prevCount of sortedIterCounts) {
+                    if (parseInt(prevCount) >= parseInt(count)) break;
+                    const prevIterNode = iterToNode[prevCount];
+                    const parentBranch = prevIterNode.children.find(bn => bn.id === data.parentId);
+                    if (parentBranch) {
+                        parentBranch.children.push(iterNode);
+                        parentFound = true;
+                        break;
                     }
-
-                    html += `</div>`; // .tree-child
-                });
-
-                // If there's a next iteration but no winner found in the branches (linear lineage fallback)
-                if (hasNextIter && !foundWinner) {
-                     html += `<div class="tree-child"><div class="tree-vline"></div><div class="tree-node branch winner"><div class="node-title">🏆</div></div><div class="tree-vline"></div>${renderIteration(iterIdx + 1)}</div>`;
                 }
+                if (!parentFound) rootNodes.push(iterNode);
+            } else {
+                rootNodes.push(iterNode);
+            }
+        });
 
-                html += `</div>`; // .tree-children
-            } else if (hasNextIter) {
-                 // Linear continuation if no branches reported yet for this iteration but a next one exists
-                 html += `<div class="tree-vline"></div>`;
-                 html += renderIteration(iterIdx + 1);
+        // Recursive renderer for the hierarchy
+        const renderNode = (node) => {
+            let html = "";
+            if (node.type === 'iteration') {
+                const d = node.data;
+                const tooltip = `Iteration: ${d.iterationCount}\nDimension: ${d.currentDimension || 'N/A'}\nDescription: ${d.currentDimensionDescription || 'N/A'}\nTask: ${d.currentTask || ''}`;
+
+                html += `
+                    <div class="tree-node" title="${window.ChatApp.Utils.escapeHtml(tooltip)}">
+                        <div class="node-title">I${d.iterationCount}</div>
+                    </div>
+                `;
+            } else {
+                const b = node.data;
+                const score = b.score !== undefined ? (Math.round(b.score * 100) + '%') : 'N/A';
+                const isWinner = node.isWinner;
+                const isFailed = b.status === 'failed' || b.status === 'rejected';
+                const id = String(b.id).split('-').pop();
+                const tooltip = `Branch: ${b.id}\nResult: ${b.status} (Score: ${score})\nStrategy: ${b.strategy || ''}`;
+
+                html += `
+                    <div class="tree-node branch ${isFailed ? 'failed' : ''} ${isWinner ? 'winner' : ''}" title="${window.ChatApp.Utils.escapeHtml(tooltip)}">
+                        <div class="node-title">${isWinner ? '🏆' : 'B' + id}</div>
+                    </div>
+                `;
             }
 
+            if (node.children.length > 0) {
+                html += `<div class="tree-vline"></div>`;
+                html += `<div class="tree-children">`;
+                node.children.forEach(child => {
+                    html += `<div class="tree-child">`;
+                    html += `<div class="tree-vline"></div>`;
+                    html += renderNode(child);
+                    html += `</div>`;
+                });
+                html += `</div>`;
+            }
             return html;
         };
 
-        content.innerHTML = renderIteration(0);
+        content.innerHTML = rootNodes.map(rn => renderNode(rn)).join('<div class="tree-hline" style="width:100%; margin:20px 0;"></div>');
     },
 
     updateCognitiveStatePanel: function(messages) {

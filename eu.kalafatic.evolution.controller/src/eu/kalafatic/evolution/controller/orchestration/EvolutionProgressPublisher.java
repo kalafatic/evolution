@@ -35,6 +35,11 @@ public class EvolutionProgressPublisher {
             eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionTree tree = context.getKernelContext().getMemoryService().getEvolutionTree();
             if (tree != null) {
                 event.setWinnerId(tree.getCurrentWinnerId());
+
+                // POPULATE PARENT ID (Milestone UI Sync)
+                String parentId = tree.getCurrentWinnerId();
+                if (parentId == null && tree.getRootId() != null) parentId = tree.getRootId();
+                event.setParentId(parentId);
             }
 
             Object genomeObj = state.getMetadata().get("semanticGenome");
@@ -56,6 +61,17 @@ public class EvolutionProgressPublisher {
 
         event.setStage(stage);
         event.setCompletedSteps(stage.ordinal());
+        event.setTimestamp(System.currentTimeMillis());
+
+        publish(context, event);
+    }
+
+    public static void updateDimension(TaskContext context, String dimensionId, String description) {
+        EvolutionProgressEvent event = activeEvents.get(context.getSessionId());
+        if (event == null) return;
+
+        event.setCurrentDimension(dimensionId);
+        event.setCurrentDimensionDescription(description);
         event.setTimestamp(System.currentTimeMillis());
 
         publish(context, event);
@@ -160,7 +176,9 @@ public class EvolutionProgressPublisher {
         json.put("currentTask", event.getCurrentTask());
         json.put("goal", event.getGoal());
         json.put("winnerId", event.getWinnerId());
+        json.put("parentId", event.getParentId());
         json.put("currentDimension", event.getCurrentDimension());
+        json.put("currentDimensionDescription", event.getCurrentDimensionDescription());
         json.put("lockedDecisionCount", event.getLockedDecisionCount());
         json.put("autoApprove", event.isAutoApprove());
         json.put("gitAutomation", event.isGitAutomation());

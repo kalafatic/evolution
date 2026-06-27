@@ -59,7 +59,7 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
         TargetSnapshot.TargetType type = targetPath.contains("evolution") ? TargetSnapshot.TargetType.SELF : TargetSnapshot.TargetType.PROJECT;
         TargetSnapshot snapshot = scanner.scanToSnapshot(root, type);
 
-        int intensity = context.getExecutionProfile().getIntensity();
+        int intensity = getIntensitySafely(context);
 
         // PASS 1 - METADATA LOADING
         context.log("[DISCOVERY] Pass 1: Metadata Loading.");
@@ -125,7 +125,7 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
         }
 
         // 2. Flows & Decision Centers (Derived from Pass 5 synthesis or explicit analysis)
-        if (context.getExecutionProfile().getIntensity() >= 2) {
+        if (getIntensitySafely(context) >= 2) {
             StringBuilder sb = new StringBuilder();
             sb.append("FACTS: ").append(model.getArchitecturalFacts().size()).append("\n");
             sb.append("SUBSYSTEMS: ").append(model.getSubsystems().size()).append("\n");
@@ -615,6 +615,13 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
         }
         model.setMetadataEntries(metadataCount);
         context.log("[DISCOVERY] Loaded metadata for " + metadataCount + " / " + snapshot.getNodes().size() + " nodes.");
+    }
+
+    private int getIntensitySafely(TaskContext context) {
+        if (context.getExecutionProfile() != null) {
+            return context.getExecutionProfile().getIntensity();
+        }
+        return 2; // Default Medium
     }
 
     private List<SemanticNode> getTopCentralNodes(TargetSnapshot snapshot, int limit) {
