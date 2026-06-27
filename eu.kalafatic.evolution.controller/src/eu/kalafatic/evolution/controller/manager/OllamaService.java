@@ -39,7 +39,7 @@ public class OllamaService {
     private int topK = 40;
     private float repeatPenalty = 1.1f;
 
-    public OllamaService(String url, String model) {
+	public OllamaService(String url, String model) {
         this.baseUrl = (url != null && !url.isEmpty()) ? url : "http://localhost:11434";
         this.model = (model != null && !model.isEmpty()) ? model : "llama3.2:3b";
     }

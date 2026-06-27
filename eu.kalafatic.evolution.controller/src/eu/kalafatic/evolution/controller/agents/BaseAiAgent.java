@@ -1,29 +1,26 @@
 package eu.kalafatic.evolution.controller.agents;
 
-import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import eu.kalafatic.evolution.controller.orchestration.AiService;
 import eu.kalafatic.evolution.controller.orchestration.ConversationState;
-import eu.kalafatic.evolution.controller.orchestration.TaskContext;
-import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
-import eu.kalafatic.evolution.controller.orchestration.intent.ConfirmedRequirements;
-import eu.kalafatic.evolution.controller.orchestration.llm.LlmRouter;
-import eu.kalafatic.evolution.controller.orchestration.mcp.McpClient;
-import eu.kalafatic.evolution.controller.orchestration.attachments.AttachmentInjector;
-import eu.kalafatic.evolution.controller.orchestration.util.CodeExtractor;
-import eu.kalafatic.evolution.controller.orchestration.util.DataScrubber;
-import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants;
-import eu.kalafatic.evolution.controller.services.BestPracticesService;
-import eu.kalafatic.evolution.controller.services.NeuronContextService;
-import eu.kalafatic.evolution.controller.tools.ITool;
 import eu.kalafatic.evolution.controller.orchestration.IOrchestrationFlow;
 import eu.kalafatic.evolution.controller.orchestration.OrchestratorResponse;
 import eu.kalafatic.evolution.controller.orchestration.ResultType;
-import eu.kalafatic.evolution.controller.orchestration.SystemState;
+import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
+import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.orchestration.intent.ConfirmedRequirements;
+import eu.kalafatic.evolution.controller.orchestration.llm.LlmRouter;
+import eu.kalafatic.evolution.controller.orchestration.util.CodeExtractor;
+import eu.kalafatic.evolution.controller.services.BestPracticesService;
+import eu.kalafatic.evolution.controller.services.NeuronContextService;
+import eu.kalafatic.evolution.controller.tools.ITool;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 /**
  * Base AI Agent that wraps existing AI model/chat code.
@@ -31,6 +28,7 @@ import eu.kalafatic.evolution.controller.orchestration.SystemState;
 public abstract class BaseAiAgent implements IAgent, IOrchestrationFlow {
     protected final String id;
     protected final String type;
+    protected String instructions;
     protected final List<ITool> tools = new ArrayList<>();
     protected final LlmRouter llmRouter = new LlmRouter();
     protected final SessionContainer sessionContainer;
@@ -157,5 +155,45 @@ public abstract class BaseAiAgent implements IAgent, IOrchestrationFlow {
 
     protected String extractContent(String response) {
         return CodeExtractor.extractCode(response);
+    }
+    
+    /**
+     * Extracts JSON from a response that may contain markdown or text around it.
+     */
+    protected JSONObject extractJson(String response) {
+        if (response == null || response.isEmpty()) {
+            return null;
+        }
+        
+        // Try to find JSON in code blocks first
+        Pattern codeBlockPattern = Pattern.compile("```(?:json)?\\s*\\n?(.*?)\\n?```", Pattern.DOTALL);
+        Matcher matcher = codeBlockPattern.matcher(response);
+        if (matcher.find()) {
+            String jsonStr = matcher.group(1).trim();
+            try {
+                return new JSONObject(jsonStr);
+            } catch (Exception e) {
+                // Fall through to try other methods
+            }
+        }
+        
+        // Try to find JSON object directly
+        Pattern jsonPattern = Pattern.compile("\\{[^{}]*(?:\\{[^{}]*\\}[^{}]*)*\\}");
+        matcher = jsonPattern.matcher(response);
+        if (matcher.find()) {
+            String jsonStr = matcher.group();
+            try {
+                return new JSONObject(jsonStr);
+            } catch (Exception e) {
+                // Fall through
+            }
+        }
+        
+        // Try to parse the whole response as JSON
+        try {
+            return new JSONObject(response.trim());
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

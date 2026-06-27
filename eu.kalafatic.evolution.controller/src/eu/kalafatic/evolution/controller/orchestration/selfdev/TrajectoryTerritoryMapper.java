@@ -9,8 +9,10 @@ import org.json.JSONObject;
 import eu.kalafatic.evolution.controller.agents.BaseAiAgent;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.parsers.JsonUtils;
+import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.controller.orchestration.goal.SemanticEnvelope;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionResult;
+import eu.kalafatic.evolution.controller.orchestration.util.ModelCapabilityDetector;
 
 /**
  * Dynamically maps the evolutionary territory to discover divergent blueprints.
@@ -48,8 +50,78 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
                "- NO ARCHITECTURAL INFLATION: If the task is simple, DO NOT introduce unnecessary complexity.\n" +
                "- GROUNDING: All blueprints MUST be descendants of the discovered Target Reality and hotspots.";
     }
-
+    
+    
     public TrajectoryBlueprint discoverNextSibling(SiblingGenerationContext ctx, TaskContext context) throws Exception {
+        String goal = ctx.getGoal().getPrimaryAction();
+        context.log("[TERRITORY] Sequentially discovering sibling #" + (ctx.getSiblingIndex() + 1) + " for: " + goal);
+        
+        // DETECT MODEL CAPABILITY
+        String modelName = getModelName(context);
+        boolean isSmallModel = ModelCapabilityDetector.getInstance().getModelCapability(modelName).isSmall();
+        
+        if (isSmallModel) {
+            // USE SIMPLIFIED PROMPT FOR SMALL MODELS
+            return discoverNextSiblingSimple(ctx, context);
+        } else {
+            // USE EXISTING COMPLEX PROMPT FOR LARGE MODELS
+            return discoverNextSiblingComplex(ctx, context);
+        }
+    }
+
+    private TrajectoryBlueprint discoverNextSiblingSimple(SiblingGenerationContext ctx, TaskContext context) throws Exception {
+        String goal = ctx.getGoal().getPrimaryAction();
+        int index = ctx.getSiblingIndex();
+        
+        // DETERMINE SIBLING TYPE BASED ON INDEX
+        String[] classVariations = {"Printer", "Logger", "Writer", "Outputter", "Renderer"};
+        String[] philosophyVariations = {
+            "Simple output using System.out", 
+            "Logging with timestamp", 
+            "Writing to file and console",
+            "Formatted output with alignment",
+            "Color-coded console output"
+        };
+        
+        String className = classVariations[index % classVariations.length];
+        String philosophy = philosophyVariations[index % philosophyVariations.length];
+        
+        // GENERATE UNIQUE STRATEGY NAME
+        String strategy = className + " Service";
+        
+        // HANDLE DUPLICATES
+        for (TrajectoryBlueprint existing : ctx.getOlderSiblings()) {
+            if (existing.getStrategy().equals(strategy)) {
+                // Add suffix to make unique
+                strategy = className + "Service" + (index + 1);
+            }
+        }
+        
+        // BUILD BLUEPRINT
+        String id = "bp-iter" + context.getOrchestrationState().getIterationCount() + 
+                    "-s" + index + "-" + System.currentTimeMillis();
+        TrajectoryBlueprint bp = new TrajectoryBlueprint(id, goal, strategy);
+        bp.setPhilosophy(philosophy);
+        bp.setSurvivalArgument(philosophy);
+        bp.setTradeoffs("Minimal complexity, focused implementation");
+        
+        // ENUM STRATEGY TYPE
+        DarwinStrategyType[] types = {
+            DarwinStrategyType.PROBABLE_SURVIVOR,
+            DarwinStrategyType.MAXIMAL_DIVERGENCE,
+            DarwinStrategyType.PHILOSOPHY_MAPPING,
+            DarwinStrategyType.SPECULATIVE_ARCHITECTURE
+        };
+        bp.setStrategyType(types[index % types.length]);
+        
+        // ADD CHARACTERISTICS (SIMPLE)
+        bp.addRequiredCharacteristic("Simple implementation");
+        bp.addRequiredCharacteristic("Single responsibility");
+        
+        return bp;    
+    }
+
+    public TrajectoryBlueprint discoverNextSiblingComplex(SiblingGenerationContext ctx, TaskContext context) throws Exception {
         String goal = ctx.getGoal().getPrimaryAction();
         context.log("[TERRITORY] Sequentially discovering sibling #" + (ctx.getSiblingIndex() + 1) + " for: " + goal);
 
@@ -142,4 +214,13 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
         return null; // Implementation replaced by discoverNextSibling
     }
 
+    
+    private String getModelName(TaskContext context) {
+        Orchestrator orch = context.getOrchestrator();
+        if (orch != null && orch.getOllama() != null) {
+            return orch.getOllama().getModel();
+        }
+        return "unknown";
+    }
+    
 }

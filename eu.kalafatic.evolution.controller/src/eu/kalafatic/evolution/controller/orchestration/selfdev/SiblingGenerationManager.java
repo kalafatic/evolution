@@ -1,7 +1,10 @@
 package eu.kalafatic.evolution.controller.orchestration.selfdev;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -26,6 +29,8 @@ public class SiblingGenerationManager {
     private final DarwinVariantSpawner spawner;
     private final AiService aiService;
     private final eu.kalafatic.evolution.controller.orchestration.SessionContainer container;
+    
+    private final DynamicSiblingGenerator dynamicGenerator;
 
     public SiblingGenerationManager(eu.kalafatic.evolution.controller.orchestration.SessionContainer container, AiService aiService) {
         this.container = container;
@@ -33,7 +38,28 @@ public class SiblingGenerationManager {
         this.mapper.setAiService(aiService);
         this.spawner = new DarwinVariantSpawner(aiService);
         this.aiService = aiService;
+        
+        dynamicGenerator = new DynamicSiblingGenerator(container, aiService);
     }
+    
+//    public List<JSONObject> generateSiblings(...) throws Exception {
+//        // Check if we should use dynamic generation
+//        String modelName = getModelName(context);
+//        ModelCapability cap = capabilityDetector.detect(modelName);
+//        
+//        if (cap.needsSimplifiedPrompts || true) { // Always use dynamic for now
+//            context.log("[SIBLING_MANAGER] Using Dynamic Sibling Generator");
+//            return dynamicGenerator.generateSiblings(
+//                goal.getPrimaryAction(),
+//                goal,
+//                context,
+//                activeDimension
+//            );
+//        }
+//        
+//        // Fallback to existing generation
+//        return generateSiblingsLegacy(...);
+//    }
 
     public List<JSONObject> generateSiblings(
             GoalModel goal,
@@ -348,5 +374,24 @@ public class SiblingGenerationManager {
         }
         if (!dimensions.has("philosophy")) dimensions.put("philosophy", bp.getPhilosophy());
         return fragment;
+    }
+    
+    private DarwinStrategyType determineStrategyType(int siblingIndex, int totalSiblings) {
+        if (siblingIndex == 0) return DarwinStrategyType.PROBABLE_SURVIVOR;
+        if (siblingIndex == 1) return DarwinStrategyType.MAXIMAL_DIVERGENCE;
+        if (siblingIndex == 2) return DarwinStrategyType.PHILOSOPHY_MAPPING;
+        return DarwinStrategyType.SPECULATIVE_ARCHITECTURE;
+    }
+    
+    private Map<String, String> getDefaultDimensions(String goal, String className) {
+        Map<String, String> dims = new HashMap<>();
+        dims.put("active_dimension", "IMPLEMENTATION");
+        dims.put("active_dimension_description", "Define the core functionality of the class");
+        dims.put("execution_model", "atomic");
+        dims.put("modularity_approach", "monolithic");
+        dims.put("abstraction_depth", "low");
+        dims.put("runtime_behavior", "deterministic");
+        dims.put("extensibility", "low");
+        return dims;
     }
 }
