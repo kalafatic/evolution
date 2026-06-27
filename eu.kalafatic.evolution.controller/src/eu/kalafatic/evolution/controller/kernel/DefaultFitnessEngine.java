@@ -1,4 +1,7 @@
 package eu.kalafatic.evolution.controller.kernel;
+import eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel;
+import eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase;
+import eu.kalafatic.evolution.controller.orchestration.engines.DarwinEngine;
 
 import java.io.File;
 import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
@@ -29,7 +32,7 @@ public class DefaultFitnessEngine implements FitnessEngine {
     }
 
     @Override
-    public EvaluationResult evaluate(File projectRoot, TaskContext context, eu.kalafatic.evolution.controller.orchestration.selfdev.RealityLevel level) throws Exception {
+    public EvaluationResult evaluate(File projectRoot, TaskContext context, eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel level) throws Exception {
         IEvaluationContract contract = sessionContainer.getCapabilityRegistry().getContractImplementation(IEvaluationContract.ID, IEvaluationContract.class);
         return contract.evaluate(projectRoot, context, level);
     }

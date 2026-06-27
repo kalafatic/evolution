@@ -1,4 +1,7 @@
 package eu.kalafatic.evolution.controller.orchestration;
+import eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel;
+import eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase;
+import eu.kalafatic.evolution.controller.orchestration.engines.DarwinEngine;
 
 /**
  * Interface for the core orchestrator that executes a task graph.

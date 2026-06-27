@@ -1,4 +1,7 @@
 package eu.kalafatic.evolution.controller.tests;
+import eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel;
+import eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase;
+import eu.kalafatic.evolution.controller.orchestration.engines.DarwinEngine;
 import eu.kalafatic.evolution.controller.orchestration.SessionManager;
 
 import static org.junit.Assert.assertTrue;
@@ -21,7 +24,6 @@ import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.TaskRequest;
 import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
-import eu.kalafatic.evolution.controller.orchestration.selfdev.DarwinEngine;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.DarwinStrategyType;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.Evaluator;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.FailureMemory;

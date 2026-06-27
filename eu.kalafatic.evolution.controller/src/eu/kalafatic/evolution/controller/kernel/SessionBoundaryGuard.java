@@ -1,4 +1,7 @@
 package eu.kalafatic.evolution.controller.kernel;
+import eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel;
+import eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase;
+import eu.kalafatic.evolution.controller.orchestration.engines.DarwinEngine;
 
 /**
  * Tracks the active session ID for the current thread to enforce session isolation.

@@ -1,4 +1,7 @@
 package eu.kalafatic.evolution.controller.orchestration;
+import eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel;
+import eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase;
+import eu.kalafatic.evolution.controller.orchestration.engines.DarwinEngine;
 
 import java.io.File;
 import java.time.Instant;
@@ -53,7 +56,6 @@ import eu.kalafatic.evolution.controller.orchestration.diagnostics.CausalNode;
 import eu.kalafatic.evolution.controller.orchestration.adapters.GitAdapter;
 import eu.kalafatic.evolution.controller.orchestration.adapters.LLMAdapter;
 import eu.kalafatic.evolution.controller.orchestration.adapters.MemoryStore;
-import eu.kalafatic.evolution.controller.orchestration.adapters.RealityGateAdapter;
 import eu.kalafatic.evolution.controller.orchestration.diagnostics.CognitiveTrace;
 import eu.kalafatic.evolution.controller.orchestration.diagnostics.ReplayEngine;
 import eu.kalafatic.evolution.controller.orchestration.engines.LineageEngine;
@@ -74,7 +76,6 @@ import eu.kalafatic.evolution.controller.orchestration.intent.EvolutionAssessmen
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionEngine;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionResult;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
-import eu.kalafatic.evolution.controller.orchestration.selfdev.DarwinEngine;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.Evaluator;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.GitManager;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationMemoryService;
@@ -139,7 +140,7 @@ public class IterationManager {
     private final BranchManager branchManager;
     private final MutationEngine mutationEngine;
     private final FitnessEngine fitnessEngine;
-    private final RealityEngine realityEngine;
+    private final eu.kalafatic.evolution.controller.kernel.RealityEngine realityEngine;
     private final AuthorityEngine authorityEngine;
     private final TrajectoryEngine trajectoryEngine;
     private final EvolutionaryPressureEngine pressureEngine;
@@ -147,7 +148,7 @@ public class IterationManager {
 
     private final SelectionEngine selectionEngine = new SelectionEngine();
     private final LineageEngine lineageEngine = new LineageEngine();
-    private final RealityGateAdapter realityEngineAdapter = new RealityGateAdapter();
+    private final eu.kalafatic.evolution.controller.orchestration.adapters.RealityEngine realityEngineAdapter = new eu.kalafatic.evolution.controller.orchestration.adapters.RealityEngine();
     private GitAdapter gitAdapterComponent;
     private LLMAdapter llmAdapterComponent;
     private MemoryStore memoryStoreComponent;
@@ -181,7 +182,7 @@ public class IterationManager {
     public BranchManager getBranchManager() { return branchManager; }
     public MutationEngine getMutationEngine() { return mutationEngine; }
     public FitnessEngine getFitnessEngine() { return fitnessEngine; }
-    public RealityEngine getRealityEngine() { return realityEngine; }
+    public eu.kalafatic.evolution.controller.kernel.RealityEngine getRealityEngine() { return realityEngine; }
     public AuthorityEngine getAuthorityEngine() { return authorityEngine; }
     public TrajectoryEngine getTrajectoryEngine() { return trajectoryEngine; }
     public EvolutionaryPressureEngine getPressureEngine() { return pressureEngine; }
@@ -1092,7 +1093,13 @@ public class IterationManager {
 
             if (!context.isAutoApprove()) {
                 context.log("[KERNEL] Mediated Mode: Pausing for final export package review.");
+import eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel;
+import eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase;
+import eu.kalafatic.evolution.controller.orchestration.engines.DarwinEngine;
                 boolean approved = context.requestApproval("Final review: Ready to generate export package with " + selectedPaths.size() + " files?").get();
+import eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel;
+import eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase;
+import eu.kalafatic.evolution.controller.orchestration.engines.DarwinEngine;
                 if (!approved) return "Export cancelled by user.";
             }
 

@@ -1,4 +1,7 @@
 package eu.kalafatic.evolution.controller.tests;
+import eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel;
+import eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase;
+import eu.kalafatic.evolution.controller.orchestration.engines.DarwinEngine;
 
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertNotNull;
@@ -137,6 +140,9 @@ public class MediatedModeIntegrationTest {
 
         assertNotNull("Response should not be null", response);
         assertTrue("Summary should contain export package info", response.getSummary().contains("Export Package (ZIP):"));
+import eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel;
+import eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase;
+import eu.kalafatic.evolution.controller.orchestration.engines.DarwinEngine;
         assertTrue("Summary should mention mediated Darwin", response.getSummary().contains("Mediated Darwin Evolution Complete"));
 
         // Verify ZIP file creation

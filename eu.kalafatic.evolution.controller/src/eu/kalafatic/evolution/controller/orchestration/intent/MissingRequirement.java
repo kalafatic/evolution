@@ -1,4 +1,7 @@
 package eu.kalafatic.evolution.controller.orchestration.intent;
+import eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel;
+import eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase;
+import eu.kalafatic.evolution.controller.orchestration.engines.DarwinEngine;
 
 /**
  * Represents a missing piece of information in the user request.

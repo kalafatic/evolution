@@ -1,4 +1,9 @@
-package eu.kalafatic.evolution.controller.orchestration.selfdev;
+package eu.kalafatic.evolution.controller.orchestration.engines;
+import eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel;
+import eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase;
+import eu.kalafatic.evolution.controller.orchestration.*;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.*;
+import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -51,7 +56,6 @@ import eu.kalafatic.evolution.controller.orchestration.SystemState;
 import eu.kalafatic.evolution.controller.orchestration.PlatformMode;
 import eu.kalafatic.evolution.controller.orchestration.ModeRouter;
 import eu.kalafatic.evolution.controller.orchestration.ConversationState;
-import eu.kalafatic.evolution.controller.orchestration.EvolutionPhase;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionPhaseMachine;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionStage;
 import eu.kalafatic.evolution.controller.orchestration.Checkpoint;
@@ -65,11 +69,10 @@ import eu.kalafatic.evolution.controller.orchestration.TaskRequest;
 import eu.kalafatic.evolution.controller.orchestration.OrchestrationState;
 import eu.kalafatic.evolution.controller.orchestration.FileChangeTracker;
 import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
-import eu.kalafatic.evolution.controller.orchestration.engines.DimensionEngine;
-import eu.kalafatic.evolution.controller.orchestration.engines.ExecutionEngine;
-import eu.kalafatic.evolution.controller.orchestration.engines.FitnessEngine;
-import eu.kalafatic.evolution.controller.orchestration.engines.LineageEngine;
-import eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel;
+
+
+
+
 import eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceArtifact;
 import eu.kalafatic.evolution.controller.mediation.scanner.TargetScanner;
 import eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot;
@@ -101,7 +104,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
     private final LineageEngine lineageEngine = new LineageEngine();
     private final FitnessEngine fitnessEngine = new FitnessEngine();
     private final ExecutionEngine executionEngine = new ExecutionEngine();
-    private final eu.kalafatic.evolution.controller.orchestration.engines.SelectionEngine selectionEngine = new eu.kalafatic.evolution.controller.orchestration.engines.SelectionEngine();
+    private final SelectionEngine selectionEngine = new SelectionEngine();
     private CapabilityStatus status = CapabilityStatus.STOPPED;
 
     public DarwinEngine(TaskContext context, IterationMemoryService memoryService, SystemStateSignalProvider stateProvider) {
@@ -1176,7 +1179,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             }
 
             // Pragma A: Heavy Reality Gate (Full Build) only for winner
-            EvaluationResult result = manager.getFitnessEngine().evaluate(context.getProjectRoot(), context, eu.kalafatic.evolution.controller.orchestration.selfdev.RealityLevel.HEAVY);
+            EvaluationResult result = manager.getFitnessEngine().evaluate(context.getProjectRoot(), context, RealityLevel.HEAVY);
 
             if (result.isSuccess() || selectedVariant != null) {
                 String completedPhase = context.getOrchestrationState().getCurrentPhase();

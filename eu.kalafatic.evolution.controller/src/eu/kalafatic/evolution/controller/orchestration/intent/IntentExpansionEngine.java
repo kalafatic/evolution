@@ -1,4 +1,7 @@
 package eu.kalafatic.evolution.controller.orchestration.intent;
+import eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel;
+import eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase;
+import eu.kalafatic.evolution.controller.orchestration.engines.DarwinEngine;
 
 import java.util.List;
 
@@ -55,6 +58,9 @@ public class IntentExpansionEngine extends BaseAiAgent {
                "For SIMPLE ATOMIC TASKS (e.g., 'create a class', 'add a method'), avoid over-engineering. Identify simple dimensions like:\n" +
                "- Implementation Style (e.g., standard vs. optimized, static vs. instance)\n" +
                "- Naming/Structure (e.g., package choice, filename vs. class name)\n" +
+import eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel;
+import eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase;
+import eu.kalafatic.evolution.controller.orchestration.engines.DarwinEngine;
                "- Operational Logic (e.g., specific output content, method signatures)\n" +
                "\n" +
                "For each dimension, analyze:\n" +

@@ -1,4 +1,7 @@
 package eu.kalafatic.evolution.controller.log;
+import eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel;
+import eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase;
+import eu.kalafatic.evolution.controller.orchestration.engines.DarwinEngine;
 
 import java.io.File;
 import java.io.FileInputStream;

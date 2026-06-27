@@ -1,4 +1,7 @@
 package eu.kalafatic.evolution.controller.supervision;
+import eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel;
+import eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase;
+import eu.kalafatic.evolution.controller.orchestration.engines.DarwinEngine;
 
 /**
  * Immutable record of an authority decision for the audit trail.
