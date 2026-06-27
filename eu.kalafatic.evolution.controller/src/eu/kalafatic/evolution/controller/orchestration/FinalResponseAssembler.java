@@ -49,7 +49,7 @@ public class FinalResponseAssembler {
         String executionStatus = buildExecutionStatus(context, success);
         String accomplishments = buildAccomplishments(context);
         eu.kalafatic.evolution.controller.kernel.EvolutionProfile profile = context.getExecutionProfile();
-        boolean isChat = profile.getCapability() == eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType.CHAT;
+        boolean isChat = profile != null && profile.getCapability() == eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType.CHAT;
 
         // Standardized Summary Construction
         StringBuilder sb = new StringBuilder();
@@ -92,7 +92,7 @@ public class FinalResponseAssembler {
         }
 
         // C. COMPREHENSIVE EVOLUTIONARY REPORTING
-        if (profile.shouldShowEvolutionSummary() || !isChat) {
+        if ((profile != null && profile.shouldShowEvolutionSummary()) || !isChat) {
             sb.append("\n\n---\n## 🧬 Evolution Summary\n\n");
             sb.append("### Goal\n---\n").append(state.getRawInput()).append("\n\n");
 
@@ -122,7 +122,7 @@ public class FinalResponseAssembler {
             }
         }
 
-        if (profile.shouldShowRepositoryChanges() || !isChat) {
+        if ((profile != null && profile.shouldShowRepositoryChanges()) || !isChat) {
             sb.append("### 📂 Repository Changes\n---\n");
             if (files.isEmpty()) {
                 sb.append("_No physical changes detected._\n\n");
@@ -154,7 +154,7 @@ public class FinalResponseAssembler {
             }
         }
 
-        if (profile.shouldPerformRealityCheck() || !isChat) {
+        if ((profile != null && profile.shouldPerformRealityCheck()) || !isChat) {
             sb.append("### 🔍 Verification\n---\n");
             Object lastDecisionObj = state.getMetadata().get("lastDecisionSnapshot");
             DecisionSnapshot lastDecision = null;
@@ -177,7 +177,7 @@ public class FinalResponseAssembler {
             sb.append("✓ Static review passed\n\n");
         }
 
-        if (profile.requiresRepository() || !isChat) {
+        if ((profile != null && profile.requiresRepository()) || !isChat) {
             sb.append("### ⚖️ Git State\n---\n");
             try {
                 eu.kalafatic.evolution.controller.orchestration.selfdev.GitManager git = context.getKernelContext().getGitManager();

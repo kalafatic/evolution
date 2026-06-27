@@ -146,7 +146,7 @@ public class DarwinVariantSpawner {
         StringBuilder constraintSb = new StringBuilder();
         constraintSb.append("MATERIALIZATION MANDATE (CRITICAL):\n")
           .append("You are MATERIALIZING the provided blueprint. You MUST NOT reinterpret the original user goal from scratch.\n")
-          .append("Your solution MUST be a direct refinement of the 'Philosophy' and 'Architectural Direction' provided below.\n\n")
+          .append("Your solution MUST be a direct refinement of the 'Strategy', 'Philosophy' and 'Architectural Direction' provided below.\n\n")
           .append("DIMENSION MANDATE:\n")
           .append("This variant MUST compete exclusively on the dimension: ").append(activeDimension != null ? activeDimension.getId() : "Implementation").append(".\n")
           .append("All other architectural aspects already resolved in the lineage MUST remain fixed.\n\n")
@@ -156,6 +156,7 @@ public class DarwinVariantSpawner {
           .append("- GROUNDING: Use ONLY the provided Target Reality Model and Hotspots.\n\n")
           .append("BLUEPRINT CONSTRAINTS (YOU MUST IMPLEMENT THIS):\n")
           .append("- ID: ").append(bp.getId()).append("\n")
+          .append("- Strategy: ").append(bp.getStrategy()).append("\n")
           .append("- Philosophy: ").append(bp.getPhilosophy()).append("\n")
           .append("- Mutation Philosophy (ENGINEERING STYLE): ").append(bp.getMutationPhilosophy()).append("\n")
           .append("- Architectural Direction: ").append(bp.getArchitecturalDirection()).append("\n");

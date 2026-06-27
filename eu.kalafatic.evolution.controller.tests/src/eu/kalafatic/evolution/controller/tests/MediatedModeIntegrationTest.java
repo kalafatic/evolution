@@ -79,20 +79,24 @@ public class MediatedModeIntegrationTest {
         context.addInputListener(message -> {
             new Thread(() -> {
                 try {
-                    Thread.sleep(200);
+                    // Robust wait for Darwin to be ready for selection
+                    Thread.sleep(500);
                     if (message.contains("Darwin evolved")) {
                         // Extract first ID from list like "- [id] Strategy"
-                        int start = message.indexOf("- [") + 3;
-                        int end = message.indexOf("]", start);
-                        if (start > 2 && end > start) {
-                            String id = message.substring(start, end);
-                            context.provideInput("Select " + id);
-                        } else {
-                            context.provideInput("Approved");
+                        int start = message.indexOf("- [");
+                        if (start >= 0) {
+                            start += 3;
+                            int end = message.indexOf("]", start);
+                            if (end > start) {
+                                String id = message.substring(start, end);
+                                context.log("[TEST] Auto-selecting variant: " + id);
+                                context.provideInput("Select " + id);
+                                return;
+                            }
                         }
-                    } else {
-                        context.provideInput("Approved");
                     }
+                    context.log("[TEST] Auto-approving message: " + (message.length() > 50 ? message.substring(0, 50) + "..." : message));
+                    context.provideInput("Approved");
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -109,7 +113,7 @@ public class MediatedModeIntegrationTest {
             "  \"semantic_justification\": \"Test justification\"," +
             "  \"tradeoffs\": \"Test tradeoffs\"," +
             "  \"failure_risks\": \"Test risks\"," +
-            "  \"actions\": [{ \"domain\": \"kernel\", \"operation\": \"ANALYZE\", \"target\": \"workspace\", \"description\": \"Test action\" }]," +
+            "  \"actions\": [{ \"domain\": \"file\", \"operation\": \"WRITE\", \"target\": \"sloeber.ino\", \"description\": \"Test action\", \"implementation\": \"void setup() {} void loop() { /* updated */ }\" }]," +
             "  \"score\": 0.95," +
             "  \"mediation_candidate\": {" +
             "    \"prompt\": \"Optimized prompt for big LLM\"," +
@@ -122,7 +126,19 @@ public class MediatedModeIntegrationTest {
             "  }" +
             "}";
 
-        mockLlm.addResponseMapping("BLUEPRINT TO MATERIALIZE", "<BEGIN_DARWIN_JSON>" + darwinVariant + "<END_DARWIN_JSON>");
+        // Support sequential sibling generation by providing divergent strategies
+        // 1. Discovery for Sibling #2 (More specific, matched when at least one sibling exists)
+        mockLlm.addResponseMapping("EXPLORED TERRITORY", "{\"strategy\": \"Strategy 2\", \"philosophy\": \"Philosophy 2\", \"strategy_type\": \"MAXIMAL_DIVERGENCE\"}");
+        // 2. Discovery for Sibling #1
+        mockLlm.addResponseMapping("ONE additional sibling", "{\"strategy\": \"Strategy 1\", \"philosophy\": \"Philosophy 1\", \"strategy_type\": \"PROBABLE_SURVIVOR\"}");
+        // 3. Materialization for Sibling #1 (Matched by specific strategy from discovery)
+        mockLlm.addResponseMapping("Strategy 1", "<BEGIN_DARWIN_JSON>" + darwinVariant.replace("Test mediated strategy", "Strategy 1") + "<END_DARWIN_JSON>");
+        // 4. Materialization for Sibling #2
+        mockLlm.addResponseMapping("Strategy 2", "<BEGIN_DARWIN_JSON>" + darwinVariant.replace("Test mediated strategy", "Strategy 2") + "<END_DARWIN_JSON>");
+
+        // 5. Task Planner Mock (to avoid Ollama not configured if actions are empty or during task generation)
+        mockLlm.addResponseMapping("Task Planner", "[{\"id\": \"t1\", \"name\": \"Improvement Task\", \"taskType\": \"llm\", \"priority\": 1, \"rationale\": \"Mock rationale\"}]");
+        mockLlm.addResponseMapping("autonomous improvement tasks", "[{\"id\": \"t1\", \"name\": \"Improvement Task\", \"taskType\": \"llm\", \"priority\": 1, \"rationale\": \"Mock rationale\"}]");
     }
 
     @Test
@@ -161,18 +177,26 @@ public class MediatedModeIntegrationTest {
     }
 
     private static class MockLlmProvider {
-        private final java.util.Map<String, String> responseMappings = new java.util.concurrent.ConcurrentHashMap<>();
+        private final java.util.List<Mapping> mappings = new java.util.ArrayList<>();
+
+        private static class Mapping {
+            String keyword;
+            String response;
+            Mapping(String k, String r) { this.keyword = k; this.response = r; }
+        }
 
         public void addResponseMapping(String keyword, String response) {
-            responseMappings.put(keyword, response);
+            mappings.add(0, new Mapping(keyword, response));
         }
 
         public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
-            for (java.util.Map.Entry<String, String> entry : responseMappings.entrySet()) {
-                if (prompt.contains(entry.getKey())) {
-                    return entry.getValue();
+            for (Mapping m : mappings) {
+                if (prompt.contains(m.keyword)) {
+                    context.log("[MOCK_LLM] Matched keyword: '" + m.keyword + "'");
+                    return m.response;
                 }
             }
+            context.log("[MOCK_LLM] No match found for prompt. Returning empty JSON.");
             return "{}";
         }
     }
