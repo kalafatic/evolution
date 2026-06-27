@@ -1,6 +1,8 @@
 package eu.kalafatic.evolution.controller.kernel;
+import eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel;
+import eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase;
+import eu.kalafatic.evolution.controller.orchestration.engines.DarwinEngine;
 
-import eu.kalafatic.evolution.controller.orchestration.EvolutionPhase;
 import eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType;
 
 /**
@@ -145,7 +147,7 @@ public final class EvolutionProfile {
     public boolean shouldShowEvolutionSummary() { return shouldShowEvolutionSummary; }
     public boolean shouldShowRepositoryChanges() { return shouldShowRepositoryChanges; }
 
-    public String getPhaseDisplayName(EvolutionPhase phase) {
+    public String getPhaseDisplayName(eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase phase) {
         if (capability == CapabilityType.CHAT) {
             switch (phase) {
                 case INTENT_EXPANSION: return "UNDERSTANDING";

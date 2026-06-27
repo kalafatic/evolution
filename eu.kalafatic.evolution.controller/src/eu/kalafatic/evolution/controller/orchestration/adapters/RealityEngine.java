@@ -1,4 +1,8 @@
 package eu.kalafatic.evolution.controller.orchestration.adapters;
+import eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel;
+import eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase;
+import eu.kalafatic.evolution.controller.orchestration.engines.DarwinEngine;
+import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -10,10 +14,9 @@ import eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel;
 import eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.dto.RealityResult;
-import eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel;
 import eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceDeltaAnalyzer;
 
-public class RealityGateAdapter {
+public class RealityEngine {
 
     public void refineTargetReality(String goal, TaskContext context, RealityDiscoveryAgent realityDiscoveryAgent) throws Exception {
         context.log("[KERNEL] Recursive Discovery: Refining Target Reality Model based on new iteration evidence.");
@@ -41,7 +44,7 @@ public class RealityGateAdapter {
         }
     }
 
-    public RealityResult check(RealityLevel level, File projectRoot, TaskContext context) {
+    public RealityResult check(eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel level, File projectRoot, TaskContext context) {
         WorkspaceDeltaAnalyzer analyzer = new WorkspaceDeltaAnalyzer(projectRoot, context);
         return new RealityResult(true, 1.0, new ArrayList<>(), new ArrayList<>(), level);
     }

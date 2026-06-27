@@ -1,4 +1,7 @@
 package eu.kalafatic.evolution.controller.tests;
+import eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel;
+import eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase;
+import eu.kalafatic.evolution.controller.orchestration.engines.DarwinEngine;
 import eu.kalafatic.evolution.controller.orchestration.SessionManager;
 
 import static org.junit.Assert.*;
@@ -48,6 +51,9 @@ public class ExportSystemTest {
             "mode: export - help me fix the kernel",
             "prepare export for manual use",
             "manual self-dev package for this module",
+import eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel;
+import eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase;
+import eu.kalafatic.evolution.controller.orchestration.engines.DarwinEngine;
             "export for chatgpt: improve agents"
         };
 

@@ -1,7 +1,9 @@
 package eu.kalafatic.evolution.controller.trajectory;
+import eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel;
+import eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase;
+import eu.kalafatic.evolution.controller.orchestration.engines.DarwinEngine;
 
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
-import eu.kalafatic.evolution.controller.orchestration.EvolutionPhase;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionaryPressureVector;
 import eu.kalafatic.utils.semantic.EvolutionComponent;
 import eu.kalafatic.utils.semantic.EvolutionaryImpact;
@@ -47,14 +49,14 @@ public class StabilityAnalyzer {
     /**
      * Determines if the evolution should progress to the next phase or stay in the current one.
      */
-    public boolean shouldProgress(EvolutionPhase current, Trajectory trajectory, TaskContext context) {
+    public boolean shouldProgress(eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase current, Trajectory trajectory, TaskContext context) {
         return shouldProgress(current, trajectory, context, null);
     }
 
     /**
      * Determines if the evolution should progress to the next phase or stay in the current one with pressure awareness.
      */
-    public boolean shouldProgress(EvolutionPhase current, Trajectory trajectory, TaskContext context, EvolutionaryPressureVector pressure) {
+    public boolean shouldProgress(eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase current, Trajectory trajectory, TaskContext context, EvolutionaryPressureVector pressure) {
         // Intent expansion always progresses once intent is clear
         if (current == EvolutionPhase.INTENT_EXPANSION) {
             context.log("[STABILITY] Intent expansion phase complete. Progressing.");

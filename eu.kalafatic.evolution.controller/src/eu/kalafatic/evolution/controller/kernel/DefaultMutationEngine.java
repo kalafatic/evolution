@@ -1,18 +1,20 @@
 package eu.kalafatic.evolution.controller.kernel;
+import eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel;
+import eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase;
+import eu.kalafatic.evolution.controller.orchestration.engines.DarwinEngine;
 
 import java.util.List;
 import eu.kalafatic.evolution.controller.orchestration.goal.GoalModel;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
-import eu.kalafatic.evolution.controller.orchestration.selfdev.DarwinEngine;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.StateSnapshot;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.FailureMemory;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionaryPressureVector;
 import eu.kalafatic.evolution.controller.trajectory.Trajectory;
 
 public class DefaultMutationEngine implements MutationEngine {
-    private final DarwinEngine engine;
+    private final eu.kalafatic.evolution.controller.orchestration.engines.DarwinEngine engine;
 
-    public DefaultMutationEngine(DarwinEngine engine) {
+    public DefaultMutationEngine(eu.kalafatic.evolution.controller.orchestration.engines.DarwinEngine engine) {
         this.engine = engine;
     }
 

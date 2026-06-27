@@ -1,4 +1,7 @@
 package eu.kalafatic.evolution.controller.orchestration.attachments;
+import eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel;
+import eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase;
+import eu.kalafatic.evolution.controller.orchestration.engines.DarwinEngine;
 
 /**
  * Represents a section of a Markdown attachment with its intent classification.

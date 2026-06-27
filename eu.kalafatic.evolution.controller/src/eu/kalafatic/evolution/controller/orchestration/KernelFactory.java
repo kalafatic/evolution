@@ -1,8 +1,10 @@
 package eu.kalafatic.evolution.controller.orchestration;
+import eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel;
+import eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase;
+import eu.kalafatic.evolution.controller.orchestration.engines.DarwinEngine;
 
 import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityException;
 import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityRegistry;
-import eu.kalafatic.evolution.controller.orchestration.selfdev.DarwinEngine;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.Evaluator;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.GitManager;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationMemoryService;
@@ -34,7 +36,7 @@ public class KernelFactory {
                 context.getKernelContext().getMemoryService();
 
         SystemStateSignalProvider stateProvider = new SystemStateSignalProvider(context.getProjectRoot(), context);
-        DarwinEngine darwinEngine = new DarwinEngine(context, memoryService, stateProvider);
+        eu.kalafatic.evolution.controller.orchestration.engines.DarwinEngine darwinEngine = new DarwinEngine(context, memoryService, stateProvider);
         darwinEngine.setAiService(aiService);
 
         // Register static capabilities

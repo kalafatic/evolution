@@ -1,4 +1,7 @@
 package eu.kalafatic.evolution.controller.orchestration.util;
+import eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel;
+import eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase;
+import eu.kalafatic.evolution.controller.orchestration.engines.DarwinEngine;
 
 /**
  * Utility for extracting code from LLM responses containing markdown code blocks.
