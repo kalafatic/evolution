@@ -1,7 +1,4 @@
 package eu.kalafatic.evolution.controller.parsers;
-import eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel;
-import eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase;
-import eu.kalafatic.evolution.controller.orchestration.engines.DarwinEngine;
 
 import org.json.JSONArray;
 import org.json.JSONObject;

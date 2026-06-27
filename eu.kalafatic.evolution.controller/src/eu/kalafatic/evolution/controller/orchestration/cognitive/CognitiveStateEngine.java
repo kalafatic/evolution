@@ -1,7 +1,4 @@
 package eu.kalafatic.evolution.controller.orchestration.cognitive;
-import eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel;
-import eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase;
-import eu.kalafatic.evolution.controller.orchestration.engines.DarwinEngine;
 
 import eu.kalafatic.evolution.controller.orchestration.ContextAssistResult;
 import eu.kalafatic.evolution.controller.orchestration.ConfidenceLevel;

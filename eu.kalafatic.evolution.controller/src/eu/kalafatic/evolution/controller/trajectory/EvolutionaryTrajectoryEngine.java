@@ -1,12 +1,10 @@
 package eu.kalafatic.evolution.controller.trajectory;
-import eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel;
-import eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase;
-import eu.kalafatic.evolution.controller.orchestration.engines.DarwinEngine;
 
 import java.util.List;
 import eu.kalafatic.evolution.controller.kernel.EvolutionaryPressureEngine;
 import eu.kalafatic.evolution.controller.kernel.TrajectoryMutationEngine;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.orchestration.EvolutionPhase;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionPhaseMachine;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.AbstractionLevel;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;

@@ -1,7 +1,4 @@
 package eu.kalafatic.evolution.controller.supervision;
-import eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel;
-import eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase;
-import eu.kalafatic.evolution.controller.orchestration.engines.DarwinEngine;
 
 /**
  * Encapsulates the result of a single policy evaluation.

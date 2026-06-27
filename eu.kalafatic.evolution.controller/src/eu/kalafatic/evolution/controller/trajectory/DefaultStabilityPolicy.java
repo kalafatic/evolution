@@ -1,10 +1,8 @@
 package eu.kalafatic.evolution.controller.trajectory;
-import eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel;
-import eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase;
-import eu.kalafatic.evolution.controller.orchestration.engines.DarwinEngine;
 
 import java.util.List;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.orchestration.EvolutionPhase;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionaryPressureVector;
 
 /**
@@ -76,7 +74,7 @@ public class DefaultStabilityPolicy implements IStabilityPolicy {
     }
 
     @Override
-    public boolean shouldProgress(eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase current, Trajectory trajectory, TaskContext context, EvolutionaryPressureVector pressure) {
+    public boolean shouldProgress(EvolutionPhase current, Trajectory trajectory, TaskContext context, EvolutionaryPressureVector pressure) {
         if (trajectory == null) return true;
 
         if (isConverged(trajectory, context, pressure)) return true;

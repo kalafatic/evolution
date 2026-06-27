@@ -1,6 +1,4 @@
-package eu.kalafatic.evolution.controller.orchestration.enums;
-import eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel;
-import eu.kalafatic.evolution.controller.orchestration.engines.DarwinEngine;
+package eu.kalafatic.evolution.controller.orchestration;
 
 /**
  * Formal states of the Darwin evolutionary lifecycle.

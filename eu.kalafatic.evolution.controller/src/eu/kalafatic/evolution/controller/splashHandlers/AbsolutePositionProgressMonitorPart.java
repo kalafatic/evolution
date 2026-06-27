@@ -1,7 +1,4 @@
 package eu.kalafatic.evolution.controller.splashHandlers;
-import eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel;
-import eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase;
-import eu.kalafatic.evolution.controller.orchestration.engines.DarwinEngine;
 import org.eclipse.jface.dialogs.ProgressIndicator;
 import org.eclipse.swt.widgets.Label;
 public class AbsolutePositionProgressMonitorPart implements org.eclipse.core.runtime.IProgressMonitor {

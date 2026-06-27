@@ -1,7 +1,4 @@
 package eu.kalafatic.evolution.controller.orchestration.mediated.analysis;
-import eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel;
-import eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase;
-import eu.kalafatic.evolution.controller.orchestration.engines.DarwinEngine;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -29,9 +26,6 @@ public class MetadataAgentTest {
         src.mkdirs();
         File javaFile = new File(src, "MyClass.java");
         Files.write(javaFile.toPath(), "package eu.kalafatic.evolution.orchestration;\npublic class MyClass {}\n".getBytes());
-import eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel;
-import eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase;
-import eu.kalafatic.evolution.controller.orchestration.engines.DarwinEngine;
 
         MetadataAgent generator = new MetadataAgent();
         MetadataResult result = generator.generate(root);

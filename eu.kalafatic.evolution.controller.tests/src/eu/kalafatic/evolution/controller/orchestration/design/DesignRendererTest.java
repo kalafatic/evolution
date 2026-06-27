@@ -1,7 +1,4 @@
 package eu.kalafatic.evolution.controller.orchestration.design;
-import eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel;
-import eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase;
-import eu.kalafatic.evolution.controller.orchestration.engines.DarwinEngine;
 
 import static org.junit.Assert.assertTrue;
 import java.util.Arrays;

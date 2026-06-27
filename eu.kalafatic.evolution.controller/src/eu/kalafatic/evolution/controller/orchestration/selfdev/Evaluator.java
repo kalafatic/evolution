@@ -1,7 +1,4 @@
 package eu.kalafatic.evolution.controller.orchestration.selfdev;
-import eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel;
-import eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase;
-import eu.kalafatic.evolution.controller.orchestration.engines.DarwinEngine;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -114,7 +111,7 @@ public class Evaluator implements ICapability, IEvaluationContract {
     }
 
     @Override
-    public EvaluationResult evaluate(File projectRoot, TaskContext context, eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel level) throws Exception {
+    public EvaluationResult evaluate(File projectRoot, TaskContext context, RealityLevel level) throws Exception {
         if (context != null) context.log("[EVALUATOR] Pragma A: Tiered Evaluation - Level: " + level);
 
         EvaluationResult result = OrchestrationFactory.eINSTANCE.createEvaluationResult();

@@ -1,7 +1,4 @@
 package eu.kalafatic.evolution.controller.orchestration.selfdev;
-import eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel;
-import eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase;
-import eu.kalafatic.evolution.controller.orchestration.engines.DarwinEngine;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -235,7 +232,7 @@ public class DarwinVariantSpawner {
 
     /**
      * Spawns variants for the given strategies.
-     * @deprecated Use generateVariants or spawnSingleBlueprint through eu.kalafatic.evolution.controller.orchestration.engines.DarwinEngine orchestration.
+     * @deprecated Use generateVariants or spawnSingleBlueprint through DarwinEngine orchestration.
      */
     @Deprecated
     public List<JSONObject> spawn(GoalModel goal, List<DarwinStrategySeed> seeds, String basePrompt, String lineageContext, List<String> rejectedSiblings, boolean isMediated, TaskContext context) {

@@ -1,7 +1,4 @@
 package eu.kalafatic.evolution.controller.mediation.scanner;
-import eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel;
-import eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase;
-import eu.kalafatic.evolution.controller.orchestration.engines.DarwinEngine;
 
 import static org.junit.Assert.*;
 import java.io.File;

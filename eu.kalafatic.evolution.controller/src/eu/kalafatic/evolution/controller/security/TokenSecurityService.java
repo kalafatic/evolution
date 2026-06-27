@@ -1,7 +1,4 @@
 package eu.kalafatic.evolution.controller.security;
-import eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel;
-import eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase;
-import eu.kalafatic.evolution.controller.orchestration.engines.DarwinEngine;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;

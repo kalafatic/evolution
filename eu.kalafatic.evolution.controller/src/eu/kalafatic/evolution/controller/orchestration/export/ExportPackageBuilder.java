@@ -1,7 +1,4 @@
 package eu.kalafatic.evolution.controller.orchestration.export;
-import eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel;
-import eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase;
-import eu.kalafatic.evolution.controller.orchestration.engines.DarwinEngine;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -47,9 +44,6 @@ public class ExportPackageBuilder {
 
             String readme = "# Self-Development Export Package\n\n" +
                             "This package was generated to assist in manual self-development using ChatGPT.\n\n" +
-import eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel;
-import eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase;
-import eu.kalafatic.evolution.controller.orchestration.engines.DarwinEngine;
                             "## Contents\n" +
                             "- `optimized_prompt.md`: Use this as your first message to ChatGPT.\n" +
                             "- `analysis.md`: Detailed reasoning about your request.\n" +

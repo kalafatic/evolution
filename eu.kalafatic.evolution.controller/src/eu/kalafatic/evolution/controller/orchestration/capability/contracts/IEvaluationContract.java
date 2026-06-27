@@ -1,7 +1,4 @@
 package eu.kalafatic.evolution.controller.orchestration.capability.contracts;
-import eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel;
-import eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase;
-import eu.kalafatic.evolution.controller.orchestration.engines.DarwinEngine;
 
 import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
@@ -20,7 +17,7 @@ public interface IEvaluationContract {
     /**
      * Pragma A: Tiered Evaluation
      */
-    EvaluationResult evaluate(File projectRoot, TaskContext context, eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel level) throws Exception;
+    EvaluationResult evaluate(File projectRoot, TaskContext context, eu.kalafatic.evolution.controller.orchestration.selfdev.RealityLevel level) throws Exception;
 
     // For signal emission and backward compatibility
     List<EvaluationSignal> evaluate(String variantId);

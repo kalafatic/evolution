@@ -1,7 +1,4 @@
 package eu.kalafatic.evolution.controller.orchestration;
-import eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel;
-import eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase;
-import eu.kalafatic.evolution.controller.orchestration.engines.DarwinEngine;
 
 import eu.kalafatic.evolution.controller.kernel.EvolutionProfile;
 import eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType;
@@ -15,15 +12,15 @@ import eu.kalafatic.evolution.model.orchestration.SelfDevDecision;
  */
 public class EvolutionPhaseMachine {
 
-    public eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase getInitialPhase() {
+    public EvolutionPhase getInitialPhase() {
         return EvolutionPhase.INTENT_EXPANSION;
     }
 
-    public eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase next(eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase current) {
+    public EvolutionPhase next(EvolutionPhase current) {
         return next(current, null);
     }
 
-    public eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase next(eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase current, EvolutionProfile profile) {
+    public EvolutionPhase next(EvolutionPhase current, EvolutionProfile profile) {
         if (profile != null && profile.getCapability() == CapabilityType.CHAT) {
             if (current == EvolutionPhase.INTENT_EXPANSION) {
                 return EvolutionPhase.FINAL_SYNTHESIS;
@@ -32,7 +29,7 @@ public class EvolutionPhaseMachine {
             }
         }
 
-        eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase nextPhase;
+        EvolutionPhase nextPhase;
         switch (current) {
             case INTENT_EXPANSION:
                 nextPhase = EvolutionPhase.ARCHITECTURE_VARIANTS;
@@ -60,11 +57,11 @@ public class EvolutionPhaseMachine {
         return nextPhase;
     }
 
-    public SelfDevDecision determineDecision(eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase phase) {
+    public SelfDevDecision determineDecision(EvolutionPhase phase) {
         return isTerminal(phase) ? SelfDevDecision.STOP : SelfDevDecision.CONTINUE;
     }
 
-    public void validateTransition(eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase current, eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase next) {
+    public void validateTransition(EvolutionPhase current, EvolutionPhase next) {
         if (current == next) return;
         if (isTerminal(current)) {
              throw new IllegalStateException("[PHASE_MACHINE] Cannot transition from terminal state: " + current);
@@ -78,14 +75,14 @@ public class EvolutionPhaseMachine {
         }
     }
 
-    public boolean isTerminal(eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase phase) {
+    public boolean isTerminal(EvolutionPhase phase) {
         return phase == EvolutionPhase.TERMINAL_SUCCESS || phase == EvolutionPhase.TERMINAL_FAILURE;
     }
 
     /**
      * Compatibility bridge for existing string-based constants.
      */
-    public static String toLegacyString(eu.kalafatic.evolution.controller.orchestration.enums.EvolutionPhase phase) {
+    public static String toLegacyString(EvolutionPhase phase) {
         if (phase == null) return null;
         switch (phase) {
             case INTENT_EXPANSION: return EvolutionConstants.PHASE_INTENT_EXPANSION;
