@@ -69,18 +69,20 @@ import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchResult;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.BuildResult;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.DarwinEngine;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.DarwinEngineFactory;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.Evaluator;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionNode;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionTree;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.FitnessResult;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.GitManager;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.IBaseDarwinEngine;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.ISelfDevSupervisor;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationMemoryService;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationRecord;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.MavenSelfDevSupervisor;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.MergeResult;
-import eu.kalafatic.evolution.controller.orchestration.selfdev.SelfDevSupervisor;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.StateSnapshot;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.SystemStateSignalProvider;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.TaskExecutor;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.TaskPlanner;
 import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants;
@@ -122,7 +124,7 @@ public class IterationManager {
 	private final TaskPlanner taskPlanner;
 	private final TaskExecutor taskExecutor;
 	private final Evaluator evaluator;
-	private final DarwinEngine darwinEngine;
+	private final IBaseDarwinEngine darwinEngine;
 	private final IterationMemoryService memoryService;
 	private final GoalUnderstandingEngine goalUnderstandingEngine;
 	private final SemanticEnvelopeEngine semanticEnvelopeEngine;
@@ -292,7 +294,17 @@ public class IterationManager {
 		this.taskPlanner = taskPlanner;
 		this.taskExecutor = taskExecutor;
 		this.evaluator = evaluator;
-		this.darwinEngine = darwinEngine;
+		//this.darwinEngine = darwinEngine;
+		
+		
+		this.darwinEngine = DarwinEngineFactory.create(
+		        context, 
+		        memoryService, 
+		        aiService,
+		        new SystemStateSignalProvider() // or pass the existing one
+		    );
+		    context.log("[KERNEL] Created Darwin Engine: " + darwinEngine.getMode());
+		
 		this.memoryService = memoryService;
 		this.gitAdapterComponent = new GitAdapter(gitManager);
 		this.llmAdapterComponent = new LLMAdapter(aiService);
@@ -411,6 +423,11 @@ public class IterationManager {
 			context.log(
 					"[KERNEL] Self-Dev mode enabled with supervisor: " + selfDevSupervisor.getClass().getSimpleName());
 		}
+		
+		
+	    // Create mode-specific Darwin engine
+	    this.darwinEngine = DarwinEngineFactory.create(context, memoryService, aiService);
+	    context.log("[KERNEL] Created Darwin Engine: " + darwinEngine.getMode());
 	}
 
 	private OrchestratorResponse handleSelfDev(TaskRequest taskRequest) throws Exception {
@@ -589,28 +606,163 @@ public class IterationManager {
 		return evolve(request, context, null);
 	}
 
-	@Deprecated
-	public OrchestratorResponse evolve(String request, TaskContext context, EvolutionAssessment initialAssessment)
-			throws Exception {
-		return darwinEngine.evolve(request, this, initialAssessment);
+//	@Deprecated
+//	public OrchestratorResponse evolve(String request, TaskContext context, EvolutionAssessment initialAssessment)
+//			throws Exception {
+//		return darwinEngine.evolve(request, this, initialAssessment);
+//	}
+	
+	// In IterationManager.java
+	
+	/**
+	 * Evolves the system using the current Darwin engine.
+	 * Delegates to the appropriate engine based on type.
+	 */
+	public OrchestratorResponse evolve(String request, TaskContext context, EvolutionAssessment initialAssessment) throws Exception {
+	    // Check if we have a standard DarwinEngine
+	    if (this.darwinEngine instanceof DarwinEngine) {
+	        // Use the original evolve method
+	        return ((DarwinEngine) this.darwinEngine).evolve(request, this, initialAssessment);
+	    } else {
+	        // For other modes (CHAT, MEDIATED, SELF_DEV), use runIteration
+	        context.log("[KERNEL] Using mode-specific evolution for: " + darwinEngine.getMode());
+	        
+	        // Get or create goal model
+	        GoalModel goal = (GoalModel) context.getOrchestrationState().getMetadata().get("goalModel");
+	        if (goal == null) {
+	            goal = goalUnderstandingEngine.understand(request, context);
+	            context.getOrchestrationState().getMetadata().put("goalModel", goal);
+	        }
+	        
+	        // Run the engine's iteration
+	        EvaluationResult result = darwinEngine.runIteration(goal, this);
+	        
+	        OrchestratorResponse response = new OrchestratorResponse();
+	        response.setResultType(ResultType.CHAT);
+	        
+	        if (result.isSuccess()) {
+	            response.setSummary(result.getSummary() != null ? result.getSummary() : "Evolution completed successfully");
+	            transition(SystemState.DONE, context);
+	        } else {
+	            response.setSummary("Evolution failed: " + String.join("; ", result.getErrors()));
+	            transition(SystemState.FAILED, context);
+	        }
+	        
+	        // Assemble final response
+	        FinalResponseAssembler assembler = new FinalResponseAssembler();
+	        FinalResponse finalResponse = assembler.assemble(context, response.getSummary(), result.isSuccess(), context.getStartTime());
+	        response.setFinalResponse(finalResponse);
+	        
+	        return response;
+	    }
 	}
 
+//	public OrchestratorResponse evolve(String request, TaskContext context, EvolutionAssessment initialAssessment) throws Exception {
+//	    // Check if the current engine is the original DarwinEngine
+//	    if (this.darwinEngine instanceof DarwinEngine) {
+//	        // Use the original evolve method
+//	        return ((DarwinEngine) this.darwinEngine).evolve(request, this, initialAssessment);
+//	    } else {
+//	        // For other modes, use the simplified flow
+//	        context.log("[KERNEL] Using mode-specific evolution for: " + darwinEngine.getMode());
+//	        
+//	        // Get or create goal model
+//	        GoalModel goal = (GoalModel) context.getOrchestrationState().getMetadata().get("goalModel");
+//	        if (goal == null) {
+//	            goal = goalUnderstandingEngine.understand(request, context);
+//	            context.getOrchestrationState().getMetadata().put("goalModel", goal);
+//	        }
+//	        
+//	        EvaluationResult result = darwinEngine.runIteration(goal, this);
+//	        
+//	        OrchestratorResponse response = new OrchestratorResponse();
+//	        response.setResultType(ResultType.CHAT);
+//	        
+//	        if (result.isSuccess()) {
+//	            response.setSummary(result.getSummary() != null ? result.getSummary() : "Evolution completed successfully");
+//	            transition(SystemState.DONE, context);
+//	        } else {
+//	            response.setSummary("Evolution failed: " + String.join("; ", result.getErrors()));
+//	            transition(SystemState.FAILED, context);
+//	        }
+//	        
+//	        return response;
+//	    }
+//	}
+
+//	private OrchestratorResponse handleModeSpecific(TaskRequest taskRequest) throws Exception {
+//	    context.log("[KERNEL] Using mode-specific evolution for: " + darwinEngine.getMode());
+//	    
+//	    // Get or create goal model
+//	    GoalModel goal = (GoalModel) context.getOrchestrationState().getMetadata().get("goalModel");
+//	    if (goal == null) {
+//	        goal = goalUnderstandingEngine.understand(taskRequest.getPrompt(), context);
+//	        context.getOrchestrationState().getMetadata().put("goalModel", goal);
+//	    }
+//	    
+//	    // Run the engine's iteration
+//	    EvaluationResult result = darwinEngine.runIteration(goal, this);
+//	    
+//	    OrchestratorResponse response = new OrchestratorResponse();
+//	    response.setResultType(ResultType.CHAT);
+//	    
+//	    if (result.isSuccess()) {
+//	        response.setSummary(result.getSummary() != null ? result.getSummary() : "Evolution completed successfully");
+//	        transition(SystemState.DONE, context);
+//	    } else {
+//	        response.setSummary("Evolution failed: " + String.join("; ", result.getErrors()));
+//	        transition(SystemState.FAILED, context);
+//	    }
+//	    
+//	    return response;
+//	}
+	
+	
+	
 	public EvaluationResult runIteration(Iteration iteration) {
-		this.currentIterationModel = iteration;
+	    this.currentIterationModel = iteration;
+	    
+	    try {
+	        // Get goal model
+	        GoalModel goal = (GoalModel) context.getOrchestrationState().getMetadata().get("goalModel");
+	        if (goal == null) {
+	            goal = goalUnderstandingEngine.understand(
+	                context.getOrchestrationState().getRawInput(), context);
+	            context.getOrchestrationState().getMetadata().put("goalModel", goal);
+	        }
+	        
+	        // Delegate to the mode-specific Darwin engine
+	        return darwinEngine.runIteration(goal, this);
+	        
+	    } catch (Exception e) {
+	        context.log("[KERNEL] Critical error in iteration: " + e.getMessage());
+	        if (System.getProperty("evolution.test.debug") != null) {
+	            e.printStackTrace();
+	        }
+	        EvaluationResult result = OrchestrationFactory.eINSTANCE.createEvaluationResult();
+	        result.setSuccess(false);
+	        result.setDecision(SelfDevDecision.ROLLBACK);
+	        return result;
+	    }
 
-		try {
-			return darwinEngine.runDarwinIteration(context, this);
-		} catch (Exception e) {
-			context.log("[KERNEL] Critical error in iteration: " + e.getMessage());
-			if (System.getProperty("evolution.test.debug") != null) {
-				e.printStackTrace();
-			}
-			EvaluationResult result = OrchestrationFactory.eINSTANCE.createEvaluationResult();
-			result.setSuccess(false);
-			result.setDecision(SelfDevDecision.ROLLBACK);
-			return result;
-		}
 	}
+
+//	public EvaluationResult runIteration(Iteration iteration) {
+//		this.currentIterationModel = iteration;
+//
+//		try {
+//			return darwinEngine.runDarwinIteration(context, this);
+//		} catch (Exception e) {
+//			context.log("[KERNEL] Critical error in iteration: " + e.getMessage());
+//			if (System.getProperty("evolution.test.debug") != null) {
+//				e.printStackTrace();
+//			}
+//			EvaluationResult result = OrchestrationFactory.eINSTANCE.createEvaluationResult();
+//			result.setSuccess(false);
+//			result.setDecision(SelfDevDecision.ROLLBACK);
+//			return result;
+//		}
+//	}
 
 	public EvaluationResult failedResult() {
 		EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
@@ -1636,36 +1788,74 @@ public class IterationManager {
 	 * Internal handler that delegates to the appropriate execution path based on
 	 * the current mode (Mediated, Self-Dev, or Standard).
 	 */
+//	private OrchestratorResponse #(TaskRequest taskRequest) throws Exception {
+//		// Check if we have pre-populated tasks in EXECUTING state
+//		if (context.getStateHolder().getState() == SystemState.EXECUTING
+//				&& !context.getOrchestrator().getTasks().isEmpty()) {
+//			context.log("[KERNEL] Pre-populated tasks detected. Executing directly...");
+//			boolean success = executeTasksWithRetries(context.getOrchestrator().getTasks());
+//			OrchestratorResponse bypassResponse = new OrchestratorResponse();
+//			bypassResponse.setResultType(ResultType.CHAT);
+//			bypassResponse.setSummary(success ? "Execution completed successfully." : "Execution failed.");
+//			transition(success ? SystemState.DONE : SystemState.FAILED, context);
+//			return bypassResponse;
+//		}
+//
+//		// Check if in Mediated mode - use mediation engine
+//		boolean isMediated = isMediatedMode();
+//		if (isMediated) {
+//			context.log("[KERNEL] Mediated Mode: Using mediated orchestration flow");
+//			return handleMediated(taskRequest);
+//		}
+//
+//		// Check if in Self-Dev mode
+//		boolean isSelfDev = isSelfDevMode();
+//		if (isSelfDev) {
+//			context.log("[KERNEL] Self-Dev Mode: Using self-development orchestration flow");
+//			return handleSelfDev(taskRequest);
+//		}
+//
+//		// Standard mode - delegate to DarwinEngine
+//		context.log("[KERNEL] Standard Mode: Using Darwin orchestration flow");
+//		return darwinEngine.orchestrateEvolution(taskRequest, this);
+//	}
+	
 	private OrchestratorResponse handleInternal(TaskRequest taskRequest) throws Exception {
-		// Check if we have pre-populated tasks in EXECUTING state
-		if (context.getStateHolder().getState() == SystemState.EXECUTING
-				&& !context.getOrchestrator().getTasks().isEmpty()) {
-			context.log("[KERNEL] Pre-populated tasks detected. Executing directly...");
-			boolean success = executeTasksWithRetries(context.getOrchestrator().getTasks());
-			OrchestratorResponse bypassResponse = new OrchestratorResponse();
-			bypassResponse.setResultType(ResultType.CHAT);
-			bypassResponse.setSummary(success ? "Execution completed successfully." : "Execution failed.");
-			transition(success ? SystemState.DONE : SystemState.FAILED, context);
-			return bypassResponse;
-		}
-
-		// Check if in Mediated mode - use mediation engine
-		boolean isMediated = isMediatedMode();
-		if (isMediated) {
-			context.log("[KERNEL] Mediated Mode: Using mediated orchestration flow");
-			return handleMediated(taskRequest);
-		}
-
-		// Check if in Self-Dev mode
-		boolean isSelfDev = isSelfDevMode();
-		if (isSelfDev) {
-			context.log("[KERNEL] Self-Dev Mode: Using self-development orchestration flow");
-			return handleSelfDev(taskRequest);
-		}
-
-		// Standard mode - delegate to DarwinEngine
-		context.log("[KERNEL] Standard Mode: Using Darwin orchestration flow");
-		return darwinEngine.orchestrateEvolution(taskRequest, this);
+	    // Check if we're using the standard DarwinEngine (the original one)
+	    if (darwinEngine instanceof DarwinEngine) {
+	        // Use the original evolve method
+	        return ((DarwinEngine) darwinEngine).orchestrateEvolution(taskRequest, this);
+	    } else {
+	        // For other modes (CHAT, MEDIATED, SELF_DEV), use the simplified flow
+	        return handleModeSpecific(taskRequest);
+	    }
+	}
+	
+	private OrchestratorResponse handleModeSpecific(TaskRequest taskRequest) throws Exception {
+	    context.log("[KERNEL] Using mode-specific evolution for: " + darwinEngine.getMode());
+	    
+	    // Get or create goal model
+	    GoalModel goal = (GoalModel) context.getOrchestrationState().getMetadata().get("goalModel");
+	    if (goal == null) {
+	        goal = goalUnderstandingEngine.understand(taskRequest.getPrompt(), context);
+	        context.getOrchestrationState().getMetadata().put("goalModel", goal);
+	    }
+	    
+	    // Run the engine's iteration
+	    EvaluationResult result = darwinEngine.runIteration(goal, this);
+	    
+	    OrchestratorResponse response = new OrchestratorResponse();
+	    response.setResultType(ResultType.CHAT);
+	    
+	    if (result.isSuccess()) {
+	        response.setSummary(result.getSummary() != null ? result.getSummary() : "Evolution completed successfully");
+	        transition(SystemState.DONE, context);
+	    } else {
+	        response.setSummary("Evolution failed: " + String.join("; ", result.getErrors()));
+	        transition(SystemState.FAILED, context);
+	    }
+	    
+	    return response;
 	}
 
 	/**
