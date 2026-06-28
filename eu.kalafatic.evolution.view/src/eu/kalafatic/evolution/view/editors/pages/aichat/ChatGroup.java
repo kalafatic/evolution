@@ -211,7 +211,22 @@ public class ChatGroup extends AEvoGroup {
                 eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider gitProvider = new eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider();
                 List<String> changedFiles = new java.util.ArrayList<>();
                 try {
-                    changedFiles.addAll(gitProvider.getChangedFiles(projectRoot, "HEAD"));
+                    List<String> gitFiles = gitProvider.getChangedFiles(projectRoot, "HEAD");
+                    for (String gf : gitFiles) {
+                        String path = gf;
+                        boolean isDeleted = false;
+                        if (path.length() > 2 && path.charAt(1) == ' ') {
+                            isDeleted = path.startsWith("D ");
+                            path = path.substring(2);
+                        }
+                        if (!FileFilterUtil.isSystemFile(path)) {
+                            if (!isDeleted) {
+                                File f = new File(projectRoot, path);
+                                if (!f.exists()) continue;
+                            }
+                            changedFiles.add(gf);
+                        }
+                    }
                 } catch (Exception e) {
                     // Not a git repo, ignore
                 }
@@ -224,6 +239,11 @@ public class ChatGroup extends AEvoGroup {
                     for (java.util.Map.Entry<String, eu.kalafatic.evolution.controller.orchestration.FileChangeTracker.ChangeType> entry : aiChanges.entrySet()) {
                         String path = entry.getKey();
                         if (FileFilterUtil.isSystemFile(path)) continue;
+
+                        if (entry.getValue() != eu.kalafatic.evolution.controller.orchestration.FileChangeTracker.ChangeType.REMOVED) {
+                            File f = new File(projectRoot, path);
+                            if (!f.exists()) continue;
+                        }
 
                         String prefix = "M ";
                         if (entry.getValue() == eu.kalafatic.evolution.controller.orchestration.FileChangeTracker.ChangeType.NEW) prefix = "A ";
