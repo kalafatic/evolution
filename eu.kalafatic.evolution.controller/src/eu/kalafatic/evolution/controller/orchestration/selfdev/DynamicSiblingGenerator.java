@@ -2,7 +2,6 @@ package eu.kalafatic.evolution.controller.orchestration.selfdev;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -14,6 +13,7 @@ import eu.kalafatic.evolution.controller.orchestration.EvolutionProgressPublishe
 import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.goal.GoalModel;
+import eu.kalafatic.evolution.controller.orchestration.util.ModeRecognizer;
 import eu.kalafatic.evolution.controller.orchestration.util.ModelCapability;
 import eu.kalafatic.evolution.controller.orchestration.util.ModelCapabilityDetector;
 
@@ -45,7 +45,7 @@ public class DynamicSiblingGenerator {
             TaskContext context,
             EvolutionDimension activeDimension) throws Exception {
         
-        boolean isMediated = isMediated(context);
+        boolean isMediated = ModeRecognizer.isMediatedMode(context);
 
         // STEP 1: Analyze intent
         context.log("[DYNAMIC] Analyzing user intent...");
@@ -121,23 +121,12 @@ public class DynamicSiblingGenerator {
         return "unknown";
     }
     
-    private boolean isMediated(TaskContext context) {
-        if (context == null) return false;
-        return context.getBehaviorProfile().hasTrait(eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait.WORKFLOW_EXPORT_ONLY) ||
-               (context.getPlatformMode() != null &&
-                ("HYBRID_MANUAL_EXPORT".equals(context.getPlatformMode().getType().name()) ||
-                 "MEDIATED".equalsIgnoreCase(context.getPlatformMode().getType().name()))) ||
-               (context.getOrchestrator() != null &&
-                context.getOrchestrator().getAiMode() != null &&
-                "MEDIATED".equals(context.getOrchestrator().getAiMode().name())) ||
-               (context.getOrchestrationState() != null &&
-                context.getOrchestrationState().getMetadata().containsKey("mediatedSnapshot"));
-    }
+    
 
     private String buildDynamicPrompt(PromptStrategy strategy, int siblingIndex, TaskContext context) {
         StringBuilder prompt = new StringBuilder();
         
-        boolean isMediated = isMediated(context);
+        boolean isMediated = ModeRecognizer.isMediatedMode(context);
 
         // Base instruction
         if (isMediated) {
@@ -286,7 +275,7 @@ public class DynamicSiblingGenerator {
     private JSONObject generateSingleVariant(String prompt, PromptStrategy strategy, int index, TaskContext context) {
         String variantId = "variant-" + System.currentTimeMillis() + "-" + index;
         String variantStrategy = strategy.intent.primaryGoal + " - Variant " + (index + 1);
-        boolean isMediated = isMediated(context);
+        boolean isMediated = ModeRecognizer.isMediatedMode(context);
 
         try {
             EvolutionProgressPublisher.updateBranchStatus(context, variantId, variantStrategy, "analyzing", null);

@@ -90,7 +90,7 @@ import eu.kalafatic.evolution.model.orchestration.SelfDevStatus;
 import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 
-public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationContract {
+public class DarwinEngine4 extends BaseAiAgent implements ICapability, IMutationContract {
 
 	private final TaskContext context;
 	private final IterationMemoryService memoryService;
@@ -112,7 +112,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 	private final eu.kalafatic.evolution.controller.orchestration.engines.SelectionEngine selectionEngine = new eu.kalafatic.evolution.controller.orchestration.engines.SelectionEngine();
 	private CapabilityStatus status = CapabilityStatus.STOPPED;
 
-	public DarwinEngine(TaskContext context, IterationMemoryService memoryService,
+	public DarwinEngine4(TaskContext context, IterationMemoryService memoryService,
 			SystemStateSignalProvider stateProvider) {
 		super("DarwinEngine", "DarwinEngine", SessionManager.getInstance().getSession(context.getSessionId()));
 		this.context = context;
@@ -333,22 +333,20 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 			}
 
 			if (state.getLockedAbstractionLevel() == null) {
-                AbstractionLevel lockedLevel = AbstractionLevel.DESIGN; // Default
-                String complexity = goalModel.getComplexity() != null ? goalModel.getComplexity().toUpperCase() : "MEDIUM";
-                String type = goalModel.getGoalType() != null ? goalModel.getGoalType().toUpperCase() : "GENERAL";
+				AbstractionLevel lockedLevel = AbstractionLevel.DESIGN; // Default
+				String complexity = goalModel.getComplexity() != null ? goalModel.getComplexity().toUpperCase()
+						: "MEDIUM";
 
-                if ("ANALYSIS".equalsIgnoreCase(type) || "ANALYSIS".equalsIgnoreCase(goalModel.getIntent())) {
-                    lockedLevel = AbstractionLevel.ARCHITECTURE;
-                } else if ("SIMPLE".equals(complexity)) {
-                    lockedLevel = AbstractionLevel.IMPLEMENTATION;
-                } else if ("HIGH".equals(complexity)) {
-                    lockedLevel = AbstractionLevel.ARCHITECTURE;
-                }
+				if ("SIMPLE".equals(complexity)) {
+					lockedLevel = AbstractionLevel.IMPLEMENTATION;
+				} else if ("HIGH".equals(complexity)) {
+					lockedLevel = AbstractionLevel.ARCHITECTURE;
+				}
 
-                state.setLockedAbstractionLevel(lockedLevel);
-                context.log("[DARWIN] Abstraction level LOCKED to: " + lockedLevel + " based on complexity: " + complexity + ", type: " + type);
-            }
-
+				state.setLockedAbstractionLevel(lockedLevel);
+				context.log(
+						"[DARWIN] Abstraction level LOCKED to: " + lockedLevel + " based on complexity: " + complexity);
+			}
 
 			// ADAPTIVE KERNEL: Ensure execution profile is initialized before access
 			if (context.getExecutionProfile() == null) {
