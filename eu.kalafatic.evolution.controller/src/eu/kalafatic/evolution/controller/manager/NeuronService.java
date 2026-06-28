@@ -10,6 +10,7 @@ import org.json.JSONObject;
 import eu.kalafatic.evolution.model.orchestration.NeuronAI;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.controller.log.Log;
 
 /**
  * @evo.lastModified: 14:A
@@ -25,7 +26,7 @@ public class NeuronService {
 
     private static String initializeGlobalDir() {
         String home = System.getProperty("user.home");
-        if (home == null) return "supervisor";
+        if (home == null) home = ".";
         return home + java.io.File.separator + "supervisor";
     }
 
@@ -37,6 +38,7 @@ public class NeuronService {
 
     private NeuronService() {
         loadGlobalMemory();
+        Runtime.getRuntime().addShutdownHook(new Thread(this::saveGlobalMemory));
     }
 
     public static NeuronService getInstance() {
@@ -46,6 +48,7 @@ public class NeuronService {
     public static void setGlobalPaths(String dir, String path) {
         GLOBAL_DIR = dir;
         GLOBAL_PATH = path;
+        INSTANCE.loadGlobalMemory();
     }
 
     public void train(Orchestrator orchestrator, String text) {
@@ -168,8 +171,9 @@ public class NeuronService {
                 Map<String, Map<String, Integer>> loaded = deserializeMemory(data);
                 globalMemory.clear();
                 globalMemory.putAll(loaded);
+                Log.log("[NEURON] Global memory loaded from: " + GLOBAL_PATH);
             } catch (Exception e) {
-                System.err.println("Error loading global neuron memory: " + e.getMessage());
+                Log.log("[NEURON] Error loading global memory: " + e.getMessage());
             }
         }
     }
@@ -182,8 +186,9 @@ public class NeuronService {
             }
             String data = serializeMemory(globalMemory);
             java.nio.file.Files.write(new java.io.File(GLOBAL_PATH).toPath(), data.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            Log.log("[NEURON] Global memory persisted to: " + GLOBAL_PATH);
         } catch (Exception e) {
-            System.err.println("Error saving global neuron memory: " + e.getMessage());
+            Log.log("[NEURON] Error saving global memory: " + e.getMessage());
         }
     }
 
