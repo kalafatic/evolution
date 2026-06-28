@@ -156,23 +156,34 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 	    // 2. ROUTE BASED ON INTENT
 	    // ============================================================
 	    if (intent.isChat()) {
-	        context.log("[DARWIN] CHAT detected. Using minimal evolution (1-2 branches).");
+	        context.log("[DARWIN] CHAT detected. Using minimal evolution.");
+	        state.getMetadata().put("isChatRequest", true);
 	        // Set CHAT profile
 	        EvolutionProfile chatProfile = EvolutionProfile.create(CapabilityType.CHAT, 1);
 	        context.getOrchestrationState().setExecutionProfile(chatProfile);
 	        state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(EvolutionPhase.TERMINAL_SUCCESS));
 	        state.setIterationCount(1);
-	        state.getMetadata().put("isChatRequest", true);
-	        
+
 	    } else if (intent.isControl()) {
-	        context.log("[DARWIN] CONTROL detected. Routing to selection engine.");
+	        context.log("[DARWIN] CONTROL detected.");
 	        state.getMetadata().put("pendingControlCommand", request);
-	        
+
 	    } else {
-	        // TASK (default)
+	        // ============================================================
+	        // TASK: RESET THE CHAT FLAG!
+	        // ============================================================
 	        context.log("[DARWIN] TASK detected. Using full evolution.");
+	        
+	        // ✅ CRITICAL FIX: Remove the chat flag
 	        state.getMetadata().remove("isChatRequest");
-	        // Don't set CHAT profile — use normal flow
+	        
+	        // Also ensure we don't have any stale chat profile
+	        // If profile is CHAT, reset it
+	        if (context.getExecutionProfile() != null && 
+	            context.getExecutionProfile().getCapability() == CapabilityType.CHAT) {
+	            EvolutionProfile taskProfile = EvolutionProfile.create(CapabilityType.CODE, 2);
+	            context.getOrchestrationState().setExecutionProfile(taskProfile);
+	        }
 	    }
 
 		Map<String, Object> contextMap = taskRequest.getContext();
@@ -700,6 +711,23 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 			goal = context.getOrchestrator().getSelfDevSession() != null
 					? context.getOrchestrator().getSelfDevSession().getInitialRequest()
 					: "Autonomous Improvement";
+		}
+		// ============================================================
+		// FIX: If this is a TASK, ensure CHAT flag is cleared
+		// ============================================================
+		// Check if the goal contains code keywords
+		if (!modeRecognizer.isChatMode(context)) {
+			if (state.getMetadata().containsKey("isChatRequest")) {
+				context.log("[DARWIN] TASK detected. Clearing stale CHAT flag.");
+				state.getMetadata().remove("isChatRequest");
+			}
+			// Ensure profile is not CHAT
+			if (context.getExecutionProfile() != null
+					&& context.getExecutionProfile().getCapability() == CapabilityType.CHAT) {
+				context.log("[DARWIN] TASK detected. Resetting profile from CHAT to CODE.");
+				EvolutionProfile taskProfile = EvolutionProfile.create(CapabilityType.CODE, 2);
+				context.getOrchestrationState().setExecutionProfile(taskProfile);
+			}
 		}
 
 		// Determine current phase
@@ -1982,7 +2010,13 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 	    // ============================================================
 	    boolean isChatFlag = context.getOrchestrationState().getMetadata().containsKey("isChatRequest") &&
 	                         (boolean) context.getOrchestrationState().getMetadata().get("isChatRequest");
-	    
+	    boolean isActuallyTask = !modeRecognizer.isChatMode(context);
+	    // If the flag says CHAT but the goal is a task, clear the flag
+	    if (isChatFlag && isActuallyTask) {
+	        context.log("[DARWIN] WARNING: CHAT flag is true but goal is a task. Clearing flag.");
+	        context.getOrchestrationState().getMetadata().remove("isChatRequest");
+	        isChatFlag = false;
+	    }
 	    // Also check the profile capability
 	    boolean isChatCapability = context.getExecutionProfile() != null &&
 	                               context.getExecutionProfile().getCapability() == CapabilityType.CHAT;
