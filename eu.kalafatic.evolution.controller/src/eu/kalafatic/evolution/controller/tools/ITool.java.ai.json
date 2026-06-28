@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.controller.tools; import java.io.File; import eu.kalafatic.evolution.controller.orchestration.TaskContext;",
+  "summary": "package eu.kalafatic.evolution.controller.tools; import java.io.File; import eu.kalafatic.evolution.controller.orchestration.TaskContext; public interface ITool { String getName(); String execute(String command, File workingDir, TaskContext context) throws Exception; }",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

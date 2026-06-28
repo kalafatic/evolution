@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration.selfdev; import java.io.File; import java.util.Collections;",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration.selfdev; import java.io.File; import java.util.Collections; import java.util.List; import java.util.Set; import java.util.concurrent.ConcurrentHashMap; import eu.kalafatic.evolution.controller.tools.GitTool; import eu.kalafatic.evolution.controller.orchestration.TaskContext; public class GitManager { private final File root; private final GitTool gitTool = new GitTool(); private final Set<String> worktreeRegistry = ConcurrentHashMap.newKeySet(); public GitManager(File root) { this.root = root; } public boolean isGitRepository() { return new File(root, \".git\").exists(); } public void cleanupLocks() { File gitLock = new File(root, \".git/index.lock\");",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

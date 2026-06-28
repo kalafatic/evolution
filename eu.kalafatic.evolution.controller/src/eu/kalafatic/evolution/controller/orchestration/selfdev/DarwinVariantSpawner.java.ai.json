@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "orchestration",
+  "stability": "STABLE",
+  "mediatedRelevanceScore": 1.0,
+  "importanceScore": 1.0,
+  "summary": "package eu.kalafatic.evolution.controller.orchestration.selfdev; import java.util.ArrayList; import java.util.List; import org.json.JSONObject; import eu.kalafatic.evolution.controller.orchestration.AiService; import eu.kalafatic.evolution.controller.orchestration.TaskContext; import eu.kalafatic.evolution.model.orchestration.Orchestrator; public class DarwinVariantSpawner { private final AiService aiService; private final DarwinVariantValidator validator; public DarwinVariantSpawner(AiService aiService) { this.aiService = aiService; this.validator = new DarwinVariantValidator(); } public List<JSONObject> spawn(String goal, List<DarwinStrategySeed> seeds, String basePrompt, String lineageContext, List<String> rejectedSiblings, TaskContext context) { List<JSONObject> variants = new ArrayList<>(); Orchestrator orchestrator = context.getOrchestrator(); List<JSONObject> currentRoundVariants = new ArrayList<>(); for (DarwinStrategySeed seed : seeds) { context.log(\"[SPAWNER] Generating \" + seed.getType() + \" trajectory...\");",
+  "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
+  "contextSelectionHints": ["mandatory_context"],
+  "dependencyLinks": []
+}

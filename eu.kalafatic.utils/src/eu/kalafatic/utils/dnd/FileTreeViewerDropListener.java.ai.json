@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.2,
   "importanceScore": 0.2,
-  "summary": "package eu.kalafatic.utils.dnd; import java.io.File; import java.io.UnsupportedEncodingException;",
+  "summary": "package eu.kalafatic.utils.dnd; import java.io.File; import java.io.UnsupportedEncodingException; import java.util.concurrent.locks.Lock; import java.util.concurrent.locks.ReentrantLock; import org.eclipse.jface.dialogs.MessageDialog; import org.eclipse.jface.viewers.Viewer; import org.eclipse.swt.dnd.DND; import org.eclipse.swt.dnd.DropTarget; import org.eclipse.swt.dnd.DropTargetAdapter; import org.eclipse.swt.dnd.DropTargetEvent; import org.eclipse.swt.dnd.FileTransfer; import org.eclipse.swt.dnd.Transfer; import org.eclipse.swt.widgets.Display; import org.eclipse.ui.part.EditorPart; import eu.kalafatic.utils.lib.EEncoding; public class FileTreeViewerDropListener { private EditorPart editorPart; private Viewer viewer;",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

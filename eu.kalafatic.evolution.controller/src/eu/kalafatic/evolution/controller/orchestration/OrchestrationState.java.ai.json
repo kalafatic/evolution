@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration; import java.util.ArrayList; import java.util.List;",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration; import java.util.ArrayList; import java.util.List; import java.util.Map; import java.util.concurrent.ConcurrentHashMap; import eu.kalafatic.evolution.model.orchestration.Task; import eu.kalafatic.evolution.controller.orchestration.intent.IntentAnalysisResult; import eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent; import eu.kalafatic.evolution.controller.orchestration.diagnostics.CognitiveTrace; import eu.kalafatic.evolution.controller.orchestration.workspace.SemanticWorkspace; import java.util.Set; import java.util.UUID; public class OrchestrationState { private String rawInput; private IntentAnalysisResult intentAnalysis; private Set<TaskIntent> taskIntents; private String attachmentContext; private List<Task> executionPlan = new ArrayList<>(); private List<String> diagnostics = new ArrayList<>(); private Map<String, Object> metadata = new ConcurrentHashMap<>();",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

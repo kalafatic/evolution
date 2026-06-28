@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.controller.tests; import static org.junit.Assert.assertEquals; import static org.junit.Assert.assertNotEquals;",
+  "summary": "package eu.kalafatic.evolution.controller.tests; import static org.junit.Assert.assertEquals; import static org.junit.Assert.assertNotEquals; import org.junit.Test; import eu.kalafatic.evolution.controller.orchestration.util.DataScrubber; public class DataScrubberTest { @Test public void testScrubOpenAiKey() { String input = \"My key is sk-123456789012345678901234567890123456789012345678 and it's secret.\"; String expected = \"My key is [SECRET_API_KEY] and it's secret.\"; assertEquals(expected, DataScrubber.scrub(input)); } @Test public void testScrubEmail() { String input = \"Contact me at user@example.com for info.\"; String expected = \"Contact me at [EMAIL_REDACTED] for info.\"; assertEquals(expected, DataScrubber.scrub(input)); } @Test public void testScrubAbsolutePath() {",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

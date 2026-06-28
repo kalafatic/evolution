@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.supervision; import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant; public class ManualSelectionPolicy implements ResolverPolicy {",
+  "summary": "package eu.kalafatic.evolution.controller.supervision; import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant; public class ManualSelectionPolicy implements ResolverPolicy { private final String manualSelectionId; public ManualSelectionPolicy(String manualSelectionId) { this.manualSelectionId = manualSelectionId; } @Override public PolicyResult evaluate(BranchVariant variant) { double score = variant.getId().equals(manualSelectionId) ? 1.0 : 0.0; return new PolicyResult(score, 1.0, \"Manual selection override for ID: \" + manualSelectionId); } @Override public String getName() { return \"ManualSelectionPolicy\"; } }",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

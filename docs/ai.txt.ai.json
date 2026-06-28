@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "Kernel ├─ Policy Engine ├─ Flow Resolver",
+  "summary": "Kernel ├─ Policy Engine ├─ Flow Resolver ├─ Event Bus └─ State Store Flows ├─ DarwinFlow ├─ IterativeFlow └─ AtomicFlow Agents ├─ Planner ├─ Analyzer ├─ Executor └─ Validator UI ├─ Interactive Diagram ├─ Step Mode └─ Runtime Monitor FIX UI: FIX IT RIGHT WAY.",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

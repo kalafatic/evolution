@@ -5,8 +5,8 @@
   "stability": "",
   "mediatedRelevanceScore": 0.9,
   "importanceScore": 0.9,
-  "summary": "package eu.kalafatic.evolution.controller.execution; import java.lang.management.ManagementFactory; import java.lang.management.MemoryMXBean;",
+  "summary": "package eu.kalafatic.evolution.controller.execution; import java.lang.management.ManagementFactory; import java.lang.management.MemoryMXBean; import java.lang.management.OperatingSystemMXBean; import java.util.concurrent.atomic.AtomicInteger; import java.util.concurrent.atomic.AtomicLong; public class BackpressureController { private static final BackpressureController INSTANCE = new BackpressureController(); private final AtomicInteger activeEvaluations = new AtomicInteger(0); private final AtomicLong signalCount = new AtomicLong(0); private long lastSignalCheck = System.currentTimeMillis(); private BackpressureController() {} public static BackpressureController getInstance() { return INSTANCE; } public void incrementEvaluations() { activeEvaluations.incrementAndGet(); } public void decrementEvaluations() { activeEvaluations.decrementAndGet(); } public void recordSignal() { signalCount.incrementAndGet(); } public void resetCounters() { signalCount.set(0); lastSignalCheck = System.currentTimeMillis(); }",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration; import java.io.File; import java.nio.file.Files;",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration; import java.io.File; import java.nio.file.Files; import java.time.Instant; import java.util.ArrayList; import java.util.List; import java.util.Map; import java.util.concurrent.CompletableFuture; import java.util.concurrent.ExecutorService; import java.util.concurrent.Executors; import java.util.stream.Collectors; import org.json.JSONArray; import org.json.JSONObject; import eu.kalafatic.evolution.controller.agents.AgentFactory; import eu.kalafatic.evolution.controller.agents.AnalyticAgent; import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants; import eu.kalafatic.evolution.controller.agents.StructureAgent; import eu.kalafatic.evolution.controller.agents.CriticAgent; import eu.kalafatic.evolution.controller.agents.FinalResponseAgent; import eu.kalafatic.evolution.controller.agents.GeneralAgent;",
   "evolutionaryNotes": "",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

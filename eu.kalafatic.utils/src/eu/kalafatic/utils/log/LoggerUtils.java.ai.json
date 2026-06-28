@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.2,
   "importanceScore": 0.2,
-  "summary": "package eu.kalafatic.utils.log; import static eu.kalafatic.utils.constants.FConstants.PREFERENCES; import java.io.BufferedReader;",
+  "summary": "package eu.kalafatic.utils.log; import static eu.kalafatic.utils.constants.FConstants.PREFERENCES; import java.io.BufferedReader; import java.io.BufferedWriter; import java.io.File; import java.io.FileInputStream; import java.io.FileWriter; import java.io.IOException; import java.io.InputStreamReader; import java.io.Writer; import java.text.SimpleDateFormat; import java.util.HashMap; import java.util.Map; import java.util.logging.FileHandler; import java.util.logging.Formatter; import java.util.logging.Logger; import java.util.logging.SimpleFormatter; import org.eclipse.core.runtime.Path; import eu.kalafatic.utils.constants.FConstants; import eu.kalafatic.utils.interfaces.ILog;",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

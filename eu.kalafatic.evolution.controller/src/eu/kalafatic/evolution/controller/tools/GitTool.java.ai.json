@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.controller.tools; import java.io.File; import java.util.ArrayList;",
+  "summary": "package eu.kalafatic.evolution.controller.tools; import java.io.File; import java.util.ArrayList; import java.util.List; import eu.kalafatic.evolution.controller.orchestration.TaskContext; import eu.kalafatic.evolution.model.orchestration.Git; public class GitTool implements ITool { private static List<File> cachedRepos = new ArrayList<>(); private static boolean scanning = false; public static synchronized List<File> getCachedLocalRepositories() { if (cachedRepos.isEmpty() && !scanning) { triggerBackgroundScan(); } return new ArrayList<>(cachedRepos); } public static void triggerBackgroundScan() { synchronized (GitTool.class) { if (scanning) return; scanning = true; }",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

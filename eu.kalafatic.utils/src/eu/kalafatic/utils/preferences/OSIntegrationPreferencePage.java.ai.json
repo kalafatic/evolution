@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.2,
   "importanceScore": 0.2,
-  "summary": "package eu.kalafatic.utils.preferences; import static eu.kalafatic.utils.constants.FConstants.PREFERENCES; import java.io.File;",
+  "summary": "package eu.kalafatic.utils.preferences; import static eu.kalafatic.utils.constants.FConstants.PREFERENCES; import java.io.File; import java.util.Arrays; import java.util.List; import org.eclipse.swt.SWT; import org.eclipse.swt.events.ModifyEvent; import org.eclipse.swt.events.ModifyListener; import org.eclipse.swt.events.SelectionAdapter; import org.eclipse.swt.events.SelectionEvent; import org.eclipse.swt.layout.GridData; import org.eclipse.swt.widgets.Button; import org.eclipse.swt.widgets.Combo; import org.eclipse.swt.widgets.Composite; import org.eclipse.swt.widgets.Control; import org.eclipse.swt.widgets.Event; import org.eclipse.swt.widgets.FileDialog; import org.eclipse.swt.widgets.Group; import org.eclipse.swt.widgets.Label; import org.eclipse.swt.widgets.Listener;",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

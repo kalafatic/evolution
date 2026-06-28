@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.controller.agents; import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants; import eu.kalafatic.evolution.controller.tools.ToolFactory;",
+  "summary": "package eu.kalafatic.evolution.controller.agents; import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants; import eu.kalafatic.evolution.controller.tools.ToolFactory; public class MavenAgent extends BaseAiAgent { public MavenAgent() { super(EvolutionConstants.AGENT_MAVEN, EvolutionConstants.AGENT_MAVEN); addTool(ToolFactory.getTool(EvolutionConstants.TOOL_MAVEN)); } @Override protected String getAgentInstructions() { return \"You are an AI Maven Agent. You manage Java project builds.\n\" + \"Use the MavenTool to run goals like clean, compile, test, or install.\"; } }",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

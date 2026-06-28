@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.4,
   "importanceScore": 0.4,
-  "summary": "package eu.kalafatic.evolution.view.perspective; import org.eclipse.ui.IFolderLayout; import org.eclipse.ui.IPageLayout;",
+  "summary": "package eu.kalafatic.evolution.view.perspective; import org.eclipse.ui.IFolderLayout; import org.eclipse.ui.IPageLayout; import org.eclipse.ui.IPerspectiveFactory; import org.eclipse.ui.console.IConsoleConstants; import eu.kalafatic.evolution.view.views.AIOutputView; import eu.kalafatic.evolution.view.views.InternalBrowserView; import eu.kalafatic.evolution.view.views.OrchestrationZestView; public class EvoPerspective implements IPerspectiveFactory { public static final String ID = \"eu.kalafatic.evolution.view.evoPerspective\"; @Override public void createInitialLayout(IPageLayout layout) { String editorArea = layout.getEditorArea(); layout.setEditorAreaVisible(true); IFolderLayout left = layout.createFolder(EFolder.TOP_LEFT.ID, IPageLayout.LEFT, 0.20f, editorArea); left.addView(\"eu.kalafatic.views.EvoNavigator\"); IFolderLayout bottomLeft = layout.createFolder(EFolder.BOTTOM_LEFT.ID, IPageLayout.BOTTOM, 0.50f, EFolder.TOP_LEFT.ID); bottomLeft.addView(IConsoleConstants.ID_CONSOLE_VIEW);",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

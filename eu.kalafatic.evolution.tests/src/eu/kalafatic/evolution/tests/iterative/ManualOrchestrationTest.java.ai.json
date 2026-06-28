@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.tests.iterative; import java.util.Random; public class ManualOrchestrationTest implements ISimulationTest {",
+  "summary": "package eu.kalafatic.evolution.tests.iterative; import java.util.Random; public class ManualOrchestrationTest implements ISimulationTest { private final ITestListener listener; private final Random random = new Random(); private boolean stop = false; public ManualOrchestrationTest(ITestListener listener) { this.listener = listener; } @Override public void run() { stop = false; listener.reset(); executeStep(\"observe\"); } @Override public void stop() { this.stop = true; } private void executeStep(String step) {",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

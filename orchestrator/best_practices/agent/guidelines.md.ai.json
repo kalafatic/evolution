@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "documentation",
+  "stability": "EVOLVING",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "- Be concise and professional in all communications. - Prioritize using available tools over general reasoning for technical tasks. - Report errors clearly and suggest potential fixes or workarounds. - Always verify the outcome of tool execution.",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

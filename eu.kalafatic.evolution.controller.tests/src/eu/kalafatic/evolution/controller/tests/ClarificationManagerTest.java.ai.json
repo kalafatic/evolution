@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.controller.tests; import static org.junit.Assert.*; import org.junit.Before;",
+  "summary": "package eu.kalafatic.evolution.controller.tests; import static org.junit.Assert.*; import org.junit.Before; import org.junit.Test; import eu.kalafatic.evolution.controller.orchestration.TaskContext; import eu.kalafatic.evolution.controller.orchestration.ConversationState; import eu.kalafatic.evolution.controller.orchestration.intent.ClarificationManager; import eu.kalafatic.evolution.controller.orchestration.intent.IntentAnalysisResult; import eu.kalafatic.evolution.controller.orchestration.intent.MissingRequirement; import eu.kalafatic.evolution.controller.orchestration.intent.Ambiguity; import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory; import eu.kalafatic.evolution.model.orchestration.Orchestrator; import java.io.File; import java.nio.file.Files; public class ClarificationManagerTest { private ClarificationManager manager; private IntentAnalysisResult result; private TaskContext context; private Orchestrator orchestrator; @Before",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

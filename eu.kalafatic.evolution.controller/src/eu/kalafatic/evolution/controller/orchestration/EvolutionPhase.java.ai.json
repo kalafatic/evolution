@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "orchestration",
+  "stability": "STABLE",
+  "mediatedRelevanceScore": 1.0,
+  "importanceScore": 1.0,
+  "summary": "package eu.kalafatic.evolution.controller.orchestration; public enum EvolutionPhase { INTENT_EXPANSION, ARCHITECTURE_VARIANTS, SELECTION_REFINEMENT, IMPLEMENTATION_PLAN, FINAL_SYNTHESIS, TERMINAL_SUCCESS, TERMINAL_FAILURE; public static EvolutionPhase fromString(String phase) { if (phase == null) return INTENT_EXPANSION; try { return EvolutionPhase.valueOf(phase); } catch (IllegalArgumentException e) { switch (phase) { case \"INTENT_EXPANSION\": return INTENT_EXPANSION; case \"ARCHITECTURE_VARIANTS\": return ARCHITECTURE_VARIANTS; case \"SELECTION_REFINEMENT\": return SELECTION_REFINEMENT; case \"IMPLEMENTATION_PLAN\": return IMPLEMENTATION_PLAN; case \"FINAL_SYNTHESIS\": return FINAL_SYNTHESIS;",
+  "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
+  "contextSelectionHints": ["mandatory_context"],
+  "dependencyLinks": []
+}

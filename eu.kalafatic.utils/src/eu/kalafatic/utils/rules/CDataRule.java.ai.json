@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.2,
   "importanceScore": 0.2,
-  "summary": "package eu.kalafatic.utils.rules; import org.eclipse.jface.text.rules.ICharacterScanner; import org.eclipse.jface.text.rules.IRule;",
+  "summary": "package eu.kalafatic.utils.rules; import org.eclipse.jface.text.rules.ICharacterScanner; import org.eclipse.jface.text.rules.IRule; import org.eclipse.jface.text.rules.IToken; import org.eclipse.jface.text.rules.Token; public class CDataRule implements IRule { IToken fToken; StringBuffer buffer = new StringBuffer(); int charsRead = 0; private String matchString; private static final String START_MATCH_STRING  = \"<![CDATA[\"; private static final String END_MATCH_STRING = \"]]>\";",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

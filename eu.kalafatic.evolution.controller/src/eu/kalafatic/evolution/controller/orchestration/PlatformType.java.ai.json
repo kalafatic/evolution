@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration; public enum PlatformType { SIMPLE_CHAT,",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration; public enum PlatformType { SIMPLE_CHAT, ASSISTED_CODING, DARWIN_MODE, SELF_DEV_MODE, HYBRID_MANUAL_EXPORT }",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

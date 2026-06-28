@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.4,
   "importanceScore": 0.4,
-  "summary": "package eu.kalafatic.evolution.view.editors.pages.properties; import org.eclipse.swt.SWT; import org.eclipse.swt.layout.GridData;",
+  "summary": "package eu.kalafatic.evolution.view.editors.pages.properties; import org.eclipse.swt.SWT; import org.eclipse.swt.layout.GridData; import org.eclipse.swt.widgets.Composite; import org.eclipse.swt.widgets.Table; import org.eclipse.swt.widgets.TableColumn; import org.eclipse.swt.widgets.TableItem; import org.eclipse.ui.forms.widgets.FormToolkit; import eu.kalafatic.evolution.model.orchestration.Agent; import eu.kalafatic.evolution.model.orchestration.Orchestrator; import eu.kalafatic.evolution.view.editors.MultiPageEditor; import eu.kalafatic.evolution.view.editors.pages.AEvoGroup; import eu.kalafatic.utils.factories.GUIFactory; public class AgentsGroup extends AEvoGroup { private Table agentsTable; public AgentsGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator) { super(editor, orchestrator); createControl(toolkit, parent); } private void createControl(FormToolkit toolkit, Composite parent) {",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.model.orchestration.validation; import eu.kalafatic.evolution.model.orchestration.NeuronType; public interface NeuronAIValidator {",
+  "summary": "package eu.kalafatic.evolution.model.orchestration.validation; import eu.kalafatic.evolution.model.orchestration.NeuronType; public interface NeuronAIValidator { boolean validate(); boolean validateUrl(String value); boolean validateModel(String value); boolean validateType(NeuronType value); boolean validateTrainingData(String value); }",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

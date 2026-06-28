@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.controller.handlers; import java.io.File; import org.eclipse.core.commands.ExecutionEvent;",
+  "summary": "package eu.kalafatic.evolution.controller.handlers; import java.io.File; import org.eclipse.core.commands.ExecutionEvent; import org.eclipse.core.commands.ExecutionException; import org.eclipse.emf.ecore.EObject; import org.eclipse.jgit.api.Git; import org.eclipse.jgit.transport.CredentialsProvider; import org.eclipse.swt.widgets.Shell; import org.eclipse.ui.handlers.HandlerUtil; import eu.kalafatic.evolution.model.orchestration.Orchestrator; public class GitCommitCommandHandler extends AbstractOrchestratorHandler { @Override public Object execute(ExecutionEvent event) throws ExecutionException { Orchestrator orchestrator = getOrchestrator(event); if (orchestrator != null) { EObject git = (EObject) orchestrator.eGet(orchestrator.eClass().getEStructuralFeature(\"git\")); if (git != null) { String repositoryUrl = (String) git.eGet(git.eClass().getEStructuralFeature(\"repositoryUrl\")); String branch = (String) git.eGet(git.eClass().getEStructuralFeature(\"branch\")); String username = (String) git.eGet(git.eClass().getEStructuralFeature(\"username\"));",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

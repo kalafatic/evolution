@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.ecore.EObject; public interface NeuronAI extends EObject {",
+  "summary": "package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.ecore.EObject; public interface NeuronAI extends EObject { String getUrl(); void setUrl(String value);",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

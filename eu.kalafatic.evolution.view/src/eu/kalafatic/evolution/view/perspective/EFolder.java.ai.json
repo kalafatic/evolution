@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.4,
   "importanceScore": 0.4,
-  "summary": "package eu.kalafatic.evolution.view.perspective; public enum EFolder { TOP_LEFT(0, \"TOP_LEFT\"),",
+  "summary": "package eu.kalafatic.evolution.view.perspective; public enum EFolder { TOP_LEFT(0, \"TOP_LEFT\"), TOP_RIGHT(1, \"TOP_RIGHT\"), BOTTOM_LEFT(2, \"BOTTOM_LEFT\"), BOTTOM_RIGHT(3, \"BOTTOM_RIGHT\"), BOTTOM_BOTTOM_RIGHT(4, \"BOTTOM_BOTTOM_RIGHT\"), CENTER(5, \"CENTER\"), LEFT_RIGHT(6, \"LEFT_RIGHT\"), MULTI_VIEW(7, \":*\"); public int index; public String ID;",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.2,
   "importanceScore": 0.2,
-  "summary": "package eu.kalafatic.utils.preferences; import java.util.ArrayList; import java.util.List;",
+  "summary": "package eu.kalafatic.utils.preferences; import java.util.ArrayList; import java.util.List; import java.util.Locale; import org.eclipse.swt.widgets.Display; import eu.kalafatic.utils.constants.FCoreImageConstants; import eu.kalafatic.utils.interfaces.IPreference; import eu.kalafatic.utils.lib.ELogEvent; import eu.kalafatic.utils.lib.ELogType; import eu.kalafatic.utils.lib.ERemote; public enum ECorePreferences implements IPreference { SET(\"Set\", false, false), MODULE(\"Core\", \"\", \"\"), APP_NAME(\"Application name\", \"Gemini\", \"Gemini\"), APP_ID(\"Application ID\", \"-GE2010-000000000000\", \"-GE2010-000000000000\"), WORKSPACE_LOC(\"Workspace location\", \"C:\\GE\\workspace\", \"C:\\GE\\workspace\"),",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

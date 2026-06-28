@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.2,
   "importanceScore": 0.2,
-  "summary": "package eu.kalafatic.utils.providers; import org.eclipse.jface.viewers.Viewer; import org.eclipse.ui.dialogs.PatternFilter;",
+  "summary": "package eu.kalafatic.utils.providers; import org.eclipse.jface.viewers.Viewer; import org.eclipse.ui.dialogs.PatternFilter; import org.eclipse.ui.views.IViewCategory; import org.eclipse.ui.views.IViewDescriptor; public class ViewPatternFilter extends PatternFilter { public ViewPatternFilter() { super(); } @Override public boolean isElementSelectable(Object element) { return element instanceof IViewDescriptor; }",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

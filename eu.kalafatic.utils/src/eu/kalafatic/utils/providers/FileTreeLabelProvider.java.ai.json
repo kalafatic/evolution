@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.2,
   "importanceScore": 0.2,
-  "summary": "package eu.kalafatic.utils.providers; import java.io.File; import org.eclipse.jface.viewers.ILabelProvider;",
+  "summary": "package eu.kalafatic.utils.providers; import java.io.File; import org.eclipse.jface.viewers.ILabelProvider; import org.eclipse.jface.viewers.ILabelProviderListener; import org.eclipse.swt.graphics.Image; import eu.kalafatic.utils.constants.FCoreImageConstants; public class FileTreeLabelProvider implements ILabelProvider { @Override public Image getImage(Object element) { File file = (File) element; if (file.isDirectory()) { return file.getParent() != null ? FCoreImageConstants.FOLDER_IMG : FCoreImageConstants.DRIVE_IMG_1; } else if (file.isFile()) { return FCoreImageConstants.FILE_IMG; } return FCoreImageConstants.DRIVE_IMG_2; }",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

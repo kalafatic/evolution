@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "orchestration",
+  "stability": "STABLE",
+  "mediatedRelevanceScore": 1.0,
+  "importanceScore": 1.0,
+  "summary": "package eu.kalafatic.evolution.controller.orchestration.util; public class CodeExtractor { public static String extractCode(String text) { if (text == null) return \"\"; String trimmed = text.trim(); trimmed = trimmed.replaceAll(\"(?is)<think>.*?</think>\", \"\").trim(); if (trimmed.contains(\"```\")) { int firstBackticks = trimmed.indexOf(\"```\"); int firstNewline = trimmed.indexOf(\"\n\", firstBackticks); int lastBackticks = trimmed.lastIndexOf(\"```\"); if (firstNewline != -1 && lastBackticks > firstNewline) { return trimmed.substring(firstNewline + 1, lastBackticks).trim(); } else if (lastBackticks > firstBackticks + 3) { return trimmed.substring(firstBackticks + 3, lastBackticks).trim(); } } return trimmed; } }",
+  "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
+  "contextSelectionHints": ["mandatory_context"],
+  "dependencyLinks": []
+}

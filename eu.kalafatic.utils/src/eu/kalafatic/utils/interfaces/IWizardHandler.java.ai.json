@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.2,
   "importanceScore": 0.2,
-  "summary": "package eu.kalafatic.utils.interfaces; import org.eclipse.core.commands.ExecutionEvent; import org.eclipse.ui.wizards.IWizardRegistry;",
+  "summary": "package eu.kalafatic.utils.interfaces; import org.eclipse.core.commands.ExecutionEvent; import org.eclipse.ui.wizards.IWizardRegistry; public interface IWizardHandler { String getWizardIdParameterId(); IWizardRegistry getWizardRegistry(); void executeHandler(ExecutionEvent event); }",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration; import java.util.Map; import java.util.UUID;",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration; import java.util.Map; import java.util.UUID; import java.util.concurrent.CompletableFuture; import java.util.concurrent.ConcurrentHashMap; import java.util.concurrent.ExecutorService; import java.util.concurrent.Executors; import eu.kalafatic.evolution.controller.tools.GitTool; import eu.kalafatic.evolution.model.orchestration.Orchestrator; import eu.kalafatic.evolution.model.orchestration.PromptInstructions; import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory; import eu.kalafatic.evolution.model.orchestration.Task; public class OrchestratorServiceImpl implements OrchestratorService { private final Map<String, TaskResult> tasks = new ConcurrentHashMap<>(); private final Map<String, TaskContext> contexts = new ConcurrentHashMap<>(); private final ExecutorService executor = Executors.newCachedThreadPool(); @Override public OrchestratorResponse handle(TaskRequest request) { final Orchestrator inputOrchModel = (Orchestrator) request.getContext().get(\"orchestrator\"); TaskContext context = (TaskContext) request.getContext().get(\"taskContext\");",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.mediation.analysis; import java.util.List; import java.util.ArrayList;",
+  "summary": "package eu.kalafatic.evolution.controller.mediation.analysis; import java.util.List; import java.util.ArrayList; import eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot; import eu.kalafatic.evolution.controller.mediation.model.SemanticNode; public class StagingValidator { public static class ValidationResult { public boolean passed; public String riskLevel; // LOW, MEDIUM, HIGH public List<String> warnings = new ArrayList<>(); public String reason; } public ValidationResult validate(TargetSnapshot snapshot, List<MediatedDarwinEngine.Hypothesis> hypotheses) { ValidationResult result = new ValidationResult(); result.passed = true; result.riskLevel = \"LOW\"; boolean isSelfMode = snapshot.getTargetType() == TargetSnapshot.TargetType.SELF; for (MediatedDarwinEngine.Hypothesis h : hypotheses) { for (String nodeId : h.affectedNodes) { SemanticNode node = snapshot.getNodes().get(nodeId);",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.model.orchestration.validation; import eu.kalafatic.evolution.model.orchestration.Orchestrator; import org.eclipse.emf.common.util.EList;",
+  "summary": "package eu.kalafatic.evolution.model.orchestration.validation; import eu.kalafatic.evolution.model.orchestration.Orchestrator; import org.eclipse.emf.common.util.EList; public interface EvoProjectValidator { boolean validate(); boolean validateName(String value); boolean validateOrchestrations(EList<Orchestrator> value); }",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

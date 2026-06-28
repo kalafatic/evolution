@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.model.orchestration.impl; import eu.kalafatic.evolution.model.orchestration.AIProvider; import eu.kalafatic.evolution.model.orchestration.Agent;",
+  "summary": "package eu.kalafatic.evolution.model.orchestration.impl; import eu.kalafatic.evolution.model.orchestration.AIProvider; import eu.kalafatic.evolution.model.orchestration.Agent; import eu.kalafatic.evolution.model.orchestration.AiChat; import eu.kalafatic.evolution.model.orchestration.AiMode; import eu.kalafatic.evolution.model.orchestration.Database; import eu.kalafatic.evolution.model.orchestration.Eclipse; import eu.kalafatic.evolution.model.orchestration.FileConfig; import eu.kalafatic.evolution.model.orchestration.Git; import eu.kalafatic.evolution.model.orchestration.LLM; import eu.kalafatic.evolution.model.orchestration.Maven; import eu.kalafatic.evolution.model.orchestration.MonitoringData; import eu.kalafatic.evolution.model.orchestration.NeuronAI; import eu.kalafatic.evolution.model.orchestration.Ollama; import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage; import eu.kalafatic.evolution.model.orchestration.Orchestrator; import eu.kalafatic.evolution.model.orchestration.SelfDevSession; import eu.kalafatic.evolution.model.orchestration.ServerSession; import eu.kalafatic.evolution.model.orchestration.ServerSettings; import eu.kalafatic.evolution.model.orchestration.SupervisorSettings;",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

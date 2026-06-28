@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration.intent; import java.util.ArrayList; import java.util.Comparator;",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration.intent; import java.util.ArrayList; import java.util.Comparator; import java.util.List; import java.util.stream.Collectors; public class ClarificationPlanner { public enum Strategy { AUTO_INFER,      // Low ambiguity, proceed with assumptions BRANCH_PARALLEL, // Medium ambiguity, create parallel Darwin hypotheses CLARIFY_USER     // High ambiguity, must ask user } public Strategy determineStrategy(IntentExpansionResult result, eu.kalafatic.evolution.controller.orchestration.TaskContext context) { InterpretationState state = result.getState(); context.log(\"[KERNEL] Determining clarification strategy for InterpretationState: \" + state); if (state == InterpretationState.CLEAR) { return Strategy.AUTO_INFER; } if (state == InterpretationState.EVOLVABLE) { return Strategy.BRANCH_PARALLEL; }",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

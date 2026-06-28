@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration.selfdev; import java.util.List; import eu.kalafatic.evolution.controller.orchestration.EvolutionOrchestrator;",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration.selfdev; import java.util.List; import eu.kalafatic.evolution.controller.orchestration.EvolutionOrchestrator; import eu.kalafatic.evolution.controller.orchestration.TaskContext; import eu.kalafatic.evolution.controller.orchestration.TaskRequest; import eu.kalafatic.evolution.model.orchestration.Task; import eu.kalafatic.evolution.model.orchestration.TaskStatus; public class TaskExecutor { private final EvolutionOrchestrator orchestrator; private final TaskContext context; public TaskExecutor(TaskContext context) { this.context = context; this.orchestrator = new EvolutionOrchestrator(); } public TaskExecutor(TaskContext context, eu.kalafatic.evolution.model.orchestration.Orchestrator orchestrator) { this.context = context; this.orchestrator = (orchestrator instanceof EvolutionOrchestrator) ? (EvolutionOrchestrator) orchestrator : new EvolutionOrchestrator(); } public EvolutionOrchestrator getOrchestrator() { return orchestrator;",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

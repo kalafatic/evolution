@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration.intent; import java.util.ArrayList; import java.util.Collections;",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration.intent; import java.util.ArrayList; import java.util.Collections; import java.util.List; import java.util.Objects; import org.json.JSONArray; import org.json.JSONObject; public final class ConfirmedRequirements { private final String goal; private final String language; private final String framework; private final List<String> constraints; private final String expectedOutput; private final String hash; private final int version; private final long timestamp; public ConfirmedRequirements(String goal, String language, String framework, List<String> constraints, String expectedOutput, int version) { this.goal = goal != null ? goal : \"\"; this.language = language != null ? language : \"\"; this.framework = framework != null ? framework : \"\";",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

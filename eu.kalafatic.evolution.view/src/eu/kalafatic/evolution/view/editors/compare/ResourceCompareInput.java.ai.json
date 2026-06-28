@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.4,
   "importanceScore": 0.4,
-  "summary": "package eu.kalafatic.evolution.view.editors.compare; import java.io.ByteArrayInputStream; import java.io.InputStream;",
+  "summary": "package eu.kalafatic.evolution.view.editors.compare; import java.io.ByteArrayInputStream; import java.io.InputStream; import org.eclipse.compare.CompareConfiguration; import org.eclipse.compare.CompareEditorInput; import org.eclipse.compare.ITypedElement; import org.eclipse.compare.ResourceNode; import org.eclipse.compare.structuremergeviewer.DiffNode; import org.eclipse.core.resources.IFile; import org.eclipse.core.runtime.IProgressMonitor; import org.eclipse.swt.graphics.Image; public class ResourceCompareInput extends CompareEditorInput { private Object left; private Object right; public ResourceCompareInput(CompareConfiguration config, Object left, Object right) { super(config); this.left = left; this.right = right; } @Override",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

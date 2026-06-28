@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.model.orchestration.presentation; import org.eclipse.emf.common.EMFPlugin; import org.eclipse.emf.common.ui.EclipseUIPlugin;",
+  "summary": "package eu.kalafatic.evolution.model.orchestration.presentation; import org.eclipse.emf.common.EMFPlugin; import org.eclipse.emf.common.ui.EclipseUIPlugin; import org.eclipse.emf.common.util.ResourceLocator; public final class EvolutionEditorPlugin extends EMFPlugin { public static final EvolutionEditorPlugin INSTANCE = new EvolutionEditorPlugin(); private static Implementation plugin; public EvolutionEditorPlugin() { super (new ResourceLocator [] { }); }",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

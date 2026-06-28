@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.7,
   "importanceScore": 0.7,
-  "summary": "package eu.kalafatic.utils.model; import java.util.Collections; import java.util.HashMap;",
+  "summary": "package eu.kalafatic.utils.model; import java.util.Collections; import java.util.HashMap; import java.util.Map; import org.eclipse.emf.ecore.EObject; import org.eclipse.emf.ecore.xmi.XMLResource; import org.eclipse.swt.widgets.Display; public class ModelUtils { public static final Map<String, Object> SAVE_OPTIONS = new HashMap<String, Object>(); static { SAVE_OPTIONS.put(XMLResource.OPTION_ENCODING, \"UTF-8\"); } public static void doSave(final EObject eObject) { doSave(eObject, SAVE_OPTIONS); }",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

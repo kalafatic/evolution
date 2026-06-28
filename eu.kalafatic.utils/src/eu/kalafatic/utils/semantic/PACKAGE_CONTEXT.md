@@ -1,13 +1,12 @@
 # PACKAGE CONTEXT
 
-## Directory: eu.kalafatic.utils/src/eu/kalafatic/utils/semantic/
+## Directory: git/evolution-240526-ok/eu.kalafatic.utils/src/eu/kalafatic/utils/semantic/
 
 ## Domain: general
 
 ## Components
-* `EvoMetadata.java`: package eu.kalafatic.utils.semantic; import java.util.ArrayList; import java.util.HashMap;
-* `AIContextTool.java`: package eu.kalafatic.utils.semantic; import java.io.File; import java.io.IOException;
-* `EvolutionComponent.java`: package eu.kalafatic.utils.semantic; import java.lang.annotation.ElementType; import java.lang.annotation.Retention;
-* `EvolutionaryImpact.java`: package eu.kalafatic.utils.semantic; public enum EvolutionaryImpact { LOW,
-* `PACKAGE_CONTEXT.md`: 
-* `Stability.java`: package eu.kalafatic.utils.semantic; public enum Stability { EXPERIMENTAL,
+* `EvoMetadata.java`: package eu.kalafatic.utils.semantic; import java.util.ArrayList; import java.util.HashMap; import java.util.List; import java.util.Map; public class EvoMetadata { private String id; private String path; private String domain; private String role; private String purpose; private List<String> inputs = new ArrayList<>(); private List<String> outputs = new ArrayList<>(); private String stability = "EVOLVING"; private String evolutionaryImpact = "MEDIUM"; private double mediatedRelevanceScore = 0.0; private double importanceScore = 0.0; private List<String> contextSelectionHints = new ArrayList<>(); private List<String> dependencyLinks = new ArrayList<>(); private String summary;
+* `EvolutionComponent.java`: package eu.kalafatic.utils.semantic; import java.lang.annotation.ElementType; import java.lang.annotation.Retention; import java.lang.annotation.RetentionPolicy; import java.lang.annotation.Target; @Retention(RetentionPolicy.RUNTIME) @Target(ElementType.TYPE) public @interface EvolutionComponent { String domain() default ""; String role() default ""; String purpose() default ""; String[] inputs() default {}; String[] outputs() default {}; Stability stability() default Stability.EVOLVING; EvolutionaryImpact evolutionaryImpact() default EvolutionaryImpact.MEDIUM; String lifecycleStage() default "active"; String[] dependencies() default {}; boolean mediationRelevance() default true; String visibility() default "public"; String trajectoryCategory() default "general";
+* `Stability.java`: package eu.kalafatic.utils.semantic; public enum Stability { EXPERIMENTAL, EVOLVING, STABLE, FROZEN, DEPRECATED }
+* `AIContextTool.java`: package eu.kalafatic.utils.semantic; import java.io.File; import java.io.IOException; import java.nio.file.Files; import java.util.ArrayList; import java.util.List; public class AIContextTool { public static final String METADATA_SUFFIX = ".ai.json"; public EvoMetadata loadMetadata(File artifact) { File sidecar = getSidecarFile(artifact); if (sidecar.exists()) { try { String content = new String(Files.readAllBytes(sidecar.toPath())); EvoMetadata meta = parseSimpleJson(content, artifact.getPath()); if (sidecar.lastModified() < artifact.lastModified()) { meta.setStale(true); } return meta; } catch (IOException e) { }
+* `EvolutionaryImpact.java`: package eu.kalafatic.utils.semantic; public enum EvolutionaryImpact { LOW, MEDIUM, HIGH, CRITICAL }

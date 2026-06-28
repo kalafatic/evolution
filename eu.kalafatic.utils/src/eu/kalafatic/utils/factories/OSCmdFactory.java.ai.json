@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.2,
   "importanceScore": 0.2,
-  "summary": "package eu.kalafatic.utils.factories; public class OSCmdFactory { private volatile static OSCmdFactory INSTANCE;",
+  "summary": "package eu.kalafatic.utils.factories; public class OSCmdFactory { private volatile static OSCmdFactory INSTANCE; public static OSCmdFactory getInstance() { if (INSTANCE == null) { synchronized (OSCmdFactory.class) { INSTANCE = new OSCmdFactory(); } } return INSTANCE; } }",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

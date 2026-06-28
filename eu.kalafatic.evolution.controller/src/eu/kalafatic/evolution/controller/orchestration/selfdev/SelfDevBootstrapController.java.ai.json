@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration.selfdev; import java.io.File; import java.io.IOException;",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration.selfdev; import java.io.File; import java.io.IOException; import java.nio.file.Files; import org.json.JSONArray; import org.json.JSONObject; import com.fasterxml.jackson.databind.ObjectMapper; import eu.kalafatic.evolution.controller.orchestration.ContextBuilder; import eu.kalafatic.evolution.controller.orchestration.ContextPackage; import eu.kalafatic.evolution.controller.orchestration.TaskContext; import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory; import eu.kalafatic.evolution.model.orchestration.Orchestrator; import eu.kalafatic.evolution.model.orchestration.Task; public class SelfDevBootstrapController { private final File projectRoot; private final File runDir; private final Orchestrator orchestrator; private volatile Process supervisorProcess; public SelfDevBootstrapController(File projectRoot, Orchestrator orchestrator) { this.projectRoot = projectRoot;",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

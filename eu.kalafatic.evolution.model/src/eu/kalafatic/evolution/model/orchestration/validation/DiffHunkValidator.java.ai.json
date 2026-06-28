@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.model.orchestration.validation; import org.eclipse.emf.common.util.EList; public interface DiffHunkValidator {",
+  "summary": "package eu.kalafatic.evolution.model.orchestration.validation; import org.eclipse.emf.common.util.EList; public interface DiffHunkValidator { boolean validate(); boolean validateHeader(String value); boolean validateLines(EList<String> value); }",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

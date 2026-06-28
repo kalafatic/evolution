@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration; import java.util.ArrayList; import java.util.HashSet;",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration; import java.util.ArrayList; import java.util.HashSet; import java.util.List; import java.util.Set; import java.util.stream.Collectors; import java.util.regex.Matcher; import java.util.regex.Pattern; import eu.kalafatic.evolution.model.orchestration.Task; import eu.kalafatic.evolution.controller.orchestration.attachments.AttachmentInjector; import eu.kalafatic.evolution.controller.orchestration.workspace.ContextResolver; import eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceArtifact; import eu.kalafatic.evolution.controller.tools.FileTool; public class ContextBuilder { private static final int MAX_FILES = 5; private static final int SMALL_FILE_LIMIT = 4096; public static ContextPackage build(Task task, TaskContext context) { return build(task, context, 1, null); } public static ContextPackage build(Task task, TaskContext context, int attempt, String lastFeedback) {",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

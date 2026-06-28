@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.controller.tests; import static org.junit.Assert.*; import java.io.File;",
+  "summary": "package eu.kalafatic.evolution.controller.tests; import static org.junit.Assert.*; import java.io.File; import java.lang.reflect.Field; import java.nio.file.Files; import java.util.ArrayList; import java.util.List; import java.util.concurrent.atomic.AtomicInteger; import org.junit.Before; import org.junit.Test; import eu.kalafatic.evolution.controller.orchestration.EvolutionOrchestrator; import eu.kalafatic.evolution.controller.orchestration.TaskContext; import eu.kalafatic.evolution.controller.orchestration.llm.ILlmProvider; import eu.kalafatic.evolution.controller.orchestration.llm.LlmRouter; import eu.kalafatic.evolution.model.orchestration.AiMode; import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory; import eu.kalafatic.evolution.model.orchestration.Orchestrator; import eu.kalafatic.evolution.model.orchestration.Ollama; import eu.kalafatic.evolution.controller.agents.BaseAiAgent; import eu.kalafatic.evolution.controller.orchestration.TransitionToken;",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.ecore.EAttribute; import org.eclipse.emf.ecore.EClass;",
+  "summary": "package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.ecore.EAttribute; import org.eclipse.emf.ecore.EClass; import org.eclipse.emf.ecore.EEnum; import org.eclipse.emf.ecore.EPackage; import org.eclipse.emf.ecore.EReference; public interface OrchestrationPackage extends EPackage { String eNAME = \"orchestration\"; String eNS_URI = \"http://eu.kalafatic.evolution/orchestration\"; String eNS_PREFIX = \"orchestration\";",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

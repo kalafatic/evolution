@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.model.orchestration.tests; import eu.kalafatic.evolution.model.orchestration.AiChat; import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;",
+  "summary": "package eu.kalafatic.evolution.model.orchestration.tests; import eu.kalafatic.evolution.model.orchestration.AiChat; import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory; import junit.framework.TestCase; import junit.textui.TestRunner; public class AiChatTest extends TestCase { protected AiChat fixture = null; public static void main(String[] args) { TestRunner.run(AiChatTest.class); } public AiChatTest(String name) { super(name); }",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

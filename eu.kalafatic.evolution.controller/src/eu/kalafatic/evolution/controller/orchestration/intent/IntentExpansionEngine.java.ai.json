@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration.intent; import org.json.JSONArray; import org.json.JSONObject;",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration.intent; import org.json.JSONArray; import org.json.JSONObject; import eu.kalafatic.evolution.controller.agents.BaseAiAgent; import eu.kalafatic.evolution.controller.orchestration.TaskContext; import eu.kalafatic.evolution.controller.orchestration.diagnostics.CausalNode; import eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceArtifact; import eu.kalafatic.evolution.controller.parsers.JsonUtils; import java.util.ArrayList; import java.util.List; public class IntentExpansionEngine extends BaseAiAgent { public IntentExpansionEngine() { super(\"IntentExpansionEngine\", \"IntentExpansionEngine\"); } @Override protected String getAgentInstructions() { return \"You are an Intent Expansion Engine. Your goal is to analyze user requests for ambiguity and explore the 'intent space' before implementation begins.\n\" + \"Identify unresolved dimensions of intent and generate coherent hypotheses for what the user might want.\n\" + \"\n\" + \"CRITICAL DISTINCTION:\n\" +",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

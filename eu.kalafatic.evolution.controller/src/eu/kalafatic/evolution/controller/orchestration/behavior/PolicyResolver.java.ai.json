@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration.behavior; import eu.kalafatic.evolution.controller.orchestration.behavior.ExecutionPolicy.*; public class PolicyResolver {",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration.behavior; import eu.kalafatic.evolution.controller.orchestration.behavior.ExecutionPolicy.*; public class PolicyResolver { private static final ExecutionMode[] MODES = { ExecutionMode.LOCAL, ExecutionMode.HYBRID, ExecutionMode.REMOTE, ExecutionMode.PROXY, ExecutionMode.MEDIATED }; private static final SupervisionLevel[] SUPERVISIONS = { SupervisionLevel.AUTO, SupervisionLevel.MANUAL, SupervisionLevel.HYBRID }; private static final InteractionMode[] INTERACTIONS = { InteractionMode.CONTINUOUS, InteractionMode.STEP, InteractionMode.GUIDED }; private static final ReasoningStrategy[] REASONING = { ReasoningStrategy.ATOMIC, ReasoningStrategy.DARWIN, ReasoningStrategy.ITERATIVE, ReasoningStrategy.CONSERVATIVE, ReasoningStrategy.EXPLORATORY, ReasoningStrategy.ANALYTICAL }; private static final WorkflowModel[] WORKFLOWS = { WorkflowModel.TASK_ORIENTED, WorkflowModel.SELF_DEV, WorkflowModel.HYBRID, WorkflowModel.EXPORT_ONLY }; public ExecutionPolicy resolve(long bitState) { ExecutionPolicy policy = decode(bitState);",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

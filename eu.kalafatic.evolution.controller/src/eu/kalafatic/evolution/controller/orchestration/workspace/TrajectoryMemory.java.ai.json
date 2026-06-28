@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration.workspace; import java.util.ArrayList; import java.util.List;",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration.workspace; import java.util.ArrayList; import java.util.List; import java.util.Map; import java.util.concurrent.ConcurrentHashMap; import eu.kalafatic.evolution.controller.trajectory.Trajectory; public class TrajectoryMemory { private final Map<String, Trajectory> trajectories = new ConcurrentHashMap<>(); private final List<String> successfulStrategies = new ArrayList<>(); private final List<String> recurringFailureLoops = new ArrayList<>(); private final List<String> userPreferredStyles = new ArrayList<>(); private final List<String> architectureEvolutionHistory = new ArrayList<>(); private final List<String> branchLineagePatterns = new ArrayList<>(); private final Map<String, Integer> strategySuccessCount = new ConcurrentHashMap<>(); private final Map<String, Integer> strategyFailureCount = new ConcurrentHashMap<>(); public void recordSuccessfulStrategy(String strategy) { if (!successfulStrategies.contains(strategy)) { successfulStrategies.add(strategy); } strategySuccessCount.merge(strategy, 1, Integer::sum);",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

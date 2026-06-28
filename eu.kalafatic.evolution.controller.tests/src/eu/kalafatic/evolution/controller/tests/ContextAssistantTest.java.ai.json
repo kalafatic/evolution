@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.controller.tests; import static org.junit.Assert.*; import org.junit.Before;",
+  "summary": "package eu.kalafatic.evolution.controller.tests; import static org.junit.Assert.*; import org.junit.Before; import org.junit.Test; import eu.kalafatic.evolution.controller.orchestration.ContextAssistant; import eu.kalafatic.evolution.controller.orchestration.ContextAssistResult; import eu.kalafatic.evolution.controller.orchestration.PlatformType; import eu.kalafatic.evolution.controller.orchestration.ConfidenceLevel; import eu.kalafatic.evolution.controller.orchestration.TaskContext; import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory; import eu.kalafatic.evolution.model.orchestration.Orchestrator; import java.io.File; public class ContextAssistantTest { private ContextAssistant assistant; private TaskContext context; private Orchestrator orchestrator; @Before public void setUp() { assistant = new ContextAssistant(); orchestrator = OrchestrationFactory.eINSTANCE.createOrchestrator();",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

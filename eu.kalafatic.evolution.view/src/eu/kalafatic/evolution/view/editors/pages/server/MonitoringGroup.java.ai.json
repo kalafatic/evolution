@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.4,
   "importanceScore": 0.4,
-  "summary": "package eu.kalafatic.evolution.view.editors.pages.server; import org.eclipse.draw2d.Figure; import org.eclipse.draw2d.LightweightSystem;",
+  "summary": "package eu.kalafatic.evolution.view.editors.pages.server; import org.eclipse.draw2d.Figure; import org.eclipse.draw2d.LightweightSystem; import org.eclipse.draw2d.XYLayout; import org.eclipse.draw2d.geometry.Rectangle; import org.eclipse.swt.SWT; import org.eclipse.swt.graphics.Color; import org.eclipse.swt.layout.GridData; import org.eclipse.swt.layout.GridLayout; import org.eclipse.swt.widgets.Canvas; import org.eclipse.swt.widgets.Composite; import org.eclipse.ui.forms.widgets.FormToolkit; import org.eclipse.ui.forms.widgets.Section; import eu.kalafatic.evolution.model.orchestration.MonitoringData; import eu.kalafatic.evolution.model.orchestration.Orchestrator; import eu.kalafatic.evolution.view.editors.MultiPageEditor; import eu.kalafatic.evolution.view.editors.pages.tools.AToolGroup; import java.util.List; public class MonitoringGroup extends AToolGroup { private Canvas canvas;",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

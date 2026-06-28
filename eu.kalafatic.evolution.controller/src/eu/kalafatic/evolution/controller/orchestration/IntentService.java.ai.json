@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration; import java.util.HashSet; import java.util.Set;",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration; import java.util.HashSet; import java.util.Set; import eu.kalafatic.evolution.controller.orchestration.attachments.TaskIntent; import eu.kalafatic.evolution.controller.orchestration.intent.AtomicIntentAnalysis; import eu.kalafatic.evolution.controller.orchestration.intent.HybridAtomicIntentClassifier; public class IntentService { private final AiService aiService; public IntentService(AiService aiService) { this.aiService = aiService; } public void analyze(String request, TaskContext context) { OrchestrationState state = context.getOrchestrationState(); state.setRawInput(request); Set<TaskIntent> intents = classify(request); state.setTaskIntents(intents); state.addDiagnostic(\"Classified intents: \" + intents); HybridAtomicIntentClassifier atomicClassifier = new HybridAtomicIntentClassifier(aiService); AtomicIntentAnalysis atomicAnalysis = atomicClassifier.analyze(request, context); state.getMetadata().put(\"atomicAnalysis\", atomicAnalysis);",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

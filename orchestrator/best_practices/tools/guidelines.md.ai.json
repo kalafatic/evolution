@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "documentation",
+  "stability": "EVOLVING",
+  "mediatedRelevanceScore": 0.5,
+  "importanceScore": 0.5,
+  "summary": "- Ensure all file paths are normalized and relative to the project root. - Request explicit user approval for high-risk actions (e.g., DELETE, SHELL). - Log tool execution results, including partial successes or informative failures. - Clean up temporary resources or side effects after execution.",
+  "evolutionaryNotes": "",
+  "contextSelectionHints": [],
+  "dependencyLinks": []
+}

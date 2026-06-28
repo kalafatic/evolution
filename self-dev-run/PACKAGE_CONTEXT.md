@@ -1,9 +1,8 @@
 # PACKAGE CONTEXT
 
-## Directory: self-dev-run/
+## Directory: git/evolution-240526-ok/self-dev-run/
 
 ## Domain: general
 
 ## Components
-* `PACKAGE_CONTEXT.md`: 
-* `bootstrap.json`: { "sourcePath": ".", "targetPath": "./self-dev-run/workspace",
+* `bootstrap.json`: { "sourcePath": ".", "targetPath": "./self-dev-run/workspace", "action": "BUILD_AND_START" }

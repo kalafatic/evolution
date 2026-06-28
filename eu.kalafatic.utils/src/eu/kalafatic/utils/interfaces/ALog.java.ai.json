@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.2,
   "importanceScore": 0.2,
-  "summary": "package eu.kalafatic.utils.interfaces; import static eu.kalafatic.utils.constants.FConstants.PREFERENCES; import java.util.logging.Logger;",
+  "summary": "package eu.kalafatic.utils.interfaces; import static eu.kalafatic.utils.constants.FConstants.PREFERENCES; import java.util.logging.Logger; import org.eclipse.swt.SWTException; import org.eclipse.ui.IWorkbenchWindow; import org.eclipse.ui.PartInitException; import org.eclipse.ui.PlatformUI; import eu.kalafatic.utils.lib.EView; import eu.kalafatic.utils.model.LogElement; import eu.kalafatic.utils.preferences.ECorePreferences; import eu.kalafatic.utils.views.ConsoleView; public abstract class ALog implements ILog { protected static Logger logger; private static ConsoleView console; public static boolean LOG_ENABLED = PREFERENCES.getBoolean(ECorePreferences.LOG_ENABLED.getName(), (Boolean) ECorePreferences.LOG_ENABLED.getValue());",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

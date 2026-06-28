@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.2,
   "importanceScore": 0.2,
-  "summary": "package eu.kalafatic.utils.interfaces; import org.eclipse.swt.widgets.Table; public interface ISWizard extends ISWizardSettings {",
+  "summary": "package eu.kalafatic.utils.interfaces; import org.eclipse.swt.widgets.Table; public interface ISWizard extends ISWizardSettings { public final String FILE = \"File\"; public final String DB = \"Database\"; public final String TORRENT = \"Torrent\"; void createPages(); void addTable(boolean source, Table table);",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.controller.agents; import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants; import eu.kalafatic.evolution.controller.tools.ToolFactory;",
+  "summary": "package eu.kalafatic.evolution.controller.agents; import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants; import eu.kalafatic.evolution.controller.tools.ToolFactory; public class GitAgent extends BaseAiAgent { public GitAgent() { super(EvolutionConstants.AGENT_GIT, EvolutionConstants.AGENT_GIT); addTool(ToolFactory.getTool(EvolutionConstants.TOOL_GIT)); } @Override protected String getAgentInstructions() { return \"You are an AI Git Agent. You handle version control tasks.\n\" + \"Use the GitTool to perform operations like clone, commit, push, or branch management.\"; } }",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

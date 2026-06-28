@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.2,
   "importanceScore": 0.2,
-  "summary": "package eu.kalafatic.utils.windows; import java.io.BufferedReader; import java.io.IOException;",
+  "summary": "package eu.kalafatic.utils.windows; import java.io.BufferedReader; import java.io.IOException; import java.io.InputStreamReader; public class WinCMDUtils { private volatile static WinCMDUtils INSTANCE; public static WinCMDUtils getInstance() { if (INSTANCE == null) { synchronized (WinCMDUtils.class) { INSTANCE = new WinCMDUtils(); } } return INSTANCE; }",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

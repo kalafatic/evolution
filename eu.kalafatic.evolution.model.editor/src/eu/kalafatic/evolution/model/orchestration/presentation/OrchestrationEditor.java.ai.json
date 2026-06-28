@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.model.orchestration.presentation; import java.io.IOException; import java.io.InputStream;",
+  "summary": "package eu.kalafatic.evolution.model.orchestration.presentation; import java.io.IOException; import java.io.InputStream; import java.util.ArrayList; import java.util.Collection; import java.util.Collections; import java.util.EventObject; import java.util.HashMap; import java.util.Iterator; import java.util.LinkedHashMap; import java.util.List; import java.util.Map; import org.eclipse.core.resources.IFile; import org.eclipse.core.resources.IMarker; import org.eclipse.core.resources.IResource; import org.eclipse.core.resources.IResourceChangeEvent; import org.eclipse.core.resources.IResourceChangeListener; import org.eclipse.core.resources.IResourceDelta; import org.eclipse.core.resources.IResourceDeltaVisitor; import org.eclipse.core.resources.ResourcesPlugin;",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

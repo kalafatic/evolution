@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.7,
   "importanceScore": 0.7,
-  "summary": "package eu.kalafatic.utils.model; import java.util.ArrayList; import java.util.Collection;",
+  "summary": "package eu.kalafatic.utils.model; import java.util.ArrayList; import java.util.Collection; import java.util.Iterator; import java.util.List; public class ObservableList<T> implements Iterable<T> { private final List<T> list = new ArrayList<>(); private final String name; private final List<IModelChangeListener> listeners = new ArrayList<>(); public ObservableList(String name) { this.name = name; } public void add(T item) { list.add(item); fireChange(new ModelChangeEvent(ModelChangeEvent.Type.ADD, name, null, item)); } public void remove(T item) { if (list.remove(item)) { fireChange(new ModelChangeEvent(ModelChangeEvent.Type.REMOVE, name, item, null)); }",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

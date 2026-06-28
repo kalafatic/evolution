@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.2,
   "importanceScore": 0.2,
-  "summary": "package eu.kalafatic.utils.eclipse; import org.eclipse.swt.widgets.Display; import org.eclipse.ui.console.ConsolePlugin;",
+  "summary": "package eu.kalafatic.utils.eclipse; import org.eclipse.swt.widgets.Display; import org.eclipse.ui.console.ConsolePlugin; import org.eclipse.ui.console.IConsole; import org.eclipse.ui.console.IConsoleManager; import org.eclipse.ui.console.MessageConsole; import org.eclipse.ui.console.MessageConsoleStream; public class ConsoleUtils { public static final ConsoleUtils INSTANCE = new ConsoleUtils(); public MessageConsole findConsole(String consoleName) { ConsolePlugin plugin = ConsolePlugin.getDefault(); IConsoleManager conMan = plugin.getConsoleManager(); IConsole[] existing = conMan.getConsoles(); for (int i = 0; i < existing.length; i++) { if (consoleName.equals(existing[i].getName())) { return (MessageConsole) existing[i]; } } MessageConsole myConsole = new MessageConsole(consoleName, null); conMan.addConsoles(new IConsole[] { myConsole });",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

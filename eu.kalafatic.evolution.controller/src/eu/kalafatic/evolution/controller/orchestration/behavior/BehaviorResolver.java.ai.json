@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration.behavior; import eu.kalafatic.evolution.controller.orchestration.PlatformMode; import eu.kalafatic.evolution.controller.orchestration.PlatformType;",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration.behavior; import eu.kalafatic.evolution.controller.orchestration.PlatformMode; import eu.kalafatic.evolution.controller.orchestration.PlatformType; import eu.kalafatic.evolution.controller.orchestration.TaskContext; import eu.kalafatic.evolution.model.orchestration.AiMode; import eu.kalafatic.evolution.model.orchestration.Orchestrator; public class BehaviorResolver { public long resolveBitState(TaskContext context) { Orchestrator orchestrator = context.getOrchestrator(); int mode = BitState.MODE_LOCAL; if (orchestrator.getAiMode() != null) { switch (orchestrator.getAiMode()) { case LOCAL:    mode = BitState.MODE_LOCAL; break; case HYBRID:   mode = BitState.MODE_HYBRID; break; case REMOTE:   mode = BitState.MODE_REMOTE; break; case PROXY:    mode = BitState.MODE_PROXY; break; case MEDIATED: mode = BitState.MODE_MEDIATED; break; } } int supervision = BitState.SUPERVISION_AUTO;",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

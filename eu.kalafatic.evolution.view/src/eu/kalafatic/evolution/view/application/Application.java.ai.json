@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.4,
   "importanceScore": 0.4,
-  "summary": "package eu.kalafatic.evolution.view.application; import java.io.File; import org.eclipse.core.runtime.Platform;",
+  "summary": "package eu.kalafatic.evolution.view.application; import java.io.File; import org.eclipse.core.runtime.Platform; import eu.kalafatic.evolution.controller.orchestration.ServerManager; import org.eclipse.equinox.app.IApplication; import org.eclipse.equinox.app.IApplicationContext; import org.eclipse.osgi.service.datalocation.Location; import org.eclipse.swt.widgets.Display; import org.eclipse.ui.IWorkbench; import org.eclipse.ui.PlatformUI; import org.eclipse.ui.internal.ide.ChooseWorkspaceData; import org.eclipse.ui.internal.ide.ChooseWorkspaceDialog; public class Application implements IApplication { @Override public Object start(IApplicationContext context) throws Exception { String[] args = (String[]) context.getArguments().get(IApplicationContext.APPLICATION_ARGS); boolean serverOnly = false; int port = 48080; for (int i = 0; i < args.length; i++) { if (\"--server\".equals(args[i])) {",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

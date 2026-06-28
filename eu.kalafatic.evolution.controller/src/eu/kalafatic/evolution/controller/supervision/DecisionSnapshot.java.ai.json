@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.supervision; import java.util.Collections; import java.util.List;",
+  "summary": "package eu.kalafatic.evolution.controller.supervision; import java.util.Collections; import java.util.List; import java.util.Map; import java.util.HashMap; import java.util.ArrayList; public final class DecisionSnapshot { private final String iterationId; private final String selectedVariantId; private final List<String> rankedVariants; private final Map<String, Double> aggregatedScores; private final List<String> criticalFailures; private final String activationReason; private final String resolverPolicy; private final double resolverConfidence; private final String recommendationSummary; private final double disagreementMetric; private boolean explorationTriggered = false; private double avgShortTermFitness; private double avgLongTermStability;",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

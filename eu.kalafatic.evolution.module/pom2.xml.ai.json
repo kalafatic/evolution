@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "<project xmlns=\"http://maven.apache.org/POM/4.0.0\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd\">",
+  "summary": "<project xmlns=\"http://maven.apache.org/POM/4.0.0\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd\"> <modelVersion>4.0.0</modelVersion> <artifactId>eu.kalafatic.evolution.module</artifactId> <packaging>eclipse-repository</packaging> <build> <sourceDirectory>src</sourceDirectory> <extensions> <extension> <groupId>org.eclipse.tycho</groupId> <artifactId>tycho-maven-plugin</artifactId> <version>4.0.5</version> </extension> </extensions> <plugins> <plugin> <artifactId>maven-compiler-plugin</artifactId> <version>3.13.0</version> <configuration>",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

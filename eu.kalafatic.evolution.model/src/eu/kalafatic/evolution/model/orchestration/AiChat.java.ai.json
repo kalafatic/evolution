@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.common.util.EList; import org.eclipse.emf.ecore.EObject;",
+  "summary": "package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.common.util.EList; import org.eclipse.emf.ecore.EObject; public interface AiChat extends EObject { String getUrl();",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

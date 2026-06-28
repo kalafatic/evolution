@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.2,
   "importanceScore": 0.2,
-  "summary": "package eu.kalafatic.utils.semantic; public enum Stability { EXPERIMENTAL,",
+  "summary": "package eu.kalafatic.utils.semantic; public enum Stability { EXPERIMENTAL, EVOLVING, STABLE, FROZEN, DEPRECATED }",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

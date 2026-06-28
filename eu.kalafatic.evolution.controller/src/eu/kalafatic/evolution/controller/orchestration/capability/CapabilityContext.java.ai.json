@@ -7,6 +7,6 @@
   "importanceScore": 1.0,
   "summary": "package eu.kalafatic.evolution.controller.orchestration.capability; public class CapabilityContext { }",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.2,
   "importanceScore": 0.2,
-  "summary": "package eu.kalafatic.utils.hack; import org.eclipse.core.runtime.IProduct; import org.eclipse.core.runtime.Platform;",
+  "summary": "package eu.kalafatic.utils.hack; import org.eclipse.core.runtime.IProduct; import org.eclipse.core.runtime.Platform; import org.eclipse.jface.resource.StringConverter; import org.eclipse.swt.events.PaintEvent; import org.eclipse.swt.events.PaintListener; import org.eclipse.swt.graphics.Color; import org.eclipse.swt.graphics.Point; import org.eclipse.swt.graphics.RGB; import org.eclipse.swt.graphics.Rectangle; import org.eclipse.swt.widgets.Composite; import org.eclipse.swt.widgets.Shell; import org.eclipse.ui.branding.IProductConstants; import org.eclipse.ui.internal.util.PrefUtil; @SuppressWarnings(\"restriction\") public class EclipseSplashHandler extends BasicSplashHandler { private Rectangle bounds, progressRect, messageRect; private Point location; public Color foreground; final String version;",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

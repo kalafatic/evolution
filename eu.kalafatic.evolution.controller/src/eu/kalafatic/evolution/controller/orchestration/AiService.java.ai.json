@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration; import eu.kalafatic.evolution.model.orchestration.Orchestrator; import eu.kalafatic.evolution.controller.orchestration.llm.LlmRouter;",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration; import eu.kalafatic.evolution.model.orchestration.Orchestrator; import eu.kalafatic.evolution.controller.orchestration.llm.LlmRouter; public class AiService { private LlmRouter llmRouter = LlmRouter.getInstance(); public void setLlmRouter(LlmRouter router) { this.llmRouter = router; } public String sendRequest(Orchestrator orchestrator, String prompt) throws Exception { return sendRequest(orchestrator, prompt, null, null); } public String sendRequest(Orchestrator orchestrator, String prompt, TaskContext context) throws Exception { return sendRequest(orchestrator, prompt, null, context); } public String sendRequest(Orchestrator orchestrator, String prompt, String proxyUrl, TaskContext context) throws Exception { return sendRequest(orchestrator, prompt, 0.7f, proxyUrl, context); } public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception { return sendRequest(orchestrator, prompt, temperature, proxyUrl, context, null); }",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

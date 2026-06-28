@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration.capability.contracts; import eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceArtifact; import eu.kalafatic.evolution.controller.orchestration.workspace.TrajectoryMemory;",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration.capability.contracts; import eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceArtifact; import eu.kalafatic.evolution.controller.orchestration.workspace.TrajectoryMemory; import eu.kalafatic.evolution.controller.orchestration.diagnostics.CognitiveTrace; import java.util.List; public interface IWorkspaceContract { String ID = \"contract.workspace\"; void addArtifact(WorkspaceArtifact artifact); List<WorkspaceArtifact> getArtifactsByTag(String tag); TrajectoryMemory getTrajectoryMemory(); void applyDecay(CognitiveTrace trace); }",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.4,
   "importanceScore": 0.4,
-  "summary": "package eu.kalafatic.evolution.view.editors.pages.server; import org.eclipse.jface.viewers.ArrayContentProvider; import org.eclipse.jface.viewers.ITableLabelProvider;",
+  "summary": "package eu.kalafatic.evolution.view.editors.pages.server; import org.eclipse.jface.viewers.ArrayContentProvider; import org.eclipse.jface.viewers.ITableLabelProvider; import org.eclipse.jface.viewers.LabelProvider; import org.eclipse.jface.viewers.TableViewer; import org.eclipse.swt.SWT; import org.eclipse.swt.graphics.Color; import org.eclipse.swt.graphics.Image; import org.eclipse.swt.layout.GridData; import org.eclipse.swt.layout.GridLayout; import org.eclipse.swt.widgets.Composite; import org.eclipse.swt.widgets.Table; import org.eclipse.swt.widgets.TableColumn; import org.eclipse.ui.forms.widgets.FormToolkit; import org.eclipse.ui.forms.widgets.Section; import eu.kalafatic.evolution.model.orchestration.Orchestrator; import eu.kalafatic.evolution.model.orchestration.ServerSession; import eu.kalafatic.evolution.view.editors.MultiPageEditor; import eu.kalafatic.evolution.view.editors.pages.tools.AToolGroup; import java.util.HashSet;",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

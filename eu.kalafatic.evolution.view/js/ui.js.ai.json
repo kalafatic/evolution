@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "window.ChatApp = window.ChatApp || {}; window.ChatApp.UI = { m_pos: 0,",
+  "summary": "window.ChatApp = window.ChatApp || {}; window.ChatApp.UI = { m_pos: 0, currentContextFile: null, init: function() { this.initResizing(); this.initQuote(); }, initResizing: function() { const panel = document.getElementById('side-panel'); const handle = document.getElementById('resize-handle'); if (!handle || !panel) return; handle.addEventListener(\"mousedown\", (e) => { this.m_pos = e.x; panel.style.transition = 'none'; document.addEventListener(\"mousemove\", resize, false); document.body.style.cursor = 'col-resize'; e.preventDefault(); }, false); const resize = (e) => {",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

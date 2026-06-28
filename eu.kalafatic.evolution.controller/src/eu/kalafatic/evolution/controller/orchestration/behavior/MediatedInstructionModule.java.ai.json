@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration.behavior; import java.util.stream.Collectors; public class MediatedInstructionModule implements InstructionModule {",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration.behavior; import java.util.stream.Collectors; public class MediatedInstructionModule implements InstructionModule { @Override public String getInstructions(ExecutionPolicy policy) { if (policy.getExecutionMode() != ExecutionPolicy.ExecutionMode.MEDIATED) { return \"\"; } StringBuilder sb = new StringBuilder(); sb.append(\"SUPERVISION: MEDIATED (\").append(policy.getSupervisionLevel()).append(\")\n\") .append(\"→ CORE ROLE: You are a prompt optimizer, architecture analyst, context curator, and iteration planner.\n\") .append(\"→ CORE PURPOSE: Convert weak, ambiguous human requests into high-signal architecture-aware engineering tasks.\n\") .append(\"→ GOAL: Prepare the BEST POSSIBLE task package (prompt + context + strategy) for an external LLM.\n\") .append(\"→ MANDATORY: You DO NOT implement code changes. You are preparing execution, not executing it.\n\") .append(\"→ OUTPUT: 1. Improved execution prompt, 2. Minimal high-value context selection, 3. Implementation strategy.\n\n\") .append(\"MEDIATED OPERATIONAL GUIDELINES:\n\") .append(\"→ Strictly control context scope and affected subsystems.\n\") .append(\"→ Determine what the external LLM SHOULD see and what it MUST NOT see.\n\") .append(\"→ Focus on reasoning density and architectural coherence over repository completeness.\"); if (!policy.getConstraints().isEmpty()) {",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

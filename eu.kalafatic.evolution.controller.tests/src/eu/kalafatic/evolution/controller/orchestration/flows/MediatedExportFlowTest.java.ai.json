@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "orchestration",
+  "stability": "STABLE",
+  "mediatedRelevanceScore": 1.0,
+  "importanceScore": 1.0,
+  "summary": "package eu.kalafatic.evolution.controller.orchestration; import static org.junit.Assert.*; import java.io.File; import org.junit.Rule; import org.junit.Test; import org.junit.rules.TemporaryFolder; import eu.kalafatic.evolution.controller.orchestration.*; import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory; import eu.kalafatic.evolution.model.orchestration.Orchestrator; public class MediatedExportFlowTest { @Rule public TemporaryFolder folder = new TemporaryFolder(); @Test public void testExecute() throws Exception { folder.newFile(\"pom.xml\"); Orchestrator orchestrator = OrchestrationFactory.eINSTANCE.createOrchestrator(); TaskContext context = new TaskContext(orchestrator, folder.getRoot()); MediatedExportFlow flow = new MediatedExportFlow(null, KernelFactory.create(context, null)); OrchestratorResponse response = flow.execute(\"Analyze this project\", context); assertNotNull(response);",
+  "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
+  "contextSelectionHints": ["mandatory_context"],
+  "dependencyLinks": []
+}

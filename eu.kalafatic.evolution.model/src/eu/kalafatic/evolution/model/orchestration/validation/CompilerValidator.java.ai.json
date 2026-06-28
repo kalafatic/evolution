@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.model.orchestration.validation; public interface CompilerValidator { boolean validate();",
+  "summary": "package eu.kalafatic.evolution.model.orchestration.validation; public interface CompilerValidator { boolean validate(); boolean validateSourceVersion(String value); boolean validateTargetVersion(String value); boolean validateCPath(String value); boolean validateCppPath(String value); boolean validateMakePath(String value); boolean validateCmakePath(String value); boolean validateTestStatus(String value); }",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

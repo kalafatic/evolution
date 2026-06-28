@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.2,
   "importanceScore": 0.2,
-  "summary": "package eu.kalafatic.utils.xml; import org.eclipse.jface.text.DefaultInformationControl; import org.eclipse.jface.text.DefaultTextHover;",
+  "summary": "package eu.kalafatic.utils.xml; import org.eclipse.jface.text.DefaultInformationControl; import org.eclipse.jface.text.DefaultTextHover; import org.eclipse.jface.text.IDocument; import org.eclipse.jface.text.IInformationControl; import org.eclipse.jface.text.IInformationControlCreator; import org.eclipse.jface.text.ITextDoubleClickStrategy; import org.eclipse.jface.text.ITextHover; import org.eclipse.jface.text.TextAttribute; import org.eclipse.jface.text.contentassist.ContentAssistant; import org.eclipse.jface.text.contentassist.IContentAssistant; import org.eclipse.jface.text.information.IInformationPresenter; import org.eclipse.jface.text.information.InformationPresenter; import org.eclipse.jface.text.presentation.IPresentationReconciler; import org.eclipse.jface.text.presentation.PresentationReconciler; import org.eclipse.jface.text.quickassist.IQuickAssistAssistant; import org.eclipse.jface.text.quickassist.QuickAssistAssistant; import org.eclipse.jface.text.reconciler.IReconciler; import org.eclipse.jface.text.reconciler.Reconciler; import org.eclipse.jface.text.rules.DefaultDamagerRepairer;",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

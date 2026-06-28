@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.controller.workflow; import eu.kalafatic.evolution.controller.orchestration.KernelFacade; import eu.kalafatic.evolution.controller.orchestration.TaskContext;",
+  "summary": "package eu.kalafatic.evolution.controller.workflow; import eu.kalafatic.evolution.controller.orchestration.KernelFacade; import eu.kalafatic.evolution.controller.orchestration.TaskContext; public class GraphActionExecutor { private TaskContext context; private String sessionId; public GraphActionExecutor(TaskContext context) { this.context = context; if (context != null) this.sessionId = context.getSessionId(); } public void setContext(TaskContext context) { this.context = context; if (context != null) this.sessionId = context.getSessionId(); } public void setSessionId(String sessionId) { this.sessionId = sessionId; } public void execute(String entityId, String action) { if (context != null) context.log(\"[GRAPH] Executing action '\" + action + \"' on entity '\" + entityId + \"'\"); else System.out.println(\"[GRAPH] Executing action '\" + action + \"' on entity '\" + entityId + \"' (No Context)\");",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

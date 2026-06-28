@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.controller.workflow; import java.util.Map; import java.util.concurrent.ConcurrentHashMap;",
+  "summary": "package eu.kalafatic.evolution.controller.workflow; import java.util.Map; import java.util.concurrent.ConcurrentHashMap; import java.util.List; import java.util.concurrent.CopyOnWriteArrayList; import org.json.JSONObject; import org.json.JSONArray; public class WorkflowGraphManager implements RuntimeEventListener { private static final WorkflowGraphManager GLOBAL_INSTANCE = new WorkflowGraphManager(); private final Map<String, SessionGraphData> sessionGraphs = new ConcurrentHashMap<>(); private WorkflowGraphManager() { RuntimeEventBus.getInstance().subscribe(this); } public static WorkflowGraphManager getInstance(String sessionId) { return GLOBAL_INSTANCE; } private SessionGraphData getSessionGraph(String sessionId) { if (sessionId == null) sessionId = \"Default\"; return sessionGraphs.computeIfAbsent(sessionId, id -> new SessionGraphData(id));",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

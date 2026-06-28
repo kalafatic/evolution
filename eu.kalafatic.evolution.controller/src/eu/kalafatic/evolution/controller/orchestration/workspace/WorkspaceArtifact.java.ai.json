@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration.workspace; import java.util.HashSet; import java.util.Set;",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration.workspace; import java.util.HashSet; import java.util.Set; public class WorkspaceArtifact { private final String artifactId; private final String artifactType; private final Set<String> semanticTags = new HashSet<>(); private double confidence = 1.0; private String sourceIteration; private String lineageId; private final Set<String> relatedVariants = new HashSet<>(); private String content; private long timestamp; private double decayScore = 1.0; private double relevanceScore = 0.0; public WorkspaceArtifact(String artifactId, String artifactType) { this.artifactId = artifactId; this.artifactType = artifactType; this.timestamp = System.currentTimeMillis(); }",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

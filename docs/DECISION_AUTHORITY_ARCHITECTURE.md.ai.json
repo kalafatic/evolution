@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "The Darwin orchestration system has been refactored to introduce a centralized deterministic decision authority layer called **ActivationResolver**. This layer ensures that all activation decisions (branch selection, winner determination, rank finalization) have a single, reproducible origin. ```text Evaluators (Telemetry)",
+  "summary": "The Darwin orchestration system has been refactored to introduce a centralized deterministic decision authority layer called **ActivationResolver**. This layer ensures that all activation decisions (branch selection, winner determination, rank finalization) have a single, reproducible origin. ```text Evaluators (Telemetry) ↓ EvaluationSignals (Immutable Observations) ↓ ActivationGate (Ranking & Recommendations) ↓ ActivationResolver (Deterministic Decision Authority) ↓ DecisionSnapshot (Immutable Decision Record) ↓ DarwinFlow (Execution Coordination) ``` The **ActivationResolver** is the ONLY component allowed to: - Activate branches - Select winners - Finalize ranks - Produce execution decisions It is strictly deterministic and does not perform any execution, git mutations, or LLM calls.",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

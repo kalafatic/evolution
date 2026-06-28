@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.mediation.analysis; import java.io.File; import java.io.IOException;",
+  "summary": "package eu.kalafatic.evolution.controller.mediation.analysis; import java.io.File; import java.io.IOException; import java.nio.file.Files; import java.util.ArrayList; import java.util.List; import java.util.HashMap; import java.util.Map; import eu.kalafatic.evolution.controller.mediation.model.FileDescriptor; import eu.kalafatic.evolution.controller.mediation.model.SemanticEdge; import eu.kalafatic.evolution.controller.mediation.model.SemanticNode; import eu.kalafatic.evolution.controller.mediation.model.TargetDescriptor; import eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot; import eu.kalafatic.utils.semantic.AIContextTool; import eu.kalafatic.utils.semantic.EvoMetadata; public class SemanticExtractor { private final AIContextTool contextTool = new AIContextTool(); public void extract(TargetDescriptor target, File root) { for (FileDescriptor file : target.getFiles()) { analyzeFile(file, root);",
   "evolutionaryNotes": "",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

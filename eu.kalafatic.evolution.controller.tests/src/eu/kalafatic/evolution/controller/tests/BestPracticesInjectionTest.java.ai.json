@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.controller.tests; import static org.junit.Assert.*; import java.io.File;",
+  "summary": "package eu.kalafatic.evolution.controller.tests; import static org.junit.Assert.*; import java.io.File; import java.nio.file.Files; import org.junit.Before; import org.junit.Test; import eu.kalafatic.evolution.controller.agents.BaseAiAgent; import eu.kalafatic.evolution.controller.orchestration.TaskContext; import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory; import eu.kalafatic.evolution.model.orchestration.Orchestrator; public class BestPracticesInjectionTest { private File tempRoot; private Orchestrator orchestrator; private TaskContext context; @Before public void setUp() throws Exception { tempRoot = Files.createTempDirectory(\"bp-inject-test\").toFile(); orchestrator = OrchestrationFactory.eINSTANCE.createOrchestrator(); orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat()); orchestrator.getAiChat().setPromptInstructions(OrchestrationFactory.eINSTANCE.createPromptInstructions());",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

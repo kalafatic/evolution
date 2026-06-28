@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.supervision; import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant; public class ComplexityCostPolicy implements ResolverPolicy {",
+  "summary": "package eu.kalafatic.evolution.controller.supervision; import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant; public class ComplexityCostPolicy implements ResolverPolicy { @Override public PolicyResult evaluate(BranchVariant variant) { double score = 0.5; StringBuilder trace = new StringBuilder(\"Base complexity score: 0.5. \"); int steps = variant.getProjectedSteps().size(); if (steps > 0) { double penalty = Math.min(0.2, steps * 0.02); score -= penalty; trace.append(\"Projected steps penalty (-\").append(String.format(\"%.2f\", penalty)).append(\"). \"); } if (variant.getTradeoffs() != null && !variant.getTradeoffs().isEmpty()) { score += 0.1; trace.append(\"Explicit tradeoffs rewarded (+0.1). \"); } if (\"IMPLEMENTATION\".equals(variant.getStrategyType())) { score += 0.05; trace.append(\"Implementation strategy bonus (+0.05). \");",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

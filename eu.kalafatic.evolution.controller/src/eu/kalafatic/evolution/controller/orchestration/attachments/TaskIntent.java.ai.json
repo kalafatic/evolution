@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration.attachments; public enum TaskIntent { DEBUGGING,",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration.attachments; public enum TaskIntent { DEBUGGING, ANALYSIS, IMPLEMENTATION, REFACTORING, ARCHITECTURE, TESTING, REVIEW, OPTIMIZATION, EXPLANATION, PLANNING }",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration.intent; public class MissingRequirement { private final String field;",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration.intent; public class MissingRequirement { private final String field; private final String description; public MissingRequirement(String field, String description) { this.field = field; this.description = description; } public String getField() { return field; } public String getDescription() { return description; } @Override public String toString() { return field + \": \" + description; } }",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

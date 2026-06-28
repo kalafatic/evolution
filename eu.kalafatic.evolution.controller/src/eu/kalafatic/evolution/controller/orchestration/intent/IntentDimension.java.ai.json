@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration.intent; import java.util.ArrayList; import java.util.List;",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration.intent; import java.util.ArrayList; import java.util.List; public class IntentDimension { private String dimensionId; private String name; private double confidence; private String inferredValue; private List<String> candidateValues = new ArrayList<>(); private double ambiguityScore; private boolean requiresUserInput; private String rationale; public String getDimensionId() { return dimensionId; } public void setDimensionId(String dimensionId) { this.dimensionId = dimensionId; } public String getName() { return name; } public void setName(String name) { this.name = name; } public double getConfidence() { return confidence; } public void setConfidence(double confidence) { this.confidence = confidence; } public String getInferredValue() { return inferredValue; } public void setInferredValue(String inferredValue) { this.inferredValue = inferredValue; }",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

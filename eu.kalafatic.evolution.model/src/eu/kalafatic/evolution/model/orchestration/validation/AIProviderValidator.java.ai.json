@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.model.orchestration.validation; public interface AIProviderValidator { boolean validate();",
+  "summary": "package eu.kalafatic.evolution.model.orchestration.validation; public interface AIProviderValidator { boolean validate(); boolean validateName(String value); boolean validateUrl(String value); boolean validateApiKey(String value); boolean validateFormat(String value); boolean validateLocal(boolean value); boolean validateDefaultModel(String value); boolean validateApiKeyEncrypted(boolean value); boolean validateUseEnvVar(boolean value); boolean validateEnvVarName(String value); boolean validateState(String value); boolean validateStateDescription(String value); boolean validateRating(int value); boolean validateRatingAnalyze(int value); boolean validateRatingChat(int value); boolean validateRatingProgramming(int value); }",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.supervisor; import java.io.File; import java.io.FileOutputStream;",
+  "summary": "package eu.kalafatic.evolution.supervisor; import java.io.File; import java.io.FileOutputStream; import java.io.IOException; import java.util.ArrayList; import java.util.List; import java.util.concurrent.TimeUnit; public class ProcessRunner { private Process currentProcess; public boolean runBuild(File variantDir) { String os = System.getProperty(\"os.name\").toLowerCase(); String mvnCmd = os.contains(\"win\") ? \"mvn.cmd\" : \"mvn\"; System.out.println(\"[BUILD] Running \" + mvnCmd + \" clean package -DskipTests in \" + variantDir.getAbsolutePath()); ProcessBuilder pb = new ProcessBuilder(mvnCmd, \"clean\", \"package\", \"-DskipTests\"); pb.directory(variantDir); pb.inheritIO(); try { Process process = pb.start(); int exitCode = process.waitFor(); return exitCode == 0;",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

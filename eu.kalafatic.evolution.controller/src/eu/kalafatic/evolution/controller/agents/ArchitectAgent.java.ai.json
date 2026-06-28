@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.controller.agents; import eu.kalafatic.evolution.controller.tools.FileTool; import eu.kalafatic.evolution.controller.tools.ShellTool;",
+  "summary": "package eu.kalafatic.evolution.controller.agents; import eu.kalafatic.evolution.controller.tools.FileTool; import eu.kalafatic.evolution.controller.tools.ShellTool; public class ArchitectAgent extends BaseAiAgent { public ArchitectAgent() { super(\"Architect\", \"Architect\"); addTool(new FileTool()); addTool(new ShellTool()); } public void updateDesignModel(eu.kalafatic.evolution.controller.orchestration.TaskContext context, String designJson) { context.getOrchestrator().setSharedMemory(designJson); } @Override protected String getAgentInstructions() { return \"You are acting as an Architect Agent.\n\" + \"Analyze the project request and provide a detailed architecture design, resource allocation plan, or file structure.\n\" + \"Your goal is to:\n\" + \"1. Analyze technical requirements and constraints.\n\" + \"2. Propose necessary agents (e.g., JavaDev, Tester, Reviewer) and tools (e.g., Maven, Git) required for the task.\n\" + \"3. Define a clear project structure or execution strategy.\n\" +",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

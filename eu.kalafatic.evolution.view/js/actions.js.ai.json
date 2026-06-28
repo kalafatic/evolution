@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "window.ChatApp = window.ChatApp || {}; window.ChatApp.Actions = { queue: [],",
+  "summary": "window.ChatApp = window.ChatApp || {}; window.ChatApp.Actions = { queue: [], isReady: false, callJava: function(action, index, payload) { if (window.JavaHandler) { const safeIndex = (index === undefined || index === null) ? \"-1\" : String(index); window.JavaHandler(String(action), safeIndex, payload !== undefined ? String(payload) : \"\"); } else { console.warn('Java bridge not ready. Queuing action:', action); this.queue.push({ action, index, payload }); } }, processQueue: function() { if (window.JavaHandler) { console.log('Processing queued Java calls:', this.queue.length); while (this.queue.length > 0) { const item = this.queue.shift(); this.callJava(item.action, item.index, item.payload); }",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

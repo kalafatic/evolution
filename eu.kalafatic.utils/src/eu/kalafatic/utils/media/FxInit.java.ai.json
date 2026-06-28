@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.2,
   "importanceScore": 0.2,
-  "summary": "package eu.kalafatic.utils.media; public class FxInit { private static boolean initialized = false;",
+  "summary": "package eu.kalafatic.utils.media; public class FxInit { private static boolean initialized = false; public static synchronized void init() { if (!initialized) { initialized = true; } } }",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

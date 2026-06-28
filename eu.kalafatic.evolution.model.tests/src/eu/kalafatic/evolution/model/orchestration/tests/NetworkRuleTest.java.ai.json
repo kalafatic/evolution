@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.model.orchestration.tests; import eu.kalafatic.evolution.model.orchestration.NetworkRule; import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;",
+  "summary": "package eu.kalafatic.evolution.model.orchestration.tests; import eu.kalafatic.evolution.model.orchestration.NetworkRule; import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory; import junit.textui.TestRunner; public class NetworkRuleTest extends RuleTest { public static void main(String[] args) { TestRunner.run(NetworkRuleTest.class); } public NetworkRuleTest(String name) { super(name); } @Override protected NetworkRule getFixture() { return (NetworkRule)fixture; }",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

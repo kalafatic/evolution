@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration; import java.util.List; import org.json.JSONObject;",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration; import java.util.List; import org.json.JSONObject; import eu.kalafatic.evolution.controller.orchestration.*; import eu.kalafatic.evolution.controller.orchestration.intent.IntentAnalysisResult; import eu.kalafatic.evolution.controller.orchestration.intent.ClarificationManager; import eu.kalafatic.evolution.controller.orchestration.intent.ConfirmedRequirements; import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants; import eu.kalafatic.evolution.model.orchestration.Task; public class IterativeFlow implements IOrchestrationFlow { private final AiService aiService; private final IterationManager manager; private final ClarificationManager clarificationManager = new ClarificationManager(); public IterativeFlow(AiService aiService, IterationManager manager) { this.aiService = aiService; this.manager = manager; } @Override public OrchestratorResponse execute(String request, TaskContext context) throws Exception { context.log(\"[KERNEL] Executing Iterative Flow.\");",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

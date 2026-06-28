@@ -1,0 +1,12 @@
+{
+  "domain": "evolution",
+  "purpose": "",
+  "role": "orchestration",
+  "stability": "STABLE",
+  "mediatedRelevanceScore": 1.0,
+  "importanceScore": 1.0,
+  "summary": "package eu.kalafatic.evolution.controller.orchestration.selfdev; public class DarwinStrategySeed { private final DarwinStrategyType type; private final String instructions; private final boolean mandatory; private String interpretation; private String assumption; private String futureGoal; public DarwinStrategySeed(DarwinStrategyType type, String instructions, boolean mandatory) { this.type = type; this.instructions = instructions; this.mandatory = mandatory; } public String getInterpretation() { return interpretation; } public void setInterpretation(String interpretation) { this.interpretation = interpretation; } public String getAssumption() {",
+  "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
+  "contextSelectionHints": ["mandatory_context"],
+  "dependencyLinks": []
+}

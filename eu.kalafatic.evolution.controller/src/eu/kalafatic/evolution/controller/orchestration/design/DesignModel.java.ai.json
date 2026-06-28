@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration.design; import java.util.ArrayList; import java.util.List;",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration.design; import java.util.ArrayList; import java.util.List; public class DesignModel { private String name; private List<ComponentRecord> components = new ArrayList<>(); private List<RelationshipRecord> relationships = new ArrayList<>(); public String getName() { return name; } public void setName(String name) { this.name = name; } public List<ComponentRecord> getComponents() { return components; } public void setComponents(List<ComponentRecord> components) { this.components = components; } public List<RelationshipRecord> getRelationships() { return relationships; } public void setRelationships(List<RelationshipRecord> relationships) { this.relationships = relationships; } }",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

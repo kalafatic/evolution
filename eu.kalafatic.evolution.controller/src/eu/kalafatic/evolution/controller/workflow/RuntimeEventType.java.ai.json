@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.controller.workflow; import eu.kalafatic.evolution.controller.trajectory.EventCategory; public enum RuntimeEventType {",
+  "summary": "package eu.kalafatic.evolution.controller.workflow; import eu.kalafatic.evolution.controller.trajectory.EventCategory; public enum RuntimeEventType { KERNEL_STARTED(EventCategory.KERNEL), KERNEL_SHUTDOWN(EventCategory.KERNEL), MODE_CHANGED(EventCategory.KERNEL), FLOW_STARTED(EventCategory.FLOW), FLOW_ROUTED(EventCategory.FLOW), FLOW_PAUSED(EventCategory.FLOW), FLOW_COMPLETED(EventCategory.FLOW), ITERATION_STARTED(EventCategory.FLOW), ITERATION_COMPLETED(EventCategory.FLOW), HYPOTHESIS_GENERATED(EventCategory.AGENT), PLAN_SELECTED(EventCategory.AGENT), BRANCH_CREATED(EventCategory.AGENT), DECISION_UPDATED(EventCategory.AGENT), MUTATING(EventCategory.AGENT), MUTATION_REVIEW(EventCategory.AGENT), REASONING_STEP(EventCategory.AGENT), EVALUATION_SIGNAL_CREATED(EventCategory.AGENT),",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

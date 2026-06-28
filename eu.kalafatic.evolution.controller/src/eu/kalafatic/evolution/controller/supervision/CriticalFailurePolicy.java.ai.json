@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.supervision; import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant; public class CriticalFailurePolicy implements ResolverPolicy {",
+  "summary": "package eu.kalafatic.evolution.controller.supervision; import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant; public class CriticalFailurePolicy implements ResolverPolicy { @Override public PolicyResult evaluate(BranchVariant variant) { if (!variant.isSuccess() || (variant.getErrorMessage() != null && !variant.getErrorMessage().isEmpty())) { return new PolicyResult(0.0, 1.0, \"Critical failure or error message detected: \" + variant.getErrorMessage()); } return new PolicyResult(1.0, 1.0, \"No critical failures detected.\"); } @Override public String getName() { return \"CriticalFailurePolicy\"; } }",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

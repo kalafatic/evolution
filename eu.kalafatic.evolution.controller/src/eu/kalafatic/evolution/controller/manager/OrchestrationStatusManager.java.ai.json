@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.controller.manager; import java.util.Map; import java.util.concurrent.ConcurrentHashMap;",
+  "summary": "package eu.kalafatic.evolution.controller.manager; import java.util.Map; import java.util.concurrent.ConcurrentHashMap; public class OrchestrationStatusManager { private static final OrchestrationStatusManager INSTANCE = new OrchestrationStatusManager(); private final Map<String, Double> progressMap = new ConcurrentHashMap<>(); private final Map<String, String> statusMap = new ConcurrentHashMap<>(); private final Map<String, String> agentStatusMap = new ConcurrentHashMap<>(); private OrchestrationStatusManager() {} public static OrchestrationStatusManager getInstance() { return INSTANCE; } public void updateStatus(String id, double progress, String status) { if (id != null) { progressMap.put(id, progress); statusMap.put(id, status); } } public void updateAgentStatus(String agentId, String status) { if (agentId != null) {",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

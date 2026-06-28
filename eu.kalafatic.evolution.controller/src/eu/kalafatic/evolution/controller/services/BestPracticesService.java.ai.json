@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.controller.services; import java.io.File; import java.io.IOException;",
+  "summary": "package eu.kalafatic.evolution.controller.services; import java.io.File; import java.io.IOException; import java.nio.charset.StandardCharsets; import java.nio.file.Files; import java.util.HashMap; import java.util.Map; import eu.kalafatic.evolution.model.orchestration.Orchestrator; import eu.kalafatic.utils.log.Log; public class BestPracticesService { private static final Map<String, String> ROLE_DEFAULTS = new HashMap<>(); private static final Map<String, String> SPECIAL_DEFAULTS = new HashMap<>(); static { ROLE_DEFAULTS.put(\"architect\", \"### ARCHITECT Best Practices\n\n\" + \"- Design for modularity and high cohesion.\n\" + \"- Use EMF-based modeling for core domain entities.\n\" + \"- Follow the 'Separation of Concerns' principle between UI and logic.\n\" + \"- Prioritize maintainability and extensibility in all design decisions.\"); ROLE_DEFAULTS.put(\"planner\", \"### PLANNER Best Practices\n\n\" + \"- Decompose user requests into atomic, actionable tasks.\n\" +",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

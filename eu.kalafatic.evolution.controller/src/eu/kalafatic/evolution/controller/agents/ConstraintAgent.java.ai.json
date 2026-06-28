@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.controller.agents; import org.json.JSONObject; import eu.kalafatic.evolution.controller.parsers.JsonUtils;",
+  "summary": "package eu.kalafatic.evolution.controller.agents; import org.json.JSONObject; import eu.kalafatic.evolution.controller.parsers.JsonUtils; import eu.kalafatic.evolution.controller.orchestration.TaskContext; import eu.kalafatic.evolution.controller.trajectory.EvaluationSignal; import eu.kalafatic.evolution.controller.trajectory.SignalSeverity; import eu.kalafatic.evolution.controller.workflow.RuntimeEvent; import eu.kalafatic.evolution.controller.workflow.RuntimeEventBus; import eu.kalafatic.evolution.controller.workflow.RuntimeEventType; public class ConstraintAgent extends BaseAiAgent { public ConstraintAgent() { super(\"Constraint\", \"Constraint\"); } @Override protected String getAgentInstructions() { return \"You are an Architectural Constraint Agent. Your goal is to maintain system health and adherence to the design.\n\n\" + \"CRITERIA:\n\" + \"1. Verify proposed changes against the 'DesignModel' found in SHARED MEMORY.\n\" + \"2. Ensure no forbidden dependencies are introduced.\n\" + \"3. Ensure interface compliance and that components stay within their defined responsibilities.\n\" +",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.model.orchestration.impl; import eu.kalafatic.evolution.model.orchestration.NeuronAI; import eu.kalafatic.evolution.model.orchestration.NeuronType;",
+  "summary": "package eu.kalafatic.evolution.model.orchestration.impl; import eu.kalafatic.evolution.model.orchestration.NeuronAI; import eu.kalafatic.evolution.model.orchestration.NeuronType; import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage; import org.eclipse.emf.common.notify.Notification; import org.eclipse.emf.ecore.EClass; import org.eclipse.emf.ecore.impl.ENotificationImpl; import org.eclipse.emf.ecore.impl.MinimalEObjectImpl; public class NeuronAIImpl extends MinimalEObjectImpl.Container implements NeuronAI { protected static final String URL_EDEFAULT = null;",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

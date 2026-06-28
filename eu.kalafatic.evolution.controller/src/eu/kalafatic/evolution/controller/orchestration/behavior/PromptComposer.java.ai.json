@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration.behavior; import java.util.List; import java.util.stream.Collectors;",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration.behavior; import java.util.List; import java.util.stream.Collectors; public class PromptComposer { public String compose(ExecutionPolicy policy, List<InstructionModule> modules, String stateContext) { StringBuilder sb = new StringBuilder(); String instructionText = modules.stream() .map(m -> m.getInstructions(policy)) .filter(s -> !s.isEmpty()) .collect(Collectors.joining(\"\n\n\")); if (instructionText.isEmpty()) { sb.append(\"Your task is to propose the best STRATEGY to fulfill the user's goal by reasoning over STATE and FEEDBACK.\n\n\"); } else { sb.append(instructionText).append(\"\n\n\"); } sb.append(\"PRIMARY OBJECTIVE:\n\") .append(\"→ Propose a precise engineering strategy to achieve the user's goal.\n\") .append(\"→ CRITICAL: Fulfillment of the current goal is the HIGHEST priority.\n\") .append(\"→ If the goal is ANALYTICAL (e.g., 'analyze project'), use ANALYZE operations in 'structure' or 'test' domains.\n\n\"); sb.append(\"STATE MODEL:\n\")",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

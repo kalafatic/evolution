@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.2,
   "importanceScore": 0.2,
-  "summary": "package eu.kalafatic.utils; import java.lang.annotation.Retention; import java.lang.annotation.RetentionPolicy;",
+  "summary": "package eu.kalafatic.utils; import java.lang.annotation.Retention; import java.lang.annotation.RetentionPolicy; @Retention(RetentionPolicy.SOURCE) public @interface Evo { int iteration(); String variant(); String reason(); }",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

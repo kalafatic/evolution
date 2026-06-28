@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.controller.agents; import java.util.ArrayList; import java.util.List;",
+  "summary": "package eu.kalafatic.evolution.controller.agents; import java.util.ArrayList; import java.util.List; import java.util.Map; import java.util.concurrent.ConcurrentHashMap; import eu.kalafatic.evolution.controller.orchestration.WebSearchAgent; import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants; public class AgentFactory { private static final Map<String, IAgent> agents = new ConcurrentHashMap<>(); static { registerDefaultAgents(); } public static synchronized void registerDefaultAgents() { agents.clear(); registerAgent(EvolutionConstants.AGENT_ANALYTIC, new AnalyticAgent()); registerAgent(EvolutionConstants.AGENT_ARCHITECT, new ArchitectAgent()); registerAgent(EvolutionConstants.AGENT_JAVA_DEV, new JavaDevAgent()); registerAgent(EvolutionConstants.AGENT_TESTER, new TesterAgent()); registerAgent(EvolutionConstants.AGENT_VALIDATOR, new ValidatorAgent()); registerAgent(EvolutionConstants.AGENT_GENERAL, new GeneralAgent());",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

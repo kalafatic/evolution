@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.controller.agents; import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants; import eu.kalafatic.evolution.controller.tools.ToolFactory;",
+  "summary": "package eu.kalafatic.evolution.controller.agents; import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants; import eu.kalafatic.evolution.controller.tools.ToolFactory; public class JavaDevAgent extends BaseAiAgent { public JavaDevAgent() { super(EvolutionConstants.AGENT_JAVA_DEV, EvolutionConstants.AGENT_JAVA_DEV); addTool(ToolFactory.getTool(EvolutionConstants.TOOL_FILE)); addTool(ToolFactory.getTool(EvolutionConstants.TOOL_MAVEN)); addTool(ToolFactory.getTool(EvolutionConstants.TOOL_GIT)); addTool(ToolFactory.getTool(EvolutionConstants.TOOL_SHELL)); addTool(ToolFactory.getTool(EvolutionConstants.TOOL_ECLIPSE)); } @Override protected String getAgentInstructions() { return \"You are acting as a Senior Java Developer Agent.\n\" + \"Generate Java source code or Maven POM content as requested.\n\" + \"Evo-Way: When generating a plan for a coding task, you should include the full code implementation in the 'implementation' field of the JSON response if the task is straightforward. This allows for immediate execution without a second reasoning step.\n\" + \"IMPORTANT: Always look at the SHARED MEMORY for overall requirements and context to ensure your code matches the user's intent.\"; } @Override",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

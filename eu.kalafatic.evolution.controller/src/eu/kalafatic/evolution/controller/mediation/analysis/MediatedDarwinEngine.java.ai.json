@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.mediation.analysis; import java.util.ArrayList; import java.util.List;",
+  "summary": "package eu.kalafatic.evolution.controller.mediation.analysis; import java.util.ArrayList; import java.util.List; import java.util.Map; import java.util.HashMap; import java.util.stream.Collectors; import eu.kalafatic.evolution.controller.mediation.model.SemanticNode; import eu.kalafatic.evolution.controller.mediation.model.SemanticEdge; import eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot; public class MediatedDarwinEngine { public static class Hypothesis { public String description; public double confidence; public List<String> affectedNodes = new ArrayList<>(); public String riskLevel; // LOW, MEDIUM, HIGH } public List<Hypothesis> runDarwinLoop(TargetSnapshot snapshot, String query) { List<SemanticNode> subgraph = selectSubgraph(snapshot, query); List<Hypothesis> hypotheses = new ArrayList<>(); hypotheses.addAll(generateInitialHypotheses(subgraph, snapshot));",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

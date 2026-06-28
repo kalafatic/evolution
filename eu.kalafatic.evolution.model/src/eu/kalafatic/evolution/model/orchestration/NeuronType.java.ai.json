@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.model.orchestration; import java.util.Arrays; import java.util.Collections;",
+  "summary": "package eu.kalafatic.evolution.model.orchestration; import java.util.Arrays; import java.util.Collections; import java.util.List; import org.eclipse.emf.common.util.Enumerator; public enum NeuronType implements Enumerator { MLP(0, \"MLP\", \"MLP\"), CNN(1, \"CNN\", \"CNN\"), RNN(2, \"RNN\", \"RNN\"),",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

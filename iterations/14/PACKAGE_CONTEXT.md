@@ -1,9 +1,8 @@
 # PACKAGE CONTEXT
 
-## Directory: iterations/14/
+## Directory: git/evolution-240526-ok/iterations/14/
 
 ## Domain: general
 
 ## Components
-* `plan.json`: { "iteration": 14, "variant": "B",
-* `PACKAGE_CONTEXT.md`: 
+* `plan.json`: { "iteration": 14, "variant": "B", "files": ["EvolutionOrchestrator.java", "AnalyticAgent.java", "LlmRouter.java"] }

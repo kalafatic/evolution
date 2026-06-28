@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration; import org.json.JSONArray; import org.json.JSONObject;",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration; import org.json.JSONArray; import org.json.JSONObject; import eu.kalafatic.evolution.controller.orchestration.llm.LlmRouter; import eu.kalafatic.evolution.model.orchestration.Orchestrator; public class ContextAssistant { private final LlmRouter llmRouter = new LlmRouter(); public ContextAssistResult analyze(String input, TaskContext context) throws Exception { Orchestrator orchestrator = context.getOrchestrator(); ConversationState state = ConversationState.load(context.getSharedMemory(), context.getSessionId()); StringBuilder sb = new StringBuilder(); sb.append(\"You are a Context Assist layer for an AI platform.\n\"); sb.append(\"Your goal is to help users select the correct PlatformMode and provide missing inputs.\n\n\"); sb.append(\"SUPPORTED MODES:\n\"); sb.append(\"- SIMPLE_CHAT: normal conversation, casual questions, greetings.\n\"); sb.append(\"- ASSISTED_CODING: help me write/debug code, specific coding tasks.\n\"); sb.append(\"- DARWIN_MODE: try multiple solutions, optimize, iterate, complex problem solving.\n\"); sb.append(\"- SELF_DEV_MODE: improve yourself, refactor system, modify Evo's own code.\n\"); sb.append(\"- UNKNOWN: use this if you cannot determine the mode even with context.\n\n\"); sb.append(\"BEHAVIOR RULES:\n\");",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

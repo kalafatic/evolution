@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration.selfdev; import java.util.ArrayList; import java.util.List;",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration.selfdev; import java.util.ArrayList; import java.util.List; import org.json.JSONArray; import org.json.JSONObject; import eu.kalafatic.evolution.controller.parsers.JsonUtils; import eu.kalafatic.evolution.controller.agents.BaseAiAgent; import eu.kalafatic.evolution.controller.orchestration.TaskContext; import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory; import eu.kalafatic.evolution.model.orchestration.Task; public class TaskPlanner extends BaseAiAgent { public TaskPlanner() { super(\"TaskPlanner\", \"SelfDevPlanner\"); } @Override protected String getAgentInstructions() { return \"You are acting as a Task Planner Agent for self-development workflows.\"; } public List<Task> generateTasksFromVariant(TaskContext context, BranchVariant variant) throws Exception { if (variant.getActions() == null || variant.getActions().isEmpty()) {",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

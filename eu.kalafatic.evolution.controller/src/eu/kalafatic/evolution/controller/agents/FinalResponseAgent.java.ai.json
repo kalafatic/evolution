@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.controller.agents; import java.util.List; import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants;",
+  "summary": "package eu.kalafatic.evolution.controller.agents; import java.util.List; import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants; import eu.kalafatic.evolution.controller.orchestration.TaskContext; import eu.kalafatic.evolution.model.orchestration.Task; import eu.kalafatic.evolution.model.orchestration.TaskStatus; public class FinalResponseAgent extends BaseAiAgent { public FinalResponseAgent() { super(\"FinalResponse\", \"FinalResponse\"); } @Override protected String getAgentInstructions() { return \"You are a Final Response Agent. Your goal is to provide a concise, human-readable summary of the work performed.\n\n\" + \"RULES:\n\" + \"- Be extremely concise.\n\" + \"- Focus on the high-level outcome.\n\" + \"- INTEGRATE HYBRID INSIGHTS: Incorporate any provided architectural cautions (Analytical) or future refactor tips (Stabilization) into the summary.\n\" + \"- Do not include technical logs or Darwin internals.\n\" + \"- Do not include file lists (these are handled by another layer).\n\" + \"- Do not include conversational filler.\";",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

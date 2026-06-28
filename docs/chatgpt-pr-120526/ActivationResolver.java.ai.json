@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.controller.supervision; import java.util.List; import java.util.ArrayList;",
+  "summary": "package eu.kalafatic.evolution.controller.supervision; import java.util.List; import java.util.ArrayList; import java.util.stream.Collectors; import eu.kalafatic.evolution.controller.trajectory.EvaluationSignal; import eu.kalafatic.evolution.controller.orchestration.workspace.SemanticWorkspace; import eu.kalafatic.evolution.controller.orchestration.selfdev.ActivationRecommendation; import eu.kalafatic.evolution.controller.execution.ScheduledExecutionPlan; public class ActivationResolver { public DecisionSnapshot resolve(String iterationId, List<EvaluationSignal> signals, List<ActivationRecommendation> recommendations, List<ResolverPolicy> policies) { return resolve(iterationId, signals, recommendations, policies, null); } public DecisionSnapshot resolve(String iterationId, List<EvaluationSignal> signals, List<ActivationRecommendation> recommendations, List<ResolverPolicy> policies, SemanticWorkspace workspace) { return resolve(iterationId, signals, recommendations, policies, workspace, null); }",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

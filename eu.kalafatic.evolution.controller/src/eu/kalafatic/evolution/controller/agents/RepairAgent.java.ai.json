@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.controller.agents; import eu.kalafatic.evolution.controller.tools.FileTool; import eu.kalafatic.evolution.controller.tools.MavenTool;",
+  "summary": "package eu.kalafatic.evolution.controller.agents; import eu.kalafatic.evolution.controller.tools.FileTool; import eu.kalafatic.evolution.controller.tools.MavenTool; import eu.kalafatic.evolution.controller.tools.ShellTool; public class RepairAgent extends BaseAiAgent { public RepairAgent() { super(\"Repair\", \"Repair\"); addTool(new FileTool()); addTool(new MavenTool()); addTool(new ShellTool()); } @Override protected String getAgentInstructions() { return \"You are an AI Repair Specialist. Your goal is to analyze failures (build, test, or planning) and provide surgical corrections.\n\n\" + \"STRATEGY FOR TECHNICAL FAILURES:\n\" + \"1. Analyze the provided error logs carefully.\n\" + \"2. Identify the exact file and line number causing the issue.\n\" + \"3. Propose a fix that addresses the root cause without refactoring unrelated code.\n\" + \"4. If a dependency is missing, suggest adding it to the POM.\n\" + \"5. If a method signature is mismatched, correct the caller or the definition based on project context.\n\n\" +",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

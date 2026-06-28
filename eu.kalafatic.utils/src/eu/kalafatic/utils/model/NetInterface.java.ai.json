@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.7,
   "importanceScore": 0.7,
-  "summary": "package eu.kalafatic.utils.model; import java.util.ArrayList; import java.util.List;",
+  "summary": "package eu.kalafatic.utils.model; import java.util.ArrayList; import java.util.List; public class NetInterface { private String name, displayName, mac; private List<String> address; private boolean up, virtual, multicast; public NetInterface() { address=new ArrayList<String>(); } public String getName() {",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

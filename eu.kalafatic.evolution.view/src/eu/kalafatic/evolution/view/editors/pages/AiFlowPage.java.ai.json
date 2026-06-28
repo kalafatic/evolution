@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.4,
   "importanceScore": 0.4,
-  "summary": "package eu.kalafatic.evolution.view.editors.pages; import org.eclipse.emf.common.notify.Adapter; import org.eclipse.emf.common.notify.Notification;",
+  "summary": "package eu.kalafatic.evolution.view.editors.pages; import org.eclipse.emf.common.notify.Adapter; import org.eclipse.emf.common.notify.Notification; import org.eclipse.emf.ecore.util.EContentAdapter; import org.eclipse.jface.action.Action; import org.eclipse.jface.action.ToolBarManager; import org.eclipse.swt.SWT; import org.eclipse.swt.browser.Browser; import org.eclipse.swt.browser.BrowserFunction; import org.eclipse.swt.browser.LocationAdapter; import org.eclipse.swt.browser.LocationEvent; import org.eclipse.swt.browser.ProgressAdapter; import org.eclipse.swt.browser.ProgressEvent; import org.eclipse.swt.custom.ScrolledComposite; import org.eclipse.swt.layout.FillLayout; import org.eclipse.swt.layout.GridData; import org.eclipse.swt.layout.GridLayout; import org.eclipse.swt.widgets.Composite; import org.eclipse.swt.widgets.Display; import java.io.File;",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

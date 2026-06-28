@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration.diagnostics; import java.util.HashMap; import java.util.Map;",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration.diagnostics; import java.util.HashMap; import java.util.Map; public final class CognitiveHealth { private double ambiguityPressure; private double mutationStability; private double contextCoherence; private double signalNoiseRatio; private double schedulerSaturation; private double branchEntropy; private double resolverConfidenceConsistency; public double getAmbiguityPressure() { return ambiguityPressure; } public void setAmbiguityPressure(double ambiguityPressure) { this.ambiguityPressure = ambiguityPressure; } public double getMutationStability() { return mutationStability; } public void setMutationStability(double mutationStability) { this.mutationStability = mutationStability; } public double getContextCoherence() { return contextCoherence; } public void setContextCoherence(double contextCoherence) { this.contextCoherence = contextCoherence; } public double getSignalNoiseRatio() { return signalNoiseRatio; } public void setSignalNoiseRatio(double signalNoiseRatio) { this.signalNoiseRatio = signalNoiseRatio; } public double getSchedulerSaturation() { return schedulerSaturation; }",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

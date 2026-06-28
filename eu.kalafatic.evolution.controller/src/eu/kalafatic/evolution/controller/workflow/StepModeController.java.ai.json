@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.controller.workflow; import java.util.Map; import java.util.concurrent.ConcurrentHashMap;",
+  "summary": "package eu.kalafatic.evolution.controller.workflow; import java.util.Map; import java.util.concurrent.ConcurrentHashMap; import java.util.concurrent.CompletableFuture; import eu.kalafatic.evolution.controller.orchestration.TaskContext; public class StepModeController { private static final StepModeController instance = new StepModeController(); private final Map<String, CompletableFuture<WorkflowStatus>> stepGates = new ConcurrentHashMap<>(); private StepModeController() {} public static StepModeController getInstance() { return instance; } public WorkflowStatus waitForStep(String sessionId, WorkflowStep step, TaskContext context) { if (context.isAutoApprove()) { return WorkflowStatus.COMPLETED; } if (context.getOrchestrator().getAiChat() != null && context.getOrchestrator().getAiChat().getPromptInstructions() != null && !context.getOrchestrator().getAiChat().getPromptInstructions().isStepMode()) { return WorkflowStatus.COMPLETED; } step.setStatus(WorkflowStatus.WAITING_USER);",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

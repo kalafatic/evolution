@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.2,
   "importanceScore": 0.2,
-  "summary": "package eu.kalafatic.utils.factories; import java.net.URL; import org.eclipse.jface.resource.FontRegistry;",
+  "summary": "package eu.kalafatic.utils.factories; import java.net.URL; import org.eclipse.jface.resource.FontRegistry; import org.eclipse.swt.SWT; import org.eclipse.swt.graphics.FontData; import org.eclipse.swt.layout.GridData; import org.eclipse.swt.layout.GridLayout; import org.eclipse.swt.widgets.Button; import org.eclipse.swt.widgets.Composite; import org.eclipse.swt.widgets.Display; import org.eclipse.swt.widgets.Group; import org.eclipse.swt.widgets.Label; import org.eclipse.swt.widgets.Text; import org.eclipse.ui.PlatformUI; import org.eclipse.ui.browser.IWorkbenchBrowserSupport; import org.eclipse.ui.forms.IFormColors; import org.eclipse.ui.forms.events.ExpansionAdapter; import org.eclipse.ui.forms.events.ExpansionEvent; import org.eclipse.ui.forms.events.HyperlinkEvent; import org.eclipse.ui.forms.events.IHyperlinkListener;",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

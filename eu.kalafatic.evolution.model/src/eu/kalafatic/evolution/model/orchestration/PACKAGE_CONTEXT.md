@@ -1,60 +1,59 @@
 # PACKAGE CONTEXT
 
-## Directory: eu.kalafatic.evolution.model/src/eu/kalafatic/evolution/model/orchestration/
+## Directory: git/evolution-240526-ok/eu.kalafatic.evolution.model/src/eu/kalafatic/evolution/model/orchestration/
 
 ## Domain: general
 
 ## Components
-* `FileChange.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.common.util.EList; import org.eclipse.emf.ecore.EObject;
-* `Eclipse.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.ecore.EObject; public interface Eclipse extends EObject {
-* `Maven.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.common.util.EList; import org.eclipse.emf.ecore.EObject;
-* `PromptInstructions.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.ecore.EObject; public interface PromptInstructions extends EObject {
-* `Ollama.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.ecore.EObject; public interface Ollama extends EObject {
-* `LLM.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.ecore.EObject; public interface LLM extends EObject {
-* `NeuronAI.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.ecore.EObject; public interface NeuronAI extends EObject {
-* `TaskStatus.java`: package eu.kalafatic.evolution.model.orchestration; import java.util.Arrays; import java.util.Collections;
-* `NetworkRule.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.common.util.EList; public interface NetworkRule extends Rule {
-* `IterationStatus.java`: package eu.kalafatic.evolution.model.orchestration; import java.util.Arrays; import java.util.Collections;
-* `ExecutionMode.java`: package eu.kalafatic.evolution.model.orchestration; import java.util.Arrays; import java.util.Collections;
-* `OrchestrationFactory.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.ecore.EFactory; public interface OrchestrationFactory extends EFactory {
-* `PACKAGE_CONTEXT.md`: 
-* `FileConfig.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.ecore.EObject; public interface FileConfig extends EObject {
-* `SelfDevSession.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.common.util.EList; import org.eclipse.emf.ecore.EObject;
-* `MemoryRule.java`: package eu.kalafatic.evolution.model.orchestration; public interface MemoryRule extends Rule { int getStorageLimit();
-* `SupervisorSettings.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.ecore.EObject; public interface SupervisorSettings extends EObject {
-* `CommandStatus.java`: package eu.kalafatic.evolution.model.orchestration; import java.util.Arrays; import java.util.Collections;
-* `MonitoringData.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.ecore.EObject; public interface MonitoringData extends EObject {
-* `SelfDevDecision.java`: package eu.kalafatic.evolution.model.orchestration; import java.util.Arrays; import java.util.Collections;
-* `Compiler.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.ecore.EObject; public interface Compiler extends EObject {
-* `SecretRule.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.common.util.EList; public interface SecretRule extends Rule {
-* `TestStatus.java`: package eu.kalafatic.evolution.model.orchestration; import java.util.Arrays; import java.util.Collections;
-* `EvoProject.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.common.util.EList; import org.eclipse.emf.ecore.EObject;
-* `Command.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.ecore.EObject; public interface Command extends EObject {
-* `Test.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.ecore.EObject; public interface Test extends EObject {
-* `Database.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.ecore.EObject; public interface Database extends EObject {
-* `ReviewSession.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.common.util.EList; import org.eclipse.emf.ecore.EObject;
-* `AccessRule.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.common.util.EList; public interface AccessRule extends Rule {
-* `DiffHunk.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.common.util.EList; import org.eclipse.emf.ecore.EObject;
-* `EvaluationResult.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.common.util.EList; import org.eclipse.emf.ecore.EObject;
-* `SelfDevStatus.java`: package eu.kalafatic.evolution.model.orchestration; import java.util.Arrays; import java.util.Collections;
-* `ChatMessage.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.ecore.EObject; public interface ChatMessage extends EObject {
+* `ChangeSet.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.common.util.EList; import org.eclipse.emf.ecore.EObject; public interface ChangeSet extends EObject { String getCommitId(); void setCommitId(String value);
+* `SessionType.java`: package eu.kalafatic.evolution.model.orchestration; import java.util.Arrays; import java.util.Collections; import java.util.List; import org.eclipse.emf.common.util.Enumerator; public enum SessionType implements Enumerator { HTTPD(0, "HTTPD", "HTTPD"), UI(1, "UI", "UI"); public static final int HTTPD_VALUE = 0;
+* `LLM.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.ecore.EObject; public interface LLM extends EObject { String getModel(); void setModel(String value);
+* `Iteration.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.common.util.EList; import org.eclipse.emf.ecore.EObject; public interface Iteration extends EObject { String getId();
+* `Maven.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.common.util.EList; import org.eclipse.emf.ecore.EObject; public interface Maven extends EObject { EList<String> getGoals(); EList<String> getProfiles();
+* `Rule.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.ecore.EObject; public interface Rule extends EObject { String getName(); void setName(String value);
+* `SelfDevDecision.java`: package eu.kalafatic.evolution.model.orchestration; import java.util.Arrays; import java.util.Collections; import java.util.List; import org.eclipse.emf.common.util.Enumerator; public enum SelfDevDecision implements Enumerator { CONTINUE(0, "CONTINUE", "CONTINUE"), ROLLBACK(1, "ROLLBACK", "ROLLBACK"), STOP(2, "STOP", "STOP");
+* `Command.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.ecore.EObject; public interface Command extends EObject { String getName(); void setName(String value);
+* `Git.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.ecore.EObject; public interface Git extends EObject { String getRepositoryUrl(); void setRepositoryUrl(String value);
+* `NeuronAI.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.ecore.EObject; public interface NeuronAI extends EObject { String getUrl(); void setUrl(String value);
+* `ServerSession.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.ecore.EObject; public interface ServerSession extends EObject { String getId(); void setId(String value);
+* `EvaluationResult.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.common.util.EList; import org.eclipse.emf.ecore.EObject; public interface EvaluationResult extends EObject { boolean isSuccess();
+* `ReviewSession.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.common.util.EList; import org.eclipse.emf.ecore.EObject; public interface ReviewSession extends EObject { String getId(); void setId(String value);
+* `Eclipse.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.ecore.EObject; public interface Eclipse extends EObject { String getWorkspace(); void setWorkspace(String value);
+* `FileConfig.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.ecore.EObject; public interface FileConfig extends EObject { String getLocalPath(); void setLocalPath(String value);
+* `DiffHunk.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.common.util.EList; import org.eclipse.emf.ecore.EObject; public interface DiffHunk extends EObject { String getHeader(); void setHeader(String value);
+* `ChatSession.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.common.util.EList; import org.eclipse.emf.ecore.EObject; public interface ChatSession extends EObject { String getId();
+* `EvoProject.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.common.util.EList; import org.eclipse.emf.ecore.EObject; public interface EvoProject extends EObject { String getName(); void setName(String value);
 * `Orchestrator.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.common.util.EList; import org.eclipse.emf.ecore.EObject;
-* `Git.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.ecore.EObject; public interface Git extends EObject {
-* `Agent.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.common.util.EList; import org.eclipse.emf.ecore.EObject;
-* `Comment.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.ecore.EObject; public interface Comment extends EObject {
-* `LogLevel.java`: package eu.kalafatic.evolution.model.orchestration; import java.util.Arrays; import java.util.Collections;
-* `ServerSession.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.ecore.EObject; public interface ServerSession extends EObject {
-* `NeuronType.java`: package eu.kalafatic.evolution.model.orchestration; import java.util.Arrays; import java.util.Collections;
-* `Rule.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.ecore.EObject; public interface Rule extends EObject {
-* `OrchestrationPackage.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.ecore.EAttribute; import org.eclipse.emf.ecore.EClass;
-* `ReviewDecision.java`: package eu.kalafatic.evolution.model.orchestration; import java.util.Arrays; import java.util.Collections;
+* `LogLevel.java`: package eu.kalafatic.evolution.model.orchestration; import java.util.Arrays; import java.util.Collections; import java.util.List; import org.eclipse.emf.common.util.Enumerator; public enum LogLevel implements Enumerator { TRACE(0, "TRACE", "TRACE"), DEBUG(1, "DEBUG", "DEBUG"), INFO(2, "INFO", "INFO"),
+* `MonitoringData.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.ecore.EObject; public interface MonitoringData extends EObject { long getTimestamp(); void setTimestamp(long value);
+* `ExecutionMode.java`: package eu.kalafatic.evolution.model.orchestration; import java.util.Arrays; import java.util.Collections; import java.util.List; import org.eclipse.emf.common.util.Enumerator; public enum ExecutionMode implements Enumerator { SERIAL(0, "SERIAL", "SERIAL"), PARALLEL(1, "PARALLEL", "PARALLEL"); public static final int SERIAL_VALUE = 0;
+* `AiChat.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.common.util.EList; import org.eclipse.emf.ecore.EObject; public interface AiChat extends EObject { String getUrl();
+* `OrchestrationPackage.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.ecore.EAttribute; import org.eclipse.emf.ecore.EClass; import org.eclipse.emf.ecore.EEnum; import org.eclipse.emf.ecore.EPackage; import org.eclipse.emf.ecore.EReference; public interface OrchestrationPackage extends EPackage { String eNAME = "orchestration"; String eNS_URI = "http://eu.kalafatic.evolution/orchestration"; String eNS_PREFIX = "orchestration";
+* `Compiler.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.ecore.EObject; public interface Compiler extends EObject { String getSourceVersion(); void setSourceVersion(String value);
+* `SelfDevSession.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.common.util.EList; import org.eclipse.emf.ecore.EObject; public interface SelfDevSession extends EObject { String getId();
+* `PromptInstructions.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.ecore.EObject; public interface PromptInstructions extends EObject { boolean isAutoApprove(); void setAutoApprove(boolean value);
+* `FeedbackLevel.java`: package eu.kalafatic.evolution.model.orchestration; import java.util.Arrays; import java.util.Collections; import java.util.List; import org.eclipse.emf.common.util.Enumerator; public enum FeedbackLevel implements Enumerator { SIMPLE(0, "SIMPLE", "SIMPLE"), INTERACTIVE(1, "INTERACTIVE", "INTERACTIVE"), ADVANCED(2, "ADVANCED", "ADVANCED"),
+* `CommandStatus.java`: package eu.kalafatic.evolution.model.orchestration; import java.util.Arrays; import java.util.Collections; import java.util.List; import org.eclipse.emf.common.util.Enumerator; public enum CommandStatus implements Enumerator { PENDING(0, "PENDING", "PENDING"), RUNNING(1, "RUNNING", "RUNNING"), COMPLETED(2, "COMPLETED", "COMPLETED"),
+* `ServerSettings.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.ecore.EObject; public interface ServerSettings extends EObject { int getPort(); void setPort(int value);
+* `SupervisorSettings.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.ecore.EObject; public interface SupervisorSettings extends EObject { String getExecutablePath(); void setExecutablePath(String value);
+* `TaskStatus.java`: package eu.kalafatic.evolution.model.orchestration; import java.util.Arrays; import java.util.Collections; import java.util.List; import org.eclipse.emf.common.util.Enumerator; public enum TaskStatus implements Enumerator { READY(0, "READY", "READY"), PENDING(1, "PENDING", "PENDING"), RUNNING(2, "RUNNING", "RUNNING"),
+* `NeuronType.java`: package eu.kalafatic.evolution.model.orchestration; import java.util.Arrays; import java.util.Collections; import java.util.List; import org.eclipse.emf.common.util.Enumerator; public enum NeuronType implements Enumerator { MLP(0, "MLP", "MLP"), CNN(1, "CNN", "CNN"), RNN(2, "RNN", "RNN"),
+* `AccessRule.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.common.util.EList; public interface AccessRule extends Rule { EList<String> getAllowedPaths(); EList<String> getDeniedPaths(); } // AccessRule
+* `OrchestrationFactory.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.ecore.EFactory; public interface OrchestrationFactory extends EFactory { OrchestrationFactory eINSTANCE = eu.kalafatic.evolution.model.orchestration.impl.OrchestrationFactoryImpl.init(); Task createTask(); Agent createAgent(); Orchestrator createOrchestrator();
+* `NetworkRule.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.common.util.EList; public interface NetworkRule extends Rule { EList<String> getAllowedDomains(); boolean isAllowAll();
+* `SelfDevStatus.java`: package eu.kalafatic.evolution.model.orchestration; import java.util.Arrays; import java.util.Collections; import java.util.List; import org.eclipse.emf.common.util.Enumerator; public enum SelfDevStatus implements Enumerator { RUNNING(0, "RUNNING", "RUNNING"), STOPPED(1, "STOPPED", "STOPPED"), FAILED(2, "FAILED", "FAILED"),
+* `AIProvider.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.ecore.EObject; public interface AIProvider extends EObject { String getName();
+* `FileChange.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.common.util.EList; import org.eclipse.emf.ecore.EObject; public interface FileChange extends EObject { String getFilePath(); void setFilePath(String value);
+* `AiMode.java`: package eu.kalafatic.evolution.model.orchestration; import java.util.Arrays; import java.util.Collections; import java.util.List; import org.eclipse.emf.common.util.Enumerator; public enum AiMode implements Enumerator { LOCAL(0, "LOCAL", "Local"), HYBRID(1, "HYBRID", "Hybrid"), REMOTE(2, "REMOTE", "Remote"),
+* `ChatMessage.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.ecore.EObject; public interface ChatMessage extends EObject { int getIndex();
+* `TestStatus.java`: package eu.kalafatic.evolution.model.orchestration; import java.util.Arrays; import java.util.Collections; import java.util.List; import org.eclipse.emf.common.util.Enumerator; public enum TestStatus implements Enumerator { PENDING(0, "PENDING", "PENDING"), RUNNING(1, "RUNNING", "RUNNING"), PASSED(2, "PASSED", "PASSED"),
+* `Test.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.ecore.EObject; public interface Test extends EObject { String getId(); void setId(String value);
 * `Task.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.common.util.EList; import org.eclipse.emf.ecore.EObject;
-* `Iteration.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.common.util.EList; import org.eclipse.emf.ecore.EObject;
-* `AiChat.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.common.util.EList; import org.eclipse.emf.ecore.EObject;
-* `AiMode.java`: package eu.kalafatic.evolution.model.orchestration; import java.util.Arrays; import java.util.Collections;
-* `ChangeSet.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.common.util.EList; import org.eclipse.emf.ecore.EObject;
-* `ChatSession.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.common.util.EList; import org.eclipse.emf.ecore.EObject;
-* `AIProvider.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.ecore.EObject; public interface AIProvider extends EObject {
-* `SessionType.java`: package eu.kalafatic.evolution.model.orchestration; import java.util.Arrays; import java.util.Collections;
-* `FeedbackLevel.java`: package eu.kalafatic.evolution.model.orchestration; import java.util.Arrays; import java.util.Collections;
-* `ServerSettings.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.ecore.EObject; public interface ServerSettings extends EObject {
+* `SecretRule.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.common.util.EList; public interface SecretRule extends Rule { EList<String> getAllowedSecrets(); } // SecretRule
+* `IterationStatus.java`: package eu.kalafatic.evolution.model.orchestration; import java.util.Arrays; import java.util.Collections; import java.util.List; import org.eclipse.emf.common.util.Enumerator; public enum IterationStatus implements Enumerator { PENDING(0, "PENDING", "PENDING"), RUNNING(1, "RUNNING", "RUNNING"), DONE(2, "DONE", "DONE"),
+* `Comment.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.ecore.EObject; public interface Comment extends EObject { String getId();
+* `Agent.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.common.util.EList; import org.eclipse.emf.ecore.EObject; public interface Agent extends EObject { String getId(); void setId(String value);
+* `Ollama.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.ecore.EObject; public interface Ollama extends EObject { String getUrl(); void setUrl(String value);
+* `MemoryRule.java`: package eu.kalafatic.evolution.model.orchestration; public interface MemoryRule extends Rule { int getStorageLimit(); void setStorageLimit(int value);
+* `ReviewDecision.java`: package eu.kalafatic.evolution.model.orchestration; import java.util.Arrays; import java.util.Collections; import java.util.List; import org.eclipse.emf.common.util.Enumerator; public enum ReviewDecision implements Enumerator { OPEN(0, "OPEN", "OPEN"), IN_REVIEW(1, "IN_REVIEW", "IN_REVIEW"), APPROVED(2, "APPROVED", "APPROVED"),
+* `Database.java`: package eu.kalafatic.evolution.model.orchestration; import org.eclipse.emf.ecore.EObject; public interface Database extends EObject { String getUrl(); void setUrl(String value);

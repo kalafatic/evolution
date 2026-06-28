@@ -1,13 +1,12 @@
 # PACKAGE CONTEXT
 
-## Directory: eu.kalafatic.utils/src/eu/kalafatic/utils/rules/
+## Directory: git/evolution-240526-ok/eu.kalafatic.utils/src/eu/kalafatic/utils/rules/
 
 ## Domain: general
 
 ## Components
-* `StartTagRule.java`: package eu.kalafatic.utils.rules; import org.eclipse.jface.text.rules.ICharacterScanner; import org.eclipse.jface.text.rules.IToken;
-* `NonMatchingRule.java`: package eu.kalafatic.utils.rules; import org.eclipse.jface.text.rules.ICharacterScanner; import org.eclipse.jface.text.rules.IPredicateRule;
-* `XMLTextPredicateRule.java`: package eu.kalafatic.utils.rules; import org.eclipse.jface.text.rules.ICharacterScanner; import org.eclipse.jface.text.rules.IPredicateRule;
-* `EscapedCharRule.java`: package eu.kalafatic.utils.rules; import org.eclipse.jface.text.rules.ICharacterScanner; import org.eclipse.jface.text.rules.IRule;
-* `CDataRule.java`: package eu.kalafatic.utils.rules; import org.eclipse.jface.text.rules.ICharacterScanner; import org.eclipse.jface.text.rules.IRule;
-* `PACKAGE_CONTEXT.md`: 
+* `XMLTextPredicateRule.java`: package eu.kalafatic.utils.rules; import org.eclipse.jface.text.rules.ICharacterScanner; import org.eclipse.jface.text.rules.IPredicateRule; import org.eclipse.jface.text.rules.IToken; import org.eclipse.jface.text.rules.Token; public class XMLTextPredicateRule implements IPredicateRule { private IToken token; private int charsRead; private boolean whiteSpaceOnly; boolean inCdata; public XMLTextPredicateRule(IToken text) { this.token = text; }
+* `CDataRule.java`: package eu.kalafatic.utils.rules; import org.eclipse.jface.text.rules.ICharacterScanner; import org.eclipse.jface.text.rules.IRule; import org.eclipse.jface.text.rules.IToken; import org.eclipse.jface.text.rules.Token; public class CDataRule implements IRule { IToken fToken; StringBuffer buffer = new StringBuffer(); int charsRead = 0; private String matchString; private static final String START_MATCH_STRING  = "<![CDATA["; private static final String END_MATCH_STRING = "]]>";
+* `StartTagRule.java`: package eu.kalafatic.utils.rules; import org.eclipse.jface.text.rules.ICharacterScanner; import org.eclipse.jface.text.rules.IToken; import org.eclipse.jface.text.rules.MultiLineRule; public class StartTagRule extends MultiLineRule { public StartTagRule(IToken token) { this(token, false); } protected StartTagRule(IToken token, boolean endAsWell) { super("<", endAsWell ? "/>" : ">", token); }
+* `NonMatchingRule.java`: package eu.kalafatic.utils.rules; import org.eclipse.jface.text.rules.ICharacterScanner; import org.eclipse.jface.text.rules.IPredicateRule; import org.eclipse.jface.text.rules.IToken; import org.eclipse.jface.text.rules.Token; public class NonMatchingRule implements IPredicateRule { public NonMatchingRule() { super(); } public IToken getSuccessToken() { return Token.UNDEFINED; } public IToken evaluate(ICharacterScanner scanner, boolean resume) { return Token.UNDEFINED;
+* `EscapedCharRule.java`: package eu.kalafatic.utils.rules; import org.eclipse.jface.text.rules.ICharacterScanner; import org.eclipse.jface.text.rules.IRule; import org.eclipse.jface.text.rules.IToken; import org.eclipse.jface.text.rules.Token; public class EscapedCharRule implements IRule { IToken fToken; StringBuffer buffer = new StringBuffer(); public EscapedCharRule(IToken token) { super(); this.fToken = token; }

@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "{ \"sourcePath\": \".\", \"targetPath\": \"./self-dev-run/workspace\",",
+  "summary": "{ \"sourcePath\": \".\", \"targetPath\": \"./self-dev-run/workspace\", \"action\": \"BUILD_AND_START\" }",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

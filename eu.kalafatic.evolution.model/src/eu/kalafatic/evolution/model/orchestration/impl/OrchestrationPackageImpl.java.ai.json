@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.model.orchestration.impl; import eu.kalafatic.evolution.model.orchestration.AIProvider; import eu.kalafatic.evolution.model.orchestration.AccessRule;",
+  "summary": "package eu.kalafatic.evolution.model.orchestration.impl; import eu.kalafatic.evolution.model.orchestration.AIProvider; import eu.kalafatic.evolution.model.orchestration.AccessRule; import eu.kalafatic.evolution.model.orchestration.Agent; import eu.kalafatic.evolution.model.orchestration.AiChat; import eu.kalafatic.evolution.model.orchestration.AiMode; import eu.kalafatic.evolution.model.orchestration.ChangeSet; import eu.kalafatic.evolution.model.orchestration.ChatMessage; import eu.kalafatic.evolution.model.orchestration.ChatSession; import eu.kalafatic.evolution.model.orchestration.Command; import eu.kalafatic.evolution.model.orchestration.CommandStatus; import eu.kalafatic.evolution.model.orchestration.Comment; import eu.kalafatic.evolution.model.orchestration.Database; import eu.kalafatic.evolution.model.orchestration.DiffHunk; import eu.kalafatic.evolution.model.orchestration.Eclipse; import eu.kalafatic.evolution.model.orchestration.EvaluationResult; import eu.kalafatic.evolution.model.orchestration.EvoProject; import eu.kalafatic.evolution.model.orchestration.ExecutionMode; import eu.kalafatic.evolution.model.orchestration.FeedbackLevel; import eu.kalafatic.evolution.model.orchestration.FileChange;",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

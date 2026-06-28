@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.model.orchestration.validation; import eu.kalafatic.evolution.model.orchestration.ChatMessage; import org.eclipse.emf.common.util.EList;",
+  "summary": "package eu.kalafatic.evolution.model.orchestration.validation; import eu.kalafatic.evolution.model.orchestration.ChatMessage; import org.eclipse.emf.common.util.EList; public interface ChatSessionValidator { boolean validate(); boolean validateId(String value); boolean validateMessages(EList<ChatMessage> value); boolean validateIterativeMode(boolean value); boolean validateSelfIterativeMode(boolean value); boolean validateDarwinMode(boolean value); boolean validateGitAutomation(boolean value); boolean validateMaxIterations(int value); boolean validateStepMode(boolean value); }",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

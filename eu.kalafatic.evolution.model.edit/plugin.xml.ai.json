@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "<?xml version=\"1.0\" encoding=\"UTF-8\"?> <?eclipse version=\"3.0\"?> <!--",
+  "summary": "<?xml version=\"1.0\" encoding=\"UTF-8\"?> <?eclipse version=\"3.0\"?> <!-- --> <plugin> <extension point=\"org.eclipse.emf.edit.itemProviderAdapterFactories\"> <!-- @generated evolution --> <factory uri=\"http://eu.kalafatic.evolution/orchestration\" class=\"eu.kalafatic.evolution.model.orchestration.provider.OrchestrationItemProviderAdapterFactory\" supportedTypes= \"org.eclipse.emf.edit.provider.IEditingDomainItemProvider org.eclipse.emf.edit.provider.IStructuredItemContentProvider org.eclipse.emf.edit.provider.ITreeItemContentProvider org.eclipse.emf.edit.provider.IItemLabelProvider org.eclipse.emf.edit.provider.IItemPropertySource\"/> </extension> </plugin>",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.2,
   "importanceScore": 0.2,
-  "summary": "package eu.kalafatic.utils.p2; import org.eclipse.swt.widgets.Composite; public class InstallationPage extends org.eclipse.ui.about.InstallationPage {",
+  "summary": "package eu.kalafatic.utils.p2; import org.eclipse.swt.widgets.Composite; public class InstallationPage extends org.eclipse.ui.about.InstallationPage { public InstallationPage() { } @Override public void createControl(Composite parent) { } }",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

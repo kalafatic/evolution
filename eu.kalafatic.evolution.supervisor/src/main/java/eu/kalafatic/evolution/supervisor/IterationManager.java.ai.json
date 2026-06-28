@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.supervisor; import java.io.File; import java.io.IOException;",
+  "summary": "package eu.kalafatic.evolution.supervisor; import java.io.File; import java.io.IOException; import java.nio.file.*; import java.nio.file.attribute.BasicFileAttributes; public class IterationManager { private final File baseDir; public IterationManager(File baseDir) { this.baseDir = baseDir; } public File prepareIteration(int iterNumber) throws IOException { String iterName = String.format(\"iter-%03d\", iterNumber); File iterDir = new File(new File(baseDir, \"iterations\"), iterName); if (!iterDir.exists() && !iterDir.mkdirs()) { throw new IOException(\"Could not create iteration directory: \" + iterDir.getAbsolutePath()); } File workspaceDir = new File(baseDir, \"workspace\"); if (!workspaceDir.exists()) { throw new IOException(\"Workspace directory missing: \" + workspaceDir.getAbsolutePath()); }",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

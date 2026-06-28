@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "{ \"iteration\": 13, \"variant\": \"A\",",
+  "summary": "{ \"iteration\": 13, \"variant\": \"A\", \"files\": [\"ChatGroup.java\", \"ModelsGroup.java\", \"TerminalGroup.java\"] }",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

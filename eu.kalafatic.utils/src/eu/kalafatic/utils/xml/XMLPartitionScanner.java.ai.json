@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.2,
   "importanceScore": 0.2,
-  "summary": "package eu.kalafatic.utils.xml; import org.eclipse.jface.text.rules.IPredicateRule; import org.eclipse.jface.text.rules.IToken;",
+  "summary": "package eu.kalafatic.utils.xml; import org.eclipse.jface.text.rules.IPredicateRule; import org.eclipse.jface.text.rules.IToken; import org.eclipse.jface.text.rules.MultiLineRule; import org.eclipse.jface.text.rules.RuleBasedPartitionScanner; import org.eclipse.jface.text.rules.Token; import eu.kalafatic.utils.rules.NonMatchingRule; import eu.kalafatic.utils.rules.StartTagRule; import eu.kalafatic.utils.rules.XMLTextPredicateRule; public class XMLPartitionScanner extends RuleBasedPartitionScanner { public final static String XML_TAG = \"__xml_tag\"; public final static String XML_DEFAULT = \"__xml_default\"; public final static String XML_COMMENT = \"__xml_comment\"; public final static String XML_PI = \"__xml_pi\"; public final static String XML_DOCTYPE = \"__xml_doctype\"; public final static String XML_CDATA = \"__xml_cdata\"; public final static String XML_START_TAG = \"__xml_start_tag\";",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

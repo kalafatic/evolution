@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "window.ChatApp = window.ChatApp || {}; (function() { const state = {",
+  "summary": "window.ChatApp = window.ChatApp || {}; (function() { const state = { messages: [], changes: [], lastDiffs: {}, isUiReady: false, pendingMessages: null, pendingChanges: null, searchQuery: '', searchMatches: [], currentMatchIndex: -1 }; window.updateMessages = function(messages) { if (!state.isUiReady) { state.pendingMessages = messages; return; } if (!messages || !Array.isArray(messages)) { console.error('updateMessages: expected array, got', typeof messages);",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

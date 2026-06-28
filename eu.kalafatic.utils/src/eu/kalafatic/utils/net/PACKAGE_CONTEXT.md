@@ -1,13 +1,12 @@
 # PACKAGE CONTEXT
 
-## Directory: eu.kalafatic.utils/src/eu/kalafatic/utils/net/
+## Directory: git/evolution-240526-ok/eu.kalafatic.utils/src/eu/kalafatic/utils/net/
 
 ## Domain: general
 
 ## Components
-* `SubnetUtils.java`: package eu.kalafatic.utils.net; import java.util.regex.Matcher; import java.util.regex.Pattern;
-* `PACKAGE_CONTEXT.md`: 
-* `PortUtils.java`: package eu.kalafatic.utils.net; import java.io.IOException; import java.net.DatagramSocket;
-* `SSLUtils.java`: package eu.kalafatic.utils.net; import java.io.File; import java.io.FileInputStream;
-* `NetUtils.java`: package eu.kalafatic.utils.net; import java.io.BufferedReader; import java.io.InputStreamReader;
-* `NetstatUtils.java`: package eu.kalafatic.utils.net; import eu.kalafatic.utils.windows.WinCMDUtils; public class NetstatUtils {
+* `SubnetUtils.java`: package eu.kalafatic.utils.net; import java.util.regex.Matcher; import java.util.regex.Pattern; public class SubnetUtils { private static final String IP_ADDRESS = "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})"; private static final String SLASH_FORMAT = IP_ADDRESS + "/(\\d{1,3})"; private static final Pattern addressPattern = Pattern.compile(IP_ADDRESS);
+* `PortUtils.java`: package eu.kalafatic.utils.net; import java.io.IOException; import java.net.DatagramSocket; import java.net.ServerSocket; public class PortUtils { public static final PortUtils INSTANCE = new PortUtils(); public boolean available(int port) { ServerSocket ss = null; DatagramSocket ds = null; try { ss = new ServerSocket(port); ss.setReuseAddress(true); ds = new DatagramSocket(port); ds.setReuseAddress(true); return true; } catch (IOException e) { } finally { if (ds != null) {
+* `NetstatUtils.java`: package eu.kalafatic.utils.net; import eu.kalafatic.utils.windows.WinCMDUtils; public class NetstatUtils { private volatile static NetstatUtils INSTANCE; public static NetstatUtils getInstance() { if (INSTANCE == null) { synchronized (NetstatUtils.class) { INSTANCE = new NetstatUtils(); } } return INSTANCE; }
+* `SSLUtils.java`: package eu.kalafatic.utils.net; import java.io.File; import java.io.FileInputStream; import java.io.FileOutputStream; import java.io.IOException; import java.net.URL; import java.security.KeyStore; import java.security.cert.Certificate; import java.util.Collections; import org.eclipse.core.runtime.FileLocator; import org.eclipse.core.runtime.Path; import org.eclipse.core.runtime.Platform; import org.osgi.framework.Bundle; import eu.kalafatic.utils.constants.FConstants; import eu.kalafatic.utils.preferences.ECorePreferences; public class SSLUtils { private volatile static SSLUtils INSTANCE; public static SSLUtils getInstance() { if (INSTANCE == null) { synchronized (SSLUtils.class) {
+* `NetUtils.java`: package eu.kalafatic.utils.net; import java.io.BufferedReader; import java.io.InputStreamReader; import java.net.Inet4Address; import java.net.Inet6Address; import java.net.InetAddress; import java.net.UnknownHostException; import java.util.ArrayList; import java.util.HashSet; import java.util.List; import java.util.Set; import java.util.StringTokenizer; import java.util.regex.Matcher; import eu.kalafatic.utils.constants.ERegex; public class NetUtils { public static Set<Object> getGateway() { Set<Object> set = new HashSet<Object>(); try { Process result = Runtime.getRuntime().exec("netstat -rn"); BufferedReader output = new BufferedReader(new InputStreamReader(result.getInputStream()));

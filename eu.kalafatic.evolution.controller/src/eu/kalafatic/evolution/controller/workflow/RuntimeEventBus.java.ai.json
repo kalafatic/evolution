@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.5,
   "importanceScore": 0.5,
-  "summary": "package eu.kalafatic.evolution.controller.workflow; import java.util.ArrayList; import java.util.List;",
+  "summary": "package eu.kalafatic.evolution.controller.workflow; import java.util.ArrayList; import java.util.List; import java.util.concurrent.CopyOnWriteArrayList; import eu.kalafatic.evolution.controller.execution.BackpressureController; import eu.kalafatic.evolution.controller.execution.ExecutionBudget; public class RuntimeEventBus { private static final RuntimeEventBus INSTANCE = new RuntimeEventBus(); private final List<RuntimeEventListener> listeners = new CopyOnWriteArrayList<>(); private ExecutionBudget budget = ExecutionBudget.defaultProfile(); private RuntimeEventBus() {} public static RuntimeEventBus getInstance() { return INSTANCE; } public void setBudget(ExecutionBudget budget) { this.budget = budget; } public void subscribe(RuntimeEventListener listener) { listeners.add(listener); } public void unsubscribe(RuntimeEventListener listener) { listeners.remove(listener);",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []

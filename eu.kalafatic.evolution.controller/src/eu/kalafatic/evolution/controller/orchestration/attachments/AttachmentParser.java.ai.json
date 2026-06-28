@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.controller.orchestration.attachments; import java.util.regex.Matcher; import java.util.regex.Pattern;",
+  "summary": "package eu.kalafatic.evolution.controller.orchestration.attachments; import java.util.regex.Matcher; import java.util.regex.Pattern; import java.util.ArrayList; import java.util.List; public class AttachmentParser { private static final Pattern HEADER_PATTERN = Pattern.compile(\"^(#+)\\s+(.*)$\", Pattern.MULTILINE); public static StructuredAttachmentContext parse(String markdown, String filename) { StructuredAttachmentContext context = new StructuredAttachmentContext(); if (markdown == null || markdown.trim().isEmpty()) { return context; } Matcher matcher = HEADER_PATTERN.matcher(markdown); int lastPos = 0; String lastHeader = \"General\"; while (matcher.find()) { int currentStart = matcher.start(); if (currentStart > lastPos) { String sectionContent = markdown.substring(lastPos, currentStart).trim(); if (!sectionContent.isEmpty()) {",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

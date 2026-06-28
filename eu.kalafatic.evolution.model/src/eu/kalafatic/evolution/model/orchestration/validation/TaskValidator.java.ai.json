@@ -5,8 +5,8 @@
   "stability": "STABLE",
   "mediatedRelevanceScore": 1.0,
   "importanceScore": 1.0,
-  "summary": "package eu.kalafatic.evolution.model.orchestration.validation; import eu.kalafatic.evolution.model.orchestration.FeedbackLevel; import eu.kalafatic.evolution.model.orchestration.LogLevel;",
+  "summary": "package eu.kalafatic.evolution.model.orchestration.validation; import eu.kalafatic.evolution.model.orchestration.FeedbackLevel; import eu.kalafatic.evolution.model.orchestration.LogLevel; import eu.kalafatic.evolution.model.orchestration.Task; import eu.kalafatic.evolution.model.orchestration.TaskStatus; import org.eclipse.emf.common.util.EList; public interface TaskValidator { boolean validate(); boolean validateId(String value); boolean validateName(String value); boolean validateType(String value); boolean validateStatus(TaskStatus value); boolean validateNext(EList<Task> value); boolean validateSubTasks(EList<Task> value); boolean validateResponse(String value); boolean validateFeedback(String value); boolean validateApprovalRequired(boolean value); boolean validateLoopToTaskId(String value); boolean validatePriority(int value); boolean validateResultSummary(String value);",
   "evolutionaryNotes": "Suggestion: Add @EvolutionComponent annotation to this high-importance class.",
-  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
+  "contextSelectionHints": ["mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context", "mandatory_context"],
   "dependencyLinks": []
 }

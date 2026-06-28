@@ -5,7 +5,7 @@
   "stability": "",
   "mediatedRelevanceScore": 0.2,
   "importanceScore": 0.2,
-  "summary": "package eu.kalafatic.utils.providers; import org.eclipse.core.runtime.CoreException; import org.eclipse.jface.text.AbstractDocument;",
+  "summary": "package eu.kalafatic.utils.providers; import org.eclipse.core.runtime.CoreException; import org.eclipse.jface.text.AbstractDocument; import org.eclipse.jface.text.IDocument; import org.eclipse.jface.text.IDocumentPartitioner; import org.eclipse.jface.text.rules.FastPartitioner; import org.eclipse.ui.editors.text.TextFileDocumentProvider; import eu.kalafatic.utils.xml.XMLPartitionScanner; import eu.kalafatic.utils.xml.XMLStringPartitionScanner; public class XMLTextDocumentProvider extends TextFileDocumentProvider { @Override protected FileInfo createFileInfo(Object element) throws CoreException { FileInfo info = super.createFileInfo(element); if (info == null) { info = createEmptyFileInfo(); } IDocument document = info.fTextFileBuffer.getDocument(); if (document != null) { IDocumentPartitioner partitioner = new FastPartitioner(new XMLPartitionScanner(), new String[] { XMLPartitionScanner.XML_TAG, XMLPartitionScanner.XML_COMMENT, XMLPartitionScanner.XML_START_TAG, XMLPartitionScanner.XML_PI, XMLPartitionScanner.XML_DOCTYPE, XMLPartitionScanner.XML_END_TAG, XMLPartitionScanner.XML_TEXT,",
   "evolutionaryNotes": "",
   "contextSelectionHints": [],
   "dependencyLinks": []
