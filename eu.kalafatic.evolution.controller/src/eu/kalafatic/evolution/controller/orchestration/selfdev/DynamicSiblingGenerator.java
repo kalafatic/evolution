@@ -9,6 +9,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import eu.kalafatic.evolution.controller.orchestration.AiService;
+import eu.kalafatic.evolution.controller.orchestration.EvolutionProgressPublisher;
 import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.goal.GoalModel;
@@ -239,13 +240,17 @@ public class DynamicSiblingGenerator {
     }
     
     private JSONObject generateSingleVariant(String prompt, PromptStrategy strategy, int index, TaskContext context) {
+        String variantId = "variant-" + System.currentTimeMillis() + "-" + index;
+        String variantStrategy = strategy.intent.primaryGoal + " - Variant " + (index + 1);
+
         try {
+            EvolutionProgressPublisher.updateBranchStatus(context, variantId, variantStrategy, "analyzing", null);
             String response = aiService.sendRequest(context.getOrchestrator(), prompt, context);
             
             // Parse based on format
             JSONObject variant = new JSONObject();
-            variant.put("id", "variant-" + System.currentTimeMillis() + "-" + index);
-            variant.put("strategy", strategy.intent.primaryGoal + " - Variant " + (index + 1));
+            variant.put("id", variantId);
+            variant.put("strategy", variantStrategy);
             
             // Extract code based on format
             String code = extractCode(response, strategy.format);
@@ -287,10 +292,12 @@ public class DynamicSiblingGenerator {
             steps.put("Add main method");
             variant.put("projected_steps", steps);
             
+            EvolutionProgressPublisher.updateBranchStatus(context, variantId, variantStrategy, "planned", null);
             return variant;
             
         } catch (Exception e) {
             context.log("[DYNAMIC] Failed to generate variant: " + e.getMessage());
+            EvolutionProgressPublisher.updateBranchStatus(context, variantId, variantStrategy, "failed", null);
             return null;
         }
     }

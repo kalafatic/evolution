@@ -1382,6 +1382,8 @@ public class IterationManager {
         EvolutionDecision decision = authorityEngine.decide(iterationId, variants, context, manualSelectionId);
         applyDecision(decision, variants, context);
 
+        EvolutionProgressPublisher.setWinnerId(context, decision.getSelectedVariantId());
+
         // UI SYNC: Emit centralized [DARWIN_BRANCHES] message for variant status updates
         sessionContainer.getEventBus().publish(new RuntimeEvent(RuntimeEventType.DECISION_UPDATED, context.getSessionId(), manualSelectionId, iterationId, "Kernel", decision.getSelectedVariantId(), System.currentTimeMillis()));
 

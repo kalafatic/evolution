@@ -471,68 +471,90 @@ window.ChatApp.Renderer = {
         const sortedIters = Object.keys(iterations).sort((a, b) => parseInt(a) - parseInt(b));
         if (sortedIters.length === 0) return;
 
-        let rootHtml = "";
-        
+        // Map iterations by their parentId to build non-linear tree
+        const childrenByParent = {};
+        sortedIters.forEach(key => {
+            const data = iterations[key];
+            const pid = data.parentId || "ROOT";
+            if (!childrenByParent[pid]) childrenByParent[pid] = [];
+            childrenByParent[pid].push(data);
+        });
+
         // Recursive renderer for the lineage
-        const renderIteration = (iterIdx) => {
-            if (iterIdx >= sortedIters.length) return "";
+        const renderNode = (parentData, isRoot = false) => {
+            let html = "";
             
-            const iterKey = sortedIters[iterIdx];
-            const data = iterations[iterKey];
-            
+            if (isRoot) {
+                // Find iteration(s) that have no parentId or "ROOT" as parentId
+                const roots = childrenByParent["ROOT"] || [];
+                roots.forEach(r => {
+                    html += renderIteration(r);
+                });
+            }
+            return html;
+        };
+
+        const renderIteration = (data) => {
+            const dimInfo = data.currentDimension ? `\nDimension: ${data.currentDimension}${data.currentDimensionDescription ? ' (' + data.currentDimensionDescription + ')' : ''}` : "";
             let html = `
-                <div class="tree-node" title="Iteration ${data.iterationCount}: ${data.currentTask || ''}">
+                <div class="tree-node" title="Iteration ${data.iterationCount}: ${data.currentTask || ''}${dimInfo}">
                     <div class="node-title">I${data.iterationCount}</div>
+                    ${data.currentDimension ? `<div style="font-size: 6px; color: #64748b; margin-top: -2px;">${data.currentDimension.substring(0, 8)}</div>` : ''}
                 </div>
             `;
 
             const branches = data.branches || [];
             const hasBranches = branches.length > 0;
-            const hasNextIter = iterIdx + 1 < sortedIters.length;
+
+            // Find any iterations that claim this iteration's winner (or this iteration itself) as parent
+            const winnerId = data.winnerId;
 
             if (hasBranches) {
                 html += `<div class="tree-vline"></div>`;
                 html += `<div class="tree-children">`;
                 
-                let foundWinner = false;
                 branches.forEach(b => {
-                    const isWinner = data.winnerId === b.id;
-                    if (isWinner) foundWinner = true;
+                    const isWinner = winnerId === b.id;
                     const isFailed = b.status === 'failed' || b.status === 'rejected';
-                    
+                    const subIterations = childrenByParent[b.id] || [];
+                    const hasSubIters = subIterations.length > 0;
+
                     html += `<div class="tree-child">`;
                     html += `<div class="tree-vline"></div>`;
                     html += `
-                        <div class="tree-node branch ${isFailed ? 'failed' : ''} ${isWinner ? 'winner' : ''}" title="Branch ${b.id}${b.score !== undefined ? ' - Score: ' + Math.round(b.score*100) : ''}">
-                            <div class="node-title">${isWinner ? '🏆' : 'B' + String(b.id).split('-').pop()}</div>
+                        <div class="tree-node branch ${isFailed ? 'failed' : ''} ${isWinner ? 'winner' : ''}" title="Branch ${b.id}${b.strategy ? ': ' + b.strategy : ''}${b.score !== undefined ? ' - Score: ' + Math.round(b.score*100) : ''}">
+                            <div class="node-title">${isWinner ? '🏆' : 'B' + String(b.id).split('-').pop().substring(0, 3)}</div>
                         </div>
                     `;
 
-                    // If this branch is the winner, nest the next iteration under it
-                    if (isWinner && hasNextIter) {
+                    if (hasSubIters) {
                         html += `<div class="tree-vline"></div>`;
-                        html += renderIteration(iterIdx + 1);
+                        subIterations.forEach(si => {
+                            html += renderIteration(si);
+                        });
                     }
                     
-                    html += `</div>`; // .tree-child
+                    html += `</div>`;
                 });
                 
-                // If there's a next iteration but no winner found in the branches (linear lineage fallback)
-                if (hasNextIter && !foundWinner) {
-                     html += `<div class="tree-child"><div class="tree-vline"></div><div class="tree-node branch winner"><div class="node-title">🏆</div></div><div class="tree-vline"></div>${renderIteration(iterIdx + 1)}</div>`;
+                html += `</div>`;
+            } else {
+                // If no branches but there are iterations that claim this iteration as parent (linear continuation)
+                // We use "data.winnerId" or similar as a proxy if branches are missing from progress event
+                const pid = data.winnerId || "iter-" + data.iterationCount;
+                const subIterations = childrenByParent[pid] || [];
+                if (subIterations.length > 0) {
+                    html += `<div class="tree-vline"></div>`;
+                    subIterations.forEach(si => {
+                        html += renderIteration(si);
+                    });
                 }
-                
-                html += `</div>`; // .tree-children
-            } else if (hasNextIter) {
-                 // Linear continuation if no branches reported yet for this iteration but a next one exists
-                 html += `<div class="tree-vline"></div>`;
-                 html += renderIteration(iterIdx + 1);
             }
             
             return html;
         };
 
-        content.innerHTML = renderIteration(0);
+        content.innerHTML = renderNode(null, true) || '<div style="text-align: center; color: #94a3b8; margin-top: 20px;">No lineage.</div>';
     },
 
     updateCognitiveStatePanel: function(messages) {

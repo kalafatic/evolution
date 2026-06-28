@@ -59,7 +59,13 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
         TargetSnapshot.TargetType type = targetPath.contains("evolution") ? TargetSnapshot.TargetType.SELF : TargetSnapshot.TargetType.PROJECT;
         TargetSnapshot snapshot = scanner.scanToSnapshot(root, type);
 
-        int intensity = context.getExecutionProfile().getIntensity();
+        // Null-safety fallback for ExecutionProfile
+        eu.kalafatic.evolution.controller.kernel.EvolutionProfile profile = context.getExecutionProfile();
+        if (profile == null) {
+            profile = eu.kalafatic.evolution.controller.kernel.EvolutionIntensityCalculator.calculate(context, null, null);
+            context.getOrchestrationState().setExecutionProfile(profile);
+        }
+        int intensity = profile.getIntensity();
 
         // PASS 1 - METADATA LOADING
         context.log("[DISCOVERY] Pass 1: Metadata Loading.");
@@ -125,7 +131,10 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
         }
 
         // 2. Flows & Decision Centers (Derived from Pass 5 synthesis or explicit analysis)
-        if (context.getExecutionProfile().getIntensity() >= 2) {
+        eu.kalafatic.evolution.controller.kernel.EvolutionProfile profile = context.getExecutionProfile();
+        int intensity = (profile != null) ? profile.getIntensity() : 2;
+
+        if (intensity >= 2) {
             StringBuilder sb = new StringBuilder();
             sb.append("FACTS: ").append(model.getArchitecturalFacts().size()).append("\n");
             sb.append("SUBSYSTEMS: ").append(model.getSubsystems().size()).append("\n");

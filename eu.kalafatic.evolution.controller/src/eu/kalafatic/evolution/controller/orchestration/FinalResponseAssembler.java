@@ -49,6 +49,13 @@ public class FinalResponseAssembler {
         String executionStatus = buildExecutionStatus(context, success);
         String accomplishments = buildAccomplishments(context);
         eu.kalafatic.evolution.controller.kernel.EvolutionProfile profile = context.getExecutionProfile();
+
+        // Null-safety fallback for ExecutionProfile
+        if (profile == null) {
+            profile = eu.kalafatic.evolution.controller.kernel.EvolutionIntensityCalculator.calculate(context, null, null);
+            context.getOrchestrationState().setExecutionProfile(profile);
+        }
+
         boolean isChat = profile.getCapability() == eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType.CHAT;
 
         // Standardized Summary Construction
@@ -92,7 +99,8 @@ public class FinalResponseAssembler {
         }
 
         // C. COMPREHENSIVE EVOLUTIONARY REPORTING
-        if (profile.shouldShowEvolutionSummary() || !isChat) {
+        final eu.kalafatic.evolution.controller.kernel.EvolutionProfile finalProfile = profile;
+        if (finalProfile.shouldShowEvolutionSummary() || !isChat) {
             sb.append("\n\n---\n## 🧬 Evolution Summary\n\n");
             sb.append("### Goal\n---\n").append(state.getRawInput()).append("\n\n");
 
@@ -122,7 +130,7 @@ public class FinalResponseAssembler {
             }
         }
 
-        if (profile.shouldShowRepositoryChanges() || !isChat) {
+        if (finalProfile.shouldShowRepositoryChanges() || !isChat) {
             sb.append("### 📂 Repository Changes\n---\n");
             if (files.isEmpty()) {
                 sb.append("_No physical changes detected._\n\n");
@@ -154,7 +162,7 @@ public class FinalResponseAssembler {
             }
         }
 
-        if (profile.shouldPerformRealityCheck() || !isChat) {
+        if (finalProfile.shouldPerformRealityCheck() || !isChat) {
             sb.append("### 🔍 Verification\n---\n");
             Object lastDecisionObj = state.getMetadata().get("lastDecisionSnapshot");
             DecisionSnapshot lastDecision = null;
@@ -177,7 +185,7 @@ public class FinalResponseAssembler {
             sb.append("✓ Static review passed\n\n");
         }
 
-        if (profile.requiresRepository() || !isChat) {
+        if (finalProfile.requiresRepository() || !isChat) {
             sb.append("### ⚖️ Git State\n---\n");
             try {
                 eu.kalafatic.evolution.controller.orchestration.selfdev.GitManager git = context.getKernelContext().getGitManager();
