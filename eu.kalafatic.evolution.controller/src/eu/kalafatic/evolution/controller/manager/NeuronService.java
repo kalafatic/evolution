@@ -20,11 +20,32 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 public class NeuronService {
 
     private static final NeuronService INSTANCE = new NeuronService();
+    private static String GLOBAL_DIR = initializeGlobalDir();
+    private static String GLOBAL_PATH = initializeGlobalPath();
 
-    private NeuronService() {}
+    private static String initializeGlobalDir() {
+        String home = System.getProperty("user.home");
+        if (home == null) return "supervisor";
+        return home + java.io.File.separator + "supervisor";
+    }
+
+    private static String initializeGlobalPath() {
+        return initializeGlobalDir() + java.io.File.separator + "neuron_memory.json";
+    }
+
+    private final Map<String, Map<String, Integer>> globalMemory = new HashMap<>();
+
+    private NeuronService() {
+        loadGlobalMemory();
+    }
 
     public static NeuronService getInstance() {
         return INSTANCE;
+    }
+
+    public static void setGlobalPaths(String dir, String path) {
+        GLOBAL_DIR = dir;
+        GLOBAL_PATH = path;
     }
 
     public void train(Orchestrator orchestrator, String text) {
@@ -38,19 +59,31 @@ public class NeuronService {
     /**
      * @evo:14:A reason=categorized-weighted-training
      */
-    public void train(Orchestrator orchestrator, String text, String category, int rating) {
-        if (orchestrator == null || text == null || text.trim().isEmpty() || rating < 3) return;
+    public synchronized void train(Orchestrator orchestrator, String text, String category, int rating) {
+        if (text == null || text.trim().isEmpty() || rating < 3) return;
 
-        NeuronAI neuronAI = orchestrator.getNeuronAI();
-        if (neuronAI == null) {
-            neuronAI = OrchestrationFactory.eINSTANCE.createNeuronAI();
-            orchestrator.setNeuronAI(neuronAI);
-        }
-
-        Map<String, Map<String, Integer>> memory = loadMemory(neuronAI);
         String cat = (category == null || category.isEmpty()) ? "chat" : category;
-        Map<String, Integer> catMemory = memory.computeIfAbsent(cat, k -> new HashMap<>());
+        Map<String, Integer> globalCatMemory = globalMemory.computeIfAbsent(cat, k -> new HashMap<>());
 
+        // Update Global Memory
+        updateMemoryMap(globalCatMemory, text);
+        saveGlobalMemory();
+
+        // Update Orchestrator Local Memory (Backward Compatibility)
+        if (orchestrator != null) {
+            NeuronAI neuronAI = orchestrator.getNeuronAI();
+            if (neuronAI == null) {
+                neuronAI = OrchestrationFactory.eINSTANCE.createNeuronAI();
+                orchestrator.setNeuronAI(neuronAI);
+            }
+            Map<String, Map<String, Integer>> localMemory = loadMemory(neuronAI);
+            Map<String, Integer> localCatMemory = localMemory.computeIfAbsent(cat, k -> new HashMap<>());
+            updateMemoryMap(localCatMemory, text);
+            saveMemory(neuronAI, localMemory);
+        }
+    }
+
+    private void updateMemoryMap(Map<String, Integer> catMemory, String text) {
         // Tokenize and increment weights
         String[] tokens = text.toLowerCase().split("[^a-zA-Z0-9\\-]+");
         for (String token : tokens) {
@@ -74,8 +107,6 @@ public class NeuronService {
                     .collect(Collectors.toList());
             catMemory.keySet().retainAll(toKeep);
         }
-
-        saveMemory(neuronAI, memory);
     }
 
     public String[] getProposals(Orchestrator orchestrator, String prefix) {
@@ -85,19 +116,33 @@ public class NeuronService {
     /**
      * @evo:14:A reason=categorized-weighted-proposals
      */
-    public String[] getProposals(Orchestrator orchestrator, String prefix, String category) {
-        if (orchestrator == null || orchestrator.getNeuronAI() == null || prefix == null) {
-            return new String[0];
+    public synchronized String[] getProposals(Orchestrator orchestrator, String prefix, String category) {
+        if (prefix == null) return new String[0];
+
+        String cat = (category == null || category.isEmpty()) ? "chat" : category;
+        Map<String, Integer> mergedMemory = new HashMap<>();
+
+        // Add from global memory
+        Map<String, Integer> globalCatMemory = globalMemory.get(cat);
+        if (globalCatMemory != null) {
+            mergedMemory.putAll(globalCatMemory);
         }
 
-        Map<String, Map<String, Integer>> memory = loadMemory(orchestrator.getNeuronAI());
-        String cat = (category == null || category.isEmpty()) ? "chat" : category;
-        Map<String, Integer> catMemory = memory.get(cat);
+        // Merge from local orchestrator memory
+        if (orchestrator != null && orchestrator.getNeuronAI() != null) {
+            Map<String, Map<String, Integer>> localMemory = loadMemory(orchestrator.getNeuronAI());
+            Map<String, Integer> localCatMemory = localMemory.get(cat);
+            if (localCatMemory != null) {
+                for (Map.Entry<String, Integer> entry : localCatMemory.entrySet()) {
+                    mergedMemory.put(entry.getKey(), mergedMemory.getOrDefault(entry.getKey(), 0) + entry.getValue());
+                }
+            }
+        }
 
-        if (catMemory == null) return new String[0];
+        if (mergedMemory.isEmpty()) return new String[0];
 
         String lowerPrefix = prefix.toLowerCase();
-        return catMemory.entrySet().stream()
+        return mergedMemory.entrySet().stream()
                 .filter(e -> e.getKey().toLowerCase().startsWith(lowerPrefix))
                 .sorted((e1, e2) -> e2.getValue().compareTo(e1.getValue()))
                 .limit(10)
@@ -106,8 +151,44 @@ public class NeuronService {
     }
 
     private Map<String, Map<String, Integer>> loadMemory(NeuronAI neuronAI) {
+        return deserializeMemory(neuronAI.getTrainingData());
+    }
+
+    private void saveMemory(NeuronAI neuronAI, Map<String, Map<String, Integer>> memory) {
+        neuronAI.setTrainingData(serializeMemory(memory));
+    }
+
+    private synchronized void loadGlobalMemory() {
+        if (GLOBAL_PATH == null) return;
+        java.io.File file = new java.io.File(GLOBAL_PATH);
+        if (file.exists()) {
+            try {
+                byte[] bytes = java.nio.file.Files.readAllBytes(file.toPath());
+                String data = new String(bytes, java.nio.charset.StandardCharsets.UTF_8);
+                Map<String, Map<String, Integer>> loaded = deserializeMemory(data);
+                globalMemory.clear();
+                globalMemory.putAll(loaded);
+            } catch (Exception e) {
+                System.err.println("Error loading global neuron memory: " + e.getMessage());
+            }
+        }
+    }
+
+    private synchronized void saveGlobalMemory() {
+        try {
+            java.io.File dir = new java.io.File(GLOBAL_DIR);
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
+            String data = serializeMemory(globalMemory);
+            java.nio.file.Files.write(new java.io.File(GLOBAL_PATH).toPath(), data.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        } catch (Exception e) {
+            System.err.println("Error saving global neuron memory: " + e.getMessage());
+        }
+    }
+
+    private Map<String, Map<String, Integer>> deserializeMemory(String data) {
         Map<String, Map<String, Integer>> memory = new HashMap<>();
-        String data = neuronAI.getTrainingData();
         if (data != null && !data.isEmpty()) {
             try {
                 JSONObject root = new JSONObject(data);
@@ -135,14 +216,14 @@ public class NeuronService {
                     }
                     memory.put("chat", chatMap);
                 } catch (Exception ex) {
-                    System.err.println("Error loading neuron memory: " + e.getMessage());
+                    System.err.println("Error deserializing neuron memory: " + ex.getMessage());
                 }
             }
         }
         return memory;
     }
 
-    private void saveMemory(NeuronAI neuronAI, Map<String, Map<String, Integer>> memory) {
+    private String serializeMemory(Map<String, Map<String, Integer>> memory) {
         JSONObject root = new JSONObject();
         for (Map.Entry<String, Map<String, Integer>> entry : memory.entrySet()) {
             JSONObject catObj = new JSONObject();
@@ -151,6 +232,6 @@ public class NeuronService {
             }
             root.put(entry.getKey(), catObj);
         }
-        neuronAI.setTrainingData(root.toString());
+        return root.toString();
     }
 }
