@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import eu.kalafatic.evolution.controller.orchestration.util.FileFilterUtil;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationRecord;
 import eu.kalafatic.evolution.controller.supervision.DecisionSnapshot;
 import eu.kalafatic.evolution.model.orchestration.Task;
@@ -254,6 +255,8 @@ public class FinalResponseAssembler {
 
         for (Map.Entry<String, FileChangeTracker.ChangeType> entry : changes.entrySet()) {
             String relativePath = entry.getKey();
+            if (FileFilterUtil.isSystemFile(relativePath)) continue;
+
             String displayName = new File(relativePath).getName();
 
             // Generate Eclipse-compatible URI
@@ -277,6 +280,8 @@ public class FinalResponseAssembler {
                     java.util.regex.Matcher m = java.util.regex.Pattern.compile("(?i)(?:file|wrote|created|at):?\\s*([a-zA-Z0-9_/\\\\\\s.-]+\\.[a-zA-Z0-9]+)\\b").matcher(summary);
                     while (m.find()) {
                         String path = m.group(1).trim();
+                        if (FileFilterUtil.isSystemFile(path)) continue;
+
                         File f = new File(projectRoot, path);
                         if (f.exists()) {
                             String uri = "file://" + f.getAbsolutePath().replace('\\', '/');
@@ -292,6 +297,7 @@ public class FinalResponseAssembler {
 
         return refs.stream().distinct().collect(java.util.stream.Collectors.toList());
     }
+
 
     private String buildExecutionStatus(TaskContext context, boolean success) {
         if (!success) return "Execution failed.";

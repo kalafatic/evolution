@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import eu.kalafatic.evolution.controller.orchestration.util.FileFilterUtil;
+
 import java.net.URL;
 import java.util.Collections;
 
@@ -221,6 +223,8 @@ public class ChatGroup extends AEvoGroup {
 
                     for (java.util.Map.Entry<String, eu.kalafatic.evolution.controller.orchestration.FileChangeTracker.ChangeType> entry : aiChanges.entrySet()) {
                         String path = entry.getKey();
+                        if (FileFilterUtil.isSystemFile(path)) continue;
+
                         String prefix = "M ";
                         if (entry.getValue() == eu.kalafatic.evolution.controller.orchestration.FileChangeTracker.ChangeType.NEW) prefix = "A ";
                         else if (entry.getValue() == eu.kalafatic.evolution.controller.orchestration.FileChangeTracker.ChangeType.REMOVED) prefix = "D ";
