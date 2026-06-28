@@ -251,12 +251,18 @@ public class IterationManager {
         String request = taskRequest.getPrompt();
         OrchestrationState state = context.getOrchestrationState();
 
-        // CHECKPOINT INVALIDATION: If the new goal differs from the checkpoint goal, reset evolution phase
+        // CHECKPOINT INVALIDATION: If the new goal differs from the checkpoint goal, OR if we are in a terminal phase, reset evolution phase
         String checkpointGoal = (String) state.getMetadata().get("checkpoint_goal");
-        if (checkpointGoal != null && !checkpointGoal.equalsIgnoreCase(request)) {
-            context.log("[KERNEL] New request detected. Invalidating stale evolution phase: " + state.getCurrentPhase());
+        String currentPhase = state.getCurrentPhase();
+        boolean isTerminal = currentPhase != null && (currentPhase.contains("TERMINAL") || currentPhase.contains("SYNTHESIS"));
+
+        if (isTerminal || (checkpointGoal != null && !checkpointGoal.equalsIgnoreCase(request))) {
+            context.log("[KERNEL] Resetting evolution state (Reason: " + (isTerminal ? "Terminal phase reached" : "New request") + ").");
             state.setCurrentPhase(null);
             state.setIterationCount(0);
+            if (currentIterationModel != null) {
+                currentIterationModel.setPhase(null);
+            }
         }
         state.setRawInput(request);
         state.getMetadata().put("checkpoint_goal", request);

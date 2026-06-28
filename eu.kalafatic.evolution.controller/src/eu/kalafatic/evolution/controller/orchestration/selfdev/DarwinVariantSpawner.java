@@ -140,7 +140,7 @@ public class DarwinVariantSpawner {
                "  \"actions\": [\n" +
                "    {\n" +
                "      \"domain\": \"file|test|build|structure\",\n" +
-               "      \"operation\": \"WRITE|DELETE|MKDIR|TEST|BUILD|ANALYZE\",\n" +
+               "      \"operation\": \"WRITE|DELETE|MKDIR|TEST|BUILD|ANALYZE\", // MANDATORY: Use only these exact values\n" +
                "      \"target\": \"<actual path or identifier>\",\n" +
                "      \"description\": \"<specific technical instruction for this action>\"\n" +
                "    }\n" +
