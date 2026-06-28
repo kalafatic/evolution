@@ -554,39 +554,47 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
     }
 
     private void identifyKnowledgeGaps(TargetSnapshot snapshot, TargetRealityModel model, TaskContext context) throws Exception {
-        context.log("[DISCOVERY] Identifying Knowledge Gaps.");
+        context.log("[DISCOVERY] Identifying Knowledge Gaps (Knowledge Acquisition Focus).");
         model.getKnowledgeGaps().clear();
         if (snapshot == null) return;
 
-        // 1. Identify high-centrality nodes not covered by subsystems or facts
-        List<SemanticNode> topNodes = getTopCentralNodes(snapshot, 20);
+        // 1. Identify high-centrality nodes not covered by subsystems or facts (STRICTER)
+        List<SemanticNode> topNodes = getTopCentralNodes(snapshot, 32);
         for (SemanticNode node : topNodes) {
-            boolean covered = model.getSubsystems().stream().anyMatch(s -> s.getCriticalFiles().contains(node.getPath())) ||
-                              model.getArchitecturalFacts().stream().anyMatch(f -> f.getEvidence().contains(node.getPath()));
-            if (!covered) {
-                KnowledgeGap gap = new KnowledgeGap("gap-" + node.getId(), "High-influence component unmapped: " + node.getPath(), KnowledgeGap.GapType.UNKNOWN_FACT);
+            boolean coveredBySubsystem = model.getSubsystems().stream().anyMatch(s -> s.getCriticalFiles().contains(node.getPath()));
+            boolean coveredByFact = model.getArchitecturalFacts().stream().anyMatch(f -> f.getEvidence().contains(node.getPath()));
+
+            if (!coveredBySubsystem && !coveredByFact) {
+                KnowledgeGap gap = new KnowledgeGap("gap-" + node.getId(), "CRITICAL UNKNOWN: High-influence component unmapped: " + node.getPath(), KnowledgeGap.GapType.UNKNOWN_FACT);
                 gap.getRelatedArtifacts().add(node.getPath());
-                gap.setSignificance(0.9);
+                gap.setSignificance(0.95); // Extremely high significance to force discovery
                 model.addKnowledgeGap(gap);
             }
         }
 
-        // 2. Check for missing subsystem boundaries
+        // 2. Detect "Empty" Subsystems (Knowledge Gap in Structure)
         for (Subsystem s : model.getSubsystems()) {
-            if (s.getBoundaries().isEmpty()) {
-                KnowledgeGap gap = new KnowledgeGap("gap-" + s.getId() + "-bounds", "Subsystem missing boundaries: " + s.getName(), KnowledgeGap.GapType.MISSING_EVIDENCE);
-                gap.setSignificance(0.7);
+            if (s.getBoundaries().isEmpty() || s.getCriticalFiles().isEmpty()) {
+                KnowledgeGap gap = new KnowledgeGap("gap-" + s.getId() + "-structure", "Structural Void: Subsystem '" + s.getName() + "' exists but its files/boundaries are unknown.", KnowledgeGap.GapType.MISSING_EVIDENCE);
+                gap.setSignificance(0.8);
                 model.addKnowledgeGap(gap);
             }
         }
 
-        // 3. Identify low-confidence facts
-        for (ArchitecturalFact f : model.getArchitecturalFacts()) {
-            if (f.getConfidence() < 0.6) {
-                KnowledgeGap gap = new KnowledgeGap("gap-" + f.getId(), "Low-confidence fact requires verification: " + f.toString(), KnowledgeGap.GapType.WEAK_FACT);
-                gap.setSignificance(0.5);
-                model.addKnowledgeGap(gap);
+        // 3. Low-Confidence Pattern Recognition
+        for (ArchitecturalGene gene : model.getGenes()) {
+            if (gene.getEvidence().isEmpty()) {
+                 KnowledgeGap gap = new KnowledgeGap("gap-gene-" + gene.getId(), "Unverified Pattern: Gene '" + gene.getPattern() + "' inferred but lacks supporting file evidence.", KnowledgeGap.GapType.WEAK_FACT);
+                 gap.setSignificance(0.75);
+                 model.addKnowledgeGap(gap);
             }
+        }
+
+        // 4. Global Uncertainty (Incompleteness Gap)
+        if (model.getRealityCompleteness() < 0.5) {
+             KnowledgeGap gap = new KnowledgeGap("gap-global-completeness", "Knowledge Vacuum: Architecture model completeness is critically low (" + String.format("%.0f%%", model.getRealityCompleteness()*100) + "). Massive recursive discovery required.", KnowledgeGap.GapType.UNKNOWN_FACT);
+             gap.setSignificance(1.0);
+             model.addKnowledgeGap(gap);
         }
 
         context.log("[DISCOVERY] Identified " + model.getKnowledgeGaps().size() + " knowledge gaps.");

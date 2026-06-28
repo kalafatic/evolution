@@ -40,8 +40,8 @@ public class PromptSynthesizer {
         StringBuilder sb = new StringBuilder();
         sb.append("# OPTIMIZED MEDIATED CONTEXT PROMPT\n\n");
 
-        sb.append("## REFORMULATED REQUEST\n");
-        sb.append("Identify and propose evolutionary improvements for the following objective:\n");
+        sb.append("## REFORMULATED REQUEST (KNOWLEDGE ACQUISITION FOCUS)\n");
+        sb.append("Your primary objective is to EXPLORE and RESOLVE UNKNOWN REGIONS of the repository to satisfy the following goal:\n");
         sb.append("> ").append(request).append("\n\n");
 
         if (evolvedUnderstanding != null && !evolvedUnderstanding.isEmpty()) {
@@ -99,7 +99,8 @@ public class PromptSynthesizer {
             }
         }
 
-        sb.append("## CONSTRAINTS\n");
+        sb.append("## CONSTRAINTS & PRIORITIES\n");
+        sb.append("- **PRIORITY: Resolve Knowledge Gaps.** Focus your analysis on the identified hotspots and gaps listed above.\n");
         sb.append("- Respect existing architectural patterns.\n");
         sb.append("- Prioritize stability and modularity.\n");
         sb.append("- Propose structured changes.\n");

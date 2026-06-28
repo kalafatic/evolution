@@ -128,6 +128,11 @@ public class MediatedModeIntegrationTest {
     @Test
     public void testMediatedDarwinToZipExport() throws Exception {
         eu.kalafatic.evolution.controller.orchestration.SessionContainer session = eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getOrCreateSession(context.getSessionId());
+
+        // Ensure execution profile is initialized for the test context
+        context.getOrchestrationState().setExecutionProfile(
+            eu.kalafatic.evolution.controller.kernel.EvolutionIntensityCalculator.calculate(context, null, null));
+
         IterationManager manager = KernelFactory.create(context, session, aiService);
 
         TaskRequest request = new TaskRequest();

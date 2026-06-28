@@ -26,7 +26,7 @@ import eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot;
 public class ContextCurator {
 
     public List<String> selectContext(TargetSnapshot snapshot, String query, int maxFiles, TargetRealityModel realityModel) {
-        return selectContextWithBudget(snapshot, query, DEFAULT_TOKEN_BUDGET, realityModel);
+        return selectContextWithBudget(snapshot, query, DEFAULT_TOKEN_BUDGET, realityModel, maxFiles);
     }
 
     public List<String> curate(TargetDescriptor target) {
@@ -42,14 +42,18 @@ public class ContextCurator {
     private static final int DEFAULT_TOKEN_BUDGET = 32000; // ~128k chars
 
     public List<String> selectContext(TargetSnapshot snapshot, String query, int maxFiles) {
-        return selectContextWithBudget(snapshot, query, DEFAULT_TOKEN_BUDGET);
+        return selectContextWithBudget(snapshot, query, DEFAULT_TOKEN_BUDGET, null, maxFiles);
     }
 
     public List<String> selectContextWithBudget(TargetSnapshot snapshot, String query, int tokenBudget) {
-        return selectContextWithBudget(snapshot, query, tokenBudget, null);
+        return selectContextWithBudget(snapshot, query, tokenBudget, null, 16);
     }
 
     public List<String> selectContextWithBudget(TargetSnapshot snapshot, String query, int tokenBudget, TargetRealityModel realityModel) {
+        return selectContextWithBudget(snapshot, query, tokenBudget, realityModel, 16);
+    }
+
+    public List<String> selectContextWithBudget(TargetSnapshot snapshot, String query, int tokenBudget, TargetRealityModel realityModel, int maxFiles) {
         if (snapshot == null || snapshot.getNodes().isEmpty()) return new ArrayList<>();
 
         Map<String, Double> scores = new HashMap<>();
@@ -85,12 +89,13 @@ public class ContextCurator {
                 long factCount = realityModel.getArchitecturalFacts().stream().filter(f -> f.getEvidence().contains(path)).count();
                 authority += (factCount * 15.0);
 
-                // Unknownness / Uncertainty Elevation (Knowledge Gap Driven)
+                // Unknownness / Uncertainty Elevation (Knowledge Gap DOMINANCE)
                 Optional<KnowledgeGap> gap = realityModel.getKnowledgeGaps().stream()
                     .filter(g -> g.getRelatedArtifacts().contains(path))
                     .findFirst();
                 if (gap.isPresent()) {
-                    score += (gap.get().getSignificance() * 100.0); // Prioritize uncertainty reduction
+                    score += 500.0; // Dominant boost for unknown regions
+                    score += (gap.get().getSignificance() * 200.0);
                 }
             }
 
@@ -135,6 +140,11 @@ public class ContextCurator {
             if (node.getTags().contains("Executory")) score += 15.0; // Entry points are major hotspots
             if (node.getTags().contains("Annotated")) score += 10.0; // Components with metadata are significant
 
+            // G. Build & Project Descriptors (Strongly prioritize for grounding)
+            if (path.endsWith("pom.xml") || path.endsWith("build.gradle") || path.endsWith("package.json") || path.endsWith("sloeber.ino")) {
+                score += 300.0;
+            }
+
             if (score > 0) {
                 scores.put(nid, score);
             }
@@ -157,9 +167,11 @@ public class ContextCurator {
             long estimatedTokens = estimateTokens(node);
             if (currentTokens + estimatedTokens > tokenBudget) continue;
 
+            // Enforce maxFiles
+            if (selected.size() >= maxFiles) break;
+
             // Stop only when adequate coverage is reached or budget is exhausted.
-            // Dynamic threshold: no hard file count limit if completeness is low.
-            if (isCoverageAdequate(selected, realityModel, currentTokens, tokenBudget)) break;
+            if (isCoverageAdequate(selected, realityModel, currentTokens, tokenBudget, maxFiles)) break;
 
             String cluster = deriveCluster(node);
             if (selectedClusters.contains(cluster) && entry.getValue() < 100.0) continue;
@@ -221,35 +233,27 @@ public class ContextCurator {
         }
     }
 
-    private boolean isCoverageAdequate(List<String> selected, TargetRealityModel model, long currentTokens, int budget) {
+    private boolean isCoverageAdequate(List<String> selected, TargetRealityModel model, long currentTokens, int budget, int maxFiles) {
         if (selected.size() < 4) return false; // Minimum context
         if (currentTokens > budget * 0.95) return true; // Budget nearing absolute limit
+        if (selected.size() >= maxFiles) return true;
 
         if (model != null) {
-            // No arbitrary file count limit if completeness is low.
-            // We want to reach at least 80% coverage of subsystems and high-significance gaps.
-            if (model.getRealityCompleteness() < 0.8 && selected.size() < 64) {
-                 // Force more context for incomplete models
-            } else if (selected.size() >= 32) {
-                 return true;
-            }
-
-            long subsystemsCovered = model.getSubsystems().stream()
-                .filter(s -> s.getCriticalFiles().stream().anyMatch(selected::contains))
-                .count();
-
             long highSignificanceGapsCovered = model.getKnowledgeGaps().stream()
                 .filter(g -> g.getSignificance() > 0.8)
                 .filter(g -> g.getRelatedArtifacts().stream().anyMatch(selected::contains))
                 .count();
 
-            boolean subsystemsAdequate = model.getSubsystems().isEmpty() || (subsystemsCovered >= model.getSubsystems().size() * 0.8);
-            boolean gapsAdequate = model.getKnowledgeGaps().stream().filter(g -> g.getSignificance() > 0.8).count() == highSignificanceGapsCovered;
+            long totalHighSignificanceGaps = model.getKnowledgeGaps().stream().filter(g -> g.getSignificance() > 0.8).count();
 
-            return subsystemsAdequate && gapsAdequate;
+            // Coverage is adequate ONLY if all high-sig gaps are covered OR we hit maxFiles
+            boolean gapsAdequate = (totalHighSignificanceGaps == 0) || (highSignificanceGapsCovered >= totalHighSignificanceGaps);
+
+            if (gapsAdequate && selected.size() >= Math.min(12, maxFiles)) return true;
+            return false;
         }
 
-        return selected.size() >= 16; // Default heuristic if no model
+        return selected.size() >= maxFiles;
     }
 
     private String deriveCluster(SemanticNode node) {
