@@ -10,6 +10,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import eu.kalafatic.evolution.controller.agents.BaseAiAgent;
+import eu.kalafatic.evolution.controller.kernel.EvolutionProfile;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionProgressPublisher;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.behavior.ConservativeReasoningModule;
@@ -28,6 +29,7 @@ import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityHeal
 import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityStatus;
 import eu.kalafatic.evolution.controller.orchestration.capability.ICapability;
 import eu.kalafatic.evolution.controller.orchestration.capability.contracts.IMutationContract;
+import eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType;
 import eu.kalafatic.evolution.controller.orchestration.goal.GoalModel;
 import eu.kalafatic.evolution.controller.orchestration.goal.SemanticEnvelope;
 import eu.kalafatic.evolution.controller.orchestration.intent.AtomicIntentAnalysis;
@@ -122,12 +124,38 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 		this.rejectionAnalyzer = new RejectionPatternAnalyzer(getSessionContainer());
 		this.mediationEngine = new MediationEngine();
 	}
-
+	
 	public OrchestratorResponse orchestrateEvolution(TaskRequest taskRequest, IterationManager iterationManager)
 			throws Exception {
 		context.setStartTime(Instant.now());
 		String request = taskRequest.getPrompt();
 		OrchestrationState state = context.getOrchestrationState();
+		
+		 // ============================================================
+	    // 1. CLASSIFY THE PROMPT
+	    // Everything is evolution — chat is just 1-2 branches
+	    // ============================================================
+		boolean chatMode = ModeRecognizer.isChatMode(context);
+		
+	    // ============================================================
+	    // 2. IF CHAT: Set minimal evolution parameters
+	    // ============================================================
+	    if (chatMode) {
+	        context.log("[DARWIN] CHAT detected. Using minimal evolution (1-2 branches, 1 iteration).");
+	        
+	        // Set the profile to CHAT capability	        
+	        EvolutionProfile chatProfile = EvolutionProfile.create(CapabilityType.CHAT, 1);
+	        context.getOrchestrationState().setExecutionProfile(chatProfile);
+	        
+	        // Set phase to TERMINAL_SUCCESS — bypass heavy phases
+	        state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(EvolutionPhase.TERMINAL_SUCCESS));
+	        state.setIterationCount(1);
+	        
+	        // Flag that this is a chat request
+	        state.getMetadata().put("isChatRequest", true);
+	        
+	        // Continue to evolution loop — it will generate 1-2 chat branches
+	    }
 
 		Map<String, Object> contextMap = taskRequest.getContext();
 		if (contextMap != null) {
@@ -671,23 +699,8 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 		// ============================================================
 		// 2. GOAL MODEL & SEMANTIC ENVELOPE
 		// ============================================================
-
-		Object goalModelObj = state.getMetadata().get("goalModel");
-		GoalModel goalModel = null;
-		if (goalModelObj instanceof GoalModel) {
-			goalModel = (GoalModel) goalModelObj;
-		} else if (goalModelObj instanceof Map) {
-			goalModel = new com.fasterxml.jackson.databind.ObjectMapper()
-					.configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-					.convertValue(goalModelObj, GoalModel.class);
-			state.getMetadata().put("goalModel", goalModel);
-		}
-
-		if (goalModel == null) {
-			goalModel = manager.getGoalUnderstandingEngine().understand(goal, context);
-			state.getMetadata().put("goalModel", goalModel);
-		}
-
+		GoalModel goalModel = GoalModel.extract(state.getMetadata(), manager, goal, context);
+		
 		// ABSTRACTION LEVEL SELECTION & LOCKING
 		if (state.getLockedAbstractionLevel() == null) {
 			AbstractionLevel lockedLevel = AbstractionLevel.DESIGN;
@@ -806,8 +819,8 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 		// ============================================================
 		// 7. BRANCH GENERATION
 		// ============================================================
-
-		List<BranchVariant> variants = generateProposals(context, goalModel, manager);
+	    
+		 List<BranchVariant> variants = generateProposals(context, goalModel, manager);
 
 		if (variants.isEmpty()) {
 			context.log("[DARWIN] CRITICAL: No trajectories survived diversity analysis. Evolution blocked.");
@@ -934,6 +947,13 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 	// ============================================================
 	// HELPER METHODS
 	// ============================================================
+	
+	
+	
+
+	private String generateAlternativeChatResponse(String request, TaskContext context) {
+	    return "I'm ready to evolve! Tell me what code you want me to work on, and I'll generate competing implementations for you to choose from.";
+	}
 
 	/**
 	 * Handles the Intent Expansion phase separately for clarity.
@@ -1594,8 +1614,8 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 				.getAuthority();
 		eu.kalafatic.evolution.controller.orchestration.VariantExecutionContext variantExecContext = new eu.kalafatic.evolution.controller.orchestration.VariantExecutionContext(
 				variant.getId());
-		boolean isMediated = context.getBehaviorProfile().hasTrait(BehaviorTrait.WORKFLOW_EXPORT_ONLY);
 
+		boolean isMediated = ModeRecognizer.isMediatedMode(context);
 		try {
 			if (context.getMetadata().containsKey("testMode") || isMediated) {
 				tempDir = context.getProjectRoot();
@@ -2043,9 +2063,8 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 		DarwinDiversityAnalyzer diversityAnalyzer = new DarwinDiversityAnalyzer();
 
 		int currentIteration = context.getOrchestrationState().getIterationCount();
-		boolean isMediated = policy.getExecutionMode() == ExecutionPolicy.ExecutionMode.MEDIATED
-				|| context.getBehaviorProfile().hasTrait(
-						eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait.WORKFLOW_EXPORT_ONLY);
+
+		boolean isMediated = ModeRecognizer.isMediatedMode(context);
 
 		List<TrajectoryBlueprint> currentBlueprints = new ArrayList<>();
 		int generation = trajectory != null ? trajectory.getGeneration() : 0;

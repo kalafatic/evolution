@@ -95,8 +95,16 @@ public class GoalModel {
 			TaskContext context) throws Exception {
 		Object goalModelObj = metadata.get("goalModel");
 		
-		if (goalModelObj instanceof GoalModel) {
+		if ((goalModelObj != null) && (goalModelObj instanceof GoalModel)) {
 			return (GoalModel) goalModelObj;
+		}
+		
+		if ((goalModelObj != null) &&  (goalModelObj instanceof Map)) {
+			GoalModel goalModel = new com.fasterxml.jackson.databind.ObjectMapper()
+					.configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+					.convertValue(goalModelObj, GoalModel.class);
+			metadata.put("goalModel", goalModel);
+			return goalModel;
 		}
 
 		if (iterationManager != null) {		
