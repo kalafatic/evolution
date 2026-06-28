@@ -379,15 +379,18 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             if (state.getLockedAbstractionLevel() == null) {
                 AbstractionLevel lockedLevel = AbstractionLevel.DESIGN; // Default
                 String complexity = goalModel.getComplexity() != null ? goalModel.getComplexity().toUpperCase() : "MEDIUM";
+                String type = goalModel.getGoalType() != null ? goalModel.getGoalType().toUpperCase() : "GENERAL";
 
-                if ("SIMPLE".equals(complexity)) {
+                if ("ANALYSIS".equalsIgnoreCase(type) || "ANALYSIS".equalsIgnoreCase(goalModel.getIntent())) {
+                    lockedLevel = AbstractionLevel.ARCHITECTURE;
+                } else if ("SIMPLE".equals(complexity)) {
                     lockedLevel = AbstractionLevel.IMPLEMENTATION;
                 } else if ("HIGH".equals(complexity)) {
                     lockedLevel = AbstractionLevel.ARCHITECTURE;
                 }
 
                 state.setLockedAbstractionLevel(lockedLevel);
-                context.log("[DARWIN] Abstraction level LOCKED to: " + lockedLevel + " based on complexity: " + complexity);
+                context.log("[DARWIN] Abstraction level LOCKED to: " + lockedLevel + " based on complexity: " + complexity + ", type: " + type);
             }
 
             // ADAPTIVE KERNEL: Ensure execution profile is initialized before access

@@ -101,6 +101,15 @@ public class MediatedModeIntegrationTest {
 
         // Mock LLM responses
         mockLlm.addResponseMapping("IntentExpansionEngine", "{\"state\": \"CLEAR\", \"dominantIntent\": \"Analysis\", \"confidence\": {\"overallConfidence\": 1.0}}");
+        mockLlm.addResponseMapping("Analyze this user request and extract the true intent", "{\"primaryGoal\": \"Analyze project\", \"complexity\": \"SIMPLE\", \"goalType\": \"ANALYSIS\", \"domain\": \"JAVA\"}");
+        mockLlm.addResponseMapping("design the optimal prompt format for resolving the goal", "{\"format\": \"STEP_BY_STEP\", \"siblingCount\": 2}");
+
+        // Mediated format for DynamicSiblingGenerator
+        String mediatedResponse = "PROMPT: Optimized mediated prompt\n" +
+                                   "ARCHITECTURE: Test architecture summary\n" +
+                                   "FILES: pom.xml, sloeber.ino\n" +
+                                   "INSTRUCTIONS: Follow these steps";
+        mockLlm.addResponseMapping("produce an analysis package (Genome A/B)", mediatedResponse);
 
         String darwinVariant = "{" +
             "  \"strategy_type\": \"ARCHITECTURE_MAPPING\"," +

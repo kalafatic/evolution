@@ -2,6 +2,7 @@ package eu.kalafatic.evolution.controller.orchestration.selfdev;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -44,6 +45,8 @@ public class DynamicSiblingGenerator {
             TaskContext context,
             EvolutionDimension activeDimension) throws Exception {
         
+        boolean isMediated = isMediated(context);
+
         // STEP 1: Analyze intent
         context.log("[DYNAMIC] Analyzing user intent...");
         IntentProfile intent = intentAnalyzer.analyzeIntent(userRequest, context);
@@ -118,11 +121,30 @@ public class DynamicSiblingGenerator {
         return "unknown";
     }
     
+    private boolean isMediated(TaskContext context) {
+        if (context == null) return false;
+        return context.getBehaviorProfile().hasTrait(eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait.WORKFLOW_EXPORT_ONLY) ||
+               (context.getPlatformMode() != null &&
+                ("HYBRID_MANUAL_EXPORT".equals(context.getPlatformMode().getType().name()) ||
+                 "MEDIATED".equalsIgnoreCase(context.getPlatformMode().getType().name()))) ||
+               (context.getOrchestrator() != null &&
+                context.getOrchestrator().getAiMode() != null &&
+                "MEDIATED".equals(context.getOrchestrator().getAiMode().name())) ||
+               (context.getOrchestrationState() != null &&
+                context.getOrchestrationState().getMetadata().containsKey("mediatedSnapshot"));
+    }
+
     private String buildDynamicPrompt(PromptStrategy strategy, int siblingIndex, TaskContext context) {
         StringBuilder prompt = new StringBuilder();
         
+        boolean isMediated = isMediated(context);
+
         // Base instruction
-        prompt.append("Generate a Java solution for: ").append(strategy.intent.primaryGoal).append("\n\n");
+        if (isMediated) {
+            prompt.append("Perform a repository-grounded architectural analysis for: ").append(strategy.intent.primaryGoal).append("\n\n");
+        } else {
+            prompt.append("Generate a Java solution for: ").append(strategy.intent.primaryGoal).append("\n\n");
+        }
         
         // Tone
         if ("instructional".equals(strategy.tone)) {
@@ -132,21 +154,25 @@ public class DynamicSiblingGenerator {
         }
         
         // Format-specific prompt construction
-        switch (strategy.format) {
-            case "STEP_BY_STEP":
-                prompt.append(buildStepByStepPrompt(strategy, siblingIndex));
-                break;
-            case "JSON_SCHEMA":
-                prompt.append(buildJsonSchemaPrompt(strategy, siblingIndex));
-                break;
-            case "SIMPLE_TEXT":
-                prompt.append(buildSimpleTextPrompt(strategy, siblingIndex));
-                break;
-            case "CODE_ONLY":
-                prompt.append(buildCodeOnlyPrompt(strategy, siblingIndex));
-                break;
-            default:
-                prompt.append(buildSimpleTextPrompt(strategy, siblingIndex));
+        if (isMediated) {
+             prompt.append(buildMediatedPrompt(strategy, siblingIndex, context));
+        } else {
+            switch (strategy.format) {
+                case "STEP_BY_STEP":
+                    prompt.append(buildStepByStepPrompt(strategy, siblingIndex));
+                    break;
+                case "JSON_SCHEMA":
+                    prompt.append(buildJsonSchemaPrompt(strategy, siblingIndex));
+                    break;
+                case "SIMPLE_TEXT":
+                    prompt.append(buildSimpleTextPrompt(strategy, siblingIndex));
+                    break;
+                case "CODE_ONLY":
+                    prompt.append(buildCodeOnlyPrompt(strategy, siblingIndex));
+                    break;
+                default:
+                    prompt.append(buildSimpleTextPrompt(strategy, siblingIndex));
+            }
         }
         
         // Add examples
@@ -239,9 +265,28 @@ public class DynamicSiblingGenerator {
             """;
     }
     
+    private String buildMediatedPrompt(PromptStrategy strategy, int index, TaskContext context) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Your task is to produce an analysis package (Genome A/B) for this goal.\n\n");
+
+        sb.append("GENOME A: The optimized prompt for a high-capability external LLM.\n");
+        sb.append("GENOME B: The architectural understanding and required context.\n\n");
+
+        sb.append("Identify 4-16 key files from the project that are critical for this task.\n\n");
+
+        sb.append("Return your answer in this format:\n");
+        sb.append("PROMPT: [optimized prompt]\n");
+        sb.append("ARCHITECTURE: [concise architecture mapping]\n");
+        sb.append("FILES: [comma-separated list of 4-16 files]\n");
+        sb.append("INSTRUCTIONS: [specific execution instructions]\n");
+
+        return sb.toString();
+    }
+
     private JSONObject generateSingleVariant(String prompt, PromptStrategy strategy, int index, TaskContext context) {
         String variantId = "variant-" + System.currentTimeMillis() + "-" + index;
         String variantStrategy = strategy.intent.primaryGoal + " - Variant " + (index + 1);
+        boolean isMediated = isMediated(context);
 
         try {
             EvolutionProgressPublisher.updateBranchStatus(context, variantId, variantStrategy, "analyzing", null);
@@ -252,44 +297,52 @@ public class DynamicSiblingGenerator {
             variant.put("id", variantId);
             variant.put("strategy", variantStrategy);
             
-            // Extract code based on format
-            String code = extractCode(response, strategy.format);
-            variant.put("implementation", code);
-            
-            // Extract class name
-            String className = extractClassName(code);
-            variant.put("class_name", className);
-            
-            // Build action
-            JSONObject action = new JSONObject();
-            action.put("operation", "WRITE");
-            action.put("target", "src/main/java/com/example/" + className + ".java");
-            action.put("implementation", code);
-            JSONArray actions = new JSONArray();
-            actions.put(action);
-            variant.put("actions", actions);
+            if (isMediated) {
+                populateMediatedVariant(variant, response, strategy, context);
+            } else {
+                // Extract code based on format
+                String code = extractCode(response, strategy.format);
+                variant.put("implementation", code);
+
+                // Extract class name
+                String className = extractClassName(code);
+                variant.put("class_name", className);
+
+                // Build action
+                JSONObject action = new JSONObject();
+                action.put("operation", "WRITE");
+                action.put("target", "src/main/java/com/example/" + className + ".java");
+                action.put("implementation", code);
+                JSONArray actions = new JSONArray();
+                actions.put(action);
+                variant.put("actions", actions);
+            }
             
             // Fill required fields
             variant.put("strategy_type", "PROBABLE_SURVIVOR");
             variant.put("semantic_anchor", strategy.intent.primaryGoal);
             variant.put("survival_argument", "Generated for: " + strategy.intent.primaryGoal);
-            variant.put("tradeoffs", "Simple implementation");
+            variant.put("tradeoffs", isMediated ? "High-signal discovery" : "Simple implementation");
             variant.put("reasoning_level", "MINIMAL");
-            variant.put("architecture_enabled", false);
-            variant.put("implementation_enabled", true);
+            variant.put("architecture_enabled", isMediated);
+            variant.put("implementation_enabled", !isMediated);
             
             // Engineering dimensions
             JSONObject dims = new JSONObject();
-            dims.put("active_dimension", "IMPLEMENTATION");
-            dims.put("active_dimension_description", "Define the core functionality");
-            dims.put("execution_model", "atomic");
-            dims.put("abstraction_depth", "low");
+            dims.put("active_dimension", isMediated ? "ARCHITECTURE" : "IMPLEMENTATION");
+            dims.put("active_dimension_description", isMediated ? "Establish architectural grounding" : "Define the core functionality");
+            dims.put("execution_model", isMediated ? "mediated" : "atomic");
+            dims.put("abstraction_depth", isMediated ? "high" : "low");
             variant.put("engineering_dimensions", dims);
             
             // Projected steps
             JSONArray steps = new JSONArray();
-            steps.put("Write Java class: " + className);
-            steps.put("Add main method");
+            if (isMediated) {
+                steps.put("Discovery repository structure");
+                steps.put("Synthesize optimized prompt");
+            } else {
+                steps.put("Implement logic");
+            }
             variant.put("projected_steps", steps);
             
             EvolutionProgressPublisher.updateBranchStatus(context, variantId, variantStrategy, "planned", null);
@@ -302,6 +355,60 @@ public class DynamicSiblingGenerator {
         }
     }
     
+    private void populateMediatedVariant(JSONObject variant, String response, PromptStrategy strategy, TaskContext context) {
+        String optimizedPrompt = extractField(response, "PROMPT:");
+        String architecture = extractField(response, "ARCHITECTURE:");
+        String filesStr = extractField(response, "FILES:");
+        String instructions = extractField(response, "INSTRUCTIONS:");
+
+        JSONObject med = new JSONObject();
+        med.put("prompt", optimizedPrompt);
+        med.put("architecture_summary", architecture);
+        med.put("execution_instructions", instructions);
+
+        JSONArray selectedFiles = new JSONArray();
+        if (filesStr != null && !filesStr.isEmpty()) {
+            String[] parts = filesStr.split(",");
+            for (String p : parts) {
+                selectedFiles.put(p.trim());
+            }
+        }
+        med.put("selected_files", selectedFiles);
+        variant.put("mediation_candidate", med);
+
+        // ACTION: Mediated mode uses ANALYZE workspace
+        JSONObject action = new JSONObject();
+        action.put("domain", "kernel");
+        action.put("operation", "ANALYZE");
+        action.put("target", "workspace");
+        action.put("description", "Perform cognitive analysis of the repository");
+
+        JSONArray actions = new JSONArray();
+        actions.put(action);
+        variant.put("actions", actions);
+    }
+
+    private String extractField(String response, String label) {
+        if (response == null) return "";
+        int start = response.indexOf(label);
+        if (start == -1) return "";
+
+        start += label.length();
+
+        // Find the next label to determine the end of the current field
+        String[] labels = {"PROMPT:", "ARCHITECTURE:", "FILES:", "INSTRUCTIONS:"};
+        int end = response.length();
+
+        for (String l : labels) {
+            int nextLabelStart = response.indexOf(l, start);
+            if (nextLabelStart != -1 && nextLabelStart < end) {
+                end = nextLabelStart;
+            }
+        }
+
+        return response.substring(start, end).trim();
+    }
+
     private String extractCode(String response, String format) {
         // Try to extract from code blocks first
         Pattern codeBlockPattern = Pattern.compile(
@@ -361,6 +468,12 @@ public class DynamicSiblingGenerator {
     }
     
     private boolean validateVariant(JSONObject variant, PromptStrategy strategy) {
+        // Mediated mode validation
+        if (variant.has("mediation_candidate")) {
+            JSONObject med = variant.getJSONObject("mediation_candidate");
+            return med.has("prompt") && !med.optString("prompt").isEmpty();
+        }
+
         // Check required fields
         if (!variant.has("implementation") || variant.optString("implementation").isEmpty()) {
             return false;

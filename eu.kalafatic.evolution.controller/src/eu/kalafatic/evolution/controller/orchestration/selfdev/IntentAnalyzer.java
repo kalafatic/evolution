@@ -54,8 +54,8 @@ public class IntentAnalyzer extends BaseAiAgent {
             
             1. What is the primary goal? (one sentence)
             2. What is the complexity level? (SIMPLE, MEDIUM, COMPLEX)
-            3. What domain is this in? (JAVA, PYTHON, WEB, API, etc.)
-            4. What artifact should be produced? (single class, multiple classes, service, etc.)
+            3. What domain is this in? (JAVA, PYTHON, WEB, API, ARCHITECTURE, etc.)
+            4. What artifact should be produced? (e.g. class, service, documentation, mediated package)
             5. Does the user want a framework? (yes/no)
             6. What abstraction level? (IMPLEMENTATION, DESIGN, ARCHITECTURE)
             7. What are the key features needed? (list)
@@ -63,15 +63,15 @@ public class IntentAnalyzer extends BaseAiAgent {
             
             Return ONLY valid JSON, no explanation:
             {
-                "primaryGoal": "Create a Java class that prints text",
-                "complexity": "SIMPLE",
-                "domain": "JAVA",
-                "artifactType": "single class with main method",
+                "primaryGoal": "[concise description of the user's primary goal]",
+                "complexity": "SIMPLE/MEDIUM/COMPLEX",
+                "domain": "[technical domain]",
+                "artifactType": "[type of artifact]",
                 "requiresFramework": false,
-                "abstractionLevel": "IMPLEMENTATION",
-                "keyFeatures": ["print text", "console output"],
-                "avoidances": ["spring", "microservices", "external libraries"],
-                "ambiguityScore": 0.2
+                "abstractionLevel": "IMPLEMENTATION/DESIGN/ARCHITECTURE",
+                "keyFeatures": ["[feature 1]", "[feature 2]"],
+                "avoidances": ["[avoidance 1]", "[avoidance 2]"],
+                "ambiguityScore": 0.5
             }
             """;
     }
@@ -88,10 +88,10 @@ public class IntentAnalyzer extends BaseAiAgent {
         }
         
         IntentProfile profile = new IntentProfile();
-        profile.primaryGoal = obj.optString("primaryGoal", "Create Java class that prints text");
+        profile.primaryGoal = obj.optString("primaryGoal", userRequest);
         profile.complexity = obj.optString("complexity", "SIMPLE");
-        profile.domain = obj.optString("domain", "JAVA");
-        profile.artifactType = obj.optString("artifactType", "single class with main method");
+        profile.domain = obj.optString("domain", "GENERAL");
+        profile.artifactType = obj.optString("artifactType", "unknown");
         profile.requiresFramework = obj.optBoolean("requiresFramework", false);
         profile.abstractionLevel = obj.optString("abstractionLevel", "IMPLEMENTATION");
         profile.ambiguityScore = obj.optDouble("ambiguityScore", 0.5);
@@ -101,9 +101,6 @@ public class IntentAnalyzer extends BaseAiAgent {
             for (int i = 0; i < features.length(); i++) {
                 profile.keyFeatures.add(features.getString(i));
             }
-        } else {
-            profile.keyFeatures.add("print text");
-            profile.keyFeatures.add("console output");
         }
         
         JSONArray avoidances = obj.optJSONArray("avoidances");
@@ -111,9 +108,6 @@ public class IntentAnalyzer extends BaseAiAgent {
             for (int i = 0; i < avoidances.length(); i++) {
                 profile.avoidances.add(avoidances.getString(i));
             }
-        } else {
-            profile.avoidances.add("external frameworks");
-            profile.avoidances.add("complex dependencies");
         }
         
         profile.userSkillLevel = inferSkillLevel(response);
@@ -123,18 +117,14 @@ public class IntentAnalyzer extends BaseAiAgent {
     
     private IntentProfile createDefaultProfile(String userRequest) {
         IntentProfile profile = new IntentProfile();
-        profile.primaryGoal = userRequest != null && !userRequest.isEmpty() ? userRequest : "Create Java class";
+        profile.primaryGoal = userRequest != null && !userRequest.isEmpty() ? userRequest : "Process request";
         profile.complexity = "SIMPLE";
-        profile.domain = "JAVA";
-        profile.artifactType = "single class with main method";
+        profile.domain = "GENERAL";
+        profile.artifactType = "unknown";
         profile.requiresFramework = false;
         profile.abstractionLevel = "IMPLEMENTATION";
         profile.ambiguityScore = 0.5;
-        profile.keyFeatures.add("print text");
-        profile.keyFeatures.add("console output");
-        profile.avoidances.add("external frameworks");
-        profile.avoidances.add("complex dependencies");
-        profile.userSkillLevel = "BEGINNER";
+        profile.userSkillLevel = "INTERMEDIATE";
         return profile;
     }
     
