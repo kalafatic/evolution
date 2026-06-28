@@ -27,7 +27,7 @@ public class PromptOptimizer extends BaseAiAgent {
     
     private String buildOptimizationPrompt(IntentProfile intent) {
         return """
-            Given this user intent, design the optimal prompt format for generating Java code.
+            Given this user intent, design the optimal prompt format for resolving the goal.
             
             USER INTENT:
             Primary Goal: """ + intent.primaryGoal + """
@@ -58,14 +58,14 @@ public class PromptOptimizer extends BaseAiAgent {
             Return as JSON:
             {
                 "format": "STEP_BY_STEP",
-                "fields": ["class_name", "method_name", "implementation_code"],
+                "fields": ["field1", "field2"],
                 "examples": ["Example 1", "Example 2"],
-                "constraints": ["No external libraries", "Single file"],
+                "constraints": ["Constraint 1", "Constraint 2"],
                 "siblingCount": 3,
-                "tone": "instructional",
-                "promptTemplate": "Generate a Java class that {goal}. The class should have...",
-                "expectedOutputFormat": "Plain Java code with no markdown",
-                "validationRules": ["Must compile", "Must have main method"]
+                "tone": "instructional/conversational/technical",
+                "promptTemplate": "Instructions for {goal}...",
+                "expectedOutputFormat": "[description of format]",
+                "validationRules": ["Rule 1", "Rule 2"]
             }
             """;
     }
