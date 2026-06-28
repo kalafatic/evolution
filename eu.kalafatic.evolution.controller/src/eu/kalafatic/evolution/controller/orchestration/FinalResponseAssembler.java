@@ -257,6 +257,9 @@ public class FinalResponseAssembler {
             String relativePath = entry.getKey();
             if (FileFilterUtil.isSystemFile(relativePath)) continue;
 
+            File f = new File(projectRoot, relativePath);
+            if (entry.getValue() != FileChangeTracker.ChangeType.REMOVED && !f.exists()) continue;
+
             String displayName = new File(relativePath).getName();
 
             // Generate Eclipse-compatible URI
