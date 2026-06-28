@@ -322,16 +322,8 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
 			// GROUNDING: Establish Goal Model and Locked Abstraction Level BEFORE Intensity
 			// Calculation
-			Object goalModelObj = state.getMetadata().get("goalModel");
-			GoalModel goalModel = null;
-			if (goalModelObj instanceof GoalModel) {
-				goalModel = (GoalModel) goalModelObj;
-			}
-			if (goalModel == null) {
-				goalModel = iterationManager.getGoalUnderstandingEngine().understand(request, context);
-				state.getMetadata().put("goalModel", goalModel);
-			}
-
+			GoalModel goalModel = GoalModel.extract(state.getMetadata(), iterationManager, request, context);
+			
 			if (state.getLockedAbstractionLevel() == null) {
                 AbstractionLevel lockedLevel = AbstractionLevel.DESIGN; // Default
                 String complexity = goalModel.getComplexity() != null ? goalModel.getComplexity().toUpperCase() : "MEDIUM";
