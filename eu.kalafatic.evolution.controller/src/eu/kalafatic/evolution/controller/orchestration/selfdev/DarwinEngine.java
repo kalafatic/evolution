@@ -2020,6 +2020,8 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
         if (profile.useImplementation()) {
             context.log("[DARWIN] Parallel Evaluation: Triggering implementation validation for " + evaluationCandidates.size() + " variants.");
+            EvolutionProgressPublisher.updateStage(context, EvolutionStage.VALIDATE_BRANCH);
+
             String baseCommitFinal = baseCommit;
             eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionaryPressureVector pressureFinal = pressure;
 
@@ -2040,6 +2042,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 
         // [DARWIN IMPROVEMENT] After evaluation, ensure all raw variants (including REJECTED_SEMANTIC)
         // are preserved in the list passed to the scheduler, but with differentiated scores.
+        EvolutionProgressPublisher.updateStage(context, EvolutionStage.SCORE_BRANCH);
         for (BranchVariant v : rawVariants) {
             EvolutionNode node = context.getKernelContext().getMemoryService().getEvolutionTree().getNode(v.getId());
             if (node != null && "REJECTED_SEMANTIC".equals(node.getStatus())) {
@@ -2408,6 +2411,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             }
 
             for (eu.kalafatic.evolution.model.orchestration.Task task : tasks) {
+                EvolutionProgressPublisher.updateBranchStatus(context, variant.getId(), variant.getStrategy(), "verifying", null);
                 boolean taskSuccess = variantManager.executeTasksWithRetries(List.of(task));
                 if (variantExecContext != null) {
                     variantExecContext.getTasks().add(task);
@@ -2483,6 +2487,7 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
             variant.setSuccess(result.isSuccess());
             if (result.isSuccess()) {
                 manager.updateVariantLifecycle(List.of(variant), variant.getId(), BranchVariant.ActivationState.SCORING, context);
+                EvolutionProgressPublisher.updateBranchStatus(context, variant.getId(), variant.getStrategy(), "scoring", null);
 
                 // CAPTURE IMPLEMENTATION: Update EvolutionNode with ACTUAL file contents after successful execution
                 EvolutionTree tree = context.getKernelContext().getMemoryService().getEvolutionTree();

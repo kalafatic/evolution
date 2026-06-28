@@ -110,6 +110,7 @@ public class SiblingGenerationManager {
             Orchestrator orchestrator) throws Exception {
         
         context.log("[SIBLING_MANAGER] Dynamic generation starting...");
+        EvolutionProgressPublisher.updateActiveModel(context, getModelName(orchestrator, context), "Dynamic Territory Exploration");
         
         // Use DynamicSiblingGenerator which handles everything step by step
         List<JSONObject> variants = dynamicGenerator.generateSiblings(
