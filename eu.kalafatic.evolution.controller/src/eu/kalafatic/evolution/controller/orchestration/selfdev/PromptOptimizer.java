@@ -51,7 +51,7 @@ public class PromptOptimizer extends BaseAiAgent {
             
             4. What constraints should we enforce?
             
-            5. How many siblings should we generate?
+            5. How many siblings should we generate? (MANDATE: generate at least 2-4 siblings for code tasks to ensure evolutionary diversity).
             
             6. What should be the prompt's "tone" (instructional, conversational, technical)?
             
