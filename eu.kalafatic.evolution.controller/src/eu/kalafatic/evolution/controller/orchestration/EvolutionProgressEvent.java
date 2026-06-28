@@ -19,7 +19,9 @@ public class EvolutionProgressEvent {
     private String currentTask;
     private String goal;
     private String winnerId;
+    private String parentId;
     private String currentDimension;
+    private String currentDimensionDescription;
     private int lockedDecisionCount;
     private boolean autoApprove;
     private boolean gitAutomation;
@@ -69,8 +71,14 @@ public class EvolutionProgressEvent {
     public String getWinnerId() { return winnerId; }
     public void setWinnerId(String winnerId) { this.winnerId = winnerId; }
 
+    public String getParentId() { return parentId; }
+    public void setParentId(String parentId) { this.parentId = parentId; }
+
     public String getCurrentDimension() { return currentDimension; }
     public void setCurrentDimension(String currentDimension) { this.currentDimension = currentDimension; }
+
+    public String getCurrentDimensionDescription() { return currentDimensionDescription; }
+    public void setCurrentDimensionDescription(String currentDimensionDescription) { this.currentDimensionDescription = currentDimensionDescription; }
 
     public int getLockedDecisionCount() { return lockedDecisionCount; }
     public void setLockedDecisionCount(int lockedDecisionCount) { this.lockedDecisionCount = lockedDecisionCount; }

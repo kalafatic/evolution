@@ -102,7 +102,7 @@ public class ModelCapabilityDetector {
         }
         
         // Override for specific known issues
-        if (info.modelFamily.equals("phi") && info.parameterCount < 4_000_000_000L) {
+        if (info.modelFamily != null && info.modelFamily.equals("phi") && info.parameterCount < 4_000_000_000L) {
             cap.canHandleComplexJson = false;
             cap.recommendedStrategy = "STEP_BY_STEP";
         }
