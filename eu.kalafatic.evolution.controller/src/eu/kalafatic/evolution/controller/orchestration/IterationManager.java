@@ -1229,6 +1229,21 @@ public class IterationManager {
             MediatedExportManager exportManager = new MediatedExportManager();
 
             Object realityModelObj = context.getOrchestrationState().getMetadata().get("targetRealityModel");
+            if (realityModelObj == null) {
+                context.log("[KERNEL] Warning: TargetRealityModel missing during export. Creating default fallback.");
+                TargetRealityModel fallbackModel = new TargetRealityModel();
+                try {
+                    GoalModel gm = GoalModel.extract(context.getOrchestrationState().getMetadata(), this, request, context);
+                    if (gm != null) {
+                        fallbackModel.setDomain(gm.getDomain());
+                        fallbackModel.setPurpose(gm.getIntent() + " " + gm.getRequestedArtifact());
+                    }
+                } catch (Exception e) {
+                    context.log("[KERNEL] Warning: Could not extract GoalModel for fallback RealityModel: " + e.getMessage());
+                }
+                context.getOrchestrationState().getMetadata().put("targetRealityModel", fallbackModel);
+                realityModelObj = fallbackModel;
+            }
 
             // DRIVE UNIFIED PROJECTIONS
             TargetRealityModel model = (TargetRealityModel) realityModelObj;
