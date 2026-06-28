@@ -193,8 +193,37 @@
         .viz-panel-header { padding: 10px 15px; border-bottom: 1px solid var(--border); font-size: 0.8em; font-weight: bold; color: var(--text-dim); text-transform: uppercase; background: var(--bg-secondary); }
 
         #system-tree { padding: 15px; font-size: 12px; color: #333333; border-bottom: 1px solid var(--border); }
-        #graph-container { height: 280px; padding: 10px; position: relative; }
+        #graph-container { height: 220px; padding: 10px; position: relative; }
         #visual-svg { width: 100%; height: 100%; }
+
+        /* Evolution Tree Styles */
+        #tree-container {
+            flex: 1; overflow: auto; background: #fafafa;
+            display: flex; flex-direction: column; align-items: center; padding: 20px;
+            min-height: 200px; border-top: 1px solid var(--border);
+        }
+
+        .tree-node {
+            width: 32px; height: 32px; border: 1.5px solid #7aa6ff; border-radius: 4px;
+            background: white; text-align: center; overflow: hidden; margin: 2px 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,.05); flex-shrink: 0;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+        }
+        .tree-node .node-title { font-weight: bold; font-size: 8px; margin: 0; line-height: 1; }
+        .tree-node.branch { border-color: #86c68a; }
+        .tree-node.branch .node-title { background: #edf8ee; color: #166a27; }
+        .tree-node.failed { border-color: #fca5a5; opacity: 0.8; }
+        .tree-node.failed .node-title { background: #fef2f2; color: #991b1b; }
+        .tree-node.winner { background: #fffbeb; border-color: #f59e0b; }
+
+        .tree-vline { width: 1.5px; height: 12px; background: #cbd5e1; flex-shrink: 0; }
+        .tree-children { display: flex; justify-content: center; position: relative; padding-top: 12px; }
+        .tree-children::before { content: ""; position: absolute; top: 0; left: 50%; width: 1.5px; height: 12px; background: #cbd5e1; }
+        .tree-child { display: flex; flex-direction: column; align-items: center; padding: 0 3px; position: relative; }
+        .tree-child::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 1.5px; background: #cbd5e1; }
+        .tree-child:first-child::before { left: 50%; }
+        .tree-child:last-child::before { right: 50%; }
+        .tree-child:only-child::before { display: none; }
 
         .thinking-indicator {
             display: none; align-items: center; gap: 8px; font-size: 12px; color: var(--accent); margin-bottom: 10px;
@@ -365,7 +394,11 @@
             </div>
             <div class="viz-panel-header">Runtime Graph</div>
             <div id="graph-container">
-                 <svg id="visual-svg" width="100%" height="100%" viewBox="0 0 400 300"></svg>
+                 <svg id="visual-svg" width="100%" height="100%" viewBox="0 0 400 220"></svg>
+            </div>
+            <div class="viz-panel-header">Evolution Lineage</div>
+            <div id="tree-container">
+                 <div id="tree-content" style="display: flex; flex-direction: column; align-items: center;"></div>
             </div>
             <div style="flex-grow:1; background: var(--bg-primary);"></div>
         </div>
@@ -529,11 +562,99 @@
                 const response = await fetch(getBaseUrl() + '/server/conversation/' + currentSessionId + '?runtime=SWT');
                 const messages = await response.json();
                 messages.forEach(appendMessage);
+                updateTreePanel(messages);
             } catch (err) {
                 console.error('Polling error:', err);
             } finally {
                 isPolling = false;
             }
+        }
+
+        function updateTreePanel(messages) {
+            const content = document.getElementById('tree-content');
+            if (!content) return;
+
+            const progressMessages = (messages || []).filter(m => {
+                const role = (m.agentType || '').toLowerCase();
+                return role.includes('evolution-progress');
+            });
+
+            if (progressMessages.length === 0) return;
+
+            const iterations = {};
+            progressMessages.forEach(m => {
+                try {
+                    const data = JSON.parse(m.text);
+                    if (data.iterationCount !== undefined) {
+                        if (!iterations[data.iterationCount] || data.timestamp > iterations[data.iterationCount].timestamp) {
+                            iterations[data.iterationCount] = data;
+                        }
+                    }
+                } catch(e) {}
+            });
+
+            const sortedIters = Object.keys(iterations).sort((a, b) => parseInt(a) - parseInt(b));
+            if (sortedIters.length === 0) return;
+
+            const childrenByParent = {};
+            sortedIters.forEach(key => {
+                const data = iterations[key];
+                const pid = data.parentId || "ROOT";
+                if (!childrenByParent[pid]) childrenByParent[pid] = [];
+                childrenByParent[pid].push(data);
+            });
+
+            const renderIteration = (data) => {
+                const dimInfo = data.currentDimension ? `\nDimension: ${data.currentDimension}${data.currentDimensionDescription ? ' (' + data.currentDimensionDescription + ')' : ''}` : "";
+                let html = `
+                    <div class="tree-node" title="Iteration ${data.iterationCount}: ${data.currentTask || ''}${dimInfo}">
+                        <div class="node-title">I${data.iterationCount}</div>
+                        ${data.currentDimension ? `<div style="font-size: 6px; color: #64748b; margin-top: -2px;">${data.currentDimension.substring(0, 8)}</div>` : ''}
+                    </div>
+                `;
+
+                const branches = data.branches || [];
+                const winnerId = data.winnerId;
+
+                if (branches.length > 0) {
+                    html += `<div class="tree-vline"></div>`;
+                    html += `<div class="tree-children">`;
+
+                    branches.forEach(b => {
+                        const isWinner = winnerId === b.id;
+                        const isFailed = b.status === 'failed' || b.status === 'rejected';
+                        const subIterations = childrenByParent[b.id] || [];
+
+                        html += `<div class="tree-child">`;
+                        html += `<div class="tree-vline"></div>`;
+                        html += `
+                            <div class="tree-node branch ${isFailed ? 'failed' : ''} ${isWinner ? 'winner' : ''}" title="Branch ${b.id}${b.strategy ? ': ' + b.strategy : ''}${b.score !== undefined ? ' - Score: ' + Math.round(b.score*100) : ''}">
+                                <div class="node-title">${isWinner ? '🏆' : 'B' + String(b.id).split('-').pop().substring(0, 3)}</div>
+                            </div>
+                        `;
+
+                        if (subIterations.length > 0) {
+                            html += `<div class="tree-vline"></div>`;
+                            subIterations.forEach(si => { html += renderIteration(si); });
+                        }
+                        html += `</div>`;
+                    });
+                    html += `</div>`;
+                } else {
+                    const pid = data.winnerId || "iter-" + data.iterationCount;
+                    const subIterations = childrenByParent[pid] || [];
+                    if (subIterations.length > 0) {
+                        html += `<div class="tree-vline"></div>`;
+                        subIterations.forEach(si => { html += renderIteration(si); });
+                    }
+                }
+                return html;
+            };
+
+            const roots = childrenByParent["ROOT"] || [];
+            let fullHtml = "";
+            roots.forEach(r => { fullHtml += renderIteration(r); });
+            content.innerHTML = fullHtml || '<div style="text-align: center; color: #94a3b8; margin-top: 20px;">No lineage.</div>';
         }
 
         async function sendMessage() {
