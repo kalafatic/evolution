@@ -17,6 +17,7 @@ import org.eclipse.jface.fieldassist.IContentProposal;
 import org.eclipse.jface.fieldassist.IContentProposalProvider;
 import org.eclipse.jface.fieldassist.IControlContentAdapter;
 import org.eclipse.jface.window.Window;
+import org.eclipse.ui.ide.IDE;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.custom.StyledText;
@@ -950,6 +951,14 @@ public class AiChatPage extends AEvoPage {
 				Display.getDefault().asyncExec(() -> {
 					if (isDisposed()) return;
 					editor.refreshNavigator(iFile);
+
+					// Open the actual file editor
+					try {
+						IDE.openEditor(editor.getSite().getPage(), iFile);
+					} catch (Exception e) {
+						// Fallback if editor cannot be opened
+					}
+
 					editor.showComparePage(iFile);
 					chatGroup.selectFile(finalPath);
 				});

@@ -158,30 +158,30 @@ window.ChatApp.Renderer = {
         let html = window.ChatApp.Utils.escapeHtml(clean);
 
         // Links & Interactions
-        html = html.replace(/\bCREATE\b/g, '<a class="link-go" onclick="window.ChatApp.Actions.callJava(\'create\')">CREATE</a>');
-        html = html.replace(/\bCLARIFY\b/g, '<a class="link-clarify" onclick="window.ChatApp.Actions.callJava(\'clarify\')">CLARIFY</a>');
+        html = html.replace(/\bCREATE\b/g, '<a class="link-go" onclick="event.stopPropagation(); window.ChatApp.Actions.callJava(\'create\')">CREATE</a>');
+        html = html.replace(/\bCLARIFY\b/g, '<a class="link-clarify" onclick="event.stopPropagation(); window.ChatApp.Actions.callJava(\'clarify\')">CLARIFY</a>');
 
         // Conversational phrase mapping
-        html = html.replace(/could you tell me a bit more about what you(?:’|'|&#039;)re trying to accomplish\?/g, '<a class="link-clarify" onclick="window.ChatApp.Actions.callJava(\'clarify\')">$&</a>');
-        html = html.replace(/Are you looking for a simple example to get started/g, '<a class="link-go" onclick="window.ChatApp.Actions.callJava(\'helloworld\')">$&</a>');
-        html = html.replace(/are you working on a more complex project that requires a specific file structure\?/g, '<a class="link-clarify" onclick="window.ChatApp.Actions.callJava(\'clarify\')">$&</a>');
+        html = html.replace(/could you tell me a bit more about what you(?:’|'|&#039;)re trying to accomplish\?/g, '<a class="link-clarify" onclick="event.stopPropagation(); window.ChatApp.Actions.callJava(\'clarify\')">$&</a>');
+        html = html.replace(/Are you looking for a simple example to get started/g, '<a class="link-go" onclick="event.stopPropagation(); window.ChatApp.Actions.callJava(\'helloworld\')">$&</a>');
+        html = html.replace(/are you working on a more complex project that requires a specific file structure\?/g, '<a class="link-clarify" onclick="event.stopPropagation(); window.ChatApp.Actions.callJava(\'clarify\')">$&</a>');
 
         // Proposal link [PROPOSAL: Label | Request]
         html = html.replace(/\[PROPOSAL:\s*(.*?)\s*\|\s*(.*?)\s*\]/g, (match, label, req) => {
-             return `<a class="link-go" onclick="window.ChatApp.Actions.callJava('executeProposal', '-1', '${window.ChatApp.Utils.escapeJs(req)}')"><b>${label}</b></a>`;
+             return `<a class="link-go" onclick="event.stopPropagation(); window.ChatApp.Actions.callJava('executeProposal', '-1', '${window.ChatApp.Utils.escapeJs(req)}')"><b>${label}</b></a>`;
         });
 
         // File link [FILE: path]
         html = html.replace(/\[FILE:\s*(.*?)\s*\]/g, (match, path) => {
-            return `<a onclick="window.ChatApp.Actions.callJava('openDiff', '-1', '${window.ChatApp.Utils.escapeJs(path)}')"><b>${path}</b></a>`;
+            return `<a onclick="event.stopPropagation(); window.ChatApp.Actions.callJava('openDiff', '-1', '${window.ChatApp.Utils.escapeJs(path)}')"><b>${path}</b></a>`;
         });
 
         // Proposal: print to console
-        html = html.replace(/\bprint to console\b/gi, '<a class="link-go" onclick="window.ChatApp.Actions.callJava(\'executeProposal\', \'-1\', \'print to console\')">$&</a>');
+        html = html.replace(/\bprint to console\b/gi, '<a class="link-go" onclick="event.stopPropagation(); window.ChatApp.Actions.callJava(\'executeProposal\', \'-1\', \'print to console\')">$&</a>');
 
         // Phase Transition Yes/No links
         html = html.replace(/\((Yes\/No)\)/gi, (match) => {
-            return `(<a class="link-go" onclick="window.ChatApp.Actions.callJava('executeProposal', '-1', 'Yes')">Yes</a>/<a class="link-go" onclick="window.ChatApp.Actions.callJava('executeProposal', '-1', 'No')">No</a>)`;
+            return `(<a class="link-go" onclick="event.stopPropagation(); window.ChatApp.Actions.callJava('executeProposal', '-1', 'Yes')">Yes</a>/<a class="link-go" onclick="event.stopPropagation(); window.ChatApp.Actions.callJava('executeProposal', '-1', 'No')">No</a>)`;
         });
 
         // Basic Markdown
@@ -192,9 +192,9 @@ window.ChatApp.Renderer = {
         // Markdown Links [text](url)
         html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, text, url) => {
              if (url.startsWith('file://')) {
-                  return `<a onclick="window.ChatApp.Actions.callJava('openDiff', '-1', '${window.ChatApp.Utils.escapeJs(url)}')"><b>${text}</b></a>`;
+                  return `<a onclick="event.stopPropagation(); window.ChatApp.Actions.callJava('openDiff', '-1', '${window.ChatApp.Utils.escapeJs(url)}')"><b>${text}</b></a>`;
              }
-             return `<a href="${url}" target="_blank">${text}</a>`;
+             return `<a href="${url}" target="_blank" onclick="event.stopPropagation();">${text}</a>`;
         });
 
         // Headers
@@ -211,7 +211,7 @@ window.ChatApp.Renderer = {
 
         // Blocks
         html = html.replace(/```([a-z]*)\n?([\s\S]*?)\n?```/gi, (match, lang, code) => {
-            return `<pre><code>${window.ChatApp.Utils.escapeHtml(code.trim())}</code><button class="copy-btn" style="position:absolute;top:8px;right:8px;" onclick="window.ChatApp.Actions.callJava('copy', '-1', '${window.ChatApp.Utils.escapeJs(code)}')">Copy</button></pre>`;
+            return `<pre><code>${window.ChatApp.Utils.escapeHtml(code.trim())}</code><button class="copy-btn" style="position:absolute;top:8px;right:8px;" onclick="event.stopPropagation(); window.ChatApp.Actions.callJava('copy', '-1', '${window.ChatApp.Utils.escapeJs(code)}')">Copy</button></pre>`;
         });
 
         // Restore think blocks
@@ -240,7 +240,7 @@ window.ChatApp.Renderer = {
 
             const str = String(val);
             if (['files', 'path', 'file', 'target'].includes(key) && (str.includes('.') || str.includes('/'))) {
-                return `<a onclick="window.ChatApp.Actions.callJava('openDiff', '-1', '${window.ChatApp.Utils.escapeJs(str)}')"><b>${window.ChatApp.Utils.escapeHtml(str)}</b></a>`;
+                return `<a onclick="event.stopPropagation(); window.ChatApp.Actions.callJava('openDiff', '-1', '${window.ChatApp.Utils.escapeJs(str)}')"><b>${window.ChatApp.Utils.escapeHtml(str)}</b></a>`;
             }
             return window.ChatApp.Utils.escapeHtml(str);
         };
@@ -268,7 +268,7 @@ window.ChatApp.Renderer = {
             humanKeys.forEach(f => {
                 if (data[f]) {
                     if (f === 'refinedPrompt') {
-                        html += `<div><div style="font-size: 10px; font-weight: 800; color: #64748b;">REFINED PROMPT</div><a class="link-go" onclick="window.ChatApp.Actions.callJava('executeProposal', '-1', '${window.ChatApp.Utils.escapeJs(data[f])}')"><b>${window.ChatApp.Utils.escapeHtml(data[f])}</b></a></div>`;
+                        html += `<div><div style="font-size: 10px; font-weight: 800; color: #64748b;">REFINED PROMPT</div><a class="link-go" onclick="event.stopPropagation(); window.ChatApp.Actions.callJava('executeProposal', '-1', '${window.ChatApp.Utils.escapeJs(data[f])}')"><b>${window.ChatApp.Utils.escapeHtml(data[f])}</b></a></div>`;
                     } else if (f === 'hypothesis' && typeof data[f] === 'object') {
                          html += `<div><div style="font-size: 10px; font-weight: 800; color: #64748b;">HYPOTHESIS</div>${renderValue(data[f].description)}</div>`;
                          if (data[f].expected_effects) html += `<div><div style="font-size: 10px; font-weight: 800; color: #64748b;">EXPECTED EFFECTS</div>${renderValue(data[f].expected_effects)}</div>`;
