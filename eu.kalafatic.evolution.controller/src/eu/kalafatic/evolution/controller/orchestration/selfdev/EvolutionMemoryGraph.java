@@ -28,6 +28,28 @@ public class EvolutionMemoryGraph {
     public void recordDimension(EvolutionDimension dimension) {
         dimensions.add(dimension);
     }
+    
+ // In EvolutionMemoryGraph.java — ADD THIS FIELD AND METHODS
+    private Map<String, Object> metadata = new HashMap<>();
+
+    public Map<String, Object> getMetadata() {
+        return metadata;
+    }
+
+    public void setMetadata(Map<String, Object> metadata) {
+        this.metadata = metadata;
+    }
+
+    public Object getMetadata(String key) {
+        return metadata != null ? metadata.get(key) : null;
+    }
+
+    public void putMetadata(String key, Object value) {
+        if (metadata == null) {
+            metadata = new HashMap<>();
+        }
+        metadata.put(key, value);
+    }
 
     public void recordTerritory(String type, String concern) {
         switch (type.toUpperCase()) {

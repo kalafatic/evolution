@@ -108,7 +108,7 @@ public class GoalModel {
 		}
 
 		if (iterationManager != null) {		
-			GoalModel goalModel = iterationManager.getGoalUnderstandingEngine().understand(request, context);
+			GoalModel goalModel = iterationManager.getGoalUnderstandingEngine().understand(iterationManager.getSessionContainer(), request, context);
 			metadata.put("goalModel", goalModel);
 				return goalModel;
 		}
