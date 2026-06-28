@@ -131,29 +131,31 @@ mark.search-match {
     display: none;
 }
 
-/* Base visibility: User messages, terminal AI responses, and active prompts must always be visible */
+/* Base visibility: User messages, terminal AI responses, and errors must always be visible */
 .message.user,
 .message.final-response,
-.message.error,
-.message.result-summary,
-.message.waiting {
+.message.error {
     display: flex !important;
 }
 
 /* 1. SIMPLE: USER PROMPT AND SYSTEM FINAL ANSWERS ONLY (Handled by base visibility) */
+body.simple #cognitive-panel,
+body.simple #tree-panel,
+body.simple #side-panel {
+    display: none !important;
+}
 
-/* 2. INTERACTIVE: SIMPLE + BRANCHES - NOTHING ELSE */
-body.interactive .message.darwin,
-body.interactive .message.branch,
-body.interactive .message.darwin-branches {
+/* 2. INTERACTIVE: SIMPLE + BRANCHES + ACTIVE PROMPTS */
+body.interactive .message.darwin, body.advanced .message.darwin, body.full .message.darwin,
+body.interactive .message.branch, body.advanced .message.branch, body.full .message.branch,
+body.interactive .message.darwin-branches, body.advanced .message.darwin-branches, body.full .message.darwin-branches,
+body.interactive .message.waiting, body.advanced .message.waiting, body.full .message.waiting,
+body.interactive .message.result-summary, body.advanced .message.result-summary, body.full .message.result-summary {
     display: flex;
 }
 
 /* 3. ADVANCED: INTERACTIVE + THINKING - NOTHING ELSE */
-body.advanced .message.darwin,
-body.advanced .message.branch,
-body.advanced .message.darwin-branches,
-body.advanced .think-block {
+body.advanced .think-block, body.full .think-block {
     display: flex;
 }
 

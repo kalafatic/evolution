@@ -12,10 +12,157 @@
     width: 320px;
 }
 
-#progress-panel {
+#cognitive-panel {
     width: 0; /* Default closed, will be opened via JS or manually */
     border-left: 1px solid var(--border);
-    background: #fdfdfd;
+    background: #f1f5f9; /* Match cognitive-state-content background */
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+#cognitive-state-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+}
+
+#tree-panel {
+    width: 0;
+    border-left: 1px solid var(--border);
+    background: #fafafa;
+    transition: width 0.3s ease;
+    overflow: auto; /* Handle both vertical and horizontal scroll */
+}
+
+/* HTML Tree Visualization */
+#tree-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    min-width: 100%;
+    box-sizing: border-box;
+    flex: 1;
+}
+
+.tree-node {
+    width: 32px;
+    height: 32px;
+    border: 1.5px solid #7aa6ff;
+    border-radius: 4px;
+    background: white;
+    text-align: center;
+    overflow: hidden;
+    margin: 2px 0;
+    box-shadow: 0 1px 3px rgba(0,0,0,.05);
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.tree-node .node-title {
+    padding: 0;
+    font-weight: bold;
+    font-size: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.tree-node .node-body {
+    display: none; /* Hide detailed body for compactness */
+}
+
+.tree-node.branch {
+    border-color: #86c68a;
+}
+
+.tree-node.branch .node-title {
+    background: #edf8ee;
+    color: #166a27;
+}
+
+.tree-node.failed {
+    border-color: #fca5a5;
+    opacity: 0.8;
+}
+
+.tree-node.failed .node-title {
+    background: #fef2f2;
+    color: #991b1b;
+}
+
+.tree-node.winner {
+    background: #fffbeb;
+    border-color: #f59e0b;
+}
+
+.tree-node .winner-label {
+    display: none; /* Icon instead */
+}
+
+.tree-vline {
+    width: 1.5px;
+    height: 12px;
+    background: #cbd5e1;
+    flex-shrink: 0;
+}
+
+.tree-hline {
+    height: 2px;
+    background: #cbd5e1;
+    margin: 0 10px;
+}
+
+.tree-children {
+    display: flex;
+    justify-content: center;
+    position: relative;
+    padding-top: 12px;
+}
+
+.tree-children::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 1.5px;
+    height: 12px;
+    background: #cbd5e1;
+}
+
+.tree-child {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 3px;
+    position: relative;
+}
+
+/* Horizontal connectors */
+.tree-child::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1.5px;
+    background: #cbd5e1;
+}
+
+.tree-child:first-child::before {
+    left: 50%;
+}
+
+.tree-child:last-child::before {
+    right: 50%;
+}
+
+.tree-child:only-child::before {
+    display: none;
 }
 
 .resize-handle {

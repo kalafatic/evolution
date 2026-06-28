@@ -1,19 +1,26 @@
 package eu.kalafatic.evolution.controller.orchestration.selfdev;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import eu.kalafatic.evolution.controller.orchestration.AiService;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionProgressPublisher;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
-import eu.kalafatic.evolution.controller.orchestration.goal.GoalModel;
-import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants;
-import eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionResult;
 import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait;
+import eu.kalafatic.evolution.controller.orchestration.goal.GoalModel;
+import eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionResult;
+import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants;
+import eu.kalafatic.evolution.controller.orchestration.util.ModelCapability;
+import eu.kalafatic.evolution.controller.orchestration.util.ModelCapabilityDetector;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
+import eu.kalafatic.evolution.model.orchestration.LLM;
+import eu.kalafatic.evolution.model.orchestration.Ollama;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 
 /**
@@ -26,6 +33,13 @@ public class SiblingGenerationManager {
     private final DarwinVariantSpawner spawner;
     private final AiService aiService;
     private final eu.kalafatic.evolution.controller.orchestration.SessionContainer container;
+    
+    // Dynamic generation for small models
+    private final DynamicSiblingGenerator dynamicGenerator;
+    private final ModelCapabilityDetector capabilityDetector;
+    
+    // Cache for model capabilities
+    private final Map<String, ModelCapability> capabilityCache = new HashMap<>();
 
     public SiblingGenerationManager(eu.kalafatic.evolution.controller.orchestration.SessionContainer container, AiService aiService) {
         this.container = container;
@@ -33,9 +47,88 @@ public class SiblingGenerationManager {
         this.mapper.setAiService(aiService);
         this.spawner = new DarwinVariantSpawner(aiService);
         this.aiService = aiService;
+        
+        // Initialize dynamic generator for small models
+        this.dynamicGenerator = new DynamicSiblingGenerator(container, aiService);
+        this.capabilityDetector = new ModelCapabilityDetector();
+    }
+    
+    /**
+     * Main entry point for sibling generation.
+     * Intelligently routes to the appropriate generation strategy based on model capability.
+     */
+    public List<JSONObject> generateSiblings(
+            GoalModel goal,
+            EvolutionDimension activeDimension,
+            int targetPopulation,
+            String basePrompt,
+            String lineageContext,
+            List<String> rejectedSiblings,
+            TaskContext context,
+            SemanticGenome genome,
+            EvolutionTree tree,
+            String currentParentId,
+            int generation,
+            BranchVariant.ReasoningLevel reasoningLevel,
+            boolean architectureEnabled,
+            boolean implementationEnabled,
+            IntentExpansionResult expansion,
+            Orchestrator orchestrator) throws Exception {
+
+        // 1. DETECT MODEL CAPABILITY
+        String modelName = getModelName(orchestrator, context);
+        ModelCapability capability = getModelCapability(modelName);
+        
+        context.log("[SIBLING_MANAGER] Model: " + modelName + 
+                    " | Capability: " + capability.size + 
+                    " | Complex JSON: " + capability.canHandleComplexJson +
+                    " | Strategy: " + capability.recommendedStrategy);
+
+        // 2. ROUTE TO APPROPRIATE GENERATION STRATEGY
+        if (capability.needsSimplifiedPrompts || !capability.canHandleComplexJson) {
+            context.log("[SIBLING_MANAGER] Using Dynamic (Simplified) Sibling Generator for small model");
+            return generateSiblingsDynamic(goal, activeDimension, targetPopulation, context, orchestrator);
+        } else {
+            context.log("[SIBLING_MANAGER] Using Legacy (Complex) Sibling Generator for capable model");
+            return generateSiblingsLegacy(
+                goal, activeDimension, targetPopulation, basePrompt, lineageContext,
+                rejectedSiblings, context, genome, tree, currentParentId, generation,
+                reasoningLevel, architectureEnabled, implementationEnabled, expansion, orchestrator
+            );
+        }
+    }
+    
+    /**
+     * Dynamic generation path - uses simplified, step-by-step prompts.
+     * Works well with small models (gemma3:1b, phi3, etc.)
+     */
+    private List<JSONObject> generateSiblingsDynamic(
+            GoalModel goal,
+            EvolutionDimension activeDimension,
+            int targetPopulation,
+            TaskContext context,
+            Orchestrator orchestrator) throws Exception {
+        
+        context.log("[SIBLING_MANAGER] Dynamic generation starting...");
+        
+        // Use DynamicSiblingGenerator which handles everything step by step
+        List<JSONObject> variants = dynamicGenerator.generateSiblings(
+            goal.getPrimaryAction(),
+            goal,
+            context,
+            activeDimension
+        );
+        
+        // Adjust target population if needed
+        if (variants.size() < targetPopulation) {
+            context.log("[SIBLING_MANAGER] Dynamic generator produced " + variants.size() + 
+                       " variants, target was " + targetPopulation + ". Using available.");
+        }
+        
+        return variants;
     }
 
-    public List<JSONObject> generateSiblings(
+    public List<JSONObject> generateSiblingsLegacy(
             GoalModel goal,
             EvolutionDimension activeDimension,
             int targetPopulation,
@@ -165,6 +258,66 @@ public class SiblingGenerationManager {
         }
         return uniqueVariants;
     }
+    
+    /**
+     * Gets the model name from orchestrator using EMF types.
+     */
+    private String getModelName(Orchestrator orchestrator, TaskContext context) {
+        if (orchestrator != null) {
+            // Try Ollama first (EMF type)
+            Ollama ollama = orchestrator.getOllama();
+            if (ollama != null) {
+                String model = ollama.getModel();
+                if (model != null && !model.isEmpty()) {
+                    return model;
+                }
+            }
+            
+            // Try LLM (EMF type)
+            LLM llm = orchestrator.getLlm();
+            if (llm != null) {
+                String model = llm.getModel();
+                if (model != null && !model.isEmpty()) {
+                    return model;
+                }
+            }
+            
+            // Try remote model setting
+            String remoteModel = orchestrator.getRemoteModel();
+            if (remoteModel != null && !remoteModel.isEmpty()) {
+                return remoteModel;
+            }
+            
+            // Try local model setting
+            String localModel = orchestrator.getLocalModel();
+            if (localModel != null && !localModel.isEmpty()) {
+                return localModel;
+            }
+            
+            // Try hybrid model setting
+            String hybridModel = orchestrator.getHybridModel();
+            if (hybridModel != null && !hybridModel.isEmpty()) {
+                return hybridModel;
+            }
+        }
+        
+        // Fallback: check context metadata
+        if (context != null && context.getOrchestrationState() != null) {
+            Map<String, Object> metadata = context.getOrchestrationState().getMetadata();
+            if (metadata != null && metadata.containsKey("modelName")) {
+                return metadata.get("modelName").toString();
+            }
+        }
+        
+        // Check system property
+        String modelFromProperty = System.getProperty("ollama.model");
+        if (modelFromProperty != null && !modelFromProperty.isEmpty()) {
+            return modelFromProperty;
+        }
+        
+        return "unknown";
+    }
+
 
     private TrajectoryBlueprint constructTrajectoryBlueprint(GoalModel goal, IntentExpansionResult expansion,
             List<TrajectoryBlueprint> currentBlueprints, int generation, String siblingMemoryBuilder,
@@ -348,5 +501,18 @@ public class SiblingGenerationManager {
         }
         if (!dimensions.has("philosophy")) dimensions.put("philosophy", bp.getPhilosophy());
         return fragment;
+    }
+    
+    /**
+     * Gets model capability with caching.
+     */
+    private ModelCapability getModelCapability(String modelName) {
+        if (capabilityCache.containsKey(modelName)) {
+            return capabilityCache.get(modelName);
+        }
+        
+        ModelCapability capability = capabilityDetector.getModelCapability(modelName);
+        capabilityCache.put(modelName, capability);
+        return capability;
     }
 }
