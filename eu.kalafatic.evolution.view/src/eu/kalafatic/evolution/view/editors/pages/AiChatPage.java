@@ -579,7 +579,8 @@ public class AiChatPage extends AEvoPage {
 	 */
 	public void createNewSession(String taskName) {
 		if (taskName != null && !taskName.trim().isEmpty()) {
-			String dateStr = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd-HHmm"));
+			// USE SECOND/MILLI PRECISION: Ensure unique SessionContext and fresh Java instances
+			String dateStr = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd-HHmmssSSS"));
 			String id = dateStr + "_" + taskName.trim();
 
 			ChatSession newSession = OrchestrationFactory.eINSTANCE.createChatSession();
@@ -593,13 +594,20 @@ public class AiChatPage extends AEvoPage {
 				newSession.setGitAutomation(currentSession.isGitAutomation());
 				newSession.setMaxIterations(currentSession.getMaxIterations());
 				newSession.setStepMode(currentSession.isStepMode());
-				newSession.setTargetPath(currentSession.getTargetPath());
-				newSession.setTargetType(currentSession.getTargetType());
 				newSession.setAutoApprove(currentSession.isAutoApprove());
 				newSession.setAiMode(currentSession.getAiMode());
 				newSession.setLocalModel(currentSession.getLocalModel());
 				newSession.setRemoteModel(currentSession.getRemoteModel());
 				newSession.setExpansion(currentSession.getExpansion());
+
+				// RESET MEDIATED WORKFLOW: New session must NOT follow mediated workflow by default
+				newSession.setTargetPath(null);
+				newSession.setTargetType(null);
+				newSession.setOutputPath(null);
+
+				if (newSession.getAiMode() == AiMode.MEDIATED) {
+					newSession.setAiMode(AiMode.LOCAL);
+				}
 			}
 
 			orchestrator.getAiChat().getSessions().add(newSession);
@@ -607,6 +615,15 @@ public class AiChatPage extends AEvoPage {
 
 			// Pre-select model from last used settings (and other general settings)
 			loadLastUsedSettings();
+
+			// SECONDARY RESET: Ensure loaded settings didn't re-pollute with mediated state
+			if (currentSession.getAiMode() == AiMode.MEDIATED) {
+				currentSession.setAiMode(AiMode.LOCAL);
+			}
+			currentSession.setTargetPath(null);
+			currentSession.setTargetType(null);
+			currentSession.setOutputPath(null);
+
 			scheduleRefresh();
 			chatGroup.setSession(currentSession);
 			updateSessionCombo();
