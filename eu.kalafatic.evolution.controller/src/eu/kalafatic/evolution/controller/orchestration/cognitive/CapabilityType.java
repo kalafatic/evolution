@@ -8,5 +8,6 @@ public enum CapabilityType {
     CODE,
     ARCHITECTURE,
     EVOLUTION,
-    SELF_DEV
+    SELF_DEV, 
+    MEDIATED
 }

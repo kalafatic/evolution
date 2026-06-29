@@ -72,15 +72,15 @@ public class DarwinFlow implements IOrchestrationFlow {
         return manager.getDarwinEngine().orchestrateEvolution(new TaskRequest(request, context.getProjectRoot()), manager);
     }
 
-    @Deprecated
-    public List<BranchVariant> generateProposals(TaskContext context, GoalModel goal) throws Exception {
-	return manager.getDarwinEngine().generateProposals(context, goal, manager);
-    }
-
-    @Deprecated
-    public EvaluationResult executeWinner(TaskContext context, eu.kalafatic.evolution.controller.supervision.EvolutionDecision decision, List<BranchVariant> variants, GoalModel goal) throws Exception {
-	return manager.getDarwinEngine().executeWinner(context, decision, variants, goal, manager);
-    }
+//    @Deprecated
+//    public List<BranchVariant> generateProposals(TaskContext context, GoalModel goal) throws Exception {
+//	return manager.getDarwinEngine().generateProposals(context, goal, manager);
+//    }
+//
+//    @Deprecated
+//    public EvaluationResult executeWinner(TaskContext context, eu.kalafatic.evolution.controller.supervision.EvolutionDecision decision, List<BranchVariant> variants, GoalModel goal) throws Exception {
+//	return manager.getDarwinEngine().executeWinner(context, decision, variants, goal, manager);
+//    }
 
     public VariantExecutionContext evaluateVariantParallel(BranchVariant variant, eu.kalafatic.evolution.controller.orchestration.selfdev.TaskPlanner planner, TaskContext context, String baseCommit, eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionaryPressureVector pressure) {
         File tempDir = null;

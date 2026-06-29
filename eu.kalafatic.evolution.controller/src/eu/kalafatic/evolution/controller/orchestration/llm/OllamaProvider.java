@@ -1,15 +1,19 @@
 package eu.kalafatic.evolution.controller.orchestration.llm;
 
-import eu.kalafatic.evolution.model.orchestration.Orchestrator;
-import eu.kalafatic.evolution.model.orchestration.AiMode;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import eu.kalafatic.evolution.controller.manager.OllamaManager;
 import eu.kalafatic.evolution.controller.manager.OllamaModel;
 import eu.kalafatic.evolution.controller.manager.OllamaService;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
-
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 
 /**
  * Ollama LLM provider implementation.
@@ -120,4 +124,57 @@ public class OllamaProvider implements ILlmProvider {
         // Dynamic model update based on current operational context
         orchestrator.setLocalModel(newModel);
     }
+    
+    public static boolean testLLM(String baseUrl, String model) {
+        try {
+            HttpClient client = HttpClient.newBuilder()
+                    .connectTimeout(Duration.ofSeconds(5))
+                    .build();
+
+            String json = """
+                {
+                  "model":"%s",
+                  "prompt":"Reply with exactly OK",
+                  "stream":false
+                }
+                """.formatted(model);
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/api/generate"))
+                    .timeout(Duration.ofSeconds(30))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(json))
+                    .build();
+
+            HttpResponse<String> response =
+                    client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() != 200) {
+                System.err.println("LLM failed: HTTP " + response.statusCode());
+                return false;
+            }
+
+            String body = response.body();
+
+            // Simple check that a response was generated
+            if (body.contains("\"response\"") && body.contains("OK")) {
+                System.out.println("✓ LLM is working.");
+                return true;
+            }
+
+            System.err.println("LLM responded unexpectedly:");
+            System.err.println(body);
+            return false;
+
+        } catch (Exception e) {
+            System.err.println("LLM test failed: " + e.getMessage());
+            return false;
+        }
+    }
+    
+    
+    public static void main(String[] args) {
+    	boolean ok = testLLM("http://localhost:11434", "gemma3:1b");
+	}
+    
 }

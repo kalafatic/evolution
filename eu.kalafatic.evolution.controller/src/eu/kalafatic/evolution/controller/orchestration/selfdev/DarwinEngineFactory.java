@@ -1,39 +1,44 @@
-//package eu.kalafatic.evolution.controller.orchestration.selfdev;
-//
-//import eu.kalafatic.evolution.controller.orchestration.AiService;
-//import eu.kalafatic.evolution.controller.orchestration.TaskContext;
-//import eu.kalafatic.evolution.controller.orchestration.util.ModeRecognizer;
-//
-///**
-// * Factory for creating mode-specific Darwin engines.
-// * Returns IDarwinEngine interface instances.
-// */
-//public class DarwinEngineFactory {
-//
-//    public static IDarwinEngine create(TaskContext context, IterationMemoryService memoryService,
-//                                       AiService aiService) {
-//
-//        String mode = ModeRecognizer.determineMode(context);
-//        context.log("[DARWIN_FACTORY] Creating Darwin Engine for mode: " + mode);
-//
-//        switch (mode) {
-//            case "SELF_DEV":
-//                context.log("[DARWIN_FACTORY] Creating Self-Dev Engine");
-//                ISelfDevSupervisor supervisor = new MavenSelfDevSupervisor(context);
-//                return new SelfDevEngine(context, memoryService, supervisor);
-//
-//            case "MEDIATED":
-//                context.log("[DARWIN_FACTORY] Creating Mediated Engine");
-//                return new MediatedEngine(context, memoryService);
-//
-//            case "CHAT":
-//                context.log("[DARWIN_FACTORY] Creating Chat Engine");
-//                return new ChatEngine(context, memoryService);
-//
-//            case "STANDARD":
-//            default:
-//                context.log("[DARWIN_FACTORY] Creating Standard Engine");
-//                return new StandardEngine(context, memoryService);
-//        }
-//    }
-//}
+package eu.kalafatic.evolution.controller.orchestration.selfdev;
+
+import eu.kalafatic.evolution.controller.agents.PromptIntentAnalyzer;
+import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+
+/**
+ * Factory for creating the appropriate Darwin engine based on mode.
+ */
+public class DarwinEngineFactory {
+
+    public static ADarwinEngine createEngine(String mode, TaskContext context,
+                                              IterationMemoryService memoryService,
+                                              SystemStateSignalProvider stateProvider) {
+        context.log("[FACTORY] Creating DarwinEngine for mode: " + mode);
+        
+        switch (mode.toUpperCase()) {
+            case "CHAT":
+                return new ChatDarwinEngine(context, memoryService, stateProvider);
+            case "TASK":
+            case "CODE":
+                return new TaskDarwinEngine(context, memoryService, stateProvider);
+            case "MEDIATED":
+                return new MediatedDarwinEngine(context, memoryService, stateProvider);
+            case "SELFDEV":
+                return new SelfDevDarwinEngine(context, memoryService, stateProvider);
+            default:
+                context.log("[FACTORY] Unknown mode: " + mode + ". Defaulting to TASK.");
+                return new TaskDarwinEngine(context, memoryService, stateProvider);
+        }
+    }
+    
+    public static ADarwinEngine createEngineForIntent(PromptIntentAnalyzer.IntentResult intent,
+                                                        TaskContext context,
+                                                        IterationMemoryService memoryService,
+                                                        SystemStateSignalProvider stateProvider) {
+        if (intent.isChat()) {
+            return new ChatDarwinEngine(context, memoryService, stateProvider);
+        } else if (intent.isControl()) {
+            return new TaskDarwinEngine(context, memoryService, stateProvider);
+        } else {
+            return new TaskDarwinEngine(context, memoryService, stateProvider);
+        }
+    }
+}

@@ -14,6 +14,7 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 
 import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
+import eu.kalafatic.evolution.controller.orchestration.llm.OllamaProvider;
 import eu.kalafatic.evolution.controller.providers.AiProviders;
 import eu.kalafatic.evolution.controller.providers.ProviderConfig;
 import eu.kalafatic.evolution.model.orchestration.AiMode;
@@ -46,9 +47,9 @@ public class ChatMgmtGroup extends AEvoGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Chat Management", 1, true);
+        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Chat Management", 2, true);
        
-        Composite sessionsComp = GUIFactory.INSTANCE.createComposite(group, 7, SWT.BORDER);
+        Composite sessionsComp = GUIFactory.INSTANCE.createComposite(group, 6, SWT.BORDER);
 
         Button newSessionButton = GUIFactory.INSTANCE.createButton(sessionsComp, "New Session");
         newSessionButton.addSelectionListener(new SelectionAdapter() {
@@ -57,9 +58,9 @@ public class ChatMgmtGroup extends AEvoGroup {
                 page.createNewSession();
             }
         });
+        
 
-
-        GUIFactory.INSTANCE.createLabel(sessionsComp, "Select Session:");
+        //GUIFactory.INSTANCE.createLabel(sessionsComp, "Select Session:");
         sessionCombo = GUIFactory.INSTANCE.createCombo(sessionsComp);
         sessionCombo.add(page.getCurrentSessionName());
         sessionCombo.select(0);
@@ -102,37 +103,19 @@ public class ChatMgmtGroup extends AEvoGroup {
                 page.copyConversationToClipboard();
             }
         });
-
-        // AI Settings part (merged)
-        compositeLocal = GUIFactory.INSTANCE.createComposite(group, 3, SWT.BORDER);
-        compositeLocal.setBackground(lightGreen);
+       // GUIFactory.INSTANCE.createLabel(group);
         
-        GUIFactory.INSTANCE.createLabel(compositeLocal, "AI Mode:");
-        aiModeCombo = GUIFactory.INSTANCE.createCombo(compositeLocal, AiMode.values());
-        Button targetButton = GUIFactory.INSTANCE.createButton(compositeLocal, "Target");
         
-        targetButton.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                eu.kalafatic.evolution.model.orchestration.ChatSession session = page.getCurrentSession();
-                if (session != null) {
-                    eu.kalafatic.evolution.view.dialogs.MediatedTargetDialog dlg = new eu.kalafatic.evolution.view.dialogs.MediatedTargetDialog(page.getShell(), session, page.getProjectRoot(), editor);
-                    dlg.open();
-                }
-            }
-        });
-
-        GUIFactory.INSTANCE.createLabel(compositeLocal, "Model:");
-        localModelCombo = selectModel(compositeLocal);
-//        GUIFactory.INSTANCE.createLabel(compositeLocal);
-
         compositeRemote = GUIFactory.INSTANCE.createComposite(group, 3, SWT.BORDER);
+        GridData gd = new GridData(SWT.FILL, SWT.CENTER, true, true);
+        gd.verticalSpan = 2;
+        compositeRemote.setLayoutData(gd);
         
         GUIFactory.INSTANCE.createLabel(compositeRemote, "AI Remote:");
         aiRemoteCombo = GUIFactory.INSTANCE.createCombo(compositeRemote);
 
-        Button connectionButton = GUIFactory.INSTANCE.createButton(compositeRemote, "Test Connection");
-        connectionButton.addSelectionListener(new SelectionAdapter() {
+        Button connectionButtonRemote = GUIFactory.INSTANCE.createButton(compositeRemote, "Test Connection");
+        connectionButtonRemote.addSelectionListener(new SelectionAdapter() {
             public void widgetSelected(SelectionEvent e) {
                 if (orchestrator != null) {
                     page.testAiConnectionRemote(aiModeCombo.getSelectionIndex(), aiRemoteCombo.getText(),
@@ -161,6 +144,55 @@ public class ChatMgmtGroup extends AEvoGroup {
         GUIFactory.INSTANCE.createLabel(compositeRemote, "API URL:");
         remoteUrlText = GUIFactory.INSTANCE.createText(compositeRemote);
         GUIFactory.INSTANCE.createEditButton(compositeRemote, remoteUrlText);
+
+       
+        
+        
+
+        // AI Settings part (merged)
+        compositeLocal = GUIFactory.INSTANCE.createComposite(group, 3, SWT.BORDER);
+        compositeLocal.setBackground(lightGreen);
+        
+        GUIFactory.INSTANCE.createLabel(compositeLocal, "AI Mode:", SWT.NONE, GUIFactory.BUTTON_WIDTH);
+        aiModeCombo = GUIFactory.INSTANCE.createCombo(compositeLocal, AiMode.values());
+        Button targetButton = GUIFactory.INSTANCE.createButton(compositeLocal, "Target");
+        
+        targetButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                eu.kalafatic.evolution.model.orchestration.ChatSession session = page.getCurrentSession();
+                if (session != null) {
+                    eu.kalafatic.evolution.view.dialogs.MediatedTargetDialog dlg = new eu.kalafatic.evolution.view.dialogs.MediatedTargetDialog(page.getShell(), session, page.getProjectRoot(), editor);
+                    dlg.open();
+                }
+            }
+        });
+
+        GUIFactory.INSTANCE.createLabel(compositeLocal, "Model:", SWT.NONE, GUIFactory.BUTTON_WIDTH);
+        localModelCombo = selectModel(compositeLocal);
+        
+        Button connectionButton = GUIFactory.INSTANCE.createButton(compositeLocal, "Test Connection");
+        connectionButton.addSelectionListener(new SelectionAdapter() {
+            public void widgetSelected(SelectionEvent e) {
+            	
+                if (orchestrator != null) {        
+                    
+                    OllamaProvider.testLLM(orchestrator.getOllama().getUrl(), aiModeCombo.getText());
+                    
+					MessageBox messageBox = new MessageBox(page.getShell(), SWT.ICON_WORKING | SWT.OK);
+					messageBox.setText("Nice");
+					messageBox.setMessage("Ollama + " + aiModeCombo.getText() + " ...OK");
+					messageBox.open();
+                    
+                } else {
+                    MessageBox messageBox = new MessageBox(page.getShell(), SWT.ICON_WARNING | SWT.OK);
+                    messageBox.setText("Warning");
+                    messageBox.setMessage("Orchestrator not loaded.");
+                    messageBox.open();
+                }
+            }
+        });
+
 
         aiModeCombo.addSelectionListener(new SelectionAdapter() {
             @Override

@@ -12,6 +12,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.json.JSONObject;
 
 public class OllamaModelInfo {
+	
+	  private double parameterCountBillions;
+	    private int contextLength;
+	    private String quantization;
     
     private static final String OLLAMA_HOST = "http://localhost:11434";
     private static final HttpClient httpClient = HttpClient.newBuilder()
@@ -63,6 +67,9 @@ public class OllamaModelInfo {
         KNOWN_MODEL_SIZES.put("deepseek-coder:6.7b", 6_700_000_000L);
         KNOWN_MODEL_SIZES.put("deepseek-coder:33b", 33_000_000_000L);
     }
+    
+
+  
     
     public ModelInfo getModelInfo(String modelName) {
         ModelInfo info = new ModelInfo();
@@ -274,4 +281,28 @@ public class OllamaModelInfo {
         if (lower.contains("neural")) return "neural";
         return "unknown";
     }
+
+	public double getParameterCountBillions() {
+		return parameterCountBillions;
+	}
+
+	public void setParameterCountBillions(double parameterCountBillions) {
+		this.parameterCountBillions = parameterCountBillions;
+	}
+
+	public int getContextLength() {
+		return contextLength;
+	}
+
+	public void setContextLength(int contextLength) {
+		this.contextLength = contextLength;
+	}
+
+	public String getQuantization() {
+		return quantization;
+	}
+
+	public void setQuantization(String quantization) {
+		this.quantization = quantization;
+	}
 }
