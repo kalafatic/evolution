@@ -2063,6 +2063,17 @@ private String generateChatResponse(String request, TaskContext context) {
 			context.getOrchestrationState().setExecutionProfile(profile_init);
 		}
 		
+		// 1. Expansion-Based Population Scaling (Milestone Requirement)
+		int expansionValue = 5; // Default Medium
+		if (context.getOrchestrator() != null && context.getOrchestrator().getAiChat() != null) {
+			String sessionId = context.getSessionId();
+			eu.kalafatic.evolution.model.orchestration.ChatSession chatSession = context.getOrchestrator().getAiChat()
+					.getSessions().stream().filter(s -> s.getId().equals(sessionId)).findFirst().orElse(null);
+			if (chatSession != null) {
+				expansionValue = chatSession.getExpansion();
+			}
+		}
+
 	    // ============================================================
 	    // CHECK: Is this ACTUALLY a chat request?
 	    // ============================================================
@@ -2082,7 +2093,8 @@ private String generateChatResponse(String request, TaskContext context) {
 	    // Only generate chat variants if BOTH conditions are true
 	    if (isChatFlag && isChatCapability) {
 	        context.log("[DARWIN] CHAT: Generating conversational branches via LLM.");
-	        return generateChatVariants(goal, context);
+	        int chatLimit = expansionValue <= 5 ? 1 : 2;
+	        return generateChatVariants(goal, context, chatLimit);
 	    }
 	    
 	    // If the flag is true but capability is not CHAT, clear the flag
@@ -2293,45 +2305,22 @@ private String generateChatResponse(String request, TaskContext context) {
 		else if (modelName.contains("claude") || modelName.contains("gpt-4") || modelName.contains("o1"))
 			modelCapability = 0.95;
 
-		// 1. Expansion-Based Population Scaling (Milestone Requirement)
-		int expansionValue = 5; // Default Medium
-		if (context.getOrchestrator() != null && context.getOrchestrator().getAiChat() != null) {
-			String sessionId = context.getSessionId();
-			eu.kalafatic.evolution.model.orchestration.ChatSession chatSession = context.getOrchestrator().getAiChat()
-					.getSessions().stream().filter(s -> s.getId().equals(sessionId)).findFirst().orElse(null);
-			if (chatSession != null) {
-				expansionValue = chatSession.getExpansion();
-			}
-		}
-
-		// 2. Population Scaling based on Capability and Intensity
-		int branchingLimit = 4; // Refined Default: Aim for 4 branches
+		// 2. Population Scaling based on Task Type and Expansion Value
+		int branchingLimit = 2; // Default
 		eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType capType = profile.getCapability();
+		boolean isSelfDev = ModeRecognizer.isSelfDevMode(context);
 
-		switch (capType) {
-		case CHAT:
-			branchingLimit = 2;
-			break;
-		case CODE:
-		case EVOLUTION:
-		case ARCHITECTURE:
-		case SELF_DEV:
-			branchingLimit = 4;
-			break;
-		default:
-			branchingLimit = 4;
-			break;
+		if (capType == eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType.CHAT) {
+			branchingLimit = expansionValue <= 5 ? 1 : 2;
+		} else if (isSelfDev) {
+			branchingLimit = expansionValue <= 5 ? 3 : 4;
+		} else {
+			// CODING or MEDIATED
+			branchingLimit = expansionValue <= 5 ? 2 : 3;
 		}
 
-		// Respect expansionValue from UI
-		if (expansionValue <= 3)
-			branchingLimit = Math.max(branchingLimit, 2);
-		else if (expansionValue >= 8)
-			branchingLimit = Math.max(branchingLimit, 6);
-
-		// Scale by model capability - allow 4 even for small models to ensure diversity
-		if (modelCapability < 0.4)
-			branchingLimit = Math.max(branchingLimit, 3);
+		// MANDATE: Never more than 4. Darwin decides, not LLM.
+		branchingLimit = Math.min(branchingLimit, 4);
 
 		context.log("[DARWIN] Adaptive Kernel Intensity: " + intensity + ". Population Target: " + branchingLimit);
 
@@ -2578,10 +2567,10 @@ private String generateChatResponse(String request, TaskContext context) {
 	}
 
 	/**
-	 * Generates 1-2 conversational response variants via LLM.
+	 * Generates conversational response variants via LLM.
 	 * Called when CHAT capability is detected.
 	 */
-	private List<BranchVariant> generateChatVariants(GoalModel goal, TaskContext context) throws Exception {
+	private List<BranchVariant> generateChatVariants(GoalModel goal, TaskContext context, int limit) throws Exception {
 	    List<BranchVariant> variants = new ArrayList<>();
 	    
 	    String prompt = goal.getPrimaryAction();
@@ -2593,44 +2582,28 @@ private String generateChatResponse(String request, TaskContext context) {
 	        "DO NOT mention Java classes or methods. Just respond naturally as a helpful assistant. " +
 	        "Keep responses brief (1-2 sentences) and friendly.";
 	    
-	    // === Variant 1: Standard friendly response ===
-	    String chatPrompt1 = String.format(
-	        "%s\n\nUser said: \"%s\"\n\nRespond naturally. Be friendly and helpful.",
-	        systemInstruction, prompt
-	    );
-	    
-	    String response1 = aiService.sendRequest(
-	        context.getOrchestrator(),
-	        chatPrompt1,
-	        context
-	    );
-	    
-	    BranchVariant variant1 = createChatVariant(response1, context);
-	    variant1.setId("chat-variant-1-" + System.currentTimeMillis());
-	    variant1.setStrategy("Friendly Chat Response");
-	    variants.add(variant1);
-	    
-	    // === Variant 2: Alternative response (for diversity) ===
-	    String chatPrompt2 = String.format(
-	        "%s\n\nUser said: \"%s\"\n\nProvide a different but equally friendly response. " +
-	        "Be helpful and encouraging.",
-	        systemInstruction, prompt
-	    );
-	    
-	    String response2 = aiService.sendRequest(
-	        context.getOrchestrator(),
-	        chatPrompt2,
-	        context
-	    );
-	    
-	    BranchVariant variant2 = createChatVariant(response2, context);
-	    variant2.setId("chat-variant-2-" + System.currentTimeMillis());
-	    variant2.setStrategy("Alternative Chat Response");
-	    variant2.setScore(0.90);
-	    variants.add(variant2);
-	    
-	    // Score variants
-	    variant1.setScore(0.95);
+	    for (int i = 0; i < limit; i++) {
+	        String strategy = i == 0 ? "Friendly Chat Response" : "Alternative Chat Response " + (i + 1);
+	        String instruction = i == 0 ? "Respond naturally. Be friendly and helpful." :
+	                                     "Provide a different but equally friendly response. Be helpful and encouraging.";
+
+	        String chatPrompt = String.format(
+	            "%s\n\nUser said: \"%s\"\n\n%s",
+	            systemInstruction, prompt, instruction
+	        );
+
+	        String response = aiService.sendRequest(
+	            context.getOrchestrator(),
+	            chatPrompt,
+	            context
+	        );
+
+	        BranchVariant variant = createChatVariant(response, context);
+	        variant.setId("chat-variant-" + (i + 1) + "-" + System.currentTimeMillis());
+	        variant.setStrategy(strategy);
+	        variant.setScore(0.95 - (i * 0.05));
+	        variants.add(variant);
+	    }
 	    
 	    context.log("[DARWIN] CHAT: Generated " + variants.size() + " conversational variants.");
 	    return variants;

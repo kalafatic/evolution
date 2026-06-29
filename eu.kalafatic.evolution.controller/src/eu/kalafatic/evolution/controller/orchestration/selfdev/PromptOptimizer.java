@@ -27,7 +27,6 @@ public class PromptOptimizer extends BaseAiAgent {
 	    if (isMediated) {
 	        strategy.format = "MEDIATED";
 	        strategy.tone = "analytical";
-	        strategy.siblingCount = Math.max(intent.complexity.equals("HIGH") ? 4 : 3, 3);
 	        strategy.constraints = Arrays.asList(
 	            "NO code generation",
 	            "Focus on architectural analysis",
@@ -77,9 +76,7 @@ public class PromptOptimizer extends BaseAiAgent {
             
             4. What constraints should we enforce?
             
-            5. How many siblings should we generate? (MANDATE: generate at least 2-4 siblings for code tasks to ensure evolutionary diversity).
-            
-            6. What should be the prompt's "tone" (instructional, conversational, technical)?
+            5. What should be the prompt's "tone" (instructional, conversational, technical)?
             
             Return as JSON:
             {
@@ -87,7 +84,6 @@ public class PromptOptimizer extends BaseAiAgent {
                 "fields": ["field1", "field2"],
                 "examples": ["Example 1", "Example 2"],
                 "constraints": ["Constraint 1", "Constraint 2"],
-                "siblingCount": 3,
                 "tone": "instructional/conversational/technical",
                 "promptTemplate": "Instructions for {goal}...",
                 "expectedOutputFormat": "[description of format]",
@@ -101,7 +97,6 @@ public class PromptOptimizer extends BaseAiAgent {
         PromptStrategy strategy = new PromptStrategy();
         strategy.intent = intent;
         strategy.format = obj.optString("format");
-        strategy.siblingCount = obj.optInt("siblingCount", 3);
         strategy.tone = obj.optString("tone", "instructional");
         strategy.promptTemplate = obj.optString("promptTemplate");
         strategy.expectedOutputFormat = obj.optString("expectedOutputFormat");
