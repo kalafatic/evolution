@@ -2126,8 +2126,8 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 			state.append("\n--- REPOSITORY STRUCTURE (REAL EVIDENCE) ---\n").append(projectStructure).append("\n");
 		}
 
-		eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot snapshotMed = (eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot) context
-				.getOrchestrationState().getMetadata().get("mediatedSnapshot");
+		eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot snapshotMed = 
+			    getTargetSnapshotSafe(context);
 		if (snapshotMed != null) {
 			state.append("\n--- SEMANTIC REPOSITORY SNAPSHOT (REAL EVIDENCE) ---\n");
 			state.append("Architecture Inference: ").append(snapshotMed.getMetadata().get("architectureInference"))
@@ -2488,6 +2488,37 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 		return variants;
 	}
 	
+	private eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot getTargetSnapshotSafe(TaskContext context) {
+	    Object obj = context.getOrchestrationState().getMetadata().get("mediatedSnapshot");
+	    
+	    if (obj == null) {
+	        return null;
+	    }
+	    
+	    if (obj instanceof eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot) {
+	        return (eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot) obj;
+	    }
+	    
+	    // If it's a Map (from checkpoint deserialization), convert it
+	    if (obj instanceof Map) {
+	        try {
+	            com.fasterxml.jackson.databind.ObjectMapper mapper = 
+	                new com.fasterxml.jackson.databind.ObjectMapper()
+	                    .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+	            eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot snapshot = 
+	                mapper.convertValue(obj, eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot.class);
+	            // Store the converted object back
+	            context.getOrchestrationState().getMetadata().put("mediatedSnapshot", snapshot);
+	            return snapshot;
+	        } catch (Exception e) {
+	            context.log("[DARWIN] Failed to convert mediatedSnapshot from Map: " + e.getMessage());
+	            return null;
+	        }
+	    }
+	    
+	    return null;
+	}
+
 	/**
 	 * Generates 1-2 conversational response variants via LLM.
 	 * Called when CHAT capability is detected.

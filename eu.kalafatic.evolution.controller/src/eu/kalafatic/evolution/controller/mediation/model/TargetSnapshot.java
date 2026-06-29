@@ -11,15 +11,23 @@ import java.util.HashMap;
 public class TargetSnapshot {
     public enum TargetType { PROJECT, SELF }
 
-    private final String snapshotId;
-    private final String version;
-    private final long timestamp;
-    private final TargetType targetType;
-    private final String rootPath;
+    private String snapshotId;
+    private String version;
+    private long timestamp;
+    private TargetType targetType;
+    private String rootPath;
 
-    private final Map<String, SemanticNode> nodes = new HashMap<>();
-    private final List<SemanticEdge> edges = new ArrayList<>();
-    private final Map<String, Object> metadata = new HashMap<>();
+    private Map<String, SemanticNode> nodes = new HashMap<>();
+    private List<SemanticEdge> edges = new ArrayList<>();
+    private Map<String, Object> metadata = new HashMap<>();
+    
+ // ============================================================
+    // ✅ ADD: No-arg constructor for Jackson deserialization
+    // ============================================================
+    public TargetSnapshot() {
+        this.version = "";        
+		this.timestamp = System.currentTimeMillis();
+    }
 
     public TargetSnapshot(String snapshotId, String version, TargetType targetType, String rootPath) {
         this.snapshotId = snapshotId;

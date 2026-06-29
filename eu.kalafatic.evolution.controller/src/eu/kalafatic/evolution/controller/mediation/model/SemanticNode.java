@@ -9,11 +9,11 @@ import java.util.HashMap;
  * A semantic representation of a file or logical unit in the target.
  */
 public class SemanticNode {
-    private final String id;
-    private final String path;
-    private final String type;
+    private  String id;
+    private  String path;
+    private String type;
     private String summary;
-    private final List<String> tags = new ArrayList<>();
+    private List<String> tags = new ArrayList<>();
     private double architecturalAuthority;
     private double evolutionaryInfluenceScore;
     private List<String> breakImpacts = new ArrayList<>();
@@ -28,6 +28,9 @@ public class SemanticNode {
 
     // Dependency references (imports, includes)
     private final List<String> dependencies = new ArrayList<>();
+    
+    public SemanticNode() {
+    }
 
     public SemanticNode(String id, String path, String type) {
         this.id = id;

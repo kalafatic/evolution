@@ -1,11 +1,14 @@
 package eu.kalafatic.evolution.controller.orchestration.selfdev;
 
+import java.util.Arrays;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import eu.kalafatic.evolution.controller.agents.BaseAiAgent;
 import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.orchestration.util.ModeRecognizer;
 
 public class PromptOptimizer extends BaseAiAgent {
 	
@@ -15,6 +18,29 @@ public class PromptOptimizer extends BaseAiAgent {
 	}
 
 	public PromptStrategy optimizePrompt(IntentProfile intent, TaskContext context) throws Exception {
+	    PromptStrategy strategy = new PromptStrategy();
+	    strategy.intent = intent;
+	    
+	    // Check if mediated mode
+	    boolean isMediated = ModeRecognizer.isMediatedMode(context);
+	    
+	    if (isMediated) {
+	        strategy.format = "MEDIATED";
+	        strategy.tone = "analytical";
+	        strategy.siblingCount = Math.max(intent.complexity.equals("HIGH") ? 4 : 3, 3);
+	        strategy.constraints = Arrays.asList(
+	            "NO code generation",
+	            "Focus on architectural analysis",
+	            "Identify 8-16 critical files",
+	            "Provide optimized prompt for external LLM"
+	        );
+	        strategy.validationRules = Arrays.asList(
+	            "Must include ARCHITECTURE_SUMMARY",
+	            "Must include CRITICAL_FILES with 8-16 files",
+	            "Must include OPTIMIZED_PROMPT"
+	        );
+	        return strategy;
+	    }
 		instructions = buildOptimizationPrompt(intent);
         String response = aiService.sendRequest(context.getOrchestrator(), instructions, context);
         return parseOptimizationResponse(response, intent);

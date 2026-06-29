@@ -74,6 +74,12 @@ public class DynamicSiblingGenerator {
 		// MANDATE: Enforce target population for Darwinian search
 		int siblingCount = Math.max(strategy.siblingCount, targetPopulation);
 		context.log("[DYNAMIC] Using format: " + strategy.format + " | Siblings: " + siblingCount);
+		
+		
+		if (isMediated) {
+		    strategy.format = "MEDIATED";
+		    strategy.siblingCount = Math.max(targetPopulation, 3);
+		}
 
 		// STEP 3: Detect model capability
 		String modelName = getModelName(context);
@@ -228,15 +234,25 @@ public class DynamicSiblingGenerator {
 		StringBuilder prompt = new StringBuilder();
 		boolean isMediated = ModeRecognizer.isMediatedMode(context);
 
-		// ============================================================
-		// 1. BASE INSTRUCTION
-		// ============================================================
-		if (isMediated) {
-			prompt.append("Perform a repository-grounded architectural analysis for: ")
-					.append(strategy.intent.primaryGoal).append("\n\n");
-		} else {
-			prompt.append("Generate a Java solution for: ").append(strategy.intent.primaryGoal).append("\n\n");
-		}
+	    // ============================================================
+	    // 1. BASE INSTRUCTION — DIFFERENT FOR MEDIATED MODE
+	    // ============================================================
+	    if (isMediated) {
+	    	strategy.format = "MEDIATED";
+	        
+	        prompt.append("You are performing a REPOSITORY ANALYSIS task.\n");
+	        prompt.append("Your goal is to produce an ANALYSIS PACKAGE (Genome A/B) for the goal: ")
+	              .append(strategy.intent.primaryGoal)
+	              .append("\n\n");
+	        prompt.append("You MUST NOT generate code or create files.\n");
+	        prompt.append("You MUST analyze the existing repository structure and produce:\n");
+	        prompt.append("  - Genome A: An optimized prompt for an external LLM\n");
+	        prompt.append("  - Genome B: A curated set of files and architectural summary\n\n");
+	    } else {
+	        prompt.append("Generate a Java solution for: ")
+	              .append(strategy.intent.primaryGoal)
+	              .append("\n\n");
+	    }
 
 		// ============================================================
 		// 2. CONTEXT: What has already been generated?
@@ -305,7 +321,7 @@ public class DynamicSiblingGenerator {
 		// ============================================================
 		// 4. FORMAT INSTRUCTION
 		// ============================================================
-		if (isMediated) {
+		if ("MEDIATED".equals(strategy.format) || isMediated) {
 			prompt.append(buildMediatedPrompt(strategy, siblingIndex, context));
 		} else {
 			switch (strategy.format) {
@@ -582,21 +598,39 @@ public class DynamicSiblingGenerator {
 	}
 
 	private String buildMediatedPrompt(PromptStrategy strategy, int index, TaskContext context) {
-		StringBuilder sb = new StringBuilder();
-		sb.append("Your task is to produce an analysis package (Genome A/B) for this goal.\n\n");
-
-		sb.append("GENOME A: The optimized prompt for a high-capability external LLM.\n");
-		sb.append("GENOME B: The architectural understanding and required context.\n\n");
-
-		sb.append("Identify 4-16 key files from the project that are critical for this task.\n\n");
-
-		sb.append("Return your answer in this format:\n");
-		sb.append("PROMPT: [optimized prompt]\n");
-		sb.append("ARCHITECTURE: [concise architecture mapping]\n");
-		sb.append("FILES: [comma-separated list of 4-16 files]\n");
-		sb.append("INSTRUCTIONS: [specific execution instructions]\n");
-
-		return sb.toString();
+	    StringBuilder sb = new StringBuilder();
+	    
+	    sb.append("TASK: Produce an architectural analysis package for the goal: ")
+	      .append(strategy.intent.primaryGoal)
+	      .append("\n\n");
+	    
+	    sb.append("GENOME A (The Optimized Prompt):\n");
+	    sb.append("  Create a concise, context-rich prompt that an external LLM can use to analyze this codebase.\n");
+	    sb.append("  The prompt should:\n");
+	    sb.append("  - Explain the purpose of the codebase\n");
+	    sb.append("  - Identify key architectural patterns\n");
+	    sb.append("  - List critical files and their responsibilities\n");
+	    sb.append("  - Ask specific questions about the architecture\n\n");
+	    
+	    sb.append("GENOME B (The Context Package):\n");
+	    sb.append("  Identify 8-16 critical files from the repository that are essential for understanding the architecture.\n");
+	    sb.append("  For each file, explain its role in the system.\n");
+	    sb.append("  Provide a concise architecture summary (2-3 sentences).\n\n");
+	    
+	    sb.append("OUTPUT FORMAT:\n");
+	    sb.append("ARCHITECTURE_SUMMARY: [2-3 sentences describing the overall architecture]\n");
+	    sb.append("CRITICAL_FILES:\n");
+	    sb.append("  - path/to/file1.java: [role and importance]\n");
+	    sb.append("  - path/to/file2.java: [role and importance]\n");
+	    sb.append("  ...\n");
+	    sb.append("OPTIMIZED_PROMPT:\n");
+	    sb.append("[The prompt for the external LLM]\n");
+	    sb.append("EXECUTION_INSTRUCTIONS:\n");
+	    sb.append("[Specific instructions for using the analysis package]\n\n");
+	    
+	    sb.append("⚠️ CRITICAL: Do NOT generate code. Only provide architectural analysis.\n");
+	    
+	    return sb.toString();
 	}
 
 	private JSONObject generateSingleVariant(String prompt, PromptStrategy strategy, int index, TaskContext context) {
