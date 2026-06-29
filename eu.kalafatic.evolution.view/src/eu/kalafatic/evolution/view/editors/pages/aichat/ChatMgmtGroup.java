@@ -19,6 +19,7 @@ import eu.kalafatic.evolution.controller.providers.AiProviders;
 import eu.kalafatic.evolution.controller.providers.ProviderConfig;
 import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.view.HTTPUtils;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
 import eu.kalafatic.evolution.view.editors.pages.AiChatPage;
@@ -177,11 +178,12 @@ public class ChatMgmtGroup extends AEvoGroup {
             	
                 if (orchestrator != null) {        
                     
-                    OllamaProvider.testLLM(orchestrator.getOllama().getUrl(), aiModeCombo.getText());
+                    int testLLM = OllamaProvider.testLLM(orchestrator.getOllama().getUrl(), localModelCombo.getText());
+                    String message = HTTPUtils.getMessage(testLLM);
                     
-					MessageBox messageBox = new MessageBox(page.getShell(), SWT.ICON_WORKING | SWT.OK);
-					messageBox.setText("Nice");
-					messageBox.setMessage("Ollama + " + aiModeCombo.getText() + " ...OK");
+					MessageBox messageBox = new MessageBox(page.getShell(), SWT.ICON_INFORMATION | SWT.OK);
+					messageBox.setText("Response");
+					messageBox.setMessage("Ollama + " + aiModeCombo.getText() + " : " + message);
 					messageBox.open();
                     
                 } else {

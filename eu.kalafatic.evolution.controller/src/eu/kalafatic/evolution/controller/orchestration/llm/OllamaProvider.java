@@ -125,7 +125,7 @@ public class OllamaProvider implements ILlmProvider {
         orchestrator.setLocalModel(newModel);
     }
     
-    public static boolean testLLM(String baseUrl, String model) {
+    public static int testLLM(String baseUrl, String model) {
         try {
             HttpClient client = HttpClient.newBuilder()
                     .connectTimeout(Duration.ofSeconds(5))
@@ -151,7 +151,7 @@ public class OllamaProvider implements ILlmProvider {
 
             if (response.statusCode() != 200) {
                 System.err.println("LLM failed: HTTP " + response.statusCode());
-                return false;
+                return response.statusCode();
             }
 
             String body = response.body();
@@ -159,22 +159,22 @@ public class OllamaProvider implements ILlmProvider {
             // Simple check that a response was generated
             if (body.contains("\"response\"") && body.contains("OK")) {
                 System.out.println("✓ LLM is working.");
-                return true;
+                return 200;
             }
 
             System.err.println("LLM responded unexpectedly:");
             System.err.println(body);
-            return false;
+            return 500;
 
         } catch (Exception e) {
             System.err.println("LLM test failed: " + e.getMessage());
-            return false;
+            return 600;
         }
     }
     
     
     public static void main(String[] args) {
-    	boolean ok = testLLM("http://localhost:11434", "gemma3:1b");
+    	 testLLM("http://localhost:11434", "gemma3:1b");
 	}
     
 }
