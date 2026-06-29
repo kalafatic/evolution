@@ -62,6 +62,17 @@ public class EvolutionProgressPublisher {
         publish(context, event);
     }
 
+    public static void syncBranches(TaskContext context, java.util.List<EvolutionProgressEvent.BranchStatus> statuses) {
+        EvolutionProgressEvent event = activeEvents.get(context.getSessionId());
+        if (event == null) return;
+
+        event.getBranchStatuses().clear();
+        event.getBranchStatuses().addAll(statuses);
+        event.setTimestamp(System.currentTimeMillis());
+
+        publish(context, event);
+    }
+
     public static void updateBranchStatus(TaskContext context, String branchId, String strategy, String status, Double score) {
         EvolutionProgressEvent event = activeEvents.get(context.getSessionId());
         if (event == null) return;
