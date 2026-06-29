@@ -20,10 +20,17 @@ import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.equinox.p2.ui.Policy;
 import org.eclipse.jface.resource.ImageDescriptor;
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Status;
+import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
+
+import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
+import eu.kalafatic.evolution.view.util.GitRegistryHelper;
 
 //import eu.kalafatic.gemini.core.p2.CloudPolicy;
 
@@ -77,6 +84,27 @@ public class Activator extends AbstractUIPlugin {
 //		PreferenceInitializer.setUp();
 
 		registerP2Policy(bundleContext);
+
+		registerExistingEvoRepository();
+	}
+
+	private void registerExistingEvoRepository() {
+		Job job = new Job("Registering existing Evo repository") {
+			@Override
+			protected IStatus run(IProgressMonitor monitor) {
+				try {
+					String evoRepoPath = ProjectModelManager.getInstance().findEvolutionRepository();
+					if (evoRepoPath != null) {
+						GitRegistryHelper.registerGitRepository(new File(evoRepoPath));
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				return Status.OK_STATUS;
+			}
+		};
+		job.setSystem(true);
+		job.schedule(5000); // Delay to allow workbench to initialize
 	}
 
 	// ---------------------------------------------------------------
