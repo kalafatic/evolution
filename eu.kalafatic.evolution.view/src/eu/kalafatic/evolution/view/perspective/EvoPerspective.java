@@ -27,6 +27,7 @@ public class EvoPerspective implements IPerspectiveFactory {
         // Left column - Navigators (Evo Navigator and Project Explorer) - 20%
         IFolderLayout left = layout.createFolder(EFolder.TOP_LEFT.ID, IPageLayout.LEFT, 0.20f, editorArea);
         left.addView("eu.kalafatic.views.EvoNavigator");
+        left.addView("org.eclipse.egit.ui.RepositoriesView");
         //left.addView(IPageLayout.ID_PROJECT_EXPLORER);
 
         // Bottom column - Console - 30%
@@ -72,6 +73,7 @@ public class EvoPerspective implements IPerspectiveFactory {
     private void addViewShortcuts(IPageLayout layout) {
         layout.addShowViewShortcut(IPageLayout.ID_PROJECT_EXPLORER);
         layout.addShowViewShortcut("eu.kalafatic.views.EvoNavigator");
+        layout.addShowViewShortcut("org.eclipse.egit.ui.RepositoriesView");
         layout.addShowViewShortcut(IConsoleConstants.ID_CONSOLE_VIEW);
         layout.addShowViewShortcut(AIOutputView.ID);
         layout.addShowViewShortcut(OrchestrationZestView.ID);
