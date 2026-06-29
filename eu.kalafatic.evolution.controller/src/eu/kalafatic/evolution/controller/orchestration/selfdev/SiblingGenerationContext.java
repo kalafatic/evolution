@@ -3,6 +3,7 @@ package eu.kalafatic.evolution.controller.orchestration.selfdev;
 import java.util.ArrayList;
 import java.util.List;
 import eu.kalafatic.evolution.controller.orchestration.goal.GoalModel;
+import eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionResult;
 
 /**
  * Context for generating the next sibling in an evolutionary generation.
@@ -16,6 +17,18 @@ public class SiblingGenerationContext {
     private List<TrajectoryBlueprint> olderSiblings = new ArrayList<>();
     private int siblingIndex;
     private int targetPopulation;
+    
+
+    private SemanticGenome genome;
+    private EvolutionTree tree;
+    private String currentParentId;
+    private int generation;
+    private IntentExpansionResult expansion;
+    
+    public SiblingGenerationContext() {
+		// TODO Auto-generated constructor stub
+	}
+  
 
     public SiblingGenerationContext(GoalModel goal, TrajectoryBlueprint parent, EvolutionDimension dimension, int targetPopulation) {
         this.goal = goal;
@@ -24,7 +37,9 @@ public class SiblingGenerationContext {
         this.targetPopulation = targetPopulation;
     }
 
-    public GoalModel getGoal() {
+   
+
+	public GoalModel getGoal() {
         return goal;
     }
 
@@ -71,4 +86,48 @@ public class SiblingGenerationContext {
     public void setTargetPopulation(int targetPopulation) {
         this.targetPopulation = targetPopulation;
     }
+
+	public SemanticGenome getGenome() {
+		return genome;
+	}
+
+	public void setGenome(SemanticGenome genome) {
+		this.genome = genome;
+	}
+
+	public EvolutionTree getTree() {
+		return tree;
+	}
+
+	public void setTree(EvolutionTree tree) {
+		this.tree = tree;
+	}
+
+	public String getCurrentParentId() {
+		return currentParentId;
+	}
+
+	public void setCurrentParentId(String currentParentId) {
+		this.currentParentId = currentParentId;
+	}
+
+	public int getGeneration() {
+		return generation;
+	}
+
+	public void setGeneration(int generation) {
+		this.generation = generation;
+	}
+
+
+	public IntentExpansionResult getExpansion() {
+		return expansion;
+	}
+
+
+	public void setExpansion(IntentExpansionResult expansion) {
+		this.expansion = expansion;
+	}
+
+
 }
