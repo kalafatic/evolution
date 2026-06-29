@@ -43,7 +43,8 @@ public class DynamicSiblingGenerator {
             String userRequest, 
             GoalModel goal,
             TaskContext context,
-            EvolutionDimension activeDimension) throws Exception {
+            EvolutionDimension activeDimension,
+            int targetPopulation) throws Exception {
         
         boolean isMediated = ModeRecognizer.isMediatedMode(context);
 
@@ -55,7 +56,10 @@ public class DynamicSiblingGenerator {
         // STEP 2: Optimize prompt based on intent
         context.log("[DYNAMIC] Optimizing prompt for intent...");
         PromptStrategy strategy = promptOptimizer.optimizePrompt(intent, context);
-        context.log("[DYNAMIC] Using format: " + strategy.format + " | Siblings: " + strategy.siblingCount);
+
+        // MANDATE: Enforce target population for Darwinian search
+        int siblingCount = Math.max(strategy.siblingCount, targetPopulation);
+        context.log("[DYNAMIC] Using format: " + strategy.format + " | Siblings: " + siblingCount);
         
         // STEP 3: Detect model capability
         String modelName = getModelName(context);
@@ -65,9 +69,9 @@ public class DynamicSiblingGenerator {
         // STEP 4: Generate siblings using the optimized strategy
         List<JSONObject> variants = new ArrayList<>();
         
-        for (int i = 0; i < strategy.siblingCount; i++) {
+        for (int i = 0; i < siblingCount; i++) {
             String prompt = buildDynamicPrompt(strategy, i, context);
-            context.log("[DYNAMIC] Generating sibling " + (i+1) + "/" + strategy.siblingCount);
+            context.log("[DYNAMIC] Generating sibling " + (i+1) + "/" + siblingCount);
             
             JSONObject variant = generateSingleVariant(prompt, strategy, i, context);
             if (variant != null && validateVariant(variant, strategy)) {
@@ -299,6 +303,7 @@ public class DynamicSiblingGenerator {
 
                 // Build action
                 JSONObject action = new JSONObject();
+                action.put("domain", "file");
                 action.put("operation", "WRITE");
                 action.put("target", "src/main/java/com/example/" + className + ".java");
                 action.put("implementation", code);
@@ -514,6 +519,7 @@ public class DynamicSiblingGenerator {
         variant.put("class_name", className);
         
         JSONObject action = new JSONObject();
+        action.put("domain", "file");
         action.put("operation", "WRITE");
         action.put("target", "src/main/java/com/example/" + className + ".java");
         action.put("implementation", code);

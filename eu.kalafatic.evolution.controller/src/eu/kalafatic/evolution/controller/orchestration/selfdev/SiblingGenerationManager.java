@@ -117,7 +117,8 @@ public class SiblingGenerationManager {
             goal.getPrimaryAction(),
             goal,
             context,
-            activeDimension
+            activeDimension,
+            targetPopulation
         );
         
         // Adjust target population if needed
