@@ -651,7 +651,9 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 		}
 
 		String summary;
-		if ((state.getCurrentPhase().contains("TERMINAL") || state.getCurrentPhase().contains("SYNTHESIS"))
+		if ((state.getCurrentPhase().contains("TERMINAL") 
+				|| state.getCurrentPhase().contains("SYNTHESIS")
+				|| state.getCurrentPhase().contains("DESIGN_SATISFIED")) 
 				&& response.getResultType() != ResultType.ERROR) {
 			if (context.getBehaviorProfile().hasTrait(BehaviorTrait.WORKFLOW_EXPORT_ONLY)) {
 				summary = iterationManager.performMediatedExportConvergence(request, context);

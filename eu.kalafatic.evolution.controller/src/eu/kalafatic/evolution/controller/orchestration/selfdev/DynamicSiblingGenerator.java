@@ -124,7 +124,7 @@ public class DynamicSiblingGenerator {
 		// Ensure we have at least one variant
 		if (variants.isEmpty()) {
 			context.log("[DYNAMIC] No valid variants generated. Creating fallback.");
-			JSONObject fallback = createFallbackVariant(profile, context);
+			JSONObject fallback = isMediated ? createMediatedFallbackVariant(profile, context) : createFallbackVariant(profile, context);
 			variants.add(fallback);
 		}
 
@@ -600,35 +600,48 @@ public class DynamicSiblingGenerator {
 	private String buildMediatedPrompt(PromptStrategy strategy, int index, TaskContext context) {
 	    StringBuilder sb = new StringBuilder();
 	    
-	    sb.append("TASK: Produce an architectural analysis package for the goal: ")
+	    sb.append("⚠️ CRITICAL: You are in MEDIATED ANALYSIS MODE.\n");
+	    sb.append("DO NOT generate code. DO NOT create files. DO NOT write classes.\n\n");
+	    
+	    sb.append("TASK: Produce a comprehensive architectural analysis package for the goal: ")
 	      .append(strategy.intent.primaryGoal)
 	      .append("\n\n");
 	    
-	    sb.append("GENOME A (The Optimized Prompt):\n");
+	    sb.append("GENOME A (The Optimized Prompt for External LLM):\n");
 	    sb.append("  Create a concise, context-rich prompt that an external LLM can use to analyze this codebase.\n");
 	    sb.append("  The prompt should:\n");
-	    sb.append("  - Explain the purpose of the codebase\n");
-	    sb.append("  - Identify key architectural patterns\n");
-	    sb.append("  - List critical files and their responsibilities\n");
-	    sb.append("  - Ask specific questions about the architecture\n\n");
+	    sb.append("  - State the purpose of the analysis\n");
+	    sb.append("  - List the key files that need to be examined\n");
+	    sb.append("  - Ask specific questions about the architecture\n");
+	    sb.append("  - Request identification of patterns, anti-patterns, and improvement opportunities\n\n");
 	    
 	    sb.append("GENOME B (The Context Package):\n");
 	    sb.append("  Identify 8-16 critical files from the repository that are essential for understanding the architecture.\n");
-	    sb.append("  For each file, explain its role in the system.\n");
-	    sb.append("  Provide a concise architecture summary (2-3 sentences).\n\n");
+	    sb.append("  For each file, explain its role in the system (1-2 sentences).\n");
+	    sb.append("  Provide a concise architecture summary (2-3 sentences).\n");
+	    sb.append("  List key dependencies and their relationships.\n\n");
 	    
-	    sb.append("OUTPUT FORMAT:\n");
+	    sb.append("OUTPUT FORMAT (EXACTLY):\n");
+	    sb.append("=========================================\n");
 	    sb.append("ARCHITECTURE_SUMMARY: [2-3 sentences describing the overall architecture]\n");
+	    sb.append("\n");
 	    sb.append("CRITICAL_FILES:\n");
-	    sb.append("  - path/to/file1.java: [role and importance]\n");
-	    sb.append("  - path/to/file2.java: [role and importance]\n");
-	    sb.append("  ...\n");
+	    sb.append("  - path/to/file1.java: [role and importance, 1-2 sentences]\n");
+	    sb.append("  - path/to/file2.java: [role and importance, 1-2 sentences]\n");
+	    sb.append("  ... (8-16 files total)\n");
+	    sb.append("\n");
+	    sb.append("DEPENDENCIES:\n");
+	    sb.append("  - [dependency name]: [purpose]\n");
+	    sb.append("\n");
 	    sb.append("OPTIMIZED_PROMPT:\n");
-	    sb.append("[The prompt for the external LLM]\n");
+	    sb.append("[The complete prompt for the external LLM]\n");
+	    sb.append("\n");
 	    sb.append("EXECUTION_INSTRUCTIONS:\n");
-	    sb.append("[Specific instructions for using the analysis package]\n\n");
+	    sb.append("[Specific instructions for using the analysis package]\n");
+	    sb.append("=========================================\n\n");
 	    
-	    sb.append("⚠️ CRITICAL: Do NOT generate code. Only provide architectural analysis.\n");
+	    sb.append("⚠️ REMINDER: This is an ANALYSIS task. Your output should be the analysis package above.\n");
+	    sb.append("⚠️ DO NOT include code. DO NOT include class definitions. ONLY analysis.\n");
 	    
 	    return sb.toString();
 	}
@@ -866,6 +879,38 @@ public class DynamicSiblingGenerator {
 		variant.put("engineering_dimensions", dims);
 
 		return variant;
+	}
+	
+	private JSONObject createMediatedFallbackVariant(IntentProfile intent, TaskContext context) {
+	    JSONObject variant = new JSONObject();
+	    
+	    // Create a mediated analysis package instead of code
+	    String analysisPackage = 
+	        "ARCHITECTURE_SUMMARY: Analysis of the repository structure.\n\n" +
+	        "CRITICAL_FILES:\n" +
+	        "  - pom.xml: Build configuration\n" +
+	        "  - src/main/java/com/example/App.java: Main entry point\n\n" +
+	        "OPTIMIZED_PROMPT: Analyze this Java application's architecture...\n\n" +
+	        "EXECUTION_INSTRUCTIONS: Review the files and identify architectural patterns.";
+	    
+	    variant.put("id", "mediated-fallback-" + System.currentTimeMillis());
+	    variant.put("strategy", "Analysis: " + intent.primaryGoal);
+	    variant.put("strategy_type", "PHILOSOPHY_MAPPING");
+	    variant.put("semantic_anchor", "Architectural analysis package");
+	    variant.put("survival_argument", "Generated as fallback analysis package");
+	    variant.put("tradeoffs", "High-signal discovery, no code generation");
+	    variant.put("architecture_enabled", true);
+	    variant.put("implementation_enabled", false);
+	    
+	    // Store analysis in mediation_candidate
+	    JSONObject med = new JSONObject();
+	    med.put("prompt", "Analyze the repository structure and identify key architectural patterns.");
+	    med.put("architecture_summary", "Repository analysis package");
+	    med.put("execution_instructions", "Review the provided analysis package.");
+	    med.put("selected_files", new JSONArray());
+	    variant.put("mediation_candidate", med);
+	    
+	    return variant;
 	}
 
 	// In DynamicSiblingGenerator.java
