@@ -926,6 +926,20 @@ private String generateChatResponse(String request, TaskContext context) {
 	    
 		 List<BranchVariant> variants = generateProposals(context, goalModel, manager);
 
+		 // SYNC PROGRESS BRANCHES: Ensure UI only shows final considered variants
+		 if (!variants.isEmpty()) {
+		     java.util.List<EvolutionProgressEvent.BranchStatus> statuses = new java.util.ArrayList<>();
+		     for (BranchVariant v : variants) {
+		         EvolutionProgressEvent.BranchStatus bs = new EvolutionProgressEvent.BranchStatus();
+		         bs.setId(v.getId());
+		         bs.setStrategy(v.getStrategy());
+		         bs.setStatus("active");
+		         bs.setScore(v.getScore());
+		         statuses.add(bs);
+		     }
+		     EvolutionProgressPublisher.syncBranches(context, statuses);
+		 }
+
 		if (variants.isEmpty()) {
 			context.log("[DARWIN] CRITICAL: No trajectories survived diversity analysis. Evolution blocked.");
 			return manager.failedResult();

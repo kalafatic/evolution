@@ -499,7 +499,7 @@ window.ChatApp.Renderer = {
             let html = `
                 <div class="tree-node" title="Iteration ${data.iterationCount}: ${data.currentTask || ''}${dimInfo}">
                     <div class="node-title">I${data.iterationCount}</div>
-                    ${data.currentDimension ? `<div style="font-size: 6px; color: #64748b; margin-top: -2px;">${data.currentDimension.substring(0, 8)}</div>` : ''}
+                    ${data.currentDimension ? `<div style="font-size: 6px; color: #64748b; margin-top: -2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 34px; text-align: center;">${data.currentDimension}</div>` : ''}
                 </div>
             `;
 
@@ -513,7 +513,7 @@ window.ChatApp.Renderer = {
                 html += `<div class="tree-vline"></div>`;
                 html += `<div class="tree-children">`;
                 
-                branches.forEach(b => {
+                branches.forEach((b, idx) => {
                     const isWinner = winnerId === b.id;
                     const isFailed = b.status === 'failed' || b.status === 'rejected';
                     const subIterations = childrenByParent[b.id] || [];
@@ -523,7 +523,7 @@ window.ChatApp.Renderer = {
                     html += `<div class="tree-vline"></div>`;
                     html += `
                         <div class="tree-node branch ${isFailed ? 'failed' : ''} ${isWinner ? 'winner' : ''}" title="Branch ${b.id}${b.strategy ? ': ' + b.strategy : ''}${b.score !== undefined ? ' - Score: ' + Math.round(b.score*100) : ''}">
-                            <div class="node-title">${isWinner ? '🏆' : 'B' + String(b.id).split('-').pop().substring(0, 3)}</div>
+                            <div class="node-title">${isWinner ? '🏆' : 'B' + (idx + 1)}</div>
                         </div>
                     `;
 
