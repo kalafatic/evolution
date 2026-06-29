@@ -76,7 +76,7 @@ public final class EvolutionProfile {
                 useTests = false;
                 useImplementation = false;
                 useParallelBranches = true;
-                requireUserSelection = true;
+                requireUserSelection = false;
                 persistBranches = false;
                 requiresRepository = false;
                 shouldPerformRealityCheck = false;
@@ -113,7 +113,7 @@ public final class EvolutionProfile {
         if (intensity == 1) {
             if (capability == CapabilityType.CHAT) {
                 useParallelBranches = true;
-                requireUserSelection = true;
+                requireUserSelection = false;
                 useImplementation = false;
             } else {
                 useParallelBranches = true;
