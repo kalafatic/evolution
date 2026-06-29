@@ -72,23 +72,47 @@ public class ModeRouter {
             new eu.kalafatic.evolution.controller.orchestration.cognitive.CognitiveAnalysisPipeline();
         eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityAnalysis analysis = pipeline.analyze(prompt);
 
+        if (analysis == null || analysis.getWinner() == null) {
+            return createSimpleChatMode();
+        }
+
         return mapToPlatformMode(analysis.getWinner().getCapability());
     }
-    /**
-     * Legacy support for routeFast.
-     */
-//    public PlatformMode routeFast(String prompt, Orchestrator orchestrator) {
-//        return route(prompt, orchestrator);
-//    }
 
     /**
      * Detects or assigns PlatformMode based on user input, orchestrator state, and optional context assist result.
-     * Priority: 1. Session Cognitive State (grounded in history), 2. Pipeline Analysis/Overrides, 3. Model Fallback.
+     * Priority:
+     * 1. Explicit Prompt Overrides (e.g. "mode: chat")
+     * 2. Explicit Orchestrator Model overrides (User UI selection)
+     * 3. Session Cognitive State (grounded in history)
+     * 4. Pipeline Analysis Fallback
      */
     public PlatformMode route(String prompt, Orchestrator orchestrator, ContextAssistResult assistResult) {
         if (prompt == null) prompt = "";
+        String lower = prompt.toLowerCase().trim();
 
-        // 1. Process through Cognitive State Engine if session exists (Conversation Trajectory)
+        // 1. Check explicit prompt overrides first (e.g. "mode: chat")
+        if (lower.contains("mode: chat")) return createSimpleChatMode();
+        if (lower.contains("mode: assisted")) return createAssistedCodingMode();
+        if (lower.contains("mode: darwin")) return createDarwinMode();
+        if (lower.contains("mode: self-dev")) return createSelfDevMode();
+        if (lower.contains("mode: mediated") || lower.contains("analyze target")) return createHybridManualExportMode();
+
+        // 2. Check explicit Orchestrator model overrides (User UI selection)
+        if (orchestrator != null) {
+            if (orchestrator.getAiMode() == eu.kalafatic.evolution.model.orchestration.AiMode.MEDIATED) {
+                return createHybridManualExportMode();
+            }
+            if (orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null &&
+                orchestrator.getAiChat().getPromptInstructions().isSelfIterativeMode()) {
+                return createSelfDevMode();
+            }
+            if (orchestrator.isDarwinMode()) {
+                return createDarwinMode();
+            }
+        }
+
+        // 3. Process through Cognitive State Engine if session exists (Conversation Trajectory)
         String sessionId = (orchestrator != null) ? orchestrator.getId() : null;
         SessionContainer session = (sessionId != null) ? SessionManager.getInstance().getSession(sessionId) : null;
         if (session != null) {
@@ -108,25 +132,8 @@ public class ModeRouter {
             return mapToPlatformMode(cogState.getCurrentCapability());
         }
 
-        // 2. Try explicit overrides or Pipeline analysis (Non-Session Path)
-        PlatformMode fastMode = routeFast(prompt, orchestrator);
-        if (fastMode.getType() != PlatformType.SIMPLE_CHAT) return fastMode;
-
-        // 3. Fallback to model-based routing if no session exists (legacy support)
-        if (orchestrator != null) {
-            if (orchestrator.getAiMode() == eu.kalafatic.evolution.model.orchestration.AiMode.MEDIATED) {
-                return createHybridManualExportMode();
-            }
-            if (orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null &&
-                orchestrator.getAiChat().getPromptInstructions().isSelfIterativeMode()) {
-                return createSelfDevMode();
-            }
-            if (orchestrator.isDarwinMode()) {
-                return createDarwinMode();
-            }
-        }
-
-        return fastMode; // This is SIMPLE_CHAT
+        // 4. Fallback to Pipeline analysis (Non-Session Path)
+        return routeFast(prompt, orchestrator);
     }
 
     private PlatformMode mapToPlatformMode(CapabilityType capability) {

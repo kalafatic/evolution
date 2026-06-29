@@ -158,11 +158,14 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 	    if (intent.isChat()) {
 	        context.log("[DARWIN] CHAT detected. Using minimal evolution.");
 	        state.getMetadata().put("isChatRequest", true);
+
 	        // Set CHAT profile
 	        EvolutionProfile chatProfile = EvolutionProfile.create(CapabilityType.CHAT, 1);
 	        context.getOrchestrationState().setExecutionProfile(chatProfile);
-	        state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(EvolutionPhase.TERMINAL_SUCCESS));
-	        state.setIterationCount(1);
+
+	        // CHAT FLOW FIX: Start at synthesis phase to allow one-pass generation
+	        state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(EvolutionPhase.FINAL_SYNTHESIS));
+	        state.setIterationCount(0);
 
 	    } else if (intent.isControl()) {
 	        context.log("[DARWIN] CONTROL detected.");
@@ -236,6 +239,11 @@ public class DarwinEngine extends BaseAiAgent implements ICapability, IMutationC
 				// Clear any cached intent expansion to force fresh analysis
 				state.getMetadata().remove("intentExpansion");
 				state.getMetadata().remove("engineeringDimensions");
+				state.getMetadata().remove("goalModel");
+				state.getMetadata().remove("semanticEnvelope");
+				state.getMetadata().remove("lastDecisionSnapshot");
+				state.getMetadata().remove("isChatRequest");
+				state.setLockedAbstractionLevel(null);
 			}
 			state.setRawInput(request);
 			state.getMetadata().put("checkpoint_goal", request);

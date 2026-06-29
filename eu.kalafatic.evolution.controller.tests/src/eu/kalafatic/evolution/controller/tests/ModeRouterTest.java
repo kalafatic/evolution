@@ -122,6 +122,7 @@ public class ModeRouterTest {
     @Test
     public void testRouteFastUnknown() {
         PlatformMode mode = router.routeFast("What is the capital of France?", orchestrator);
-        assertNull(mode);
+        assertNotNull(mode);
+        assertEquals(PlatformType.SIMPLE_CHAT, mode.getType());
     }
 }

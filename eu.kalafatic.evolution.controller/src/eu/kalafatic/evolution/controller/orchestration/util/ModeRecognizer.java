@@ -52,6 +52,12 @@ public class ModeRecognizer {
     
     public boolean isChatMode(TaskContext context) {
         try {
+            // 1. FAST-PATH: Check metadata flag if already analyzed
+            Object isChat = context.getOrchestrationState().getMetadata().get("isChatRequest");
+            if (isChat instanceof Boolean) {
+                return (Boolean) isChat;
+            }
+
             String rawInput = context.getOrchestrationState().getRawInput();
             if (rawInput == null || rawInput.trim().isEmpty()) {
                 return false;
