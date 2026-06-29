@@ -8,11 +8,13 @@ import java.util.regex.Pattern;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import eu.kalafatic.evolution.controller.agents.PromptIntentAnalyzer;
 import eu.kalafatic.evolution.controller.orchestration.AiService;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionProgressPublisher;
 import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.goal.GoalModel;
+import eu.kalafatic.evolution.controller.orchestration.goal.GoalUnderstandingEngine;
 import eu.kalafatic.evolution.controller.orchestration.util.ModeRecognizer;
 import eu.kalafatic.evolution.controller.orchestration.util.ModelCapability;
 import eu.kalafatic.evolution.controller.orchestration.util.ModelCapabilityDetector;
@@ -21,7 +23,7 @@ public class DynamicSiblingGenerator {
     
     private final SessionContainer container;
     private final AiService aiService;
-    private final IntentAnalyzer intentAnalyzer;
+    private final PromptIntentAnalyzer intentAnalyzer;
     private final PromptOptimizer promptOptimizer;
     private final ModelCapabilityDetector capabilityDetector;
     
@@ -29,8 +31,8 @@ public class DynamicSiblingGenerator {
         this.container = container;
         this.aiService = aiService;
         
-        // Initialize the analyzers with the container
-        this.intentAnalyzer = new IntentAnalyzer(container);
+        // Initialize the unified analyzers with the container
+        this.intentAnalyzer = new PromptIntentAnalyzer(container, null);
         this.intentAnalyzer.setAiService(aiService);
         
         this.promptOptimizer = new PromptOptimizer( container);
@@ -48,14 +50,24 @@ public class DynamicSiblingGenerator {
         
         boolean isMediated = ModeRecognizer.isMediatedMode(context);
 
-        // STEP 1: Analyze intent
+        // STEP 1: Analyze intent using unified PromptIntentAnalyzer
         context.log("[DYNAMIC] Analyzing user intent...");
-        IntentProfile intent = intentAnalyzer.analyzeIntent(userRequest, context);
-        context.log("[DYNAMIC] Intent: " + intent.primaryGoal + " | Complexity: " + intent.complexity);
+        PromptIntentAnalyzer.IntentResult intentResult = intentAnalyzer.analyze(userRequest, context);
+        context.log("[DYNAMIC] Intent: " + intentResult.getCategory() + " | SubIntent: " + intentResult.getSubIntent());
+
+        // Map unified result to IntentProfile for backward compatibility with PromptOptimizer
+        IntentProfile profile = new IntentProfile();
+        profile.primaryGoal = goal.getPrimaryAction();
+        profile.complexity = goal.getComplexity();
+        profile.domain = goal.getDomain();
+        profile.artifactType = intentResult.getTargetArtifact() != null ?
+                intentResult.getTargetArtifact() : goal.getRequestedArtifact();
+        profile.abstractionLevel = context.getOrchestrationState().getLockedAbstractionLevel() != null ?
+                context.getOrchestrationState().getLockedAbstractionLevel().name() : "IMPLEMENTATION";
         
         // STEP 2: Optimize prompt based on intent
         context.log("[DYNAMIC] Optimizing prompt for intent...");
-        PromptStrategy strategy = promptOptimizer.optimizePrompt(intent, context);
+        PromptStrategy strategy = promptOptimizer.optimizePrompt(profile, context);
 
         // MANDATE: Enforce target population for Darwinian search
         int siblingCount = Math.max(strategy.siblingCount, targetPopulation);
@@ -82,7 +94,7 @@ public class DynamicSiblingGenerator {
         // Ensure we have at least one variant
         if (variants.isEmpty()) {
             context.log("[DYNAMIC] No valid variants generated. Creating fallback.");
-            JSONObject fallback = createFallbackVariant(intent, context);
+            JSONObject fallback = createFallbackVariant(profile, context);
             variants.add(fallback);
         }
         
