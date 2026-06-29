@@ -65,8 +65,11 @@ public class ModeRecognizer {
             PromptIntentAnalyzer.IntentResult result = analyzer.analyze(rawInput, context);
             return result.isChat();
         } catch (Exception e) {
-            context.log("[ModeRecognizer] LLM analysis failed: " + e.getMessage());
-            return isConversationalInput(context.getOrchestrationState().getRawInput());
+            context.log("[ModeRecognizer] [CRITICAL] LLM analysis failed for chat mode detection: " + e.getMessage());
+            // DEFAULT FALLBACK: If LLM fails, we MUST be conservative and assume TASK
+            // unless the input is exceptionally short and non-technical.
+            String rawInput = context.getOrchestrationState().getRawInput();
+            return (rawInput != null && rawInput.trim().length() < 15 && !rawInput.toLowerCase().contains("code"));
         }
     }
     
@@ -87,26 +90,5 @@ public class ModeRecognizer {
             context.log("[ModeRecognizer] Failed to create analyzer: " + e.getMessage());
             return null;
         }
-    }
-    
-    private boolean isConversationalInput(String input) {
-        if (input == null || input.isEmpty()) {
-            return false;
-        }
-        String lower = input.toLowerCase().trim();
-        
-        if (lower.matches("^(hi|hello|hey|greetings|howdy|sup|yo|what's up|how are you).*")) {
-            return true;
-        }
-        if (lower.matches("^(what|why|when|where|who|how|can you|will you|do you|is it|are you).*")) {
-            if (!lower.matches(".*(code|class|method|function|implement|generate|create|write|build|print).*")) {
-                return true;
-            }
-        }
-        if (lower.length() < 30 && 
-            !lower.matches(".*(create|generate|write|implement|build|class|method|function|code|print).*")) {
-            return true;
-        }
-        return false;
     }
 }

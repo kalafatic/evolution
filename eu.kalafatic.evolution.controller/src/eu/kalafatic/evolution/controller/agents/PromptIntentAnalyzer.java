@@ -22,19 +22,18 @@ public class PromptIntentAnalyzer extends BaseAiAgent {
 
     private static final String SYSTEM_INSTRUCTION = 
         "You are a Prompt Intent Analyzer for an evolutionary AI coding platform called EVO.\n\n" +
-        "Your task is to classify user prompts into EXACTLY ONE of these categories:\n\n" +
-        "1. CHAT - Pure conversation: greetings, small talk, non-technical questions, " +
-        "explanations, clarifications that do NOT request code changes.\n" +
-        "2. TASK - Code-related work: creating, modifying, refactoring, debugging, " +
-        "analyzing, optimizing, or any action that changes code or architecture.\n" +
-        "3. CONTROL - UI commands: 'select variant X', 'approve', 'reject', " +
-        "'keep variant', 'force solution', 'proceed', 'yes', 'no'.\n\n" +
+        "Your task is to classify user prompts into EXACTLY ONE of these categories based on their SEMANTIC INTENT, not just keywords.\n\n" +
+        "1. CHAT - Pure conversation, meta-discussion about the project, or general knowledge inquiry.\n" +
+        "   - Semantic Markers: Greetings, status checks, non-technical explanations, philosophy, or questions that DO NOT imply modifying the current codebase.\n" +
+        "2. TASK - Any request that implies changing, creating, analyzing, or optimizing code or architecture.\n" +
+        "   - Semantic Markers: Requests for implementation, refactoring, bug fixes, adding features, or deep technical analysis of specific project components.\n" +
+        "3. CONTROL - Explicit system commands or workflow decisions.\n" +
+        "   - Semantic Markers: Approval/rejection of variants, selection of specific paths, process steering, or confirmation of automated actions.\n\n" +
         "CRITICAL RULES:\n" +
-        "- 'hi', 'hello', 'how are you' → CHAT\n" +
-        "- 'create java class which can print text' → TASK (it's about code)\n" +
-        "- 'select v0' → CONTROL\n" +
-        "- If uncertain, bias toward TASK (better to evolve than to ignore)\n" +
-        "- Provide confidence score (0.0-1.0) and reasoning";
+        "- Avoid reliance on specific keywords (e.g., 'code', 'class'); instead, look for the underlying action requested.\n" +
+        "- If the user expresses an intent to perform technical work, even without naming specific artifacts, classify as TASK.\n" +
+        "- If uncertain between CHAT and TASK, bias toward TASK to ensure the evolutionary engine is engaged.\n" +
+        "- Provide confidence score (0.0-1.0) and a deep semantic reasoning for your choice.";
 
     private static final String OUTPUT_SCHEMA = 
         "{\n" +
@@ -123,15 +122,6 @@ public class PromptIntentAnalyzer extends BaseAiAgent {
             category = IntentCategory.TASK;
         }
 
-        // 7. Safety net: if LLM said CHAT but prompt has code keywords, upgrade
-        String lower = prompt.toLowerCase();
-        if (category == IntentCategory.CHAT && containsCodeKeywords(lower)) {
-            context.log("[INTENT] Override: LLM said CHAT but prompt contains code keywords. Upgrading to TASK.");
-            category = IntentCategory.TASK;
-            confidence = Math.min(confidence + 0.2, 1.0);
-            reasoning = "Overridden: Code keywords detected: " + reasoning;
-        }
-
         IntentResult result = new IntentResult(category, confidence, reasoning, subIntent, targetArtifact);
 
         // 8. Cache result
@@ -206,25 +196,6 @@ public class PromptIntentAnalyzer extends BaseAiAgent {
         return sb.toString();
     }
 
-    /**
-     * Safety net: checks if prompt contains code keywords.
-     */
-    private boolean containsCodeKeywords(String lower) {
-        String[] keywords = {
-            "class", "method", "function", "interface", "enum",
-            "create", "generate", "implement", "build",
-            "print", "return", "public", "private", "static",
-            "void", "import", "package", "src/", "src\\",
-            ".java", ".py", ".js", ".cpp", ".go", ".rs", ".ts",
-            "refactor", "debug", "optimize", "migrate", "restructure"
-        };
-        for (String kw : keywords) {
-            if (lower.contains(kw)) {
-                return true;
-            }
-        }
-        return false;
-    }
 
     // ============================================================
     // INNER CLASSES

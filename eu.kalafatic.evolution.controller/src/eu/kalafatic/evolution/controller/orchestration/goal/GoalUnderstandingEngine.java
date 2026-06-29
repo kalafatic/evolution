@@ -46,31 +46,7 @@ public class GoalUnderstandingEngine extends BaseAiAgent {
         context.log("[GOAL UNDERSTANDING] Analyzing user prompt: " + prompt);
 
         // ============================================================
-        // FAST‑PATH: Detect pure chat prompts
-        // Everything still goes through LLM EXCEPT these trivial greetings
-        // ============================================================
-        String trimmed = prompt == null ? "" : prompt.trim().toLowerCase();
-       
-        if (new ModeRecognizer(sessionContainer).isChatMode(context)) {
-            context.log("[GOAL UNDERSTANDING] Fast‑path: CHAT detected. Returning chat‑friendly GoalModel.");
-
-            GoalModel chatModel = new GoalModel();
-            chatModel.setGoalType("CHAT");
-            chatModel.setDomain("GENERAL");
-            chatModel.setIntent("RESPOND");
-            chatModel.setRequestedArtifact("conversation");
-            chatModel.setPrimaryAction(generateChatAction(trimmed));
-            chatModel.setComplexity("SIMPLE");
-            chatModel.setRequiredOutputs("conversational response");
-            chatModel.setConfidence(1.0);
-            chatModel.setAmbiguity(0.0);
-
-            context.log("[GOAL UNDERSTANDING] Derived Goal Model (CHAT fast‑path): " + chatModel.toString());
-            return chatModel;
-        }
-
-        // ============================================================
-        // NORMAL FLOW: LLM‑based goal extraction for tasks
+        // LLM‑based goal extraction for all prompts (no hard-coded fast-paths)
         // ============================================================
         String systemPrompt = getAgentInstructions() + "\n\n" + getFooterInstructions();
         String userPrompt = "Parse the following user request into a GoalModel:\n\n" + prompt;
@@ -94,23 +70,4 @@ public class GoalUnderstandingEngine extends BaseAiAgent {
         return model;
     }
 
-    // ============================================================
-    // PRIVATE HELPERS
-    // ============================================================
-
-    private String generateChatAction(String trimmed) {
-        if (trimmed.matches("^(hi|hello|hey|good morning|good afternoon|good evening|howdy|greetings|yo|sup)$")) {
-            return "respond to greeting";
-        }
-        if (trimmed.matches("^(how are you|how are you doing|how's it going|what's up|whats up)$")) {
-            return "respond to status inquiry";
-        }
-        if (trimmed.matches("^(thanks|thank you|thx|ty|great|awesome|nice|sure|fine)$")) {
-            return "respond to acknowledgment";
-        }
-        if (trimmed.matches("^(goodbye|bye|see you|see ya)$")) {
-            return "respond to farewell";
-        }
-        return "respond conversationally";
-    }
 }
