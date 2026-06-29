@@ -72,13 +72,12 @@ public class DynamicSiblingGenerator {
 		PromptStrategy strategy = promptOptimizer.optimizePrompt(profile, context);
 
 		// MANDATE: Enforce target population for Darwinian search
-		int siblingCount = Math.max(strategy.siblingCount, targetPopulation);
+		int siblingCount = targetPopulation;
 		context.log("[DYNAMIC] Using format: " + strategy.format + " | Siblings: " + siblingCount);
 		
 		
 		if (isMediated) {
 		    strategy.format = "MEDIATED";
-		    strategy.siblingCount = Math.max(targetPopulation, 3);
 		}
 
 		// STEP 3: Detect model capability
