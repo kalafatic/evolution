@@ -3023,13 +3023,22 @@ public interface OrchestrationPackage extends EPackage {
 	int SUPERVISOR_SETTINGS__SETTINGS = 4;
 
 	/**
+	 * The feature id for the '<em><b>Git</b></em>' reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int SUPERVISOR_SETTINGS__GIT = 5;
+
+	/**
 	 * The number of structural features of the '<em>Supervisor Settings</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int SUPERVISOR_SETTINGS_FEATURE_COUNT = 5;
+	int SUPERVISOR_SETTINGS_FEATURE_COUNT = 6;
 
 	/**
 	 * The number of operations of the '<em>Supervisor Settings</em>' class.
@@ -6657,6 +6666,17 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getSupervisorSettings_Settings();
 
 	/**
+	 * Returns the meta object for the containment reference '{@link eu.kalafatic.evolution.model.orchestration.SupervisorSettings#getGit <em>Git</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference '<em>Git</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.SupervisorSettings#getGit()
+	 * @see #getSupervisorSettings()
+	 * @generated
+	 */
+	EReference getSupervisorSettings_Git();
+
+	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.ReviewSession <em>Review Session</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -9615,6 +9635,14 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute SUPERVISOR_SETTINGS__SETTINGS = eINSTANCE.getSupervisorSettings_Settings();
+
+		/**
+		 * The meta object literal for the '<em><b>Git</b></em>' containment reference feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference SUPERVISOR_SETTINGS__GIT = eINSTANCE.getSupervisorSettings_Git();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ReviewSessionImpl <em>Review Session</em>}' class.

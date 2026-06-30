@@ -69,7 +69,7 @@ public class GitSettingsPage extends AWizardPage {
         new Label(container, SWT.NONE).setText("Repository URL:");
         repoUrlText = new Text(container, SWT.BORDER);
         repoUrlText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        repoUrlText.setText("https://github.com/kalafatic/evo.git");
+        repoUrlText.setText("https://github.com/kalafatic/evolution/");
 
 
         gitDecorator = new ControlDecoration(repoUrlText, SWT.TOP | SWT.LEFT);
@@ -231,7 +231,7 @@ public class GitSettingsPage extends AWizardPage {
 
     private void testConnection() {
         String url = repoUrlText.getText();
-        if (url == null || url.isEmpty() || url.equals("https://github.com/kalafatic/evo.git")) {
+        if (url == null || url.isEmpty() || url.equals("https://github.com/kalafatic/evolution/")) {
             org.eclipse.jface.dialogs.MessageDialog.openWarning(getShell(), "Git Test", "Please enter a valid repository URL first.");
             return;
         }

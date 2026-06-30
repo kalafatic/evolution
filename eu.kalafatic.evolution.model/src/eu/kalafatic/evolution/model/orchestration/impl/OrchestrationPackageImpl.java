@@ -125,6 +125,16 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
+	public EReference getSupervisorSettings_Git() {
+		return (EReference)supervisorSettingsEClass.getEStructuralFeatures().get(5);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public EReference getOrchestrator_ForgeSessions() {
 		return (EReference)orchestratorEClass.getEStructuralFeatures().get(34);
 	}
@@ -4755,6 +4765,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEAttribute(getSupervisorSettings_SourcePath(), ecorePackage.getEString(), "sourcePath", null, 0, 1, SupervisorSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getSupervisorSettings_Commands(), ecorePackage.getEString(), "commands", null, 0, 1, SupervisorSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getSupervisorSettings_Settings(), ecorePackage.getEString(), "settings", null, 0, 1, SupervisorSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getSupervisorSettings_Git(), this.getGit(), null, "git", null, 0, 1, SupervisorSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(reviewSessionEClass, ReviewSession.class, "ReviewSession", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getReviewSession_Id(), ecorePackage.getEString(), "id", null, 0, 1, ReviewSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
