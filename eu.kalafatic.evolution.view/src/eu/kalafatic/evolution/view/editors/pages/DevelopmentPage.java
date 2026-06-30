@@ -18,6 +18,8 @@ import org.eclipse.swt.browser.LocationAdapter;
 import org.eclipse.swt.browser.LocationEvent;
 import org.eclipse.swt.browser.ProgressAdapter;
 import org.eclipse.swt.browser.ProgressEvent;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -50,6 +52,7 @@ import eu.kalafatic.utils.constants.FUIConstants;
 import eu.kalafatic.evolution.view.application.Activator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.development.InteractiveWorkflowGroup;
+import eu.kalafatic.evolution.view.editors.pages.development.RowEditDialog;
 import eu.kalafatic.evolution.view.editors.pages.development.SupervisorGroup;
 import eu.kalafatic.evolution.view.editors.pages.development.VizGroup;
 import eu.kalafatic.evolution.view.editors.pages.iteration.SelfDevEditDialog;
@@ -66,14 +69,18 @@ public class DevelopmentPage extends AEvoPage {
         public static final String GENOME_CHECK = "Genome Check";
         public static final String PERM_CHECK = "Permissions Check";
 
+        public int order;
+        public boolean selected;
         public String name;
         public String path;
         public String status;
 
-        public SelfDevRow(String name, String path, String status) {
+        public SelfDevRow(int order, String name, String path, String status) {
+            this.order = order;
             this.name = name;
             this.path = path;
             this.status = status;
+            this.selected = false;
         }
     }
 
@@ -160,7 +167,7 @@ public class DevelopmentPage extends AEvoPage {
         sessionStatusLabel.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false));
         sessionProgressLabel = toolkit.createLabel(sdStatusComp, "Progress: 0%");
 
-        selfDevTable = new TableViewer(selfDevComp, SWT.BORDER | SWT.FULL_SELECTION);
+        selfDevTable = new TableViewer(selfDevComp, SWT.BORDER | SWT.FULL_SELECTION | SWT.CHECK);
         Table sdTable = selfDevTable.getTable();
         sdTable.setHeaderVisible(true);
         sdTable.setLinesVisible(true);
@@ -170,15 +177,46 @@ public class DevelopmentPage extends AEvoPage {
 
         createSelfDevColumns();
         selfDevTable.setContentProvider(ArrayContentProvider.getInstance());
+        selfDevTable.getTable().addListener(SWT.Selection, event -> {
+            if (event.detail == SWT.CHECK) {
+                SelfDevRow row = (SelfDevRow) event.item.getData();
+                row.selected = ((org.eclipse.swt.widgets.TableItem) event.item).getChecked();
+            }
+        });
+
         List<SelfDevRow> sdData = new ArrayList<>();
-        sdData.add(new SelfDevRow(SelfDevRow.SELF_DEV_LOOP, "orchestrator", "ready"));
-        sdData.add(new SelfDevRow(SelfDevRow.EVO_RCP, "/xx/", "ready"));
-        sdData.add(new SelfDevRow(SelfDevRow.GIT_CHECK, "supervisor.git", "ready"));
-        sdData.add(new SelfDevRow(SelfDevRow.MAVEN_CHECK, "supervisor.maven", "ready"));
-        sdData.add(new SelfDevRow(SelfDevRow.LLM_CHECK, "supervisor.llm", "ready"));
-        sdData.add(new SelfDevRow(SelfDevRow.GENOME_CHECK, "supervisor.genome", "ready"));
-        sdData.add(new SelfDevRow(SelfDevRow.PERM_CHECK, "supervisor.fs", "ready"));
+        sdData.add(new SelfDevRow(1, SelfDevRow.SELF_DEV_LOOP, "orchestrator", "ready"));
+        sdData.add(new SelfDevRow(2, SelfDevRow.EVO_RCP, "/xx/", "ready"));
+        sdData.add(new SelfDevRow(3, SelfDevRow.GIT_CHECK, "supervisor.git", "ready"));
+        sdData.add(new SelfDevRow(4, SelfDevRow.MAVEN_CHECK, "supervisor.maven", "ready"));
+        sdData.add(new SelfDevRow(5, SelfDevRow.LLM_CHECK, "supervisor.llm", "ready"));
+        sdData.add(new SelfDevRow(6, SelfDevRow.GENOME_CHECK, "supervisor.genome", "ready"));
+        sdData.add(new SelfDevRow(7, SelfDevRow.PERM_CHECK, "supervisor.fs", "ready"));
         selfDevTable.setInput(sdData);
+
+        // 1.2 Control Panel
+        Composite sdControlPanel = toolkit.createComposite(selfDevComp);
+        sdControlPanel.setLayout(new GridLayout(3, false));
+        sdControlPanel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        Button runSelectedBtn = GUIFactory.INSTANCE.createButton(sdControlPanel, "▶ Run Selected");
+        runSelectedBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                runSelected();
+            }
+        });
+
+        Button stepModeCheck = toolkit.createButton(sdControlPanel, "Step Mode", SWT.CHECK);
+        stepModeCheck.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                java.util.Map<String, Object> settings = new java.util.HashMap<>();
+                settings.put("stepMode", stepModeCheck.getSelection());
+                RuntimeProjection projection = ProjectionService.getInstance().getProjection(getCurrentSessionName());
+                projection.getConfiguration().putAll(settings);
+            }
+        });
 
         sdTable.addListener(SWT.MouseDown, event -> {
             org.eclipse.swt.graphics.Point pt = new org.eclipse.swt.graphics.Point(event.x, event.y);
@@ -246,11 +284,11 @@ public class DevelopmentPage extends AEvoPage {
                         return "\u25B6"; // play
                     }
                 case 1: // Edit
-                    if (SelfDevRow.SELF_DEV_LOOP.equals(row.name) || row.name.endsWith("Check")) return "\u270E";
-                    return "";
-                case 2: return row.name;
-                case 3: return row.path;
-                case 4: return row.status;
+                    return "\u270E";
+                case 2: return String.valueOf(row.order);
+                case 3: return row.name;
+                case 4: return row.path;
+                case 5: return row.status;
                 default: return "";
             }
         }
@@ -289,8 +327,8 @@ public class DevelopmentPage extends AEvoPage {
     }
 
     private void createSelfDevColumns() {
-        String[] titles = { "Action", "Edit", "Name", "Path/URL", "Status" };
-        int[] bounds = { 100, 50, 150, 250, 150 };
+        String[] titles = { "Action", "Edit", "#", "Name", "Path/URL", "Status" };
+        int[] bounds = { 100, 50, 40, 150, 250, 150 };
 
         for (int i = 0; i < titles.length; i++) {
             TableViewerColumn col = createTableViewerColumn(selfDevTable, titles[i], bounds[i], i);
@@ -322,45 +360,62 @@ public class DevelopmentPage extends AEvoPage {
 
     private void handleSelfDevAction(SelfDevRow row, int columnIndex) {
         if (columnIndex == 0) { // Action
-            if (SelfDevRow.SELF_DEV_LOOP.equals(row.name)) {
-                RuntimeProjection projection = ProjectionService.getInstance().getProjection(getCurrentSessionName());
-                if (projection.isRunning()) {
-                    OrchestratorServiceImpl.getInstance().shutdownSession(getCurrentSessionName());
-                } else {
-                    TaskRequest request = new TaskRequest("Start Self-Dev Bootstrap", projectRoot);
-                    request.getContext().put("orchestrator", orchestrator);
-                    request.getContext().put("sessionId", getCurrentSessionName());
-                    OrchestratorServiceImpl.getInstance().submit(getCurrentSessionName(), request);
-                }
-            } else if (SelfDevRow.GIT_CHECK.equals(row.name)) {
-                row.status = bootstrapController.check("GIT");
-                selfDevTable.refresh(row);
-            } else if (SelfDevRow.MAVEN_CHECK.equals(row.name)) {
-                row.status = bootstrapController.check("MAVEN");
-                selfDevTable.refresh(row);
-            } else if (SelfDevRow.LLM_CHECK.equals(row.name)) {
-                row.status = bootstrapController.check("LLM");
-                selfDevTable.refresh(row);
-            } else if (SelfDevRow.GENOME_CHECK.equals(row.name)) {
-                row.status = bootstrapController.check("GENOME");
-                selfDevTable.refresh(row);
-            } else if (SelfDevRow.PERM_CHECK.equals(row.name)) {
-                row.status = bootstrapController.check("PERMISSIONS");
-                selfDevTable.refresh(row);
-            } else {
-                if ("running".equals(row.status)) {
-                    row.status = "paused";
-                } else if ("paused".equals(row.status)) {
-                    row.status = "running";
-                } else {
-                    row.status = "running";
-                }
-                selfDevTable.refresh(row);
-            }
+            handleActionInternal(row);
         } else if (columnIndex == 1) { // Edit
-            if (SelfDevRow.SELF_DEV_LOOP.equals(row.name) || row.name.endsWith("Check")) {
+            if (SelfDevRow.SELF_DEV_LOOP.equals(row.name)) {
                 openSelfDevEditDialog();
+            } else {
+                openRowEditDialog(row);
             }
+        }
+    }
+
+    private void openRowEditDialog(SelfDevRow row) {
+        RowEditDialog dialog = new RowEditDialog(getShell(), row);
+        if (dialog.open() == org.eclipse.jface.window.Window.OK) {
+            selfDevTable.refresh(row);
+            setDirty(true);
+        }
+    }
+
+    private void runSelected() {
+        Object input = selfDevTable.getInput();
+        if (input instanceof List) {
+            List<SelfDevRow> rows = (List<SelfDevRow>) input;
+            for (SelfDevRow row : rows) {
+                if (row.selected) {
+                    handleActionInternal(row);
+                }
+            }
+        }
+    }
+
+    private void handleActionInternal(SelfDevRow row) {
+        if (SelfDevRow.SELF_DEV_LOOP.equals(row.name)) {
+            RuntimeProjection projection = ProjectionService.getInstance().getProjection(getCurrentSessionName());
+            if (projection.isRunning()) {
+                OrchestratorServiceImpl.getInstance().shutdownSession(getCurrentSessionName());
+            } else {
+                TaskRequest request = new TaskRequest("Start Self-Dev Bootstrap", projectRoot);
+                request.getContext().put("orchestrator", orchestrator);
+                request.getContext().put("sessionId", getCurrentSessionName());
+                OrchestratorServiceImpl.getInstance().submit(getCurrentSessionName(), request);
+            }
+        } else if (SelfDevRow.GIT_CHECK.equals(row.name)) {
+            row.status = bootstrapController.check("GIT");
+            selfDevTable.refresh(row);
+        } else if (SelfDevRow.MAVEN_CHECK.equals(row.name)) {
+            row.status = bootstrapController.check("MAVEN");
+            selfDevTable.refresh(row);
+        } else if (SelfDevRow.LLM_CHECK.equals(row.name)) {
+            row.status = bootstrapController.check("LLM");
+            selfDevTable.refresh(row);
+        } else if (SelfDevRow.GENOME_CHECK.equals(row.name)) {
+            row.status = bootstrapController.check("GENOME");
+            selfDevTable.refresh(row);
+        } else if (SelfDevRow.PERM_CHECK.equals(row.name)) {
+            row.status = bootstrapController.check("PERMISSIONS");
+            selfDevTable.refresh(row);
         }
     }
 
