@@ -1,48 +1,49 @@
 package eu.kalafatic.evolution.view.views;
 
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.ResourcesPlugin;
-import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.core.runtime.IStatus;
-import org.eclipse.core.runtime.Status;
+import org.eclipse.jface.action.Action;
+import org.eclipse.jface.action.IMenuManager;
+import org.eclipse.jface.action.IToolBarManager;
+import org.eclipse.jface.action.Separator;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Tree;
+import org.eclipse.ui.IActionBars;
+import org.eclipse.ui.IWorkbenchActionConstants;
 import org.eclipse.jface.viewers.CellEditor;
 import org.eclipse.jface.viewers.ColumnLabelProvider;
 import org.eclipse.jface.viewers.DelegatingStyledCellLabelProvider;
 import org.eclipse.jface.viewers.DelegatingStyledCellLabelProvider.IStyledLabelProvider;
 import org.eclipse.jface.viewers.EditingSupport;
-import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TextCellEditor;
 import org.eclipse.jface.viewers.TreeViewerColumn;
+import eu.kalafatic.evolution.view.provider.OrchestrationNavigatorContentProvider.ModelProperty;
+import org.eclipse.jface.viewers.ITreeContentProvider;
+import org.eclipse.ui.IDecoratorManager;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerFilter;
-import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Text;
-import org.eclipse.swt.widgets.Tree;
-import org.eclipse.ui.IDecoratorManager;
+import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.navigator.CommonNavigator;
-import org.eclipse.ui.progress.UIJob;
 
-import eu.kalafatic.evolution.view.provider.OrchestrationNavigatorContentProvider.ModelProperty;
-
-public class EvoNavigator extends CommonNavigator {
+public class EvoNavigator5 extends CommonNavigator {
 
 	/** The lock. */
 	private final Lock lock = new ReentrantLock(true);
-	
-	private final AtomicBoolean refreshScheduled = new AtomicBoolean(false);
 
-	public EvoNavigator() {
+	public EvoNavigator5() {
 		super();
 	}
 
@@ -173,61 +174,83 @@ public class EvoNavigator extends CommonNavigator {
 	/**
 	 * Refresh and expand to the given resource.
 	 */
+//	public void refreshAndExpand(IResource resource) {
+//		if (lock.tryLock()) {
+//			try {
+//				Display.getDefault().asyncExec(() -> {
+//					if (getCommonViewer() != null && !getCommonViewer().getControl().isDisposed()) {
+//						getCommonViewer().refresh();
+//						if (resource != null) {
+//							getCommonViewer().setSelection(new StructuredSelection(resource), true);
+//							getCommonViewer().expandAll();
+//						}
+//
+//						// Trigger decorator refresh
+//						IDecoratorManager decoratorManager = PlatformUI.getWorkbench().getDecoratorManager();
+//						decoratorManager.update("eu.kalafatic.evolution.view.evoLabelDecorator");
+//					}
+//				});
+//			} finally {
+//				lock.unlock();
+//			}
+//		}
+//	}
+	
 	public void refreshAndExpand(IResource resource) {
-		if (!refreshScheduled.compareAndSet(false, true)) {
-			return;
-		}
-
-		UIJob job = new UIJob("Refresh and Expand Navigator") {
-			@Override
-			public IStatus runInUIThread(IProgressMonitor monitor) {
-				refreshScheduled.set(false);
-				try {
-					if (getCommonViewer() != null && !getCommonViewer().getControl().isDisposed()) {
-						getCommonViewer().refresh();
-						if (resource != null) {
-							getCommonViewer().setSelection(new StructuredSelection(resource), true);
-							getCommonViewer().expandToLevel(resource, 1);
-						}
-
-						// Trigger decorator refresh
-						IDecoratorManager decoratorManager = PlatformUI.getWorkbench().getDecoratorManager();
-						decoratorManager.update("eu.kalafatic.evolution.view.evoLabelDecorator");
-					}
-				} catch (Exception e) {
-					// Ignore
-				}
-				return Status.OK_STATUS;
-			}
-		};
-		job.schedule(250);
+	    if (lock.tryLock()) {
+	        try {
+	            Display.getDefault().asyncExec(() -> {
+	                if (getCommonViewer() != null && !getCommonViewer().getControl().isDisposed()) {
+	                    // CRITICAL: Use false to prevent structural refresh
+	                    getCommonViewer().refresh(false);
+	                    
+	                    if (resource != null) {
+	                        // Use reveal FIRST, then selection
+	                        getCommonViewer().reveal(resource);
+	                        // Don't fire selection events (false parameter)
+	                        getCommonViewer().setSelection(new StructuredSelection(resource), false);
+	                        // Don't use expandAll() - it's expensive and can trigger events
+	                        // getCommonViewer().expandAll(); // REMOVE THIS!
+	                    }
+	                }
+	            });
+	        } finally {
+	            lock.unlock();
+	        }
+	    }
 	}
 
 	/**
 	 * Refresh.
 	 */
 	public void refresh() {
-		if (!refreshScheduled.compareAndSet(false, true)) {
-			return;
-		}
-
-		UIJob job = new UIJob("Refresh Navigator") {
-			@Override
-			public IStatus runInUIThread(IProgressMonitor monitor) {
-				refreshScheduled.set(false);
-				try {
-					if (getCommonViewer() != null && !getCommonViewer().getControl().isDisposed()
-							&& getCommonViewer().getControl().isVisible()) {
-						getCommonViewer().refresh();
-					}
-				} catch (Exception e) {
-					// Ignore
-				}
-				return Status.OK_STATUS;
+		if (lock.tryLock()) {
+			try {
+				Display.getDefault().asyncExec(refresh);
+			} finally {
+				lock.unlock();
 			}
-		};
-		job.schedule(250);
+		}
 	}
+
+	/** The refresh. */
+	private final Runnable refresh = new Runnable() {
+		@Override
+		public void run() {
+			lock.lock();
+			try {
+				if (getCommonViewer() != null && getCommonViewer().getControl() != null && !getCommonViewer().getControl().isDisposed()
+						&& getCommonViewer().getControl().isVisible()) {
+
+					getCommonViewer().refresh();
+				}
+			} catch (Exception e) {
+				// e.printStackTrace();
+			} finally {
+				lock.unlock();
+			}
+		}
+	};
 
 	@Override
 	public void setFocus() {

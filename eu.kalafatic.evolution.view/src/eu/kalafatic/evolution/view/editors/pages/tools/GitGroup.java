@@ -28,6 +28,12 @@ public class GitGroup extends AToolGroup {
     private Text gitRepoText, gitBranchText, gitUsernameText, gitPasswordText;
     private Combo gitLocalPathText;
     private Text branchNameText, commitMsgText;
+    private Git git;
+    
+    private Text gitRepoTextEvo, gitBranchTextEvo, gitUsernameTextEvo, gitPasswordTextEvo;
+    private Combo gitLocalPathTextEvo;
+    private Text branchNameTextEvo, commitMsgTextEvo;
+    private Git gitEvo;
 
     public GitGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, Color successColor) {
         super(editor, orchestrator, successColor);
@@ -35,29 +41,35 @@ public class GitGroup extends AToolGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Git Tool Settings", 3, true);
-        GUIFactory.INSTANCE.createLabel(group, "Repository URL:");
-        gitRepoText = GUIFactory.INSTANCE.createText(group);
+        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Git Tool Settings", 2, true);      
+        
+        createGitControllsEvolution(GUIFactory.INSTANCE.createGroup(group, "Evolution (Codebase)", 3));
+        createGitControllsEvo(GUIFactory.INSTANCE.createGroup(group, "Evo (Self Development)", 3));
+    }
+
+	private void createGitControllsEvolution(Composite composite) {
+		GUIFactory.INSTANCE.createLabel(composite, "Repository URL:");
+        gitRepoText = GUIFactory.INSTANCE.createText(composite);
         gitRepoText.setText(orchestrator.getGit() != null && orchestrator.getGit().getRepositoryUrl() != null ? orchestrator.getGit().getRepositoryUrl() : "");
-        GUIFactory.INSTANCE.createEditButton(group, gitRepoText);
+        GUIFactory.INSTANCE.createEditButton(composite, gitRepoText);
 
-        GUIFactory.INSTANCE.createLabel(group, "Branch:");
-        gitBranchText = GUIFactory.INSTANCE.createText(group);
+        GUIFactory.INSTANCE.createLabel(composite, "Branch:");
+        gitBranchText = GUIFactory.INSTANCE.createText(composite);
         gitBranchText.setText(orchestrator.getGit() != null && orchestrator.getGit().getBranch() != null ? orchestrator.getGit().getBranch() : "");
-        GUIFactory.INSTANCE.createEditButton(group, gitBranchText);
+        GUIFactory.INSTANCE.createEditButton(composite, gitBranchText);
 
-        GUIFactory.INSTANCE.createLabel(group, "Username:");
-        gitUsernameText = GUIFactory.INSTANCE.createText(group);
+        GUIFactory.INSTANCE.createLabel(composite, "Username:");
+        gitUsernameText = GUIFactory.INSTANCE.createText(composite);
         gitUsernameText.setText(orchestrator.getGit() != null && orchestrator.getGit().getUsername() != null ? orchestrator.getGit().getUsername() : "");
-        GUIFactory.INSTANCE.createEditButton(group, gitUsernameText);
+        GUIFactory.INSTANCE.createEditButton(composite, gitUsernameText);
 
-        GUIFactory.INSTANCE.createLabel(group, "Password:");
-        gitPasswordText = GUIFactory.INSTANCE.createPasswordText(group);
+        GUIFactory.INSTANCE.createLabel(composite, "Password:");
+        gitPasswordText = GUIFactory.INSTANCE.createPasswordText(composite);
         gitPasswordText.setText(orchestrator.getGit() != null && orchestrator.getGit().getPassword() != null ? orchestrator.getGit().getPassword() : "");
-        GUIFactory.INSTANCE.createEditButton(group, gitPasswordText);
+        GUIFactory.INSTANCE.createEditButton(composite, gitPasswordText);
 
-        GUIFactory.INSTANCE.createLabel(group, "Local Path:");
-        gitLocalPathText = GUIFactory.INSTANCE.createCombo(group);
+        GUIFactory.INSTANCE.createLabel(composite, "Local Path:");
+        gitLocalPathText = GUIFactory.INSTANCE.createCombo(composite);
         List<String> repos = ProjectModelManager.getInstance().getAvailableLocalRepositories();
         for (String r : repos) {
             gitLocalPathText.add(r);
@@ -83,19 +95,19 @@ public class GitGroup extends AToolGroup {
                 gitLocalPathText.select(0);
             }
         }
-        GUIFactory.INSTANCE.createLabel(group, "");
+        GUIFactory.INSTANCE.createLabel(composite, "");
 
-        GUIFactory.INSTANCE.createLabel(group, "Branch Name:");
-        branchNameText = GUIFactory.INSTANCE.createText(group);
+        GUIFactory.INSTANCE.createLabel(composite, "Branch Name:");
+        branchNameText = GUIFactory.INSTANCE.createText(composite);
         branchNameText.setText(orchestrator.getGit() != null && orchestrator.getGit().getBranchName() != null ? orchestrator.getGit().getBranchName() : "");
-        GUIFactory.INSTANCE.createLabel(group, "");
+        GUIFactory.INSTANCE.createLabel(composite, "");
 
-        GUIFactory.INSTANCE.createLabel(group, "Commit Msg:");
-        commitMsgText = GUIFactory.INSTANCE.createText(group);
+        GUIFactory.INSTANCE.createLabel(composite, "Commit Msg:");
+        commitMsgText = GUIFactory.INSTANCE.createText(composite);
         commitMsgText.setText(orchestrator.getGit() != null && orchestrator.getGit().getCommitMsg() != null ? orchestrator.getGit().getCommitMsg() : "");
-        GUIFactory.INSTANCE.createLabel(group, "");
+        GUIFactory.INSTANCE.createLabel(composite, "");
 
-        Composite btnComp = toolkit.createComposite(group);
+        Composite btnComp = GUIFactory.INSTANCE.createComposite(composite);
         btnComp.setLayout(new GridLayout(5, false));
         GridData btnGd = new GridData(SWT.FILL, SWT.CENTER, true, false, 3, 1);
         btnComp.setLayoutData(btnGd);
@@ -136,12 +148,127 @@ public class GitGroup extends AToolGroup {
         testBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                testGit();
+                testGit(git);
             }
         });
-    }
+	}
+	
+	private void createGitControllsEvo(Composite composite) {		
+		gitEvo = orchestrator.getSupervisorSettings().getGit();
+		
+		if (gitEvo==null) {
+			git = OrchestrationFactory.eINSTANCE.createGit();
+        	gitEvo.setRepositoryUrl("https://github.com/kalafatic/evo/");
+        	gitEvo.setBranch("master");
+            orchestrator.getSupervisorSettings().setGit(gitEvo);
+		}
+		
+		GUIFactory.INSTANCE.createLabel(composite, "Repository URL:");
+        gitRepoTextEvo = GUIFactory.INSTANCE.createText(composite);
+        gitRepoTextEvo.setText(orchestrator.getGit() != null && orchestrator.getGit().getRepositoryUrl() != null ? gitEvo.getRepositoryUrl() : "");
+        GUIFactory.INSTANCE.createEditButton(composite, gitRepoTextEvo);
 
-    private void testGit() {
+        GUIFactory.INSTANCE.createLabel(composite, "Branch:");
+        gitBranchTextEvo = GUIFactory.INSTANCE.createText(composite);
+        gitBranchTextEvo.setText(gitEvo != null && gitEvo.getBranch() != null ? gitEvo.getBranch() : "");
+        GUIFactory.INSTANCE.createEditButton(composite, gitBranchText);
+
+        GUIFactory.INSTANCE.createLabel(composite, "Username:");
+        gitUsernameTextEvo = GUIFactory.INSTANCE.createText(composite);
+        gitUsernameTextEvo.setText(gitEvo != null && gitEvo.getUsername() != null ? gitEvo.getUsername() : "");
+        GUIFactory.INSTANCE.createEditButton(composite, gitUsernameText);
+
+        GUIFactory.INSTANCE.createLabel(composite, "Password:");
+        gitPasswordTextEvo = GUIFactory.INSTANCE.createPasswordText(composite);
+        gitPasswordTextEvo.setText(gitEvo != null && gitEvo.getPassword() != null ? gitEvo.getPassword() : "");
+        GUIFactory.INSTANCE.createEditButton(composite, gitPasswordText);
+
+        GUIFactory.INSTANCE.createLabel(composite, "Local Path:");
+        gitLocalPathTextEvo = GUIFactory.INSTANCE.createCombo(composite);
+        List<String> repos = ProjectModelManager.getInstance().getAvailableLocalRepositories();
+        for (String r : repos) {
+            gitLocalPathTextEvo.add(r);
+        }
+
+        String initialLocalPath = gitEvo != null && gitEvo.getLocalPath() != null ? gitEvo.getLocalPath() : "";
+        if (!initialLocalPath.isEmpty()) {
+            if (gitLocalPathTextEvo.indexOf(initialLocalPath) < 0) {
+                gitLocalPathTextEvo.add(initialLocalPath);
+            }
+            gitLocalPathTextEvo.setText(initialLocalPath);
+        } else if (!repos.isEmpty()) {
+            boolean found = false;
+            for (int i = 0; i < gitLocalPathTextEvo.getItemCount(); i++) {
+                String item = gitLocalPathTextEvo.getItem(i).toLowerCase();
+                if (item.contains("evolution") || item.contains("/evo")) {
+                    gitLocalPathTextEvo.select(i);
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                gitLocalPathText.select(0);
+            }
+        }
+        GUIFactory.INSTANCE.createLabel(composite, "");
+
+        GUIFactory.INSTANCE.createLabel(composite, "Branch Name:");
+        branchNameTextEvo = GUIFactory.INSTANCE.createText(composite);
+        branchNameTextEvo.setText(gitEvo != null && gitEvo.getBranchName() != null ? gitEvo.getBranchName() : "");
+        GUIFactory.INSTANCE.createLabel(composite, "");
+
+        GUIFactory.INSTANCE.createLabel(composite, "Commit Msg:");
+        commitMsgTextEvo = GUIFactory.INSTANCE.createText(composite);
+        commitMsgTextEvo.setText(gitEvo != null && gitEvo.getCommitMsg() != null ? gitEvo.getCommitMsg() : "");
+        GUIFactory.INSTANCE.createLabel(composite, "");
+
+        Composite btnComp = GUIFactory.INSTANCE.createComposite(composite);
+        btnComp.setLayout(new GridLayout(5, false));
+        GridData btnGd = new GridData(SWT.FILL, SWT.CENTER, true, false, 3, 1);
+        btnComp.setLayoutData(btnGd);
+
+        Button branchBtn = GUIFactory.INSTANCE.createButton(btnComp, "New Branch");
+        branchBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                executeCommand("BRANCH " + branchNameTextEvo.getText(), "git");
+            }
+        });
+
+        Button commitBtn = GUIFactory.INSTANCE.createButton(btnComp, "Commit");
+        commitBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                executeCommand("COMMIT " + commitMsgTextEvo.getText(), "git");
+            }
+        });
+
+        Button pullBtn = GUIFactory.INSTANCE.createButton(btnComp, "Pull");
+        pullBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                executeCommand("PULL", "git");
+            }
+        });
+
+        Button pushBtn = GUIFactory.INSTANCE.createButton(btnComp, "Push");
+        pushBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                executeCommand("PUSH", "git");
+            }
+        });
+
+        Button testBtn = GUIFactory.INSTANCE.createButton(btnComp, "Test Git");
+        testBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                testGit(gitEvo);
+            }
+        });
+	}
+
+    private void testGit(Git git) {
         try {
             File workingDir = getWorkingDir();
             TaskContext context = new TaskContext(orchestrator, workingDir);
@@ -168,14 +295,14 @@ public class GitGroup extends AToolGroup {
             }
 
             MessageDialog.openInformation(group.getShell(), "Git Test", statusMsg.toString());
-            if (orchestrator.getGit() != null) {
-                orchestrator.getGit().setTestStatus("SUCCESS");
+            if (git != null) {
+            	git.setTestStatus("SUCCESS");
                 updateGroupStatus();
             }
         } catch (Exception e) {
             MessageDialog.openError(group.getShell(), "Git Test Failed", e.getMessage());
-            if (orchestrator.getGit() != null) {
-                orchestrator.getGit().setTestStatus("FAILED");
+            if (git != null) {
+            	git.setTestStatus("FAILED");
                 updateGroupStatus();
             }
         }
