@@ -20,6 +20,12 @@ import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.Task;
+import eu.kalafatic.evolution.supervisor.bootstrap.BuildConfiguration;
+import eu.kalafatic.evolution.supervisor.bootstrap.BuildResult;
+import eu.kalafatic.evolution.supervisor.bootstrap.CodebaseCopyTool;
+import eu.kalafatic.evolution.supervisor.bootstrap.CopyConfiguration;
+import eu.kalafatic.evolution.supervisor.bootstrap.CopyResult;
+import eu.kalafatic.evolution.supervisor.bootstrap.RcpBuildTool;
 
 /**
  * Controller for bootstrapping the self-development flow.
@@ -164,7 +170,7 @@ public class SelfDevBootstrapController {
     }
 
     /**
-     * Performs a specific preflight check.
+     * Performs a specific preflight check or action.
      */
     public String check(String type) {
         return switch (type.toUpperCase()) {
@@ -173,6 +179,9 @@ public class SelfDevBootstrapController {
             case "LLM" -> checkLlm();
             case "GENOME" -> checkGenome();
             case "PERMISSIONS" -> checkPermissions();
+            case "COPY" -> checkCopy();
+            case "BUILD" -> checkBuild();
+            case "EXPORT" -> checkExport();
             default -> "UNKNOWN";
         };
     }
@@ -242,5 +251,63 @@ public class SelfDevBootstrapController {
             } catch (IOException e) {}
         }
         return "ERROR: No write access to " + runDir.getName();
+    }
+
+    private String checkCopy() {
+        File sandbox = new File(runDir, "workspace");
+        CodebaseCopyTool tool = new CodebaseCopyTool();
+        CopyConfiguration config = new CopyConfiguration(projectRoot, sandbox);
+        config.setOverwrite(true);
+        config.addExclusion(".git");
+        config.addExclusion("target");
+        config.addExclusion("self-dev-run");
+        config.addExclusion(".settings");
+        config.addExclusion(".mvn");
+        config.addExclusion(".metadata");
+        config.addExclusion("bin");
+        config.addExclusion("iterations");
+        config.addExclusion("orchestrator");
+
+        CopyResult result = tool.copy(config);
+        if (result.isSuccess()) {
+            return "CHECKED (" + result.getFilesCopied() + " files, " + (result.getTotalBytes() / 1024 / 1024) + " MB)";
+        } else {
+            return "ERROR: " + result.getMessage();
+        }
+    }
+
+    private String checkBuild() {
+        File sandbox = new File(runDir, "workspace");
+        if (!sandbox.exists()) return "ERROR: Sandbox missing. Run Copy first.";
+
+        RcpBuildTool tool = new RcpBuildTool();
+        BuildConfiguration config = new BuildConfiguration(sandbox);
+        config.setSkipTests(true);
+        config.addGoal("clean");
+        config.addGoal("package");
+
+        BuildResult result = tool.build(config);
+        if (result.isSuccess()) {
+            return "SUCCESS (" + result.getDurationMs() + "ms)";
+        } else {
+            return "ERROR: Build failed. Exit code: " + result.getExitCode();
+        }
+    }
+
+    private String checkExport() {
+        File sandbox = new File(runDir, "workspace");
+        RcpBuildTool tool = new RcpBuildTool();
+        BuildConfiguration config = new BuildConfiguration(sandbox);
+
+        // We reuse the findArtifact logic from RcpBuildTool by calling a build with no goals if needed,
+        // but it's better to just use the discovery logic.
+        // For now, let's just check if the artifact exists using the tool's result pattern.
+        BuildResult dummyResult = new BuildResult(true, "", 0, "", "", 0);
+        File artifact = tool.build(config).getProducedArtifact(); // RcpBuildTool.build() finds it.
+
+        if (artifact != null && artifact.exists()) {
+            return "READY: " + artifact.getName();
+        }
+        return "ERROR: Artifact not found. Run Build first.";
     }
 }
