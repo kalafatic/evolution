@@ -203,11 +203,36 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
 
             // Git Settings
             if (!gitPage.isSkipped()) {
-                modelManager.updateGitSettings(orchestrator, gitPage.getRepoUrl(), gitPage.getBranch(), gitPage.getUsername(), gitPage.getPassword(), gitPage.getLocalPath());
+                final String repoUrl = gitPage.getRepoUrl();
+                final String localPathStr = gitPage.getLocalPath();
+                final String branch = gitPage.getBranch();
+                final String user = gitPage.getUsername();
+                final String pass = gitPage.getPassword();
 
-                String localPathStr = gitPage.getLocalPath();
+                modelManager.updateGitSettings(orchestrator, repoUrl, branch, user, pass, localPathStr);
+
                 if (localPathStr != null && !localPathStr.isEmpty()) {
-                    registerGitRepository(new File(localPathStr));
+                    File localDir = new File(localPathStr);
+                    if (!localDir.isAbsolute()) {
+                        localDir = project.getLocation().append(localPathStr).toFile();
+                    }
+
+                    final File finalLocalDir = localDir;
+
+                    if (repoUrl != null && !repoUrl.isEmpty()) {
+                        // Clone in background
+                        Job cloneJob = new Job("Cloning Git Repository") {
+                            @Override
+                            protected IStatus run(IProgressMonitor monitor) {
+                                GitRegistryHelper.cloneAndRegister(repoUrl, finalLocalDir, branch, user, pass);
+                                return Status.OK_STATUS;
+                            }
+                        };
+                        cloneJob.setUser(true);
+                        cloneJob.schedule();
+                    } else {
+                        registerGitRepository(finalLocalDir);
+                    }
                 }
             }
 

@@ -29,6 +29,8 @@ import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
 
+import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.ResourcesPlugin;
 import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
 import eu.kalafatic.evolution.view.util.GitRegistryHelper;
 
@@ -93,6 +95,18 @@ public class Activator extends AbstractUIPlugin {
 			@Override
 			protected IStatus run(IProgressMonitor monitor) {
 				try {
+					// 1. Check workspace projects
+					for (IProject project : ResourcesPlugin.getWorkspace().getRoot().getProjects()) {
+						if (project.isOpen() && project.getLocation() != null) {
+							File projectDir = project.getLocation().toFile();
+							File gitDir = new File(projectDir, ".git");
+							if (gitDir.exists()) {
+								GitRegistryHelper.registerGitRepository(projectDir);
+							}
+						}
+					}
+
+					// 2. Discover on system
 					String evoRepoPath = ProjectModelManager.getInstance().findEvolutionRepository();
 					if (evoRepoPath != null) {
 						GitRegistryHelper.registerGitRepository(new File(evoRepoPath));
