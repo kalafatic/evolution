@@ -548,6 +548,13 @@
             id="eu.kalafatic.evolution.view.editors.MultiPageEditor"
             name="Evo Multi-page Editor">
       </editor>
+      <editor
+            class="eu.kalafatic.evolution.view.editors.MediatedEditor"
+            extensions="zip"
+            icon="icons/evo_editor.svg"
+            id="eu.kalafatic.evolution.view.editors.MediatedEditor"
+            name="Mediated Editor">
+      </editor>
    </extension>
    <extension
          point="org.eclipse.ui.newWizards">
