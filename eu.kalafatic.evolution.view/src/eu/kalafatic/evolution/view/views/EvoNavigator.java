@@ -1,10 +1,14 @@
 package eu.kalafatic.evolution.view.views;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IResource;
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Status;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IMenuManager;
@@ -37,11 +41,14 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.navigator.CommonNavigator;
+import org.eclipse.ui.progress.UIJob;
 
 public class EvoNavigator extends CommonNavigator {
 
 	/** The lock. */
 	private final Lock lock = new ReentrantLock(true);
+
+	private final AtomicBoolean refreshScheduled = new AtomicBoolean(false);
 
 	public EvoNavigator() {
 		super();
@@ -175,58 +182,60 @@ public class EvoNavigator extends CommonNavigator {
 	 * Refresh and expand to the given resource.
 	 */
 	public void refreshAndExpand(IResource resource) {
-		if (lock.tryLock()) {
-			try {
-				Display.getDefault().asyncExec(() -> {
+		if (!refreshScheduled.compareAndSet(false, true)) {
+			return;
+		}
+
+		UIJob job = new UIJob("Refresh and Expand Navigator") {
+			@Override
+			public IStatus runInUIThread(IProgressMonitor monitor) {
+				refreshScheduled.set(false);
+				try {
 					if (getCommonViewer() != null && !getCommonViewer().getControl().isDisposed()) {
 						getCommonViewer().refresh();
 						if (resource != null) {
 							getCommonViewer().setSelection(new StructuredSelection(resource), true);
-							getCommonViewer().expandAll();
+							getCommonViewer().expandToLevel(resource, 1);
 						}
 
 						// Trigger decorator refresh
 						IDecoratorManager decoratorManager = PlatformUI.getWorkbench().getDecoratorManager();
 						decoratorManager.update("eu.kalafatic.evolution.view.evoLabelDecorator");
 					}
-				});
-			} finally {
-				lock.unlock();
+				} catch (Exception e) {
+					// Ignore
+				}
+				return Status.OK_STATUS;
 			}
-		}
+		};
+		job.schedule(250);
 	}
 
 	/**
 	 * Refresh.
 	 */
 	public void refresh() {
-		if (lock.tryLock()) {
-			try {
-				Display.getDefault().asyncExec(refresh);
-			} finally {
-				lock.unlock();
-			}
+		if (!refreshScheduled.compareAndSet(false, true)) {
+			return;
 		}
-	}
 
-	/** The refresh. */
-	private final Runnable refresh = new Runnable() {
-		@Override
-		public void run() {
-			lock.lock();
-			try {
-				if (getCommonViewer() != null && getCommonViewer().getControl() != null && !getCommonViewer().getControl().isDisposed()
-						&& getCommonViewer().getControl().isVisible()) {
-
-					getCommonViewer().refresh();
+		UIJob job = new UIJob("Refresh Navigator") {
+			@Override
+			public IStatus runInUIThread(IProgressMonitor monitor) {
+				refreshScheduled.set(false);
+				try {
+					if (getCommonViewer() != null && !getCommonViewer().getControl().isDisposed()
+							&& getCommonViewer().getControl().isVisible()) {
+						getCommonViewer().refresh();
+					}
+				} catch (Exception e) {
+					// Ignore
 				}
-			} catch (Exception e) {
-				// e.printStackTrace();
-			} finally {
-				lock.unlock();
+				return Status.OK_STATUS;
 			}
-		}
-	};
+		};
+		job.schedule(250);
+	}
 
 	@Override
 	public void setFocus() {
