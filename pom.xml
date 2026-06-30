@@ -40,6 +40,7 @@
 		<module>eu.kalafatic.evolution.forge.controller</module>
 		<module>eu.kalafatic.evolution.creatic</module>
 		<module>eu.kalafatic.evolution.servers</module>
+		<module>eu.kalafatic.evolution.supervisor</module>
 	</modules>
 
 	<build>
