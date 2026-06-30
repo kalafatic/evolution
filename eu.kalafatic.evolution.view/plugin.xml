@@ -555,6 +555,12 @@
             id="eu.kalafatic.evolution.view.editors.MediatedEditor"
             name="Mediated Editor">
       </editor>
+      <editor
+            class="eu.kalafatic.evolution.view.editors.FileCollectionEditor"
+            icon="icons/evo_editor.svg"
+            id="eu.kalafatic.evolution.view.editors.FileCollectionEditor"
+            name="File Collection Editor">
+      </editor>
    </extension>
    <extension
          point="org.eclipse.ui.newWizards">

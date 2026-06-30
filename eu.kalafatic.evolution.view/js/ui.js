@@ -64,9 +64,42 @@ window.ChatApp.UI = {
         });
     },
 
+    showFileContextMenu: function(e, path) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.currentContextFile = path;
+
+        // Find the parent message to extract all files
+        let parent = e.target;
+        while (parent && !parent.classList.contains('message')) parent = parent.parentElement;
+        this.currentContextMessage = parent;
+
+        const openAllItem = document.getElementById('menu-item-open-all');
+        if (openAllItem) {
+            openAllItem.style.display = 'block';
+        }
+
+        const mediatedItem = document.getElementById('menu-item-mediated');
+        if (mediatedItem) {
+            mediatedItem.style.display = path.toLowerCase().endsWith('.zip') ? 'block' : 'none';
+        }
+
+        const menu = document.getElementById('context-menu');
+        menu.style.display = 'block';
+        menu.style.left = e.pageX + 'px';
+        menu.style.top = e.pageY + 'px';
+        const hide = () => { menu.style.display = 'none'; document.removeEventListener('click', hide); };
+        setTimeout(() => document.addEventListener('click', hide), 10);
+    },
+
     showContextMenu: function(e, path) {
         e.preventDefault();
         this.currentContextFile = path;
+
+        const openAllItem = document.getElementById('menu-item-open-all');
+        if (openAllItem) {
+            openAllItem.style.display = 'none';
+        }
 
         const mediatedItem = document.getElementById('menu-item-mediated');
         if (mediatedItem) {
@@ -90,6 +123,7 @@ window.ChatApp.UI = {
         switch(action) {
             case 'workspace': window.ChatApp.Actions.callJava('openInWorkspace', '-1', path); break;
             case 'mediated': window.ChatApp.Actions.callJava('openInMediatedEditor', '-1', path); break;
+            case 'openAll': this.handleOpenAll(); break;
             case 'review': window.ChatApp.Actions.callJava('openInReviewEditor', '-1', path); break;
             case 'revert': if (confirm('Revert ' + path + '?')) window.ChatApp.Actions.callJava('revertFile', '-1', this.currentContextFile); break;
             case 'copyPath': window.ChatApp.Actions.callJava('copy', '-1', path); break;
@@ -110,6 +144,19 @@ window.ChatApp.UI = {
         const panel = document.getElementById('side-panel');
         if (panel && (panel.style.width === '0px' || panel.style.width === '0')) {
             panel.style.width = '320px';
+        }
+    },
+
+    handleOpenAll: function() {
+        if (!this.currentContextMessage) return;
+        const links = this.currentContextMessage.querySelectorAll('a[onclick*="openDiff"]');
+        const paths = new Set();
+        links.forEach(l => {
+            const match = l.getAttribute('onclick').match(/'([^']+)'\)$/);
+            if (match) paths.add(match[1]);
+        });
+        if (paths.size > 0) {
+            window.ChatApp.Actions.callJava('openAllFiles', '-1', Array.from(paths).join(','));
         }
     },
 
