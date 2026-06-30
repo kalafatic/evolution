@@ -20,6 +20,12 @@ import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.Task;
+import eu.kalafatic.evolution.supervisor.bootstrap.BuildConfiguration;
+import eu.kalafatic.evolution.supervisor.bootstrap.BuildResult;
+import eu.kalafatic.evolution.supervisor.bootstrap.CodebaseCopyTool;
+import eu.kalafatic.evolution.supervisor.bootstrap.CopyConfiguration;
+import eu.kalafatic.evolution.supervisor.bootstrap.CopyResult;
+import eu.kalafatic.evolution.supervisor.bootstrap.RcpBuildTool;
 
 /**
  * Controller for bootstrapping the self-development flow.
@@ -249,52 +255,24 @@ public class SelfDevBootstrapController {
 
     private String checkCopy() {
         File sandbox = new File(runDir, "workspace");
-        try {
-            if (sandbox.exists()) {
-                deleteDir(sandbox);
-            }
-            sandbox.mkdirs();
+        CodebaseCopyTool tool = new CodebaseCopyTool();
+        CopyConfiguration config = new CopyConfiguration(projectRoot, sandbox);
+        config.setOverwrite(true);
+        config.addExclusion(".git");
+        config.addExclusion("target");
+        config.addExclusion("self-dev-run");
+        config.addExclusion(".settings");
+        config.addExclusion(".mvn");
+        config.addExclusion(".metadata");
+        config.addExclusion("bin");
+        config.addExclusion("iterations");
+        config.addExclusion("orchestrator");
 
-            int[] stats = {0}; // files
-            long[] bytes = {0};
-
-            copyDir(projectRoot, sandbox, stats, bytes);
-            return "CHECKED (" + stats[0] + " files, " + (bytes[0] / 1024 / 1024) + " MB)";
-        } catch (IOException e) {
-            return "ERROR: " + e.getMessage();
-        }
-    }
-
-    private void deleteDir(File file) {
-        File[] contents = file.listFiles();
-        if (contents != null) {
-            for (File f : contents) {
-                deleteDir(f);
-            }
-        }
-        file.delete();
-    }
-
-    private void copyDir(File src, File dest, int[] stats, long[] bytes) throws IOException {
-        if (src.isDirectory()) {
-            String name = src.getName();
-            if (name.equals(".git") || name.equals("target") || name.equals("self-dev-run") ||
-                name.equals(".settings") || name.equals(".mvn") || name.equals(".metadata") ||
-                name.equals("bin") || name.equals("iterations") || name.equals("orchestrator")) {
-                return;
-            }
-
-            if (!dest.exists()) dest.mkdirs();
-            String[] children = src.list();
-            if (children != null) {
-                for (String child : children) {
-                    copyDir(new File(src, child), new File(dest, child), stats, bytes);
-                }
-            }
+        CopyResult result = tool.copy(config);
+        if (result.isSuccess()) {
+            return "CHECKED (" + result.getFilesCopied() + " files, " + (result.getTotalBytes() / 1024 / 1024) + " MB)";
         } else {
-            Files.copy(src.toPath(), dest.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-            stats[0]++;
-            bytes[0] += src.length();
+            return "ERROR: " + result.getMessage();
         }
     }
 
@@ -302,34 +280,33 @@ public class SelfDevBootstrapController {
         File sandbox = new File(runDir, "workspace");
         if (!sandbox.exists()) return "ERROR: Sandbox missing. Run Copy first.";
 
-        File logsDir = new File(runDir, "logs");
-        if (!logsDir.exists()) logsDir.mkdirs();
-        File buildLog = new File(logsDir, "build.log");
+        RcpBuildTool tool = new RcpBuildTool();
+        BuildConfiguration config = new BuildConfiguration(sandbox);
+        config.setSkipTests(true);
+        config.addGoal("clean");
+        config.addGoal("package");
 
-        try {
-            String os = System.getProperty("os.name").toLowerCase();
-            String mvnCmd = os.contains("win") ? "mvn.cmd" : "mvn";
-            ProcessBuilder pb = new ProcessBuilder(mvnCmd, "clean", "package", "-DskipTests");
-            pb.directory(sandbox);
-            pb.redirectErrorStream(true);
-            pb.redirectOutput(buildLog);
-
-            Process p = pb.start();
-            if (p.waitFor() == 0) return "SUCCESS (log: logs/build.log)";
-            return "ERROR: Build failed (see logs/build.log)";
-        } catch (Exception e) {
-            return "ERROR: " + e.getMessage();
+        BuildResult result = tool.build(config);
+        if (result.isSuccess()) {
+            return "SUCCESS (" + result.getDurationMs() + "ms)";
+        } else {
+            return "ERROR: Build failed. Exit code: " + result.getExitCode();
         }
     }
 
     private String checkExport() {
         File sandbox = new File(runDir, "workspace");
-        File supervisorTarget = new File(sandbox, "eu.kalafatic.evolution.supervisor/target");
-        if (supervisorTarget.exists()) {
-            File[] jars = supervisorTarget.listFiles((dir, name) -> name.endsWith("-shaded.jar"));
-            if (jars != null && jars.length > 0) {
-                return "READY: " + jars[0].getName();
-            }
+        RcpBuildTool tool = new RcpBuildTool();
+        BuildConfiguration config = new BuildConfiguration(sandbox);
+
+        // We reuse the findArtifact logic from RcpBuildTool by calling a build with no goals if needed,
+        // but it's better to just use the discovery logic.
+        // For now, let's just check if the artifact exists using the tool's result pattern.
+        BuildResult dummyResult = new BuildResult(true, "", 0, "", "", 0);
+        File artifact = tool.build(config).getProducedArtifact(); // RcpBuildTool.build() finds it.
+
+        if (artifact != null && artifact.exists()) {
+            return "READY: " + artifact.getName();
         }
         return "ERROR: Artifact not found. Run Build first.";
     }

@@ -237,6 +237,8 @@ public class DevelopmentPage extends AEvoPage {
             }
         });
 
+        createSelfDevContextMenu();
+
         // 1.5 Supervisor Group
         supervisorGroup = new SupervisorGroup(toolkit, container, editor, orchestrator);
 
@@ -340,6 +342,40 @@ public class DevelopmentPage extends AEvoPage {
             TableViewerColumn col = createTableViewerColumn(selfDevTable, titles[i], bounds[i], i);
             col.setLabelProvider(new SelfDevLabelProvider(i));
         }
+    }
+
+    private void createSelfDevContextMenu() {
+        org.eclipse.swt.widgets.Menu menu = new org.eclipse.swt.widgets.Menu(selfDevTable.getTable());
+        selfDevTable.getTable().setMenu(menu);
+
+        org.eclipse.swt.widgets.MenuItem runItem = new org.eclipse.swt.widgets.MenuItem(menu, SWT.PUSH);
+        runItem.setText("▶ Run Action");
+        runItem.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                org.eclipse.jface.viewers.IStructuredSelection selection = selfDevTable.getStructuredSelection();
+                if (!selection.isEmpty()) {
+                    handleActionInternal((SelfDevRow) selection.getFirstElement());
+                }
+            }
+        });
+
+        org.eclipse.swt.widgets.MenuItem editItem = new org.eclipse.swt.widgets.MenuItem(menu, SWT.PUSH);
+        editItem.setText("\u270E Edit Row");
+        editItem.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                org.eclipse.jface.viewers.IStructuredSelection selection = selfDevTable.getStructuredSelection();
+                if (!selection.isEmpty()) {
+                    SelfDevRow row = (SelfDevRow) selection.getFirstElement();
+                    if (SelfDevRow.SELF_DEV_LOOP.equals(row.name)) {
+                        openSelfDevEditDialog();
+                    } else {
+                        openRowEditDialog(row);
+                    }
+                }
+            }
+        });
     }
 
     private TableViewerColumn createTableViewerColumn(TableViewer viewer, String title, int bound, final int colNumber) {
