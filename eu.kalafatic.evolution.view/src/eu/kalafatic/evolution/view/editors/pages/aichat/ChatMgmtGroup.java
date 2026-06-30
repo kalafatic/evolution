@@ -60,8 +60,6 @@ public class ChatMgmtGroup extends AEvoGroup {
             }
         });
         
-
-        //GUIFactory.INSTANCE.createLabel(sessionsComp, "Select Session:");
         sessionCombo = GUIFactory.INSTANCE.createCombo(sessionsComp);
         sessionCombo.add(page.getCurrentSessionName());
         sessionCombo.select(0);
@@ -104,8 +102,6 @@ public class ChatMgmtGroup extends AEvoGroup {
                 page.copyConversationToClipboard();
             }
         });
-       // GUIFactory.INSTANCE.createLabel(group);
-        
         
         compositeRemote = GUIFactory.INSTANCE.createComposite(group, 3, SWT.BORDER);
         GridData gd = new GridData(SWT.FILL, SWT.CENTER, true, true);
@@ -144,11 +140,7 @@ public class ChatMgmtGroup extends AEvoGroup {
 
         GUIFactory.INSTANCE.createLabel(compositeRemote, "API URL:");
         remoteUrlText = GUIFactory.INSTANCE.createText(compositeRemote);
-        GUIFactory.INSTANCE.createEditButton(compositeRemote, remoteUrlText);
-
-       
-        
-        
+        GUIFactory.INSTANCE.createEditButton(compositeRemote, remoteUrlText);        
 
         // AI Settings part (merged)
         compositeLocal = GUIFactory.INSTANCE.createComposite(group, 3, SWT.BORDER);
@@ -183,7 +175,7 @@ public class ChatMgmtGroup extends AEvoGroup {
                     
 					MessageBox messageBox = new MessageBox(page.getShell(), SWT.ICON_INFORMATION | SWT.OK);
 					messageBox.setText("Response");
-					messageBox.setMessage("Ollama + " + aiModeCombo.getText() + " : " + message);
+					messageBox.setMessage("Ollama + " + localModelCombo.getText() + " : " + message);
 					messageBox.open();
                     
                 } else {
