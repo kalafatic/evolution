@@ -4,6 +4,8 @@
  */
 package eu.kalafatic.evolution.model.orchestration.validation;
 
+import eu.kalafatic.evolution.model.orchestration.Git;
+
 
 /**
  * A sample validator interface for {@link eu.kalafatic.evolution.model.orchestration.SupervisorSettings}.
@@ -19,4 +21,6 @@ public interface SupervisorSettingsValidator {
 	boolean validateSourcePath(String value);
 	boolean validateCommands(String value);
 	boolean validateSettings(String value);
+
+	boolean validateGit(Git value);
 }

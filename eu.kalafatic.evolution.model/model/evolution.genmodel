@@ -30,6 +30,7 @@
       <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//FeedbackLevel/INTERACTIVE"/>
       <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//FeedbackLevel/ADVANCED"/>
       <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//FeedbackLevel/FULL"/>
+      <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//FeedbackLevel/DEBUG"/>
     </genEnums>
     <genEnums typeSafeEnumCompatible="false" ecoreEnum="evolution.ecore#//SessionType">
       <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//SessionType/HTTPD"/>
@@ -380,6 +381,7 @@
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//SupervisorSettings/sourcePath"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//SupervisorSettings/commands"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//SupervisorSettings/settings"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//SupervisorSettings/git"/>
     </genClasses>
     <genClasses ecoreClass="evolution.ecore#//ReviewSession">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ReviewSession/id"/>

@@ -292,6 +292,7 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
     Attribute sourcePath : EString
     Attribute commands : EString
     Attribute settings : EString
+    Reference git : Git
 
   Class ReviewSession
     Attribute id : EString
@@ -407,6 +408,7 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
     Literal INTERACTIVE = 1
     Literal ADVANCED = 2
     Literal FULL = 3
+    Literal DEBUG = 4
 
   Enum SessionType
     Literal HTTPD = 0

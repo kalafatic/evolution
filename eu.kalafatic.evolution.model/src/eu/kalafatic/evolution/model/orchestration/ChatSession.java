@@ -166,13 +166,13 @@ public interface ChatSession extends EObject {
 
 	/**
 	 * Returns the value of the '<em><b>Max Iterations</b></em>' attribute.
-	 * The default value is <code>"1"</code>.
+	 * The default value is <code>"4"</code>.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @return the value of the '<em>Max Iterations</em>' attribute.
 	 * @see #setMaxIterations(int)
 	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getChatSession_MaxIterations()
-	 * @model default="1"
+	 * @model default="4"
 	 * @generated
 	 */
 	int getMaxIterations();

@@ -3023,7 +3023,7 @@ public interface OrchestrationPackage extends EPackage {
 	int SUPERVISOR_SETTINGS__SETTINGS = 4;
 
 	/**
-	 * The feature id for the '<em><b>Git</b></em>' reference.
+	 * The feature id for the '<em><b>Git</b></em>' containment reference.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated

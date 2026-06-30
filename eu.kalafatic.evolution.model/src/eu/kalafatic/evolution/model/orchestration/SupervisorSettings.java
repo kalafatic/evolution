@@ -153,7 +153,7 @@ public interface SupervisorSettings extends EObject {
 	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.SupervisorSettings#getGit <em>Git</em>}' containment reference.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @param value the new value of the '<em>Git</em>' reference.
+	 * @param value the new value of the '<em>Git</em>' containment reference.
 	 * @see #getGit()
 	 * @generated
 	 */

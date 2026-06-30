@@ -4337,6 +4337,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEAttribute(supervisorSettingsEClass, SUPERVISOR_SETTINGS__SOURCE_PATH);
 		createEAttribute(supervisorSettingsEClass, SUPERVISOR_SETTINGS__COMMANDS);
 		createEAttribute(supervisorSettingsEClass, SUPERVISOR_SETTINGS__SETTINGS);
+		createEReference(supervisorSettingsEClass, SUPERVISOR_SETTINGS__GIT);
 
 		reviewSessionEClass = createEClass(REVIEW_SESSION);
 		createEAttribute(reviewSessionEClass, REVIEW_SESSION__ID);
@@ -4765,7 +4766,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEAttribute(getSupervisorSettings_SourcePath(), ecorePackage.getEString(), "sourcePath", null, 0, 1, SupervisorSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getSupervisorSettings_Commands(), ecorePackage.getEString(), "commands", null, 0, 1, SupervisorSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getSupervisorSettings_Settings(), ecorePackage.getEString(), "settings", null, 0, 1, SupervisorSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getSupervisorSettings_Git(), this.getGit(), null, "git", null, 0, 1, SupervisorSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getSupervisorSettings_Git(), this.getGit(), null, "git", null, 0, 1, SupervisorSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(reviewSessionEClass, ReviewSession.class, "ReviewSession", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getReviewSession_Id(), ecorePackage.getEString(), "id", null, 0, 1, ReviewSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
@@ -4780,7 +4781,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEAttribute(getChatSession_SelfIterativeMode(), ecorePackage.getEBoolean(), "selfIterativeMode", "false", 0, 1, ChatSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getChatSession_DarwinMode(), ecorePackage.getEBoolean(), "darwinMode", "true", 0, 1, ChatSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getChatSession_GitAutomation(), ecorePackage.getEBoolean(), "gitAutomation", "false", 0, 1, ChatSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getChatSession_MaxIterations(), ecorePackage.getEInt(), "maxIterations", "1", 0, 1, ChatSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getChatSession_MaxIterations(), ecorePackage.getEInt(), "maxIterations", "4", 0, 1, ChatSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getChatSession_StepMode(), ecorePackage.getEBoolean(), "stepMode", "false", 0, 1, ChatSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getChatSession_TargetPath(), ecorePackage.getEString(), "targetPath", null, 0, 1, ChatSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getChatSession_TargetType(), ecorePackage.getEString(), "targetType", null, 0, 1, ChatSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
@@ -4819,7 +4820,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEClass(promptInstructionsEClass, PromptInstructions.class, "PromptInstructions", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getPromptInstructions_AutoApprove(), ecorePackage.getEBoolean(), "autoApprove", null, 0, 1, PromptInstructions.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getPromptInstructions_GitAutomation(), ecorePackage.getEBoolean(), "gitAutomation", null, 0, 1, PromptInstructions.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getPromptInstructions_PreferredMaxIterations(), ecorePackage.getEInt(), "preferredMaxIterations", "-1", 0, 1, PromptInstructions.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, !IS_ORDERED);
+		initEAttribute(getPromptInstructions_PreferredMaxIterations(), ecorePackage.getEInt(), "preferredMaxIterations", "4", 0, 1, PromptInstructions.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, !IS_ORDERED);
 		initEAttribute(getPromptInstructions_IterativeMode(), ecorePackage.getEBoolean(), "iterativeMode", "false", 0, 1, PromptInstructions.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getPromptInstructions_SelfIterativeMode(), ecorePackage.getEBoolean(), "selfIterativeMode", "false", 0, 1, PromptInstructions.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getPromptInstructions_StepMode(), ecorePackage.getEBoolean(), "stepMode", "false", 0, 1, PromptInstructions.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
@@ -4882,6 +4883,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		addEEnumLiteral(feedbackLevelEEnum, FeedbackLevel.INTERACTIVE);
 		addEEnumLiteral(feedbackLevelEEnum, FeedbackLevel.ADVANCED);
 		addEEnumLiteral(feedbackLevelEEnum, FeedbackLevel.FULL);
+		addEEnumLiteral(feedbackLevelEEnum, FeedbackLevel.DEBUG);
 
 		initEEnum(sessionTypeEEnum, SessionType.class, "SessionType");
 		addEEnumLiteral(sessionTypeEEnum, SessionType.HTTPD);

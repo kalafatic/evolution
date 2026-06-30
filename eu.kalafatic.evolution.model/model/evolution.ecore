@@ -25,6 +25,7 @@
     <eLiterals name="INTERACTIVE" value="1"/>
     <eLiterals name="ADVANCED" value="2"/>
     <eLiterals name="FULL" value="3"/>
+    <eLiterals name="DEBUG" value="4"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="Task">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="id" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
