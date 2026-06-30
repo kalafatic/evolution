@@ -191,7 +191,7 @@ public class EvolutionServer extends NanoHTTPD {
             } else if (Method.GET.equals(method) && "/server/status".equals(uri)) {
                 return handleGetServerStatus();
             } else if (Method.GET.equals(method) && "/server/system/state".equals(uri)) {
-                return handleGetSystemState();
+                return handleGetSystemState(session);
             } else if (Method.POST.equals(method) && "/server/session/ui".equals(uri)) {
                 return handleRegisterUiSession(session);
             } else if (Method.GET.equals(method) && uri.startsWith("/server/conversation/")) {
@@ -315,6 +315,9 @@ public class EvolutionServer extends NanoHTTPD {
         }
         if (json.has("branch")) {
             request.getContext().put("branch", json.getString("branch"));
+        }
+        if (json.has("sessionId")) {
+            request.getContext().put("sessionId", json.getString("sessionId"));
         }
 
         OrchestratorResponse response = OrchestratorServiceImpl.getInstance().handle(request);
@@ -853,7 +856,7 @@ public class EvolutionServer extends NanoHTTPD {
         return newFixedLengthResponse(Response.Status.OK, "application/json", status.toString());
     }
 
-    private Response handleGetSystemState() {
+    private Response handleGetSystemState(IHTTPSession session) {
         Orchestrator orch = OrchestratorServiceImpl.getInstance().getOrchestrator();
         if (orch == null) return newFixedLengthResponse(Response.Status.NOT_FOUND, "application/json", "{}");
 
@@ -881,18 +884,24 @@ public class EvolutionServer extends NanoHTTPD {
         }
         root.put("tasks", tasks);
 
-        if (orch.getSelfDevSession() != null) {
-            JSONObject session = new JSONObject();
-            session.put("status", orch.getSelfDevSession().getStatus().toString());
-            JSONArray iterations = new JSONArray();
-            for (eu.kalafatic.evolution.model.orchestration.Iteration i : orch.getSelfDevSession().getIterations()) {
-                iterations.put(new JSONObject().put("id", i.getId()).put("phase", i.getPhase()));
+        String sessionId = session.getParms().get("sessionId");
+        if (sessionId == null) sessionId = orch.getId();
+
+        SessionContainer container = SessionManager.getInstance().getSession(sessionId);
+        if (container != null || orch.getSelfDevSession() != null) {
+            JSONObject sessionObj = new JSONObject();
+            if (orch.getSelfDevSession() != null) {
+                sessionObj.put("status", orch.getSelfDevSession().getStatus().toString());
+                JSONArray iterations = new JSONArray();
+                for (eu.kalafatic.evolution.model.orchestration.Iteration i : orch.getSelfDevSession().getIterations()) {
+                    iterations.put(new JSONObject().put("id", i.getId()).put("phase", i.getPhase()));
+                }
+                sessionObj.put("iterations", iterations);
+            } else {
+                sessionObj.put("status", "ACTIVE");
             }
-            session.put("iterations", iterations);
 
             // Add Cognitive State for UI
-            String sessionId = orch.getId();
-            SessionContainer container = SessionManager.getInstance().getSession(sessionId);
             if (container != null) {
                 eu.kalafatic.evolution.controller.orchestration.cognitive.SessionCognitiveState cs = container.getCognitiveState();
                 if (cs != null) {
@@ -906,11 +915,11 @@ public class EvolutionServer extends NanoHTTPD {
                     cs.getTrajectory().forEach(t -> trajectory.put(t.name()));
                     cog.put("trajectory", trajectory);
 
-                    session.put("cognitiveState", cog);
+                    sessionObj.put("cognitiveState", cog);
                 }
             }
 
-            root.put("session", session);
+            root.put("session", sessionObj);
         }
 
         return newFixedLengthResponse(Response.Status.OK, "application/json", root.toString());

@@ -668,6 +668,12 @@
                 const payload = { prompt: text, sessionId: currentSessionId };
                 if (branch) payload.branch = branch;
 
+                // Sync UI settings into payload to ensure server uses correct session model
+                const modeSelect = document.getElementById('mode-select');
+                if (modeSelect) payload.aiMode = modeSelect.value;
+                const localSelect = document.getElementById('local-model-select');
+                if (localSelect) payload.model = localSelect.value;
+
                 await fetch(getBaseUrl() + '/task?runtime=SWT', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -873,7 +879,7 @@
 
         async function pollSystemState() {
             try {
-                const response = await fetch(getBaseUrl() + '/server/system/state?runtime=SWT');
+                const response = await fetch(getBaseUrl() + '/server/system/state?runtime=SWT&sessionId=' + currentSessionId);
                 const state = await response.json();
                 renderSystemState(state);
             } catch (err) {}

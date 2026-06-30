@@ -628,10 +628,41 @@ public class OrchestratorServiceImpl implements OrchestratorService {
 
         Orchestrator newModel = OrchestrationFactory.eINSTANCE.createOrchestrator();
         newModel.setId(sessionId);
-        if (newModel.getAiChat() == null) newModel.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
-        if (newModel.getAiChat().getPromptInstructions() == null) {
-            newModel.getAiChat().setPromptInstructions(OrchestrationFactory.eINSTANCE.createPromptInstructions());
+
+        // Inherit from template if available (Requirement 3: Settings Persistence)
+        if (this.orchestrator != null) {
+            newModel.setName(this.orchestrator.getName());
+            newModel.setAiMode(this.orchestrator.getAiMode());
+            newModel.setLocalModel(this.orchestrator.getLocalModel());
+            newModel.setRemoteModel(this.orchestrator.getRemoteModel());
+            newModel.setDarwinMode(this.orchestrator.isDarwinMode());
+
+            // Sync legacy ID for polling consistency
+            this.orchestrator.setId(sessionId);
+
+            if (this.orchestrator.getOllama() != null) {
+                newModel.setOllama(OrchestrationFactory.eINSTANCE.createOllama());
+                newModel.getOllama().setUrl(this.orchestrator.getOllama().getUrl());
+                newModel.getOllama().setModel(this.orchestrator.getOllama().getModel());
+            }
         }
+
+        if (newModel.getAiChat() == null) newModel.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
+
+        if (newModel.getAiChat().getPromptInstructions() == null) {
+            PromptInstructions pi = OrchestrationFactory.eINSTANCE.createPromptInstructions();
+            if (this.orchestrator != null && this.orchestrator.getAiChat() != null && this.orchestrator.getAiChat().getPromptInstructions() != null) {
+                PromptInstructions templatePi = this.orchestrator.getAiChat().getPromptInstructions();
+                pi.setIterativeMode(templatePi.isIterativeMode());
+                pi.setSelfIterativeMode(templatePi.isSelfIterativeMode());
+                pi.setStepMode(templatePi.isStepMode());
+                pi.setAutoApprove(templatePi.isAutoApprove());
+                pi.setGitAutomation(templatePi.isGitAutomation());
+                pi.setPreferredMaxIterations(templatePi.getPreferredMaxIterations());
+            }
+            newModel.getAiChat().setPromptInstructions(pi);
+        }
+
         if (newModel.getOllama() == null) {
             newModel.setOllama(OrchestrationFactory.eINSTANCE.createOllama());
             newModel.getOllama().setUrl("http://localhost:11434");
