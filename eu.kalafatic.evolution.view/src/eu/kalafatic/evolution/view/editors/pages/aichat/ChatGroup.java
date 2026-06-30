@@ -539,6 +539,9 @@ public class ChatGroup extends AEvoGroup {
                         case "openInMediatedEditor":
                             page.handleOpenMediatedEditor(text);
                             break;
+                        case "openAllFiles":
+                            page.handleOpenAllFiles(text);
+                            break;
                         case "openInReviewEditor":
                             // Strip status prefix if present
                             String reviewPath = text;

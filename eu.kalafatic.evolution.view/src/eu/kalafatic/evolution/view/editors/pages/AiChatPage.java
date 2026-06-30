@@ -994,6 +994,33 @@ public class AiChatPage extends AEvoPage {
 		}
 	}
 
+	public void handleOpenAllFiles(String pathsCsv) {
+		if (pathsCsv == null || pathsCsv.isEmpty()) return;
+		String[] paths = pathsCsv.split(",");
+		List<IFile> files = new ArrayList<>();
+		File projectRoot = getProjectRoot();
+
+		for (String path : paths) {
+			File file = path.contains(":") ? new File(path) : new File(projectRoot, path);
+			if (file.exists()) {
+				IFile iFile = ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(new Path(file.getAbsolutePath()));
+				if (iFile != null) files.add(iFile);
+			}
+		}
+
+		if (!files.isEmpty()) {
+			Display.getDefault().asyncExec(() -> {
+				try {
+					IDE.openEditor(editor.getSite().getPage(),
+						new eu.kalafatic.evolution.view.editors.FileCollectionEditorInput(files, "Collection of " + files.size() + " files"),
+						eu.kalafatic.evolution.view.editors.FileCollectionEditor.ID);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			});
+		}
+	}
+
 	public void handleSimpleSolution() {
 		String sid = getCurrentSessionName();
 		RuntimeProjection projection = ProjectionService.getInstance().getProjection(sid);

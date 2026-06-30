@@ -173,7 +173,7 @@ window.ChatApp.Renderer = {
 
         // File link [FILE: path]
         html = html.replace(/\[FILE:\s*(.*?)\s*\]/g, (match, path) => {
-            return `<a onclick="event.stopPropagation(); window.ChatApp.Actions.callJava('openDiff', '-1', '${window.ChatApp.Utils.escapeJs(path)}')"><b>${path}</b></a>`;
+            return `<a onclick="event.stopPropagation(); window.ChatApp.Actions.callJava('openDiff', '-1', '${window.ChatApp.Utils.escapeJs(path)}')" oncontextmenu="window.ChatApp.UI.showFileContextMenu(event, '${window.ChatApp.Utils.escapeJs(path)}')"><b>${path}</b></a>`;
         });
 
         // Proposal: print to console
@@ -192,7 +192,7 @@ window.ChatApp.Renderer = {
         // Markdown Links [text](url)
         html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, text, url) => {
              if (url.startsWith('file://')) {
-                  return `<a onclick="event.stopPropagation(); window.ChatApp.Actions.callJava('openDiff', '-1', '${window.ChatApp.Utils.escapeJs(url)}')"><b>${text}</b></a>`;
+                  return `<a onclick="event.stopPropagation(); window.ChatApp.Actions.callJava('openDiff', '-1', '${window.ChatApp.Utils.escapeJs(url)}')" oncontextmenu="window.ChatApp.UI.showFileContextMenu(event, '${window.ChatApp.Utils.escapeJs(url)}')"><b>${text}</b></a>`;
              }
              return `<a href="${url}" target="_blank" onclick="event.stopPropagation();">${text}</a>`;
         });
@@ -240,7 +240,7 @@ window.ChatApp.Renderer = {
 
             const str = String(val);
             if (['files', 'path', 'file', 'target'].includes(key) && (str.includes('.') || str.includes('/'))) {
-                return `<a onclick="event.stopPropagation(); window.ChatApp.Actions.callJava('openDiff', '-1', '${window.ChatApp.Utils.escapeJs(str)}')"><b>${window.ChatApp.Utils.escapeHtml(str)}</b></a>`;
+                return `<a onclick="event.stopPropagation(); window.ChatApp.Actions.callJava('openDiff', '-1', '${window.ChatApp.Utils.escapeJs(str)}')" oncontextmenu="window.ChatApp.UI.showFileContextMenu(event, '${window.ChatApp.Utils.escapeJs(str)}')"><b>${window.ChatApp.Utils.escapeHtml(str)}</b></a>`;
             }
             return window.ChatApp.Utils.escapeHtml(str);
         };
