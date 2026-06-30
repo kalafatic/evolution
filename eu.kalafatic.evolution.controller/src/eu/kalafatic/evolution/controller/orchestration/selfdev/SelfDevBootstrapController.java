@@ -4,6 +4,11 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -156,5 +161,86 @@ public class SelfDevBootstrapController {
 
     public boolean isRunning() {
         return supervisorProcess != null && supervisorProcess.isAlive();
+    }
+
+    /**
+     * Performs a specific preflight check.
+     */
+    public String check(String type) {
+        return switch (type.toUpperCase()) {
+            case "GIT" -> checkGit();
+            case "MAVEN" -> checkMaven();
+            case "LLM" -> checkLlm();
+            case "GENOME" -> checkGenome();
+            case "PERMISSIONS" -> checkPermissions();
+            default -> "UNKNOWN";
+        };
+    }
+
+    private String checkGit() {
+        try {
+            File gitDir = new File(projectRoot, ".git");
+            if (!gitDir.exists()) return "ERROR: Not a Git repository";
+
+            ProcessBuilder pb = new ProcessBuilder("git", "status", "--porcelain");
+            pb.directory(projectRoot);
+            Process p = pb.start();
+            p.getInputStream().readAllBytes();
+            return "CHECKED";
+        } catch (Exception e) {
+            return "ERROR: " + e.getMessage();
+        }
+    }
+
+    private String checkMaven() {
+        try {
+            String os = System.getProperty("os.name").toLowerCase();
+            String mvnCmd = os.contains("win") ? "mvn.cmd" : "mvn";
+            ProcessBuilder pb = new ProcessBuilder(mvnCmd, "-version");
+            pb.directory(projectRoot);
+            Process p = pb.start();
+            if (p.waitFor() == 0) return "CHECKED";
+            return "ERROR: Maven failed";
+        } catch (Exception e) {
+            return "ERROR: Maven not found";
+        }
+    }
+
+    private String checkLlm() {
+        try {
+            if (orchestrator != null && !orchestrator.getAiProviders().isEmpty()) {
+                return "CHECKED";
+            }
+            // Fallback: check Ollama local
+            URL url = new URL("http://localhost:11434/api/tags");
+            HttpURLConnection con = (HttpURLConnection) url.openConnection();
+            con.setRequestMethod("GET");
+            con.setConnectTimeout(2000);
+            if (con.getResponseCode() == 200) return "CHECKED";
+            return "ERROR: LLM unreachable";
+        } catch (Exception e) {
+            return "ERROR: " + e.getMessage();
+        }
+    }
+
+    private String checkGenome() {
+        File genomeDir = new File(projectRoot, "eu.kalafatic.evolution.selfdev.genome");
+        if (genomeDir.exists() && new File(genomeDir, "pom.xml").exists()) {
+            return "CHECKED";
+        }
+        return "ERROR: Genome module missing";
+    }
+
+    private String checkPermissions() {
+        if (runDir.exists() && runDir.canWrite()) {
+            File testFile = new File(runDir, ".perm-test");
+            try {
+                if (testFile.createNewFile()) {
+                    testFile.delete();
+                    return "CHECKED";
+                }
+            } catch (IOException e) {}
+        }
+        return "ERROR: No write access to " + runDir.getName();
     }
 }

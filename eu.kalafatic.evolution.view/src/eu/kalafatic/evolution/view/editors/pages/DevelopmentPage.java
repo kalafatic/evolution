@@ -8,9 +8,11 @@ import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.resource.ImageRegistry;
 import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.ColumnLabelProvider;
+import org.eclipse.jface.viewers.ITableColorProvider;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.browser.Browser;
 import org.eclipse.swt.browser.LocationAdapter;
 import org.eclipse.swt.browser.LocationEvent;
@@ -44,6 +46,7 @@ import eu.kalafatic.evolution.model.orchestration.Iteration;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
 import eu.kalafatic.evolution.model.orchestration.Task;
+import eu.kalafatic.utils.constants.FUIConstants;
 import eu.kalafatic.evolution.view.application.Activator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.development.InteractiveWorkflowGroup;
@@ -57,6 +60,11 @@ public class DevelopmentPage extends AEvoPage {
     public static class SelfDevRow {
         public static final String SELF_DEV_LOOP = "Self-Dev Loop";
         public static final String EVO_RCP = "Evo RCP";
+        public static final String GIT_CHECK = "Git Check";
+        public static final String MAVEN_CHECK = "Maven Check";
+        public static final String LLM_CHECK = "LLM Check";
+        public static final String GENOME_CHECK = "Genome Check";
+        public static final String PERM_CHECK = "Permissions Check";
 
         public String name;
         public String path;
@@ -163,8 +171,13 @@ public class DevelopmentPage extends AEvoPage {
         createSelfDevColumns();
         selfDevTable.setContentProvider(ArrayContentProvider.getInstance());
         List<SelfDevRow> sdData = new ArrayList<>();
-        sdData.add(new SelfDevRow("Self-Dev Loop", "orchestrator", "ready"));
-        sdData.add(new SelfDevRow("Evo RCP", "/xx/", "ready"));
+        sdData.add(new SelfDevRow(SelfDevRow.SELF_DEV_LOOP, "orchestrator", "ready"));
+        sdData.add(new SelfDevRow(SelfDevRow.EVO_RCP, "/xx/", "ready"));
+        sdData.add(new SelfDevRow(SelfDevRow.GIT_CHECK, "supervisor.git", "ready"));
+        sdData.add(new SelfDevRow(SelfDevRow.MAVEN_CHECK, "supervisor.maven", "ready"));
+        sdData.add(new SelfDevRow(SelfDevRow.LLM_CHECK, "supervisor.llm", "ready"));
+        sdData.add(new SelfDevRow(SelfDevRow.GENOME_CHECK, "supervisor.genome", "ready"));
+        sdData.add(new SelfDevRow(SelfDevRow.PERM_CHECK, "supervisor.fs", "ready"));
         selfDevTable.setInput(sdData);
 
         sdTable.addListener(SWT.MouseDown, event -> {
@@ -213,71 +226,76 @@ public class DevelopmentPage extends AEvoPage {
 		});
     }
 
-    private void createSelfDevColumns() {
-        String[] titles = { "Action", "Edit", "Name", "Path/URL", "Status" };
-        int[] bounds = { 100, 50, 100, 250, 100 };
+    private class SelfDevLabelProvider extends ColumnLabelProvider implements ITableColorProvider {
+        private final int col;
 
-        TableViewerColumn col = createTableViewerColumn(selfDevTable, titles[0], bounds[0], 0);
-        col.setLabelProvider(new ColumnLabelProvider() {
-            @Override
-            public String getText(Object element) {
-                SelfDevRow row = (SelfDevRow) element;
-                if ("running".equals(row.status) || "starting".equals(row.status) || "building".equals(row.status) || "evaluating".equals(row.status)) {
-                    return "\u23F8 \u23F9"; // pause stop
-                } else if ("paused".equals(row.status)) {
-                    return "\u25B6 \u23F9"; // play stop
-                } else {
-                    return "\u25B6"; // play
-                }
+        public SelfDevLabelProvider(int col) {
+            this.col = col;
+        }
+
+        @Override
+        public String getText(Object element) {
+            SelfDevRow row = (SelfDevRow) element;
+            switch (col) {
+                case 0: // Action
+                    if ("running".equals(row.status) || "starting".equals(row.status) || "building".equals(row.status) || "evaluating".equals(row.status)) {
+                        return "\u23F8 \u23F9"; // pause stop
+                    } else if ("paused".equals(row.status)) {
+                        return "\u25B6 \u23F9"; // play stop
+                    } else {
+                        return "\u25B6"; // play
+                    }
+                case 1: // Edit
+                    if (SelfDevRow.SELF_DEV_LOOP.equals(row.name) || row.name.endsWith("Check")) return "\u270E";
+                    return "";
+                case 2: return row.name;
+                case 3: return row.path;
+                case 4: return row.status;
+                default: return "";
             }
-            @Override
-            public Image getImage(Object element) {
+        }
+
+        @Override
+        public Image getImage(Object element) {
+            if (col == 0) {
                 SelfDevRow row = (SelfDevRow) element;
                 if ("running".equals(row.status) || "starting".equals(row.status) || "building".equals(row.status) || "evaluating".equals(row.status)) {
                     return imageRegistry.get("pause");
-                } else if ("paused".equals(row.status)) {
-                    return imageRegistry.get("play");
                 } else {
                     return imageRegistry.get("play");
                 }
             }
-        });
+            return null;
+        }
 
-        col = createTableViewerColumn(selfDevTable, titles[1], bounds[1], 1);
-        col.setLabelProvider(new ColumnLabelProvider() {
-            @Override
-            public String getText(Object element) {
-                SelfDevRow row = (SelfDevRow) element;
-                if (SelfDevRow.SELF_DEV_LOOP.equals(row.name)) {
-                    return "\u270E"; // Pencil icon
-                }
-                return "";
-            }
-        });
+        @Override
+        public Color getForeground(Object element, int columnIndex) {
+            return null;
+        }
 
-        col = createTableViewerColumn(selfDevTable, titles[2], bounds[2], 2);
-        col.setLabelProvider(new ColumnLabelProvider() {
-            @Override
-            public String getText(Object element) {
-                return ((SelfDevRow) element).name;
+        @Override
+        public Color getBackground(Object element, int columnIndex) {
+            SelfDevRow row = (SelfDevRow) element;
+            String status = row.status.toLowerCase();
+            if (status.contains("error") || status.contains("fail") || status.contains("missing")) {
+                return FUIConstants.LIGHT_RED;
+            } else if (status.equals("checked") || status.equals("success")) {
+                return FUIConstants.LIGHT_GREEN;
+            } else if (status.equals("ready")) {
+                return FUIConstants.GRADIENT; // Light orange-ish
             }
-        });
+            return null;
+        }
+    }
 
-        col = createTableViewerColumn(selfDevTable, titles[3], bounds[3], 3);
-        col.setLabelProvider(new ColumnLabelProvider() {
-            @Override
-            public String getText(Object element) {
-                return ((SelfDevRow) element).path;
-            }
-        });
+    private void createSelfDevColumns() {
+        String[] titles = { "Action", "Edit", "Name", "Path/URL", "Status" };
+        int[] bounds = { 100, 50, 150, 250, 150 };
 
-        col = createTableViewerColumn(selfDevTable, titles[4], bounds[4], 4);
-        col.setLabelProvider(new ColumnLabelProvider() {
-            @Override
-            public String getText(Object element) {
-                return ((SelfDevRow) element).status;
-            }
-        });
+        for (int i = 0; i < titles.length; i++) {
+            TableViewerColumn col = createTableViewerColumn(selfDevTable, titles[i], bounds[i], i);
+            col.setLabelProvider(new SelfDevLabelProvider(i));
+        }
     }
 
     private TableViewerColumn createTableViewerColumn(TableViewer viewer, String title, int bound, final int colNumber) {
@@ -314,6 +332,21 @@ public class DevelopmentPage extends AEvoPage {
                     request.getContext().put("sessionId", getCurrentSessionName());
                     OrchestratorServiceImpl.getInstance().submit(getCurrentSessionName(), request);
                 }
+            } else if (SelfDevRow.GIT_CHECK.equals(row.name)) {
+                row.status = bootstrapController.check("GIT");
+                selfDevTable.refresh(row);
+            } else if (SelfDevRow.MAVEN_CHECK.equals(row.name)) {
+                row.status = bootstrapController.check("MAVEN");
+                selfDevTable.refresh(row);
+            } else if (SelfDevRow.LLM_CHECK.equals(row.name)) {
+                row.status = bootstrapController.check("LLM");
+                selfDevTable.refresh(row);
+            } else if (SelfDevRow.GENOME_CHECK.equals(row.name)) {
+                row.status = bootstrapController.check("GENOME");
+                selfDevTable.refresh(row);
+            } else if (SelfDevRow.PERM_CHECK.equals(row.name)) {
+                row.status = bootstrapController.check("PERMISSIONS");
+                selfDevTable.refresh(row);
             } else {
                 if ("running".equals(row.status)) {
                     row.status = "paused";
@@ -325,7 +358,7 @@ public class DevelopmentPage extends AEvoPage {
                 selfDevTable.refresh(row);
             }
         } else if (columnIndex == 1) { // Edit
-            if (SelfDevRow.SELF_DEV_LOOP.equals(row.name)) {
+            if (SelfDevRow.SELF_DEV_LOOP.equals(row.name) || row.name.endsWith("Check")) {
                 openSelfDevEditDialog();
             }
         }
