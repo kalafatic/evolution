@@ -164,7 +164,7 @@ public class SelfDevBootstrapController {
     }
 
     /**
-     * Performs a specific preflight check.
+     * Performs a specific preflight check or action.
      */
     public String check(String type) {
         return switch (type.toUpperCase()) {
@@ -173,6 +173,9 @@ public class SelfDevBootstrapController {
             case "LLM" -> checkLlm();
             case "GENOME" -> checkGenome();
             case "PERMISSIONS" -> checkPermissions();
+            case "COPY" -> checkCopy();
+            case "BUILD" -> checkBuild();
+            case "EXPORT" -> checkExport();
             default -> "UNKNOWN";
         };
     }
@@ -242,5 +245,92 @@ public class SelfDevBootstrapController {
             } catch (IOException e) {}
         }
         return "ERROR: No write access to " + runDir.getName();
+    }
+
+    private String checkCopy() {
+        File sandbox = new File(runDir, "workspace");
+        try {
+            if (sandbox.exists()) {
+                deleteDir(sandbox);
+            }
+            sandbox.mkdirs();
+
+            int[] stats = {0}; // files
+            long[] bytes = {0};
+
+            copyDir(projectRoot, sandbox, stats, bytes);
+            return "CHECKED (" + stats[0] + " files, " + (bytes[0] / 1024 / 1024) + " MB)";
+        } catch (IOException e) {
+            return "ERROR: " + e.getMessage();
+        }
+    }
+
+    private void deleteDir(File file) {
+        File[] contents = file.listFiles();
+        if (contents != null) {
+            for (File f : contents) {
+                deleteDir(f);
+            }
+        }
+        file.delete();
+    }
+
+    private void copyDir(File src, File dest, int[] stats, long[] bytes) throws IOException {
+        if (src.isDirectory()) {
+            String name = src.getName();
+            if (name.equals(".git") || name.equals("target") || name.equals("self-dev-run") ||
+                name.equals(".settings") || name.equals(".mvn") || name.equals(".metadata") ||
+                name.equals("bin") || name.equals("iterations") || name.equals("orchestrator")) {
+                return;
+            }
+
+            if (!dest.exists()) dest.mkdirs();
+            String[] children = src.list();
+            if (children != null) {
+                for (String child : children) {
+                    copyDir(new File(src, child), new File(dest, child), stats, bytes);
+                }
+            }
+        } else {
+            Files.copy(src.toPath(), dest.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            stats[0]++;
+            bytes[0] += src.length();
+        }
+    }
+
+    private String checkBuild() {
+        File sandbox = new File(runDir, "workspace");
+        if (!sandbox.exists()) return "ERROR: Sandbox missing. Run Copy first.";
+
+        File logsDir = new File(runDir, "logs");
+        if (!logsDir.exists()) logsDir.mkdirs();
+        File buildLog = new File(logsDir, "build.log");
+
+        try {
+            String os = System.getProperty("os.name").toLowerCase();
+            String mvnCmd = os.contains("win") ? "mvn.cmd" : "mvn";
+            ProcessBuilder pb = new ProcessBuilder(mvnCmd, "clean", "package", "-DskipTests");
+            pb.directory(sandbox);
+            pb.redirectErrorStream(true);
+            pb.redirectOutput(buildLog);
+
+            Process p = pb.start();
+            if (p.waitFor() == 0) return "SUCCESS (log: logs/build.log)";
+            return "ERROR: Build failed (see logs/build.log)";
+        } catch (Exception e) {
+            return "ERROR: " + e.getMessage();
+        }
+    }
+
+    private String checkExport() {
+        File sandbox = new File(runDir, "workspace");
+        File supervisorTarget = new File(sandbox, "eu.kalafatic.evolution.supervisor/target");
+        if (supervisorTarget.exists()) {
+            File[] jars = supervisorTarget.listFiles((dir, name) -> name.endsWith("-shaded.jar"));
+            if (jars != null && jars.length > 0) {
+                return "READY: " + jars[0].getName();
+            }
+        }
+        return "ERROR: Artifact not found. Run Build first.";
     }
 }

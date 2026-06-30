@@ -68,6 +68,9 @@ public class DevelopmentPage extends AEvoPage {
         public static final String LLM_CHECK = "LLM Check";
         public static final String GENOME_CHECK = "Genome Check";
         public static final String PERM_CHECK = "Permissions Check";
+        public static final String COPY_SOURCE = "Copy Source";
+        public static final String BUILD_PROJECT = "Build Project";
+        public static final String EXPORT_PRODUCT = "Export Product";
 
         public int order;
         public boolean selected;
@@ -156,8 +159,8 @@ public class DevelopmentPage extends AEvoPage {
         container.setLayout(new GridLayout(1, false));
 
         // 1. Self-Development Section
-        Composite selfDevComp = GUIFactory.INSTANCE.createExpandableGroup(toolkit, container, "Self-Development", 1, true);
-        selfDevComp.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        Composite selfDevComp = GUIFactory.INSTANCE.createExpandableGroup(toolkit, container, "Self-Development", 1, true, true);
+        selfDevComp.setLayoutData(new GridData(GridData.FILL_BOTH));
 
         Composite sdStatusComp = toolkit.createComposite(selfDevComp);
         sdStatusComp.setLayout(new GridLayout(2, false));
@@ -171,8 +174,9 @@ public class DevelopmentPage extends AEvoPage {
         Table sdTable = selfDevTable.getTable();
         sdTable.setHeaderVisible(true);
         sdTable.setLinesVisible(true);
-        GridData gdSdTable = new GridData(GridData.FILL_HORIZONTAL);
+        GridData gdSdTable = new GridData(GridData.FILL_BOTH);
         gdSdTable.heightHint = 100;
+        gdSdTable.grabExcessVerticalSpace = true;
         sdTable.setLayoutData(gdSdTable);
 
         createSelfDevColumns();
@@ -185,13 +189,15 @@ public class DevelopmentPage extends AEvoPage {
         });
 
         List<SelfDevRow> sdData = new ArrayList<>();
-        sdData.add(new SelfDevRow(1, SelfDevRow.SELF_DEV_LOOP, "orchestrator", "ready"));
-        sdData.add(new SelfDevRow(2, SelfDevRow.EVO_RCP, "/xx/", "ready"));
-        sdData.add(new SelfDevRow(3, SelfDevRow.GIT_CHECK, "supervisor.git", "ready"));
-        sdData.add(new SelfDevRow(4, SelfDevRow.MAVEN_CHECK, "supervisor.maven", "ready"));
-        sdData.add(new SelfDevRow(5, SelfDevRow.LLM_CHECK, "supervisor.llm", "ready"));
-        sdData.add(new SelfDevRow(6, SelfDevRow.GENOME_CHECK, "supervisor.genome", "ready"));
-        sdData.add(new SelfDevRow(7, SelfDevRow.PERM_CHECK, "supervisor.fs", "ready"));
+        sdData.add(new SelfDevRow(1, SelfDevRow.GIT_CHECK, "supervisor.git", "ready"));
+        sdData.add(new SelfDevRow(2, SelfDevRow.MAVEN_CHECK, "supervisor.maven", "ready"));
+        sdData.add(new SelfDevRow(3, SelfDevRow.LLM_CHECK, "supervisor.llm", "ready"));
+        sdData.add(new SelfDevRow(4, SelfDevRow.GENOME_CHECK, "supervisor.genome", "ready"));
+        sdData.add(new SelfDevRow(5, SelfDevRow.PERM_CHECK, "supervisor.fs", "ready"));
+        sdData.add(new SelfDevRow(6, SelfDevRow.COPY_SOURCE, "sandbox.copy", "ready"));
+        sdData.add(new SelfDevRow(7, SelfDevRow.BUILD_PROJECT, "sandbox.build", "ready"));
+        sdData.add(new SelfDevRow(8, SelfDevRow.EXPORT_PRODUCT, "sandbox.export", "ready"));
+        sdData.add(new SelfDevRow(9, SelfDevRow.SELF_DEV_LOOP, "orchestrator", "ready"));
         selfDevTable.setInput(sdData);
 
         // 1.2 Control Panel
@@ -275,7 +281,8 @@ public class DevelopmentPage extends AEvoPage {
         public String getText(Object element) {
             SelfDevRow row = (SelfDevRow) element;
             switch (col) {
-                case 0: // Action
+                case 0: return String.valueOf(row.order);
+                case 1: // Action
                     if ("running".equals(row.status) || "starting".equals(row.status) || "building".equals(row.status) || "evaluating".equals(row.status)) {
                         return "\u23F8 \u23F9"; // pause stop
                     } else if ("paused".equals(row.status)) {
@@ -283,9 +290,8 @@ public class DevelopmentPage extends AEvoPage {
                     } else {
                         return "\u25B6"; // play
                     }
-                case 1: // Edit
+                case 2: // Edit
                     return "\u270E";
-                case 2: return String.valueOf(row.order);
                 case 3: return row.name;
                 case 4: return row.path;
                 case 5: return row.status;
@@ -295,7 +301,7 @@ public class DevelopmentPage extends AEvoPage {
 
         @Override
         public Image getImage(Object element) {
-            if (col == 0) {
+            if (col == 1) {
                 SelfDevRow row = (SelfDevRow) element;
                 if ("running".equals(row.status) || "starting".equals(row.status) || "building".equals(row.status) || "evaluating".equals(row.status)) {
                     return imageRegistry.get("pause");
@@ -327,8 +333,8 @@ public class DevelopmentPage extends AEvoPage {
     }
 
     private void createSelfDevColumns() {
-        String[] titles = { "Action", "Edit", "#", "Name", "Path/URL", "Status" };
-        int[] bounds = { 100, 50, 40, 150, 250, 150 };
+        String[] titles = { "#", "Action", "Edit", "Name", "Path/URL", "Status" };
+        int[] bounds = { 40, 100, 50, 150, 250, 150 };
 
         for (int i = 0; i < titles.length; i++) {
             TableViewerColumn col = createTableViewerColumn(selfDevTable, titles[i], bounds[i], i);
@@ -359,9 +365,9 @@ public class DevelopmentPage extends AEvoPage {
     }
 
     private void handleSelfDevAction(SelfDevRow row, int columnIndex) {
-        if (columnIndex == 0) { // Action
+        if (columnIndex == 1) { // Action
             handleActionInternal(row);
-        } else if (columnIndex == 1) { // Edit
+        } else if (columnIndex == 2) { // Edit
             if (SelfDevRow.SELF_DEV_LOOP.equals(row.name)) {
                 openSelfDevEditDialog();
             } else {
@@ -416,7 +422,28 @@ public class DevelopmentPage extends AEvoPage {
         } else if (SelfDevRow.PERM_CHECK.equals(row.name)) {
             row.status = bootstrapController.check("PERMISSIONS");
             selfDevTable.refresh(row);
+        } else if (SelfDevRow.COPY_SOURCE.equals(row.name)) {
+            executeBackgroundTask(row, "COPY");
+        } else if (SelfDevRow.BUILD_PROJECT.equals(row.name)) {
+            executeBackgroundTask(row, "BUILD");
+        } else if (SelfDevRow.EXPORT_PRODUCT.equals(row.name)) {
+            row.status = bootstrapController.check("EXPORT");
+            selfDevTable.refresh(row);
         }
+    }
+
+    private void executeBackgroundTask(SelfDevRow row, String type) {
+        row.status = "running...";
+        selfDevTable.refresh(row);
+        new Thread(() -> {
+            String result = bootstrapController.check(type);
+            Display.getDefault().asyncExec(() -> {
+                if (!selfDevTable.getTable().isDisposed()) {
+                    row.status = result;
+                    selfDevTable.refresh(row);
+                }
+            });
+        }).start();
     }
 
     private void openSelfDevEditDialog() {
