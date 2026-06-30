@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import eu.kalafatic.evolution.controller.agents.BaseAiAgent;
 import eu.kalafatic.evolution.controller.agents.PromptIntentAnalyzer;
 import eu.kalafatic.evolution.controller.kernel.EvolutionProfile;
 import eu.kalafatic.evolution.controller.mediation.analysis.ContextCurator;
@@ -23,9 +24,9 @@ import eu.kalafatic.evolution.controller.mediation.scanner.TargetScanner;
 import eu.kalafatic.evolution.controller.orchestration.ConversationState;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionPhase;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionPhaseMachine;
-import eu.kalafatic.evolution.controller.orchestration.EvolutionProgressEvent;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionProgressPublisher;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionStage;
+import eu.kalafatic.evolution.controller.orchestration.EvolutionProgressEvent;
 import eu.kalafatic.evolution.controller.orchestration.FileChangeTracker;
 import eu.kalafatic.evolution.controller.orchestration.FinalResponse;
 import eu.kalafatic.evolution.controller.orchestration.FinalResponseAssembler;
@@ -37,6 +38,7 @@ import eu.kalafatic.evolution.controller.orchestration.OrchestratorResponse;
 import eu.kalafatic.evolution.controller.orchestration.PlatformMode;
 import eu.kalafatic.evolution.controller.orchestration.PlatformType;
 import eu.kalafatic.evolution.controller.orchestration.ResultType;
+import eu.kalafatic.evolution.controller.orchestration.SessionManager;
 import eu.kalafatic.evolution.controller.orchestration.SystemState;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.TaskRequest;
@@ -47,11 +49,22 @@ import eu.kalafatic.evolution.controller.orchestration.behavior.ExecutionPolicy;
 import eu.kalafatic.evolution.controller.orchestration.behavior.ExploratoryReasoningModule;
 import eu.kalafatic.evolution.controller.orchestration.behavior.InstructionModule;
 import eu.kalafatic.evolution.controller.orchestration.behavior.MediatedInstructionModule;
+import eu.kalafatic.evolution.controller.orchestration.behavior.PolicyResolver;
+import eu.kalafatic.evolution.controller.orchestration.behavior.PromptComposer;
 import eu.kalafatic.evolution.controller.orchestration.behavior.SelfDevInstructionModule;
 import eu.kalafatic.evolution.controller.orchestration.behavior.StepModeInstructionModule;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityContext;
 import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityException;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityHealth;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityStatus;
+import eu.kalafatic.evolution.controller.orchestration.capability.ICapability;
+import eu.kalafatic.evolution.controller.orchestration.capability.contracts.IMutationContract;
 import eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType;
 import eu.kalafatic.evolution.controller.orchestration.diagnostics.CausalNode;
+import eu.kalafatic.evolution.controller.orchestration.engines.DimensionEngine;
+import eu.kalafatic.evolution.controller.orchestration.engines.ExecutionEngine;
+import eu.kalafatic.evolution.controller.orchestration.engines.FitnessEngine;
+import eu.kalafatic.evolution.controller.orchestration.engines.LineageEngine;
 import eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel;
 import eu.kalafatic.evolution.controller.orchestration.goal.GoalModel;
 import eu.kalafatic.evolution.controller.orchestration.goal.SemanticEnvelope;
@@ -59,6 +72,9 @@ import eu.kalafatic.evolution.controller.orchestration.intent.AtomicIntentAnalys
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionResult;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentHypothesis;
 import eu.kalafatic.evolution.controller.orchestration.mediation.MediationEngine;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.adaptive.DiversityPressureController;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.adaptive.EvolutionaryPenaltyModel;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.adaptive.RejectionPatternAnalyzer;
 import eu.kalafatic.evolution.controller.orchestration.util.ModeRecognizer;
 import eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceArtifact;
 import eu.kalafatic.evolution.controller.trajectory.Trajectory;
@@ -71,11 +87,11 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.PromptInstructions;
 import eu.kalafatic.evolution.model.orchestration.SelfDevDecision;
 
-public class DarwinEngine extends ADarwinEngine {	
+public class CodingEngine extends ADarwinEngine {	
 
-	public DarwinEngine(TaskContext context, IterationMemoryService memoryService,
+	public CodingEngine(TaskContext context, IterationMemoryService memoryService,
 			SystemStateSignalProvider stateProvider) {
-		super(context, memoryService, stateProvider, PlatformType.DARWIN_MODE);
+		super(context, memoryService, stateProvider, PlatformType.ASSISTED_CODING);
 	}
 	
 	public OrchestratorResponse orchestrateEvolution(TaskRequest taskRequest, IterationManager iterationManager)
@@ -1015,9 +1031,7 @@ private String generateChatResponse(String request, TaskContext context) {
 	// ============================================================
 	// HELPER METHODS
 	// ============================================================
-	
-	
-	
+		
 
 	private String generateAlternativeChatResponse(String request, TaskContext context) {
 	    return "I'm ready to evolve! Tell me what code you want me to work on, and I'll generate competing implementations for you to choose from.";
@@ -1778,7 +1792,6 @@ private String generateChatResponse(String request, TaskContext context) {
 	}
 
 	
-	
 	public List<BranchVariant> generateVariants(GoalModel goal, StateSnapshot snapshot, FailureMemory failureMemory,
 			Trajectory trajectory, EvolutionaryPressureVector pressure) throws Exception {
 		Orchestrator orchestrator = context.getOrchestrator();
@@ -2263,7 +2276,9 @@ private String generateChatResponse(String request, TaskContext context) {
 
 		return variants;
 	}
-		
+	
+	
+
 	/**
 	 * Generates conversational response variants via LLM.
 	 * Called when CHAT capability is detected.
@@ -2370,7 +2385,6 @@ private String generateChatResponse(String request, TaskContext context) {
 		return genome;
 	}
 	
-
 	@Override
 	protected String getAgentInstructions() {
 		return "Role: Darwin Engine. Strategy: Lineage-driven evolutionary mutation.\n" + "EVOLUTIONARY MANDATE:\n"

@@ -75,10 +75,9 @@ public class EvolutionOrchestrator implements IOrchestrator {
 
         IterationManager kernel = session.getIterationManager();
         if (kernel == null) {
-            kernel = KernelFactory.create(context, session, aiService);
+            kernel = KernelFactory.create(taskRequest.getPrompt(), context, session, aiService);
             session.setIterationManager(kernel);
         }
-
         return kernel.handle(taskRequest);
     }
 

@@ -6,13 +6,14 @@ import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.DarwinEngine;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.StateSnapshot;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.FailureMemory;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.IDarwinEngine;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionaryPressureVector;
 import eu.kalafatic.evolution.controller.trajectory.Trajectory;
 
 public class DefaultMutationEngine implements MutationEngine {
-    private final DarwinEngine engine;
+    private final IDarwinEngine engine;
 
-    public DefaultMutationEngine(DarwinEngine engine) {
+    public DefaultMutationEngine(IDarwinEngine engine) {
         this.engine = engine;
     }
 

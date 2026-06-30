@@ -7,6 +7,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import eu.kalafatic.evolution.controller.orchestration.selfdev.Evaluator;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.IDarwinEngine;
+
 /**
  * Central runtime catalog for AI Kernel capabilities.
  */

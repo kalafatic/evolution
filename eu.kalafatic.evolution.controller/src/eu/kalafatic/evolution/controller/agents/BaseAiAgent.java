@@ -9,6 +9,7 @@ import eu.kalafatic.evolution.controller.orchestration.AiService;
 import eu.kalafatic.evolution.controller.orchestration.ConversationState;
 import eu.kalafatic.evolution.controller.orchestration.IOrchestrationFlow;
 import eu.kalafatic.evolution.controller.orchestration.OrchestratorResponse;
+import eu.kalafatic.evolution.controller.orchestration.PlatformType;
 import eu.kalafatic.evolution.controller.orchestration.ResultType;
 import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
@@ -18,6 +19,7 @@ import eu.kalafatic.evolution.controller.orchestration.util.CodeExtractor;
 import eu.kalafatic.evolution.controller.services.BestPracticesService;
 import eu.kalafatic.evolution.controller.services.NeuronContextService;
 import eu.kalafatic.evolution.controller.tools.ITool;
+import eu.kalafatic.evolution.controller.workflow.EvolutionEvent.EELType;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -37,7 +39,9 @@ public abstract class BaseAiAgent implements IAgent, IOrchestrationFlow {
     protected AiService aiService = new AiService();
     protected BestPracticesService bestPracticesService;
     protected NeuronContextService neuronContextService;
+    
 
+    
     public BaseAiAgent(String id, String type, SessionContainer container) {
         if (container == null) {
             throw new IllegalArgumentException("BaseAiAgent [" + id + "]: SessionContainer cannot be null. Explicit session context injection is mandatory.");
@@ -215,5 +219,9 @@ public abstract class BaseAiAgent implements IAgent, IOrchestrationFlow {
     protected String extractContent(String response) {
         return CodeExtractor.extractCode(response);
     }
-        
+
+	public AiService getAiService() {
+		return aiService;
+	}
+
 }

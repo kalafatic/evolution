@@ -1,6 +1,7 @@
 package eu.kalafatic.evolution.controller.orchestration.selfdev;
 
 import eu.kalafatic.evolution.controller.agents.PromptIntentAnalyzer;
+import eu.kalafatic.evolution.controller.orchestration.PlatformType;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 
 /**
@@ -8,24 +9,23 @@ import eu.kalafatic.evolution.controller.orchestration.TaskContext;
  */
 public class DarwinEngineFactory {
 
-    public static ADarwinEngine createEngine(String mode, TaskContext context,
+    public static ADarwinEngine createEngine(PlatformType platformType, TaskContext context,
                                               IterationMemoryService memoryService,
                                               SystemStateSignalProvider stateProvider) {
-        context.log("[FACTORY] Creating DarwinEngine for mode: " + mode);
+        context.log("[FACTORY] Creating DarwinEngine for mode: " + platformType);
         
-        switch (mode.toUpperCase()) {
-            case "CHAT":
-                return new ChatDarwinEngine(context, memoryService, stateProvider);
-            case "TASK":
-            case "CODE":
-                return new TaskDarwinEngine(context, memoryService, stateProvider);
-            case "MEDIATED":
-                return new MediatedDarwinEngine(context, memoryService, stateProvider);
-            case "SELFDEV":
-                return new SelfDevDarwinEngine(context, memoryService, stateProvider);
+        switch (platformType) {
+            case SIMPLE_CHAT:
+                return new ChatEngine(context, memoryService, stateProvider);
+            case ASSISTED_CODING:
+                return new CodingEngine(context, memoryService, stateProvider);
+            case HYBRID_MANUAL_EXPORT:
+                return new MediatedEngine(context, memoryService, stateProvider);
+            case SELF_DEV_MODE:
+                return new SelfDevelopmentEngine(context, memoryService, stateProvider);
             default:
-                context.log("[FACTORY] Unknown mode: " + mode + ". Defaulting to TASK.");
-                return new TaskDarwinEngine(context, memoryService, stateProvider);
+                context.log("[FACTORY] Unknown mode: " + platformType + ". Defaulting to TASK.");
+                return new DarwinEngine(context, memoryService, stateProvider);
         }
     }
     
@@ -34,11 +34,11 @@ public class DarwinEngineFactory {
                                                         IterationMemoryService memoryService,
                                                         SystemStateSignalProvider stateProvider) {
         if (intent.isChat()) {
-            return new ChatDarwinEngine(context, memoryService, stateProvider);
+            return new ChatEngine(context, memoryService, stateProvider);
         } else if (intent.isControl()) {
-            return new TaskDarwinEngine(context, memoryService, stateProvider);
+            return new CodingEngine(context, memoryService, stateProvider);
         } else {
-            return new TaskDarwinEngine(context, memoryService, stateProvider);
+            return new DarwinEngine(context, memoryService, stateProvider);
         }
     }
 }

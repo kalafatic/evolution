@@ -117,7 +117,7 @@ public class DarwinFlow implements IOrchestrationFlow {
 
             List<Task> tasks = planner.generateTasksFromVariant(variantContext, variant);
             context.log("[DARWIN] Generated " + tasks.size() + " tasks for variant: " + variant.getId());
-            IterationManager variantManager = KernelFactory.create(variantContext, sessionContainer, aiService);
+            IterationManager variantManager = KernelFactory.create(tasks.get(0).getPrompt(), variantContext, sessionContainer, aiService);
 
             boolean success = true;
             manager.updateVariantLifecycle(List.of(variant), variant.getId(), BranchVariant.ActivationState.EXECUTING, context);

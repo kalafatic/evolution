@@ -3,6 +3,7 @@ package eu.kalafatic.evolution.controller.orchestration;
 import java.io.File;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -35,6 +36,7 @@ import eu.kalafatic.evolution.controller.kernel.GitEvolutionAdapter;
 import eu.kalafatic.evolution.controller.kernel.MutationEngine;
 import eu.kalafatic.evolution.controller.kernel.PhaseEngine;
 import eu.kalafatic.evolution.controller.kernel.RealityEngine;
+import eu.kalafatic.evolution.controller.kernel.SessionBoundaryGuard;
 import eu.kalafatic.evolution.controller.kernel.TrajectoryEngine;
 import eu.kalafatic.evolution.controller.mediation.analysis.ContextCurator;
 import eu.kalafatic.evolution.controller.mediation.analysis.PromptSynthesizer;
@@ -71,6 +73,7 @@ import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.DarwinEngine;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.Evaluator;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.GitManager;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.IDarwinEngine;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationMemoryService;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationRecord;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.StateSnapshot;
@@ -123,7 +126,10 @@ public class IterationManager {
     private final TaskPlanner taskPlanner;
     private final TaskExecutor taskExecutor;
     private final Evaluator evaluator;
-    private final DarwinEngine darwinEngine;
+    
+    private IDarwinEngine darwinEngine;
+    private final Map<PlatformType,IDarwinEngine> engineMap = new HashMap<PlatformType,IDarwinEngine>();
+  
     private final IterationMemoryService memoryService;
     private final GoalUnderstandingEngine goalUnderstandingEngine;
     private final SemanticEnvelopeEngine semanticEnvelopeEngine;
@@ -163,7 +169,7 @@ public class IterationManager {
     public TaskPlanner getTaskPlanner() { return taskPlanner; }
     public TaskExecutor getTaskExecutor() { return taskExecutor; }
     public Evaluator getEvaluator() { return evaluator; }
-    public DarwinEngine getDarwinEngine() { return darwinEngine; }
+    public IDarwinEngine getDarwinEngine() { return darwinEngine; }
     public PhaseEngine getPhaseEngine() { return phaseEngine; }
     public BranchManager getBranchManager() { return branchManager; }
     public MutationEngine getMutationEngine() { return mutationEngine; }
@@ -190,14 +196,15 @@ public class IterationManager {
 
     public IterationManager(
             TaskContext context,
-            eu.kalafatic.evolution.controller.orchestration.SessionContainer sessionContainer,
+            SessionContainer sessionContainer,
             AiService aiService,
             GitManager gitManager,
             TaskPlanner taskPlanner,
             TaskExecutor taskExecutor,
             Evaluator evaluator,
-            DarwinEngine darwinEngine,
+            IDarwinEngine darwinEngine,
             IterationMemoryService memoryService) {
+    	
         this.context = context;
         this.sessionContainer = sessionContainer;
         this.aiService = aiService;
@@ -206,6 +213,8 @@ public class IterationManager {
         this.taskExecutor = taskExecutor;
         this.evaluator = evaluator;
         this.darwinEngine = darwinEngine;
+        engineMap.put(darwinEngine.getPlatformType(), darwinEngine);
+        
         this.memoryService = memoryService;
         this.goalUnderstandingEngine = new GoalUnderstandingEngine(sessionContainer);
         this.semanticEnvelopeEngine = new SemanticEnvelopeEngine(sessionContainer);
@@ -307,11 +316,11 @@ public class IterationManager {
     }
 
     public OrchestratorResponse handle(TaskRequest taskRequest) throws Exception {
-        eu.kalafatic.evolution.controller.kernel.SessionBoundaryGuard.enterSession(context.getSessionId());
+        SessionBoundaryGuard.enterSession(context.getSessionId());
         try {
             return handleInternal(taskRequest);
         } finally {
-            eu.kalafatic.evolution.controller.kernel.SessionBoundaryGuard.exitSession();
+            SessionBoundaryGuard.exitSession();
         }
     }
 
@@ -1504,4 +1513,11 @@ public class IterationManager {
             }
         } catch (Exception e) {}
     }
+	public Map<PlatformType, IDarwinEngine> getEngineMap() {
+		return engineMap;
+	}
+	public void setDarwinEngine(IDarwinEngine darwinEngine) {
+		engineMap.put(darwinEngine.getPlatformType(), darwinEngine);
+		this.darwinEngine = darwinEngine;
+	}
 }

@@ -1,22 +1,20 @@
 //package eu.kalafatic.evolution.controller.orchestration.selfdev;
 //
 //import java.io.File;
+//import java.util.ArrayList;
 //import java.util.List;
 //
+//import eu.kalafatic.evolution.controller.agents.BaseAiAgent;
 //import eu.kalafatic.evolution.controller.kernel.EvolutionProfile;
 //import eu.kalafatic.evolution.controller.orchestration.IterationManager;
 //import eu.kalafatic.evolution.controller.orchestration.OrchestratorResponse;
 //import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
-//import eu.kalafatic.evolution.controller.orchestration.SystemState;
 //import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 //import eu.kalafatic.evolution.controller.orchestration.TaskRequest;
-//import eu.kalafatic.evolution.controller.orchestration.engines.DimensionEngine;
-//import eu.kalafatic.evolution.controller.orchestration.engines.ExecutionEngine;
-//import eu.kalafatic.evolution.controller.orchestration.engines.FitnessEngine;
-//import eu.kalafatic.evolution.controller.orchestration.engines.LineageEngine;
-//import eu.kalafatic.evolution.controller.orchestration.engines.SelectionEngine;
+//import eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType;
 //import eu.kalafatic.evolution.controller.orchestration.goal.GoalModel;
 //import eu.kalafatic.evolution.controller.orchestration.mediation.MediationEngine;
+//import eu.kalafatic.evolution.controller.orchestration.selfdev.enums.RealityLevel;
 //import eu.kalafatic.evolution.controller.orchestration.util.ModeRecognizer;
 //import eu.kalafatic.evolution.controller.trajectory.Trajectory;
 //import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
