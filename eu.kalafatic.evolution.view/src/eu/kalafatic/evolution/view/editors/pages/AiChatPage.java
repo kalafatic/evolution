@@ -966,6 +966,34 @@ public class AiChatPage extends AEvoPage {
 		}
 	}
 
+	public void handleOpenMediatedEditor(String path) {
+		if (path == null || path.isEmpty()) return;
+
+		if (path.startsWith("file://")) {
+			path = path.substring(7);
+			if (path.startsWith("/") && path.length() > 2 && path.charAt(2) == ':') {
+				path = path.substring(1);
+			}
+		}
+
+		File projectRoot = getProjectRoot();
+		File file = path.contains(":") ? new File(path) : new File(projectRoot, path);
+
+		if (file.exists()) {
+			IFile iFile = ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(new Path(file.getAbsolutePath()));
+			if (iFile != null) {
+				Display.getDefault().asyncExec(() -> {
+					if (isDisposed()) return;
+					try {
+						IDE.openEditor(editor.getSite().getPage(), iFile, eu.kalafatic.evolution.view.editors.MediatedEditor.ID);
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				});
+			}
+		}
+	}
+
 	public void handleSimpleSolution() {
 		String sid = getCurrentSessionName();
 		RuntimeProjection projection = ProjectionService.getInstance().getProjection(sid);

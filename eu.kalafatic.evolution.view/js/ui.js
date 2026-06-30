@@ -67,6 +67,12 @@ window.ChatApp.UI = {
     showContextMenu: function(e, path) {
         e.preventDefault();
         this.currentContextFile = path;
+
+        const mediatedItem = document.getElementById('menu-item-mediated');
+        if (mediatedItem) {
+            mediatedItem.style.display = path.toLowerCase().endsWith('.zip') ? 'block' : 'none';
+        }
+
         const menu = document.getElementById('context-menu');
         menu.style.display = 'block';
         menu.style.left = e.pageX + 'px';
@@ -83,6 +89,7 @@ window.ChatApp.UI = {
 
         switch(action) {
             case 'workspace': window.ChatApp.Actions.callJava('openInWorkspace', '-1', path); break;
+            case 'mediated': window.ChatApp.Actions.callJava('openInMediatedEditor', '-1', path); break;
             case 'review': window.ChatApp.Actions.callJava('openInReviewEditor', '-1', path); break;
             case 'revert': if (confirm('Revert ' + path + '?')) window.ChatApp.Actions.callJava('revertFile', '-1', this.currentContextFile); break;
             case 'copyPath': window.ChatApp.Actions.callJava('copy', '-1', path); break;

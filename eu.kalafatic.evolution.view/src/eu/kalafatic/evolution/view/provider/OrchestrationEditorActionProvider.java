@@ -39,6 +39,7 @@ public class OrchestrationEditorActionProvider extends CommonActionProvider {
     private Action rateTaskAction;
     private Action startSelfDevAction;
     private Action compareWithEachOtherAction;
+    private Action openInMediatedEditorAction;
 
     @Override
     public void init(ICommonActionExtensionSite aSite) {
@@ -167,6 +168,24 @@ public class OrchestrationEditorActionProvider extends CommonActionProvider {
                 }
             }
         };
+
+        openInMediatedEditorAction = new Action("Open in Mediated Editor") {
+            @Override
+            public void run() {
+                ISelection selection = getContext().getSelection();
+                if (selection instanceof IStructuredSelection) {
+                    Object element = ((IStructuredSelection) selection).getFirstElement();
+                    if (element instanceof IFile) {
+                        IWorkbenchPage page = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
+                        try {
+                            IDE.openEditor(page, (IFile) element, eu.kalafatic.evolution.view.editors.MediatedEditor.ID);
+                        } catch (PartInitException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            }
+        };
     }
 
     @Override
@@ -184,6 +203,13 @@ public class OrchestrationEditorActionProvider extends CommonActionProvider {
             if (firstElement instanceof Orchestrator) {
                 menu.appendToGroup(ICommonMenuConstants.GROUP_OPEN, startSelfDevAction);
             }
+            if (((IStructuredSelection) selection).size() == 1) {
+                Object first = ((IStructuredSelection) selection).getFirstElement();
+                if (first instanceof IFile && "zip".equalsIgnoreCase(((IFile) first).getFileExtension())) {
+                    menu.appendToGroup(ICommonMenuConstants.GROUP_OPEN, openInMediatedEditorAction);
+                }
+            }
+
             if (((IStructuredSelection) selection).size() == 2) {
                 Object first = ((IStructuredSelection) selection).toArray()[0];
                 Object second = ((IStructuredSelection) selection).toArray()[1];
