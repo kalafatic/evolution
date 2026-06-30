@@ -18,6 +18,7 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.SupervisorSettings#getSourcePath <em>Source Path</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.SupervisorSettings#getCommands <em>Commands</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.SupervisorSettings#getSettings <em>Settings</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.SupervisorSettings#getGit <em>Git</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getSupervisorSettings()
@@ -135,5 +136,27 @@ public interface SupervisorSettings extends EObject {
 	 * @generated
 	 */
 	void setSettings(String value);
+
+	/**
+	 * Returns the value of the '<em><b>Git</b></em>' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Git</em>' containment reference.
+	 * @see #setGit(Git)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getSupervisorSettings_Git()
+	 * @model containment="true"
+	 * @generated
+	 */
+	Git getGit();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.SupervisorSettings#getGit <em>Git</em>}' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Git</em>' reference.
+	 * @see #getGit()
+	 * @generated
+	 */
+	void setGit(Git value);
 
 } // SupervisorSettings

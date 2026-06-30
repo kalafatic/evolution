@@ -3,10 +3,13 @@
 package eu.kalafatic.evolution.model.orchestration.impl;
 
 import org.eclipse.emf.common.notify.Notification;
+import org.eclipse.emf.common.notify.NotificationChain;
 import org.eclipse.emf.ecore.EClass;
+import org.eclipse.emf.ecore.InternalEObject;
 import org.eclipse.emf.ecore.impl.ENotificationImpl;
 import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
 
+import eu.kalafatic.evolution.model.orchestration.Git;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 import eu.kalafatic.evolution.model.orchestration.SupervisorSettings;
 
@@ -23,6 +26,7 @@ import eu.kalafatic.evolution.model.orchestration.SupervisorSettings;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.SupervisorSettingsImpl#getSourcePath <em>Source Path</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.SupervisorSettingsImpl#getCommands <em>Commands</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.SupervisorSettingsImpl#getSettings <em>Settings</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.SupervisorSettingsImpl#getGit <em>Git</em>}</li>
  * </ul>
  *
  * @generated
@@ -129,12 +133,67 @@ public class SupervisorSettingsImpl extends MinimalEObjectImpl.Container impleme
 	protected String settings = SETTINGS_EDEFAULT;
 
 	/**
+	 * The cached value of the '{@link #getGit() <em>Git</em>}' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getGit()
+	 * @generated
+	 * @ordered
+	 */
+	protected Git git;
+
+	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
 	protected SupervisorSettingsImpl() {
 		super();
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Git getGit() {
+		return git;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public NotificationChain basicSetGit(Git newGit, NotificationChain msgs) {
+		Git oldGit = git;
+		git = newGit;
+		if (eNotificationRequired()) {
+			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, OrchestrationPackage.SUPERVISOR_SETTINGS__GIT, oldGit, newGit);
+			if (msgs == null) msgs = notification; else msgs.add(notification);
+		}
+		return msgs;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setGit(Git newGit) {
+		if (newGit != git) {
+			NotificationChain msgs = null;
+			if (git != null)
+				msgs = ((InternalEObject)git).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.SUPERVISOR_SETTINGS__GIT, null, msgs);
+			if (newGit != null)
+				msgs = ((InternalEObject)newGit).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.SUPERVISOR_SETTINGS__GIT, null, msgs);
+			msgs = basicSetGit(newGit, msgs);
+			if (msgs != null) msgs.dispatch();
+		}
+		else if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.SUPERVISOR_SETTINGS__GIT, newGit, newGit));
 	}
 
 	/**
@@ -267,6 +326,25 @@ public class SupervisorSettingsImpl extends MinimalEObjectImpl.Container impleme
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public NotificationChain eInverseRemove(InternalEObject otherEnd, int featureID, NotificationChain msgs) {
+		switch (featureID) {
+			case OrchestrationPackage.SUPERVISOR_SETTINGS__GIT:
+				return basicSetGit(null, msgs);
+		}
+		return super.eInverseRemove(otherEnd, featureID, msgs);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@Override
 	public Object eGet(int featureID, boolean resolve, boolean coreType) {
 		switch (featureID) {
@@ -280,6 +358,8 @@ public class SupervisorSettingsImpl extends MinimalEObjectImpl.Container impleme
 				return getCommands();
 			case OrchestrationPackage.SUPERVISOR_SETTINGS__SETTINGS:
 				return getSettings();
+			case OrchestrationPackage.SUPERVISOR_SETTINGS__GIT:
+				return getGit();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -306,6 +386,9 @@ public class SupervisorSettingsImpl extends MinimalEObjectImpl.Container impleme
 				return;
 			case OrchestrationPackage.SUPERVISOR_SETTINGS__SETTINGS:
 				setSettings((String)newValue);
+				return;
+			case OrchestrationPackage.SUPERVISOR_SETTINGS__GIT:
+				setGit((Git)newValue);
 				return;
 		}
 		super.eSet(featureID, newValue);
@@ -334,6 +417,9 @@ public class SupervisorSettingsImpl extends MinimalEObjectImpl.Container impleme
 			case OrchestrationPackage.SUPERVISOR_SETTINGS__SETTINGS:
 				setSettings(SETTINGS_EDEFAULT);
 				return;
+			case OrchestrationPackage.SUPERVISOR_SETTINGS__GIT:
+				setGit((Git)null);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -356,6 +442,8 @@ public class SupervisorSettingsImpl extends MinimalEObjectImpl.Container impleme
 				return COMMANDS_EDEFAULT == null ? commands != null : !COMMANDS_EDEFAULT.equals(commands);
 			case OrchestrationPackage.SUPERVISOR_SETTINGS__SETTINGS:
 				return SETTINGS_EDEFAULT == null ? settings != null : !SETTINGS_EDEFAULT.equals(settings);
+			case OrchestrationPackage.SUPERVISOR_SETTINGS__GIT:
+				return git != null;
 		}
 		return super.eIsSet(featureID);
 	}

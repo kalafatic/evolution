@@ -165,6 +165,24 @@ public class ProjectModelManager {
     }
 
     public void initializeDefaults(Orchestrator orchestrator) {
+        if (orchestrator.getGit() == null) {
+            Git git = OrchestrationFactory.eINSTANCE.createGit();
+            git.setRepositoryUrl("https://github.com/kalafatic/evolution/");
+            git.setBranch("master");
+            orchestrator.setGit(git);
+        } else if (orchestrator.getGit().getRepositoryUrl() == null || orchestrator.getGit().getRepositoryUrl().isEmpty()) {
+            orchestrator.getGit().setRepositoryUrl("https://github.com/kalafatic/evolution/");
+        }
+
+        if (orchestrator.getSupervisorSettings() != null) {
+            if (orchestrator.getSupervisorSettings().getGit() == null) {
+                Git supGit = OrchestrationFactory.eINSTANCE.createGit();
+                supGit.setRepositoryUrl("https://github.com/kalafatic/evo/");
+                supGit.setBranch("master");
+                orchestrator.getSupervisorSettings().setGit(supGit);
+            }
+        }
+
         if (orchestrator.getDefaultTarget() == null || orchestrator.getDefaultTarget().isEmpty()) {
             SourceDiscoveryResult result = getOrDiscoverWorkspace();
             if (result != null && result.getPrimaryRepository() != null) {
@@ -309,6 +327,9 @@ public class ProjectModelManager {
         supervisor.setCommands(commands);
         supervisor.setSettings(settings);
         supervisor.setDeployed(deployed);
+        if (supervisor.getGit() == null) {
+            supervisor.setGit(orchestrator.getGit());
+        }
     }
 
     public void updateCompilerSettings(Orchestrator orchestrator, String sourceVersion) {

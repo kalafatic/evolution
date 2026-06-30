@@ -21,6 +21,9 @@ public class GitCommitCommandHandler extends AbstractOrchestratorHandler {
             EObject git = (EObject) orchestrator.eGet(orchestrator.eClass().getEStructuralFeature("git"));
             if (git != null) {
                 String repositoryUrl = (String) git.eGet(git.eClass().getEStructuralFeature("repositoryUrl"));
+                if (repositoryUrl == null || repositoryUrl.isEmpty()) {
+                    repositoryUrl = "https://github.com/kalafatic/evolution/";
+                }
                 String branch = (String) git.eGet(git.eClass().getEStructuralFeature("branch"));
                 String username = (String) git.eGet(git.eClass().getEStructuralFeature("username"));
                 String localPath = (String) git.eGet(git.eClass().getEStructuralFeature("localPath"));
