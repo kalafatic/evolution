@@ -1829,7 +1829,7 @@ public class ChatEngine extends ADarwinEngine {
 		}
 	}
 
-	private void mergeHybridInsights(List<BranchVariant> variants, BranchVariant winner, TaskContext context) {
+	protected void mergeHybridInsights(List<BranchVariant> variants, BranchVariant winner, TaskContext context) {
 		JSONArray analyticalInsights = new JSONArray();
 		JSONArray stabilizationInsights = new JSONArray();
 
@@ -2147,7 +2147,7 @@ public class ChatEngine extends ADarwinEngine {
 		SemanticGenome genome = dimensionEngine.createGenome(goal, expansion, context);
 
 		// Select the next mutable dimension
-		EvolutionDimension activeDimension = dimensionEngine.selectNextDimension(genome, context);
+		EvolutionDimension activeDimension = dimensionEngine.selectNextDimension(genome, context, goal, trajectory);
 
 		context.getOrchestrationState().getMetadata().put("current_dimension", activeDimension.getId());
 		context.getOrchestrationState().getMetadata().put("current_dimension_description",
@@ -2344,7 +2344,7 @@ public class ChatEngine extends ADarwinEngine {
 		return variants;
 	}
 
-	private eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot getTargetSnapshotSafe(
+	protected eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot getTargetSnapshotSafe(
 			TaskContext context) {
 		Object obj = context.getOrchestrationState().getMetadata().get("mediatedSnapshot");
 
@@ -2474,7 +2474,7 @@ public class ChatEngine extends ADarwinEngine {
 		return genome;
 	}
 
-	private BranchVariant mapToBranchVariant(JSONObject obj, String goal, String currentPhase, Trajectory trajectory,
+	protected BranchVariant mapToBranchVariant(JSONObject obj, String goal, String currentPhase, Trajectory trajectory,
 			TaskContext context) {
 		BranchVariant v = new BranchVariant();
 		v.setId(obj.optString("id", "v-" + System.currentTimeMillis()));
@@ -2646,7 +2646,7 @@ public class ChatEngine extends ADarwinEngine {
 		return v;
 	}
 
-	private double semanticDistance(GoalModel goal, JSONObject variant, SemanticEnvelope envelope) {
+	protected double semanticDistance(GoalModel goal, JSONObject variant, SemanticEnvelope envelope) {
 		String strategy = variant.optString("strategy", "").toLowerCase();
 		String philosophy = variant.optString("semantic_anchor", "").toLowerCase();
 		String primaryAction = goal.getPrimaryAction().toLowerCase();

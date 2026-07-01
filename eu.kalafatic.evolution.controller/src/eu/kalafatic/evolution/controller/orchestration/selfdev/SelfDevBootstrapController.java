@@ -288,7 +288,7 @@ public class SelfDevBootstrapController {
 
         BuildResult result = tool.build(config);
         if (result.isSuccess()) {
-            return "SUCCESS (" + result.getDurationMs() + "ms)";
+            return "SUCCESS (" + result.getExecutionTimeMs() + "ms)";
         } else {
             return "ERROR: Build failed. Exit code: " + result.getExitCode();
         }

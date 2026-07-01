@@ -142,7 +142,7 @@ public class MediatedModeIntegrationTest {
         context.getOrchestrationState().setExecutionProfile(
             eu.kalafatic.evolution.controller.kernel.EvolutionIntensityCalculator.calculate(context, null, null));
 
-        IterationManager manager = KernelFactory.create(context, session, aiService);
+        IterationManager manager = KernelFactory.create("Test", context, session, aiService);
 
         TaskRequest request = new TaskRequest();
         request.setPrompt("Analyze my project");

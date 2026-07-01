@@ -63,6 +63,7 @@ import eu.kalafatic.evolution.controller.orchestration.capability.ICapability;
 import eu.kalafatic.evolution.controller.orchestration.capability.contracts.IMutationContract;
 import eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType;
 import eu.kalafatic.evolution.controller.orchestration.diagnostics.CausalNode;
+import eu.kalafatic.evolution.controller.orchestration.engines.DimensionDiscoveryAgent;
 import eu.kalafatic.evolution.controller.orchestration.engines.DimensionEngine;
 import eu.kalafatic.evolution.controller.orchestration.engines.ExecutionEngine;
 import eu.kalafatic.evolution.controller.orchestration.engines.FitnessEngine;
@@ -112,6 +113,7 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 	protected final FitnessEngine fitnessEngine = new FitnessEngine();
 	protected final ExecutionEngine executionEngine = new ExecutionEngine();
 	protected final SelectionEngine selectionEngine = new SelectionEngine();
+	protected final DimensionDiscoveryAgent dimensionDiscoveryAgent;
 	protected CapabilityStatus status = CapabilityStatus.STOPPED;
 	
 	// Inject the analyzer
@@ -131,6 +133,8 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 		this.rejectionAnalyzer = new RejectionPatternAnalyzer(getSessionContainer());
 		this.mediationEngine = new MediationEngine();
 		this.platformType = platformType;
+		this.dimensionDiscoveryAgent = new DimensionDiscoveryAgent(getSessionContainer());
+		this.dimensionEngine.setDiscoveryAgent(dimensionDiscoveryAgent);
     
 	    // Create ModeRecognizer with SessionContainer from parent (BaseAiAgent)
 	    this.modeRecognizer = new ModeRecognizer(getSessionContainer());
@@ -2361,7 +2365,7 @@ private String generateChatResponse(String request, TaskContext context) {
 		SemanticGenome genome = dimensionEngine.createGenome(goal, expansion, context);
 
 		// Select the next mutable dimension
-		EvolutionDimension activeDimension = dimensionEngine.selectNextDimension(genome, context);
+		EvolutionDimension activeDimension = dimensionEngine.selectNextDimension(genome, context, goal, trajectory);
 
 		context.getOrchestrationState().getMetadata().put("current_dimension", activeDimension.getId());
 		context.getOrchestrationState().getMetadata().put("current_dimension_description",

@@ -1627,7 +1627,7 @@ public abstract class ADarwinEngine2 extends BaseAiAgent implements ICapability,
             List<eu.kalafatic.evolution.model.orchestration.Task> tasks = planner
                     .generateTasksFromVariant(variantContext, variant);
             context.log("[DARWIN] Generated " + tasks.size() + " tasks for variant: " + variant.getId());
-            IterationManager variantManager = KernelFactory.create(variantContext, getSessionContainer(), aiService);
+            IterationManager variantManager = KernelFactory.create("Autonomous", variantContext, getSessionContainer(), aiService);
             
             if (context.getMetadata().containsKey("testMode") || isMediated || isChatMode) {
                 variant.setSuccess(true);

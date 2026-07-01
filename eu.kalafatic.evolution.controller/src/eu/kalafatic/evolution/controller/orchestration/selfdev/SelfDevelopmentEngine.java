@@ -1042,7 +1042,7 @@ private String generateChatResponse(String request, TaskContext context) {
 	/**
 	 * Handles the Intent Expansion phase separately for clarity.
 	 */
-	private EvaluationResult handleIntentExpansionPhase(TaskContext context, IterationManager manager,
+	protected EvaluationResult handleIntentExpansionPhase(TaskContext context, IterationManager manager,
 			EvolutionPhaseMachine phaseMachine, String goal, EvolutionPhase phase) throws Exception {
 
 		// Use the existing OrchestrationState
@@ -1107,7 +1107,7 @@ private String generateChatResponse(String request, TaskContext context) {
 	/**
 	 * Resolves variant selection from pending commands or auto-selection.
 	 */
-	private String resolveVariantSelection(List<BranchVariant> variants, TaskContext context,
+	protected String resolveVariantSelection(List<BranchVariant> variants, TaskContext context,
 			IterationManager manager) {
 
 		OrchestrationState state = context.getOrchestrationState();
@@ -1134,7 +1134,7 @@ private String generateChatResponse(String request, TaskContext context) {
 	/**
 	 * Handles iteration failure with appropriate recovery strategy.
 	 */
-	private void handleIterationFailure(TaskContext context, IterationManager manager, EvaluationResult result)
+	protected void handleIterationFailure(TaskContext context, IterationManager manager, EvaluationResult result)
 			throws Exception {
 
 		context.log("[DARWIN] Iteration failed. Attempting recovery...");
@@ -1178,7 +1178,7 @@ private String generateChatResponse(String request, TaskContext context) {
 	/**
 	 * Gets or creates the mediation engine.
 	 */
-	private MediationEngine getMediationEngine() {
+	protected MediationEngine getMediationEngine() {
 		if (mediationEngine == null) {
 			mediationEngine = new MediationEngine();
 		}
@@ -1188,7 +1188,7 @@ private String generateChatResponse(String request, TaskContext context) {
 	/**
 	 * Merges mediation insights into the evolutionary context.
 	 */
-	private void mergeMediationInsights(MediationResult mediation, TaskContext context, IterationManager manager) {
+	protected void mergeMediationInsights(MediationResult mediation, TaskContext context, IterationManager manager) {
 
 		context.log("[DARWIN] Merging mediation insights...");
 
@@ -1774,7 +1774,7 @@ private String generateChatResponse(String request, TaskContext context) {
 			List<eu.kalafatic.evolution.model.orchestration.Task> tasks = planner
 					.generateTasksFromVariant(variantContext, variant);
 			context.log("[DARWIN] Generated " + tasks.size() + " tasks for variant: " + variant.getId());
-			IterationManager variantManager = KernelFactory.create(variantContext, getSessionContainer(), aiService);
+			IterationManager variantManager = KernelFactory.create("Autonomous", variantContext, getSessionContainer(), aiService);
 			
 			if (context.getMetadata().containsKey("testMode") || isMediated || isChatMode) {
 			    variant.setSuccess(true);
@@ -1991,7 +1991,7 @@ private String generateChatResponse(String request, TaskContext context) {
 		}
 	}
 
-	private void mergeHybridInsights(List<BranchVariant> variants, BranchVariant winner, TaskContext context) {
+	protected void mergeHybridInsights(List<BranchVariant> variants, BranchVariant winner, TaskContext context) {
 		JSONArray analyticalInsights = new JSONArray();
 		JSONArray stabilizationInsights = new JSONArray();
 
@@ -2021,7 +2021,7 @@ private String generateChatResponse(String request, TaskContext context) {
 		}
 	}
 
-	private void deleteDirectory(File directory) {
+	protected void deleteDirectory(File directory) {
 		File[] allContents = directory.listFiles();
 		if (allContents != null) {
 			for (File file : allContents)
@@ -2318,7 +2318,7 @@ private String generateChatResponse(String request, TaskContext context) {
 		SemanticGenome genome = dimensionEngine.createGenome(goal, expansion, context);
 
 		// Select the next mutable dimension
-		EvolutionDimension activeDimension = dimensionEngine.selectNextDimension(genome, context);
+		EvolutionDimension activeDimension = dimensionEngine.selectNextDimension(genome, context, goal, trajectory);
 
 		context.getOrchestrationState().getMetadata().put("current_dimension", activeDimension.getId());
 		context.getOrchestrationState().getMetadata().put("current_dimension_description",
@@ -2515,7 +2515,7 @@ private String generateChatResponse(String request, TaskContext context) {
 		return variants;
 	}
 	
-	private eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot getTargetSnapshotSafe(TaskContext context) {
+	protected eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot getTargetSnapshotSafe(TaskContext context) {
 	    Object obj = context.getOrchestrationState().getMetadata().get("mediatedSnapshot");
 	    
 	    if (obj == null) {
@@ -2652,7 +2652,7 @@ private String generateChatResponse(String request, TaskContext context) {
 		return genome;
 	}
 
-	private BranchVariant mapToBranchVariant(JSONObject obj, String goal, String currentPhase, Trajectory trajectory,
+	protected BranchVariant mapToBranchVariant(JSONObject obj, String goal, String currentPhase, Trajectory trajectory,
 			TaskContext context) {
 		BranchVariant v = new BranchVariant();
 		v.setId(obj.optString("id", "v-" + System.currentTimeMillis()));
@@ -2824,7 +2824,7 @@ private String generateChatResponse(String request, TaskContext context) {
 		return v;
 	}
 
-	private double semanticDistance(GoalModel goal, JSONObject variant, SemanticEnvelope envelope) {
+	protected double semanticDistance(GoalModel goal, JSONObject variant, SemanticEnvelope envelope) {
 		String strategy = variant.optString("strategy", "").toLowerCase();
 		String philosophy = variant.optString("semantic_anchor", "").toLowerCase();
 		String primaryAction = goal.getPrimaryAction().toLowerCase();
@@ -2901,7 +2901,7 @@ private String generateChatResponse(String request, TaskContext context) {
 		return Math.min(1.0, distance);
 	}
 
-	private String sanitize(String s) {
+	protected String sanitize(String s) {
 		if (s == null || s.isEmpty())
 			return "unnamed";
 		String sanitized = s.toLowerCase().replaceAll("[^a-z0-9]", "-").replaceAll("-+", "-");
