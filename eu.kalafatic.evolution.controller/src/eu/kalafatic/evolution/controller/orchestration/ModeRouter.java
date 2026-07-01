@@ -34,6 +34,8 @@ public class ModeRouter {
 			return new DarwinFlow(aiService, manager);
 		case SELF_DEV_MODE:
 			return new DarwinFlow(aiService, manager);
+		case INTENT_RECONSTRUCTION:
+			return new DarwinFlow(aiService, manager);
 		case HYBRID_MANUAL_EXPORT:
 			// Mediated Mode is now handled by DarwinFlow for iterative cognitive evolution
 			return new DarwinFlow(aiService, manager);
@@ -76,6 +78,8 @@ public class ModeRouter {
 			return createDarwinMode();
 		if (lower.contains("mode: self-dev"))
 			return createSelfDevMode();
+		if (lower.contains("mode: intent-reconstruction") || lower.contains("reconstruct intent"))
+			return createIntentReconstructionMode();
 		if (lower.contains("mode: mediated") || lower.contains("analyze target"))
 			return createHybridManualExportMode();
 
@@ -164,6 +168,8 @@ public class ModeRouter {
 		switch (capability) {
 		case SELF_DEV:
 			return createSelfDevMode();
+		case INTENT_RECONSTRUCTION:
+			return createIntentReconstructionMode();
 		case EVOLUTION:
 			return createDarwinMode();
 		case ARCHITECTURE:
@@ -199,6 +205,10 @@ public class ModeRouter {
 
 	private PlatformMode createHybridManualExportMode() {
 		return new PlatformMode(PlatformType.HYBRID_MANUAL_EXPORT, AutonomyLevel.LOW, 1, false);
+	}
+
+	private PlatformMode createIntentReconstructionMode() {
+		return new PlatformMode(PlatformType.INTENT_RECONSTRUCTION, AutonomyLevel.MEDIUM, 3, false);
 	}
 
 }

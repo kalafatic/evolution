@@ -9,5 +9,6 @@ public enum CapabilityType {
     ARCHITECTURE,
     EVOLUTION,
     SELF_DEV, 
-    MEDIATED
+    MEDIATED,
+    INTENT_RECONSTRUCTION
 }

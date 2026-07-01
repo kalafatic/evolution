@@ -46,6 +46,10 @@ public class ModeRecognizer {
 		if (isMediatedMode(context)) {
 			return PlatformType.HYBRID_MANUAL_EXPORT;
 		}
+		if (intentResult.getReasoning().toLowerCase().contains("reconstruct intent") ||
+		    intentResult.getReasoning().toLowerCase().contains("analyze architecture")) {
+			return PlatformType.INTENT_RECONSTRUCTION;
+		}
 		if (intentResult.isChat()) {
 			return PlatformType.SIMPLE_CHAT;
 		}
