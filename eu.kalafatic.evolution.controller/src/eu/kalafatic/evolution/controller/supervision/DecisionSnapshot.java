@@ -1,10 +1,10 @@
 package eu.kalafatic.evolution.controller.supervision;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
-import java.util.ArrayList;
 
 /**
  * Immutable record of an activation decision made by the ActivationResolver.

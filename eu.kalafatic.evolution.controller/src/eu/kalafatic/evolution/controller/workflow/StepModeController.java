@@ -1,8 +1,9 @@
 package eu.kalafatic.evolution.controller.workflow;
 
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 
 public class StepModeController {

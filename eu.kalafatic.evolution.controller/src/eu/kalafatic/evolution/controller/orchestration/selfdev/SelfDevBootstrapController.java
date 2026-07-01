@@ -2,12 +2,9 @@ package eu.kalafatic.evolution.controller.orchestration.selfdev;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.HashMap;
-import java.util.Map;
+import java.nio.file.Files;
 
 import org.json.JSONArray;
 import org.json.JSONObject;

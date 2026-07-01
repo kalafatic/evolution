@@ -7,8 +7,8 @@ import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 
-import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.controller.log.Log;
+import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 
 public class BestPracticesService {
 

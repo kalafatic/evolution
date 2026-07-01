@@ -1,14 +1,15 @@
 package eu.kalafatic.evolution.controller.agents;
 
 import org.json.JSONObject;
+
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.tools.MavenTool;
+import eu.kalafatic.evolution.controller.tools.ShellTool;
 import eu.kalafatic.evolution.controller.trajectory.EvaluationSignal;
 import eu.kalafatic.evolution.controller.trajectory.SignalSeverity;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventBus;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
-import eu.kalafatic.evolution.controller.tools.MavenTool;
-import eu.kalafatic.evolution.controller.tools.ShellTool;
 
 /**
  * Agent specialized in Quality Assurance and Linting.

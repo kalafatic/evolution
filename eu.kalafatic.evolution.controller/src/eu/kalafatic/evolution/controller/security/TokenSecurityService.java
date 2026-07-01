@@ -2,12 +2,14 @@ package eu.kalafatic.evolution.controller.security;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
-import eu.kalafatic.evolution.model.orchestration.AIProvider;
-import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+
 import eu.kalafatic.evolution.controller.providers.AiProviders;
 import eu.kalafatic.evolution.controller.providers.ProviderConfig;
+import eu.kalafatic.evolution.model.orchestration.AIProvider;
+import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 
 public class TokenSecurityService {
 

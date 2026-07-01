@@ -1,8 +1,9 @@
 package eu.kalafatic.evolution.controller.kernel;
 
 import java.util.List;
-import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
+
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
 import eu.kalafatic.evolution.controller.supervision.AuthorityController;
 import eu.kalafatic.evolution.controller.supervision.EvolutionDecision;
 

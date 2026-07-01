@@ -1,9 +1,10 @@
 package eu.kalafatic.evolution.controller.engine;
 
-import eu.kalafatic.evolution.model.orchestration.NeuronType;
+import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.Collectors;
-import java.util.Arrays;
+
+import eu.kalafatic.evolution.model.orchestration.NeuronType;
 
 public class NeuronEngine {
 

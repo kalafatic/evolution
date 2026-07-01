@@ -1,12 +1,12 @@
 package eu.kalafatic.evolution.controller.parsers.structured;
 
-import org.json.JSONObject;
-import org.json.JSONException;
-import eu.kalafatic.evolution.controller.orchestration.TaskContext;
-import java.util.Map;
-import java.util.HashMap;
 import java.util.List;
-import java.util.ArrayList;
+import java.util.Map;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 
 /**
  * Orchestrates the robust structured-response reliability pipeline.

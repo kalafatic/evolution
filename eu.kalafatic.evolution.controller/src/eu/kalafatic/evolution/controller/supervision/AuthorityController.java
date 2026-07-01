@@ -1,10 +1,10 @@
 package eu.kalafatic.evolution.controller.supervision;
 
 import java.util.List;
+
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationMemoryService;
-import eu.kalafatic.evolution.controller.trajectory.EvaluationSignal;
 import eu.kalafatic.utils.semantic.EvolutionComponent;
 import eu.kalafatic.utils.semantic.EvolutionaryImpact;
 import eu.kalafatic.utils.semantic.Stability;

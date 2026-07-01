@@ -2,13 +2,15 @@ package eu.kalafatic.evolution.controller.orchestration.engines;
 import java.util.List;
 
 import java.util.stream.Collectors;
+
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.goal.GoalModel;
+import eu.kalafatic.evolution.controller.orchestration.intent.EvolutionAssessment;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionResult;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.AbstractionLevel;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionDimension;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.GenomeDimensionScheduler;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.SemanticDomain;
-import eu.kalafatic.evolution.controller.orchestration.selfdev.AbstractionLevel;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.SemanticGenome;
 import eu.kalafatic.evolution.controller.trajectory.Trajectory;
 import eu.kalafatic.evolution.controller.orchestration.intent.EvolutionAssessment;

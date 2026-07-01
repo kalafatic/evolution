@@ -1,10 +1,10 @@
 package eu.kalafatic.evolution.controller.parsers.structured;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import org.json.JSONObject;
 
 /**
  * Validates a JSONObject against a set of schema rules.

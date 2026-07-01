@@ -8,15 +8,24 @@ import java.util.Collections;
 import java.util.List;
 
 import org.eclipse.core.resources.IFile;
-import eu.kalafatic.evolution.model.orchestration.AiMode;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 
+import eu.kalafatic.evolution.controller.discovery.SourceDiscoveryRequest;
+import eu.kalafatic.evolution.controller.discovery.SourceDiscoveryResult;
+import eu.kalafatic.evolution.controller.discovery.WorkspaceSourceResolver;
+import eu.kalafatic.evolution.controller.providers.AiProviders;
+import eu.kalafatic.evolution.controller.providers.ProviderConfig;
+import eu.kalafatic.evolution.controller.security.TokenSecurityService;
+import eu.kalafatic.evolution.controller.tools.GitTool;
+import eu.kalafatic.evolution.controller.trajectory.EvolutionRegistry;
+import eu.kalafatic.evolution.model.orchestration.AIProvider;
 import eu.kalafatic.evolution.model.orchestration.Agent;
 import eu.kalafatic.evolution.model.orchestration.AiChat;
+import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.Compiler;
 import eu.kalafatic.evolution.model.orchestration.EvoProject;
 import eu.kalafatic.evolution.model.orchestration.FileConfig;
@@ -26,19 +35,10 @@ import eu.kalafatic.evolution.model.orchestration.Maven;
 import eu.kalafatic.evolution.model.orchestration.NeuronAI;
 import eu.kalafatic.evolution.model.orchestration.NeuronType;
 import eu.kalafatic.evolution.model.orchestration.Ollama;
-import eu.kalafatic.evolution.controller.discovery.SourceDiscoveryRequest;
-import eu.kalafatic.evolution.controller.discovery.SourceDiscoveryResult;
-import eu.kalafatic.evolution.controller.discovery.WorkspaceSourceResolver;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.SupervisorSettings;
-import eu.kalafatic.evolution.controller.tools.GitTool;
-import eu.kalafatic.evolution.controller.trajectory.EvolutionRegistry;
-import eu.kalafatic.evolution.controller.providers.AiProviders;
-import eu.kalafatic.evolution.controller.providers.ProviderConfig;
-import eu.kalafatic.evolution.controller.security.TokenSecurityService;
-import eu.kalafatic.evolution.model.orchestration.AIProvider;
 
 /**
  * Singleton manager for Evolution project models.

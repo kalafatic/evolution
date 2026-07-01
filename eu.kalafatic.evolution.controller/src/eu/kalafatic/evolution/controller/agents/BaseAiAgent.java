@@ -5,11 +5,12 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.json.JSONObject;
+
 import eu.kalafatic.evolution.controller.orchestration.AiService;
 import eu.kalafatic.evolution.controller.orchestration.ConversationState;
 import eu.kalafatic.evolution.controller.orchestration.IOrchestrationFlow;
 import eu.kalafatic.evolution.controller.orchestration.OrchestratorResponse;
-import eu.kalafatic.evolution.controller.orchestration.PlatformType;
 import eu.kalafatic.evolution.controller.orchestration.ResultType;
 import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
@@ -19,10 +20,6 @@ import eu.kalafatic.evolution.controller.orchestration.util.CodeExtractor;
 import eu.kalafatic.evolution.controller.services.BestPracticesService;
 import eu.kalafatic.evolution.controller.services.NeuronContextService;
 import eu.kalafatic.evolution.controller.tools.ITool;
-import eu.kalafatic.evolution.controller.workflow.EvolutionEvent.EELType;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
 
 
 /**

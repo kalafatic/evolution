@@ -1,7 +1,7 @@
 package eu.kalafatic.evolution.controller.orchestration.cognitive;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Represents the full cognitive analysis of an interaction, containing all candidates.

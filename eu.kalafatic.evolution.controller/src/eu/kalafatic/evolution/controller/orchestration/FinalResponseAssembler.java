@@ -7,8 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import eu.kalafatic.evolution.controller.orchestration.util.FileFilterUtil;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationRecord;
+import eu.kalafatic.evolution.controller.orchestration.util.FileFilterUtil;
 import eu.kalafatic.evolution.controller.supervision.DecisionSnapshot;
 import eu.kalafatic.evolution.model.orchestration.Task;
 
