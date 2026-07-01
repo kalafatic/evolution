@@ -4,6 +4,7 @@ import eu.kalafatic.evolution.controller.agents.PromptIntentAnalyzer;
 import eu.kalafatic.evolution.controller.agents.PromptIntentAnalyzer.IntentResult;
 import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityException;
 import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityRegistry;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.CodingEngine;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.DarwinEngineFactory;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.Evaluator;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.GitManager;
@@ -137,6 +138,12 @@ public class KernelFactory {
 
 		return new IterationManager(context, sessionContext, aiService, gitManager, taskPlanner, taskExecutor,
 				evaluator, darwinEngine, memoryService);
+	}
+
+	public static IterationManager create(IterationManager iterationManager, String prompt, TaskContext variantContext,
+			SessionContainer sessionContainer, AiService aiService) {
+		// TODO Auto-generated method stub IterationManager
+		return iterationManager;
 	}
 
 
