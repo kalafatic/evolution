@@ -1,6 +1,8 @@
 package eu.kalafatic.evolution.view.handlers;
 
 import java.io.File;
+import java.io.IOException;
+
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
@@ -57,7 +59,12 @@ public class MediatedAnalysisHandler extends AbstractHandler {
 			chatPage.updateModeDisplay();
 
 			// Trigger mediated analysis through the standard orchestrator flow
-			chatPage.handleExecuteProposal("Analyze target: " + path);
+			try {
+				chatPage.handleExecuteProposal("Analyze target: " + path);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		return null;
 	}

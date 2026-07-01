@@ -776,11 +776,7 @@ private String generateChatResponse(String request, TaskContext context) {
 		// WORKFLOW_EXPORT_ONLY is the trait used for mediated mode
 		boolean isMediated = ModeRecognizer.isMediatedMode(context);
 
-		// 5b. Check if we're in Self-Dev mode - using SELF_DEVELOPMENT trait
-		boolean isSelfDev = ModeRecognizer.isSelfDevMode(context);
-
-		// 5c. Run Mediation if needed (continuous - runs every iteration)
-		if (isMediated) {
+		// 5c. Run Mediation if needed (continuous - runs every iteration)		
 			context.log("[DARWIN] Mediated Mode: Running mediation cycle...");
 			MediationResult mediation = getMediationEngine().mediate(context, goal, null);
 			state.getMetadata().put("mediationResult", mediation);
@@ -793,23 +789,7 @@ private String generateChatResponse(String request, TaskContext context) {
 			// Merge mediation insights into the evolutionary context
 			mergeMediationInsights(mediation, context, manager);
 			context.log("[DARWIN] Mediation complete. Hotspots: " + mediation.getHotspots().size());
-		}
-
-		// 5d. For Self-Dev mode, run quick mediation
-		if (isSelfDev) {
-			context.log("[DARWIN] Self-Dev Mode: Running quick mediation...");
-			MediationResult quickMediation = getMediationEngine().quickMediate(context, goal, null);
-			state.getMetadata().put("quickMediationResult", quickMediation);
-
-			// In Self-Dev mode, also check if we're in iterative mode
-			boolean isSelfIterative = context.getOrchestrator().getAiChat() != null
-					&& context.getOrchestrator().getAiChat().getPromptInstructions() != null
-					&& context.getOrchestrator().getAiChat().getPromptInstructions().isSelfIterativeMode();
-			if (isSelfIterative) {
-				context.log("[DARWIN] Self-Dev iterative mode: Continuous improvement cycle active");
-			}
-		}
-
+	
 		// ============================================================
 		// 6. HIERARCHICAL NODE SELECTION
 		// ============================================================
@@ -1949,16 +1929,8 @@ private String generateChatResponse(String request, TaskContext context) {
 
 		// ========================================
 		// TRAJECTORY MUTATION PIPELINE
-		// ========================================
-
-		DarwinVariantSpawner spawner = new DarwinVariantSpawner(aiService);
-		DarwinDiversityAnalyzer diversityAnalyzer = new DarwinDiversityAnalyzer();
-
-		int currentIteration = context.getOrchestrationState().getIterationCount();
-
-		boolean isMediated = ModeRecognizer.isMediatedMode(context);
-
-		List<TrajectoryBlueprint> currentBlueprints = new ArrayList<>();
+		// ========================================	
+		int currentIteration = context.getOrchestrationState().getIterationCount();	
 		int generation = trajectory != null ? trajectory.getGeneration() : 0;
 
 		// Model Capability Coefficient

@@ -551,11 +551,16 @@ public class MultiPageEditor extends MultiPageEditorPart {
         setActivePageByControl(peerReviewPage);
     }
 
-    public void runTaskInChat(Task task) {
-        if (aiChatPage != null) {
-            showAiChatPage();
-            aiChatPage.runTask(task);
-        }
+    public void runTaskInChat(Task task)  {
+        try {
+			if (aiChatPage != null) {
+			    showAiChatPage();
+			    aiChatPage.runTask(task);
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
     }
 
     public void openTaskResult(Task task) {
