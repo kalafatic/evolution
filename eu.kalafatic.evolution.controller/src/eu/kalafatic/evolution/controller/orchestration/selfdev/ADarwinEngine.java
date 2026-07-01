@@ -2885,21 +2885,21 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 		case SIMPLE_CHAT:
 			branchingLimit = expansionValue <= 5 ? 1 : 2;
 			break;
-		case ASSISTED_CODING:
-		case DARWIN_MODE:
-			if (expansionValue <= 2) branchingLimit = 1;
-			else if (expansionValue <= 5) branchingLimit = 2;
-			else if (expansionValue <= 8) branchingLimit = 3;
-			else branchingLimit = 4;
-			break;
-		case HYBRID_MANUAL_EXPORT:
-		case SELF_DEV_MODE:
-			if (expansionValue <= 3) branchingLimit = 2;
-			else if (expansionValue <= 6) branchingLimit = 3;
-			else if (expansionValue <= 9) branchingLimit = 4;
-			else branchingLimit = 5;
-			branchingLimit = expansionValue <= 5 ? 2 : 6;
-			break;
+//		case ASSISTED_CODING:
+//		case DARWIN_MODE:
+//			if (expansionValue <= 2) branchingLimit = 1;
+//			else if (expansionValue <= 5) branchingLimit = 2;
+//			else if (expansionValue <= 8) branchingLimit = 3;
+//			else branchingLimit = 4;
+//			break;
+//		case HYBRID_MANUAL_EXPORT:
+//		case SELF_DEV_MODE:
+//			if (expansionValue <= 3) branchingLimit = 2;
+//			else if (expansionValue <= 6) branchingLimit = 3;
+//			else if (expansionValue <= 9) branchingLimit = 4;
+//			else branchingLimit = 5;
+//			branchingLimit = expansionValue <= 5 ? 2 : 6;
+//			break;
 		case HYBRID_MANUAL_EXPORT:
 			branchingLimit = expansionValue <= 5 ? 3 : 8;
 			break;
