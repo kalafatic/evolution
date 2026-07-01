@@ -5,10 +5,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+import org.eclipse.jface.action.Action;
+import org.eclipse.jface.action.IMenuListener;
+import org.eclipse.jface.action.IMenuManager;
+import org.eclipse.jface.action.MenuManager;
+import org.eclipse.jface.action.Separator;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.ArrayContentProvider;
+import org.eclipse.jface.viewers.CheckboxTableViewer;
 import org.eclipse.jface.viewers.ColumnLabelProvider;
-import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.swt.SWT;
@@ -19,7 +24,9 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 
@@ -41,7 +48,7 @@ import eu.kalafatic.utils.factories.GUIFactory;
  */
 public class ModelsGroup extends AEvoGroup {
 
-    private TableViewer viewer;
+    private CheckboxTableViewer viewer;
     private List<AIProvider> modelItems = new ArrayList<>();
     private eu.kalafatic.evolution.view.editors.pages.PropertiesPage page;
 
@@ -54,7 +61,7 @@ public class ModelsGroup extends AEvoGroup {
     private void createControl(FormToolkit toolkit, Composite parent) {
         group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Models", 1, true, true);
 
-        viewer = new TableViewer(group, SWT.BORDER | SWT.FULL_SELECTION | SWT.V_SCROLL);
+        viewer = CheckboxTableViewer.newCheckList(group, SWT.BORDER | SWT.FULL_SELECTION | SWT.V_SCROLL);
         Table table = viewer.getTable();
         table.setHeaderVisible(true);
         table.setLinesVisible(true);
@@ -65,6 +72,7 @@ public class ModelsGroup extends AEvoGroup {
         viewer.setContentProvider(ArrayContentProvider.getInstance());
         viewer.addDoubleClickListener(event -> handleUseModel());
 
+        createContextMenu();
         createButtons(toolkit);
         
         Display.getDefault().asyncExec(() -> {
@@ -160,11 +168,20 @@ public class ModelsGroup extends AEvoGroup {
     }
 
     private void createColumns() {
-        String[] titles = { "State", "Name", "Type", "Path/URL", "Token", "Rating (A/CH/P)" };
-        int[] bounds = { 60, 150, 60, 250, 80, 120 };
+        String[] titles = { "Select", "State", "Name", "Type", "Path/URL", "Token", "Rating (A/CH/P)" };
+        int[] bounds = { 50, 60, 150, 60, 250, 80, 120 };
+
+        // Select (Checkbox column)
+        TableViewerColumn colSelect = createTableViewerColumn(titles[0], bounds[0]);
+        colSelect.setLabelProvider(new ColumnLabelProvider() {
+            @Override
+            public String getText(Object element) {
+                return "";
+            }
+        });
 
         // State
-        TableViewerColumn colState = createTableViewerColumn(titles[0], bounds[0]);
+        TableViewerColumn colState = createTableViewerColumn(titles[1], bounds[1]);
         colState.setLabelProvider(new ColumnLabelProvider() {
             @Override
             public String getText(Object element) {
@@ -183,7 +200,7 @@ public class ModelsGroup extends AEvoGroup {
         org.eclipse.jface.viewers.ColumnViewerToolTipSupport.enableFor(viewer);
 
         // Name
-        TableViewerColumn colName = createTableViewerColumn(titles[1], bounds[1]);
+        TableViewerColumn colName = createTableViewerColumn(titles[2], bounds[2]);
         colName.setLabelProvider(new ColumnLabelProvider() {
             @Override
             public String getText(Object element) {
@@ -196,7 +213,7 @@ public class ModelsGroup extends AEvoGroup {
         });
 
         // Local
-        TableViewerColumn colLocal = createTableViewerColumn(titles[2], bounds[2]);
+        TableViewerColumn colLocal = createTableViewerColumn(titles[3], bounds[3]);
         colLocal.setLabelProvider(new ColumnLabelProvider() {
             @Override
             public String getText(Object element) {
@@ -211,7 +228,7 @@ public class ModelsGroup extends AEvoGroup {
         });
 
         // Path/URL
-        TableViewerColumn colPath = createTableViewerColumn(titles[3], bounds[3]);
+        TableViewerColumn colPath = createTableViewerColumn(titles[4], bounds[4]);
         colPath.setLabelProvider(new ColumnLabelProvider() {
             @Override
             public String getText(Object element) {
@@ -224,7 +241,7 @@ public class ModelsGroup extends AEvoGroup {
         });
 
         // Token
-        TableViewerColumn colToken = createTableViewerColumn(titles[4], bounds[4]);
+        TableViewerColumn colToken = createTableViewerColumn(titles[5], bounds[5]);
         colToken.setLabelProvider(new ColumnLabelProvider() {
             @Override
             public String getText(Object element) {
@@ -239,7 +256,7 @@ public class ModelsGroup extends AEvoGroup {
         });
 
         // Rating
-        TableViewerColumn colRating = createTableViewerColumn(titles[5], bounds[5]);
+        TableViewerColumn colRating = createTableViewerColumn(titles[6], bounds[6]);
         colRating.setLabelProvider(new ColumnLabelProvider() {
             @Override
             public String getText(Object element) {
@@ -318,6 +335,54 @@ public class ModelsGroup extends AEvoGroup {
         }
     }
 
+    private void createContextMenu() {
+        MenuManager menuMgr = new MenuManager("#PopupMenu");
+        menuMgr.setRemoveAllWhenShown(true);
+        menuMgr.addMenuListener(new IMenuListener() {
+            @Override
+            public void menuAboutToShow(IMenuManager manager) {
+                fillContextMenu(manager);
+            }
+        });
+        Control control = viewer.getControl();
+        Menu menu = menuMgr.createContextMenu(control);
+        control.setMenu(menu);
+    }
+
+    private void fillContextMenu(IMenuManager manager) {
+        manager.add(new Action("Reload") {
+            @Override public void run() {
+                String ollamaUrl = (orchestrator.getOllama() != null) ? orchestrator.getOllama().getUrl() : "http://localhost:11434";
+                OllamaManager.getInstance().getService(ollamaUrl).refreshModels();
+                load();
+            }
+        });
+        manager.add(new Action("Test Model") {
+            @Override public void run() { handleTestModel(); }
+        });
+        manager.add(new Action("Use") {
+            @Override public void run() { handleUseModel(); }
+        });
+        manager.add(new Separator());
+        manager.add(new Action("Add") {
+            @Override public void run() { handleAddModel(); }
+        });
+        manager.add(new Action("Download") {
+            @Override public void run() { handleDownloadModel(); }
+        });
+        manager.add(new Separator());
+        manager.add(new Action("Edit") {
+            @Override public void run() { handleEditModel(); }
+        });
+        manager.add(new Action("Remove") {
+            @Override public void run() { handleRemoveModel(); }
+        });
+        manager.add(new Separator());
+        manager.add(new Action("Save to Model") {
+            @Override public void run() { editor.doSave(null); }
+        });
+    }
+
     private TableViewerColumn createTableViewerColumn(String title, int bound) {
         TableViewerColumn viewerColumn = new TableViewerColumn(viewer, SWT.NONE);
         viewerColumn.getColumn().setText(title);
@@ -393,9 +458,13 @@ public class ModelsGroup extends AEvoGroup {
     }
 
     private void handleEditModel() {
-        IStructuredSelection selection = (IStructuredSelection) viewer.getSelection();
-        if (selection.isEmpty()) return;
-        AIProvider item = (AIProvider) selection.getFirstElement();
+        Object[] checked = viewer.getCheckedElements();
+        if (checked.length == 0) {
+            IStructuredSelection selection = (IStructuredSelection) viewer.getSelection();
+            if (selection.isEmpty()) return;
+            checked = new Object[] { selection.getFirstElement() };
+        }
+        AIProvider item = (AIProvider) checked[0];
         if (item.isLocal()) {
             MessageDialog.openInformation(group.getShell(), "Edit", "Local Ollama models cannot be edited here.");
             return;
@@ -431,10 +500,22 @@ public class ModelsGroup extends AEvoGroup {
     }
 
     private void handleTestModel() {
-        IStructuredSelection selection = (IStructuredSelection) viewer.getSelection();
-        if (selection.isEmpty()) return;
-        AIProvider item = (AIProvider) selection.getFirstElement();
+        Object[] checked = viewer.getCheckedElements();
+        if (checked.length == 0) {
+            IStructuredSelection selection = (IStructuredSelection) viewer.getSelection();
+            if (!selection.isEmpty()) {
+                checked = selection.toArray();
+            }
+        }
+        if (checked.length == 0) return;
 
+        for (Object obj : checked) {
+            AIProvider item = (AIProvider) obj;
+            testModel(item);
+        }
+    }
+
+    private void testModel(AIProvider item) {
         // Find real provider or use a temporary one for testing
         final AIProvider providerToTest = orchestrator.getAiProviders().stream()
                 .filter(p -> p.getName().equalsIgnoreCase(item.getName()))
@@ -476,9 +557,13 @@ public class ModelsGroup extends AEvoGroup {
     }
 
     private void handleUseModel() {
-        IStructuredSelection selection = (IStructuredSelection) viewer.getSelection();
-        if (selection.isEmpty()) return;
-        AIProvider item = (AIProvider) selection.getFirstElement();
+        Object[] checked = viewer.getCheckedElements();
+        if (checked.length == 0) {
+            IStructuredSelection selection = (IStructuredSelection) viewer.getSelection();
+            if (selection.isEmpty()) return;
+            checked = new Object[] { selection.getFirstElement() };
+        }
+        AIProvider item = (AIProvider) checked[0];
 
         if (orchestrator != null) {
             ProjectModelManager modelManager = ProjectModelManager.getInstance();
@@ -498,18 +583,25 @@ public class ModelsGroup extends AEvoGroup {
     }
 
     private void handleRemoveModel() {
-        IStructuredSelection selection = (IStructuredSelection) viewer.getSelection();
-        if (selection.isEmpty()) return;
-        AIProvider item = (AIProvider) selection.getFirstElement();
-
-        if (item.isLocal()) {
-            if (MessageDialog.openConfirm(group.getShell(), "Remove Local Model",
-                    "Are you sure you want to remove the local model: " + item.getName() + "?")) {
-                runTerminalCommand("ollama rm " + item.getName());
+        Object[] checked = viewer.getCheckedElements();
+        if (checked.length == 0) {
+            IStructuredSelection selection = (IStructuredSelection) viewer.getSelection();
+            if (!selection.isEmpty()) {
+                checked = selection.toArray();
             }
-        } else {
-            if (MessageDialog.openConfirm(group.getShell(), "Remove Remote Model",
-                    "Remove remote model configuration for: " + item.getName() + "?")) {
+        }
+        if (checked.length == 0) return;
+
+        if (!MessageDialog.openConfirm(group.getShell(), "Remove Models",
+                "Are you sure you want to remove " + checked.length + " selected model(s)?")) {
+            return;
+        }
+
+        for (Object obj : checked) {
+            AIProvider item = (AIProvider) obj;
+            if (item.isLocal()) {
+                runTerminalCommand("ollama rm " + item.getName());
+            } else {
                 if (orchestrator != null) {
                     AIProvider realProvider = orchestrator.getAiProviders().stream()
                             .filter(p -> p.getName().equalsIgnoreCase(item.getName()))
@@ -518,15 +610,14 @@ public class ModelsGroup extends AEvoGroup {
                     if (realProvider != null) {
                         orchestrator.getAiProviders().remove(realProvider);
                         editor.setDirty(true);
-                        refreshUI();
                     } else if (item.getName().equalsIgnoreCase(orchestrator.getRemoteModel())) {
                         ProjectModelManager.getInstance().updateRemoteModel(orchestrator, "");
                         editor.setDirty(true);
-                        refreshUI();
                     }
                 }
             }
         }
+        refreshUI();
     }
 
     private void runTerminalCommand(String command) {
