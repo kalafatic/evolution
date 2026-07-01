@@ -347,7 +347,7 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
                 "  \"architecture_summary\": \"string\",\n" +
                 "  \"completeness_score\": 0.0-1.0,\n" +
                 "  \"architectural_facts\": [{ \"id\": \"string\", \"subject\": \"string\", \"predicate\": \"string\", \"description\": \"string\" }],\n" +
-                "  \"hotspots\": [{ \"id\": \"string\", \"name\": \"string\", \"description\": \"string\", \"significance\": 0.0-1.0 }],\n" +
+                "  \"hotspots\": [{ \"id\": \"string\", \"name\": \"string\", \"description\": \"string\", \"significance\": 0.0-1.0, \"related_artifacts\": [\"string\"] }],\n" +
                 "  \"views\": {\n" +
                 "    \"architecture\": {\"hubs\": [\"string\"], \"orchestration\": \"string\"},\n" +
                 "    \"implementation\": {\"entry_points\": [\"string\"], \"critical_path\": [\"string\"]},\n" +
@@ -381,9 +381,20 @@ public class RealityDiscoveryAgent extends BaseAiAgent {
                 for (int i = 0; i < hotspots.length(); i++) {
                     JSONObject hObj = hotspots.optJSONObject(i);
                     if (hObj == null) continue;
+
+                    // Maintain original constructor for framework compatibility
                     Hotspot hotspot = new Hotspot(hObj.optString("id"), hObj.optString("name"), response, i);
+
+                    // Explicitly set domain fields
                     hotspot.setDescription(hObj.optString("description"));
                     hotspot.setSignificance(hObj.optDouble("significance", 0.5));
+
+                    JSONArray related = hObj.optJSONArray("related_artifacts");
+                    if (related != null) {
+                        for (int j = 0; j < related.length(); j++) {
+                            hotspot.getRelatedArtifactsList().add(related.getString(j));
+                        }
+                    }
                     model.addHotspot(hotspot);
                 }
             }
