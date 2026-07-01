@@ -15,6 +15,7 @@ public class Hotspot {
     private int linesOfCode;
     private List<String> dependencies = new ArrayList<>();
     private List<String> relatedHotspots = new ArrayList<>();
+    private List<String> relatedArtifacts = new ArrayList<>();
     
     public Hotspot() {}
     
@@ -67,8 +68,11 @@ public class Hotspot {
     }
 
 	public String[] getRelatedArtifacts() {
-		// TODO Auto-generated method stub
-		return null;
+		return relatedArtifacts.toArray(new String[0]);
+	}
+
+	public List<String> getRelatedArtifactsList() {
+		return relatedArtifacts;
 	}
 
 	public String getId() {
