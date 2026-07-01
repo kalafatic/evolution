@@ -309,6 +309,9 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 		try {
 			context.getOrchestrator().getTasks().clear();
 			context.setCurrentTaskName("Initialization");
+
+			// UI TRIGGER: Force panels to open immediately by publishing an initial progress event
+			EvolutionProgressPublisher.startIteration(context, 0, 0, "alpha", getMinIterationLimit(context), getMaxBranchingLimit(context, getExpansionValue()));
 			context.log("[DARWIN] Strategic Initialization: " + request);
 
 			ConversationState convState = ConversationState.load(context.getSharedMemory(), context.getSessionId());

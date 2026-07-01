@@ -38,6 +38,7 @@ window.ChatApp = window.ChatApp || {};
         messages.sort((a, b) => (a.sequenceNumber || 0) - (b.sequenceNumber || 0));
 
         state.messages = messages;
+        window.messages = messages; // ✅ Expose globally for branch details popup
         const wrapper = document.getElementById('messages-wrapper');
         if (!wrapper) return;
 
