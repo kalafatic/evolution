@@ -282,4 +282,10 @@ public abstract class AEvoPage extends SharedScrolledComposite implements Runtim
     public MultiPageEditor getEditor() {
 		return editor;
 	}
+
+    public void setDirty(boolean dirty) {
+        if (editor != null) {
+            editor.setDirty(dirty);
+        }
+    }
 }
