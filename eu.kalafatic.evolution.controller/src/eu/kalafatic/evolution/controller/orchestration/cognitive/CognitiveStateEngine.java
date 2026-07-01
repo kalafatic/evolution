@@ -99,7 +99,7 @@ public class CognitiveStateEngine {
             case SELF_DEV_MODE:
                 return CapabilityType.EVOLUTION;
             case HYBRID_MANUAL_EXPORT:
-                return CapabilityType.ARCHITECTURE;
+                return CapabilityType.MEDIATED;
             case ASSISTED_CODING:
                 return CapabilityType.CODE;
             case SIMPLE_CHAT:

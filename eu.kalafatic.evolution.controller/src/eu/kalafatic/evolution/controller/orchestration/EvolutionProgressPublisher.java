@@ -15,12 +15,14 @@ import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
 public class EvolutionProgressPublisher {
     private static final Map<String, EvolutionProgressEvent> activeEvents = new ConcurrentHashMap<>();
 
-    public static void startIteration(TaskContext context, int iterationCount, int generation, String lineage) {
+    public static void startIteration(TaskContext context, int iterationCount, int generation, String lineage, int minIterations, int branchingLimit) {
         EvolutionProgressEvent event = new EvolutionProgressEvent();
         event.setSessionId(context.getSessionId());
         event.setIterationCount(iterationCount);
         event.setGeneration(generation);
         event.setLineage(lineage);
+        event.setMinIterations(minIterations);
+        event.setBranchingLimit(branchingLimit);
         event.setStage(EvolutionStage.ITERATION_START);
         event.setStartTime(System.currentTimeMillis());
         event.setTotalSteps(9); // Standard stages count
@@ -190,6 +192,8 @@ public class EvolutionProgressPublisher {
         json.put("gitAutomation", event.isGitAutomation());
         json.put("stepMode", event.isStepMode());
         json.put("maxIterations", event.getMaxIterations());
+        json.put("minIterations", event.getMinIterations());
+        json.put("branchingLimit", event.getBranchingLimit());
         json.put("timestamp", event.getTimestamp());
         json.put("startTime", event.getStartTime());
 

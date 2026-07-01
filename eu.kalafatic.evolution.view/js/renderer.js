@@ -441,6 +441,8 @@ window.ChatApp.Renderer = {
     updateTreePanel: function(messages) {
         const panel = document.getElementById('tree-panel');
         const content = document.getElementById('tree-content');
+        const iterStats = document.getElementById('iter-stats');
+        const branchStats = document.getElementById('branch-stats');
         if (!panel || !content) return;
 
         const progressMessages = (messages || []).filter(m => {
@@ -457,6 +459,8 @@ window.ChatApp.Renderer = {
         }
 
         const iterations = {};
+        let latestData = null;
+
         progressMessages.forEach(m => {
             try {
                 const data = JSON.parse(m.text);
@@ -464,11 +468,26 @@ window.ChatApp.Renderer = {
                     if (!iterations[data.iterationCount] || data.timestamp > iterations[data.iterationCount].timestamp) {
                         iterations[data.iterationCount] = data;
                     }
+                    if (!latestData || data.timestamp > latestData.timestamp) {
+                        latestData = data;
+                    }
                 }
             } catch(e) {}
         });
 
         const sortedIters = Object.keys(iterations).sort((a, b) => parseInt(a) - parseInt(b));
+
+        // Update stats
+        if (latestData && iterStats && branchStats) {
+            const actualIters = sortedIters.length;
+            const minIters = latestData.minIterations || 1;
+            const maxIters = latestData.maxIterations || 10;
+            iterStats.innerText = `Iters: ${actualIters}/${minIters}/${maxIters}`;
+
+            const actualBranches = latestData.branches ? latestData.branches.length : 0;
+            const maxBranches = latestData.branchingLimit || 4;
+            branchStats.innerText = `Branches: ${actualBranches}/${maxBranches}`;
+        }
         if (sortedIters.length === 0) return;
 
         // Map iterations by their parentId to build non-linear tree
@@ -522,7 +541,10 @@ window.ChatApp.Renderer = {
                     html += `<div class="tree-child">`;
                     html += `<div class="tree-vline"></div>`;
                     html += `
-                        <div class="tree-node branch ${isFailed ? 'failed' : ''} ${isWinner ? 'winner' : ''}" title="Branch ${b.id}${b.strategy ? ': ' + b.strategy : ''}${b.score !== undefined ? ' - Score: ' + Math.round(b.score*100) : ''}">
+                        <div class="tree-node branch ${isFailed ? 'failed' : ''} ${isWinner ? 'winner' : ''}"
+                             title="Branch ${b.id}${b.strategy ? ': ' + b.strategy : ''}${b.score !== undefined ? ' - Score: ' + Math.round(b.score*100) : ''}"
+                             ondblclick="window.ChatApp.Renderer.showBranchDetails('${b.id}')"
+                             oncontextmenu="window.ChatApp.Renderer.showBranchContextMenu(event, '${b.id}')">
                             <div class="node-title">${isWinner ? '🏆' : 'B' + (idx + 1)}</div>
                         </div>
                     `;
@@ -634,6 +656,89 @@ window.ChatApp.Renderer = {
             console.error("Failed to parse cognitive state:", e);
             content.innerHTML = `<div style="color: #ef4444; font-size: 10px;">Sync Error: ${e.message}</div>`;
         }
+    },
+
+    showBranchDetails: function(branchId) {
+        // Try to find the branch data in messages
+        const popup = document.getElementById('branch-details-popup');
+        const content = document.getElementById('branch-details-content');
+        if (!popup || !content) return;
+
+        let branchData = null;
+        // Search in evolution progress messages first
+        const messages = window.messages || []; // Assumes global messages access or similar
+
+        // Find latest progress containing this branch
+        for (let i = messages.length - 1; i >= 0; i--) {
+            const m = messages[i];
+            if ((m.agentType || '').toLowerCase().includes('evolution-progress')) {
+                try {
+                    const data = JSON.parse(m.text);
+                    if (data.branches) {
+                        const b = data.branches.find(br => br.id === branchId);
+                        if (b) {
+                            branchData = b;
+                            break;
+                        }
+                    }
+                } catch(e) {}
+            }
+        }
+
+        if (branchData) {
+            content.innerHTML = `
+                <div style="margin-bottom: 12px;">
+                    <div style="font-size: 10px; font-weight: 800; color: #94a3b8; margin-bottom: 2px;">STRATEGY</div>
+                    <div style="font-weight: 600; color: #1e293b;">${branchData.strategy || 'N/A'}</div>
+                </div>
+                <div style="display: flex; gap: 20px; margin-bottom: 12px;">
+                    <div>
+                        <div style="font-size: 10px; font-weight: 800; color: #94a3b8; margin-bottom: 2px;">STATUS</div>
+                        <div style="font-weight: 600; color: ${branchData.status === 'active' ? '#3b82f6' : branchData.status === 'failed' ? '#ef4444' : '#10b981'}; text-transform: uppercase; font-size: 11px;">${branchData.status}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 10px; font-weight: 800; color: #94a3b8; margin-bottom: 2px;">SCORE</div>
+                        <div style="font-weight: 600; color: #1e293b;">${branchData.score !== undefined ? Math.round(branchData.score * 100) + '%' : 'N/A'}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 10px; font-weight: 800; color: #94a3b8; margin-bottom: 2px;">ID</div>
+                        <div style="font-family: monospace; font-size: 10px; color: #64748b;">${branchData.id}</div>
+                    </div>
+                </div>
+                <button class="branch-btn select" style="width: 100%; margin-top: 10px;" onclick="window.ChatApp.Actions.callJava('approveDarwinVariant', '-1', '${branchId}'); document.getElementById('branch-details-popup').style.display='none';">Select this Branch</button>
+            `;
+            popup.style.display = 'flex';
+        } else {
+             // Fallback: check Darwin JSON messages
+             for (let i = messages.length - 1; i >= 0; i--) {
+                const m = messages[i];
+                const role = (m.agentType || '').toLowerCase();
+                if (role.includes('darwin') || role.includes('branch')) {
+                    try {
+                        const text = m.text.replace(/^(\s*\[[^\{\"\[\]\n]+\]|\s*\([^\{\"\[\)\n]+\)|\s*(INFO|WARNING|SEVERE|ERROR|DEBUG):)+/gi, '').trim();
+                        const data = JSON.parse(text);
+                        const variants = Array.isArray(data) ? data : (data.variants || data.proposals || []);
+                        const v = variants.find(vr => String(vr.id) === String(branchId));
+                        if (v) {
+                            content.innerHTML = `
+                                <div style="max-height: 400px; overflow-y: auto;">
+                                    ${this.renderJson(v)}
+                                </div>
+                                <button class="branch-btn select" style="width: 100%; margin-top: 10px;" onclick="window.ChatApp.Actions.callJava('approveDarwinVariant', '${m.index}', '${branchId}'); document.getElementById('branch-details-popup').style.display='none';">Select this Branch</button>
+                            `;
+                            popup.style.display = 'flex';
+                            return;
+                        }
+                    } catch(e) {}
+                }
+             }
+             alert("Could not find data for branch: " + branchId);
+        }
+    },
+
+    showBranchContextMenu: function(event, branchId) {
+        event.preventDefault();
+        this.showBranchDetails(branchId);
     },
 
     updateProgressPanel: function(messages) {

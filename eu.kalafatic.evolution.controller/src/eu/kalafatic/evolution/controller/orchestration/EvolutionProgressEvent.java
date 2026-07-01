@@ -27,6 +27,8 @@ public class EvolutionProgressEvent {
     private boolean gitAutomation;
     private boolean stepMode;
     private int maxIterations;
+    private int minIterations;
+    private int branchingLimit;
     private long timestamp;
     private long startTime;
     private List<BranchStatus> branchStatuses = new ArrayList<>();
@@ -94,6 +96,12 @@ public class EvolutionProgressEvent {
 
     public int getMaxIterations() { return maxIterations; }
     public void setMaxIterations(int maxIterations) { this.maxIterations = maxIterations; }
+
+    public int getMinIterations() { return minIterations; }
+    public void setMinIterations(int minIterations) { this.minIterations = minIterations; }
+
+    public int getBranchingLimit() { return branchingLimit; }
+    public void setBranchingLimit(int branchingLimit) { this.branchingLimit = branchingLimit; }
 
     public long getTimestamp() { return timestamp; }
     public void setTimestamp(long timestamp) { this.timestamp = timestamp; }
