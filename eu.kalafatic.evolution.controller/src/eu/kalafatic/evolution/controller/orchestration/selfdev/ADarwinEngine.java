@@ -2932,27 +2932,27 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 	}
 
 	protected int getMaxBranchingLimit(TaskContext context, int expansionValue) {
-		int branchingLimit = 2; // Default
+		int branchingLimit = 4; // Default
 
 		switch (platformType) {
 		case SIMPLE_CHAT:
 			branchingLimit = expansionValue <= 5 ? 1 : 2;
 			break;
 		case ASSISTED_CODING:
-			branchingLimit = expansionValue <= 5 ? 2 : 3;
+			branchingLimit = expansionValue <= 5 ? 2 : 6;
 			break;
 		case HYBRID_MANUAL_EXPORT:
-			branchingLimit = expansionValue <= 5 ? 2 : 4;
+			branchingLimit = expansionValue <= 5 ? 3 : 8;
 			break;
 		case SELF_DEV_MODE:
-			branchingLimit = expansionValue <= 5 ? 3 : 4;
+			branchingLimit = expansionValue <= 5 ? 4 : 8;
 			break;
 
 		default:
 			throw new IllegalArgumentException("Unexpected value: " + platformType);
 		}
-		// MANDATE: Never more than 4. Darwin decides, not LLM.
-		return Math.min(branchingLimit, 4);
+		// MANDATE: Never more than 8. Darwin decides, not LLM.
+		return Math.min(branchingLimit, 8);
 	}
 
 	protected int getMaxIterationLimit(TaskContext context) {
