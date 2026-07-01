@@ -15,6 +15,7 @@ import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.tools.ShellTool;
 import eu.kalafatic.evolution.model.orchestration.Git;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
@@ -272,7 +273,7 @@ public class GitGroup extends AToolGroup {
         try {
             File workingDir = getWorkingDir();
             TaskContext context = new TaskContext(orchestrator, workingDir);
-            eu.kalafatic.evolution.controller.tools.ShellTool shell = new eu.kalafatic.evolution.controller.tools.ShellTool();
+            ShellTool shell = new ShellTool();
 
             String gitVersion = shell.execute("git --version", workingDir, context);
             StringBuilder statusMsg = new StringBuilder("Git is available: " + gitVersion + "\n");

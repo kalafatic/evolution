@@ -3,6 +3,7 @@ package eu.kalafatic.evolution.view.editors.pages.tools;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
 import eu.kalafatic.evolution.controller.orchestration.OrchestratorResponse;
+import eu.kalafatic.evolution.controller.orchestration.OrchestratorServiceImpl;
 import eu.kalafatic.evolution.controller.orchestration.ResultType;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
@@ -72,10 +73,10 @@ public abstract class AToolGroup extends AEvoGroup {
                     eu.kalafatic.evolution.controller.orchestration.TaskRequest request = new eu.kalafatic.evolution.controller.orchestration.TaskRequest(command, workingDir);
                     request.getContext().put("orchestrator", orchestrator);
 
-                    eu.kalafatic.evolution.controller.orchestration.OrchestratorResponse response =
-                        eu.kalafatic.evolution.controller.orchestration.OrchestratorServiceImpl.getInstance().handle(request);
+                   OrchestratorResponse response =
+                       OrchestratorServiceImpl.getInstance().handle(request);
 
-                    if (response.getResultType() == eu.kalafatic.evolution.controller.orchestration.ResultType.ERROR) {
+                    if (response.getResultType() ==ResultType.ERROR) {
                         task.setStatus(eu.kalafatic.evolution.model.orchestration.TaskStatus.FAILED);
                         return new org.eclipse.core.runtime.Status(org.eclipse.core.runtime.IStatus.ERROR, "eu.kalafatic.evolution.view", response.getSummary());
                     }

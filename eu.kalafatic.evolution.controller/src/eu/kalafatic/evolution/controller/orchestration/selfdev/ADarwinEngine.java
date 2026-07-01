@@ -16,9 +16,11 @@ import eu.kalafatic.evolution.controller.agents.PromptIntentAnalyzer;
 import eu.kalafatic.evolution.controller.kernel.EvolutionProfile;
 import eu.kalafatic.evolution.controller.mediation.analysis.ContextCurator;
 import eu.kalafatic.evolution.controller.mediation.analysis.SemanticExtractor;
+import eu.kalafatic.evolution.controller.mediation.model.ArchitecturalFact;
 import eu.kalafatic.evolution.controller.mediation.model.Hotspot;
 import eu.kalafatic.evolution.controller.mediation.model.MediationCandidate;
 import eu.kalafatic.evolution.controller.mediation.model.MediationResult;
+import eu.kalafatic.evolution.controller.mediation.model.Subsystem;
 import eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot;
 import eu.kalafatic.evolution.controller.mediation.scanner.TargetScanner;
 import eu.kalafatic.evolution.controller.orchestration.AiService;
@@ -85,6 +87,7 @@ import eu.kalafatic.evolution.controller.supervision.EvolutionDecision;
 import eu.kalafatic.evolution.controller.trajectory.Trajectory;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
+import eu.kalafatic.evolution.model.orchestration.ChatSession;
 import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
 import eu.kalafatic.evolution.model.orchestration.Iteration;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
@@ -124,7 +127,7 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 
 	protected PlatformType platformType;
 
-	protected eu.kalafatic.evolution.model.orchestration.ChatSession getChatSession() {
+	protected ChatSession getChatSession() {
 		if (context.getOrchestrator() != null && context.getOrchestrator().getAiChat() != null) {
 			String sessionId = context.getSessionId();
 			return context.getOrchestrator().getAiChat().getSessions().stream()
@@ -134,7 +137,7 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 	}
 
 	protected int getExpansionValue() {
-		eu.kalafatic.evolution.model.orchestration.ChatSession chatSession = getChatSession();
+		ChatSession chatSession = getChatSession();
 		return (chatSession != null) ? chatSession.getExpansion() : DEFAULT_EXPANSION_LEVEL;
 	}
 
@@ -2716,7 +2719,7 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 					JSONObject sObj = subArr.optJSONObject(i);
 					if (sObj == null)
 						continue;
-					eu.kalafatic.evolution.controller.mediation.model.Subsystem subsystem = new eu.kalafatic.evolution.controller.mediation.model.Subsystem();
+					Subsystem subsystem = new Subsystem();
 					subsystem.setId(sObj.optString("id"));
 					subsystem.setName(sObj.optString("name"));
 					subsystem.setPurpose(sObj.optString("purpose"));
@@ -2743,7 +2746,7 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 					JSONObject fObj = factArr.optJSONObject(i);
 					if (fObj == null)
 						continue;
-					eu.kalafatic.evolution.controller.mediation.model.ArchitecturalFact fact = new eu.kalafatic.evolution.controller.mediation.model.ArchitecturalFact();
+					ArchitecturalFact fact = new ArchitecturalFact();
 					fact.setId(fObj.optString("id"));
 					fact.setSubject(fObj.optString("subject"));
 					fact.setPredicate(fObj.optString("predicate"));
@@ -2885,26 +2888,14 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 		case SIMPLE_CHAT:
 			branchingLimit = expansionValue <= 5 ? 1 : 2;
 			break;
-//		case ASSISTED_CODING:
-//		case DARWIN_MODE:
-//			if (expansionValue <= 2) branchingLimit = 1;
-//			else if (expansionValue <= 5) branchingLimit = 2;
-//			else if (expansionValue <= 8) branchingLimit = 3;
-//			else branchingLimit = 4;
-//			break;
-//		case HYBRID_MANUAL_EXPORT:
-//		case SELF_DEV_MODE:
-//			if (expansionValue <= 3) branchingLimit = 2;
-//			else if (expansionValue <= 6) branchingLimit = 3;
-//			else if (expansionValue <= 9) branchingLimit = 4;
-//			else branchingLimit = 5;
-//			branchingLimit = expansionValue <= 5 ? 2 : 6;
-//			break;
+		case ASSISTED_CODING:
+			branchingLimit = expansionValue <= 5 ? 2 : 4;
+			break;
 		case HYBRID_MANUAL_EXPORT:
-			branchingLimit = expansionValue <= 5 ? 3 : 8;
+			branchingLimit = expansionValue <= 5 ? 4 : 6;
 			break;
 		case SELF_DEV_MODE:
-			branchingLimit = expansionValue <= 5 ? 4 : 8;
+			branchingLimit = expansionValue <= 5 ? 2 : 4;
 			break;
 
 		default:
@@ -2914,7 +2905,6 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 		// MANDATE: Never more than 8. Darwin decides, not LLM.
 		return Math.min(branchingLimit, 8);
 	}
-
 	protected int getMaxIterationLimit(TaskContext context) {
 		int minIterations = 1;
 
@@ -3008,7 +2998,7 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 	}
 
 	@Override
-	public void setAiService(eu.kalafatic.evolution.controller.orchestration.AiService aiService) {
+	public void setAiService(AiService aiService) {
 		super.setAiService(aiService);
 		rejectionAnalyzer.setAiService(aiService);
 	}
