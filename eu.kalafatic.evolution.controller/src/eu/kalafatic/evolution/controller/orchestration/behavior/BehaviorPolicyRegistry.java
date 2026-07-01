@@ -2,9 +2,10 @@ package eu.kalafatic.evolution.controller.orchestration.behavior;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import eu.kalafatic.evolution.controller.orchestration.PlatformType;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.model.orchestration.AiMode;
-import eu.kalafatic.evolution.controller.orchestration.PlatformType;
 
 /**
  * Registry for behavior policies.

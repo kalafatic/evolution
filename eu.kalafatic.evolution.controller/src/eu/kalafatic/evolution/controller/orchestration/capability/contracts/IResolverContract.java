@@ -1,6 +1,5 @@
 package eu.kalafatic.evolution.controller.orchestration.capability.contracts;
 
-import eu.kalafatic.evolution.controller.supervision.ActivationResolver;
 import eu.kalafatic.evolution.controller.supervision.DecisionSnapshot;
 
 /**

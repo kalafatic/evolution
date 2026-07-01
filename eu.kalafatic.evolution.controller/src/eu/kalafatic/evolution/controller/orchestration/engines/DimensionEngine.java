@@ -1,15 +1,16 @@
 package eu.kalafatic.evolution.controller.orchestration.engines;
 
 import java.util.stream.Collectors;
+
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.goal.GoalModel;
+import eu.kalafatic.evolution.controller.orchestration.intent.EvolutionAssessment;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionResult;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.AbstractionLevel;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionDimension;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.GenomeDimensionScheduler;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.SemanticDomain;
-import eu.kalafatic.evolution.controller.orchestration.selfdev.AbstractionLevel;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.SemanticGenome;
-import eu.kalafatic.evolution.controller.orchestration.intent.EvolutionAssessment;
 
 public class DimensionEngine {
     private final GenomeDimensionScheduler dimensionScheduler = new GenomeDimensionScheduler();

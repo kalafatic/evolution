@@ -1,12 +1,11 @@
 package eu.kalafatic.evolution.controller.manager;
 
 import java.io.File;
-
-
 import java.util.ArrayList;
 import java.util.List;
-import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
+import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 
 public class EnvironmentSuggestionService {
 

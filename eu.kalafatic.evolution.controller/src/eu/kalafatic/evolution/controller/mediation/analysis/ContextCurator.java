@@ -9,10 +9,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import eu.kalafatic.evolution.controller.mediation.model.ArchitecturalFact;
-import eu.kalafatic.evolution.controller.mediation.model.ArchitecturalGene;
 import eu.kalafatic.evolution.controller.mediation.model.KnowledgeGap;
-import eu.kalafatic.evolution.controller.mediation.model.FileDescriptor;
 import eu.kalafatic.evolution.controller.mediation.model.SemanticEdge;
 import eu.kalafatic.evolution.controller.mediation.model.SemanticNode;
 import eu.kalafatic.evolution.controller.mediation.model.Subsystem;

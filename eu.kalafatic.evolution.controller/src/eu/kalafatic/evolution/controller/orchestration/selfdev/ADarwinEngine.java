@@ -25,9 +25,9 @@ import eu.kalafatic.evolution.controller.orchestration.AiService;
 import eu.kalafatic.evolution.controller.orchestration.ConversationState;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionPhase;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionPhaseMachine;
+import eu.kalafatic.evolution.controller.orchestration.EvolutionProgressEvent;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionProgressPublisher;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionStage;
-import eu.kalafatic.evolution.controller.orchestration.EvolutionProgressEvent;
 import eu.kalafatic.evolution.controller.orchestration.FileChangeTracker;
 import eu.kalafatic.evolution.controller.orchestration.FinalResponse;
 import eu.kalafatic.evolution.controller.orchestration.FinalResponseAssembler;
@@ -59,7 +59,6 @@ import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityCont
 import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityException;
 import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityHealth;
 import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityStatus;
-import eu.kalafatic.evolution.controller.orchestration.capability.ICapability;
 import eu.kalafatic.evolution.controller.orchestration.capability.contracts.IMutationContract;
 import eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType;
 import eu.kalafatic.evolution.controller.orchestration.diagnostics.CausalNode;
@@ -81,6 +80,7 @@ import eu.kalafatic.evolution.controller.orchestration.selfdev.adaptive.Rejectio
 import eu.kalafatic.evolution.controller.orchestration.util.ModeRecognizer;
 import eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceArtifact;
 import eu.kalafatic.evolution.controller.supervision.AuthorityController;
+import eu.kalafatic.evolution.controller.supervision.EvolutionDecision;
 import eu.kalafatic.evolution.controller.trajectory.Trajectory;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
@@ -982,7 +982,7 @@ private String generateChatResponse(String request, TaskContext context) {
 
 		String iterId = manager.getCurrentIterationModel() != null ? manager.getCurrentIterationModel().getId()
 				: "default";
-		eu.kalafatic.evolution.controller.supervision.EvolutionDecision decision = manager.decide(iterId, variants,
+		EvolutionDecision decision = manager.decide(iterId, variants,
 				context, manualId);
 
 		if (activeTrajectory != null) {
@@ -1286,7 +1286,7 @@ private String generateChatResponse(String request, TaskContext context) {
 		Iteration currentIterationModelImpl = manager.getCurrentIterationModel();
 		String iterId = currentIterationModelImpl != null ? currentIterationModelImpl.getId() : "default";
 
-		eu.kalafatic.evolution.controller.kernel.EvolutionProfile profile = context.getExecutionProfile();
+		EvolutionProfile profile = context.getExecutionProfile();
 		String originalBranch = null;
 		String baseCommit = null;
 		if (profile.requiresRepository() && manager.getGitManager().isGitRepository()) {

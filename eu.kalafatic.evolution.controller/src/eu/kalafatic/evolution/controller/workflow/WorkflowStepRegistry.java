@@ -1,9 +1,9 @@
 package eu.kalafatic.evolution.controller.workflow;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.List;
-import java.util.ArrayList;
 
 public class WorkflowStepRegistry {
     private final Map<String, WorkflowStep> steps = new ConcurrentHashMap<>();

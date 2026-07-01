@@ -2,6 +2,7 @@ package eu.kalafatic.evolution.controller.orchestration.selfdev;
 
 import java.util.ArrayList;
 import java.util.List;
+
 import eu.kalafatic.evolution.controller.orchestration.goal.GoalModel;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionResult;
 

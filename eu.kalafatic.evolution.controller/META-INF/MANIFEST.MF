@@ -26,8 +26,7 @@ Require-Bundle: org.eclipse.swt,
  eu.kalafatic.evolution.creatic;bundle-version="2.6.5",
  eu.kalafatic.evolution.servers;bundle-version="2.6.5";visibility:=reexport,
  eu.kalafatic.evolution.controller;bundle-version="[2.6.0,3.0.0)"
-Import-Package: java.sql,
- eu.kalafatic.evolution.supervisor.bootstrap
+Import-Package: java.sql
 Automatic-Module-Name: eu.kalafatic.evolution.controller
 Bundle-RequiredExecutionEnvironment: JavaSE-21
 Export-Package: eu.kalafatic.evolution.controller,

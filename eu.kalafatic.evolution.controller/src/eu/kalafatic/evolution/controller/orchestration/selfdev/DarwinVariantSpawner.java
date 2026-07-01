@@ -2,17 +2,13 @@ package eu.kalafatic.evolution.controller.orchestration.selfdev;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.json.JSONObject;
 
 import eu.kalafatic.evolution.controller.orchestration.AiService;
-import eu.kalafatic.evolution.controller.orchestration.EvolutionProgressPublisher;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.behavior.DarwinPromptBuilder;
 import eu.kalafatic.evolution.controller.orchestration.goal.GoalModel;
-import eu.kalafatic.evolution.controller.orchestration.goal.SemanticEnvelope;
-import eu.kalafatic.evolution.controller.orchestration.intent.AtomicIntentAnalysis;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 
 /**

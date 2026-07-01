@@ -11,7 +11,6 @@ import java.util.stream.Collectors;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import eu.kalafatic.evolution.controller.agents.BaseAiAgent;
 import eu.kalafatic.evolution.controller.agents.PromptIntentAnalyzer;
 import eu.kalafatic.evolution.controller.kernel.EvolutionProfile;
 import eu.kalafatic.evolution.controller.mediation.analysis.ContextCurator;
@@ -25,9 +24,9 @@ import eu.kalafatic.evolution.controller.orchestration.AiService;
 import eu.kalafatic.evolution.controller.orchestration.ConversationState;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionPhase;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionPhaseMachine;
+import eu.kalafatic.evolution.controller.orchestration.EvolutionProgressEvent;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionProgressPublisher;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionStage;
-import eu.kalafatic.evolution.controller.orchestration.EvolutionProgressEvent;
 import eu.kalafatic.evolution.controller.orchestration.FileChangeTracker;
 import eu.kalafatic.evolution.controller.orchestration.FinalResponse;
 import eu.kalafatic.evolution.controller.orchestration.FinalResponseAssembler;
@@ -39,7 +38,6 @@ import eu.kalafatic.evolution.controller.orchestration.OrchestratorResponse;
 import eu.kalafatic.evolution.controller.orchestration.PlatformMode;
 import eu.kalafatic.evolution.controller.orchestration.PlatformType;
 import eu.kalafatic.evolution.controller.orchestration.ResultType;
-import eu.kalafatic.evolution.controller.orchestration.SessionManager;
 import eu.kalafatic.evolution.controller.orchestration.SystemState;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.TaskRequest;
@@ -50,32 +48,17 @@ import eu.kalafatic.evolution.controller.orchestration.behavior.ExecutionPolicy;
 import eu.kalafatic.evolution.controller.orchestration.behavior.ExploratoryReasoningModule;
 import eu.kalafatic.evolution.controller.orchestration.behavior.InstructionModule;
 import eu.kalafatic.evolution.controller.orchestration.behavior.MediatedInstructionModule;
-import eu.kalafatic.evolution.controller.orchestration.behavior.PolicyResolver;
-import eu.kalafatic.evolution.controller.orchestration.behavior.PromptComposer;
 import eu.kalafatic.evolution.controller.orchestration.behavior.SelfDevInstructionModule;
 import eu.kalafatic.evolution.controller.orchestration.behavior.StepModeInstructionModule;
-import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityContext;
 import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityException;
-import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityHealth;
-import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityStatus;
-import eu.kalafatic.evolution.controller.orchestration.capability.ICapability;
-import eu.kalafatic.evolution.controller.orchestration.capability.contracts.IMutationContract;
 import eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType;
 import eu.kalafatic.evolution.controller.orchestration.diagnostics.CausalNode;
-import eu.kalafatic.evolution.controller.orchestration.engines.DimensionEngine;
-import eu.kalafatic.evolution.controller.orchestration.engines.ExecutionEngine;
-import eu.kalafatic.evolution.controller.orchestration.engines.FitnessEngine;
-import eu.kalafatic.evolution.controller.orchestration.engines.LineageEngine;
 import eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel;
 import eu.kalafatic.evolution.controller.orchestration.goal.GoalModel;
 import eu.kalafatic.evolution.controller.orchestration.goal.SemanticEnvelope;
 import eu.kalafatic.evolution.controller.orchestration.intent.AtomicIntentAnalysis;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionResult;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentHypothesis;
-import eu.kalafatic.evolution.controller.orchestration.mediation.MediationEngine;
-import eu.kalafatic.evolution.controller.orchestration.selfdev.adaptive.DiversityPressureController;
-import eu.kalafatic.evolution.controller.orchestration.selfdev.adaptive.EvolutionaryPenaltyModel;
-import eu.kalafatic.evolution.controller.orchestration.selfdev.adaptive.RejectionPatternAnalyzer;
 import eu.kalafatic.evolution.controller.orchestration.util.ModeRecognizer;
 import eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceArtifact;
 import eu.kalafatic.evolution.controller.trajectory.Trajectory;
@@ -1828,38 +1811,7 @@ public class ChatEngine extends ADarwinEngine {
 			}
 		}
 	}
-
-	private void mergeHybridInsights(List<BranchVariant> variants, BranchVariant winner, TaskContext context) {
-		JSONArray analyticalInsights = new JSONArray();
-		JSONArray stabilizationInsights = new JSONArray();
-
-		for (BranchVariant v : variants) {
-			if (v.getId().equals(winner.getId()))
-				continue;
-
-			JSONObject insight = new JSONObject();
-			insight.put("strategy", v.getStrategy());
-			insight.put("risks", v.getFailureRisks());
-			insight.put("tradeoffs", v.getTradeoffs());
-
-			if ("ANALYTICAL".equals(v.getStrategyType())) {
-				analyticalInsights.put(insight);
-			} else if ("STABILIZATION".equals(v.getStrategyType())) {
-				stabilizationInsights.put(insight);
-			}
-		}
-
-		if (analyticalInsights.length() > 0) {
-			context.getOrchestrationState().getMetadata().put("hybrid_analytical_insights", analyticalInsights);
-			context.log("[DARWIN] Merged " + analyticalInsights.length() + " analytical insights into context.");
-		}
-		if (stabilizationInsights.length() > 0) {
-			context.getOrchestrationState().getMetadata().put("hybrid_stabilization_insights", stabilizationInsights);
-			context.log("[DARWIN] Merged " + stabilizationInsights.length() + " stabilization insights into context.");
-		}
-	}
-
-	
+		
 	public List<BranchVariant> generateVariants(GoalModel goal, StateSnapshot snapshot, FailureMemory failureMemory,
 			Trajectory trajectory, EvolutionaryPressureVector pressure) throws Exception {
 		Orchestrator orchestrator = context.getOrchestrator();
@@ -2343,39 +2295,7 @@ public class ChatEngine extends ADarwinEngine {
 
 		return variants;
 	}
-
-	private eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot getTargetSnapshotSafe(
-			TaskContext context) {
-		Object obj = context.getOrchestrationState().getMetadata().get("mediatedSnapshot");
-
-		if (obj == null) {
-			return null;
-		}
-
-		if (obj instanceof eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot) {
-			return (eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot) obj;
-		}
-
-		// If it's a Map (from checkpoint deserialization), convert it
-		if (obj instanceof Map) {
-			try {
-				com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper()
-						.configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,
-								false);
-				eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot snapshot = mapper.convertValue(obj,
-						eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot.class);
-				// Store the converted object back
-				context.getOrchestrationState().getMetadata().put("mediatedSnapshot", snapshot);
-				return snapshot;
-			} catch (Exception e) {
-				context.log("[DARWIN] Failed to convert mediatedSnapshot from Map: " + e.getMessage());
-				return null;
-			}
-		}
-
-		return null;
-	}
-
+	
 	/**
 	 * Generates conversational response variants via LLM. Called when CHAT
 	 * capability is detected.
@@ -2474,254 +2394,6 @@ public class ChatEngine extends ADarwinEngine {
 		return genome;
 	}
 
-	private BranchVariant mapToBranchVariant(JSONObject obj, String goal, String currentPhase, Trajectory trajectory,
-			TaskContext context) {
-		BranchVariant v = new BranchVariant();
-		v.setId(obj.optString("id", "v-" + System.currentTimeMillis()));
-		v.setBranchId(v.getId());
-		v.setLineageId(context.getSessionId());
-		v.setActivationState(BranchVariant.ActivationState.ARCHIVED);
-		v.setStrategyType(obj.optString("strategy_type", "UNKNOWN"));
-		v.setReasoningLevel(BranchVariant.ReasoningLevel.valueOf(obj.optString("reasoning_level", "BALANCED")));
-		v.setArchitectureEnabled(obj.optBoolean("architecture_enabled", true));
-		v.setImplementationEnabled(obj.optBoolean("implementation_enabled", true));
-		v.setStrategy(obj.optString("strategy", "unknown"));
-		v.setSemanticAnchor(obj.optString("semantic_anchor", v.getStrategy()));
-		v.setMutationPhilosophy(obj.optString("mutation_philosophy"));
-		v.setMutationTrace("Generated in trajectory round.");
-		v.setScore(obj.optDouble("score", 0.0));
-		String suffix = obj.optString("suffix", "variant");
-		v.setBranchName("exp/" + sanitize(goal) + "/" + v.getId() + "-" + System.currentTimeMillis());
-		v.setSurvivalArgument(obj.optString("survival_argument", "none"));
-		v.setTradeoffs(obj.optString("tradeoffs", "none"));
-		v.setFailureRisks(obj.optString("failure_risks", "none"));
-
-		Trajectory t = new Trajectory(v.getId(), v.getStrategy());
-		t.setProsConsAnalysis(obj.optString("pros_cons", "none"));
-		t.setSemanticJustification(obj.optString("semantic_justification", "none"));
-		t.setFitnessScore(v.getScore());
-
-		if (trajectory != null) {
-			t.setParentTrajectoryId(trajectory.getTrajectoryId());
-			trajectory.addChildTrajectoryId(t.getTrajectoryId());
-			t.getMutationLineage().addAll(trajectory.getMutationLineage());
-		}
-		t.addMutationToLineage(v.getStrategy());
-
-		v.setTrajectoryId(t.getTrajectoryId());
-		if (memoryService != null && memoryService.getTrajectoryMemory() != null) {
-			memoryService.getTrajectoryMemory().recordTrajectory(t);
-		}
-
-		v.setReasoningFocus(obj.optString("reasoning_focus"));
-		JSONArray selectedFilesArr = obj.optJSONArray("selected_files");
-		if (selectedFilesArr != null) {
-			for (int i = 0; i < selectedFilesArr.length(); i++) {
-				String s = selectedFilesArr.optString(i);
-				if (s != null && !s.isEmpty())
-					v.getSelectedFiles().add(s);
-			}
-		}
-
-		JSONArray stepsArr = obj.optJSONArray("projected_steps");
-		if (stepsArr != null) {
-			for (int j = 0; j < stepsArr.length(); j++) {
-				String s = stepsArr.optString(j);
-				if (s != null && !s.isEmpty())
-					v.getProjectedSteps().add(s);
-			}
-		}
-
-		JSONArray outputsArr = obj.optJSONArray("expected_outputs");
-		if (outputsArr != null) {
-			for (int j = 0; j < outputsArr.length(); j++) {
-				String s = outputsArr.optString(j);
-				if (s != null && !s.isEmpty())
-					v.getExpectedOutputs().add(s);
-			}
-		}
-
-		JSONArray actionsArr = obj.optJSONArray("actions");
-		if (actionsArr != null) {
-			for (int i = 0; i < actionsArr.length(); i++) {
-				JSONObject aObj = actionsArr.optJSONObject(i);
-				if (aObj == null)
-					continue;
-				BranchVariant.Action action = new BranchVariant.Action();
-				action.setDomain(aObj.optString("domain", "kernel"));
-				action.setOperation(aObj.optString("operation", "ANALYZE"));
-				action.setTarget(aObj.optString("target", "workspace"));
-				action.setDescription(aObj.optString("description", "Materialize architectural intent"));
-				action.setImplementation(aObj.optString("implementation", ""));
-				v.getActions().add(action);
-			}
-		}
-
-		JSONObject medObj = obj.optJSONObject("mediation_candidate");
-		if (medObj != null) {
-			MediationCandidate med = new MediationCandidate();
-			med.setPrompt(medObj.optString("prompt"));
-			JSONArray medFiles = medObj.optJSONArray("selected_files");
-			if (medFiles != null) {
-				for (int i = 0; i < medFiles.length(); i++)
-					med.getSelectedFiles().add(medFiles.getString(i));
-			}
-			med.setArchitectureSummary(medObj.optString("architecture_summary"));
-
-			JSONArray subArr = medObj.optJSONArray("subsystems");
-			if (subArr != null) {
-				for (int i = 0; i < subArr.length(); i++) {
-					JSONObject sObj = subArr.optJSONObject(i);
-					if (sObj == null)
-						continue;
-					eu.kalafatic.evolution.controller.mediation.model.Subsystem subsystem = new eu.kalafatic.evolution.controller.mediation.model.Subsystem();
-					subsystem.setId(sObj.optString("id"));
-					subsystem.setName(sObj.optString("name"));
-					subsystem.setPurpose(sObj.optString("purpose"));
-					subsystem.setDescription(sObj.optString("description"));
-					JSONArray bounds = sObj.optJSONArray("boundaries");
-					if (bounds != null)
-						for (int j = 0; j < bounds.length(); j++)
-							subsystem.getBoundaries().add(bounds.getString(j));
-					JSONArray crit = sObj.optJSONArray("critical_files");
-					if (crit != null)
-						for (int j = 0; j < crit.length(); j++)
-							subsystem.getCriticalFiles().add(crit.getString(j));
-					JSONArray resp = sObj.optJSONArray("responsibilities");
-					if (resp != null)
-						for (int j = 0; j < resp.length(); j++)
-							subsystem.getResponsibilities().add(resp.getString(j));
-					med.getSubsystems().add(subsystem);
-				}
-			}
-
-			JSONArray factArr = medObj.optJSONArray("architectural_facts");
-			if (factArr != null) {
-				for (int i = 0; i < factArr.length(); i++) {
-					JSONObject fObj = factArr.optJSONObject(i);
-					if (fObj == null)
-						continue;
-					eu.kalafatic.evolution.controller.mediation.model.ArchitecturalFact fact = new eu.kalafatic.evolution.controller.mediation.model.ArchitecturalFact();
-					fact.setId(fObj.optString("id"));
-					fact.setSubject(fObj.optString("subject"));
-					fact.setPredicate(fObj.optString("predicate"));
-					fact.setDescription(fObj.optString("description"));
-					fact.setConfidence(fObj.optDouble("confidence", 1.0));
-					JSONArray ev = fObj.optJSONArray("evidence");
-					if (ev != null)
-						for (int j = 0; j < ev.length(); j++)
-							fact.getEvidence().add(ev.getString(j));
-					med.getArchitecturalFacts().add(fact);
-				}
-			}
-
-			med.setDependencies(medObj.optString("dependencies"));
-			med.setExecutionInstructions(medObj.optString("execution_instructions"));
-			med.setEvaluation(medObj.optString("evaluation"));
-			v.setMediationCandidate(med);
-		}
-
-		JSONObject hypObj = obj.optJSONObject("hypothesis");
-		if (hypObj != null) {
-			BranchVariant.Hypothesis hyp = new BranchVariant.Hypothesis();
-			hyp.setDescription(hypObj.optString("description"));
-			JSONArray effectsArr = hypObj.optJSONArray("expected_effects");
-			if (effectsArr != null) {
-				for (int j = 0; j < effectsArr.length(); j++)
-					hyp.getExpectedEffects().add(effectsArr.getString(j));
-			}
-			v.setHypothesis(hyp);
-		}
-
-		JSONObject effectObj = obj.optJSONObject("expected_effect");
-		if (effectObj != null) {
-			BranchVariant.ExpectedEffect effect = new BranchVariant.ExpectedEffect();
-			effect.setShortTerm(effectObj.optString("short_term"));
-			effect.setLongTerm(effectObj.optString("long_term"));
-			effect.setRisk(effectObj.optDouble("risk", 0.5));
-			effect.setReversibility(effectObj.optDouble("reversibility", 1.0));
-			v.setExpectedEffect(effect);
-		}
-
-		return v;
-	}
-
-	private double semanticDistance(GoalModel goal, JSONObject variant, SemanticEnvelope envelope) {
-		String strategy = variant.optString("strategy", "").toLowerCase();
-		String philosophy = variant.optString("semantic_anchor", "").toLowerCase();
-		String primaryAction = goal.getPrimaryAction().toLowerCase();
-
-		// Technical keywords that are often semantically identical for the same goal
-		String[] identicalTechnicalConcepts = { "static", "instance", "constructor", "overloads", "logger",
-				"system.out", "varargs", "library", "utility" };
-
-		double distance = 0.0;
-
-		// 1. Mandatory Concepts Check (Goal Relative)
-		if (envelope != null && !envelope.getMandatoryConcepts().isEmpty()) {
-			int missed = 0;
-			for (String concept : envelope.getMandatoryConcepts()) {
-				String c = concept.toLowerCase();
-				// If it's a technical variety keyword, we are lenient
-				boolean isTechnicalVariety = false;
-				for (String tech : identicalTechnicalConcepts) {
-					if (c.contains(tech)) {
-						isTechnicalVariety = true;
-						break;
-					}
-				}
-
-				if (!strategy.contains(c) && !philosophy.contains(c)) {
-					if (!isTechnicalVariety)
-						missed++;
-				}
-			}
-			distance += (double) missed / envelope.getMandatoryConcepts().size() * 0.4;
-		}
-
-		// 2. Exact Match or Intent Overlap
-		if (strategy.contains(primaryAction) || philosophy.contains(primaryAction)) {
-			distance += 0.0; // Perfect intent match
-		} else {
-			// 3. Keyword Overlap (Weighted toward intent keywords)
-			String[] keywords = primaryAction.split(" ");
-			int matches = 0;
-			int significantKeywords = 0;
-			for (String k : keywords) {
-				if (k.length() <= 3)
-					continue;
-
-				boolean isTechnical = false;
-				for (String tech : identicalTechnicalConcepts) {
-					if (k.equalsIgnoreCase(tech)) {
-						isTechnical = true;
-						break;
-					}
-				}
-
-				if (!isTechnical) {
-					significantKeywords++;
-					if (strategy.contains(k) || philosophy.contains(k)) {
-						matches++;
-					}
-				}
-			}
-			double overlap = significantKeywords > 0 ? (double) matches / significantKeywords : 1.0;
-			distance += (1.0 - overlap) * 0.6;
-		}
-
-		// 4. Forbidden Regions Check (Architectural Inflation)
-		if (envelope != null && !envelope.getForbiddenRegions().isEmpty()) {
-			for (String region : envelope.getForbiddenRegions()) {
-				String r = region.toLowerCase();
-				if (strategy.contains(r) || philosophy.contains(r)) {
-					distance += 0.8; // Heavy penalty for architectural inflation
-				}
-			}
-		}
-
-		return Math.min(1.0, distance);
-	}
 
 	@Override
 	protected String getAgentInstructions() {

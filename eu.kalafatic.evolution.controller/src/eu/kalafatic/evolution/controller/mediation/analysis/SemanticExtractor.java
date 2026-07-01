@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 
 import eu.kalafatic.evolution.controller.mediation.model.FileDescriptor;
-import eu.kalafatic.evolution.controller.mediation.model.SemanticEdge;
 import eu.kalafatic.evolution.controller.mediation.model.SemanticNode;
 import eu.kalafatic.evolution.controller.mediation.model.TargetDescriptor;
 import eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot;

@@ -2,8 +2,9 @@ package eu.kalafatic.evolution.controller.agents;
 
 import java.util.ArrayList;
 import java.util.List;
-import eu.kalafatic.evolution.controller.orchestration.WebSearchAgent;
+
 import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
+import eu.kalafatic.evolution.controller.orchestration.WebSearchAgent;
 
 /**
  * Factory for AI Agents.

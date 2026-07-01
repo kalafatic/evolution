@@ -2,12 +2,13 @@ package eu.kalafatic.evolution.controller.review.service;
 
 import java.io.File;
 import java.util.UUID;
-import eu.kalafatic.evolution.model.orchestration.ReviewSession;
-import eu.kalafatic.evolution.model.orchestration.ReviewDecision;
+
+import eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider;
+import eu.kalafatic.evolution.controller.vcs.VersionControlProvider;
 import eu.kalafatic.evolution.model.orchestration.ChangeSet;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
-import eu.kalafatic.evolution.controller.vcs.VersionControlProvider;
-import eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider;
+import eu.kalafatic.evolution.model.orchestration.ReviewDecision;
+import eu.kalafatic.evolution.model.orchestration.ReviewSession;
 
 public class PeerReviewService {
     private static PeerReviewService instance;
