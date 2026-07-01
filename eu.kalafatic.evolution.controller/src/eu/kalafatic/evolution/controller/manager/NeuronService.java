@@ -20,14 +20,18 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
  */
 public class NeuronService {
 
-    private static final NeuronService INSTANCE = new NeuronService();
     private static String GLOBAL_DIR = initializeGlobalDir();
     private static String GLOBAL_PATH = initializeGlobalPath();
+    private static final NeuronService INSTANCE = new NeuronService();
 
     private static String initializeGlobalDir() {
-        String home = System.getProperty("user.home");
-        if (home == null) home = ".";
-        return home + java.io.File.separator + "supervisor";
+        try {
+            return org.eclipse.core.runtime.Platform.getStateLocation(org.eclipse.core.runtime.Platform.getBundle("eu.kalafatic.evolution.controller")).toOSString() + java.io.File.separator + "neuron";
+        } catch (Exception e) {
+            String home = System.getProperty("user.home");
+            if (home == null) home = ".";
+            return home + java.io.File.separator + "supervisor";
+        }
     }
 
     private static String initializeGlobalPath() {
@@ -119,6 +123,40 @@ public class NeuronService {
     /**
      * @evo:14:A reason=categorized-weighted-proposals
      */
+    public Map<String, Integer> getGlobalStats() {
+        Map<String, Integer> stats = new HashMap<>();
+        synchronized (globalMemory) {
+            for (Map.Entry<String, Map<String, Integer>> entry : globalMemory.entrySet()) {
+                stats.put(entry.getKey(), entry.getValue().size());
+            }
+        }
+        return stats;
+    }
+
+    public Map<String, Integer> getLocalStats(Orchestrator orchestrator) {
+        Map<String, Integer> stats = new HashMap<>();
+        if (orchestrator != null && orchestrator.getNeuronAI() != null) {
+            Map<String, Map<String, Integer>> localMemory = loadMemory(orchestrator.getNeuronAI());
+            for (Map.Entry<String, Map<String, Integer>> entry : localMemory.entrySet()) {
+                stats.put(entry.getKey(), entry.getValue().size());
+            }
+        }
+        return stats;
+    }
+
+    public synchronized void clearGlobalMemory() {
+        globalMemory.clear();
+        saveGlobalMemory();
+        Log.log("[NEURON] Global memory cleared.");
+    }
+
+    public synchronized void clearLocalMemory(Orchestrator orchestrator) {
+        if (orchestrator != null && orchestrator.getNeuronAI() != null) {
+            orchestrator.getNeuronAI().setTrainingData("");
+            Log.log("[NEURON] Local memory cleared for orchestrator: " + orchestrator.getId());
+        }
+    }
+
     public synchronized String[] getProposals(Orchestrator orchestrator, String prefix, String category) {
         if (prefix == null) return new String[0];
 
