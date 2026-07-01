@@ -14,6 +14,10 @@ public class GitManager {
     private final GitTool gitTool = new GitTool();
     private final Set<String> worktreeRegistry = ConcurrentHashMap.newKeySet();
 
+    public GitTool getGitTool() {
+        return gitTool;
+    }
+
     public GitManager(File root) {
         this.root = root;
     }

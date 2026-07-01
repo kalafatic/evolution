@@ -1406,6 +1406,10 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 		return variants;
 	}
 
+	protected boolean isCodingProcess() {
+		return platformType == PlatformType.ASSISTED_CODING || platformType == PlatformType.SELF_DEV_MODE;
+	}
+
 	public EvaluationResult executeWinner(TaskContext context,
 			eu.kalafatic.evolution.controller.supervision.EvolutionDecision decision, List<BranchVariant> variants,
 			GoalModel goal, IterationManager manager) throws Exception {
@@ -1416,6 +1420,23 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 		String baseCommit = null;
 		if (profile.requiresRepository() && manager.getGitManager().isGitRepository()) {
 			originalBranch = manager.getGitManager().getCurrentBranch();
+
+			// REQUIREMENT 3: Coding processes branched from user/git/evo - NOT master!
+			if (isCodingProcess() && "master".equals(originalBranch)) {
+				context.log("[DARWIN] [REQUIREMENT] Coding process detected on 'master'. Enforcement: Searching for alternative base branch.");
+				List<String> branches = manager.getGitManager().getGitTool().getBranches(context.getProjectRoot());
+				String altBase = branches.stream().filter(b -> !b.equals("master") && !b.contains("snapshot/") && !b.startsWith("exp/")).findFirst().orElse(null);
+				if (altBase != null) {
+					context.log("[DARWIN] Switching base for coding variant from 'master' to: " + altBase);
+					originalBranch = altBase;
+					manager.getGitManager().forceCheckout(altBase);
+				} else {
+					context.log("[DARWIN] [REQUIREMENT] No alternative base branch found. Creating and switching to 'develop' as base for evolution.");
+					manager.getGitManager().createBranch("develop");
+					originalBranch = "develop";
+				}
+			}
+
 			baseCommit = manager.getGitManager().getHeadCommit();
 		}
 		Iteration currentIterationModelImpl = manager.getCurrentIterationModel();
