@@ -5,129 +5,140 @@ This document outlines the step-by-step use cases for the Evo presentation, incl
 ---
 
 ## 1. Create New Project
-**Subtitle:** Setting up your first evolutionary project.
+**Subtitle:** Bootstrapping an evolutionary workspace.
 **Voice Reading:**
-"To begin, we'll create a new Evo project. Open the 'New Evo Project' wizard from the menu. Give your project a name and specify its location. By default, Evo starts in Local Mode, utilizing your on-premise models for maximum privacy and speed. Once complete, the system automatically registers the repository and initializes the evolutionary kernel, which you can see appearing in the Evo Navigator."
+"We start by initializing our evolutionary environment. Using the 'New Evo Project' wizard, we define our project identity and target location. Evo automatically applies the 'Evolution Project Nature' and registers the underlying Git repository with the Eclipse EGit view. Notice that by default, the project is configured in Local Mode—prioritizing data sovereignty by keeping your code and AI interactions within your infrastructure. As the wizard completes, the Evo Navigator populates with the project's structural DNA, ready for orchestration."
 
 ### Steps:
 1. Navigate to **File > New > New Evo Project**.
-2. Enter **Project Name** (e.g., 'EvoDemo').
-3. Verify **Local Mode** is selected in the wizard.
-4. Click **Finish** and observe the project appearing in the **Evo Navigator**.
+2. Enter **Project Name** (e.g., 'EvolutionCore') and choose a location.
+3. Observe the **Orchestration General** page settings (ID, Name).
+4. Click **Finish**.
+5. Locate the project in the **Evo Navigator** and notice the specialized **Evolution Nature** icon.
+6. Verify the repository is visible in the **Git Repositories** view.
 
 ---
 
 ## 2. Local Coding Assist Task
-**Subtitle:** Seamless coding assistance with local AI.
+**Subtitle:** Cognitive task execution with local models.
 **Voice Reading:**
-"Now let's start a coding task. First, we'll verify our local model selection in the Properties page. Back in the AiChat page, we provide a simple intent, like 'Create a StringUtils class with basic formatting methods'. Notice how the Intent Expansion Engine analyzes the request and automatically breaks it down. Evo iterates through the plan, generates the source code, and verifies it against the project's compiler. After execution, we can provide feedback using the satisfaction stars, allowing Neuron to learn from this interaction."
+"With our project active, let's execute a development task. First, we'll verify our 'Ollama' configuration in the Properties tab, ensuring our local llama3 model is reachable. Switching to the AiChat tab, we provide a high-level intent: 'Create a StringUtils class with basic formatting methods'. The Intent Expansion Engine instantly deconstructs this into a multi-step implementation plan. Evo then iterates through the generation and verification phases, using the project's compiler to ensure syntactical correctness. Once finished, we provide a 5-star rating, which Neuron immediately uses to train its local memory for future tasks."
 
 ### Steps:
-1. Go to the **Properties** tab and ensure the **Local Model** (e.g., 'llama3') is selected in the **Ollama Settings** section.
-2. Open the **AiChat** tab.
+1. Open the **Properties** tab and expand **Ollama Settings**. Ensure the status is **Online**.
+2. Switch to the **AiChat** tab.
 3. Type: `Create a StringUtils class with basic formatting methods`.
-4. Press **Send** and watch the **Thinking** indicator and **Intent Expansion** log in the chat.
-5. Review the generated code in the **Compare** view.
-6. Rate the result using the **Feedback** stars (1-5) at the bottom.
+4. Press **Send**. Observe the **Intent Expansion** log showing the deconstructed sub-tasks.
+5. Watch the **Thinking** phase as code is generated and validated.
+6. Click the generated file link to view the code in the **Compare** view.
+7. Expand the **Feedback** section at the bottom, select **5 stars**, and enter 'Perfect implementation'.
+8. Click **Submit Feedback** and notice the **Neuron** training notification.
 
 ---
 
 ## 3. Mediated Coding Assist Task
-**Subtitle:** High-impact architectural evolution with human-in-the-loop.
+**Subtitle:** Collaborative evolution for high-risk architectural changes.
 **Voice Reading:**
-"For complex architectural changes, we use Mediated Mode. We'll ask Evo to refactor our event bus to be fully asynchronous. Because this is a high-risk change, the Darwin Engine spawns multiple variant branches. We can inspect each proposal, compare their strategies, and select the most robust implementation. This ensures that the human supervisor remains the ultimate authority for critical technical decisions."
+"For significant architectural shifts, we employ Mediated Mode. We'll ask Evo to refactor our core EventBus into an asynchronous model. Because of the high EPS score—or evolutionary pressure—the Darwin Engine engages, spawning divergent implementation variants. In the Evolution Tree panel, we can see the lineage of these proposals. We'll double-click a branch to inspect its specific strategy and predicted score. This human-in-the-loop approach ensures that while the AI explores the solution space, the human supervisor maintains ultimate authority over the final architecture."
 
 ### Steps:
-1. Go to the **Properties** tab and switch **AI Mode** to **MEDIATED** in the **Orchestrator Settings**.
-2. In the **AiChat** tab, enter: `Refactor the EventBus to support asynchronous execution`.
-3. Observe the **Darwinian Branching** appearing in the **Evolution Tree** panel.
-4. Double-click a branch node in the tree to see variant details.
-5. In the chat, select a variant (e.g., 'Variant 1.1') and click **Approve Variant**.
-6. Wait for the final **Verification** (e.g., Maven build) to complete.
+1. In the **Properties** tab, change the **AI Mode** to **MEDIATED** in the **Orchestrator** section.
+2. In **AiChat**, enter: `Refactor the EventBus to support asynchronous execution using a lock-free queue`.
+3. Monitor the **Evolution Tree** panel as multiple branch nodes appear.
+4. Double-click a branch node (e.g., 'v1.1') to open the **Branch Details** popup.
+5. In the chat, review the proposal summary for the selected variant.
+6. Click **Approve Variant** on the preferred proposal.
+7. Observe the kernel merging the winner and performing a final **Maven Build** verification.
 
 ---
 
 ## 4. Architecture Visualization
-**Subtitle:** Real-time visibility into your system's components.
+**Subtitle:** Real-time structural awareness.
 **Voice Reading:**
-"Understanding a complex codebase is easy with Evo's Architecture view. Here, we see a live visualization of our components and their relationships. As we modify the code, we can trigger a refresh to see the architecture update instantly. This ensures our mental model always stays in sync with the actual implementation."
+"Maintaining a clear mental model of a complex system is vital. Evo's Architecture tab provides a live, interactive map of your project's components. These visual nodes represent the 'hotspots' and artifacts identified by our Reality Discovery Agent. As we evolve the code, a simple refresh keeps our visualization synchronized with the ground truth of the implementation, ensuring architectural integrity is preserved throughout the development lifecycle."
 
 ### Steps:
-1. Open the **Architecture** tab in the multi-page editor.
-2. Explore the visual nodes representing classes and modules.
-3. Use the context menu or button to **Refresh** the architecture to synchronize with latest file changes.
+1. Switch to the **Architecture** tab.
+2. Interact with the graph: zoom, pan, and hover over nodes to see artifact details.
+3. Modify a class in the project (e.g., add a method).
+4. Return to the **Architecture** tab and click the **Refresh** button.
+5. Observe the visual update reflecting the new structural state.
 
 ---
 
-## 5. Forge Interactive & Neuron
-**Subtitle:** Monitoring the engine and leveraging learned context.
+## 5. Forge Models & Neuron
+**Subtitle:** Monitoring the cognitive engine and semantic memory.
 **Voice Reading:**
-"The Forge Models page provides an interactive look at the evolutionary engine's heartbeat. You can monitor active sessions and the status of various models. Complementing this is Neuron, our semantic memory system found in the Context page. Neuron learns from every task and feedback loop, offering context-aware suggestions as you type in the chat, effectively growing as a specialized expert for your specific project."
+"The Forge Models tab is our window into the AI's internal state, showing active sessions and the status of our generative models. This is where we monitor the engine's heartbeat. Simultaneously, Neuron—our semantic memory—is working in the background. In the Context tab, we can see Neuron's learning statistics. As it absorbs our project's patterns and feedback, it begins providing specialized autocomplete suggestions in the chat, effectively evolving into a dedicated domain expert for our codebase."
 
 ### Steps:
-1. Switch to the **Forge Models** tab to see active forge sessions and model statuses.
-2. Open the **Context** tab to view the **Neuron Context (Learned Behavior)** section.
-3. Return to **AiChat** and start typing to see **Neuron Proposals** appearing in the autocomplete (triggered by Ctrl+Space or auto-activation).
+1. Open the **Forge Models** tab to see the list of active AI sessions.
+2. Switch to the **Context** tab and find the **Neuron Context Assist** section.
+3. Observe the **Global Stats** and **Local Stats** showing the number of learned behaviors.
+4. Go back to **AiChat** and type `/` or a partial keyword to trigger the **Neuron Proposals** in the autocomplete list.
 
 ---
 
 ## 6. Development & Self-Development
-**Subtitle:** Autonomous self-improvement and project bootstrapping.
+**Subtitle:** Autonomous optimization and pre-flight checks.
 **Voice Reading:**
-"The Development page is where Evo's autonomy truly shines. Here, we can run pre-flight checks like Git and Maven validations, or perform advanced sandbox actions like building the project and exporting artifacts. Most importantly, this is where we initiate the 'Self-Dev Loop', where Evo analyzes its own architecture and proposes optimizations to its internal kernel."
+"The Development tab serves as our mission control for autonomy. Here, the Self-Development table allows us to run 'Pre-flight' checks—verifying our Git, Maven, and LLM environments. Notice the color-coding: green indicates success, while orange shows we are ready to proceed. Most impressively, we can trigger the 'Self-Dev Loop'. In this mode, Evo analyzes its own internal kernel, identifies architectural debt or bottlenecks, and proposes optimizations to its own source code, demonstrating the platform's capacity for recursive self-improvement."
 
 ### Steps:
 1. Open the **Development** tab.
-2. Review the **Self-Development** table. Note the column order: Action, Edit, Name, Path, and Status.
-3. Click the **Play** icon next to **Git Check** or **Maven Check**.
-4. Observe the color-coded status (Green for success, Orange for ready, Red for errors).
-5. Click **Run Selected** on the **Self-Dev Loop** row to start an autonomous evolution cycle.
+2. Observe the **Self-Development** table with its indexed rows (1-10).
+3. Click the **Play** (▶) icon on the **Git Check** row and watch it turn **Green**.
+4. Select the **Self-Dev Loop** row.
+5. Click **▶ Run Selected** to start the autonomous cycle.
+6. Monitor the **Session Status** and **Progress** labels as Evo analyzes its own architecture.
 
 ---
 
 ## 7. Task Stack
-**Subtitle:** Deep inspection of the orchestration pipeline.
+**Subtitle:** Inspecting the hierarchical execution trace.
 **Voice Reading:**
-"The Task Stack view provides a granular, hierarchical look at every operation performed by the kernel. From high-level strategies down to individual tool calls, you can trace exactly how Evo is reasoning and executing. This transparency is crucial for debugging complex refactoring tasks and understanding the system's decision-making process."
+"Transparency is a core principle of Evo. The Task Stack tab provides a deep, hierarchical view of the kernel's execution history. We can drill down from high-level orchestration goals into specific agent strategies and individual tool calls. This view is invaluable for understanding the 'how' and 'why' behind every AI action, providing the detailed provenance required for enterprise-grade AI development."
 
 ### Steps:
 1. Open the **Task Stack** tab.
-2. Expand the orchestration nodes to see the sub-tasks (e.g., 'Strategic Planning', 'Task Execution').
-3. Observe the real-time updates as tasks transition from 'Scheduled' to 'Completed'.
+2. Expand a top-level task node to reveal its constituent sub-tasks.
+3. Observe the status icons (Checkmark for success, Spinner for active) and execution timestamps.
 
 ---
 
 ## 8. Orchestration Graph
-**Subtitle:** Visualizing the cognitive network.
+**Subtitle:** Navigating the interconnected cognitive network.
 **Voice Reading:**
-"The Graph tab offers a Zest-powered visualization of the entire orchestration network. It shows the relationships between agents, tasks, and system components like the Git repository and LLM providers. This bird's-eye view helps supervisors understand the interconnected nature of the evolutionary process."
+"To visualize the complexity of our AI's reasoning, we use the Graph tab. This Zest-powered visualization maps the relationships between agents, tasks, and system entities like Git repositories and LLM providers. By hovering over connections, we can see the data flow between components, giving us a unique perspective on the interconnected cognitive network that drives our evolutionary process."
 
 ### Steps:
 1. Open the **Graph** tab.
-2. Use the interactive layout to see how agents (like 'Planner' or 'Analytic') connect to specific **Task** nodes.
-3. Zoom and pan to explore the complexity of the current session's cognitive state.
+2. Use the interactive layout to reposition nodes and explore the network.
+3. Hover over a connection between an **Agent** and a **Task** to see relationship metadata.
+4. Notice how the graph updates dynamically as new tasks are scheduled.
 
 ---
 
 ## 9. Tools
-**Subtitle:** Managing the platform's extensible capabilities.
+**Subtitle:** Managing the platform's extensible capability registry.
 **Voice Reading:**
-"Evo's power comes from its extensive set of tools. In the Tools page, you can see all registered capabilities, from terminal execution and file management to specialized agents for testing and review. This extensible architecture allows Evo to adapt to any development environment and technology stack."
+"Evo's versatility stems from its extensible tool architecture. In the Tools tab, we manage the 'capabilities' available to our agents. From core utilities like Shell and Git tools to specialized validators for Maven and unit tests, this registry defines what the AI can do. This modular design allows us to easily plug in new capabilities, ensuring the platform can adapt to any technology stack or organizational requirement."
 
 ### Steps:
-1. Open the **Tools** tab in the editor.
-2. Browse the list of available tools (e.g., **ShellTool**, **GitTool**, **MavenTool**).
-3. Verify tool status and configuration parameters.
+1. Open the **Tools** tab.
+2. Review the list of tools, noting their **ID** and **Type**.
+3. Verify that core tools like **ShellTool** and **GitTool** are registered and 'Ready'.
 
 ---
 
 ## 10. Properties
-**Subtitle:** Centralized configuration and mode management.
+**Subtitle:** Centralized command and control.
 **Voice Reading:**
-"Finally, the Properties page is your command center for platform configuration. Here, you can manage AI providers, select models, and adjust Darwinian branching limits. The Mode Indicator provides instant feedback on whether you are running in Local, Hybrid, or Remote mode, ensuring you always have the right balance of performance and intelligence."
+"Finally, the Properties tab is our central command and control center. Here, we manage AI providers, fine-tune model parameters, and monitor system-wide progress. The prominent Mode Indicator at the top provides an at-a-glance status of our active AI mode. Whether we are adjusting Darwinian branching limits or clearing Neuron's memory, this page gives us the granular control needed to steer the platform's evolutionary trajectory."
 
 ### Steps:
 1. Open the **Properties** tab.
-2. Check the **AI Mode Indicator** banner at the top (e.g., 'LOCAL MODE ACTIVE').
-3. Expand sections like **Ollama Settings**, **Darwin Engine**, or **Context Assist** to fine-tune the platform's behavior.
-4. Observe how changing settings marks the editor as dirty, ready for saving.
+2. Observe the **AI MODE INDICATOR** banner (e.g., 'LOCAL MODE ACTIVE' in Dark Green).
+3. Expand **Context Assist** to see real-time Neuron memory statistics.
+4. Expand **Orchestrator** to modify the project name or ID.
+5. Notice the **Status Canvas** showing the progress of active orchestrations.
