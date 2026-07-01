@@ -513,66 +513,20 @@ private String generateChatResponse(String request, TaskContext context) {
 		EvaluationResult result = null;
 		int safetyCounter = 0;
 
-		// expansion-based iteration limit
-		int expansionValue = 5;
-		if (context.getOrchestrator() != null && context.getOrchestrator().getAiChat() != null) {
-			String sessionId = context.getSessionId();
-			eu.kalafatic.evolution.model.orchestration.ChatSession chatSession = context.getOrchestrator().getAiChat()
-					.getSessions().stream().filter(s -> s.getId().equals(sessionId)).findFirst().orElse(null);
-			if (chatSession != null) {
-				expansionValue = chatSession.getExpansion();
-			}
-		}
-
-		// 2. ADAPTIVE KERNEL: Intensity Scaling
-		int intensity_val = context.getExecutionProfile() != null ? context.getExecutionProfile().getIntensity() : 2;
-
-		int minIterations = 1;
-		PromptInstructions instructions = (context.getOrchestrator() != null
-				&& context.getOrchestrator().getAiChat() != null)
-						? context.getOrchestrator().getAiChat().getPromptInstructions()
-						: null;
-		if (instructions != null) {
-			minIterations = instructions.getPreferredMaxIterations();
-		}
-
-		// Enforce multiple iterations for non-CHAT tasks as requested
-		if (minIterations < 2 && intensity_val >= 1 && (context.getExecutionProfile() == null || context
-				.getExecutionProfile()
-				.getCapability() != eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType.CHAT)) {
-			minIterations = 2;
-		}
-
-		// Cap iterations for CHAT capability to avoid over-evolution of simple
-		// interactions
-		if (context.getExecutionProfile() != null && context.getExecutionProfile()
-				.getCapability() == eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType.CHAT) {
-			if (minIterations > 1)
-				minIterations = 1;
-		}
-
-		if (minIterations < 1)
-			minIterations = 1;
-
-		int maxIterationsLimit = 20; // Default Medium
-		if (intensity_val == 1)
-			maxIterationsLimit = 10; // Simple tasks still need to complete phases
-		else if (intensity_val == 2)
-			maxIterationsLimit = 15;
-		else if (expansionValue <= 3)
-			maxIterationsLimit = 25;
-		else if (expansionValue >= 8)
-			maxIterationsLimit = 100;
-
-		// Ensure max is never less than min
-		maxIterationsLimit = Math.max(maxIterationsLimit, minIterations);
-
-		context.log("[DARWIN] Dynamic Expansion Control: Min Iterations = " + minIterations
-				+ ", Target Max Iterations = " + maxIterationsLimit);
-
 		// 1. Recursive Evolutionary Loop
 		context.log("[DARWIN] Phase: Recursive Evolutionary Trajectory System.");
-		while (safetyCounter < maxIterationsLimit && !context.isPaused()) {
+
+		while (true) {
+			// Real-time expansion control evaluation
+			int expansionValue = getExpansionValue();
+			int minIterations = getMinIterationLimit(context);
+			int maxIterationsLimit = getMaxIterationLimit(context);
+
+			if (safetyCounter >= maxIterationsLimit || context.isPaused()) {
+				break;
+			}
+
+			context.log("[DARWIN] Dynamic Expansion Control: Iteration=" + (safetyCounter + 1) + ", Expansion=" + expansionValue + ", Min=" + minIterations + ", Max=" + maxIterationsLimit);
 			state.setIterationCount(safetyCounter);
 			context.log("[DARWIN] [LOOP] Starting Iteration " + (safetyCounter + 1) + " (Phase: "
 					+ state.getCurrentPhase() + ")");
@@ -580,7 +534,8 @@ private String generateChatResponse(String request, TaskContext context) {
 			// RECURSIVE ARCHITECTURAL DISCOVERY: Refine model in each iteration
 			// ADAPTIVE KERNEL: Only refine reality in subsequent iterations if intensity is
 			// high
-			if (safetyCounter > 0 && intensity_val >= 3) {
+			int intensity = context.getExecutionProfile() != null ? context.getExecutionProfile().getIntensity() : 2;
+			if (safetyCounter > 0 && intensity >= 3) {
 				iterationManager.refineTargetReality(request, context);
 			}
 
@@ -1789,15 +1744,7 @@ private String generateChatResponse(String request, TaskContext context) {
 		}
 		
 		// 1. Expansion-Based Population Scaling (Milestone Requirement)
-		int expansionValue = 5; // Default Medium
-		if (context.getOrchestrator() != null && context.getOrchestrator().getAiChat() != null) {
-			String sessionId = context.getSessionId();
-			eu.kalafatic.evolution.model.orchestration.ChatSession chatSession = context.getOrchestrator().getAiChat()
-					.getSessions().stream().filter(s -> s.getId().equals(sessionId)).findFirst().orElse(null);
-			if (chatSession != null) {
-				expansionValue = chatSession.getExpansion();
-			}
-		}
+		int expansionValue = getExpansionValue();
 
 	    // ============================================================
 	    // CHECK: Is this ACTUALLY a chat request?
@@ -2031,21 +1978,7 @@ private String generateChatResponse(String request, TaskContext context) {
 			modelCapability = 0.95;
 
 		// 2. Population Scaling based on Task Type and Expansion Value
-		int branchingLimit = 2; // Default
-		eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType capType = profile.getCapability();
-		boolean isSelfDev = ModeRecognizer.isSelfDevMode(context);
-
-		if (capType == eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType.CHAT) {
-			branchingLimit = expansionValue <= 5 ? 1 : 2;
-		} else if (isSelfDev) {
-			branchingLimit = expansionValue <= 5 ? 3 : 4;
-		} else {
-			// CODING or MEDIATED
-			branchingLimit = expansionValue <= 5 ? 2 : 3;
-		}
-
-		// MANDATE: Never more than 4. Darwin decides, not LLM.
-		branchingLimit = Math.min(branchingLimit, 4);
+		int branchingLimit = getMaxBranchingLimit(context, expansionValue);
 
 		context.log("[DARWIN] Adaptive Kernel Intensity: " + intensity + ". Population Target: " + branchingLimit);
 

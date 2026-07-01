@@ -124,6 +124,20 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 
 	protected PlatformType platformType;
 
+	protected eu.kalafatic.evolution.model.orchestration.ChatSession getChatSession() {
+		if (context.getOrchestrator() != null && context.getOrchestrator().getAiChat() != null) {
+			String sessionId = context.getSessionId();
+			return context.getOrchestrator().getAiChat().getSessions().stream()
+					.filter(s -> s.getId().equals(sessionId)).findFirst().orElse(null);
+		}
+		return null;
+	}
+
+	protected int getExpansionValue() {
+		eu.kalafatic.evolution.model.orchestration.ChatSession chatSession = getChatSession();
+		return (chatSession != null) ? chatSession.getExpansion() : DEFAULT_EXPANSION_LEVEL;
+	}
+
 	public ADarwinEngine(TaskContext context, IterationMemoryService memoryService,
 			SystemStateSignalProvider stateProvider, PlatformType platformType) {
 		super("DarwinEngine", "DarwinEngine", SessionManager.getInstance().getSession(context.getSessionId()));
@@ -572,66 +586,20 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 		EvaluationResult result = null;
 		int safetyCounter = 0;
 
-		// expansion-based iteration limit
-		int expansionValue = 5;
-		if (context.getOrchestrator() != null && context.getOrchestrator().getAiChat() != null) {
-			String sessionId = context.getSessionId();
-			eu.kalafatic.evolution.model.orchestration.ChatSession chatSession = context.getOrchestrator().getAiChat()
-					.getSessions().stream().filter(s -> s.getId().equals(sessionId)).findFirst().orElse(null);
-			if (chatSession != null) {
-				expansionValue = chatSession.getExpansion();
-			}
-		}
-
-		// 2. ADAPTIVE KERNEL: Intensity Scaling
-		int intensity_val = context.getExecutionProfile() != null ? context.getExecutionProfile().getIntensity() : 2;
-
-		int minIterations = 1;
-		PromptInstructions instructions = (context.getOrchestrator() != null
-				&& context.getOrchestrator().getAiChat() != null)
-						? context.getOrchestrator().getAiChat().getPromptInstructions()
-						: null;
-		if (instructions != null) {
-			minIterations = instructions.getPreferredMaxIterations();
-		}
-
-		// Enforce multiple iterations for non-CHAT tasks as requested
-		if (minIterations < 2 && intensity_val >= 1 && (context.getExecutionProfile() == null || context
-				.getExecutionProfile()
-				.getCapability() != eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType.CHAT)) {
-			minIterations = 2;
-		}
-
-		// Cap iterations for CHAT capability to avoid over-evolution of simple
-		// interactions
-		if (context.getExecutionProfile() != null && context.getExecutionProfile()
-				.getCapability() == eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType.CHAT) {
-			if (minIterations > 1)
-				minIterations = 1;
-		}
-
-		if (minIterations < 1)
-			minIterations = 1;
-
-		int maxIterationsLimit = 20; // Default Medium
-		if (intensity_val == 1)
-			maxIterationsLimit = 10; // Simple tasks still need to complete phases
-		else if (intensity_val == 2)
-			maxIterationsLimit = 15;
-		else if (expansionValue <= 3)
-			maxIterationsLimit = 25;
-		else if (expansionValue >= 8)
-			maxIterationsLimit = 100;
-
-		// Ensure max is never less than min
-		maxIterationsLimit = Math.max(maxIterationsLimit, minIterations);
-
-		context.log("[DARWIN] Dynamic Expansion Control: Min Iterations = " + minIterations
-				+ ", Target Max Iterations = " + maxIterationsLimit);
-
 		// 1. Recursive Evolutionary Loop
 		context.log("[DARWIN] Phase: Recursive Evolutionary Trajectory System.");
-		while (safetyCounter < maxIterationsLimit && !context.isPaused()) {
+
+		while (true) {
+			// Real-time expansion control evaluation
+			int expansionValue = getExpansionValue();
+			int minIterations = getMinIterationLimit(context);
+			int maxIterationsLimit = getMaxIterationLimit(context);
+
+			if (safetyCounter >= maxIterationsLimit || context.isPaused()) {
+				break;
+			}
+
+			context.log("[DARWIN] Dynamic Expansion Control: Iteration=" + (safetyCounter + 1) + ", Expansion=" + expansionValue + ", Min=" + minIterations + ", Max=" + maxIterationsLimit);
 			state.setIterationCount(safetyCounter);
 			context.log("[DARWIN] [LOOP] Starting Iteration " + (safetyCounter + 1) + " (Phase: "
 					+ state.getCurrentPhase() + ")");
@@ -639,7 +607,8 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 			// RECURSIVE ARCHITECTURAL DISCOVERY: Refine model in each iteration
 			// ADAPTIVE KERNEL: Only refine reality in subsequent iterations if intensity is
 			// high
-			if (safetyCounter > 0 && intensity_val >= 3) {
+			int intensity = context.getExecutionProfile() != null ? context.getExecutionProfile().getIntensity() : 2;
+			if (safetyCounter > 0 && intensity >= 3) {
 				iterationManager.refineTargetReality(request, context);
 			}
 
@@ -2071,15 +2040,7 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 		}
 
 		// 1. Expansion-Based Population Scaling (Milestone Requirement)
-		int expansionValue = 5; // Default Medium
-		if (context.getOrchestrator() != null && context.getOrchestrator().getAiChat() != null) {
-			String sessionId = context.getSessionId();
-			eu.kalafatic.evolution.model.orchestration.ChatSession chatSession = context.getOrchestrator().getAiChat()
-					.getSessions().stream().filter(s -> s.getId().equals(sessionId)).findFirst().orElse(null);
-			if (chatSession != null) {
-				expansionValue = chatSession.getExpansion();
-			}
-		}
+		int expansionValue = getExpansionValue();
 
 		// ============================================================
 		// CHECK: Is this ACTUALLY a chat request?
@@ -2312,21 +2273,7 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 			modelCapability = 0.95;
 
 		// 2. Population Scaling based on Task Type and Expansion Value
-		int branchingLimit = 2; // Default
-		eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType capType = profile.getCapability();
-		boolean isSelfDev = ModeRecognizer.isSelfDevMode(context);
-
-		if (capType == eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType.CHAT) {
-			branchingLimit = expansionValue <= 5 ? 1 : 2;
-		} else if (isSelfDev) {
-			branchingLimit = expansionValue <= 5 ? 3 : 4;
-		} else {
-			// CODING or MEDIATED
-			branchingLimit = expansionValue <= 5 ? 2 : 3;
-		}
-
-		// MANDATE: Never more than 4. Darwin decides, not LLM.
-		branchingLimit = Math.min(branchingLimit, 4);
+		int branchingLimit = getMaxBranchingLimit(context, expansionValue);
 
 		context.log("[DARWIN] Adaptive Kernel Intensity: " + intensity + ". Population Target: " + branchingLimit);
 
@@ -2939,6 +2886,18 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 			branchingLimit = expansionValue <= 5 ? 1 : 2;
 			break;
 		case ASSISTED_CODING:
+		case DARWIN_MODE:
+			if (expansionValue <= 2) branchingLimit = 1;
+			else if (expansionValue <= 5) branchingLimit = 2;
+			else if (expansionValue <= 8) branchingLimit = 3;
+			else branchingLimit = 4;
+			break;
+		case HYBRID_MANUAL_EXPORT:
+		case SELF_DEV_MODE:
+			if (expansionValue <= 3) branchingLimit = 2;
+			else if (expansionValue <= 6) branchingLimit = 3;
+			else if (expansionValue <= 9) branchingLimit = 4;
+			else branchingLimit = 5;
 			branchingLimit = expansionValue <= 5 ? 2 : 6;
 			break;
 		case HYBRID_MANUAL_EXPORT:
@@ -2949,7 +2908,8 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 			break;
 
 		default:
-			throw new IllegalArgumentException("Unexpected value: " + platformType);
+			context.log("[DARWIN] Unknown platform type: " + platformType + ". Using default branching.");
+			branchingLimit = expansionValue <= 5 ? 2 : 3;
 		}
 		// MANDATE: Never more than 8. Darwin decides, not LLM.
 		return Math.min(branchingLimit, 8);
@@ -2957,9 +2917,6 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 
 	protected int getMaxIterationLimit(TaskContext context) {
 		int minIterations = 1;
-		int maxIterations = 10; // Default
-
-		boolean isSelfDev = ModeRecognizer.isSelfDevMode(context);
 
 		PromptInstructions instructions = (context.getOrchestrator() != null
 				&& context.getOrchestrator().getAiChat() != null)
@@ -2970,21 +2927,13 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 		}
 
 		// expansion-based iteration limit
-		int expansionValue = DEFAULT_EXPANSION_LEVEL;
-		if (context.getOrchestrator() != null && context.getOrchestrator().getAiChat() != null) {
-			String sessionId = context.getSessionId();
-			eu.kalafatic.evolution.model.orchestration.ChatSession chatSession = context.getOrchestrator().getAiChat()
-					.getSessions().stream().filter(s -> s.getId().equals(sessionId)).findFirst().orElse(null);
-			if (chatSession != null) {
-				expansionValue = chatSession.getExpansion();
-			}
-		}
+		int expansionValue = getExpansionValue();
 
 		// 2. ADAPTIVE KERNEL: Intensity Scaling
-		int intensity_val = context.getExecutionProfile() != null ? context.getExecutionProfile().getIntensity() : 2;
+		int intensity = context.getExecutionProfile() != null ? context.getExecutionProfile().getIntensity() : 2;
 
 		// Enforce multiple iterations for non-CHAT tasks as requested
-		if (minIterations < 2 && intensity_val >= 1 && (context.getExecutionProfile() == null
+		if (minIterations < 2 && intensity >= 1 && (context.getExecutionProfile() == null
 				|| context.getExecutionProfile().getCapability() != CapabilityType.CHAT)) {
 			minIterations = 2;
 		}
@@ -3000,20 +2949,47 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 		if (minIterations < 1)
 			minIterations = 1;
 
-		int maxIterationsLimit = 20; // Default Medium
-		if (intensity_val == 1)
-			maxIterationsLimit = 10; // Simple tasks still need to complete phases
-		else if (intensity_val == 2)
-			maxIterationsLimit = 15;
-		else if (expansionValue <= 3)
-			maxIterationsLimit = 25;
-		else if (expansionValue >= 8)
-			maxIterationsLimit = 100;
+		// Granular dynamic range for iterations: 5 to 120 based on expansion slider (1-10)
+		int maxIterationsLimit = 5 + (expansionValue - 1) * 12;
+
+		if (intensity == 1)
+			maxIterationsLimit = Math.min(maxIterationsLimit, 20);
+		else if (intensity == 2)
+			maxIterationsLimit = Math.min(maxIterationsLimit, 40);
 
 		// Ensure max is never less than min
 		maxIterationsLimit = Math.max(maxIterationsLimit, minIterations);
 
-		return maxIterations;
+		return maxIterationsLimit;
+	}
+
+	protected int getMinIterationLimit(TaskContext context) {
+		int minIterations = 1;
+		PromptInstructions instructions = (context.getOrchestrator() != null
+				&& context.getOrchestrator().getAiChat() != null)
+						? context.getOrchestrator().getAiChat().getPromptInstructions()
+						: null;
+		if (instructions != null) {
+			minIterations = instructions.getPreferredMaxIterations();
+		}
+
+		int intensity = context.getExecutionProfile() != null ? context.getExecutionProfile().getIntensity() : 2;
+
+		if (minIterations < 2 && intensity >= 1 && (context.getExecutionProfile() == null
+				|| context.getExecutionProfile().getCapability() != CapabilityType.CHAT)) {
+			minIterations = 2;
+		}
+
+		if (context.getExecutionProfile() != null
+				&& context.getExecutionProfile().getCapability() == CapabilityType.CHAT) {
+			if (minIterations > 1)
+				minIterations = 1;
+		}
+
+		if (minIterations < 1)
+			minIterations = 1;
+
+		return minIterations;
 	}
 
 	@Override
