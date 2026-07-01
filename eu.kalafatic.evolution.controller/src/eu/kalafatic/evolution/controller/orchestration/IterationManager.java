@@ -827,8 +827,7 @@ public class IterationManager {
     }
 
     public IterationManager createVariantManager(TaskContext variantContext, AiService aiService) {
-//        return KernelFactory.create(variantContext, sessionContainer, aiService);
-        return null;
+        try { return KernelFactory.create("Autonomous", variantContext, sessionContainer, aiService); } catch (Exception e) { throw new RuntimeException(e); }
     }
 
     public Trajectory getActiveTrajectory(TaskContext context) {

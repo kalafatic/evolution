@@ -2064,7 +2064,7 @@ private String generateChatResponse(String request, TaskContext context) {
 		SemanticGenome genome = dimensionEngine.createGenome(goal, expansion, context);
 
 		// Select the next mutable dimension
-		EvolutionDimension activeDimension = dimensionEngine.selectNextDimension(genome, context);
+		EvolutionDimension activeDimension = dimensionEngine.selectNextDimension(genome, context, goal, trajectory);
 
 		context.getOrchestrationState().getMetadata().put("current_dimension", activeDimension.getId());
 		context.getOrchestrationState().getMetadata().put("current_dimension_description",
