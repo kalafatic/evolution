@@ -11,7 +11,6 @@ import java.util.stream.Collectors;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import eu.kalafatic.evolution.controller.agents.BaseAiAgent;
 import eu.kalafatic.evolution.controller.agents.PromptIntentAnalyzer;
 import eu.kalafatic.evolution.controller.kernel.EvolutionProfile;
 import eu.kalafatic.evolution.controller.mediation.analysis.ContextCurator;
@@ -24,9 +23,9 @@ import eu.kalafatic.evolution.controller.mediation.scanner.TargetScanner;
 import eu.kalafatic.evolution.controller.orchestration.ConversationState;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionPhase;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionPhaseMachine;
+import eu.kalafatic.evolution.controller.orchestration.EvolutionProgressEvent;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionProgressPublisher;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionStage;
-import eu.kalafatic.evolution.controller.orchestration.EvolutionProgressEvent;
 import eu.kalafatic.evolution.controller.orchestration.FileChangeTracker;
 import eu.kalafatic.evolution.controller.orchestration.FinalResponse;
 import eu.kalafatic.evolution.controller.orchestration.FinalResponseAssembler;
@@ -38,7 +37,6 @@ import eu.kalafatic.evolution.controller.orchestration.OrchestratorResponse;
 import eu.kalafatic.evolution.controller.orchestration.PlatformMode;
 import eu.kalafatic.evolution.controller.orchestration.PlatformType;
 import eu.kalafatic.evolution.controller.orchestration.ResultType;
-import eu.kalafatic.evolution.controller.orchestration.SessionManager;
 import eu.kalafatic.evolution.controller.orchestration.SystemState;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.TaskRequest;
@@ -49,22 +47,15 @@ import eu.kalafatic.evolution.controller.orchestration.behavior.ExecutionPolicy;
 import eu.kalafatic.evolution.controller.orchestration.behavior.ExploratoryReasoningModule;
 import eu.kalafatic.evolution.controller.orchestration.behavior.InstructionModule;
 import eu.kalafatic.evolution.controller.orchestration.behavior.MediatedInstructionModule;
-import eu.kalafatic.evolution.controller.orchestration.behavior.PolicyResolver;
-import eu.kalafatic.evolution.controller.orchestration.behavior.PromptComposer;
 import eu.kalafatic.evolution.controller.orchestration.behavior.SelfDevInstructionModule;
 import eu.kalafatic.evolution.controller.orchestration.behavior.StepModeInstructionModule;
 import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityContext;
 import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityException;
 import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityHealth;
 import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityStatus;
-import eu.kalafatic.evolution.controller.orchestration.capability.ICapability;
 import eu.kalafatic.evolution.controller.orchestration.capability.contracts.IMutationContract;
 import eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType;
 import eu.kalafatic.evolution.controller.orchestration.diagnostics.CausalNode;
-import eu.kalafatic.evolution.controller.orchestration.engines.DimensionEngine;
-import eu.kalafatic.evolution.controller.orchestration.engines.ExecutionEngine;
-import eu.kalafatic.evolution.controller.orchestration.engines.FitnessEngine;
-import eu.kalafatic.evolution.controller.orchestration.engines.LineageEngine;
 import eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel;
 import eu.kalafatic.evolution.controller.orchestration.goal.GoalModel;
 import eu.kalafatic.evolution.controller.orchestration.goal.SemanticEnvelope;
@@ -72,9 +63,6 @@ import eu.kalafatic.evolution.controller.orchestration.intent.AtomicIntentAnalys
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionResult;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentHypothesis;
 import eu.kalafatic.evolution.controller.orchestration.mediation.MediationEngine;
-import eu.kalafatic.evolution.controller.orchestration.selfdev.adaptive.DiversityPressureController;
-import eu.kalafatic.evolution.controller.orchestration.selfdev.adaptive.EvolutionaryPenaltyModel;
-import eu.kalafatic.evolution.controller.orchestration.selfdev.adaptive.RejectionPatternAnalyzer;
 import eu.kalafatic.evolution.controller.orchestration.util.ModeRecognizer;
 import eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceArtifact;
 import eu.kalafatic.evolution.controller.trajectory.Trajectory;
@@ -1042,7 +1030,7 @@ private String generateChatResponse(String request, TaskContext context) {
 	/**
 	 * Handles the Intent Expansion phase separately for clarity.
 	 */
-	private EvaluationResult handleIntentExpansionPhase(TaskContext context, IterationManager manager,
+	protected EvaluationResult handleIntentExpansionPhase(TaskContext context, IterationManager manager,
 			EvolutionPhaseMachine phaseMachine, String goal, EvolutionPhase phase) throws Exception {
 
 		// Use the existing OrchestrationState
@@ -1107,7 +1095,7 @@ private String generateChatResponse(String request, TaskContext context) {
 	/**
 	 * Resolves variant selection from pending commands or auto-selection.
 	 */
-	private String resolveVariantSelection(List<BranchVariant> variants, TaskContext context,
+	protected String resolveVariantSelection(List<BranchVariant> variants, TaskContext context,
 			IterationManager manager) {
 
 		OrchestrationState state = context.getOrchestrationState();
@@ -1134,7 +1122,7 @@ private String generateChatResponse(String request, TaskContext context) {
 	/**
 	 * Handles iteration failure with appropriate recovery strategy.
 	 */
-	private void handleIterationFailure(TaskContext context, IterationManager manager, EvaluationResult result)
+	protected void handleIterationFailure(TaskContext context, IterationManager manager, EvaluationResult result)
 			throws Exception {
 
 		context.log("[DARWIN] Iteration failed. Attempting recovery...");
@@ -1178,7 +1166,7 @@ private String generateChatResponse(String request, TaskContext context) {
 	/**
 	 * Gets or creates the mediation engine.
 	 */
-	private MediationEngine getMediationEngine() {
+	protected MediationEngine getMediationEngine() {
 		if (mediationEngine == null) {
 			mediationEngine = new MediationEngine();
 		}
@@ -1188,7 +1176,7 @@ private String generateChatResponse(String request, TaskContext context) {
 	/**
 	 * Merges mediation insights into the evolutionary context.
 	 */
-	private void mergeMediationInsights(MediationResult mediation, TaskContext context, IterationManager manager) {
+	protected void mergeMediationInsights(MediationResult mediation, TaskContext context, IterationManager manager) {
 
 		context.log("[DARWIN] Merging mediation insights...");
 
@@ -1774,7 +1762,7 @@ private String generateChatResponse(String request, TaskContext context) {
 			List<eu.kalafatic.evolution.model.orchestration.Task> tasks = planner
 					.generateTasksFromVariant(variantContext, variant);
 			context.log("[DARWIN] Generated " + tasks.size() + " tasks for variant: " + variant.getId());
-			IterationManager variantManager = KernelFactory.create(variantContext, getSessionContainer(), aiService);
+			IterationManager variantManager = KernelFactory.create("Autonomous", variantContext, getSessionContainer(), aiService);
 			
 			if (context.getMetadata().containsKey("testMode") || isMediated || isChatMode) {
 			    variant.setSuccess(true);
@@ -1991,7 +1979,7 @@ private String generateChatResponse(String request, TaskContext context) {
 		}
 	}
 
-	private void mergeHybridInsights(List<BranchVariant> variants, BranchVariant winner, TaskContext context) {
+	protected void mergeHybridInsights(List<BranchVariant> variants, BranchVariant winner, TaskContext context) {
 		JSONArray analyticalInsights = new JSONArray();
 		JSONArray stabilizationInsights = new JSONArray();
 
@@ -2021,7 +2009,7 @@ private String generateChatResponse(String request, TaskContext context) {
 		}
 	}
 
-	private void deleteDirectory(File directory) {
+	protected void deleteDirectory(File directory) {
 		File[] allContents = directory.listFiles();
 		if (allContents != null) {
 			for (File file : allContents)
@@ -2318,7 +2306,7 @@ private String generateChatResponse(String request, TaskContext context) {
 		SemanticGenome genome = dimensionEngine.createGenome(goal, expansion, context);
 
 		// Select the next mutable dimension
-		EvolutionDimension activeDimension = dimensionEngine.selectNextDimension(genome, context);
+		EvolutionDimension activeDimension = dimensionEngine.selectNextDimension(genome, context, goal, trajectory);
 
 		context.getOrchestrationState().getMetadata().put("current_dimension", activeDimension.getId());
 		context.getOrchestrationState().getMetadata().put("current_dimension_description",
@@ -2515,7 +2503,7 @@ private String generateChatResponse(String request, TaskContext context) {
 		return variants;
 	}
 	
-	private eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot getTargetSnapshotSafe(TaskContext context) {
+	protected eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot getTargetSnapshotSafe(TaskContext context) {
 	    Object obj = context.getOrchestrationState().getMetadata().get("mediatedSnapshot");
 	    
 	    if (obj == null) {
@@ -2652,7 +2640,7 @@ private String generateChatResponse(String request, TaskContext context) {
 		return genome;
 	}
 
-	private BranchVariant mapToBranchVariant(JSONObject obj, String goal, String currentPhase, Trajectory trajectory,
+	protected BranchVariant mapToBranchVariant(JSONObject obj, String goal, String currentPhase, Trajectory trajectory,
 			TaskContext context) {
 		BranchVariant v = new BranchVariant();
 		v.setId(obj.optString("id", "v-" + System.currentTimeMillis()));
@@ -2824,7 +2812,7 @@ private String generateChatResponse(String request, TaskContext context) {
 		return v;
 	}
 
-	private double semanticDistance(GoalModel goal, JSONObject variant, SemanticEnvelope envelope) {
+	protected double semanticDistance(GoalModel goal, JSONObject variant, SemanticEnvelope envelope) {
 		String strategy = variant.optString("strategy", "").toLowerCase();
 		String philosophy = variant.optString("semantic_anchor", "").toLowerCase();
 		String primaryAction = goal.getPrimaryAction().toLowerCase();
@@ -2901,7 +2889,7 @@ private String generateChatResponse(String request, TaskContext context) {
 		return Math.min(1.0, distance);
 	}
 
-	private String sanitize(String s) {
+	protected String sanitize(String s) {
 		if (s == null || s.isEmpty())
 			return "unnamed";
 		String sanitized = s.toLowerCase().replaceAll("[^a-z0-9]", "-").replaceAll("-+", "-");
@@ -2933,50 +2921,5 @@ private String generateChatResponse(String request, TaskContext context) {
 	public void setAiService(eu.kalafatic.evolution.controller.orchestration.AiService aiService) {
 		super.setAiService(aiService);
 		rejectionAnalyzer.setAiService(aiService);
-	}
-
-	@Override
-	public String getCapabilityId() {
-		return "capability.mutation";
-	}
-
-	@Override
-	public String getVersion() {
-		return "1.0.0";
-	}
-
-	@Override
-	public CapabilityStatus getStatus() {
-		return status;
-	}
-
-	@Override
-	public void initialize(CapabilityContext context) throws CapabilityException {
-		status = CapabilityStatus.INITIALIZED;
-	}
-
-	@Override
-	public void start() throws CapabilityException {
-		status = CapabilityStatus.STARTED;
-	}
-
-	@Override
-	public void stop() throws CapabilityException {
-		status = CapabilityStatus.STOPPED;
-	}
-
-	@Override
-	public List<String> getSupportedContracts() {
-		return Collections.singletonList(IMutationContract.ID);
-	}
-
-	@Override
-	public List<String> getDependencies() {
-		return Collections.emptyList();
-	}
-
-	@Override
-	public CapabilityHealth getHealth() {
-		return new CapabilityHealth(1.0, "Healthy", 0);
 	}
 }

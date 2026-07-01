@@ -2,8 +2,9 @@ package eu.kalafatic.evolution.controller.workflow;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.json.JSONObject;
+
 import org.json.JSONArray;
+import org.json.JSONObject;
 
 public class GraphEntity {
     private String id;

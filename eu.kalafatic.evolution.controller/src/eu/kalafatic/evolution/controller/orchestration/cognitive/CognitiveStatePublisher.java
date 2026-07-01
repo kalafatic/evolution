@@ -1,8 +1,9 @@
 package eu.kalafatic.evolution.controller.orchestration.cognitive;
 
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+
 import org.json.JSONObject;
+
 import eu.kalafatic.evolution.controller.orchestration.ConversationOutputController;
 import eu.kalafatic.evolution.controller.orchestration.MessagePriority;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;

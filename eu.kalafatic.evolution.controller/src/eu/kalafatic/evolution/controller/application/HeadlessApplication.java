@@ -2,6 +2,7 @@ package eu.kalafatic.evolution.controller.application;
 
 import org.eclipse.equinox.app.IApplication;
 import org.eclipse.equinox.app.IApplicationContext;
+
 import eu.kalafatic.evolution.controller.orchestration.ServerManager;
 
 /**

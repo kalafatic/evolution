@@ -1,11 +1,12 @@
 package eu.kalafatic.evolution.controller.parsers.structured;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 /**
  * Validates the semantic content of an LLM response.

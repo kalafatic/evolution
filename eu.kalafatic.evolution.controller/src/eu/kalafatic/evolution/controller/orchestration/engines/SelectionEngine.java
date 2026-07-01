@@ -2,13 +2,12 @@ package eu.kalafatic.evolution.controller.orchestration.engines;
 
 import java.util.List;
 import java.util.Map;
-import org.json.JSONObject;
-import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+
 import eu.kalafatic.evolution.controller.orchestration.IterationManager;
 import eu.kalafatic.evolution.controller.orchestration.SystemState;
-import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
+import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.goal.GoalModel;
-import eu.kalafatic.evolution.controller.kernel.EvolutionProfile;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
 
 public class SelectionEngine {
 

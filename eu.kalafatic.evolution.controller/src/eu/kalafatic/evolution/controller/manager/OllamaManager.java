@@ -1,7 +1,7 @@
 package eu.kalafatic.evolution.controller.manager;
 
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Singleton manager for Ollama services.

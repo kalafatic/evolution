@@ -1,12 +1,13 @@
 package eu.kalafatic.evolution.controller.orchestration.diagnostics;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.ArrayList;
-import java.util.Map;
+import java.util.Collections;
 import java.util.HashMap;
-import org.json.JSONObject;
+import java.util.List;
+import java.util.Map;
+
 import org.json.JSONArray;
+import org.json.JSONObject;
 
 /**
  * Represents one reasoning event inside the trace graph.

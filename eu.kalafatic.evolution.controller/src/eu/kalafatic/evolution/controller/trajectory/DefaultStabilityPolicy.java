@@ -1,8 +1,9 @@
 package eu.kalafatic.evolution.controller.trajectory;
 
 import java.util.List;
-import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+
 import eu.kalafatic.evolution.controller.orchestration.EvolutionPhase;
+import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionaryPressureVector;
 
 /**

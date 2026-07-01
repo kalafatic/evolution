@@ -16,6 +16,7 @@ import org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants;
 import org.eclipse.m2e.actions.MavenLaunchConstants;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.handlers.HandlerUtil;
+
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 
 public class MavenBuildCommandHandler extends AbstractOrchestratorHandler {

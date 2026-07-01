@@ -1,12 +1,12 @@
 package eu.kalafatic.evolution.controller.trajectory;
 
 import java.util.List;
+
 import eu.kalafatic.evolution.controller.kernel.EvolutionaryPressureEngine;
 import eu.kalafatic.evolution.controller.kernel.TrajectoryMutationEngine;
-import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionPhase;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionPhaseMachine;
-import eu.kalafatic.evolution.controller.orchestration.selfdev.AbstractionLevel;
+import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionaryPressureVector;
 import eu.kalafatic.utils.semantic.EvolutionComponent;

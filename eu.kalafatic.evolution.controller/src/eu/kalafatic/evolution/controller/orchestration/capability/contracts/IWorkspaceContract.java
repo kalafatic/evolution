@@ -1,9 +1,10 @@
 package eu.kalafatic.evolution.controller.orchestration.capability.contracts;
 
-import eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceArtifact;
-import eu.kalafatic.evolution.controller.orchestration.workspace.TrajectoryMemory;
-import eu.kalafatic.evolution.controller.orchestration.diagnostics.CognitiveTrace;
 import java.util.List;
+
+import eu.kalafatic.evolution.controller.orchestration.diagnostics.CognitiveTrace;
+import eu.kalafatic.evolution.controller.orchestration.workspace.TrajectoryMemory;
+import eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceArtifact;
 
 /**
  * Contract for semantic workspace providers.

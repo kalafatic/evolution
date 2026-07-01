@@ -1,10 +1,10 @@
 package eu.kalafatic.evolution.controller.kernel;
 
+import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
+import eu.kalafatic.evolution.controller.orchestration.SessionManager;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventBus;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
-import eu.kalafatic.evolution.controller.orchestration.SessionManager;
-import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
 
 /**
  * Authoritative engine for enforcing runtime invariants across the EVO kernel.

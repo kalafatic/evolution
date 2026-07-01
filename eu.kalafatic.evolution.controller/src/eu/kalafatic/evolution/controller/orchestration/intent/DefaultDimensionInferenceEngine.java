@@ -2,6 +2,7 @@ package eu.kalafatic.evolution.controller.orchestration.intent;
 
 import java.util.List;
 import java.util.stream.Collectors;
+
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionDimension;
 

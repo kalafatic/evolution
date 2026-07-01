@@ -15,8 +15,6 @@ import eu.kalafatic.evolution.controller.agents.PromptIntentAnalyzer;
 import eu.kalafatic.evolution.controller.kernel.EvolutionProfile;
 import eu.kalafatic.evolution.controller.mediation.analysis.ContextCurator;
 import eu.kalafatic.evolution.controller.mediation.analysis.SemanticExtractor;
-import eu.kalafatic.evolution.controller.mediation.model.Hotspot;
-import eu.kalafatic.evolution.controller.mediation.model.MediationCandidate;
 import eu.kalafatic.evolution.controller.mediation.model.MediationResult;
 import eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot;
 import eu.kalafatic.evolution.controller.mediation.scanner.TargetScanner;
@@ -58,7 +56,6 @@ import eu.kalafatic.evolution.controller.orchestration.goal.SemanticEnvelope;
 import eu.kalafatic.evolution.controller.orchestration.intent.AtomicIntentAnalysis;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionResult;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentHypothesis;
-import eu.kalafatic.evolution.controller.orchestration.mediation.MediationEngine;
 import eu.kalafatic.evolution.controller.orchestration.util.ModeRecognizer;
 import eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceArtifact;
 import eu.kalafatic.evolution.controller.trajectory.Trajectory;
@@ -2067,7 +2064,7 @@ private String generateChatResponse(String request, TaskContext context) {
 		SemanticGenome genome = dimensionEngine.createGenome(goal, expansion, context);
 
 		// Select the next mutable dimension
-		EvolutionDimension activeDimension = dimensionEngine.selectNextDimension(genome, context);
+		EvolutionDimension activeDimension = dimensionEngine.selectNextDimension(genome, context, goal, trajectory);
 
 		context.getOrchestrationState().getMetadata().put("current_dimension", activeDimension.getId());
 		context.getOrchestrationState().getMetadata().put("current_dimension_description",

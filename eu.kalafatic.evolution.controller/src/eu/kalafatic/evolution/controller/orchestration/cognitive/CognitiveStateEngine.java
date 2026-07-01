@@ -1,6 +1,5 @@
 package eu.kalafatic.evolution.controller.orchestration.cognitive;
 
-import eu.kalafatic.evolution.controller.orchestration.ContextAssistResult;
 import eu.kalafatic.evolution.controller.orchestration.ConfidenceLevel;
 
 /**

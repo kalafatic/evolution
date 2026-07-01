@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import eu.kalafatic.evolution.controller.agents.GenomeUpdateAgent;
 import eu.kalafatic.evolution.controller.orchestration.design.ComponentRecord;
 import eu.kalafatic.evolution.controller.orchestration.design.DesignModel;
 import eu.kalafatic.evolution.controller.orchestration.design.DesignRenderer;
@@ -23,7 +24,6 @@ import eu.kalafatic.evolution.model.orchestration.Iteration;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
 import eu.kalafatic.evolution.model.orchestration.Task;
-import eu.kalafatic.evolution.controller.agents.GenomeUpdateAgent;
 
 /**
  * Headless controller for repository architecture discovery and rendering.

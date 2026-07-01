@@ -1,24 +1,24 @@
 package eu.kalafatic.evolution.controller.orchestration.workspace;
-import java.util.stream.Collectors;
-
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import eu.kalafatic.evolution.controller.orchestration.diagnostics.CausalNode;
-import eu.kalafatic.evolution.controller.orchestration.diagnostics.CognitiveTrace;
-import eu.kalafatic.evolution.controller.workflow.RuntimeEventBus;
-import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
-import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
-import eu.kalafatic.evolution.controller.orchestration.capability.ICapability;
-import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityStatus;
+import java.util.stream.Collectors;
+
+import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
+import eu.kalafatic.evolution.controller.orchestration.SessionManager;
 import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityContext;
 import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityException;
 import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityHealth;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityStatus;
+import eu.kalafatic.evolution.controller.orchestration.capability.ICapability;
 import eu.kalafatic.evolution.controller.orchestration.capability.contracts.IWorkspaceContract;
-import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
-import eu.kalafatic.evolution.controller.orchestration.SessionManager;
-import java.util.Collections;
+import eu.kalafatic.evolution.controller.orchestration.diagnostics.CausalNode;
+import eu.kalafatic.evolution.controller.orchestration.diagnostics.CognitiveTrace;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEventBus;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
 
 /**
  * Persistent reasoning environment for the orchestration kernel.

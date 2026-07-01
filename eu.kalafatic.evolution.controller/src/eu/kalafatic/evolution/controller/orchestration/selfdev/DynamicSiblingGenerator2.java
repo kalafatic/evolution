@@ -14,7 +14,6 @@ import eu.kalafatic.evolution.controller.orchestration.EvolutionProgressPublishe
 import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.goal.GoalModel;
-import eu.kalafatic.evolution.controller.orchestration.goal.GoalUnderstandingEngine;
 import eu.kalafatic.evolution.controller.orchestration.util.ModeRecognizer;
 import eu.kalafatic.evolution.controller.orchestration.util.ModelCapability;
 import eu.kalafatic.evolution.controller.orchestration.util.ModelCapabilityDetector;

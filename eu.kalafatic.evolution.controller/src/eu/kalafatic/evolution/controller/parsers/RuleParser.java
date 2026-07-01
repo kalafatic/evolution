@@ -1,6 +1,12 @@
 package eu.kalafatic.evolution.controller.parsers;
 
-import eu.kalafatic.evolution.model.orchestration.*;
+import eu.kalafatic.evolution.model.orchestration.AccessRule;
+import eu.kalafatic.evolution.model.orchestration.Agent;
+import eu.kalafatic.evolution.model.orchestration.MemoryRule;
+import eu.kalafatic.evolution.model.orchestration.NetworkRule;
+import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
+import eu.kalafatic.evolution.model.orchestration.Rule;
+import eu.kalafatic.evolution.model.orchestration.SecretRule;
 
 /**
  * @generated NOT

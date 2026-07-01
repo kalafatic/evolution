@@ -2,8 +2,6 @@ package eu.kalafatic.evolution.controller.orchestration.attachments;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Parses Markdown files into categorized sections.
