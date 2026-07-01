@@ -15,7 +15,6 @@ import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
-import eu.kalafatic.evolution.controller.tools.ShellTool;
 import eu.kalafatic.evolution.model.orchestration.Git;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
@@ -158,9 +157,11 @@ public class GitGroup extends AToolGroup {
 		gitEvo = orchestrator.getSupervisorSettings().getGit();
 		
 		if (gitEvo==null) {
-			git = OrchestrationFactory.eINSTANCE.createGit();
+			gitEvo = OrchestrationFactory.eINSTANCE.createGit();
         	gitEvo.setRepositoryUrl("https://github.com/kalafatic/evo/");
         	gitEvo.setBranch("master");
+            String userHome = System.getProperty("user.home");
+            gitEvo.setLocalPath(new File(new File(userHome, "git"), "evo").getAbsolutePath());
             orchestrator.getSupervisorSettings().setGit(gitEvo);
 		}
 		
@@ -272,16 +273,19 @@ public class GitGroup extends AToolGroup {
     private void testGit(Git git) {
         try {
             File workingDir = getWorkingDir();
+            if (git != null && git.getLocalPath() != null && !git.getLocalPath().isEmpty()) {
+            	workingDir = new File(git.getLocalPath());
+            }
             TaskContext context = new TaskContext(orchestrator, workingDir);
-            ShellTool shell = new ShellTool();
+            eu.kalafatic.evolution.controller.tools.ShellTool shell = new eu.kalafatic.evolution.controller.tools.ShellTool();
 
             String gitVersion = shell.execute("git --version", workingDir, context);
             StringBuilder statusMsg = new StringBuilder("Git is available: " + gitVersion + "\n");
 
-            String url = gitRepoText.getText();
+            String url = (git != null) ? git.getRepositoryUrl() : gitRepoText.getText();
             if (url != null && !url.isEmpty()) {
-                String user = gitUsernameText.getText();
-                String pass = gitPasswordText.getText();
+                String user = (git != null) ? git.getUsername() : gitUsernameText.getText();
+                String pass = (git != null) ? git.getPassword() : gitPasswordText.getText();
                 String remoteUrl = url;
                 if (user != null && !user.isEmpty() && pass != null && !pass.isEmpty()) {
                     if (url.startsWith("https://")) {
@@ -331,6 +335,17 @@ public class GitGroup extends AToolGroup {
             setTextSafe(commitMsgText, git.getCommitMsg());
             updateGroupStatus();
         }
+        
+        if (orchestrator.getSupervisorSettings() != null && orchestrator.getSupervisorSettings().getGit() != null) {
+        	Git gitEvo = orchestrator.getSupervisorSettings().getGit();
+        	setTextSafe(gitRepoTextEvo, gitEvo.getRepositoryUrl());
+        	setTextSafe(gitBranchTextEvo, gitEvo.getBranch());
+        	setTextSafe(gitUsernameTextEvo, gitEvo.getUsername());
+        	setTextSafe(gitPasswordTextEvo, gitEvo.getPassword());
+        	selectSafe(gitLocalPathTextEvo, gitEvo.getLocalPath());
+        	setTextSafe(branchNameTextEvo, gitEvo.getBranchName());
+        	setTextSafe(commitMsgTextEvo, gitEvo.getCommitMsg());
+        }
     }
 
     @Override
@@ -346,6 +361,20 @@ public class GitGroup extends AToolGroup {
         git.setLocalPath(gitLocalPathText.getText());
         git.setBranchName(branchNameText.getText());
         git.setCommitMsg(commitMsgText.getText());
+        
+        if (orchestrator.getSupervisorSettings() != null) {
+        	if (orchestrator.getSupervisorSettings().getGit() == null) {
+        		orchestrator.getSupervisorSettings().setGit(OrchestrationFactory.eINSTANCE.createGit());
+        	}
+        	Git gitEvo = orchestrator.getSupervisorSettings().getGit();
+        	gitEvo.setRepositoryUrl(gitRepoTextEvo.getText());
+        	gitEvo.setBranch(gitBranchTextEvo.getText());
+        	gitEvo.setUsername(gitUsernameTextEvo.getText());
+        	gitEvo.setPassword(gitPasswordTextEvo.getText());
+        	gitEvo.setLocalPath(gitLocalPathTextEvo.getText());
+        	gitEvo.setBranchName(branchNameTextEvo.getText());
+        	gitEvo.setCommitMsg(commitMsgTextEvo.getText());
+        }
     }
 
     @Override
@@ -362,11 +391,13 @@ public class GitGroup extends AToolGroup {
 
     @Override
     public Text[] getTextFields() {
-        return new Text[] { gitRepoText, gitBranchText, gitUsernameText, gitPasswordText };
+        return new Text[] { gitRepoText, gitBranchText, gitUsernameText, gitPasswordText, 
+        		gitRepoTextEvo, gitBranchTextEvo, gitUsernameTextEvo, gitPasswordTextEvo };
     }
 
     @Override
     public Control[] getControls() {
-        return new Control[] { gitRepoText, gitBranchText, gitUsernameText, gitPasswordText, gitLocalPathText };
+        return new Control[] { gitRepoText, gitBranchText, gitUsernameText, gitPasswordText, gitLocalPathText,
+        		gitRepoTextEvo, gitBranchTextEvo, gitUsernameTextEvo, gitPasswordTextEvo, gitLocalPathTextEvo};
     }
 }

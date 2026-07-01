@@ -82,6 +82,7 @@ import eu.kalafatic.evolution.controller.orchestration.selfdev.adaptive.Evolutio
 import eu.kalafatic.evolution.controller.orchestration.selfdev.adaptive.RejectionPatternAnalyzer;
 import eu.kalafatic.evolution.controller.orchestration.util.ModeRecognizer;
 import eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceArtifact;
+import eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceDeltaAnalyzer.DeltaAnalysis;
 import eu.kalafatic.evolution.controller.supervision.AuthorityController;
 import eu.kalafatic.evolution.controller.supervision.EvolutionDecision;
 import eu.kalafatic.evolution.controller.trajectory.Trajectory;
@@ -130,8 +131,8 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 	protected ChatSession getChatSession() {
 		if (context.getOrchestrator() != null && context.getOrchestrator().getAiChat() != null) {
 			String sessionId = context.getSessionId();
-			return context.getOrchestrator().getAiChat().getSessions().stream()
-					.filter(s -> s.getId().equals(sessionId)).findFirst().orElse(null);
+			return context.getOrchestrator().getAiChat().getSessions().stream().filter(s -> s.getId().equals(sessionId))
+					.findFirst().orElse(null);
 		}
 		return null;
 	}
@@ -602,7 +603,8 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 				break;
 			}
 
-			context.log("[DARWIN] Dynamic Expansion Control: Iteration=" + (safetyCounter + 1) + ", Expansion=" + expansionValue + ", Min=" + minIterations + ", Max=" + maxIterationsLimit);
+			context.log("[DARWIN] Dynamic Expansion Control: Iteration=" + (safetyCounter + 1) + ", Expansion="
+					+ expansionValue + ", Min=" + minIterations + ", Max=" + maxIterationsLimit);
 			state.setIterationCount(safetyCounter);
 			context.log("[DARWIN] [LOOP] Starting Iteration " + (safetyCounter + 1) + " (Phase: "
 					+ state.getCurrentPhase() + ")");
@@ -820,7 +822,8 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 		String lineage = activeTrajectory != null ? activeTrajectory.getTrajectoryId() : "alpha";
 
 		// UI Progress
-		EvolutionProgressPublisher.startIteration(context, state.getIterationCount() + 1, generation, lineage, getMinIterationLimit(context), getMaxBranchingLimit(context, getExpansionValue()));
+		EvolutionProgressPublisher.startIteration(context, state.getIterationCount() + 1, generation, lineage,
+				getMinIterationLimit(context), getMaxBranchingLimit(context, getExpansionValue()));
 		EvolutionProgressPublisher.updateStage(context, EvolutionStage.ANALYSIS);
 
 		// ============================================================
@@ -1417,8 +1420,30 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 		eu.kalafatic.evolution.controller.orchestration.VariantExecutionContext winningContext = null;
 		String originalBranch = null;
 		String baseCommit = null;
+		
 		if (profile.requiresRepository() && manager.getGitManager().isGitRepository()) {
 			originalBranch = manager.getGitManager().getCurrentBranch();
+
+			// REQUIREMENT 3: Coding processes branched from user/git/evo - NOT master!
+			if (isCodingProcess() && "master".equals(originalBranch)) {
+				context.log(
+						"[DARWIN] [REQUIREMENT] Coding process detected on 'master'. Enforcement: Searching for alternative base branch.");
+				List<String> branches = manager.getGitManager().getGitTool().getBranches(context.getProjectRoot());
+				String altBase = branches.stream()
+						.filter(b -> !b.equals("master") && !b.contains("snapshot/") && !b.startsWith("exp/"))
+						.findFirst().orElse(null);
+				if (altBase != null) {
+					context.log("[DARWIN] Switching base for coding variant from 'master' to: " + altBase);
+					originalBranch = altBase;
+					manager.getGitManager().forceCheckout(altBase);
+				} else {
+					context.log(
+							"[DARWIN] [REQUIREMENT] No alternative base branch found. Creating and switching to 'develop' as base for evolution.");
+					manager.getGitManager().createBranch("develop");
+					originalBranch = "develop";
+				}
+			}
+
 			baseCommit = manager.getGitManager().getHeadCommit();
 		}
 		Iteration currentIterationModelImpl = manager.getCurrentIterationModel();
@@ -1572,7 +1597,7 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 			}
 
 			if (profile.shouldPerformRealityCheck()) {
-				eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceDeltaAnalyzer.DeltaAnalysis reality = executionEngine
+				DeltaAnalysis reality = executionEngine
 						.analyzeWorkspace(baseCommit, context);
 				context.log("[DARWIN] Reality Check: Winner variant applied. Analysis: " + reality.toString());
 
@@ -2905,6 +2930,7 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 		// MANDATE: Never more than 8. Darwin decides, not LLM.
 		return Math.min(branchingLimit, 8);
 	}
+
 	protected int getMaxIterationLimit(TaskContext context) {
 		int minIterations = 1;
 
@@ -2939,7 +2965,8 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 		if (minIterations < 1)
 			minIterations = 1;
 
-		// Granular dynamic range for iterations: 5 to 120 based on expansion slider (1-10)
+		// Granular dynamic range for iterations: 5 to 120 based on expansion slider
+		// (1-10)
 		int maxIterationsLimit = 5 + (expansionValue - 1) * 12;
 
 		if (intensity == 1)
@@ -3068,6 +3095,10 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 	public EvaluationResult executeWinner(BranchVariant winner, IterationManager manager) throws Exception {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	protected boolean isCodingProcess() {
+		return platformType == PlatformType.ASSISTED_CODING || platformType == PlatformType.SELF_DEV_MODE;
 	}
 
 	@Override

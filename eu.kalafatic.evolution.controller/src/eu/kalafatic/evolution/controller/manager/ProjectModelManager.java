@@ -165,21 +165,50 @@ public class ProjectModelManager {
     }
 
     public void initializeDefaults(Orchestrator orchestrator) {
+        String userHome = System.getProperty("user.home");
+        File gitHome = new File(userHome, "git");
+
         if (orchestrator.getGit() == null) {
             Git git = OrchestrationFactory.eINSTANCE.createGit();
             git.setRepositoryUrl("https://github.com/kalafatic/evolution/");
             git.setBranch("master");
+            git.setLocalPath(new File(gitHome, "evolution").getAbsolutePath());
             orchestrator.setGit(git);
-        } else if (orchestrator.getGit().getRepositoryUrl() == null || orchestrator.getGit().getRepositoryUrl().isEmpty()) {
-            orchestrator.getGit().setRepositoryUrl("https://github.com/kalafatic/evolution/");
+        } else {
+            if (orchestrator.getGit().getRepositoryUrl() == null || orchestrator.getGit().getRepositoryUrl().isEmpty()) {
+                orchestrator.getGit().setRepositoryUrl("https://github.com/kalafatic/evolution/");
+            }
+            if (orchestrator.getGit().getLocalPath() == null || orchestrator.getGit().getLocalPath().isEmpty()) {
+                orchestrator.getGit().setLocalPath(new File(gitHome, "evolution").getAbsolutePath());
+            }
+            if (orchestrator.getGit().getBranch() == null || orchestrator.getGit().getBranch().isEmpty()) {
+                orchestrator.getGit().setBranch("master");
+            }
         }
 
-        if (orchestrator.getSupervisorSettings() != null) {
-            if (orchestrator.getSupervisorSettings().getGit() == null) {
-                Git supGit = OrchestrationFactory.eINSTANCE.createGit();
-                supGit.setRepositoryUrl("https://github.com/kalafatic/evo/");
-                supGit.setBranch("master");
-                orchestrator.getSupervisorSettings().setGit(supGit);
+        if (orchestrator.getSupervisorSettings() == null) {
+            SupervisorSettings supervisor = OrchestrationFactory.eINSTANCE.createSupervisorSettings();
+            // OS-independent paths using user.home
+            supervisor.setExecutablePath(new java.io.File(userHome, "supervisor/bin/").getPath());
+            supervisor.setSourcePath(new java.io.File(userHome, "supervisor/sources/").getPath());
+            orchestrator.setSupervisorSettings(supervisor);
+        }
+
+        if (orchestrator.getSupervisorSettings().getGit() == null) {
+            Git supGit = OrchestrationFactory.eINSTANCE.createGit();
+            supGit.setRepositoryUrl("https://github.com/kalafatic/evo/");
+            supGit.setBranch("master");
+            supGit.setLocalPath(new File(gitHome, "evo").getAbsolutePath());
+            orchestrator.getSupervisorSettings().setGit(supGit);
+        } else {
+            if (orchestrator.getSupervisorSettings().getGit().getRepositoryUrl() == null || orchestrator.getSupervisorSettings().getGit().getRepositoryUrl().isEmpty()) {
+                orchestrator.getSupervisorSettings().getGit().setRepositoryUrl("https://github.com/kalafatic/evo/");
+            }
+            if (orchestrator.getSupervisorSettings().getGit().getLocalPath() == null || orchestrator.getSupervisorSettings().getGit().getLocalPath().isEmpty()) {
+                orchestrator.getSupervisorSettings().getGit().setLocalPath(new File(gitHome, "evo").getAbsolutePath());
+            }
+            if (orchestrator.getSupervisorSettings().getGit().getBranch() == null || orchestrator.getSupervisorSettings().getGit().getBranch().isEmpty()) {
+                orchestrator.getSupervisorSettings().getGit().setBranch("master");
             }
         }
 
@@ -199,14 +228,6 @@ public class ProjectModelManager {
             llm.setModel("gpt-4o");
             llm.setTemperature(0.4f);
             orchestrator.setLlm(llm);
-        }
-        if (orchestrator.getSupervisorSettings() == null) {
-            SupervisorSettings supervisor = OrchestrationFactory.eINSTANCE.createSupervisorSettings();
-            String userHome = System.getProperty("user.home");
-            // OS-independent paths using user.home
-            supervisor.setExecutablePath(new java.io.File(userHome, "supervisor/bin/").getPath());
-            supervisor.setSourcePath(new java.io.File(userHome, "supervisor/sources/").getPath());
-            orchestrator.setSupervisorSettings(supervisor);
         }
         if (orchestrator.getOllama() == null) {
             Ollama ollama = OrchestrationFactory.eINSTANCE.createOllama();
