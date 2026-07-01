@@ -24,10 +24,24 @@ public class GenomeDimensionScheduler {
             return null;
         }
 
-        // Prioritize by significance score if available
-        candidates.sort((d1, d2) -> Double.compare(d2.getSignificanceScore(), d1.getSignificanceScore()));
+        // Prioritize by composite score: significance, pressure, and ambiguity
+        candidates.sort((d1, d2) -> {
+            double score1 = calculateCompositeScore(d1);
+            double score2 = calculateCompositeScore(d2);
+            return Double.compare(score2, score1);
+        });
 
         return candidates.get(0);
+    }
+
+    /**
+     * Calculates a composite score for dimension prioritization.
+     * Weights: Significance (50%), Pressure (30%), Ambiguity (20%)
+     */
+    private double calculateCompositeScore(EvolutionDimension dim) {
+        return (dim.getSignificanceScore() * 0.5) +
+               (dim.getEvolutionaryPressure() * 0.3) +
+               (dim.getAmbiguityScore() * 0.2);
     }
 
     private boolean areDependenciesLocked(EvolutionDimension dimension, SemanticGenome genome) {

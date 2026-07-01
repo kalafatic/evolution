@@ -29,16 +29,18 @@ public class DimensionDiscoveryAgent extends BaseAiAgent {
 
     @Override
     protected String getAgentInstructions() {
-        return "You are a Semantic Dimension Discovery Agent.\n\n" +
+        return "You are a Semantic Dimension Discovery Agent (REALITY-GROUNDED).\n\n" +
                "GOAL: Identify new technical decision points (dimensions) to continue evolutionary progress.\n" +
                "You are called when all previously identified dimensions have been resolved (locked).\n\n" +
                "CONTEXT:\n" +
                "1. The high-level GOAL of the organism.\n" +
                "2. The current SEMANTIC GENOME (locked dimensions and mutation history).\n" +
-               "3. The active TRAJECTORY lineage.\n\n" +
+               "3. The active TRAJECTORY lineage.\n" +
+               "4. TARGET REALITY MODEL (Hotspots, Architectural Facts, Subsystems).\n\n" +
                "TASK:\n" +
                "Discover 1-3 NEW unresolved semantic dimensions that represent meaningful technical polymorphism.\n" +
-               "Focus on areas not yet fully resolved or where further refinement/optimization is possible.\n\n" +
+               "CRITICAL: Dimensions MUST be rooted in the identified HOTSPOTS and ARCHITECTURAL FACTS of the repository.\n" +
+               "Avoid generic dimensions. Focus on specific technical challenges identified in Reality Discovery.\n\n" +
                "RULES:\n" +
                "1. Do NOT repeat locked dimensions.\n" +
                "2. Root dimensions in 'Target Reality' if provided.\n" +
@@ -62,6 +64,29 @@ public class DimensionDiscoveryAgent extends BaseAiAgent {
         context.log("[DIMENSION_DISCOVERY] Discovering new dimensions for: " + goal.getPrimaryAction());
 
         StringBuilder sb = new StringBuilder();
+
+        eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel realityModel = (eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel) context
+                .getOrchestrationState().getMetadata().get("targetRealityModel");
+        if (realityModel != null) {
+            sb.append("\n--- DISCOVERED TARGET REALITY (GROUNDING SOURCE) ---\n");
+            sb.append("Architecture Summary: ").append(realityModel.getArchitectureSummary()).append("\n");
+
+            if (!realityModel.getArchitecturalFacts().isEmpty()) {
+                sb.append("\nARCHITECTURAL FACTS:\n");
+                for (var f : realityModel.getArchitecturalFacts()) {
+                    sb.append("- ").append(f.toString()).append("\n");
+                }
+            }
+
+            sb.append("\nIDENTIFIED HOTSPOTS (PRIORITY EVOLUTION TARGETS):\n");
+            for (eu.kalafatic.evolution.controller.mediation.model.Hotspot hotspot : realityModel.getHotspots()) {
+                sb.append("- ").append(hotspot.getName()).append(" [").append(hotspot.getType()).append("]: ")
+                        .append(hotspot.getDescription()).append(" (Significance: ").append(hotspot.getSignificance())
+                        .append(")\n");
+            }
+            sb.append("\n");
+        }
+
         sb.append("GOAL: ").append(goal.getPrimaryAction()).append("\n\n");
 
         sb.append("LOCKED DIMENSIONS (RESOLVED):\n");

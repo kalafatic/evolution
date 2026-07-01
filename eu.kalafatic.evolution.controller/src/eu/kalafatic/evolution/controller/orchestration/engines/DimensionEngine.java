@@ -47,6 +47,13 @@ public class DimensionEngine {
     }
 
     public EvolutionDimension selectNextDimension(SemanticGenome genome, TaskContext context, GoalModel goal, Trajectory trajectory) {
+        // STAGNATION HANDLING: If last iteration yielded no significant changes, boost priorities
+        Boolean lastSignificant = (Boolean) context.getOrchestrationState().getMetadata().get("lastRealityCheckSignificant");
+        if (lastSignificant != null && !lastSignificant) {
+            handleStagnation(genome, context);
+            context.getOrchestrationState().getMetadata().remove("lastRealityCheckSignificant");
+        }
+
         EvolutionDimension activeDimension = dimensionScheduler.selectNextDimension(genome);
         if (activeDimension == null && discoveryAgent != null) {
             context.log("[DARWIN] Genome exhausted. Discovering new semantic dimensions...");
@@ -78,6 +85,26 @@ public class DimensionEngine {
         if (initialAssessment != null && initialAssessment.hasUnresolvedDimensions()) {
             context.log("[DARWIN] Unresolved dimensions detected: " +
                 initialAssessment.getUnresolvedDimensions().stream().map(d -> d.getId()).collect(Collectors.joining(", ")));
+        }
+    }
+
+    /**
+     * Handles evolutionary stagnation by re-prioritizing unlocked dimensions.
+     * Increases evolutionary pressure and ambiguity scores to force exploration of new territories.
+     */
+    public void handleStagnation(SemanticGenome genome, TaskContext context) {
+        context.log("[DARWIN] Stagnation detected. Re-evaluating dimension priorities to break local equilibrium.");
+        for (EvolutionDimension dim : genome.getDimensions()) {
+            if (!genome.isLocked(dim.getId())) {
+                // Increase pressure and ambiguity to make this dimension more attractive for the next iteration
+                double newPressure = Math.min(1.0, dim.getEvolutionaryPressure() + 0.25);
+                double newAmbiguity = Math.min(1.0, dim.getAmbiguityScore() + 0.15);
+
+                dim.setEvolutionaryPressure(newPressure);
+                dim.setAmbiguityScore(newAmbiguity);
+
+                context.log("[DARWIN] Boosted Dimension [" + dim.getId() + "] -> Pressure: " + newPressure + ", Ambiguity: " + newAmbiguity);
+            }
         }
     }
 }
