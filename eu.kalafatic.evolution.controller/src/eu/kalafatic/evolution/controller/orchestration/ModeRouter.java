@@ -116,6 +116,13 @@ public class ModeRouter {
 		// 2. Check explicit Orchestrator model overrides (User UI selection)
 		if (orchestrator != null) {
 			if (orchestrator.getAiMode() == eu.kalafatic.evolution.model.orchestration.AiMode.MEDIATED) {
+				// FORCE COGNITIVE SYNC: Ensure explicit UI selection updates the cognitive state
+				String sessionId = orchestrator.getId();
+				SessionContainer session = (sessionId != null) ? SessionManager.getInstance().getSession(sessionId) : null;
+				if (session != null) {
+					session.getCognitiveState().setCurrentCapability(CapabilityType.MEDIATED);
+					new eu.kalafatic.evolution.controller.orchestration.cognitive.CognitiveStatePublisher().publish(null, session.getCognitiveState());
+				}
 				return createHybridManualExportMode();
 			}
 			if (orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null
@@ -160,6 +167,7 @@ public class ModeRouter {
 		case EVOLUTION:
 			return createDarwinMode();
 		case ARCHITECTURE:
+		case MEDIATED:
 			return createHybridManualExportMode();
 		case CODE:
 			return createAssistedCodingMode();
