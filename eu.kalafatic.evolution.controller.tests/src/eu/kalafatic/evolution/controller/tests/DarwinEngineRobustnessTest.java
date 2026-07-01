@@ -10,6 +10,7 @@ import org.json.JSONObject;
 import org.junit.Test;
 
 import eu.kalafatic.evolution.controller.agents.RealityDiscoveryAgent;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.ADarwinEngine;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.DarwinEngine;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
@@ -51,8 +52,8 @@ public class DarwinEngineRobustnessTest {
 
         DarwinEngine engine = new DarwinEngine(context, null, null);
 
-        // mapToBranchVariant is private, using reflection to test it
-        Method method = DarwinEngine.class.getDeclaredMethod("mapToBranchVariant",
+        // mapToBranchVariant is protected in ADarwinEngine, using reflection to test it
+        Method method = ADarwinEngine.class.getDeclaredMethod("mapToBranchVariant",
                 JSONObject.class, String.class, String.class,
                 eu.kalafatic.evolution.controller.trajectory.Trajectory.class,
                 TaskContext.class);
