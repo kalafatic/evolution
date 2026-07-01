@@ -1,7 +1,14 @@
 package eu.kalafatic.evolution.controller.kernel;
 
+import eu.kalafatic.evolution.controller.orchestration.ModeRouter;
+import eu.kalafatic.evolution.controller.orchestration.PlatformMode;
+import eu.kalafatic.evolution.controller.orchestration.PlatformType;
+import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
+import eu.kalafatic.evolution.controller.orchestration.SessionContext;
+import eu.kalafatic.evolution.controller.orchestration.SessionManager;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType;
+import eu.kalafatic.evolution.controller.orchestration.goal.GoalModel;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionaryPressureVector;
 import eu.kalafatic.evolution.controller.trajectory.Trajectory;
 import eu.kalafatic.utils.semantic.EvolutionComponent;
@@ -16,19 +23,19 @@ public class EvolutionIntensityCalculator {
         double intensity = 1.0;
 
         // 0. FAST RULE BYPASS (Greetings/Simple Chat)
-        eu.kalafatic.evolution.controller.orchestration.ModeRouter router = new eu.kalafatic.evolution.controller.orchestration.ModeRouter();
-        eu.kalafatic.evolution.controller.orchestration.PlatformMode fastMode = router.routeFast(context.getOrchestrationState().getRawInput(), context.getOrchestrator());
-        if (fastMode != null && fastMode.getType() == eu.kalafatic.evolution.controller.orchestration.PlatformType.SIMPLE_CHAT) {
+        ModeRouter router = new ModeRouter();
+        PlatformMode fastMode = router.routeFast(context.getOrchestrationState().getRawInput(), context.getOrchestrator());
+        if (fastMode != null && fastMode.getType() == PlatformType.SIMPLE_CHAT) {
             return EvolutionProfile.create(CapabilityType.CHAT, 1);
         }
 
         // 1. Capability & Depth Signal
         CapabilityType cap = CapabilityType.CHAT;
         int depth = 1;
-        eu.kalafatic.evolution.controller.orchestration.SessionContainer session =
-            eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getSession(context.getSessionId());
-        if (session instanceof eu.kalafatic.evolution.controller.orchestration.SessionContext) {
-            var cogState = ((eu.kalafatic.evolution.controller.orchestration.SessionContext)session).getCognitiveState();
+        SessionContainer session =
+            SessionManager.getInstance().getSession(context.getSessionId());
+        if (session instanceof SessionContext) {
+            var cogState = ((SessionContext)session).getCognitiveState();
             cap = cogState.getCurrentCapability();
             depth = cogState.getCognitiveDepth();
         }
@@ -49,7 +56,7 @@ public class EvolutionIntensityCalculator {
         }
 
         // 3. Goal Complexity (Formal & Heuristic)
-        eu.kalafatic.evolution.controller.orchestration.goal.GoalModel goalModel = (eu.kalafatic.evolution.controller.orchestration.goal.GoalModel) context.getOrchestrationState().getMetadata().get("goalModel");
+        GoalModel goalModel = (GoalModel) context.getOrchestrationState().getMetadata().get("goalModel");
         if (goalModel != null) {
             String complexity = goalModel.getComplexity() != null ? goalModel.getComplexity().toUpperCase() : "MEDIUM";
             if ("SIMPLE".equals(complexity)) intensity -= 0.5;

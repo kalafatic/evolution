@@ -95,6 +95,8 @@ import eu.kalafatic.evolution.model.orchestration.Task;
 
 public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine, IMutationContract {
 
+	public static final int DEFAULT_EXPANSION_LEVEL = 5;
+
 	protected final TaskContext context;
 	protected final IterationMemoryService memoryService;
 	protected final SystemStateSignalProvider stateProvider;
@@ -115,12 +117,12 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 	protected final SelectionEngine selectionEngine = new SelectionEngine();
 	protected final DimensionDiscoveryAgent dimensionDiscoveryAgent;
 	protected CapabilityStatus status = CapabilityStatus.STOPPED;
-	
+
 	// Inject the analyzer
 	protected PromptIntentAnalyzer intentAnalyzer;
 	protected ModeRecognizer modeRecognizer;
-	
-    protected PlatformType platformType;
+
+	protected PlatformType platformType;
 
 	public ADarwinEngine(TaskContext context, IterationMemoryService memoryService,
 			SystemStateSignalProvider stateProvider, PlatformType platformType) {
@@ -135,32 +137,32 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 		this.platformType = platformType;
 		this.dimensionDiscoveryAgent = new DimensionDiscoveryAgent(getSessionContainer());
 		this.dimensionEngine.setDiscoveryAgent(dimensionDiscoveryAgent);
-    
-	    // Create ModeRecognizer with SessionContainer from parent (BaseAiAgent)
-	    this.modeRecognizer = new ModeRecognizer(getSessionContainer());
+
+		// Create ModeRecognizer with SessionContainer from parent (BaseAiAgent)
+		this.modeRecognizer = new ModeRecognizer(getSessionContainer());
 	}
-	
+
 	public OrchestratorResponse orchestrateEvolution(TaskRequest taskRequest, IterationManager iterationManager)
 			throws Exception {
 		context.setStartTime(Instant.now());
 		String request = taskRequest.getPrompt();
 		OrchestrationState state = context.getOrchestrationState();
-		
-		 // ============================================================
-	    // 1. CLASSIFY THE PROMPT
-	    // Everything is evolution — chat is just 1-2 branches
-	    // ============================================================
-	    // ============================================================
-	    // 1. LLM-POWERED INTENT ANALYSIS
-	    // ============================================================
-	    PromptIntentAnalyzer.IntentResult intent = intentAnalyzer.analyze(request, context);
-	    context.log("[DARWIN] Intent Analysis: " + intent.toString());
-	    
-	    // ============================================================
-	    // 2. ROUTE BASED ON INTENT
-	    // ============================================================
-	    if (intent.isChat()) {
-	        context.log("[DARWIN] CHAT detected. Using minimal evolution.");
+
+		// ============================================================
+		// 1. CLASSIFY THE PROMPT
+		// Everything is evolution — chat is just 1-2 branches
+		// ============================================================
+		// ============================================================
+		// 1. LLM-POWERED INTENT ANALYSIS
+		// ============================================================
+		PromptIntentAnalyzer.IntentResult intent = intentAnalyzer.analyze(request, context);
+		context.log("[DARWIN] Intent Analysis: " + intent.toString());
+
+		// ============================================================
+		// 2. ROUTE BASED ON INTENT
+		// ============================================================
+		if (intent.isChat()) {
+			context.log("[DARWIN] CHAT detected. Using minimal evolution.");
 //	        state.getMetadata().put("isChatRequest", true);
 //
 //	        // Set CHAT profile
@@ -170,58 +172,56 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 //	        // CHAT FLOW FIX: Start at synthesis phase to allow one-pass generation
 //	        state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(EvolutionPhase.FINAL_SYNTHESIS));
 //	        state.setIterationCount(0);
-	        
-	      
-	            context.log("[DARWIN] CHAT detected. Using minimal evolution.");
-	            state.getMetadata().put("isChatRequest", true);
-	            
-	            // Set CHAT profile
-	            EvolutionProfile chatProfile = EvolutionProfile.create(CapabilityType.CHAT, 1);
-	            context.getOrchestrationState().setExecutionProfile(chatProfile);
-	            
-	            // Skip discovery and go directly to chat handling
-	            OrchestratorResponse chatResponse = new OrchestratorResponse();
-	            chatResponse.setResultType(ResultType.CHAT);
-	            
-	            // Generate chat response directly - skip all evolution
-	            String chatResponseText = generateChatResponse(request, context);
-	            chatResponse.setSummary(chatResponseText);
-	            
-	            // Store the response
-	            state.getMetadata().put("chatResponse", chatResponseText);
-	            
-	            // Transition to DONE
-	            iterationManager.transition(SystemState.DONE, context);
-	            
-	            // Assemble final response
-	            FinalResponseAssembler assembler = new FinalResponseAssembler();
-	            FinalResponse finalResponse = assembler.assemble(context, chatResponseText, true, context.getStartTime());
-	            chatResponse.setFinalResponse(finalResponse);
-	            
-	            return chatResponse;
-	       
 
-	    } else if (intent.isControl()) {
-	        context.log("[DARWIN] CONTROL detected.");
-	        state.getMetadata().put("pendingControlCommand", request);
+			context.log("[DARWIN] CHAT detected. Using minimal evolution.");
+			state.getMetadata().put("isChatRequest", true);
 
-	    } else {
-	        // ============================================================
-	        // TASK: RESET THE CHAT FLAG!
-	        // ============================================================
-	        context.log("[DARWIN] TASK detected. Using full evolution.");
-	        
-	        // ✅ CRITICAL FIX: Remove the chat flag
-	        state.getMetadata().remove("isChatRequest");
-	        
-	        // Also ensure we don't have any stale chat profile
-	        // If profile is CHAT, reset it
-	        if (context.getExecutionProfile() != null && 
-	            context.getExecutionProfile().getCapability() == CapabilityType.CHAT) {
-	            EvolutionProfile taskProfile = EvolutionProfile.create(CapabilityType.CODE, 2);
-	            context.getOrchestrationState().setExecutionProfile(taskProfile);
-	        }
-	    }
+			// Set CHAT profile
+			EvolutionProfile chatProfile = EvolutionProfile.create(CapabilityType.CHAT, 1);
+			context.getOrchestrationState().setExecutionProfile(chatProfile);
+
+			// Skip discovery and go directly to chat handling
+			OrchestratorResponse chatResponse = new OrchestratorResponse();
+			chatResponse.setResultType(ResultType.CHAT);
+
+			// Generate chat response directly - skip all evolution
+			String chatResponseText = generateChatResponse(request, context);
+			chatResponse.setSummary(chatResponseText);
+
+			// Store the response
+			state.getMetadata().put("chatResponse", chatResponseText);
+
+			// Transition to DONE
+			iterationManager.transition(SystemState.DONE, context);
+
+			// Assemble final response
+			FinalResponseAssembler assembler = new FinalResponseAssembler();
+			FinalResponse finalResponse = assembler.assemble(context, chatResponseText, true, context.getStartTime());
+			chatResponse.setFinalResponse(finalResponse);
+
+			return chatResponse;
+
+		} else if (intent.isControl()) {
+			context.log("[DARWIN] CONTROL detected.");
+			state.getMetadata().put("pendingControlCommand", request);
+
+		} else {
+			// ============================================================
+			// TASK: RESET THE CHAT FLAG!
+			// ============================================================
+			context.log("[DARWIN] TASK detected. Using full evolution.");
+
+			// ✅ CRITICAL FIX: Remove the chat flag
+			state.getMetadata().remove("isChatRequest");
+
+			// Also ensure we don't have any stale chat profile
+			// If profile is CHAT, reset it
+			if (context.getExecutionProfile() != null
+					&& context.getExecutionProfile().getCapability() == CapabilityType.CHAT) {
+				EvolutionProfile taskProfile = EvolutionProfile.create(CapabilityType.CODE, 2);
+				context.getOrchestrationState().setExecutionProfile(taskProfile);
+			}
+		}
 
 		Map<String, Object> contextMap = taskRequest.getContext();
 		if (contextMap != null) {
@@ -422,24 +422,25 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 			// GROUNDING: Establish Goal Model and Locked Abstraction Level BEFORE Intensity
 			// Calculation
 			GoalModel goalModel = GoalModel.extract(state.getMetadata(), iterationManager, request, context);
-			
+
 			if (state.getLockedAbstractionLevel() == null) {
-                AbstractionLevel lockedLevel = AbstractionLevel.DESIGN; // Default
-                String complexity = goalModel.getComplexity() != null ? goalModel.getComplexity().toUpperCase() : "MEDIUM";
-                String type = goalModel.getGoalType() != null ? goalModel.getGoalType().toUpperCase() : "GENERAL";
+				AbstractionLevel lockedLevel = AbstractionLevel.DESIGN; // Default
+				String complexity = goalModel.getComplexity() != null ? goalModel.getComplexity().toUpperCase()
+						: "MEDIUM";
+				String type = goalModel.getGoalType() != null ? goalModel.getGoalType().toUpperCase() : "GENERAL";
 
-                if ("ANALYSIS".equalsIgnoreCase(type) || "ANALYSIS".equalsIgnoreCase(goalModel.getIntent())) {
-                    lockedLevel = AbstractionLevel.ARCHITECTURE;
-                } else if ("SIMPLE".equals(complexity)) {
-                    lockedLevel = AbstractionLevel.IMPLEMENTATION;
-                } else if ("HIGH".equals(complexity)) {
-                    lockedLevel = AbstractionLevel.ARCHITECTURE;
-                }
+				if ("ANALYSIS".equalsIgnoreCase(type) || "ANALYSIS".equalsIgnoreCase(goalModel.getIntent())) {
+					lockedLevel = AbstractionLevel.ARCHITECTURE;
+				} else if ("SIMPLE".equals(complexity)) {
+					lockedLevel = AbstractionLevel.IMPLEMENTATION;
+				} else if ("HIGH".equals(complexity)) {
+					lockedLevel = AbstractionLevel.ARCHITECTURE;
+				}
 
-                state.setLockedAbstractionLevel(lockedLevel);
-                context.log("[DARWIN] Abstraction level LOCKED to: " + lockedLevel + " based on complexity: " + complexity + ", type: " + type);
-            }
-
+				state.setLockedAbstractionLevel(lockedLevel);
+				context.log("[DARWIN] Abstraction level LOCKED to: " + lockedLevel + " based on complexity: "
+						+ complexity + ", type: " + type);
+			}
 
 			// ADAPTIVE KERNEL: Ensure execution profile is initialized before access
 			if (context.getExecutionProfile() == null) {
@@ -523,30 +524,23 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 	}
 
 	/**
- * Generates a direct chat response without evolution.
- */
-private String generateChatResponse(String request, TaskContext context) {
-    try {
-        String systemInstruction = 
-            "You are a friendly, helpful AI assistant. " +
-            "RESPOND CONVERSATIONALLY. DO NOT generate code. " +
-            "Just respond naturally as a helpful assistant.";
-        
-        String prompt = String.format(
-            "%s\n\nUser said: \"%s\"\n\nRespond naturally. Be friendly and helpful.",
-            systemInstruction, request
-        );
-        
-        return aiService.sendRequest(
-            context.getOrchestrator(),
-            prompt,
-            context
-        );
-    } catch (Exception e) {
-        context.log("[DARWIN] Chat response generation failed: " + e.getMessage());
-        return "Hello! How can I help you today?";
-    }
-}
+	 * Generates a direct chat response without evolution.
+	 */
+	private String generateChatResponse(String request, TaskContext context) {
+		try {
+			String systemInstruction = "You are a friendly, helpful AI assistant. "
+					+ "RESPOND CONVERSATIONALLY. DO NOT generate code. "
+					+ "Just respond naturally as a helpful assistant.";
+
+			String prompt = String.format("%s\n\nUser said: \"%s\"\n\nRespond naturally. Be friendly and helpful.",
+					systemInstruction, request);
+
+			return aiService.sendRequest(context.getOrchestrator(), prompt, context);
+		} catch (Exception e) {
+			context.log("[DARWIN] Chat response generation failed: " + e.getMessage());
+			return "Hello! How can I help you today?";
+		}
+	}
 
 	public OrchestratorResponse evolve(String request, IterationManager iterationManager,
 			eu.kalafatic.evolution.controller.orchestration.intent.EvolutionAssessment initialAssessment)
@@ -719,9 +713,8 @@ private String generateChatResponse(String request, TaskContext context) {
 		}
 
 		String summary;
-		if ((state.getCurrentPhase().contains("TERMINAL") 
-				|| state.getCurrentPhase().contains("SYNTHESIS")
-				|| state.getCurrentPhase().contains("DESIGN_SATISFIED")) 
+		if ((state.getCurrentPhase().contains("TERMINAL") || state.getCurrentPhase().contains("SYNTHESIS")
+				|| state.getCurrentPhase().contains("DESIGN_SATISFIED"))
 				&& response.getResultType() != ResultType.ERROR) {
 			if (context.getBehaviorProfile().hasTrait(BehaviorTrait.WORKFLOW_EXPORT_ONLY)) {
 				summary = iterationManager.performMediatedExportConvergence(request, context);
@@ -816,7 +809,7 @@ private String generateChatResponse(String request, TaskContext context) {
 		// 2. GOAL MODEL & SEMANTIC ENVELOPE
 		// ============================================================
 		GoalModel goalModel = GoalModel.extract(state.getMetadata(), manager, goal, context);
-		
+
 		// ABSTRACTION LEVEL SELECTION & LOCKING
 		if (state.getLockedAbstractionLevel() == null) {
 			AbstractionLevel lockedLevel = AbstractionLevel.DESIGN;
@@ -935,22 +928,22 @@ private String generateChatResponse(String request, TaskContext context) {
 		// ============================================================
 		// 7. BRANCH GENERATION
 		// ============================================================
-	    
-		 List<BranchVariant> variants = generateProposals(context, goalModel, manager);
 
-		 // SYNC PROGRESS BRANCHES: Ensure UI only shows final considered variants
-		 if (!variants.isEmpty()) {
-		     java.util.List<EvolutionProgressEvent.BranchStatus> statuses = new java.util.ArrayList<>();
-		     for (BranchVariant v : variants) {
-		         EvolutionProgressEvent.BranchStatus bs = new EvolutionProgressEvent.BranchStatus();
-		         bs.setId(v.getId());
-		         bs.setStrategy(v.getStrategy());
-		         bs.setStatus("active");
-		         bs.setScore(v.getScore());
-		         statuses.add(bs);
-		     }
-		     EvolutionProgressPublisher.syncBranches(context, statuses);
-		 }
+		List<BranchVariant> variants = generateProposals(context, goalModel, manager);
+
+		// SYNC PROGRESS BRANCHES: Ensure UI only shows final considered variants
+		if (!variants.isEmpty()) {
+			java.util.List<EvolutionProgressEvent.BranchStatus> statuses = new java.util.ArrayList<>();
+			for (BranchVariant v : variants) {
+				EvolutionProgressEvent.BranchStatus bs = new EvolutionProgressEvent.BranchStatus();
+				bs.setId(v.getId());
+				bs.setStrategy(v.getStrategy());
+				bs.setStatus("active");
+				bs.setScore(v.getScore());
+				statuses.add(bs);
+			}
+			EvolutionProgressPublisher.syncBranches(context, statuses);
+		}
 
 		if (variants.isEmpty()) {
 			context.log("[DARWIN] CRITICAL: No trajectories survived diversity analysis. Evolution blocked.");
@@ -986,8 +979,7 @@ private String generateChatResponse(String request, TaskContext context) {
 
 		String iterId = manager.getCurrentIterationModel() != null ? manager.getCurrentIterationModel().getId()
 				: "default";
-		EvolutionDecision decision = manager.decide(iterId, variants,
-				context, manualId);
+		EvolutionDecision decision = manager.decide(iterId, variants, context, manualId);
 
 		if (activeTrajectory != null) {
 			decision.setPressure(getSessionContainer().getPressureEngine().analyze(activeTrajectory, context));
@@ -1077,12 +1069,9 @@ private String generateChatResponse(String request, TaskContext context) {
 	// ============================================================
 	// HELPER METHODS
 	// ============================================================
-	
-	
-	
 
 	private String generateAlternativeChatResponse(String request, TaskContext context) {
-	    return "I'm ready to evolve! Tell me what code you want me to work on, and I'll generate competing implementations for you to choose from.";
+		return "I'm ready to evolve! Tell me what code you want me to work on, and I'll generate competing implementations for you to choose from.";
 	}
 
 	/**
@@ -1469,44 +1458,41 @@ private String generateChatResponse(String request, TaskContext context) {
 		if (finalWinnerId != null) {
 			selectedVariant = variants.stream().filter(v -> v.getId().equals(finalWinnerId)).findFirst().orElse(null);
 		}
-		
-		 // ============================================================
-	    // FIX: Handle CHAT variants directly without Git
-	    // ============================================================
-	    if (selectedVariant != null && "CHAT_RESPONSE".equals(selectedVariant.getStrategyType())) {
-	        context.log("[DARWIN] CHAT: Executing conversational response directly (no Git).");
-	        
-	        // Extract the response
-	        String response = selectedVariant.getActions().stream()
-	            .filter(a -> "TALK".equals(a.getOperation()))
-	            .map(a -> a.getImplementation())
-	            .findFirst()
-	            .orElse("Hello! How can I help you today?");
-	        
-	        // Store response in state
-	        context.getOrchestrationState().getMetadata().put("chatResponse", response);
-	        
-	        // Mark as success
-	        EvaluationResult result = OrchestrationFactory.eINSTANCE.createEvaluationResult();
-	        result.setSuccess(true);
-	        result.setDecision(SelfDevDecision.STOP);
-	        
-	        // Record lineage
-	        IterationRecord record = new IterationRecord();
-	        record.setIteration(context.getOrchestrationState().getIterationCount());
-	        record.setGoal(goal.getPrimaryAction());
-	        record.setStrategy(selectedVariant.getStrategy());
-	        record.setBranchId(selectedVariant.getId());
-	        record.setResult("SUCCESS");
-	        record.setActivationState("ACTIVE");
-	        record.setMutationTrace(response);
-	        record.setTimestamp(System.currentTimeMillis());
-	        context.getKernelContext().getMemoryService().saveRecord(record);
-	        context.getKernelContext().getMemoryService().saveEvolutionTree();
-	        context.getKernelContext().getMemoryService().flush();
-	        
-	        return result;
-	    }
+
+		// ============================================================
+		// FIX: Handle CHAT variants directly without Git
+		// ============================================================
+		if (selectedVariant != null && "CHAT_RESPONSE".equals(selectedVariant.getStrategyType())) {
+			context.log("[DARWIN] CHAT: Executing conversational response directly (no Git).");
+
+			// Extract the response
+			String response = selectedVariant.getActions().stream().filter(a -> "TALK".equals(a.getOperation()))
+					.map(a -> a.getImplementation()).findFirst().orElse("Hello! How can I help you today?");
+
+			// Store response in state
+			context.getOrchestrationState().getMetadata().put("chatResponse", response);
+
+			// Mark as success
+			EvaluationResult result = OrchestrationFactory.eINSTANCE.createEvaluationResult();
+			result.setSuccess(true);
+			result.setDecision(SelfDevDecision.STOP);
+
+			// Record lineage
+			IterationRecord record = new IterationRecord();
+			record.setIteration(context.getOrchestrationState().getIterationCount());
+			record.setGoal(goal.getPrimaryAction());
+			record.setStrategy(selectedVariant.getStrategy());
+			record.setBranchId(selectedVariant.getId());
+			record.setResult("SUCCESS");
+			record.setActivationState("ACTIVE");
+			record.setMutationTrace(response);
+			record.setTimestamp(System.currentTimeMillis());
+			context.getKernelContext().getMemoryService().saveRecord(record);
+			context.getKernelContext().getMemoryService().saveEvolutionTree();
+			context.getKernelContext().getMemoryService().flush();
+
+			return result;
+		}
 
 		double winnerScore = decision.getAggregatedScores().getOrDefault(finalWinnerId, 0.0);
 		getSessionContainer().getEventBus()
@@ -1774,33 +1760,30 @@ private String generateChatResponse(String request, TaskContext context) {
 		}
 	}
 
-	private VariantExecutionContext evaluateVariantParallel(
-			BranchVariant variant, TaskPlanner planner, TaskContext context, String baseCommit,
-			EvolutionaryPressureVector pressure, IterationManager manager) {
+	private VariantExecutionContext evaluateVariantParallel(BranchVariant variant, TaskPlanner planner,
+			TaskContext context, String baseCommit, EvolutionaryPressureVector pressure, IterationManager manager) {
 		File tempDir = null;
-		AuthorityController authority = context.getKernelContext()
-				.getAuthority();
-		VariantExecutionContext variantExecContext = new VariantExecutionContext(
-				variant.getId());
+		AuthorityController authority = context.getKernelContext().getAuthority();
+		VariantExecutionContext variantExecContext = new VariantExecutionContext(variant.getId());
 
 		boolean isMediated = ModeRecognizer.isMediatedMode(context);
 		boolean isChatMode = modeRecognizer.isChatMode(context);
 		try {
-	        // ============================================================
-	        // FIX: Skip Git worktree for chat variants
-	        // ============================================================
-	        if (context.getMetadata().containsKey("testMode") || isMediated || isChatMode) {
-	            tempDir = context.getProjectRoot();
-	        } else {
-	            tempDir = java.nio.file.Files.createTempDirectory("evo-variant-" + variant.getId()).toFile();
-	            // Ensure worktree is clean before starting
-	            try {
-	                manager.getGitManager().removeWorktree(tempDir.getAbsolutePath());
-	                manager.getGitManager().pruneWorktrees();
-	            } catch (Exception e) {
-	            }
-	            manager.getBranchManager().createWorktree(variant.getBranchName(), tempDir.getAbsolutePath());
-	        }
+			// ============================================================
+			// FIX: Skip Git worktree for chat variants
+			// ============================================================
+			if (context.getMetadata().containsKey("testMode") || isMediated || isChatMode) {
+				tempDir = context.getProjectRoot();
+			} else {
+				tempDir = java.nio.file.Files.createTempDirectory("evo-variant-" + variant.getId()).toFile();
+				// Ensure worktree is clean before starting
+				try {
+					manager.getGitManager().removeWorktree(tempDir.getAbsolutePath());
+					manager.getGitManager().pruneWorktrees();
+				} catch (Exception e) {
+				}
+				manager.getBranchManager().createWorktree(variant.getBranchName(), tempDir.getAbsolutePath());
+			}
 			TaskContext variantContext = new TaskContext(context.getOrchestrator(), tempDir);
 			variantContext.setSessionId(context.getSessionId());
 			variantContext.setKernelContext(context.getKernelContext());
@@ -1809,44 +1792,42 @@ private String generateChatResponse(String request, TaskContext context) {
 			variantContext.setPlatformMode(context.getPlatformMode());
 			variantContext.setAutoApprove(true);
 			variantContext.setAiService(aiService);
-			
-			
 
 			// PROPAGATE LISTENERS: Ensure sub-task execution logs are visible in the UI
 			context.getLogListeners().forEach(variantContext::addLogListener);
 			context.getApprovalListeners().forEach(variantContext::addApprovalListener);
 			context.getInputListeners().forEach(variantContext::addInputListener);
 
-			List<Task> tasks = planner
-					.generateTasksFromVariant(variantContext, variant);
+			List<Task> tasks = planner.generateTasksFromVariant(variantContext, variant);
 			context.log("[DARWIN] Generated " + tasks.size() + " tasks for variant: " + variant.getId());
-			
-			IterationManager variantManager = KernelFactory.create(tasks.get(0).getPrompt(), variantContext, getSessionContainer(), aiService);
-			
+
+			IterationManager variantManager = KernelFactory.create(tasks.get(0).getPrompt(), variantContext,
+					getSessionContainer(), aiService);
+
 			if (context.getMetadata().containsKey("testMode") || isMediated || isChatMode) {
-			    variant.setSuccess(true);
-			    variant.setScore(0.95);
+				variant.setSuccess(true);
+				variant.setScore(0.95);
 
-			    // Mediated mode does NOT execute tasks that modify source code
-			    if (!isMediated && !isChatMode) {
-			        for (eu.kalafatic.evolution.model.orchestration.Task task : tasks) {
-			            try {
-			                variantManager.getTaskExecutor().getOrchestrator().executeTask(task, variantContext);
-			            } catch (Exception e) {
-			                context.log("[DARWIN] [TEST_MODE] Execution failed but continuing: " + e.getMessage());
-			            }
-			        }
-			    } else {
-			        context.log("[DARWIN] " + (isMediated ? "Mediated Mode" : "CHAT") + ": Skipping task execution.");
-			    }
+				// Mediated mode does NOT execute tasks that modify source code
+				if (!isMediated && !isChatMode) {
+					for (eu.kalafatic.evolution.model.orchestration.Task task : tasks) {
+						try {
+							variantManager.getTaskExecutor().getOrchestrator().executeTask(task, variantContext);
+						} catch (Exception e) {
+							context.log("[DARWIN] [TEST_MODE] Execution failed but continuing: " + e.getMessage());
+						}
+					}
+				} else {
+					context.log("[DARWIN] " + (isMediated ? "Mediated Mode" : "CHAT") + ": Skipping task execution.");
+				}
 
-			    manager.updateVariantLifecycle(List.of(variant), variant.getId(),
-			            BranchVariant.ActivationState.VERIFIED, context);
-			    manager.updateVariantLifecycle(List.of(variant), variant.getId(), BranchVariant.ActivationState.SCORING,
-			            context);
+				manager.updateVariantLifecycle(List.of(variant), variant.getId(),
+						BranchVariant.ActivationState.VERIFIED, context);
+				manager.updateVariantLifecycle(List.of(variant), variant.getId(), BranchVariant.ActivationState.SCORING,
+						context);
 
-			    variant.setMutationTrace(isMediated ? "Cognitive evolution in mediated mode" : "Chat response");
-			    return variantExecContext;
+				variant.setMutationTrace(isMediated ? "Cognitive evolution in mediated mode" : "Chat response");
+				return variantExecContext;
 			}
 
 			boolean success = true;
@@ -1896,7 +1877,7 @@ private String generateChatResponse(String request, TaskContext context) {
 				try {
 					eu.kalafatic.evolution.controller.tools.GitTool gitTool = new eu.kalafatic.evolution.controller.tools.GitTool();
 					String diffCommand = (baseCommit != null) ? "diff " + baseCommit + " HEAD" : "diff HEAD";
-					
+
 					String diff = gitTool.execute("diff HEAD", tempDir, variantContext);
 
 					RuntimeEvent event = new RuntimeEvent(
@@ -2003,13 +1984,12 @@ private String generateChatResponse(String request, TaskContext context) {
 
 			eu.kalafatic.evolution.controller.tools.GitTool deltaTool = new eu.kalafatic.evolution.controller.tools.GitTool();
 			try {
-			    // Handle null baseCommit (e.g., first commit or chat)
-			    String diffCommand = (baseCommit != null && !baseCommit.equals("null")) 
-			        ? "diff " + baseCommit + " HEAD" 
-			        : "diff HEAD";
-			    variant.setMutationTrace(deltaTool.execute(diffCommand, tempDir, variantContext));
+				// Handle null baseCommit (e.g., first commit or chat)
+				String diffCommand = (baseCommit != null && !baseCommit.equals("null")) ? "diff " + baseCommit + " HEAD"
+						: "diff HEAD";
+				variant.setMutationTrace(deltaTool.execute(diffCommand, tempDir, variantContext));
 			} catch (Exception e) {
-			    context.log("[DARWIN] Failed to capture mutation trace: " + e.getMessage());
+				context.log("[DARWIN] Failed to capture mutation trace: " + e.getMessage());
 			}
 			variant.setScore(fitnessEngine.calculateScore(result));
 
@@ -2089,7 +2069,7 @@ private String generateChatResponse(String request, TaskContext context) {
 					.calculate(context, trajectory, null);
 			context.getOrchestrationState().setExecutionProfile(profile_init);
 		}
-		
+
 		// 1. Expansion-Based Population Scaling (Milestone Requirement)
 		int expansionValue = 5; // Default Medium
 		if (context.getOrchestrator() != null && context.getOrchestrator().getAiChat() != null) {
@@ -2101,35 +2081,35 @@ private String generateChatResponse(String request, TaskContext context) {
 			}
 		}
 
-	    // ============================================================
-	    // CHECK: Is this ACTUALLY a chat request?
-	    // ============================================================
-	    boolean isChatFlag = context.getOrchestrationState().getMetadata().containsKey("isChatRequest") &&
-	                         (boolean) context.getOrchestrationState().getMetadata().get("isChatRequest");
-	    boolean isActuallyTask = !modeRecognizer.isChatMode(context);
-	    // If the flag says CHAT but the goal is a task, clear the flag
-	    if (isChatFlag && isActuallyTask) {
-	        context.log("[DARWIN] WARNING: CHAT flag is true but goal is a task. Clearing flag.");
-	        context.getOrchestrationState().getMetadata().remove("isChatRequest");
-	        isChatFlag = false;
-	    }
-	    // Also check the profile capability
-	    boolean isChatCapability = context.getExecutionProfile() != null &&
-	                               context.getExecutionProfile().getCapability() == CapabilityType.CHAT;
-	    
-	    // Only generate chat variants if BOTH conditions are true
-	    if (isChatFlag && isChatCapability) {
-	        context.log("[DARWIN] CHAT: Generating conversational branches via LLM.");
-	        int chatLimit = expansionValue <= 5 ? 1 : 2;
-	        return generateChatVariants(goal, context, chatLimit);
-	    }
-	    
-	    // If the flag is true but capability is not CHAT, clear the flag
-	    if (isChatFlag && !isChatCapability) {
-	        context.log("[DARWIN] WARNING: isChatRequest flag true but capability is not CHAT. Clearing flag.");
-	        context.getOrchestrationState().getMetadata().remove("isChatRequest");
-	        // Continue with normal task generation
-	    }
+		// ============================================================
+		// CHECK: Is this ACTUALLY a chat request?
+		// ============================================================
+		boolean isChatFlag = context.getOrchestrationState().getMetadata().containsKey("isChatRequest")
+				&& (boolean) context.getOrchestrationState().getMetadata().get("isChatRequest");
+		boolean isActuallyTask = !modeRecognizer.isChatMode(context);
+		// If the flag says CHAT but the goal is a task, clear the flag
+		if (isChatFlag && isActuallyTask) {
+			context.log("[DARWIN] WARNING: CHAT flag is true but goal is a task. Clearing flag.");
+			context.getOrchestrationState().getMetadata().remove("isChatRequest");
+			isChatFlag = false;
+		}
+		// Also check the profile capability
+		boolean isChatCapability = context.getExecutionProfile() != null
+				&& context.getExecutionProfile().getCapability() == CapabilityType.CHAT;
+
+		// Only generate chat variants if BOTH conditions are true
+		if (isChatFlag && isChatCapability) {
+			context.log("[DARWIN] CHAT: Generating conversational branches via LLM.");
+			int chatLimit = expansionValue <= 5 ? 1 : 2;
+			return generateChatVariants(goal, context, chatLimit);
+		}
+
+		// If the flag is true but capability is not CHAT, clear the flag
+		if (isChatFlag && !isChatCapability) {
+			context.log("[DARWIN] WARNING: isChatRequest flag true but capability is not CHAT. Clearing flag.");
+			context.getOrchestrationState().getMetadata().remove("isChatRequest");
+			// Continue with normal task generation
+		}
 
 		// ADAPTIVE KERNEL: Uniform Intensity Calculation
 		eu.kalafatic.evolution.controller.kernel.EvolutionProfile profile = context.getExecutionProfile();
@@ -2223,8 +2203,7 @@ private String generateChatResponse(String request, TaskContext context) {
 			state.append("\n--- REPOSITORY STRUCTURE (REAL EVIDENCE) ---\n").append(projectStructure).append("\n");
 		}
 
-		eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot snapshotMed = 
-			    getTargetSnapshotSafe(context);
+		eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot snapshotMed = getTargetSnapshotSafe(context);
 		if (snapshotMed != null) {
 			state.append("\n--- SEMANTIC REPOSITORY SNAPSHOT (REAL EVIDENCE) ---\n");
 			state.append("Architecture Inference: ").append(snapshotMed.getMetadata().get("architectureInference"))
@@ -2561,116 +2540,107 @@ private String generateChatResponse(String request, TaskContext context) {
 
 		return variants;
 	}
-	
+
 	protected TargetSnapshot getTargetSnapshotSafe(TaskContext context) {
-	    Object obj = context.getOrchestrationState().getMetadata().get("mediatedSnapshot");
-	    
-	    if (obj == null) {
-	        return null;
-	    }
-	    
-	    if (obj instanceof TargetSnapshot) {
-	        return (TargetSnapshot) obj;
-	    }
-	    
-	    // If it's a Map (from checkpoint deserialization), convert it
-	    if (obj instanceof Map) {
-	        try {
-	            com.fasterxml.jackson.databind.ObjectMapper mapper = 
-	                new com.fasterxml.jackson.databind.ObjectMapper()
-	                    .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-	           TargetSnapshot snapshot = 
-	                mapper.convertValue(obj, TargetSnapshot.class);
-	            // Store the converted object back
-	            context.getOrchestrationState().getMetadata().put("mediatedSnapshot", snapshot);
-	            return snapshot;
-	        } catch (Exception e) {
-	            context.log("[DARWIN] Failed to convert mediatedSnapshot from Map: " + e.getMessage());
-	            return null;
-	        }
-	    }
-	    
-	    return null;
+		Object obj = context.getOrchestrationState().getMetadata().get("mediatedSnapshot");
+
+		if (obj == null) {
+			return null;
+		}
+
+		if (obj instanceof TargetSnapshot) {
+			return (TargetSnapshot) obj;
+		}
+
+		// If it's a Map (from checkpoint deserialization), convert it
+		if (obj instanceof Map) {
+			try {
+				com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper()
+						.configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,
+								false);
+				TargetSnapshot snapshot = mapper.convertValue(obj, TargetSnapshot.class);
+				// Store the converted object back
+				context.getOrchestrationState().getMetadata().put("mediatedSnapshot", snapshot);
+				return snapshot;
+			} catch (Exception e) {
+				context.log("[DARWIN] Failed to convert mediatedSnapshot from Map: " + e.getMessage());
+				return null;
+			}
+		}
+
+		return null;
 	}
 
 	/**
-	 * Generates conversational response variants via LLM.
-	 * Called when CHAT capability is detected.
+	 * Generates conversational response variants via LLM. Called when CHAT
+	 * capability is detected.
 	 */
 	private List<BranchVariant> generateChatVariants(GoalModel goal, TaskContext context, int limit) throws Exception {
-	    List<BranchVariant> variants = new ArrayList<>();
-	    
-	    String prompt = goal.getPrimaryAction();
-	    
-	    // System instruction for chat responses
-	    String systemInstruction = 
-	        "You are a friendly, helpful AI assistant specializing in software development. " +
-	        "RESPOND CONVERSATIONALLY. DO NOT generate code. DO NOT create files. " +
-	        "DO NOT mention Java classes or methods. Just respond naturally as a helpful assistant. " +
-	        "Keep responses brief (1-2 sentences) and friendly.";
-	    
-	    for (int i = 0; i < limit; i++) {
-	        String strategy = i == 0 ? "Friendly Chat Response" : "Alternative Chat Response " + (i + 1);
-	        String instruction = i == 0 ? "Respond naturally. Be friendly and helpful." :
-	                                     "Provide a different but equally friendly response. Be helpful and encouraging.";
+		List<BranchVariant> variants = new ArrayList<>();
 
-	        String chatPrompt = String.format(
-	            "%s\n\nUser said: \"%s\"\n\n%s",
-	            systemInstruction, prompt, instruction
-	        );
+		String prompt = goal.getPrimaryAction();
 
-	        String response = aiService.sendRequest(
-	            context.getOrchestrator(),
-	            chatPrompt,
-	            context
-	        );
+		// System instruction for chat responses
+		String systemInstruction = "You are a friendly, helpful AI assistant specializing in software development. "
+				+ "RESPOND CONVERSATIONALLY. DO NOT generate code. DO NOT create files. "
+				+ "DO NOT mention Java classes or methods. Just respond naturally as a helpful assistant. "
+				+ "Keep responses brief (1-2 sentences) and friendly.";
 
-	        BranchVariant variant = createChatVariant(response, context);
-	        variant.setId("chat-variant-" + (i + 1) + "-" + System.currentTimeMillis());
-	        variant.setStrategy(strategy);
-	        variant.setScore(0.95 - (i * 0.05));
-	        variants.add(variant);
-	    }
-	    
-	    context.log("[DARWIN] CHAT: Generated " + variants.size() + " conversational variants.");
-	    return variants;
+		for (int i = 0; i < limit; i++) {
+			String strategy = i == 0 ? "Friendly Chat Response" : "Alternative Chat Response " + (i + 1);
+			String instruction = i == 0 ? "Respond naturally. Be friendly and helpful."
+					: "Provide a different but equally friendly response. Be helpful and encouraging.";
+
+			String chatPrompt = String.format("%s\n\nUser said: \"%s\"\n\n%s", systemInstruction, prompt, instruction);
+
+			String response = aiService.sendRequest(context.getOrchestrator(), chatPrompt, context);
+
+			BranchVariant variant = createChatVariant(response, context);
+			variant.setId("chat-variant-" + (i + 1) + "-" + System.currentTimeMillis());
+			variant.setStrategy(strategy);
+			variant.setScore(0.95 - (i * 0.05));
+			variants.add(variant);
+		}
+
+		context.log("[DARWIN] CHAT: Generated " + variants.size() + " conversational variants.");
+		return variants;
 	}
 
 	/**
 	 * Creates a chat variant from a response string.
 	 */
 	private BranchVariant createChatVariant(String response, TaskContext context) {
-	    BranchVariant v = new BranchVariant();
-	    v.setId("chat-variant-" + System.currentTimeMillis());
-	    v.setBranchId(v.getId());
-	    v.setLineageId(context.getSessionId());
-	    v.setStrategy("Chat Response");
-	    v.setStrategyType("CHAT_RESPONSE");
-	    v.setActivationState(BranchVariant.ActivationState.ARCHIVED);
-	    v.setScore(0.95);
-	    v.setSuccess(true);
-	    v.setSurvivalArgument("LLM-generated conversational response");
-	    v.setTradeoffs("Minimal evolution, no code generation");
-	    v.setMutationTrace(response);
-	    v.setReasoningLevel(BranchVariant.ReasoningLevel.MINIMAL);
-	    v.setArchitectureEnabled(false);
-	    v.setImplementationEnabled(false);
-	    v.setSemanticAnchor("Conversational response to user input");
-	    
-	    // ============================================================
-	    // FIX: Set branch name for chat variants
-	    // ============================================================
-	    v.setBranchName("chat/" + v.getId() + "-" + System.currentTimeMillis());
-	    
-	    BranchVariant.Action action = new BranchVariant.Action();
-	    action.setDomain("chat");
-	    action.setOperation("TALK");
-	    action.setTarget("conversation");
-	    action.setImplementation(response);
-	    action.setDescription("Chat response");
-	    v.getActions().add(action);
-	    
-	    return v;
+		BranchVariant v = new BranchVariant();
+		v.setId("chat-variant-" + System.currentTimeMillis());
+		v.setBranchId(v.getId());
+		v.setLineageId(context.getSessionId());
+		v.setStrategy("Chat Response");
+		v.setStrategyType("CHAT_RESPONSE");
+		v.setActivationState(BranchVariant.ActivationState.ARCHIVED);
+		v.setScore(0.95);
+		v.setSuccess(true);
+		v.setSurvivalArgument("LLM-generated conversational response");
+		v.setTradeoffs("Minimal evolution, no code generation");
+		v.setMutationTrace(response);
+		v.setReasoningLevel(BranchVariant.ReasoningLevel.MINIMAL);
+		v.setArchitectureEnabled(false);
+		v.setImplementationEnabled(false);
+		v.setSemanticAnchor("Conversational response to user input");
+
+		// ============================================================
+		// FIX: Set branch name for chat variants
+		// ============================================================
+		v.setBranchName("chat/" + v.getId() + "-" + System.currentTimeMillis());
+
+		BranchVariant.Action action = new BranchVariant.Action();
+		action.setDomain("chat");
+		action.setOperation("TALK");
+		action.setTarget("conversation");
+		action.setImplementation(response);
+		action.setDescription("Chat response");
+		v.getActions().add(action);
+
+		return v;
 	}
 
 	private SemanticGenome createGenome(GoalModel goal, IntentExpansionResult expansion) {
@@ -2961,6 +2931,91 @@ private String generateChatResponse(String request, TaskContext context) {
 		return sanitized.substring(0, Math.min(sanitized.length(), 30));
 	}
 
+	protected int getMaxBranchingLimit(TaskContext context, int expansionValue) {
+		int branchingLimit = 2; // Default
+
+		switch (platformType) {
+		case SIMPLE_CHAT:
+			branchingLimit = expansionValue <= 5 ? 1 : 2;
+			break;
+		case ASSISTED_CODING:
+			branchingLimit = expansionValue <= 5 ? 2 : 3;
+			break;
+		case HYBRID_MANUAL_EXPORT:
+			branchingLimit = expansionValue <= 5 ? 2 : 4;
+			break;
+		case SELF_DEV_MODE:
+			branchingLimit = expansionValue <= 5 ? 3 : 4;
+			break;
+
+		default:
+			throw new IllegalArgumentException("Unexpected value: " + platformType);
+		}
+		// MANDATE: Never more than 4. Darwin decides, not LLM.
+		return Math.min(branchingLimit, 4);
+	}
+
+	protected int getMaxIterationLimit(TaskContext context) {
+		int minIterations = 1;
+		int maxIterations = 10; // Default
+
+		boolean isSelfDev = ModeRecognizer.isSelfDevMode(context);
+
+		PromptInstructions instructions = (context.getOrchestrator() != null
+				&& context.getOrchestrator().getAiChat() != null)
+						? context.getOrchestrator().getAiChat().getPromptInstructions()
+						: null;
+		if (instructions != null) {
+			minIterations = instructions.getPreferredMaxIterations();
+		}
+
+		// expansion-based iteration limit
+		int expansionValue = DEFAULT_EXPANSION_LEVEL;
+		if (context.getOrchestrator() != null && context.getOrchestrator().getAiChat() != null) {
+			String sessionId = context.getSessionId();
+			eu.kalafatic.evolution.model.orchestration.ChatSession chatSession = context.getOrchestrator().getAiChat()
+					.getSessions().stream().filter(s -> s.getId().equals(sessionId)).findFirst().orElse(null);
+			if (chatSession != null) {
+				expansionValue = chatSession.getExpansion();
+			}
+		}
+
+		// 2. ADAPTIVE KERNEL: Intensity Scaling
+		int intensity_val = context.getExecutionProfile() != null ? context.getExecutionProfile().getIntensity() : 2;
+
+		// Enforce multiple iterations for non-CHAT tasks as requested
+		if (minIterations < 2 && intensity_val >= 1 && (context.getExecutionProfile() == null
+				|| context.getExecutionProfile().getCapability() != CapabilityType.CHAT)) {
+			minIterations = 2;
+		}
+
+		// Cap iterations for CHAT capability to avoid over-evolution of simple
+		// interactions
+		if (context.getExecutionProfile() != null
+				&& context.getExecutionProfile().getCapability() == CapabilityType.CHAT) {
+			if (minIterations > 1)
+				minIterations = 1;
+		}
+
+		if (minIterations < 1)
+			minIterations = 1;
+
+		int maxIterationsLimit = 20; // Default Medium
+		if (intensity_val == 1)
+			maxIterationsLimit = 10; // Simple tasks still need to complete phases
+		else if (intensity_val == 2)
+			maxIterationsLimit = 15;
+		else if (expansionValue <= 3)
+			maxIterationsLimit = 25;
+		else if (expansionValue >= 8)
+			maxIterationsLimit = 100;
+
+		// Ensure max is never less than min
+		maxIterationsLimit = Math.max(maxIterationsLimit, minIterations);
+
+		return maxIterations;
+	}
+
 	@Override
 	protected String getAgentInstructions() {
 		return "Role: Darwin Engine. Strategy: Lineage-driven evolutionary mutation.\n" + "EVOLUTIONARY MANDATE:\n"
@@ -3026,12 +3081,12 @@ private String generateChatResponse(String request, TaskContext context) {
 	public CapabilityHealth getHealth() {
 		return new CapabilityHealth(1.0, "Healthy", 0);
 	}
-	
+
 	@Override
 	public void setEvaluator(Evaluator evaluator) {
-		// TODO Auto-generated method stub		
-	}	
-	
+		// TODO Auto-generated method stub
+	}
+
 	public EvaluationResult runIteration(GoalModel goal, IterationManager manager) throws Exception {
 		// TODO Auto-generated method stub
 		return null;
@@ -3076,7 +3131,7 @@ private String generateChatResponse(String request, TaskContext context) {
 	@Override
 	public void setActiveTrajectory(Trajectory trajectory) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
@@ -3097,7 +3152,7 @@ private String generateChatResponse(String request, TaskContext context) {
 		// TODO Auto-generated method stub
 		return null;
 	}
-	
+
 	@Override
 	public PlatformType getPlatformType() {
 		return platformType;

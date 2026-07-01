@@ -57,7 +57,6 @@ import eu.kalafatic.utils.factories.GUIFactory;
 public class DevelopmentPage extends AEvoPage {
 
     public static class SelfDevRow {
-        public static final String SELF_DEV_LOOP = "Self-Dev Loop";
         public static final String GIT_CHECK = "Git Check";
         public static final String MAVEN_CHECK = "Maven Check";
         public static final String LLM_CHECK = "LLM Check";
@@ -66,6 +65,8 @@ public class DevelopmentPage extends AEvoPage {
         public static final String COPY_SOURCE = "Copy Source";
         public static final String BUILD_PROJECT = "Build Project";
         public static final String EXPORT_PRODUCT = "Export Product";
+        public static final String SUPERVISOR_LOOP = "Supervisor Engine";
+        public static final String SELF_DEV_LOOP = "Self-Dev Loop";
 
         public int order;
         public boolean selected;
@@ -153,7 +154,7 @@ public class DevelopmentPage extends AEvoPage {
         sdTable.setHeaderVisible(true);
         sdTable.setLinesVisible(true);
         GridData gdSdTable = new GridData(GridData.FILL_BOTH);
-        gdSdTable.heightHint = 150;
+        gdSdTable.heightHint = 180;
         gdSdTable.grabExcessVerticalSpace = true;
         sdTable.setLayoutData(gdSdTable);
 
@@ -166,17 +167,7 @@ public class DevelopmentPage extends AEvoPage {
             }
         });
 
-        List<SelfDevRow> sdData = new ArrayList<>();
-        sdData.add(new SelfDevRow(1, SelfDevRow.GIT_CHECK, "supervisor.git", "ready"));
-        sdData.add(new SelfDevRow(2, SelfDevRow.MAVEN_CHECK, "supervisor.maven", "ready"));
-        sdData.add(new SelfDevRow(3, SelfDevRow.LLM_CHECK, "supervisor.llm", "ready"));
-        sdData.add(new SelfDevRow(4, SelfDevRow.GENOME_CHECK, "supervisor.genome", "ready"));
-        sdData.add(new SelfDevRow(5, SelfDevRow.PERM_CHECK, "supervisor.fs", "ready"));
-        sdData.add(new SelfDevRow(6, SelfDevRow.COPY_SOURCE, "sandbox.copy", "ready"));
-        sdData.add(new SelfDevRow(7, SelfDevRow.BUILD_PROJECT, "sandbox.build", "ready"));
-        sdData.add(new SelfDevRow(8, SelfDevRow.EXPORT_PRODUCT, "sandbox.export", "ready"));
-        sdData.add(new SelfDevRow(9, SelfDevRow.SELF_DEV_LOOP, "orchestrator", "ready"));
-        selfDevTable.setInput(sdData);
+        loadTableData();
 
         Composite sdControlPanel = toolkit.createComposite(selfDevComp);
         sdControlPanel.setLayout(new GridLayout(3, false));
@@ -214,6 +205,24 @@ public class DevelopmentPage extends AEvoPage {
 
         this.setContent(container);
         Display.getCurrent().asyncExec(() -> { if (!isDisposed()) { refreshBrowser(); container.layout(true, true); } });
+    }
+
+    private void loadTableData() {
+        List<SelfDevRow> sdData = new ArrayList<>();
+        String gitUrl = (orchestrator != null && orchestrator.getGit() != null) ? orchestrator.getGit().getRepositoryUrl() : "supervisor.git";
+        String mvnPath = (orchestrator != null && orchestrator.getMaven() != null) ? orchestrator.getMaven().toString() : "supervisor.maven";
+        
+        sdData.add(new SelfDevRow(1, SelfDevRow.GIT_CHECK, gitUrl, "ready"));
+        sdData.add(new SelfDevRow(2, SelfDevRow.MAVEN_CHECK, mvnPath, "ready"));
+        sdData.add(new SelfDevRow(3, SelfDevRow.LLM_CHECK, "supervisor.llm", "ready"));
+        sdData.add(new SelfDevRow(4, SelfDevRow.GENOME_CHECK, "supervisor.genome", "ready"));
+        sdData.add(new SelfDevRow(5, SelfDevRow.PERM_CHECK, "supervisor.fs", "ready"));
+        sdData.add(new SelfDevRow(6, SelfDevRow.COPY_SOURCE, "sandbox.copy", "ready"));
+        sdData.add(new SelfDevRow(7, SelfDevRow.BUILD_PROJECT, "sandbox.build", "ready"));
+        sdData.add(new SelfDevRow(8, SelfDevRow.EXPORT_PRODUCT, "sandbox.export", "ready"));
+        sdData.add(new SelfDevRow(9, SelfDevRow.SUPERVISOR_LOOP, "supervisor.exe", "ready"));
+        sdData.add(new SelfDevRow(10, SelfDevRow.SELF_DEV_LOOP, "orchestrator", "ready"));
+        selfDevTable.setInput(sdData);
     }
 
     private void createSelfDevContextMenu() {
@@ -277,7 +286,7 @@ public class DevelopmentPage extends AEvoPage {
             SelfDevRow row = (SelfDevRow) element;
             String status = row.status.toLowerCase();
             if (status.contains("error") || status.contains("fail")) return FUIConstants.LIGHT_RED;
-            if (status.contains("checked") || status.equals("success")) return FUIConstants.LIGHT_GREEN;
+            if (status.contains("checked") || status.equals("success") || status.equals("running")) return FUIConstants.LIGHT_GREEN;
             if (status.equals("ready")) return FUIConstants.GRADIENT;
             return null;
         }
@@ -301,6 +310,10 @@ public class DevelopmentPage extends AEvoPage {
                 req.getContext().put("sessionId", getCurrentSessionName());
                 OrchestratorServiceImpl.getInstance().submit(getCurrentSessionName(), req);
             }
+        } else if (SelfDevRow.SUPERVISOR_LOOP.equals(row.name)) {
+            if (bootstrapController.isRunning()) { bootstrapController.stopBootstrap(); row.status = "STOPPED"; }
+            else { try { bootstrapController.startBootstrap(); row.status = "RUNNING"; } catch (Exception e) { row.status = "ERROR"; } }
+            selfDevTable.refresh(row);
         } else if (SelfDevRow.COPY_SOURCE.equals(row.name)) executeBackgroundTask(row, "COPY");
         else if (SelfDevRow.BUILD_PROJECT.equals(row.name)) executeBackgroundTask(row, "BUILD");
         else {
@@ -362,6 +375,8 @@ public class DevelopmentPage extends AEvoPage {
         if (archViz != null) archViz.scheduleRefresh();
         if (workflowGroup != null) workflowGroup.scheduleRefresh();
         refreshBrowser();
+        // Sync table data with model changes if needed
+        Display.getDefault().asyncExec(() -> { if (!selfDevTable.getTable().isDisposed()) { selfDevTable.refresh(); } });
     }
 
     private void refreshBrowser() {

@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import eu.kalafatic.evolution.controller.orchestration.intent.IntentDimension;
+import eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionResult;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationRecord;
 import eu.kalafatic.evolution.controller.orchestration.util.FileFilterUtil;
 import eu.kalafatic.evolution.controller.supervision.DecisionSnapshot;
@@ -233,10 +235,10 @@ public class FinalResponseAssembler {
 
         // From intent expansion (Ambiguities/Dimensions)
         Object expansion = state.getMetadata().get("intentExpansion");
-        if (expansion instanceof eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionResult) {
-            eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionResult exp = (eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionResult) expansion;
+        if (expansion instanceof IntentExpansionResult) {
+            IntentExpansionResult exp = (IntentExpansionResult) expansion;
             if (exp.getDimensions() != null) {
-                for (eu.kalafatic.evolution.controller.orchestration.intent.IntentDimension dim : exp.getDimensions()) {
+                for (IntentDimension dim : exp.getDimensions()) {
                     if (dim.getAmbiguityScore() > 0.5) {
                         proposals.add("Ambiguity detected in " + dim.getName() + ": " + dim.getRationale());
                     }

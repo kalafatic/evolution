@@ -7,9 +7,8 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.file.Files;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -28,7 +27,7 @@ public class SelfDevBootstrapController {
     private final File projectRoot;
     private final File runDir;
     private final Orchestrator orchestrator;
-    private volatile Process supervisorProcess;
+    private static volatile Process supervisorProcess;
 
     public SelfDevBootstrapController(File projectRoot, Orchestrator orchestrator) {
         this.projectRoot = projectRoot;
@@ -39,8 +38,52 @@ public class SelfDevBootstrapController {
         }
     }
 
+    private void ensureSupervisorRunning() {
+        if (isSupervisorAlive()) return;
+        try {
+            ProcessBuilder pb = new ProcessBuilder("java", "-jar", getSupervisorJarPath(), projectRoot.getAbsolutePath());
+            pb.directory(projectRoot);
+            pb.redirectErrorStream(true);
+            supervisorProcess = pb.start();
+            
+            new Thread(() -> {
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(supervisorProcess.getInputStream()))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) System.out.println("[Supervisor] " + line);
+                } catch (IOException e) {}
+            }).start();
+
+            waitUntilReady();
+        } catch (IOException e) {
+            System.err.println("Failed to start Supervisor: " + e.getMessage());
+        }
+    }
+
+    private boolean isSupervisorAlive() {
+        try {
+            URL url = new URL("http://localhost:8089/ping");
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setConnectTimeout(500);
+            return conn.getResponseCode() == 200;
+        } catch (Exception e) { return false; }
+    }
+
+    private void waitUntilReady() {
+        for (int i = 0; i < 10; i++) {
+            if (isSupervisorAlive()) return;
+            try { Thread.sleep(1000); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+        }
+    }
+
+    private String getSupervisorJarPath() {
+        File supervisorDir = new File(projectRoot, "eu.kalafatic.evolution.supervisor/target");
+        File[] jars = supervisorDir.listFiles((dir, name) -> name.endsWith("-shaded.jar"));
+        if (jars != null && jars.length > 0) return jars[0].getAbsolutePath();
+        return new File(supervisorDir, "eu.kalafatic.evolution.supervisor-1.0.0-SNAPSHOT.jar").getAbsolutePath();
+    }
+
     public void startBootstrap() throws IOException {
-        if (supervisorProcess != null && supervisorProcess.isAlive()) return;
+        ensureSupervisorRunning();
         File stateFile = new File(runDir, "state.json");
         File contextFile = new File(runDir, "context.json");
         JSONObject state = new JSONObject();
@@ -66,7 +109,6 @@ public class SelfDevBootstrapController {
         bootstrap.put("action", "BUILD_AND_START");
         bootstrap.put("statePath", stateFile.getAbsolutePath());
         Files.write(new File(runDir, "bootstrap.json").toPath(), bootstrap.toString(4).getBytes());
-        triggerSupervisor();
     }
 
     public void stopBootstrap() {
@@ -76,28 +118,7 @@ public class SelfDevBootstrapController {
         }
     }
 
-    private String getSupervisorJarPath() {
-        File supervisorDir = new File(projectRoot, "eu.kalafatic.evolution.supervisor/target");
-        File[] jars = supervisorDir.listFiles((dir, name) -> name.endsWith("-shaded.jar"));
-        if (jars != null && jars.length > 0) return jars[0].getAbsolutePath();
-        return new File(supervisorDir, "eu.kalafatic.evolution.supervisor-1.0.0-SNAPSHOT.jar").getAbsolutePath();
-    }
-
-    private void triggerSupervisor() {
-        new Thread(() -> {
-            try {
-                ProcessBuilder pb = new ProcessBuilder("java", "-jar", getSupervisorJarPath(), projectRoot.getAbsolutePath());
-                pb.directory(projectRoot);
-                pb.inheritIO();
-                supervisorProcess = pb.start();
-            } catch (IOException e) {
-                System.err.println("Failed to trigger Supervisor: " + e.getMessage());
-            }
-        }).start();
-    }
-
     public JSONObject getStatus() {
-        if (supervisorProcess != null && !supervisorProcess.isAlive()) return new JSONObject().put("phase", "STOPPED");
         File statusFile = new File(runDir, "status.json");
         if (statusFile.exists()) {
             try {
@@ -105,41 +126,38 @@ public class SelfDevBootstrapController {
                 if (!content.trim().isEmpty()) return new JSONObject(content);
             } catch (Exception e) {}
         }
-        return null;
+        return isSupervisorAlive() ? new JSONObject().put("phase", "RUNNING") : new JSONObject().put("phase", "STOPPED");
     }
 
-    public boolean isRunning() { return supervisorProcess != null && supervisorProcess.isAlive(); }
+    public boolean isRunning() { return isSupervisorAlive(); }
 
     public String check(String type) {
+        ensureSupervisorRunning();
         return switch (type.toUpperCase()) {
             case "GIT" -> checkGit();
             case "MAVEN" -> checkMaven();
             case "LLM" -> checkLlm();
             case "GENOME" -> checkGenome();
             case "PERMISSIONS" -> checkPermissions();
-            case "COPY" -> launchTool("--copy", projectRoot.getAbsolutePath(), new File(runDir, "workspace").getAbsolutePath());
-            case "BUILD" -> launchTool("--build", new File(runDir, "workspace").getAbsolutePath());
+            case "COPY" -> callSupervisor("/copy?src=" + encode(projectRoot.getAbsolutePath()) + "&dest=" + encode(new File(runDir, "workspace").getAbsolutePath()));
+            case "BUILD" -> callSupervisor("/build?path=" + encode(new File(runDir, "workspace").getAbsolutePath()));
             case "EXPORT" -> checkExport();
             default -> "UNKNOWN";
         };
     }
 
-    private String launchTool(String... args) {
+    private String encode(String s) { return URLEncoder.encode(s, StandardCharsets.UTF_8); }
+
+    private String callSupervisor(String endpoint) {
         try {
-            java.util.List<String> command = new java.util.ArrayList<>();
-            command.add("java");
-            command.add("-jar");
-            command.add(getSupervisorJarPath());
-            for (String arg : args) command.add(arg);
-            ProcessBuilder pb = new ProcessBuilder(command);
-            pb.directory(projectRoot);
-            Process p = pb.start();
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
+            URL url = new URL("http://localhost:8089" + endpoint);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
                 String line;
-                String lastLine = "ERROR: No output";
-                while ((line = reader.readLine()) != null) lastLine = line;
-                p.waitFor();
-                return lastLine;
+                StringBuilder res = new StringBuilder();
+                while ((line = reader.readLine()) != null) res.append(line);
+                return res.toString();
             }
         } catch (Exception e) { return "ERROR: " + e.getMessage(); }
     }
