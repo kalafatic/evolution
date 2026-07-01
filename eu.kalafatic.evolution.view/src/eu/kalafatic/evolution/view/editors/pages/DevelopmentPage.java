@@ -326,7 +326,7 @@ public class DevelopmentPage extends AEvoPage {
     }
 
     private void openRowEditDialog(SelfDevRow row) {
-        if (new RowEditDialog(getShell(), row).open() == org.eclipse.jface.window.Window.OK) { selfDevTable.refresh(row); setDirty(true); }
+        if (new RowEditDialog(getShell(), row).open() == org.eclipse.jface.window.Window.OK) { selfDevTable.refresh(row); editor.setDirty(true); }
     }
 
     private void openSelfDevEditDialog() {
