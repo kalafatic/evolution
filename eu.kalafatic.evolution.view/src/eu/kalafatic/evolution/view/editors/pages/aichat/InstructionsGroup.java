@@ -1,6 +1,7 @@
 package eu.kalafatic.evolution.view.editors.pages.aichat;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -87,7 +88,12 @@ public class InstructionsGroup extends AEvoGroup {
                     if ((e.stateMask & SWT.MODIFIER_MASK) == 0 || (e.stateMask & SWT.CTRL) != 0) {
                         e.doit = false;
                         updateModel();
-                        page.handleSend();
+                        try {
+							page.handleSend();
+						} catch (IOException e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
+						}
                     }
                 }
                 // Ctrl+L: Clean Chat
@@ -120,7 +126,12 @@ public class InstructionsGroup extends AEvoGroup {
                     if ((e.stateMask & SWT.MODIFIER_MASK) == 0 || (e.stateMask & SWT.CTRL) != 0) {
                         e.doit = false;
                         updateModel();
-                        page.handleSend();
+                        try {
+							page.handleSend();
+						} catch (IOException e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
+						}
                     }
                 }
                 if (e.keyCode == 'l' && (e.stateMask & SWT.CTRL) != 0) {
@@ -336,7 +347,12 @@ public class InstructionsGroup extends AEvoGroup {
 
         sendButton.addSelectionListener(new SelectionAdapter() {
             public void widgetSelected(SelectionEvent e) {
-                page.handleSend();
+                try {
+					page.handleSend();
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
             }
         });
     }

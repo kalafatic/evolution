@@ -385,4 +385,8 @@ public class ChatMgmtGroup extends AEvoGroup {
         }
         selectSafe(sessionCombo, current);
     }
+
+	public Combo getAiModeCombo() {
+		return aiModeCombo;
+	}
 }

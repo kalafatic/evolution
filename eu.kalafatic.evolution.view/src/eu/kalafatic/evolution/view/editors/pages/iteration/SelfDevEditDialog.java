@@ -78,7 +78,7 @@ public class SelfDevEditDialog extends DynamicMapDialog {
             orch.getGit().setBranchName(getString(BRANCH));
         }
 
-        page.setDirty(true);
+        page.getEditor().setDirty(true);
         super.okPressed();
     }
 }

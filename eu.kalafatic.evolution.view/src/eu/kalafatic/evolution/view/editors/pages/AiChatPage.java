@@ -2,6 +2,9 @@ package eu.kalafatic.evolution.view.editors.pages;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IResource;
@@ -49,7 +52,9 @@ import eu.kalafatic.evolution.controller.orchestration.TaskRequest;
 import eu.kalafatic.evolution.controller.orchestration.TaskResult;
 import eu.kalafatic.evolution.controller.orchestration.llm.LlmRouter;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.SelfDevSupervisor;
+import eu.kalafatic.evolution.controller.orchestration.util.ModeRecognizer;
 import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
+import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.controller.providers.AiProviders;
 import eu.kalafatic.evolution.controller.providers.ProviderConfig;
@@ -419,7 +424,7 @@ public class AiChatPage extends AEvoPage {
 	}
 
 
-	public void handleSend() {
+	public void handleSend() throws IOException {
 		instructionsGroup.resetBackground();
 		String request = instructionsGroup.getRequest();
 		String currentSessionId = getCurrentSessionName();
@@ -476,7 +481,15 @@ public class AiChatPage extends AEvoPage {
 
 		if (projection.isRunning()) return; // Prevent duplicate sessions for same ID
 
-		if (request.isEmpty()) return;
+		if (request.isEmpty()) {
+			if (AiMode.MEDIATED.getName().equals(chatMgmtGroup.getAiModeCombo().getItem(chatMgmtGroup.getAiModeCombo().getSelectionIndex()))) {
+				//processLogEntry("Evo: Please provide a request or instruction to proceed.");
+				request = Files.readString(java.nio.file.Path.of("md", "mediated.md"), StandardCharsets.UTF_8);
+			} else {
+				//processLogEntry("Evo: Request is empty. Please enter a valid instruction or question.");
+				return;				
+			}
+		}
 
 		if (currentSession == null) initializeSessions();
 
@@ -1021,7 +1034,7 @@ public class AiChatPage extends AEvoPage {
 		}
 	}
 
-	public void handleSimpleSolution() {
+	public void handleSimpleSolution() throws IOException {
 		String sid = getCurrentSessionName();
 		RuntimeProjection projection = ProjectionService.getInstance().getProjection(sid);
 		if (projection.isRunning() && projection.isWaitingForUser()) {
@@ -1031,7 +1044,7 @@ public class AiChatPage extends AEvoPage {
 		}
 	}
 
-	public void handleForceSolution() {
+	public void handleForceSolution() throws IOException {
 		String sid = getCurrentSessionName();
 		RuntimeProjection projection = ProjectionService.getInstance().getProjection(sid);
 		if (projection.isRunning() && projection.isWaitingForUser()) {
@@ -1049,7 +1062,7 @@ public class AiChatPage extends AEvoPage {
 		instructionsGroup.setCaretToEnd();
 	}
 
-	public void handleExecuteProposal(String request) {
+	public void handleExecuteProposal(String request) throws IOException {
 		instructionsGroup.setRequest(request);
 		handleSend();
 	}
@@ -1078,7 +1091,7 @@ public class AiChatPage extends AEvoPage {
 		return task.getId() != null ? task.getId() : "Default";
 	}
 
-	public void runTask(eu.kalafatic.evolution.model.orchestration.Task task) {
+	public void runTask(Task task) throws IOException {
 		if (task == null) return;
 
 		// 1. Switch to thread or create one
