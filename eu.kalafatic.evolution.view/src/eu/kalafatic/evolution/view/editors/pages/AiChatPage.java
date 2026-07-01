@@ -1330,6 +1330,9 @@ public class AiChatPage extends AEvoPage {
 	}
 
 	public void setupContextAssist(StyledText text) {
+		// Ensure NeuronService is initialized early
+		NeuronService.getInstance();
+
 		if (orchestrator != null && orchestrator.getNeuronAI() == null) {
 			orchestrator.setNeuronAI(eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createNeuronAI());
 		}

@@ -25,6 +25,7 @@ public class PropertiesPage extends AEvoPage {
 	private LlmSettingsGroup llmSettingsGroup;
 	private OllamaSettingsGroup ollamaSettingsGroup;
 	private AgentsGroup agentsGroup;
+	private ContextAssistGroup contextAssistGroup;
 	private AdditionalAiToolsGroup additionalAiToolsGroup;
 	private McpOpenAiGroup mcpOpenAiGroup;
 	private AiChatModelsGroup aiChatModelsGroup;
@@ -98,6 +99,7 @@ public class PropertiesPage extends AEvoPage {
 		llmSettingsGroup = new LlmSettingsGroup(toolkit, comp, editor, orchestrator);
 		ollamaSettingsGroup = new OllamaSettingsGroup(toolkit, comp, editor, orchestrator, this);
 		agentsGroup = new AgentsGroup(toolkit, comp, editor, orchestrator);
+		contextAssistGroup = new ContextAssistGroup(toolkit, comp, editor, orchestrator);
 		additionalAiToolsGroup = new AdditionalAiToolsGroup(toolkit, comp, editor, orchestrator);
 		mcpOpenAiGroup = new McpOpenAiGroup(toolkit, comp, editor, orchestrator, this);
 		aiChatModelsGroup = new AiChatModelsGroup(toolkit, comp, editor, orchestrator, this);
@@ -112,6 +114,7 @@ public class PropertiesPage extends AEvoPage {
 		orchestratorGroup.addModifyListener(ml);
 		llmSettingsGroup.addModifyListener(ml);
 		ollamaSettingsGroup.addModifyListener(ml);
+		contextAssistGroup.addModifyListener(ml);
 		additionalAiToolsGroup.addModifyListener(ml);
 		mcpOpenAiGroup.addModifyListener(ml);
 		aiChatModelsGroup.addModifyListener(ml);
@@ -139,7 +142,7 @@ public class PropertiesPage extends AEvoPage {
 	public void refreshUI() {
 		if (orchestrator == null || isUpdating) return;
 		isUpdating = true;
-		orchestratorGroup.updateUI(); llmSettingsGroup.updateUI(); ollamaSettingsGroup.updateUI(); agentsGroup.updateUI(); additionalAiToolsGroup.updateUI(); mcpOpenAiGroup.updateUI(); aiChatModelsGroup.updateUI(); modelsGroup.updateUI();
+		orchestratorGroup.updateUI(); llmSettingsGroup.updateUI(); ollamaSettingsGroup.updateUI(); agentsGroup.updateUI(); contextAssistGroup.updateUI(); additionalAiToolsGroup.updateUI(); mcpOpenAiGroup.updateUI(); aiChatModelsGroup.updateUI(); modelsGroup.updateUI();
 		isUpdating = false;
 		updateModeDisplay();
 	}
@@ -151,7 +154,7 @@ public class PropertiesPage extends AEvoPage {
 	public void syncModelWithUI() {
 		if (orchestrator == null || isUpdating) return;
 		isUpdating = true;
-		orchestratorGroup.updateModel(); llmSettingsGroup.updateModel(); ollamaSettingsGroup.updateModel(); additionalAiToolsGroup.updateModel(); mcpOpenAiGroup.updateModel(); aiChatModelsGroup.updateModel(); modelsGroup.updateModel();
+		orchestratorGroup.updateModel(); llmSettingsGroup.updateModel(); ollamaSettingsGroup.updateModel(); contextAssistGroup.updateModel(); additionalAiToolsGroup.updateModel(); mcpOpenAiGroup.updateModel(); aiChatModelsGroup.updateModel(); modelsGroup.updateModel();
 		isUpdating = false;
 		updateModeDisplay();
 	}
@@ -168,6 +171,7 @@ public class PropertiesPage extends AEvoPage {
 		if (llmSettingsGroup != null) llmSettingsGroup.setOrchestrator(orchestrator);
 		if (ollamaSettingsGroup != null) ollamaSettingsGroup.setOrchestrator(orchestrator);
 		if (agentsGroup != null) agentsGroup.setOrchestrator(orchestrator);
+		if (contextAssistGroup != null) contextAssistGroup.setOrchestrator(orchestrator);
 		if (additionalAiToolsGroup != null) additionalAiToolsGroup.setOrchestrator(orchestrator);
 		if (mcpOpenAiGroup != null) mcpOpenAiGroup.setOrchestrator(orchestrator);
 		if (aiChatModelsGroup != null) aiChatModelsGroup.setOrchestrator(orchestrator);

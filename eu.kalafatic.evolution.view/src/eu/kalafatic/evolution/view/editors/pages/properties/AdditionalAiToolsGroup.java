@@ -10,7 +10,7 @@ import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
 import eu.kalafatic.utils.factories.GUIFactory;
 
 public class AdditionalAiToolsGroup extends AEvoGroup {
-    private Text aiChatUrlText, neuronAiUrlText, compilerSourceText;
+    private Text aiChatUrlText, compilerSourceText;
 
     public AdditionalAiToolsGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
         super(editor, orchestrator);
@@ -22,9 +22,6 @@ public class AdditionalAiToolsGroup extends AEvoGroup {
         GUIFactory.INSTANCE.createLabel(group, "AI Chat URL:");
         aiChatUrlText = GUIFactory.INSTANCE.createText(group);
         GUIFactory.INSTANCE.createEditButton(group, aiChatUrlText);
-        GUIFactory.INSTANCE.createLabel(group, "Neuron AI URL:");
-        neuronAiUrlText = GUIFactory.INSTANCE.createText(group);
-        GUIFactory.INSTANCE.createEditButton(group, neuronAiUrlText);
         GUIFactory.INSTANCE.createLabel(group, "Compiler Source:");
         compilerSourceText = GUIFactory.INSTANCE.createText(group);
         GUIFactory.INSTANCE.createEditButton(group, compilerSourceText);
@@ -34,7 +31,6 @@ public class AdditionalAiToolsGroup extends AEvoGroup {
     protected void refreshUI() {
         if (orchestrator != null) {
             if (orchestrator.getAiChat() != null) setTextSafe(aiChatUrlText, orchestrator.getAiChat().getUrl());
-            if (orchestrator.getNeuronAI() != null) setTextSafe(neuronAiUrlText, orchestrator.getNeuronAI().getUrl());
             if (orchestrator.getCompiler() != null) setTextSafe(compilerSourceText, orchestrator.getCompiler().getSourceVersion());
         }
     }
@@ -46,15 +42,12 @@ public class AdditionalAiToolsGroup extends AEvoGroup {
                 (orchestrator.getAiChat() != null) ? orchestrator.getAiChat().getToken() : null,
                 (orchestrator.getAiChat() != null) ? orchestrator.getAiChat().getPrompt() : null,
                 (orchestrator.getAiChat() != null) ? orchestrator.getAiChat().getProxyUrl() : null);
-            ProjectModelManager.getInstance().updateNeuronAISettings(orchestrator, neuronAiUrlText.getText(),
-                (orchestrator.getNeuronAI() != null) ? orchestrator.getNeuronAI().getModel() : null,
-                (orchestrator.getNeuronAI() != null) ? orchestrator.getNeuronAI().getType() : null);
             ProjectModelManager.getInstance().updateCompilerSettings(orchestrator, compilerSourceText.getText());
         }
     }
 
     @Override
     public Text[] getTextFields() {
-        return new Text[] { aiChatUrlText, neuronAiUrlText, compilerSourceText };
+        return new Text[] { aiChatUrlText, compilerSourceText };
     }
 }
