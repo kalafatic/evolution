@@ -1,14 +1,14 @@
 package eu.kalafatic.evolution.controller.workflow;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
+import java.nio.file.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import eu.kalafatic.evolution.controller.mediation.model.ArchitecturalFact;
 import eu.kalafatic.evolution.controller.mediation.model.ArchitecturalGene;
 import eu.kalafatic.evolution.controller.mediation.model.Hotspot;
 import eu.kalafatic.evolution.controller.mediation.model.KnowledgeGap;

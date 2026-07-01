@@ -1,10 +1,12 @@
 package eu.kalafatic.evolution.controller.orchestration.diagnostics;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.ArrayList;
 import java.util.stream.Collectors;
+import org.json.JSONObject;
+import org.json.JSONArray;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * Central diagnostics layer for reconstructing reasoning chains and identifying failures.

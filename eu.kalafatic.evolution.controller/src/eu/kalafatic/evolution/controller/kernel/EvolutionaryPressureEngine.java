@@ -1,5 +1,7 @@
 package eu.kalafatic.evolution.controller.kernel;
 
+import java.util.HashMap;
+import java.util.Map;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionaryPressureVector;
 import eu.kalafatic.evolution.controller.trajectory.Trajectory;

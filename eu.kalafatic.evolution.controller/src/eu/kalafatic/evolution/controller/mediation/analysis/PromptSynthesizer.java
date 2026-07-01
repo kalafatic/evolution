@@ -1,7 +1,6 @@
 package eu.kalafatic.evolution.controller.mediation.analysis;
 
 import java.util.List;
-
 import eu.kalafatic.evolution.controller.mediation.model.ArchitecturalFact;
 import eu.kalafatic.evolution.controller.mediation.model.SemanticNode;
 import eu.kalafatic.evolution.controller.mediation.model.Subsystem;

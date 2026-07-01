@@ -2,7 +2,6 @@ package eu.kalafatic.evolution.controller.execution;
 
 import java.util.List;
 import java.util.stream.Collectors;
-
 import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
 
 /**

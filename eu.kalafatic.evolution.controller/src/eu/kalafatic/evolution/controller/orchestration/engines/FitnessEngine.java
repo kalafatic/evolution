@@ -1,10 +1,10 @@
 package eu.kalafatic.evolution.controller.orchestration.engines;
 
 import java.io.File;
-
-import eu.kalafatic.evolution.controller.orchestration.IterationManager;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
 import eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel;
+import eu.kalafatic.evolution.controller.orchestration.IterationManager;
 import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
 
 public class FitnessEngine {

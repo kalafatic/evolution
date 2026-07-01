@@ -1,7 +1,0 @@
-Manifest-Version: 1.0
-Bundle-ManifestVersion: 2
-Bundle-Name: Repository
-Bundle-SymbolicName: eu.kalafatic.evolution.repository
-Bundle-Version: 1.0.0.qualifier
-Bundle-RequiredExecutionEnvironment: JavaSE-21
-Automatic-Module-Name: eu.kalafatic.evolution.repository

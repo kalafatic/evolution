@@ -1,17 +1,14 @@
 package eu.kalafatic.evolution.controller.parsers;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.json.JSONException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 
 /**

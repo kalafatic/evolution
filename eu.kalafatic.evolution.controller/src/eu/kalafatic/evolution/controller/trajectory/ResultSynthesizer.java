@@ -1,12 +1,13 @@
 package eu.kalafatic.evolution.controller.trajectory;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
+import java.util.HashMap;
+import java.util.stream.Collectors;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
+import eu.kalafatic.evolution.controller.trajectory.EvaluationSignal;
 
 /**
  * Synthesis layer for merging insights and results from multiple evolutionary branches.

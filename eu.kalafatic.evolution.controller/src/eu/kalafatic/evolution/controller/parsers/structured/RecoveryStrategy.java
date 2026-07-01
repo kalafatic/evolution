@@ -1,11 +1,9 @@
 package eu.kalafatic.evolution.controller.parsers.structured;
 
+import org.json.JSONObject;
+import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import java.util.List;
 import java.util.Map;
-
-import org.json.JSONObject;
-
-import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 
 /**
  * Strategy for recovering from structured response failures.

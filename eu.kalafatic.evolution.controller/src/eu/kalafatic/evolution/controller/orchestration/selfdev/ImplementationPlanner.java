@@ -4,6 +4,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.orchestration.intent.AtomicIntentAnalysis;
 
 /**
  * Deterministic planner that converts validated architectural variants into executable action graphs.

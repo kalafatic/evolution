@@ -1,9 +1,7 @@
 package eu.kalafatic.evolution.controller.orchestration.selfdev;
 
-import eu.kalafatic.evolution.controller.orchestration.AiService;
 import eu.kalafatic.evolution.controller.orchestration.IterationManager;
 import eu.kalafatic.evolution.controller.orchestration.KernelFactory;
-import eu.kalafatic.evolution.controller.orchestration.PlatformType;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorProfile;
 import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait;
@@ -142,9 +140,9 @@ public class SelfDevSupervisor {
         }
     }
 
-    protected IterationManager createIterationManager(Iteration iteration, AiService aiService) {
+    protected IterationManager createIterationManager(Iteration iteration, eu.kalafatic.evolution.controller.orchestration.AiService aiService) {
         eu.kalafatic.evolution.controller.orchestration.SessionContainer session = eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getSession(context.getSessionId());
-        try { return KernelFactory.create("Autonomous", context, session, aiService); } catch (Exception e) { throw new RuntimeException(e); }
+        return KernelFactory.create(context, session, aiService);
     }
 
     public void stopSession() {

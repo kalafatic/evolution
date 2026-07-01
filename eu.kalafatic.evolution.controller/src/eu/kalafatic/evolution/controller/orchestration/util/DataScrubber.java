@@ -1,7 +1,7 @@
 package eu.kalafatic.evolution.controller.orchestration.util;
 
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 /**
  * Utility to scrub sensitive data from strings before sending to external services.

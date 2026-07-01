@@ -1,9 +1,9 @@
 package eu.kalafatic.evolution.controller.mediation.model;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 
 /**
  * A semantic representation of a file or logical unit in the target.

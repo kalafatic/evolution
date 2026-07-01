@@ -1,10 +1,10 @@
 package eu.kalafatic.evolution.controller.agents;
 
-import org.json.JSONObject;
-
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionEngine;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionResult;
+import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants;
+import org.json.JSONObject;
 import eu.kalafatic.evolution.controller.parsers.JsonUtils;
 
 /**

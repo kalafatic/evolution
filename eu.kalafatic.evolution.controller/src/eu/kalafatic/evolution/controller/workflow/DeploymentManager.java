@@ -1,8 +1,8 @@
 package eu.kalafatic.evolution.controller.workflow;
 
+import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
 import eu.kalafatic.evolution.controller.orchestration.SessionManager;
-import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 
 public class DeploymentManager {
     private final TaskContext context;

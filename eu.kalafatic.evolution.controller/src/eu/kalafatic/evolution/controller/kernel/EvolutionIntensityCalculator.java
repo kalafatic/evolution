@@ -2,6 +2,7 @@ package eu.kalafatic.evolution.controller.kernel;
 
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType;
+import eu.kalafatic.evolution.controller.orchestration.cognitive.SessionCognitiveState;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionaryPressureVector;
 import eu.kalafatic.evolution.controller.trajectory.Trajectory;
 import eu.kalafatic.utils.semantic.EvolutionComponent;

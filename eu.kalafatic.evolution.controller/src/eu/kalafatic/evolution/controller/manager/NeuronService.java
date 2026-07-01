@@ -7,10 +7,10 @@ import java.util.stream.Collectors;
 
 import org.json.JSONObject;
 
-import eu.kalafatic.evolution.controller.log.Log;
 import eu.kalafatic.evolution.model.orchestration.NeuronAI;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.controller.log.Log;
 
 /**
  * @evo.lastModified: 14:A

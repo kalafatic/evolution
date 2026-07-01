@@ -1,7 +1,8 @@
 package eu.kalafatic.evolution.controller.workflow;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.HashMap;
+import eu.kalafatic.evolution.controller.trajectory.EventCategory;
 
 /**
  * EvolutionEvent (EEL)

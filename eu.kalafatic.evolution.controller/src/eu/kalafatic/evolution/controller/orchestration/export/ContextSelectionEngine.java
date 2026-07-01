@@ -1,18 +1,16 @@
 package eu.kalafatic.evolution.controller.orchestration.export;
 
-import java.util.HashMap;
+import java.util.Set;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
-
+import java.util.HashMap;
 import org.json.JSONObject;
-
+import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.ContextBuilder;
 import eu.kalafatic.evolution.controller.orchestration.ContextPackage;
-import eu.kalafatic.evolution.controller.orchestration.TaskContext;
-import eu.kalafatic.evolution.controller.tools.FileTool;
-import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Task;
+import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
+import eu.kalafatic.evolution.controller.tools.FileTool;
 
 /**
  * Selects relevant source files and builds high-density context.

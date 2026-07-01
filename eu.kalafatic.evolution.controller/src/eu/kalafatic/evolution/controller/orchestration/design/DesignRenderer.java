@@ -1,5 +1,10 @@
 package eu.kalafatic.evolution.controller.orchestration.design;
 
+import java.util.HashMap;
+import java.util.Map;
+import eu.kalafatic.evolution.controller.orchestration.design.ComponentRecord;
+import eu.kalafatic.evolution.controller.orchestration.design.DesignModel;
+import eu.kalafatic.evolution.controller.orchestration.design.RelationshipRecord;
 import eu.kalafatic.evolution.model.orchestration.GenomeSnapshot;
 
 /**

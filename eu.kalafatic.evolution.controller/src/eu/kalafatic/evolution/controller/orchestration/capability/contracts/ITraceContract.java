@@ -1,8 +1,7 @@
 package eu.kalafatic.evolution.controller.orchestration.capability.contracts;
 
-import java.util.List;
-
 import eu.kalafatic.evolution.controller.orchestration.diagnostics.CausalNode;
+import java.util.List;
 
 /**
  * Contract for cognitive introspection and tracing.

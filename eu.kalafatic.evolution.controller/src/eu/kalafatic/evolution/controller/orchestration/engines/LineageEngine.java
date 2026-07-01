@@ -1,7 +1,6 @@
 package eu.kalafatic.evolution.controller.orchestration.engines;
 
 import java.util.List;
-
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionNode;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionTree;

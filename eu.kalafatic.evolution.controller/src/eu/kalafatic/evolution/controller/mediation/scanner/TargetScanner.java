@@ -1,13 +1,14 @@
 package eu.kalafatic.evolution.controller.mediation.scanner;
 
 import java.io.File;
-import java.util.List;
 import java.util.Set;
-
+import java.util.List;
+import java.util.HashSet;
 import eu.kalafatic.evolution.controller.mediation.model.FileDescriptor;
 import eu.kalafatic.evolution.controller.mediation.model.SemanticNode;
 import eu.kalafatic.evolution.controller.mediation.model.TargetDescriptor;
 import eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot;
+import java.util.ArrayList;
 
 /**
  * Recursively scans a target directory and identifies technologies and files.

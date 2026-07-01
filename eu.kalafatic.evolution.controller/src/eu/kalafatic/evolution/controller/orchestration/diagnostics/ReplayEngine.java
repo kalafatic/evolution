@@ -1,8 +1,8 @@
 package eu.kalafatic.evolution.controller.orchestration.diagnostics;
 
 import eu.kalafatic.evolution.controller.orchestration.IterationManager;
-import eu.kalafatic.evolution.controller.orchestration.SystemState;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.orchestration.SystemState;
 
 /**
  * Reconstructs reasoning cycles from a CognitiveTrace.

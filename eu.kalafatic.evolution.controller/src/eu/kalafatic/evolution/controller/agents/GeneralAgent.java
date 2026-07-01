@@ -1,5 +1,8 @@
 package eu.kalafatic.evolution.controller.agents;
 
+import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants;
+import eu.kalafatic.evolution.controller.tools.ToolFactory;
+
 /**
  * Specialized agent for general reasoning and conversational tasks.
  */

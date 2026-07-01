@@ -1,7 +1,7 @@
 package eu.kalafatic.evolution.controller.workflow;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.HashMap;
 
 public class RuntimeEvent {
     private final RuntimeEventType type;

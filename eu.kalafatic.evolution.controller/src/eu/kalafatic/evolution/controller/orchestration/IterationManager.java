@@ -1,10 +1,12 @@
 package eu.kalafatic.evolution.controller.orchestration;
 
 import java.io.File;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -18,6 +20,7 @@ import eu.kalafatic.evolution.controller.agents.PlannerAgent;
 import eu.kalafatic.evolution.controller.agents.RealityDiscoveryAgent;
 import eu.kalafatic.evolution.controller.agents.StructureAgent;
 import eu.kalafatic.evolution.controller.kernel.AuthorityEngine;
+import eu.kalafatic.evolution.controller.kernel.EvolutionProfile;
 import eu.kalafatic.evolution.controller.kernel.BranchManager;
 import eu.kalafatic.evolution.controller.kernel.DefaultAuthorityEngine;
 import eu.kalafatic.evolution.controller.kernel.DefaultBranchManager;
@@ -43,15 +46,21 @@ import eu.kalafatic.evolution.controller.mediation.model.Subsystem;
 import eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel;
 import eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot;
 import eu.kalafatic.evolution.controller.mediation.scanner.TargetScanner;
+import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorProfile;
+import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait;
 import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityException;
 import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityRegistry;
 import eu.kalafatic.evolution.controller.orchestration.capability.contracts.ISchedulingContract;
 import eu.kalafatic.evolution.controller.orchestration.diagnostics.CausalNode;
 import eu.kalafatic.evolution.controller.orchestration.diagnostics.CognitiveTrace;
 import eu.kalafatic.evolution.controller.orchestration.diagnostics.ReplayEngine;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionNode;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionTree;
 import eu.kalafatic.evolution.controller.orchestration.goal.GoalModel;
 import eu.kalafatic.evolution.controller.orchestration.goal.GoalUnderstandingEngine;
+import eu.kalafatic.evolution.controller.orchestration.goal.SemanticEnvelope;
 import eu.kalafatic.evolution.controller.orchestration.goal.SemanticEnvelopeEngine;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.AbstractionLevel;
 import eu.kalafatic.evolution.controller.orchestration.intent.AtomicIntentAnalysis;
 import eu.kalafatic.evolution.controller.orchestration.intent.ClarificationManager;
 import eu.kalafatic.evolution.controller.orchestration.intent.ClarificationPlanner;
@@ -61,9 +70,8 @@ import eu.kalafatic.evolution.controller.orchestration.intent.EvolutionAssessmen
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionEngine;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionResult;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.DarwinEngine;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.Evaluator;
-import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionNode;
-import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionTree;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.GitManager;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.IDarwinEngine;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationMemoryService;
@@ -72,6 +80,7 @@ import eu.kalafatic.evolution.controller.orchestration.selfdev.StateSnapshot;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.TaskExecutor;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.TaskPlanner;
 import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants;
+import eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceArtifact;
 import eu.kalafatic.evolution.controller.supervision.EvolutionDecision;
 import eu.kalafatic.evolution.controller.trajectory.EvolutionaryTrajectoryEngine;
 import eu.kalafatic.evolution.controller.trajectory.Trajectory;
@@ -88,11 +97,11 @@ import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
 import eu.kalafatic.evolution.model.orchestration.Iteration;
 import eu.kalafatic.evolution.model.orchestration.IterationStatus;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
+import eu.kalafatic.evolution.model.orchestration.PromptInstructions;
 import eu.kalafatic.evolution.model.orchestration.SelfDevDecision;
 import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
 import eu.kalafatic.evolution.model.orchestration.SelfDevStatus;
 import eu.kalafatic.evolution.model.orchestration.Task;
-import eu.kalafatic.evolution.model.orchestration.TaskStatus;
 import eu.kalafatic.utils.semantic.EvolutionComponent;
 import eu.kalafatic.utils.semantic.EvolutionaryImpact;
 import eu.kalafatic.utils.semantic.Stability;
@@ -385,8 +394,8 @@ public class IterationManager {
 
         RuntimeEventBus bus = sessionContainer.getEventBus();
         bus.publish(
-            new RuntimeEvent(
-                RuntimeEventType.SUPERVISOR_STATUS_CHANGED,
+            new eu.kalafatic.evolution.controller.workflow.RuntimeEvent(
+                eu.kalafatic.evolution.controller.workflow.RuntimeEventType.SUPERVISOR_STATUS_CHANGED,
                 ctx.getSessionId(), "Kernel", to.toString())
                 .withMetadata("execId", ctx.getDeterministicExecutionId())
                 .withMetadata("fromState", from != null ? from.toString() : "NONE")
@@ -827,7 +836,7 @@ public class IterationManager {
     }
 
     public IterationManager createVariantManager(TaskContext variantContext, AiService aiService) {
-        try { return KernelFactory.create("Autonomous", variantContext, sessionContainer, aiService); } catch (Exception e) { throw new RuntimeException(e); }
+        return KernelFactory.create(variantContext, sessionContainer, aiService);
     }
 
     public Trajectory getActiveTrajectory(TaskContext context) {
@@ -1331,7 +1340,7 @@ public class IterationManager {
     public boolean executeTasksWithRetries(List<Task> tasks, Runnable onStepComplete) throws Exception {
         OrchestrationState state = context.getOrchestrationState();
         for (Task task : tasks) {
-            if (task.getStatus() == TaskStatus.DONE) continue;
+            if (task.getStatus() == eu.kalafatic.evolution.model.orchestration.TaskStatus.DONE) continue;
             boolean success = false;
             for (int retry = 1; retry <= EvolutionConstants.MAX_TASK_RETRIES; retry++) {
                 state.addDiagnostic("[OrchestrationTrace] Executing task: " + task.getName() + " (Attempt " + retry + ")");
@@ -1344,8 +1353,8 @@ public class IterationManager {
                 }
                 RuntimeEventBus bus = sessionContainer.getEventBus();
                 bus.publish(
-                    new RuntimeEvent(
-                        RuntimeEventType.TASK_STARTED,
+                    new eu.kalafatic.evolution.controller.workflow.RuntimeEvent(
+                        eu.kalafatic.evolution.controller.workflow.RuntimeEventType.TASK_STARTED,
                         context.getSessionId(), "Kernel", task.getId()));
 
                 checkStep(task.getId(), "TASK_EXECUTION", "Executing task: " + task.getName());
@@ -1364,8 +1373,8 @@ public class IterationManager {
                     state.addDiagnostic("[OrchestrationTrace] Task " + task.getName() + " succeeded.");
 
                     bus.publish(
-                        new RuntimeEvent(
-                            RuntimeEventType.TASK_COMPLETED,
+                        new eu.kalafatic.evolution.controller.workflow.RuntimeEvent(
+                            eu.kalafatic.evolution.controller.workflow.RuntimeEventType.TASK_COMPLETED,
                             context.getSessionId(), "Kernel", task.getId()));
 
                     success = true;

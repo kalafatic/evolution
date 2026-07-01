@@ -1,10 +1,9 @@
 package eu.kalafatic.evolution.controller.workflow;
 
-import org.json.JSONObject;
-
-import eu.kalafatic.evolution.controller.orchestration.SessionManager;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.orchestration.SessionManager;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.SelfDevBootstrapController;
+import org.json.JSONObject;
 
 public class SupervisorManager {
     private final TaskContext context;

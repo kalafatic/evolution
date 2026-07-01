@@ -1,12 +1,11 @@
 package eu.kalafatic.evolution.controller.kernel;
 
 import java.io.File;
-
-import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
-import eu.kalafatic.evolution.controller.orchestration.TaskContext;
-import eu.kalafatic.evolution.controller.orchestration.capability.contracts.IEvaluationContract;
-import eu.kalafatic.evolution.controller.orchestration.selfdev.Evaluator;
 import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
+import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.Evaluator;
+import eu.kalafatic.evolution.controller.orchestration.capability.contracts.IEvaluationContract;
 
 public class DefaultFitnessEngine implements FitnessEngine {
     private final Evaluator evaluator;

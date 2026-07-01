@@ -11,6 +11,7 @@ import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionMemoryGraph;
 import eu.kalafatic.evolution.controller.parsers.structured.StructuredResponsePipeline;
+import eu.kalafatic.evolution.model.orchestration.AiMode;
 
 /**
  * LLM-powered intent analyzer for EVO prompts.

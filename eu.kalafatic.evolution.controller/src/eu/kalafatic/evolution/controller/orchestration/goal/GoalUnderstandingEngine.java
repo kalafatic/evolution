@@ -1,10 +1,10 @@
 package eu.kalafatic.evolution.controller.orchestration.goal;
 
 import org.json.JSONObject;
-
 import eu.kalafatic.evolution.controller.agents.BaseAiAgent;
 import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.orchestration.util.ModeRecognizer;
 import eu.kalafatic.evolution.controller.parsers.structured.StructuredResponsePipeline;
 
 /**

@@ -15,7 +15,7 @@ public class KernelUnitTest {
         Orchestrator orchestrator = OrchestrationFactory.eINSTANCE.createOrchestrator();
         TaskContext context = new TaskContext(orchestrator, tempDir);
         SessionContainer session = SessionManager.getInstance().getOrCreateSession(context.getSessionId());
-        IterationManager manager = KernelFactory.create("Test", context, session);
+        IterationManager manager = KernelFactory.create(context, session);
         assertNotNull(manager);
         assertEquals(session, manager.getSessionContainer());
     }

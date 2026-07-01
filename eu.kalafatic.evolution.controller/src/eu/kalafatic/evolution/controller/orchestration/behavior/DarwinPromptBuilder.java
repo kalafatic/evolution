@@ -1,11 +1,12 @@
 package eu.kalafatic.evolution.controller.orchestration.behavior;
-import java.util.ArrayList;
 
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import eu.kalafatic.evolution.controller.orchestration.OrchestrationState;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.orchestration.goal.GoalModel;
 import eu.kalafatic.evolution.controller.orchestration.goal.SemanticEnvelope;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionDimension;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.MutationRecord;
@@ -81,40 +82,18 @@ public class DarwinPromptBuilder {
     public DarwinPromptBuilder addGenomeMemory(SemanticGenome genome) {
         if (genome != null) {
             StringBuilder memSb = new StringBuilder();
-
-            // Group mutations by dimension
-            Map<String, List<MutationRecord>> mutationsByDim = new java.util.HashMap<>();
-            for (MutationRecord m : genome.getDiscoveredMutations()) {
-                String dim = m.getEngineeringDimensions().getOrDefault("active_dimension", "UNKNOWN");
-                mutationsByDim.computeIfAbsent(dim, k -> new ArrayList<>()).add(m);
-            }
-
-            Map<String, List<MutationRecord>> rejectionsByDim = new java.util.HashMap<>();
-            for (MutationRecord m : genome.getRejectedMutations()) {
-                String dim = m.getEngineeringDimensions().getOrDefault("active_dimension", "UNKNOWN");
-                rejectionsByDim.computeIfAbsent(dim, k -> new ArrayList<>()).add(m);
-            }
-
             if (!genome.getRejectedMutations().isEmpty()) {
                 memSb.append("FORBIDDEN MUTATIONS (REJECTED BY SEMANTIC VALIDATOR):\n");
-                for (Map.Entry<String, List<MutationRecord>> entry : rejectionsByDim.entrySet()) {
-                    memSb.append("Dimension: ").append(entry.getKey()).append("\n");
-                    for (MutationRecord rejected : entry.getValue()) {
-                        memSb.append("  - ").append(rejected.getStrategy()).append(" (Reason: ").append(rejected.getTradeoffs()).append(")\n");
-                    }
+                for (MutationRecord rejected : genome.getRejectedMutations()) {
+                    memSb.append("- ").append(rejected.getStrategy()).append(" (Reason: ").append(rejected.getTradeoffs()).append(")\n");
                 }
             }
-
             if (!genome.getDiscoveredMutations().isEmpty()) {
                 memSb.append("\nEXPLORED MUTATIONS (ALREADY ATTEMPTED):\n");
-                for (Map.Entry<String, List<MutationRecord>> entry : mutationsByDim.entrySet()) {
-                    memSb.append("Dimension: ").append(entry.getKey()).append("\n");
-                    for (MutationRecord explored : entry.getValue()) {
-                        memSb.append("  - ").append(explored.getStrategy()).append("\n");
-                    }
+                for (MutationRecord explored : genome.getDiscoveredMutations()) {
+                    memSb.append("- ").append(explored.getStrategy()).append("\n");
                 }
             }
-
             if (memSb.length() > 0) {
                 sb.append(composer.composeSiblingMemory(memSb.toString())).append("\n\n");
             }

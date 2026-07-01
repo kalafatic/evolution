@@ -327,9 +327,9 @@ public class SiblingGenerationManager {
             String currentParentId, int targetPopulation) throws Exception {
         TrajectoryBlueprint bp = null;
 
-        if (expansion != null && activeDimension != null) {
+        if (generation == 0 && expansion != null && expansion.getActiveDimensionId() != null) {
             EvolutionDimension activeDim = expansion.getUnresolvedDimensions().stream()
-                .filter(d -> d.getId().equals(activeDimension.getId()))
+                .filter(d -> d.getId().equals(expansion.getActiveDimensionId()))
                 .findFirst().orElse(null);
 
             if (activeDim != null && !activeDim.getCandidateBranches().isEmpty()) {

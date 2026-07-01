@@ -5,17 +5,15 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.json.JSONArray;
 import org.json.JSONObject;
-
+import org.json.JSONArray;
+import eu.kalafatic.evolution.controller.trajectory.EvaluationSignal;
+import eu.kalafatic.evolution.controller.orchestration.capability.ICapability;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityStatus;
 import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityContext;
 import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityException;
 import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityHealth;
-import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityStatus;
-import eu.kalafatic.evolution.controller.orchestration.capability.ICapability;
 import eu.kalafatic.evolution.controller.orchestration.capability.contracts.ITraceContract;
-import eu.kalafatic.evolution.controller.trajectory.EvaluationSignal;
 
 /**
  * Represents a complete causal chain of reasoning events for an orchestration lifecycle.

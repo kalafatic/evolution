@@ -2,7 +2,6 @@ package eu.kalafatic.evolution.controller.orchestration.selfdev.adaptive;
 
 import java.util.HashMap;
 import java.util.Map;
-
 import org.json.JSONObject;
 
 /**

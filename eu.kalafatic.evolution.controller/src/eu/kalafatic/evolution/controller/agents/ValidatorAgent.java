@@ -1,7 +1,6 @@
 package eu.kalafatic.evolution.controller.agents;
 
 import org.json.JSONObject;
-
 import eu.kalafatic.evolution.controller.orchestration.ChangeUnit;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 

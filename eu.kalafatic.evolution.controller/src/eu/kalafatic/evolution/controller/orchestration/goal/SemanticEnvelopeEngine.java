@@ -1,12 +1,12 @@
 package eu.kalafatic.evolution.controller.orchestration.goal;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
-
 import eu.kalafatic.evolution.controller.agents.BaseAiAgent;
 import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.parsers.structured.StructuredResponsePipeline;
+import java.util.ArrayList;
+import org.json.JSONArray;
 
 /**
  * Engine for deriving a SemanticEnvelope from a GoalModel.

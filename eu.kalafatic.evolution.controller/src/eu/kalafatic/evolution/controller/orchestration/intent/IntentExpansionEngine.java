@@ -14,6 +14,7 @@ import eu.kalafatic.evolution.controller.orchestration.selfdev.AbstractionLevel;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionDimension;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionaryPressureVector;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.SemanticDomain;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.SemanticDomainResolver;
 import eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceArtifact;
 import eu.kalafatic.evolution.controller.parsers.JsonUtils;

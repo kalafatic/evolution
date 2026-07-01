@@ -86,7 +86,7 @@ public class StabilizationValidationSuite {
         mockLlm.setResponse("StabilityAnalyzer", "{\"converged\": false, \"rationale\": \"Still evolving\"}");
 
         SessionContainer session = SessionManager.getInstance().getOrCreateSession(sessionId);
-        IterationManager manager = KernelFactory.create("Test", context, session, mockAiService);
+        IterationManager manager = KernelFactory.create(context, session, mockAiService);
 
         TaskRequest request = new TaskRequest("Initial goal", projectRoot);
         manager.handle(request);
@@ -103,7 +103,7 @@ public class StabilizationValidationSuite {
         context2.getMetadata().put("testMode", true);
 
         SessionContainer session2 = SessionManager.getInstance().getOrCreateSession(sessionId);
-        IterationManager manager2 = KernelFactory.create("Test", context2, session2, mockAiService);
+        IterationManager manager2 = KernelFactory.create(context2, session2, mockAiService);
 
         assertEquals("Should have restored iteration count", firstRunIterations, context2.getOrchestrationState().getIterationCount());
     }
@@ -134,7 +134,7 @@ public class StabilizationValidationSuite {
         mockLlm.setResponse("StabilityAnalyzer", "{\"converged\": true, \"rationale\": \"Stable\"}");
 
         SessionContainer session = SessionManager.getInstance().getOrCreateSession(sessionId);
-        IterationManager manager = KernelFactory.create("Test", context, session, mockAiService);
+        IterationManager manager = KernelFactory.create(context, session, mockAiService);
 
         TaskRequest request = new TaskRequest("End to end mediated test", mediatedRoot);
         OrchestratorResponse response = manager.handle(request);
@@ -170,7 +170,7 @@ public class StabilizationValidationSuite {
                     mockLlm.setResponse("IntentExpansionEngine", "{\"state\": \"CLEAR\", \"dominantIntent\": \"Task\", \"confidence\": {\"overallConfidence\": 1.0}}");
 
                     SessionContainer session = SessionManager.getInstance().getOrCreateSession(sessionId);
-                    IterationManager manager = KernelFactory.create("Test", ctx, session, mockAiService);
+                    IterationManager manager = KernelFactory.create(ctx, session, mockAiService);
 
                     TaskRequest request = new TaskRequest("Goal for session " + index, sessionRoot);
                     manager.handle(request);
@@ -213,7 +213,7 @@ public class StabilizationValidationSuite {
         ctx1.getMetadata().put("testMode", true);
         mockLlm.setResponse("IntentExpansionEngine", "{\"state\": \"CLEAR\", \"dominantIntent\": \"Task\", \"confidence\": {\"overallConfidence\": 1.0}}");
         SessionContainer session1 = SessionManager.getInstance().getOrCreateSession(sessionId1);
-        IterationManager manager1 = KernelFactory.create("Test", ctx1, session1, mockAiService);
+        IterationManager manager1 = KernelFactory.create(ctx1, session1, mockAiService);
         manager1.handle(new TaskRequest(prompt, root1));
 
         // Run 2
@@ -227,7 +227,7 @@ public class StabilizationValidationSuite {
         ctx2.setAutoApprove(true);
         ctx2.getMetadata().put("testMode", true);
         SessionContainer session2 = SessionManager.getInstance().getOrCreateSession(sessionId2);
-        IterationManager manager2 = KernelFactory.create("Test", ctx2, session2, mockAiService);
+        IterationManager manager2 = KernelFactory.create(ctx2, session2, mockAiService);
         manager2.handle(new TaskRequest(prompt, root2));
 
         assertEquals("Iteration count should be identical", ctx1.getOrchestrationState().getIterationCount(), ctx2.getOrchestrationState().getIterationCount());
@@ -246,7 +246,7 @@ public class StabilizationValidationSuite {
             "And some more noise after.");
 
         SessionContainer session = SessionManager.getInstance().getOrCreateSession(sessionId);
-        IterationManager manager = KernelFactory.create("Test", context, session, mockAiService);
+        IterationManager manager = KernelFactory.create(context, session, mockAiService);
 
         TaskRequest request = new TaskRequest("Malformed test prompt", projectRoot);
 

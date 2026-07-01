@@ -2,6 +2,8 @@ package eu.kalafatic.evolution.controller.parsers.structured;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * Engine for repairing malformed JSON output from LLMs.

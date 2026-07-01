@@ -1,11 +1,11 @@
 package eu.kalafatic.evolution.controller.agents;
 
 import java.io.File;
-
-import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
+import eu.kalafatic.evolution.selfdev.genome.hub.SelfDevGenomeHub;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
-import eu.kalafatic.evolution.selfdev.genome.hub.SelfDevGenomeHub;
+import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
+import org.json.JSONObject;
 
 /**
  * Specialized agent for Genome maintenance and updates.

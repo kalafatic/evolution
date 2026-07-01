@@ -1,9 +1,8 @@
 package eu.kalafatic.evolution.controller.agents;
 
 import org.json.JSONObject;
-
-import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.parsers.JsonUtils;
+import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 
 /**
  * Specialized agent for reviewing and critiquing plans.

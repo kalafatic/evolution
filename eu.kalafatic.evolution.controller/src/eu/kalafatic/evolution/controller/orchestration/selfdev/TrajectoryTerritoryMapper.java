@@ -1,13 +1,16 @@
 package eu.kalafatic.evolution.controller.orchestration.selfdev;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-
 import eu.kalafatic.evolution.controller.agents.BaseAiAgent;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.parsers.JsonUtils;
+import eu.kalafatic.evolution.controller.orchestration.goal.SemanticEnvelope;
+import eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionResult;
 
 /**
  * Dynamically maps the evolutionary territory to discover divergent blueprints.
@@ -31,8 +34,7 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
                "2. Same semantic goal.\n" +
                "3. Same abstraction level.\n" +
                "4. Different mutation than every existing sibling.\n" +
-               "5. Do NOT regenerate any existing mutation.\n" +
-               "6. USE HISTORY: Review grouped history by dimension. If a dimension was previously explored, ensure this new sibling provides a NEW valid branch within that dimension that hasn't been tried, or builds upon previous successes.\n\n" +
+               "5. Do NOT regenerate any existing mutation.\n\n" +
                "TASK:\n" +
                "Generate another technical philosophy for the ACTIVE DIMENSION that has NOT been touched.\n" +
                "MANDATORY: 'strategy' MUST be a specific technical architectural name. NEVER use generic placeholders like 'ROOT', 'create', 'bootstrap', 'ANALYZE', or 'EXECUTE'.\n" +
@@ -66,14 +68,6 @@ public class TrajectoryTerritoryMapper extends BaseAiAgent {
                .addSemanticEnvelope()
                .addReality()
                .addGenomeMemory(genome);
-
-        // Add lineage from tree if available
-        if (ctx.getTree() != null && ctx.getCurrentParentId() != null) {
-            String lineage = ctx.getTree().reconstructLineagePrompt(ctx.getCurrentParentId());
-            if (lineage != null && !lineage.isEmpty()) {
-                builder.addLineage(lineage);
-            }
-        }
 
         // Add Parent info
         if (ctx.getParent() != null) {

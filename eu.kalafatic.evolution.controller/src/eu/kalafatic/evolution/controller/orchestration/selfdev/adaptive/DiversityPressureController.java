@@ -1,5 +1,6 @@
 package eu.kalafatic.evolution.controller.orchestration.selfdev.adaptive;
 
+import java.util.List;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
 
 /**

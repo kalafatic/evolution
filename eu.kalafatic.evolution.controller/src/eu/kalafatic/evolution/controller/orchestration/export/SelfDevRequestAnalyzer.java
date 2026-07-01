@@ -1,9 +1,8 @@
 package eu.kalafatic.evolution.controller.orchestration.export;
 
 import org.json.JSONObject;
-
-import eu.kalafatic.evolution.controller.agents.AgentFactory;
 import eu.kalafatic.evolution.controller.agents.AnalyticAgent;
+import eu.kalafatic.evolution.controller.agents.AgentFactory;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.util.EvolutionConstants;
 

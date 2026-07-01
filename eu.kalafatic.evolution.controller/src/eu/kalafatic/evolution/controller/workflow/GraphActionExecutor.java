@@ -2,8 +2,8 @@ package eu.kalafatic.evolution.controller.workflow;
 
 import eu.kalafatic.evolution.controller.orchestration.KernelFacade;
 import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
-import eu.kalafatic.evolution.controller.orchestration.SessionContext;
 import eu.kalafatic.evolution.controller.orchestration.SessionManager;
+import eu.kalafatic.evolution.controller.orchestration.SessionContext;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 
 public class GraphActionExecutor {

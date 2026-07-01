@@ -1,9 +1,8 @@
 package eu.kalafatic.evolution.controller.log;
 
 import org.json.JSONObject;
-
-import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.model.orchestration.LogLevel;
+import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 
 /**
  * Task-aware, adaptive logging service for structured diagnostics.

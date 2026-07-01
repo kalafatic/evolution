@@ -33,7 +33,7 @@ public class CheckpointDeterminismTest {
         context.setSessionId(sessionId);
 
         SessionContainer session = SessionManager.getInstance().getOrCreateSession(sessionId);
-        IterationManager manager = KernelFactory.create("Test", context, session);
+        IterationManager manager = KernelFactory.create(context, session);
         context.getOrchestrationState().setCurrentPhase("INTENT_EXPANSION");
 
         // 1. Setup rich state
@@ -82,7 +82,7 @@ public class CheckpointDeterminismTest {
 
         SessionManager.getInstance().shutdownSession(sessionId);
         SessionContainer session2 = SessionManager.getInstance().getOrCreateSession(sessionId);
-        IterationManager manager2 = KernelFactory.create("Test", context2, session2);
+        IterationManager manager2 = KernelFactory.create(context2, session2);
 
         // 4. Assertions
         EvolutionMemoryGraph graph2 = session2.getEvolutionMemoryGraph();

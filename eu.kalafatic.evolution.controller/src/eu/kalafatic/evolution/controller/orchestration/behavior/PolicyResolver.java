@@ -1,10 +1,6 @@
 package eu.kalafatic.evolution.controller.orchestration.behavior;
 
-import eu.kalafatic.evolution.controller.orchestration.behavior.ExecutionPolicy.ExecutionMode;
-import eu.kalafatic.evolution.controller.orchestration.behavior.ExecutionPolicy.InteractionMode;
-import eu.kalafatic.evolution.controller.orchestration.behavior.ExecutionPolicy.ReasoningStrategy;
-import eu.kalafatic.evolution.controller.orchestration.behavior.ExecutionPolicy.SupervisionLevel;
-import eu.kalafatic.evolution.controller.orchestration.behavior.ExecutionPolicy.WorkflowModel;
+import eu.kalafatic.evolution.controller.orchestration.behavior.ExecutionPolicy.*;
 
 /**
  * Resolves semantic ExecutionPolicy from raw bitfield state using a rule-based engine.

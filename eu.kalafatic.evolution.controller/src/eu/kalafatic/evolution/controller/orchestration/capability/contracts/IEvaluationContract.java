@@ -1,11 +1,10 @@
 package eu.kalafatic.evolution.controller.orchestration.capability.contracts;
 
-import java.io.File;
-import java.util.List;
-
+import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.trajectory.EvaluationSignal;
-import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
+import java.io.File;
+import java.util.List;
 
 /**
  * Contract for evaluators.

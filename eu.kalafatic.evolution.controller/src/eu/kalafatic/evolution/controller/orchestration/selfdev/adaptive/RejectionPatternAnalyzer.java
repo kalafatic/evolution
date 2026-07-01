@@ -1,8 +1,10 @@
 package eu.kalafatic.evolution.controller.orchestration.selfdev.adaptive;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import eu.kalafatic.evolution.controller.agents.BaseAiAgent;

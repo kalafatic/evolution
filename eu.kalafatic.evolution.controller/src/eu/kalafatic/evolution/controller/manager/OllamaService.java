@@ -1,5 +1,10 @@
 package eu.kalafatic.evolution.controller.manager;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.util.function.Consumer;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -8,7 +13,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Consumer;
 
 import org.json.JSONArray;
 import org.json.JSONObject;

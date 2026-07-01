@@ -1,8 +1,8 @@
 package eu.kalafatic.evolution.controller.trajectory;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.HashMap;
 
 /**
  * Standardized telemetry object for evaluator signals.

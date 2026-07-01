@@ -1,7 +1,6 @@
 package eu.kalafatic.evolution.controller.execution;
 
 import java.util.List;
-
 import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
 
 /**

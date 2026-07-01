@@ -2,10 +2,15 @@ package eu.kalafatic.evolution.controller.supervision;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
-import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
 import eu.kalafatic.evolution.controller.trajectory.EvaluationSignal;
+import eu.kalafatic.evolution.controller.trajectory.SignalBus;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.ActivationRecommendation;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.ActivationGate;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant;
+import eu.kalafatic.evolution.controller.execution.ScheduledExecutionPlan;
 import eu.kalafatic.utils.semantic.EvolutionComponent;
 import eu.kalafatic.utils.semantic.EvolutionaryImpact;
 import eu.kalafatic.utils.semantic.Stability;

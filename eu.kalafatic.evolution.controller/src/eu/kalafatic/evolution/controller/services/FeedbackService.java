@@ -1,10 +1,9 @@
 package eu.kalafatic.evolution.controller.services;
 
 import org.json.JSONObject;
-
-import eu.kalafatic.evolution.controller.log.Log;
 import eu.kalafatic.evolution.model.orchestration.AIProvider;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.controller.log.Log;
 
 /**
  * Service to handle user feedback, calculate averages, and persist metadata.
