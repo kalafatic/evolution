@@ -232,7 +232,7 @@ public class DarwinEngine extends ADarwinEngine {
 			context.setCurrentTaskName("Initialization");
 
 			// UI TRIGGER: Force panels to open immediately by publishing an initial progress event
-			EvolutionProgressPublisher.startIteration(context, 0, 0, "alpha", getMinIterationLimit(context), getMaxBranchingLimit(context, getExpansionValue()));
+			EvolutionProgressPublisher.startIteration(context, 0, 0, "alpha", getMinIterationLimit(context), getMaxIterationLimit(context), getMinBranchingLimit(context, getExpansionValue()), getMaxBranchingLimit(context, getExpansionValue()));
 			context.log("[DARWIN] Strategic Initialization: " + request);
 
 			ConversationState convState = ConversationState.load(context.getSharedMemory(), context.getSessionId());
@@ -748,7 +748,7 @@ private String generateChatResponse(String request, TaskContext context) {
 		String lineage = activeTrajectory != null ? activeTrajectory.getTrajectoryId() : "alpha";
 
 		// UI Progress
-		EvolutionProgressPublisher.startIteration(context, state.getIterationCount() + 1, generation, lineage, getMinIterationLimit(context), getMaxBranchingLimit(context, getExpansionValue()));
+		EvolutionProgressPublisher.startIteration(context, state.getIterationCount() + 1, generation, lineage, getMinIterationLimit(context), getMaxIterationLimit(context), getMinBranchingLimit(context, getExpansionValue()), getMaxBranchingLimit(context, getExpansionValue()));
 		EvolutionProgressPublisher.updateStage(context, EvolutionStage.ANALYSIS);
 
 		// ============================================================

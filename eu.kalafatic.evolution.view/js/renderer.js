@@ -481,7 +481,7 @@ window.ChatApp.Renderer = {
             try {
                 const data = JSON.parse(m.text);
                 if (data.iterationCount !== undefined) {
-                    const key = data.lineage || data.iterationCount;
+                    const key = (data.lineage || 'root') + "_" + data.iterationCount;
                     if (!iterations[key] || data.timestamp > iterations[key].timestamp) {
                         iterations[key] = data;
                     }
@@ -518,20 +518,23 @@ window.ChatApp.Renderer = {
             `;
 
             if (isRoot && latestData) {
-                const actualIters = iterationValues.length;
+                const actualIters = Math.max(...iterationValues.map(iv => iv.iterationCount || 0));
                 const minIters = latestData.minIterations || 1;
                 const maxIters = latestData.maxIterations || 10;
+
+                const platform = latestData.platformType || "ASSISTED_CODING";
                 const actualBranches = latestData.branches ? latestData.branches.length : 0;
+                const minBranches = latestData.minBranchingLimit || 2;
                 const maxBranches = latestData.branchingLimit || 4;
 
                 const iText = `Iters: ${actualIters}/${minIters}/${maxIters}`;
-                const bText = `Branches: ${actualBranches}/${maxBranches}`;
+                const bText = `${platform} ${actualBranches}/${minBranches}/${maxBranches}`;
 
                 iterHtml = `
                     <div style="display: flex; align-items: center; gap: 12px;">
-                        <div style="font-size: 9px; color: #94a3b8; min-width: 60px; text-align: right; font-weight: normal;">${iText}</div>
+                        <div id="iter-stats" style="font-size: 9px; color: #94a3b8; min-width: 60px; text-align: right; font-weight: normal;">${iText}</div>
                         ${iterHtml}
-                        <div style="font-size: 9px; color: #94a3b8; min-width: 60px; font-weight: normal;">${bText}</div>
+                        <div id="branch-stats" style="font-size: 9px; color: #94a3b8; min-width: 60px; font-weight: normal;">${bText}</div>
                     </div>
                 `;
             }

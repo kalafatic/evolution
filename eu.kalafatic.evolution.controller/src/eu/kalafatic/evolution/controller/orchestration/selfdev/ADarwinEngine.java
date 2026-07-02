@@ -327,7 +327,7 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 			context.setCurrentTaskName("Initialization");
 
 			// UI TRIGGER: Force panels to open immediately by publishing an initial progress event
-			EvolutionProgressPublisher.startIteration(context, 0, 0, "alpha", getMinIterationLimit(context), getMaxBranchingLimit(context, getExpansionValue()));
+			EvolutionProgressPublisher.startIteration(context, 0, 0, "alpha", getMinIterationLimit(context), getMaxIterationLimit(context), getMinBranchingLimit(context, getExpansionValue()), getMaxBranchingLimit(context, getExpansionValue()));
 
 		// FORCE COGNITIVE SYNC: Trigger cognitive state update to reflect evolutionary capability
 		if (getSessionContainer() instanceof eu.kalafatic.evolution.controller.orchestration.SessionContext) {
@@ -844,7 +844,7 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 
 		// UI Progress
 		EvolutionProgressPublisher.startIteration(context, state.getIterationCount() + 1, generation, lineage,
-				getMinIterationLimit(context), getMaxBranchingLimit(context, getExpansionValue()));
+				getMinIterationLimit(context), getMaxIterationLimit(context), getMinBranchingLimit(context, getExpansionValue()), getMaxBranchingLimit(context, getExpansionValue()));
 		EvolutionProgressPublisher.updateStage(context, EvolutionStage.ANALYSIS);
 
 		// ============================================================
@@ -2955,6 +2955,28 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 		if (sanitized.isEmpty())
 			return "unnamed";
 		return sanitized.substring(0, Math.min(sanitized.length(), 30));
+	}
+
+	protected int getMinBranchingLimit(TaskContext context, int expansionValue) {
+		int minBranchingLimit = 2; // Default baseline for diversity
+
+		switch (platformType) {
+		case SIMPLE_CHAT:
+			minBranchingLimit = 1;
+			break;
+		case ASSISTED_CODING:
+			minBranchingLimit = 2;
+			break;
+		case HYBRID_MANUAL_EXPORT:
+			minBranchingLimit = 4;
+			break;
+		case SELF_DEV_MODE:
+			minBranchingLimit = 2;
+			break;
+		default:
+			minBranchingLimit = 2;
+		}
+		return minBranchingLimit;
 	}
 
 	protected int getMaxBranchingLimit(TaskContext context, int expansionValue) {

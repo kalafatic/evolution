@@ -15,13 +15,15 @@ import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
 public class EvolutionProgressPublisher {
     private static final Map<String, EvolutionProgressEvent> activeEvents = new ConcurrentHashMap<>();
 
-    public static void startIteration(TaskContext context, int iterationCount, int generation, String lineage, int minIterations, int branchingLimit) {
+    public static void startIteration(TaskContext context, int iterationCount, int generation, String lineage, int minIterations, int maxIterations, int minBranchingLimit, int branchingLimit) {
         EvolutionProgressEvent event = new EvolutionProgressEvent();
         event.setSessionId(context.getSessionId());
         event.setIterationCount(iterationCount);
         event.setGeneration(generation);
         event.setLineage(lineage);
         event.setMinIterations(minIterations);
+        event.setMaxIterations(maxIterations);
+        event.setMinBranchingLimit(minBranchingLimit);
         event.setBranchingLimit(branchingLimit);
         event.setStage(EvolutionStage.ITERATION_START);
         event.setStartTime(System.currentTimeMillis());
@@ -199,6 +201,7 @@ public class EvolutionProgressPublisher {
         json.put("maxIterations", event.getMaxIterations());
         json.put("minIterations", event.getMinIterations());
         json.put("branchingLimit", event.getBranchingLimit());
+        json.put("minBranchingLimit", event.getMinBranchingLimit());
         json.put("timestamp", event.getTimestamp());
         json.put("startTime", event.getStartTime());
 
