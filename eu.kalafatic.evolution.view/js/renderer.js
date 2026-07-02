@@ -58,7 +58,21 @@ window.ChatApp.Renderer = {
         } else {
             const bubble = document.createElement('div');
             bubble.className = 'bubble';
-            bubble.onclick = () => window.ChatApp.Actions.callJava('edit', m.index.toString(), m.text);
+
+            // MEDIATED FINAL RESPONSE CLICK MUST OPEN NEW MediatedEditor
+            let mediatedZip = null;
+            if (role.includes('final-response') || role.includes('result-summary')) {
+                const zipMatch = m.text.match(/\[.*?\]\((file:\/\/.*?\.zip)\)/i) || m.text.match(/file:\/\/.*?\.zip/i);
+                if (zipMatch) mediatedZip = zipMatch[1] || zipMatch[0];
+            }
+
+            if (mediatedZip) {
+                bubble.onclick = () => window.ChatApp.Actions.callJava('openInMediatedEditor', '-1', mediatedZip);
+                bubble.title = "Click to open Mediated Editor";
+                bubble.style.cursor = 'pointer';
+            } else {
+                bubble.onclick = () => window.ChatApp.Actions.callJava('edit', m.index.toString(), m.text);
+            }
 
             const bubbleContent = document.createElement('div');
             bubbleContent.className = 'bubble-content';
@@ -191,7 +205,9 @@ window.ChatApp.Renderer = {
         // Markdown Links [text](url)
         html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, text, url) => {
              if (url.startsWith('file://')) {
-                  return `<a onclick="event.stopPropagation(); window.ChatApp.Actions.callJava('openDiff', '-1', '${window.ChatApp.Utils.escapeJs(url)}')" oncontextmenu="window.ChatApp.UI.showFileContextMenu(event, '${window.ChatApp.Utils.escapeJs(url)}')"><b>${text}</b></a>`;
+                  const isZip = url.toLowerCase().endsWith('.zip');
+                  const action = isZip ? 'openInMediatedEditor' : 'openDiff';
+                  return `<a onclick="event.stopPropagation(); window.ChatApp.Actions.callJava('${action}', '-1', '${window.ChatApp.Utils.escapeJs(url)}')" oncontextmenu="window.ChatApp.UI.showFileContextMenu(event, '${window.ChatApp.Utils.escapeJs(url)}')"><b>${text}</b></a>`;
              }
              return `<a href="${url}" target="_blank" onclick="event.stopPropagation();">${text}</a>`;
         });
@@ -240,7 +256,9 @@ window.ChatApp.Renderer = {
 
             const str = String(val);
             if (['files', 'path', 'file', 'target'].includes(key) && (str.includes('.') || str.includes('/'))) {
-                return `<a onclick="event.stopPropagation(); window.ChatApp.Actions.callJava('openDiff', '-1', '${window.ChatApp.Utils.escapeJs(str)}')" oncontextmenu="window.ChatApp.UI.showFileContextMenu(event, '${window.ChatApp.Utils.escapeJs(str)}')"><b>${window.ChatApp.Utils.escapeHtml(str)}</b></a>`;
+                const isZip = str.toLowerCase().endsWith('.zip');
+                const action = isZip ? 'openInMediatedEditor' : 'openDiff';
+                return `<a onclick="event.stopPropagation(); window.ChatApp.Actions.callJava('${action}', '-1', '${window.ChatApp.Utils.escapeJs(str)}')" oncontextmenu="window.ChatApp.UI.showFileContextMenu(event, '${window.ChatApp.Utils.escapeJs(str)}')"><b>${window.ChatApp.Utils.escapeHtml(str)}</b></a>`;
             }
             return window.ChatApp.Utils.escapeHtml(str);
         };

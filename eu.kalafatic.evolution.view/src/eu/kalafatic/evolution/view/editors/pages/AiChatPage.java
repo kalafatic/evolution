@@ -977,9 +977,12 @@ public class AiChatPage extends AEvoPage {
 
 		if (path.startsWith("file://")) {
 			path = path.substring(7);
-			if (path.startsWith("/") && path.length() > 2 && path.charAt(2) == ':') {
-				path = path.substring(1);
-			}
+		}
+
+		// On Windows, file:///C:/path -> /C:/path (after stripping file://)
+		// We remove the leading / for Windows drive letters to get C:/path
+		if (path.startsWith("/") && path.length() > 2 && path.charAt(2) == ':') {
+			path = path.substring(1);
 		}
 
 		File projectRoot = getProjectRoot();
