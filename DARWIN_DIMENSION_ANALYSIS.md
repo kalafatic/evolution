@@ -49,3 +49,19 @@ A stabilization agent that generates blueprints for siblings.
 4. **Sibling Generation**: `SiblingGenerationManager` uses `TrajectoryTerritoryMapper` to spawn competing blueprints for the active dimension.
 5. **Selection & Locking**: Once a winner is chosen, its dimension is `LOCKED` in the genome, and the loop proceeds to the next dimension.
 6. **Exhaustion & Discovery**: If no unlocked dimensions remain, `DimensionDiscoveryAgent` is called to expand the genome.
+
+## Dimension Creation Points
+
+Technical dimensions are instantiated in the following locations:
+
+1.  **`IntentExpansionEngine.expand(...)`**:
+    - **Initial Discovery**: Created during the first phase of orchestration based on user intent analysis.
+    - **Metadata**: Sets `id`, `description`, `abstractionLevel`, `semanticDomain`, `significanceScore`, and `ambiguityScore`.
+
+2.  **`DimensionDiscoveryAgent.discover(...)`**:
+    - **Genome Expansion**: Created when all existing dimensions are locked but the goal is not yet satisfied.
+    - **Grounding**: Uses `TargetRealityModel` (hotspots/facts) to discover project-specific decision points.
+    - **Metadata**: Sets composite scoring fields including `evolutionaryPressure`.
+
+3.  **`DimensionEngine.selectNextDimension(...)`**:
+    - **Fallback**: Creates a default `IMPLEMENTATION` dimension if no other dimensions are available.
