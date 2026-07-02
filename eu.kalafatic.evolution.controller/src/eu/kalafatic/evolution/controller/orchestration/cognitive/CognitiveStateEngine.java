@@ -18,6 +18,17 @@ public class CognitiveStateEngine {
         CapabilityAnalysis analysis = pipeline.analyze(prompt);
         CapabilitySignal signal = analysis.getWinner();
 
+        // 1b. Check for explicit UI mode selection (Priority over prompt analysis)
+        if (context != null && context.getOrchestrator() != null) {
+            eu.kalafatic.evolution.model.orchestration.AiMode uiMode = context.getOrchestrator().getAiMode();
+            if (uiMode == eu.kalafatic.evolution.model.orchestration.AiMode.MEDIATED) {
+                signal = new CapabilitySignal(CapabilityType.MEDIATED, 10.0, 1.0, signal.getIntent(), null, "EXPLICIT_UI_MEDIATED");
+            } else if (context.getOrchestrator().isDarwinMode() && signal.getCapability() == CapabilityType.CHAT) {
+                // If Darwin is on but prompt looks like chat, escalate to EVOLUTION
+                signal = new CapabilitySignal(CapabilityType.EVOLUTION, 5.0, 0.8, signal.getIntent(), null, "EXPLICIT_UI_DARWIN");
+            }
+        }
+
         // 2. Influence by ContextAssist if high confidence
         if (assistResult != null && assistResult.getConfidence() == ConfidenceLevel.HIGH) {
             CapabilityType assistCap = mapToCapability(assistResult.getMode());

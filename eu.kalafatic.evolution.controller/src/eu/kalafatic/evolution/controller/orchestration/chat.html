@@ -409,10 +409,6 @@
             </div>
             <div class="viz-panel-header">
                 Evolution Lineage
-                <div id="tree-stats" style="font-size: 9px; color: var(--text-dim); margin-top: 2px; text-transform: none; font-weight: normal; display: flex; gap: 8px;">
-                    <span id="iter-stats">Iters: -/-/-</span>
-                    <span id="branch-stats">Branches: -/-/-</span>
-                </div>
             </div>
             <div id="tree-container">
                  <div id="tree-content" style="display: flex; flex-direction: column; align-items: center;"></div>
@@ -619,10 +615,6 @@
 
             const sortedIters = Object.keys(iterations).sort((a, b) => parseInt(a) - parseInt(b));
 
-            if (latestData && iterStats && branchStats) {
-                iterStats.innerText = `Iters: ${sortedIters.length}/${latestData.minIterations || 1}/${latestData.maxIterations || 10}`;
-                branchStats.innerText = `Branches: ${latestData.branches ? latestData.branches.length : 0}/${latestData.branchingLimit || 4}`;
-            }
             if (sortedIters.length === 0) return;
 
             const childrenByParent = {};
@@ -633,14 +625,28 @@
                 childrenByParent[pid].push(data);
             });
 
-            const renderIteration = (data) => {
+            const renderIteration = (data, isRoot = false) => {
                 const dimInfo = data.currentDimension ? `\nDimension: ${data.currentDimension}${data.currentDimensionDescription ? ' (' + data.currentDimensionDescription + ')' : ''}` : "";
-                let html = `
+                let nodeHtml = `
                     <div class="tree-node" title="Iteration ${data.iterationCount}: ${data.currentTask || ''}${dimInfo}">
                         <div class="node-title">I${data.iterationCount}</div>
                         ${data.currentDimension ? `<div style="font-size: 6px; color: #64748b; margin-top: -2px;">${data.currentDimension.substring(0, 8)}</div>` : ''}
                     </div>
                 `;
+
+                if (isRoot && latestData) {
+                    const iText = `Iters: ${sortedIters.length}/${latestData.minIterations || 1}/${latestData.maxIterations || 10}`;
+                    const bText = `Branches: ${latestData.branches ? latestData.branches.length : 0}/${latestData.branchingLimit || 4}`;
+                    nodeHtml = `
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="font-size: 9px; color: var(--text-dim); min-width: 60px; text-align: right; font-weight: normal;">${iText}</div>
+                            ${nodeHtml}
+                            <div style="font-size: 9px; color: var(--text-dim); min-width: 60px; font-weight: normal;">${bText}</div>
+                        </div>
+                    `;
+                }
+
+                let html = nodeHtml;
 
                 const branches = data.branches || [];
                 const winnerId = data.winnerId;
@@ -685,7 +691,7 @@
 
             const roots = childrenByParent["ROOT"] || [];
             let fullHtml = "";
-            roots.forEach(r => { fullHtml += renderIteration(r); });
+            roots.forEach((r, idx) => { fullHtml += renderIteration(r, idx === 0); });
             content.innerHTML = fullHtml || '<div style="text-align: center; color: #94a3b8; margin-top: 20px;">No lineage.</div>';
         }
 
