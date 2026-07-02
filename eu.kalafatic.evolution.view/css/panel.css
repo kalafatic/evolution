@@ -64,10 +64,22 @@
     align-items: center;
 }
 
-.tree-node.dimension {
+.tree-node.iteration.dimension {
     width: 64px;
     background: #f0f7ff;
     border-color: #3b82f6;
+    border-radius: 16px; /* Pill shape */
+}
+
+.tree-node.iteration.intent {
+    width: 64px;
+    background: #fff1f2;
+    border-color: #f43f5e;
+    clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); /* Diamond shape */
+}
+
+.tree-node.branch {
+    border-radius: 4px; /* Square/Rect shape */
 }
 
 .tree-node.proposal {

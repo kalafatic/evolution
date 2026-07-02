@@ -509,10 +509,13 @@ window.ChatApp.Renderer = {
             if (platformClass === 'hybrid_manual_export') platformClass = 'mediated';
             const dimInfo = data.currentDimension ? `\nDimension: ${data.currentDimension}${data.currentDimensionDescription ? ' (' + data.currentDimensionDescription + ')' : ''}` : "";
             const iterationId = data.lineage || data.iterationCount;
+            const isIntent = data.iterationCount === 0 || data.iterationCount === '0';
+            const typeClass = isIntent ? 'intent' : 'dimension';
+
             let iterHtml = `
-                <div class="tree-node dimension ${platformClass}" title="Iteration ${data.iterationCount}: ${data.currentTask || ''}${dimInfo}"
+                <div class="tree-node iteration ${typeClass} ${platformClass}" title="Iteration ${data.iterationCount}: ${data.currentTask || ''}${dimInfo}"
                      ondblclick="window.ChatApp.Renderer.showDimensionDetails('${iterationId}')">
-                    <div class="node-title">I${data.iterationCount}</div>
+                    <div class="node-title">${isIntent ? 'INTENT' : 'I' + data.iterationCount}</div>
                     ${data.currentDimension ? `<div style="font-size: 6px; color: #64748b; margin-top: -2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; text-align: center; padding: 0 2px;">${data.currentDimension}</div>` : ''}
                 </div>
             `;
@@ -558,11 +561,11 @@ window.ChatApp.Renderer = {
                     iterHtml += `<div class="tree-child">`;
                     iterHtml += `<div class="tree-vline"></div>`;
                     iterHtml += `
-                        <div class="tree-node proposal branch ${platformClass} ${isFailed ? 'failed' : ''} ${isWinner ? 'winner' : ''}"
+                        <div class="tree-node branch proposal ${platformClass} ${isFailed ? 'failed' : ''} ${isWinner ? 'winner' : ''}"
                              title="Branch ${b.id}${b.strategy ? ': ' + b.strategy : ''}${b.score !== undefined ? ' - Score: ' + Math.round(b.score*100) : ''}"
                              ondblclick="window.ChatApp.Renderer.showBranchDetails('${b.id}')"
                              oncontextmenu="window.ChatApp.Renderer.showBranchContextMenu(event, '${b.id}')">
-                            <div class="node-title">${isWinner ? '🏆' : 'B' + (idx + 1)}</div>
+                            <div class="node-title">B${idx + 1}${isWinner ? '🏆' : ''}</div>
                         </div>
                     `;
 
