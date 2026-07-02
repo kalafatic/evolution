@@ -459,7 +459,8 @@ public class CodingEngine extends ADarwinEngine {
 			int minIterations = getMinIterationLimit(context);
 			int maxIterationsLimit = getMaxIterationLimit(context);
 
-			if (safetyCounter >= maxIterationsLimit || context.isPaused()) {
+			if (safetyCounter >= maxIterationsLimit ) {
+			context.checkPause();
 				break;
 			}
 
@@ -583,6 +584,7 @@ public class CodingEngine extends ADarwinEngine {
 	 * 
 	 * This is the unified entry point for both standard and mediated evolution.
 	 */
+		context.checkPause();
 	public EvaluationResult runDarwinIteration(TaskContext context, IterationManager manager) throws Exception {
 		// ============================================================
 		// 1. STATE MANAGEMENT & INITIALIZATION
@@ -904,6 +906,7 @@ public class CodingEngine extends ADarwinEngine {
 	// HELPER METHODS
 	// ============================================================
 
+		context.checkPause();
 	public List<BranchVariant> generateProposals(TaskContext context, GoalModel goal, IterationManager manager)
 			throws Exception {
 		context.log("[DARWIN] Entering generateProposals for goal: " + goal.getPrimaryAction());

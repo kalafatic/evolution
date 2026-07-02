@@ -620,9 +620,10 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 			int minIterations = getMinIterationLimit(context);
 			int maxIterationsLimit = getMaxIterationLimit(context);
 
-			if (safetyCounter >= maxIterationsLimit || context.isPaused()) {
+			if (safetyCounter >= maxIterationsLimit) {
 				break;
 			}
+			context.checkPause();
 
 			context.log("[DARWIN] Dynamic Expansion Control: Iteration=" + (safetyCounter + 1) + ", Expansion="
 					+ expansionValue + ", Min=" + minIterations + ", Max=" + maxIterationsLimit);
@@ -746,6 +747,7 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 	 * This is the unified entry point for both standard and mediated evolution.
 	 */
 	public EvaluationResult runDarwinIteration(TaskContext context, IterationManager manager) throws Exception {
+		context.checkPause();
 		// ============================================================
 		// 1. STATE MANAGEMENT & INITIALIZATION
 		// ============================================================
@@ -1286,6 +1288,7 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 
 	public List<BranchVariant> generateProposals(TaskContext context, GoalModel goal, IterationManager manager)
 			throws Exception {
+		context.checkPause();
 		context.log("[DARWIN] Entering generateProposals for goal: " + goal.getPrimaryAction());
 		Iteration currentIterationModelImpl = manager.getCurrentIterationModel();
 		String iterId = currentIterationModelImpl != null ? currentIterationModelImpl.getId() : "default";

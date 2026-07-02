@@ -529,7 +529,8 @@ private String generateChatResponse(String request, TaskContext context) {
 			int minIterations = getMinIterationLimit(context);
 			int maxIterationsLimit = getMaxIterationLimit(context);
 
-			if (safetyCounter >= maxIterationsLimit || context.isPaused()) {
+			if (safetyCounter >= maxIterationsLimit ) {
+			context.checkPause();
 				break;
 			}
 
@@ -654,6 +655,7 @@ private String generateChatResponse(String request, TaskContext context) {
 	 * 
 	 * This is the unified entry point for both standard and mediated evolution.
 	 */
+		context.checkPause();
 	public EvaluationResult runDarwinIteration(TaskContext context, IterationManager manager) throws Exception {
 		// ============================================================
 		// 1. STATE MANAGEMENT & INITIALIZATION
@@ -1181,6 +1183,7 @@ private String generateChatResponse(String request, TaskContext context) {
 		context.getKernelContext().getMemoryService().saveEvolutionTree();
 	}
 
+		context.checkPause();
 	public List<BranchVariant> generateProposals(TaskContext context, GoalModel goal, IterationManager manager)
 			throws Exception {
 		context.log("[DARWIN] Entering generateProposals for goal: " + goal.getPrimaryAction());

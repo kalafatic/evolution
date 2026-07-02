@@ -261,11 +261,19 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                 boolean autoApprove = (Boolean)settings.get("autoApprove");
                 pi.setAutoApprove(autoApprove);
 
-                // If auto-approve is enabled while waiting, resume the session
-                if (autoApprove && session instanceof SessionContext) {
+                // Synchronize TaskContext and handle pause/resume state
+                if (session instanceof SessionContext) {
                     TaskContext taskContext = ((SessionContext)session).getTaskContext();
-                    if (taskContext != null && (taskContext.isWaitingForApproval() || taskContext.isWaitingForInput())) {
-                        provideApproval(sessionId, true);
+                    if (taskContext != null) {
+                        taskContext.setAutoApprove(autoApprove);
+
+                        // Toggle pause state based on auto-approve
+                        setPaused(sessionId, !autoApprove);
+
+                        // If auto-approve is enabled while waiting for approval, provide it
+                        if (autoApprove && (taskContext.isWaitingForApproval() || taskContext.isWaitingForInput())) {
+                            provideApproval(sessionId, true);
+                        }
                     }
                 }
             }
