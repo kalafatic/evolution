@@ -316,6 +316,12 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 
 			// UI TRIGGER: Force panels to open immediately by publishing an initial progress event
 			EvolutionProgressPublisher.startIteration(context, 0, 0, "alpha", getMinIterationLimit(context), getMaxBranchingLimit(context, getExpansionValue()));
+
+		// FORCE COGNITIVE SYNC: Trigger cognitive state update to reflect evolutionary capability
+		if (getSessionContainer() instanceof eu.kalafatic.evolution.controller.orchestration.SessionContext) {
+			getSessionContainer().getCognitiveState().processInteraction(request);
+		}
+
 			context.log("[DARWIN] Strategic Initialization: " + request);
 
 			ConversationState convState = ConversationState.load(context.getSharedMemory(), context.getSessionId());

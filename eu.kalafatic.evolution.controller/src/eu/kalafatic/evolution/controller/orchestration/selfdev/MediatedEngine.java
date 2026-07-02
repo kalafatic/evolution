@@ -82,6 +82,11 @@ public class MediatedEngine extends ADarwinEngine  {
 		// ✅ Trigger UI panels immediately
 		EvolutionProgressPublisher.startIteration(context, 1, 0, "alpha", 1, 4);
 
+		// FORCE COGNITIVE SYNC: Trigger cognitive state update to reflect evolutionary capability
+		if (getSessionContainer() instanceof eu.kalafatic.evolution.controller.orchestration.SessionContext) {
+			getSessionContainer().getCognitiveState().processInteraction(taskRequest.getPrompt());
+		}
+
 		String request = taskRequest.getPrompt();
 		OrchestrationState state = context.getOrchestrationState();
 		
