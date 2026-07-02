@@ -245,7 +245,7 @@ window.ChatApp.Renderer = {
             return window.ChatApp.Utils.escapeHtml(str);
         };
 
-        const humanKeys = ['explanation', 'strategy', 'thought', 'objective', 'refinedPrompt', 'rootCause', 'plan', 'workDone', 'summary', 'description', 'hypothesis', 'expected_effects', 'expected_effect', 'clarificationQuestion'];
+        const humanKeys = ['explanation', 'strategy', 'thought', 'objective', 'refinedPrompt', 'rootCause', 'plan', 'workDone', 'summary', 'description', 'hypothesis', 'expected_effects', 'expected_effect', 'clarificationQuestion', 'goal', 'currentTask', 'status', 'currentDimensionDescription'];
 
         // If data is a simple object with just one or two human keys, render it as plain text
         if (typeof data === 'object' && !Array.isArray(data)) {
@@ -497,23 +497,27 @@ window.ChatApp.Renderer = {
 
         // Map iterations by their parentId to build non-linear tree
         const childrenByParent = {};
+        const allTargetIds = new Set();
+
         iterationValues.forEach(data => {
             const pid = data.parentId || "ROOT";
             if (!childrenByParent[pid]) childrenByParent[pid] = [];
             childrenByParent[pid].push(data);
+
+            // Track all iteration IDs and their branch IDs to find true roots
+            allTargetIds.add(data.lineage || data.iterationCount);
+            (data.branches || []).forEach(b => allTargetIds.add(b.id));
         });
 
         // Recursive renderer for the lineage
         function renderIteration(data, isRoot = false) {
-            let platformClass = (data.platformType || '').toLowerCase();
-            if (platformClass === 'hybrid_manual_export') platformClass = 'mediated';
             const dimInfo = data.currentDimension ? `\nDimension: ${data.currentDimension}${data.currentDimensionDescription ? ' (' + data.currentDimensionDescription + ')' : ''}` : "";
             const iterationId = data.lineage || data.iterationCount;
             let iterHtml = `
-                <div class="tree-node dimension ${platformClass}" title="Iteration ${data.iterationCount}: ${data.currentTask || ''}${dimInfo}"
+                <div class="tree-node" title="Iteration ${data.iterationCount}: ${data.currentTask || ''}${dimInfo}"
                      ondblclick="window.ChatApp.Renderer.showDimensionDetails('${iterationId}')">
                     <div class="node-title">I${data.iterationCount}</div>
-                    ${data.currentDimension ? `<div style="font-size: 6px; color: #64748b; margin-top: -2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; text-align: center; padding: 0 2px;">${data.currentDimension}</div>` : ''}
+                    ${data.currentDimension ? `<div style="font-size: 6px; color: #64748b; margin-top: -2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 34px; text-align: center;">${data.currentDimension}</div>` : ''}
                 </div>
             `;
 
@@ -555,7 +559,7 @@ window.ChatApp.Renderer = {
                     iterHtml += `<div class="tree-child">`;
                     iterHtml += `<div class="tree-vline"></div>`;
                     iterHtml += `
-                        <div class="tree-node proposal branch ${platformClass} ${isFailed ? 'failed' : ''} ${isWinner ? 'winner' : ''}"
+                        <div class="tree-node branch ${isFailed ? 'failed' : ''} ${isWinner ? 'winner' : ''}"
                              title="Branch ${b.id}${b.strategy ? ': ' + b.strategy : ''}${b.score !== undefined ? ' - Score: ' + Math.round(b.score*100) : ''}"
                              ondblclick="window.ChatApp.Renderer.showBranchDetails('${b.id}')"
                              oncontextmenu="window.ChatApp.Renderer.showBranchContextMenu(event, '${b.id}')">
@@ -593,8 +597,12 @@ window.ChatApp.Renderer = {
         function renderNode(isRoot = false) {
             let html = "";
             if (isRoot) {
-                // Find iteration(s) that have no parentId or "ROOT" as parentId
-                const roots = childrenByParent["ROOT"] || [];
+                // Find true roots: Iterations whose parentId is "ROOT" OR is unknown (missing lineage node)
+                const roots = iterationValues.filter(data => {
+                    const pid = data.parentId || "ROOT";
+                    return pid === "ROOT" || !allTargetIds.has(pid);
+                });
+
                 roots.forEach((r, idx) => {
                     html += renderIteration(r, idx === 0);
                 });

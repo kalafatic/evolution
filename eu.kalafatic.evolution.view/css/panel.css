@@ -52,7 +52,7 @@
     height: 32px;
     border: 1.5px solid #7aa6ff;
     border-radius: 4px;
-    background: #ffffff;
+    background: white;
     text-align: center;
     overflow: hidden;
     margin: 2px 0;
@@ -62,48 +62,6 @@
     flex-direction: column;
     justify-content: center;
     align-items: center;
-}
-
-.tree-node.dimension {
-    width: 64px;
-    background: #f0f7ff;
-    border-color: #3b82f6;
-}
-
-.tree-node.proposal {
-    background: #f0fdf4;
-    border-color: #22c55e;
-}
-
-/* Mode-based colors */
-.tree-node.simple_chat {
-    background: #f5f3ff; /* Light purple */
-    border-color: #8b5cf6;
-}
-
-.tree-node.hybrid_manual_export, .tree-node.mediated {
-    background: #fff7ed; /* Light orange */
-    border-color: #f97316;
-}
-
-.tree-node.self_dev_mode {
-    background: #ecfeff; /* Light cyan */
-    border-color: #06b6d4;
-}
-
-.tree-node.assisted_coding {
-    background: #fefce8; /* Light yellow */
-    border-color: #eab308;
-}
-
-.tree-node.darwin_mode {
-    background: #f8fafc; /* Light slate */
-    border-color: #64748b;
-}
-
-.tree-node.intent_reconstruction {
-    background: #fff1f2; /* Light rose */
-    border-color: #f43f5e;
 }
 
 .tree-node .node-title {
@@ -120,16 +78,13 @@
 
 
 .tree-node.winner {
-    background: #fffbeb !important;
-    border-color: #f59e0b !important;
-    box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
-    z-index: 2;
+    background: #fffbeb;
+    border-color: #f59e0b;
 }
 
 .tree-node.failed {
-    background: #fef2f2 !important;
-    border-color: #ef4444 !important;
-    opacity: 0.7;
+    border-color: #fca5a5;
+    opacity: 0.8;
 }
 
 .tree-node .winner-label {
