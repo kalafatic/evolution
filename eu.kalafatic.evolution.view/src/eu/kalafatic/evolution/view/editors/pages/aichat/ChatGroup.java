@@ -553,6 +553,9 @@ public class ChatGroup extends AEvoGroup {
                         case "openPeerReview":
                             editor.showPeerReviewPage();
                             break;
+                        case "addDimension":
+                            page.provideInput("Add dimension: " + text);
+                            break;
                     }
                 } catch (Exception e) {
                     e.printStackTrace();

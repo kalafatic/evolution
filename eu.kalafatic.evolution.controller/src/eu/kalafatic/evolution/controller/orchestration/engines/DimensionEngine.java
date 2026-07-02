@@ -47,6 +47,22 @@ public class DimensionEngine {
     }
 
     public EvolutionDimension selectNextDimension(SemanticGenome genome, TaskContext context, GoalModel goal, Trajectory trajectory) {
+        // FORCED DIMENSION: If user rejected all proposals, we stay in the same dimension
+        if (context != null && Boolean.TRUE.equals(context.getOrchestrationState().getMetadata().get("force_current_dimension"))) {
+            String currentDimId = (String) context.getOrchestrationState().getMetadata().get("current_dimension");
+            if (currentDimId != null) {
+                context.log("[DARWIN] Forced Dimension active: " + currentDimId);
+                context.getOrchestrationState().getMetadata().remove("force_current_dimension");
+                return genome.getDimensions().stream()
+                        .filter(d -> d.getId().equals(currentDimId))
+                        .findFirst()
+                        .orElseGet(() -> {
+                            context.log("[DARWIN] Warning: Forced dimension " + currentDimId + " not found in genome. Falling back to scheduler.");
+                            return dimensionScheduler.selectNextDimension(genome);
+                        });
+            }
+        }
+
         // STAGNATION HANDLING: If last iteration yielded no significant changes, boost priorities
         Boolean lastSignificant = (Boolean) context.getOrchestrationState().getMetadata().get("lastRealityCheckSignificant");
         if (lastSignificant != null && !lastSignificant) {

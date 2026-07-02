@@ -40,7 +40,19 @@ public class CognitiveStateEngine {
         double baseConfidence = 0.8;
         state.setConfidence(baseConfidence + (state.getTrendStability() * 0.2));
 
-        // 7. Publish meaningful changes
+        // 7. Sync dimensions from genome if available
+        if (context != null) {
+            Object genomeObj = context.getOrchestrationState().getMetadata().get("semanticGenome");
+            if (genomeObj instanceof eu.kalafatic.evolution.controller.orchestration.selfdev.SemanticGenome) {
+                eu.kalafatic.evolution.controller.orchestration.selfdev.SemanticGenome genome = (eu.kalafatic.evolution.controller.orchestration.selfdev.SemanticGenome) genomeObj;
+                state.getDimensions().clear();
+                for (eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionDimension dim : genome.getDimensions()) {
+                    state.getDimensions().add(dim.getId());
+                }
+            }
+        }
+
+        // 8. Publish meaningful changes
         publisher.publish(context, state);
     }
 

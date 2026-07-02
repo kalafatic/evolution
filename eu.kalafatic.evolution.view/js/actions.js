@@ -25,6 +25,14 @@ window.ChatApp.Actions = {
         }
     },
 
+    addDimension: function() {
+        const input = document.getElementById('add-dimension-input');
+        if (input && input.value.trim()) {
+            this.callJava('addDimension', '-1', input.value.trim());
+            input.value = '';
+        }
+    },
+
     renderActions: function(m) {
         const container = document.createElement('div');
         container.className = 'actions';

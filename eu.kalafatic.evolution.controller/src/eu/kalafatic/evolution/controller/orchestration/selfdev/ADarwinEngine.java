@@ -935,9 +935,24 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 		String manualId = resolveVariantSelection(variants, context, manager);
 
 		if (manualId == null && !context.isAutoApprove()) {
-			if (executionProfile.requireUserSelection()) {
+			// REQUIREMENT 1: Always wait for user selection if AutoApprove is off
+			if (executionProfile.requireUserSelection() || !context.isAutoApprove()) {
 				manualId = manager.handleVariantSelection(context, variants, goal);
-				if ("REGENERATE".equals(manualId)) {
+				if ("REGENERATE".equals(manualId) || "REGENERATE_SAME_DIMENSION".equals(manualId)) {
+					if ("REGENERATE_SAME_DIMENSION".equals(manualId)) {
+						context.getOrchestrationState().getMetadata().put("force_current_dimension", true);
+						// Record rejected strategies to ensure diversity in next attempt
+						List<String> rejectedStrategies = variants.stream()
+							.map(v -> v.getStrategy())
+							.collect(Collectors.toList());
+
+						Object existingRejected = context.getOrchestrationState().getMetadata().get("current_iteration_rejected_strategies");
+						if (existingRejected instanceof List) {
+							((List<String>) existingRejected).addAll(rejectedStrategies);
+						} else {
+							context.getOrchestrationState().getMetadata().put("current_iteration_rejected_strategies", new ArrayList<>(rejectedStrategies));
+						}
+					}
 					return runDarwinIteration(context, manager);
 				}
 				if (manualId == null || "STOP".equals(manualId) || "FAILED".equals(manualId)) {
@@ -2327,6 +2342,13 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 		context.getOrchestrationState().getMetadata().put("current_dimension", activeDimension.getId());
 		context.getOrchestrationState().getMetadata().put("current_dimension_description",
 				activeDimension.getDescription());
+
+		// Reset iteration-specific rejection memory when a new dimension is selected
+		Object lastDim = context.getOrchestrationState().getMetadata().get("last_active_dimension");
+		if (lastDim == null || !lastDim.equals(activeDimension.getId())) {
+			context.getOrchestrationState().getMetadata().remove("current_iteration_rejected_strategies");
+			context.getOrchestrationState().getMetadata().put("last_active_dimension", activeDimension.getId());
+		}
 		context.log("[DARWIN] Scheduled Mutation Dimension: " + activeDimension.getId());
 
 		// EXPLICIT EVOLUTION STATE (Milestone Requirement 7)
@@ -2392,6 +2414,14 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 					.filter(r -> !"ACTIVE".equals(r.getActivationState()) && !"KEPT".equals(r.getActivationState()))
 					.map(r -> r.getStrategy() + " (Iteration " + r.getIteration() + ")").distinct()
 					.collect(Collectors.toList());
+
+		// Add rejected strategies from current iteration (if user explicitly rejected all and triggered regeneration)
+		Object curRejected = context.getOrchestrationState().getMetadata().get("current_iteration_rejected_strategies");
+		if (curRejected instanceof List) {
+			for (String rs : (List<String>) curRejected) {
+				if (!rejectedSiblings.contains(rs)) rejectedSiblings.add(rs);
+			}
+		}
 		}
 		String lineageContext = lineageBuilder.toString();
 

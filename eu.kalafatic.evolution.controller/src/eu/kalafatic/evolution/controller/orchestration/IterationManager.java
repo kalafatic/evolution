@@ -3,6 +3,9 @@ package eu.kalafatic.evolution.controller.orchestration;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.stream.Collectors;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import java.util.List;
 import java.util.Map;
 
@@ -612,12 +615,23 @@ public class IterationManager {
             String input = context.requestInput(sb.toString()).get();
             String trimmed = (input != null) ? input.trim() : "";
 
-            if (trimmed.isEmpty() || "Approved".equalsIgnoreCase(trimmed) || "Yes".equalsIgnoreCase(trimmed) || "Proceed".equalsIgnoreCase(trimmed) || "OK".equalsIgnoreCase(trimmed)) {
+            if ("Reject all".equalsIgnoreCase(trimmed) || trimmed.isEmpty()) {
+                context.log("[KERNEL] User rejected all proposals or entered empty prompt. Regenerating within current dimension.");
+                return "REGENERATE_SAME_DIMENSION";
+            }
+
+            if ("Approved".equalsIgnoreCase(trimmed) || "Yes".equalsIgnoreCase(trimmed) || "Proceed".equalsIgnoreCase(trimmed) || "OK".equalsIgnoreCase(trimmed)) {
                 context.log("[KERNEL] User approved best trajectory via fast-approval.");
                 return variants.stream()
                         .max((v1, v2) -> Double.compare(v1.getScore(), v2.getScore()))
                         .map(v -> v.getId())
                         .orElse(null);
+            }
+
+            if ("Reject".equalsIgnoreCase(trimmed) || "No".equalsIgnoreCase(trimmed) || "Rejected".equalsIgnoreCase(trimmed)) {
+                // If it's just "Reject" without a variant ID, we treat it as "Reject all"
+                context.log("[KERNEL] User rejected all proposals. Regenerating within current dimension.");
+                return "REGENERATE_SAME_DIMENSION";
             }
 
             if ("Force Solution".equalsIgnoreCase(trimmed)) {
@@ -632,8 +646,9 @@ public class IterationManager {
                         .orElse(null);
             }
 
-            if (trimmed.startsWith("Select ") || trimmed.startsWith("Approve variant ")) {
-                String manualId = trimmed.startsWith("Select ") ? trimmed.substring(7).trim() : trimmed.substring(16).trim();
+            String lower = trimmed.toLowerCase();
+            if (lower.startsWith("select ") || lower.startsWith("approve variant ")) {
+                String manualId = trimmed.substring(lower.startsWith("select ") ? 7 : 16).trim();
                 boolean found = variants.stream().anyMatch(v -> v.getId().equals(manualId));
                 if (found) {
                     context.log("[KERNEL] User selected trajectory: " + manualId);
@@ -642,25 +657,55 @@ public class IterationManager {
                 } else {
                     context.log("[KERNEL] Warning: Selected trajectory ID not found: " + manualId);
                 }
-            } else if (trimmed.startsWith("Keep variant ")) {
-                String keepId = trimmed.substring(13).trim();
-                variants.stream().filter(v -> v.getId().equals(keepId)).findFirst().ifPresent(v -> {
+            } else if (lower.startsWith("keep ")) {
+                String keepId = trimmed.substring(5).trim();
+                if (keepId.toLowerCase().startsWith("variant ")) keepId = keepId.substring(8).trim();
+                final String finalKeepId = keepId;
+                variants.stream().filter(v -> v.getId().equals(finalKeepId)).findFirst().ifPresent(v -> {
                     v.setActivationState(BranchVariant.ActivationState.KEPT);
-                    context.log("[KERNEL] Trajectory " + keepId + " marked as KEPT for final evaluation.");
+                    context.log("[KERNEL] Trajectory " + finalKeepId + " marked as KEPT for next iteration.");
+
+                    // Requirement 2c: Save dimension for next iteration
+                    Object genomeObj = context.getOrchestrationState().getMetadata().get("semanticGenome");
+                    if (genomeObj instanceof eu.kalafatic.evolution.controller.orchestration.selfdev.SemanticGenome) {
+                        String currentDim = (String) context.getOrchestrationState().getMetadata().get("current_dimension");
+                        if (currentDim != null) {
+                            ((eu.kalafatic.evolution.controller.orchestration.selfdev.SemanticGenome) genomeObj).lockDimension(currentDim);
+                            context.log("[KERNEL] Dimension " + currentDim + " locked due to 'KEEP' command.");
+                        }
+                    }
                     emitDarwinBranches(context, variants, null);
                 });
-            } else if (trimmed.startsWith("Reject variant ")) {
-                String rejectedId = trimmed.substring(15).trim();
-                variants.stream().filter(v -> v.getId().equals(rejectedId)).findFirst().ifPresent(v -> {
+            } else if (lower.startsWith("reject ")) {
+                String rejectedId = trimmed.substring(7).trim();
+                if (rejectedId.toLowerCase().startsWith("variant ")) rejectedId = rejectedId.substring(8).trim();
+                final String finalRejectedId = rejectedId;
+                variants.stream().filter(v -> v.getId().equals(finalRejectedId)).findFirst().ifPresent(v -> {
                     v.setActivationState(BranchVariant.ActivationState.REJECTED);
-                    context.log("[KERNEL] Trajectory " + rejectedId + " rejected by user.");
-                    sessionContainer.getEvolutionMemoryGraph().recordRejection("MANUAL_SELECTION", rejectedId, "User rejected explicitly.");
+                    context.log("[KERNEL] Trajectory " + finalRejectedId + " rejected by user.");
+                    sessionContainer.getEvolutionMemoryGraph().recordRejection("MANUAL_SELECTION", finalRejectedId, "User rejected explicitly.");
                     emitDarwinBranches(context, variants, null);
                 });
-            } else if ("Rejected".equalsIgnoreCase(trimmed) || "Reject".equalsIgnoreCase(trimmed) || "No".equalsIgnoreCase(trimmed)) {
-                recordRejection(goal, "Darwin trajectories rejected by user.");
-                sessionContainer.getEvolutionMemoryGraph().recordEntropy(1.0);
-                return "FAILED";
+            } else if (trimmed.startsWith("Add dimension:")) {
+                String dimName = trimmed.substring("Add dimension:".length()).trim();
+                context.log("[KERNEL] User added a new dimension: " + dimName);
+
+                Object genomeObj = context.getOrchestrationState().getMetadata().get("semanticGenome");
+                if (genomeObj instanceof eu.kalafatic.evolution.controller.orchestration.selfdev.SemanticGenome) {
+                    eu.kalafatic.evolution.controller.orchestration.selfdev.SemanticGenome genome = (eu.kalafatic.evolution.controller.orchestration.selfdev.SemanticGenome) genomeObj;
+                    eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionDimension newDim =
+                        new eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionDimension(
+                            dimName.toUpperCase().replace(" ", "_"),
+                            dimName,
+                            eu.kalafatic.evolution.controller.orchestration.selfdev.AbstractionLevel.DESIGN,
+                            eu.kalafatic.evolution.controller.orchestration.selfdev.SemanticDomain.STRUCTURE
+                        );
+                    genome.addDimension(newDim);
+                    context.log("[KERNEL] Dimension " + newDim.getId() + " added to genome.");
+
+                    // Trigger regeneration with new dimension
+                    return "REGENERATE";
+                }
             } else if (trimmed.startsWith("Propose:") || trimmed.startsWith("{")) {
                 context.log("[KERNEL] User injected a new trajectory. Integrating as a first-class candidate.");
 
@@ -669,8 +714,8 @@ public class IterationManager {
                 if (gmObj instanceof GoalModel) {
                     goalModel = (GoalModel) gmObj;
                 } else if (gmObj instanceof Map) {
-                    goalModel = new com.fasterxml.jackson.databind.ObjectMapper()
-                        .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                    goalModel = new ObjectMapper()
+                        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                         .convertValue(gmObj, GoalModel.class);
                 }
 
@@ -678,14 +723,22 @@ public class IterationManager {
                 variants.add(userVariant);
                 context.log("[KERNEL] User trajectory " + userVariant.getId() + " added to the evolutionary pool.");
             } else {
-                context.log("[KERNEL] User provided guidance: " + trimmed + ". Refining intent and regenerating trajectories.");
-                String newGoal = goal + " (Guidance: " + trimmed + ")";
-                context.getOrchestrationState().setRawInput(newGoal);
-                context.getOrchestrationState().getMetadata().remove("goalModel");
-                if (context.getOrchestrator().getSelfDevSession() != null) {
-                     context.getOrchestrator().getSelfDevSession().setInitialRequest(newGoal);
+                context.log("[KERNEL] User injected a new trajectory via prompt. Integrating as a first-class candidate.");
+
+                Object gmObj = context.getOrchestrationState().getMetadata().get("goalModel");
+                GoalModel goalModel = null;
+                if (gmObj instanceof GoalModel) {
+                    goalModel = (GoalModel) gmObj;
+                } else if (gmObj instanceof Map) {
+                    goalModel = new ObjectMapper()
+                        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                        .convertValue(gmObj, GoalModel.class);
                 }
-                return "REGENERATE";
+
+                BranchVariant userVariant = createUserVariant(trimmed, goalModel, context);
+                variants.add(userVariant);
+                context.log("[KERNEL] User trajectory " + userVariant.getId() + " added to the evolutionary pool.");
+                emitDarwinBranches(context, variants, null);
             }
         }
     }
@@ -1101,8 +1154,8 @@ public class IterationManager {
             } else if (snapshotObj instanceof Map) {
                 // RESILIENCE: Restore snapshot from Map if it came from a JSON checkpoint
                 try {
-                    snapshot = new com.fasterxml.jackson.databind.ObjectMapper()
-                        .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                    snapshot = new ObjectMapper()
+                        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                         .convertValue(snapshotObj, TargetSnapshot.class);
                 } catch (Exception e) {
                     context.log("[KERNEL] Warning: Failed to restore mediatedSnapshot from Map: " + e.getMessage());
@@ -1132,8 +1185,8 @@ public class IterationManager {
             } else if (winningCandidateObj != null) {
                 // RESILIENCE: Handle candidate restored from JSON checkpoint (Map or JSONObject)
                 try {
-                    winningCandidate = new com.fasterxml.jackson.databind.ObjectMapper()
-                        .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                    winningCandidate = new ObjectMapper()
+                        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                         .setPropertyNamingStrategy(com.fasterxml.jackson.databind.PropertyNamingStrategies.SNAKE_CASE)
                         .convertValue(winningCandidateObj, eu.kalafatic.evolution.controller.mediation.model.MediationCandidate.class);
                 } catch (Exception e) {
