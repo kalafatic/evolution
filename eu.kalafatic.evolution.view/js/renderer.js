@@ -493,20 +493,7 @@ window.ChatApp.Renderer = {
         });
 
         // Recursive renderer for the lineage
-        const renderNode = (parentData, isRoot = false) => {
-            let html = "";
-            
-            if (isRoot) {
-                // Find iteration(s) that have no parentId or "ROOT" as parentId
-                const roots = childrenByParent["ROOT"] || [];
-                roots.forEach((r, idx) => {
-                    html += renderIteration(r, idx === 0);
-                });
-            }
-            return html;
-        };
-
-        const renderIteration = (data, isRoot = false) => {
+        function renderIteration(data, isRoot = false) {
             const dimInfo = data.currentDimension ? `\nDimension: ${data.currentDimension}${data.currentDimensionDescription ? ' (' + data.currentDimensionDescription + ')' : ''}` : "";
             let iterHtml = `
                 <div class="tree-node" title="Iteration ${data.iterationCount}: ${data.currentTask || ''}${dimInfo}"
@@ -587,9 +574,21 @@ window.ChatApp.Renderer = {
             }
             
             return iterHtml;
-        };
+        }
 
-        content.innerHTML = renderNode(null, true) || '<div style="text-align: center; color: #94a3b8; margin-top: 20px;">No lineage.</div>';
+        function renderNode(isRoot = false) {
+            let html = "";
+            if (isRoot) {
+                // Find iteration(s) that have no parentId or "ROOT" as parentId
+                const roots = childrenByParent["ROOT"] || [];
+                roots.forEach((r, idx) => {
+                    html += renderIteration(r, idx === 0);
+                });
+            }
+            return html;
+        }
+
+        content.innerHTML = renderNode(true) || '<div style="text-align: center; color: #94a3b8; margin-top: 20px;">No lineage.</div>';
     },
 
     updateCognitiveStatePanel: function(messages) {

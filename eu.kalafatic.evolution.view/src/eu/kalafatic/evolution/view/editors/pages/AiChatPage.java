@@ -139,11 +139,17 @@ public class AiChatPage extends AEvoPage {
 		Display.getDefault().asyncExec(() -> {
 			if (isDisposed()) return;
 			String turnId = msg.getTurnId();
-			if (turnId != null && turnId.contains("__")) {
-				chatGroup.addMessageToSession(turnId.split("__")[0], msg);
-			} else if (turnId != null) {
-				chatGroup.addMessageToSession(turnId.split("_")[0], msg);
+			if (turnId == null) return;
+
+			String sid;
+			if (turnId.contains("__")) {
+				sid = turnId.substring(0, turnId.lastIndexOf("__"));
+			} else if (turnId.contains("_")) {
+				sid = turnId.substring(0, turnId.lastIndexOf("_"));
+			} else {
+				sid = getCurrentSessionName();
 			}
+			chatGroup.addMessageToSession(sid, msg);
 		});
 	};
 

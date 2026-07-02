@@ -25,6 +25,7 @@ public class EvolutionProgressPublisher {
         event.setBranchingLimit(branchingLimit);
         event.setStage(EvolutionStage.ITERATION_START);
         event.setStartTime(System.currentTimeMillis());
+        event.setTimestamp(System.currentTimeMillis());
         event.setTotalSteps(9); // Standard stages count
         event.setCompletedSteps(0);
 
@@ -143,7 +144,7 @@ public class EvolutionProgressPublisher {
         // 2. Also send as a progress message to ConversationOutputController
         // We use a special agentType 'evolution-progress' which the JS renderer will recognize
         // Use a consistent turnId based on iteration to allow the UI to update the same block
-        String turnId = context.getSessionId() + "_iter_" + event.getIterationCount();
+        String turnId = context.getSessionId() + "__iter_" + event.getIterationCount();
         ConversationOutputController.getInstance().submitMessage(
                 context.getSessionId(),
                 turnId,

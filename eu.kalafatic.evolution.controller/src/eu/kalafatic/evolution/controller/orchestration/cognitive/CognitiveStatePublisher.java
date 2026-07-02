@@ -91,7 +91,7 @@ public class CognitiveStatePublisher {
         // although renderer.js currently handles this as a specialized non-rendered message.
         ConversationOutputController.getInstance().submitMessage(
                 sessionId,
-                sessionId + "_cognitive_state",
+                sessionId + "__cognitive_state",
                 "Cognitive Engine",
                 payload.toString(),
                 "cognitive-state-changed",
