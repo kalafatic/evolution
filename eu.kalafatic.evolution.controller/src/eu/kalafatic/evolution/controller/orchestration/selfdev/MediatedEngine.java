@@ -78,6 +78,10 @@ public class MediatedEngine extends ADarwinEngine  {
 	public OrchestratorResponse orchestrateEvolution(TaskRequest taskRequest, IterationManager iterationManager)
 			throws Exception {
 		context.setStartTime(Instant.now());
+
+		// ✅ Trigger UI panels immediately
+		EvolutionProgressPublisher.startIteration(context, 1, 0, "alpha", 1, 4);
+
 		String request = taskRequest.getPrompt();
 		OrchestrationState state = context.getOrchestrationState();
 		

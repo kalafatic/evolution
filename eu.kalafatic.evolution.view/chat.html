@@ -184,6 +184,18 @@
             <div class="menu-separator"></div>
             <div class="menu-item" onclick="menuAction('copyPath')"><span class="menu-icon">📋</span> Copy Path</div>
         </div>
+
+        <div id="branch-details-popup" class="side-panel" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 400px; height: auto; max-height: 80vh; display: none; z-index: 2000; box-shadow: 0 10px 25px rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 8px;">
+            <div class="side-panel-header">
+                <div class="side-panel-title-row">
+                    <span style="font-weight: bold; font-size: 12px; color: #64748b;">BRANCH DETAILS</span>
+                    <button class="panel-btn" onclick="document.getElementById('branch-details-popup').style.display='none'" title="Close">✕</button>
+                </div>
+            </div>
+            <div id="branch-details-content" style="padding: 15px; overflow-y: auto;">
+                <!-- Branch details will be rendered here -->
+            </div>
+        </div>
     </div>
 
     <!-- JS Modules (Non-ESM) -->
