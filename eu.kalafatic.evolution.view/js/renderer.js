@@ -390,6 +390,11 @@ window.ChatApp.Renderer = {
                 let strategy = v.strategy || v.description;
                 if (strategy) headerHtml += `<div class="branch-strategy">${strategy}</div>`;
 
+                // Dimension Info
+                if (v.engineering_dimensions && v.engineering_dimensions.active_dimension) {
+                    headerHtml += `<div class="branch-dimension" style="font-size: 10px; color: #64748b; margin-top: 2px;">Dimension: <b>${v.engineering_dimensions.active_dimension}</b>${v.engineering_dimensions.active_dimension_description ? ' - ' + v.engineering_dimensions.active_dimension_description : ''}</div>`;
+                }
+
                 let footerContent = "";
                 if (isThisApproved) {
                     footerContent = '<div style="color: #16a34a; font-weight: bold;">APPROVED</div>';
@@ -504,8 +509,9 @@ window.ChatApp.Renderer = {
 
         const renderIteration = (data, isRoot = false) => {
             const dimInfo = data.currentDimension ? `\nDimension: ${data.currentDimension}${data.currentDimensionDescription ? ' (' + data.currentDimensionDescription + ')' : ''}` : "";
-            let nodeHtml = `
-                <div class="tree-node" title="Iteration ${data.iterationCount}: ${data.currentTask || ''}${dimInfo}">
+            let html = `
+                <div class="tree-node" title="Iteration ${data.iterationCount}: ${data.currentTask || ''}${dimInfo}"
+                     ondblclick="window.ChatApp.Renderer.showDimensionDetails('${data.iterationCount}')">
                     <div class="node-title">I${data.iterationCount}</div>
                     ${data.currentDimension ? `<div style="font-size: 6px; color: #64748b; margin-top: -2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 34px; text-align: center;">${data.currentDimension}</div>` : ''}
                 </div>
@@ -749,6 +755,59 @@ window.ChatApp.Renderer = {
     showBranchContextMenu: function(event, branchId) {
         event.preventDefault();
         this.showBranchDetails(branchId);
+    },
+
+    showDimensionDetails: function(iterationCount) {
+        const popup = document.getElementById('branch-details-popup');
+        const content = document.getElementById('branch-details-content');
+        if (!popup || !content) return;
+
+        let iterData = null;
+        const messages = window.messages || [];
+
+        // Find latest progress for this iteration
+        for (let i = messages.length - 1; i >= 0; i--) {
+            const m = messages[i];
+            if ((m.agentType || '').toLowerCase().includes('evolution-progress')) {
+                try {
+                    const data = JSON.parse(m.text);
+                    if (String(data.iterationCount) === String(iterationCount)) {
+                        iterData = data;
+                        break;
+                    }
+                } catch(e) {}
+            }
+        }
+
+        if (iterData) {
+            content.innerHTML = `
+                <div style="margin-bottom: 12px;">
+                    <div style="font-size: 10px; font-weight: 800; color: #94a3b8; margin-bottom: 2px;">GOAL / TASK</div>
+                    <div style="font-weight: 600; color: #1e293b;">${iterData.goal || iterData.currentTask || 'N/A'}</div>
+                </div>
+                <div style="margin-bottom: 12px;">
+                    <div style="font-size: 10px; font-weight: 800; color: #94a3b8; margin-bottom: 2px;">CURRENT DIMENSION</div>
+                    <div style="font-weight: 600; color: #3b82f6;">${iterData.currentDimension || 'N/A'}</div>
+                </div>
+                <div style="margin-bottom: 12px;">
+                    <div style="font-size: 10px; font-weight: 800; color: #94a3b8; margin-bottom: 2px;">DIMENSION DESCRIPTION</div>
+                    <div style="font-size: 11px; color: #334155; line-height: 1.4;">${iterData.currentDimensionDescription || 'No description available.'}</div>
+                </div>
+                <div style="display: flex; gap: 20px; margin-bottom: 12px;">
+                    <div>
+                        <div style="font-size: 10px; font-weight: 800; color: #94a3b8; margin-bottom: 2px;">ITERATION</div>
+                        <div style="font-weight: 600; color: #1e293b;">#${iterData.iterationCount}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 10px; font-weight: 800; color: #94a3b8; margin-bottom: 2px;">GENERATION</div>
+                        <div style="font-weight: 600; color: #1e293b;">${iterData.generation}</div>
+                    </div>
+                </div>
+            `;
+            popup.style.display = 'flex';
+        } else {
+            alert("Could not find data for iteration: " + iterationCount);
+        }
     },
 
     updateProgressPanel: function(messages) {
