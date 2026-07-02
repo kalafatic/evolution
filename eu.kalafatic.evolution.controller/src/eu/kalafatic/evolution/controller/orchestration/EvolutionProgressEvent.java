@@ -22,6 +22,7 @@ public class EvolutionProgressEvent {
     private String parentId;
     private String currentDimension;
     private String currentDimensionDescription;
+    private String platformType;
     private int lockedDecisionCount;
     private boolean autoApprove;
     private boolean gitAutomation;
@@ -81,6 +82,9 @@ public class EvolutionProgressEvent {
 
     public String getCurrentDimensionDescription() { return currentDimensionDescription; }
     public void setCurrentDimensionDescription(String currentDimensionDescription) { this.currentDimensionDescription = currentDimensionDescription; }
+
+    public String getPlatformType() { return platformType; }
+    public void setPlatformType(String platformType) { this.platformType = platformType; }
 
     public int getLockedDecisionCount() { return lockedDecisionCount; }
     public void setLockedDecisionCount(int lockedDecisionCount) { this.lockedDecisionCount = lockedDecisionCount; }

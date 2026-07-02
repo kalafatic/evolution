@@ -494,12 +494,13 @@ window.ChatApp.Renderer = {
 
         // Recursive renderer for the lineage
         function renderIteration(data, isRoot = false) {
+            const platformClass = (data.platformType || '').toLowerCase();
             const dimInfo = data.currentDimension ? `\nDimension: ${data.currentDimension}${data.currentDimensionDescription ? ' (' + data.currentDimensionDescription + ')' : ''}` : "";
             let iterHtml = `
-                <div class="tree-node" title="Iteration ${data.iterationCount}: ${data.currentTask || ''}${dimInfo}"
+                <div class="tree-node dimension ${platformClass}" title="Iteration ${data.iterationCount}: ${data.currentTask || ''}${dimInfo}"
                      ondblclick="window.ChatApp.Renderer.showDimensionDetails('${data.iterationCount}')">
                     <div class="node-title">I${data.iterationCount}</div>
-                    ${data.currentDimension ? `<div style="font-size: 6px; color: #64748b; margin-top: -2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 34px; text-align: center;">${data.currentDimension}</div>` : ''}
+                    ${data.currentDimension ? `<div style="font-size: 6px; color: #64748b; margin-top: -2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; text-align: center; padding: 0 2px;">${data.currentDimension}</div>` : ''}
                 </div>
             `;
 
@@ -541,7 +542,7 @@ window.ChatApp.Renderer = {
                     iterHtml += `<div class="tree-child">`;
                     iterHtml += `<div class="tree-vline"></div>`;
                     iterHtml += `
-                        <div class="tree-node branch ${isFailed ? 'failed' : ''} ${isWinner ? 'winner' : ''}"
+                        <div class="tree-node proposal branch ${platformClass} ${isFailed ? 'failed' : ''} ${isWinner ? 'winner' : ''}"
                              title="Branch ${b.id}${b.strategy ? ': ' + b.strategy : ''}${b.score !== undefined ? ' - Score: ' + Math.round(b.score*100) : ''}"
                              ondblclick="window.ChatApp.Renderer.showBranchDetails('${b.id}')"
                              oncontextmenu="window.ChatApp.Renderer.showBranchContextMenu(event, '${b.id}')">
