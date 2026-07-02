@@ -221,6 +221,18 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 
 		} else if (intent.isControl()) {
 			context.log("[DARWIN] CONTROL detected.");
+
+			// ✅ CRITICAL FIX: If we are waiting for input, satisfy it directly instead of starting a new loop
+			if (context.isWaitingForInput()) {
+				context.log("[DARWIN] Satisfying pending input request with CONTROL command: " + request);
+				context.provideInput(request);
+
+				OrchestratorResponse controlAck = new OrchestratorResponse();
+				controlAck.setResultType(ResultType.CHAT);
+				controlAck.setSummary("Processing command: " + request);
+				return controlAck;
+			}
+
 			state.getMetadata().put("pendingControlCommand", request);
 
 		} else {

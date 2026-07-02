@@ -777,35 +777,69 @@ public class DynamicSiblingGenerator {
 	}
 
 	private String extractCode(String response, String format) {
-		// Try to extract from code blocks first
-		Pattern codeBlockPattern = Pattern.compile("```(?:java)?\\s*\\n(.*?)\\n```", Pattern.DOTALL);
+		// 1. Try to extract from specifically marked code blocks first
+		Pattern codeBlockPattern = Pattern.compile("```(?:java|json)?\\s*\\n(.*?)\\n```", Pattern.DOTALL);
 		Matcher matcher = codeBlockPattern.matcher(response);
-		if (matcher.find()) {
-			return matcher.group(1).trim();
+
+		while (matcher.find()) {
+			String block = matcher.group(1).trim();
+
+			// If it's a JSON block, it might contain the code inside
+			if (block.startsWith("{")) {
+				try {
+					JSONObject obj = new JSONObject(block);
+					if (obj.has("code")) return obj.getString("code");
+					if (obj.has("implementation")) return obj.getString("implementation");
+				} catch (Exception e) {
+					// Fall through to returning the block if it looks like Java
+				}
+			}
+
+			// If it contains 'class ' it's probably the Java code we want
+			if (block.contains("class ")) {
+				return block;
+			}
 		}
 
-		// If it's CODE_ONLY format, return as-is
+		// 2. If it's CODE_ONLY format, return as-is
 		if ("CODE_ONLY".equals(format)) {
 			return response.trim();
 		}
 
-		// Try to extract from STEP_BY_STEP format
+		// 3. Try to extract from STEP_BY_STEP format
 		if ("STEP_BY_STEP".equals(format)) {
-			Pattern stepPattern = Pattern.compile("CODE:\\s*\\n?```(?:java)?\\s*\\n(.*?)\\n```", Pattern.DOTALL);
+			Pattern stepPattern = Pattern.compile("CODE:\\s*\\n?```(?:java|json)?\\s*\\n(.*?)\\n```", Pattern.DOTALL);
 			matcher = stepPattern.matcher(response);
 			if (matcher.find()) {
-				return matcher.group(1).trim();
+				String block = matcher.group(1).trim();
+				if (block.startsWith("{")) {
+					try {
+						JSONObject obj = new JSONObject(block);
+						if (obj.has("code")) return obj.getString("code");
+						if (obj.has("implementation")) return obj.getString("implementation");
+					} catch (Exception e) {}
+				}
+				return block;
 			}
 		}
 
-		// Try to extract from JSON
+		// 4. Try to extract from the root response if it's JSON
 		try {
-			JSONObject obj = new JSONObject(response);
-			return obj.optString("code", obj.optString("implementation", response));
-		} catch (Exception e) {
-			// Return raw response
-			return response;
+			String trimmedResponse = response.trim();
+			if (trimmedResponse.startsWith("{")) {
+				JSONObject obj = new JSONObject(trimmedResponse);
+				if (obj.has("code")) return obj.getString("code");
+				if (obj.has("implementation")) return obj.getString("implementation");
+			}
+		} catch (Exception e) {}
+
+		// 5. Final fallback: return the first code block if anything was found, or the raw response
+		matcher.reset();
+		if (matcher.find()) {
+			return matcher.group(1).trim();
 		}
+
+		return response.trim();
 	}
 
 	private boolean validateVariant(JSONObject variant, PromptStrategy strategy) {

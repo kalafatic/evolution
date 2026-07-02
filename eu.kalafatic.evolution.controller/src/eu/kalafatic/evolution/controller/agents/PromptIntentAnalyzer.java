@@ -31,6 +31,7 @@ public class PromptIntentAnalyzer extends BaseAiAgent {
         "CRITICAL RULES:\n" +
         "- Avoid reliance on specific keywords (e.g., 'code', 'class'); instead, look for the underlying action requested.\n" +
         "- If the user expresses an intent to perform technical work, even without naming specific artifacts, classify as TASK.\n" +
+        "- If the prompt is about approving, selecting, keeping, or rejecting a specific variant (e.g., 'Approve variant v0', 'Select v1'), it is ALWAYS a CONTROL intent, NEVER a TASK intent.\n" +
         "- If uncertain between CHAT and TASK, bias toward TASK to ensure the evolutionary engine is engaged.\n" +
         "- Provide confidence score (0.0-1.0) and a deep semantic reasoning for your choice.";
 
