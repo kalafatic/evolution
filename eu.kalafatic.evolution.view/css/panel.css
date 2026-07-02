@@ -81,7 +81,7 @@
     border-color: #8b5cf6;
 }
 
-.tree-node.hybrid_manual_export {
+.tree-node.hybrid_manual_export, .tree-node.mediated {
     background: #fff7ed; /* Light orange */
     border-color: #f97316;
 }

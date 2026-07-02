@@ -227,6 +227,7 @@ window.ChatApp.Renderer = {
 
     renderJson: function(data) {
         if (!data) return "";
+        const technicalKeys = ['id', 'suffix', 'score', 'risk', 'reversibility', 'confidence', 'intent', 'category', 'isAmbiguous', 'missingInformation', 'lineage', 'iterationCount', 'generation', 'platformType', 'timestamp', 'startTime', 'winnerId', 'parentId'];
         const renderValue = (val, key) => {
             if (val === null || val === undefined) return "";
             if (Array.isArray(val)) {
@@ -245,7 +246,6 @@ window.ChatApp.Renderer = {
         };
 
         const humanKeys = ['explanation', 'strategy', 'thought', 'objective', 'refinedPrompt', 'rootCause', 'plan', 'workDone', 'summary', 'description', 'hypothesis', 'expected_effects', 'expected_effect', 'clarificationQuestion'];
-        const technicalKeys = ['id', 'suffix', 'score', 'risk', 'reversibility', 'confidence', 'intent', 'category', 'isAmbiguous', 'missingInformation'];
 
         // If data is a simple object with just one or two human keys, render it as plain text
         if (typeof data === 'object' && !Array.isArray(data)) {
@@ -293,6 +293,18 @@ window.ChatApp.Renderer = {
                     html += `<div><b>${k}:</b> ${renderValue(v, k)}</div>`;
                 }
             });
+
+            // Finally render technical metadata in a collapsed section
+            const techEntries = Object.entries(data).filter(([k]) => technicalKeys.includes(k));
+            if (techEntries.length > 0) {
+                html += `
+                    <details style="margin-top: 8px; border-top: 1px dashed var(--border); padding-top: 4px;">
+                        <summary style="font-size: 10px; font-weight: 800; color: #94a3b8; cursor: pointer;">TECHNICAL METADATA</summary>
+                        <div style="font-size: 10px; color: #64748b; padding-left: 8px;">
+                            ${techEntries.map(([k, v]) => `<div><b>${k}:</b> ${renderValue(v, k)}</div>`).join('')}
+                        </div>
+                    </details>`;
+            }
 
             // Special handling for actions array
             if (data.actions && Array.from(data.actions).length > 0) {
@@ -469,8 +481,9 @@ window.ChatApp.Renderer = {
             try {
                 const data = JSON.parse(m.text);
                 if (data.iterationCount !== undefined) {
-                    if (!iterations[data.iterationCount] || data.timestamp > iterations[data.iterationCount].timestamp) {
-                        iterations[data.iterationCount] = data;
+                    const key = data.lineage || data.iterationCount;
+                    if (!iterations[key] || data.timestamp > iterations[key].timestamp) {
+                        iterations[key] = data;
                     }
                     if (!latestData || data.timestamp > latestData.timestamp) {
                         latestData = data;
@@ -479,14 +492,12 @@ window.ChatApp.Renderer = {
             } catch(e) {}
         });
 
-        const sortedIters = Object.keys(iterations).sort((a, b) => parseInt(a) - parseInt(b));
-
-        if (sortedIters.length === 0) return;
+        const iterationValues = Object.values(iterations);
+        if (iterationValues.length === 0) return;
 
         // Map iterations by their parentId to build non-linear tree
         const childrenByParent = {};
-        sortedIters.forEach(key => {
-            const data = iterations[key];
+        iterationValues.forEach(data => {
             const pid = data.parentId || "ROOT";
             if (!childrenByParent[pid]) childrenByParent[pid] = [];
             childrenByParent[pid].push(data);
@@ -494,18 +505,20 @@ window.ChatApp.Renderer = {
 
         // Recursive renderer for the lineage
         function renderIteration(data, isRoot = false) {
-            const platformClass = (data.platformType || '').toLowerCase();
+            let platformClass = (data.platformType || '').toLowerCase();
+            if (platformClass === 'hybrid_manual_export') platformClass = 'mediated';
             const dimInfo = data.currentDimension ? `\nDimension: ${data.currentDimension}${data.currentDimensionDescription ? ' (' + data.currentDimensionDescription + ')' : ''}` : "";
+            const iterationId = data.lineage || data.iterationCount;
             let iterHtml = `
                 <div class="tree-node dimension ${platformClass}" title="Iteration ${data.iterationCount}: ${data.currentTask || ''}${dimInfo}"
-                     ondblclick="window.ChatApp.Renderer.showDimensionDetails('${data.iterationCount}')">
+                     ondblclick="window.ChatApp.Renderer.showDimensionDetails('${iterationId}')">
                     <div class="node-title">I${data.iterationCount}</div>
                     ${data.currentDimension ? `<div style="font-size: 6px; color: #64748b; margin-top: -2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; text-align: center; padding: 0 2px;">${data.currentDimension}</div>` : ''}
                 </div>
             `;
 
             if (isRoot && latestData) {
-                const actualIters = sortedIters.length;
+                const actualIters = iterationValues.length;
                 const minIters = latestData.minIterations || 1;
                 const maxIters = latestData.maxIterations || 10;
                 const actualBranches = latestData.branches ? latestData.branches.length : 0;
@@ -708,23 +721,8 @@ window.ChatApp.Renderer = {
 
         if (branchData) {
             content.innerHTML = `
-                <div style="margin-bottom: 12px;">
-                    <div style="font-size: 10px; font-weight: 800; color: #94a3b8; margin-bottom: 2px;">STRATEGY</div>
-                    <div style="font-weight: 600; color: #1e293b;">${branchData.strategy || 'N/A'}</div>
-                </div>
-                <div style="display: flex; gap: 20px; margin-bottom: 12px;">
-                    <div>
-                        <div style="font-size: 10px; font-weight: 800; color: #94a3b8; margin-bottom: 2px;">STATUS</div>
-                        <div style="font-weight: 600; color: ${branchData.status === 'active' ? '#3b82f6' : branchData.status === 'failed' ? '#ef4444' : '#10b981'}; text-transform: uppercase; font-size: 11px;">${branchData.status}</div>
-                    </div>
-                    <div>
-                        <div style="font-size: 10px; font-weight: 800; color: #94a3b8; margin-bottom: 2px;">SCORE</div>
-                        <div style="font-weight: 600; color: #1e293b;">${branchData.score !== undefined ? Math.round(branchData.score * 100) + '%' : 'N/A'}</div>
-                    </div>
-                    <div>
-                        <div style="font-size: 10px; font-weight: 800; color: #94a3b8; margin-bottom: 2px;">ID</div>
-                        <div style="font-family: monospace; font-size: 10px; color: #64748b;">${branchData.id}</div>
-                    </div>
+                <div style="max-height: 400px; overflow-y: auto;">
+                    ${this.renderJson(branchData)}
                 </div>
                 <button class="branch-btn select" style="width: 100%; margin-top: 10px;" onclick="window.ChatApp.Actions.callJava('approveDarwinVariant', '-1', '${branchId}'); document.getElementById('branch-details-popup').style.display='none';">Select this Branch</button>
             `;
@@ -762,7 +760,7 @@ window.ChatApp.Renderer = {
         this.showBranchDetails(branchId);
     },
 
-    showDimensionDetails: function(iterationCount) {
+    showDimensionDetails: function(iterationId) {
         const popup = document.getElementById('branch-details-popup');
         const content = document.getElementById('branch-details-content');
         if (!popup || !content) return;
@@ -776,7 +774,7 @@ window.ChatApp.Renderer = {
             if ((m.agentType || '').toLowerCase().includes('evolution-progress')) {
                 try {
                     const data = JSON.parse(m.text);
-                    if (String(data.iterationCount) === String(iterationCount)) {
+                    if (String(data.lineage || data.iterationCount) === String(iterationId)) {
                         iterData = data;
                         break;
                     }
@@ -786,32 +784,13 @@ window.ChatApp.Renderer = {
 
         if (iterData) {
             content.innerHTML = `
-                <div style="margin-bottom: 12px;">
-                    <div style="font-size: 10px; font-weight: 800; color: #94a3b8; margin-bottom: 2px;">GOAL / TASK</div>
-                    <div style="font-weight: 600; color: #1e293b;">${iterData.goal || iterData.currentTask || 'N/A'}</div>
-                </div>
-                <div style="margin-bottom: 12px;">
-                    <div style="font-size: 10px; font-weight: 800; color: #94a3b8; margin-bottom: 2px;">CURRENT DIMENSION</div>
-                    <div style="font-weight: 600; color: #3b82f6;">${iterData.currentDimension || 'N/A'}</div>
-                </div>
-                <div style="margin-bottom: 12px;">
-                    <div style="font-size: 10px; font-weight: 800; color: #94a3b8; margin-bottom: 2px;">DIMENSION DESCRIPTION</div>
-                    <div style="font-size: 11px; color: #334155; line-height: 1.4;">${iterData.currentDimensionDescription || 'No description available.'}</div>
-                </div>
-                <div style="display: flex; gap: 20px; margin-bottom: 12px;">
-                    <div>
-                        <div style="font-size: 10px; font-weight: 800; color: #94a3b8; margin-bottom: 2px;">ITERATION</div>
-                        <div style="font-weight: 600; color: #1e293b;">#${iterData.iterationCount}</div>
-                    </div>
-                    <div>
-                        <div style="font-size: 10px; font-weight: 800; color: #94a3b8; margin-bottom: 2px;">GENERATION</div>
-                        <div style="font-weight: 600; color: #1e293b;">${iterData.generation}</div>
-                    </div>
+                <div style="max-height: 400px; overflow-y: auto;">
+                    ${this.renderJson(iterData)}
                 </div>
             `;
             popup.style.display = 'flex';
         } else {
-            alert("Could not find data for iteration: " + iterationCount);
+            alert("Could not find data for iteration: " + iterationId);
         }
     },
 
