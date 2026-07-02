@@ -80,7 +80,7 @@ public class MediatedEngine extends ADarwinEngine  {
 		context.setStartTime(Instant.now());
 
 		// ✅ Trigger UI panels immediately
-		EvolutionProgressPublisher.startIteration(context, 1, 0, "alpha", 1, 4);
+		EvolutionProgressPublisher.startIteration(context, 1, 0, "alpha", 1, 10, 4, 4);
 
 		// FORCE COGNITIVE SYNC: Trigger cognitive state update to reflect evolutionary capability
 		if (getSessionContainer() instanceof eu.kalafatic.evolution.controller.orchestration.SessionContext) {
@@ -754,7 +754,7 @@ private String generateChatResponse(String request, TaskContext context) {
 		String lineage = activeTrajectory != null ? activeTrajectory.getTrajectoryId() : "alpha";
 
 		// UI Progress
-		EvolutionProgressPublisher.startIteration(context, state.getIterationCount() + 1, generation, lineage, getMinIterationLimit(context), getMaxBranchingLimit(context, getExpansionValue()));
+		EvolutionProgressPublisher.startIteration(context, state.getIterationCount() + 1, generation, lineage, getMinIterationLimit(context), getMaxIterationLimit(context), getMinBranchingLimit(context, getExpansionValue()), getMaxBranchingLimit(context, getExpansionValue()));
 		EvolutionProgressPublisher.updateStage(context, EvolutionStage.ANALYSIS);
 
 		// ============================================================

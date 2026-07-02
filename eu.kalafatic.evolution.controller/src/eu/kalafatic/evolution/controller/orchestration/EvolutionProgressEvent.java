@@ -30,6 +30,7 @@ public class EvolutionProgressEvent {
     private int maxIterations;
     private int minIterations;
     private int branchingLimit;
+    private int minBranchingLimit;
     private long timestamp;
     private long startTime;
     private List<BranchStatus> branchStatuses = new ArrayList<>();
@@ -106,6 +107,9 @@ public class EvolutionProgressEvent {
 
     public int getBranchingLimit() { return branchingLimit; }
     public void setBranchingLimit(int branchingLimit) { this.branchingLimit = branchingLimit; }
+
+    public int getMinBranchingLimit() { return minBranchingLimit; }
+    public void setMinBranchingLimit(int minBranchingLimit) { this.minBranchingLimit = minBranchingLimit; }
 
     public long getTimestamp() { return timestamp; }
     public void setTimestamp(long timestamp) { this.timestamp = timestamp; }

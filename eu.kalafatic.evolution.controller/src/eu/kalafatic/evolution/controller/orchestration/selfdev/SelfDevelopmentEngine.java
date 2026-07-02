@@ -752,7 +752,7 @@ private String generateChatResponse(String request, TaskContext context) {
 		String lineage = activeTrajectory != null ? activeTrajectory.getTrajectoryId() : "alpha";
 
 		// UI Progress
-		EvolutionProgressPublisher.startIteration(context, state.getIterationCount() + 1, generation, lineage, getMinIterationLimit(context), getMaxBranchingLimit(context, getExpansionValue()));
+		EvolutionProgressPublisher.startIteration(context, state.getIterationCount() + 1, generation, lineage, getMinIterationLimit(context), getMaxIterationLimit(context), getMinBranchingLimit(context, getExpansionValue()), getMaxBranchingLimit(context, getExpansionValue()));
 		EvolutionProgressPublisher.updateStage(context, EvolutionStage.ANALYSIS);
 
 		// ============================================================
