@@ -352,6 +352,7 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                             if (finalOrch.getOllama() != null) finalOrch.getOllama().setModel(s.getLocalModel());
                         }
                         if (s.getRemoteModel() != null) finalOrch.setRemoteModel(s.getRemoteModel());
+                        finalOrch.setDarwinMode(s.isDarwinMode());
                     if (s.getTargetPath() != null) {
                         // For Mediated Mode persistence
                     }
