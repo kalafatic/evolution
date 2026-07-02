@@ -700,6 +700,7 @@ public class AiChatPage extends AEvoPage {
 		String idPrefix = isSelfDev ? "selfdev-" : (isDarwin ? "darwin-" : "chat-");
 
 		if (orchestrator != null) {
+			orchestrator.setDarwinMode(isDarwin);
 			if (orchestrator.getAiChat() == null) orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
 			if (orchestrator.getLlm() == null) orchestrator.setLlm(OrchestrationFactory.eINSTANCE.createLLM());
 			NeuronService.getInstance().train(orchestrator, finalRequest, "coding", 5);

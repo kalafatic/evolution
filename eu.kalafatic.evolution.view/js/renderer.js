@@ -46,7 +46,6 @@ window.ChatApp.Renderer = {
             content.appendChild(this.renderDarwin(m));
 
             // Move Force Solution button out of branch container to appear UNDER all branches
-            const role = (m.agentType || '').toLowerCase();
             const isApproved = role.includes('approved');
             const isWaiting = role.includes('waiting');
             if (!isApproved && isWaiting) {
@@ -509,7 +508,7 @@ window.ChatApp.Renderer = {
 
         const renderIteration = (data, isRoot = false) => {
             const dimInfo = data.currentDimension ? `\nDimension: ${data.currentDimension}${data.currentDimensionDescription ? ' (' + data.currentDimensionDescription + ')' : ''}` : "";
-            let html = `
+            let iterHtml = `
                 <div class="tree-node" title="Iteration ${data.iterationCount}: ${data.currentTask || ''}${dimInfo}"
                      ondblclick="window.ChatApp.Renderer.showDimensionDetails('${data.iterationCount}')">
                     <div class="node-title">I${data.iterationCount}</div>
@@ -527,16 +526,14 @@ window.ChatApp.Renderer = {
                 const iText = `Iters: ${actualIters}/${minIters}/${maxIters}`;
                 const bText = `Branches: ${actualBranches}/${maxBranches}`;
 
-                nodeHtml = `
+                iterHtml = `
                     <div style="display: flex; align-items: center; gap: 12px;">
                         <div style="font-size: 9px; color: #94a3b8; min-width: 60px; text-align: right; font-weight: normal;">${iText}</div>
-                        ${nodeHtml}
+                        ${iterHtml}
                         <div style="font-size: 9px; color: #94a3b8; min-width: 60px; font-weight: normal;">${bText}</div>
                     </div>
                 `;
             }
-
-            let html = nodeHtml;
 
             const branches = data.branches || [];
             const hasBranches = branches.length > 0;
@@ -545,8 +542,8 @@ window.ChatApp.Renderer = {
             const winnerId = data.winnerId;
 
             if (hasBranches) {
-                html += `<div class="tree-vline"></div>`;
-                html += `<div class="tree-children">`;
+                iterHtml += `<div class="tree-vline"></div>`;
+                iterHtml += `<div class="tree-children">`;
                 
                 branches.forEach((b, idx) => {
                     const isWinner = winnerId === b.id;
@@ -554,9 +551,9 @@ window.ChatApp.Renderer = {
                     const subIterations = childrenByParent[b.id] || [];
                     const hasSubIters = subIterations.length > 0;
 
-                    html += `<div class="tree-child">`;
-                    html += `<div class="tree-vline"></div>`;
-                    html += `
+                    iterHtml += `<div class="tree-child">`;
+                    iterHtml += `<div class="tree-vline"></div>`;
+                    iterHtml += `
                         <div class="tree-node branch ${isFailed ? 'failed' : ''} ${isWinner ? 'winner' : ''}"
                              title="Branch ${b.id}${b.strategy ? ': ' + b.strategy : ''}${b.score !== undefined ? ' - Score: ' + Math.round(b.score*100) : ''}"
                              ondblclick="window.ChatApp.Renderer.showBranchDetails('${b.id}')"
@@ -566,30 +563,30 @@ window.ChatApp.Renderer = {
                     `;
 
                     if (hasSubIters) {
-                        html += `<div class="tree-vline"></div>`;
+                        iterHtml += `<div class="tree-vline"></div>`;
                         subIterations.forEach(si => {
-                            html += renderIteration(si);
+                            iterHtml += renderIteration(si);
                         });
                     }
                     
-                    html += `</div>`;
+                    iterHtml += `</div>`;
                 });
                 
-                html += `</div>`;
+                iterHtml += `</div>`;
             } else {
                 // If no branches but there are iterations that claim this iteration as parent (linear continuation)
                 // We use "data.winnerId" or similar as a proxy if branches are missing from progress event
                 const pid = data.winnerId || "iter-" + data.iterationCount;
                 const subIterations = childrenByParent[pid] || [];
                 if (subIterations.length > 0) {
-                    html += `<div class="tree-vline"></div>`;
+                    iterHtml += `<div class="tree-vline"></div>`;
                     subIterations.forEach(si => {
-                        html += renderIteration(si);
+                        iterHtml += renderIteration(si);
                     });
                 }
             }
             
-            return html;
+            return iterHtml;
         };
 
         content.innerHTML = renderNode(null, true) || '<div style="text-align: center; color: #94a3b8; margin-top: 20px;">No lineage.</div>';
