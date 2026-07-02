@@ -193,18 +193,25 @@ public class IntentReconstructionEngine extends ADarwinEngine {
         ComponentRecord record = new ComponentRecord();
         record.setId(meta.getPath());
         record.setName(file.getName());
-        record.setType(meta.getRole());
+
+        // Heuristic: Controllers and Resources are candidates for Use Cases in this mode
+        if (file.getName().endsWith("Controller.java") || file.getName().endsWith("Resource.java") || file.getName().endsWith("Application.java")) {
+            record.setType("USE_CASE");
+        } else {
+            record.setType(meta.getRole() != null ? meta.getRole().toUpperCase() : "COMPONENT");
+        }
+
         record.setDescription(meta.getSummary());
         record.setPath(meta.getPath());
         record.setImportanceScore(meta.getImportanceScore());
 
         // Extract method intent if possible
         if (meta.getSummary() != null) {
-            // Simple NLP-lite: extract words that look like methods or use cases
-            // In a real implementation, we'd use better parsing
             String summary = meta.getSummary().toLowerCase();
-            if (summary.contains("create") || summary.contains("save")) record.getUseCases().add("Persistence");
-            if (summary.contains("find") || summary.contains("get")) record.getUseCases().add("Retrieval");
+            if (summary.contains("create") || summary.contains("post") || summary.contains("save")) record.getUseCases().add("Command: Create/Save");
+            if (summary.contains("find") || summary.contains("get") || summary.contains("search")) record.getUseCases().add("Query: Find/Search");
+            if (summary.contains("delete") || summary.contains("remove")) record.getUseCases().add("Command: Delete/Remove");
+            if (summary.contains("update") || summary.contains("put") || summary.contains("patch")) record.getUseCases().add("Command: Update");
         }
 
         designModel.getComponents().add(record);

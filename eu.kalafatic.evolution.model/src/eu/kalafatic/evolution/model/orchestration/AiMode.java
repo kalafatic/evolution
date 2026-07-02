@@ -66,7 +66,17 @@ public enum AiMode implements Enumerator {
 	 * @generated
 	 * @ordered
 	 */
-	MEDIATED(4, "MEDIATED", "Mediated");
+	MEDIATED(4, "MEDIATED", "Mediated"),
+
+	/**
+	 * The '<em><b>INTENT</b></em>' literal object.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #INTENT_VALUE
+	 * @generated
+	 * @ordered
+	 */
+	INTENT(5, "INTENT", "Intent");
 
 	/**
 	 * The '<em><b>LOCAL</b></em>' literal value.
@@ -124,6 +134,17 @@ public enum AiMode implements Enumerator {
 	public static final int MEDIATED_VALUE = 4;
 
 	/**
+	 * The '<em><b>INTENT</b></em>' literal value.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #INTENT
+	 * @model literal="Intent"
+	 * @generated
+	 * @ordered
+	 */
+	public static final int INTENT_VALUE = 5;
+
+	/**
 	 * An array of all the '<em><b>Ai Mode</b></em>' enumerators.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -136,6 +157,7 @@ public enum AiMode implements Enumerator {
 			REMOTE,
 			PROXY,
 			MEDIATED,
+			INTENT,
 		};
 
 	/**
@@ -197,6 +219,7 @@ public enum AiMode implements Enumerator {
 			case REMOTE_VALUE: return REMOTE;
 			case PROXY_VALUE: return PROXY;
 			case MEDIATED_VALUE: return MEDIATED;
+			case INTENT_VALUE: return INTENT;
 		}
 		return null;
 	}

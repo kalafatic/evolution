@@ -291,8 +291,8 @@ public class ChatMgmtGroup extends AEvoGroup {
                     List<String> modelsToShow;
                     if (mode == AiMode.PROXY) {
                         modelsToShow = ProjectModelManager.getInstance().getLlmModels(orchestrator, AiMode.PROXY);
-                    } else if (mode == AiMode.MEDIATED) {
-                        modelsToShow = ProjectModelManager.getInstance().getLlmModels(orchestrator, AiMode.MEDIATED);
+                    } else if (mode == AiMode.MEDIATED || mode == AiMode.INTENT) {
+                        modelsToShow = ProjectModelManager.getInstance().getLlmModels(orchestrator, mode);
                     } else {
                         modelsToShow = ProjectModelManager.getInstance().getLlmModels(orchestrator, AiMode.LOCAL,
                                 AiMode.HYBRID);

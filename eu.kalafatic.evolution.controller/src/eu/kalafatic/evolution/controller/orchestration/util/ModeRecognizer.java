@@ -43,6 +43,9 @@ public class ModeRecognizer {
 		if (isSelfDevMode(context)) {
 			return PlatformType.SELF_DEV_MODE;
 		}
+		if (isIntentMode(context)) {
+			return PlatformType.INTENT_RECONSTRUCTION;
+		}
 		if (isMediatedMode(context)) {
 			return PlatformType.HYBRID_MANUAL_EXPORT;
 		}
@@ -66,6 +69,9 @@ public class ModeRecognizer {
 		if (isSelfDevMode(context)) {
 			return PlatformType.SELF_DEV_MODE;
 		}
+		if (isIntentMode(context)) {
+			return PlatformType.INTENT_RECONSTRUCTION;
+		}
 		if (isMediatedMode(context)) {
 			return PlatformType.HYBRID_MANUAL_EXPORT;
 		}
@@ -87,6 +93,10 @@ public class ModeRecognizer {
 
 	public static boolean isMediatedMode(TaskContext context) {
 		return (context.getOrchestrator() != null) && (AiMode.MEDIATED.equals(context.getOrchestrator().getAiMode()));
+	}
+
+	public static boolean isIntentMode(TaskContext context) {
+		return (context.getOrchestrator() != null) && (AiMode.INTENT.equals(context.getOrchestrator().getAiMode()));
 	}
 
 	public boolean isChatMode(TaskContext context) {

@@ -80,6 +80,8 @@ public class ModeRouter {
 			return createSelfDevMode();
 		if (lower.contains("mode: intent-reconstruction") || lower.contains("reconstruct intent"))
 			return createIntentReconstructionMode();
+		if (lower.contains("mode: intent") || lower.contains("reconstruct intent"))
+			return createIntentReconstructionMode();
 		if (lower.contains("mode: mediated") || lower.contains("analyze target"))
 			return createHybridManualExportMode();
 
@@ -128,6 +130,15 @@ public class ModeRouter {
 					new eu.kalafatic.evolution.controller.orchestration.cognitive.CognitiveStatePublisher().publish(null, session.getCognitiveState());
 				}
 				return createHybridManualExportMode();
+			}
+			if (orchestrator.getAiMode() == eu.kalafatic.evolution.model.orchestration.AiMode.INTENT) {
+				String sessionId = orchestrator.getId();
+				SessionContainer session = (sessionId != null) ? SessionManager.getInstance().getSession(sessionId) : null;
+				if (session != null) {
+					session.getCognitiveState().setCurrentCapability(CapabilityType.INTENT_RECONSTRUCTION);
+					new eu.kalafatic.evolution.controller.orchestration.cognitive.CognitiveStatePublisher().publish(null, session.getCognitiveState());
+				}
+				return createIntentReconstructionMode();
 			}
 			if (orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null
 					&& orchestrator.getAiChat().getPromptInstructions().isSelfIterativeMode()) {

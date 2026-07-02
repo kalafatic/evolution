@@ -202,6 +202,9 @@ public class ArchitecturePage extends AEvoPage {
                 case "DISCOVER":
                     handleDiscover();
                     break;
+                case "DISCOVER_INTENT":
+                    handleDiscoverIntent();
+                    break;
                 case "UPDATE_GENOME":
                     handleUpdateGenome();
                     break;
@@ -252,6 +255,18 @@ public class ArchitecturePage extends AEvoPage {
 
     private void handleUpdateGenome() {
         if (currentTargetPath == null) return;
+
+        // SAVE INTENT MODEL TO GENOME: Prior to standard genome update, ensure intent model is cached
+        DesignModel intentModel = extractModel();
+        if (intentModel != null && orchestrator != null) {
+            eu.kalafatic.evolution.controller.log.Log.log("[ARCH] Saving Intent Model to Genome Cache during Update...");
+            String sid = (orchestrator.getSelfDevSession() != null) ? orchestrator.getSelfDevSession().getId() : "genome-update-session";
+            eu.kalafatic.evolution.controller.orchestration.SessionContainer session = eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getOrCreateSession(sid);
+            eu.kalafatic.evolution.controller.orchestration.TaskContext ctx = new eu.kalafatic.evolution.controller.orchestration.TaskContext(orchestrator, new java.io.File(currentTargetPath));
+            ctx.setSessionId(sid);
+            saveModelToCache(ctx, intentModel);
+        }
+
         new eu.kalafatic.evolution.controller.orchestration.ArchitectureController().renderArchitecture(orchestrator, currentTargetPath, "UPDATE_GENOME");
         scheduleRefresh();
     }
@@ -610,6 +625,54 @@ public class ArchitecturePage extends AEvoPage {
         manager.add(new org.eclipse.jface.action.Separator());
         manager.add(new org.eclipse.jface.action.Action("Export Architecture (HTML)") { @Override public void run() { handleExport(); } });
         manager.add(new org.eclipse.jface.action.Action("Save Design Model (JSON)") { @Override public void run() { handleSaveModel(); } });
+    }
+
+    private void handleDiscoverIntent() {
+        if (currentTargetPath == null) {
+            handleBrowseTarget();
+            if (currentTargetPath == null) return;
+        }
+
+        java.io.File root = new java.io.File(currentTargetPath);
+        eu.kalafatic.evolution.controller.log.Log.log("[ARCH] Discover Intent for: " + currentTargetPath);
+
+        org.eclipse.core.runtime.jobs.Job job = new org.eclipse.core.runtime.jobs.Job("Reconstructing Intent") {
+            @Override
+            protected org.eclipse.core.runtime.IStatus run(org.eclipse.core.runtime.IProgressMonitor monitor) {
+                try {
+                    String sid = (orchestrator.getSelfDevSession() != null && orchestrator.getSelfDevSession().getId() != null) ?
+                            orchestrator.getSelfDevSession().getId() : "intent-session-" + System.currentTimeMillis();
+
+                    eu.kalafatic.evolution.controller.orchestration.SessionContainer session = eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getOrCreateSession(sid);
+                    eu.kalafatic.evolution.controller.orchestration.TaskContext ctx = new eu.kalafatic.evolution.controller.orchestration.TaskContext(orchestrator, root);
+                    ctx.setSessionId(sid);
+                    ctx.getOrchestrationState().getMetadata().put("testMode", true); // Run in analysis mode
+
+                    eu.kalafatic.evolution.controller.orchestration.selfdev.IntentReconstructionEngine engine =
+                        new eu.kalafatic.evolution.controller.orchestration.selfdev.IntentReconstructionEngine(ctx, session.getMemoryService(root), new eu.kalafatic.evolution.controller.orchestration.selfdev.SystemStateSignalProvider(root, ctx));
+
+                    eu.kalafatic.evolution.controller.orchestration.IterationManager manager = eu.kalafatic.evolution.controller.orchestration.KernelFactory.create(engine, ctx, session, new eu.kalafatic.evolution.controller.orchestration.AiService());
+
+                    monitor.beginTask("Intent Reconstruction", 100);
+                    for (int i = 0; i < 5; i++) { // Run 5 iterations of the surgeon
+                        monitor.subTask(" Surgeon Iteration " + (i+1));
+                        engine.runDarwinIteration(ctx, manager);
+                        monitor.worked(20);
+                    }
+
+                    DesignModel model = (DesignModel) ctx.getOrchestrationState().getMetadata().get("reconstructedDesignModel");
+                    if (model != null) {
+                        saveModelToCache(ctx, model);
+                    }
+
+                    scheduleRefresh();
+                    return org.eclipse.core.runtime.Status.OK_STATUS;
+                } catch (Exception e) {
+                    return new org.eclipse.core.runtime.Status(org.eclipse.core.runtime.IStatus.ERROR, "eu.kalafatic.evolution.view", "Intent reconstruction failed", e);
+                }
+            }
+        };
+        job.schedule();
     }
 
     private void handleDiscover() {
