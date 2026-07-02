@@ -24,6 +24,7 @@ public class SessionCognitiveState {
     private CapabilityType dominantTrend = CapabilityType.CHAT;
     private double trendStability = 1.0;
     private int cognitiveDepth = 1;
+    private List<String> dimensions = new ArrayList<>();
 
     public SessionCognitiveState() {
         for (CapabilityType type : CapabilityType.values()) {
@@ -66,6 +67,9 @@ public class SessionCognitiveState {
 
     public int getCognitiveDepth() { return cognitiveDepth; }
     public void setCognitiveDepth(int cognitiveDepth) { this.cognitiveDepth = cognitiveDepth; }
+
+    public List<String> getDimensions() { return dimensions; }
+    public void setDimensions(List<String> dimensions) { this.dimensions = dimensions; }
 
     public String getSessionId() { return sessionId; }
     public void setSessionId(String sessionId) { this.sessionId = sessionId; }

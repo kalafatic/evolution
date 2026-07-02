@@ -598,6 +598,7 @@ window.ChatApp.Renderer = {
     updateCognitiveStatePanel: function(messages) {
         const panel = document.getElementById('cognitive-panel');
         const content = document.getElementById('cognitive-state-content');
+        const dimList = document.getElementById('dimension-list');
         if (!panel || !content) return;
 
         const cogMessages = (messages || []).filter(m => (m.agentType || '').toLowerCase().includes('cognitive-state-changed'));
@@ -612,6 +613,13 @@ window.ChatApp.Renderer = {
 
         try {
             const data = JSON.parse(lastMsg.text);
+
+            if (dimList && data.dimensions) {
+                dimList.innerHTML = data.dimensions.map(d =>
+                    `<span class="trait-tag" style="font-size: 9px; padding: 2px 6px; background: #fff; border: 1px solid #cbd5e1; white-space: nowrap;">${d}</span>`
+                ).join('');
+            }
+
             const confPercent = Math.round((data.confidence || 0) * 100);
             const stabilityPercent = Math.round((data.stability || 0) * 100);
 

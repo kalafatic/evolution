@@ -17,6 +17,7 @@ public class SessionCognitiveSnapshot {
     private double velocity;
     private double stability;
     private List<CapabilityType> trajectory;
+    private List<String> dimensions;
     private int depth;
     private Map<CapabilityType, Double> scores;
     private List<CapabilitySignal> history;
@@ -33,6 +34,7 @@ public class SessionCognitiveSnapshot {
         this.stability = state.getTrendStability();
         this.trajectory = new ArrayList<>(state.getTrajectory());
         this.depth = state.getCognitiveDepth();
+        this.dimensions = new ArrayList<>(state.getDimensions());
         this.scores = new HashMap<>(state.getCapabilityScores());
         this.history = new ArrayList<>(state.getCapabilityHistory());
     }
@@ -64,6 +66,9 @@ public class SessionCognitiveSnapshot {
     public int getDepth() { return depth; }
     public void setDepth(int depth) { this.depth = depth; }
 
+    public List<String> getDimensions() { return dimensions; }
+    public void setDimensions(List<String> dimensions) { this.dimensions = dimensions; }
+
     public Map<CapabilityType, Double> getScores() { return scores; }
     public void setScores(Map<CapabilityType, Double> scores) { this.scores = scores; }
 
@@ -80,6 +85,12 @@ public class SessionCognitiveSnapshot {
         json.put("velocity", velocity);
         json.put("stability", stability);
         json.put("depth", depth);
+
+        org.json.JSONArray dimArr = new org.json.JSONArray();
+        if (dimensions != null) {
+            for (String d : dimensions) dimArr.put(d);
+        }
+        json.put("dimensions", dimArr);
 
         org.json.JSONArray trajArr = new org.json.JSONArray();
         if (trajectory != null) {
