@@ -158,6 +158,9 @@ public class EvolutionProgressPublisher {
 
     private static void populateSessionProperties(TaskContext context, EvolutionProgressEvent event) {
         event.setAutoApprove(context.isAutoApprove());
+        if (context.getPlatformMode() != null && context.getPlatformMode().getType() != null) {
+            event.setPlatformType(context.getPlatformMode().getType().name());
+        }
         if (context.getOrchestrator() != null && context.getOrchestrator().getAiChat() != null) {
             String sid = context.getSessionId();
             context.getOrchestrator().getAiChat().getSessions().stream()
@@ -188,6 +191,7 @@ public class EvolutionProgressPublisher {
         json.put("parentId", event.getParentId());
         json.put("currentDimension", event.getCurrentDimension());
         json.put("currentDimensionDescription", event.getCurrentDimensionDescription());
+        json.put("platformType", event.getPlatformType());
         json.put("lockedDecisionCount", event.getLockedDecisionCount());
         json.put("autoApprove", event.isAutoApprove());
         json.put("gitAutomation", event.isGitAutomation());
