@@ -23,6 +23,8 @@ public class DarwinEngineFactory {
                 return new MediatedEngine(context, memoryService, stateProvider);
             case SELF_DEV_MODE:
                 return new SelfDevelopmentEngine(context, memoryService, stateProvider);
+            case INTENT_RECONSTRUCTION:
+                return new IntentReconstructionEngine(context, memoryService, stateProvider);
             default:
                 context.log("[FACTORY] Unknown mode: " + platformType + ". Defaulting to TASK.");
                 return new DarwinEngine(context, memoryService, stateProvider);
