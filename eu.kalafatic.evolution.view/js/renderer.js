@@ -528,7 +528,7 @@ window.ChatApp.Renderer = {
                 const maxBranches = latestData.branchingLimit || 4;
 
                 const iText = `Iters: ${actualIters}/${minIters}/${maxIters}`;
-                const bText = `${platform} ${actualBranches}/${minBranches}/${maxBranches}`;
+				const bText = `Branches: ${actualBranches}/${maxBranches}`;
 
                 iterHtml = `
                     <div style="display: flex; align-items: center; gap: 12px;">
