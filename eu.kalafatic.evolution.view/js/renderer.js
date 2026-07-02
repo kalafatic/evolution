@@ -482,17 +482,6 @@ window.ChatApp.Renderer = {
 
         const sortedIters = Object.keys(iterations).sort((a, b) => parseInt(a) - parseInt(b));
 
-        // Update stats
-        if (latestData && iterStats && branchStats) {
-            const actualIters = sortedIters.length;
-            const minIters = latestData.minIterations || 1;
-            const maxIters = latestData.maxIterations || 10;
-            iterStats.innerText = `Iters: ${actualIters}/${minIters}/${maxIters}`;
-
-            const actualBranches = latestData.branches ? latestData.branches.length : 0;
-            const maxBranches = latestData.branchingLimit || 4;
-            branchStats.innerText = `Branches: ${actualBranches}/${maxBranches}`;
-        }
         if (sortedIters.length === 0) return;
 
         // Map iterations by their parentId to build non-linear tree
@@ -511,14 +500,14 @@ window.ChatApp.Renderer = {
             if (isRoot) {
                 // Find iteration(s) that have no parentId or "ROOT" as parentId
                 const roots = childrenByParent["ROOT"] || [];
-                roots.forEach(r => {
-                    html += renderIteration(r);
+                roots.forEach((r, idx) => {
+                    html += renderIteration(r, idx === 0);
                 });
             }
             return html;
         };
 
-        const renderIteration = (data) => {
+        const renderIteration = (data, isRoot = false) => {
             const dimInfo = data.currentDimension ? `\nDimension: ${data.currentDimension}${data.currentDimensionDescription ? ' (' + data.currentDimensionDescription + ')' : ''}` : "";
             let html = `
                 <div class="tree-node" title="Iteration ${data.iterationCount}: ${data.currentTask || ''}${dimInfo}"
@@ -527,6 +516,27 @@ window.ChatApp.Renderer = {
                     ${data.currentDimension ? `<div style="font-size: 6px; color: #64748b; margin-top: -2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 34px; text-align: center;">${data.currentDimension}</div>` : ''}
                 </div>
             `;
+
+            if (isRoot && latestData) {
+                const actualIters = sortedIters.length;
+                const minIters = latestData.minIterations || 1;
+                const maxIters = latestData.maxIterations || 10;
+                const actualBranches = latestData.branches ? latestData.branches.length : 0;
+                const maxBranches = latestData.branchingLimit || 4;
+
+                const iText = `Iters: ${actualIters}/${minIters}/${maxIters}`;
+                const bText = `Branches: ${actualBranches}/${maxBranches}`;
+
+                nodeHtml = `
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="font-size: 9px; color: #94a3b8; min-width: 60px; text-align: right; font-weight: normal;">${iText}</div>
+                        ${nodeHtml}
+                        <div style="font-size: 9px; color: #94a3b8; min-width: 60px; font-weight: normal;">${bText}</div>
+                    </div>
+                `;
+            }
+
+            let html = nodeHtml;
 
             const branches = data.branches || [];
             const hasBranches = branches.length > 0;
