@@ -1798,6 +1798,40 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 		}
 	}
 
+	protected File createIsolatedVariantDirectory(BranchVariant variant, IterationManager manager) throws Exception {
+		boolean isMediated = ModeRecognizer.isMediatedMode(context);
+		boolean isChatMode = modeRecognizer.isChatMode(context);
+
+		// ============================================================
+		// FIX: Skip Git worktree for chat variants or non-VCS environments
+		// or if no HEAD commit exists yet (fresh repository)
+		// ============================================================
+		boolean isFreshRepo = false;
+		try {
+			isFreshRepo = manager.getGitManager().isGitRepository() && manager.getGitManager().getHeadCommit() == null;
+		} catch (Exception e) {
+			isFreshRepo = true; // Assume fresh if HEAD check fails
+		}
+
+		if (context.getMetadata().containsKey("testMode") || isMediated || isChatMode) {
+			return context.getProjectRoot();
+		} else if (!manager.getGitManager().isGitRepository() || isFreshRepo) {
+			File tempDir = java.nio.file.Files.createTempDirectory("evo-variant-copy-" + variant.getId()).toFile();
+			copyDirectory(context.getProjectRoot(), tempDir);
+			return tempDir;
+		} else {
+			File tempDir = java.nio.file.Files.createTempDirectory("evo-variant-" + variant.getId()).toFile();
+			// Ensure worktree is clean before starting
+			try {
+				manager.getGitManager().removeWorktree(tempDir.getAbsolutePath());
+				manager.getGitManager().pruneWorktrees();
+			} catch (Exception e) {
+			}
+			manager.getBranchManager().createWorktree(variant.getBranchName(), tempDir.getAbsolutePath());
+			return tempDir;
+		}
+	}
+
 	private VariantExecutionContext evaluateVariantParallel(BranchVariant variant, TaskPlanner planner,
 			TaskContext context, String baseCommit, EvolutionaryPressureVector pressure, IterationManager manager) {
 		File tempDir = null;
@@ -1806,22 +1840,9 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 
 		boolean isMediated = ModeRecognizer.isMediatedMode(context);
 		boolean isChatMode = modeRecognizer.isChatMode(context);
+
 		try {
-			// ============================================================
-			// FIX: Skip Git worktree for chat variants or non-VCS environments
-			// ============================================================
-			if (context.getMetadata().containsKey("testMode") || isMediated || isChatMode || !manager.getGitManager().isGitRepository()) {
-				tempDir = context.getProjectRoot();
-			} else {
-				tempDir = java.nio.file.Files.createTempDirectory("evo-variant-" + variant.getId()).toFile();
-				// Ensure worktree is clean before starting
-				try {
-					manager.getGitManager().removeWorktree(tempDir.getAbsolutePath());
-					manager.getGitManager().pruneWorktrees();
-				} catch (Exception e) {
-				}
-				manager.getBranchManager().createWorktree(variant.getBranchName(), tempDir.getAbsolutePath());
-			}
+			tempDir = createIsolatedVariantDirectory(variant, manager);
 			TaskContext variantContext = new TaskContext(context.getOrchestrator(), tempDir);
 			variantContext.setSessionId(context.getSessionId());
 			variantContext.setKernelContext(context.getKernelContext());
@@ -2093,6 +2114,26 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 				deleteDirectory(file);
 		}
 		directory.delete();
+	}
+
+	protected void copyDirectory(File source, File destination) throws Exception {
+		if (source.isDirectory()) {
+			if (!destination.exists()) {
+				destination.mkdirs();
+			}
+			String[] files = source.list();
+			if (files != null) {
+				for (String file : files) {
+					if (".git".equals(file) || "target".equals(file) || "bin".equals(file) || ".settings".equals(file)
+							|| ".project".equals(file) || ".classpath".equals(file))
+						continue;
+					copyDirectory(new File(source, file), new File(destination, file));
+				}
+			}
+		} else {
+			java.nio.file.Files.copy(source.toPath(), destination.toPath(),
+					java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+		}
 	}
 
 	public List<BranchVariant> generateVariants(GoalModel goal, StateSnapshot snapshot, FailureMemory failureMemory,

@@ -1480,22 +1480,9 @@ private String generateChatResponse(String request, TaskContext context) {
 
 		boolean isMediated = ModeRecognizer.isMediatedMode(context);
 		boolean isChatMode = modeRecognizer.isChatMode(context);
+
 		try {
-	        // ============================================================
-	        // FIX: Skip Git worktree for chat variants
-	        // ============================================================
-	        if (context.getMetadata().containsKey("testMode") || isMediated || isChatMode) {
-	            tempDir = context.getProjectRoot();
-	        } else {
-	            tempDir = java.nio.file.Files.createTempDirectory("evo-variant-" + variant.getId()).toFile();
-	            // Ensure worktree is clean before starting
-	            try {
-	                manager.getGitManager().removeWorktree(tempDir.getAbsolutePath());
-	                manager.getGitManager().pruneWorktrees();
-	            } catch (Exception e) {
-	            }
-	            manager.getBranchManager().createWorktree(variant.getBranchName(), tempDir.getAbsolutePath());
-	        }
+			tempDir = createIsolatedVariantDirectory(variant, manager);
 			TaskContext variantContext = new TaskContext(context.getOrchestrator(), tempDir);
 			variantContext.setSessionId(context.getSessionId());
 			variantContext.setKernelContext(context.getKernelContext());
