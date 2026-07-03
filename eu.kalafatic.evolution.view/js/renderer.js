@@ -374,7 +374,7 @@ window.ChatApp.Renderer = {
                 const vId = String(v.id || index);
                 const isThisApproved = role.includes('approved:' + vId);
                 const isThisRejected = role.includes('rejected:' + vId);
-                const isThisKept = role.includes('kept:' + vId) || v.approved === true || v.status === 'KEPT' || (v.id && m.text.includes(v.id + '"') && m.text.includes('"status":"KEPT"'));
+                const isThisKept = role.includes('kept:' + vId) || v.approved === true || v.status === 'KEPT' || (v.id && m.text.includes('"' + v.id + '"') && m.text.match(new RegExp('"' + v.id + '"[^}]*"status"\\s*:\\s*"KEPT"')));
 
                 const col = document.createElement('div');
                 col.className = 'branch-column' + (v.isBest ? ' best' : '') + (isThisApproved ? ' approved' : '') + (isThisRejected ? ' rejected' : '') + (isThisKept ? ' kept' : '');
@@ -552,13 +552,14 @@ window.ChatApp.Renderer = {
                 branches.forEach((b, idx) => {
                     const isWinner = winnerId === b.id;
                     const isFailed = b.status === 'failed' || b.status === 'rejected';
+                    const isKept = b.status === 'KEPT' || b.status === 'kept';
                     const subIterations = childrenByParent[b.id] || [];
                     const hasSubIters = subIterations.length > 0;
 
                     iterHtml += `<div class="tree-child">`;
                     iterHtml += `<div class="tree-vline"></div>`;
                     iterHtml += `
-                        <div class="tree-node proposal branch ${platformClass} ${isFailed ? 'failed' : ''} ${isWinner ? 'winner' : ''}"
+                        <div class="tree-node proposal branch ${platformClass} ${isFailed ? 'failed' : ''} ${isWinner ? 'winner' : ''} ${isKept ? 'kept' : ''}"
                              title="Branch ${b.id}${b.strategy ? ': ' + b.strategy : ''}${b.score !== undefined ? ' - Score: ' + Math.round(b.score*100) : ''}"
                              ondblclick="window.ChatApp.Renderer.showBranchDetails('${b.id}')"
                              oncontextmenu="window.ChatApp.Renderer.showBranchContextMenu(event, '${b.id}')">
@@ -629,7 +630,7 @@ window.ChatApp.Renderer = {
 
             if (dimList && data.dimensions) {
                 dimList.innerHTML = data.dimensions.map(d =>
-                    `<span class="trait-tag" style="font-size: 9px; padding: 2px 6px; background: #fff; border: 1px solid #cbd5e1; white-space: nowrap;">${d}</span>`
+                    `<span class="trait-tag">${d}</span>`
                 ).join('');
             }
 
@@ -637,7 +638,7 @@ window.ChatApp.Renderer = {
             const stabilityPercent = Math.round((data.stability || 0) * 100);
 
             const trajectoryHtml = (data.trajectory || []).slice(-5).map(t =>
-                `<span class="trait-tag active" style="font-size: 9px; padding: 2px 4px;">${t}</span>`
+                `<span class="trait-tag active">${t}</span>`
             ).join(' <span style="color:#94a3b8">→</span> ');
 
             content.innerHTML = `
