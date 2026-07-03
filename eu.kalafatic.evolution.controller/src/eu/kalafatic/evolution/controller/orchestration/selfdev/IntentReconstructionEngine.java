@@ -87,7 +87,7 @@ public class IntentReconstructionEngine extends ADarwinEngine {
     }
 
     private void scoreDirectory(File dir, int depth) {
-        if (depth > 2) return; // Limit depth for initial scan
+        if (depth > 3) return; // Limit depth for initial scan
 
         File[] children = dir.listFiles();
         if (children == null) return;
@@ -103,6 +103,16 @@ public class IntentReconstructionEngine extends ADarwinEngine {
                 if (name.equals("java")) score += 100;
                 if (name.equals("api") || name.equals("core") || name.equals("model")) score += 30;
                 if (name.contains("controller") || name.contains("service") || name.contains("repository")) score += 20;
+
+                // Identify SUBSYSTEMS based on package depth and naming
+                if (depth >= 2 && !name.equals("java") && !name.equals("main") && !name.equals("src")) {
+                    ComponentRecord sub = new ComponentRecord();
+                    sub.setId("subsystem:" + child.getName());
+                    sub.setName(child.getName());
+                    sub.setType("SUBSYSTEM");
+                    sub.setDescription("Architectural subsystem discovered at depth " + depth);
+                    designModel.getComponents().add(sub);
+                }
 
                 explorationQueue.add(new ExplorationNode(child, score, depth));
                 scoreDirectory(child, depth + 1);
@@ -194,9 +204,15 @@ public class IntentReconstructionEngine extends ADarwinEngine {
         record.setId(meta.getPath());
         record.setName(file.getName());
 
-        // Heuristic: Controllers and Resources are candidates for Use Cases in this mode
-        if (file.getName().endsWith("Controller.java") || file.getName().endsWith("Resource.java") || file.getName().endsWith("Application.java")) {
+        // Heuristic: Controllers, Resources, Services, and Handlers are candidates for Use Cases in this mode
+        String name = file.getName();
+        if (name.endsWith("Controller.java") || name.endsWith("Resource.java") ||
+            name.endsWith("Service.java") || name.endsWith("UseCase.java") ||
+            name.endsWith("Handler.java") || name.endsWith("Facade.java") ||
+            name.endsWith("Application.java")) {
             record.setType("USE_CASE");
+        } else if (file.isDirectory() || meta.getRole() != null && meta.getRole().equalsIgnoreCase("subsystem")) {
+            record.setType("SUBSYSTEM");
         } else {
             record.setType(meta.getRole() != null ? meta.getRole().toUpperCase() : "COMPONENT");
         }
@@ -215,6 +231,17 @@ public class IntentReconstructionEngine extends ADarwinEngine {
         }
 
         designModel.getComponents().add(record);
+
+        // Add relationships from metadata
+        if (meta.getDependencyLinks() != null) {
+            for (String dep : meta.getDependencyLinks()) {
+                RelationshipRecord rel = new RelationshipRecord();
+                rel.setFrom(record.getId());
+                rel.setTo(dep);
+                rel.setType("DEPENDS_ON");
+                designModel.getRelationships().add(rel);
+            }
+        }
     }
 
     private void discoverNewHooks(EvoMetadata meta) {

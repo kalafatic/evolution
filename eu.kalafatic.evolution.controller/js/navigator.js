@@ -114,6 +114,21 @@
         // In the future, simple manual layouts can be added here.
     };
 
+    function getBoundaryPoint(src, tgt, w, h) {
+        const dx = tgt.x - src.x;
+        const dy = tgt.y - src.y;
+        if (dx === 0 && dy === 0) return { x: src.x, y: src.y };
+
+        const ratioX = (w / 2) / Math.abs(dx);
+        const ratioY = (h / 2) / Math.abs(dy);
+        const ratio = Math.min(ratioX, ratioY);
+
+        return {
+            x: src.x + dx * ratio,
+            y: src.y + dy * ratio
+        };
+    }
+
     window.updateGraph = function(data) {
         if (typeof log === 'function') log("updateGraph called with " + (data && data.components ? data.components.length : 0) + " components.");
 
@@ -167,17 +182,35 @@
         svg.appendChild(gRoot);
 
         graphData.links.forEach(l => {
+            const w1 = 200 + (l.source.importance * 50);
+            const h1 = 100;
+            const w2 = 200 + (l.target.importance * 50);
+            const h2 = 100;
+
+            const p1 = getBoundaryPoint(l.source, l.target, w1, h1);
+            const p2 = getBoundaryPoint(l.target, l.source, w2, h2);
+
             const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
             line.setAttribute("class", "link");
-            line.setAttribute("x1", l.source.x);
-            line.setAttribute("y1", l.source.y);
-            line.setAttribute("x2", l.target.x);
-            line.setAttribute("y2", l.target.y);
+            line.setAttribute("x1", p1.x);
+            line.setAttribute("y1", p1.y);
+            line.setAttribute("x2", p2.x);
+            line.setAttribute("y2", p2.y);
             line.setAttribute("stroke", getLinkColor(l.type));
             if (l.type === 'DEPENDS_ON' || l.type === 'EVIDENCE') {
                 line.setAttribute("stroke-dasharray", "5,5");
             }
             gRoot.appendChild(line);
+
+            // Add relationship label
+            const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            label.setAttribute("x", (p1.x + p2.x) / 2);
+            label.setAttribute("y", (p1.y + p2.y) / 2 - 5);
+            label.setAttribute("text-anchor", "middle");
+            label.setAttribute("class", "link-label");
+            label.setAttribute("style", "font-size: 8px; fill: #666; pointer-events: none; font-family: monospace;");
+            label.textContent = l.type;
+            gRoot.appendChild(label);
         });
 
         graphData.nodes.forEach(n => {
@@ -368,7 +401,12 @@ window.showPopup = function(title, items) {
         const ul = document.createElement("ul");
         items.forEach(item => {
             const li = document.createElement("li");
-            li.textContent = item;
+            if (item.trim().startsWith('<')) {
+                li.innerHTML = item;
+                li.style.listStyle = "none";
+            } else {
+                li.textContent = item;
+            }
             ul.appendChild(li);
         });
         content.appendChild(ul);
