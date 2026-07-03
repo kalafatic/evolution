@@ -321,6 +321,18 @@ public class ArchitecturePage extends AEvoPage {
             } catch (java.io.IOException e) {
                 eu.kalafatic.evolution.controller.log.Log.log("[ARCH] Failed to save orchestrator resource: " + e.getMessage());
             }
+
+            // Save to Session Metadata
+            try {
+                String sid = (orchestrator.getSelfDevSession() != null) ? orchestrator.getSelfDevSession().getId() : "discovery-session";
+                eu.kalafatic.evolution.controller.orchestration.SessionContainer session = eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getSession(sid);
+                if (session != null && session.getSessionState() != null) {
+                    session.getSessionState().getMetadata().put("targetPath", path);
+                    eu.kalafatic.evolution.controller.log.Log.log("[ARCH] Target path saved to session metadata: " + path);
+                }
+            } catch (Exception e) {
+                eu.kalafatic.evolution.controller.log.Log.log("[ARCH] Failed to save target to session metadata: " + e.getMessage());
+            }
         }
 
         if (!targetHistory.contains(path)) {
@@ -663,6 +675,29 @@ public class ArchitecturePage extends AEvoPage {
                     DesignModel model = (DesignModel) ctx.getOrchestrationState().getMetadata().get("reconstructedDesignModel");
                     if (model != null) {
                         saveModelToCache(ctx, model);
+
+                        Display.getDefault().asyncExec(() -> {
+                            long useCases = model.getComponents().stream().filter(c -> "USE_CASE".equals(c.getType())).count();
+                            long subsystems = model.getComponents().stream().filter(c -> "SUBSYSTEM".equals(c.getType()) || "DOMAIN".equals(c.getType())).count();
+                            long hotspots = model.getComponents().stream().filter(c -> "HOTSPOT".equals(c.getType())).count();
+
+                            StringBuilder msg = new StringBuilder();
+                            msg.append("<h3>🎯 Intent Reconstruction Complete</h3>");
+                            msg.append("<p>The Curiosity-Driven Surgeon has analyzed the repository and reconstructed the architectural intent.</p>");
+                            msg.append("<ul>");
+                            msg.append("<li><b>Components:</b> ").append(model.getComponents().size()).append("</li>");
+                            msg.append("<li><b>Use Cases identified:</b> ").append(useCases).append("</li>");
+                            msg.append("<li><b>Subsystems discovered:</b> ").append(subsystems).append("</li>");
+                            if (hotspots > 0) msg.append("<li><b>Hotspots flagged:</b> ").append(hotspots).append("</li>");
+                            msg.append("</ul>");
+                            msg.append("<p><b>Next Steps:</b> Review the <b>Knowledge Graph</b> to see discovered relationships, or run <b>Update Genome</b> to synchronize full documentation.</p>");
+
+                            if (browser != null && !browser.isDisposed()) {
+                                // We use a popup if available, otherwise fallback to alert
+                                String escapedMsg = msg.toString().replace("'", "\\'");
+                                browser.execute("if(window.showPopup) { window.showPopup('Intent Discovery Results', ['" + escapedMsg + "']); } else { alert('Intent Discovery Complete'); }");
+                            }
+                        });
                     }
 
                     scheduleRefresh();
