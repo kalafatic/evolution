@@ -101,15 +101,35 @@ function drawDemoConnections() {
             if (parseInt(b.dataset.layer) === parseInt(a.dataset.layer) + 1) {
                 const r1 = a.getBoundingClientRect();
                 const r2 = b.getBoundingClientRect();
+                const x1 = r1.left + r1.width / 2 - cRect.left;
+                const y1 = r1.top + r1.height / 2 - cRect.top;
+                const x2 = r2.left + r2.width / 2 - cRect.left;
+                const y2 = r2.top + r2.height / 2 - cRect.top;
+
+                const weight = (Math.random() * 2 - 1).toFixed(2);
+                const opacity = Math.abs(weight);
 
                 const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-                line.setAttribute("x1", r1.left + r1.width / 2 - cRect.left);
-                line.setAttribute("y1", r1.top + r1.height / 2 - cRect.top);
-                line.setAttribute("x2", r2.left + r2.width / 2 - cRect.left);
-                line.setAttribute("y2", r2.top + r2.height / 2 - cRect.top);
-                line.setAttribute("stroke", "#888");
-                line.setAttribute("stroke-width", "1");
+                line.setAttribute("x1", x1);
+                line.setAttribute("y1", y1);
+                line.setAttribute("x2", x2);
+                line.setAttribute("y2", y2);
+                line.setAttribute("stroke", weight > 0 ? "#4fc1ff" : "#f48771");
+                line.setAttribute("stroke-width", Math.abs(weight) * 3 + 0.5);
+                line.setAttribute("stroke-opacity", opacity * 0.8 + 0.2);
                 svg.appendChild(line);
+
+                // Add weight label on hover or if strong
+                if (opacity > 0.8) {
+                    const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                    label.setAttribute("x", (x1 + x2) / 2);
+                    label.setAttribute("y", (y1 + y2) / 2 - 5);
+                    label.setAttribute("font-size", "6px");
+                    label.setAttribute("fill", "#666");
+                    label.setAttribute("text-anchor", "middle");
+                    label.textContent = weight;
+                    svg.appendChild(label);
+                }
             }
         });
     });
@@ -185,11 +205,32 @@ function trainDemo() {
 }
 
 function forwardDemo() {
-    document.querySelectorAll(".demo-neuron-el").forEach(n => {
-        let v = Math.random() * 255;
-        n.style.background = "rgb(" + v + ",80,80)";
+    const neurons = document.querySelectorAll(".demo-neuron-el");
+    neurons.forEach(n => {
+        let val = Math.random();
+        let color = Math.floor(val * 255);
+        n.style.background = "rgb(" + color + ", 122, 204)";
+        n.style.boxShadow = `0 0 ${val * 15}px rgba(0, 122, 204, 0.8)`;
+
+        // Show activation value
+        let badge = n.querySelector(".activation-badge");
+        if (!badge) {
+            badge = document.createElement("div");
+            badge.className = "activation-badge";
+            badge.style.position = "absolute";
+            badge.style.top = "-15px";
+            badge.style.fontSize = "8px";
+            badge.style.background = "white";
+            badge.style.padding = "1px 3px";
+            badge.style.border = "1px solid #ccc";
+            badge.style.borderRadius = "3px";
+            badge.style.color = "#333";
+            n.style.position = "relative";
+            n.appendChild(badge);
+        }
+        badge.textContent = val.toFixed(2);
     });
-    log("Forward pass simulated.");
+    log("Forward pass simulated with numerical I/O.");
 }
 
 // ============== INTERACTIVE LLM DEMO ==============
@@ -424,6 +465,10 @@ function renderMlp() {
     for(let i=0; i<mlpH; i++){ html += "<div class='demo-mlp-node'>h"+i+"</div>"; }
     html += "</div>";
     html += "<div class='demo-mlp-layer'><div>Output</div><div class='demo-mlp-node'>y</div></div>";
+
+    const params = (2 * mlpH) + mlpH + (mlpH * 1) + 1; // input->hidden + hidden bias + hidden->out + out bias
+    html += `<div style="font-size: 0.7em; color: #aaa; margin-top: 10px;">Total Parameters: ${params}</div>`;
+
     net.innerHTML = html;
 }
 

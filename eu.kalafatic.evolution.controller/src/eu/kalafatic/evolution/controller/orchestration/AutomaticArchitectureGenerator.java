@@ -26,7 +26,9 @@ public class AutomaticArchitectureGenerator {
         switch (modelType != null ? modelType.toUpperCase() : "") {
             case "SEED":
                 graph = generateSeedGraph();
-                defaults.put("lr", 0.001).put("optimizer", "adam").put("epochs", 5);
+                defaults.put("lr", 0.001).put("optimizer", "adam").put("epochs", 50)
+                        .put("batch", 32).put("dropout", 0.2).put("weight_decay", 1e-5)
+                        .put("is_production_ready", true);
                 break;
             case "NEURON":
                 graph = generateNeuronGraph();
@@ -66,12 +68,19 @@ public class AutomaticArchitectureGenerator {
 
     private String generateSeedGraph() {
         return "{\"nodes\":[" +
-                "{\"id\":\"s_in\",\"name\":\"seed_input\",\"type\":\"LAYER\",\"x\":100,\"y\":200}," +
-                "{\"id\":\"s_h\",\"name\":\"seed_hidden\",\"type\":\"LAYER\",\"x\":300,\"y\":200}," +
-                "{\"id\":\"s_out\",\"name\":\"seed_output\",\"type\":\"LAYER\",\"x\":500,\"y\":200}" +
+                "{\"id\":\"s_in\",\"name\":\"input (Image)\",\"type\":\"DATA\",\"x\":50,\"y\":200}," +
+                "{\"id\":\"s_conv\",\"name\":\"conv2d (Extractor)\",\"type\":\"LAYER\",\"x\":200,\"y\":100}," +
+                "{\"id\":\"s_pool\",\"name\":\"maxpool (Downsample)\",\"type\":\"LAYER\",\"x\":200,\"y\":300}," +
+                "{\"id\":\"s_attn\",\"name\":\"attention (Focus)\",\"type\":\"ATTENTION\",\"x\":400,\"y\":200}," +
+                "{\"id\":\"s_flat\",\"name\":\"flatten\",\"type\":\"LAYER\",\"x\":550,\"y\":200}," +
+                "{\"id\":\"s_out\",\"name\":\"classifier (Head)\",\"type\":\"LAYER\",\"x\":700,\"y\":200}" +
                 "],\"links\":[" +
-                "{\"source\":\"s_in\",\"target\":\"s_h\"}," +
-                "{\"source\":\"s_h\",\"target\":\"s_out\"}" +
+                "{\"source\":\"s_in\",\"target\":\"s_conv\"}," +
+                "{\"source\":\"s_in\",\"target\":\"s_pool\"}," +
+                "{\"source\":\"s_conv\",\"target\":\"s_attn\"}," +
+                "{\"source\":\"s_pool\",\"target\":\"s_attn\"}," +
+                "{\"source\":\"s_attn\",\"target\":\"s_flat\"}," +
+                "{\"source\":\"s_flat\",\"target\":\"s_out\"}" +
                 "]}";
     }
 
