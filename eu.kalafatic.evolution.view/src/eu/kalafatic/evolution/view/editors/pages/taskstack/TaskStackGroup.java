@@ -1,54 +1,58 @@
 package eu.kalafatic.evolution.view.editors.pages.taskstack;
 
-import org.eclipse.jface.viewers.ColumnLabelProvider;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.List;
+
+import org.eclipse.jface.dialogs.Dialog;
+import org.eclipse.jface.util.LocalSelectionTransfer;
+import org.eclipse.jface.viewers.CellEditor;
+import org.eclipse.jface.viewers.CheckStateChangedEvent;
 import org.eclipse.jface.viewers.CheckboxCellEditor;
 import org.eclipse.jface.viewers.CheckboxTreeViewer;
-import org.eclipse.jface.viewers.ICheckStateProvider;
-import org.eclipse.jface.viewers.ITreeContentProvider;
-import org.eclipse.jface.viewers.TreeViewerColumn;
-import org.eclipse.jface.viewers.TextCellEditor;
+import org.eclipse.jface.viewers.ColumnLabelProvider;
 import org.eclipse.jface.viewers.DialogCellEditor;
 import org.eclipse.jface.viewers.EditingSupport;
 import org.eclipse.jface.viewers.ICheckStateListener;
-import org.eclipse.jface.viewers.CellEditor;
-import org.eclipse.jface.viewers.CheckStateChangedEvent;
-import org.eclipse.jface.util.LocalSelectionTransfer;
+import org.eclipse.jface.viewers.ICheckStateProvider;
 import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.jface.viewers.ITreeContentProvider;
+import org.eclipse.jface.viewers.TextCellEditor;
+import org.eclipse.jface.viewers.TreeViewerColumn;
 import org.eclipse.jface.viewers.ViewerDropAdapter;
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.dnd.DND;
 import org.eclipse.swt.dnd.DragSourceAdapter;
 import org.eclipse.swt.dnd.DragSourceEvent;
 import org.eclipse.swt.dnd.Transfer;
 import org.eclipse.swt.dnd.TransferData;
-import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.DateTime;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Tree;
-import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.ui.forms.widgets.FormToolkit;
-import eu.kalafatic.evolution.model.orchestration.Task;
-import eu.kalafatic.evolution.model.orchestration.TaskStatus;
-import eu.kalafatic.evolution.view.editors.pages.TaskStackPage;
-import eu.kalafatic.utils.factories.GUIFactory;
 
 import eu.kalafatic.evolution.controller.orchestration.behavior.BitState;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
+import eu.kalafatic.evolution.model.orchestration.Task;
+import eu.kalafatic.evolution.model.orchestration.TaskStatus;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
-
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
+import eu.kalafatic.evolution.view.editors.pages.TaskStackPage;
+import eu.kalafatic.utils.factories.GUIFactory;
 
 public class TaskStackGroup extends AEvoGroup {
     private FormToolkit toolkit;
     private TaskStackPage page;
     private CheckboxTreeViewer treeViewer;
+    private Combo executionModeCombo;
 
     public TaskStackGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, TaskStackPage page) {
         super(editor, orchestrator);
@@ -89,6 +93,33 @@ public class TaskStackGroup extends AEvoGroup {
         GridData gd = new GridData(GridData.FILL_BOTH);
         gd.heightHint = 400;
         group.setLayoutData(gd);
+        
+        
+        Composite topComp = toolkit.createComposite(group);
+        topComp.setLayout(new GridLayout(6, false));
+        topComp.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        Button selectAllBtn = GUIFactory.INSTANCE.createButton(topComp, "Select All");
+        selectAllBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                page.selectAll(true);
+            }
+        });
+
+        Button unselectAllBtn = GUIFactory.INSTANCE.createButton(topComp, "Unselect All");
+        unselectAllBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                page.selectAll(false);
+            }
+        });
+
+        GUIFactory.INSTANCE.createLabel(topComp, "Execution Mode:");
+        executionModeCombo = GUIFactory.INSTANCE.createCombo(topComp);
+        executionModeCombo.add("Sequential");
+        executionModeCombo.add("Parallel (Max 3)");
+        executionModeCombo.select(0);
 
         Tree tree = toolkit.createTree(group, SWT.CHECK | SWT.BORDER | SWT.FULL_SELECTION | SWT.V_SCROLL | SWT.H_SCROLL);
         tree.setHeaderVisible(true);
@@ -734,4 +765,8 @@ public class TaskStackGroup extends AEvoGroup {
 	public CheckboxTreeViewer getTreeViewer() {
 		return treeViewer;
 	}
+	
+	  public boolean isParallel() {
+	        return executionModeCombo.getText().startsWith("Parallel");
+	    }
 }

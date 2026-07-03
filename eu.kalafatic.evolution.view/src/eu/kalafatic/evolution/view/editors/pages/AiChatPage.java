@@ -476,7 +476,9 @@ public class AiChatPage extends AEvoPage {
 		if (request.isEmpty()) {
 			if (AiMode.MEDIATED.getName().equals(chatMgmtGroup.getAiModeCombo().getItem(chatMgmtGroup.getAiModeCombo().getSelectionIndex()))) {
 				//processLogEntry("Evo: Please provide a request or instruction to proceed.");
-				request = Files.readString(java.nio.file.Path.of("md", "mediated.md"), StandardCharsets.UTF_8);
+				request = Files.readString(java.nio.file.Path.of("prompts", "mediated.md"), StandardCharsets.UTF_8);
+			} else 	if (AiMode.INTENT.getName().equals(chatMgmtGroup.getAiModeCombo().getItem(chatMgmtGroup.getAiModeCombo().getSelectionIndex()))) {
+				request = Files.readString(java.nio.file.Path.of("prompts", "intent.md"), StandardCharsets.UTF_8);
 			} else {
 				//processLogEntry("Evo: Request is empty. Please enter a valid instruction or question.");
 				return;				

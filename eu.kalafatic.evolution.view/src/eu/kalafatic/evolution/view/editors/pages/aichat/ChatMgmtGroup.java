@@ -149,6 +149,7 @@ public class ChatMgmtGroup extends AEvoGroup {
         GUIFactory.INSTANCE.createLabel(compositeLocal, "AI Mode:", SWT.NONE, GUIFactory.BUTTON_WIDTH);
         aiModeCombo = GUIFactory.INSTANCE.createCombo(compositeLocal, AiMode.values());
         Button targetButton = GUIFactory.INSTANCE.createButton(compositeLocal, "Target");
+        targetButton.setBackground(lightOrange);
         
         targetButton.addSelectionListener(new SelectionAdapter() {
             @Override
