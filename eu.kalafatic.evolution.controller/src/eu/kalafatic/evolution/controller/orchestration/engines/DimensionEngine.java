@@ -71,6 +71,19 @@ public class DimensionEngine {
         }
 
         EvolutionDimension activeDimension = dimensionScheduler.selectNextDimension(genome);
+
+        // SPECIFICITY REFINEMENT: If scheduler picked generic 'IMPLEMENTATION', check if better unlocked candidates exist
+        if (activeDimension != null && "IMPLEMENTATION".equals(activeDimension.getId())) {
+             EvolutionDimension better = genome.getDimensions().stream()
+                 .filter(d -> !genome.isLocked(d.getId()) && !"IMPLEMENTATION".equals(d.getId()))
+                 .findFirst()
+                 .orElse(null);
+             if (better != null) {
+                 context.log("[DARWIN] Promoting specific dimension " + better.getId() + " over generic IMPLEMENTATION.");
+                 activeDimension = better;
+             }
+        }
+
         if (activeDimension == null && discoveryAgent != null) {
             context.log("[DARWIN] Genome exhausted. Discovering new semantic dimensions...");
             try {

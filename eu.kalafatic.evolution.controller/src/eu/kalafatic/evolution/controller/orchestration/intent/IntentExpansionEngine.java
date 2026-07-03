@@ -51,10 +51,11 @@ public class IntentExpansionEngine extends BaseAiAgent {
                "PHASE 1 - SEMANTIC DIMENSION DISCOVERY:\n" +
                "Analyze the goal to identify UNRESOLVED SEMANTIC DIMENSIONS.\n" +
                "A dimension is a decision point (e.g., Error Handling Strategy, Output Target, Persistence Model).\n" +
-               "For SIMPLE ATOMIC TASKS (e.g., 'create a class', 'add a method'), avoid over-engineering. Identify simple dimensions like:\n" +
+               "For SIMPLE ATOMIC TASKS (e.g., 'create a class', 'add a method'), avoid over-engineering but ENSURE SPECIFICITY. Identify simple dimensions like:\n" +
                "- Implementation Style (e.g., standard vs. optimized, static vs. instance)\n" +
-               "- Naming/Structure (e.g., package choice, filename vs. class name)\n" +
-               "- Operational Logic (e.g., specific output content, method signatures)\n" +
+               "- API Design (e.g., method signatures, return types, exception handling)\n" +
+               "- Dependency Strategy (e.g., standard library vs. lightweight external utils)\n" +
+               "- Structural Organization (e.g., inner classes vs. separate files, package layout)\n" +
                "\n" +
                "For each dimension, analyze:\n" +
                "- Abstraction Level: [PHILOSOPHY, STRATEGY, ARCHITECTURE, DESIGN, IMPLEMENTATION, SYNTAX]\n" +
@@ -66,6 +67,7 @@ public class IntentExpansionEngine extends BaseAiAgent {
                "Select exactly ONE dimension to evolve in this iteration.\n" +
                "Priority Rule: Higher abstraction levels (Philosophy/Strategy) MUST be resolved before lower levels (Architecture/Implementation).\n" +
                "For simple tasks, focus on IMPLEMENTATION or DESIGN dimensions immediately if Philosophy/Architecture is obvious.\n" +
+               "STRICT: Avoid generic ID 'IMPLEMENTATION' if a more specific sub-dimension (e.g. 'API_DESIGN') can be named.\n" +
                "\n" +
                "PHASE 3 - CANDIDATE TRAJECTORIES:\n" +
                "For the selected dimension, define sibling branches (blueprints) that compete to resolve it.\n" +

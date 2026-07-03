@@ -1556,14 +1556,14 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 
 		boolean isTestMode = context.getMetadata().containsKey("testMode");
 		try {
-			if (profile.requiresRepository() && !isExportOnly && !isTestMode) {
+			if (profile.requiresRepository() && !isExportOnly && !isTestMode && manager.getGitManager().isGitRepository() && originalBranch != null) {
 				manager.getGitManager().createBranchFrom(originalBranch, snapshotBranch);
 				manager.getGitManager().forceCheckout(snapshotBranch);
 			}
 
 			context.log("[DARWIN] Executing winner variant: " + selectedVariant.getId() + " ("
 					+ selectedVariant.getStrategy() + ")");
-			if (profile.requiresRepository() && !isExportOnly && !isTestMode) {
+			if (profile.requiresRepository() && !isExportOnly && !isTestMode && manager.getGitManager().isGitRepository() && originalBranch != null) {
 				manager.getGitManager().createBranchFrom(originalBranch, selectedVariant.getBranchName());
 			}
 
@@ -1591,14 +1591,14 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 			if (!selectedVariant.isSuccess()) {
 				context.log(
 						"[DARWIN] Winner variant execution failed during materialization: " + selectedVariant.getId());
-				if (!isExportOnly && !isTestMode) {
+				if (!isExportOnly && !isTestMode && manager.getGitManager().isGitRepository() && originalBranch != null) {
 					manager.getGitManager().forceCheckout(originalBranch);
 					manager.getGitManager().rollback(context);
 				}
 				return manager.failedResult();
 			}
 
-			if (profile.requiresRepository() && !isExportOnly && !isTestMode) {
+			if (profile.requiresRepository() && !isExportOnly && !isTestMode && manager.getGitManager().isGitRepository() && originalBranch != null) {
 				manager.getGitManager().forceCheckout(originalBranch);
 				manager.getGitManager().merge(selectedVariant.getBranchName());
 			} else if (isExportOnly) {
@@ -1786,7 +1786,7 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 		} catch (Exception e) {
 			context.log("[DARWIN] DarwinEngine.executeWinner failed: " + e.getMessage());
 			if (profile.requiresRepository() && !isExportOnly && !isTestMode
-					&& manager.getGitManager().isGitRepository()) {
+					&& manager.getGitManager().isGitRepository() && originalBranch != null) {
 				try {
 					manager.getGitManager().forceCheckout(originalBranch);
 					manager.getGitManager().rollback(context);
@@ -1808,9 +1808,9 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 		boolean isChatMode = modeRecognizer.isChatMode(context);
 		try {
 			// ============================================================
-			// FIX: Skip Git worktree for chat variants
+			// FIX: Skip Git worktree for chat variants or non-VCS environments
 			// ============================================================
-			if (context.getMetadata().containsKey("testMode") || isMediated || isChatMode) {
+			if (context.getMetadata().containsKey("testMode") || isMediated || isChatMode || !manager.getGitManager().isGitRepository()) {
 				tempDir = context.getProjectRoot();
 			} else {
 				tempDir = java.nio.file.Files.createTempDirectory("evo-variant-" + variant.getId()).toFile();
