@@ -345,6 +345,9 @@ window.ChatApp.Renderer = {
             const variants = Array.isArray(data) ? data : (data.variants || data.proposals || data.hypotheses || []);
             const iteration = data.iteration !== undefined ? data.iteration : null;
 
+            // STALL FILTER: Ignore DARWIN_BRANCHES messages that have no variants (e.g. intent expansion)
+            if (variants.length === 0 && (m.agentType || '').includes('darwin')) return null;
+
             if (!Array.isArray(variants) || variants.length === 0) {
                  container.innerHTML = `<div class="bubble error">
                     <div style="font-weight:bold; margin-bottom: 4px;">Evolution Stalled (Iteration ${iteration !== null ? iteration : '?'})</div>
@@ -465,30 +468,36 @@ window.ChatApp.Renderer = {
             try {
                 const data = JSON.parse(m.text);
                 if (data.iterationCount !== undefined) {
-                    if (!iterations[data.iterationCount] || data.timestamp > iterations[data.iterationCount].timestamp) {
-                        iterations[data.iterationCount] = data;
+                    // TREE FIX: Use composite key for iterations to prevent data loss when lineage branches
+                    const key = (data.lineage || 'root') + '_' + data.iterationCount;
+                    if (!iterations[key] || data.timestamp > iterations[key].timestamp) {
+                        iterations[key] = data;
                     }
                 }
             } catch(e) {}
         });
 
-        const sortedIterCounts = Object.keys(iterations).sort((a, b) => parseInt(a) - parseInt(b));
-        if (sortedIterCounts.length === 0) return;
+        const sortedIterKeys = Object.keys(iterations).sort((a, b) => {
+            const aData = iterations[a];
+            const bData = iterations[b];
+            return aData.timestamp - bData.timestamp;
+        });
+        if (sortedIterKeys.length === 0) return;
 
         // Build the hierarchy based on parentId (Sync with Darwin Engine)
         const rootNodes = [];
         const iterToNode = {};
 
-        sortedIterCounts.forEach(count => {
-            const data = iterations[count];
-            const iterNodeId = 'iter-' + count;
+        sortedIterKeys.forEach(key => {
+            const data = iterations[key];
+            const iterNodeId = 'iter-' + data.iterationCount + '_' + (data.lineage || 'alpha');
             const iterNode = {
                 id: iterNodeId,
                 type: 'iteration',
                 data: data,
                 children: []
             };
-            iterToNode[count] = iterNode;
+            iterToNode[key] = iterNode;
 
             const branches = data.branches || [];
             branches.forEach(b => {
@@ -505,11 +514,11 @@ window.ChatApp.Renderer = {
             });
 
             // Connect iteration to its parent branch if possible
-            if (data.parentId) {
+            if (data.parentId && data.parentId !== 'ROOT') {
                 let parentFound = false;
-                for (let prevCount of sortedIterCounts) {
-                    if (parseInt(prevCount) >= parseInt(count)) break;
-                    const prevIterNode = iterToNode[prevCount];
+                // Look back through all previous iterations to find the parent branch
+                for (let prevKey of sortedIterKeys) {
+                    const prevIterNode = iterToNode[prevKey];
                     const parentBranch = prevIterNode.children.find(bn => bn.id === data.parentId);
                     if (parentBranch) {
                         parentBranch.children.push(iterNode);
