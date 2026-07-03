@@ -228,6 +228,7 @@
                         </select>
                         <button class="btn btn-sm" onclick="javaAction('', 'BROWSE_TARGET')" style="width:auto;">📁</button>
                     </div>
+                    <input type="text" id="target-path-input" style="width: 100%; margin-top: 2px;" placeholder="Target path..." onchange="javaAction(this.value, 'SET_TARGET')">
                     <button class="btn btn-primary" onclick="javaAction('', 'DISCOVER')">🔍 Discover Architecture</button>
                     <button class="btn" onclick="javaAction('', 'DISCOVER_INTENT')">🎯 Discover Intent</button>
                 </div>
@@ -323,28 +324,47 @@
         window.DEFAULT_PATH = {{DEFAULT_PATH_JSON}};
         window.TARGET_HISTORY = {{TARGET_HISTORY_JSON}};
 
+        window.updateSidebar = function(data) {
+            log('Updating sidebar...');
+            if (data.mode) {
+                var modeSelect = document.getElementById('mode-select');
+                if (modeSelect) modeSelect.value = data.mode;
+            }
+
+            if (data.target) {
+                var targetInput = document.getElementById('target-path-input');
+                if (targetInput) targetInput.value = data.target;
+            }
+
+            if (data.history) {
+                var targetSelect = document.getElementById('target-select');
+                if (targetSelect) {
+                    targetSelect.innerHTML = '';
+                    for (var i = 0; i < data.history.length; i++) {
+                        var path = data.history[i];
+                        var opt = document.createElement('option');
+                        opt.value = path;
+                        var displayPath = path;
+                        if (path === data.defaultTarget) {
+                            displayPath = "EVO (default): " + path;
+                        }
+                        opt.text = displayPath;
+                        if (path === data.target) opt.selected = true;
+                        targetSelect.appendChild(opt);
+                    }
+                }
+            }
+        };
+
         function initUI() {
             log('Initializing UI elements...');
 
-            // Sync select dropdown
-            const modeSelect = document.getElementById('mode-select');
-            if (modeSelect) modeSelect.value = window.CURRENT_VIEW_MODE;
-
-            const targetSelect = document.getElementById('target-select');
-            if (targetSelect) {
-                targetSelect.innerHTML = '';
-                window.TARGET_HISTORY.forEach(path => {
-                    const opt = document.createElement('option');
-                    opt.value = path;
-                    let displayPath = path;
-                    if (path === window.DEFAULT_PATH) {
-                        displayPath = "EVO (default): " + path;
-                    }
-                    opt.text = displayPath;
-                    if (path === window.TARGET_PATH) opt.selected = true;
-                    targetSelect.appendChild(opt);
-                });
-            }
+            updateSidebar({
+                mode: window.CURRENT_VIEW_MODE,
+                target: window.TARGET_PATH,
+                defaultTarget: window.DEFAULT_PATH,
+                history: window.TARGET_HISTORY
+            });
 
             if (window.INITIAL_MODEL && window.INITIAL_MODEL.name) {
                 const projectTitle = document.getElementById('project-title');
