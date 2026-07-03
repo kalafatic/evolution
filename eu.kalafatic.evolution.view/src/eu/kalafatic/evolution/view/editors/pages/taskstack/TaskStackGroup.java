@@ -12,6 +12,14 @@ import org.eclipse.jface.viewers.EditingSupport;
 import org.eclipse.jface.viewers.ICheckStateListener;
 import org.eclipse.jface.viewers.CellEditor;
 import org.eclipse.jface.viewers.CheckStateChangedEvent;
+import org.eclipse.jface.util.LocalSelectionTransfer;
+import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.jface.viewers.ViewerDropAdapter;
+import org.eclipse.swt.dnd.DND;
+import org.eclipse.swt.dnd.DragSourceAdapter;
+import org.eclipse.swt.dnd.DragSourceEvent;
+import org.eclipse.swt.dnd.Transfer;
+import org.eclipse.swt.dnd.TransferData;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -35,6 +43,7 @@ import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 
 public class TaskStackGroup extends AEvoGroup {
     private FormToolkit toolkit;
@@ -110,6 +119,8 @@ public class TaskStackGroup extends AEvoGroup {
         treeViewer.setInput(orchestrator);
         treeViewer.expandAll();
         
+        initDragAndDrop();
+
         // Add listener for checkbox changes
         treeViewer.addCheckStateListener(new ICheckStateListener() {
             @Override
@@ -149,6 +160,33 @@ public class TaskStackGroup extends AEvoGroup {
     }
 
     private void createColumns() {
+        // Order Column
+        TreeViewerColumn orderCol = new TreeViewerColumn(treeViewer, SWT.CENTER);
+        orderCol.getColumn().setText("#");
+        orderCol.getColumn().setWidth(40);
+        orderCol.setLabelProvider(new ColumnLabelProvider() {
+            @Override
+            public String getText(Object element) {
+                if (element instanceof Task) {
+                    Task task = (Task) element;
+                    Object parent = ((TaskTreeContentProvider) treeViewer.getContentProvider()).getParent(task);
+                    List<Task> list = null;
+                    if (parent instanceof Orchestrator) {
+                        list = ((Orchestrator) parent).getTasks();
+                    } else if (parent instanceof Task) {
+                        list = ((Task) parent).getSubTasks();
+                    }
+                    if (list != null) {
+                        int index = list.indexOf(task);
+                        if (index >= 0) {
+                            return String.valueOf(index + 1);
+                        }
+                    }
+                }
+                return "";
+            }
+        });
+
         // Run Column
         TreeViewerColumn runCol = new TreeViewerColumn(treeViewer, SWT.CENTER);
         runCol.getColumn().setText("Run");
@@ -599,6 +637,98 @@ public class TaskStackGroup extends AEvoGroup {
             super.okPressed();
         }
         public String getSelectedDate() { return selectedDate; }
+    }
+
+    private void initDragAndDrop() {
+        int operations = DND.DROP_MOVE;
+        Transfer[] transfers = new Transfer[] { LocalSelectionTransfer.getTransfer() };
+
+        treeViewer.addDragSupport(operations, transfers, new DragSourceAdapter() {
+            @Override
+            public void dragStart(DragSourceEvent event) {
+                IStructuredSelection selection = (IStructuredSelection) treeViewer.getSelection();
+                event.doit = !selection.isEmpty();
+                LocalSelectionTransfer.getTransfer().setSelection(selection);
+            }
+        });
+
+        treeViewer.addDropSupport(operations, transfers, new ViewerDropAdapter(treeViewer) {
+            @Override
+            public boolean performDrop(Object data) {
+                Object target = getCurrentTarget();
+                int location = getCurrentLocation();
+                IStructuredSelection selection = (IStructuredSelection) data;
+                Task sourceTask = (Task) selection.getFirstElement();
+
+                if (sourceTask == null || sourceTask == target) return false;
+
+                Object sourceParent = ((TaskTreeContentProvider) treeViewer.getContentProvider()).getParent(sourceTask);
+                List<Task> sourceList = getTaskList(sourceParent);
+                int sourceIndex = sourceList != null ? sourceList.indexOf(sourceTask) : -1;
+
+                Object targetParent = null;
+                List<Task> targetList = null;
+                int targetIndex = -1;
+
+                if (target == null) {
+                    targetParent = orchestrator;
+                    targetList = orchestrator.getTasks();
+                    targetIndex = targetList.size();
+                } else {
+                    Task targetTask = (Task) target;
+                    if (location == LOCATION_ON) {
+                        targetParent = targetTask;
+                        targetList = targetTask.getSubTasks();
+                        targetIndex = targetList.size();
+                    } else {
+                        targetParent = ((TaskTreeContentProvider) treeViewer.getContentProvider()).getParent(targetTask);
+                        targetList = getTaskList(targetParent);
+                        targetIndex = targetList.indexOf(targetTask);
+                        if (location == LOCATION_AFTER) {
+                            targetIndex++;
+                        }
+                    }
+                }
+
+                if (sourceList != null && targetList != null) {
+                    // Avoid dropping a parent into its own child
+                    Object temp = targetParent;
+                    while (temp instanceof Task) {
+                        if (temp == sourceTask) return false;
+                        temp = ((TaskTreeContentProvider) treeViewer.getContentProvider()).getParent(temp);
+                    }
+
+                    if (sourceList == targetList && sourceIndex < targetIndex) {
+                        targetIndex--;
+                    }
+
+                    sourceList.remove(sourceTask);
+                    if (targetIndex < 0) targetIndex = 0;
+                    if (targetIndex > targetList.size()) targetIndex = targetList.size();
+
+                    targetList.add(targetIndex, sourceTask);
+
+                    treeViewer.refresh();
+                    page.setDirty(true);
+                    return true;
+                }
+                return false;
+            }
+
+            @Override
+            public boolean validateDrop(Object target, int operation, TransferData transferType) {
+                return LocalSelectionTransfer.getTransfer().isSupportedType(transferType);
+            }
+
+            private List<Task> getTaskList(Object parent) {
+                if (parent instanceof Orchestrator) {
+                    return ((Orchestrator) parent).getTasks();
+                } else if (parent instanceof Task) {
+                    return ((Task) parent).getSubTasks();
+                }
+                return null;
+            }
+        });
     }
 
 	public CheckboxTreeViewer getTreeViewer() {
