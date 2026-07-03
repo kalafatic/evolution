@@ -12,6 +12,7 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.DirectoryDialog;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
@@ -20,6 +21,7 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
+import eu.kalafatic.evolution.view.util.GitRegistryHelper;
 import eu.kalafatic.utils.factories.GUIFactory;
 import java.io.File;
 import java.util.List;
@@ -95,7 +97,22 @@ public class GitGroup extends AToolGroup {
                 gitLocalPathText.select(0);
             }
         }
-        GUIFactory.INSTANCE.createLabel(composite, "");
+        Button browseBtn = GUIFactory.INSTANCE.createButton(composite, "Browse");
+        browseBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                DirectoryDialog dialog = new DirectoryDialog(group.getShell());
+                dialog.setText("Select Git Repository Folder");
+                String path = dialog.open();
+                if (path != null) {
+                    if (gitLocalPathText.indexOf(path) < 0) {
+                        gitLocalPathText.add(path);
+                    }
+                    gitLocalPathText.setText(path);
+                    updateModel();
+                }
+            }
+        });
 
         GUIFactory.INSTANCE.createLabel(composite, "Branch Name:");
         branchNameText = GUIFactory.INSTANCE.createText(composite);
@@ -108,9 +125,26 @@ public class GitGroup extends AToolGroup {
         GUIFactory.INSTANCE.createLabel(composite, "");
 
         Composite btnComp = GUIFactory.INSTANCE.createComposite(composite);
-        btnComp.setLayout(new GridLayout(5, false));
+        btnComp.setLayout(new GridLayout(6, false));
         GridData btnGd = new GridData(SWT.FILL, SWT.CENTER, true, false, 3, 1);
         btnComp.setLayoutData(btnGd);
+
+        Button createBtn = GUIFactory.INSTANCE.createButton(btnComp, "Create");
+        createBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                updateModel();
+                String localPath = gitLocalPathText.getText();
+                if (localPath != null && !localPath.isEmpty()) {
+                    File f = new File(localPath);
+                    if (!f.exists()) {
+                        f.mkdirs();
+                    }
+                    executeCommand("init", "git");
+                    GitRegistryHelper.registerGitRepository(f);
+                }
+            }
+        });
 
         Button branchBtn = GUIFactory.INSTANCE.createButton(btnComp, "New Branch");
         branchBtn.addSelectionListener(new SelectionAdapter() {
@@ -212,7 +246,22 @@ public class GitGroup extends AToolGroup {
                 gitLocalPathText.select(0);
             }
         }
-        GUIFactory.INSTANCE.createLabel(composite, "");
+        Button browseBtnEvo = GUIFactory.INSTANCE.createButton(composite, "Browse");
+        browseBtnEvo.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                DirectoryDialog dialog = new DirectoryDialog(group.getShell());
+                dialog.setText("Select Git Repository Folder");
+                String path = dialog.open();
+                if (path != null) {
+                    if (gitLocalPathTextEvo.indexOf(path) < 0) {
+                        gitLocalPathTextEvo.add(path);
+                    }
+                    gitLocalPathTextEvo.setText(path);
+                    updateModel();
+                }
+            }
+        });
 
         GUIFactory.INSTANCE.createLabel(composite, "Branch Name:");
         branchNameTextEvo = GUIFactory.INSTANCE.createText(composite);
@@ -225,9 +274,26 @@ public class GitGroup extends AToolGroup {
         GUIFactory.INSTANCE.createLabel(composite, "");
 
         Composite btnComp = GUIFactory.INSTANCE.createComposite(composite);
-        btnComp.setLayout(new GridLayout(5, false));
+        btnComp.setLayout(new GridLayout(6, false));
         GridData btnGd = new GridData(SWT.FILL, SWT.CENTER, true, false, 3, 1);
         btnComp.setLayoutData(btnGd);
+
+        Button createBtn = GUIFactory.INSTANCE.createButton(btnComp, "Create");
+        createBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                updateModel();
+                String localPath = gitLocalPathTextEvo.getText();
+                if (localPath != null && !localPath.isEmpty()) {
+                    File f = new File(localPath);
+                    if (!f.exists()) {
+                        f.mkdirs();
+                    }
+                    executeCommand("init", "git");
+                    GitRegistryHelper.registerGitRepository(f);
+                }
+            }
+        });
 
         Button branchBtn = GUIFactory.INSTANCE.createButton(btnComp, "New Branch");
         branchBtn.addSelectionListener(new SelectionAdapter() {

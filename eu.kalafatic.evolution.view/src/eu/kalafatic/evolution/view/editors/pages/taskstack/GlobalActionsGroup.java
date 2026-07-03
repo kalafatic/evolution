@@ -4,6 +4,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
+import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
@@ -137,6 +138,14 @@ public class GlobalActionsGroup extends AEvoGroup {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 page.removeSelected();
+            }
+        });
+
+        Button saveBtn = GUIFactory.INSTANCE.createButton(compositeRemote, "Save Plan", SWT.PUSH, 2 * GUIFactory.BUTTON_WIDTH);
+        saveBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                editor.doSave(new NullProgressMonitor());
             }
         });
     }

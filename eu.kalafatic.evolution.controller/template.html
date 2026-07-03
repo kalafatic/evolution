@@ -44,6 +44,7 @@
                         </select>
                         <button class="btn btn-sm" onclick="javaAction('', 'BROWSE_TARGET')" style="width:auto;">📁</button>
                     </div>
+                    <input type="text" id="target-path-input" style="width: 100%; margin-top: 2px;" placeholder="Target path..." onchange="javaAction(this.value, 'SET_TARGET')">
                     <button class="btn btn-primary" onclick="javaAction('', 'DISCOVER')" data-guidance="Trigger architecture discovery. EVO will scan the target directory for components, dependencies, and metadata.">🔍 Discover Architecture</button>
                 </div>
             </div>
@@ -171,6 +172,11 @@
             if (data.mode) {
                 var modeSelect = document.getElementById('mode-select');
                 if (modeSelect) modeSelect.value = data.mode;
+            }
+
+            if (data.target) {
+                var targetInput = document.getElementById('target-path-input');
+                if (targetInput) targetInput.value = data.target;
             }
 
             if (data.history) {
