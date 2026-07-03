@@ -43,8 +43,11 @@ window.ChatApp.Renderer = {
             // Updated in main.js via list
             if (!document.body.classList.contains('debug')) return null;
         } else if (isDarwin) {
+            const darwinEl = this.renderDarwin(m);
+            if (!darwinEl) return null;
+
             content.style.flexDirection = 'column';
-            content.appendChild(this.renderDarwin(m));
+            content.appendChild(darwinEl);
 
             // Move Force Solution button out of branch container to appear UNDER all branches
             const role = (m.agentType || '').toLowerCase();
@@ -474,7 +477,7 @@ window.ChatApp.Renderer = {
             try {
                 const data = JSON.parse(m.text);
                 if (data.iterationCount !== undefined) {
-                    // TREE FIX: Use composite key for iterations to prevent data loss when lineage branches
+                    // Use composite key for iterations to prevent data loss when lineage branches
                     const key = (data.lineage || 'root') + '_' + data.iterationCount;
                     if (!iterations[key] || data.timestamp > iterations[key].timestamp) {
                         iterations[key] = data;
@@ -483,22 +486,17 @@ window.ChatApp.Renderer = {
             } catch(e) {}
         });
 
-        const sortedIterKeys = Object.keys(iterations).sort((a, b) => {
-            const aData = iterations[a];
-            const bData = iterations[b];
-            return aData.timestamp - bData.timestamp;
-        });
+        const sortedIterKeys = Object.keys(iterations).sort((a, b) => iterations[a].timestamp - iterations[b].timestamp);
         if (sortedIterKeys.length === 0) return;
 
-        // Build the hierarchy based on parentId (Sync with Darwin Engine)
         const rootNodes = [];
-        const iterToNode = {};
+        const allNodes = {}; // Map of all nodes by ID for robust parent resolution
 
+        // First pass: create all nodes and their basic discovery chains
         sortedIterKeys.forEach(key => {
             const data = iterations[key];
             const iterNodeId = 'iter-' + data.iterationCount + '_' + (data.lineage || 'alpha');
 
-            // 1. Create discovery chain: Intent -> Dimension -> Iteration
             const intentNode = {
                 id: iterNodeId + '_intent',
                 type: 'intent',
@@ -523,13 +521,14 @@ window.ChatApp.Renderer = {
             intentNode.children.push(dimNode);
             dimNode.children.push(iterNode);
 
-            iterToNode[key] = iterNode; // Map to iteration node for branch discovery
+            allNodes[intentNode.id] = intentNode;
+            allNodes[dimNode.id] = dimNode;
+            allNodes[iterNode.id] = iterNode;
 
             const branches = data.branches || [];
             branches.forEach(b => {
-                const branchId = b.id;
                 const branchNode = {
-                    id: branchId,
+                    id: b.id,
                     type: 'branch',
                     data: b,
                     iterationData: data,
@@ -537,24 +536,28 @@ window.ChatApp.Renderer = {
                     children: []
                 };
                 iterNode.children.push(branchNode);
+                allNodes[branchNode.id] = branchNode;
             });
+        });
 
-            // 2. Connect chain to its parent branch if possible
+        // Second pass: resolve parent-child links across iterations
+        sortedIterKeys.forEach(key => {
+            const data = iterations[key];
+            const iterNodeId = 'iter-' + data.iterationCount + '_' + (data.lineage || 'alpha');
+            const intentNode = allNodes[iterNodeId + '_intent'];
+
             if (data.parentId && data.parentId !== 'ROOT') {
-                let parentFound = false;
-                // Look back through all previous iterations to find the parent branch
-                for (let prevKey of sortedIterKeys) {
-                    const prevIterNode = iterToNode[prevKey];
-                    const parentBranch = (prevIterNode.children || []).find(bn => bn.id === data.parentId);
-                    if (parentBranch) {
+                const parentBranch = allNodes[data.parentId];
+                if (parentBranch) {
+                    // Check if already child to avoid duplicates if message list is updated
+                    if (!parentBranch.children.includes(intentNode)) {
                         parentBranch.children.push(intentNode);
-                        parentFound = true;
-                        break;
                     }
+                } else {
+                    if (!rootNodes.includes(intentNode)) rootNodes.push(intentNode);
                 }
-                if (!parentFound) rootNodes.push(intentNode);
             } else {
-                rootNodes.push(intentNode);
+                if (!rootNodes.includes(intentNode)) rootNodes.push(intentNode);
             }
         });
 
