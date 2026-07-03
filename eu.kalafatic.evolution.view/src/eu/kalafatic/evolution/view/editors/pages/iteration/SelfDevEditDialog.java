@@ -19,6 +19,8 @@ public class SelfDevEditDialog extends DynamicMapDialog {
     private static final String SOURCE_PATH = "sourcePath";
     private static final String TARGET_PATH = "targetPath";
     private static final String BRANCH = "branch";
+    private static final String LLM_MODEL = "llmModel";
+    private static final String MAVEN_GOALS = "mavenGoals";
 
     public SelfDevEditDialog(Shell parentShell, SelfDevSession session, DevelopmentPage page) {
         super(parentShell, createFields(session));
@@ -37,20 +39,30 @@ public class SelfDevEditDialog extends DynamicMapDialog {
         String src = "";
         String tgt = "";
         String br = "evo/self-dev";
+        String llm = "llama3";
+        String mvn = "clean install";
 
         if (session.eContainer() instanceof eu.kalafatic.evolution.model.orchestration.Orchestrator orch) {
             if (orch.getSupervisorSettings() != null) {
                 src = orch.getSupervisorSettings().getSourcePath();
-                tgt = orch.getSupervisorSettings().getExecutablePath(); // Use ExecutablePath for Target path for now if nothing else
+                tgt = orch.getSupervisorSettings().getExecutablePath();
             }
             if (orch.getGit() != null) {
                 br = orch.getGit().getBranchName();
             }
+            if (orch.getLlm() != null) {
+                llm = orch.getLlm().getModel();
+            }
+            if (orch.getMaven() != null) {
+                mvn = String.join(" ", orch.getMaven().getGoals());
+            }
         }
 
-        fields.put(SOURCE_PATH, new DynamicField("Source Path:", DynamicField.TYPE_TEXT, src));
-        fields.put(TARGET_PATH, new DynamicField("Target Path (Sandbox):", DynamicField.TYPE_TEXT, tgt));
+        fields.put(SOURCE_PATH, new DynamicField("Source Path:", DynamicField.TYPE_TEXT | DynamicField.DIRECTORY, src));
+        fields.put(TARGET_PATH, new DynamicField("Target Path (Sandbox):", DynamicField.TYPE_TEXT | DynamicField.DIRECTORY, tgt));
         fields.put(BRANCH, new DynamicField("Git Branch:", DynamicField.TYPE_TEXT, br));
+        fields.put(LLM_MODEL, new DynamicField("LLM Model:", DynamicField.TYPE_TEXT, llm));
+        fields.put(MAVEN_GOALS, new DynamicField("Maven Goals:", DynamicField.TYPE_TEXT, mvn));
 
         return fields;
     }
@@ -76,6 +88,17 @@ public class SelfDevEditDialog extends DynamicMapDialog {
                 orch.setGit(eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createGit());
             }
             orch.getGit().setBranchName(getString(BRANCH));
+
+            if (orch.getLlm() == null) {
+                orch.setLlm(eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createLLM());
+            }
+            orch.getLlm().setModel(getString(LLM_MODEL));
+
+            if (orch.getMaven() == null) {
+                orch.setMaven(eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createMaven());
+            }
+            orch.getMaven().getGoals().clear();
+            for (String g : getString(MAVEN_GOALS).split(" ")) if (!g.trim().isEmpty()) orch.getMaven().getGoals().add(g.trim());
         }
 
         page.getEditor().setDirty(true);
