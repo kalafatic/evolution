@@ -21,6 +21,8 @@ import eu.kalafatic.evolution.model.orchestration.ServerSettings;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ServerSettingsImpl#getPort <em>Port</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ServerSettingsImpl#isAutoStart <em>Auto Start</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ServerSettingsImpl#isGitAutomation <em>Git Automation</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ServerSettingsImpl#isMcpEnabled <em>Mcp Enabled</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ServerSettingsImpl#getMcpPort <em>Mcp Port</em>}</li>
  * </ul>
  *
  * @generated
@@ -85,6 +87,92 @@ public class ServerSettingsImpl extends MinimalEObjectImpl.Container implements 
 	 * @ordered
 	 */
 	protected boolean gitAutomation = GIT_AUTOMATION_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #isMcpEnabled() <em>Mcp Enabled</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isMcpEnabled()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final boolean MCP_ENABLED_EDEFAULT = true;
+
+	/**
+	 * The cached value of the '{@link #isMcpEnabled() <em>Mcp Enabled</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isMcpEnabled()
+	 * @generated
+	 * @ordered
+	 */
+	protected boolean mcpEnabled = MCP_ENABLED_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getMcpPort() <em>Mcp Port</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getMcpPort()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final int MCP_PORT_EDEFAULT = 58080;
+
+	/**
+	 * The cached value of the '{@link #getMcpPort() <em>Mcp Port</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getMcpPort()
+	 * @generated
+	 * @ordered
+	 */
+	protected int mcpPort = MCP_PORT_EDEFAULT;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public boolean isMcpEnabled() {
+		return mcpEnabled;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setMcpEnabled(boolean newMcpEnabled) {
+		boolean oldMcpEnabled = mcpEnabled;
+		mcpEnabled = newMcpEnabled;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.SERVER_SETTINGS__MCP_ENABLED, oldMcpEnabled, mcpEnabled));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public int getMcpPort() {
+		return mcpPort;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setMcpPort(int newMcpPort) {
+		int oldMcpPort = mcpPort;
+		mcpPort = newMcpPort;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.SERVER_SETTINGS__MCP_PORT, oldMcpPort, mcpPort));
+	}
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -188,6 +276,10 @@ public class ServerSettingsImpl extends MinimalEObjectImpl.Container implements 
 				return isAutoStart();
 			case OrchestrationPackage.SERVER_SETTINGS__GIT_AUTOMATION:
 				return isGitAutomation();
+			case OrchestrationPackage.SERVER_SETTINGS__MCP_ENABLED:
+				return isMcpEnabled();
+			case OrchestrationPackage.SERVER_SETTINGS__MCP_PORT:
+				return getMcpPort();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -208,6 +300,12 @@ public class ServerSettingsImpl extends MinimalEObjectImpl.Container implements 
 				return;
 			case OrchestrationPackage.SERVER_SETTINGS__GIT_AUTOMATION:
 				setGitAutomation((Boolean)newValue);
+				return;
+			case OrchestrationPackage.SERVER_SETTINGS__MCP_ENABLED:
+				setMcpEnabled((Boolean)newValue);
+				return;
+			case OrchestrationPackage.SERVER_SETTINGS__MCP_PORT:
+				setMcpPort((Integer)newValue);
 				return;
 		}
 		super.eSet(featureID, newValue);
@@ -230,6 +328,12 @@ public class ServerSettingsImpl extends MinimalEObjectImpl.Container implements 
 			case OrchestrationPackage.SERVER_SETTINGS__GIT_AUTOMATION:
 				setGitAutomation(GIT_AUTOMATION_EDEFAULT);
 				return;
+			case OrchestrationPackage.SERVER_SETTINGS__MCP_ENABLED:
+				setMcpEnabled(MCP_ENABLED_EDEFAULT);
+				return;
+			case OrchestrationPackage.SERVER_SETTINGS__MCP_PORT:
+				setMcpPort(MCP_PORT_EDEFAULT);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -248,6 +352,10 @@ public class ServerSettingsImpl extends MinimalEObjectImpl.Container implements 
 				return autoStart != AUTO_START_EDEFAULT;
 			case OrchestrationPackage.SERVER_SETTINGS__GIT_AUTOMATION:
 				return gitAutomation != GIT_AUTOMATION_EDEFAULT;
+			case OrchestrationPackage.SERVER_SETTINGS__MCP_ENABLED:
+				return mcpEnabled != MCP_ENABLED_EDEFAULT;
+			case OrchestrationPackage.SERVER_SETTINGS__MCP_PORT:
+				return mcpPort != MCP_PORT_EDEFAULT;
 		}
 		return super.eIsSet(featureID);
 	}
@@ -268,6 +376,10 @@ public class ServerSettingsImpl extends MinimalEObjectImpl.Container implements 
 		result.append(autoStart);
 		result.append(", gitAutomation: ");
 		result.append(gitAutomation);
+		result.append(", mcpEnabled: ");
+		result.append(mcpEnabled);
+		result.append(", mcpPort: ");
+		result.append(mcpPort);
 		result.append(')');
 		return result.toString();
 	}

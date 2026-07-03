@@ -16,6 +16,8 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.ServerSettings#getPort <em>Port</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.ServerSettings#isAutoStart <em>Auto Start</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.ServerSettings#isGitAutomation <em>Git Automation</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.ServerSettings#isMcpEnabled <em>Mcp Enabled</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.ServerSettings#getMcpPort <em>Mcp Port</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getServerSettings()
@@ -91,5 +93,51 @@ public interface ServerSettings extends EObject {
 	 * @generated
 	 */
 	void setGitAutomation(boolean value);
+
+	/**
+	 * Returns the value of the '<em><b>Mcp Enabled</b></em>' attribute.
+	 * The default value is <code>"true"</code>.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Mcp Enabled</em>' attribute.
+	 * @see #setMcpEnabled(boolean)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getServerSettings_McpEnabled()
+	 * @model default="true"
+	 * @generated
+	 */
+	boolean isMcpEnabled();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.ServerSettings#isMcpEnabled <em>Mcp Enabled</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Mcp Enabled</em>' attribute.
+	 * @see #isMcpEnabled()
+	 * @generated
+	 */
+	void setMcpEnabled(boolean value);
+
+	/**
+	 * Returns the value of the '<em><b>Mcp Port</b></em>' attribute.
+	 * The default value is <code>"58080"</code>.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Mcp Port</em>' attribute.
+	 * @see #setMcpPort(int)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getServerSettings_McpPort()
+	 * @model default="58080"
+	 * @generated
+	 */
+	int getMcpPort();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.ServerSettings#getMcpPort <em>Mcp Port</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Mcp Port</em>' attribute.
+	 * @see #getMcpPort()
+	 * @generated
+	 */
+	void setMcpPort(int value);
 
 } // ServerSettings

@@ -924,13 +924,31 @@ public interface OrchestrationPackage extends EPackage {
 	int SERVER_SETTINGS__GIT_AUTOMATION = 2;
 
 	/**
+	 * The feature id for the '<em><b>Mcp Enabled</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int SERVER_SETTINGS__MCP_ENABLED = 3;
+
+	/**
+	 * The feature id for the '<em><b>Mcp Port</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int SERVER_SETTINGS__MCP_PORT = 4;
+
+	/**
 	 * The number of structural features of the '<em>Server Settings</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int SERVER_SETTINGS_FEATURE_COUNT = 3;
+	int SERVER_SETTINGS_FEATURE_COUNT = 5;
 
 	/**
 	 * The number of operations of the '<em>Server Settings</em>' class.
@@ -4891,6 +4909,28 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getServerSettings_GitAutomation();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.ServerSettings#isMcpEnabled <em>Mcp Enabled</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Mcp Enabled</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ServerSettings#isMcpEnabled()
+	 * @see #getServerSettings()
+	 * @generated
+	 */
+	EAttribute getServerSettings_McpEnabled();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.ServerSettings#getMcpPort <em>Mcp Port</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Mcp Port</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ServerSettings#getMcpPort()
+	 * @see #getServerSettings()
+	 * @generated
+	 */
+	EAttribute getServerSettings_McpPort();
+
+	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.ServerSession <em>Server Session</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -8265,6 +8305,22 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute SERVER_SETTINGS__GIT_AUTOMATION = eINSTANCE.getServerSettings_GitAutomation();
+
+		/**
+		 * The meta object literal for the '<em><b>Mcp Enabled</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute SERVER_SETTINGS__MCP_ENABLED = eINSTANCE.getServerSettings_McpEnabled();
+
+		/**
+		 * The meta object literal for the '<em><b>Mcp Port</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute SERVER_SETTINGS__MCP_PORT = eINSTANCE.getServerSettings_McpPort();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ServerSessionImpl <em>Server Session</em>}' class.

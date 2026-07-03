@@ -14,6 +14,8 @@ import eu.kalafatic.utils.factories.GUIFactory;
 
 public class McpConfigGroup extends AEvoGroup {
     private Text mcpUrlText;
+    private Button mcpEnabledBtn;
+    private Text mcpPortText;
     private McpSettingsPage page;
 
     public McpConfigGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, McpSettingsPage page) {
@@ -23,8 +25,32 @@ public class McpConfigGroup extends AEvoGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "MCP Configuration", 3, true);
-        GUIFactory.INSTANCE.createLabel(group, "Server URL:");
+        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "MCP Configuration", 2, true);
+
+        mcpEnabledBtn = toolkit.createButton(group, "Enable Local MCP Server", org.eclipse.swt.SWT.CHECK);
+        mcpEnabledBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                if (orchestrator != null && orchestrator.getServerSettings() != null) {
+                    orchestrator.getServerSettings().setMcpEnabled(mcpEnabledBtn.getSelection());
+                    page.setDirty(true);
+                }
+            }
+        });
+        GUIFactory.INSTANCE.createLabel(group, "");
+
+        GUIFactory.INSTANCE.createLabel(group, "Local MCP Port:");
+        mcpPortText = GUIFactory.INSTANCE.createText(group);
+        mcpPortText.addModifyListener(e -> {
+            if (orchestrator != null && orchestrator.getServerSettings() != null) {
+                try {
+                    orchestrator.getServerSettings().setMcpPort(Integer.parseInt(mcpPortText.getText()));
+                    page.setDirty(true);
+                } catch (NumberFormatException ex) {}
+            }
+        });
+
+        GUIFactory.INSTANCE.createLabel(group, "Remote Server URL:");
         mcpUrlText = GUIFactory.INSTANCE.createText(group);
         mcpUrlText.addModifyListener(e -> {
             if (orchestrator != null) {
@@ -33,7 +59,7 @@ public class McpConfigGroup extends AEvoGroup {
             }
         });
 
-        Button testBtn = GUIFactory.INSTANCE.createButton(group, "Test Connection");
+        Button testBtn = GUIFactory.INSTANCE.createButton(group, "Test Connection", 150);
         testBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -46,6 +72,10 @@ public class McpConfigGroup extends AEvoGroup {
     protected void refreshUI() {
         if (orchestrator != null) {
             setTextSafe(mcpUrlText, orchestrator.getMcpServerUrl());
+            if (orchestrator.getServerSettings() != null) {
+                mcpEnabledBtn.setSelection(orchestrator.getServerSettings().isMcpEnabled());
+                setTextSafe(mcpPortText, String.valueOf(orchestrator.getServerSettings().getMcpPort()));
+            }
         }
     }
 
