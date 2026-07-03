@@ -167,6 +167,10 @@
         .node-ATTENTION circle { fill: #c586c0; }
         .node-TRANSFORMER circle { fill: #b5cea8; }
         .node-CUSTOM circle { fill: #858585; }
+        .node-TEXT text { font-size: 14px; font-weight: bold; fill: #555; }
+        .node-TEXT circle { display: none; }
+        .node-SHAPE rect { stroke: #555; stroke-dasharray: 4, 4; fill: none; }
+        .node-DIRECTION path { fill: #555; }
 
         /* Logs/Metrics */
         #log-view {
@@ -184,11 +188,50 @@
         #node-palette {
             background: var(--bg-secondary);
             border-bottom: 1px solid var(--border);
-            padding: 10px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .palette-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .palette-group-title {
+            font-size: 0.7em;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 2px;
+        }
+        .palette-items {
             display: flex;
             flex-wrap: wrap;
             gap: 5px;
         }
+        .palette-item {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            cursor: grab;
+            font-size: 1.1em;
+            transition: all 0.2s;
+        }
+        .palette-item:hover {
+            border-color: var(--accent);
+            background: #f0f7ff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .palette-item:active { cursor: grabbing; }
+
         #palette-context-menu {
             position: absolute;
             display: none;
@@ -386,12 +429,33 @@
             </div>
 
             <div id="node-palette" data-guidance="Drag components onto the canvas to design your AI model architecture. Connect nodes to define data flow." oncontextmenu="showPaletteMenu(event)">
-                <div style="font-size: 0.7em; color: var(--text-dim); width: 100%; margin-bottom: 2px;">DRAG NODES</div>
-                <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'NEURON')" data-guidance="Generate a basic computational unit architecture.">Neuron</button>
-                <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'MLP')" data-guidance="Generate a Multi-Layer Perceptron architecture.">MLP</button>
-                <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'CNN')" data-guidance="Generate a Convolutional Neural Network architecture.">CNN</button>
-                <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'TRANSFORMER')" data-guidance="Generate a Transformer architecture.">Transformer</button>
-                <button class="btn btn-sm" draggable="true" ondragstart="onNodeDrag(event, 'LLM')" data-guidance="Generate a Large Language Model architecture.">LLM</button>
+                <div class="palette-group">
+                    <div class="palette-group-title">Computational Units</div>
+                    <div class="palette-items">
+                        <div class="palette-item" draggable="true" ondragstart="onNodeDrag(event, 'NEURON')" title="Neuron" data-guidance="Basic computational unit.">🧠</div>
+                        <div class="palette-item" draggable="true" ondragstart="onNodeDrag(event, 'MLP')" title="MLP" data-guidance="Multi-Layer Perceptron block.">📊</div>
+                        <div class="palette-item" draggable="true" ondragstart="onNodeDrag(event, 'CNN')" title="CNN" data-guidance="Convolutional block.">👁️</div>
+                        <div class="palette-item" draggable="true" ondragstart="onNodeDrag(event, 'TRANSFORMER')" title="Transformer" data-guidance="Transformer/Attention block.">⚡</div>
+                        <div class="palette-item" draggable="true" ondragstart="onNodeDrag(event, 'LLM')" title="LLM" data-guidance="Full LLM stack.">🤖</div>
+                    </div>
+                </div>
+
+                <div class="palette-group">
+                    <div class="palette-group-title">Connections & Flow</div>
+                    <div class="palette-items">
+                        <div class="palette-item" draggable="true" ondragstart="onNodeDrag(event, 'CONNECTION')" title="Weighted Connection">🔗</div>
+                        <div class="palette-item" draggable="true" ondragstart="onNodeDrag(event, 'RESIDUAL')" title="Residual Link">🔄</div>
+                        <div class="palette-item" draggable="true" ondragstart="onNodeDrag(event, 'DIRECTION')" title="Flow Direction">➡️</div>
+                    </div>
+                </div>
+
+                <div class="palette-group">
+                    <div class="palette-group-title">Annotations</div>
+                    <div class="palette-items">
+                        <div class="palette-item" draggable="true" ondragstart="onNodeDrag(event, 'TEXT')" title="Label">📝</div>
+                        <div class="palette-item" draggable="true" ondragstart="onNodeDrag(event, 'SHAPE')" title="Boundary">🔲</div>
+                    </div>
+                </div>
             </div>
 
             <div id="interactive-demos-palette" style="background: var(--bg-secondary); border-bottom: 1px solid var(--border); padding: 10px; display: flex; flex-wrap: wrap; gap: 5px;">
@@ -1014,15 +1078,34 @@
                 };
                 nodeG.onclick = () => inspectNode(n);
 
-                const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-                circle.setAttribute("r", "20");
-                nodeG.appendChild(circle);
+                if (n.type === 'TEXT') {
+                    const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                    text.setAttribute("text-anchor", "middle");
+                    text.textContent = n.name;
+                    nodeG.appendChild(text);
+                } else if (n.type === 'SHAPE') {
+                    const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                    rect.setAttribute("x", "-50");
+                    rect.setAttribute("y", "-30");
+                    rect.setAttribute("width", "100");
+                    rect.setAttribute("height", "60");
+                    rect.setAttribute("rx", "5");
+                    nodeG.appendChild(rect);
+                } else if (n.type === 'DIRECTION') {
+                    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                    path.setAttribute("d", "M -10,-5 L 10,0 L -10,5 Z");
+                    nodeG.appendChild(path);
+                } else {
+                    const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                    circle.setAttribute("r", "20");
+                    nodeG.appendChild(circle);
 
-                const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-                text.setAttribute("dy", "35");
-                text.setAttribute("text-anchor", "middle");
-                text.textContent = n.name;
-                nodeG.appendChild(text);
+                    const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                    text.setAttribute("dy", "35");
+                    text.setAttribute("text-anchor", "middle");
+                    text.textContent = n.name;
+                    nodeG.appendChild(text);
+                }
 
                 g.appendChild(nodeG);
             });
@@ -1067,7 +1150,13 @@
             const type = e.dataTransfer.getData("nodeType");
             if (!type) return;
 
-            if (activeSessionId) {
+            const rect = canvasEl.getBoundingClientRect();
+            const x = e.clientX - rect.left - panX;
+            const y = e.clientY - rect.top - panY;
+
+            const isUtility = ['TEXT', 'DIRECTION', 'SHAPE', 'CONNECTION', 'RESIDUAL'].includes(type);
+
+            if (activeSessionId && !isUtility) {
                 log(`Generating full ${type} architecture...`);
                 try {
                     await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/generate-architecture?runtime=SWT`, {
@@ -1076,10 +1165,6 @@
                     });
                 } catch (e) { log(`Error generating architecture: ${e.message}`); }
             } else {
-                const rect = canvasEl.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-
                 const newNode = {
                     id: "node_" + Date.now(),
                     name: type.toLowerCase() + "_" + (model.nodes.length + 1),
@@ -1089,7 +1174,7 @@
 
                 model.nodes.push(newNode);
                 initGraph();
-                log(`Added ${type} node to local state.`);
+                log(`Added ${type} ${isUtility ? 'utility' : 'node'} to local state.`);
             }
         });
 
