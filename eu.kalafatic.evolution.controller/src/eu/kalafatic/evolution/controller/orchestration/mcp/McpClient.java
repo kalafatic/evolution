@@ -50,8 +50,62 @@ public class McpClient {
      * @throws Exception If an error occurs
      */
     public String listResources() throws Exception {
-        JSONObject response = sendRpcRequest("resources/list", new JSONObject());
-        return response.getJSONArray("resources").toString();
+        JSONObject result = sendRpcRequest("resources/list", new JSONObject());
+        return result.getJSONArray("resources").toString();
+    }
+
+    /**
+     * Lists available tools from the MCP server.
+     *
+     * @return List of tool objects
+     * @throws Exception If an error occurs
+     */
+    public String listTools() throws Exception {
+        JSONObject result = sendRpcRequest("tools/list", new JSONObject());
+        return result.getJSONArray("tools").toString();
+    }
+
+    /**
+     * Calls a tool on the MCP server.
+     *
+     * @param name Tool name
+     * @param arguments Tool arguments
+     * @return Tool execution result
+     * @throws Exception If an error occurs
+     */
+    public String callTool(String name, JSONObject arguments) throws Exception {
+        JSONObject params = new JSONObject();
+        params.put("name", name);
+        params.put("arguments", arguments);
+        JSONObject result = sendRpcRequest("tools/call", params);
+        return result.toString();
+    }
+
+    /**
+     * Lists available prompts from the MCP server.
+     *
+     * @return List of prompt objects
+     * @throws Exception If an error occurs
+     */
+    public String listPrompts() throws Exception {
+        JSONObject result = sendRpcRequest("prompts/list", new JSONObject());
+        return result.getJSONArray("prompts").toString();
+    }
+
+    /**
+     * Gets a prompt from the MCP server.
+     *
+     * @param name Prompt name
+     * @param arguments Prompt arguments
+     * @return Prompt content
+     * @throws Exception If an error occurs
+     */
+    public String getPrompt(String name, JSONObject arguments) throws Exception {
+        JSONObject params = new JSONObject();
+        params.put("name", name);
+        params.put("arguments", arguments);
+        JSONObject result = sendRpcRequest("prompts/get", params);
+        return result.toString();
     }
 
     /**

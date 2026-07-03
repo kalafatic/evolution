@@ -1,0 +1,5 @@
+{
+  "port": 58080,
+  "enableLogging": true,
+  "enabledConnectors": ["DummyConnector"]
+}

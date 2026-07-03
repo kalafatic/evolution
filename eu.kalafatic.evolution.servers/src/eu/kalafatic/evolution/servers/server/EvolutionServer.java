@@ -11,6 +11,16 @@ import eu.kalafatic.evolution.servers.service.AuthService;
 import eu.kalafatic.evolution.servers.service.UserService;
 import eu.kalafatic.evolution.servers.controller.AuthController;
 import eu.kalafatic.evolution.servers.controller.StaticResourceController;
+import eu.kalafatic.evolution.servers.mcp.server.McpServer;
+import eu.kalafatic.evolution.servers.mcp.server.McpConfig;
+import eu.kalafatic.evolution.servers.mcp.server.JsonRpcDispatcher;
+import eu.kalafatic.evolution.servers.mcp.tools.ToolRegistry;
+import eu.kalafatic.evolution.servers.mcp.tools.DemoTools;
+import eu.kalafatic.evolution.servers.mcp.resources.ResourceRegistry;
+import eu.kalafatic.evolution.servers.mcp.resources.DemoResources;
+import eu.kalafatic.evolution.servers.mcp.prompts.PromptRegistry;
+import eu.kalafatic.evolution.servers.mcp.prompts.DemoPrompts;
+import eu.kalafatic.evolution.servers.mcp.connectors.DummyConnector;
 
 public class EvolutionServer extends NanoHTTPD {
     private final DatabaseManager dbManager;
@@ -21,6 +31,8 @@ public class EvolutionServer extends NanoHTTPD {
 
     private final AuthController authController;
     private final StaticResourceController staticResourceController;
+
+    private McpServer mcpServer;
 
     public EvolutionServer(int port) {
         super(port);
@@ -65,9 +77,36 @@ public class EvolutionServer extends NanoHTTPD {
     public void startServer() throws IOException {
         start(NanoHTTPD.SOCKET_READ_TIMEOUT, false);
         System.out.println("Server started on port " + getListeningPort());
+        startMcpServer();
+    }
+
+    private void startMcpServer() {
+        McpConfig config = McpConfig.load();
+        ToolRegistry toolRegistry = new ToolRegistry();
+        DemoTools.registerAll(toolRegistry);
+
+        DummyConnector dummy = new DummyConnector();
+        dummy.registerTools(toolRegistry);
+
+        ResourceRegistry resourceRegistry = new ResourceRegistry();
+        DemoResources.registerAll(resourceRegistry);
+
+        PromptRegistry promptRegistry = new PromptRegistry();
+        DemoPrompts.registerAll(promptRegistry);
+
+        JsonRpcDispatcher dispatcher = new JsonRpcDispatcher(toolRegistry, resourceRegistry, promptRegistry);
+        mcpServer = new McpServer(config.getPort(), dispatcher);
+        try {
+            mcpServer.startServer();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void stopServer() {
+        if (mcpServer != null) {
+            mcpServer.stopServer();
+        }
         stop();
         System.out.println("Server stopped.");
     }

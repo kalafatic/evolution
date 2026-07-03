@@ -10,18 +10,17 @@ import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.ui.forms.widgets.FormToolkit;
-import eu.kalafatic.evolution.view.editors.pages.McpSettingsPage;
-import eu.kalafatic.utils.factories.GUIFactory;
-
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
+import eu.kalafatic.evolution.view.editors.pages.McpSettingsPage;
+import eu.kalafatic.utils.factories.GUIFactory;
 
-public class McpResourcesGroup extends AEvoGroup {
-    private Table resourcesTable;
+public class McpToolsGroup extends AEvoGroup {
+    private Table toolsTable;
     private McpSettingsPage page;
 
-    public McpResourcesGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, McpSettingsPage page) {
+    public McpToolsGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, McpSettingsPage page) {
         super(editor, orchestrator);
         this.page = page;
         createControl(toolkit, parent);
@@ -29,46 +28,44 @@ public class McpResourcesGroup extends AEvoGroup {
 
     @Override
     protected void refreshUI() {
-        // Refresh handled by page.refreshResources()
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Available Resources", 1, false);
+        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Available Tools", 1, false);
 
-        resourcesTable = new Table(group, SWT.BORDER | SWT.FULL_SELECTION);
-        resourcesTable.setHeaderVisible(true);
-        resourcesTable.setLinesVisible(true);
+        toolsTable = new Table(group, SWT.BORDER | SWT.FULL_SELECTION);
+        toolsTable.setHeaderVisible(true);
+        toolsTable.setLinesVisible(true);
         GridData gd = new GridData(GridData.FILL_BOTH);
         gd.heightHint = 150;
-        resourcesTable.setLayoutData(gd);
+        toolsTable.setLayoutData(gd);
 
-        String[] headers = { "Name", "URI", "MIME Type", "Description" };
-        int[] widths = { 150, 200, 120, 350 };
+        String[] headers = { "Name", "Description", "Input Schema" };
+        int[] widths = { 150, 350, 300 };
         for (int i = 0; i < headers.length; i++) {
-            TableColumn col = new TableColumn(resourcesTable, SWT.NONE);
+            TableColumn col = new TableColumn(toolsTable, SWT.NONE);
             col.setText(headers[i]);
             col.setWidth(widths[i]);
         }
 
-        Button refreshBtn = GUIFactory.INSTANCE.createButton(group, "Refresh Resources", 150);
+        Button refreshBtn = GUIFactory.INSTANCE.createButton(group, "Refresh Tools", 150);
         refreshBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                page.refreshResources();
+                page.refreshTools();
             }
         });
     }
 
     public void clear() {
-        resourcesTable.removeAll();
+        toolsTable.removeAll();
     }
 
-    public void addItem(String name, String uri, String mimeType, String desc) {
-        if (resourcesTable.isDisposed()) return;
-        TableItem item = new TableItem(resourcesTable, SWT.NONE);
+    public void addItem(String name, String desc, String schema) {
+        if (toolsTable.isDisposed()) return;
+        TableItem item = new TableItem(toolsTable, SWT.NONE);
         item.setText(0, name);
-        item.setText(1, uri);
-        item.setText(2, mimeType);
-        item.setText(3, desc);
+        item.setText(1, desc);
+        item.setText(2, schema);
     }
 }
