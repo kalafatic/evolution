@@ -22,7 +22,20 @@ public class RowEditDialog extends DynamicMapDialog {
     private static LinkedHashMap<String, DynamicField> createFields(SelfDevRow row) {
         LinkedHashMap<String, DynamicField> fields = new LinkedHashMap<>();
         fields.put(NAME, new DynamicField("Name:", DynamicField.TYPE_TEXT, row.name));
-        fields.put(PATH, new DynamicField("Path/URL:", DynamicField.TYPE_TEXT, row.path));
+
+        int pathFlags = DynamicField.TYPE_TEXT;
+        if (SelfDevRow.GIT_CHECK.equals(row.name)) {
+            // Git could be a directory if it's a local path
+            pathFlags |= DynamicField.DIRECTORY;
+        } else if (SelfDevRow.COPY_SOURCE.equals(row.name) ||
+                   SelfDevRow.BUILD_PROJECT.equals(row.name) ||
+                   SelfDevRow.EXPORT_PRODUCT.equals(row.name)) {
+            pathFlags |= DynamicField.DIRECTORY;
+        } else if (SelfDevRow.SUPERVISOR_LOOP.equals(row.name)) {
+            pathFlags |= DynamicField.FILE;
+        }
+
+        fields.put(PATH, new DynamicField("Path/URL:", pathFlags, row.path));
         fields.put(STATUS, new DynamicField("Status:", DynamicField.TYPE_TEXT, row.status));
         return fields;
     }
