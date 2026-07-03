@@ -1563,6 +1563,10 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 
 			context.log("[DARWIN] Executing winner variant: " + selectedVariant.getId() + " ("
 					+ selectedVariant.getStrategy() + ")");
+
+		// UI SYNC: Update winner in progress monitor
+		EvolutionProgressPublisher.setWinnerId(context, finalWinnerId);
+
 			if (profile.requiresRepository() && !isExportOnly && !isTestMode && manager.getGitManager().isGitRepository() && originalBranch != null) {
 				manager.getGitManager().createBranchFrom(originalBranch, selectedVariant.getBranchName());
 			}

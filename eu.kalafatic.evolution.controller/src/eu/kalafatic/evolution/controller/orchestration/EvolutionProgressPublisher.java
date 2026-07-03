@@ -31,27 +31,6 @@ public class EvolutionProgressPublisher {
         event.setTotalSteps(9); // Standard stages count
         event.setCompletedSteps(0);
 
-        // Populate explicit state if available
-        OrchestrationState state = context.getOrchestrationState();
-        if (state != null) {
-            event.setGoal(state.getRawInput());
-            event.setCurrentDimension((String) state.getMetadata().get("current_dimension"));
-            event.setCurrentDimensionDescription((String) state.getMetadata().get("current_dimension_description"));
-
-            eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionTree tree = context.getKernelContext().getMemoryService().getEvolutionTree();
-            if (tree != null) {
-                event.setParentId(tree.getCurrentWinnerId());
-            }
-
-            Object genomeObj = state.getMetadata().get("semanticGenome");
-            eu.kalafatic.evolution.controller.orchestration.selfdev.SemanticGenome genome =
-                eu.kalafatic.evolution.controller.parsers.JsonUtils.restoreFromMetadata(genomeObj,
-                    eu.kalafatic.evolution.controller.orchestration.selfdev.SemanticGenome.class, "semanticGenome", context);
-            if (genome != null) {
-                event.setLockedDecisionCount(genome.getLockedDimensions().size());
-            }
-        }
-
         activeEvents.put(context.getSessionId(), event);
         publish(context, event);
     }
@@ -163,6 +142,30 @@ public class EvolutionProgressPublisher {
         if (context.getPlatformMode() != null && context.getPlatformMode().getType() != null) {
             event.setPlatformType(context.getPlatformMode().getType().name());
         }
+
+        // Populate explicit state from OrchestrationState
+        OrchestrationState state = context.getOrchestrationState();
+        if (state != null) {
+            event.setGoal(state.getRawInput());
+            event.setCurrentDimension((String) state.getMetadata().get("current_dimension"));
+            event.setCurrentDimensionDescription((String) state.getMetadata().get("current_dimension_description"));
+
+            if (context.getKernelContext() != null && context.getKernelContext().getMemoryService() != null) {
+                eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionTree tree = context.getKernelContext().getMemoryService().getEvolutionTree();
+                if (tree != null) {
+                    event.setParentId(tree.getCurrentWinnerId());
+                }
+            }
+
+            Object genomeObj = state.getMetadata().get("semanticGenome");
+            eu.kalafatic.evolution.controller.orchestration.selfdev.SemanticGenome genome =
+                eu.kalafatic.evolution.controller.parsers.JsonUtils.restoreFromMetadata(genomeObj,
+                    eu.kalafatic.evolution.controller.orchestration.selfdev.SemanticGenome.class, "semanticGenome", context);
+            if (genome != null) {
+                event.setLockedDecisionCount(genome.getLockedDimensions().size());
+            }
+        }
+
         if (context.getOrchestrator() != null && context.getOrchestrator().getAiChat() != null) {
             String sid = context.getSessionId();
             context.getOrchestrator().getAiChat().getSessions().stream()
