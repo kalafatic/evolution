@@ -169,8 +169,7 @@ public class InstructionsGroup extends AEvoGroup {
             }
         });
 
-        attachButton = GUIFactory.INSTANCE.createButton(btnComp, "\ud83d\udcce" + "Attach MD");
-        
+        attachButton = GUIFactory.INSTANCE.createButton(btnComp, "\ud83d\udcce" + "Attach MD");        
         
 
         // Right side: Checkboxes and Spinners
@@ -199,39 +198,8 @@ public class InstructionsGroup extends AEvoGroup {
                 page.saveLastUsedSettings();
             }
         });
-
-        selfIterativeCheck = GUIFactory.INSTANCE.createCheckButton(settingsComp, "Self Development");
-        selfIterativeCheck.setToolTipText("Enable autonomous iterative development to improve the codebase.");
-        selfIterativeCheck.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                boolean sel = selfIterativeCheck.getSelection();
-                java.util.Map<String, Object> settings = new java.util.HashMap<>();
-                settings.put("selfIterativeMode", sel);
-                if (sel) {
-                    settings.put("iterativeMode", true);
-                    settings.put("darwinMode", true);
-                }
-                page.updateConfiguration(settings);
-                page.saveLastUsedSettings();
-            }
-        });
         
         
-
-        darwinCheck = GUIFactory.INSTANCE.createCheckButton(settingsComp, "Darwin");
-        darwinCheck.setSelection(true);
-        darwinCheck.setToolTipText("Enable Darwin style iterations (multiple branches, survival of the fittest).");
-        darwinCheck.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                boolean sel = darwinCheck.getSelection();
-                java.util.Map<String, Object> settings = new java.util.HashMap<>();
-                settings.put("darwinMode", sel);
-                page.updateConfiguration(settings);
-                page.saveLastUsedSettings();
-            }
-        });
 
         autoApproveCheck = GUIFactory.INSTANCE.createCheckButton(settingsComp, "Auto-Approve");
         autoApproveCheck.setToolTipText("Automatically approve plans and file deletions.");
@@ -256,6 +224,23 @@ public class InstructionsGroup extends AEvoGroup {
             }
         });
 
+        selfIterativeCheck = GUIFactory.INSTANCE.createCheckButton(settingsComp, "Self Development");
+        selfIterativeCheck.setToolTipText("Enable autonomous iterative development to improve the codebase.");
+        selfIterativeCheck.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                boolean sel = selfIterativeCheck.getSelection();
+                java.util.Map<String, Object> settings = new java.util.HashMap<>();
+                settings.put("selfIterativeMode", sel);
+                if (sel) {
+                    settings.put("iterativeMode", true);
+                    settings.put("darwinMode", true);
+                }
+                page.updateConfiguration(settings);
+                page.saveLastUsedSettings();
+            }
+        });
+        
         gitAutomationCheck = GUIFactory.INSTANCE.createCheckButton(settingsComp, "Auto-Git");
         gitAutomationCheck.setToolTipText("Automatically create branches and commit changes.");
         gitAutomationCheck.addSelectionListener(new SelectionAdapter() {
@@ -275,6 +260,20 @@ public class InstructionsGroup extends AEvoGroup {
             public void widgetSelected(SelectionEvent e) {
                 java.util.Map<String, Object> settings = new java.util.HashMap<>();
                 settings.put("stepMode", stepModeCheck.getSelection());
+                page.updateConfiguration(settings);
+                page.saveLastUsedSettings();
+            }
+        });
+        
+        darwinCheck = GUIFactory.INSTANCE.createCheckButton(settingsComp, "Darwin");
+        darwinCheck.setSelection(true);
+        darwinCheck.setToolTipText("Enable Darwin style iterations (multiple branches, survival of the fittest).");
+        darwinCheck.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                boolean sel = darwinCheck.getSelection();
+                java.util.Map<String, Object> settings = new java.util.HashMap<>();
+                settings.put("darwinMode", sel);
                 page.updateConfiguration(settings);
                 page.saveLastUsedSettings();
             }
@@ -319,11 +318,7 @@ public class InstructionsGroup extends AEvoGroup {
                 }
             }
         });
-        
-        
-        
-   
-        
+                
 
         attachButton.setToolTipText("Add External Instructions (.md)");
         attachButton.addSelectionListener(new SelectionAdapter() {
