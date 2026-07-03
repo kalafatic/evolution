@@ -450,7 +450,19 @@ public class ArchitecturePage extends AEvoPage {
             // Path-aware validation
             String cachedPath = obj.optString("targetPath");
             String cachedMode = obj.optString("viewMode");
-            if (cachedPath != null && !cachedPath.equals(currentTargetPath)) return null;
+
+            // Normalize paths for comparison (especially for Windows backslashes)
+            if (cachedPath != null && currentTargetPath != null) {
+                java.io.File cFile = new java.io.File(cachedPath);
+                java.io.File tFile = new java.io.File(currentTargetPath);
+                if (!cFile.getAbsolutePath().equalsIgnoreCase(tFile.getAbsolutePath())) {
+                    eu.kalafatic.evolution.controller.log.Log.log("[ARCH] Cache invalid: Path mismatch (" + cachedPath + " vs " + currentTargetPath + ")");
+                    return null;
+                }
+            } else if (cachedPath != currentTargetPath) {
+                return null;
+            }
+
             if (cachedMode != null && !cachedMode.equals(currentMode.name())) return null;
 
             DesignModel model = new DesignModel();
@@ -856,6 +868,12 @@ public class ArchitecturePage extends AEvoPage {
             if (!isJsReady) {
                  // Initial values are already in INITIAL_MODEL via initBrowser's renderer.render()
                  return;
+            }
+
+            // Synchronize project title
+            if (model != null && model.getName() != null) {
+                String title = model.getName();
+                browser.execute("var titleEl = document.getElementById('project-title'); if(titleEl) titleEl.innerText = '" + title.replace("'", "\\'") + "';");
             }
 
             browser.execute("if(window.updateGraph) { window.updateGraph(" + json + "); }");
