@@ -52,7 +52,7 @@ public class GitManager {
 //        }
         
         // Use File separator for OS independence
-        return userHome + File.separator + repoName;
+        return userHome + File.separator + repoName + File.separator;
     }
     
     public static Git createOrOpenRepo(String path) throws Exception {

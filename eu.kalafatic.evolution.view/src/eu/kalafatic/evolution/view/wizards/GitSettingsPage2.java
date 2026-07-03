@@ -30,6 +30,7 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.browser.IWorkbenchBrowserSupport;
 
 import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.EclipseGitRepositoryManager;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.GitManager;
 import eu.kalafatic.utils.factories.GUIFactory;
 
@@ -156,11 +157,11 @@ public class GitSettingsPage2 extends AWizardPage {
 
 		List<String> repos = ProjectModelManager.getInstance().getAvailableLocalRepositories();
 		
-		String localRepo= GitManager.getDefaultRepositoryPath() + "/evolution";
-		
-		if (!repos.contains(localRepo)) {
-			repos.add(localRepo);
-		}
+//		String localRepo= GitManager.getDefaultRepositoryPath() + "/evolution";
+//		
+//		if (!repos.contains(localRepo)) {
+//			repos.add(localRepo);
+//		}
 		for (String r : repos) {
 			localPathText.add(r);
 		}
@@ -213,9 +214,9 @@ public class GitSettingsPage2 extends AWizardPage {
 		GUIFactory.INSTANCE.createLabel(groupEvo, "Repository URL:");
 		repoUrlText1 = new Text(groupEvo, SWT.BORDER);
 		repoUrlText1.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		repoUrlText1.setText(GitManager.DEFAULT_GIT_EVO_URL);
+		repoUrlText1.setText(EclipseGitRepositoryManager.getRuntimeWorkspacePath()+"evo");
 		repoUrlText1.setEditable(true);
-
+		
 		gitDecorator1 = new ControlDecoration(repoUrlText1, SWT.TOP | SWT.LEFT);
 		gitDecorator1.setImage(
 				FieldDecorationRegistry.getDefault().getFieldDecoration(FieldDecorationRegistry.DEC_ERROR).getImage());
@@ -238,14 +239,14 @@ public class GitSettingsPage2 extends AWizardPage {
 		GUIFactory.INSTANCE.createLabel(groupEvo);
 
 		GUIFactory.INSTANCE.createLabel(groupEvo, "Username:");
-		usernameText = new Text(groupEvo, SWT.BORDER);
-		usernameText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		usernameText.setText("admin");
+		usernameText1 = new Text(groupEvo, SWT.BORDER);
+		usernameText1.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		usernameText1.setText("admin");
 		GUIFactory.INSTANCE.createLabel(groupEvo);
 
 		GUIFactory.INSTANCE.createLabel(groupEvo, "Password/Token:");
-		passwordText = new Text(groupEvo, SWT.BORDER | SWT.PASSWORD);
-		passwordText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		passwordText1 = new Text(groupEvo, SWT.BORDER | SWT.PASSWORD);
+		passwordText1.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		GUIFactory.INSTANCE.createLabel(groupEvo);
 
 		GUIFactory.INSTANCE.createLabel(groupEvo, "Local Path:");
@@ -254,37 +255,37 @@ public class GitSettingsPage2 extends AWizardPage {
 		pathComp.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		GUIFactory.INSTANCE.createLabel(groupEvo);
 
-		localPathText = new Combo(pathComp, SWT.BORDER | SWT.DROP_DOWN);
-		localPathText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		localPathText1 = new Combo(pathComp, SWT.BORDER | SWT.DROP_DOWN);
+		localPathText1.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
 		repos = ProjectModelManager.getInstance().getAvailableLocalRepositories();
 		
 		//IProject project = wizard.g;
-		localRepo= GitManager.getDefaultRepositoryPath() + File.separator + "evo";
-		
-		if (!repos.contains(localRepo)) {
-			repos.add(localRepo);
-		}
+//		localRepo= GitManager.getDefaultRepositoryPath() + File.separator + "evo";
+//		
+//		if (!repos.contains(localRepo)) {
+//			repos.add(localRepo);
+//		}
 		
 		for (String r : repos) {
-			localPathText.add(r);
+			localPathText1.add(r);
 		}
 
 		// Default selection logic: evolution or evo
 		if (repos.isEmpty()) {
-			localPathText.setText("repo");
+			localPathText1.setText("repo");
 		} else {
 			boolean found = false;
-			for (int i = 0; i < localPathText.getItemCount(); i++) {
-				String item = localPathText.getItem(i).toLowerCase();
+			for (int i = 0; i < localPathText1.getItemCount(); i++) {
+				String item = localPathText1.getItem(i).toLowerCase();
 				if (item.contains("evolution") || item.contains("/evo")) {
-					localPathText.select(i);
+					localPathText1.select(i);
 					found = true;
 					break;
 				}
 			}
 			if (!found) {
-				localPathText.select(0);
+				localPathText1.select(0);
 			}
 		}
 
@@ -295,10 +296,10 @@ public class GitSettingsPage2 extends AWizardPage {
 			public void widgetSelected(SelectionEvent e) {
 				DirectoryDialog dialog = new DirectoryDialog(getShell());
 				dialog.setText("Select Local Git Repository Directory");
-				dialog.setFilterPath(localPathText.getText());
+				dialog.setFilterPath(localPathText1.getText());
 				String selected = dialog.open();
 				if (selected != null) {
-					localPathText.setText(selected);
+					localPathText1.setText(selected);
 				}
 			}
 		});
