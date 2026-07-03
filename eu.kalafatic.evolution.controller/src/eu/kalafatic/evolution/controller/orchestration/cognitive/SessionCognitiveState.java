@@ -87,6 +87,19 @@ public class SessionCognitiveState {
         engine.processInteraction(prompt, this, context, null);
     }
 
+    public void sync() {
+        CognitiveStateEngine engine = new CognitiveStateEngine();
+        eu.kalafatic.evolution.controller.orchestration.SessionContainer session =
+            eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getSession(sessionId);
+
+        eu.kalafatic.evolution.controller.orchestration.TaskContext context = null;
+        if (session instanceof eu.kalafatic.evolution.controller.orchestration.SessionContext) {
+            context = ((eu.kalafatic.evolution.controller.orchestration.SessionContext)session).getTaskContext();
+        }
+
+        engine.sync(this, context);
+    }
+
     public void addSignal(CapabilitySignal signal) {
         capabilityHistory.add(signal);
         if (capabilityHistory.size() > 20) {
