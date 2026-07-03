@@ -1149,14 +1149,14 @@ public class CodingEngine extends ADarwinEngine {
 
 		boolean isTestMode = context.getMetadata().containsKey("testMode");
 		try {
-			if (profile.requiresRepository() && !isExportOnly && !isTestMode) {
+			if (profile.requiresRepository() && !isExportOnly && !isTestMode && manager.getGitManager().isGitRepository() && originalBranch != null) {
 				manager.getGitManager().createBranchFrom(originalBranch, snapshotBranch);
 				manager.getGitManager().forceCheckout(snapshotBranch);
 			}
 
 			context.log("[DARWIN] Executing winner variant: " + selectedVariant.getId() + " ("
 					+ selectedVariant.getStrategy() + ")");
-			if (profile.requiresRepository() && !isExportOnly && !isTestMode) {
+			if (profile.requiresRepository() && !isExportOnly && !isTestMode && manager.getGitManager().isGitRepository() && originalBranch != null) {
 				manager.getGitManager().createBranchFrom(originalBranch, selectedVariant.getBranchName());
 			}
 
@@ -1184,14 +1184,14 @@ public class CodingEngine extends ADarwinEngine {
 			if (!selectedVariant.isSuccess()) {
 				context.log(
 						"[DARWIN] Winner variant execution failed during materialization: " + selectedVariant.getId());
-				if (!isExportOnly && !isTestMode) {
+				if (!isExportOnly && !isTestMode && manager.getGitManager().isGitRepository() && originalBranch != null) {
 					manager.getGitManager().forceCheckout(originalBranch);
 					manager.getGitManager().rollback(context);
 				}
 				return manager.failedResult();
 			}
 
-			if (profile.requiresRepository() && !isExportOnly && !isTestMode) {
+			if (profile.requiresRepository() && !isExportOnly && !isTestMode && manager.getGitManager().isGitRepository() && originalBranch != null) {
 				manager.getGitManager().forceCheckout(originalBranch);
 				manager.getGitManager().merge(selectedVariant.getBranchName());
 			} else if (isExportOnly) {
@@ -1379,7 +1379,7 @@ public class CodingEngine extends ADarwinEngine {
 		} catch (Exception e) {
 			context.log("[DARWIN] DarwinEngine.executeWinner failed: " + e.getMessage());
 			if (profile.requiresRepository() && !isExportOnly && !isTestMode
-					&& manager.getGitManager().isGitRepository()) {
+					&& manager.getGitManager().isGitRepository() && originalBranch != null) {
 				try {
 					manager.getGitManager().forceCheckout(originalBranch);
 					manager.getGitManager().rollback(context);

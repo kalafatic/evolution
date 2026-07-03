@@ -68,16 +68,31 @@ public class GitManager {
     }
 
     public String getCurrentBranch() throws Exception {
+        if (!isGitRepository()) return null;
         try {
-            return gitTool.execute("rev-parse --abbrev-ref HEAD", root, null).trim();
+            String branch = gitTool.execute("rev-parse --abbrev-ref HEAD", root, null).trim();
+            if ("HEAD".equals(branch)) {
+                // We are in detached HEAD state, try to get a better name or just return null for "originalBranch"
+                return null;
+            }
+            return branch;
         } catch (Exception e) {
             // Fallback for new repositories without commits
-            return gitTool.execute("symbolic-ref --short HEAD", root, null).trim();
+            try {
+                return gitTool.execute("symbolic-ref --short HEAD", root, null).trim();
+            } catch (Exception ex) {
+                return null;
+            }
         }
     }
 
     public String getHeadCommit() throws Exception {
-        return gitTool.execute("rev-parse HEAD", root, null).trim();
+        if (!isGitRepository()) return null;
+        try {
+            return gitTool.execute("rev-parse HEAD", root, null).trim();
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     public void createBranch(String branchName) throws Exception {
