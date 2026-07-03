@@ -176,6 +176,22 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
                     System.err.println("Failed to initialize local git: " + e.getMessage());
                 }
             }
+            if (gitPage.isSkipped() || gitPage.getRepoUrl1() == null || gitPage.getRepoUrl1().isEmpty()) {
+                try {
+                    File projectDir = project.getLocation().toFile();
+                    new ProcessBuilder("git", "init").directory(projectDir).start().waitFor();
+
+                    File gitignore = new File(projectDir, ".gitignore");
+                    if (!gitignore.exists()) {
+                        java.nio.file.Files.write(gitignore.toPath(), GITIGNORE_TEMPLATE.getBytes());
+                    }
+
+                    registerGitRepository(projectDir);
+                } catch (Exception e) {
+                    System.err.println("Failed to initialize local git: " + e.getMessage());
+                }
+            }
+
 
             // Create basic pom.xml
             IFile pomFile = project.getFile("pom.xml");

@@ -33,7 +33,7 @@ import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.GitManager;
 import eu.kalafatic.utils.factories.GUIFactory;
 
-public class GitSettingsPage extends AWizardPage {
+public class GitSettingsPage2 extends AWizardPage {
 	
 	private Text repoUrlText, branchText, usernameText, passwordText;
 	private Text repoUrlText1, branchText1, usernameText1, passwordText1;
@@ -44,7 +44,7 @@ public class GitSettingsPage extends AWizardPage {
 	private ControlDecoration gitDecorator1, infoDecorator1;
 	private Job validationJob;
 
-    public GitSettingsPage() {
+    public GitSettingsPage2() {
         super("GitSettingsPage");
         setTitle("Git Settings");
         setDescription("Configure Git repository settings.");
@@ -77,17 +77,17 @@ public class GitSettingsPage extends AWizardPage {
 				eu.kalafatic.evolution.model.orchestration.Git git1 = orchestrator.getSupervisorSettings().getGit();
 
 				if (git.getRepositoryUrl() != null)
-					repoUrlText1.setText(git1.getRepositoryUrl());
+					repoUrlText.setText(git1.getRepositoryUrl());
 				if (git.getBranch() != null)
-					branchText1.setText(git1.getBranch());
+					branchText.setText(git1.getBranch());
 				if (git1.getUsername() != null)
-					usernameText1.setText(git1.getUsername());
+					usernameText.setText(git1.getUsername());
 				if (git1.getPassword() != null)
-					passwordText1.setText(git1.getPassword());
+					passwordText.setText(git1.getPassword());
 				if (git1.getLocalPath() != null) {
 					String lp = git1.getLocalPath();
-					if (localPathText1.indexOf(lp) < 0) {
-						localPathText1.add(lp);
+					if (localPathText.indexOf(lp) < 0) {
+						localPathText.add(lp);
 					}
 					localPathText.setText(lp);
 				}
@@ -106,11 +106,7 @@ public class GitSettingsPage extends AWizardPage {
 
 	@Override
 	public void createControl(Composite parent) {
-		 Composite container = new Composite(parent, SWT.NONE);
-	     container.setLayout(new GridLayout(1, false));
-		
-		
-		Group groupCodebase = GUIFactory.INSTANCE.createGroup(container, "Codebase", 3);
+		Group groupCodebase = GUIFactory.INSTANCE.createGroup(parent, "Codebase", 3);
 
 		GUIFactory.INSTANCE.createLabel(groupCodebase, "Repository URL:");
 		repoUrlText = new Text(groupCodebase, SWT.BORDER);
@@ -143,7 +139,6 @@ public class GitSettingsPage extends AWizardPage {
 		usernameText = new Text(groupCodebase, SWT.BORDER);
 		usernameText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		usernameText.setText("admin");
-		GUIFactory.INSTANCE.createLabel(groupCodebase);
 
 		GUIFactory.INSTANCE.createLabel(groupCodebase, "Password/Token:");
 		passwordText = new Text(groupCodebase, SWT.BORDER | SWT.PASSWORD);
@@ -213,7 +208,7 @@ public class GitSettingsPage extends AWizardPage {
 			}
 		});
 
-		Group groupEvo = GUIFactory.INSTANCE.createGroup(container, "Evo", 3);
+		Group groupEvo = GUIFactory.INSTANCE.createGroup(parent, "Evo", 3);
 
 		GUIFactory.INSTANCE.createLabel(groupEvo, "Repository URL:");
 		repoUrlText1 = new Text(groupEvo, SWT.BORDER);
@@ -320,10 +315,7 @@ public class GitSettingsPage extends AWizardPage {
 		GUIFactory.INSTANCE.createLabel(groupEvo);
 		GUIFactory.INSTANCE.createLabel(groupEvo);
 
-		
-		Group guidance = GUIFactory.INSTANCE.createGroup(container, "Guidance", 2);
-		
-		skipCheck = new Button(guidance, SWT.CHECK);
+		skipCheck = new Button(groupEvo, SWT.CHECK);
 		skipCheck.setText("Skip this step and setup later");
 		skipCheck.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, true, false, 2, 1));
 		skipCheck.addSelectionListener(new SelectionAdapter() {
@@ -333,7 +325,7 @@ public class GitSettingsPage extends AWizardPage {
 			}
 		});
 
-		Link gitHelpLink = new Link(guidance, SWT.NONE);
+		Link gitHelpLink = new Link(groupEvo, SWT.NONE);
 		gitHelpLink.setText("<a>How to install Git?</a>");
 		gitHelpLink.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false, 2, 1));
 		gitHelpLink.addSelectionListener(new SelectionAdapter() {
@@ -343,7 +335,7 @@ public class GitSettingsPage extends AWizardPage {
 			}
 		});
 
-		setControl(container);
+		setControl(parent);
 //		validateGit();
 //		validateGit1();
 

@@ -4,12 +4,26 @@ import java.io.File;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.eclipse.jgit.api.Git;
+
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.tools.GitTool;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
 
 public class GitManager {
+	
+    // OS-specific default directory names
+    private static final String WINDOWS_REPO = "git-repo";
+    private static final String MAC_REPO = "git-repo";
+    private static final String LINUX_REPO = "git-repo";
+    private static final String DEFAULT_REPO_NAME = "git-repo";
+    
+	public static String DEFAULT_GIT_URL ="https://github.com/kalafatic/evolution"; 
+	public static String DEFAULT_GIT_PATH ="https://github.com/kalafatic/evolution"; 
+	public static String DEFAULT_GIT_EVO_URL ="https://github.com/kalafatic/evo"; 
+	public static String DEFAULT_GIT_EVO_PATH ="https://github.com/kalafatic/evo"; 
+	
     private final File root;
     private final GitTool gitTool = new GitTool();
     private final Set<String> worktreeRegistry = ConcurrentHashMap.newKeySet();
@@ -21,6 +35,35 @@ public class GitManager {
     public GitManager(File root) {
         this.root = root;
     }
+    
+    public static String getDefaultRepositoryPath() {
+        String userHome = System.getProperty("user.home");
+        String osName = System.getProperty("os.name").toLowerCase();
+        
+        String repoName = "git";//DEFAULT_REPO_NAME;
+//        
+//        // You can customize repository name per OS if needed
+//        if (osName.contains("win")) {
+//            repoName = WINDOWS_REPO;
+//        } else if (osName.contains("mac")) {
+//            repoName = MAC_REPO;
+//        } else if (osName.contains("nix") || osName.contains("nux") || osName.contains("aix")) {
+//            repoName = LINUX_REPO;
+//        }
+        
+        // Use File separator for OS independence
+        return userHome + File.separator + repoName;
+    }
+    
+    public static Git createOrOpenRepo(String path) throws Exception {
+	    File dir = new File(path);
+	    if (dir.exists() && new File(dir, ".git").exists()) {
+	        return Git.open(dir);
+	    } else {
+	        return Git.init().setDirectory(dir).call();
+	    }
+	}
+	
 
     public boolean isGitRepository() {
         File gitDir = new File(root, ".git");
