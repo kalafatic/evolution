@@ -54,8 +54,11 @@ public class CognitiveStateEngine {
         // 7. Sync dimensions from genome if available
         if (context != null) {
             Object genomeObj = context.getOrchestrationState().getMetadata().get("semanticGenome");
-            if (genomeObj instanceof eu.kalafatic.evolution.controller.orchestration.selfdev.SemanticGenome) {
-                eu.kalafatic.evolution.controller.orchestration.selfdev.SemanticGenome genome = (eu.kalafatic.evolution.controller.orchestration.selfdev.SemanticGenome) genomeObj;
+            eu.kalafatic.evolution.controller.orchestration.selfdev.SemanticGenome genome = 
+                eu.kalafatic.evolution.controller.parsers.JsonUtils.restoreFromMetadata(genomeObj, 
+                    eu.kalafatic.evolution.controller.orchestration.selfdev.SemanticGenome.class, "semanticGenome", context);
+            
+            if (genome != null) {
                 state.getDimensions().clear();
                 for (eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionDimension dim : genome.getDimensions()) {
                     state.getDimensions().add(dim.getId());
@@ -64,6 +67,26 @@ public class CognitiveStateEngine {
         }
 
         // 8. Publish meaningful changes
+        publisher.publish(context, state);
+    }
+
+    public void sync(SessionCognitiveState state, eu.kalafatic.evolution.controller.orchestration.TaskContext context) {
+        if (context == null) return;
+
+        // Sync dimensions from genome if available
+        Object genomeObj = context.getOrchestrationState().getMetadata().get("semanticGenome");
+        eu.kalafatic.evolution.controller.orchestration.selfdev.SemanticGenome genome = 
+            eu.kalafatic.evolution.controller.parsers.JsonUtils.restoreFromMetadata(genomeObj, 
+                eu.kalafatic.evolution.controller.orchestration.selfdev.SemanticGenome.class, "semanticGenome", context);
+        
+        if (genome != null) {
+            state.getDimensions().clear();
+            for (eu.kalafatic.evolution.controller.orchestration.selfdev.EvolutionDimension dim : genome.getDimensions()) {
+                state.getDimensions().add(dim.getId());
+            }
+        }
+
+        // Publish current state
         publisher.publish(context, state);
     }
 

@@ -1,908 +1,439 @@
-window.ChatApp = window.ChatApp || {};
-
-window.ChatApp.Renderer = {
-    renderMessage: function(m) {
-        if (!m || (m.text === undefined || m.text === null)) return null;
-        const role = (m.agentType || '').toLowerCase();
-
-        // Skip rendering non-user empty messages to avoid broken bubbles
-        if (m.text.trim() === "" && !role.includes('user')) return null;
-
-        const roles = role.split(' ');
-        const primaryRole = roles[0];
-        const isUser = primaryRole === 'user' || (m.sender || '').toLowerCase().includes('you') || (m.sender || '').toLowerCase().includes('user');
-
-        const div = document.createElement('div');
-        div.className = 'message ' + (isUser ? 'user' : 'ai') + ' ' + role;
-        div.dataset.index = m.index;
-        if (m.isTerminal) div.classList.add('final-response');
-        if (role.includes('approved')) div.classList.add('approved');
-        if (!role.includes('waiting') && (role.includes('darwin') || role.includes('branch'))) div.classList.add('sealed');
-
-        const header = document.createElement('div');
-        header.className = 'header';
-        const icon = window.ChatApp.Constants.icons[primaryRole] || (isUser ? window.ChatApp.Constants.icons.user : window.ChatApp.Constants.icons.ai);
-        header.innerHTML = `<span class="timestamp">${m.timestamp || ''}</span><span class="icon">${icon}</span><span class="sender">${m.sender}</span>`;
-
-        const content = document.createElement('div');
-        content.className = 'message-content';
-
-        let isDarwin = !isUser && (role.includes('darwin') || role.includes('branch')) && (m.text.includes('{') || m.text.includes('['));
-        if (!isDarwin && !isUser) {
-             try {
-                const data = JSON.parse(m.text);
-                if (data.variants || data.proposals || (Array.isArray(data) && data.length > 0 && (data[0].strategy || data[0].id || data[0].description))) isDarwin = true;
-             } catch(e) {}
-        }
-
-        if (role.includes('evolution-progress')) {
-            // Updated in main.js via list
-            if (!document.body.classList.contains('debug')) return null; 
-        } else if (role.includes('cognitive-state-changed')) {
-            // Updated in main.js via list
-            if (!document.body.classList.contains('debug')) return null;
-        } else if (isDarwin) {
-            content.style.flexDirection = 'column';
-            content.appendChild(this.renderDarwin(m));
-
-            // Move Force Solution button out of branch container to appear UNDER all branches
-            const isApproved = role.includes('approved');
-            const isWaiting = role.includes('waiting');
-            if (!isApproved && isWaiting) {
-                const forceDiv = document.createElement('div');
-                forceDiv.className = 'force-solution-container';
-                forceDiv.innerHTML = `<button class="branch-btn force" onclick="window.ChatApp.Actions.callJava('forceSolution', '${m.index}', '')">⚡ Force Solution</button>
-                                      <div class="force-hint">Bypass expansion & execute winner</div>`;
-                content.appendChild(forceDiv);
-            }
-        } else {
-            const bubble = document.createElement('div');
-            bubble.className = 'bubble';
-            bubble.onclick = () => window.ChatApp.Actions.callJava('edit', m.index.toString(), m.text);
-
-            const bubbleContent = document.createElement('div');
-            bubbleContent.className = 'bubble-content';
-            bubbleContent.innerHTML = this.formatText(m.text, primaryRole);
-            bubble.appendChild(bubbleContent);
-            content.appendChild(bubble);
-            content.appendChild(window.ChatApp.Actions.renderActions(m));
-        }
-
-        div.appendChild(header);
-        div.appendChild(content);
-        return div;
-    },
-
-    highlightMatches: function(el, query) {
-        this.clearHighlight(el);
-        if (!query) return;
-
-        const regex = query instanceof RegExp ? query : new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
-
-        const walk = (node) => {
-            if (node.nodeType === 3) { // Text node
-                const text = node.nodeValue;
-                let match;
-                const spans = [];
-                let lastIdx = 0;
-
-                while ((match = regex.exec(text)) !== null) {
-                    if (match.index > lastIdx) {
-                        spans.push(document.createTextNode(text.substring(lastIdx, match.index)));
-                    }
-                    const mark = document.createElement('mark');
-                    mark.className = 'search-match';
-                    mark.innerText = match[0];
-                    spans.push(mark);
-                    lastIdx = regex.lastIndex;
-                    if (regex.lastIndex === match.index) regex.lastIndex++; // Avoid infinite loop for empty matches
-                }
-
-                if (lastIdx < text.length) {
-                    spans.push(document.createTextNode(text.substring(lastIdx)));
-                }
-
-                if (spans.length > 0) {
-                    const fragment = document.createDocumentFragment();
-                    spans.forEach(s => fragment.appendChild(s));
-                    node.parentNode.replaceChild(fragment, node);
-                }
-            } else if (node.nodeType === 1 && node.childNodes && !['SCRIPT', 'STYLE', 'MARK'].includes(node.tagName)) {
-                Array.from(node.childNodes).forEach(walk);
-            }
-        };
-
-        // Target only bubble and header
-        const content = el.querySelector('.bubble-content') || el;
-        const sender = el.querySelector('.sender');
-        if (content) walk(content);
-        if (sender) walk(sender);
-    },
-
-    clearHighlight: function(el) {
-        el.querySelectorAll('mark.search-match').forEach(mark => {
-            const parent = mark.parentNode;
-            parent.replaceChild(document.createTextNode(mark.innerText), mark);
-            parent.normalize(); // Merge adjacent text nodes
-        });
-    },
-
-    formatText: function(text, role) {
-        if (!text) return "";
-        let clean = window.ChatApp.Utils.stripTechnicalMarkers(text);
-
-        // Handle think blocks BEFORE escaping
-        let thinkBlocks = [];
-        clean = clean.replace(/<think>([\s\S]*?)<\/think>/gi, (match, content) => {
-            thinkBlocks.push(content);
-            return '___THINK_BLOCK_' + (thinkBlocks.length - 1) + '___';
-        });
-
-        // Try JSON rendering first
-        if (clean.includes('{') && clean.includes('}')) {
-            try {
-                let jsonText = clean;
-                if (jsonText.startsWith('```')) {
-                    jsonText = jsonText.replace(/^```[a-z]*\n/i, '').replace(/\n```$/i, '');
-                }
-                const match = jsonText.match(/[\{\[][\s\S]*[\}\]]/);
-                if (match) {
-                    const data = JSON.parse(match[0]);
-                    return this.renderJson(data);
-                }
-            } catch(e) {}
-        }
-
-        // Markdown-ish formatting
-        let html = window.ChatApp.Utils.escapeHtml(clean);
-
-        // Links & Interactions
-        html = html.replace(/\bCREATE\b/g, '<a class="link-go" onclick="event.stopPropagation(); window.ChatApp.Actions.callJava(\'create\')">CREATE</a>');
-        html = html.replace(/\bCLARIFY\b/g, '<a class="link-clarify" onclick="event.stopPropagation(); window.ChatApp.Actions.callJava(\'clarify\')">CLARIFY</a>');
-
-        // Conversational phrase mapping
-        html = html.replace(/could you tell me a bit more about what you(?:’|'|&#039;)re trying to accomplish\?/g, '<a class="link-clarify" onclick="event.stopPropagation(); window.ChatApp.Actions.callJava(\'clarify\')">$&</a>');
-        html = html.replace(/Are you looking for a simple example to get started/g, '<a class="link-go" onclick="event.stopPropagation(); window.ChatApp.Actions.callJava(\'helloworld\')">$&</a>');
-        html = html.replace(/are you working on a more complex project that requires a specific file structure\?/g, '<a class="link-clarify" onclick="event.stopPropagation(); window.ChatApp.Actions.callJava(\'clarify\')">$&</a>');
-
-        // Proposal link [PROPOSAL: Label | Request]
-        html = html.replace(/\[PROPOSAL:\s*(.*?)\s*\|\s*(.*?)\s*\]/g, (match, label, req) => {
-             return `<a class="link-go" onclick="event.stopPropagation(); window.ChatApp.Actions.callJava('executeProposal', '-1', '${window.ChatApp.Utils.escapeJs(req)}')"><b>${label}</b></a>`;
-        });
-
-        // File link [FILE: path]
-        html = html.replace(/\[FILE:\s*(.*?)\s*\]/g, (match, path) => {
-            return `<a onclick="event.stopPropagation(); window.ChatApp.Actions.callJava('openDiff', '-1', '${window.ChatApp.Utils.escapeJs(path)}')" oncontextmenu="window.ChatApp.UI.showFileContextMenu(event, '${window.ChatApp.Utils.escapeJs(path)}')"><b>${path}</b></a>`;
-        });
-
-        // Proposal: print to console
-        html = html.replace(/\bprint to console\b/gi, '<a class="link-go" onclick="event.stopPropagation(); window.ChatApp.Actions.callJava(\'executeProposal\', \'-1\', \'print to console\')">$&</a>');
-
-        // Phase Transition Yes/No links
-        html = html.replace(/\((Yes\/No)\)/gi, (match) => {
-            return `(<a class="link-go" onclick="event.stopPropagation(); window.ChatApp.Actions.callJava('executeProposal', '-1', 'Yes')">Yes</a>/<a class="link-go" onclick="event.stopPropagation(); window.ChatApp.Actions.callJava('executeProposal', '-1', 'No')">No</a>)`;
-        });
-
-        // Basic Markdown
-        html = html.replace(/\*\*([\s\S]*?)\*\*/g, '<b>$1</b>');
-        html = html.replace(/\*([\s\S]*?)\*/g, '<i>$1</i>');
-        html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
-
-        // Markdown Links [text](url)
-        html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, text, url) => {
-             if (url.startsWith('file://')) {
-                  return `<a onclick="event.stopPropagation(); window.ChatApp.Actions.callJava('openDiff', '-1', '${window.ChatApp.Utils.escapeJs(url)}')" oncontextmenu="window.ChatApp.UI.showFileContextMenu(event, '${window.ChatApp.Utils.escapeJs(url)}')"><b>${text}</b></a>`;
-             }
-             return `<a href="${url}" target="_blank" onclick="event.stopPropagation();">${text}</a>`;
-        });
-
-        // Headers
-        html = html.replace(/^\s*###### (.*$)/gim, '<h6>$1</h6>');
-        html = html.replace(/^\s*##### (.*$)/gim, '<h5>$1</h5>');
-        html = html.replace(/^\s*#### (.*$)/gim, '<h4>$1</h4>');
-        html = html.replace(/^\s*### (.*$)/gim, '<h3>$1</h3>');
-        html = html.replace(/^\s*## (.*$)/gim, '<h2>$1</h2>');
-        html = html.replace(/^\s*# (.*$)/gim, '<h1>$1</h1>');
-
-        // Lists
-        html = html.replace(/^\s*[\-\*]\s+(.*)$/gm, '<li>$1</li>');
-        html = html.replace(/(?:<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
-
-        // Blocks
-        html = html.replace(/```([a-z]*)\n?([\s\S]*?)\n?```/gi, (match, lang, code) => {
-            return `<pre><code>${window.ChatApp.Utils.escapeHtml(code.trim())}</code><button class="copy-btn" style="position:absolute;top:8px;right:8px;" onclick="event.stopPropagation(); window.ChatApp.Actions.callJava('copy', '-1', '${window.ChatApp.Utils.escapeJs(code)}')">Copy</button></pre>`;
-        });
-
-        // Restore think blocks
-        html = html.replace(/___THINK_BLOCK_(\d+)___/g, (match, index) => {
-            return `<div class="think-block">${this.formatText(thinkBlocks[parseInt(index)], role)}</div>`;
-        });
-
-        if (html.includes("PROJECT ROOT:") || html.includes("INSTRUCTIONS:")) {
-            html = '<div class="non-essential">' + html + '</div>';
-        }
-
-        return html.replace(/\n/g, '<br>');
-    },
-
-    renderJson: function(data) {
-        if (!data) return "";
-        const technicalKeys = ['id', 'suffix', 'score', 'risk', 'reversibility', 'confidence', 'intent', 'category', 'isAmbiguous', 'missingInformation', 'lineage', 'iterationCount', 'generation', 'platformType', 'timestamp', 'startTime', 'winnerId', 'parentId'];
-        const renderValue = (val, key) => {
-            if (val === null || val === undefined) return "";
-            if (Array.isArray(val)) {
-                if (val.length === 0) return "";
-                return `<ul style="margin: 4px 0; padding-left: 18px;">${val.map(v => `<li>${renderValue(v, key)}</li>`).join('')}</ul>`;
-            }
-            if (typeof val === 'object') {
-                return Object.entries(val).map(([k, v]) => `<div style="margin-bottom: 2px;"><b>${k}:</b> ${renderValue(v, k)}</div>`).join('');
-            }
-
-            const str = String(val);
-            if (['files', 'path', 'file', 'target'].includes(key) && (str.includes('.') || str.includes('/'))) {
-                return `<a onclick="event.stopPropagation(); window.ChatApp.Actions.callJava('openDiff', '-1', '${window.ChatApp.Utils.escapeJs(str)}')" oncontextmenu="window.ChatApp.UI.showFileContextMenu(event, '${window.ChatApp.Utils.escapeJs(str)}')"><b>${window.ChatApp.Utils.escapeHtml(str)}</b></a>`;
-            }
-            return window.ChatApp.Utils.escapeHtml(str);
-        };
-
-        const humanKeys = ['explanation', 'strategy', 'thought', 'objective', 'refinedPrompt', 'rootCause', 'plan', 'workDone', 'summary', 'description', 'hypothesis', 'expected_effects', 'expected_effect', 'clarificationQuestion'];
-
-        // If data is a simple object with just one or two human keys, render it as plain text
-        if (typeof data === 'object' && !Array.isArray(data)) {
-            const keys = Object.keys(data);
-            const humanPresent = keys.filter(k => humanKeys.includes(k));
-            if (humanPresent.length === 1 && keys.length <= 3) {
-                 const key = humanPresent[0];
-                 if (typeof data[key] === 'string') return this.formatText(data[key]);
-            }
-        }
-
-        let html = '<div style="display: flex; flex-direction: column; gap: 6px;">';
-        if (Array.isArray(data)) {
-            data.forEach((item, idx) => {
-                html += `<div style="border-bottom: 1px solid var(--border); padding-bottom: 6px; margin-bottom: 6px;"><b>PROPOSAL ${idx+1}</b><br>${this.renderJson(item)}</div>`;
-            });
-        } else {
-            // First render prioritized human keys
-            humanKeys.forEach(f => {
-                if (data[f]) {
-                    if (f === 'refinedPrompt') {
-                        html += `<div><div style="font-size: 10px; font-weight: 800; color: #64748b;">REFINED PROMPT</div><a class="link-go" onclick="event.stopPropagation(); window.ChatApp.Actions.callJava('executeProposal', '-1', '${window.ChatApp.Utils.escapeJs(data[f])}')"><b>${window.ChatApp.Utils.escapeHtml(data[f])}</b></a></div>`;
-                    } else if (f === 'hypothesis' && typeof data[f] === 'object') {
-                         html += `<div><div style="font-size: 10px; font-weight: 800; color: #64748b;">HYPOTHESIS</div>${renderValue(data[f].description)}</div>`;
-                         if (data[f].expected_effects) html += `<div><div style="font-size: 10px; font-weight: 800; color: #64748b;">EXPECTED EFFECTS</div>${renderValue(data[f].expected_effects)}</div>`;
-                    } else if (f === 'expected_effect' && typeof data[f] === 'object') {
-                         html += `<div><div style="font-size: 10px; font-weight: 800; color: #64748b;">EXPECTED EFFECT</div>${data[f].short_term || data[f].long_term || ''}</div>`;
-                    } else if (f === 'clarificationQuestion') {
-                         html += `<div style="font-size: 1.1em; color: var(--ai-text); border-left: 3px solid var(--primary); padding-left: 8px;">${renderValue(data[f], f)}</div>`;
-                    } else {
-                        // Less technical header for common narrative fields
-                        const usePlainLabel = ['explanation', 'thought', 'summary', 'description'].includes(f);
-                        if (usePlainLabel) {
-                            html += `<div style="line-height: 1.4;">${renderValue(data[f], f)}</div>`;
-                        } else {
-                            html += `<div><div style="font-size: 10px; font-weight: 800; color: #64748b;">${f.toUpperCase().replace('_', ' ')}</div>${renderValue(data[f], f)}</div>`;
-                        }
-                    }
-                }
-            });
-
-            // Then render non-technical, non-prioritized keys
-            Object.entries(data).forEach(([k, v]) => {
-                if (!humanKeys.includes(k) && !technicalKeys.includes(k) && k !== 'actions' && k !== 'variants' && k !== 'proposals' && k !== 'type') {
-                    html += `<div><b>${k}:</b> ${renderValue(v, k)}</div>`;
-                }
-            });
-
-            // Finally render technical metadata in a collapsed section
-            const techEntries = Object.entries(data).filter(([k]) => technicalKeys.includes(k));
-            if (techEntries.length > 0) {
-                html += `
-                    <details style="margin-top: 8px; border-top: 1px dashed var(--border); padding-top: 4px;">
-                        <summary style="font-size: 10px; font-weight: 800; color: #94a3b8; cursor: pointer;">TECHNICAL METADATA</summary>
-                        <div style="font-size: 10px; color: #64748b; padding-left: 8px;">
-                            ${techEntries.map(([k, v]) => `<div><b>${k}:</b> ${renderValue(v, k)}</div>`).join('')}
-                        </div>
-                    </details>`;
-            }
-
-            // Special handling for actions array
-            if (data.actions && Array.from(data.actions).length > 0) {
-                html += `<div><div style="font-size: 10px; font-weight: 800; color: #64748b;">ACTIONS</div>`;
-                data.actions.forEach(a => {
-                    html += `<div style="margin-left: 8px; font-size: 11px;">• <b>${a.operation}</b> ${renderValue(a.target, 'target')} - <i>${a.description}</i></div>`;
-                });
-                html += `</div>`;
-            }
-        }
-        return html + '</div>';
-    },
-
-    renderDarwin: function(m) {
-        const container = document.createElement('div');
-        container.className = 'branch-container';
-        try {
-            let text = (m.text || '').trim();
-
-            // Strip Log Contamination (e.g., [Default] [80ff...])
-            // We strip leading tags [...] or (...) that don't look like the start of JSON
-            text = text.replace(/^(\s*\[[^\{\"\[\]\n]+\]|\s*\([^\{\"\[\)\n]+\)|\s*(INFO|WARNING|SEVERE|ERROR|DEBUG):)+/gi, '').trim();
-
-            if (text.startsWith('```')) text = text.replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/i, '').trim();
-
-            let data;
-            // Robust JSON extraction: look for explicit Darwin tags first
-            if (text.includes('<BEGIN_DARWIN_JSON>') && text.includes('<END_DARWIN_JSON>')) {
-                const start = text.indexOf('<BEGIN_DARWIN_JSON>') + '<BEGIN_DARWIN_JSON>'.length;
-                const end = text.indexOf('<END_DARWIN_JSON>');
-                data = JSON.parse(text.substring(start, end).trim());
-            } else {
-                // Fallback to regex: find the first { or [ and the last corresponding } or ]
-                const jsonMatch = text.match(/[\{\[][\s\S]*[\}\]]/);
-                if (jsonMatch) {
-                    let candidate = jsonMatch[0];
-                    // If it still looks like it has leading tags (e.g. from greedy match), strip them again
-                    if (candidate.startsWith('[') && !candidate.startsWith('[{') && !candidate.startsWith('["')) {
-                         const nestedMatch = candidate.substring(1).match(/[\{\[][\s\S]*[\}\]]/);
-                         if (nestedMatch) candidate = nestedMatch[0];
-                    }
-                    data = JSON.parse(candidate);
-                } else {
-                    data = JSON.parse(text);
-                }
-            }
-
-            const variants = Array.isArray(data) ? data : (data.variants || data.proposals || data.hypotheses || []);
-            const iteration = data.iteration !== undefined ? data.iteration : null;
-
-            if (!Array.isArray(variants) || variants.length === 0) {
-                 container.innerHTML = `<div class="bubble error">
-                    <div style="font-weight:bold; margin-bottom: 4px;">Evolution Stalled (Iteration ${iteration !== null ? iteration : '?'})</div>
-                    <div>The model failed to produce valid evolutionary trajectories. Diversity requirements were not met.</div>
-                 </div>`;
-                 return container;
-            }
-
-            const role = (m.agentType || '').toLowerCase();
-            const isApproved = role.includes('approved');
-            const isRejected = role.includes('rejected');
-            const isWaiting = role.includes('waiting');
-            const isManualDecision = role.includes('decision:manual');
-            const isAutoDecision = role.includes('decision:auto');
-
-            variants.forEach((v, index) => {
-                const vId = String(v.id || index);
-                const isThisApproved = role.includes('approved:' + vId);
-                const isThisRejected = role.includes('rejected:' + vId);
-                const isThisKept = role.includes('kept:' + vId) || v.approved === true || v.status === 'KEPT' || (v.id && m.text.includes('"' + v.id + '"') && m.text.match(new RegExp('"' + v.id + '"[^}]*"status"\\s*:\\s*"KEPT"')));
-
-                const col = document.createElement('div');
-                col.className = 'branch-column' + (v.isBest ? ' best' : '') + (isThisApproved ? ' approved' : '') + (isThisRejected ? ' rejected' : '') + (isThisKept ? ' kept' : '');
-
-                if (isThisApproved || isThisRejected || isThisKept) {
-                    const stamp = document.createElement('div');
-                    stamp.className = 'decision-stamp';
-                    if (isThisApproved) {
-                        stamp.innerText = isAutoDecision ? 'AUTO-APPROVED' : 'APPROVED';
-                        stamp.classList.add('approved');
-                    } else if (isThisRejected) {
-                        stamp.innerText = 'REJECTED';
-                        stamp.classList.add('rejected');
-                    } else if (isThisKept) {
-                        stamp.innerText = 'KEPT';
-                        stamp.classList.add('kept');
-                    }
-                    col.appendChild(stamp);
-                }
-
-                // Simplified Darwin Header
-                let headerLabel = iteration !== null ? `ITERATION ${iteration} - PROPOSAL ${index + 1}` : `PROPOSAL ${index + 1}`;
-                let headerHtml = `<div class="branch-header">${headerLabel}${isThisKept ? ' [KEPT]' : ''}</div>`;
-                let strategy = v.strategy || v.description;
-                if (strategy) headerHtml += `<div class="branch-strategy">${strategy}</div>`;
-
-                // Dimension Info
-                if (v.engineering_dimensions && v.engineering_dimensions.active_dimension) {
-                    headerHtml += `<div class="branch-dimension" style="font-size: 10px; color: #64748b; margin-top: 2px;">Dimension: <b>${v.engineering_dimensions.active_dimension}</b>${v.engineering_dimensions.active_dimension_description ? ' - ' + v.engineering_dimensions.active_dimension_description : ''}</div>`;
-                }
-
-                let footerContent = "";
-                if (isThisApproved) {
-                    footerContent = '<div style="color: #16a34a; font-weight: bold;">APPROVED</div>';
-                } else if (isThisRejected) {
-                    footerContent = '<div style="color: #dc2626; font-weight: bold;">REJECTED</div>';
-                } else if (isThisKept && !isWaiting) {
-                    footerContent = '<div style="color: #166534; font-weight: bold;">KEPT</div>';
-                } else if (isWaiting) {
-                    footerContent = `
-                        <button class="branch-btn select" onclick="window.ChatApp.Actions.callJava('approveDarwinVariant', '${m.index}', '${vId}')">Select</button>
-                        <button class="branch-btn keep" onclick="window.ChatApp.Actions.callJava('keepDarwinVariant', '${m.index}', '${vId}')">Keep</button>
-                        <button class="branch-btn reject" onclick="window.ChatApp.Actions.callJava('rejectDarwinVariant', '${m.index}', '${vId}')">Reject</button>
-                        <button class="branch-btn" onclick="window.ChatApp.Actions.callJava('editDarwinVariant', '${m.index}', '${vId}')">Edit</button>`;
-                }
-
-                col.innerHTML = `
-                    ${headerHtml}
-                    <div class="branch-body" style="font-size: 11px;">${this.renderJson(v)}</div>
-                    <div class="branch-footer">${footerContent}</div>
-                `;
-                container.appendChild(col);
-            });
-
-        } catch(e) { container.innerHTML = `<div class="bubble error">Failed to parse Darwin: ${e.message}</div>`; }
-        return container;
-    },
-
-    resetProgressPanel: function() {
-        const cogPanel = document.getElementById('cognitive-panel');
-        const sidePanel = document.getElementById('side-panel');
-        const content = document.getElementById('progress-content');
-        if (cogPanel) cogPanel.style.width = '0px';
-        // sidePanel might contain changes, so we don't necessarily close it entirely if we only want to reset progress
-        if (content) {
-            content.innerHTML = '<div style="text-align: center; color: #94a3b8; font-size: 11px;">Evolution tracking inactive.</div>';
-        }
-        this.resetTreePanel();
-    },
-
-    resetTreePanel: function() {
-        const panel = document.getElementById('tree-panel');
-        const content = document.getElementById('tree-content');
-        if (panel) panel.style.width = '0px';
-        if (content) {
-            content.innerHTML = '<div style="text-align: center; color: #94a3b8; margin-top: 20px;">No lineage.</div>';
-        }
-    },
-
-    updateTreePanel: function(messages) {
-        const panel = document.getElementById('tree-panel');
-        const content = document.getElementById('tree-content');
-        const iterStats = document.getElementById('iter-stats');
-        const branchStats = document.getElementById('branch-stats');
-        if (!panel || !content) return;
-
-        const progressMessages = (messages || []).filter(m => {
-            const role = (m.agentType || '').toLowerCase();
-            return role.includes('evolution-progress');
-        });
-
-        if (progressMessages.length === 0) return;
-
-        // Auto-open panel if closed
-        if ((!panel.style.width || panel.style.width === '0px' || panel.style.width === '0') && !document.body.classList.contains('simple')) {
-             panel.style.width = '240px'; // Increased default width for HTML tree
-             if (window.ChatApp && window.ChatApp.UI) window.ChatApp.UI.updateLayout();
-        }
-
-        const iterations = {};
-        let latestData = null;
-
-        progressMessages.forEach(m => {
-            try {
-                const data = JSON.parse(m.text);
-                if (data.iterationCount !== undefined) {
-                    const key = (data.lineage || 'root') + "_" + data.iterationCount;
-                    if (!iterations[key] || data.timestamp > iterations[key].timestamp) {
-                        iterations[key] = data;
-                    }
-                    if (!latestData || data.timestamp > latestData.timestamp) {
-                        latestData = data;
-                    }
-                }
-            } catch(e) {}
-        });
-
-        const iterationValues = Object.values(iterations);
-        if (iterationValues.length === 0) return;
-
-        // Map iterations by their parentId to build non-linear tree
-        const childrenByParent = {};
-        iterationValues.forEach(data => {
-            const pid = data.parentId || "ROOT";
-            if (!childrenByParent[pid]) childrenByParent[pid] = [];
-            childrenByParent[pid].push(data);
-        });
-
-        // Recursive renderer for the lineage
-        function renderIteration(data, isRoot = false) {
-            let platformClass = (data.platformType || '').toLowerCase();
-            if (platformClass === 'hybrid_manual_export') platformClass = 'mediated';
-            const dimInfo = data.currentDimension ? `\nDimension: ${data.currentDimension}${data.currentDimensionDescription ? ' (' + data.currentDimensionDescription + ')' : ''}` : "";
-            const iterationId = data.lineage || data.iterationCount;
-            let iterHtml = `
-                <div class="tree-node dimension ${platformClass}" title="Iteration ${data.iterationCount}: ${data.currentTask || ''}${dimInfo}"
-                     ondblclick="window.ChatApp.Renderer.showDimensionDetails('${iterationId}')">
-                    <div class="node-title">I${data.iterationCount}</div>
-                    ${data.currentDimension ? `<div style="font-size: 6px; color: #64748b; margin-top: -2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; text-align: center; padding: 0 2px;">${data.currentDimension}</div>` : ''}
-                </div>
-            `;
-
-            if (isRoot && latestData) {
-                const actualIters = Math.max(...iterationValues.map(iv => iv.iterationCount || 0));
-                const minIters = latestData.minIterations || 1;
-                const maxIters = latestData.maxIterations || 10;
-
-                const platform = latestData.platformType || "ASSISTED_CODING";
-                const actualBranches = latestData.branches ? latestData.branches.length : 0;
-                const minBranches = latestData.minBranchingLimit || 2;
-                const maxBranches = latestData.branchingLimit || 4;
-
-                const iText = `Iters: ${actualIters}/${minIters}/${maxIters}`;
-				const bText = `Branches: ${actualBranches}/${maxBranches}`;
-
-                iterHtml = `
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                        <div id="iter-stats" style="font-size: 9px; color: #94a3b8; min-width: 60px; text-align: right; font-weight: normal;">${iText}</div>
-                        ${iterHtml}
-                        <div id="branch-stats" style="font-size: 9px; color: #94a3b8; min-width: 60px; font-weight: normal;">${bText}</div>
-                    </div>
-                `;
-            }
-
-            const branches = data.branches || [];
-            const hasBranches = branches.length > 0;
-
-            // Find any iterations that claim this iteration's winner (or this iteration itself) as parent
-            const winnerId = data.winnerId;
-
-            if (hasBranches) {
-                iterHtml += `<div class="tree-vline"></div>`;
-                iterHtml += `<div class="tree-children">`;
-                
-                branches.forEach((b, idx) => {
-                    const isWinner = winnerId === b.id;
-                    const isFailed = b.status === 'failed' || b.status === 'rejected';
-                    const isKept = b.status === 'KEPT' || b.status === 'kept';
-                    const subIterations = childrenByParent[b.id] || [];
-                    const hasSubIters = subIterations.length > 0;
-
-                    iterHtml += `<div class="tree-child">`;
-                    iterHtml += `<div class="tree-vline"></div>`;
-                    iterHtml += `
-                        <div class="tree-node proposal branch ${platformClass} ${isFailed ? 'failed' : ''} ${isWinner ? 'winner' : ''} ${isKept ? 'kept' : ''}"
-                             title="Branch ${b.id}${b.strategy ? ': ' + b.strategy : ''}${b.score !== undefined ? ' - Score: ' + Math.round(b.score*100) : ''}"
-                             ondblclick="window.ChatApp.Renderer.showBranchDetails('${b.id}')"
-                             oncontextmenu="window.ChatApp.Renderer.showBranchContextMenu(event, '${b.id}')">
-                            <div class="node-title">${isWinner ? '🏆' : 'B' + (idx + 1)}</div>
-                        </div>
-                    `;
-
-                    if (hasSubIters) {
-                        iterHtml += `<div class="tree-vline"></div>`;
-                        subIterations.forEach(si => {
-                            iterHtml += renderIteration(si);
-                        });
-                    }
-                    
-                    iterHtml += `</div>`;
-                });
-                
-                iterHtml += `</div>`;
-            } else {
-                // If no branches but there are iterations that claim this iteration as parent (linear continuation)
-                // We use "data.winnerId" or similar as a proxy if branches are missing from progress event
-                const pid = data.winnerId || "iter-" + data.iterationCount;
-                const subIterations = childrenByParent[pid] || [];
-                if (subIterations.length > 0) {
-                    iterHtml += `<div class="tree-vline"></div>`;
-                    subIterations.forEach(si => {
-                        iterHtml += renderIteration(si);
-                    });
-                }
-            }
-            
-            return iterHtml;
-        }
-
-        function renderNode(isRoot = false) {
-            let html = "";
-            if (isRoot) {
-                // Find iteration(s) that have no parentId or "ROOT" as parentId
-                const roots = childrenByParent["ROOT"] || [];
-                roots.forEach((r, idx) => {
-                    html += renderIteration(r, idx === 0);
-                });
-            }
-            return html;
-        }
-
-        content.innerHTML = renderNode(true) || '<div style="text-align: center; color: #94a3b8; margin-top: 20px;">No lineage.</div>';
-    },
-
-    updateCognitiveStatePanel: function(messages) {
-        const panel = document.getElementById('cognitive-panel');
-        const content = document.getElementById('cognitive-state-content');
-        const dimList = document.getElementById('dimension-list');
-        if (!panel || !content) return;
-
-        const cogMessages = (messages || []).filter(m => (m.agentType || '').toLowerCase().includes('cognitive-state-changed'));
-        if (cogMessages.length === 0) return;
-        const lastMsg = cogMessages[cogMessages.length - 1];
-
-        // Auto-open panel if closed
-        if ((!panel.style.width || panel.style.width === '0px' || panel.style.width === '0') && !document.body.classList.contains('simple')) {
-             panel.style.width = '320px';
-             if (window.ChatApp && window.ChatApp.UI) window.ChatApp.UI.updateLayout();
-        }
-
-        try {
-            const data = JSON.parse(lastMsg.text);
-
-            if (dimList && data.dimensions) {
-                dimList.innerHTML = data.dimensions.map(d =>
-                    `<span class="trait-tag">${d}</span>`
-                ).join('');
-            }
-
-            const confPercent = Math.round((data.confidence || 0) * 100);
-            const stabilityPercent = Math.round((data.stability || 0) * 100);
-
-            const trajectoryHtml = (data.trajectory || []).slice(-5).map(t =>
-                `<span class="trait-tag active">${t}</span>`
-            ).join(' <span style="color:#94a3b8">→</span> ');
-
-            content.innerHTML = `
-                <div style="display: flex; flex-direction: column; gap: 8px; font-family: sans-serif;">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="font-size: 10px; color: #64748b; font-weight: 800;">CAPABILITY</span>
-                        <div style="display: flex; align-items: center; gap: 4px;">
-                            <span style="font-size: 9px; color: #94a3b8;">Depth ${data.depth}</span>
-                            <span class="badge active" style="background: #3b82f6; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold;">${data.capability}</span>
-                        </div>
-                    </div>
-
-                    <div style="display: flex; gap: 10px; margin-top: 4px;">
-                        <div style="flex: 1;">
-                            <div style="font-size: 9px; color: #94a3b8; margin-bottom: 2px;">INTENT</div>
-                            <div style="font-size: 11px; font-weight: 600; color: #334155;">${data.intent}</div>
-                        </div>
-                        <div style="flex: 1;">
-                            <div style="font-size: 9px; color: #94a3b8; margin-bottom: 2px;">DIRECTION</div>
-                            <div style="font-size: 11px; font-weight: 600; color: #334155;">${data.direction}</div>
-                        </div>
-                    </div>
-
-                    <div style="margin-top: 4px;">
-                        <div style="display: flex; justify-content: space-between; font-size: 9px; color: #94a3b8; margin-bottom: 2px;">
-                            <span>CONFIDENCE</span>
-                            <span>${confPercent}%</span>
-                        </div>
-                        <div class="progress-bar-bg" style="height: 4px;">
-                            <div class="progress-bar-fill" style="width: ${confPercent}%; background: #10b981;"></div>
-                        </div>
-                    </div>
-
-                    <div style="margin-top: 4px;">
-                        <div style="display: flex; justify-content: space-between; font-size: 9px; color: #94a3b8; margin-bottom: 2px;">
-                            <span>TREND STABILITY</span>
-                            <span>${stabilityPercent}%</span>
-                        </div>
-                        <div class="progress-bar-bg" style="height: 4px;">
-                            <div class="progress-bar-fill" style="width: ${stabilityPercent}%; background: #8b5cf6;"></div>
-                        </div>
-                    </div>
-
-                    <div style="margin-top: 6px;">
-                        <div style="font-size: 9px; color: #94a3b8; margin-bottom: 4px;">TRAJECTORY</div>
-                        <div style="display: flex; align-items: center; gap: 4px; overflow-x: auto; padding-bottom: 4px;">
-                            ${trajectoryHtml || '<span style="color:#cbd5e1; font-style:italic;">Stable</span>'}
-                        </div>
-                    </div>
-                </div>
-            `;
-        } catch(e) {
-            console.error("Failed to parse cognitive state:", e);
-            content.innerHTML = `<div style="color: #ef4444; font-size: 10px;">Sync Error: ${e.message}</div>`;
-        }
-    },
-
-    showBranchDetails: function(branchId) {
-        // Try to find the branch data in messages
-        const popup = document.getElementById('branch-details-popup');
-        const content = document.getElementById('branch-details-content');
-        if (!popup || !content) return;
-
-        let branchData = null;
-        // Search in evolution progress messages first
-        const messages = window.messages || []; // Assumes global messages access or similar
-
-        // Find latest progress containing this branch
-        for (let i = messages.length - 1; i >= 0; i--) {
-            const m = messages[i];
-            if ((m.agentType || '').toLowerCase().includes('evolution-progress')) {
-                try {
-                    const data = JSON.parse(m.text);
-                    if (data.branches) {
-                        const b = data.branches.find(br => br.id === branchId);
-                        if (b) {
-                            branchData = b;
-                            break;
-                        }
-                    }
-                } catch(e) {}
-            }
-        }
-
-        if (branchData) {
-            content.innerHTML = `
-                <div style="max-height: 400px; overflow-y: auto;">
-                    ${this.renderJson(branchData)}
-                </div>
-                <button class="branch-btn select" style="width: 100%; margin-top: 10px;" onclick="window.ChatApp.Actions.callJava('approveDarwinVariant', '-1', '${branchId}'); document.getElementById('branch-details-popup').style.display='none';">Select this Branch</button>
-            `;
-            popup.style.display = 'flex';
-        } else {
-             // Fallback: check Darwin JSON messages
-             for (let i = messages.length - 1; i >= 0; i--) {
-                const m = messages[i];
-                const role = (m.agentType || '').toLowerCase();
-                if (role.includes('darwin') || role.includes('branch')) {
-                    try {
-                        const text = m.text.replace(/^(\s*\[[^\{\"\[\]\n]+\]|\s*\([^\{\"\[\)\n]+\)|\s*(INFO|WARNING|SEVERE|ERROR|DEBUG):)+/gi, '').trim();
-                        const data = JSON.parse(text);
-                        const variants = Array.isArray(data) ? data : (data.variants || data.proposals || []);
-                        const v = variants.find(vr => String(vr.id) === String(branchId));
-                        if (v) {
-                            content.innerHTML = `
-                                <div style="max-height: 400px; overflow-y: auto;">
-                                    ${this.renderJson(v)}
-                                </div>
-                                <button class="branch-btn select" style="width: 100%; margin-top: 10px;" onclick="window.ChatApp.Actions.callJava('approveDarwinVariant', '${m.index}', '${branchId}'); document.getElementById('branch-details-popup').style.display='none';">Select this Branch</button>
-                            `;
-                            popup.style.display = 'flex';
-                            return;
-                        }
-                    } catch(e) {}
-                }
-             }
-             alert("Could not find data for branch: " + branchId);
-        }
-    },
-
-    showBranchContextMenu: function(event, branchId) {
-        event.preventDefault();
-        this.showBranchDetails(branchId);
-    },
-
-    showDimensionDetails: function(iterationId) {
-        const popup = document.getElementById('branch-details-popup');
-        const content = document.getElementById('branch-details-content');
-        if (!popup || !content) return;
-
-        let iterData = null;
-        const messages = window.messages || [];
-
-        // Find latest progress for this iteration
-        for (let i = messages.length - 1; i >= 0; i--) {
-            const m = messages[i];
-            if ((m.agentType || '').toLowerCase().includes('evolution-progress')) {
-                try {
-                    const data = JSON.parse(m.text);
-                    if (String(data.lineage || data.iterationCount) === String(iterationId)) {
-                        iterData = data;
-                        break;
-                    }
-                } catch(e) {}
-            }
-        }
-
-        if (iterData) {
-            content.innerHTML = `
-                <div style="max-height: 400px; overflow-y: auto;">
-                    ${this.renderJson(iterData)}
-                </div>
-            `;
-            popup.style.display = 'flex';
-        } else {
-            alert("Could not find data for iteration: " + iterationId);
-        }
-    },
-
-    updateProgressPanel: function(messages) {
-        const panel = document.getElementById('side-panel');
-        const content = document.getElementById('progress-content');
-        if (!panel || !content) return;
-
-        const progressMessages = (messages || []).filter(m => (m.agentType || '').toLowerCase().includes('evolution-progress'));
-        if (progressMessages.length === 0) return;
-        const lastMsg = progressMessages[progressMessages.length - 1];
-
-        // Auto-open panel if closed and iteration is starting
-        if ((!panel.style.width || panel.style.width === '0px' || panel.style.width === '0') && !document.body.classList.contains('simple')) {
-             panel.style.width = '320px';
-             // Force layout update if in split-view/flexbox
-             if (window.ChatApp && window.ChatApp.UI) window.ChatApp.UI.updateLayout();
-        }
-
-        try {
-            const data = JSON.parse(lastMsg.text);
-            const stages = [
-                { id: 'ITERATION_START', label: 'Iteration Started' },
-                { id: 'ANALYZE_PARENT', label: 'Parent Analysis' },
-                { id: 'GENERATE_BRANCH', label: 'Branch Generation' },
-                { id: 'VALIDATE_BRANCH', label: 'Validation' },
-                { id: 'SCORE_BRANCH', label: 'Scoring' },
-                { id: 'SELECT_WINNER', label: 'Selection' },
-                { id: 'SAVE_LINEAGE', label: 'Persist Lineage' },
-                { id: 'ITERATION_COMPLETE', label: 'Complete' }
-            ];
-
-            const currentStageIdx = stages.findIndex(s => s.id === data.stage);
-            const percent = Math.round(((currentStageIdx + 1) / stages.length) * 100);
-
-            let branchTableRows = (data.branches || []).map(b => `
-                <tr>
-                    <td>${b.id}</td>
-                    <td>${b.status || 'waiting'}</td>
-                    <td>${b.score !== undefined ? Math.round(b.score * 100) : '-'}</td>
-                </tr>
-            `).join('');
-
-            const now = Date.now();
-            const start = data.startTime || now;
-            const elapsed = Math.max(0, Math.round((now - start) / 1000));
-            // Guard against extreme elapsed times in mock data
-            const displayElapsed = elapsed > 36000 ? 0 : elapsed;
-            const minutes = Math.floor(displayElapsed / 60).toString().padStart(2, '0');
-            const seconds = (displayElapsed % 60).toString().padStart(2, '0');
-
-            content.innerHTML = `
-                <div class="progress-monitor">
-                <div class="progress-header">
-                    <span>Iteration <b>#${data.iterationCount}</b></span>
-                    <span>Generation <b>${data.generation}</b></span>
-                    <span>Lineage <b>${data.lineage}</b></span>
-                </div>
-                <div class="session-properties-row">
-                    <span class="badge ${data.autoApprove ? 'active' : ''}">Auto-Approve</span>
-                    <span class="badge ${data.gitAutomation ? 'active' : ''}">Auto-Git</span>
-                    <span class="badge ${data.stepMode ? 'active' : ''}">Step Mode</span>
-                    <span class="badge active">Max: ${data.maxIterations}</span>
-                </div>
-                <div class="global-progress-container">
-                    <div class="progress-bar-bg">
-                        <div class="progress-bar-fill" style="width: ${percent}%"></div>
-                    </div>
-                    <div class="current-stage">${stages[currentStageIdx]?.label || data.stage}</div>
-                </div>
-                <div class="evolution-pipeline">
-                    ${stages.map((s, idx) => {
-                        let icon = '○';
-                        let statusClass = 'step-status-waiting';
-                        if (idx < currentStageIdx || data.stage === 'ITERATION_COMPLETE') {
-                            icon = '✓';
-                            statusClass = 'step-status-completed';
-                        } else if (idx === currentStageIdx) {
-                            icon = '►';
-                            statusClass = 'step-status-active';
-                        }
-                        return `<div class="pipeline-step ${statusClass}"><span class="step-icon">${icon}</span> ${s.label}</div>`;
-                    }).join('')}
-                </div>
-                <table class="branch-table">
-                    <thead>
-                        <tr><th>Branch</th><th>Status</th><th>Score</th></tr>
-                    </thead>
-                    <tbody>
-                        ${branchTableRows || '<tr><td colspan="3" style="text-align:center;color:var(--text-secondary)">No branches yet</td></tr>'}
-                    </tbody>
-                </table>
-                <div class="active-llm-panel">
-                    <div class="llm-info-row">
-                        <span class="llm-label">Active Model:</span>
-                        <span>${data.currentModel || 'local'}</span>
-                    </div>
-                    <div class="llm-info-row">
-                        <span class="llm-label">Task:</span>
-                        <span>${data.currentTask || 'Initializing...'}</span>
-                    </div>
-                    <div class="llm-info-row">
-                        <span class="llm-label">Elapsed:</span>
-                        <span>${minutes}:${seconds}</span>
-                    </div>
-                </div>
-                </div>
-            `;
-        } catch(e) { content.innerHTML = `<div class="bubble error">Failed to parse Progress: ${e.message}</div>`; }
-    }
-};
+.side-panel {
+    position: relative;
+    background: #fff;
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: width 0.3s ease;
+}
+
+#side-panel {
+    width: 320px;
+}
+
+#cognitive-panel {
+    width: 0; /* Default closed, will be opened via JS or manually */
+    border-left: 1px solid var(--border);
+    background: #f1f5f9; /* Match cognitive-state-content background */
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+#cognitive-state-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+}
+
+#tree-panel {
+    width: 0;
+    border-left: 1px solid var(--border);
+    background: #fafafa;
+    transition: width 0.3s ease;
+    overflow: auto; /* Handle both vertical and horizontal scroll */
+}
+
+/* HTML Tree Visualization */
+#tree-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    min-width: 100%;
+    box-sizing: border-box;
+    flex: 1;
+}
+
+.tree-node {
+    width: 32px;
+    height: auto;
+    min-height: 32px;
+    padding: 4px 2px;
+    border: 1.5px solid #7aa6ff;
+    border-radius: 4px;
+    background: #ffffff;
+    text-align: center;
+    overflow: hidden;
+    margin: 2px 0;
+    box-shadow: 0 1px 3px rgba(0,0,0,.05);
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    box-sizing: border-box;
+}
+
+.tree-node.dimension {
+    width: 64px;
+    background: #f0f7ff;
+    border-color: #3b82f6;
+}
+
+.tree-node.proposal {
+    background: #ffffff;
+    border-color: #e2e8f0;
+}
+
+.tree-node.kept {
+    background: #f0fdf4 !important;
+    border-color: #22c55e !important;
+    color: #166534 !important;
+}
+
+/* Mode-based colors */
+.tree-node.simple_chat {
+    background: #f5f3ff; /* Light purple */
+    border-color: #8b5cf6;
+}
+
+.tree-node.hybrid_manual_export, .tree-node.mediated {
+    background: #fff7ed; /* Light orange */
+    border-color: #f97316;
+}
+
+.tree-node.self_dev_mode {
+    background: #ecfeff; /* Light cyan */
+    border-color: #06b6d4;
+}
+
+.tree-node.assisted_coding {
+    background: #fefce8; /* Light yellow */
+    border-color: #eab308;
+}
+
+.tree-node.darwin_mode {
+    background: #f8fafc; /* Light slate */
+    border-color: #64748b;
+}
+
+.tree-node.intent_reconstruction {
+    background: #fff1f2; /* Light rose */
+    border-color: #f43f5e;
+}
+
+.tree-node .node-title {
+    padding: 0;
+    font-weight: bold;
+    font-size: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.tree-node .node-body {
+    display: none; /* Hide detailed body for compactness */
+}
+
+
+.tree-node.winner {
+    background: #eff6ff !important;
+    border-color: #3b82f6 !important;
+    color: #1e40af !important;
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
+    z-index: 2;
+}
+
+.tree-node.failed {
+    background: #fff5f5 !important;
+    border-color: #feb2b2 !important;
+    color: #9b2c2c !important;
+}
+
+.tree-node .winner-label {
+    display: none; /* Icon instead */
+}
+
+.tree-vline {
+    width: 1.5px;
+    height: 12px;
+    background: #cbd5e1;
+    flex-shrink: 0;
+}
+
+.tree-hline {
+    height: 2px;
+    background: #cbd5e1;
+    margin: 0 10px;
+}
+
+.tree-children {
+    display: flex;
+    justify-content: center;
+    position: relative;
+    padding-top: 12px;
+}
+
+.tree-children::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 1.5px;
+    height: 12px;
+    background: #cbd5e1;
+}
+
+.tree-child {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 3px;
+    position: relative;
+}
+
+/* Horizontal connectors */
+.tree-child::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1.5px;
+    background: #cbd5e1;
+}
+
+.tree-child:first-child::before {
+    left: 50%;
+}
+
+.tree-child:last-child::before {
+    right: 50%;
+}
+
+.tree-child:only-child::before {
+    display: none;
+}
+
+.resize-handle {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    cursor: col-resize;
+    z-index: 100;
+    transition: background-color 0.2s;
+}
+.resize-handle:hover {
+    background-color: #3b82f6;
+}
+
+.side-panel-header {
+    padding: 10px;
+    background: #f8fafc;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.side-panel-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.side-panel-actions {
+    display: flex;
+    gap: 6px;
+}
+.panel-btn {
+    background: none;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    padding: 4px;
+    cursor: pointer;
+    color: #64748b;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+.panel-btn:hover {
+    background: #f1f5f9;
+    color: #3b82f6;
+    border-color: #3b82f6;
+}
+
+.search-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+.search-input {
+    width: 100%;
+    padding: 4px 8px 4px 24px;
+    font-size: 11px;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    outline: none;
+}
+.search-input:focus {
+    border-color: #3b82f6;
+}
+.search-icon {
+    position: absolute;
+    left: 6px;
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+.file-stack-item {
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    margin-bottom: 6px;
+    background: #fff;
+    overflow: hidden;
+    transition: box-shadow 0.2s;
+}
+.file-stack-item:hover {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.file-stack-item.newly-created {
+    border-color: #22c55e;
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.2);
+    background: #f0fdf4;
+}
+.file-stack-item.active-file {
+    border-color: #3b82f6;
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.3);
+}
+.file-info {
+    padding: 8px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    background: #fff;
+    user-select: none;
+}
+.file-info:hover {
+    background: #f8fafc;
+}
+.file-status {
+    font-size: 10px;
+    font-weight: 900;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 3px;
+}
+.file-status.modified { background: #fef3c7; color: #92400e; }
+.file-status.added { background: #dcfce7; color: #166534; }
+.file-status.deleted { background: #fee2e2; color: #991b1b; }
+
+.file-icon { font-size: 14px; }
+.file-details {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+}
+.file-name {
+    font-size: 11px;
+    font-weight: 600;
+    color: #1e293b;
+}
+.file-path {
+    font-size: 9px;
+    color: #64748b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.expand-icon {
+    font-size: 10px;
+    color: #94a3b8;
+    transition: transform 0.2s;
+}
+.file-stack-item.expanded .expand-icon {
+    transform: rotate(90deg);
+}
+
+.file-diff-inline {
+    border-top: 1px solid #f1f5f9;
+    background: #f8fafc;
+    display: none;
+}
+.file-stack-item.expanded .file-diff-inline {
+    display: block;
+}
+
+.diff-line {
+    display: flex;
+    font-family: 'Fira Code', 'JetBrains Mono', monospace;
+    font-size: 11px;
+    line-height: 1.4;
+    white-space: pre;
+}
+.line-num {
+    width: 30px;
+    text-align: right;
+    padding-right: 8px;
+    color: #94a3b8;
+    user-select: none;
+    background: #f1f5f9;
+    border-right: 1px solid #e2e8f0;
+}
+.line-content {
+    padding-left: 8px;
+    flex: 1;
+}
+.diff-line.added { background: #e6ffed; }
+.diff-line.added .line-content { color: #22863a; }
+.diff-line.deleted { background: #ffeef0; }
+.diff-line.deleted .line-content { color: #cb2431; }
+.diff-line.hunk-header { background: #f1f8ff; color: #005cc5; font-weight: bold; }
+
+#context-menu {
+    display: none;
+    position: fixed;
+    background: white;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+    z-index: 2000;
+    font-size: 11px;
+    padding: 4px 0;
+    border-radius: 6px;
+    min-width: 160px;
+}
+.menu-item {
+    padding: 6px 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #334155;
+}
+.menu-item:hover {
+    background: #f1f5f9;
+    color: #2563eb;
+}
+.menu-separator {
+    height: 1px;
+    background: #f1f5f9;
+    margin: 4px 0;
+}
+.menu-icon { width: 14px; text-align: center; }
+
+/* Cognitive State Tags */
+.trait-tag {
+    font-size: 9px;
+    padding: 2px 6px;
+    background: #fff;
+    border: 1px solid #cbd5e1;
+    white-space: nowrap;
+    border-radius: 4px;
+    color: #475569;
+    display: inline-block;
+}
+
+.trait-tag.active {
+    background: #3b82f6;
+    color: white;
+    border-color: #2563eb;
+}

@@ -89,14 +89,13 @@
             </div>
             <div id="dimension-list-container" style="padding: 4px 10px; background: #e2e8f0; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 4px;">
                 <span style="font-weight: bold; font-size: 10px; color: #64748b; text-transform: uppercase;">Technical Dimensions</span>
-				<div style="display: flex; gap: 4px;">
-				    <input type="text" id="add-dimension-input" placeholder="Add dimension..." style="flex: 1; font-size: 10px; padding: 2px 6px; border: 1px solid #cbd5e1; border-radius: 4px;">
-				    <button onclick="window.ChatApp.Actions.addDimension()" style="font-size: 10px; padding: 0 6px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer;">+</button>
-				 </div>
-				<div id="dimension-list" style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none;">
+                <div id="dimension-list" style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none;">
                     <!-- Dimensions will be rendered here -->
                 </div>
-                
+                <div style="display: flex; gap: 4px;">
+                    <input type="text" id="add-dimension-input" placeholder="Add dimension..." style="flex: 1; font-size: 10px; padding: 2px 6px; border: 1px solid #cbd5e1; border-radius: 4px;">
+                    <button onclick="window.ChatApp.Actions.addDimension()" style="font-size: 10px; padding: 0 6px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer;">+</button>
+                </div>
             </div>
             <div id="cognitive-state-content" style="padding: 10px; border-bottom: 1px solid var(--border); background: #f1f5f9;">
                 <!-- Cognitive state will be rendered here -->

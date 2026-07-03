@@ -330,8 +330,8 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 			EvolutionProgressPublisher.startIteration(context, 0, 0, "alpha", getMinIterationLimit(context), getMaxIterationLimit(context), getMinBranchingLimit(context, getExpansionValue()), getMaxBranchingLimit(context, getExpansionValue()));
 
 		// FORCE COGNITIVE SYNC: Trigger cognitive state update to reflect evolutionary capability
-		if (getSessionContainer() instanceof eu.kalafatic.evolution.controller.orchestration.SessionContext) {
-			getSessionContainer().getCognitiveState().processInteraction(request);
+		if (getSessionContainer() != null && getSessionContainer().getCognitiveState() != null) {
+			getSessionContainer().getCognitiveState().sync();
 		}
 
 			context.log("[DARWIN] Strategic Initialization: " + request);
@@ -846,6 +846,11 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 		EvolutionProgressPublisher.startIteration(context, state.getIterationCount() + 1, generation, lineage,
 				getMinIterationLimit(context), getMaxIterationLimit(context), getMinBranchingLimit(context, getExpansionValue()), getMaxBranchingLimit(context, getExpansionValue()));
 		EvolutionProgressPublisher.updateStage(context, EvolutionStage.ANALYSIS);
+
+		// SYNC COGNITIVE STATE: Ensure UI reflects dimensions at start of every evolutionary step
+		if (getSessionContainer() != null && getSessionContainer().getCognitiveState() != null) {
+			getSessionContainer().getCognitiveState().sync();
+		}
 
 		// ============================================================
 		// 3. TERMINAL PHASE CHECK

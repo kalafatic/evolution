@@ -55,6 +55,14 @@ public class CognitiveStatePublisher {
         if (Math.abs(current.getConfidence() - last.getConfidence()) > CONFIDENCE_THRESHOLD) return true;
         if (Math.abs(current.getVelocity() - last.getVelocity()) > 0.5) return true;
 
+        // Emit on dimension change
+        if (current.getDimensions() != null && last.getDimensions() != null) {
+            if (current.getDimensions().size() != last.getDimensions().size()) return true;
+            if (!current.getDimensions().equals(last.getDimensions())) return true;
+        } else if (current.getDimensions() != last.getDimensions()) {
+            return true;
+        }
+
         return false;
     }
 

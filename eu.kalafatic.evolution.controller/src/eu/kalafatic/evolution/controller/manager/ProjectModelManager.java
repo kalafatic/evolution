@@ -429,6 +429,9 @@ public class ProjectModelManager {
             if (modeList.contains(AiMode.MEDIATED)) {
                 include = true; // Include everything for mediated for now
             }
+            if (modeList.contains(AiMode.INTENT) && info.isLocal() && !isProxy(info)) {
+                include = true;
+            }
 
             if (include) {
                 modelNames.add(info.getName());
