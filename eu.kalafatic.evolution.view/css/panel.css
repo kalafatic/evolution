@@ -67,10 +67,15 @@
     box-sizing: border-box;
 }
 
-.tree-node.dimension {
+.tree-node.dimension, .tree-node.intent_reconstruction {
     width: 64px;
     background: #f0f7ff;
     border-color: #3b82f6;
+}
+
+.tree-node.intent_reconstruction {
+    background: #fff1f2;
+    border-color: #f43f5e;
 }
 
 .tree-node.proposal {
@@ -108,11 +113,6 @@
 .tree-node.darwin_mode {
     background: #f8fafc; /* Light slate */
     border-color: #64748b;
-}
-
-.tree-node.intent_reconstruction {
-    background: #fff1f2; /* Light rose */
-    border-color: #f43f5e;
 }
 
 .tree-node .node-title {

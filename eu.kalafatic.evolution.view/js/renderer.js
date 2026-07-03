@@ -428,7 +428,13 @@ window.ChatApp.Renderer = {
         const cogPanel = document.getElementById('cognitive-panel');
         const sidePanel = document.getElementById('side-panel');
         const content = document.getElementById('progress-content');
+        const cogContent = document.getElementById('cognitive-state-content');
+        const dimList = document.getElementById('dimension-list');
+
         if (cogPanel) cogPanel.style.width = '0px';
+        if (cogContent) cogContent.innerHTML = '<div style="text-align: center; color: #94a3b8; padding: 10px; font-size: 11px;">Initializing Engine...</div>';
+        if (dimList) dimList.innerHTML = '';
+
         // sidePanel might contain changes, so we don't necessarily close it entirely if we only want to reset progress
         if (content) {
             content.innerHTML = '<div style="text-align: center; color: #94a3b8; font-size: 11px;">Evolution tracking inactive.</div>';
@@ -491,13 +497,33 @@ window.ChatApp.Renderer = {
         sortedIterKeys.forEach(key => {
             const data = iterations[key];
             const iterNodeId = 'iter-' + data.iterationCount + '_' + (data.lineage || 'alpha');
+
+            // 1. Create discovery chain: Intent -> Dimension -> Iteration
+            const intentNode = {
+                id: iterNodeId + '_intent',
+                type: 'intent',
+                data: { goal: data.goal || 'Evolutionary Goal' },
+                children: []
+            };
+
+            const dimNode = {
+                id: iterNodeId + '_dim',
+                type: 'dimension',
+                data: { id: data.currentDimension, description: data.currentDimensionDescription },
+                children: []
+            };
+
             const iterNode = {
                 id: iterNodeId,
                 type: 'iteration',
                 data: data,
                 children: []
             };
-            iterToNode[key] = iterNode;
+
+            intentNode.children.push(dimNode);
+            dimNode.children.push(iterNode);
+
+            iterToNode[key] = iterNode; // Map to iteration node for branch discovery
 
             const branches = data.branches || [];
             branches.forEach(b => {
@@ -513,22 +539,22 @@ window.ChatApp.Renderer = {
                 iterNode.children.push(branchNode);
             });
 
-            // Connect iteration to its parent branch if possible
+            // 2. Connect chain to its parent branch if possible
             if (data.parentId && data.parentId !== 'ROOT') {
                 let parentFound = false;
                 // Look back through all previous iterations to find the parent branch
                 for (let prevKey of sortedIterKeys) {
                     const prevIterNode = iterToNode[prevKey];
-                    const parentBranch = prevIterNode.children.find(bn => bn.id === data.parentId);
+                    const parentBranch = (prevIterNode.children || []).find(bn => bn.id === data.parentId);
                     if (parentBranch) {
-                        parentBranch.children.push(iterNode);
+                        parentBranch.children.push(intentNode);
                         parentFound = true;
                         break;
                     }
                 }
-                if (!parentFound) rootNodes.push(iterNode);
+                if (!parentFound) rootNodes.push(intentNode);
             } else {
-                rootNodes.push(iterNode);
+                rootNodes.push(intentNode);
             }
         });
 
@@ -542,6 +568,22 @@ window.ChatApp.Renderer = {
                 html += `
                     <div class="tree-node" title="${window.ChatApp.Utils.escapeHtml(tooltip)}">
                         <div class="node-title">I${d.iterationCount}</div>
+                    </div>
+                `;
+            } else if (node.type === 'intent') {
+                const d = node.data;
+                const tooltip = `Evolutionary Goal: ${d.goal}`;
+                html += `
+                    <div class="tree-node intent_reconstruction" title="${window.ChatApp.Utils.escapeHtml(tooltip)}">
+                        <div class="node-title">INTENT</div>
+                    </div>
+                `;
+            } else if (node.type === 'dimension') {
+                const d = node.data;
+                const tooltip = `Dimension: ${d.id}\nDescription: ${d.description || 'N/A'}`;
+                html += `
+                    <div class="tree-node dimension" title="${window.ChatApp.Utils.escapeHtml(tooltip)}">
+                        <div class="node-title">${window.ChatApp.Utils.escapeHtml(d.id || 'DIM')}</div>
                     </div>
                 `;
             } else {
@@ -579,6 +621,7 @@ window.ChatApp.Renderer = {
     updateCognitiveStatePanel: function(messages) {
         const panel = document.getElementById('cognitive-panel');
         const content = document.getElementById('cognitive-state-content');
+        const dimList = document.getElementById('dimension-list');
         if (!panel || !content) return;
 
         const cogMessages = (messages || []).filter(m => (m.agentType || '').toLowerCase().includes('cognitive-state-changed'));
@@ -593,6 +636,14 @@ window.ChatApp.Renderer = {
 
         try {
             const data = JSON.parse(lastMsg.text);
+
+            // Update technical dimensions list
+            if (dimList) {
+                dimList.innerHTML = (data.dimensions || []).map(d =>
+                    `<span class="trait-tag active" style="cursor: help;" title="Active Technical Dimension">${window.ChatApp.Utils.escapeHtml(d)}</span>`
+                ).join('');
+            }
+
             const confPercent = Math.round((data.confidence || 0) * 100);
             const stabilityPercent = Math.round((data.stability || 0) * 100);
 
