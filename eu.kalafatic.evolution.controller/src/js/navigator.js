@@ -368,7 +368,12 @@ window.showPopup = function(title, items) {
         const ul = document.createElement("ul");
         items.forEach(item => {
             const li = document.createElement("li");
-            li.textContent = item;
+            if (item.trim().startsWith('<')) {
+                li.innerHTML = item;
+                li.style.listStyle = "none";
+            } else {
+                li.textContent = item;
+            }
             ul.appendChild(li);
         });
         content.appendChild(ul);
