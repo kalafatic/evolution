@@ -100,6 +100,7 @@ public class IntentExpansionEngine extends BaseAiAgent {
                "      \"description\": \"string\",\n" +
                "      \"abstractionLevel\": \"PHILOSOPHY|STRATEGY|ARCHITECTURE|DESIGN|IMPLEMENTATION|SYNTAX\",\n" +
                "      \"semanticDomain\": \"EXECUTION|PERSISTENCE|RESILIENCE|COMMUNICATION|STRUCTURE|VALIDATION\",\n" +
+               "      \"significanceScore\": float,\n" +
                "      \"ambiguityScore\": float,\n" +
                "      \"pressure\": {\n" +
                "        \"ambiguity\": float, \"extensibility\": float, \"scalability\": float, \"failureExposure\": float,\n" +

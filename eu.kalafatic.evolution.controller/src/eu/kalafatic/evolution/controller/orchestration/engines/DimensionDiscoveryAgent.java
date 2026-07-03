@@ -54,7 +54,9 @@ public class DimensionDiscoveryAgent extends BaseAiAgent {
                "      \"description\": \"description of the decision point\",\n" +
                "      \"abstractionLevel\": \"LEVEL\",\n" +
                "      \"semanticDomain\": \"DOMAIN\",\n" +
-               "      \"significanceScore\": float (0.0-1.0)\n" +
+               "      \"significanceScore\": float (0.0-1.0),\n" +
+               "      \"ambiguityScore\": float (0.0-1.0),\n" +
+               "      \"evolutionaryPressure\": float (0.0-1.0)\n" +
                "    }\n" +
                "  ]\n" +
                "}";
@@ -142,6 +144,8 @@ public class DimensionDiscoveryAgent extends BaseAiAgent {
                     domainResolver.resolve(dimObj.optString("semanticDomain", "EXECUTION"))
                 );
                 dim.setSignificanceScore(dimObj.optDouble("significanceScore", 0.5));
+                dim.setAmbiguityScore(dimObj.optDouble("ambiguityScore", 0.0));
+                dim.setEvolutionaryPressure(dimObj.optDouble("evolutionaryPressure", 0.0));
                 discovered.add(dim);
             }
         }
