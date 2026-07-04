@@ -79,6 +79,9 @@ public class EclipseGitEvoTool {
         public final String id;
         public String defaultRemote;
         public String defaultLocalPath;
+        public String defaultBranch = "master";
+        public String defaultUsername = "admin";
+        public String defaultPassword = "";
 
         public RepoConfig(String id, String remote, String local) {
             this.id = id;
@@ -153,6 +156,24 @@ public class EclipseGitEvoTool {
         return config.getProperty(id + ".remote", rc.defaultRemote);
     }
 
+    public static String getRepositoryBranch(String id) {
+        RepoConfig rc = registry.get(id);
+        if (rc == null) return null;
+        return config.getProperty(id + ".branch", rc.defaultBranch);
+    }
+
+    public static String getRepositoryUsername(String id) {
+        RepoConfig rc = registry.get(id);
+        if (rc == null) return null;
+        return config.getProperty(id + ".username", rc.defaultUsername);
+    }
+
+    public static String getRepositoryPassword(String id) {
+        RepoConfig rc = registry.get(id);
+        if (rc == null) return null;
+        return config.getProperty(id + ".password", rc.defaultPassword);
+    }
+
     public static GitOpResult changeRepositoryLocation(String id, String newPath) {
         if (!registry.containsKey(id)) return new GitOpResult(OpStatus.FAILED, "Unknown repo: " + id);
         config.setProperty(id + ".local", newPath);
@@ -165,6 +186,21 @@ public class EclipseGitEvoTool {
         config.setProperty(id + ".remote", newUrl);
         saveConfiguration();
         return new GitOpResult(OpStatus.SUCCESS, "Remote URL updated for " + id);
+    }
+
+    public static GitOpResult changeBranch(String id, String branch) {
+        if (!registry.containsKey(id)) return new GitOpResult(OpStatus.FAILED, "Unknown repo: " + id);
+        config.setProperty(id + ".branch", branch);
+        saveConfiguration();
+        return new GitOpResult(OpStatus.SUCCESS, "Branch updated for " + id);
+    }
+
+    public static GitOpResult changeCredentials(String id, String user, String pass) {
+        if (!registry.containsKey(id)) return new GitOpResult(OpStatus.FAILED, "Unknown repo: " + id);
+        config.setProperty(id + ".username", user);
+        config.setProperty(id + ".password", pass);
+        saveConfiguration();
+        return new GitOpResult(OpStatus.SUCCESS, "Credentials updated for " + id);
     }
 
     public static GitOpResult removeRepository(String id) {
@@ -294,6 +330,10 @@ public class EclipseGitEvoTool {
         File configFile = getConfigFile();
         config.setProperty(AUTO_CLONE_KEY, String.valueOf(autoClone));
         config.setProperty(AUTO_REGISTER_KEY, String.valueOf(autoRegister));
+
+        // Ensure all registered repo configs that might have been updated are reflected in the properties
+        // This is handled by the changeXXX methods which update 'config' directly.
+
         try (FileOutputStream out = new FileOutputStream(configFile)) {
             config.store(out, "Evo Git Tool Settings");
         } catch (IOException e) { log("Failed to save configuration: " + e.getMessage()); }

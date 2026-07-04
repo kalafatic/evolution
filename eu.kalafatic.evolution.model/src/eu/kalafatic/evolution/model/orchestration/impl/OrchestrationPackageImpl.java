@@ -86,6 +86,26 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	@Override
+	public EAttribute getServerSettings_McpEnabled() {
+		return (EAttribute)serverSettingsEClass.getEStructuralFeatures().get(3);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getServerSettings_McpPort() {
+		return (EAttribute)serverSettingsEClass.getEStructuralFeatures().get(4);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	private EClass forgeSessionEClass = null;
 
 	/**
@@ -3829,17 +3849,12 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
-	public EReference getForgeSession_ModelState() {
+	public EReference getForgeSession_Git() {
 		return (EReference)forgeSessionEClass.getEStructuralFeatures().get(7);
 	}
 
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
 	@Override
-	public EReference getForgeSession_Experiments() {
+	public EReference getForgeSession_ModelState() {
 		return (EReference)forgeSessionEClass.getEStructuralFeatures().get(8);
 	}
 
@@ -3849,8 +3864,18 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
-	public EReference getForgeSession_Snapshots() {
+	public EReference getForgeSession_Experiments() {
 		return (EReference)forgeSessionEClass.getEStructuralFeatures().get(9);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getForgeSession_Snapshots() {
+		return (EReference)forgeSessionEClass.getEStructuralFeatures().get(10);
 	}
 
 	/**
@@ -4426,6 +4451,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEAttribute(forgeSessionEClass, FORGE_SESSION__STATUS);
 		createEAttribute(forgeSessionEClass, FORGE_SESSION__ACTIVE_MODEL_ID);
 		createEAttribute(forgeSessionEClass, FORGE_SESSION__SELECTED_MODEL_TYPE);
+		createEReference(forgeSessionEClass, FORGE_SESSION__GIT);
 		createEReference(forgeSessionEClass, FORGE_SESSION__MODEL_STATE);
 		createEReference(forgeSessionEClass, FORGE_SESSION__EXPERIMENTS);
 		createEReference(forgeSessionEClass, FORGE_SESSION__SNAPSHOTS);
@@ -4857,6 +4883,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEAttribute(getForgeSession_Status(), this.getForgeStatus(), "status", null, 0, 1, ForgeSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getForgeSession_ActiveModelId(), ecorePackage.getEString(), "activeModelId", null, 0, 1, ForgeSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getForgeSession_SelectedModelType(), ecorePackage.getEString(), "selectedModelType", null, 0, 1, ForgeSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getForgeSession_Git(), this.getGit(), null, "git", null, 0, 1, ForgeSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getForgeSession_ModelState(), this.getSessionModelState(), null, "modelState", null, 0, 1, ForgeSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getForgeSession_Experiments(), this.getSessionExperiment(), null, "experiments", null, 0, -1, ForgeSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getForgeSession_Snapshots(), this.getSessionSnapshot(), null, "snapshots", null, 0, -1, ForgeSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);

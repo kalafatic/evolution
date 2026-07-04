@@ -61,8 +61,12 @@ public class McpToolsGroup extends AEvoGroup {
         toolsTable.removeAll();
     }
 
+    public boolean isDisposed() {
+        return toolsTable == null || toolsTable.isDisposed();
+    }
+
     public void addItem(String name, String desc, String schema) {
-        if (toolsTable.isDisposed()) return;
+        if (isDisposed()) return;
         TableItem item = new TableItem(toolsTable, SWT.NONE);
         item.setText(0, name);
         item.setText(1, desc);

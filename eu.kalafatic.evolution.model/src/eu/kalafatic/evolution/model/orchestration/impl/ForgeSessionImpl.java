@@ -14,6 +14,7 @@ import org.eclipse.emf.ecore.util.InternalEList;
 
 import eu.kalafatic.evolution.model.orchestration.ForgeSession;
 import eu.kalafatic.evolution.model.orchestration.ForgeStatus;
+import eu.kalafatic.evolution.model.orchestration.Git;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 import eu.kalafatic.evolution.model.orchestration.SessionExperiment;
 import eu.kalafatic.evolution.model.orchestration.SessionModelState;
@@ -34,6 +35,7 @@ public class ForgeSessionImpl extends MinimalEObjectImpl.Container implements Fo
 	protected String activeModelId = ACTIVE_MODEL_ID_EDEFAULT;
 	protected static final String SELECTED_MODEL_TYPE_EDEFAULT = null;
 	protected String selectedModelType = SELECTED_MODEL_TYPE_EDEFAULT;
+	protected Git git;
 	protected SessionModelState modelState;
 	protected EList<SessionExperiment> experiments;
 	protected EList<SessionSnapshot> snapshots;
@@ -139,6 +141,36 @@ public class ForgeSessionImpl extends MinimalEObjectImpl.Container implements Fo
 	}
 
 	@Override
+	public Git getGit() {
+		return git;
+	}
+
+	public NotificationChain basicSetGit(Git newGit, NotificationChain msgs) {
+		Git oldGit = git;
+		git = newGit;
+		if (eNotificationRequired()) {
+			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, OrchestrationPackage.FORGE_SESSION__GIT, oldGit, newGit);
+			if (msgs == null) msgs = notification; else msgs.add(notification);
+		}
+		return msgs;
+	}
+
+	@Override
+	public void setGit(Git newGit) {
+		if (newGit != git) {
+			NotificationChain msgs = null;
+			if (git != null)
+				msgs = ((InternalEObject)git).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.FORGE_SESSION__GIT, null, msgs);
+			if (newGit != null)
+				msgs = ((InternalEObject)newGit).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.FORGE_SESSION__GIT, null, msgs);
+			msgs = basicSetGit(newGit, msgs);
+			if (msgs != null) msgs.dispatch();
+		}
+		else if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.FORGE_SESSION__GIT, newGit, newGit));
+	}
+
+	@Override
 	public SessionModelState getModelState() {
 		return modelState;
 	}
@@ -187,6 +219,8 @@ public class ForgeSessionImpl extends MinimalEObjectImpl.Container implements Fo
 	@Override
 	public NotificationChain eInverseRemove(InternalEObject otherEnd, int featureID, NotificationChain msgs) {
 		switch (featureID) {
+			case OrchestrationPackage.FORGE_SESSION__GIT:
+				return basicSetGit(null, msgs);
 			case OrchestrationPackage.FORGE_SESSION__MODEL_STATE:
 				return basicSetModelState(null, msgs);
 			case OrchestrationPackage.FORGE_SESSION__EXPERIMENTS:
@@ -214,6 +248,8 @@ public class ForgeSessionImpl extends MinimalEObjectImpl.Container implements Fo
 				return getActiveModelId();
 			case OrchestrationPackage.FORGE_SESSION__SELECTED_MODEL_TYPE:
 				return getSelectedModelType();
+			case OrchestrationPackage.FORGE_SESSION__GIT:
+				return getGit();
 			case OrchestrationPackage.FORGE_SESSION__MODEL_STATE:
 				return getModelState();
 			case OrchestrationPackage.FORGE_SESSION__EXPERIMENTS:
@@ -248,6 +284,9 @@ public class ForgeSessionImpl extends MinimalEObjectImpl.Container implements Fo
 				return;
 			case OrchestrationPackage.FORGE_SESSION__SELECTED_MODEL_TYPE:
 				setSelectedModelType((String)newValue);
+				return;
+			case OrchestrationPackage.FORGE_SESSION__GIT:
+				setGit((Git)newValue);
 				return;
 			case OrchestrationPackage.FORGE_SESSION__MODEL_STATE:
 				setModelState((SessionModelState)newValue);
@@ -288,6 +327,9 @@ public class ForgeSessionImpl extends MinimalEObjectImpl.Container implements Fo
 			case OrchestrationPackage.FORGE_SESSION__SELECTED_MODEL_TYPE:
 				setSelectedModelType(SELECTED_MODEL_TYPE_EDEFAULT);
 				return;
+			case OrchestrationPackage.FORGE_SESSION__GIT:
+				setGit((Git)null);
+				return;
 			case OrchestrationPackage.FORGE_SESSION__MODEL_STATE:
 				setModelState((SessionModelState)null);
 				return;
@@ -318,6 +360,8 @@ public class ForgeSessionImpl extends MinimalEObjectImpl.Container implements Fo
 				return ACTIVE_MODEL_ID_EDEFAULT == null ? activeModelId != null : !ACTIVE_MODEL_ID_EDEFAULT.equals(activeModelId);
 			case OrchestrationPackage.FORGE_SESSION__SELECTED_MODEL_TYPE:
 				return SELECTED_MODEL_TYPE_EDEFAULT == null ? selectedModelType != null : !SELECTED_MODEL_TYPE_EDEFAULT.equals(selectedModelType);
+			case OrchestrationPackage.FORGE_SESSION__GIT:
+				return git != null;
 			case OrchestrationPackage.FORGE_SESSION__MODEL_STATE:
 				return modelState != null;
 			case OrchestrationPackage.FORGE_SESSION__EXPERIMENTS:

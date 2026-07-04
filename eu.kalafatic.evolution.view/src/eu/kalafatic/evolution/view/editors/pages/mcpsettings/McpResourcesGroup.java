@@ -63,8 +63,12 @@ public class McpResourcesGroup extends AEvoGroup {
         resourcesTable.removeAll();
     }
 
+    public boolean isDisposed() {
+        return resourcesTable == null || resourcesTable.isDisposed();
+    }
+
     public void addItem(String name, String uri, String mimeType, String desc) {
-        if (resourcesTable.isDisposed()) return;
+        if (isDisposed()) return;
         TableItem item = new TableItem(resourcesTable, SWT.NONE);
         item.setText(0, name);
         item.setText(1, uri);

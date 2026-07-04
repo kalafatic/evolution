@@ -3673,22 +3673,27 @@ public interface OrchestrationPackage extends EPackage {
 	/**
 	 * @generated
 	 */
-	int FORGE_SESSION__MODEL_STATE = 7;
+	int FORGE_SESSION__GIT = 7;
 
 	/**
 	 * @generated
 	 */
-	int FORGE_SESSION__EXPERIMENTS = 8;
+	int FORGE_SESSION__MODEL_STATE = 8;
 
 	/**
 	 * @generated
 	 */
-	int FORGE_SESSION__SNAPSHOTS = 9;
+	int FORGE_SESSION__EXPERIMENTS = 9;
 
 	/**
 	 * @generated
 	 */
-	int FORGE_SESSION_FEATURE_COUNT = 10;
+	int FORGE_SESSION__SNAPSHOTS = 10;
+
+	/**
+	 * @generated
+	 */
+	int FORGE_SESSION_FEATURE_COUNT = 11;
 
 	/**
 	 * @generated
@@ -7331,6 +7336,8 @@ public interface OrchestrationPackage extends EPackage {
 	/**
 	 * @generated
 	 */
+	EReference getForgeSession_Git();
+
 	EReference getForgeSession_ModelState();
 
 	/**
@@ -10271,6 +10278,8 @@ public interface OrchestrationPackage extends EPackage {
 		EAttribute FORGE_SESSION__ACTIVE_MODEL_ID = eINSTANCE.getForgeSession_ActiveModelId();
 
 		EAttribute FORGE_SESSION__SELECTED_MODEL_TYPE = eINSTANCE.getForgeSession_SelectedModelType();
+
+		EReference FORGE_SESSION__GIT = eINSTANCE.getForgeSession_Git();
 
 		EReference FORGE_SESSION__MODEL_STATE = eINSTANCE.getForgeSession_ModelState();
 
