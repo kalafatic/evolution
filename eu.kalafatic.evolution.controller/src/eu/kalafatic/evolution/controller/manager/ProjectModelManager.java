@@ -245,11 +245,17 @@ public class ProjectModelManager {
     }
 
     public void updateGitSettings(Orchestrator orchestrator, String url, String branch, String username, String password, String localPath) {
+        if (orchestrator == null) return;
         Git git = orchestrator.getGit();
         if (git == null) {
             git = OrchestrationFactory.eINSTANCE.createGit();
             orchestrator.setGit(git);
         }
+        updateGitSettings(git, url, branch, username, password, localPath);
+    }
+
+    public void updateGitSettings(Git git, String url, String branch, String username, String password, String localPath) {
+        if (git == null) return;
         git.setRepositoryUrl(url);
         git.setBranch(branch);
         git.setUsername(username);

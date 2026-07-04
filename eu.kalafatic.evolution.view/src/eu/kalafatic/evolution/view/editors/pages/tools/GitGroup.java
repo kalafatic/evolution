@@ -1,6 +1,8 @@
 package eu.kalafatic.evolution.view.editors.pages.tools;
 
 import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.jface.fieldassist.ControlDecoration;
+import org.eclipse.jface.fieldassist.FieldDecorationRegistry;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -13,29 +15,27 @@ import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.DirectoryDialog;
+import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
-import eu.kalafatic.evolution.model.orchestration.Git;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
-import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
+import eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool;
 import eu.kalafatic.evolution.view.util.GitRegistryHelper;
 import eu.kalafatic.utils.factories.GUIFactory;
 import java.io.File;
 import java.util.List;
 
 public class GitGroup extends AToolGroup {
+    private Combo repoSelector;
     private Text gitRepoText, gitBranchText, gitUsernameText, gitPasswordText;
     private Combo gitLocalPathText;
     private Text branchNameText, commitMsgText;
-    private Git git;
+    private ControlDecoration urlDecorator, pathDecorator;
     
-    private Text gitRepoTextEvo, gitBranchTextEvo, gitUsernameTextEvo, gitPasswordTextEvo;
-    private Combo gitLocalPathTextEvo;
-    private Text branchNameTextEvo, commitMsgTextEvo;
-    private Git gitEvo;
+    private String currentRepoId = EclipseGitEvoTool.REPO_EVOLUTION;
 
     public GitGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, Color successColor) {
         super(editor, orchestrator, successColor);
@@ -43,60 +43,55 @@ public class GitGroup extends AToolGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Git Tool Settings", 2, true);      
+        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Git Tool Settings", 1, true);
         
-        createGitControllsEvolution(GUIFactory.INSTANCE.createGroup(group, "Evolution (Codebase)", 3));
-        createGitControllsEvo(GUIFactory.INSTANCE.createGroup(group, "Evo (Self Development)", 3));
+        Group selectorGroup = GUIFactory.INSTANCE.createGroup(group, "Repository Selection", 2);
+        GUIFactory.INSTANCE.createLabel(selectorGroup, "Select Repository:");
+        repoSelector = new Combo(selectorGroup, SWT.READ_ONLY | SWT.DROP_DOWN);
+        repoSelector.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        for (String id : EclipseGitEvoTool.getRegisteredRepositoryIds()) {
+            repoSelector.add(id);
+        }
+        repoSelector.select(0);
+        repoSelector.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                updateModel();
+                currentRepoId = repoSelector.getText();
+                refreshUI();
+            }
+        });
+
+        createGitControls(GUIFactory.INSTANCE.createGroup(group, "Configuration", 3));
     }
 
-	private void createGitControllsEvolution(Composite composite) {
+	private void createGitControls(Composite composite) {
 		GUIFactory.INSTANCE.createLabel(composite, "Repository URL:");
         gitRepoText = GUIFactory.INSTANCE.createText(composite);
-        gitRepoText.setText(orchestrator.getGit() != null && orchestrator.getGit().getRepositoryUrl() != null ? orchestrator.getGit().getRepositoryUrl() : "");
+        urlDecorator = createErrorDecorator(gitRepoText, "URL cannot be empty");
         GUIFactory.INSTANCE.createEditButton(composite, gitRepoText);
 
         GUIFactory.INSTANCE.createLabel(composite, "Branch:");
         gitBranchText = GUIFactory.INSTANCE.createText(composite);
-        gitBranchText.setText(orchestrator.getGit() != null && orchestrator.getGit().getBranch() != null ? orchestrator.getGit().getBranch() : "");
         GUIFactory.INSTANCE.createEditButton(composite, gitBranchText);
 
         GUIFactory.INSTANCE.createLabel(composite, "Username:");
         gitUsernameText = GUIFactory.INSTANCE.createText(composite);
-        gitUsernameText.setText(orchestrator.getGit() != null && orchestrator.getGit().getUsername() != null ? orchestrator.getGit().getUsername() : "");
         GUIFactory.INSTANCE.createEditButton(composite, gitUsernameText);
 
         GUIFactory.INSTANCE.createLabel(composite, "Password:");
         gitPasswordText = GUIFactory.INSTANCE.createPasswordText(composite);
-        gitPasswordText.setText(orchestrator.getGit() != null && orchestrator.getGit().getPassword() != null ? orchestrator.getGit().getPassword() : "");
         GUIFactory.INSTANCE.createEditButton(composite, gitPasswordText);
 
         GUIFactory.INSTANCE.createLabel(composite, "Local Path:");
         gitLocalPathText = GUIFactory.INSTANCE.createCombo(composite);
+        pathDecorator = createErrorDecorator(gitLocalPathText, "Path cannot be empty");
+
         List<String> repos = ProjectModelManager.getInstance().getAvailableLocalRepositories();
         for (String r : repos) {
             gitLocalPathText.add(r);
         }
 
-        String initialLocalPath = orchestrator.getGit() != null && orchestrator.getGit().getLocalPath() != null ? orchestrator.getGit().getLocalPath() : "";
-        if (!initialLocalPath.isEmpty()) {
-            if (gitLocalPathText.indexOf(initialLocalPath) < 0) {
-                gitLocalPathText.add(initialLocalPath);
-            }
-            gitLocalPathText.setText(initialLocalPath);
-        } else if (!repos.isEmpty()) {
-            boolean found = false;
-            for (int i = 0; i < gitLocalPathText.getItemCount(); i++) {
-                String item = gitLocalPathText.getItem(i).toLowerCase();
-                if (item.contains("evolution") || item.contains("/evo")) {
-                    gitLocalPathText.select(i);
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                gitLocalPathText.select(0);
-            }
-        }
         Button browseBtn = GUIFactory.INSTANCE.createButton(composite, "Browse");
         browseBtn.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -105,9 +100,6 @@ public class GitGroup extends AToolGroup {
                 dialog.setText("Select Git Repository Folder");
                 String path = dialog.open();
                 if (path != null) {
-                    if (gitLocalPathText.indexOf(path) < 0) {
-                        gitLocalPathText.add(path);
-                    }
                     gitLocalPathText.setText(path);
                     updateModel();
                 }
@@ -116,18 +108,15 @@ public class GitGroup extends AToolGroup {
 
         GUIFactory.INSTANCE.createLabel(composite, "Branch Name:");
         branchNameText = GUIFactory.INSTANCE.createText(composite);
-        branchNameText.setText(orchestrator.getGit() != null && orchestrator.getGit().getBranchName() != null ? orchestrator.getGit().getBranchName() : "");
         GUIFactory.INSTANCE.createLabel(composite, "");
 
         GUIFactory.INSTANCE.createLabel(composite, "Commit Msg:");
         commitMsgText = GUIFactory.INSTANCE.createText(composite);
-        commitMsgText.setText(orchestrator.getGit() != null && orchestrator.getGit().getCommitMsg() != null ? orchestrator.getGit().getCommitMsg() : "");
         GUIFactory.INSTANCE.createLabel(composite, "");
 
         Composite btnComp = GUIFactory.INSTANCE.createComposite(composite);
         btnComp.setLayout(new GridLayout(6, false));
-        GridData btnGd = new GridData(SWT.FILL, SWT.CENTER, true, false, 3, 1);
-        btnComp.setLayoutData(btnGd);
+        btnComp.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 3, 1));
 
         Button createBtn = GUIFactory.INSTANCE.createButton(btnComp, "Create");
         createBtn.addSelectionListener(new SelectionAdapter() {
@@ -137,333 +126,128 @@ public class GitGroup extends AToolGroup {
                 String localPath = gitLocalPathText.getText();
                 if (localPath != null && !localPath.isEmpty()) {
                     File f = new File(localPath);
-                    if (!f.exists()) {
-                        f.mkdirs();
-                    }
+                    if (!f.exists()) f.mkdirs();
                     executeCommand("init", "git");
                     GitRegistryHelper.registerGitRepository(f);
                 }
             }
         });
 
-        Button branchBtn = GUIFactory.INSTANCE.createButton(btnComp, "New Branch");
-        branchBtn.addSelectionListener(new SelectionAdapter() {
+        GUIFactory.INSTANCE.createButton(btnComp, "New Branch").addSelectionListener(new SelectionAdapter() {
             @Override
-            public void widgetSelected(SelectionEvent e) {
-                executeCommand("BRANCH " + branchNameText.getText(), "git");
-            }
+            public void widgetSelected(SelectionEvent e) { executeCommand("BRANCH " + branchNameText.getText(), "git"); }
         });
 
-        Button commitBtn = GUIFactory.INSTANCE.createButton(btnComp, "Commit");
-        commitBtn.addSelectionListener(new SelectionAdapter() {
+        GUIFactory.INSTANCE.createButton(btnComp, "Commit").addSelectionListener(new SelectionAdapter() {
             @Override
-            public void widgetSelected(SelectionEvent e) {
-                executeCommand("COMMIT " + commitMsgText.getText(), "git");
-            }
+            public void widgetSelected(SelectionEvent e) { executeCommand("COMMIT " + commitMsgText.getText(), "git"); }
         });
 
-        Button pullBtn = GUIFactory.INSTANCE.createButton(btnComp, "Pull");
-        pullBtn.addSelectionListener(new SelectionAdapter() {
+        GUIFactory.INSTANCE.createButton(btnComp, "Pull").addSelectionListener(new SelectionAdapter() {
             @Override
-            public void widgetSelected(SelectionEvent e) {
-                executeCommand("PULL", "git");
-            }
+            public void widgetSelected(SelectionEvent e) { executeCommand("PULL", "git"); }
         });
 
-        Button pushBtn = GUIFactory.INSTANCE.createButton(btnComp, "Push");
-        pushBtn.addSelectionListener(new SelectionAdapter() {
+        GUIFactory.INSTANCE.createButton(btnComp, "Push").addSelectionListener(new SelectionAdapter() {
             @Override
-            public void widgetSelected(SelectionEvent e) {
-                executeCommand("PUSH", "git");
-            }
+            public void widgetSelected(SelectionEvent e) { executeCommand("PUSH", "git"); }
         });
 
-        Button testBtn = GUIFactory.INSTANCE.createButton(btnComp, "Test Git");
-        testBtn.addSelectionListener(new SelectionAdapter() {
+        GUIFactory.INSTANCE.createButton(btnComp, "Test Git").addSelectionListener(new SelectionAdapter() {
             @Override
-            public void widgetSelected(SelectionEvent e) {
-                testGit(git);
-            }
-        });
-	}
-	
-	private void createGitControllsEvo(Composite composite) {		
-		gitEvo = orchestrator.getSupervisorSettings().getGit();
-		
-		if (gitEvo==null) {
-			gitEvo = OrchestrationFactory.eINSTANCE.createGit();
-        	gitEvo.setRepositoryUrl("https://github.com/kalafatic/evo/");
-        	gitEvo.setBranch("master");
-            String userHome = System.getProperty("user.home");
-            gitEvo.setLocalPath(new File(new File(userHome, "git"), "evo").getAbsolutePath());
-            orchestrator.getSupervisorSettings().setGit(gitEvo);
-		}
-		
-		GUIFactory.INSTANCE.createLabel(composite, "Repository URL:");
-        gitRepoTextEvo = GUIFactory.INSTANCE.createText(composite);
-        gitRepoTextEvo.setText(orchestrator.getGit() != null && orchestrator.getGit().getRepositoryUrl() != null ? gitEvo.getRepositoryUrl() : "");
-        GUIFactory.INSTANCE.createEditButton(composite, gitRepoTextEvo);
-
-        GUIFactory.INSTANCE.createLabel(composite, "Branch:");
-        gitBranchTextEvo = GUIFactory.INSTANCE.createText(composite);
-        gitBranchTextEvo.setText(gitEvo != null && gitEvo.getBranch() != null ? gitEvo.getBranch() : "");
-        GUIFactory.INSTANCE.createEditButton(composite, gitBranchText);
-
-        GUIFactory.INSTANCE.createLabel(composite, "Username:");
-        gitUsernameTextEvo = GUIFactory.INSTANCE.createText(composite);
-        gitUsernameTextEvo.setText(gitEvo != null && gitEvo.getUsername() != null ? gitEvo.getUsername() : "");
-        GUIFactory.INSTANCE.createEditButton(composite, gitUsernameText);
-
-        GUIFactory.INSTANCE.createLabel(composite, "Password:");
-        gitPasswordTextEvo = GUIFactory.INSTANCE.createPasswordText(composite);
-        gitPasswordTextEvo.setText(gitEvo != null && gitEvo.getPassword() != null ? gitEvo.getPassword() : "");
-        GUIFactory.INSTANCE.createEditButton(composite, gitPasswordText);
-
-        GUIFactory.INSTANCE.createLabel(composite, "Local Path:");
-        gitLocalPathTextEvo = GUIFactory.INSTANCE.createCombo(composite);
-        List<String> repos = ProjectModelManager.getInstance().getAvailableLocalRepositories();
-        for (String r : repos) {
-            gitLocalPathTextEvo.add(r);
-        }
-
-        String initialLocalPath = gitEvo != null && gitEvo.getLocalPath() != null ? gitEvo.getLocalPath() : "";
-        if (!initialLocalPath.isEmpty()) {
-            if (gitLocalPathTextEvo.indexOf(initialLocalPath) < 0) {
-                gitLocalPathTextEvo.add(initialLocalPath);
-            }
-            gitLocalPathTextEvo.setText(initialLocalPath);
-        } else if (!repos.isEmpty()) {
-            boolean found = false;
-            for (int i = 0; i < gitLocalPathTextEvo.getItemCount(); i++) {
-                String item = gitLocalPathTextEvo.getItem(i).toLowerCase();
-                if (item.contains("evolution") || item.contains("/evo")) {
-                    gitLocalPathTextEvo.select(i);
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                gitLocalPathText.select(0);
-            }
-        }
-        Button browseBtnEvo = GUIFactory.INSTANCE.createButton(composite, "Browse");
-        browseBtnEvo.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                DirectoryDialog dialog = new DirectoryDialog(group.getShell());
-                dialog.setText("Select Git Repository Folder");
-                String path = dialog.open();
-                if (path != null) {
-                    if (gitLocalPathTextEvo.indexOf(path) < 0) {
-                        gitLocalPathTextEvo.add(path);
-                    }
-                    gitLocalPathTextEvo.setText(path);
-                    updateModel();
-                }
-            }
-        });
-
-        GUIFactory.INSTANCE.createLabel(composite, "Branch Name:");
-        branchNameTextEvo = GUIFactory.INSTANCE.createText(composite);
-        branchNameTextEvo.setText(gitEvo != null && gitEvo.getBranchName() != null ? gitEvo.getBranchName() : "");
-        GUIFactory.INSTANCE.createLabel(composite, "");
-
-        GUIFactory.INSTANCE.createLabel(composite, "Commit Msg:");
-        commitMsgTextEvo = GUIFactory.INSTANCE.createText(composite);
-        commitMsgTextEvo.setText(gitEvo != null && gitEvo.getCommitMsg() != null ? gitEvo.getCommitMsg() : "");
-        GUIFactory.INSTANCE.createLabel(composite, "");
-
-        Composite btnComp = GUIFactory.INSTANCE.createComposite(composite);
-        btnComp.setLayout(new GridLayout(6, false));
-        GridData btnGd = new GridData(SWT.FILL, SWT.CENTER, true, false, 3, 1);
-        btnComp.setLayoutData(btnGd);
-
-        Button createBtn = GUIFactory.INSTANCE.createButton(btnComp, "Create");
-        createBtn.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                updateModel();
-                String localPath = gitLocalPathTextEvo.getText();
-                if (localPath != null && !localPath.isEmpty()) {
-                    File f = new File(localPath);
-                    if (!f.exists()) {
-                        f.mkdirs();
-                    }
-                    executeCommand("init", "git");
-                    GitRegistryHelper.registerGitRepository(f);
-                }
-            }
-        });
-
-        Button branchBtn = GUIFactory.INSTANCE.createButton(btnComp, "New Branch");
-        branchBtn.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                executeCommand("BRANCH " + branchNameTextEvo.getText(), "git");
-            }
-        });
-
-        Button commitBtn = GUIFactory.INSTANCE.createButton(btnComp, "Commit");
-        commitBtn.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                executeCommand("COMMIT " + commitMsgTextEvo.getText(), "git");
-            }
-        });
-
-        Button pullBtn = GUIFactory.INSTANCE.createButton(btnComp, "Pull");
-        pullBtn.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                executeCommand("PULL", "git");
-            }
-        });
-
-        Button pushBtn = GUIFactory.INSTANCE.createButton(btnComp, "Push");
-        pushBtn.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                executeCommand("PUSH", "git");
-            }
-        });
-
-        Button testBtn = GUIFactory.INSTANCE.createButton(btnComp, "Test Git");
-        testBtn.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                testGit(gitEvo);
-            }
+            public void widgetSelected(SelectionEvent e) { testGit(); }
         });
 	}
 
-    private void testGit(Git git) {
+    private ControlDecoration createErrorDecorator(Control control, String description) {
+        ControlDecoration dec = new ControlDecoration(control, SWT.TOP | SWT.LEFT);
+        dec.setImage(FieldDecorationRegistry.getDefault().getFieldDecoration(FieldDecorationRegistry.DEC_ERROR).getImage());
+        dec.setDescriptionText(description);
+        dec.hide();
+        return dec;
+    }
+
+    private void testGit() {
         try {
-            File workingDir = getWorkingDir();
-            if (git != null && git.getLocalPath() != null && !git.getLocalPath().isEmpty()) {
-            	workingDir = new File(git.getLocalPath());
-            }
+            String path = gitLocalPathText.getText();
+            File workingDir = (path != null && !path.isEmpty()) ? new File(path) : new File(System.getProperty("java.io.tmpdir"));
+
             TaskContext context = new TaskContext(orchestrator, workingDir);
             eu.kalafatic.evolution.controller.tools.ShellTool shell = new eu.kalafatic.evolution.controller.tools.ShellTool();
 
             String gitVersion = shell.execute("git --version", workingDir, context);
-            StringBuilder statusMsg = new StringBuilder("Git is available: " + gitVersion + "\n");
+            StringBuilder statusMsg = new StringBuilder("Git available: " + gitVersion + "\n");
 
-            String url = (git != null) ? git.getRepositoryUrl() : gitRepoText.getText();
-            if (url != null && !url.isEmpty()) {
-                String user = (git != null) ? git.getUsername() : gitUsernameText.getText();
-                String pass = (git != null) ? git.getPassword() : gitPasswordText.getText();
+            String url = gitRepoText.getText();
+            if (!url.isEmpty()) {
+                String user = gitUsernameText.getText();
+                String pass = gitPasswordText.getText();
                 String remoteUrl = url;
-                if (user != null && !user.isEmpty() && pass != null && !pass.isEmpty()) {
-                    if (url.startsWith("https://")) {
-                        remoteUrl = "https://" + java.net.URLEncoder.encode(user, "UTF-8") + ":" +
-                                    java.net.URLEncoder.encode(pass, "UTF-8") + "@" + url.substring(8);
-                    }
+                if (!user.isEmpty() && !pass.isEmpty() && url.startsWith("http")) {
+                    String proto = url.startsWith("https") ? "https://" : "http://";
+                    String rest = url.substring(proto.length());
+                    remoteUrl = proto + java.net.URLEncoder.encode(user, "UTF-8") + ":" + java.net.URLEncoder.encode(pass, "UTF-8") + "@" + rest;
                 }
-
                 statusMsg.append("Testing remote connectivity...\n");
-                String remoteResult = shell.execute("git ls-remote " + remoteUrl + " HEAD", workingDir, context);
+                shell.execute("git ls-remote " + remoteUrl + " HEAD", workingDir, context);
                 statusMsg.append("Remote connection successful!");
             }
 
             MessageDialog.openInformation(group.getShell(), "Git Test", statusMsg.toString());
-            if (git != null) {
-            	git.setTestStatus("SUCCESS");
-                updateGroupStatus();
-            }
         } catch (Exception e) {
             MessageDialog.openError(group.getShell(), "Git Test Failed", e.getMessage());
-            if (git != null) {
-            	git.setTestStatus("FAILED");
-                updateGroupStatus();
-            }
         }
-    }
-
-    private File getWorkingDir() {
-        String path = gitLocalPathText.getText();
-        if (path != null && !path.isEmpty()) {
-            File f = new File(path);
-            if (f.exists()) return f;
-        }
-        return new File(System.getProperty("java.io.tmpdir"));
     }
 
     @Override
     protected void refreshUI() {
-        if (orchestrator.getGit() != null) {
-            Git git = orchestrator.getGit();
-            setTextSafe(gitRepoText, git.getRepositoryUrl());
-            setTextSafe(gitBranchText, git.getBranch());
-            setTextSafe(gitUsernameText, git.getUsername());
-            setTextSafe(gitPasswordText, git.getPassword());
-            selectSafe(gitLocalPathText, git.getLocalPath());
-            setTextSafe(branchNameText, git.getBranchName());
-            setTextSafe(commitMsgText, git.getCommitMsg());
-            updateGroupStatus();
-        }
+        setTextSafe(gitRepoText, EclipseGitEvoTool.getRepositoryRemote(currentRepoId));
+        setTextSafe(gitBranchText, EclipseGitEvoTool.getRepositoryBranch(currentRepoId));
+        setTextSafe(gitUsernameText, EclipseGitEvoTool.getRepositoryUsername(currentRepoId));
+        setTextSafe(gitPasswordText, EclipseGitEvoTool.getRepositoryPassword(currentRepoId));
+        selectSafe(gitLocalPathText, EclipseGitEvoTool.getRepositoryPath(currentRepoId));
         
-        if (orchestrator.getSupervisorSettings() != null && orchestrator.getSupervisorSettings().getGit() != null) {
-        	Git gitEvo = orchestrator.getSupervisorSettings().getGit();
-        	setTextSafe(gitRepoTextEvo, gitEvo.getRepositoryUrl());
-        	setTextSafe(gitBranchTextEvo, gitEvo.getBranch());
-        	setTextSafe(gitUsernameTextEvo, gitEvo.getUsername());
-        	setTextSafe(gitPasswordTextEvo, gitEvo.getPassword());
-        	selectSafe(gitLocalPathTextEvo, gitEvo.getLocalPath());
-        	setTextSafe(branchNameTextEvo, gitEvo.getBranchName());
-        	setTextSafe(commitMsgTextEvo, gitEvo.getCommitMsg());
-        }
+        // Branch name and commit msg are transient/contextual for operations, not persisted in Tool
     }
 
     @Override
     public void updateModel() {
-        if (orchestrator.getGit() == null) {
-            orchestrator.setGit(OrchestrationFactory.eINSTANCE.createGit());
-        }
-        Git git = orchestrator.getGit();
-        git.setRepositoryUrl(gitRepoText.getText());
-        git.setBranch(gitBranchText.getText());
-        git.setUsername(gitUsernameText.getText());
-        git.setPassword(gitPasswordText.getText());
-        git.setLocalPath(gitLocalPathText.getText());
-        git.setBranchName(branchNameText.getText());
-        git.setCommitMsg(commitMsgText.getText());
+        EclipseGitEvoTool.changeRemoteUrl(currentRepoId, gitRepoText.getText());
+        EclipseGitEvoTool.changeBranch(currentRepoId, gitBranchText.getText());
+        EclipseGitEvoTool.changeCredentials(currentRepoId, gitUsernameText.getText(), gitPasswordText.getText());
+        EclipseGitEvoTool.changeRepositoryLocation(currentRepoId, gitLocalPathText.getText());
         
-        if (orchestrator.getSupervisorSettings() != null) {
-        	if (orchestrator.getSupervisorSettings().getGit() == null) {
-        		orchestrator.getSupervisorSettings().setGit(OrchestrationFactory.eINSTANCE.createGit());
-        	}
-        	Git gitEvo = orchestrator.getSupervisorSettings().getGit();
-        	gitEvo.setRepositoryUrl(gitRepoTextEvo.getText());
-        	gitEvo.setBranch(gitBranchTextEvo.getText());
-        	gitEvo.setUsername(gitUsernameTextEvo.getText());
-        	gitEvo.setPassword(gitPasswordTextEvo.getText());
-        	gitEvo.setLocalPath(gitLocalPathTextEvo.getText());
-        	gitEvo.setBranchName(branchNameTextEvo.getText());
-        	gitEvo.setCommitMsg(commitMsgTextEvo.getText());
+        // Also update the active orchestrator model if it matches
+        if (currentRepoId.equals(EclipseGitEvoTool.REPO_EVOLUTION)) {
+            ProjectModelManager.getInstance().updateGitSettings(orchestrator, gitRepoText.getText(), gitBranchText.getText(), gitUsernameText.getText(), gitPasswordText.getText(), gitLocalPathText.getText());
+        } else if (currentRepoId.equals(EclipseGitEvoTool.REPO_WORKSPACE)) {
+            if (orchestrator.getSupervisorSettings() != null) {
+                ProjectModelManager.getInstance().updateGitSettings(orchestrator.getSupervisorSettings().getGit(), gitRepoText.getText(), gitBranchText.getText(), gitUsernameText.getText(), gitPasswordText.getText(), gitLocalPathText.getText());
+            }
+        } else if (currentRepoId.equals(EclipseGitEvoTool.REPO_LLM)) {
+            // Update LLM repo settings in any active ForgeSession if appropriate,
+            // or just rely on the central tool registry which ForgeSessionManager uses.
+            for (eu.kalafatic.evolution.model.orchestration.ForgeSession session : orchestrator.getForgeSessions()) {
+                if (session.getGit() != null) {
+                    ProjectModelManager.getInstance().updateGitSettings(session.getGit(), gitRepoText.getText(), gitBranchText.getText(), gitUsernameText.getText(), gitPasswordText.getText(), gitLocalPathText.getText());
+                }
+            }
         }
     }
 
     @Override
-    protected String getTestStatus() {
-        return orchestrator.getGit() != null ? orchestrator.getGit().getTestStatus() : null;
-    }
+    protected String getTestStatus() { return null; }
 
     @Override
-    protected void clearTestStatus() {
-        if (orchestrator.getGit() != null) {
-            orchestrator.getGit().setTestStatus(null);
-        }
-    }
+    protected void clearTestStatus() {}
 
     @Override
     public Text[] getTextFields() {
-        return new Text[] { gitRepoText, gitBranchText, gitUsernameText, gitPasswordText, 
-        		gitRepoTextEvo, gitBranchTextEvo, gitUsernameTextEvo, gitPasswordTextEvo };
+        return new Text[] { gitRepoText, gitBranchText, gitUsernameText, gitPasswordText, branchNameText, commitMsgText };
     }
 
     @Override
     public Control[] getControls() {
-        return new Control[] { gitRepoText, gitBranchText, gitUsernameText, gitPasswordText, gitLocalPathText,
-        		gitRepoTextEvo, gitBranchTextEvo, gitUsernameTextEvo, gitPasswordTextEvo, gitLocalPathTextEvo};
+        return new Control[] { repoSelector, gitRepoText, gitBranchText, gitUsernameText, gitPasswordText, gitLocalPathText, branchNameText, commitMsgText };
     }
 }
