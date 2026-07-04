@@ -15,8 +15,6 @@ public class DataForgeEngine {
             for (Path file : files) {
                 String content = Files.readString(file);
                 if (content.trim().isEmpty()) continue;
-
-                // Simple pre-training entry
                 ObjectNode node = mapper.createObjectNode();
                 node.put("text", "File: " + file.getFileName().toString() + "\n\nContent:\n" + content);
                 writer.write(mapper.writeValueAsString(node));
@@ -30,11 +28,10 @@ public class DataForgeEngine {
             for (Path file : files) {
                 String content = Files.readString(file);
                 if (content.trim().isEmpty()) continue;
-
                 ObjectNode node = mapper.createObjectNode();
                 node.put("instruction", "Explain the purpose of the code or content in " + file.getFileName().toString());
                 node.put("input", "");
-                node.put("output", content); // Placeholder, will be improved by AiDataEnhancer
+                node.put("output", content);
                 writer.write(mapper.writeValueAsString(node));
                 writer.newLine();
             }
