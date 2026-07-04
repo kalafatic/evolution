@@ -62,6 +62,7 @@ public class EvolutionServer extends NanoHTTPD {
     private DatasetController datasetController;
     private TrainingController trainingController;
     private SnapshotController snapshotController;
+    private eu.kalafatic.evolution.forge.controller.service.SelfEvoForgingService selfEvoService = new eu.kalafatic.evolution.forge.controller.service.impl.SelfEvoForgingServiceImpl();
 
     public EvolutionServer(int port) {
         super(port);
@@ -290,6 +291,10 @@ public class EvolutionServer extends NanoHTTPD {
                 } else if (id.endsWith("/events")) {
                     String[] parts = id.split("/");
                     return handleGetForgeEvents(parts[0]);
+                } else if (id.contains("/forging/stats")) {
+                    return handleGetForgingStats(id.split("/")[0]);
+                } else if (id.contains("/forging/start") && Method.POST.equals(method)) {
+                    return handleStartForging(id.split("/")[0]);
                 }
             }
         } catch (Exception e) {
@@ -464,6 +469,28 @@ public class EvolutionServer extends NanoHTTPD {
                 .put("isTerminal", msg.isIsTerminal()));
         }
         return newFixedLengthResponse(Response.Status.OK, "application/json", array.toString());
+    }
+
+    private Response handleGetForgingStats(String sessionId) {
+        eu.kalafatic.evolution.forge.controller.service.SelfEvoForgingService.ForgingStats stats = selfEvoService.getStats(sessionId);
+        JSONObject json = new JSONObject()
+            .put("status", stats.status())
+            .put("progress", stats.progress())
+            .put("filesScanned", stats.filesScanned())
+            .put("totalFiles", stats.totalFiles())
+            .put("instructionsGenerated", stats.instructionsGenerated())
+            .put("currentLoss", stats.currentLoss())
+            .put("currentEpoch", stats.currentEpoch());
+        return newFixedLengthResponse(Response.Status.OK, "application/json", json.toString());
+    }
+
+    private Response handleStartForging(String sessionId) {
+        try {
+            selfEvoService.startForging(sessionId, new File(".").toPath());
+            return newFixedLengthResponse(Response.Status.OK, "application/json", "{\"status\": \"started\"}");
+        } catch (Exception e) {
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", e.getMessage());
+        }
     }
 
     private Response handleGetSettings() {

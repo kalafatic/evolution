@@ -523,6 +523,7 @@
                         <span style="font-size: 0.8em; font-weight: bold; color: var(--text-dim);">VISUALIZATION</span>
                         <select id="viz-selector" style="background: #3c3c3c; border: 1px solid #555; color: white; padding: 2px;" onchange="onVizChange()" data-guidance="Switch between different visualization modes to monitor architecture, data, training metrics, or evolutionary history.">
                             <option value="ARCHITECTURE">Architecture Graph</option>
+                            <option value="SELF_EVO">Self-Evo Forging</option>
                             <option value="DATASET">Dataset Explorer</option>
                             <option value="TRAINING">Training Monitor</option>
                             <option value="EVOLUTION">Evolution Timeline</option>
@@ -676,6 +677,7 @@
     <script src="forge-viz/viz-dataset.js"></script>
     <script src="forge-viz/viz-training.js"></script>
     <script src="forge-viz/viz-evolution.js"></script>
+    <script src="forge-viz/viz-self-evo.js"></script>
     <script src="forge-viz/viz-walkthrough.js"></script>
     <script src="forge-viz/viz-interactive-demos.js"></script>
     <script>
@@ -1440,6 +1442,11 @@
                     if (!res.ok) throw new Error("Fetch failed");
                     const data = await res.json();
                     renderArchitectureViz(data);
+                } else if (currentViz === 'SELF_EVO') {
+                    const res = await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/forging/stats?runtime=SWT`);
+                    if (!res.ok) throw new Error("Fetch failed");
+                    const stats = await res.json();
+                    renderSelfEvoViz(stats);
                 } else if (currentViz === 'DATASET') {
                     const statsRes = await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/dataset/stats?runtime=SWT`);
                     if (!statsRes.ok) throw new Error("Fetch failed");

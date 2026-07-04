@@ -61,6 +61,10 @@ public class AutomaticArchitectureGenerator {
                 graph = generateLlmGraph(llmLayers, llmHeads, vocabSize, contextLength);
                 defaults.put("vocab_size", vocabSize).put("context_length", contextLength).put("layers", llmLayers).put("heads", llmHeads).put("lr", 0.00005).put("batch", 8).put("optimizer", "adam").put("epochs", 5);
                 break;
+            case "SELF_EVO":
+                graph = generateSelfEvoGraph();
+                defaults.put("pipeline", "full").put("target_model", "evo").put("base_model", "llama3.2:3b").put("enhance_data", true);
+                break;
         }
 
         return new ArchitectureResult(graph, defaults);
@@ -115,6 +119,19 @@ public class AutomaticArchitectureGenerator {
         links.put(new JSONObject().put("source", lastId).put("target", outputId));
 
         return new JSONObject().put("nodes", nodes).put("links", links).toString();
+    }
+
+    private String generateSelfEvoGraph() {
+        return "{\"nodes\":[" +
+                "{\"id\":\"se1\",\"name\":\"Scanner\",\"type\":\"CUSTOM\",\"x\":100,\"y\":150}," +
+                "{\"id\":\"se2\",\"name\":\"Data Enhancer\",\"type\":\"ATTENTION\",\"x\":250,\"y\":150}," +
+                "{\"id\":\"se3\",\"name\":\"Trainer\",\"type\":\"TRANSFORMER\",\"x\":400,\"y\":150}," +
+                "{\"id\":\"se4\",\"name\":\"GGUF Export\",\"type\":\"LAYER\",\"x\":550,\"y\":150}" +
+                "],\"links\":[" +
+                "{\"source\":\"se1\",\"target\":\"se2\"}," +
+                "{\"source\":\"se2\",\"target\":\"se3\"}," +
+                "{\"source\":\"se3\",\"target\":\"se4\"}" +
+                "]}";
     }
 
     private String generateCnnGraph(int filters, int kernelSize) {
