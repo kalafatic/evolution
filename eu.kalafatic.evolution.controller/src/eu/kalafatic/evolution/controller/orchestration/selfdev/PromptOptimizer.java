@@ -115,28 +115,28 @@ public class PromptOptimizer extends BaseAiAgent {
         JSONArray fields = obj.optJSONArray("fields");
         if (fields != null) {
             for (int i = 0; i < fields.length(); i++) {
-                strategy.fields.add(fields.getString(i));
+                strategy.fields.add(fields.optString(i));
             }
         }
         
         JSONArray examples = obj.optJSONArray("examples");
         if (examples != null) {
             for (int i = 0; i < examples.length(); i++) {
-                strategy.examples.add(examples.getString(i));
+                strategy.examples.add(examples.optString(i));
             }
         }
         
         JSONArray constraints = obj.optJSONArray("constraints");
         if (constraints != null) {
             for (int i = 0; i < constraints.length(); i++) {
-                strategy.constraints.add(constraints.getString(i));
+                strategy.constraints.add(constraints.optString(i));
             }
         }
         
         JSONArray validationRules = obj.optJSONArray("validationRules");
         if (validationRules != null) {
             for (int i = 0; i < validationRules.length(); i++) {
-                strategy.validationRules.add(validationRules.getString(i));
+                strategy.validationRules.add(validationRules.optString(i));
             }
         }
         
