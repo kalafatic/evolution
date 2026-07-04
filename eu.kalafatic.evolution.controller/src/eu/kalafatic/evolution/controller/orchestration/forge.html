@@ -437,6 +437,7 @@
                         <div class="palette-item" draggable="true" ondragstart="onNodeDrag(event, 'CNN')" title="CNN" data-guidance="Convolutional block.">👁️</div>
                         <div class="palette-item" draggable="true" ondragstart="onNodeDrag(event, 'TRANSFORMER')" title="Transformer" data-guidance="Transformer/Attention block.">⚡</div>
                         <div class="palette-item" draggable="true" ondragstart="onNodeDrag(event, 'LLM')" title="LLM" data-guidance="Full LLM stack.">🤖</div>
+                        <div class="palette-item" draggable="true" ondragstart="onNodeDrag(event, 'SELF_EVO')" title="Self-Evo Forging" data-guidance="Automated project-specific LLM creation.">🧪</div>
                     </div>
                 </div>
 
@@ -465,6 +466,7 @@
                 <button class="btn btn-sm" onclick="setInteractiveDemo('CNN')">CNN</button>
                 <button class="btn btn-sm" onclick="setInteractiveDemo('TRANSFORMER')">Transformer</button>
                 <button class="btn btn-sm" onclick="setInteractiveDemo('LLM')">LLM</button>
+                <button class="btn btn-sm" onclick="setInteractiveDemo('SELF_EVO')">Self-Evo</button>
             </div>
 
             <div id="session-list">
@@ -511,6 +513,7 @@
                     <div class="menu-item" onclick="loadTemplate('CNN')">🎁 Load CNN Demo</div>
                     <div class="menu-item" onclick="loadTemplate('TRANSFORMER')">🎁 Load Transformer Demo</div>
                     <div class="menu-item" onclick="loadTemplate('LLM')">🎁 Load LLM Demo</div>
+                    <div class="menu-item" onclick="loadTemplate('SELF_EVO')">🎁 Load Self-Evo Demo</div>
                 </div>
 
                 <textarea id="json-fallback"></textarea>
@@ -834,10 +837,16 @@
             if (session && session.uiState) {
                 if (session.uiState.selectedVisualization) {
                     currentViz = session.uiState.selectedVisualization;
-                    document.getElementById('viz-selector').value = currentViz;
+                } else if (session.modelType === 'SELF_EVO') {
+                    currentViz = 'SELF_EVO';
                 }
+                document.getElementById('viz-selector').value = currentViz;
                 vizAutoRefresh = !!session.uiState.autoRefreshEnabled;
+            } else if (session && session.modelType === 'SELF_EVO') {
+                currentViz = 'SELF_EVO';
+                document.getElementById('viz-selector').value = currentViz;
             }
+
             onVizChange();
             updateGuidance();
         }

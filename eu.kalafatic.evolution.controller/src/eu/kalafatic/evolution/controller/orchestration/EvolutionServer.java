@@ -239,18 +239,35 @@ public class EvolutionServer extends NanoHTTPD {
                 return handleGenerateArchitecture(id, session);
             } else if (Method.POST.equals(method) && "/forge/save-all".equals(uri)) {
                 return handleForgeSaveAll();
-            } else if (Method.GET.equals(method) && uri.startsWith("/forge/session/")) {
-                String id = uri.substring("/forge/session/".length());
-                if (id.endsWith("/model")) {
-                    return handleGetForgeModel(id.substring(0, id.length() - 6));
-                }
-                return handleGetForgeSession(id);
-            } else if (Method.POST.equals(method) && uri.startsWith("/forge/session/")) {
-                String id = uri.substring("/forge/session/".length());
-                if (id.endsWith("/model")) {
-                    return handleUpdateForgeModel(id.substring(0, id.length() - 6), session);
-                } else if (id.endsWith("/clone")) {
-                    return handleCloneForgeSession(id.substring(0, id.length() - 6), session);
+            } else if (uri.startsWith("/forge/session/")) {
+                String idPart = uri.substring("/forge/session/".length());
+                String[] parts = idPart.split("/");
+                String id = parts[0];
+
+                if (parts.length > 1) {
+                    String subAction = idPart.substring(id.length());
+                    if (Method.GET.equals(method)) {
+                        if (subAction.equals("/model")) return handleGetForgeModel(id);
+                        if (subAction.equals("/structure")) return handleGetForgeStructure(id);
+                        if (subAction.equals("/dataset/stats")) return handleGetDatasetStats(id);
+                        if (subAction.startsWith("/dataset/sample/")) return handleGetDatasetSample(id, Integer.parseInt(parts[3]));
+                        if (subAction.equals("/training/metrics")) return handleGetTrainingMetrics(id);
+                        if (subAction.equals("/training/events")) return handleGetTrainingEvents(id);
+                        if (subAction.startsWith("/snapshots/compare/active/")) return handleCompareSnapshots(id, parts[4]);
+                        if (subAction.equals("/snapshots")) return handleGetForgeSnapshots(id);
+                        if (subAction.equals("/forging/stats")) return handleGetForgingStats(id);
+                        if (subAction.equals("/events")) return handleGetForgeEvents(id);
+                    } else if (Method.POST.equals(method)) {
+                        if (subAction.equals("/model")) return handleUpdateForgeModel(id, session);
+                        if (subAction.equals("/clone")) return handleCloneForgeSession(id, session);
+                        if (subAction.startsWith("/uistate/")) return handleUpdateUiState(id, parts[2], session);
+                        if (subAction.equals("/forging/start")) return handleStartForging(id);
+                        if (subAction.equals("/demo")) return handleRunForgeDemo(id);
+                        if (subAction.equals("/generate-architecture")) return handleGenerateArchitecture(id, session);
+                    }
+                } else {
+                    if (Method.GET.equals(method)) return handleGetForgeSession(id);
+                    if (Method.DELETE.equals(method)) return handleDeleteForgeSession(id);
                 }
             } else if (Method.POST.equals(method) && "/creatic/analyze".equals(uri)) {
                 return handleCreaticAnalyze(session);
@@ -260,42 +277,8 @@ public class EvolutionServer extends NanoHTTPD {
                 return handleGetResource("creatic.css", "text/css");
             } else if (Method.GET.equals(method) && "/auth-integration.js".equals(uri)) {
                 return handleGetResource("auth-integration.js", "application/javascript");
-            } else if (Method.DELETE.equals(method) && uri.startsWith("/forge/session/")) {
-                return handleDeleteForgeSession(uri.substring("/forge/session/".length()));
             } else if (Method.POST.equals(method) && uri.startsWith("/forge/dataset/generate")) {
                 return handleGenerateSyntheticDataset(session);
-            } else if (uri.startsWith("/forge/session/")) {
-                String id = uri.substring("/forge/session/".length());
-                if (id.contains("/structure")) {
-                    return handleGetForgeStructure(id.split("/")[0]);
-                } else if (id.contains("/dataset/stats")) {
-                    return handleGetDatasetStats(id.split("/")[0]);
-                } else if (id.contains("/dataset/sample/")) {
-                    String[] parts = id.split("/");
-                    return handleGetDatasetSample(parts[0], Integer.parseInt(parts[3]));
-                } else if (id.contains("/training/metrics")) {
-                    return handleGetTrainingMetrics(id.split("/")[0]);
-                } else if (id.contains("/training/events")) {
-                    return handleGetTrainingEvents(id.split("/")[0]);
-                } else if (id.contains("/snapshots/compare/active/")) {
-                    String[] parts = id.split("/");
-                    return handleCompareSnapshots(parts[0], parts[4]);
-                } else if (id.contains("/snapshots")) {
-                    return handleGetForgeSnapshots(id.split("/")[0]);
-                } else if (id.contains("/uistate/")) {
-                    String[] parts = id.split("/");
-                    return handleUpdateUiState(parts[0], parts[2], session);
-                } else if (id.endsWith("/demo") && Method.POST.equals(method)) {
-                    String[] parts = id.split("/");
-                    return handleRunForgeDemo(parts[0]);
-                } else if (id.endsWith("/events")) {
-                    String[] parts = id.split("/");
-                    return handleGetForgeEvents(parts[0]);
-                } else if (id.contains("/forging/stats")) {
-                    return handleGetForgingStats(id.split("/")[0]);
-                } else if (id.contains("/forging/start") && Method.POST.equals(method)) {
-                    return handleStartForging(id.split("/")[0]);
-                }
             }
         } catch (Exception e) {
             return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json",
