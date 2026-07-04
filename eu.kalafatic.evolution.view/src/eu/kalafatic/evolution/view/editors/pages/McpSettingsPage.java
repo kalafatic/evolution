@@ -17,6 +17,7 @@ public class McpSettingsPage extends AEvoPage {
     private boolean isUpdating = false;
 
     private McpConfigGroup configGroup;
+    private McpServersGroup serversGroup;
     private McpResourcesGroup resourcesGroup;
     private McpToolsGroup toolsGroup;
     private McpPromptsGroup promptsGroup;
@@ -30,6 +31,7 @@ public class McpSettingsPage extends AEvoPage {
         Composite comp = toolkit.createComposite(this);
         comp.setLayout(new GridLayout(1, false));
         configGroup = new McpConfigGroup(toolkit, comp, editor, orchestrator, this);
+        serversGroup = new McpServersGroup(toolkit, comp, editor, orchestrator, this);
         resourcesGroup = new McpResourcesGroup(toolkit, comp, editor, orchestrator, this);
         toolsGroup = new McpToolsGroup(toolkit, comp, editor, orchestrator, this);
         promptsGroup = new McpPromptsGroup(toolkit, comp, editor, orchestrator, this);
@@ -92,14 +94,32 @@ public class McpSettingsPage extends AEvoPage {
     }
 
     @Override
-    protected void refreshUI() {
+    public void refreshUI() {
         if (orchestrator == null || isUpdating) return;
         isUpdating = true;
         configGroup.updateUI();
+        serversGroup.updateUI();
         isUpdating = false;
-        refreshResources();
-        refreshTools();
-        refreshPrompts();
+
+        String url = orchestrator.getMcpServerUrl();
+        if (url == null || url.isEmpty()) {
+            loadMockData();
+        } else {
+            refreshResources();
+            refreshTools();
+            refreshPrompts();
+        }
+    }
+
+    private void loadMockData() {
+        resourcesGroup.clear();
+        resourcesGroup.addItem("Mock Resource", "mock://test", "text/plain", "Test resource for UI validation");
+
+        toolsGroup.clear();
+        toolsGroup.addItem("mockTool", "A tool that does nothing", "{\"type\":\"object\"}");
+
+        promptsGroup.clear();
+        promptsGroup.addItem("mockPrompt", "A prompt for testing", "[]");
     }
 
     public void updateMcpInfo() { scheduleRefresh(); }
