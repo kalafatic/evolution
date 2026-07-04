@@ -99,6 +99,8 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
     Attribute port : EInt
     Attribute autoStart : EBoolean
     Attribute gitAutomation : EBoolean
+    Attribute mcpEnabled : EBoolean
+    Attribute mcpPort : EInt
 
   Class ServerSession
     Attribute id : EString
@@ -359,6 +361,7 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
     Attribute status : ForgeStatus
     Attribute activeModelId : EString
     Attribute selectedModelType : EString
+    Reference git : Git
     Reference modelState : SessionModelState
     Reference experiments : SessionExperiment<<0..*>>
     Reference snapshots : SessionSnapshot<<0..*>>
@@ -437,6 +440,7 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
     Literal REMOTE = 2
     Literal PROXY = 3
     Literal MEDIATED = 4
+    Literal INTENT = 5
 
   Enum SelfDevStatus
     Literal RUNNING = 0

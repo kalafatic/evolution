@@ -30,12 +30,13 @@ import org.eclipse.emf.ecore.EObject;
 public interface Git extends EObject {
 	/**
 	 * Returns the value of the '<em><b>Repository Url</b></em>' attribute.
+	 * The default value is <code>"https://github.com/kalafatic/evolution.git"</code>.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @return the value of the '<em>Repository Url</em>' attribute.
 	 * @see #setRepositoryUrl(String)
 	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getGit_RepositoryUrl()
-	 * @model
+	 * @model default="https://github.com/kalafatic/evolution.git"
 	 * @generated
 	 */
 	String getRepositoryUrl();
@@ -52,12 +53,13 @@ public interface Git extends EObject {
 
 	/**
 	 * Returns the value of the '<em><b>Branch</b></em>' attribute.
+	 * The default value is <code>"master"</code>.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @return the value of the '<em>Branch</em>' attribute.
 	 * @see #setBranch(String)
 	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getGit_Branch()
-	 * @model
+	 * @model default="master"
 	 * @generated
 	 */
 	String getBranch();
@@ -74,12 +76,13 @@ public interface Git extends EObject {
 
 	/**
 	 * Returns the value of the '<em><b>Username</b></em>' attribute.
+	 * The default value is <code>"admin"</code>.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @return the value of the '<em>Username</em>' attribute.
 	 * @see #setUsername(String)
 	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getGit_Username()
-	 * @model
+	 * @model default="admin"
 	 * @generated
 	 */
 	String getUsername();

@@ -59,6 +59,7 @@
       <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//AiMode/REMOTE"/>
       <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//AiMode/PROXY"/>
       <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//AiMode/MEDIATED"/>
+      <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//AiMode/INTENT"/>
     </genEnums>
     <genEnums typeSafeEnumCompatible="false" ecoreEnum="evolution.ecore#//SelfDevStatus">
       <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//SelfDevStatus/RUNNING"/>
@@ -188,6 +189,8 @@
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ServerSettings/port"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ServerSettings/autoStart"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ServerSettings/gitAutomation"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ServerSettings/mcpEnabled"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ServerSettings/mcpPort"/>
     </genClasses>
     <genClasses ecoreClass="evolution.ecore#//ServerSession">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ServerSession/id"/>
@@ -448,6 +451,7 @@
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ForgeSession/status"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ForgeSession/activeModelId"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ForgeSession/selectedModelType"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//ForgeSession/git"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//ForgeSession/modelState"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//ForgeSession/experiments"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference evolution.ecore#//ForgeSession/snapshots"/>

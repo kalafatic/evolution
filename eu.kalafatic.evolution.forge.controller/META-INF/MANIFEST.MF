@@ -27,4 +27,5 @@ Export-Package: eu.kalafatic.evolution.forge.controller.api,
  eu.kalafatic.evolution.forge.controller.bridge,
  eu.kalafatic.evolution.forge.controller.impl,
  eu.kalafatic.evolution.forge.controller.repository,
- eu.kalafatic.evolution.forge.controller.service
+ eu.kalafatic.evolution.forge.controller.service,
+ eu.kalafatic.evolution.forge.controller.service.impl

@@ -33,6 +33,8 @@ import eu.kalafatic.evolution.forge.controller.api.ModelController;
 import eu.kalafatic.evolution.forge.controller.api.SessionController;
 import eu.kalafatic.evolution.forge.controller.api.SnapshotController;
 import eu.kalafatic.evolution.forge.controller.api.TrainingController;
+import eu.kalafatic.evolution.forge.controller.service.SelfEvoForgingService;
+import eu.kalafatic.evolution.forge.controller.service.impl.SelfEvoForgingServiceImpl;
 import eu.kalafatic.evolution.model.orchestration.ChatMessage;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
@@ -62,7 +64,7 @@ public class EvolutionServer extends NanoHTTPD {
     private DatasetController datasetController;
     private TrainingController trainingController;
     private SnapshotController snapshotController;
-    private eu.kalafatic.evolution.forge.controller.service.SelfEvoForgingService selfEvoService = new eu.kalafatic.evolution.forge.controller.service.impl.SelfEvoForgingServiceImpl();
+    private SelfEvoForgingService selfEvoService = new SelfEvoForgingServiceImpl();
 
     public EvolutionServer(int port) {
         super(port);

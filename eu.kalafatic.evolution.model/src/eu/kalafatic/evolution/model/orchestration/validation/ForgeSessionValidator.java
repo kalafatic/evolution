@@ -7,6 +7,7 @@ package eu.kalafatic.evolution.model.orchestration.validation;
 import org.eclipse.emf.common.util.EList;
 
 import eu.kalafatic.evolution.model.orchestration.ForgeStatus;
+import eu.kalafatic.evolution.model.orchestration.Git;
 import eu.kalafatic.evolution.model.orchestration.SessionExperiment;
 import eu.kalafatic.evolution.model.orchestration.SessionModelState;
 import eu.kalafatic.evolution.model.orchestration.SessionSnapshot;
@@ -27,6 +28,8 @@ public interface ForgeSessionValidator {
 	boolean validateStatus(ForgeStatus value);
 	boolean validateActiveModelId(String value);
 	boolean validateSelectedModelType(String value);
+	boolean validateGit(Git value);
+
 	boolean validateModelState(SessionModelState value);
 	boolean validateExperiments(EList<SessionExperiment> value);
 	boolean validateSnapshots(EList<SessionSnapshot> value);

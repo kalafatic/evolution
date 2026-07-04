@@ -139,7 +139,7 @@ public class DevelopmentPage extends AEvoPage {
         Composite container = toolkit.createComposite(this);
         container.setLayout(new GridLayout(1, false));
 
-        Composite selfDevComp = GUIFactory.INSTANCE.createExpandableGroup(toolkit, container, "Self-Development", 1, true, true);
+        Composite selfDevComp = GUIFactory.INSTANCE.createExpandableGroup(toolkit, container, "Self-Development", 1, false, true);
         selfDevComp.setLayoutData(new GridData(GridData.FILL_BOTH));
 
         Composite sdStatusComp = toolkit.createComposite(selfDevComp);

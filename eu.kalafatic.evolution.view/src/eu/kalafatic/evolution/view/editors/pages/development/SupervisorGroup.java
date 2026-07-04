@@ -31,7 +31,7 @@ public class SupervisorGroup extends AEvoGroup {
     }
 
     private void createControl(FormToolkit toolkit, Composite parent) {
-        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Supervisor Settings", 3, true);
+        group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Supervisor Settings", 3, false);
 
         GUIFactory.INSTANCE.createLabel(group, "Executable Path:");
         executablePathText = GUIFactory.INSTANCE.createText(group);
