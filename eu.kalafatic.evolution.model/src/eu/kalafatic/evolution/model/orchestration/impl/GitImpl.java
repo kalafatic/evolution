@@ -39,7 +39,7 @@ public class GitImpl extends MinimalEObjectImpl.Container implements Git {
 	 * @generated
 	 * @ordered
 	 */
-	protected static final String REPOSITORY_URL_EDEFAULT = null;
+	protected static final String REPOSITORY_URL_EDEFAULT = "https://github.com/kalafatic/evolution.git";
 
 	/**
 	 * The cached value of the '{@link #getRepositoryUrl() <em>Repository Url</em>}' attribute.
@@ -59,7 +59,7 @@ public class GitImpl extends MinimalEObjectImpl.Container implements Git {
 	 * @generated
 	 * @ordered
 	 */
-	protected static final String BRANCH_EDEFAULT = null;
+	protected static final String BRANCH_EDEFAULT = "master";
 
 	/**
 	 * The cached value of the '{@link #getBranch() <em>Branch</em>}' attribute.
@@ -79,7 +79,7 @@ public class GitImpl extends MinimalEObjectImpl.Container implements Git {
 	 * @generated
 	 * @ordered
 	 */
-	protected static final String USERNAME_EDEFAULT = null;
+	protected static final String USERNAME_EDEFAULT = "admin";
 
 	/**
 	 * The cached value of the '{@link #getUsername() <em>Username</em>}' attribute.

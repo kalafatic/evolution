@@ -17,6 +17,7 @@ import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import eu.kalafatic.evolution.controller.discovery.SourceDiscoveryRequest;
 import eu.kalafatic.evolution.controller.discovery.SourceDiscoveryResult;
 import eu.kalafatic.evolution.controller.discovery.WorkspaceSourceResolver;
+import eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool;
 import eu.kalafatic.evolution.controller.providers.AiProviders;
 import eu.kalafatic.evolution.controller.providers.ProviderConfig;
 import eu.kalafatic.evolution.controller.security.TokenSecurityService;
@@ -166,23 +167,22 @@ public class ProjectModelManager {
 
     public void initializeDefaults(Orchestrator orchestrator) {
         String userHome = System.getProperty("user.home");
-        File gitHome = new File(userHome, "git");
 
         if (orchestrator.getGit() == null) {
             Git git = OrchestrationFactory.eINSTANCE.createGit();
-            git.setRepositoryUrl("https://github.com/kalafatic/evolution/");
-            git.setBranch("master");
-            git.setLocalPath(new File(gitHome, "evolution").getAbsolutePath());
+            git.setRepositoryUrl(EclipseGitEvoTool.getRepositoryRemote(EclipseGitEvoTool.REPO_EVOLUTION));
+            git.setBranch(EclipseGitEvoTool.getRepositoryBranch(EclipseGitEvoTool.REPO_EVOLUTION));
+            git.setLocalPath(EclipseGitEvoTool.getRepositoryPath(EclipseGitEvoTool.REPO_EVOLUTION));
             orchestrator.setGit(git);
         } else {
             if (orchestrator.getGit().getRepositoryUrl() == null || orchestrator.getGit().getRepositoryUrl().isEmpty()) {
-                orchestrator.getGit().setRepositoryUrl("https://github.com/kalafatic/evolution/");
+                orchestrator.getGit().setRepositoryUrl(EclipseGitEvoTool.getRepositoryRemote(EclipseGitEvoTool.REPO_EVOLUTION));
             }
             if (orchestrator.getGit().getLocalPath() == null || orchestrator.getGit().getLocalPath().isEmpty()) {
-                orchestrator.getGit().setLocalPath(new File(gitHome, "evolution").getAbsolutePath());
+                orchestrator.getGit().setLocalPath(EclipseGitEvoTool.getRepositoryPath(EclipseGitEvoTool.REPO_EVOLUTION));
             }
             if (orchestrator.getGit().getBranch() == null || orchestrator.getGit().getBranch().isEmpty()) {
-                orchestrator.getGit().setBranch("master");
+                orchestrator.getGit().setBranch(EclipseGitEvoTool.getRepositoryBranch(EclipseGitEvoTool.REPO_EVOLUTION));
             }
         }
 
@@ -196,19 +196,19 @@ public class ProjectModelManager {
 
         if (orchestrator.getSupervisorSettings().getGit() == null) {
             Git supGit = OrchestrationFactory.eINSTANCE.createGit();
-            supGit.setRepositoryUrl("https://github.com/kalafatic/evo/");
-            supGit.setBranch("master");
-            supGit.setLocalPath(new File(gitHome, "evo").getAbsolutePath());
+            supGit.setRepositoryUrl(EclipseGitEvoTool.getRepositoryRemote(EclipseGitEvoTool.REPO_WORKSPACE));
+            supGit.setBranch(EclipseGitEvoTool.getRepositoryBranch(EclipseGitEvoTool.REPO_WORKSPACE));
+            supGit.setLocalPath(EclipseGitEvoTool.getRepositoryPath(EclipseGitEvoTool.REPO_WORKSPACE));
             orchestrator.getSupervisorSettings().setGit(supGit);
         } else {
             if (orchestrator.getSupervisorSettings().getGit().getRepositoryUrl() == null || orchestrator.getSupervisorSettings().getGit().getRepositoryUrl().isEmpty()) {
-                orchestrator.getSupervisorSettings().getGit().setRepositoryUrl("https://github.com/kalafatic/evo/");
+                orchestrator.getSupervisorSettings().getGit().setRepositoryUrl(EclipseGitEvoTool.getRepositoryRemote(EclipseGitEvoTool.REPO_WORKSPACE));
             }
             if (orchestrator.getSupervisorSettings().getGit().getLocalPath() == null || orchestrator.getSupervisorSettings().getGit().getLocalPath().isEmpty()) {
-                orchestrator.getSupervisorSettings().getGit().setLocalPath(new File(gitHome, "evo").getAbsolutePath());
+                orchestrator.getSupervisorSettings().getGit().setLocalPath(EclipseGitEvoTool.getRepositoryPath(EclipseGitEvoTool.REPO_WORKSPACE));
             }
             if (orchestrator.getSupervisorSettings().getGit().getBranch() == null || orchestrator.getSupervisorSettings().getGit().getBranch().isEmpty()) {
-                orchestrator.getSupervisorSettings().getGit().setBranch("master");
+                orchestrator.getSupervisorSettings().getGit().setBranch(EclipseGitEvoTool.getRepositoryBranch(EclipseGitEvoTool.REPO_WORKSPACE));
             }
         }
 

@@ -202,7 +202,21 @@ public class GitSettingsPage extends AWizardPage {
 			@Override
 			protected IStatus run(IProgressMonitor monitor) {
 				try {
-					ProcessBuilder pb = new ProcessBuilder("git", "ls-remote", url, "HEAD");
+					String user = usernameText.getText();
+					String pass = passwordText.getText();
+					String remoteUrl = url;
+
+					if (!user.isEmpty() && !pass.isEmpty()) {
+						if (url.startsWith("https://")) {
+							remoteUrl = "https://" + java.net.URLEncoder.encode(user, "UTF-8") + ":"
+									+ java.net.URLEncoder.encode(pass, "UTF-8") + "@" + url.substring(8);
+						} else if (url.startsWith("http://")) {
+							remoteUrl = "http://" + java.net.URLEncoder.encode(user, "UTF-8") + ":"
+									+ java.net.URLEncoder.encode(pass, "UTF-8") + "@" + url.substring(7);
+						}
+					}
+
+					ProcessBuilder pb = new ProcessBuilder("git", "ls-remote", remoteUrl, "HEAD");
 					boolean success = (pb.start().waitFor() == 0);
 					Display.getDefault().asyncExec(() -> {
 						if (success) org.eclipse.jface.dialogs.MessageDialog.openInformation(getShell(), "Git Test", "Connection successful!");
