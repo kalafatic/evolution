@@ -16,6 +16,7 @@ public class McpConfigGroup extends AEvoGroup {
     private Text mcpUrlText;
     private Button mcpEnabledBtn;
     private Text mcpPortText;
+    private org.eclipse.swt.widgets.Label statusLabel;
     private McpSettingsPage page;
 
     public McpConfigGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, McpSettingsPage page) {
@@ -65,6 +66,19 @@ public class McpConfigGroup extends AEvoGroup {
             public void widgetSelected(SelectionEvent e) {
                 page.testConnection(mcpUrlText.getText());
             }
+        });
+
+        GUIFactory.INSTANCE.createLabel(group, "Status:");
+        statusLabel = GUIFactory.INSTANCE.createLabel(group, "Unknown");
+    }
+
+    public void setStatus(boolean success, String message) {
+        if (group == null || group.isDisposed()) return;
+        org.eclipse.swt.widgets.Display.getDefault().asyncExec(() -> {
+            if (group.isDisposed()) return;
+            statusLabel.setText(message != null ? message : (success ? "Connected" : "Disconnected"));
+            group.setBackground(success ? lightGreen : lightRed);
+            // Also set background for child labels/controls if needed, but group background usually propagates
         });
     }
 

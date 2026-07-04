@@ -41,7 +41,7 @@ public abstract class AEvoPage extends SharedScrolledComposite implements Runtim
     
     protected Color colorUser, colorEvolution, colorPlanner, colorArchitect, colorJavaDev, colorTester, colorReviewer, colorError, colorWhite, colorLocal, colorHybrid, colorRemote, colorWaiting, colorLightOrange;
     protected Font chatFont, bannerFont;
-    protected Color lightGreen;
+    protected Color lightGreen, lightRed;
 
     protected Adapter modelAdapter = new EContentAdapter() {
         @Override
@@ -93,6 +93,7 @@ public abstract class AEvoPage extends SharedScrolledComposite implements Runtim
 		colorWaiting = new Color(display, 255, 140, 0); // Dark Orange
 		colorLightOrange = new Color(display, 255, 200, 150);
 		lightGreen = new Color(Display.getDefault(), 220, 255, 220);
+		lightRed = new Color(Display.getDefault(), 255, 220, 220);
 
 		Font defaultFont = JFaceResources.getDefaultFont();
 		FontData[] fontData = defaultFont.getFontData();
