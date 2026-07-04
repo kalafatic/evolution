@@ -48,102 +48,34 @@
 }
 
 .tree-node {
-    width: 40px;
-    height: 40px;
-    padding: 4px;
-    border: 2px solid #94a3b8;
-    border-radius: 8px;
+    width: 32px;
+    height: auto;
+    min-height: 32px;
+    padding: 4px 2px;
+    border: 1.5px solid #7aa6ff;
+    border-radius: 4px;
     background: #ffffff;
     text-align: center;
     overflow: hidden;
-    margin: 8px 0;
-    box-shadow: 0 3px 6px rgba(0,0,0,0.06);
+    margin: 2px 0;
+    box-shadow: 0 1px 3px rgba(0,0,0,.05);
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     box-sizing: border-box;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 10;
-    position: relative;
-    cursor: default;
 }
 
-.tree-node:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(0,0,0,0.1);
-    border-color: #64748b;
-}
-
-/* Pink Diamond for Intent */
-.node-wrapper {
-    padding: 16px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    position: relative;
-    z-index: 10;
-}
-
-.tree-node.intent {
-    width: 64px;
-    height: 64px;
-    background: #fff1f2;
-    border: 2px solid #f43f5e;
-    transform: rotate(45deg);
-    border-radius: 8px;
-}
-
-.tree-node.intent:hover {
-    transform: rotate(45deg) scale(1.05);
-}
-
-.tree-node.intent .node-title {
-    transform: rotate(-45deg);
-    color: #9f1239;
-    font-size: 11px;
-    font-weight: 900;
-    width: 140%;
-    text-align: center;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-/* Blue Pill for Dimension */
 .tree-node.dimension {
-    width: 80px;
-    height: 32px;
-    background: #eff6ff;
-    border: 2px solid #3b82f6;
-    border-radius: 16px;
-    color: #1d4ed8;
-    margin: 16px 0;
+    width: 64px;
+    background: #f0f7ff;
+    border-color: #3b82f6;
 }
 
-.tree-node.dimension .node-title {
-    font-size: 10px;
-    letter-spacing: 0.5px;
-}
-
-.tree-node.iteration {
-    width: 44px;
-    height: 44px;
-    background: #f8fafc;
-    border: 2px solid #475569;
-    border-radius: 50%;
-    color: #1e293b;
-    font-family: 'Inter', sans-serif;
-    margin: 16px 0;
-}
-
-.tree-node.branch {
-    width: 48px;
-    height: 48px;
-    border-radius: 10px;
-    border: 2px solid #94a3b8;
+.tree-node.proposal {
     background: #ffffff;
-    margin: 8px 12px;
+    border-color: #e2e8f0;
 }
 
 .tree-node.kept {
@@ -178,14 +110,17 @@
     border-color: #64748b;
 }
 
+.tree-node.intent_reconstruction {
+    background: #fff1f2; /* Light rose */
+    border-color: #f43f5e;
+}
+
 .tree-node .node-title {
     padding: 0;
-    font-weight: 800;
-    font-size: 10px;
+    font-weight: bold;
+    font-size: 8px;
     white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
 }
 
 .tree-node .node-body {
@@ -194,118 +129,82 @@
 
 
 .tree-node.winner {
-    background: #f0f9ff !important;
-    border-color: #0284c7 !important;
-    color: #0369a1 !important;
-    box-shadow: 0 0 12px rgba(2, 132, 199, 0.2);
+    background: #eff6ff !important;
+    border-color: #3b82f6 !important;
+    color: #1e40af !important;
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
+    z-index: 2;
 }
 
 .tree-node.failed {
-    background: #fef2f2 !important;
-    border-color: #ef4444 !important;
-    color: #b91c1c !important;
-    border-radius: 8px;
+    background: #fff5f5 !important;
+    border-color: #feb2b2 !important;
+    color: #9b2c2c !important;
 }
 
 .tree-node .winner-label {
     display: none; /* Icon instead */
 }
 
-.tree-hline-separator {
-    height: 60px;
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 20px 0;
-    position: relative;
+.tree-vline {
+    width: 1.5px;
+    height: 12px;
+    background: #cbd5e1;
+    flex-shrink: 0;
 }
 
-.tree-hline-separator::after {
-    content: "NEXT EVOLUTION";
-    font-size: 10px;
-    color: #94a3b8;
-    font-weight: 800;
-    letter-spacing: 2px;
-    text-transform: uppercase;
+.tree-hline {
+    height: 2px;
+    background: #cbd5e1;
+    margin: 0 10px;
 }
 
 .tree-children {
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    position: relative;
-    padding-top: 32px;
-}
-
-.tree-children.horizontal {
-    flex-direction: row;
     justify-content: center;
-    align-items: flex-start;
+    position: relative;
+    padding-top: 12px;
 }
 
-/* Vertical line from parent node down to the horizontal bar (or directly to child) */
 .tree-children::before {
     content: "";
     position: absolute;
-    top: -32px; /* Start at bottom of parent node area */
+    top: 0;
     left: 50%;
-    transform: translateX(-50%);
-    width: 2px;
-    height: 32px;
+    width: 1.5px;
+    height: 12px;
     background: #cbd5e1;
-    z-index: 1;
-}
-
-.tree-children:not(.horizontal) > .tree-child::before {
-    display: none;
-}
-
-.tree-children:not(.horizontal) > .tree-child::after {
-    height: 32px;
 }
 
 .tree-child {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 0 32px;
+    padding: 0 3px;
     position: relative;
 }
 
-/* Horizontal line segments */
+/* Horizontal connectors */
 .tree-child::before {
     content: "";
     position: absolute;
-    top: 0; /* Intersection point at the top of the child container */
+    top: 0;
     left: 0;
     right: 0;
-    height: 2px;
+    height: 1.5px;
     background: #cbd5e1;
-    z-index: 1;
 }
 
-/* Clean up first/last/only child horizontal lines */
-.tree-child:first-child::before { left: 50%; }
-.tree-child:last-child::before { right: 50%; }
-.tree-child:only-child::before { display: none; }
-
-/* Vertical line from horizontal bar down to each child node */
-.tree-child::after {
-    content: "";
-    position: absolute;
-    top: 0;
+.tree-child:first-child::before {
     left: 50%;
-    transform: translateX(-50%);
-    width: 2px;
-    height: 32px; /* Stem down to node */
-    background: #cbd5e1;
-    z-index: 1;
 }
 
-/* Ensure single child has a perfectly continuous vertical line */
-.tree-child:only-child::after {
-    height: 100%;
+.tree-child:last-child::before {
+    right: 50%;
+}
+
+.tree-child:only-child::before {
+    display: none;
 }
 
 .resize-handle {
