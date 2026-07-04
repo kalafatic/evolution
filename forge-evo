@@ -1,0 +1,3 @@
+#!/bin/bash
+# Evo Forge Agent - One Click Command
+java -jar eu.kalafatic.evolution.forge.agent/target/eu.kalafatic.evolution.forge.agent-2.6.5-SNAPSHOT.jar "$@"

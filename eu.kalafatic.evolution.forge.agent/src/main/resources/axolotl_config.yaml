@@ -1,0 +1,17 @@
+base_model: unsloth/llama-3-8b-bnb-4bit
+model_type: LlamaForCausalLM
+tokenizer_type: LlamaTokenizer
+
+datasets:
+  - path: evo-forge-data/evo_train.jsonl
+    type: alpaca
+
+adapter: lora
+lora_r: 32
+lora_alpha: 16
+lora_dropout: 0.05
+
+learning_rate: 0.0002
+num_epochs: 3
+micro_batch_size: 2
+gradient_accumulation_steps: 4

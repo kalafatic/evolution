@@ -41,6 +41,7 @@
 		<module>eu.kalafatic.evolution.creatic</module>
 		<module>eu.kalafatic.evolution.servers</module>
 		<module>eu.kalafatic.evolution.supervisor</module>
+		<module>eu.kalafatic.evolution.forge.agent</module>
 	</modules>
 
 	<build>
