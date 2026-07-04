@@ -50,7 +50,6 @@ window.ChatApp.Renderer = {
             content.appendChild(darwinEl);
 
             // Move Force Solution button out of branch container to appear UNDER all branches
-            const role = (m.agentType || '').toLowerCase();
             const isApproved = role.includes('approved');
             const isWaiting = role.includes('waiting');
             if (!isApproved && isWaiting) {
@@ -473,7 +472,7 @@ window.ChatApp.Renderer = {
         }
 
         const iterations = {};
-        const winnersMap = {}; // lineage -> iterationCount -> branchId
+        let latestData = null;
 
         progressMessages.forEach(m => {
             try {
@@ -482,166 +481,125 @@ window.ChatApp.Renderer = {
                     const key = (data.lineage || 'root') + '_' + data.iterationCount;
                     if (!iterations[key] || data.timestamp > iterations[key].timestamp) {
                         iterations[key] = data;
-                        if (data.winnerId) {
-                             winnersMap[data.lineage || 'root'] = winnersMap[data.lineage || 'root'] || {};
-                             winnersMap[data.lineage || 'root'][data.iterationCount] = data.winnerId;
-                        }
+                    }
+                    if (!latestData || data.timestamp > latestData.timestamp) {
+                        latestData = data;
                     }
                 }
             } catch(e) {}
         });
 
         const sortedIterKeys = Object.keys(iterations).sort((a, b) => iterations[a].timestamp - iterations[b].timestamp);
+
         if (sortedIterKeys.length === 0) return;
 
-        const rootNodes = [];
-        const allNodes = {};
-
-        // First pass: create all nodes and their basic discovery chains
+        // Map iterations by their parentId to build non-linear tree
+        const childrenByParent = {};
         sortedIterKeys.forEach(key => {
             const data = iterations[key];
-            const lineage = data.lineage || 'root';
-            const iterNodeId = 'iter-' + data.iterationCount + '_' + lineage;
-
-            const intentNode = {
-                id: iterNodeId + '_intent',
-                type: 'intent',
-                data: { goal: data.goal || 'Evolutionary Goal' },
-                children: []
-            };
-
-            const dimNode = {
-                id: iterNodeId + '_dim',
-                type: 'dimension',
-                data: { id: data.currentDimension, description: data.currentDimensionDescription },
-                children: []
-            };
-
-            const iterNode = {
-                id: iterNodeId,
-                type: 'iteration',
-                data: data,
-                children: []
-            };
-
-            intentNode.children.push(dimNode);
-            dimNode.children.push(iterNode);
-
-            allNodes[intentNode.id] = intentNode;
-            allNodes[dimNode.id] = dimNode;
-            allNodes[iterNode.id] = iterNode;
-
-            const branches = data.branches || [];
-            branches.forEach(b => {
-                const branchNode = {
-                    id: b.id,
-                    type: 'branch',
-                    data: b,
-                    iterationData: data,
-                    isWinner: data.winnerId === b.id,
-                    children: []
-                };
-                iterNode.children.push(branchNode);
-                // Important: Branch IDs might not be globally unique.
-                // We index them by their specific ID and also keep track of them in context.
-                allNodes[b.id] = branchNode;
-                allNodes[iterNodeId + '_' + b.id] = branchNode;
-            });
+            const pid = data.parentId || "ROOT";
+            if (!childrenByParent[pid]) childrenByParent[pid] = [];
+            childrenByParent[pid].push(data);
         });
 
-        // Second pass: resolve parent-child links across iterations
-        sortedIterKeys.forEach(key => {
-            const data = iterations[key];
-            const lineage = data.lineage || 'root';
-            const iterNodeId = 'iter-' + data.iterationCount + '_' + lineage;
-            const intentNode = allNodes[iterNodeId + '_intent'];
-
-            let parentFound = false;
-            if (data.parentId && data.parentId !== 'ROOT') {
-                // Try finding the exact branch
-                let parentBranch = allNodes[data.parentId];
-
-                // If not found, and it's a linear progression, try finding the winner of the previous iteration in the same lineage
-                if (!parentBranch && data.iterationCount > 0) {
-                     const prevIterWinnerId = (winnersMap[lineage] || {})[data.iterationCount - 1];
-                     if (prevIterWinnerId) {
-                         const prevIterNodeId = 'iter-' + (data.iterationCount - 1) + '_' + lineage;
-                         parentBranch = allNodes[prevIterNodeId + '_' + prevIterWinnerId] || allNodes[prevIterWinnerId];
-                     }
-                }
-
-                if (parentBranch) {
-                    if (!parentBranch.children.includes(intentNode)) {
-                        parentBranch.children.push(intentNode);
-                    }
-                    parentFound = true;
-                }
-            }
-
-            if (!parentFound) {
-                if (!rootNodes.includes(intentNode)) rootNodes.push(intentNode);
-            }
-        });
-
-        // Recursive renderer for the hierarchy
-        const renderNode = (node) => {
+        // Recursive renderer for the lineage
+        const renderNode = (parentData, isRoot = false) => {
             let html = "";
-            if (node.type === 'iteration') {
-                const d = node.data;
-                const tooltip = `Iteration: ${d.iterationCount}\nDimension: ${d.currentDimension || 'N/A'}\nDescription: ${d.currentDimensionDescription || 'N/A'}\nTask: ${d.currentTask || ''}`;
 
-                html += `
-                    <div class="tree-node iteration" title="${window.ChatApp.Utils.escapeHtml(tooltip)}">
-                        <div class="node-title">I${d.iterationCount}</div>
-                    </div>
-                `;
-            } else if (node.type === 'intent') {
-                const d = node.data;
-                const tooltip = `Evolutionary Goal: ${d.goal}`;
-                html += `
-                    <div class="node-wrapper">
-                        <div class="tree-node intent" title="${window.ChatApp.Utils.escapeHtml(tooltip)}">
-                            <div class="node-title">INTENT</div>
-                        </div>
-                    </div>
-                `;
-            } else if (node.type === 'dimension') {
-                const d = node.data;
-                const tooltip = `Dimension: ${d.id}\nDescription: ${d.description || 'N/A'}`;
-                html += `
-                    <div class="tree-node dimension" title="${window.ChatApp.Utils.escapeHtml(tooltip)}">
-                        <div class="node-title">${window.ChatApp.Utils.escapeHtml(d.id || 'DIM')}</div>
-                    </div>
-                `;
-            } else {
-                const b = node.data;
-                const score = b.score !== undefined ? (Math.round(b.score * 100) + '%') : 'N/A';
-                const isWinner = node.isWinner;
-                const isFailed = b.status === 'failed' || b.status === 'rejected';
-                const id = String(b.id).split('-').pop();
-                const tooltip = `Branch: ${b.id}\nResult: ${b.status} (Score: ${score})\nStrategy: ${b.strategy || ''}`;
-
-                html += `
-                    <div class="tree-node branch ${isFailed ? 'failed' : ''} ${isWinner ? 'winner' : ''}" title="${window.ChatApp.Utils.escapeHtml(tooltip)}">
-                        <div class="node-title">${isWinner ? '🏆' : 'B' + id}</div>
-                    </div>
-                `;
-            }
-
-            if (node.children.length > 0) {
-                const isBranchParent = node.type === 'iteration';
-                html += `<div class="tree-children ${isBranchParent ? 'horizontal' : ''}">`;
-                node.children.forEach(child => {
-                    html += `<div class="tree-child">`;
-                    html += renderNode(child);
-                    html += `</div>`;
+            if (isRoot) {
+                // Find iteration(s) that have no parentId or "ROOT" as parentId
+                const roots = childrenByParent["ROOT"] || [];
+                roots.forEach((r, idx) => {
+                    html += renderIteration(r, idx === 0);
                 });
-                html += `</div>`;
             }
             return html;
         };
 
-        content.innerHTML = rootNodes.map(rn => renderNode(rn)).join('<div class="tree-hline-separator"></div>');
+        const renderIteration = (data, isRoot = false) => {
+            const dimInfo = data.currentDimension ? `\nDimension: ${data.currentDimension}${data.currentDimensionDescription ? ' (' + data.currentDimensionDescription + ')' : ''}` : "";
+            let iterHtml = `
+                <div class="tree-node" title="Iteration ${data.iterationCount}: ${data.currentTask || ''}${dimInfo}"
+                     ondblclick="window.ChatApp.Renderer.showDimensionDetails('${data.iterationCount}')">
+                    <div class="node-title">I${data.iterationCount}</div>
+                    ${data.currentDimension ? `<div style="font-size: 6px; color: #64748b; margin-top: -2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 34px; text-align: center;">${data.currentDimension}</div>` : ''}
+                </div>
+            `;
+
+            if (isRoot && latestData) {
+                const actualIters = sortedIterKeys.length;
+                const minIters = latestData.minIterations || 1;
+                const maxIters = latestData.maxIterations || 10;
+                const actualBranches = latestData.branches ? latestData.branches.length : 0;
+                const maxBranches = latestData.branchingLimit || 4;
+
+                const iText = `Iters: ${actualIters}/${minIters}/${maxIters}`;
+                const bText = `Branches: ${actualBranches}/${maxBranches}`;
+
+                iterHtml = `
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="font-size: 9px; color: #94a3b8; min-width: 60px; text-align: right; font-weight: normal;">${iText}</div>
+                        ${iterHtml}
+                        <div style="font-size: 9px; color: #94a3b8; min-width: 60px; font-weight: normal;">${bText}</div>
+                    </div>
+                `;
+            }
+
+            const branches = data.branches || [];
+            const hasBranches = branches.length > 0;
+
+            // Find any iterations that claim this iteration's winner (or this iteration itself) as parent
+            const winnerId = data.winnerId;
+
+            if (hasBranches) {
+                iterHtml += `<div class="tree-vline"></div>`;
+                iterHtml += `<div class="tree-children">`;
+
+                branches.forEach((b, idx) => {
+                    const isWinner = winnerId === b.id;
+                    const isFailed = b.status === 'failed' || b.status === 'rejected';
+                    const subIterations = childrenByParent[b.id] || [];
+                    const hasSubIters = subIterations.length > 0;
+
+                    iterHtml += `<div class="tree-child">`;
+                    iterHtml += `<div class="tree-vline"></div>`;
+                    iterHtml += `
+                        <div class="tree-node branch ${isFailed ? 'failed' : ''} ${isWinner ? 'winner' : ''}"
+                             title="Branch ${b.id}${b.strategy ? ': ' + b.strategy : ''}${b.score !== undefined ? ' - Score: ' + Math.round(b.score*100) : ''}"
+                             ondblclick="window.ChatApp.Renderer.showBranchDetails('${b.id}')"
+                             oncontextmenu="window.ChatApp.Renderer.showBranchContextMenu(event, '${b.id}')">
+                            <div class="node-title">${isWinner ? '🏆' : 'B' + (idx + 1)}</div>
+                        </div>
+                    `;
+
+                    if (hasSubIters) {
+                        iterHtml += `<div class="tree-vline"></div>`;
+                        subIterations.forEach(si => {
+                            iterHtml += renderIteration(si);
+                        });
+                    }
+
+                    iterHtml += `</div>`;
+                });
+
+                iterHtml += `</div>`;
+            } else {
+                // If no branches but there are iterations that claim this iteration as parent (linear continuation)
+                // We use "data.winnerId" or similar as a proxy if branches are missing from progress event
+                const pid = data.winnerId || "iter-" + data.iterationCount;
+                const subIterations = childrenByParent[pid] || [];
+                if (subIterations.length > 0) {
+                    iterHtml += `<div class="tree-vline"></div>`;
+                    subIterations.forEach(si => {
+                        iterHtml += renderIteration(si);
+                    });
+                }
+            }
+
+            return iterHtml;
+        };
+
+        content.innerHTML = renderNode(null, true) || '<div style="text-align: center; color: #94a3b8; margin-top: 20px;">No lineage.</div>';
     },
 
     updateCognitiveStatePanel: function(messages) {
@@ -729,6 +687,141 @@ window.ChatApp.Renderer = {
         } catch(e) {
             console.error("Failed to parse cognitive state:", e);
             content.innerHTML = `<div style="color: #ef4444; font-size: 10px;">Sync Error: ${e.message}</div>`;
+        }
+    },
+
+    showBranchDetails: function(branchId) {
+        // Try to find the branch data in messages
+        const popup = document.getElementById('branch-details-popup');
+        const content = document.getElementById('branch-details-content');
+        if (!popup || !content) return;
+
+        let branchData = null;
+        const messages = window.messages || [];
+
+        // Find latest progress containing this branch
+        for (let i = messages.length - 1; i >= 0; i--) {
+            const m = messages[i];
+            if ((m.agentType || '').toLowerCase().includes('evolution-progress')) {
+                try {
+                    const data = JSON.parse(m.text);
+                    if (data.branches) {
+                        const b = data.branches.find(br => br.id === branchId);
+                        if (b) {
+                            branchData = b;
+                            break;
+                        }
+                    }
+                } catch(e) {}
+            }
+        }
+
+        if (branchData) {
+            content.innerHTML = `
+                <div style="margin-bottom: 12px;">
+                    <div style="font-size: 10px; font-weight: 800; color: #94a3b8; margin-bottom: 2px;">STRATEGY</div>
+                    <div style="font-weight: 600; color: #1e293b;">${branchData.strategy || 'N/A'}</div>
+                </div>
+                <div style="display: flex; gap: 20px; margin-bottom: 12px;">
+                    <div>
+                        <div style="font-size: 10px; font-weight: 800; color: #94a3b8; margin-bottom: 2px;">STATUS</div>
+                        <div style="font-weight: 600; color: ${branchData.status === 'active' ? '#3b82f6' : branchData.status === 'failed' ? '#ef4444' : '#10b981'}; text-transform: uppercase; font-size: 11px;">${branchData.status}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 10px; font-weight: 800; color: #94a3b8; margin-bottom: 2px;">SCORE</div>
+                        <div style="font-weight: 600; color: #1e293b;">${branchData.score !== undefined ? Math.round(branchData.score * 100) + '%' : 'N/A'}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 10px; font-weight: 800; color: #94a3b8; margin-bottom: 2px;">ID</div>
+                        <div style="font-family: monospace; font-size: 10px; color: #64748b;">${branchData.id}</div>
+                    </div>
+                </div>
+                <button class="branch-btn select" style="width: 100%; margin-top: 10px;" onclick="window.ChatApp.Actions.callJava('approveDarwinVariant', '-1', '${branchId}'); document.getElementById('branch-details-popup').style.display='none';">Select this Branch</button>
+            `;
+            popup.style.display = 'flex';
+        } else {
+             // Fallback: check Darwin JSON messages
+             for (let i = messages.length - 1; i >= 0; i--) {
+                const m = messages[i];
+                const role = (m.agentType || '').toLowerCase();
+                if (role.includes('darwin') || role.includes('branch')) {
+                    try {
+                        const text = m.text.replace(/^(\s*\[[^\{\"\[\]\n]+\]|\s*\([^\{\"\[\)\n]+\)|\s*(INFO|WARNING|SEVERE|ERROR|DEBUG):)+/gi, '').trim();
+                        const data = JSON.parse(text);
+                        const variants = Array.isArray(data) ? data : (data.variants || data.proposals || []);
+                        const v = variants.find(vr => String(vr.id) === String(branchId));
+                        if (v) {
+                            content.innerHTML = `
+                                <div style="max-height: 400px; overflow-y: auto;">
+                                    ${this.renderJson(v)}
+                                </div>
+                                <button class="branch-btn select" style="width: 100%; margin-top: 10px;" onclick="window.ChatApp.Actions.callJava('approveDarwinVariant', '${m.index}', '${branchId}'); document.getElementById('branch-details-popup').style.display='none';">Select this Branch</button>
+                            `;
+                            popup.style.display = 'flex';
+                            return;
+                        }
+                    } catch(e) {}
+                }
+             }
+             alert("Could not find data for branch: " + branchId);
+        }
+    },
+
+    showBranchContextMenu: function(event, branchId) {
+        event.preventDefault();
+        this.showBranchDetails(branchId);
+    },
+
+    showDimensionDetails: function(iterationCount) {
+        const popup = document.getElementById('branch-details-popup');
+        const content = document.getElementById('branch-details-content');
+        if (!popup || !content) return;
+
+        let iterData = null;
+        const messages = window.messages || [];
+
+        // Find latest progress for this iteration
+        for (let i = messages.length - 1; i >= 0; i--) {
+            const m = messages[i];
+            if ((m.agentType || '').toLowerCase().includes('evolution-progress')) {
+                try {
+                    const data = JSON.parse(m.text);
+                    if (String(data.iterationCount) === String(iterationCount)) {
+                        iterData = data;
+                        break;
+                    }
+                } catch(e) {}
+            }
+        }
+
+        if (iterData) {
+            content.innerHTML = `
+                <div style="margin-bottom: 12px;">
+                    <div style="font-size: 10px; font-weight: 800; color: #94a3b8; margin-bottom: 2px;">GOAL / TASK</div>
+                    <div style="font-weight: 600; color: #1e293b;">${iterData.goal || iterData.currentTask || 'N/A'}</div>
+                </div>
+                <div style="margin-bottom: 12px;">
+                    <div style="font-size: 10px; font-weight: 800; color: #94a3b8; margin-bottom: 2px;">CURRENT DIMENSION</div>
+                    <div style="font-weight: 600; color: #3b82f6;">${iterData.currentDimension || 'N/A'}</div>
+                </div>
+                <div style="margin-bottom: 12px;">
+                    <div style="font-size: 10px; font-weight: 800; color: #94a3b8; margin-bottom: 2px;">DIMENSION DESCRIPTION</div>
+                    <div style="font-size: 11px; color: #334155; line-height: 1.4;">${iterData.currentDimensionDescription || 'No description available.'}</div>
+                </div>
+                <div style="display: flex; gap: 20px; margin-bottom: 12px;">
+                    <div>
+                        <div style="font-size: 10px; font-weight: 800; color: #94a3b8; margin-bottom: 2px;">ITERATION</div>
+                        <div style="font-weight: 600; color: #1e293b;">#${iterData.iterationCount}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 10px; font-weight: 800; color: #94a3b8; margin-bottom: 2px;">GENERATION</div>
+                        <div style="font-weight: 600; color: #1e293b;">${iterData.generation}</div>
+                    </div>
+                </div>
+            `;
+            popup.style.display = 'flex';
+        } else {
+            alert("Could not find data for iteration: " + iterationCount);
         }
     },
 
