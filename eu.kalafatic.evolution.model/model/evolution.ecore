@@ -523,6 +523,8 @@
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="status" eType="#//ForgeStatus"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="activeModelId" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="selectedModelType" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="git" eType="#//Git"
+        containment="true"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="modelState" eType="#//SessionModelState"
         containment="true"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="experiments" upperBound="-1"

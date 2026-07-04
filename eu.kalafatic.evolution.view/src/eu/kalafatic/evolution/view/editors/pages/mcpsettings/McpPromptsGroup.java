@@ -61,8 +61,12 @@ public class McpPromptsGroup extends AEvoGroup {
         promptsTable.removeAll();
     }
 
+    public boolean isDisposed() {
+        return promptsTable == null || promptsTable.isDisposed();
+    }
+
     public void addItem(String name, String desc, String args) {
-        if (promptsTable.isDisposed()) return;
+        if (isDisposed()) return;
         TableItem item = new TableItem(promptsTable, SWT.NONE);
         item.setText(0, name);
         item.setText(1, desc);

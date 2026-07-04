@@ -25,6 +25,9 @@ public interface ForgeSession extends EObject {
 	String getSelectedModelType();
 	void setSelectedModelType(String value);
 
+	Git getGit();
+	void setGit(Git value);
+
 	SessionModelState getModelState();
 	void setModelState(SessionModelState value);
 
