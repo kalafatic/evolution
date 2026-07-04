@@ -87,12 +87,12 @@
 }
 
 .tree-node.intent {
-    width: 56px;
-    height: 56px;
+    width: 64px;
+    height: 64px;
     background: #fff1f2;
     border: 2px solid #f43f5e;
     transform: rotate(45deg);
-    border-radius: 4px;
+    border-radius: 8px;
 }
 
 .tree-node.intent:hover {
@@ -102,23 +102,23 @@
 .tree-node.intent .node-title {
     transform: rotate(-45deg);
     color: #9f1239;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 900;
-    width: 141%;
+    width: 140%;
     text-align: center;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 1px;
 }
 
 /* Blue Pill for Dimension */
 .tree-node.dimension {
-    width: 72px;
-    height: 30px;
+    width: 80px;
+    height: 32px;
     background: #eff6ff;
     border: 2px solid #3b82f6;
-    border-radius: 15px;
+    border-radius: 16px;
     color: #1d4ed8;
-    margin: 12px 0;
+    margin: 16px 0;
 }
 
 .tree-node.dimension .node-title {
@@ -127,18 +127,23 @@
 }
 
 .tree-node.iteration {
-    width: 36px;
-    height: 36px;
+    width: 44px;
+    height: 44px;
     background: #f8fafc;
-    border: 2px solid #64748b;
+    border: 2px solid #475569;
     border-radius: 50%;
-    color: #334155;
+    color: #1e293b;
     font-family: 'Inter', sans-serif;
+    margin: 16px 0;
 }
 
-.tree-node.proposal {
+.tree-node.branch {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    border: 2px solid #94a3b8;
     background: #ffffff;
-    border-color: #e2e8f0;
+    margin: 8px 12px;
 }
 
 .tree-node.kept {
@@ -192,8 +197,7 @@
     background: #f0f9ff !important;
     border-color: #0284c7 !important;
     color: #0369a1 !important;
-    box-shadow: 0 0 10px rgba(2, 132, 199, 0.2);
-    border-radius: 8px;
+    box-shadow: 0 0 12px rgba(2, 132, 199, 0.2);
 }
 
 .tree-node.failed {
@@ -208,22 +212,17 @@
 }
 
 .tree-hline-separator {
-    height: 1px;
-    background: #e2e8f0;
+    height: 60px;
     width: 100%;
-    margin: 50px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 20px 0;
     position: relative;
-    border: none;
 }
 
 .tree-hline-separator::after {
     content: "NEXT EVOLUTION";
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: #fafafa;
-    padding: 0 16px;
     font-size: 10px;
     color: #94a3b8;
     font-weight: 800;
@@ -233,29 +232,44 @@
 
 .tree-children {
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    align-items: center;
     position: relative;
     padding-top: 32px;
+}
+
+.tree-children.horizontal {
+    flex-direction: row;
+    justify-content: center;
+    align-items: flex-start;
 }
 
 /* Vertical line from parent node down to the horizontal bar (or directly to child) */
 .tree-children::before {
     content: "";
     position: absolute;
-    top: -16px; /* Start at bottom of parent node */
+    top: -32px; /* Start at bottom of parent node area */
     left: 50%;
-    margin-left: -1px;
+    transform: translateX(-50%);
     width: 2px;
-    height: 48px; /* Stem down through the children area */
+    height: 32px;
     background: #cbd5e1;
     z-index: 1;
+}
+
+.tree-children:not(.horizontal) > .tree-child::before {
+    display: none;
+}
+
+.tree-children:not(.horizontal) > .tree-child::after {
+    height: 32px;
 }
 
 .tree-child {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 0 24px;
+    padding: 0 32px;
     position: relative;
 }
 
@@ -263,7 +277,7 @@
 .tree-child::before {
     content: "";
     position: absolute;
-    top: 32px; /* Intersection point */
+    top: 0; /* Intersection point at the top of the child container */
     left: 0;
     right: 0;
     height: 2px;
@@ -280,18 +294,18 @@
 .tree-child::after {
     content: "";
     position: absolute;
-    top: 32px;
+    top: 0;
     left: 50%;
-    margin-left: -1px;
+    transform: translateX(-50%);
     width: 2px;
-    height: 8px; /* Stem down to node */
+    height: 32px; /* Stem down to node */
     background: #cbd5e1;
     z-index: 1;
 }
 
 /* Ensure single child has a perfectly continuous vertical line */
 .tree-child:only-child::after {
-    display: none; /* Covered by parent stem */
+    height: 100%;
 }
 
 .resize-handle {

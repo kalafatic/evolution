@@ -473,14 +473,19 @@ window.ChatApp.Renderer = {
         }
 
         const iterations = {};
+        const winnersMap = {}; // lineage -> iterationCount -> branchId
+
         progressMessages.forEach(m => {
             try {
                 const data = JSON.parse(m.text);
                 if (data.iterationCount !== undefined) {
-                    // Use composite key for iterations to prevent data loss when lineage branches
                     const key = (data.lineage || 'root') + '_' + data.iterationCount;
                     if (!iterations[key] || data.timestamp > iterations[key].timestamp) {
                         iterations[key] = data;
+                        if (data.winnerId) {
+                             winnersMap[data.lineage || 'root'] = winnersMap[data.lineage || 'root'] || {};
+                             winnersMap[data.lineage || 'root'][data.iterationCount] = data.winnerId;
+                        }
                     }
                 }
             } catch(e) {}
@@ -490,12 +495,13 @@ window.ChatApp.Renderer = {
         if (sortedIterKeys.length === 0) return;
 
         const rootNodes = [];
-        const allNodes = {}; // Map of all nodes by ID for robust parent resolution
+        const allNodes = {};
 
         // First pass: create all nodes and their basic discovery chains
         sortedIterKeys.forEach(key => {
             const data = iterations[key];
-            const iterNodeId = 'iter-' + data.iterationCount + '_' + (data.lineage || 'alpha');
+            const lineage = data.lineage || 'root';
+            const iterNodeId = 'iter-' + data.iterationCount + '_' + lineage;
 
             const intentNode = {
                 id: iterNodeId + '_intent',
@@ -536,27 +542,43 @@ window.ChatApp.Renderer = {
                     children: []
                 };
                 iterNode.children.push(branchNode);
-                allNodes[branchNode.id] = branchNode;
+                // Important: Branch IDs might not be globally unique.
+                // We index them by their specific ID and also keep track of them in context.
+                allNodes[b.id] = branchNode;
+                allNodes[iterNodeId + '_' + b.id] = branchNode;
             });
         });
 
         // Second pass: resolve parent-child links across iterations
         sortedIterKeys.forEach(key => {
             const data = iterations[key];
-            const iterNodeId = 'iter-' + data.iterationCount + '_' + (data.lineage || 'alpha');
+            const lineage = data.lineage || 'root';
+            const iterNodeId = 'iter-' + data.iterationCount + '_' + lineage;
             const intentNode = allNodes[iterNodeId + '_intent'];
 
+            let parentFound = false;
             if (data.parentId && data.parentId !== 'ROOT') {
-                const parentBranch = allNodes[data.parentId];
+                // Try finding the exact branch
+                let parentBranch = allNodes[data.parentId];
+
+                // If not found, and it's a linear progression, try finding the winner of the previous iteration in the same lineage
+                if (!parentBranch && data.iterationCount > 0) {
+                     const prevIterWinnerId = (winnersMap[lineage] || {})[data.iterationCount - 1];
+                     if (prevIterWinnerId) {
+                         const prevIterNodeId = 'iter-' + (data.iterationCount - 1) + '_' + lineage;
+                         parentBranch = allNodes[prevIterNodeId + '_' + prevIterWinnerId] || allNodes[prevIterWinnerId];
+                     }
+                }
+
                 if (parentBranch) {
-                    // Check if already child to avoid duplicates if message list is updated
                     if (!parentBranch.children.includes(intentNode)) {
                         parentBranch.children.push(intentNode);
                     }
-                } else {
-                    if (!rootNodes.includes(intentNode)) rootNodes.push(intentNode);
+                    parentFound = true;
                 }
-            } else {
+            }
+
+            if (!parentFound) {
                 if (!rootNodes.includes(intentNode)) rootNodes.push(intentNode);
             }
         });
@@ -607,7 +629,8 @@ window.ChatApp.Renderer = {
             }
 
             if (node.children.length > 0) {
-                html += `<div class="tree-children">`;
+                const isBranchParent = node.type === 'iteration';
+                html += `<div class="tree-children ${isBranchParent ? 'horizontal' : ''}">`;
                 node.children.forEach(child => {
                     html += `<div class="tree-child">`;
                     html += renderNode(child);
