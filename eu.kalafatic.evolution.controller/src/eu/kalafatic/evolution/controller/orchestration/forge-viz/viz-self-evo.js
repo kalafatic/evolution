@@ -11,12 +11,18 @@
             return;
         }
 
-        const progress = stats.progress || 0;
+        const progress = stats ? (stats.progress || 0) : 0;
+        const status = stats ? (stats.status || 'IDLE') : 'IDLE';
+        const filesScanned = stats ? (stats.filesScanned || 0) : 0;
+        const totalFiles = stats ? (stats.totalFiles || 0) : 0;
+        const instructionsGenerated = stats ? (stats.instructionsGenerated || 0) : 0;
+        const currentLoss = stats ? (stats.currentLoss || 0.0) : 0.0;
+        const currentEpoch = stats ? (stats.currentEpoch || '0') : '0';
 
         area.innerHTML = `
             <div style="width:100%; max-width:600px; padding:20px; background:var(--bg-secondary); border-radius:8px; border:1px solid var(--border);">
                 <h2 style="margin-top:0; color:var(--accent);">Self-Evo Forging Pipeline</h2>
-                <p>Status: <strong style="color:${statusColor(stats.status)}">${stats.status}</strong></p>
+                <p>Status: <strong style="color:${statusColor(status)}">${status}</strong></p>
 
                 <div style="width:100%; height:20px; background:#ddd; border-radius:10px; overflow:hidden; margin:20px 0;">
                     <div style="width:${progress}%; height:100%; background:var(--accent); transition:width 0.5s;"></div>
@@ -26,24 +32,24 @@
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-top:20px;">
                     <div class="viz-card">
                         <h4>Scanner</h4>
-                        <p>${stats.filesScanned} / ${stats.totalFiles} Files</p>
+                        <p>${filesScanned} / ${totalFiles} Files</p>
                     </div>
                     <div class="viz-card">
                         <h4>AI Enhancer</h4>
-                        <p>${stats.instructionsGenerated} Instructions</p>
+                        <p>${instructionsGenerated} Instructions</p>
                     </div>
                     <div class="viz-card">
                         <h4>Fine-Tuning</h4>
-                        <p>Loss: ${stats.currentLoss.toFixed(4)}</p>
+                        <p>Loss: ${typeof currentLoss === 'number' ? currentLoss.toFixed(4) : currentLoss}</p>
                     </div>
                     <div class="viz-card">
                         <h4>Epoch</h4>
-                        <p>${stats.currentEpoch}</p>
+                        <p>${currentEpoch}</p>
                     </div>
                 </div>
 
                 <div style="margin-top:30px; text-align:center;">
-                    <button class="btn btn-primary" onclick="startForging()" ${stats.status !== 'IDLE' ? 'disabled' : ''}>Start Forging Process</button>
+                    <button class="btn btn-primary" onclick="startForging()" ${status !== 'IDLE' ? 'disabled' : ''}>Start Forging Process</button>
                 </div>
             </div>
         `;
