@@ -5,7 +5,6 @@ import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 public class SmartScanner {
     private final Path rootPath;
@@ -14,7 +13,6 @@ public class SmartScanner {
     public SmartScanner(Path rootPath) {
         this.rootPath = rootPath;
         loadGitIgnore();
-        // Add default ignores
         ignorePatterns.add(Pattern.compile(".*\\.git/.*"));
         ignorePatterns.add(Pattern.compile(".*/target/.*"));
         ignorePatterns.add(Pattern.compile(".*/bin/.*"));
@@ -33,9 +31,7 @@ public class SmartScanner {
                     if (line.isEmpty() || line.startsWith("#")) continue;
                     ignorePatterns.add(globToPattern(line));
                 }
-            } catch (IOException e) {
-                System.err.println("Warning: Could not read .gitignore: " + e.getMessage());
-            }
+            } catch (IOException e) {}
         }
     }
 
@@ -72,9 +68,7 @@ public class SmartScanner {
     private boolean isIgnored(Path path) {
         String relativePath = rootPath.relativize(path).toString().replace("\\", "/");
         for (Pattern pattern : ignorePatterns) {
-            if (pattern.matcher(relativePath).matches()) {
-                return true;
-            }
+            if (pattern.matcher(relativePath).matches()) return true;
         }
         return false;
     }

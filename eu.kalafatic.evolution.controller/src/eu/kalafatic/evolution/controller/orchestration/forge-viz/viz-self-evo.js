@@ -90,7 +90,17 @@
     window.startForging = async function() {
         log("Initiating Self-Evo forging...");
         try {
-            await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/forging/start?runtime=SWT`, { method: 'POST' });
+            const res = await fetch(getBaseUrl() + \`/forge/session/\${activeSessionId}/forging/start?runtime=SWT\`, { method: 'POST' });
+            if (res.ok) {
+                log("Forging process started successfully.");
+                if (!vizAutoRefresh) {
+                    vizAutoRefresh = true;
+                    document.getElementById('viz-selector').value = 'SELF_EVO';
+                    if (window.setupAutoRefresh) window.setupAutoRefresh();
+                }
+            } else {
+                throw new Error(await res.text());
+            }
         } catch (e) { log("Start forging error: " + e.message); }
     };
 })();

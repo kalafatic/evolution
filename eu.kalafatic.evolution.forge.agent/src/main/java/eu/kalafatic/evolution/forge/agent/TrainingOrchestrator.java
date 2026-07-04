@@ -1,6 +1,6 @@
 package eu.kalafatic.evolution.forge.agent;
 
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.*;
 import java.util.List;
 
@@ -9,6 +9,8 @@ public class TrainingOrchestrator {
     private final SmartScanner scanner;
     private final DataForgeEngine forge;
     private final AiDataEnhancer enhancer;
+    private final ModelExporter exporter = new ModelExporter();
+    private EvoForgeServer server;
 
     public TrainingOrchestrator(Path projectPath, AiDataEnhancer enhancer) {
         this.projectPath = projectPath;
@@ -17,48 +19,16 @@ public class TrainingOrchestrator {
         this.enhancer = enhancer;
     }
 
-    public void runPipeline() throws Exception {
-        System.out.println("Step 1: Scanning project data...");
-        List<Path> files = scanner.scan();
-        System.out.println("Found " + files.size() + " relevant files.");
+    public void setServer(EvoForgeServer server) { this.server = server; }
 
+    public void runPipeline() throws Exception {
+        updateStatus("Forging...", 50);
+        List<Path> files = scanner.scan();
         Path dataDir = projectPath.resolve("evo-forge-data");
         Files.createDirectories(dataDir);
-
-        System.out.println("Step 2: Forging raw dataset...");
-        Path rawDataset = dataDir.resolve("raw_data.jsonl");
-        forge.buildDataset(files, rawDataset);
-
-        System.out.println("Step 3: Creating instruction pairs...");
-        Path instructionDataset = dataDir.resolve("instructions.jsonl");
-        forge.createInstructionPairs(files, instructionDataset);
-
-        if (enhancer != null) {
-            System.out.println("Step 4: AI Data Enhancement...");
-            Path enhancedDataset = dataDir.resolve("evo_train.jsonl");
-            enhancer.enhance(instructionDataset, enhancedDataset);
-        }
-
-        System.out.println("Step 5: Configuring training parameters...");
-        generateAxolotlConfig(dataDir);
-
-        System.out.println("Pipeline complete. Ready for training.");
+        forge.buildDataset(files, dataDir.resolve("raw_data.jsonl"));
+        updateStatus("Complete", 100);
     }
 
-    private void generateAxolotlConfig(Path dataDir) throws IOException {
-        String config = "base_model: unsloth/llama-3-8b-bnb-4bit\n" +
-                        "model_type: LlamaForCausalLM\n" +
-                        "tokenizer_type: LlamaTokenizer\n" +
-                        "dataset_prepared_path: " + dataDir.resolve("prepared").toString() + "\n" +
-                        "datasets:\n" +
-                        "  - path: " + dataDir.resolve("evo_train.jsonl").toString() + "\n" +
-                        "    type: alpaca\n" +
-                        "adapter: lora\n" +
-                        "lora_r: 32\n" +
-                        "lora_alpha: 16\n" +
-                        "lora_dropout: 0.05\n" +
-                        "learning_rate: 0.0002\n" +
-                        "num_epochs: 3\n";
-        Files.writeString(dataDir.resolve("axolotl_config.yaml"), config);
-    }
+    private void updateStatus(String s, int p) { if (server != null) server.updateProgress(s, p); }
 }
