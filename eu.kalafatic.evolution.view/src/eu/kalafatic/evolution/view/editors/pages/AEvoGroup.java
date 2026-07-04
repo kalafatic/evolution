@@ -233,4 +233,8 @@ public abstract class AEvoGroup {
     public void dispose() {
         // Default implementation does nothing
     }
+
+    public boolean isDisposed() {
+        return group == null || group.isDisposed();
+    }
 }
