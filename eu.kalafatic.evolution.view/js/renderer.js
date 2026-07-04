@@ -569,7 +569,7 @@ window.ChatApp.Renderer = {
                 const tooltip = `Iteration: ${d.iterationCount}\nDimension: ${d.currentDimension || 'N/A'}\nDescription: ${d.currentDimensionDescription || 'N/A'}\nTask: ${d.currentTask || ''}`;
 
                 html += `
-                    <div class="tree-node" title="${window.ChatApp.Utils.escapeHtml(tooltip)}">
+                    <div class="tree-node iteration" title="${window.ChatApp.Utils.escapeHtml(tooltip)}">
                         <div class="node-title">I${d.iterationCount}</div>
                     </div>
                 `;
@@ -577,8 +577,10 @@ window.ChatApp.Renderer = {
                 const d = node.data;
                 const tooltip = `Evolutionary Goal: ${d.goal}`;
                 html += `
-                    <div class="tree-node intent_reconstruction" title="${window.ChatApp.Utils.escapeHtml(tooltip)}">
-                        <div class="node-title">INTENT</div>
+                    <div class="node-wrapper">
+                        <div class="tree-node intent" title="${window.ChatApp.Utils.escapeHtml(tooltip)}">
+                            <div class="node-title">INTENT</div>
+                        </div>
                     </div>
                 `;
             } else if (node.type === 'dimension') {
@@ -618,7 +620,7 @@ window.ChatApp.Renderer = {
             return html;
         };
 
-        content.innerHTML = rootNodes.map(rn => renderNode(rn)).join('<div class="tree-hline" style="width:100%; margin:20px 0;"></div>');
+        content.innerHTML = rootNodes.map(rn => renderNode(rn)).join('<div class="tree-hline-separator"></div>');
     },
 
     updateCognitiveStatePanel: function(messages) {
