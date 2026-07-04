@@ -4,6 +4,30 @@ This document outlines the presentation flow for capturing a video demonstration
 
 ---
 
+## 0. Introduction: Motivation & Vision
+**Action**: Display a high-level overview or slide with the WHY, WHAT, and HOW.
+
+### WHY? (The Motivation)
+**Subtitles**:
+- Why build EVO? The motivation is three-fold: Personal, Economical, and Political.
+- **Personal**: It’s about the joy of creation, staying at the absolute frontier of technology, and ensuring long-term job relevance in an AI-driven industry.
+- **Economical**: For both users and developers, EVO builds "priceless know-how." It transforms the user from a consumer into a master of the AI lifecycle.
+- **Political**: In an era of increasing censorship and the global "GPU/LLM war," EVO provides independence. It’s about local control and resisting centralized AI authority.
+
+### WHAT? (The Scope)
+**Subtitles**:
+- EVO is a comprehensive platform for the entire AI lifecycle.
+- It integrates local LLMs via Ollama, the Model Context Protocol (MCP) for ecosystem connectivity, and a deterministic evolutionary Orchestrator.
+- The ultimate vision is **local self-development**: an AI platform that can autonomously improve its own source code and architecture on your local machine.
+
+### HOW? (The Foundation)
+**Subtitles**:
+- Built on a rock-solid foundation of open technologies: **Java, Eclipse RCP, and the Eclipse Modeling Framework (EMF)**.
+- We leverage Ollama for local execution and frontier tools like **Grok, ChatGPT, and DeepSeek** for advanced reasoning.
+- My role is the **Architect** – using agents like **Jules** to generate code while I maintain the structural integrity and evolutionary direction.
+
+---
+
 ## 1. Start EVO RCP
 **Action**: Launch the EVO application.
 **Subtitles**:
@@ -97,3 +121,15 @@ This document outlines the presentation flow for capturing a video demonstration
 - Each task represents a unit of work: Analysis, Implementation, or Validation.
 - We can inspect individual task status, logs, and generated artifacts.
 - The stack ensures deterministic execution and provides a clear audit trail for the entire evolutionary process.
+
+---
+
+## 8. Future Vision & Proposed Improvements
+**Action**: Show the "Forge Models" or "Iteration" tab while summarizing the future.
+**Subtitles**:
+- The journey of EVO has just begun. Our roadmap includes:
+- **Deeper Local Self-Evolution**: Enhancing the kernel's ability to refactor its own OSGi service layer without external oversight.
+- **MCP Ecosystem Expansion**: Full bidirectional synchronization with Jira, Confluence, and GitHub for enterprise-grade orchestration.
+- **Refined Darwinian Metrics**: Implementing multi-objective optimization (complexity vs. performance) into the variant scoring engine.
+- **Autonomous Reasoning Isolation**: Moving toward a completely air-gapped evolutionary loop for high-security environments.
+- EVO is the bridge between human architectural intent and autonomous machine execution.
