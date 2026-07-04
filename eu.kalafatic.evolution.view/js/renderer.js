@@ -607,11 +607,9 @@ window.ChatApp.Renderer = {
             }
 
             if (node.children.length > 0) {
-                html += `<div class="tree-vline"></div>`;
                 html += `<div class="tree-children">`;
                 node.children.forEach(child => {
                     html += `<div class="tree-child">`;
-                    html += `<div class="tree-vline"></div>`;
                     html += renderNode(child);
                     html += `</div>`;
                 });
