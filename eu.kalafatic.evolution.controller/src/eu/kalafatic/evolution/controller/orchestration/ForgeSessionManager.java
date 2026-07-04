@@ -43,6 +43,10 @@ public class ForgeSessionManager {
     }
 
     private void seedDefaultSessions() {
+        // 0. Self-Evo Forging
+        ForgeSession s0 = createSession("Self-Evo Forging", "SELF_EVO");
+        s0.getModelState().setModelGraph("{\"nodes\":[{\"id\":\"se1\",\"name\":\"Scanner\",\"type\":\"CUSTOM\",\"x\":100,\"y\":150},{\"id\":\"se2\",\"name\":\"Data Enhancer\",\"type\":\"ATTENTION\",\"x\":250,\"y\":150},{\"id\":\"se3\",\"name\":\"Trainer\",\"type\":\"TRANSFORMER\",\"x\":400,\"y\":150},{\"id\":\"se4\",\"name\":\"GGUF Export\",\"type\":\"LAYER\",\"x\":550,\"y\":150}],\"links\":[{\"source\":\"se1\",\"target\":\"se2\"},{\"source\":\"se2\",\"target\":\"se3\"},{\"source\":\"se3\",\"target\":\"se4\"}]}");
+
         // 1. Simple Neuron
         ForgeSession s1 = createSession("Simple Neuron", "NEURON");
         s1.getModelState().setModelGraph("{\"nodes\":[{\"id\":\"n1\",\"name\":\"input_1\",\"type\":\"NEURON\",\"x\":100,\"y\":100},{\"id\":\"n2\",\"name\":\"bias\",\"type\":\"NEURON\",\"x\":100,\"y\":200},{\"id\":\"n3\",\"name\":\"output\",\"type\":\"NEURON\",\"x\":300,\"y\":150}],\"links\":[{\"source\":\"n1\",\"target\":\"n3\"},{\"source\":\"n2\",\"target\":\"n3\"}]}");
