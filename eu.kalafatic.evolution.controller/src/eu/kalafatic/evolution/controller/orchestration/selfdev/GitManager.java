@@ -86,15 +86,21 @@ public class GitManager {
         if (!isGitRepository()) {
             try {
                 gitTool.execute("init", root, null);
-                gitTool.execute("config user.email \"evolution@kalafatic.eu\"", root, null);
-                gitTool.execute("config user.name \"Evolution Kernel\"", root, null);
-                gitTool.execute("config commit.gpgsign false", root, null);
             } catch (Exception e) {
                 // Ignore init failures in environments without git
             }
         }
 
         if (isGitRepository()) {
+            // Always try to set config if we are in a repo
+            try {
+                gitTool.execute("config user.email \"evolution@kalafatic.eu\"", root, null);
+                gitTool.execute("config user.name \"Evolution Kernel\"", root, null);
+                gitTool.execute("config commit.gpgsign false", root, null);
+            } catch (Exception e) {
+                // Ignore config failures
+            }
+
             // Ensure HEAD exists (it won't in a fresh init without commits)
             try {
                 gitTool.execute("rev-parse --verify HEAD", root, null);
