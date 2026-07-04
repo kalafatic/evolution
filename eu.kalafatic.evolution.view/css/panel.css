@@ -49,28 +49,87 @@
 
 .tree-node {
     width: 32px;
-    height: auto;
-    min-height: 32px;
-    padding: 4px 2px;
-    border: 1.5px solid #7aa6ff;
-    border-radius: 4px;
+    height: 32px;
+    padding: 4px;
+    border: 2px solid #94a3b8;
+    border-radius: 8px;
     background: #ffffff;
     text-align: center;
     overflow: hidden;
-    margin: 2px 0;
-    box-shadow: 0 1px 3px rgba(0,0,0,.05);
+    margin: 4px 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.06);
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     box-sizing: border-box;
+    transition: all 0.2s ease;
+    cursor: default;
 }
 
+.tree-node:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Pink Diamond for Intent */
+.node-wrapper {
+    padding: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    z-index: 10;
+}
+
+.tree-node.intent {
+    width: 36px;
+    height: 36px;
+    background: #fff1f2;
+    border: 2px solid #f43f5e;
+    transform: rotate(45deg);
+    border-radius: 4px;
+}
+
+.tree-node.intent .node-title {
+    transform: rotate(-45deg);
+    color: #9f1239;
+    font-size: 7px;
+    font-weight: 900;
+    width: 140%;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Blue Pill for Dimension */
 .tree-node.dimension {
-    width: 64px;
-    background: #f0f7ff;
-    border-color: #3b82f6;
+    width: 60px;
+    height: 20px;
+    background: #eff6ff;
+    border: 2px solid #3b82f6;
+    border-radius: 10px;
+    color: #1d4ed8;
+    margin: 6px 0;
+}
+
+.tree-node.dimension .node-title {
+    font-size: 7px;
+    font-weight: 800;
+}
+
+.tree-node.iteration {
+    width: 28px;
+    height: 28px;
+    background: #f8fafc;
+    border: 2px solid #475569;
+    border-radius: 50%;
+    color: #1e293b;
+}
+
+.tree-node.iteration .node-title {
+    font-size: 9px;
 }
 
 .tree-node.proposal {
@@ -129,17 +188,17 @@
 
 
 .tree-node.winner {
-    background: #eff6ff !important;
-    border-color: #3b82f6 !important;
-    color: #1e40af !important;
-    box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
+    background: #f0f9ff !important;
+    border-color: #0284c7 !important;
+    color: #0369a1 !important;
+    box-shadow: 0 0 10px rgba(2, 132, 199, 0.3);
     z-index: 2;
 }
 
 .tree-node.failed {
-    background: #fff5f5 !important;
-    border-color: #feb2b2 !important;
-    color: #9b2c2c !important;
+    background: #fef2f2 !important;
+    border-color: #ef4444 !important;
+    color: #b91c1c !important;
 }
 
 .tree-node .winner-label {
@@ -147,15 +206,15 @@
 }
 
 .tree-vline {
-    width: 1.5px;
-    height: 12px;
-    background: #cbd5e1;
+    width: 2px;
+    height: 16px;
+    background: #94a3b8;
     flex-shrink: 0;
 }
 
 .tree-hline {
     height: 2px;
-    background: #cbd5e1;
+    background: #94a3b8;
     margin: 0 10px;
 }
 
@@ -163,7 +222,7 @@
     display: flex;
     justify-content: center;
     position: relative;
-    padding-top: 12px;
+    padding-top: 16px;
 }
 
 .tree-children::before {
@@ -171,16 +230,16 @@
     position: absolute;
     top: 0;
     left: 50%;
-    width: 1.5px;
-    height: 12px;
-    background: #cbd5e1;
+    width: 2px;
+    height: 16px;
+    background: #94a3b8;
 }
 
 .tree-child {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 0 3px;
+    padding: 0 5px;
     position: relative;
 }
 
@@ -191,8 +250,8 @@
     top: 0;
     left: 0;
     right: 0;
-    height: 1.5px;
-    background: #cbd5e1;
+    height: 2px;
+    background: #94a3b8;
 }
 
 .tree-child:first-child::before {
