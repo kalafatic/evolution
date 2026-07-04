@@ -77,6 +77,13 @@ public class ForgeSessionManager {
         if (orchestrator == null) return null;
 
         ForgeSession session = OrchestrationFactory.eINSTANCE.createForgeSession();
+
+        eu.kalafatic.evolution.model.orchestration.Git git = eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createGit();
+        git.setRepositoryUrl(eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.getRepositoryRemote(eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.REPO_LLM));
+        git.setLocalPath(eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.getRepositoryPath(eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.REPO_LLM));
+        git.setBranch(eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.getRepositoryBranch(eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.REPO_LLM));
+        session.setGit(git);
+
         session.setSessionId(UUID.randomUUID().toString());
         session.setName(name);
         session.setSelectedModelType(modelType);

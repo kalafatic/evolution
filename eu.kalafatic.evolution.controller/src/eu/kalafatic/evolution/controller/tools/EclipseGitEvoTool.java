@@ -12,10 +12,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.jgit.api.CloneCommand;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.Status;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
+import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 
 /**
  * Central utility for programmatically managing multiple Git repositories
@@ -99,15 +101,21 @@ public class EclipseGitEvoTool {
     static {
         registerRepository(new RepoConfig(REPO_EVOLUTION, "https://github.com/kalafatic/evolution.git", getEvolutionDefaultPath()));
         registerRepository(new RepoConfig(REPO_WORKSPACE, "https://github.com/kalafatic/evo.git", getEvoDefaultPath()));
-        registerRepository(new RepoConfig(REPO_LLM, "/llm", getLlmDefaultPath()));
+        registerRepository(new RepoConfig(REPO_LLM, "https://github.com/kalafatic/llm.git", getLlmDefaultPath()));
     }
 
     // --- Utilities ---
 
     private static void log(String message) { System.out.println("[GIT] " + message); }
 
-    private static String getEvolutionDefaultPath() {
-        return Paths.get(System.getProperty("user.home"), "git", "evolution").toString();
+    public static String getEvolutionDefaultPath() {
+        try {
+            File workspaceDir = ResourcesPlugin.getWorkspace().getRoot().getLocation().toFile();
+            // evolution path inside RCP sandbox workspace sibling: ${workspace_loc}/../evolution
+            return new File(workspaceDir.getParentFile(), "evolution").getAbsolutePath();
+        } catch (Exception e) {
+            return Paths.get(System.getProperty("user.home"), "git", "evolution").toString();
+        }
     }
 
     private static String getEvoDefaultPath() {
@@ -119,12 +127,13 @@ public class EclipseGitEvoTool {
         }
     }
 
-    private static String getLlmDefaultPath() {
+    public static String getLlmDefaultPath() {
         try {
-            Path workspaceLoc = Paths.get(ResourcesPlugin.getWorkspace().getRoot().getLocation().toOSString());
-            return workspaceLoc.resolve("runtime").resolve("git").resolve("llm").resolve("evo").toString();
+            File workspaceDir = ResourcesPlugin.getWorkspace().getRoot().getLocation().toFile();
+            // LLM path inside RCP sandbox workspace sibling: ${workspace_loc}/../llm
+            return new File(workspaceDir.getParentFile(), "llm").getAbsolutePath();
         } catch (Exception e) {
-            return Paths.get(System.getProperty("user.home"), "git", "llm-evo").toString();
+            return Paths.get(System.getProperty("user.home"), "git", "llm").toString();
         }
     }
 
@@ -369,7 +378,20 @@ public class EclipseGitEvoTool {
         log("Cloning " + id + " [" + remoteUrl + "] to " + localPath);
         try {
             if (!dir.exists() && !dir.mkdirs()) return new GitOpResult(OpStatus.FAILED, "Mkdirs failed");
-            try (Git git = Git.cloneRepository().setURI(remoteUrl).setDirectory(dir).setCloneAllBranches(true).setBare(false).call()) {
+
+            CloneCommand cloneCmd = Git.cloneRepository()
+                    .setURI(remoteUrl)
+                    .setDirectory(dir)
+                    .setCloneAllBranches(true)
+                    .setBare(false);
+
+            String user = getRepositoryUsername(id);
+            String pass = getRepositoryPassword(id);
+            if (user != null && !user.isEmpty() && pass != null && !pass.isEmpty()) {
+                cloneCmd.setCredentialsProvider(new UsernamePasswordCredentialsProvider(user, pass));
+            }
+
+            try (Git git = cloneCmd.call()) {
                 return new GitOpResult(OpStatus.SUCCESS, "Cloned");
             }
         } catch (Exception e) {
