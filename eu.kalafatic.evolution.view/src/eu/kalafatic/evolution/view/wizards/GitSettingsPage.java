@@ -242,15 +242,15 @@ public class GitSettingsPage extends AWizardPage {
 	}
 
 	public String getBranch() {
-		return branchText.getText(); // Temporary: wizard handles branch separately
+		return EclipseGitEvoTool.getRepositoryBranch(EclipseGitEvoTool.REPO_EVOLUTION);
 	}
 
 	public String getUsername() {
-		return usernameText.getText();
+		return EclipseGitEvoTool.getRepositoryUsername(EclipseGitEvoTool.REPO_EVOLUTION);
 	}
 
 	public String getPassword() {
-		return passwordText.getText();
+		return EclipseGitEvoTool.getRepositoryPassword(EclipseGitEvoTool.REPO_EVOLUTION);
 	}
 
 	public String getLocalPath() {
@@ -262,15 +262,15 @@ public class GitSettingsPage extends AWizardPage {
 	}
 
 	public String getBranch1() {
-		return branchText.getText();
+		return EclipseGitEvoTool.getRepositoryBranch(EclipseGitEvoTool.REPO_WORKSPACE);
 	}
 
 	public String getUsername1() {
-		return usernameText.getText();
+		return EclipseGitEvoTool.getRepositoryUsername(EclipseGitEvoTool.REPO_WORKSPACE);
 	}
 
 	public String getPassword1() {
-		return passwordText.getText();
+		return EclipseGitEvoTool.getRepositoryPassword(EclipseGitEvoTool.REPO_WORKSPACE);
 	}
 
 	public String getLocalPath1() {
