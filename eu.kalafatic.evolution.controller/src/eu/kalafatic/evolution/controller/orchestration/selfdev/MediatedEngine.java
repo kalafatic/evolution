@@ -817,20 +817,6 @@ private String generateChatResponse(String request, TaskContext context) {
 	    
 		 List<BranchVariant> variants = generateProposals(context, goalModel, manager);
 
-		 // SYNC PROGRESS BRANCHES: Ensure UI only shows final considered variants
-		 if (!variants.isEmpty()) {
-		     java.util.List<EvolutionProgressEvent.BranchStatus> statuses = new java.util.ArrayList<>();
-		     for (BranchVariant v : variants) {
-		         EvolutionProgressEvent.BranchStatus bs = new EvolutionProgressEvent.BranchStatus();
-		         bs.setId(v.getId());
-		         bs.setStrategy(v.getStrategy());
-		         bs.setStatus("active");
-		         bs.setScore(v.getScore());
-		         statuses.add(bs);
-		     }
-		     EvolutionProgressPublisher.syncBranches(context, statuses);
-		 }
-
 		if (variants.isEmpty()) {
 			context.log("[DARWIN] CRITICAL: No trajectories survived diversity analysis. Evolution blocked.");
 			return manager.failedResult();
@@ -1116,6 +1102,24 @@ private String generateChatResponse(String request, TaskContext context) {
 		}
 		List<BranchVariant> variants = executionPlan.getScheduledVariants();
 		context.getOrchestrationState().getMetadata().put("executionPlan", executionPlan);
+
+		// UI SYNC: Ensure all raw variants (full population) are synchronized to the UI
+		// We mark scheduled ones as 'active' and filtered ones as 'rejected' for lineage preservation.
+		java.util.List<EvolutionProgressEvent.BranchStatus> statuses = new java.util.ArrayList<>();
+		for (BranchVariant v : rawVariants) {
+			EvolutionProgressEvent.BranchStatus bs = new EvolutionProgressEvent.BranchStatus();
+			bs.setId(v.getId());
+			bs.setStrategy(v.getStrategy());
+			bs.setScore(v.getScore());
+
+			if (executionPlan.isApproved(v.getId())) {
+				bs.setStatus("active");
+			} else {
+				bs.setStatus("rejected");
+			}
+			statuses.add(bs);
+		}
+		EvolutionProgressPublisher.syncBranches(context, statuses);
 
 		for (BranchVariant v : variants) {
 			eu.kalafatic.evolution.controller.trajectory.TrajectoryAnalysisRecord tar = new eu.kalafatic.evolution.controller.trajectory.TrajectoryAnalysisRecord();
