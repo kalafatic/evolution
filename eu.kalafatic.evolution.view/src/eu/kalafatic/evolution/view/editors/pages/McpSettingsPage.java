@@ -56,7 +56,7 @@ public class McpSettingsPage extends AEvoPage {
         new Thread(() -> {
             try {
                 McpClient client = new McpClient(url); String resourcesJson = client.listResources(); JSONArray resources = new JSONArray(resourcesJson);
-                Display.getDefault().asyncExec(() -> { if (resourcesGroup.isDisposed()) return; for (int i = 0; i < resources.length(); i++) { JSONObject res = resources.getJSONObject(i); resourcesGroup.addItem(res.optString("name", "N/A"), res.optString("uri", "N/A"), res.optString("mimeType", "N/A"), res.optString("description", "")); } });
+                Display.getDefault().asyncExec(() -> { if (resourcesGroup.getGroup() == null || resourcesGroup.getGroup().isDisposed()) return; for (int i = 0; i < resources.length(); i++) { JSONObject res = resources.getJSONObject(i); resourcesGroup.addItem(res.optString("name", "N/A"), res.optString("uri", "N/A"), res.optString("mimeType", "N/A"), res.optString("description", "")); } });
             } catch (Exception ex) {
                 Display.getDefault().asyncExec(() -> { if (isDisposed()) return; MessageBox mb = new MessageBox(getShell(), SWT.ICON_ERROR | SWT.OK); mb.setText("Error"); mb.setMessage("Failed to list resources: " + ex.getMessage()); mb.open(); });
             }
@@ -69,7 +69,7 @@ public class McpSettingsPage extends AEvoPage {
         new Thread(() -> {
             try {
                 McpClient client = new McpClient(url); String toolsJson = client.listTools(); JSONArray tools = new JSONArray(toolsJson);
-                Display.getDefault().asyncExec(() -> { if (toolsGroup.isDisposed()) return; for (int i = 0; i < tools.length(); i++) { JSONObject tool = tools.getJSONObject(i); toolsGroup.addItem(tool.optString("name", "N/A"), tool.optString("description", ""), tool.optJSONObject("inputSchema") != null ? tool.optJSONObject("inputSchema").toString() : "{}"); } });
+                Display.getDefault().asyncExec(() -> { if (toolsGroup.getGroup() == null || toolsGroup.getGroup().isDisposed()) return; for (int i = 0; i < tools.length(); i++) { JSONObject tool = tools.getJSONObject(i); toolsGroup.addItem(tool.optString("name", "N/A"), tool.optString("description", ""), tool.optJSONObject("inputSchema") != null ? tool.optJSONObject("inputSchema").toString() : "{}"); } });
             } catch (Exception ex) {
                 Display.getDefault().asyncExec(() -> { if (isDisposed()) return; MessageBox mb = new MessageBox(getShell(), SWT.ICON_ERROR | SWT.OK); mb.setText("Error"); mb.setMessage("Failed to list tools: " + ex.getMessage()); mb.open(); });
             }
@@ -82,7 +82,7 @@ public class McpSettingsPage extends AEvoPage {
         new Thread(() -> {
             try {
                 McpClient client = new McpClient(url); String promptsJson = client.listPrompts(); JSONArray prompts = new JSONArray(promptsJson);
-                Display.getDefault().asyncExec(() -> { if (promptsGroup.isDisposed()) return; for (int i = 0; i < prompts.length(); i++) { JSONObject prompt = prompts.getJSONObject(i); promptsGroup.addItem(prompt.optString("name", "N/A"), prompt.optString("description", ""), prompt.optJSONArray("arguments") != null ? prompt.optJSONArray("arguments").toString() : "[]"); } });
+                Display.getDefault().asyncExec(() -> { if (promptsGroup.getGroup() == null || promptsGroup.getGroup().isDisposed()) return; for (int i = 0; i < prompts.length(); i++) { JSONObject prompt = prompts.getJSONObject(i); promptsGroup.addItem(prompt.optString("name", "N/A"), prompt.optString("description", ""), prompt.optJSONArray("arguments") != null ? prompt.optJSONArray("arguments").toString() : "[]"); } });
             } catch (Exception ex) {
                 Display.getDefault().asyncExec(() -> { if (isDisposed()) return; MessageBox mb = new MessageBox(getShell(), SWT.ICON_ERROR | SWT.OK); mb.setText("Error"); mb.setMessage("Failed to list prompts: " + ex.getMessage()); mb.open(); });
             }
