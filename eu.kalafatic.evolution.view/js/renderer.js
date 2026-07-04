@@ -518,11 +518,17 @@ window.ChatApp.Renderer = {
 
         const renderIteration = (data, isRoot = false) => {
             const dimInfo = data.currentDimension ? `\nDimension: ${data.currentDimension}${data.currentDimensionDescription ? ' (' + data.currentDimensionDescription + ')' : ''}` : "";
-            let iterHtml = `
-                <div class="tree-node" title="Iteration ${data.iterationCount}: ${data.currentTask || ''}${dimInfo}"
-                     ondblclick="window.ChatApp.Renderer.showDimensionDetails('${data.iterationCount}')">
-                    <div class="node-title">I${data.iterationCount}</div>
-                    ${data.currentDimension ? `<div style="font-size: 6px; color: #64748b; margin-top: -2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 34px; text-align: center;">${data.currentDimension}</div>` : ''}
+
+            // Build the chain: Intent -> Dimension -> Iteration
+            let chainHtml = "";
+
+            // 1. Intent Node
+            const intentTooltip = `Evolutionary Goal: ${data.goal || 'N/A'}`;
+            let intentHtml = `
+                <div class="node-wrapper">
+                    <div class="tree-node intent" title="${window.ChatApp.Utils.escapeHtml(intentTooltip)}">
+                        <div class="node-title">INTENT</div>
+                    </div>
                 </div>
             `;
 
@@ -536,14 +542,36 @@ window.ChatApp.Renderer = {
                 const iText = `Iters: ${actualIters}/${minIters}/${maxIters}`;
                 const bText = `Branches: ${actualBranches}/${maxBranches}`;
 
-                iterHtml = `
+                intentHtml = `
                     <div style="display: flex; align-items: center; gap: 12px;">
                         <div style="font-size: 9px; color: #94a3b8; min-width: 60px; text-align: right; font-weight: normal;">${iText}</div>
-                        ${iterHtml}
+                        ${intentHtml}
                         <div style="font-size: 9px; color: #94a3b8; min-width: 60px; font-weight: normal;">${bText}</div>
                     </div>
                 `;
             }
+
+            chainHtml += intentHtml;
+            chainHtml += `<div class="tree-vline"></div>`;
+
+            // 2. Dimension Node
+            const dimensionTooltip = `Dimension: ${data.currentDimension || 'N/A'}\nDescription: ${data.currentDimensionDescription || 'N/A'}`;
+            chainHtml += `
+                <div class="tree-node dimension" title="${window.ChatApp.Utils.escapeHtml(dimensionTooltip)}"
+                     ondblclick="window.ChatApp.Renderer.showDimensionDetails('${data.iterationCount}')">
+                    <div class="node-title">${window.ChatApp.Utils.escapeHtml(data.currentDimension || 'DIM')}</div>
+                </div>
+            `;
+            chainHtml += `<div class="tree-vline"></div>`;
+
+            // 3. Iteration Node
+            chainHtml += `
+                <div class="tree-node iteration" title="Iteration ${data.iterationCount}: ${data.currentTask || ''}${dimInfo}">
+                    <div class="node-title">I${data.iterationCount}</div>
+                </div>
+            `;
+
+            let iterHtml = chainHtml;
 
             const branches = data.branches || [];
             const hasBranches = branches.length > 0;
