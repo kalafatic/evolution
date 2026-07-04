@@ -219,6 +219,7 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
 
             // Git Settings
             if (!gitPage.isSkipped()) {
+                // 1. Evolution Repo
                 final String repoUrl = gitPage.getRepoUrl();
                 final String localPathStr = gitPage.getLocalPath();
                 final String branch = gitPage.getBranch();
@@ -226,6 +227,17 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
                 final String pass = gitPage.getPassword();
 
                 modelManager.updateGitSettings(orchestrator, repoUrl, branch, user, pass, localPathStr);
+
+                // 2. Workspace Repo
+                final String repoUrl1 = gitPage.getRepoUrl1();
+                final String localPathStr1 = gitPage.getLocalPath1();
+                final String branch1 = gitPage.getBranch1();
+                final String user1 = gitPage.getUsername1();
+                final String pass1 = gitPage.getPassword1();
+
+                if (orchestrator.getSupervisorSettings() != null) {
+                    modelManager.updateGitSettings(orchestrator.getSupervisorSettings().getGit(), repoUrl1, branch1, user1, pass1, localPathStr1);
+                }
 
                 if (localPathStr != null && !localPathStr.isEmpty()) {
                     File localDir = new File(localPathStr);
