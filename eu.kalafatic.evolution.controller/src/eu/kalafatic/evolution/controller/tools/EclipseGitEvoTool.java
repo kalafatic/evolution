@@ -111,17 +111,18 @@ public class EclipseGitEvoTool {
     public static String getEvolutionDefaultPath() {
         try {
             File workspaceDir = ResourcesPlugin.getWorkspace().getRoot().getLocation().toFile();
-            // evolution path inside RCP sandbox workspace sibling: ${workspace_loc}/../evolution
+            // evolution path: ${workspace_loc}/../evolution
             return new File(workspaceDir.getParentFile(), "evolution").getAbsolutePath();
         } catch (Exception e) {
             return Paths.get(System.getProperty("user.home"), "git", "evolution").toString();
         }
     }
 
-    private static String getEvoDefaultPath() {
+    public static String getEvoDefaultPath() {
         try {
-            Path workspaceLoc = Paths.get(ResourcesPlugin.getWorkspace().getRoot().getLocation().toOSString());
-            return workspaceLoc.resolve("runtime").resolve("git").resolve("evo").toString();
+            File workspaceDir = ResourcesPlugin.getWorkspace().getRoot().getLocation().toFile();
+            // evo path: ${workspace_loc}/evo
+            return new File(workspaceDir, "evo").getAbsolutePath();
         } catch (Exception e) {
             return Paths.get(System.getProperty("user.home"), "git", "evo").toString();
         }
@@ -130,8 +131,8 @@ public class EclipseGitEvoTool {
     public static String getLlmDefaultPath() {
         try {
             File workspaceDir = ResourcesPlugin.getWorkspace().getRoot().getLocation().toFile();
-            // LLM path inside RCP sandbox workspace sibling: ${workspace_loc}/../llm
-            return new File(workspaceDir.getParentFile(), "llm").getAbsolutePath();
+            // LLM path: ${workspace_loc}/llm
+            return new File(workspaceDir, "llm").getAbsolutePath();
         } catch (Exception e) {
             return Paths.get(System.getProperty("user.home"), "git", "llm").toString();
         }
