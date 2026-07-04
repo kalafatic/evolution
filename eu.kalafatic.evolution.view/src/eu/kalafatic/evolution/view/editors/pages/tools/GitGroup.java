@@ -201,35 +201,77 @@ public class GitGroup extends AToolGroup {
 
     @Override
     protected void refreshUI() {
-        setTextSafe(gitRepoText, EclipseGitEvoTool.getRepositoryRemote(currentRepoId));
-        setTextSafe(gitBranchText, EclipseGitEvoTool.getRepositoryBranch(currentRepoId));
-        setTextSafe(gitUsernameText, EclipseGitEvoTool.getRepositoryUsername(currentRepoId));
-        setTextSafe(gitPasswordText, EclipseGitEvoTool.getRepositoryPassword(currentRepoId));
-        selectSafe(gitLocalPathText, EclipseGitEvoTool.getRepositoryPath(currentRepoId));
+        eu.kalafatic.evolution.model.orchestration.Git git = getGitModel();
+
+        // 1. Load from model if available
+        String remote = git != null ? git.getRepositoryUrl() : null;
+        String branch = git != null ? git.getBranch() : null;
+        String user = git != null ? git.getUsername() : null;
+        String pass = git != null ? git.getPassword() : null;
+        String local = git != null ? git.getLocalPath() : null;
+
+        // 2. Fallback to Git Tool Registry
+        if (isEmpty(remote)) remote = EclipseGitEvoTool.getRepositoryRemote(currentRepoId);
+        if (isEmpty(branch)) branch = EclipseGitEvoTool.getRepositoryBranch(currentRepoId);
+        if (isEmpty(user))   user   = EclipseGitEvoTool.getRepositoryUsername(currentRepoId);
+        if (isEmpty(pass))   pass   = EclipseGitEvoTool.getRepositoryPassword(currentRepoId);
+        if (isEmpty(local))  local  = EclipseGitEvoTool.getRepositoryPath(currentRepoId);
+
+        // 3. Absolute fallbacks
+        if (isEmpty(branch)) branch = "master";
+        if (isEmpty(user))   user   = "admin";
+        if (isEmpty(pass))   pass   = "admin";
         
-        // Branch name and commit msg are transient/contextual for operations, not persisted in Tool
+        setTextSafe(gitRepoText, remote);
+        setTextSafe(gitBranchText, branch);
+        setTextSafe(gitUsernameText, user);
+        setTextSafe(gitPasswordText, pass);
+        selectSafe(gitLocalPathText, local);
+
+        // Transient/contextual defaults
+        if (commitMsgText.getText().isEmpty()) setTextSafe(commitMsgText, "Initial");
     }
+
+    private eu.kalafatic.evolution.model.orchestration.Git getGitModel() {
+        if (currentRepoId.equals(EclipseGitEvoTool.REPO_EVOLUTION)) {
+            return orchestrator.getGit();
+        } else if (currentRepoId.equals(EclipseGitEvoTool.REPO_WORKSPACE)) {
+            return (orchestrator.getSupervisorSettings() != null) ? orchestrator.getSupervisorSettings().getGit() : null;
+        } else if (currentRepoId.equals(EclipseGitEvoTool.REPO_LLM)) {
+            // Find first ForgeSession as a representative model
+            if (!orchestrator.getForgeSessions().isEmpty()) {
+                return orchestrator.getForgeSessions().get(0).getGit();
+            }
+        }
+        return null;
+    }
+
+    private boolean isEmpty(String s) { return s == null || s.isEmpty(); }
 
     @Override
     public void updateModel() {
-        EclipseGitEvoTool.changeRemoteUrl(currentRepoId, gitRepoText.getText());
-        EclipseGitEvoTool.changeBranch(currentRepoId, gitBranchText.getText());
-        EclipseGitEvoTool.changeCredentials(currentRepoId, gitUsernameText.getText(), gitPasswordText.getText());
-        EclipseGitEvoTool.changeRepositoryLocation(currentRepoId, gitLocalPathText.getText());
+        String url = gitRepoText.getText();
+        String branch = gitBranchText.getText();
+        String user = gitUsernameText.getText();
+        String pass = gitPasswordText.getText();
+        String local = gitLocalPathText.getText();
+
+        EclipseGitEvoTool.changeRemoteUrl(currentRepoId, url);
+        EclipseGitEvoTool.changeBranch(currentRepoId, branch);
+        EclipseGitEvoTool.changeCredentials(currentRepoId, user, pass);
+        EclipseGitEvoTool.changeRepositoryLocation(currentRepoId, local);
         
         // Also update the active orchestrator model if it matches
         if (currentRepoId.equals(EclipseGitEvoTool.REPO_EVOLUTION)) {
-            ProjectModelManager.getInstance().updateGitSettings(orchestrator, gitRepoText.getText(), gitBranchText.getText(), gitUsernameText.getText(), gitPasswordText.getText(), gitLocalPathText.getText());
+            ProjectModelManager.getInstance().updateGitSettings(orchestrator, url, branch, user, pass, local);
         } else if (currentRepoId.equals(EclipseGitEvoTool.REPO_WORKSPACE)) {
             if (orchestrator.getSupervisorSettings() != null) {
-                ProjectModelManager.getInstance().updateGitSettings(orchestrator.getSupervisorSettings().getGit(), gitRepoText.getText(), gitBranchText.getText(), gitUsernameText.getText(), gitPasswordText.getText(), gitLocalPathText.getText());
+                ProjectModelManager.getInstance().updateGitSettings(orchestrator.getSupervisorSettings().getGit(), url, branch, user, pass, local);
             }
         } else if (currentRepoId.equals(EclipseGitEvoTool.REPO_LLM)) {
-            // Update LLM repo settings in any active ForgeSession if appropriate,
-            // or just rely on the central tool registry which ForgeSessionManager uses.
             for (eu.kalafatic.evolution.model.orchestration.ForgeSession session : orchestrator.getForgeSessions()) {
                 if (session.getGit() != null) {
-                    ProjectModelManager.getInstance().updateGitSettings(session.getGit(), gitRepoText.getText(), gitBranchText.getText(), gitUsernameText.getText(), gitPasswordText.getText(), gitLocalPathText.getText());
+                    ProjectModelManager.getInstance().updateGitSettings(session.getGit(), url, branch, user, pass, local);
                 }
             }
         }

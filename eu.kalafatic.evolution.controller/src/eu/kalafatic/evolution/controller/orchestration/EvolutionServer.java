@@ -125,32 +125,28 @@ public class EvolutionServer extends NanoHTTPD {
             return serveExternalResource(uri);
         }
         if ("/auth-integration.js".equals(uri)) {
-            return handleGetResource("auth-integration.js", "application/javascript");
+            return handleGetResource("/auth-integration.js", "application/javascript");
         }
         if (uri.startsWith("/forge-viz/")) {
             String fileName = uri.substring("/forge-viz/".length());
-            return handleGetResource("forge-viz/" + fileName, "application/javascript");
+            return handleGetResource("/forge-viz/" + fileName, "application/javascript");
         }
         if ("/creatic.js".equals(uri)) {
-            return handleGetResource("creatic.js", "application/javascript");
+            return handleGetResource("/creatic.js", "application/javascript");
         }
         if ("/creatic.css".equals(uri)) {
-            return handleGetResource("creatic.css", "text/css");
+            return handleGetResource("/creatic.css", "text/css");
+        }
+        if ("/shared.css".equals(uri)) {
+            return handleGetResource("/shared.css", "text/css");
+        }
+        if ("/architecture.css".equals(uri)) {
+            return handleGetResource("/architecture.css", "text/css");
         }
 
         // 3. Environment-Aware Authorization Check
         try {
             if (!isAuthorized(session)) {
-                // If it's a GET request for an HTML page or experimental route, redirect to login
-                if (Method.GET.equals(method) && (
-                    "/".equals(uri) || "/index.html".equals(uri) || "/dashboard.html".equals(uri) ||
-                    uri.startsWith("/experimental/")
-                )) {
-                    Response response = newFixedLengthResponse(Response.Status.REDIRECT, NanoHTTPD.MIME_HTML, "");
-                    response.addHeader("Location", "/login.html");
-                    return response;
-                }
-
                 // For API calls, return 401.
                 if (uri.startsWith("/server/") || uri.startsWith("/task") || uri.startsWith("/forge/") || uri.startsWith("/api/")) {
                     return newFixedLengthResponse(Response.Status.UNAUTHORIZED, "application/json",
