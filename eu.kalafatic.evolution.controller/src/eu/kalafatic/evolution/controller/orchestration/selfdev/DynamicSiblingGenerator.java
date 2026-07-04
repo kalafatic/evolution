@@ -58,7 +58,14 @@ public class DynamicSiblingGenerator {
 
 		// Map to IntentProfile
 		IntentProfile profile = new IntentProfile();
-		profile.primaryGoal = goal.getPrimaryAction();
+
+		// GROUNDING IMPROVEMENT: Combine action and artifact for better LLM grounding
+		String combinedGoal = goal.getPrimaryAction();
+		if (goal.getRequestedArtifact() != null && !combinedGoal.toLowerCase().contains(goal.getRequestedArtifact().toLowerCase())) {
+			combinedGoal += " (" + goal.getRequestedArtifact() + ")";
+		}
+
+		profile.primaryGoal = combinedGoal;
 		profile.complexity = goal.getComplexity();
 		profile.domain = goal.getDomain();
 		profile.artifactType = intentResult.getTargetArtifact() != null ? intentResult.getTargetArtifact()
@@ -96,7 +103,7 @@ public class DynamicSiblingGenerator {
 
 		for (int i = 0; i < siblingCount; i++) {
 			String prompt = buildIterativePrompt(strategy, i, previousSolutions, previousStrategies, previousClassNames,
-					context);
+					context, activeDimension);
 
 			context.log("[DYNAMIC] Generating sibling " + (i + 1) + "/" + siblingCount + " (learning from "
 					+ previousSolutions.size() + " previous siblings)");
@@ -228,7 +235,8 @@ public class DynamicSiblingGenerator {
 	}
 
 	private String buildIterativePrompt(PromptStrategy strategy, int siblingIndex, List<String> previousSolutions,
-			List<String> previousStrategies, List<String> previousClassNames, TaskContext context) throws Exception {
+			List<String> previousStrategies, List<String> previousClassNames, TaskContext context,
+			EvolutionDimension activeDimension) throws Exception {
 
 		StringBuilder prompt = new StringBuilder();
 		boolean isMediated = ModeRecognizer.isMediatedMode(context);
@@ -306,6 +314,13 @@ public class DynamicSiblingGenerator {
 		} else {
 			// Force diversity by specifying what to do differently
 			prompt.append("YOUR CHALLENGE: Create a solution that is DIFFERENT from all above.\n");
+
+			if (activeDimension != null) {
+				prompt.append("\n[EVOLUTIONARY_AXIS] Focus on varying this specific dimension:\n");
+				prompt.append("Dimension: ").append(activeDimension.getId()).append("\n");
+				prompt.append("Description: ").append(activeDimension.getDescription()).append("\n\n");
+			}
+
 			prompt.append("Consider these dimensions to vary:\n");
 			prompt.append("- Class name (must be unique)\n");
 			prompt.append("- Method organization (main only vs separate methods vs interface)\n");
@@ -777,9 +792,19 @@ public class DynamicSiblingGenerator {
 	}
 
 	private String extractCode(String response, String format) {
+		if (response == null) return "";
+
+		// 0. Handle "Implementation:" or "CODE:" prefix explicitly before code blocks
+		Pattern labelPattern = Pattern.compile("(?:Implementation|CODE|Java Code):\\s*\\n?(.*)", Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
+		Matcher labelMatcher = labelPattern.matcher(response);
+		String workingResponse = response;
+		if (labelMatcher.find()) {
+			workingResponse = labelMatcher.group(1).trim();
+		}
+
 		// 1. Try to extract from specifically marked code blocks first
 		Pattern codeBlockPattern = Pattern.compile("```(?:java|json)?\\s*\\n(.*?)\\n```", Pattern.DOTALL);
-		Matcher matcher = codeBlockPattern.matcher(response);
+		Matcher matcher = codeBlockPattern.matcher(workingResponse);
 
 		while (matcher.find()) {
 			String block = matcher.group(1).trim();
@@ -796,20 +821,20 @@ public class DynamicSiblingGenerator {
 			}
 
 			// If it contains 'class ' it's probably the Java code we want
-			if (block.contains("class ")) {
+			if (block.contains("class ") || block.contains("interface ") || block.contains("enum ")) {
 				return block;
 			}
 		}
 
-		// 2. If it's CODE_ONLY format, return as-is
+		// 2. If it's CODE_ONLY format, return as-is (but try to strip markdown)
 		if ("CODE_ONLY".equals(format)) {
-			return response.trim();
+			return workingResponse.replaceAll("```(?:java)?", "").replaceAll("```", "").trim();
 		}
 
 		// 3. Try to extract from STEP_BY_STEP format
 		if ("STEP_BY_STEP".equals(format)) {
 			Pattern stepPattern = Pattern.compile("CODE:\\s*\\n?```(?:java|json)?\\s*\\n(.*?)\\n```", Pattern.DOTALL);
-			matcher = stepPattern.matcher(response);
+			matcher = stepPattern.matcher(workingResponse);
 			if (matcher.find()) {
 				String block = matcher.group(1).trim();
 				if (block.startsWith("{")) {
@@ -825,7 +850,7 @@ public class DynamicSiblingGenerator {
 
 		// 4. Try to extract from the root response if it's JSON
 		try {
-			String trimmedResponse = response.trim();
+			String trimmedResponse = workingResponse.trim();
 			if (trimmedResponse.startsWith("{")) {
 				JSONObject obj = new JSONObject(trimmedResponse);
 				if (obj.has("code")) return obj.getString("code");
@@ -833,13 +858,30 @@ public class DynamicSiblingGenerator {
 			}
 		} catch (Exception e) {}
 
-		// 5. Final fallback: return the first code block if anything was found, or the raw response
+		// 5. SEARCH FALLBACK: If we still don't have a clean class, search for the first occurrence of "class "
+		if (workingResponse.contains("public class ") || workingResponse.contains("class ")) {
+			int start = workingResponse.indexOf("public class ");
+			if (start == -1) start = workingResponse.indexOf("class ");
+
+			if (start != -1) {
+				// Try to find the end of the class (very naive, but better than junk text)
+				String subset = workingResponse.substring(start);
+				// If there's a closing ``` after it, stop there
+				int end = subset.indexOf("```");
+				if (end != -1) {
+					return subset.substring(0, end).trim();
+				}
+				return subset.trim();
+			}
+		}
+
+		// 6. Final fallback: return the first code block if anything was found, or the raw response
 		matcher.reset();
 		if (matcher.find()) {
 			return matcher.group(1).trim();
 		}
 
-		return response.trim();
+		return workingResponse.trim();
 	}
 
 	private boolean validateVariant(JSONObject variant, PromptStrategy strategy) {

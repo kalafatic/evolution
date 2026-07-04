@@ -67,7 +67,7 @@ public class IntentExpansionEngine extends BaseAiAgent {
                "Select exactly ONE dimension to evolve in this iteration.\n" +
                "Priority Rule: Higher abstraction levels (Philosophy/Strategy) MUST be resolved before lower levels (Architecture/Implementation).\n" +
                "For simple tasks, focus on IMPLEMENTATION or DESIGN dimensions immediately if Philosophy/Architecture is obvious.\n" +
-               "STRICT: Avoid generic ID 'IMPLEMENTATION' if a more specific sub-dimension (e.g. 'API_DESIGN') can be named.\n" +
+               "STRICT: Avoid generic ID 'IMPLEMENTATION' if a more specific sub-dimension (e.g. 'API_DESIGN', 'OUTPUT_FORMAT', 'ERROR_STRATEGY') can be named. Specificity improves evolutionary diversity.\n" +
                "\n" +
                "PHASE 3 - CANDIDATE TRAJECTORIES:\n" +
                "For the selected dimension, define sibling branches (blueprints) that compete to resolve it.\n" +

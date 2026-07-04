@@ -23,6 +23,7 @@ public class GoalUnderstandingEngine extends BaseAiAgent {
         return "You are a Goal Understanding Engine. Your role is to parse user prompts into a formal GoalModel.\n" +
                "Identify the type of request, the domain, the intent, the requested artifact, the primary action, complexity, and expected outputs.\n" +
                "Be precise. Do not over-engineer simple requests.\n" +
+               "STRICT RULE: 'primaryAction' must capture the functional requirement (e.g., 'print text', 'calculate sum', 'connect to DB') instead of just a generic verb like 'create' or 'modify'.\n" +
                "STRICT RULE: Greetings (e.g., 'hello', 'hi') and non-technical conversational prompts must be assigned to the 'GENERAL' domain with a 'primaryAction' like 'respond conversationally'. Do NOT default them to 'JAVA' or other technical domains.";
     }
 
