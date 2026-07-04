@@ -48,71 +48,92 @@
 }
 
 .tree-node {
-    width: 36px;
-    height: 36px;
-    padding: 2px;
+    width: 40px;
+    height: 40px;
+    padding: 4px;
     border: 2px solid #94a3b8;
-    border-radius: 4px;
+    border-radius: 8px;
     background: #ffffff;
     text-align: center;
     overflow: hidden;
-    margin: 2px 0;
-    box-shadow: 0 1px 3px rgba(0,0,0,.1);
+    margin: 8px 0;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.06);
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     box-sizing: border-box;
-    transition: all 0.2s ease;
-    z-index: 1;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 10;
+    position: relative;
+    cursor: default;
+}
+
+.tree-node:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+    border-color: #64748b;
 }
 
 /* Pink Diamond for Intent */
 .node-wrapper {
-    padding: 10px;
+    padding: 16px;
     display: flex;
     justify-content: center;
     align-items: center;
+    position: relative;
+    z-index: 10;
 }
 
 .tree-node.intent {
-    width: 48px;
-    height: 48px;
+    width: 56px;
+    height: 56px;
     background: #fff1f2;
     border: 2px solid #f43f5e;
     transform: rotate(45deg);
-    border-radius: 2px;
+    border-radius: 4px;
+}
+
+.tree-node.intent:hover {
+    transform: rotate(45deg) scale(1.05);
 }
 
 .tree-node.intent .node-title {
     transform: rotate(-45deg);
     color: #9f1239;
-    font-size: 9px;
+    font-size: 10px;
     font-weight: 900;
+    width: 141%;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 /* Blue Pill for Dimension */
 .tree-node.dimension {
-    width: 64px;
-    height: 28px;
+    width: 72px;
+    height: 30px;
     background: #eff6ff;
     border: 2px solid #3b82f6;
-    border-radius: 20px;
+    border-radius: 15px;
     color: #1d4ed8;
+    margin: 12px 0;
 }
 
 .tree-node.dimension .node-title {
-    font-size: 9px;
+    font-size: 10px;
+    letter-spacing: 0.5px;
 }
 
 .tree-node.iteration {
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
     background: #f8fafc;
     border: 2px solid #64748b;
     border-radius: 50%;
     color: #334155;
+    font-family: 'Inter', sans-serif;
 }
 
 .tree-node.proposal {
@@ -168,100 +189,109 @@
 
 
 .tree-node.winner {
-    background: #eff6ff !important;
-    border-color: #3b82f6 !important;
-    color: #1e40af !important;
-    box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
-    z-index: 2;
-    border-radius: 4px;
+    background: #f0f9ff !important;
+    border-color: #0284c7 !important;
+    color: #0369a1 !important;
+    box-shadow: 0 0 10px rgba(2, 132, 199, 0.2);
+    border-radius: 8px;
 }
 
 .tree-node.failed {
-    background: #fff1f2 !important;
-    border-color: #f43f5e !important;
-    color: #9f1239 !important;
-    border-radius: 4px;
+    background: #fef2f2 !important;
+    border-color: #ef4444 !important;
+    color: #b91c1c !important;
+    border-radius: 8px;
 }
 
 .tree-node .winner-label {
     display: none; /* Icon instead */
 }
 
-.tree-vline {
-    width: 2px;
-    height: 16px;
-    background: #94a3b8;
-    flex-shrink: 0;
-}
-
 .tree-hline-separator {
-    height: 2px;
+    height: 1px;
     background: #e2e8f0;
     width: 100%;
-    margin: 30px 0;
+    margin: 50px 0;
     position: relative;
+    border: none;
 }
 
 .tree-hline-separator::after {
     content: "NEXT EVOLUTION";
     position: absolute;
-    top: -6px;
+    top: 50%;
     left: 50%;
-    transform: translateX(-50%);
+    transform: translate(-50%, -50%);
     background: #fafafa;
-    padding: 0 10px;
-    font-size: 9px;
+    padding: 0 16px;
+    font-size: 10px;
     color: #94a3b8;
-    font-weight: bold;
-    letter-spacing: 1px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-transform: uppercase;
 }
 
 .tree-children {
     display: flex;
     justify-content: center;
     position: relative;
-    padding-top: 16px;
+    padding-top: 32px;
 }
 
+/* Vertical line from parent node down to the horizontal bar (or directly to child) */
 .tree-children::before {
     content: "";
     position: absolute;
-    top: 0;
+    top: -16px; /* Start at bottom of parent node */
     left: 50%;
+    margin-left: -1px;
     width: 2px;
-    height: 16px;
-    background: #94a3b8;
+    height: 48px; /* Stem down through the children area */
+    background: #cbd5e1;
+    z-index: 1;
 }
 
 .tree-child {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 0 10px;
+    padding: 0 24px;
     position: relative;
 }
 
-/* Horizontal connectors */
+/* Horizontal line segments */
 .tree-child::before {
     content: "";
     position: absolute;
-    top: 0;
+    top: 32px; /* Intersection point */
     left: 0;
     right: 0;
     height: 2px;
-    background: #94a3b8;
+    background: #cbd5e1;
+    z-index: 1;
 }
 
-.tree-child:first-child::before {
+/* Clean up first/last/only child horizontal lines */
+.tree-child:first-child::before { left: 50%; }
+.tree-child:last-child::before { right: 50%; }
+.tree-child:only-child::before { display: none; }
+
+/* Vertical line from horizontal bar down to each child node */
+.tree-child::after {
+    content: "";
+    position: absolute;
+    top: 32px;
     left: 50%;
+    margin-left: -1px;
+    width: 2px;
+    height: 8px; /* Stem down to node */
+    background: #cbd5e1;
+    z-index: 1;
 }
 
-.tree-child:last-child::before {
-    right: 50%;
-}
-
-.tree-child:only-child::before {
-    display: none;
+/* Ensure single child has a perfectly continuous vertical line */
+.tree-child:only-child::after {
+    display: none; /* Covered by parent stem */
 }
 
 .resize-handle {
