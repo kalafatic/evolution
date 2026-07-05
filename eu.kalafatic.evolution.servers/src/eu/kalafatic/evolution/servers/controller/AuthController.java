@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BooleanSupplier;
 import eu.kalafatic.evolution.servers.service.AuthService;
 import eu.kalafatic.evolution.servers.model.User;
 import eu.kalafatic.evolution.servers.model.Session;
@@ -15,9 +16,14 @@ import eu.kalafatic.evolution.servers.model.Session;
 public class AuthController {
     private final AuthService authService;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private BooleanSupplier authEnabledProvider;
 
     public AuthController(AuthService authService) {
         this.authService = authService;
+    }
+
+    public void setAuthEnabledProvider(BooleanSupplier provider) {
+        this.authEnabledProvider = provider;
     }
 
     public Response handle(IHTTPSession session) {
@@ -140,17 +146,15 @@ public class AuthController {
     }
 
     private boolean isAuthorized(IHTTPSession session) {
-        // Check global authentication flag via system property or orchestrator
+        // Check global authentication flag via system property or provider
         String authProp = System.getProperty("evolution.api.authenticate");
         if ("false".equalsIgnoreCase(authProp)) {
             return true;
         }
 
         try {
-            eu.kalafatic.evolution.model.orchestration.Orchestrator orch =
-                eu.kalafatic.evolution.controller.orchestration.OrchestratorServiceImpl.getInstance().getOrchestrator();
-            if (orch != null && orch.getServerSettings() != null) {
-                if (!orch.getServerSettings().isAuthenticate()) {
+            if (authEnabledProvider != null) {
+                if (!authEnabledProvider.getAsBoolean()) {
                     return true;
                 }
             } else if (authProp == null) {

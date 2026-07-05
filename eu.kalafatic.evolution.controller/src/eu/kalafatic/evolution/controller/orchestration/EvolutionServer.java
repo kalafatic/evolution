@@ -73,6 +73,10 @@ public class EvolutionServer extends NanoHTTPD {
         SessionRepository sessionRepository = new SessionRepository(dbManager);
         this.authService = new AuthService(userRepository, sessionRepository);
         this.authController = new AuthController(authService);
+        this.authController.setAuthEnabledProvider(() -> {
+            Orchestrator orch = OrchestratorServiceImpl.getInstance().getOrchestrator();
+            return orch != null && orch.getServerSettings() != null && orch.getServerSettings().isAuthenticate();
+        });
         this.architectureController = new ArchitectureController();
         this.evolutionDashboardController = new EvolutionDashboardController();
     }
