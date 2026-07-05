@@ -43,6 +43,8 @@ public class EvolutionServer extends NanoHTTPD {
         this.userService = new UserService(userRepository);
 
         this.authController = new AuthController(authService);
+        this.authController.setAuthEnabledProvider(() ->
+            !"false".equalsIgnoreCase(System.getProperty("evolution.api.authenticate")));
         this.staticResourceController = new StaticResourceController();
     }
 
