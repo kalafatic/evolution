@@ -23,6 +23,7 @@ import eu.kalafatic.evolution.model.orchestration.ServerSettings;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ServerSettingsImpl#isGitAutomation <em>Git Automation</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ServerSettingsImpl#isMcpEnabled <em>Mcp Enabled</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ServerSettingsImpl#getMcpPort <em>Mcp Port</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ServerSettingsImpl#isAuthenticate <em>Authenticate</em>}</li>
  * </ul>
  *
  * @generated
@@ -129,6 +130,26 @@ public class ServerSettingsImpl extends MinimalEObjectImpl.Container implements 
 	protected int mcpPort = MCP_PORT_EDEFAULT;
 
 	/**
+	 * The default value of the '{@link #isAuthenticate() <em>Authenticate</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isAuthenticate()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final boolean AUTHENTICATE_EDEFAULT = false;
+
+	/**
+	 * The cached value of the '{@link #isAuthenticate() <em>Authenticate</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #isAuthenticate()
+	 * @generated
+	 * @ordered
+	 */
+	protected boolean authenticate = AUTHENTICATE_EDEFAULT;
+
+	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
@@ -172,6 +193,29 @@ public class ServerSettingsImpl extends MinimalEObjectImpl.Container implements 
 		mcpPort = newMcpPort;
 		if (eNotificationRequired())
 			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.SERVER_SETTINGS__MCP_PORT, oldMcpPort, mcpPort));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public boolean isAuthenticate() {
+		return authenticate;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setAuthenticate(boolean newAuthenticate) {
+		boolean oldAuthenticate = authenticate;
+		authenticate = newAuthenticate;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.SERVER_SETTINGS__AUTHENTICATE, oldAuthenticate, authenticate));
 	}
 
 	/**
@@ -280,6 +324,8 @@ public class ServerSettingsImpl extends MinimalEObjectImpl.Container implements 
 				return isMcpEnabled();
 			case OrchestrationPackage.SERVER_SETTINGS__MCP_PORT:
 				return getMcpPort();
+			case OrchestrationPackage.SERVER_SETTINGS__AUTHENTICATE:
+				return isAuthenticate();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -306,6 +352,9 @@ public class ServerSettingsImpl extends MinimalEObjectImpl.Container implements 
 				return;
 			case OrchestrationPackage.SERVER_SETTINGS__MCP_PORT:
 				setMcpPort((Integer)newValue);
+				return;
+			case OrchestrationPackage.SERVER_SETTINGS__AUTHENTICATE:
+				setAuthenticate((Boolean)newValue);
 				return;
 		}
 		super.eSet(featureID, newValue);
@@ -334,6 +383,9 @@ public class ServerSettingsImpl extends MinimalEObjectImpl.Container implements 
 			case OrchestrationPackage.SERVER_SETTINGS__MCP_PORT:
 				setMcpPort(MCP_PORT_EDEFAULT);
 				return;
+			case OrchestrationPackage.SERVER_SETTINGS__AUTHENTICATE:
+				setAuthenticate(AUTHENTICATE_EDEFAULT);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -356,6 +408,8 @@ public class ServerSettingsImpl extends MinimalEObjectImpl.Container implements 
 				return mcpEnabled != MCP_ENABLED_EDEFAULT;
 			case OrchestrationPackage.SERVER_SETTINGS__MCP_PORT:
 				return mcpPort != MCP_PORT_EDEFAULT;
+			case OrchestrationPackage.SERVER_SETTINGS__AUTHENTICATE:
+				return authenticate != AUTHENTICATE_EDEFAULT;
 		}
 		return super.eIsSet(featureID);
 	}
@@ -380,6 +434,8 @@ public class ServerSettingsImpl extends MinimalEObjectImpl.Container implements 
 		result.append(mcpEnabled);
 		result.append(", mcpPort: ");
 		result.append(mcpPort);
+		result.append(", authenticate: ");
+		result.append(authenticate);
 		result.append(')');
 		return result.toString();
 	}

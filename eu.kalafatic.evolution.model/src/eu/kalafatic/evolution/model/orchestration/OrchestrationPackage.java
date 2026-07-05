@@ -942,13 +942,22 @@ public interface OrchestrationPackage extends EPackage {
 	int SERVER_SETTINGS__MCP_PORT = 4;
 
 	/**
+	 * The feature id for the '<em><b>Authenticate</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int SERVER_SETTINGS__AUTHENTICATE = 5;
+
+	/**
 	 * The number of structural features of the '<em>Server Settings</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int SERVER_SETTINGS_FEATURE_COUNT = 5;
+	int SERVER_SETTINGS_FEATURE_COUNT = 6;
 
 	/**
 	 * The number of operations of the '<em>Server Settings</em>' class.
@@ -4936,6 +4945,17 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getServerSettings_McpPort();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.ServerSettings#isAuthenticate <em>Authenticate</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Authenticate</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ServerSettings#isAuthenticate()
+	 * @see #getServerSettings()
+	 * @generated
+	 */
+	EAttribute getServerSettings_Authenticate();
+
+	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.ServerSession <em>Server Session</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -8328,6 +8348,14 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute SERVER_SETTINGS__MCP_PORT = eINSTANCE.getServerSettings_McpPort();
+
+		/**
+		 * The meta object literal for the '<em><b>Authenticate</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute SERVER_SETTINGS__AUTHENTICATE = eINSTANCE.getServerSettings_Authenticate();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ServerSessionImpl <em>Server Session</em>}' class.
