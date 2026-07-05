@@ -1364,10 +1364,6 @@ public class CodingEngine extends ADarwinEngine {
 
 				if (profile.requiresRepository() && !isExportOnly && !isTestMode
 						&& manager.getGitManager().isGitRepository()) {
-					boolean hasPhysicalChanges = context.getOrchestrationState().getMetadata()
-							.get("lastRealityCheckSignificant") != null
-							&& (Boolean) context.getOrchestrationState().getMetadata()
-									.get("lastRealityCheckSignificant");
 
 					if (hasPhysicalChanges) {
 						manager.checkStep(selectedVariant.getId(), "GIT_COMMIT",
