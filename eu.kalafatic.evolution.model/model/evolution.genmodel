@@ -191,6 +191,7 @@
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ServerSettings/gitAutomation"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ServerSettings/mcpEnabled"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ServerSettings/mcpPort"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ServerSettings/authenticate"/>
     </genClasses>
     <genClasses ecoreClass="evolution.ecore#//ServerSession">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ServerSession/id"/>

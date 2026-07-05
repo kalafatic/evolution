@@ -21,4 +21,6 @@ public interface ServerSettingsValidator {
 	boolean validateMcpEnabled(boolean value);
 
 	boolean validateMcpPort(int value);
+
+	boolean validateAuthenticate(boolean value);
 }

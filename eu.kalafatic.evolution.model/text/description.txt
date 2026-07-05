@@ -101,6 +101,7 @@ Package orchestration <http://eu.kalafatic.evolution/orchestration>
     Attribute gitAutomation : EBoolean
     Attribute mcpEnabled : EBoolean
     Attribute mcpPort : EInt
+    Attribute authenticate : EBoolean
 
   Class ServerSession
     Attribute id : EString

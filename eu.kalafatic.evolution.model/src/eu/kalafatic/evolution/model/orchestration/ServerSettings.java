@@ -18,7 +18,7 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.ServerSettings#isGitAutomation <em>Git Automation</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.ServerSettings#isMcpEnabled <em>Mcp Enabled</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.ServerSettings#getMcpPort <em>Mcp Port</em>}</li>
-	 *   <li>{@link eu.kalafatic.evolution.model.orchestration.ServerSettings#isAuthenticate <em>Authenticate</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.ServerSettings#isAuthenticate <em>Authenticate</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getServerSettings()

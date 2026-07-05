@@ -7,11 +7,9 @@ import eu.kalafatic.evolution.servers.mcp.protocol.McpResponse;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class McpServer extends NanoHTTPD {
-    private static final Logger logger = LoggerFactory.getLogger(McpServer.class);
+   
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final JsonRpcDispatcher dispatcher;
 
@@ -28,17 +26,17 @@ public class McpServer extends NanoHTTPD {
                 session.parseBody(files);
                 String postData = files.get("postData");
 
-                logger.info("Received request: {}", postData);
+                //logger.info("Received request: {}", postData);
 
                 McpRequest request = objectMapper.readValue(postData, McpRequest.class);
                 McpResponse response = dispatcher.dispatch(request);
 
                 String jsonResponse = objectMapper.writeValueAsString(response);
-                logger.info("Sending response: {}", jsonResponse);
+               // logger.info("Sending response: {}", jsonResponse);
 
                 return newFixedLengthResponse(Response.Status.OK, "application/json", jsonResponse);
             } catch (Exception e) {
-                logger.error("Error processing request", e);
+               //logger.error("Error processing request", e);
                 return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, MIME_PLAINTEXT, e.getMessage());
             }
         }
@@ -47,11 +45,11 @@ public class McpServer extends NanoHTTPD {
 
     public void startServer() throws IOException {
         start(NanoHTTPD.SOCKET_READ_TIMEOUT, false);
-        logger.info("MCP Server started on port {}", getListeningPort());
+        //logger.info("MCP Server started on port {}", getListeningPort());
     }
 
     public void stopServer() {
         stop();
-        logger.info("MCP Server stopped.");
+       // logger.info("MCP Server stopped.");
     }
 }
