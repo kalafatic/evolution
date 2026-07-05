@@ -45,6 +45,16 @@ public class RoutingPolicyRegistry {
                 return router.sendRemoteRequest(orchestrator, prompt, temperature, proxyUrl, context);
             }
         });
+
+        // MEDIATED & INTENT POLICY (Local fallback)
+        policies.add(new IRoutingPolicy() {
+            @Override public boolean applies(Orchestrator orchestrator, TaskContext context) {
+                return orchestrator.getAiMode() == AiMode.MEDIATED || orchestrator.getAiMode() == AiMode.INTENT;
+            }
+            @Override public String handle(LlmRouter router, Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
+                return router.sendLocalRequest(orchestrator, prompt, temperature, proxyUrl, context);
+            }
+        });
     }
 
     public static List<IRoutingPolicy> getPolicies() {
