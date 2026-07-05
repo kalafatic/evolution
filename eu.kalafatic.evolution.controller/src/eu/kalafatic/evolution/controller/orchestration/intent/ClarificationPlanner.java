@@ -67,7 +67,7 @@ public class ClarificationPlanner {
                 .collect(Collectors.toList());
     }
 
-    public String formatClarificationRequest(IntentExpansionResult result) {
+    public String formatClarificationRequest(IntentExpansionResult result, TaskContext context) {
         List<String> questions = generateQuestions(result);
         if (questions.isEmpty()) return null;
 
@@ -76,6 +76,24 @@ public class ClarificationPlanner {
             sb.append("- ").append(q).append("\n");
         }
         sb.append("\nCould you please clarify these points?");
+
+        // Attach DARWIN_BRANCHES tag with hypotheses if available for semantic selection
+        if (result.getHypotheses() != null && !result.getHypotheses().isEmpty()) {
+            JSONObject json = new JSONObject();
+            json.put("iteration", context.getOrchestrationState().getIterationCount());
+            JSONArray variants = new JSONArray();
+            for (eu.kalafatic.evolution.controller.orchestration.intent.IntentHypothesis h : result.getHypotheses()) {
+                JSONObject v = new JSONObject();
+                v.put("id", h.getId());
+                v.put("strategy", h.getDescription());
+                v.put("score", h.getConfidence());
+                v.put("status", "RECOMMENDED");
+                variants.put(v);
+            }
+            json.put("variants", variants);
+            sb.append("\n\n[DARWIN_BRANCHES] ").append(json.toString());
+        }
+
         return sb.toString();
     }
 }

@@ -2215,12 +2215,6 @@ public class ChatEngine extends ADarwinEngine {
 					"MANDATORY_SEMANTIC_ENVELOPE_MISSING: No valid SemanticEnvelope found in orchestration state metadata. Evolution cannot proceed without a mandatory semantic envelope.");
 		}
 
-		// STABILIZATION: Always emit branches block to UI even if empty or stalled
-		JSONObject branchesJson = new JSONObject();
-		branchesJson.put("iteration", currentIteration + 1); // Sync to 1-based for UI
-		branchesJson.put("variants", new JSONArray(uniqueVariants));
-		context.log("[DARWIN_BRANCHES] " + branchesJson.toString());
-
 		// 1. Goal-Driven Validation: Semantic Distance and Domain Matching
 		// [DARWIN IMPROVEMENT] Delayed Semantic Filtering: Do NOT removeIf. Just mark
 		// status in tree.
