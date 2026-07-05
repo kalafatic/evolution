@@ -1,4 +1,4 @@
-function renderTrainingViz(metrics, events) {
+window.renderTrainingViz = function(metrics, events) {
     const area = document.getElementById('viz-area');
     let eventsHtml = (events || []).map(e => `<div style="font-size:0.8em; margin-bottom:2px; border-bottom:1px solid #333; padding-bottom:2px;">${e}</div>`).join('');
 

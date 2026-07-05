@@ -1,4 +1,4 @@
-function renderEvolutionViz(snapshots) {
+window.renderEvolutionViz = function(snapshots) {
     const area = document.getElementById('viz-area');
     area.innerHTML = '';
 

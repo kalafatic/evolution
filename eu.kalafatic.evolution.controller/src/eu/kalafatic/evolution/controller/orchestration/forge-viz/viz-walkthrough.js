@@ -15,7 +15,7 @@ class WalkthroughNeuron {
     }
 }
 
-function renderWalkthroughViz() {
+window.renderWalkthroughViz = function() {
     const area = document.getElementById('viz-area');
     area.innerHTML = `
         <div style="display:flex; flex-direction:column; align-items:center; width:100%;">

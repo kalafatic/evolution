@@ -129,7 +129,7 @@ public class EvolutionServer extends NanoHTTPD {
         }
         if (uri.startsWith("/forge-viz/")) {
             String fileName = uri.substring("/forge-viz/".length());
-            return handleGetResource("forge-viz/" + fileName, "application/javascript");
+            return handleGetResource("/eu/kalafatic/evolution/controller/orchestration/forge-viz/" + fileName, "application/javascript");
         }
         if ("/creatic.js".equals(uri)) {
             return handleGetResource("/creatic.js", "application/javascript");

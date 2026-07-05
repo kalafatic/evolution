@@ -1,4 +1,4 @@
-function renderDatasetViz(stats, sample) {
+window.renderDatasetViz = function(stats, sample) {
     const area = document.getElementById('viz-area');
     area.innerHTML = `
         <div class="sample-nav">
