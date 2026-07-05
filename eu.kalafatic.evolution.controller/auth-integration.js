@@ -4,12 +4,37 @@
  */
 
 function isSWTBrowser() {
-    return typeof JavaHandler !== 'undefined' || typeof JavaLog !== 'undefined';
+    return typeof JavaHandler !== 'undefined' ||
+           typeof JavaLog !== 'undefined' ||
+           typeof JavaBridgeReady !== 'undefined';
 }
+
+/**
+ * Fetch interceptor to automatically add SWT runtime header for local API calls.
+ */
+(function() {
+    const originalFetch = window.fetch;
+    window.fetch = function() {
+        let [resource, config] = arguments;
+        if (isSWTBrowser()) {
+            if (typeof resource === 'string' && (resource.startsWith('/') || resource.startsWith(window.location.origin))) {
+                config = config || {};
+                config.headers = config.headers || {};
+                if (config.headers instanceof Headers) {
+                    config.headers.set('x-evo-runtime', 'SWT');
+                } else {
+                    config.headers['x-evo-runtime'] = 'SWT';
+                }
+            }
+        }
+        return originalFetch(resource, config);
+    };
+})();
 
 async function checkAuthentication() {
     if (window.isEvoAuthChecking) return;
     if (isSWTBrowser() || window.location.protocol === 'file:' || window.location.search.includes('runtime=SWT')) {
+        console.log("SWT environment detected. Authentication check bypassed.");
         return;
     }
 
@@ -52,8 +77,11 @@ async function checkAuthentication() {
                     return;
                 }
             }
-            console.warn('Unauthorized. Redirecting to login.');
-            window.location.href = '/login.html';
+            console.warn('Unauthorized.');
+            if (!isSWTBrowser()) {
+                console.warn('Redirecting to login.');
+                window.location.href = '/login.html';
+            }
         }
     } catch (error) {
         console.error('Auth check failed:', error);

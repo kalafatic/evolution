@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.Browser;
+import org.eclipse.swt.browser.BrowserFunction;
 import org.eclipse.swt.browser.LocationAdapter;
 import org.eclipse.swt.browser.LocationEvent;
 import org.eclipse.swt.browser.ProgressAdapter;
@@ -200,6 +201,25 @@ public class BrowserPage extends Composite {
                 item.setText(title);
             }
         });
+
+        // Register bridge functions to allow web pages to detect SWT environment
+        new BrowserFunction(browser, "JavaLog") {
+            @Override
+            public Object function(Object[] args) {
+                if (args.length > 0) {
+                    System.out.println("[Internal Browser] " + args[0]);
+                }
+                return null;
+            }
+        };
+
+        new BrowserFunction(browser, "JavaHandler") {
+            @Override
+            public Object function(Object[] args) {
+                // Basic handler to satisfy isSWTBrowser() detection
+                return null;
+            }
+        };
 
         browser.setUrl(url);
         tabFolder.setSelection(item);
