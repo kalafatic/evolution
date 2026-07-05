@@ -140,6 +140,27 @@ public class AuthController {
     }
 
     private boolean isAuthorized(IHTTPSession session) {
+        // Check global authentication flag via system property or orchestrator
+        String authProp = System.getProperty("evolution.api.authenticate");
+        if ("false".equalsIgnoreCase(authProp)) {
+            return true;
+        }
+
+        try {
+            eu.kalafatic.evolution.model.orchestration.Orchestrator orch =
+                eu.kalafatic.evolution.controller.orchestration.OrchestratorServiceImpl.getInstance().getOrchestrator();
+            if (orch != null && orch.getServerSettings() != null) {
+                if (!orch.getServerSettings().isAuthenticate()) {
+                    return true;
+                }
+            } else if (authProp == null) {
+                // Default to bypass if nothing is configured
+                return true;
+            }
+        } catch (Throwable e) {
+            if (authProp == null) return true;
+        }
+
         String runtimeHeader = session.getHeaders().get("x-evo-runtime");
         if (runtimeHeader == null) runtimeHeader = session.getHeaders().get("X-Evo-Runtime");
         String runtimeParam = session.getParms().get("runtime");

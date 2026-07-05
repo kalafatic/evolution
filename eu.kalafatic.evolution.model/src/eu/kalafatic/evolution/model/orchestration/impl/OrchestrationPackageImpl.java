@@ -125,6 +125,16 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
+	public EAttribute getServerSettings_Authenticate() {
+		return (EAttribute)serverSettingsEClass.getEStructuralFeatures().get(5);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public EReference getSupervisorSettings_Git() {
 		return (EReference)supervisorSettingsEClass.getEStructuralFeatures().get(5);
 	}
@@ -4171,6 +4181,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEAttribute(serverSettingsEClass, SERVER_SETTINGS__GIT_AUTOMATION);
 		createEAttribute(serverSettingsEClass, SERVER_SETTINGS__MCP_ENABLED);
 		createEAttribute(serverSettingsEClass, SERVER_SETTINGS__MCP_PORT);
+		createEAttribute(serverSettingsEClass, SERVER_SETTINGS__AUTHENTICATE);
 
 		serverSessionEClass = createEClass(SERVER_SESSION);
 		createEAttribute(serverSessionEClass, SERVER_SESSION__ID);
@@ -4603,6 +4614,7 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEAttribute(getServerSettings_GitAutomation(), ecorePackage.getEBoolean(), "gitAutomation", "false", 0, 1, ServerSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getServerSettings_McpEnabled(), ecorePackage.getEBoolean(), "mcpEnabled", "true", 0, 1, ServerSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getServerSettings_McpPort(), ecorePackage.getEInt(), "mcpPort", "58080", 0, 1, ServerSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getServerSettings_Authenticate(), ecorePackage.getEBoolean(), "authenticate", "false", 0, 1, ServerSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(serverSessionEClass, ServerSession.class, "ServerSession", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getServerSession_Id(), ecorePackage.getEString(), "id", null, 0, 1, ServerSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);

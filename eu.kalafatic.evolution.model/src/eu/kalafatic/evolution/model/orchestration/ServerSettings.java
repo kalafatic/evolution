@@ -18,6 +18,7 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.ServerSettings#isGitAutomation <em>Git Automation</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.ServerSettings#isMcpEnabled <em>Mcp Enabled</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.ServerSettings#getMcpPort <em>Mcp Port</em>}</li>
+	 *   <li>{@link eu.kalafatic.evolution.model.orchestration.ServerSettings#isAuthenticate <em>Authenticate</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getServerSettings()
@@ -139,5 +140,28 @@ public interface ServerSettings extends EObject {
 	 * @generated
 	 */
 	void setMcpPort(int value);
+
+	/**
+	 * Returns the value of the '<em><b>Authenticate</b></em>' attribute.
+	 * The default value is <code>"false"</code>.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Authenticate</em>' attribute.
+	 * @see #setAuthenticate(boolean)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getServerSettings_Authenticate()
+	 * @model default="false"
+	 * @generated
+	 */
+	boolean isAuthenticate();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.ServerSettings#isAuthenticate <em>Authenticate</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Authenticate</em>' attribute.
+	 * @see #isAuthenticate()
+	 * @generated
+	 */
+	void setAuthenticate(boolean value);
 
 } // ServerSettings

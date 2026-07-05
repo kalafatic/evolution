@@ -485,6 +485,9 @@ public class EvolutionServer extends NanoHTTPD {
         json.put("localModel", orch.getLocalModel());
         json.put("remoteModel", orch.getRemoteModel());
         json.put("darwinMode", orch.isDarwinMode());
+        if (orch.getServerSettings() != null) {
+            json.put("authenticate", orch.getServerSettings().isAuthenticate());
+        }
 
         if (orch.getAiChat() != null && orch.getAiChat().getPromptInstructions() != null) {
             PromptInstructions instr = orch.getAiChat().getPromptInstructions();
@@ -518,6 +521,11 @@ public class EvolutionServer extends NanoHTTPD {
             if (json.has("localModel")) orch.setLocalModel(json.getString("localModel"));
             if (json.has("remoteModel")) orch.setRemoteModel(json.getString("remoteModel"));
             if (json.has("darwinMode")) orch.setDarwinMode(json.getBoolean("darwinMode"));
+            if (json.has("authenticate") && orch.getServerSettings() != null) {
+                boolean auth = json.getBoolean("authenticate");
+                orch.getServerSettings().setAuthenticate(auth);
+                System.setProperty("evolution.api.authenticate", String.valueOf(auth));
+            }
 
             if (orch.getAiChat() != null && orch.getAiChat().getPromptInstructions() != null) {
                 PromptInstructions instr = orch.getAiChat().getPromptInstructions();
@@ -645,6 +653,13 @@ public class EvolutionServer extends NanoHTTPD {
     }
 
     private boolean isAuthorized(IHTTPSession session) {
+        // Check global authentication flag (default to bypass if not explicitly true)
+        Orchestrator orch = OrchestratorServiceImpl.getInstance().getOrchestrator();
+        boolean authEnabled = orch != null && orch.getServerSettings() != null && orch.getServerSettings().isAuthenticate();
+        if (!authEnabled) {
+            return true;
+        }
+
         // SWT Browser bypass
         String runtimeHeader = session.getHeaders().get("x-evo-runtime");
         if (runtimeHeader == null) runtimeHeader = session.getHeaders().get("X-Evo-Runtime");

@@ -34,6 +34,7 @@ public class SettingsGroup extends AToolGroup {
 
     private Text portText;
     private Button autoStartCheck;
+    private Button authenticateCheck;
     private Runnable onStateChange;
     private TableViewer serverViewer;
 
@@ -58,6 +59,10 @@ public class SettingsGroup extends AToolGroup {
 
         toolkit.createLabel(group, "Auto-start with UI:");
         autoStartCheck = toolkit.createButton(group, "", SWT.CHECK);
+
+        toolkit.createLabel(group, "Enable API Authentication:");
+        authenticateCheck = toolkit.createButton(group, "", SWT.CHECK);
+        authenticateCheck.setToolTipText("If unchecked, authentication is bypassed for local API calls (useful for debugging internal browser issues).");
 
         Composite btnComp = toolkit.createComposite(group);
         btnComp.setLayout(new GridLayout(3, false));
@@ -186,6 +191,7 @@ public class SettingsGroup extends AToolGroup {
         if (settings != null) {
             setTextSafe(portText, String.valueOf(settings.getPort()));
             setSelectionSafe(autoStartCheck, settings.isAutoStart());
+            setSelectionSafe(authenticateCheck, settings.isAuthenticate());
         }
 
         if (serverViewer != null && !serverViewer.getControl().isDisposed()) {
@@ -219,6 +225,9 @@ public class SettingsGroup extends AToolGroup {
             // keep old value
         }
         settings.setAutoStart(autoStartCheck.getSelection());
+        boolean auth = authenticateCheck.getSelection();
+        settings.setAuthenticate(auth);
+        System.setProperty("evolution.api.authenticate", String.valueOf(auth));
     }
 
     @Override
