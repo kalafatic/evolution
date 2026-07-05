@@ -74,6 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function isSWTEnvironment() {
     return typeof JavaHandler !== 'undefined' ||
            typeof JavaLog !== 'undefined' ||
+           typeof JavaBridgeReady !== 'undefined' ||
            window.location.search.includes('runtime=SWT') ||
            window.location.protocol === 'file:';
 }
