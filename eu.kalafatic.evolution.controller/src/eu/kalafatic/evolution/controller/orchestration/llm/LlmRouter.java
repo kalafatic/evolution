@@ -1,6 +1,7 @@
 package eu.kalafatic.evolution.controller.orchestration.llm;
 
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 
 /**
@@ -32,9 +33,19 @@ public class LlmRouter {
      */
     public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
         if (context != null) {
-            String remoteModel = (orchestrator != null) ? orchestrator.getRemoteModel() : "unknown";
-            String localModel = (orchestrator != null && orchestrator.getOllama() != null) ? orchestrator.getOllama().getModel() : "local";
-            context.log("Stage: LLM\nProvider: dynamic\nModel: " + (remoteModel != null ? remoteModel : localModel));
+            String activeModel = "unknown";
+            if (orchestrator != null) {
+                AiMode mode = orchestrator.getAiMode();
+                if (mode == AiMode.REMOTE) {
+                    activeModel = orchestrator.getRemoteModel();
+                } else if (mode == AiMode.HYBRID) {
+                    activeModel = (orchestrator.getHybridModel() != null) ? orchestrator.getHybridModel() : "Hybrid";
+                } else {
+                    // LOCAL, PROXY, MEDIATED, INTENT or default
+                    activeModel = (orchestrator.getOllama() != null) ? orchestrator.getOllama().getModel() : orchestrator.getLocalModel();
+                }
+            }
+            context.log("Stage: LLM\nProvider: dynamic\nModel: " + (activeModel != null ? activeModel : "unknown"));
             context.log("LlmRouter: Routing request via dynamic policies.");
         }
 
