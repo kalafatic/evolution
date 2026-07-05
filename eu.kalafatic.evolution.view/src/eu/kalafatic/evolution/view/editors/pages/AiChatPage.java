@@ -1255,7 +1255,8 @@ public class AiChatPage extends AEvoPage {
 
         if (content.contains("[DARWIN_BRANCHES]")) {
             agentType = "darwin-branches waiting";
-            content = content.replace("[DARWIN_BRANCHES]", "").trim();
+            // NOTE: We no longer strip [DARWIN_BRANCHES] here because renderer.js needs it to accurately
+            // separate descriptive text from the JSON data payload.
             priority = MessagePriority.USER_ACTION_REQUIRED;
         }
 
