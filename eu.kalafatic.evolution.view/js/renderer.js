@@ -166,8 +166,8 @@ window.ChatApp.Renderer = {
             return '___THINK_BLOCK_' + (thinkBlocks.length - 1) + '___';
         });
 
-        // Try JSON rendering first
-        if (clean.includes('{') && clean.includes('}')) {
+        // Try JSON rendering first - but only if it looks like a complete object, not just a snippet
+        if (clean.includes('{') && clean.includes('}') && (clean.trim().startsWith('{') || clean.trim().startsWith('[') || clean.includes('[DARWIN_BRANCHES]'))) {
             try {
                 let jsonText = clean;
                 if (jsonText.startsWith('```')) {
@@ -176,7 +176,10 @@ window.ChatApp.Renderer = {
                 const match = jsonText.match(/[\{\[][\s\S]*[\}\]]/);
                 if (match) {
                     const data = JSON.parse(match[0]);
-                    return this.renderJson(data);
+                    // Only render as JSON block if it has multiple keys or looks like a formal proposal
+                    if (Array.isArray(data) || Object.keys(data).length > 2 || data.strategy || data.explanation) {
+                        return this.renderJson(data);
+                    }
                 }
             } catch(e) {}
         }
@@ -348,7 +351,26 @@ window.ChatApp.Renderer = {
 
             let data;
             // Robust JSON extraction: look for explicit Darwin tags first
-            if (text.includes('<BEGIN_DARWIN_JSON>') && text.includes('<END_DARWIN_JSON>')) {
+            if (text.includes('[DARWIN_BRANCHES]')) {
+                const start = text.indexOf('[DARWIN_BRANCHES]') + '[DARWIN_BRANCHES]'.length;
+                const part = text.substring(start).trim();
+                // We assume the JSON follows the marker. We find the first { or [ that belongs to the actual payload.
+                const jsonMatch = part.match(/[\{\[][\s\S]*[\}\]]/);
+                if (jsonMatch) {
+                    try {
+                        data = JSON.parse(jsonMatch[0]);
+                    } catch (e) {
+                         // If parsing failed, it might be that there's noise before the real JSON. Try to find the start more carefully.
+                         const firstBrace = part.indexOf('{');
+                         const firstBracket = part.indexOf('[');
+                         const realStart = (firstBrace !== -1 && firstBracket !== -1) ? Math.min(firstBrace, firstBracket) : Math.max(firstBrace, firstBracket);
+                         if (realStart !== -1) data = JSON.parse(part.substring(realStart));
+                         else throw e;
+                    }
+                } else {
+                    data = JSON.parse(part);
+                }
+            } else if (text.includes('<BEGIN_DARWIN_JSON>') && text.includes('<END_DARWIN_JSON>')) {
                 const start = text.indexOf('<BEGIN_DARWIN_JSON>') + '<BEGIN_DARWIN_JSON>'.length;
                 const end = text.indexOf('<END_DARWIN_JSON>');
                 data = JSON.parse(text.substring(start, end).trim());
