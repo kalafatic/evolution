@@ -129,7 +129,7 @@ public class EvolutionServer extends NanoHTTPD {
         }
         if (uri.startsWith("/forge-viz/")) {
             String fileName = uri.substring("/forge-viz/".length());
-            return handleGetResource("/forge-viz/" + fileName, "application/javascript");
+            return handleGetResource("forge-viz/" + fileName, "application/javascript");
         }
         if ("/creatic.js".equals(uri)) {
             return handleGetResource("/creatic.js", "application/javascript");
@@ -269,12 +269,6 @@ public class EvolutionServer extends NanoHTTPD {
                 }
             } else if (Method.POST.equals(method) && "/creatic/analyze".equals(uri)) {
                 return handleCreaticAnalyze(session);
-            } else if (Method.GET.equals(method) && "/creatic.js".equals(uri)) {
-                return handleGetResource("creatic.js", "application/javascript");
-            } else if (Method.GET.equals(method) && "/creatic.css".equals(uri)) {
-                return handleGetResource("creatic.css", "text/css");
-            } else if (Method.GET.equals(method) && "/auth-integration.js".equals(uri)) {
-                return handleGetResource("auth-integration.js", "application/javascript");
             } else if (Method.POST.equals(method) && uri.startsWith("/forge/dataset/generate")) {
                 return handleGenerateSyntheticDataset(session);
             }
