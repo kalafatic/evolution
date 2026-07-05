@@ -188,16 +188,18 @@ public class FinalResponseAssembler {
 					&& (Boolean) context.getOrchestrationState().getMetadata()
 							.get("lastRealityCheckSignificant");
 
-            String statusStr = success ? "SUCCESS" : (hasPhysicalChanges ? "SUCCESS_WITH_ERRORS" : "FAILED");
-            sb.append("✓ Status: ").append(statusStr).append("\n");
-
-            // Extract build errors if any
+            // Extract build errors if any from iteration record
             IterationRecord lastWinnerRecord = context.getKernelContext().getMemoryService().getRecords().stream()
                     .filter(r -> "ACTIVE".equals(r.getActivationState()))
                     .reduce((first, second) -> second)
                     .orElse(null);
 
-            if (lastWinnerRecord != null && "SUCCESS_WITH_BUILD_ERROR".equals(lastWinnerRecord.getResult())) {
+            boolean buildFailed = lastWinnerRecord != null && "SUCCESS_WITH_BUILD_ERROR".equals(lastWinnerRecord.getResult());
+
+            String statusStr = success ? (buildFailed ? "SUCCESS_WITH_ERRORS" : "SUCCESS") : (hasPhysicalChanges ? "SUCCESS_WITH_ERRORS" : "FAILED");
+            sb.append("✓ Status: ").append(statusStr).append("\n");
+
+            if (buildFailed) {
                 sb.append("⚠️ Build: FAILED (delivered despite error)\n");
             } else {
                 sb.append("✓ Build successful\n");
