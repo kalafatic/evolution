@@ -108,8 +108,8 @@ public class BrowserPage extends Composite {
             port = orchestrator.getServerSettings().getPort();
         }
 
-        createNewTab("http://localhost:" + port + "/experimental/chat");
-        createNewTab("http://localhost:" + port);
+        createNewTab("http://localhost:" + port + "/experimental/chat?runtime=SWT");
+        createNewTab("http://localhost:" + port + "/dashboard.html?runtime=SWT");
         // Listeners
         goButton.addSelectionListener(new SelectionAdapter() {
             @Override public void widgetSelected(SelectionEvent e) { navigateTo(urlText.getText()); }

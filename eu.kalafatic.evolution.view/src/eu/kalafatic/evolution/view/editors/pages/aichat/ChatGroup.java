@@ -441,6 +441,13 @@ public class ChatGroup extends AEvoGroup {
             }
         };
 
+        new BrowserFunction(browser, "JavaBridgeReady") {
+            @Override
+            public Object function(Object[] args) {
+                return null;
+            }
+        };
+
         new BrowserFunction(browser, "JavaHandler") {
             @Override
             public Object function(Object[] args) {

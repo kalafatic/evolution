@@ -647,6 +647,7 @@ public class EvolutionServer extends NanoHTTPD {
     private boolean isAuthorized(IHTTPSession session) {
         // SWT Browser bypass
         String runtimeHeader = session.getHeaders().get("x-evo-runtime");
+        if (runtimeHeader == null) runtimeHeader = session.getHeaders().get("X-Evo-Runtime");
         String runtimeParam = session.getParms().get("runtime");
         if ("SWT".equalsIgnoreCase(runtimeHeader) || "SWT".equalsIgnoreCase(runtimeParam)) {
             return true;

@@ -10,20 +10,37 @@ function isSWTBrowser() {
 }
 
 /**
- * Fetch interceptor to automatically add SWT runtime header for local API calls.
+ * Robust fetch interceptor to automatically add SWT runtime header for local API calls.
  */
 (function() {
     const originalFetch = window.fetch;
-    window.fetch = function() {
-        let [resource, config] = arguments;
-        if (isSWTBrowser()) {
-            if (typeof resource === 'string' && (resource.startsWith('/') || resource.startsWith(window.location.origin))) {
-                config = config || {};
-                config.headers = config.headers || {};
-                if (config.headers instanceof Headers) {
-                    config.headers.set('x-evo-runtime', 'SWT');
+    window.fetch = function(resource, config) {
+        if (isSWTBrowser() || window.location.search.includes('runtime=SWT')) {
+            let url = "";
+            if (typeof resource === 'string') {
+                url = resource;
+            } else if (resource instanceof URL) {
+                url = resource.href;
+            } else if (resource && typeof resource === 'object' && resource.url) {
+                url = resource.url;
+            }
+
+            const isLocal = url.startsWith('/') ||
+                          url.startsWith(window.location.origin) ||
+                          url.includes('localhost:') ||
+                          url.includes('127.0.0.1:');
+
+            if (isLocal) {
+                if (resource instanceof Request) {
+                    resource.headers.set('x-evo-runtime', 'SWT');
                 } else {
-                    config.headers['x-evo-runtime'] = 'SWT';
+                    config = config || {};
+                    config.headers = config.headers || {};
+                    if (config.headers instanceof Headers) {
+                        config.headers.set('x-evo-runtime', 'SWT');
+                    } else {
+                        config.headers['x-evo-runtime'] = 'SWT';
+                    }
                 }
             }
         }
