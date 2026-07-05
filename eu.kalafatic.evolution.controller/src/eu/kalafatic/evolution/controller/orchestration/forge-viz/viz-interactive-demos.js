@@ -1,6 +1,8 @@
 
 // ============== INTERACTIVE DEMOS ==============
 
+(function() {
+
 let demoNetwork = [
     { name: "Input", neurons: 2 },
     { name: "Hidden", neurons: 3 },
@@ -8,7 +10,7 @@ let demoNetwork = [
 ];
 let demoSelected = null;
 
-function renderInteractiveNeuronDemo() {
+window.renderInteractiveNeuronDemo = function() {
     const area = document.getElementById('viz-area');
     area.innerHTML = `
         <div id="demo-neuron-container" style="display:flex; flex-direction:column; height:100%; width:100%; background:white; color: #333;">
@@ -28,7 +30,7 @@ function renderInteractiveNeuronDemo() {
     `;
 
     renderDemoNetwork();
-}
+};
 
 function renderDemoNetwork() {
     const canvas = document.getElementById("demo-canvas");
@@ -162,37 +164,37 @@ function inspectDemoNeuron(l, i) {
     `;
 }
 
-function addDemoLayer() {
+window.addDemoLayer = function() {
     demoNetwork.splice(demoNetwork.length - 1, 0, {
         name: "Hidden",
         neurons: 3
     });
     renderDemoNetwork();
-}
+};
 
-function addDemoNeuron() {
+window.addDemoNeuron = function() {
     if (demoSelected == null) return;
     let l = parseInt(demoSelected.dataset.layer);
     demoNetwork[l].neurons++;
     renderDemoNetwork();
-}
+};
 
-function removeDemoNeuron() {
+window.removeDemoNeuron = function() {
     if (demoSelected == null) return;
     let l = parseInt(demoSelected.dataset.layer);
     if (demoNetwork[l].neurons > 1)
         demoNetwork[l].neurons--;
     renderDemoNetwork();
-}
+};
 
-function saveDemoNeuron() {
+window.saveDemoNeuron = function() {
     if (demoSelected == null) return;
     const nameInput = document.getElementById("demo-n-name");
     demoSelected.innerHTML = nameInput.value.substring(0, 1);
     log("Neuron settings applied.");
-}
+};
 
-function trainDemo() {
+window.trainDemo = function() {
     const loss = (Math.random() * 0.2).toFixed(4);
     log("Demo Training - Loss: " + loss);
     const details = document.getElementById('viz-details-content');
@@ -202,9 +204,9 @@ function trainDemo() {
     lossDiv.style.background = "#e8f0fe";
     lossDiv.innerHTML = `<b>Training Status</b><br>Current Loss: ${loss}`;
     details.appendChild(lossDiv);
-}
+};
 
-function forwardDemo() {
+window.forwardDemo = function() {
     const neurons = document.querySelectorAll(".demo-neuron-el");
     neurons.forEach(n => {
         let val = Math.random();
@@ -231,11 +233,11 @@ function forwardDemo() {
         badge.textContent = val.toFixed(2);
     });
     log("Forward pass simulated with numerical I/O.");
-}
+};
 
 // ============== INTERACTIVE LLM DEMO ==============
 
-function renderInteractiveLlmDemo() {
+window.renderInteractiveLlmDemo = function() {
     const area = document.getElementById('viz-area');
     area.innerHTML = `
         <div style="padding:20px; text-align:center; height:100%; width:100%; background:#fff; color:#333;">
@@ -269,15 +271,16 @@ function renderInteractiveLlmDemo() {
         </div>
     `;
     updateLlmCandidates();
-}
+};
 
 let llmTokens = ["The", "quick", "brown", "fox", "jumps", "over", "the", "lazy", "dog"];
 let llmIndex = 5;
 
-function stepLlmDemo() {
+window.stepLlmDemo = function() {
     if (llmIndex >= llmTokens.length) llmIndex = 0;
 
     const context = document.getElementById('llm-context');
+    if (!context) return;
     let html = "";
     for(let i=0; i<llmIndex; i++) {
         html += llmTokens[i] + " ";
@@ -287,7 +290,7 @@ function stepLlmDemo() {
 
     llmIndex++;
     updateLlmCandidates();
-}
+};
 
 function updateLlmCandidates() {
     const candidates = document.getElementById('llm-candidates');
@@ -311,7 +314,7 @@ function updateLlmCandidates() {
 
 // ============== INTERACTIVE CNN DEMO ==============
 
-function renderInteractiveCnnDemo() {
+window.renderInteractiveCnnDemo = function() {
     const area = document.getElementById('viz-area');
     area.innerHTML = `
         <div style="padding:20px; text-align:center; height:100%; width:100%; background:#fff; color:#333;">
@@ -368,7 +371,7 @@ function renderInteractiveCnnDemo() {
     pixels.forEach((p, i) => {
         p.onmouseover = () => highlightCnnFilter(i);
     });
-}
+};
 
 function highlightCnnFilter(index) {
     const x = index % 7;
@@ -400,7 +403,7 @@ function highlightCnnFilter(index) {
 let mlpW1=[], mlpW2=[], mlpb1=[], mlpb2=[];
 let mlpH=3;
 
-function renderInteractiveMlpDemo() {
+window.renderInteractiveMlpDemo = function() {
     const area = document.getElementById('viz-area');
     area.innerHTML = `
         <div id="demo-mlp-container" style="padding:20px; text-align:center; height:100%; width:100%; background:#1f232b; color:white; overflow:auto;">
@@ -435,12 +438,12 @@ function renderInteractiveMlpDemo() {
         </div>
     `;
     buildMlp();
-}
+};
 
 function mlpSigmoid(x){ return 1/(1+Math.exp(-x)); }
 function mlpRand(){ return Math.random()*2-1; }
 
-function buildMlp() {
+window.buildMlp = function() {
     const hiddenInput = document.getElementById('demo-mlp-hidden');
     if (!hiddenInput) return;
     mlpH = parseInt(hiddenInput.value);
@@ -452,7 +455,7 @@ function buildMlp() {
     }
     mlpb2=mlpRand();
     renderMlp();
-}
+};
 
 function renderMlp() {
     const net = document.getElementById('demo-mlp-net');
@@ -472,7 +475,7 @@ function renderMlp() {
     net.innerHTML = html;
 }
 
-function forwardMlp() {
+window.forwardMlp = function() {
     const x1Val = parseFloat(document.getElementById('demo-mlp-x1').value);
     const x2Val = parseFloat(document.getElementById('demo-mlp-x2').value);
     let h = [];
@@ -488,11 +491,11 @@ function forwardMlp() {
     nodes.forEach(n => n.classList.add("active"));
     setTimeout(() => { nodes.forEach(n => n.classList.remove("active")); }, 300);
     document.getElementById('demo-mlp-out').innerText = y.toFixed(4);
-}
+};
 
 // ============== INTERACTIVE TRANSFORMER DEMO ==============
 
-function renderInteractiveTransformerDemo() {
+window.renderInteractiveTransformerDemo = function() {
     const area = document.getElementById('viz-area');
     area.innerHTML = `
         <div id="demo-tf-container" style="padding:20px; text-align:center; height:100%; width:100%; background:#20242b; color:white; overflow:auto;">
@@ -544,12 +547,12 @@ function renderInteractiveTransformerDemo() {
         </div>
     `;
     buildTransformer();
-}
+};
 
 function tfBlock(name){ return "<div class='demo-tf-block'>"+name+"</div>"; }
 function tfArrow(){ return "<div class='demo-tf-arrow'>➜</div>"; }
 
-function buildTransformer(){
+window.buildTransformer = function() {
     const pipeline = document.getElementById('demo-tf-pipeline');
     if (!pipeline) return;
     let html="";
@@ -560,9 +563,9 @@ function buildTransformer(){
     html+=tfBlock("LayerNorm"); html+=tfArrow();
     html+=tfBlock("Output");
     pipeline.innerHTML=html;
-}
+};
 
-async function runTransformer(){
+window.runTransformer = async function() {
     const prompt = document.getElementById('demo-tf-prompt');
     const tokens = document.getElementById('demo-tf-tokens');
     const output = document.getElementById('demo-tf-output');
@@ -587,4 +590,6 @@ async function runTransformer(){
         for(let x of t){ x.classList.remove("active"); }
     }
     output.textContent = "Generated: " + prompt.value + " ...";
-}
+};
+
+})();

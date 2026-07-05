@@ -1,4 +1,4 @@
-function renderArchitectureViz(data) {
+window.renderArchitectureViz = function(data) {
     const area = document.getElementById('viz-area');
     area.innerHTML = '';
 
