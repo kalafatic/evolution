@@ -535,8 +535,8 @@ public class IterationManager {
     }
 
     public boolean handleClarification(TaskContext context, ClarificationPlanner planner, IntentExpansionResult expansion, String goal) throws Exception {
-        String clarificationRequest = planner.formatClarificationRequest(expansion);
-        context.log(clarificationRequest);
+        String clarificationRequest = planner.formatClarificationRequest(expansion, context);
+        // REMOVE: Premature log removed to prevent duplicate UI rendering now that requestInput handles the combined payload.
         String userResponse = context.requestInput(clarificationRequest).get();
         String trimmed = (userResponse != null) ? userResponse.trim() : "";
 
@@ -610,7 +610,10 @@ public class IterationManager {
                 }
             }
             sb.append("\nMANUAL MODE: ALL branches preserved. No auto-collapse.\n");
-            sb.append("Select a trajectory to execute (e.g. 'Select v0'), Keep to save, or Reject to stop.");
+            sb.append("Select a trajectory to execute (e.g. 'Select v0'), Keep to save, or Reject to stop.\n\n");
+
+            // ATTACH DARWIN BRANCHES JSON: This ensures branches are rendered as part of the blocking turn
+            sb.append("[DARWIN_BRANCHES] ").append(generateDarwinBranchesJson(context, variants, null));
 
             String input = context.requestInput(sb.toString()).get();
             String trimmed = (input != null) ? input.trim() : "";
@@ -787,12 +790,11 @@ public class IterationManager {
         return EvolutionPhase.INTENT_EXPANSION.name().equals(phaseStr) || "INTENT_EXPANSION".equals(phaseStr);
     }
 
-    private void emitDarwinBranches(TaskContext context, List<BranchVariant> variants, String approvedId) {
+    private String generateDarwinBranchesJson(TaskContext context, List<BranchVariant> variants, String approvedId) {
         JSONObject json = new JSONObject();
-        int iteration = context.getOrchestrationState().getIterationCount() + 1; // Sync to 1-based for UI
+        int iteration = context.getOrchestrationState().getIterationCount() + 1;
         json.put("iteration", iteration);
         JSONArray variantsArr = new JSONArray();
-
         EvolutionTree tree = context.getKernelContext().getMemoryService().getEvolutionTree();
 
         for (BranchVariant v : variants) {
@@ -804,15 +806,34 @@ public class IterationManager {
             vObj.put("tradeoffs", v.getTradeoffs());
             vObj.put("status", v.getActivationState().name());
 
+            // Include actions for rendering snippets directly in the branch UI
+            if (!v.getActions().isEmpty()) {
+                JSONArray actionsArr = new JSONArray();
+                for (BranchVariant.Action a : v.getActions()) {
+                    JSONObject aObj = new JSONObject();
+                    aObj.put("operation", a.getOperation());
+                    aObj.put("target", a.getTarget());
+                    aObj.put("description", a.getDescription());
+                    aObj.put("implementation", a.getImplementation());
+                    actionsArr.put(aObj);
+                }
+                vObj.put("actions", actionsArr);
+            }
+
             EvolutionNode node = tree.getNode(v.getId());
             if (node != null) {
                 vObj.put("mutation_identity", node.getMutationIdentity());
                 vObj.put("parent_id", node.getParentId());
             }
-
             variantsArr.put(vObj);
         }
         json.put("variants", variantsArr);
+        return json.toString();
+    }
+
+    private void emitDarwinBranches(TaskContext context, List<BranchVariant> variants, String approvedId) {
+        int iteration = context.getOrchestrationState().getIterationCount() + 1;
+        EvolutionTree tree = context.getKernelContext().getMemoryService().getEvolutionTree();
 
         StringBuilder outcomeBuilder = new StringBuilder("[DARWIN_BRANCHES] ");
         outcomeBuilder.append("\nIteration ").append(iteration).append("\n");
@@ -824,7 +845,6 @@ public class IterationManager {
         for (BranchVariant v : variants) {
             EvolutionNode node = tree.getNode(v.getId());
             String identity = (node != null && node.getMutationIdentity() != null) ? node.getMutationIdentity() : v.getId();
-            String parentId = (node != null) ? node.getParentId() : "ROOT";
 
             if (v.getId().equals(approvedId)) {
                 outcomeBuilder.append("\n  ├── ").append(identity).append(" (Winner) Strategy: ").append(v.getStrategy()).append("\n");
@@ -840,7 +860,7 @@ public class IterationManager {
             }
         }
         outcomeBuilder.append("[DECISION:MANUAL] ");
-        outcomeBuilder.append(json.toString());
+        outcomeBuilder.append(generateDarwinBranchesJson(context, variants, approvedId));
         context.log(outcomeBuilder.toString());
     }
 
@@ -1455,30 +1475,8 @@ public class IterationManager {
         // UI SYNC: Emit centralized [DARWIN_BRANCHES] message for variant status updates
         sessionContainer.getEventBus().publish(new RuntimeEvent(RuntimeEventType.DECISION_UPDATED, context.getSessionId(), manualSelectionId, iterationId, "Kernel", decision.getSelectedVariantId(), System.currentTimeMillis()));
 
-        JSONObject json = new JSONObject();
-        int iteration = context.getOrchestrationState().getIterationCount() + 1; // Sync to 1-based for UI
-        json.put("iteration", iteration);
-        JSONArray variantsArr = new JSONArray();
-
+        int iteration = context.getOrchestrationState().getIterationCount() + 1;
         EvolutionTree tree = context.getKernelContext().getMemoryService().getEvolutionTree();
-
-        for (BranchVariant v : variants) {
-            JSONObject vObj = new JSONObject();
-            vObj.put("id", v.getId());
-            vObj.put("strategy", v.getStrategy());
-            vObj.put("score", v.getScore());
-            vObj.put("survival_argument", v.getSurvivalArgument());
-            vObj.put("tradeoffs", v.getTradeoffs());
-            vObj.put("status", v.getActivationState().name());
-
-            EvolutionNode node = tree.getNode(v.getId());
-            if (node != null) {
-                vObj.put("mutation_identity", node.getMutationIdentity());
-                vObj.put("parent_id", node.getParentId());
-            }
-            variantsArr.put(vObj);
-        }
-        json.put("variants", variantsArr);
 
         StringBuilder outcomeBuilder = new StringBuilder("[DARWIN_BRANCHES] ");
         outcomeBuilder.append("\nIteration ").append(iteration).append("\n");
@@ -1509,7 +1507,7 @@ public class IterationManager {
         // Ensure decision type and variant metadata are logged for visual stamping
         String decisionType = (manualSelectionId != null) ? "MANUAL" : "AUTO";
         outcomeBuilder.append("[DECISION:").append(decisionType).append("] ");
-        outcomeBuilder.append(json.toString());
+        outcomeBuilder.append(generateDarwinBranchesJson(context, variants, winnerId));
 
         // STAMPING MANDATE: Always emit branch statuses for the UI to render stamps correctly
         context.log(outcomeBuilder.toString());

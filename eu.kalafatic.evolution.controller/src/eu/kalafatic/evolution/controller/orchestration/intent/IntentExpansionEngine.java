@@ -181,7 +181,6 @@ public class IntentExpansionEngine extends BaseAiAgent {
 
         int currentIteration = context.getOrchestrationState().getIterationCount();
         json.put("iteration", currentIteration);
-        context.log("[DARWIN_BRANCHES] " + json.toString());
 
         IntentExpansionResult result = new IntentExpansionResult();
         result.setOriginalPrompt(prompt);

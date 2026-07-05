@@ -43,11 +43,34 @@ window.ChatApp.Renderer = {
             // Updated in main.js via list
             if (!document.body.classList.contains('debug')) return null;
         } else if (isDarwin) {
-            const darwinEl = this.renderDarwin(m);
-            if (!darwinEl) return null;
+            // Extract descriptive text if present (e.g. combined manual selection prompt)
+            let textPart = "";
+            if (m.text.includes('[DARWIN_BRANCHES]')) {
+                textPart = m.text.substring(0, m.text.indexOf('[DARWIN_BRANCHES]')).trim();
+            } else if (m.text.includes('<BEGIN_DARWIN_JSON>')) {
+                textPart = m.text.substring(0, m.text.indexOf('<BEGIN_DARWIN_JSON>')).trim();
+            } else {
+                textPart = m.text.replace(/[\{\[][\s\S]*[\}\]]/, '').trim();
+            }
 
-            content.style.flexDirection = 'column';
-            content.appendChild(darwinEl);
+            // Remove common log tags from text part
+            textPart = textPart.replace(/^(\s*\[[^\{\"\[\]\n]+\]|\s*\([^\{\"\[\)\n]+\)|\s*(INFO|WARNING|SEVERE|ERROR|DEBUG):)+/gi, '').trim();
+
+            if (textPart) {
+                const bubble = document.createElement('div');
+                bubble.className = 'bubble';
+                const bubbleContent = document.createElement('div');
+                bubbleContent.className = 'bubble-content';
+                bubbleContent.innerHTML = this.formatText(textPart, primaryRole);
+                bubble.appendChild(bubbleContent);
+                content.appendChild(bubble);
+            }
+
+            const darwinEl = this.renderDarwin(m);
+            if (darwinEl) {
+                content.style.flexDirection = 'column';
+                content.appendChild(darwinEl);
+            }
 
             // Move Force Solution button out of branch container to appear UNDER all branches
             const isApproved = role.includes('approved');
@@ -59,6 +82,7 @@ window.ChatApp.Renderer = {
                                       <div class="force-hint">Bypass expansion & execute winner</div>`;
                 content.appendChild(forceDiv);
             }
+            if (!content.hasChildNodes()) return null;
         } else {
             const bubble = document.createElement('div');
             bubble.className = 'bubble';
