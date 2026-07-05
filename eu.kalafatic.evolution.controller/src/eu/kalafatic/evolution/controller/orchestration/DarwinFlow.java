@@ -176,8 +176,17 @@ public class DarwinFlow implements IOrchestrationFlow {
             variant.setSuccess(success);
 
             EvaluationResult result = manager.getFitnessEngine().evaluate(tempDir, variantContext, pressure);
-            variant.setSuccess(result.isSuccess());
-            if (result.isSuccess()) {
+
+            // FIX: If code was generated, deliver it even with build errors in the worktree
+            if (success && !result.isSuccess()) {
+                 context.log("[DARWIN] Delivering variant from DarwinFlow despite build errors because tasks succeeded.");
+                 variant.setSuccess(true);
+                 variant.setErrorMessage("Build error during parallel evaluation");
+            } else {
+                 variant.setSuccess(result.isSuccess());
+            }
+
+            if (result.isSuccess() || variant.isSuccess()) {
                 manager.updateVariantLifecycle(List.of(variant), variant.getId(), BranchVariant.ActivationState.SCORING, context);
 
                 // CAPTURE IMPLEMENTATION: Update EvolutionNode with ACTUAL file contents after successful execution

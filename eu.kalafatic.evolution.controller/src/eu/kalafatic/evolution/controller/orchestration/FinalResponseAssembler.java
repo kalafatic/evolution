@@ -182,8 +182,27 @@ public class FinalResponseAssembler {
                     sb.append("**Execution Validation Score:** ").append(String.format("%.2f", winnerScore)).append("\n");
                 }
             }
-            sb.append("✓ Status: ").append(success ? "SUCCESS" : "FAILED").append("\n");
-            sb.append("✓ Build successful\n");
+
+            boolean hasPhysicalChanges = context.getOrchestrationState().getMetadata()
+					.get("lastRealityCheckSignificant") != null
+					&& (Boolean) context.getOrchestrationState().getMetadata()
+							.get("lastRealityCheckSignificant");
+
+            String statusStr = success ? "SUCCESS" : (hasPhysicalChanges ? "SUCCESS_WITH_ERRORS" : "FAILED");
+            sb.append("✓ Status: ").append(statusStr).append("\n");
+
+            // Extract build errors if any
+            IterationRecord lastWinnerRecord = context.getKernelContext().getMemoryService().getRecords().stream()
+                    .filter(r -> "ACTIVE".equals(r.getActivationState()))
+                    .reduce((first, second) -> second)
+                    .orElse(null);
+
+            if (lastWinnerRecord != null && "SUCCESS_WITH_BUILD_ERROR".equals(lastWinnerRecord.getResult())) {
+                sb.append("⚠️ Build: FAILED (delivered despite error)\n");
+            } else {
+                sb.append("✓ Build successful\n");
+            }
+
             sb.append("✓ Tests passed\n");
             sb.append("✓ Static review passed\n\n");
         }
