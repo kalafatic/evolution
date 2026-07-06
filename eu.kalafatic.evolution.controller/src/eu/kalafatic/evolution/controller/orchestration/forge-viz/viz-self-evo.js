@@ -49,8 +49,14 @@
                 </div>
 
                 <div style="margin-top:30px; text-align:center;">
-                    <button class="btn btn-primary" onclick="startForging()" ${status !== 'IDLE' ? 'disabled' : ''}>Start Forging Process</button>
+                    <button class="btn btn-primary" onclick="startForging()" ${status !== 'IDLE' ? 'disabled' : ''} style="padding: 12px 24px; font-weight: bold; background-color: var(--accent); box-shadow: 0 4px 6px rgba(0,0,0,0.1); border: none; font-size: 1.1em;">Start Forging Process</button>
                 </div>
+
+                ${status === 'COMPLETE' ? `
+                    <div style="margin-top:20px; padding:15px; background:rgba(137, 209, 133, 0.2); border:1px solid var(--success); border-radius:4px; color:var(--success); font-weight:bold; text-align:center; animation: pulse-glow 2s infinite;">
+                        ✅ Forging Complete! Exported LLM model appeared in Ollama models.
+                    </div>
+                ` : ''}
             </div>
         `;
 

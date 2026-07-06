@@ -234,6 +234,37 @@ public class OllamaService {
         return jsonResponse.has("response") ? jsonResponse.getString("response") : jsonResponse.optString("solution", "");
     }
 
+    /**
+     * Creates a new model in Ollama from a Modelfile content.
+     * @param modelName The name of the model to create.
+     * @param modelfileContent The content of the Modelfile.
+     * @return The status response from Ollama.
+     */
+    public String createModel(String modelName, String modelfileContent) throws Exception {
+        String createUrl = this.baseUrl + (this.baseUrl.endsWith("/") ? "" : "/") + "api/create";
+
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("model", modelName);
+        jsonObject.put("modelfile", modelfileContent);
+        jsonObject.put("stream", false);
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(createUrl))
+                .header("Content-Type", "application/json")
+                .timeout(Duration.ofMinutes(5))
+                .POST(HttpRequest.BodyPublishers.ofString(jsonObject.toString()))
+                .build();
+
+        HttpResponse<String> response = createClient().send(request, HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() != 200) {
+            throw new RuntimeException("Ollama create model error: " + response.statusCode() + " - " + response.body());
+        }
+
+        refreshModels();
+        return response.body();
+    }
+
     private String buildChatJsonRequest(List<Message> history, boolean stream) {
         JSONObject json = new JSONObject();
         json.put("model", this.model);

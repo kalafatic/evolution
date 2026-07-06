@@ -24,7 +24,8 @@ Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.jface,
  eu.kalafatic.evolution.forge.model,
  eu.kalafatic.evolution.forge.trainer,
- eu.kalafatic.evolution.forge.agent.api
+ eu.kalafatic.evolution.forge.agent.api,
+ eu.kalafatic.evolution.controller
 Export-Package: eu.kalafatic.evolution.forge.controller.api,
  eu.kalafatic.evolution.forge.controller.bridge,
  eu.kalafatic.evolution.forge.controller.impl,
