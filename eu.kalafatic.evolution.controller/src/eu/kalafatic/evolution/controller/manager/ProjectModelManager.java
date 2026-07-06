@@ -211,6 +211,8 @@ public class ProjectModelManager {
                 orchestrator.getSupervisorSettings().getGit().setBranch(EclipseGitEvoTool.getRepositoryBranch(EclipseGitEvoTool.REPO_WORKSPACE));
             }
         }
+        
+        
 
         if (orchestrator.getDefaultTarget() == null || orchestrator.getDefaultTarget().isEmpty()) {
             SourceDiscoveryResult result = getOrDiscoverWorkspace();

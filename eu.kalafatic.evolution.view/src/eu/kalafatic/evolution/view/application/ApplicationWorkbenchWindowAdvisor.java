@@ -65,6 +65,7 @@ import eu.kalafatic.evolution.controller.log.Log;
 import eu.kalafatic.evolution.controller.splashHandlers.EvolutionSplashHandler;
 import eu.kalafatic.evolution.controller.splashHandlers.ISplashUser;
 import eu.kalafatic.evolution.controller.splashHandlers.EvolutionSplashHandler.GSHf;
+import eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool;
 import eu.kalafatic.evolution.view.provider.ProjectManager;
 import eu.kalafatic.utils.constants.FCoreImageConstants;
 
@@ -198,6 +199,8 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 //				createProject(Platform.getProduct().getName());
 //				openMultiPageEditor();
 				new ProjectManager().refreshAllProjects();
+				
+				EclipseGitEvoTool.refreshGitView();
 			}
 		});
 	}

@@ -4,20 +4,25 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.jgit.api.CloneCommand;
 import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.Status;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
+import org.eclipse.swt.widgets.Display;
+import org.eclipse.ui.IViewPart;
+import org.eclipse.ui.IWorkbenchPage;
+import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.navigator.CommonNavigator;
+import org.eclipse.ui.navigator.CommonViewer;
 
 /**
  * Central utility for programmatically managing multiple Git repositories
@@ -294,7 +299,27 @@ public class EclipseGitEvoTool {
         return new GitOpResult(OpStatus.SUCCESS, "Registered");
     }
 
-    public static void refreshGitView() { log("Refreshing Git view..."); }
+    public static void refreshGitView() {
+    	log("Refreshing Git view..."); 
+    	Display.getDefault().asyncExec(() -> {
+    		log("Refreshing Git view..."); 
+    		
+    		
+    		// Find the view by its ID (typically "org.eclipse.egit.ui.RepositoriesView")
+    		IWorkbenchPage page = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
+    		IViewPart view = page.findView("org.eclipse.egit.ui.RepositoriesView");
+
+    		if (view != null) {
+    		    // If it's a CommonNavigator view, get its viewer and refresh
+    		    if (view instanceof CommonNavigator) {
+    		        CommonViewer viewer = ((CommonNavigator) view).getCommonViewer();
+    		        viewer.refresh();
+    		    }
+    		    // For other views, you might need to cast to a specific type
+    		}
+    		
+    	});
+    	}
 
     private static RepoStatus getRepoStatusById(String id) {
         String path = getRepositoryPath(id);

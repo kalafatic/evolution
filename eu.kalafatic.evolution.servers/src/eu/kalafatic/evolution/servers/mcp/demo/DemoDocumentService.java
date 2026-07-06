@@ -52,7 +52,7 @@ public class DemoDocumentService {
             .filter(doc -> {
                 try {
                     DocumentContent content = getDocument(doc.getPath());
-                    return content != null && (content.getTitle().toLowerCase().contains(lowerQuery) ||
+                    return content != null && (content.getTitle().toLowerCase().contains(lowerQuery) || 
                                               content.getContent().toLowerCase().contains(lowerQuery));
                 } catch (IOException e) {
                     return false;
