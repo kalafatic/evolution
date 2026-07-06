@@ -6,6 +6,9 @@ import eu.kalafatic.evolution.forge.tokenizer.impl.SimpleBPETokenizer;
 import eu.kalafatic.evolution.forge.model.llm.EvoLlmModel;
 import eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer;
 import eu.kalafatic.evolution.forge.agent.export.OllamaExporter;
+import eu.kalafatic.evolution.controller.manager.OllamaManager;
+import eu.kalafatic.evolution.controller.manager.OllamaService;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -49,9 +52,19 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                 EvoLlmTrainer trainer = new EvoLlmTrainer(model);
                 trainer.train(samples, 1);
                 
-                updateStats(sessionId, new ForgingStats("EXPORTING", 90, 0, 0, samples.size(), 0.0, "DONE"));
+                updateStats(sessionId, new ForgingStats("EXPORTING", 80, 0, 0, samples.size(), 0.0, "1/1"));
                 OllamaExporter exporter = new OllamaExporter();
-                exporter.export("evo-" + sessionId, Paths.get("dist/evo-" + sessionId), model);
+                Path exportPath = Paths.get("dist/evo-" + sessionId);
+                String modelName = "evo-" + sessionId;
+                exporter.export(modelName, exportPath, model);
+
+                updateStats(sessionId, new ForgingStats("EXPORT_GGUF", 90, 0, 0, samples.size(), 0.0, "OLLAMA"));
+                OllamaService ollama = OllamaManager.getInstance().getService("http://localhost:11434");
+                Path modelfilePath = exportPath.resolve("Modelfile");
+                if (Files.exists(modelfilePath)) {
+                    String modelfileContent = Files.readString(modelfilePath);
+                    ollama.createModel(modelName, modelfileContent);
+                }
                 
                 updateStats(sessionId, new ForgingStats("COMPLETE", 100, 0, 0, samples.size(), 0.0, "DONE"));
 

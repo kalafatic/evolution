@@ -283,7 +283,8 @@ public class ForgeSessionManager {
         new Thread(() -> {
             try {
                 // 1. Initializing Architecture
-                generateArchitecture(session, "MLP");
+                String type = session.getSelectedModelType() != null ? session.getSelectedModelType() : "MLP";
+                generateArchitecture(session, type);
                 publishEvent(session, RuntimeEventType.FORGE_MODEL_CHANGED, "DEMO_INITIALIZED");
                 Thread.sleep(1500);
 
