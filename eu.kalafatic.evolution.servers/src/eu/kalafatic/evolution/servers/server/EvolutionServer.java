@@ -21,6 +21,8 @@ import eu.kalafatic.evolution.servers.mcp.resources.DemoResources;
 import eu.kalafatic.evolution.servers.mcp.prompts.PromptRegistry;
 import eu.kalafatic.evolution.servers.mcp.prompts.DemoPrompts;
 import eu.kalafatic.evolution.servers.mcp.connectors.DummyConnector;
+import eu.kalafatic.evolution.servers.mcp.demo.DemoConfiguration;
+import eu.kalafatic.evolution.servers.mcp.demo.DemoDocumentationProvider;
 
 public class EvolutionServer extends NanoHTTPD {
     private final DatabaseManager dbManager;
@@ -33,6 +35,7 @@ public class EvolutionServer extends NanoHTTPD {
     private final StaticResourceController staticResourceController;
 
     private McpServer mcpServer;
+    private DemoDocumentationProvider demoDocumentationProvider;
 
     public EvolutionServer(int port) {
         super(port);
@@ -80,6 +83,25 @@ public class EvolutionServer extends NanoHTTPD {
         start(NanoHTTPD.SOCKET_READ_TIMEOUT, false);
         System.out.println("Server started on port " + getListeningPort());
         startMcpServer();
+        startDemoMcpServer();
+    }
+
+    private void startDemoMcpServer() {
+        DemoConfiguration demoConfig = new DemoConfiguration();
+        // Overwrite defaults with system properties if provided
+        demoConfig.setPort(Integer.getInteger("mcp.demo.port", 38080));
+        demoConfig.setHost(System.getProperty("mcp.demo.host", "localhost"));
+        demoConfig.setDocsFolder(System.getProperty("mcp.demo.docsFolder", "docs"));
+        demoConfig.setEnabled(!"false".equalsIgnoreCase(System.getProperty("mcp.demo.enabled", "true")));
+
+        if (demoConfig.isEnabled()) {
+            demoDocumentationProvider = new DemoDocumentationProvider(demoConfig);
+            try {
+                demoDocumentationProvider.startServer();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     private void startMcpServer() {
@@ -108,6 +130,9 @@ public class EvolutionServer extends NanoHTTPD {
     public void stopServer() {
         if (mcpServer != null) {
             mcpServer.stopServer();
+        }
+        if (demoDocumentationProvider != null) {
+            demoDocumentationProvider.stopServer();
         }
         stop();
         System.out.println("Server stopped.");

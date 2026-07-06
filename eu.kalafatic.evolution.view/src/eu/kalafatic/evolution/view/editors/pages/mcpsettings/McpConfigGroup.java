@@ -68,6 +68,14 @@ public class McpConfigGroup extends AEvoGroup {
             }
         });
 
+        Button requestBtn = GUIFactory.INSTANCE.createButton(group, "Test Request", 150);
+        requestBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                page.openRequestDialog(mcpUrlText.getText());
+            }
+        });
+
         GUIFactory.INSTANCE.createLabel(group, "Status:");
         statusLabel = GUIFactory.INSTANCE.createLabel(group, "Unknown");
     }
