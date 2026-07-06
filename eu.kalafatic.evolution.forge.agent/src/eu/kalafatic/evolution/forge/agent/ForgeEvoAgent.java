@@ -1,6 +1,8 @@
 package eu.kalafatic.evolution.forge.agent;
 
 import java.nio.file.Paths;
+import eu.kalafatic.evolution.controller.manager.OllamaManager;
+import eu.kalafatic.evolution.controller.manager.OllamaService;
 
 
 public class ForgeEvoAgent {

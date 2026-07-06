@@ -1,5 +1,6 @@
 package eu.kalafatic.evolution.forge.agent;
 
+import eu.kalafatic.evolution.controller.manager.OllamaService;
 import java.io.BufferedWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
