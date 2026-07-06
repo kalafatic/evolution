@@ -36,6 +36,7 @@
 		<module>eu.kalafatic.evolution.forge.data</module>
 		<module>eu.kalafatic.evolution.forge.runtime</module>
 		<module>eu.kalafatic.evolution.forge.trainer</module>
+		<module>eu.kalafatic.evolution.forge.agent.api</module>
 		<module>eu.kalafatic.evolution.forge.observability</module>
 		<module>eu.kalafatic.evolution.forge.controller</module>
 		<module>eu.kalafatic.evolution.creatic</module>

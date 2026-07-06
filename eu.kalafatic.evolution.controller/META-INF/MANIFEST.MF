@@ -6,6 +6,9 @@ Bundle-Version: 2.6.5.qualifier
 Require-Bundle: org.eclipse.swt,
  org.eclipse.jface,
  org.eclipse.ui,
+ org.eclipse.egit.core,
+ org.eclipse.egit.ui,
+ org.eclipse.jgit,
  org.eclipse.emf.ecore,
  org.eclipse.emf.common,
  org.eclipse.emf.ecore.xmi,
@@ -30,6 +33,7 @@ Import-Package: java.sql,
  eu.kalafatic.evolution.servers;bundle-version="2.6.5";visibility:=reexport,
  eu.kalafatic.evolution.controller;bundle-version="[2.6.0,3.0.0)"
 Import-Package: java.sql,
+ org.eclipse.egit.core;version="[7.5.0,8.0.0)",
  org.eclipse.ui.navigator
 Automatic-Module-Name: eu.kalafatic.evolution.controller
 Bundle-RequiredExecutionEnvironment: JavaSE-21

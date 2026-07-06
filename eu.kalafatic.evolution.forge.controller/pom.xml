@@ -34,6 +34,17 @@
 			<artifactId>eu.kalafatic.evolution.forge.observability</artifactId>
 			<version>2.6.5-SNAPSHOT</version>
 		</dependency>
+		
+		<dependency>
+			<groupId>eu.kalafatic.evolution</groupId>
+			<artifactId>eu.kalafatic.evolution.forge.agent</artifactId>
+			<version>2.6.5-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>eu.kalafatic.evolution</groupId>
+			<artifactId>eu.kalafatic.evolution.forge.agent.api</artifactId>
+			<version>2.6.5-SNAPSHOT</version>
+		</dependency>
 		<dependency>
 			<groupId>eu.kalafatic.evolution</groupId>
 			<artifactId>eu.kalafatic.evolution.model</artifactId>

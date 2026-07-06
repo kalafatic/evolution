@@ -1,0 +1,10 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Forge Agent API
+Bundle-SymbolicName: eu.kalafatic.evolution.forge.agent.api
+Bundle-Version: 2.6.5.qualifier
+Export-Package: eu.kalafatic.evolution.forge.agent.export
+Require-Bundle: eu.kalafatic.evolution.forge.model,
+ eu.kalafatic.evolution.forge.math
+Automatic-Module-Name: eu.kalafatic.evolution.forge.agent.api
+Bundle-RequiredExecutionEnvironment: JavaSE-21

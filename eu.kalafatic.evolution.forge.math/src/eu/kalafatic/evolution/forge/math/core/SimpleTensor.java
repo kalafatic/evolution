@@ -27,6 +27,114 @@ public class SimpleTensor implements Tensor {
     }
 
     @Override
+    public Tensor exp() {
+        float[] resultData = new float[(int) size];
+        for (int i = 0; i < size; i++) {
+            resultData[i] = (float) Math.exp(data[i]);
+        }
+        return new SimpleTensor(shape, resultData);
+    }
+
+    @Override
+    public Tensor log() {
+        float[] resultData = new float[(int) size];
+        for (int i = 0; i < size; i++) {
+            resultData[i] = (float) Math.log(data[i]);
+        }
+        return new SimpleTensor(shape, resultData);
+    }
+
+    @Override
+    public Tensor sqrt() {
+        float[] resultData = new float[(int) size];
+        for (int i = 0; i < size; i++) {
+            resultData[i] = (float) Math.sqrt(data[i]);
+        }
+        return new SimpleTensor(shape, resultData);
+    }
+
+    @Override
+    public Tensor pow(float exponent) {
+        float[] resultData = new float[(int) size];
+        for (int i = 0; i < size; i++) {
+            resultData[i] = (float) Math.pow(data[i], exponent);
+        }
+        return new SimpleTensor(shape, resultData);
+    }
+
+    @Override
+    public float sum() {
+        float total = 0;
+        for (float val : data) {
+            total += val;
+        }
+        return total;
+    }
+
+    @Override
+    public Tensor softmax() {
+        // Simple softmax implementation for rank 1 or 2
+        float[] resultData = new float[(int) size];
+        if (rank == 1) {
+            float max = Float.NEGATIVE_INFINITY;
+            for (float val : data) if (val > max) max = val;
+            float sum = 0;
+            for (int i = 0; i < size; i++) {
+                resultData[i] = (float) Math.exp(data[i] - max);
+                sum += resultData[i];
+            }
+            for (int i = 0; i < size; i++) resultData[i] /= sum;
+        } else if (rank == 2) {
+            int rows = (int) shape[0];
+            int cols = (int) shape[1];
+            for (int r = 0; r < rows; r++) {
+                float max = Float.NEGATIVE_INFINITY;
+                for (int c = 0; c < cols; c++) {
+                    float val = data[r * cols + c];
+                    if (val > max) max = val;
+                }
+                float sum = 0;
+                for (int c = 0; c < cols; c++) {
+                    resultData[r * cols + c] = (float) Math.exp(data[r * cols + c] - max);
+                    sum += resultData[r * cols + c];
+                }
+                for (int c = 0; c < cols; c++) resultData[r * cols + c] /= sum;
+            }
+        } else {
+            throw new UnsupportedOperationException("Softmax only supported for rank 1 or 2");
+        }
+        return new SimpleTensor(shape, resultData);
+    }
+
+    @Override
+    public Tensor layerNorm() {
+        float[] resultData = new float[(int) size];
+        if (rank == 2) {
+            int rows = (int) shape[0];
+            int cols = (int) shape[1];
+            float eps = 1e-5f;
+            for (int r = 0; r < rows; r++) {
+                float mean = 0;
+                for (int c = 0; c < cols; c++) mean += data[r * cols + c];
+                mean /= cols;
+                float var = 0;
+                for (int c = 0; c < cols; c++) {
+                    float diff = data[r * cols + c] - mean;
+                    var += diff * diff;
+                }
+                var /= cols;
+                float std = (float) Math.sqrt(var + eps);
+                for (int c = 0; c < cols; c++) {
+                    resultData[r * cols + c] = (data[r * cols + c] - mean) / std;
+                }
+            }
+        } else {
+            throw new UnsupportedOperationException("LayerNorm only supported for rank 2");
+        }
+        return new SimpleTensor(shape, resultData);
+    }
+
+    @Override
     public long[] getShape() {
         return shape;
     }

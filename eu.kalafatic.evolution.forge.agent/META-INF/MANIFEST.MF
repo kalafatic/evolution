@@ -1,0 +1,21 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Forge Agent
+Bundle-SymbolicName: eu.kalafatic.evolution.forge.agent
+Bundle-Version: 2.6.5.qualifier
+Bundle-RequiredExecutionEnvironment: JavaSE-21
+Require-Bundle: eu.kalafatic.evolution.controller,
+ eu.kalafatic.evolution.forge.math,
+ eu.kalafatic.evolution.forge.model,
+ eu.kalafatic.evolution.forge.agent.api
+Export-Package: eu.kalafatic.evolution.forge.agent
+Import-Package: eu.kalafatic.evolution.forge.controller.service,
+ eu.kalafatic.evolution.forge.model,
+ fi.iki.elonen
+Bundle-ClassPath: .,
+ lib/json-20140107.jar,
+ lib/jackson-annotations-2.20.jar,
+ lib/jackson-core-2.20.0.jar,
+ lib/jackson-databind-2.20.0.jar,
+ lib/jbcrypt-0.4.jar,
+ lib/nanohttpd-2.3.1.jar

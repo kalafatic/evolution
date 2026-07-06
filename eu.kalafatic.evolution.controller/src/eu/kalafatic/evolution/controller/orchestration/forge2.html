@@ -1,0 +1,1774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forge Models</title>
+    <style>
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f3f3f3;
+            --border: #cccccc;
+            --text: #333333;
+            --text-dim: #666666;
+            --accent: #007acc;
+            --accent-hover: #1177bb;
+            --error: #f48771;
+            --success: #89d185;
+        }
+
+        body, html {
+            margin: 0; padding: 0; height: 100%;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text);
+            overflow: hidden;
+        }
+
+        #layout { display: flex; height: 100%; }
+
+        /* Session Bar */
+        #sidebar {
+            width: 260px;
+            background-color: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar-header {
+            padding: 10px;
+            background-color: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+            font-size: 0.8em;
+            letter-spacing: 1px;
+        }
+
+        #session-list { flex-grow: 1; overflow-y: auto; }
+        .session-item {
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            position: relative;
+        }
+        .session-item:hover { background-color: #e0e0e0; }
+        .session-item.active {
+            background-color: #e8f0fe;
+            border-left: 3px solid var(--accent);
+        }
+        .session-name { display: block; font-weight: bold; margin-bottom: 4px; }
+        .session-info { font-size: 0.75em; color: var(--text-dim); }
+        .session-status {
+            font-size: 0.7em;
+            padding: 2px 4px;
+            border-radius: 3px;
+            background: #444;
+            float: right;
+        }
+        .status-training { color: #dcdcaa; border: 1px solid #dcdcaa; }
+
+        /* Main Content */
+        #main-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 300px;
+        }
+
+        #panel-resizer {
+            width: 4px;
+            cursor: col-resize;
+            background: transparent;
+            transition: background 0.2s;
+            z-index: 100;
+        }
+        #panel-resizer:hover, #panel-resizer.resizing {
+            background: var(--accent);
+        }
+        #top-toolbar {
+            height: 40px;
+            background-color: var(--bg-secondary);
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            border-bottom: 1px solid var(--border);
+        }
+        #active-session-name { font-weight: bold; color: var(--accent); margin-right: 20px; }
+
+        /* Canvas */
+        #canvas-container {
+            flex-grow: 1;
+            position: relative;
+            background-color: var(--bg-primary);
+            background-image: radial-gradient(circle, var(--border) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+        #canvas { width: 100%; height: 100%; }
+
+        /* Right Panels */
+        #panels-container {
+            width: 320px;
+            min-width: 200px;
+            max-width: 600px;
+            background-color: var(--bg-secondary);
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+        .panel { padding: 15px; border-bottom: 1px solid var(--border); }
+        .panel h3 {
+            font-size: 0.85em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            margin: 0 0 12px 0;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .control-group { margin-bottom: 10px; }
+        .control-group label { display: block; font-size: 0.8em; margin-bottom: 4px; color: var(--text-dim); }
+        .control-group input, .control-group select {
+            width: 100%;
+            background: #ffffff;
+            border: 1px solid var(--border);
+            color: #333333;
+            padding: 4px;
+            box-sizing: border-box;
+        }
+
+        /* Buttons */
+        .btn {
+            background-color: #ffffff;
+            color: #333333;
+            border: 1px solid var(--border);
+            padding: 6px 12px;
+            cursor: pointer;
+            border-radius: 2px;
+            font-size: 0.85em;
+        }
+        .btn:hover { background-color: #f0f0f0; }
+        .btn-primary { background-color: var(--accent); color: white; border-color: var(--accent); }
+        .btn-primary:hover { background-color: var(--accent-hover); }
+        .btn-danger { color: #d32f2f; border-color: #d32f2f; }
+        .btn-sm { padding: 2px 6px; font-size: 0.75em; }
+
+        /* Graph Elements */
+        .node circle { stroke: #333333; stroke-width: 2px; }
+        .node text { font-size: 11px; fill: #333333; pointer-events: none; }
+        .link { stroke: #444; stroke-width: 2px; fill: none; marker-end: url(#arrowhead); }
+
+        /* Node Types Colors */
+        .node-NEURON circle { fill: #ce9178; }
+        .node-LAYER circle { fill: #4fc1ff; }
+        .node-ATTENTION circle { fill: #c586c0; }
+        .node-TRANSFORMER circle { fill: #b5cea8; }
+        .node-CUSTOM circle { fill: #858585; }
+        .node-TEXT text { font-size: 14px; font-weight: bold; fill: #555; }
+        .node-TEXT circle { display: none; }
+        .node-SHAPE rect { stroke: #555; stroke-dasharray: 4, 4; fill: none; }
+        .node-DIRECTION path { fill: #555; }
+
+        /* Logs/Metrics */
+        #log-view {
+            height: 150px;
+            background: #ffffff;
+            color: #333333;
+            font-family: monospace;
+            font-size: 0.75em;
+            padding: 5px;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+        }
+
+        /* Node Palette */
+        #node-palette {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .palette-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .palette-group-title {
+            font-size: 0.7em;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 2px;
+        }
+        .palette-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        .palette-item {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            cursor: grab;
+            font-size: 1.1em;
+            transition: all 0.2s;
+        }
+        .palette-item:hover {
+            border-color: var(--accent);
+            background: #f0f7ff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .palette-item:active { cursor: grabbing; }
+
+        #palette-context-menu {
+            position: absolute;
+            display: none;
+            background: white;
+            border: 1px solid var(--border);
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+            z-index: 1000;
+            font-size: 0.8em;
+        }
+        .menu-item {
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+        .menu-item:hover {
+            background: var(--bg-secondary);
+        }
+
+        #json-fallback {
+            display: none;
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-primary);
+            color: #d4d4d4;
+            font-family: monospace;
+            padding: 20px;
+            box-sizing: border-box;
+            border: none;
+            resize: none;
+            z-index: 100;
+        }
+
+        /* Visualization Workspace */
+        #viz-workspace {
+            border-top: 1px solid var(--border);
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: var(--bg-primary);
+        }
+        #viz-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #viz-selector {
+            background: #ffffff !important;
+            color: #333333 !important;
+            border: 1px solid var(--border) !important;
+        }
+        #viz-container {
+            display: flex;
+            gap: 15px;
+            height: 450px;
+        }
+        #viz-area {
+            flex-grow: 1;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            position: relative;
+            overflow: auto;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #viz-details {
+            width: 250px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            padding: 10px;
+            font-size: 0.85em;
+        }
+        .viz-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--accent);
+            padding: 10px;
+            margin-bottom: 5px;
+            border-radius: 4px;
+        }
+        .viz-card h4 { margin: 0 0 5px 0; color: var(--accent); }
+
+        /* Dataset Explorer */
+        .sample-nav { display: flex; gap: 5px; margin-bottom: 10px; }
+        .data-block { background: #f8f8f8; color: #333; border: 1px solid var(--border); padding: 10px; font-family: monospace; font-size: 0.8em; margin-top: 5px; }
+
+        /* Guided Workflow Steps */
+        #workflow-panel {
+            background: #e1f5fe;
+            border: 1px solid #03a9f4;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+        .workflow-step {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.8em;
+            margin: 6px 0;
+            color: #777;
+        }
+        .workflow-step.active {
+            font-weight: bold;
+            color: var(--accent);
+        }
+        .workflow-step.completed {
+            color: var(--success);
+        }
+        .workflow-step.disabled {
+            opacity: 0.5;
+        }
+        .step-icon {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 1px solid currentColor;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7em;
+        }
+        .workflow-step.completed .step-icon:after {
+            content: '✓';
+        }
+
+        .highlight-focus {
+            box-shadow: 0 0 10px 2px var(--accent);
+            border: 2px solid var(--accent) !important;
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+
+        /* Timeline */
+        .timeline-item {
+            padding: 10px;
+            border-left: 2px solid var(--accent);
+            margin-left: 10px;
+            position: relative;
+            cursor: pointer;
+        }
+        .timeline-item:before {
+            content: '';
+            width: 10px; height: 10px;
+            background: var(--accent);
+            border-radius: 50%;
+            position: absolute;
+            left: -6px; top: 15px;
+        }
+        .timeline-item:hover { background: #f0f0f0; }
+        .timeline-item.active { background: #e8f0fe; font-weight: bold; }
+
+        .diff-added { color: var(--success); }
+        .diff-removed { color: var(--error); }
+
+        /* Demo Animations */
+        @keyframes march {
+            to { stroke-dashoffset: -20; }
+        }
+        @keyframes pulse-glow {
+            0% { filter: drop-shadow(0 0 2px var(--accent)); }
+            50% { filter: drop-shadow(0 0 8px var(--accent)); }
+            100% { filter: drop-shadow(0 0 2px var(--accent)); }
+        }
+        .link.animating {
+            stroke: var(--accent);
+            stroke-dasharray: 5, 5;
+            animation: march 0.5s linear infinite, pulse-glow 2s ease-in-out infinite;
+            stroke-width: 3px;
+        }
+
+        #demo-panel {
+            background: #fff9c4;
+            border: 1px solid #fbc02d;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+        .demo-step { font-size: 0.8em; margin: 4px 0; color: #555; }
+        .demo-step.active { font-weight: bold; color: var(--accent); }
+        .demo-step.completed { text-decoration: line-through; color: var(--success); }
+
+    </style>
+    <script src="/auth-integration.js"></script>
+</head>
+<body>
+    <div id="layout">
+        <!-- SESSION BAR -->
+        <div id="sidebar">
+            <div class="sidebar-header">
+                SESSIONS
+                <div style="display: flex; gap: 4px;">
+                    <button class="btn btn-sm" onclick="showDemoDialog()" title="Load Demo Template" data-guidance="Load a pre-configured architecture template (Neuron, MLP, CNN, or Transformer) to start quickly.">🎁</button>
+                    <button class="btn btn-sm btn-primary" onclick="createNewSession()" data-guidance="Create a new blank Forge session for custom model architecture development.">NEW</button>
+                </div>
+            </div>
+
+            <div id="node-palette" data-guidance="Drag components onto the canvas to design your AI model architecture. Connect nodes to define data flow." oncontextmenu="showPaletteMenu(event)">
+                <div class="palette-group">
+                    <div class="palette-group-title">Computational Units</div>
+                    <div class="palette-items">
+                        <div class="palette-item" draggable="true" ondragstart="onNodeDrag(event, 'NEURON')" title="Neuron" data-guidance="Basic computational unit.">🧠</div>
+                        <div class="palette-item" draggable="true" ondragstart="onNodeDrag(event, 'MLP')" title="MLP" data-guidance="Multi-Layer Perceptron block.">📊</div>
+                        <div class="palette-item" draggable="true" ondragstart="onNodeDrag(event, 'CNN')" title="CNN" data-guidance="Convolutional block.">👁️</div>
+                        <div class="palette-item" draggable="true" ondragstart="onNodeDrag(event, 'TRANSFORMER')" title="Transformer" data-guidance="Transformer/Attention block.">⚡</div>
+                        <div class="palette-item" draggable="true" ondragstart="onNodeDrag(event, 'LLM')" title="LLM" data-guidance="Full LLM stack.">🤖</div>
+                        <div class="palette-item" draggable="true" ondragstart="onNodeDrag(event, 'SELF_EVO')" title="Self-Evo Forging" data-guidance="Automated project-specific LLM creation.">🧪</div>
+                    </div>
+                </div>
+
+                <div class="palette-group">
+                    <div class="palette-group-title">Connections & Flow</div>
+                    <div class="palette-items">
+                        <div class="palette-item" draggable="true" ondragstart="onNodeDrag(event, 'CONNECTION')" title="Weighted Connection">🔗</div>
+                        <div class="palette-item" draggable="true" ondragstart="onNodeDrag(event, 'RESIDUAL')" title="Residual Link">🔄</div>
+                        <div class="palette-item" draggable="true" ondragstart="onNodeDrag(event, 'DIRECTION')" title="Flow Direction">➡️</div>
+                    </div>
+                </div>
+
+                <div class="palette-group">
+                    <div class="palette-group-title">Annotations</div>
+                    <div class="palette-items">
+                        <div class="palette-item" draggable="true" ondragstart="onNodeDrag(event, 'TEXT')" title="Label">📝</div>
+                        <div class="palette-item" draggable="true" ondragstart="onNodeDrag(event, 'SHAPE')" title="Boundary">🔲</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="interactive-demos-palette" style="background: var(--bg-secondary); border-bottom: 1px solid var(--border); padding: 10px; display: flex; flex-wrap: wrap; gap: 5px;">
+                <div style="font-size: 0.7em; color: var(--text-dim); width: 100%; margin-bottom: 2px;">INTERACTIVE DEMOS</div>
+                <button class="btn btn-sm" onclick="setInteractiveDemo('NEURON')">Neuron</button>
+                <button class="btn btn-sm" onclick="setInteractiveDemo('MLP')">MLP</button>
+                <button class="btn btn-sm" onclick="setInteractiveDemo('CNN')">CNN</button>
+                <button class="btn btn-sm" onclick="setInteractiveDemo('TRANSFORMER')">Transformer</button>
+                <button class="btn btn-sm" onclick="setInteractiveDemo('LLM')">LLM</button>
+                <button class="btn btn-sm" onclick="setInteractiveDemo('SELF_EVO')">Self-Evo</button>
+            </div>
+
+            <div id="session-list">
+                <!-- Sessions populated here -->
+            </div>
+            <div class="panel" style="border-top: 1px solid var(--border); border-bottom: none;">
+                <h3>Genome Milestones</h3>
+                <div id="snapshot-list" class="session-info">No snapshots created</div>
+                <button class="btn btn-sm" id="snapshot-btn" style="width: 100%; margin-top: 10px;" onclick="createSessionSnapshot()" data-guidance="Capture a frozen milestone of your current model's genome for versioning and evolution tracking.">SNAPSHOT</button>
+            </div>
+        </div>
+
+        <!-- MAIN CANVAS -->
+        <div id="main-content">
+            <div id="top-toolbar">
+                <span id="active-session-name">No Session Selected</span>
+                <div id="session-status-indicator" style="margin-left: 10px;">
+                    <span id="lifecycle-badge" style="background: #444; padding: 2px 8px; border-radius: 10px; font-size: 0.7em; color: #aaa;">OFFLINE</span>
+                </div>
+
+                <div style="margin-left: auto; display: flex; gap: 10px;">
+                    <button class="btn btn-sm" id="json-editor-btn" onclick="toggleJsonEditor()" data-guidance="Switch to manual JSON editing mode for direct structural modifications.">JSON Editor</button>
+                    <button class="btn btn-sm" id="save-all-btn" onclick="saveAllSessions()" title="Persist all sessions to disk" data-guidance="Save all open Forge sessions and their current states to the permanent repository.">💾 Save All</button>
+                    <button class="btn btn-sm" id="clone-btn" onclick="cloneActiveSession()" data-guidance="Duplicate the current session to experiment with architectural variations without affecting the original.">Clone</button>
+                    <button class="btn btn-sm" id="save-arch-btn" onclick="saveActiveModel()" data-guidance="Commit the current graph architecture to the session model state.">Save Architecture</button>
+                    <button class="btn btn-sm btn-danger" id="delete-btn" onclick="deleteActiveSession()" data-guidance="Permanently remove this session and all its associated data.">Delete</button>
+                </div>
+            </div>
+
+            <div id="canvas-container">
+                <svg id="canvas">
+                    <defs>
+                        <marker id="arrowhead" viewBox="-0 -5 10 10" refX="20" refY="0" orient="auto" markerWidth="6" markerHeight="6" xoverflow="visible">
+                            <path d="M 0,-5 L 10 ,0 L 0,5" fill="#555" style="stroke: none;"></path>
+                        </marker>
+                    </defs>
+                </svg>
+
+                <div id="palette-context-menu">
+                    <div style="padding: 5px 12px; font-weight: bold; font-size: 0.9em; border-bottom: 1px solid var(--border); color: var(--text-dim);">DEMO TEMPLATES</div>
+                    <div class="menu-item" onclick="loadTemplate('SEED')">🌱 Load Seed Model</div>
+                    <div class="menu-item" onclick="loadTemplate('NEURON')">🎁 Load Neuron Demo</div>
+                    <div class="menu-item" onclick="loadTemplate('MLP')">🎁 Load MLP Demo</div>
+                    <div class="menu-item" onclick="loadTemplate('CNN')">🎁 Load CNN Demo</div>
+                    <div class="menu-item" onclick="loadTemplate('TRANSFORMER')">🎁 Load Transformer Demo</div>
+                    <div class="menu-item" onclick="loadTemplate('LLM')">🎁 Load LLM Demo</div>
+                    <div class="menu-item" onclick="loadTemplate('SELF_EVO')">🎁 Load Self-Evo Demo</div>
+                </div>
+
+                <textarea id="json-fallback"></textarea>
+            </div>
+
+            <!-- VISUALIZATION WORKSPACE -->
+            <div id="viz-workspace">
+                <div id="viz-header">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 0.8em; font-weight: bold; color: var(--text-dim);">VISUALIZATION</span>
+                        <select id="viz-selector" style="background: #3c3c3c; border: 1px solid #555; color: white; padding: 2px;" onchange="onVizChange()" data-guidance="Switch between different visualization modes to monitor architecture, data, training metrics, or evolutionary history.">
+                            <option value="ARCHITECTURE">Architecture Graph</option>
+                            <option value="SELF_EVO">Self-Evo Forging</option>
+                            <option value="DATASET">Dataset Explorer</option>
+                            <option value="TRAINING">Training Monitor</option>
+                            <option value="EVOLUTION">Evolution Timeline</option>
+                            <option value="WALKTHROUGH">Study Walkthrough</option>
+                            <option value="INTERACTIVE_NEURON">Interactive Neuron</option>
+                            <option value="INTERACTIVE_MLP">Interactive MLP</option>
+                            <option value="INTERACTIVE_CNN">Interactive CNN</option>
+                            <option value="INTERACTIVE_TRANSFORMER">Interactive Transformer</option>
+                            <option value="INTERACTIVE_LLM">Interactive LLM</option>
+                        </select>
+                    </div>
+                    <div id="viz-controls" style="display: flex; gap: 5px;">
+                        <!-- Contextual controls inserted here -->
+                    </div>
+                </div>
+
+                <div id="viz-container">
+                    <div id="viz-area">
+                        <!-- Dynamic HTML visualization -->
+                    </div>
+                    <div id="viz-details">
+                        <h3 style="font-size: 0.85em; margin-top: 0; border-bottom: 1px solid var(--border); padding-bottom: 5px;">Details</h3>
+                        <div id="viz-details-content">
+                            Select an element to see details.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="panel-resizer"></div>
+
+        <!-- RIGHT PANELS -->
+        <div id="panels-container">
+            <!-- WORKFLOW PANEL -->
+            <div id="workflow-panel" style="display:none">
+                <h3 style="font-size: 0.85em; margin: 0 0 10px 0;">🛠️ Forge Workflow</h3>
+                <div id="workflow-steps">
+                    <div class="workflow-step" id="w-arch"><div class="step-icon"></div> Architecture Generated</div>
+                    <div class="workflow-step" id="w-props"><div class="step-icon"></div> Review Properties</div>
+                    <div class="workflow-step" id="w-data"><div class="step-icon"></div> Select Dataset</div>
+                    <div class="workflow-step" id="w-train"><div class="step-icon"></div> Train Model</div>
+                    <div class="workflow-step" id="w-eval"><div class="step-icon"></div> Evaluate</div>
+                    <div class="workflow-step" id="w-export"><div class="step-icon"></div> Export Model</div>
+                </div>
+            </div>
+
+            <!-- DEMO PANEL -->
+            <div id="demo-panel" style="display:none">
+                <h3 style="font-size: 0.85em; margin: 0 0 10px 0;">🚀 E2E Demo Progress</h3>
+                <div id="demo-steps">
+                    <div class="demo-step" id="step-init">Initializing Architecture...</div>
+                    <div class="demo-step" id="step-data">Loading Training Data...</div>
+                    <div class="demo-step" id="step-train">Training Model...</div>
+                    <div class="demo-step" id="step-export">Exporting to Ollama...</div>
+                    <div class="demo-step" id="step-final">Finalizing & Saving...</div>
+                </div>
+            </div>
+
+            <!-- GUIDANCE PANEL -->
+            <div class="panel" id="guidance-panel">
+                <h3>Recommended Next Steps</h3>
+                <div id="guidance-content" style="font-size: 0.85em; color: var(--text-dim); line-height: 1.4;">
+                    Select a session to begin.
+                </div>
+            </div>
+
+            <!-- CONFIGURATION PANEL (MODEL PROPERTIES) -->
+            <div class="panel" id="properties-panel">
+                <h3>Model Properties</h3>
+                <div id="dynamic-properties">
+                    <!-- Populated based on architecture -->
+                </div>
+                <div class="control-group">
+                    <label>Learning Rate</label>
+                    <input type="number" id="lr" step="0.0001" value="0.001" onchange="persistProperty('lr', this.value)">
+                </div>
+                <div class="control-group">
+                    <label>Batch Size</label>
+                    <input type="number" id="batch" value="32" onchange="persistProperty('batch', this.value)">
+                </div>
+                <div class="control-group">
+                    <label>Optimizer</label>
+                    <select id="optimizer" onchange="persistProperty('optimizer', this.value)">
+                        <option value="adam">Adam</option>
+                        <option value="sgd">SGD</option>
+                        <option value="rmsprop">RMSprop</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>Epochs</label>
+                    <input type="number" id="epochs" value="10" onchange="persistProperty('epochs', this.value)">
+                </div>
+                <button class="btn btn-sm btn-primary" style="width: 100%; margin-top: 10px;" onclick="confirmProperties()" id="confirm-props-btn">Confirm Properties</button>
+            </div>
+
+            <!-- DATASET PANEL -->
+            <div class="panel">
+                <h3>Dataset</h3>
+                <div class="control-group">
+                    <label>Active Dataset</label>
+                    <select id="dataset-selector" onchange="onDatasetSelect(this.value)">
+                        <option value="">Select...</option>
+                        <option value="mnist">MNIST (Digits)</option>
+                        <option value="cifar10">CIFAR-10</option>
+                        <option value="wiki">Wikipedia-Small</option>
+                        <option value="synthetic">Synthetic Generator</option>
+                    </select>
+                </div>
+                <button class="btn btn-sm" style="width: 100%;">Upload Custom Data</button>
+            </div>
+
+            <!-- TRAINING PANEL -->
+            <div class="panel">
+                <h3>Training & Execution</h3>
+                <div style="display: flex; gap: 5px;">
+                    <button id="train-btn" class="btn btn-primary" style="flex: 1;" onclick="startTraining()" data-guidance="Initialize and start the training process for the current model architecture. Ensure a dataset is selected first.">START</button>
+                    <button id="stop-btn" class="btn" style="flex: 1;" onclick="stopTraining()" disabled data-guidance="Immediately halt the current training run. Current weights will be preserved but training progress will stop.">STOP</button>
+                </div>
+                <button class="btn btn-sm" style="width: 100%; margin-top: 8px;" data-guidance="Trigger an evaluation run to measure the model's performance on the validation set." onclick="runEvaluation()">Evaluate Now</button>
+            </div>
+
+            <!-- OBSERVABILITY PANEL -->
+            <div class="panel" style="flex-grow: 1; border-bottom: none;">
+                <h3>Observability</h3>
+                <div id="training-progress-container" style="display:none; margin-bottom: 10px;">
+                    <div style="font-size: 0.75em; color: var(--text-dim); margin-bottom: 4px;">TRAINING PROGRESS</div>
+                    <div style="height: 10px; background: #eee; border-radius: 5px; overflow: hidden; border: 1px solid var(--border);">
+                        <div id="training-progress-bar" style="width: 0%; height: 100%; background: var(--accent); transition: width 0.3s;"></div>
+                    </div>
+                    <div id="training-progress-text" style="font-size: 0.7em; text-align: right; margin-top: 2px;">0%</div>
+                </div>
+                <div style="font-size: 0.8em; margin-bottom: 10px;">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>Loss:</span> <span id="metric-loss" style="color: var(--accent);">--</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>Accuracy:</span> <span id="metric-acc" style="color: var(--success);">--</span>
+                    </div>
+                </div>
+                <div id="log-view">
+                    <div>[SYS] Forge UI ready.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <link rel="stylesheet" href="creatic.css">
+    <script src="creatic.js"></script>
+    <script src="forge-viz/viz-architecture.js"></script>
+    <script src="forge-viz/viz-dataset.js"></script>
+    <script src="forge-viz/viz-training.js"></script>
+    <script src="forge-viz/viz-evolution.js"></script>
+    <script src="forge-viz/viz-walkthrough.js"></script>
+    <script src="forge-viz/viz-interactive-demos.js"></script>
+    <script>
+        let serverPort = 48080;
+        let activeSessionId = null;
+        let sessions = [];
+        let model = { nodes: [], links: [] };
+        let isTraining = false;
+
+        // Canvas interaction state
+        let isPanning = false;
+        let panX = 0;
+        let panY = 0;
+        let startX, startY;
+        let draggedNode = null;
+
+        // Panel Resizing
+        let isResizing = false;
+
+        // Viz State
+        let currentViz = 'ARCHITECTURE';
+        let currentSampleIndex = 0;
+        let vizAutoRefresh = false;
+        let vizRefreshInterval = 5000;
+        let refreshTimer = null;
+
+        // Bridge to SWT
+        function log(msg) {
+            if (window.logFunction) logFunction(msg);
+            else console.log(msg);
+
+            const logView = document.getElementById('log-view');
+            const entry = document.createElement('div');
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            logView.appendChild(entry);
+            logView.scrollTop = logView.scrollHeight;
+        }
+
+        window.initializeForge = function(port) {
+            serverPort = port;
+            log(`Connecting to Forge Server on port ${port}...`);
+
+            loadSessions();
+            updateButtonState();
+            initResizer();
+        };
+
+        function initResizer() {
+            const resizer = document.getElementById('panel-resizer');
+            const container = document.getElementById('panels-container');
+
+            resizer.onmousedown = (e) => {
+                isResizing = true;
+                resizer.classList.add('resizing');
+                document.body.style.cursor = 'col-resize';
+                e.preventDefault();
+            };
+
+            window.addEventListener('mousemove', (e) => {
+                if (!isResizing) return;
+                const width = window.innerWidth - e.clientX;
+                if (width >= 200 && width <= 600) {
+                    container.style.width = width + 'px';
+                }
+            });
+
+            window.addEventListener('mouseup', () => {
+                if (isResizing) {
+                    isResizing = false;
+                    resizer.classList.remove('resizing');
+                    document.body.style.cursor = 'default';
+                }
+            });
+        }
+
+        function getBaseUrl() {
+            if (window.location.protocol === 'file:' || window.location.protocol.startsWith('bundle')) {
+                return `http://localhost:${serverPort}`;
+            }
+            return '';
+        }
+
+        async function loadSessions() {
+            const url = getBaseUrl() + `/forge/sessions?runtime=SWT`;
+            try {
+                const res = await fetch(url);
+                if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+                sessions = await res.json();
+                renderSessionList();
+                if (sessions.length > 0 && !activeSessionId) {
+                    selectSession(sessions[0].id);
+                }
+            } catch (e) {
+                log(`Error loading sessions from ${url}: ${e.message}`);
+            }
+        }
+
+        function renderSessionList() {
+            const list = document.getElementById("session-list");
+            list.innerHTML = '';
+
+            sessions.forEach(s => {
+                const item = document.createElement("div");
+                item.className = `session-item ${s.id === activeSessionId ? 'active' : ''}`;
+                item.onclick = () => selectSession(s.id);
+
+                const name = document.createElement("span");
+                name.className = "session-name";
+                name.textContent = s.name;
+                item.appendChild(name);
+
+                const info = document.createElement("div");
+                info.className = "session-info";
+
+                const type = document.createElement("span");
+                type.textContent = s.modelType;
+                info.appendChild(type);
+
+                const status = document.createElement("span");
+                status.className = `session-status ${s.status === 'TRAINING' ? 'status-training' : ''}`;
+                status.textContent = s.status;
+                info.appendChild(status);
+
+                item.appendChild(info);
+                list.appendChild(item);
+            });
+        }
+
+        function updateGuidance() {
+            // Replaced by Creatic integrated guidance
+            if (window.Creatic && window.Creatic.refresh) {
+                window.Creatic.refresh();
+            }
+        }
+
+        async function selectSession(id) {
+            activeSessionId = id;
+            const session = sessions.find(s => s.id === id);
+
+            document.getElementById('active-session-name').textContent = session ? session.name : "Unknown";
+
+            const state = (session && session.lifecycleState) ? session.lifecycleState : 'CREATED';
+            updateLifecycleUI(state);
+            updateButtonState();
+
+            renderSessionList();
+            await fetchModel(id);
+            await updateModelPropertiesUI();
+            log(`Switched to session: ${session ? session.name : id}`);
+
+            if (window.forgeAction) forgeAction("SESSION_SWITCHED", id);
+
+            // Restore Viz State
+            if (session && session.uiState) {
+                if (session.uiState.selectedVisualization) {
+                    currentViz = session.uiState.selectedVisualization;
+                } else if (session.modelType === 'SELF_EVO') {
+                    currentViz = 'SELF_EVO';
+                }
+                document.getElementById('viz-selector').value = currentViz;
+                vizAutoRefresh = !!session.uiState.autoRefreshEnabled;
+            } else if (session && session.modelType === 'SELF_EVO') {
+                currentViz = 'SELF_EVO';
+                document.getElementById('viz-selector').value = currentViz;
+            }
+
+            onVizChange();
+            updateGuidance();
+        }
+
+        function updateLifecycleUI(state) {
+            const badge = document.getElementById('lifecycle-badge');
+            badge.textContent = state;
+
+            const colors = {
+                'CREATED': '#888',
+                'TRAINING': '#dcdcaa',
+                'FROZEN': '#4fc1ff',
+                'DEPLOYED': '#89d185',
+                'EVOLVING': '#c586c0'
+            };
+            badge.style.color = colors[state] || '#aaa';
+            badge.style.borderColor = colors[state] || '#333';
+            badge.style.border = '1px solid';
+        }
+
+        function updateButtonState() {
+            const hasSession = activeSessionId !== null;
+            const session = sessions.find(s => s.id === activeSessionId);
+            const state = (session && session.lifecycleState) ? session.lifecycleState : 'CREATED';
+
+            document.getElementById('train-btn').disabled = !hasSession || (state === 'FROZEN' || state === 'COMPILING');
+            document.getElementById('stop-btn').disabled = !hasSession || !isTraining;
+
+            if (document.getElementById('json-editor-btn')) document.getElementById('json-editor-btn').disabled = !hasSession;
+            if (document.getElementById('clone-btn')) document.getElementById('clone-btn').disabled = !hasSession;
+            if (document.getElementById('save-arch-btn')) document.getElementById('save-arch-btn').disabled = !hasSession;
+            if (document.getElementById('delete-btn')) document.getElementById('delete-btn').disabled = !hasSession;
+            if (document.getElementById('snapshot-btn')) document.getElementById('snapshot-btn').disabled = !hasSession;
+            if (document.getElementById('dataset-selector')) document.getElementById('dataset-selector').disabled = !hasSession;
+        }
+
+        async function fetchModel(id) {
+            const modelUrl = getBaseUrl() + `/forge/session/${id}/model?runtime=SWT`;
+            const sessionUrl = getBaseUrl() + `/forge/session/${id}?runtime=SWT`;
+            try {
+                const res = await fetch(modelUrl);
+                if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+                model = await res.json();
+                if (!model.nodes) model = { nodes: [], links: [] };
+
+                document.getElementById('json-fallback').value = JSON.stringify(model, null, 2);
+                initGraph();
+
+                // Also fetch session details for UI state
+                const sres = await fetch(sessionUrl);
+                if (!sres.ok) throw new Error(`HTTP ${sres.status}: ${sres.statusText}`);
+                const sessionDetails = await sres.json();
+                updateWorkflowUI(sessionDetails.uiState);
+            } catch (e) {
+                log(`Error fetching model/session details: ${e.message} (URLs: ${modelUrl}, ${sessionUrl})`);
+            }
+        }
+
+        function updateWorkflowUI(uiState) {
+            const status = uiState['forge.workflow.status'] || 'START';
+            const panel = document.getElementById('workflow-panel');
+            panel.style.display = activeSessionId ? 'block' : 'none';
+
+            const steps = ['w-arch', 'w-props', 'w-data', 'w-train', 'w-eval', 'w-export'];
+            const statusMap = {
+                'START': -1,
+                'ARCH_GENERATED': 0,
+                'PROPERTIES_CONFIRMED': 1,
+                'DATASET_SELECTED': 2,
+                'TRAINING_ACTIVE': 3,
+                'TRAINING_COMPLETED': 4,
+                'EVALUATED': 5,
+                'EXPORTED': 6
+            };
+
+            const currentIndex = statusMap[status];
+
+            steps.forEach((id, idx) => {
+                const el = document.getElementById(id);
+                el.classList.remove('active', 'completed', 'disabled');
+                if (idx < currentIndex) el.classList.add('completed');
+                else if (idx === currentIndex) el.classList.add('active');
+                else el.classList.add('disabled');
+            });
+
+            // UI locking based on workflow
+            document.getElementById('confirm-props-btn').disabled = (currentIndex !== 1 && currentIndex !== 0);
+            document.getElementById('dataset-selector').disabled = (currentIndex < 2);
+            document.getElementById('train-btn').disabled = (currentIndex < 3);
+
+            // Highlight properties panel if review is mandatory
+            const propPanel = document.getElementById('properties-panel');
+            if (status === 'ARCH_GENERATED' || status === 'START' && model.nodes.length > 0) {
+                propPanel.classList.add('highlight-focus');
+            } else {
+                propPanel.classList.remove('highlight-focus');
+            }
+        }
+
+        async function updateModelPropertiesUI() {
+            if (!activeSessionId) return;
+            try {
+                const res = await fetch(getBaseUrl() + `/forge/session/${activeSessionId}?runtime=SWT`);
+                const session = await res.json();
+                const uiState = session.uiState || {};
+
+                document.getElementById('lr').value = uiState.lr || 0.001;
+                document.getElementById('batch').value = uiState.batch || 32;
+                document.getElementById('optimizer').value = uiState.optimizer || 'adam';
+                document.getElementById('epochs').value = uiState.epochs || 10;
+
+                const dynamic = document.getElementById('dynamic-properties');
+                dynamic.innerHTML = '';
+
+                const type = session.modelType;
+                if (type === 'MLP') {
+                    addDynamicProp('layers', 'Hidden Layers', uiState.layers || 1, 'number');
+                    addDynamicProp('hidden_size', 'Hidden Size', uiState.hidden_size || 64, 'number');
+                } else if (type === 'CNN') {
+                    addDynamicProp('filters', 'Filters', uiState.filters || 32, 'number');
+                    addDynamicProp('kernel_size', 'Kernel Size', uiState.kernel_size || 3, 'number');
+                } else if (type === 'TRANSFORMER') {
+                    addDynamicProp('heads', 'Attention Heads', uiState.heads || 8, 'number');
+                    addDynamicProp('d_model', 'Model Dim', uiState.d_model || 512, 'number');
+                } else if (type === 'LLM') {
+                    addDynamicProp('vocab_size', 'Vocab Size', uiState.vocab_size || 32000, 'number');
+                    addDynamicProp('context_length', 'Context Length', uiState.context_length || 2048, 'number');
+                }
+            } catch (e) { log(`Error updating properties UI: ${e.message}`); }
+        }
+
+        function addDynamicProp(id, label, value, type) {
+            const group = document.createElement('div');
+            group.className = 'control-group';
+            group.innerHTML = `
+                <label>${label}</label>
+                <input type="${type}" id="prop-${id}" value="${value}" onchange="persistProperty('${id}', this.value)">
+            `;
+            document.getElementById('dynamic-properties').appendChild(group);
+        }
+
+        async function persistProperty(key, value) {
+            if (!activeSessionId) return;
+            await persistUiState(key, value);
+            // If it's a structural property, we might want to regenerate architecture
+            const structuralProps = ['layers', 'hidden_size', 'filters', 'heads'];
+            if (structuralProps.includes(key)) {
+                 log(`Structural property ${key} changed. Regenerating architecture...`);
+                 // This would call handleGenerateArchitecture on backend
+                 const session = sessions.find(s => s.id === activeSessionId);
+                 await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/generate-architecture?runtime=SWT`, {
+                    method: 'POST',
+                    body: JSON.stringify({ modelType: session.modelType })
+                 });
+            }
+        }
+
+        async function confirmProperties() {
+            if (!activeSessionId) return;
+            log("Properties confirmed. Moving to dataset selection.");
+            await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/uistate/forge.workflow.status?runtime=SWT`, {
+                method: 'POST',
+                body: JSON.stringify({ value: 'PROPERTIES_CONFIRMED' })
+            });
+            await fetchModel(activeSessionId);
+        }
+
+        async function runEvaluation() {
+            if (!activeSessionId) return;
+            log("Running model evaluation...");
+            await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/uistate/forge.workflow.status?runtime=SWT`, {
+                method: 'POST',
+                body: JSON.stringify({ value: 'EVALUATED' })
+            });
+            await fetchModel(activeSessionId);
+        }
+
+        async function onDatasetSelect(val) {
+            if (!activeSessionId || !val) return;
+            log(`Dataset ${val} selected.`);
+            await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/uistate/forge.workflow.status?runtime=SWT`, {
+                method: 'POST',
+                body: JSON.stringify({ value: 'DATASET_SELECTED' })
+            });
+            await fetchModel(activeSessionId);
+        }
+
+        function initGraph() {
+            const svg = document.getElementById("canvas");
+            svg.innerHTML = `
+                <defs>
+                    <marker id="arrowhead" viewBox="-0 -5 10 10" refX="20" refY="0" orient="auto" markerWidth="6" markerHeight="6" xoverflow="visible">
+                        <path d="M 0,-5 L 10 ,0 L 0,5" fill="#555" style="stroke: none;"></path>
+                    </marker>
+                </defs>
+            `;
+
+            const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            g.setAttribute("class", "graph-root");
+            g.setAttribute("transform", `translate(${panX}, ${panY})`);
+            svg.appendChild(g);
+
+            // Background for panning
+            const bg = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+            bg.setAttribute("width", "2000");
+            bg.setAttribute("height", "2000");
+            bg.setAttribute("fill", "transparent");
+            bg.onmousedown = (e) => {
+                isPanning = true;
+                startX = e.clientX - panX;
+                startY = e.clientY - panY;
+            };
+            g.appendChild(bg);
+
+            model.links.forEach(l => {
+                const source = model.nodes.find(n => n.id === (l.source.id || l.source));
+                const target = model.nodes.find(n => n.id === (l.target.id || l.target));
+                if (source && target) {
+                    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                    line.setAttribute("class", "link");
+                    line.setAttribute("x1", source.x || 100);
+                    line.setAttribute("y1", source.y || 100);
+                    line.setAttribute("x2", target.x || 200);
+                    line.setAttribute("y2", target.y || 200);
+                    g.appendChild(line);
+                }
+            });
+
+            model.nodes.forEach(n => {
+                const nodeG = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                nodeG.setAttribute("class", `node node-${n.type || 'CUSTOM'}`);
+                nodeG.setAttribute("transform", `translate(${n.x || 100},${n.y || 100})`);
+                nodeG.setAttribute("style", "cursor: grab;");
+                nodeG.onmousedown = (e) => {
+                    e.stopPropagation();
+                    draggedNode = n;
+                    startX = e.clientX - n.x;
+                    startY = e.clientY - n.y;
+                    nodeG.style.cursor = 'grabbing';
+                };
+                nodeG.onclick = () => inspectNode(n);
+
+                if (n.type === 'TEXT') {
+                    const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                    text.setAttribute("text-anchor", "middle");
+                    text.textContent = n.name;
+                    nodeG.appendChild(text);
+                } else if (n.type === 'SHAPE') {
+                    const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                    rect.setAttribute("x", "-50");
+                    rect.setAttribute("y", "-30");
+                    rect.setAttribute("width", "100");
+                    rect.setAttribute("height", "60");
+                    rect.setAttribute("rx", "5");
+                    nodeG.appendChild(rect);
+                } else if (n.type === 'DIRECTION') {
+                    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                    path.setAttribute("d", "M -10,-5 L 10,0 L -10,5 Z");
+                    nodeG.appendChild(path);
+                } else {
+                    const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                    circle.setAttribute("r", "20");
+                    nodeG.appendChild(circle);
+
+                    const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                    text.setAttribute("dy", "35");
+                    text.setAttribute("text-anchor", "middle");
+                    text.textContent = n.name;
+                    nodeG.appendChild(text);
+                }
+
+                g.appendChild(nodeG);
+            });
+
+            svg.onmousemove = (e) => {
+                if (isPanning) {
+                    const nextX = e.clientX - startX;
+                    const nextY = e.clientY - startY;
+                    if (Number.isFinite(nextX) && Number.isFinite(nextY)) {
+                        panX = nextX;
+                        panY = nextY;
+                        g.setAttribute("transform", `translate(${panX}, ${panY})`);
+                    }
+                } else if (draggedNode) {
+                    const nextX = e.clientX - startX;
+                    const nextY = e.clientY - startY;
+                    if (Number.isFinite(nextX) && Number.isFinite(nextY)) {
+                        draggedNode.x = nextX;
+                        draggedNode.y = nextY;
+                        initGraph();
+                    }
+                }
+            };
+
+            svg.onmouseup = () => {
+                isPanning = false;
+                draggedNode = null;
+            };
+
+            updateGuidance();
+        }
+
+        // Palette and Canvas actions
+        function onNodeDrag(event, type) {
+            event.dataTransfer.setData("nodeType", type);
+        }
+
+        const canvasEl = document.getElementById('canvas');
+        canvasEl.addEventListener('dragover', e => e.preventDefault());
+        canvasEl.addEventListener('drop', async e => {
+            e.preventDefault();
+            const type = e.dataTransfer.getData("nodeType");
+            if (!type) return;
+
+            const rect = canvasEl.getBoundingClientRect();
+            const x = e.clientX - rect.left - panX;
+            const y = e.clientY - rect.top - panY;
+
+            const isUtility = ['TEXT', 'DIRECTION', 'SHAPE', 'CONNECTION', 'RESIDUAL'].includes(type);
+
+            if (activeSessionId && !isUtility) {
+                log(`Generating full ${type} architecture...`);
+                try {
+                    await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/generate-architecture?runtime=SWT`, {
+                        method: 'POST',
+                        body: JSON.stringify({ modelType: type })
+                    });
+                } catch (e) { log(`Error generating architecture: ${e.message}`); }
+            } else {
+                const newNode = {
+                    id: "node_" + Date.now(),
+                    name: type.toLowerCase() + "_" + (model.nodes.length + 1),
+                    type: type,
+                    x: x, y: y
+                };
+
+                model.nodes.push(newNode);
+                initGraph();
+                log(`Added ${type} ${isUtility ? 'utility' : 'node'} to local state.`);
+            }
+        });
+
+        async function createNewSession() {
+            const name = prompt("Enter Session Name:");
+            if (!name) return;
+            try {
+                const res = await fetch(getBaseUrl() + `/forge/session?runtime=SWT`, {
+                    method: 'POST',
+                    body: JSON.stringify({ name: name, modelType: 'MLP' })
+                });
+                const data = await res.json();
+                await loadSessions();
+                selectSession(data.id);
+            } catch (e) { log(`Error: ${e.message}`); }
+        }
+
+        async function showDemoDialog() {
+            const type = prompt("Select Demo Type (NEURON, MLP, CNN, TRANSFORMER):", "MLP");
+            if (!type) return;
+
+            const name = prompt("Enter Demo Session Name:", "Demo " + type);
+            if (!name) return;
+
+            try {
+                const res = await fetch(`/forge/session?runtime=SWT`, {
+                    method: 'POST',
+                    body: JSON.stringify({ name: name, modelType: type.toUpperCase(), isDemo: true })
+                });
+                const data = await res.json();
+                await loadSessions();
+                selectSession(data.id);
+                log(`Demo ${type} loaded.`);
+            } catch (e) { log(`Error loading demo: ${e.message}`); }
+        }
+
+        async function saveAllSessions() {
+            try {
+                const res = await fetch(getBaseUrl() + `/forge/save-all?runtime=SWT`, { method: 'POST' });
+                const data = await res.json();
+                if (data.status === 'ok') {
+                    log("All Forge sessions persisted to disk.");
+                    alert("All sessions saved successfully!");
+                } else {
+                    log("Save error: " + data.error);
+                }
+            } catch (e) { log(`Error saving all: ${e.message}`); }
+        }
+
+        async function saveActiveModel() {
+            if (!activeSessionId) {
+                log("No active session to save.");
+                return;
+            }
+            try {
+                await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/model?runtime=SWT`, {
+                    method: 'POST',
+                    body: JSON.stringify(model)
+                });
+                log("Architecture saved to server.");
+                if (window.forgeAction) forgeAction("UPDATE_MODEL", JSON.stringify({ sessionId: activeSessionId, modelGraph: JSON.stringify(model) }));
+            } catch (e) { log(`Save error: ${e.message}`); }
+        }
+
+        function toggleJsonEditor() {
+            const editor = document.getElementById('json-fallback');
+            if (editor.style.display === 'block') {
+                try {
+                    model = JSON.parse(editor.value);
+                    initGraph();
+                    editor.style.display = 'none';
+                } catch (e) { alert("Invalid JSON!"); }
+            } else {
+                editor.value = JSON.stringify(model, null, 2);
+                editor.style.display = 'block';
+            }
+        }
+
+        async function startTraining() {
+            if (!activeSessionId) {
+                log("No active session to train.");
+                return;
+            }
+            isTraining = true;
+            document.getElementById('train-btn').disabled = true;
+            document.getElementById('stop-btn').disabled = false;
+            document.getElementById('training-progress-container').style.display = 'block';
+            log("Training started...");
+
+            await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/uistate/forge.workflow.status?runtime=SWT`, {
+                method: 'POST',
+                body: JSON.stringify({ value: 'TRAINING_ACTIVE' })
+            });
+
+            if (window.forgeAction) forgeAction("UPDATE_STATUS", JSON.stringify({ sessionId: activeSessionId, status: "TRAINING" }));
+
+            // Update session status in local state for immediate guidance refresh
+            const session = sessions.find(s => s.id === activeSessionId);
+            if (session) session.status = 'TRAINING';
+            updateGuidance();
+            await fetchModel(activeSessionId);
+        }
+
+        function stopTraining() {
+            if (!activeSessionId) return;
+            isTraining = false;
+            document.getElementById('train-btn').disabled = false;
+            document.getElementById('stop-btn').disabled = true;
+            log("Training stopped.");
+            if (window.forgeAction) forgeAction("UPDATE_STATUS", JSON.stringify({ sessionId: activeSessionId, status: "IDLE" }));
+
+            const session = sessions.find(s => s.id === activeSessionId);
+            if (session) session.status = 'IDLE';
+            updateGuidance();
+        }
+
+        function createSessionSnapshot() {
+            if (!activeSessionId) return;
+            if (window.forgeAction) forgeAction("CREATE_SNAPSHOT", JSON.stringify({ sessionId: activeSessionId }));
+            log("Snapshot request sent.");
+        }
+
+        async function deleteActiveSession() {
+            if (!activeSessionId) return;
+            if (!confirm("Delete this session?")) return;
+            try {
+                await fetch(getBaseUrl() + `/forge/session/${activeSessionId}?runtime=SWT`, { method: 'DELETE' });
+                log("Session deleted.");
+                activeSessionId = null;
+                await loadSessions();
+            } catch (e) { log(`Error: ${e.message}`); }
+        }
+
+        function inspectNode(d) {
+            log(`Inspecting ${d.name} (${d.type})`);
+        }
+
+        // --- VISUALIZATION LOGIC ---
+
+        function onVizChange() {
+            currentViz = document.getElementById('viz-selector').value;
+            updateVizControls();
+            refreshViz();
+            persistUiState('selectedVisualization', currentViz);
+        }
+
+        function updateVizControls() {
+            const controls = document.getElementById('viz-controls');
+            controls.innerHTML = '';
+
+            const refreshBtn = document.createElement('button');
+            refreshBtn.className = 'btn btn-sm';
+            refreshBtn.textContent = 'Refresh';
+            refreshBtn.onclick = refreshViz;
+            controls.appendChild(refreshBtn);
+
+            const autoLabel = document.createElement('label');
+            autoLabel.style.fontSize = '0.7em';
+            autoLabel.style.display = 'flex';
+            autoLabel.style.alignItems = 'center';
+            autoLabel.style.gap = '3px';
+            const autoCheck = document.createElement('input');
+            autoCheck.type = 'checkbox';
+            autoCheck.checked = vizAutoRefresh;
+            autoCheck.onchange = (e) => {
+                vizAutoRefresh = e.target.checked;
+                persistUiState('autoRefreshEnabled', vizAutoRefresh);
+                setupAutoRefresh();
+            };
+            autoLabel.appendChild(autoCheck);
+            autoLabel.appendChild(document.createTextNode('Auto'));
+            controls.appendChild(autoLabel);
+
+            if (currentViz === 'DATASET') {
+                const search = document.createElement('input');
+                search.type = 'text';
+                search.placeholder = 'Search...';
+                search.className = 'btn btn-sm';
+                search.style.width = '80px';
+                search.style.background = '#3c3c3c';
+                controls.appendChild(search);
+
+                const prevBtn = document.createElement('button');
+                prevBtn.className = 'btn btn-sm';
+                prevBtn.textContent = '<';
+                prevBtn.onclick = () => { currentSampleIndex = Math.max(0, currentSampleIndex - 1); refreshViz(); };
+                controls.appendChild(prevBtn);
+
+                const nextBtn = document.createElement('button');
+                nextBtn.className = 'btn btn-sm';
+                nextBtn.textContent = '>';
+                nextBtn.onclick = () => { currentSampleIndex++; refreshViz(); };
+                controls.appendChild(nextBtn);
+            }
+
+            if (currentViz === 'WALKTHROUGH') {
+                const playBtn = document.createElement('button');
+                playBtn.className = 'btn btn-sm btn-primary';
+                playBtn.innerHTML = '▶ Play';
+                playBtn.onclick = startWalkthroughAutoPlay;
+                controls.appendChild(playBtn);
+
+                const stepBtn = document.createElement('button');
+                stepBtn.className = 'btn btn-sm';
+                stepBtn.textContent = 'Next Step';
+                stepBtn.onclick = () => {
+                    const steps = [walkthroughStep1Create, walkthroughStep2Forward, walkthroughStep3Train, walkthroughStep4Generate];
+                    const next = steps[walkthroughStep % 4];
+                    next();
+                };
+                controls.appendChild(stepBtn);
+
+                const studyBtn = document.createElement('button');
+                studyBtn.className = 'btn btn-sm';
+                studyBtn.textContent = isStudyMode ? 'Close Study' : 'Study Mode';
+                studyBtn.onclick = () => {
+                    isStudyMode = !isStudyMode;
+                    studyBtn.textContent = isStudyMode ? 'Close Study' : 'Study Mode';
+                    const editArea = document.getElementById('study-messages');
+                    if (editArea) editArea.style.display = isStudyMode ? 'block' : 'none';
+                };
+                controls.appendChild(studyBtn);
+            }
+        }
+
+        function setupAutoRefresh() {
+            if (refreshTimer) clearInterval(refreshTimer);
+            if (vizAutoRefresh) {
+                refreshTimer = setInterval(refreshViz, vizRefreshInterval);
+            }
+        }
+
+        async function refreshViz() {
+            if (!activeSessionId) {
+                if (currentViz === 'INTERACTIVE_NEURON') {
+                    renderInteractiveNeuronDemo();
+                    return;
+                } else if (currentViz === 'INTERACTIVE_MLP') {
+                    renderInteractiveMlpDemo();
+                    return;
+                } else if (currentViz === 'INTERACTIVE_CNN') {
+                    renderInteractiveCnnDemo();
+                    return;
+                } else if (currentViz === 'INTERACTIVE_TRANSFORMER') {
+                    renderInteractiveTransformerDemo();
+                    return;
+                } else if (currentViz === 'INTERACTIVE_LLM') {
+                    renderInteractiveLlmDemo();
+                    return;
+                }
+                return;
+            }
+
+            const area = document.getElementById('viz-area');
+            const details = document.getElementById('viz-details-content');
+
+            const session = sessions.find(s => s.id === activeSessionId);
+            const isDemo = session && (session.uiState && (session.uiState.isDemo === true || session.uiState.isDemo === 'true'));
+
+            try {
+                if (currentViz === 'ARCHITECTURE') {
+                    const res = await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/structure?runtime=SWT`);
+                    if (!res.ok) throw new Error("Fetch failed");
+                    const data = await res.json();
+                    renderArchitectureViz(data);
+                } else if (currentViz === 'SELF_EVO') {
+                    const res = await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/forging/stats?runtime=SWT`);
+                    if (!res.ok) throw new Error("Fetch failed");
+                    const stats = await res.json();
+                    renderSelfEvoViz(stats);
+                } else if (currentViz === 'DATASET') {
+                    const statsRes = await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/dataset/stats?runtime=SWT`);
+                    if (!statsRes.ok) throw new Error("Fetch failed");
+                    const stats = await statsRes.json();
+                    const sampleRes = await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/dataset/sample/${currentSampleIndex}?runtime=SWT`);
+                    if (!sampleRes.ok) throw new Error("Fetch failed");
+                    const sample = await sampleRes.json();
+                    renderDatasetViz(stats, sample);
+                } else if (currentViz === 'TRAINING') {
+                    const metricsRes = await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/training/metrics?runtime=SWT`);
+                    if (!metricsRes.ok) throw new Error("Fetch failed");
+                    const metrics = await metricsRes.json();
+                    const eventsRes = await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/training/events?runtime=SWT`);
+                    if (!eventsRes.ok) throw new Error("Fetch failed");
+                    const events = await eventsRes.json();
+                    renderTrainingViz(metrics, events);
+                } else if (currentViz === 'EVOLUTION') {
+                    const res = await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/snapshots?runtime=SWT`);
+                    if (!res.ok) throw new Error("Fetch failed");
+                    const snapshots = await res.json();
+                    renderEvolutionViz(snapshots);
+                } else if (currentViz === 'WALKTHROUGH') {
+                    renderWalkthroughViz();
+                } else if (currentViz === 'INTERACTIVE_NEURON') {
+                    renderInteractiveNeuronDemo();
+                } else if (currentViz === 'INTERACTIVE_MLP') {
+                    renderInteractiveMlpDemo();
+                } else if (currentViz === 'INTERACTIVE_CNN') {
+                    renderInteractiveCnnDemo();
+                } else if (currentViz === 'INTERACTIVE_TRANSFORMER') {
+                    renderInteractiveTransformerDemo();
+                } else if (currentViz === 'INTERACTIVE_LLM') {
+                    renderInteractiveLlmDemo();
+                }
+            } catch (e) {
+                if (isDemo) {
+                    renderDemoFallback();
+                } else {
+                    area.innerHTML = `<div style="padding:20px; color:var(--error)">Error loading visualization: ${e.message}</div>`;
+                }
+            }
+        }
+
+        function renderDemoFallback() {
+            const area = document.getElementById('viz-area');
+            if (currentViz === 'TRAINING') {
+                renderTrainingViz({ loss: '0.2451', acc: '0.8920' }, ['Demo started', 'Data loaded', 'Batch 100 processing...']);
+            } else if (currentViz === 'ARCHITECTURE') {
+                renderArchitectureViz(model);
+            } else if (currentViz === 'DATASET') {
+                renderDatasetViz({ size: 10000, vocab: 5000 }, { raw: "This is a demo sample text for visualization fallback.", tokens: [1, 4, 12, 5, 2] });
+            } else {
+                area.innerHTML = `<div style="padding:20px; color:var(--accent)">[DEMO MODE] Visualization simulation active.</div>`;
+            }
+        }
+
+        function renderArchitectureViz(data) {
+            // Moved to /forge-viz/viz-architecture.js
+            if (window.renderArchitectureViz) window.renderArchitectureViz(data);
+        }
+
+        function renderDatasetViz(stats, sample) {
+            // Moved to /forge-viz/viz-dataset.js
+            if (window.renderDatasetViz) window.renderDatasetViz(stats, sample);
+        }
+
+        function renderTrainingViz(metrics, events) {
+            // Moved to /forge-viz/viz-training.js
+            if (window.renderTrainingViz) window.renderTrainingViz(metrics, events);
+        }
+
+        function renderWalkthroughViz() {
+            // Moved to /forge-viz/viz-walkthrough.js
+            if (window.renderWalkthroughViz) window.renderWalkthroughViz();
+        }
+
+        function renderEvolutionViz(snapshots) {
+            // Moved to /forge-viz/viz-evolution.js
+            if (window.renderEvolutionViz) window.renderEvolutionViz(snapshots);
+        }
+
+        function setInteractiveDemo(type) {
+            currentViz = 'INTERACTIVE_' + type;
+            document.getElementById('viz-selector').value = currentViz;
+            onVizChange();
+        }
+
+        async function persistUiState(key, value) {
+            if (!activeSessionId) return;
+            try {
+                await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/uistate/${key}?runtime=SWT`, {
+                    method: 'POST',
+                    body: JSON.stringify({ value: value })
+                });
+            } catch (e) { log(`Persist error: ${e.message}`); }
+        }
+
+        async function exportSnapshot(snapshotId) {
+            log(`Triggering deterministic export for snapshot: ${snapshotId}`);
+            if (window.forgeAction) {
+                const path = await forgeAction("exportModel", activeSessionId, activeSessionId, snapshotId);
+                log(`Export complete: ${path}`);
+                alert(`Model exported to: ${path}\nYou can now deploy it to Ollama.`);
+
+                await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/uistate/forge.workflow.status?runtime=SWT`, {
+                    method: 'POST',
+                    body: JSON.stringify({ value: 'EXPORTED' })
+                });
+                await fetchModel(activeSessionId);
+            }
+        }
+
+        async function compareSnapshot(id) {
+            log(`Comparing active session with snapshot: ${id}`);
+            try {
+                const res = await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/snapshots/compare/active/${id}?runtime=SWT`);
+                const diff = await res.json();
+
+                document.getElementById('viz-details-content').innerHTML = `
+                    <h4>Comparison Result</h4>
+                    <p><b>Snapshot:</b> ${id}</p>
+                    <div style="margin-top:10px; padding:10px; background:#f0f0f0; border:1px solid var(--border); border-radius:4px;">
+                        <div>Layers Added: <span class="diff-added">${diff.layersAdded || 0}</span></div>
+                        <div>Layers Removed: <span class="diff-removed">${diff.layersRemoved || 0}</span></div>
+                        <div>Parameter Delta: <span class="${(diff.paramDelta || 0) >= 0 ? 'diff-added' : 'diff-removed'}">${diff.paramDelta || 0}</span></div>
+                        <div>Loss Delta: <span class="${(diff.lossDelta || 0) <= 0 ? 'diff-added' : 'diff-removed'}">${diff.lossDelta || 0}</span></div>
+                    </div>
+                    <button class="btn btn-sm" style="width:100%; margin-top:10px;" onclick="refreshViz()">Back to Timeline</button>
+                `;
+            } catch (e) {
+                alert("Error fetching comparison: " + e.message);
+            }
+        }
+
+        // E2E Demo Logic
+        window.startE2EDemo = async function() {
+            if (!activeSessionId) {
+                alert("Please select or create a session first.");
+                return;
+            }
+
+            document.getElementById('demo-panel').style.display = 'block';
+            resetDemoSteps();
+            updateDemoStep('step-init', 'active');
+
+            try {
+                const res = await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/demo?runtime=SWT`, { method: 'POST' });
+                log("E2E Demo started on backend...");
+            } catch (e) {
+                log("Demo error: " + e.message);
+            }
+        };
+
+        function resetDemoSteps() {
+            const steps = ['step-init', 'step-data', 'step-train', 'step-export', 'step-final'];
+            steps.forEach(id => {
+                const el = document.getElementById(id);
+                el.className = 'demo-step';
+            });
+        }
+
+        function updateDemoStep(id, status) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.remove('active', 'completed');
+            if (status) el.classList.add(status);
+        }
+
+        function setLinksAnimating(animating) {
+            const links = document.querySelectorAll('.link');
+            links.forEach(l => {
+                if (animating) l.classList.add('animating');
+                else l.classList.remove('animating');
+            });
+        }
+
+        // Event Handling from Backend
+        async function handleRuntimeEvent(event) {
+            if (event.entityId !== activeSessionId) return;
+
+            switch(event.type) {
+                case 'FORGE_MODEL_CHANGED':
+                case 'UI_STATE_UPDATED':
+                case 'FORGE_SESSION_CREATED':
+                    await fetchModel(activeSessionId);
+                    await updateModelPropertiesUI();
+                    break;
+                case 'FORGE_DATASET_IMPORTED':
+                    updateDemoStep('step-init', 'completed');
+                    updateDemoStep('step-data', 'active');
+                    setTimeout(() => updateDemoStep('step-data', 'completed'), 1000);
+                    break;
+                case 'FORGE_TRAINING_STARTED':
+                    updateDemoStep('step-train', 'active');
+                    setLinksAnimating(true);
+                    currentViz = 'TRAINING';
+                    document.getElementById('viz-selector').value = 'TRAINING';
+                    onVizChange();
+                    break;
+                case 'EVOLUTION_PROGRESS':
+                    // Training simulation updates via viz
+                    refreshViz();
+                    // Update progress bar
+                    if (event.action && event.action.startsWith("DEMO_TRAINING_PROGRESS_")) {
+                        const step = parseInt(event.action.substring("DEMO_TRAINING_PROGRESS_".length));
+                        const percent = Math.min(100, (step + 1) * 20);
+                        document.getElementById('training-progress-bar').style.width = percent + '%';
+                        document.getElementById('training-progress-text').textContent = percent + '%';
+                    }
+                    break;
+                case 'EXPORT_READY':
+                    setLinksAnimating(false);
+                    updateDemoStep('step-train', 'completed');
+                    updateDemoStep('step-export', 'active');
+                    setTimeout(() => {
+                        updateDemoStep('step-export', 'completed');
+                        updateDemoStep('step-final', 'active');
+                    }, 2000);
+                    break;
+                case 'VIEW_UPDATED':
+                    if (event.action === 'DEMO_COMPLETED') {
+                        updateDemoStep('step-final', 'completed');
+                        log("E2E Demo Finished Successfully!");
+                        setTimeout(() => {
+                            document.getElementById('demo-panel').style.display = 'none';
+                        }, 5000);
+                    }
+                    break;
+            }
+        }
+
+        // Simple poll for events
+        let lastProcessedEventTime = 0;
+        setInterval(async () => {
+            if (activeSessionId) {
+                 // In a real system, we'd listen to the EventBus. Here we poll a recent events endpoint.
+                 try {
+                     const res = await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/events?runtime=SWT`);
+                     const events = await res.json();
+                     events.filter(e => e.timestamp > lastProcessedEventTime).forEach(e => {
+                         handleRuntimeEvent(e);
+                         lastProcessedEventTime = Math.max(lastProcessedEventTime, e.timestamp);
+                     });
+                 } catch(e) {}
+            } else {
+                 lastProcessedEventTime = Date.now();
+            }
+        }, 1000);
+
+        function showPaletteMenu(e) {
+            e.preventDefault();
+            const menu = document.getElementById('palette-context-menu');
+            menu.style.display = 'block';
+            menu.style.left = e.pageX + 'px';
+            menu.style.top = e.pageY + 'px';
+
+            window.onclick = () => menu.style.display = 'none';
+        }
+
+        async function loadTemplate(type) {
+            if (!activeSessionId) {
+                await createNewSessionWithTemplate(type);
+                return;
+            }
+            log(`Loading ${type} template into current session...`);
+            await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/generate-architecture?runtime=SWT`, {
+                method: 'POST',
+                body: JSON.stringify({ modelType: type, isDemo: true })
+            });
+            startDemoAnimation();
+        }
+
+        async function startDemoAnimation() {
+            log("Starting demo flow simulation...");
+            const delay = 2000;
+
+            setTimeout(async () => {
+                log("Demo: Reviewing properties...");
+                await persistUiState('forge.workflow.status', 'ARCH_GENERATED'); // Already set but for UI
+                await fetchModel(activeSessionId);
+
+                setTimeout(async () => {
+                    log("Demo: Confirming properties...");
+                    await confirmProperties();
+
+                    setTimeout(async () => {
+                        log("Demo: Selecting dataset...");
+                        await onDatasetSelect('mnist');
+
+                        setTimeout(async () => {
+                            log("Demo: Starting training...");
+                            await startTraining();
+                        }, delay);
+                    }, delay);
+                }, delay);
+            }, delay);
+        }
+
+        async function createNewSessionWithTemplate(type) {
+             const name = prompt("Enter Session Name for " + type + " Demo:", type + " Demo");
+             if (!name) return;
+             try {
+                const res = await fetch(getBaseUrl() + `/forge/session?runtime=SWT`, {
+                    method: 'POST',
+                    body: JSON.stringify({ name: name, modelType: type, isDemo: true })
+                });
+                const data = await res.json();
+                await loadSessions();
+                selectSession(data.id);
+            } catch (e) { log(`Error: ${e.message}`); }
+        }
+
+        // Notify SWT ready
+        if (window.logFunction) logFunction("ready");
+    </script>
+</body>
+</html>

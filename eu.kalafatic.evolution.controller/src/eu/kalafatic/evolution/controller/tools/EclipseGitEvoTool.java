@@ -9,9 +9,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 
 import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.egit.core.RepositoryUtil;
 import org.eclipse.jgit.api.CloneCommand;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.lib.Repository;
@@ -301,8 +303,22 @@ public class EclipseGitEvoTool {
 
     public static void refreshGitView() {
     	log("Refreshing Git view..."); 
+    	
     	Display.getDefault().asyncExec(() -> {
     		log("Refreshing Git view..."); 
+    		
+    		
+    		
+    		for (Entry<String, RepoConfig> entry : registry.entrySet()) {
+			    String id = entry.getKey();
+			    String path = getRepositoryPath(id);
+			    if (path != null) {
+			        log("Refreshing repo: " + id + " at " + path);
+			        //removeFromEgitView(path);
+			        addToEgitView(path);
+			    }
+				
+			}
     		
     		
     		// Find the view by its ID (typically "org.eclipse.egit.ui.RepositoriesView")
@@ -374,18 +390,42 @@ public class EclipseGitEvoTool {
         } catch (IOException e) { log("Failed to save configuration: " + e.getMessage()); }
     }
 
+    public static void createAndShowRepository(File projectDir) {
+        try {
+            // 1. Create the repo using JGit
+            Git git = Git.init().setDirectory(projectDir).call();
+            
+            // 2. Register it with EGit (triggers view refresh)
+            RepositoryUtil.INSTANCE.addConfiguredRepository(projectDir);
+            
+            // 3. Clean up
+            git.close();
+            
+        } catch (Exception e) {
+            // Handle errors
+        }
+    }
+    
     // --- Integration Helpers ---
 
-    private static void addToEgitView(String localPath) {
-        File gitDir = new File(localPath, ".git");
-        if (!gitDir.exists()) return;
-        try {
-            Class<?> utilClass = Class.forName("org.eclipse.egit.core.RepositoryUtil");
-            Object util = utilClass.getMethod("getInstance").invoke(null);
-            util.getClass().getMethod("addConfiguredRepository", File.class).invoke(util, gitDir);
-            log("Added to EGit view: " + gitDir.getAbsolutePath());
-        } catch (Exception e) { log("Failed to register with EGit: " + e.getMessage()); }
-    }
+	private static void addToEgitView(String localPath) {
+		try {
+			File gitDir = new File(localPath, ".git");
+			gitDir.getParentFile().mkdirs();
+			
+			if (!gitDir.exists()) {				
+				gitDir.createNewFile();
+				createAndShowRepository(gitDir);
+			}
+
+			Class<?> utilClass = Class.forName("org.eclipse.egit.core.RepositoryUtil");
+			Object util = utilClass.getMethod("getInstance").invoke(null);
+			util.getClass().getMethod("addConfiguredRepository", File.class).invoke(util, gitDir);
+			log("Added to EGit view: " + gitDir.getAbsolutePath());
+		} catch (Exception e) {
+			log("Failed to register with EGit: " + e.getMessage());
+		}
+	}
 
     private static void removeFromEgitView(String localPath) {
         File gitDir = new File(localPath, ".git");
