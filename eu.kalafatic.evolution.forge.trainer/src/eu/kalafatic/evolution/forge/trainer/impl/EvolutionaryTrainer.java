@@ -1,14 +1,14 @@
 package eu.kalafatic.evolution.forge.trainer.impl;
 
-import eu.kalafatic.evolution.forge.controller.service.EvolutionService;
 import eu.kalafatic.evolution.forge.trainer.api.Trainer;
+import eu.kalafatic.evolution.forge.trainer.service.TrainerEvolutionService;
 
 public class EvolutionaryTrainer implements Trainer {
-    private final EvolutionService evolutionService;
+	private final TrainerEvolutionService evolutionService;
     private final String sessionId;
     private final String modelId;
 
-    public EvolutionaryTrainer(EvolutionService evolutionService, String sessionId, String modelId) {
+	public EvolutionaryTrainer(TrainerEvolutionService evolutionService, String sessionId, String modelId) {
         this.evolutionService = evolutionService;
         this.sessionId = sessionId;
         this.modelId = modelId;

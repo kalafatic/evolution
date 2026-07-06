@@ -14,6 +14,14 @@ public interface Tensor {
     Tensor matmul(Tensor other);
     Tensor transpose();
 
+    Tensor exp();
+    Tensor log();
+    Tensor sqrt();
+    Tensor pow(float exponent);
+    float sum();
+    Tensor softmax();
+    Tensor layerNorm();
+
     int getRank();
     long getSize();
 }

@@ -5,4 +5,5 @@ Bundle-SymbolicName: eu.kalafatic.evolution.forge.tokenizer
 Bundle-Version: 2.6.5.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-21
 Export-Package: eu.kalafatic.evolution.forge.tokenizer.api,
- eu.kalafatic.evolution.forge.tokenizer.core
+ eu.kalafatic.evolution.forge.tokenizer.core,
+ eu.kalafatic.evolution.forge.tokenizer.impl

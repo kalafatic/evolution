@@ -1,6 +1,8 @@
 package eu.kalafatic.evolution.forge.controller.service;
 
-public interface EvolutionService {
+import eu.kalafatic.evolution.forge.trainer.service.TrainerEvolutionService;
+
+public interface EvolutionService extends TrainerEvolutionService {
     String addSubModel(String sessionId, String modelId, String type, String config);
     void removeSubModel(String sessionId, String modelId, String subModelId);
     void connectSubModels(String sessionId, String modelId, String fromId, String toId, String connectionType);

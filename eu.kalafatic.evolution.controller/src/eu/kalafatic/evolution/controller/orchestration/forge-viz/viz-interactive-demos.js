@@ -592,4 +592,91 @@ window.runTransformer = async function() {
     output.textContent = "Generated: " + prompt.value + " ...";
 };
 
+// ============== INTERACTIVE LLM-EVO DEMO ==============
+
+window.renderInteractiveLlmEvoDemo = function() {
+    const area = document.getElementById('viz-area');
+    area.innerHTML = `
+        <div style="padding:20px; height:100%; width:100%; background:#fff; color:#333; overflow:auto; display:flex; flex-direction:column;">
+            <div style="text-align:center; margin-bottom:20px;">
+                <h3 style="color:var(--accent)">LLM-EVO: Educational Pipeline</h3>
+                <p style="font-size:0.9em; color:#666;">Understand every internal component of your custom LLM.</p>
+            </div>
+
+            <div id="llm-evo-pipeline" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px; padding:0 20px;">
+                ${renderEvoStep("Markdown", "docs/*.md", "active")}
+                ${renderEvoArrow()}
+                ${renderEvoStep("Tokenizer", "Vocab: 4096", "")}
+                ${renderEvoArrow()}
+                ${renderEvoStep("Transformer", "Layers: 2", "")}
+                ${renderEvoArrow()}
+                ${renderEvoStep("Training", "Loss: 2.14", "")}
+                ${renderEvoArrow()}
+                ${renderEvoStep("Ollama", "Model: evo", "")}
+            </div>
+
+            <div id="llm-evo-explanation" style="flex:1; border:1px solid #eee; border-radius:8px; padding:20px; background:#fcfcfc;">
+                <h4 id="evo-stage-title" style="margin-top:0; color:var(--accent);">Stage: Markdown Loader</h4>
+                <div id="evo-stage-content" style="font-size:0.9em; line-height:1.6; color:#444;">
+                    <p>Loads all Markdown files from the project directory recursively.</p>
+                    <pre style="background:#eee; padding:10px; border-radius:4px;">Files Found: 12\nTotal Characters: 45,231</pre>
+                </div>
+                <div id="evo-stage-details" style="margin-top:20px; padding-top:15px; border-top:1px dashed #ccc; font-size:0.85em; color:#666;">
+                    <b>Educational Note:</b> This stage creates the raw corpus. Pre-processing here is critical for model quality.
+                </div>
+            </div>
+
+            <div style="margin-top:20px; display:flex; gap:10px; justify-content:center;">
+                <button class="btn btn-primary" onclick="prevEvoStage()">Previous</button>
+                <button class="btn btn-primary" onclick="nextEvoStage()">Next Stage</button>
+            </div>
+        </div>
+    `;
+};
+
+let currentEvoStage = 0;
+const evoStages = [
+    { title: "Markdown Loader", content: "Loads all Markdown files from the project directory recursively. It respects .gitignore and focuses on UTF-8 content.", code: "Files Found: 12\nTotal Characters: 45,231", note: "This stage creates the raw corpus. Pre-processing here is critical for model quality." },
+    { title: "Tokenizer (BPE)", content: "Converts text into numerical tokens using Byte Pair Encoding. This helps the model handle unknown words by breaking them into sub-words.", code: "Token: 'Evolution' -> [432]\nToken: 'AI' -> [12, 54]", note: "BPE balances vocabulary size and sequence length." },
+    { title: "Transformer Block", content: "The heart of the LLM. It uses Multi-Head Attention to understand relationships between tokens regardless of their distance.", code: "Embedding Dim: 256\nHeads: 8\nAttention: Dot-Product", note: "Attention mechanism allows the model to 'focus' on relevant context." },
+    { title: "Training Loop", content: "Adjusts weights using backpropagation to minimize the prediction loss. It tracks perplexity and accuracy over time.", code: "Epoch 5/10\nLoss: 1.23\nAccuracy: 42%", note: "Gradient descent iteratively improves the model's predictions." },
+    { title: "Ollama Export", content: "Converts the trained weights into a GGUF package and generates a Modelfile for immediate deployment.", code: "export to: ./dist/evo.gguf\nModelfile created.", note: "Integration with Ollama allows using the custom model in any application." }
+];
+
+function renderEvoStep(name, sub, status) {
+    return `
+        <div class="evo-step-node ${status}" style="text-align:center; flex:1; padding:10px; border:2px solid #ddd; border-radius:8px; background:white; cursor:pointer; margin:0 5px;">
+            <div style="font-weight:bold; font-size:0.85em;">${name}</div>
+            <div style="font-size:0.7em; color:#888;">${sub}</div>
+        </div>
+    `;
+}
+
+function renderEvoArrow() {
+    return `<div style="color:#ccc; font-size:1.2em;">➔</div>`;
+}
+
+window.nextEvoStage = function() {
+    currentEvoStage = (currentEvoStage + 1) % evoStages.length;
+    updateEvoUI();
+};
+
+window.prevEvoStage = function() {
+    currentEvoStage = (currentEvoStage - 1 + evoStages.length) % evoStages.length;
+    updateEvoUI();
+};
+
+function updateEvoUI() {
+    const stage = evoStages[currentEvoStage];
+    document.getElementById('evo-stage-title').textContent = "Stage: " + stage.title;
+    document.getElementById('evo-stage-content').innerHTML = `<p>${stage.content}</p><pre style="background:#eee; padding:10px; border-radius:4px;">${stage.code}</pre>`;
+    document.getElementById('evo-stage-details').innerHTML = `<b>Educational Note:</b> ${stage.note}`;
+
+    const nodes = document.querySelectorAll('.evo-step-node');
+    nodes.forEach((n, i) => {
+        n.style.borderColor = (i === currentEvoStage) ? 'var(--accent)' : '#ddd';
+        n.style.background = (i === currentEvoStage) ? '#eff6ff' : 'white';
+    });
+}
+
 })();

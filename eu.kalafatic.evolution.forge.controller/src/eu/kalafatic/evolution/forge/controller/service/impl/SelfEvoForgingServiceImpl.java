@@ -1,7 +1,14 @@
 package eu.kalafatic.evolution.forge.controller.service.impl;
 
 import eu.kalafatic.evolution.forge.controller.service.SelfEvoForgingService;
+import eu.kalafatic.evolution.forge.data.impl.*;
+import eu.kalafatic.evolution.forge.tokenizer.impl.SimpleBPETokenizer;
+import eu.kalafatic.evolution.forge.model.llm.EvoLlmModel;
+import eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer;
+import eu.kalafatic.evolution.forge.agent.export.OllamaExporter;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -17,22 +24,39 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
 
         executor.submit(() -> {
             try {
-                // Forging process simulation for the UI
-                updateStats(sessionId, new ForgingStats("SCANNING", 10, 50, 200, 0, 0.0, "0"));
-                Thread.sleep(2000);
+                // REAL PIPELINE IMPLEMENTATION
+                MarkdownLoader loader = new MarkdownLoader();
+                MarkdownCleaner cleaner = new MarkdownCleaner();
 
-                updateStats(sessionId, new ForgingStats("ENHANCING", 30, 200, 200, 45, 0.0, "0"));
-                Thread.sleep(2000);
+                updateStats(sessionId, new ForgingStats("SCANNING", 10, 0, 0, 0, 0.0, "0"));
+                String corpus = loader.loadFromDirectory(projectPath);
+                String cleanCorpus = cleaner.clean(corpus);
 
-                updateStats(sessionId, new ForgingStats("TRAINING", 60, 200, 200, 150, 0.724, "1/3"));
-                Thread.sleep(3000);
+                updateStats(sessionId, new ForgingStats("ENHANCING", 30, 0, 0, 0, 0.0, "0"));
+                SimpleBPETokenizer tokenizer = new SimpleBPETokenizer();
+                tokenizer.train(cleanCorpus, 4096);
+                List<Integer> allTokens = tokenizer.encode(cleanCorpus);
 
-                updateStats(sessionId, new ForgingStats("EXPORTING", 90, 200, 200, 150, 0.089, "3/3"));
-                Thread.sleep(2000);
+                VocabularyBuilder vocabBuilder = new VocabularyBuilder();
+                // Map of tokens for vocab builder (simplified)
+                Map<String, Integer> vocab = vocabBuilder.buildVocabulary(List.of(cleanCorpus.split("\\s+")), 1);
 
-                updateStats(sessionId, new ForgingStats("COMPLETE", 100, 200, 200, 150, 0.042, "DONE"));
+                DatasetBuilder datasetBuilder = new DatasetBuilder();
+                List<DatasetBuilder.Sample> samples = datasetBuilder.buildSlidingWindow(allTokens, 16, 8);
+
+                updateStats(sessionId, new ForgingStats("TRAINING", 60, 0, 0, samples.size(), 0.0, "1/1"));
+                EvoLlmModel model = new EvoLlmModel(tokenizer.getVocabSize(), 128, 4, 2, 512, 16);
+                EvoLlmTrainer trainer = new EvoLlmTrainer(model);
+                trainer.train(samples, 1);
+
+                updateStats(sessionId, new ForgingStats("EXPORTING", 90, 0, 0, samples.size(), 0.0, "DONE"));
+                OllamaExporter exporter = new OllamaExporter();
+                exporter.export("evo-" + sessionId, Paths.get("dist/evo-" + sessionId), model);
+
+                updateStats(sessionId, new ForgingStats("COMPLETE", 100, 0, 0, samples.size(), 0.0, "DONE"));
 
             } catch (Exception e) {
+                e.printStackTrace();
                 updateStats(sessionId, new ForgingStats("ERROR", 0, 0, 0, 0, 0.0, "ERR"));
             }
         });
