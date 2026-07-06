@@ -49,6 +49,7 @@ public class McpPromptsGroup extends AEvoGroup {
         }
 
         Button refreshBtn = GUIFactory.INSTANCE.createButton(group, "Refresh Prompts", 150);
+        refreshBtn.setToolTipText("Fetch the latest list of prompts from the connected MCP server.");
         refreshBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {

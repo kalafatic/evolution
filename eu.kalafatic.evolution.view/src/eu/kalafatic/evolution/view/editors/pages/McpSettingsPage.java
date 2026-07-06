@@ -137,11 +137,18 @@ public class McpSettingsPage extends AEvoPage {
     public void refreshUI() {
         if (orchestrator == null || isUpdating) return;
         isUpdating = true;
+
+        String url = orchestrator.getMcpServerUrl();
+        if (url == null || url.isEmpty()) {
+            orchestrator.setMcpServerUrl("http://localhost:38080/mcp");
+            setDirty(true);
+        }
+
         configGroup.updateUI();
         serversGroup.updateUI();
         isUpdating = false;
 
-        String url = orchestrator.getMcpServerUrl();
+        url = orchestrator.getMcpServerUrl();
         if (url == null || url.isEmpty()) {
             loadMockData();
         } else {

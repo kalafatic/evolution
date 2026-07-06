@@ -11,14 +11,22 @@ import java.util.Map;
 public class DemoDocumentController {
     private final DemoDocumentService service;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private eu.kalafatic.evolution.servers.mcp.server.JsonRpcDispatcher mcpDispatcher;
 
     public DemoDocumentController(DemoDocumentService service) {
         this.service = service;
     }
 
+    public void setMcpDispatcher(eu.kalafatic.evolution.servers.mcp.server.JsonRpcDispatcher dispatcher) {
+        this.mcpDispatcher = dispatcher;
+    }
+
     public Response handle(IHTTPSession session) {
         String uri = session.getUri();
         try {
+            if (session.getMethod() == NanoHTTPD.Method.POST && "/mcp".equals(uri)) {
+                return handleMcp(session);
+            }
             if ("/health".equals(uri)) {
                 return jsonResponse(Map.of("status", "UP"));
             } else if ("/documents".equals(uri)) {
@@ -44,6 +52,20 @@ public class DemoDocumentController {
             return errorResponse(Response.Status.INTERNAL_ERROR, e.getMessage());
         }
         return NanoHTTPD.newFixedLengthResponse(Response.Status.NOT_FOUND, NanoHTTPD.MIME_PLAINTEXT, "Not Found");
+    }
+
+    private Response handleMcp(IHTTPSession session) throws Exception {
+        if (mcpDispatcher == null) {
+            return errorResponse(Response.Status.INTERNAL_ERROR, "MCP Dispatcher not initialized");
+        }
+        Map<String, String> files = new java.util.HashMap<>();
+        session.parseBody(files);
+        String postData = files.get("postData");
+
+        eu.kalafatic.evolution.servers.mcp.protocol.McpRequest request = objectMapper.readValue(postData, eu.kalafatic.evolution.servers.mcp.protocol.McpRequest.class);
+        eu.kalafatic.evolution.servers.mcp.protocol.McpResponse response = mcpDispatcher.dispatch(request);
+
+        return jsonResponse(response);
     }
 
     private Response jsonResponse(Object data) throws IOException {

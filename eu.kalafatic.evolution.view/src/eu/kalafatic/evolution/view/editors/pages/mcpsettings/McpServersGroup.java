@@ -60,6 +60,7 @@ public class McpServersGroup extends AEvoGroup {
         btnComp.setLayoutData(new GridData(GridData.FILL_VERTICAL));
 
         Button addBtn = GUIFactory.INSTANCE.createButton(btnComp, "Add", 120);
+        addBtn.setToolTipText("Add a new MCP server configuration to the managed list.");
         addBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -68,6 +69,7 @@ public class McpServersGroup extends AEvoGroup {
         });
 
         Button editBtn = GUIFactory.INSTANCE.createButton(btnComp, "Edit", 120);
+        editBtn.setToolTipText("Edit the selected MCP server configuration.");
         editBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -76,6 +78,7 @@ public class McpServersGroup extends AEvoGroup {
         });
 
         Button removeBtn = GUIFactory.INSTANCE.createButton(btnComp, "Remove", 120);
+        removeBtn.setToolTipText("Remove the selected MCP server configuration.");
         removeBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -84,6 +87,7 @@ public class McpServersGroup extends AEvoGroup {
         });
 
         Button setActiveBtn = GUIFactory.INSTANCE.createButton(btnComp, "Set Active", 120);
+        setActiveBtn.setToolTipText("Set the selected server as the active Remote MCP Server URL.");
         setActiveBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -92,6 +96,7 @@ public class McpServersGroup extends AEvoGroup {
         });
 
         Button testBtn = GUIFactory.INSTANCE.createButton(btnComp, "Test", 120);
+        testBtn.setToolTipText("Test the connection to the selected MCP server.");
         testBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
