@@ -25,6 +25,12 @@ public class SemanticDomainResolver {
         ALIAS_MAP.put("MODEL", SemanticDomain.STRUCTURE);
         ALIAS_MAP.put("VALIDATION", SemanticDomain.VALIDATION);
         ALIAS_MAP.put("CHECK", SemanticDomain.VALIDATION);
+        ALIAS_MAP.put("KNOWLEDGE", SemanticDomain.KNOWLEDGE);
+        ALIAS_MAP.put("INFORMATION", SemanticDomain.KNOWLEDGE);
+        ALIAS_MAP.put("DATA", SemanticDomain.DATA);
+        ALIAS_MAP.put("MEDIA", SemanticDomain.MEDIA);
+        ALIAS_MAP.put("IMAGE", SemanticDomain.MEDIA);
+        ALIAS_MAP.put("VIDEO", SemanticDomain.MEDIA);
     }
 
     public SemanticDomain resolve(String input) {

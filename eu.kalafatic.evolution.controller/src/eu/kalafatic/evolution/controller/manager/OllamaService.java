@@ -165,6 +165,44 @@ public class OllamaService {
     }
 
     /**
+     * Analyzes an image using multi-modal capabilities (api/generate with images).
+     */
+    public String analyzeImage(String prompt, String imagePath) throws Exception {
+        java.io.File file = new java.io.File(imagePath);
+        if (!file.exists()) throw new java.io.FileNotFoundException("Image not found: " + imagePath);
+
+        byte[] bytes = java.nio.file.Files.readAllBytes(file.toPath());
+        String base64Image = java.util.Base64.getEncoder().encodeToString(bytes);
+
+        String genUrl = this.baseUrl + (this.baseUrl.endsWith("/") ? "" : "/") + "api/generate";
+
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("model", this.model);
+        jsonObject.put("prompt", prompt);
+        jsonObject.put("stream", false);
+
+        JSONArray images = new JSONArray();
+        images.put(base64Image);
+        jsonObject.put("images", images);
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(genUrl))
+                .header("Content-Type", "application/json")
+                .timeout(Duration.ofSeconds(120))
+                .POST(HttpRequest.BodyPublishers.ofString(jsonObject.toString()))
+                .build();
+
+        HttpResponse<String> response = createClient().send(request, HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() != 200) {
+            throw new RuntimeException("Ollama image analysis error: " + response.statusCode() + " - " + response.body());
+        }
+
+        JSONObject jsonResponse = new JSONObject(response.body());
+        return jsonResponse.optString("response", "");
+    }
+
+    /**
      * Sends a generation request (api/generate)
      */
     public String generate(String prompt) throws Exception {

@@ -12,7 +12,7 @@ import java.util.Map;
 public class TargetRealityModel {
     private String domain;
     private String purpose;
-    private String architectureSummary;
+    private String contentLandscapeSummary;
     private List<Hotspot> hotspots = new ArrayList<>();
     private List<Subsystem> subsystems = new ArrayList<>();
     private List<ArchitecturalFact> architecturalFacts = new ArrayList<>();
@@ -41,8 +41,8 @@ public class TargetRealityModel {
     private final List<String> referenceImplementations = new ArrayList<>();
     private final Map<String, Object> metadata = new HashMap<>();
 
-    private final Map<String, Object> architectureView = new HashMap<>();
-    private final Map<String, Object> implementationView = new HashMap<>();
+    private final Map<String, Object> knowledgeView = new HashMap<>();
+    private final Map<String, Object> structureView = new HashMap<>();
     private final Map<String, Object> genomeView = new HashMap<>();
 
     private double realityCompleteness; // 0.0 - 1.0
@@ -58,8 +58,13 @@ public class TargetRealityModel {
     public String getPurpose() { return purpose; }
     public void setPurpose(String purpose) { this.purpose = purpose; }
 
-    public String getArchitectureSummary() { return architectureSummary; }
-    public void setArchitectureSummary(String architectureSummary) { this.architectureSummary = architectureSummary; }
+    public String getContentLandscapeSummary() { return contentLandscapeSummary; }
+    public void setContentLandscapeSummary(String contentLandscapeSummary) { this.contentLandscapeSummary = contentLandscapeSummary; }
+
+    @Deprecated
+    public String getArchitectureSummary() { return contentLandscapeSummary; }
+    @Deprecated
+    public void setArchitectureSummary(String architectureSummary) { this.contentLandscapeSummary = architectureSummary; }
 
     public List<Hotspot> getHotspots() { return hotspots; }
     public void setHotspots(List<Hotspot> hotspots) { this.hotspots = hotspots; }
@@ -91,8 +96,13 @@ public class TargetRealityModel {
     public List<String> getReferenceImplementations() { return referenceImplementations; }
     public Map<String, Object> getMetadata() { return metadata; }
 
-    public Map<String, Object> getArchitectureView() { return architectureView; }
-    public Map<String, Object> getImplementationView() { return implementationView; }
+    public Map<String, Object> getKnowledgeView() { return knowledgeView; }
+    public Map<String, Object> getStructureView() { return structureView; }
+
+    @Deprecated
+    public Map<String, Object> getArchitectureView() { return knowledgeView; }
+    @Deprecated
+    public Map<String, Object> getImplementationView() { return structureView; }
     public Map<String, Object> getGenomeView() { return genomeView; }
 
     public double getRealityCompleteness() { return realityCompleteness; }

@@ -6,5 +6,8 @@ public enum AbstractionLevel {
     ARCHITECTURE,
     DESIGN,
     IMPLEMENTATION,
-    SYNTAX
+    SYNTAX,
+    CONCEPT,
+    INTENT,
+    KNOWLEDGE_BASE
 }

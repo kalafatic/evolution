@@ -124,6 +124,20 @@ public class OllamaProvider implements ILlmProvider {
         // Dynamic model update based on current operational context
         orchestrator.setLocalModel(newModel);
     }
+
+    public String sendImageRequest(Orchestrator orchestrator, String prompt, String imagePath, TaskContext context) throws Exception {
+        if (orchestrator.getOllama() == null || orchestrator.getOllama().getUrl() == null || orchestrator.getOllama().getUrl().isEmpty()) {
+            throw new Exception("Ollama is not configured for Multi-Modal");
+        }
+
+        String baseUrl = orchestrator.getOllama().getUrl();
+        String model = orchestrator.getOllama().getModel();
+
+        OllamaService service = OllamaManager.getInstance().getService(baseUrl);
+        service.setModel(model);
+
+        return service.analyzeImage(prompt, imagePath);
+    }
     
     public static int testLLM(String baseUrl, String model) {
         try {

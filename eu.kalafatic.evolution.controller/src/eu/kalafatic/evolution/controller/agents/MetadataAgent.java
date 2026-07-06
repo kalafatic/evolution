@@ -219,11 +219,8 @@ public class MetadataAgent {
             return false;
         }
 
-        // Process most source and documentation files
-        return name.endsWith(".java") || name.endsWith(".c") || name.endsWith(".cpp") ||
-               name.endsWith(".py") || name.endsWith(".js") || name.endsWith(".ts") ||
-               name.endsWith(".json") || name.endsWith(".xml") || name.endsWith(".yaml") || name.endsWith(".yml") ||
-               name.endsWith(".md") || name.endsWith(".txt");
+        // Every file is a carrier of knowledge.
+        return true;
     }
 
     private void processFile(File file, File root, MetadataResult result, Options options) {
@@ -267,6 +264,8 @@ public class MetadataAgent {
 
     private void assignSemanticRole(File file, EvoMetadata meta) {
         String path = file.getAbsolutePath().replace(File.separatorChar, '/');
+        String name = file.getName().toLowerCase();
+
         if (path.contains("/orchestration/")) meta.setRole("orchestration");
         else if (path.contains("/mediation/")) meta.setRole("mediation");
         else if (path.contains("/supervision/")) meta.setRole("supervision");
@@ -275,7 +274,9 @@ public class MetadataAgent {
         else if (path.contains("/view/") || path.contains("/ui/")) meta.setRole("ui");
         else if (path.contains("/model/")) meta.setRole("domain");
         else if (path.contains("/utils/")) meta.setRole("utility");
-        else if (path.endsWith(".md")) meta.setRole("documentation");
+        else if (name.endsWith(".md") || name.endsWith(".txt") || name.endsWith(".pdf") ||
+                 name.endsWith(".docx") || name.endsWith(".pptx") || name.endsWith(".xlsx")) meta.setRole("documentation");
+        else if (name.endsWith(".png") || name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".webp")) meta.setRole("media");
         else meta.setRole("unknown");
 
         meta.setDomain("evolution"); // Default domain for this system
@@ -316,6 +317,17 @@ public class MetadataAgent {
     private void generateSummary(File file, EvoMetadata meta) {
         if (file.length() > MAX_METADATA_FILE_SIZE) {
             meta.setSummary("Large file - summary skipped");
+            return;
+        }
+
+        String name = file.getName().toLowerCase();
+        if (name.endsWith(".png") || name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".webp")) {
+            meta.setSummary("Image carrier: " + file.getName() + ". Requires multi-modal analysis.");
+            return;
+        }
+
+        if (name.endsWith(".pdf") || name.endsWith(".docx") || name.endsWith(".pptx") || name.endsWith(".xlsx")) {
+            meta.setSummary("Binary document carrier: " + file.getName() + ". Requires specialized extraction.");
             return;
         }
 

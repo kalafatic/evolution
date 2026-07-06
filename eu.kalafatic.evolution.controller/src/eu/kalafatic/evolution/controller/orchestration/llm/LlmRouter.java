@@ -88,6 +88,16 @@ public class LlmRouter {
         return sendLocalRequest(orchestrator, prompt, temperature, proxyUrl, context);
     }
 
+    public String sendImageRequest(Orchestrator orchestrator, String prompt, String imagePath, TaskContext context) throws Exception {
+        if (context != null) context.log("LlmRouter: Routing Multi-Modal Image request.");
+
+        // Multi-modal is currently supported via Ollama or specialized OpenAI-compatible endpoints
+        if (orchestrator.getAiMode() == AiMode.REMOTE) {
+             return openAiProvider.sendImageRequest(orchestrator, prompt, imagePath, context);
+        }
+        return ollamaProvider.sendImageRequest(orchestrator, prompt, imagePath, context);
+    }
+
     /**
      * Tests the connection to the LLM.
      */

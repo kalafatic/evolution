@@ -38,6 +38,10 @@ public class AiService {
         return llmRouter.sendRequest(orchestrator, prompt, temperature, proxyUrl, context);
     }
 
+    public String sendImageRequest(Orchestrator orchestrator, String prompt, String imagePath, TaskContext context) throws Exception {
+        return llmRouter.sendImageRequest(orchestrator, prompt, imagePath, context);
+    }
+
     // Refactored to delegate to ProjectModelManager for unified model loading logic.
     public String[] getOllamaModels(Orchestrator orchestrator) {
         java.util.List<String> models = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getInstance().getLlmModels(orchestrator, eu.kalafatic.evolution.model.orchestration.AiMode.LOCAL);

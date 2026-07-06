@@ -33,4 +33,8 @@ public interface ILlmProvider {
     default String testConnection(Orchestrator orchestrator, float temperature, String proxyUrl, TaskContext context) throws Exception {
         return sendRequest(orchestrator, "Ping", temperature, proxyUrl, context);
     }
+
+    default String sendImageRequest(Orchestrator orchestrator, String prompt, String imagePath, TaskContext context) throws Exception {
+        throw new UnsupportedOperationException("Multi-modal image analysis not supported by this provider");
+    }
 }

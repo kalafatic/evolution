@@ -6,5 +6,8 @@ public enum SemanticDomain {
     RESILIENCE,
     COMMUNICATION,
     STRUCTURE,
-    VALIDATION
+    VALIDATION,
+    KNOWLEDGE,
+    DATA,
+    MEDIA
 }
