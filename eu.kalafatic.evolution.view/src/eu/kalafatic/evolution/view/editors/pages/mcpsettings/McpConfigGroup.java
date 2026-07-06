@@ -40,7 +40,8 @@ public class McpConfigGroup extends AEvoGroup {
         });
         GUIFactory.INSTANCE.createLabel(group, "");
 
-        GUIFactory.INSTANCE.createLabel(group, "Local MCP Port:");
+        org.eclipse.swt.widgets.Label portLabel = GUIFactory.INSTANCE.createLabel(group, "Local MCP Port:");
+        portLabel.setToolTipText("The port on which the local Evolution MCP server runs (default: 58080).");
         mcpPortText = GUIFactory.INSTANCE.createText(group);
         mcpPortText.addModifyListener(e -> {
             if (orchestrator != null && orchestrator.getServerSettings() != null) {
@@ -51,7 +52,8 @@ public class McpConfigGroup extends AEvoGroup {
             }
         });
 
-        GUIFactory.INSTANCE.createLabel(group, "Remote Server URL:");
+        org.eclipse.swt.widgets.Label urlLabel = GUIFactory.INSTANCE.createLabel(group, "Remote MCP Server URL:");
+        urlLabel.setToolTipText("The URL of the MCP server to connect to (e.g., http://localhost:38080/mcp).");
         mcpUrlText = GUIFactory.INSTANCE.createText(group);
         mcpUrlText.addModifyListener(e -> {
             if (orchestrator != null) {
@@ -61,6 +63,7 @@ public class McpConfigGroup extends AEvoGroup {
         });
 
         Button testBtn = GUIFactory.INSTANCE.createButton(group, "Test Connection", 150);
+        testBtn.setToolTipText("Initialize connection and verify protocol compatibility with the MCP server.");
         testBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -69,10 +72,36 @@ public class McpConfigGroup extends AEvoGroup {
         });
 
         Button requestBtn = GUIFactory.INSTANCE.createButton(group, "Test Request", 150);
+        requestBtn.setToolTipText("Send a custom JSON-RPC request to the MCP server.");
         requestBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 page.openRequestDialog(mcpUrlText.getText());
+            }
+        });
+
+        Button loadDemoBtn = GUIFactory.INSTANCE.createButton(group, "Load Demo Settings", 150);
+        loadDemoBtn.setToolTipText("Set the URL to the local demo documentation MCP server (localhost:38080).");
+        loadDemoBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                mcpUrlText.setText("http://localhost:38080/mcp");
+                if (orchestrator != null) {
+                    orchestrator.setMcpServerUrl(mcpUrlText.getText());
+                    page.setDirty(true);
+                }
+            }
+        });
+
+        Button refreshAllBtn = GUIFactory.INSTANCE.createButton(group, "Connect & Refresh All", 180);
+        refreshAllBtn.setToolTipText("Initialize connection and refresh all tools, resources, and prompts.");
+        refreshAllBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                page.testConnection(mcpUrlText.getText());
+                page.refreshResources();
+                page.refreshTools();
+                page.refreshPrompts();
             }
         });
 

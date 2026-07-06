@@ -18,6 +18,32 @@ public class DemoDocumentationProvider extends NanoHTTPD {
         this.service = new DemoDocumentService(config.getDocsFolder());
         this.controller = new DemoDocumentController(service);
         initializeDocs();
+        initializeMcp();
+    }
+
+    private void initializeMcp() {
+        eu.kalafatic.evolution.servers.mcp.tools.ToolRegistry toolRegistry = new eu.kalafatic.evolution.servers.mcp.tools.ToolRegistry();
+        eu.kalafatic.evolution.servers.mcp.tools.DemoTools.registerAll(toolRegistry);
+
+        eu.kalafatic.evolution.servers.mcp.resources.ResourceRegistry resourceRegistry = new eu.kalafatic.evolution.servers.mcp.resources.ResourceRegistry();
+        eu.kalafatic.evolution.servers.mcp.resources.DemoResources.registerAll(resourceRegistry);
+
+        McpDocumentResourceProvider docProvider = new McpDocumentResourceProvider(service);
+        for (DemoDocumentScanner.DocumentInfo doc : service.listDocuments()) {
+            resourceRegistry.register(new eu.kalafatic.evolution.servers.mcp.model.Resource(
+                "docs://" + doc.getPath(),
+                doc.getName(),
+                "Documentation: " + doc.getName(),
+                "text/markdown"
+            ), docProvider);
+        }
+
+        eu.kalafatic.evolution.servers.mcp.prompts.PromptRegistry promptRegistry = new eu.kalafatic.evolution.servers.mcp.prompts.PromptRegistry();
+        eu.kalafatic.evolution.servers.mcp.prompts.DemoPrompts.registerAll(promptRegistry);
+
+        eu.kalafatic.evolution.servers.mcp.server.JsonRpcDispatcher dispatcher =
+            new eu.kalafatic.evolution.servers.mcp.server.JsonRpcDispatcher(toolRegistry, resourceRegistry, promptRegistry);
+        controller.setMcpDispatcher(dispatcher);
     }
 
     private void initializeDocs() {

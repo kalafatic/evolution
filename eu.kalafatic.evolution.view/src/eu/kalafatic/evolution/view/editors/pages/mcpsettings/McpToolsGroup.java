@@ -49,6 +49,7 @@ public class McpToolsGroup extends AEvoGroup {
         }
 
         Button refreshBtn = GUIFactory.INSTANCE.createButton(group, "Refresh Tools", 150);
+        refreshBtn.setToolTipText("Fetch the latest list of tools from the connected MCP server.");
         refreshBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {

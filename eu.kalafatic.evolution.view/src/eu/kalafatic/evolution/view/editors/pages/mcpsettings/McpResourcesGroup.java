@@ -51,6 +51,7 @@ public class McpResourcesGroup extends AEvoGroup {
         }
 
         Button refreshBtn = GUIFactory.INSTANCE.createButton(group, "Refresh Resources", 150);
+        refreshBtn.setToolTipText("Fetch the latest list of resources from the connected MCP server.");
         refreshBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
