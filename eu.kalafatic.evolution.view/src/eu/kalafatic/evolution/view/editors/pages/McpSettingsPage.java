@@ -54,6 +54,46 @@ public class McpSettingsPage extends AEvoPage {
         }).start();
     }
 
+    public void openRequestDialog(String url) {
+        if (url.isEmpty()) { MessageBox mb = new MessageBox(getShell(), SWT.ICON_ERROR | SWT.OK); mb.setText("Error"); mb.setMessage("MCP Server URL cannot be empty."); mb.open(); return; }
+        McpRequestDialog dialog = new McpRequestDialog(getShell());
+        if (dialog.open() == org.eclipse.jface.window.Window.OK) {
+            String method = dialog.getMethod();
+            String params = dialog.getParams();
+            sendCustomRequest(url, method, params);
+        }
+    }
+
+    private void sendCustomRequest(String url, String method, String params) {
+        new Thread(() -> {
+            try {
+                McpClient client = new McpClient(url);
+                JSONObject jsonParams = new JSONObject(params);
+                // We need a way to send generic request in McpClient or use the existing ones if they match
+                // For simplicity, let's assume we can use a generic method if we add it to McpClient
+                // But since I don't want to change McpClient too much, I'll use reflection or just call the right one
+                String response = client.sendGenericRequest(method, jsonParams);
+
+                String finalResponse = response;
+                Display.getDefault().asyncExec(() -> {
+                    if (isDisposed()) return;
+                    MessageBox mb = new MessageBox(getShell(), SWT.ICON_INFORMATION | SWT.OK);
+                    mb.setText("Request Success");
+                    mb.setMessage("Method: " + method + "\nResponse:\n" + finalResponse);
+                    mb.open();
+                });
+            } catch (Exception ex) {
+                Display.getDefault().asyncExec(() -> {
+                    if (isDisposed()) return;
+                    MessageBox mb = new MessageBox(getShell(), SWT.ICON_ERROR | SWT.OK);
+                    mb.setText("Request Failed");
+                    mb.setMessage("Error sending request: " + ex.getMessage());
+                    mb.open();
+                });
+            }
+        }).start();
+    }
+
     public void refreshResources() {
         String url = configGroup.getUrl(); if (url.isEmpty()) return;
         resourcesGroup.clear();

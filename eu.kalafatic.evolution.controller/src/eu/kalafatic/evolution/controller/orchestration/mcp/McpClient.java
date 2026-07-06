@@ -126,6 +126,18 @@ public class McpClient {
         return "";
     }
 
+    /**
+     * Sends a generic JSON-RPC request.
+     *
+     * @param method The method name
+     * @param params The parameters
+     * @return The result as a JSON string
+     * @throws Exception If an error occurs
+     */
+    public String sendGenericRequest(String method, JSONObject params) throws Exception {
+        return sendRpcRequest(method, params).toString();
+    }
+
     private JSONObject sendRpcRequest(String method, JSONObject params) throws Exception {
         JSONObject request = new JSONObject();
         request.put("jsonrpc", "2.0");
