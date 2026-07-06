@@ -9,7 +9,9 @@ import java.io.PrintStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.logging.FileHandler;
+import java.util.logging.Filter;
 import java.util.logging.Level;
+import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 import java.util.zip.ZipEntry;
@@ -54,6 +56,30 @@ public class Log {
         initFileLogger();
         zipOldLogs();
         initSwtReflection();
+        applyNanoHTTPDLoggingFilter();
+    }
+
+    private static void applyNanoHTTPDLoggingFilter() {
+        try {
+            Logger nanoLogger = Logger.getLogger("fi.iki.elonen.NanoHTTPD");
+            nanoLogger.setFilter(new Filter() {
+                @Override
+                public boolean isLoggable(LogRecord record) {
+                    if (record.getLevel() == Level.SEVERE && "Could not send response to the client".equals(record.getMessage())) {
+                        Throwable thrown = record.getThrown();
+                        if (thrown instanceof java.net.SocketException) {
+                            String msg = thrown.getMessage();
+                            if (msg != null && msg.contains("An established connection was aborted by the software in your host machine")) {
+                                return false;
+                            }
+                        }
+                    }
+                    return true;
+                }
+            });
+        } catch (Exception e) {
+            // Silently fail if we can't set the filter
+        }
     }
 
     private static void initSwtReflection() {
