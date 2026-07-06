@@ -94,4 +94,67 @@ public class OpenAIProvider implements ILlmProvider {
         JSONObject jsonResponse = new JSONObject(response.body());
         return jsonResponse.getJSONArray("choices").getJSONObject(0).getJSONObject("message").getString("content");
     }
+
+    @Override
+    public String sendImageRequest(Orchestrator orchestrator, String prompt, String imagePath, TaskContext context) throws Exception {
+        java.io.File file = new java.io.File(imagePath);
+        if (!file.exists()) throw new java.io.FileNotFoundException("Image not found: " + imagePath);
+
+        byte[] bytes = java.nio.file.Files.readAllBytes(file.toPath());
+        String base64Image = java.util.Base64.getEncoder().encodeToString(bytes);
+        String extension = imagePath.substring(imagePath.lastIndexOf(".") + 1).toLowerCase();
+        String mimeType = "image/" + (extension.equals("jpg") ? "jpeg" : extension);
+
+        // Build GPT-4o style vision request
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("model", "gpt-4o"); // Fallback to vision-capable model
+
+        JSONArray messages = new JSONArray();
+        JSONObject message = new JSONObject();
+        message.put("role", "user");
+
+        JSONArray contents = new JSONArray();
+        JSONObject textContent = new JSONObject();
+        textContent.put("type", "text");
+        textContent.put("text", prompt);
+        contents.put(textContent);
+
+        JSONObject imageContent = new JSONObject();
+        imageContent.put("type", "image_url");
+        JSONObject imageUrl = new JSONObject();
+        imageUrl.put("url", "data:" + mimeType + ";base64," + base64Image);
+        imageContent.put("image_url", imageUrl);
+        contents.put(imageContent);
+
+        message.put("content", contents);
+        messages.put(message);
+        jsonObject.put("messages", messages);
+
+        // The rest is similar to sendRequest
+        String remoteModelName = orchestrator.getRemoteModel();
+        eu.kalafatic.evolution.controller.security.TokenSecurityService.ResolvedProvider resolved =
+                eu.kalafatic.evolution.controller.security.TokenSecurityService.getInstance().resolve(orchestrator, remoteModelName);
+
+        String token = (resolved != null) ? resolved.token : null;
+        String apiUrl = (resolved != null && resolved.url != null) ? resolved.url : DEFAULT_OPENAI_URL;
+
+        if (token == null || token.isEmpty()) token = "YOUR_API_KEY"; // Placeholder
+
+        HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(apiUrl))
+                .header("Content-Type", "application/json")
+                .header("Authorization", "Bearer " + token)
+                .timeout(Duration.ofSeconds(120))
+                .POST(HttpRequest.BodyPublishers.ofString(jsonObject.toString()))
+                .build();
+
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() != 200) {
+            throw new Exception("Remote Vision AI error: " + response.statusCode() + " - " + response.body());
+        }
+
+        JSONObject resp = new JSONObject(response.body());
+        return resp.getJSONArray("choices").getJSONObject(0).getJSONObject("message").getString("content");
+    }
 }

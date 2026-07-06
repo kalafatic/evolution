@@ -30,22 +30,22 @@ public class DimensionDiscoveryAgent extends BaseAiAgent {
     @Override
     protected String getAgentInstructions() {
         return "You are a Semantic Dimension Discovery Agent (REALITY-GROUNDED).\n\n" +
-               "GOAL: Identify new technical decision points (dimensions) to continue evolutionary progress.\n" +
+               "GOAL: Identify new technical OR CONCEPTUAL decision points (dimensions) to continue evolutionary progress.\n" +
                "You are called when all previously identified dimensions have been resolved (locked).\n\n" +
                "CONTEXT:\n" +
                "1. The high-level GOAL of the organism.\n" +
                "2. The current SEMANTIC GENOME (locked dimensions and mutation history).\n" +
                "3. The active TRAJECTORY lineage.\n" +
-               "4. TARGET REALITY MODEL (Hotspots, Architectural Facts, Subsystems).\n\n" +
+               "4. TARGET REALITY MODEL (Hotspots, Knowledge Gaps, Facts, Subsystems).\n\n" +
                "TASK:\n" +
-               "Discover 1-3 NEW unresolved semantic dimensions that represent meaningful technical polymorphism.\n" +
-               "CRITICAL: Dimensions MUST be rooted in the identified HOTSPOTS and ARCHITECTURAL FACTS of the repository.\n" +
-               "Avoid generic dimensions. Focus on specific technical challenges identified in Reality Discovery.\n\n" +
+               "Discover 1-3 NEW unresolved semantic dimensions that represent meaningful technical or informational polymorphism.\n" +
+               "CRITICAL: Dimensions MUST be rooted in the identified HOTSPOTS, FACTS, or KNOWLEDGE GAPS of the environment.\n" +
+               "Avoid generic dimensions. Focus on specific challenges identified in Reality Discovery.\n\n" +
                "RULES:\n" +
                "1. Do NOT repeat locked dimensions.\n" +
                "2. Root dimensions in 'Target Reality' if provided.\n" +
-               "3. Use appropriate Abstraction Levels (PHILOSOPHY, STRATEGY, ARCHITECTURE, DESIGN, IMPLEMENTATION, SYNTAX).\n" +
-               "4. Use appropriate Semantic Domains (EXECUTION, PERSISTENCE, RESILIENCE, COMMUNICATION, STRUCTURE, VALIDATION).\n\n" +
+               "3. Use appropriate Abstraction Levels (PHILOSOPHY, STRATEGY, ARCHITECTURE, DESIGN, IMPLEMENTATION, SYNTAX, CONCEPT, INTENT, KNOWLEDGE_BASE).\n" +
+               "4. Use appropriate Semantic Domains (EXECUTION, PERSISTENCE, RESILIENCE, COMMUNICATION, STRUCTURE, VALIDATION, KNOWLEDGE, DATA, MEDIA).\n\n" +
                "OUTPUT FORMAT (JSON ONLY):\n" +
                "{\n" +
                "  \"dimensions\": [\n" +

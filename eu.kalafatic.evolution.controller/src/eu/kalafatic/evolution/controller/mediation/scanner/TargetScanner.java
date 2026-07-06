@@ -97,7 +97,18 @@ public class TargetScanner {
 
     private String getExtension(String fileName) {
         int lastDot = fileName.lastIndexOf('.');
-        return (lastDot > 0) ? fileName.substring(lastDot + 1).toLowerCase() : "unknown";
+        if (lastDot <= 0) return "unknown";
+        String ext = fileName.substring(lastDot + 1).toLowerCase();
+
+        // Categorize file types into carrier classes
+        return switch (ext) {
+            case "java", "c", "cpp", "py", "js", "ts", "html", "css", "sql", "sh", "bat" -> "source_code";
+            case "md", "txt", "pdf", "docx", "pptx", "xlsx", "csv" -> "document";
+            case "json", "xml", "yaml", "yml" -> "data";
+            case "png", "jpg", "jpeg", "webp", "gif", "svg" -> "image";
+            case "zip", "tar", "gz", "rar", "7z" -> "archive";
+            default -> ext;
+        };
     }
 
     private void detectTechnologies(TargetDescriptor target) {
