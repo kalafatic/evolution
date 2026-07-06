@@ -11,6 +11,7 @@
 package eu.kalafatic.evolution.view.application;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.InputStream;
 import java.util.List;
 
@@ -26,6 +27,8 @@ import org.eclipse.core.runtime.Platform;
 import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.util.LocalSelectionTransfer;
+import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.dnd.FileTransfer;
 import org.eclipse.swt.events.DisposeEvent;
@@ -66,6 +69,8 @@ import eu.kalafatic.evolution.controller.splashHandlers.EvolutionSplashHandler;
 import eu.kalafatic.evolution.controller.splashHandlers.ISplashUser;
 import eu.kalafatic.evolution.controller.splashHandlers.EvolutionSplashHandler.GSHf;
 import eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool;
+
+
 import eu.kalafatic.evolution.view.provider.ProjectManager;
 import eu.kalafatic.utils.constants.FCoreImageConstants;
 
@@ -200,10 +205,14 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 //				openMultiPageEditor();
 				new ProjectManager().refreshAllProjects();
 				
-				EclipseGitEvoTool.refreshGitView();
+				
+				EclipseGitEvoTool.registerRepositoriesInGitView();
 			}
 		});
 	}
+	
+	
+
 /*
 		 * (non-Javadoc)
 		 * @see org.eclipse.ui.application.WorkbenchWindowAdvisor#dispose()
