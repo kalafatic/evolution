@@ -148,7 +148,7 @@ public class McpConfigGroup extends AEvoGroup {
         if (demoStatusLabel == null || demoStatusLabel.isDisposed()) return;
         boolean running = eu.kalafatic.evolution.controller.orchestration.mcp.McpDemoServerManager.getInstance().isRunning();
         demoStatusLabel.setText(running ? "Running" : "Stopped");
-        demoStatusLabel.setForeground(running ? darkGreen : darkRed);
+        demoStatusLabel.setForeground(running ? lightGreen : lightRed);
     }
 
     public String getUrl() {
