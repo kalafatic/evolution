@@ -539,6 +539,7 @@
                             <option value="INTERACTIVE_TRANSFORMER">Interactive Transformer</option>
                             <option value="INTERACTIVE_LLM">Interactive LLM</option>
                             <option value="INTERACTIVE_LLM_EVO">Interactive LLM-EVO</option>
+                            <option value="INTERACTIVE_SELF_EVO">Interactive Self-Evo</option>
                         </select>
                     </div>
                     <div id="viz-controls" style="display: flex; gap: 5px;">
@@ -684,6 +685,7 @@
     <script src="/forge-viz/viz-training.js"></script>
     <script src="/forge-viz/viz-evolution.js"></script>
     <script src="/forge-viz/viz-walkthrough.js"></script>
+    <script src="/forge-viz/viz-self-evo.js"></script>
     <script src="/forge-viz/viz-interactive-demos.js"></script>
     <script>
         let serverPort = 48080;
@@ -1462,6 +1464,9 @@
                 } else if (currentViz === 'INTERACTIVE_LLM_EVO') {
                     renderInteractiveLlmEvoDemo();
                     return;
+                } else if (currentViz === 'INTERACTIVE_SELF_EVO') {
+                    renderSelfEvoViz({ status: 'IDLE', progress: 0 });
+                    return;
                 }
                 return;
             }
@@ -1518,6 +1523,11 @@
                     renderInteractiveLlmDemo();
                 } else if (currentViz === 'INTERACTIVE_LLM_EVO') {
                     renderInteractiveLlmEvoDemo();
+                } else if (currentViz === 'INTERACTIVE_SELF_EVO') {
+                    // Redirect to real SELF_EVO if session exists
+                    currentViz = 'SELF_EVO';
+                    document.getElementById('viz-selector').value = 'SELF_EVO';
+                    refreshViz();
                 }
             } catch (e) {
                 if (isDemo) {
@@ -1566,7 +1576,35 @@
             if (window.renderEvolutionViz) window.renderEvolutionViz(snapshots);
         }
 
-        function setInteractiveDemo(type) {
+        async function setInteractiveDemo(type) {
+            if (type === 'SELF_EVO') {
+                // If there is already a SELF_EVO session, select it and show its live viz
+                let session = sessions.find(s => s.modelType === 'SELF_EVO');
+                if (session) {
+                    selectSession(session.id);
+                    currentViz = 'SELF_EVO';
+                    document.getElementById('viz-selector').value = 'SELF_EVO';
+                    onVizChange();
+                    return;
+                } else {
+                    // Create one
+                    log("Creating new Self-Evo session for interactive demo...");
+                    try {
+                        const res = await fetch(getBaseUrl() + `/forge/session?runtime=SWT`, {
+                            method: 'POST',
+                            body: JSON.stringify({ name: "Self-Evo Live", modelType: 'SELF_EVO' })
+                        });
+                        const data = await res.json();
+                        await loadSessions();
+                        selectSession(data.id);
+                        currentViz = 'SELF_EVO';
+                        document.getElementById('viz-selector').value = 'SELF_EVO';
+                        onVizChange();
+                        return;
+                    } catch (e) { log(`Error: ${e.message}`); }
+                }
+            }
+
             currentViz = 'INTERACTIVE_' + type;
             document.getElementById('viz-selector').value = currentViz;
             onVizChange();
@@ -1758,6 +1796,15 @@
         }
 
         async function startDemoAnimation() {
+            const session = sessions.find(s => s.id === activeSessionId);
+            if (session && session.modelType === 'SELF_EVO') {
+                log("Self-Evo Demo: Activating pipeline visualization...");
+                currentViz = 'SELF_EVO';
+                document.getElementById('viz-selector').value = 'SELF_EVO';
+                onVizChange();
+                return;
+            }
+
             log("Starting demo flow simulation...");
             const delay = 2000;
 
