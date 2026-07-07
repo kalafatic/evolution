@@ -192,9 +192,9 @@ public class TaskStackGroup extends AEvoGroup {
 
     private void createColumns() {
         // Order Column
-        TreeViewerColumn orderCol = new TreeViewerColumn(treeViewer, SWT.CENTER);
+        TreeViewerColumn orderCol = new TreeViewerColumn(treeViewer, SWT.RIGHT);
         orderCol.getColumn().setText("#");
-        orderCol.getColumn().setWidth(40);
+        orderCol.getColumn().setWidth(50);
         orderCol.setLabelProvider(new ColumnLabelProvider() {
             @Override
             public String getText(Object element) {
@@ -219,7 +219,7 @@ public class TaskStackGroup extends AEvoGroup {
         });
 
         // Run Column
-        TreeViewerColumn runCol = new TreeViewerColumn(treeViewer, SWT.CENTER);
+        TreeViewerColumn runCol = new TreeViewerColumn(treeViewer, SWT.RIGHT);
         runCol.getColumn().setText("Run");
         runCol.getColumn().setWidth(200);
         runCol.setLabelProvider(new ColumnLabelProvider() {
@@ -232,7 +232,7 @@ public class TaskStackGroup extends AEvoGroup {
         });
 
         // Edit Column
-        TreeViewerColumn editCol = new TreeViewerColumn(treeViewer, SWT.CENTER);
+        TreeViewerColumn editCol = new TreeViewerColumn(treeViewer, SWT.RIGHT);
         editCol.getColumn().setText("Edit");
         editCol.getColumn().setWidth(40);
         editCol.setLabelProvider(new ColumnLabelProvider() {
@@ -243,7 +243,7 @@ public class TaskStackGroup extends AEvoGroup {
         });
         
         // Prompt Column
-        TreeViewerColumn promptCol = new TreeViewerColumn(treeViewer, SWT.LEFT);
+        TreeViewerColumn promptCol = new TreeViewerColumn(treeViewer, SWT.RIGHT);
         promptCol.getColumn().setText("Prompt");
         promptCol.getColumn().setWidth(200);
         promptCol.setLabelProvider(new ColumnLabelProvider() {
@@ -257,7 +257,7 @@ public class TaskStackGroup extends AEvoGroup {
         
         
         // Attachments Column
-        TreeViewerColumn attachmentsCol = new TreeViewerColumn(treeViewer, SWT.LEFT);
+        TreeViewerColumn attachmentsCol = new TreeViewerColumn(treeViewer, SWT.RIGHT);
         attachmentsCol.getColumn().setText("Attachments");
         attachmentsCol.getColumn().setWidth(100);
         attachmentsCol.setLabelProvider(new ColumnLabelProvider() {
@@ -286,7 +286,7 @@ public class TaskStackGroup extends AEvoGroup {
         */
 
         // Date Column
-        TreeViewerColumn dateCol = new TreeViewerColumn(treeViewer, SWT.LEFT);
+        TreeViewerColumn dateCol = new TreeViewerColumn(treeViewer, SWT.RIGHT);
         dateCol.getColumn().setText("Date");
         dateCol.getColumn().setWidth(100);
         dateCol.setLabelProvider(new ColumnLabelProvider() {
@@ -324,7 +324,7 @@ public class TaskStackGroup extends AEvoGroup {
 
         
         // Type Column
-        TreeViewerColumn typeCol = new TreeViewerColumn(treeViewer, SWT.LEFT);
+        TreeViewerColumn typeCol = new TreeViewerColumn(treeViewer, SWT.RIGHT);
         typeCol.getColumn().setText("Type");
         typeCol.getColumn().setWidth(80);
         typeCol.setLabelProvider(new ColumnLabelProvider() {
@@ -337,7 +337,7 @@ public class TaskStackGroup extends AEvoGroup {
         typeCol.setEditingSupport(new TaskAttributeEditingSupport(treeViewer, "type"));
 
         // Mode Column
-        TreeViewerColumn modeCol = new TreeViewerColumn(treeViewer, SWT.LEFT);
+        TreeViewerColumn modeCol = new TreeViewerColumn(treeViewer, SWT.RIGHT);
         modeCol.getColumn().setText("Mode");
         modeCol.getColumn().setWidth(80);
         modeCol.setLabelProvider(new ColumnLabelProvider() {
@@ -375,7 +375,7 @@ public class TaskStackGroup extends AEvoGroup {
         });
 
         // Iterative Column
-        TreeViewerColumn iterativeCol = new TreeViewerColumn(treeViewer, SWT.CENTER);
+        TreeViewerColumn iterativeCol = new TreeViewerColumn(treeViewer, SWT.RIGHT);
         iterativeCol.getColumn().setText("Iterative");
         iterativeCol.getColumn().setWidth(70);
         iterativeCol.setLabelProvider(new ColumnLabelProvider() {
@@ -393,7 +393,7 @@ public class TaskStackGroup extends AEvoGroup {
         });
 
         // Self-Dev Column
-        TreeViewerColumn selfDevCol = new TreeViewerColumn(treeViewer, SWT.CENTER);
+        TreeViewerColumn selfDevCol = new TreeViewerColumn(treeViewer, SWT.RIGHT);
         selfDevCol.getColumn().setText("Self-Dev");
         selfDevCol.getColumn().setWidth(70);
         selfDevCol.setLabelProvider(new ColumnLabelProvider() {
@@ -411,7 +411,7 @@ public class TaskStackGroup extends AEvoGroup {
         });
 
         // Darwin Column
-        TreeViewerColumn darwinCol = new TreeViewerColumn(treeViewer, SWT.CENTER);
+        TreeViewerColumn darwinCol = new TreeViewerColumn(treeViewer, SWT.RIGHT);
         darwinCol.getColumn().setText("Darwin");
         darwinCol.getColumn().setWidth(70);
         darwinCol.setLabelProvider(new ColumnLabelProvider() {
@@ -429,7 +429,7 @@ public class TaskStackGroup extends AEvoGroup {
         });
 
         // Auto-Git Column
-        TreeViewerColumn autoGitCol = new TreeViewerColumn(treeViewer, SWT.CENTER);
+        TreeViewerColumn autoGitCol = new TreeViewerColumn(treeViewer, SWT.RIGHT);
         autoGitCol.getColumn().setText("Auto-Git");
         autoGitCol.getColumn().setWidth(70);
         autoGitCol.setLabelProvider(new ColumnLabelProvider() {
@@ -447,7 +447,7 @@ public class TaskStackGroup extends AEvoGroup {
         });
 
         // Step Mode Column
-        TreeViewerColumn stepModeCol = new TreeViewerColumn(treeViewer, SWT.CENTER);
+        TreeViewerColumn stepModeCol = new TreeViewerColumn(treeViewer, SWT.RIGHT);
         stepModeCol.getColumn().setText("Step Mode");
         stepModeCol.getColumn().setWidth(70);
         stepModeCol.setLabelProvider(new ColumnLabelProvider() {
@@ -465,7 +465,7 @@ public class TaskStackGroup extends AEvoGroup {
         });
 
         // Max Iterations Column
-        TreeViewerColumn maxIterCol = new TreeViewerColumn(treeViewer, SWT.CENTER);
+        TreeViewerColumn maxIterCol = new TreeViewerColumn(treeViewer, SWT.RIGHT);
         maxIterCol.getColumn().setText("Max Iter");
         maxIterCol.getColumn().setWidth(70);
         maxIterCol.setLabelProvider(new ColumnLabelProvider() {
@@ -485,7 +485,7 @@ public class TaskStackGroup extends AEvoGroup {
         });
 
         // Auto-Approve Column
-        TreeViewerColumn autoApproveCol = new TreeViewerColumn(treeViewer, SWT.CENTER);
+        TreeViewerColumn autoApproveCol = new TreeViewerColumn(treeViewer, SWT.RIGHT);
         autoApproveCol.getColumn().setText("Auto-Approve");
         autoApproveCol.getColumn().setWidth(90);
         autoApproveCol.setLabelProvider(new ColumnLabelProvider() {
@@ -503,7 +503,7 @@ public class TaskStackGroup extends AEvoGroup {
         });
 
         // State Column
-        TreeViewerColumn stateCol = new TreeViewerColumn(treeViewer, SWT.LEFT);
+        TreeViewerColumn stateCol = new TreeViewerColumn(treeViewer, SWT.RIGHT);
         stateCol.getColumn().setText("State");
         stateCol.getColumn().setWidth(50);
         stateCol.setLabelProvider(new ColumnLabelProvider() {
@@ -518,7 +518,7 @@ public class TaskStackGroup extends AEvoGroup {
         });
 
         // Result Column
-        TreeViewerColumn resultCol = new TreeViewerColumn(treeViewer, SWT.LEFT);
+        TreeViewerColumn resultCol = new TreeViewerColumn(treeViewer, SWT.RIGHT);
         resultCol.getColumn().setText("Result");
         resultCol.getColumn().setWidth(200);
         resultCol.setLabelProvider(new ColumnLabelProvider() {
