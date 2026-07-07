@@ -920,7 +920,8 @@
             const session = sessions.find(s => s.id === activeSessionId);
             const state = (session && session.lifecycleState) ? session.lifecycleState : 'CREATED';
 
-            document.getElementById('train-btn').disabled = !hasSession || (state === 'FROZEN' || state === 'COMPILING');
+            const isInteractiveDemo = currentViz.startsWith('INTERACTIVE_');
+            document.getElementById('train-btn').disabled = (!hasSession && !isInteractiveDemo) || (state === 'FROZEN' || state === 'COMPILING');
             document.getElementById('stop-btn').disabled = !hasSession || !isTraining;
 
             if (document.getElementById('json-editor-btn')) document.getElementById('json-editor-btn').disabled = !hasSession;
@@ -1313,10 +1314,28 @@
         }
 
         async function startTraining() {
+            if (currentViz === 'INTERACTIVE_LLM_EVO') {
+                if (window.runLlmEvoLifecycle) window.runLlmEvoLifecycle();
+                return;
+            }
+            if (currentViz === 'INTERACTIVE_SELF_EVO') {
+                if (window.runSelfEvoSimulation) window.runSelfEvoSimulation();
+                return;
+            }
+
             if (!activeSessionId) {
                 log("No active session to train.");
                 return;
             }
+
+            const session = sessions.find(s => s.id === activeSessionId);
+            if (session && session.modelType === 'SELF_EVO') {
+                if (window.startForging) {
+                    window.startForging();
+                    return;
+                }
+            }
+
             isTraining = true;
             document.getElementById('train-btn').disabled = true;
             document.getElementById('stop-btn').disabled = false;
@@ -1331,7 +1350,6 @@
             if (window.forgeAction) forgeAction("UPDATE_STATUS", JSON.stringify({ sessionId: activeSessionId, status: "TRAINING" }));
 
             // Update session status in local state for immediate guidance refresh
-            const session = sessions.find(s => s.id === activeSessionId);
             if (session) session.status = 'TRAINING';
             updateGuidance();
             await fetchModel(activeSessionId);
@@ -1377,6 +1395,7 @@
             currentViz = document.getElementById('viz-selector').value;
             updateVizControls();
             refreshViz();
+            updateButtonState();
             persistUiState('selectedVisualization', currentViz);
         }
 

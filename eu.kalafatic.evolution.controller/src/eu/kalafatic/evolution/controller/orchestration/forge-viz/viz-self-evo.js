@@ -205,14 +205,17 @@
         const stages = ['scan', 'enhance', 'train', 'export'];
         let i = 0;
 
-        selfEvoInterval = setInterval(() => {
+        const nextStage = () => {
             if (i >= stages.length) {
                 clearInterval(selfEvoInterval);
                 return;
             }
             showSelfEvoStage(stages[i]);
             i++;
-        }, 2500);
+        };
+
+        nextStage();
+        selfEvoInterval = setInterval(nextStage, 2500);
     };
 
     window.resetSelfEvoSimulation = function() {

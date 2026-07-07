@@ -299,14 +299,17 @@ window.runLlmEvoLifecycle = async function() {
     const stages = ['data', 'tokenizer', 'transformer', 'export'];
     let i = 0;
 
-    evoInterval = setInterval(() => {
+    const nextStage = () => {
         if (i >= stages.length) {
             clearInterval(evoInterval);
             return;
         }
         showEvoStage(stages[i]);
         i++;
-    }, 2000);
+    };
+
+    nextStage();
+    evoInterval = setInterval(nextStage, 2000);
 };
 
 window.resetLlmEvoLifecycle = function() {
