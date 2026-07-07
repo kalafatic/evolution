@@ -765,6 +765,7 @@
             return '';
         }
 
+        let isAutoCreating = false;
         async function loadSessions() {
             const url = getBaseUrl() + `/forge/sessions?runtime=SWT`;
             try {
@@ -774,7 +775,7 @@
                 renderSessionList();
                 if (sessions.length > 0 && !activeSessionId) {
                     selectSession(sessions[0].id);
-                } else if (sessions.length === 0) {
+                } else if (sessions.length === 0 && !isAutoCreating) {
                     autoCreateSession();
                 }
             } catch (e) {
@@ -783,6 +784,8 @@
         }
 
         async function autoCreateSession() {
+            if (isAutoCreating) return;
+            isAutoCreating = true;
             log("No sessions found. Auto-creating Genesis Model...");
             try {
                 const res = await fetch(getBaseUrl() + `/forge/session?runtime=SWT`, {
@@ -791,8 +794,12 @@
                 });
                 const data = await res.json();
                 await loadSessions();
-                selectSession(data.id);
-            } catch (e) { log(`Auto-create error: ${e.message}`); }
+                if (data && data.id) selectSession(data.id);
+            } catch (e) {
+                log(`Auto-create error: ${e.message}`);
+            } finally {
+                isAutoCreating = false;
+            }
         }
 
         function renderSessionList() {
