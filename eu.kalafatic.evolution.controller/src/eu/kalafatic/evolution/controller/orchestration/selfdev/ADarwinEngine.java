@@ -1645,7 +1645,7 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 				return res;
 			}
 
-			if (profile.shouldPerformRealityCheck()) {
+			if (profile.shouldPerformRealityCheck() && manager.getGitManager().isGitRepository()) {
 				DeltaAnalysis reality = executionEngine
 						.analyzeWorkspace(baseCommit, context);
 				context.log("[DARWIN] Reality Check: Winner variant applied. Analysis: " + reality.toString());
@@ -1671,6 +1671,10 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 				if (!isSignificant) {
 					context.log("[DARWIN] Reality Check WARNING: Winner variant resulted in NO physical changes.");
 				}
+				context.getOrchestrationState().getMetadata().put("lastRealityCheckSignificant", isSignificant);
+			} else if (profile.shouldPerformRealityCheck()) {
+				// Non-git reality check fallback: if we have actions, assume significant
+				boolean isSignificant = selectedVariant != null && !selectedVariant.getActions().isEmpty();
 				context.getOrchestrationState().getMetadata().put("lastRealityCheckSignificant", isSignificant);
 			}
 
@@ -1944,31 +1948,33 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 				manager.checkStep(task.getId(), "GIT_STAGING", "Staging changes for task: " + task.getName());
 
 				try {
-					eu.kalafatic.evolution.controller.tools.GitTool gitTool = new eu.kalafatic.evolution.controller.tools.GitTool();
-					String diffCommand = (baseCommit != null) ? "diff " + baseCommit + " HEAD" : "diff HEAD";
+					if (manager.getGitManager().isGitRepository()) {
+						eu.kalafatic.evolution.controller.tools.GitTool gitTool = new eu.kalafatic.evolution.controller.tools.GitTool();
+						String diffCommand = (baseCommit != null) ? "diff " + baseCommit + " HEAD" : "diff HEAD";
 
-					String diff = gitTool.execute("diff HEAD", tempDir, variantContext);
+						String diff = gitTool.execute("diff HEAD", tempDir, variantContext);
 
-					RuntimeEvent event = new RuntimeEvent(
-							eu.kalafatic.evolution.controller.workflow.RuntimeEventType.TOOL_EXECUTION_SUCCEEDED,
-							"DarwinEngine", "GitTool", diff);
-					variantExecContext.recordEvent(event);
+						RuntimeEvent event = new RuntimeEvent(
+								eu.kalafatic.evolution.controller.workflow.RuntimeEventType.TOOL_EXECUTION_SUCCEEDED,
+								"DarwinEngine", "GitTool", diff);
+						variantExecContext.recordEvent(event);
 
-					eu.kalafatic.evolution.controller.supervision.ActivationResolver resolver = new eu.kalafatic.evolution.controller.supervision.ActivationResolver(
-							context.getSemanticWorkspace().getTrajectoryMemory());
-					eu.kalafatic.evolution.controller.supervision.DecisionSnapshot intermediateDecision = resolver
-							.resolve(variantContext.getOrchestrationState().getCurrentIterationId(), List.of(variant),
-									getSessionContainer().getSignalBus().getSignalsForVariant(variant.getId()),
-									variantContext);
+						eu.kalafatic.evolution.controller.supervision.ActivationResolver resolver = new eu.kalafatic.evolution.controller.supervision.ActivationResolver(
+								context.getSemanticWorkspace().getTrajectoryMemory());
+						eu.kalafatic.evolution.controller.supervision.DecisionSnapshot intermediateDecision = resolver
+								.resolve(variantContext.getOrchestrationState().getCurrentIterationId(), List.of(variant),
+										getSessionContainer().getSignalBus().getSignalsForVariant(variant.getId()),
+										variantContext);
 
-					Trajectory t = context.getSemanticWorkspace().getTrajectoryMemory()
-							.getTrajectory(variant.getTrajectoryId());
-					if (t != null) {
-						double currentFitness = intermediateDecision.getAggregatedScores().getOrDefault(variant.getId(),
-								0.5);
-						t.setFitnessScore(currentFitness);
-						t.getFitnessHistory().add(currentFitness);
-						t.setStabilityScore(intermediateDecision.getAvgLongTermStability());
+						Trajectory t = context.getSemanticWorkspace().getTrajectoryMemory()
+								.getTrajectory(variant.getTrajectoryId());
+						if (t != null) {
+							double currentFitness = intermediateDecision.getAggregatedScores().getOrDefault(variant.getId(),
+									0.5);
+							t.setFitnessScore(currentFitness);
+							t.getFitnessHistory().add(currentFitness);
+							t.setStabilityScore(intermediateDecision.getAvgLongTermStability());
+						}
 					}
 				} catch (Exception e) {
 					context.log("[DARWIN] Error during dynamic re-evaluation for variant " + variant.getId() + ": "
@@ -1977,8 +1983,10 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 			}
 
 			if (success) {
-				variantManager.getGitManager().commit("Darwin Variant Execution: " + variant.getStrategy(),
-						variantContext);
+				if (variantManager.getGitManager().isGitRepository()) {
+					variantManager.getGitManager().commit("Darwin Variant Execution: " + variant.getStrategy(),
+							variantContext);
+				}
 				manager.updateVariantLifecycle(List.of(variant), variant.getId(),
 						BranchVariant.ActivationState.VERIFIED, context);
 			} else {
@@ -2068,14 +2076,16 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 				}
 			}
 
-			eu.kalafatic.evolution.controller.tools.GitTool deltaTool = new eu.kalafatic.evolution.controller.tools.GitTool();
-			try {
-				// Handle null baseCommit (e.g., first commit or chat)
-				String diffCommand = (baseCommit != null && !baseCommit.equals("null")) ? "diff " + baseCommit + " HEAD"
-						: "diff HEAD";
-				variant.setMutationTrace(deltaTool.execute(diffCommand, tempDir, variantContext));
-			} catch (Exception e) {
-				context.log("[DARWIN] Failed to capture mutation trace: " + e.getMessage());
+			if (manager.getGitManager().isGitRepository()) {
+				eu.kalafatic.evolution.controller.tools.GitTool deltaTool = new eu.kalafatic.evolution.controller.tools.GitTool();
+				try {
+					// Handle null baseCommit (e.g., first commit or chat)
+					String diffCommand = (baseCommit != null && !baseCommit.equals("null")) ? "diff " + baseCommit + " HEAD"
+							: "diff HEAD";
+					variant.setMutationTrace(deltaTool.execute(diffCommand, tempDir, variantContext));
+				} catch (Exception e) {
+					context.log("[DARWIN] Failed to capture mutation trace: " + e.getMessage());
+				}
 			}
 			variant.setScore(fitnessEngine.calculateScore(result));
 
