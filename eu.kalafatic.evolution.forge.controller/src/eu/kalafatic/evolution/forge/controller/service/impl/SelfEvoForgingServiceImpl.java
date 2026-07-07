@@ -60,10 +60,13 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
 
                 updateStats(sessionId, new ForgingStats("EXPORT_GGUF", 90, 0, 0, samples.size(), 0.0, "OLLAMA"));
                 OllamaService ollama = OllamaManager.getInstance().getService("http://localhost:11434");
+
+                // For 'SELF_EVO' interactive demo consistency, ensure we register the model as 'evo'
+                String targetName = "evo";
                 Path modelfilePath = exportPath.resolve("Modelfile");
                 if (Files.exists(modelfilePath)) {
                     String modelfileContent = Files.readString(modelfilePath);
-                    ollama.createModel(modelName, modelfileContent);
+                    ollama.createModel(targetName, modelfileContent);
                 }
                 
                 updateStats(sessionId, new ForgingStats("COMPLETE", 100, 0, 0, samples.size(), 0.0, "DONE"));
