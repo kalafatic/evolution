@@ -436,7 +436,16 @@
         }
 
     </style>
-    <script src="/auth-integration.js"></script>
+    <link rel="stylesheet" href="creatic.css">
+    <script src="creatic.js"></script>
+    <script src="auth-integration.js"></script>
+    <script src="forge-viz/viz-architecture.js"></script>
+    <script src="forge-viz/viz-dataset.js"></script>
+    <script src="forge-viz/viz-training.js"></script>
+    <script src="forge-viz/viz-evolution.js"></script>
+    <script src="forge-viz/viz-walkthrough.js"></script>
+    <script src="forge-viz/viz-self-evo.js"></script>
+    <script src="forge-viz/viz-interactive-demos.js"></script>
 </head>
 <body>
     <div id="layout">
@@ -700,14 +709,6 @@
         </div>
     </div>
 
-    <link rel="stylesheet" href="creatic.css">
-    <script src="creatic.js"></script>
-    <script src="forge-viz/viz-architecture.js"></script>
-    <script src="forge-viz/viz-dataset.js"></script>
-    <script src="forge-viz/viz-training.js"></script>
-    <script src="forge-viz/viz-evolution.js"></script>
-    <script src="forge-viz/viz-walkthrough.js"></script>
-    <script src="forge-viz/viz-interactive-demos.js"></script>
     <script>
         let serverPort = 48080;
         let activeSessionId = null;
@@ -1482,6 +1483,12 @@
                 } else if (currentViz === 'INTERACTIVE_LLM') {
                     renderInteractiveLlmDemo();
                     return;
+                } else if (currentViz === 'INTERACTIVE_LLM_EVO') {
+                    renderInteractiveLlmEvoDemo();
+                    return;
+                } else if (currentViz === 'INTERACTIVE_SELF_EVO') {
+                    renderInteractiveSelfEvoDemo();
+                    return;
                 }
                 return;
             }
@@ -1602,27 +1609,8 @@
                     selectSession(session.id);
                     currentViz = 'SELF_EVO';
                     document.getElementById('viz-selector').value = 'SELF_EVO';
-                } else {
-                    // Try to create one, but don't block the interactive simulation view
-                    log("Creating new Self-Evo session for background forging...");
-                    try {
-                        const res = await fetch(getBaseUrl() + `/forge/session?runtime=SWT`, {
-                            method: 'POST',
-                            body: JSON.stringify({ name: "Self-Evo Live", modelType: 'SELF_EVO' })
-                        });
-                        if (res.ok) {
-                            const data = await res.json();
-                            await loadSessions();
-                            if (data && data.id) {
-                                selectSession(data.id);
-                                currentViz = 'SELF_EVO';
-                                document.getElementById('viz-selector').value = 'SELF_EVO';
-                            }
-                        }
-                    } catch (e) {
-                        log(`Note: Background session creation for Self-Evo failed (${e.message}). Using simulation mode.`);
-                    }
                 }
+                // If no session, we stay in INTERACTIVE_SELF_EVO mode (simulation)
             }
 
             onVizChange();

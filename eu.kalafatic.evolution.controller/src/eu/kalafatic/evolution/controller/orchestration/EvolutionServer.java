@@ -128,23 +128,24 @@ public class EvolutionServer extends NanoHTTPD {
         if ("/login.html".equals(uri) || uri.startsWith("/css/") || uri.startsWith("/js/")) {
             return serveExternalResource(uri);
         }
-        if ("/auth-integration.js".equals(uri)) {
+        if (uri.endsWith("/auth-integration.js")) {
             return handleGetResource("/auth-integration.js", "application/javascript");
         }
-        if (uri.startsWith("/forge-viz/")) {
-            String fileName = uri.substring("/forge-viz/".length());
+        if (uri.contains("/forge-viz/")) {
+            int idx = uri.indexOf("/forge-viz/");
+            String fileName = uri.substring(idx + "/forge-viz/".length());
             return handleGetResource("forge-viz/" + fileName, "application/javascript");
         }
-        if ("/creatic.js".equals(uri)) {
+        if (uri.endsWith("/creatic.js")) {
             return handleGetResource("/creatic.js", "application/javascript");
         }
-        if ("/creatic.css".equals(uri)) {
+        if (uri.endsWith("/creatic.css")) {
             return handleGetResource("/creatic.css", "text/css");
         }
-        if ("/shared.css".equals(uri)) {
+        if (uri.endsWith("/shared.css")) {
             return handleGetResource("/shared.css", "text/css");
         }
-        if ("/architecture.css".equals(uri)) {
+        if (uri.endsWith("/architecture.css")) {
             return handleGetResource("/architecture.css", "text/css");
         }
 
