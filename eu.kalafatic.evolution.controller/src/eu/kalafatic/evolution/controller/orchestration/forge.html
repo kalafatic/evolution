@@ -774,10 +774,25 @@
                 renderSessionList();
                 if (sessions.length > 0 && !activeSessionId) {
                     selectSession(sessions[0].id);
+                } else if (sessions.length === 0) {
+                    autoCreateSession();
                 }
             } catch (e) {
                 log(`Error loading sessions from ${url}: ${e.message}`);
             }
+        }
+
+        async function autoCreateSession() {
+            log("No sessions found. Auto-creating Genesis Model...");
+            try {
+                const res = await fetch(getBaseUrl() + `/forge/session?runtime=SWT`, {
+                    method: 'POST',
+                    body: JSON.stringify({ name: "Genesis Model", modelType: 'MLP' })
+                });
+                const data = await res.json();
+                await loadSessions();
+                selectSession(data.id);
+            } catch (e) { log(`Auto-create error: ${e.message}`); }
         }
 
         function renderSessionList() {
