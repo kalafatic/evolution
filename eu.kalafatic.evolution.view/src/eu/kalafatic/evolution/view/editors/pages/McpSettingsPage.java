@@ -41,7 +41,10 @@ public class McpSettingsPage extends AEvoPage {
     }
 
     public void testConnection(String url) {
-        if (url.isEmpty()) { MessageBox mb = new MessageBox(getShell(), SWT.ICON_ERROR | SWT.OK); mb.setText("Error"); mb.setMessage("MCP Server URL cannot be empty."); mb.open(); return; }
+        if (url.isEmpty()) {
+            eu.kalafatic.evolution.controller.log.Log.log("MCP Server URL cannot be empty.");
+            return;
+        }
         new Thread(() -> {
             try {
                 McpClient client = new McpClient(url); String response = client.initialize();
@@ -50,7 +53,7 @@ public class McpSettingsPage extends AEvoPage {
             } catch (Exception ex) {
                 String errorMsg = ex.getMessage() != null ? ex.getMessage() : ex.toString();
                 configGroup.setStatus(false, "Error: " + errorMsg);
-                Display.getDefault().asyncExec(() -> { if (isDisposed()) return; MessageBox mb = new MessageBox(getShell(), SWT.ICON_ERROR | SWT.OK); mb.setText("Connection Failed"); mb.setMessage("Error connecting to MCP server: " + errorMsg); mb.open(); });
+                eu.kalafatic.evolution.controller.log.Log.log(this, ex);
             }
         }).start();
     }
@@ -71,17 +74,17 @@ public class McpSettingsPage extends AEvoPage {
                 Display.getDefault().asyncExec(() -> {
                     if (isDisposed()) return;
                     configGroup.updateDemoStatus();
-                    MessageBox mb = new MessageBox(getShell(), SWT.ICON_ERROR | SWT.OK);
-                    mb.setText("Error");
-                    mb.setMessage("Failed to start MCP Demo Server: " + (ex.getMessage() != null ? ex.getMessage() : ex.toString()));
-                    mb.open();
                 });
+                eu.kalafatic.evolution.controller.log.Log.log(this, ex);
             }
         }).start();
     }
 
     public void openRequestDialog(String url) {
-        if (url.isEmpty()) { MessageBox mb = new MessageBox(getShell(), SWT.ICON_ERROR | SWT.OK); mb.setText("Error"); mb.setMessage("MCP Server URL cannot be empty."); mb.open(); return; }
+        if (url.isEmpty()) {
+            eu.kalafatic.evolution.controller.log.Log.log("MCP Server URL cannot be empty.");
+            return;
+        }
         McpRequestDialog dialog = new McpRequestDialog(getShell());
         if (dialog.open() == org.eclipse.jface.window.Window.OK) {
             String method = dialog.getMethod();
@@ -109,13 +112,7 @@ public class McpSettingsPage extends AEvoPage {
                     mb.open();
                 });
             } catch (Exception ex) {
-                Display.getDefault().asyncExec(() -> {
-                    if (isDisposed()) return;
-                    MessageBox mb = new MessageBox(getShell(), SWT.ICON_ERROR | SWT.OK);
-                    mb.setText("Request Failed");
-                    mb.setMessage("Error sending request: " + (ex.getMessage() != null ? ex.getMessage() : ex.toString()));
-                    mb.open();
-                });
+                eu.kalafatic.evolution.controller.log.Log.log(this, ex);
             }
         }).start();
     }
@@ -162,26 +159,16 @@ public class McpSettingsPage extends AEvoPage {
         }).start();
     }
 
-    private long lastErrorTime = 0;
     private void handleRefreshError(String prefix, Exception ex) {
         if (isDisposed()) return;
-        long now = System.currentTimeMillis();
         String message = prefix + ": " + (ex.getMessage() != null ? ex.getMessage() : ex.toString());
         if (ex instanceof java.net.ConnectException || ex.getCause() instanceof java.net.ConnectException) {
             message = prefix + ": Connection refused. Is the MCP server running at " + configGroup.getUrl() + "?";
         }
 
         final String finalMsg = message;
-        if (now - lastErrorTime > 2000) { // Throttling error dialogs
-            lastErrorTime = now;
-            Display.getDefault().asyncExec(() -> {
-                if (isDisposed()) return;
-                MessageBox mb = new MessageBox(getShell(), SWT.ICON_ERROR | SWT.OK);
-                mb.setText("MCP Error");
-                mb.setMessage(finalMsg);
-                mb.open();
-            });
-        }
+        eu.kalafatic.evolution.controller.log.Log.log(this, ex);
+        eu.kalafatic.evolution.controller.log.Log.log(finalMsg);
     }
 
     @Override
