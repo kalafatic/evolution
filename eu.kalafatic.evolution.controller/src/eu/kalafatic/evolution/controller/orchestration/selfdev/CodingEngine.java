@@ -279,7 +279,7 @@ public class CodingEngine extends ADarwinEngine {
 
 			// 2. ANALYZING stage
 			iterationManager.transition(SystemState.ANALYZING, context);
-			if (iterationManager.getGitManager().isGitRepository() || context.getMetadata().containsKey("testMode")) {
+			if (iterationManager.getGitManager().isGitRepository() || context.getMetadata().containsKey("testMode") || isCodingProcess()) {
 				iterationManager.getGitManager().ensureInitialCommit();
 
 				PromptInstructions instructions = (context.getOrchestrator() != null

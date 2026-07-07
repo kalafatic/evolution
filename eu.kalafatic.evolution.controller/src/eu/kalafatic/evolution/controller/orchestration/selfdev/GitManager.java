@@ -184,6 +184,7 @@ public class GitManager {
     }
 
     public void commit(String message, TaskContext context) throws Exception {
+        if (!isGitRepository()) return;
         gitTool.execute("add .", root, context);
         // Metadata is automatically injected by GitTool for 'commit' commands
         gitTool.execute("commit --allow-empty -m \"" + message + "\"", root, context);
@@ -206,12 +207,14 @@ public class GitManager {
             context.getKernelContext().getEventBus().publish(new RuntimeEvent(RuntimeEventType.RECOVERY_TRIGGERED, context.getSessionId(), "GitManager", "Git Rollback"));
         }
 
-        // Hardening: reset --hard HEAD clears uncommitted dirty state, clean -fd removes untracked pollution.
-        gitTool.execute("reset --hard HEAD", root, null);
-        try {
-            gitTool.execute("clean -fd", root, null);
-        } catch (Exception e) {
-            // Silently ignore clean failures if git is in a weird state
+        if (isGitRepository()) {
+            // Hardening: reset --hard HEAD clears uncommitted dirty state, clean -fd removes untracked pollution.
+            gitTool.execute("reset --hard HEAD", root, null);
+            try {
+                gitTool.execute("clean -fd", root, null);
+            } catch (Exception e) {
+                // Silently ignore clean failures if git is in a weird state
+            }
         }
     }
 
