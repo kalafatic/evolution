@@ -42,6 +42,11 @@ public class ForgeSessionManager {
         }
     }
 
+    private Orchestrator getOrchestratorModel() {
+        if (orchestrator != null) return orchestrator;
+        return OrchestratorServiceImpl.getInstance().getOrchestrator();
+    }
+
     private void seedDefaultSessions() {
         // 0. Self-Evo Forging
         ForgeSession s0 = createSession("Self-Evo Forging", "SELF_EVO");
@@ -65,8 +70,9 @@ public class ForgeSessionManager {
     }
 
     public List<ForgeSession> getSessions() {
-        if (orchestrator == null) return new ArrayList<>();
-        return orchestrator.getForgeSessions();
+        Orchestrator orch = getOrchestratorModel();
+        if (orch == null) return new ArrayList<>();
+        return orch.getForgeSessions();
     }
 
     public ForgeSession createSession(String name, String modelType) {
@@ -74,7 +80,8 @@ public class ForgeSessionManager {
     }
 
     public ForgeSession createSession(String name, String modelType, boolean isDemo) {
-        if (orchestrator == null) return null;
+        Orchestrator orch = getOrchestratorModel();
+        if (orch == null) return null;
 
         ForgeSession session = OrchestrationFactory.eINSTANCE.createForgeSession();
 
@@ -97,7 +104,7 @@ public class ForgeSessionManager {
         state.setHyperparameters("{}");
         session.setModelState(state);
 
-        orchestrator.getForgeSessions().add(session);
+        orch.getForgeSessions().add(session);
 
         if (isDemo) {
             updateUiState(session.getSessionId(), "isDemo", true);
@@ -137,10 +144,11 @@ public class ForgeSessionManager {
     }
 
     public boolean deleteSession(String sessionId) {
-        if (orchestrator == null) return false;
+        Orchestrator orch = getOrchestratorModel();
+        if (orch == null) return false;
         ForgeSession toRemove = findSession(sessionId);
         if (toRemove != null) {
-            orchestrator.getForgeSessions().remove(toRemove);
+            orch.getForgeSessions().remove(toRemove);
             publishEvent(toRemove, RuntimeEventType.VIEW_UPDATED, "SESSION_DELETED");
             return true;
         }
@@ -161,8 +169,9 @@ public class ForgeSessionManager {
     }
 
     public ForgeSession findSession(String sessionId) {
-        if (orchestrator == null) return null;
-        return orchestrator.getForgeSessions().stream()
+        Orchestrator orch = getOrchestratorModel();
+        if (orch == null) return null;
+        return orch.getForgeSessions().stream()
                 .filter(s -> s.getSessionId().equals(sessionId))
                 .findFirst().orElse(null);
     }
@@ -328,7 +337,10 @@ public class ForgeSessionManager {
     }
 
     private void publishEvent(ForgeSession session, RuntimeEventType type, String action) {
-        RuntimeEvent event = new RuntimeEvent(type, orchestrator.getId(), "ForgeSessionManager", action)
+        Orchestrator orch = getOrchestratorModel();
+        if (orch == null) return;
+
+        RuntimeEvent event = new RuntimeEvent(type, orch.getId(), "ForgeSessionManager", action)
                 .withEntityId(session.getSessionId())
                 .withMetadata("sessionName", session.getName());
 
@@ -341,7 +353,7 @@ public class ForgeSessionManager {
         buffer.add(event);
         if (buffer.size() > 50) buffer.remove(0);
 
-        SessionContainer container = SessionManager.getInstance().getSession(orchestrator.getId());
+        SessionContainer container = SessionManager.getInstance().getSession(orch.getId());
         if (container != null) {
             RuntimeEventBus bus = container.getEventBus();
             if (bus != null) {
