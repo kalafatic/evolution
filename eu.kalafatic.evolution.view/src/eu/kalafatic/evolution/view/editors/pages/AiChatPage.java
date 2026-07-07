@@ -307,17 +307,10 @@ public class AiChatPage extends AEvoPage {
 
 	public void updateModeDisplay() {
 		if (modeIndicatorLabel == null || modeIndicatorLabel.isDisposed()) return;
-		RuntimeProjection projection = ProjectionService.getInstance().getProjection(getCurrentSessionName());
-		java.util.Map<String, Object> config = projection.getConfiguration();
 
-		int modeVal = (int) config.getOrDefault("aiMode", orchestrator != null ? orchestrator.getAiMode().getValue() : 0);
-		AiMode mode = AiMode.get(modeVal);
-
-		String modelName = (String) config.getOrDefault(mode == AiMode.LOCAL ? "localModel" : "remoteModel", null);
-		if (modelName == null && orchestrator != null) {
-			modelName = (mode == AiMode.LOCAL) ? orchestrator.getLocalModel() : orchestrator.getRemoteModel();
-		}
-		if (modelName == null) modelName = "NOT SET";
+		AiMode mode = getSelectedAiMode();
+		String modelName = getSelectedModelName();
+		if (modelName == null || modelName.isEmpty()) modelName = "NOT SET";
 
 		File projectRoot = getProjectRoot();
 		String targetPath = projectRoot != null ? projectRoot.getAbsolutePath() : "UNKNOWN";
@@ -480,13 +473,9 @@ public class AiChatPage extends AEvoPage {
 		}
 
 		// Validate LLM selection before starting task
-		java.util.Map<String, Object> config = projection.getConfiguration();
-		int modeVal = (int) config.getOrDefault("aiMode", orchestrator != null ? orchestrator.getAiMode().getValue() : 0);
-		AiMode mode = AiMode.get(modeVal);
-		String modelName = (String) config.getOrDefault(mode == AiMode.LOCAL ? "localModel" : "remoteModel", null);
-		if (modelName == null && orchestrator != null) {
-			modelName = (mode == AiMode.LOCAL) ? orchestrator.getLocalModel() : orchestrator.getRemoteModel();
-		}
+		AiMode mode = getSelectedAiMode();
+		String modelName = getSelectedModelName();
+
 		if (modelName == null || modelName.isEmpty() || "NOT SET".equals(modelName)) {
 			isWaitingForModel = true;
 			lastAttemptedRequest = request;
@@ -870,15 +859,37 @@ public class AiChatPage extends AEvoPage {
 		scheduleRefresh();
 	}
 
-	private boolean hasValidModel() {
+	private AiMode getSelectedAiMode() {
 		RuntimeProjection projection = ProjectionService.getInstance().getProjection(getCurrentSessionName());
 		java.util.Map<String, Object> config = projection.getConfiguration();
-		int modeVal = (int) config.getOrDefault("aiMode", orchestrator != null ? orchestrator.getAiMode().getValue() : 0);
-		AiMode mode = AiMode.get(modeVal);
-		String modelName = (String) config.getOrDefault(mode == AiMode.LOCAL ? "localModel" : "remoteModel", null);
-		if (modelName == null && orchestrator != null) {
-			modelName = (mode == AiMode.LOCAL) ? orchestrator.getLocalModel() : orchestrator.getRemoteModel();
+
+		if (currentSession != null && currentSession.getAiMode() != null) return currentSession.getAiMode();
+		if (orchestrator != null) return orchestrator.getAiMode();
+
+		int modeVal = (int) config.getOrDefault("aiMode", 0);
+		return AiMode.get(modeVal);
+	}
+
+	private String getSelectedModelName() {
+		RuntimeProjection projection = ProjectionService.getInstance().getProjection(getCurrentSessionName());
+		java.util.Map<String, Object> config = projection.getConfiguration();
+		AiMode mode = getSelectedAiMode();
+
+		String modelName = null;
+		if (mode == AiMode.LOCAL) {
+			if (currentSession != null && currentSession.getLocalModel() != null && !currentSession.getLocalModel().isEmpty()) modelName = currentSession.getLocalModel();
+			else if (orchestrator != null && orchestrator.getLocalModel() != null && !orchestrator.getLocalModel().isEmpty()) modelName = orchestrator.getLocalModel();
+			else modelName = (String) config.get("localModel");
+		} else {
+			if (currentSession != null && currentSession.getRemoteModel() != null && !currentSession.getRemoteModel().isEmpty()) modelName = currentSession.getRemoteModel();
+			else if (orchestrator != null && orchestrator.getRemoteModel() != null && !orchestrator.getRemoteModel().isEmpty()) modelName = orchestrator.getRemoteModel();
+			else modelName = (String) config.get("remoteModel");
 		}
+		return modelName;
+	}
+
+	private boolean hasValidModel() {
+		String modelName = getSelectedModelName();
 		return modelName != null && !modelName.isEmpty() && !"NOT SET".equals(modelName);
 	}
 

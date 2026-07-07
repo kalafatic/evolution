@@ -183,18 +183,20 @@ public class OrchestratorServiceImpl implements OrchestratorService {
     @Override
     public void updateConfiguration(String sessionId, java.util.Map<String, Object> settings) {
         SessionContainer session = SessionManager.getInstance().getOrCreateSession(sessionId);
-        Orchestrator model = (this.orchestrator != null) ? this.orchestrator : null;
+
+        java.util.List<Orchestrator> modelsToUpdate = new java.util.ArrayList<>();
+        if (this.orchestrator != null) modelsToUpdate.add(this.orchestrator);
 
         if (session instanceof SessionContext) {
             TaskContext context = ((SessionContext)session).getTaskContext();
-            if (context != null && context.getOrchestrator() != null) {
-                model = context.getOrchestrator();
+            if (context != null && context.getOrchestrator() != null && context.getOrchestrator() != this.orchestrator) {
+                modelsToUpdate.add(context.getOrchestrator());
             }
         }
 
         boolean changed = !settings.isEmpty();
 
-        if (model != null) {
+        for (Orchestrator model : modelsToUpdate) {
             if (settings.containsKey("aiMode")) {
                 Object modeVal = settings.get("aiMode");
                 if (modeVal instanceof Integer) {
