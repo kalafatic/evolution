@@ -85,6 +85,8 @@ import eu.kalafatic.evolution.view.projection.RuntimeProjection;
  */
 public class AiChatPage extends AEvoPage {
 	private boolean isUpdating = false;
+	private boolean isWaitingForModel = false;
+	private String lastAttemptedRequest = "";
 	private Label modeIndicatorLabel;
 	private ContentProposalAdapter assistAdapter;
 	private OllamaService ollamaService;
@@ -473,6 +475,10 @@ public class AiChatPage extends AEvoPage {
 
 		if (projection.isRunning()) return; // Prevent duplicate sessions for same ID
 
+		if (request.isEmpty() && isWaitingForModel && hasValidModel()) {
+			request = lastAttemptedRequest;
+		}
+
 		// Validate LLM selection before starting task
 		java.util.Map<String, Object> config = projection.getConfiguration();
 		int modeVal = (int) config.getOrDefault("aiMode", orchestrator != null ? orchestrator.getAiMode().getValue() : 0);
@@ -482,9 +488,13 @@ public class AiChatPage extends AEvoPage {
 			modelName = (mode == AiMode.LOCAL) ? orchestrator.getLocalModel() : orchestrator.getRemoteModel();
 		}
 		if (modelName == null || modelName.isEmpty() || "NOT SET".equals(modelName)) {
+			isWaitingForModel = true;
+			lastAttemptedRequest = request;
 			outputController.submitMessage(currentSessionId, currentSessionId + "__" + System.currentTimeMillis(), "Evo", "No LLM model is selected for " + mode.getName() + " mode. Please select a model in the settings or Chat Management section before proceeding.", "ai waiting", MessagePriority.USER_ACTION_REQUIRED, false);
 			return;
 		}
+
+		isWaitingForModel = false;
 
 		if (request.isEmpty()) {
 			if (AiMode.MEDIATED.getName().equals(chatMgmtGroup.getAiModeCombo().getItem(chatMgmtGroup.getAiModeCombo().getSelectionIndex()))) {
@@ -554,6 +564,7 @@ public class AiChatPage extends AEvoPage {
 
 	public void handleStop() {
 		instructionsGroup.resetBackground();
+		isWaitingForModel = false;
 		// Shut down and cleanup the session resources - this will trigger KERNEL_SHUTDOWN event
 		OrchestratorServiceImpl.getInstance().shutdownSession(getCurrentSessionName());
 	}
@@ -859,6 +870,18 @@ public class AiChatPage extends AEvoPage {
 		scheduleRefresh();
 	}
 
+	private boolean hasValidModel() {
+		RuntimeProjection projection = ProjectionService.getInstance().getProjection(getCurrentSessionName());
+		java.util.Map<String, Object> config = projection.getConfiguration();
+		int modeVal = (int) config.getOrDefault("aiMode", orchestrator != null ? orchestrator.getAiMode().getValue() : 0);
+		AiMode mode = AiMode.get(modeVal);
+		String modelName = (String) config.getOrDefault(mode == AiMode.LOCAL ? "localModel" : "remoteModel", null);
+		if (modelName == null && orchestrator != null) {
+			modelName = (mode == AiMode.LOCAL) ? orchestrator.getLocalModel() : orchestrator.getRemoteModel();
+		}
+		return modelName != null && !modelName.isEmpty() && !"NOT SET".equals(modelName);
+	}
+
 	private void resumeWaitingSessions() {
 		// This should now be handled by OrchestratorServiceImpl directly if needed
 		// or via events.
@@ -907,6 +930,16 @@ public class AiChatPage extends AEvoPage {
 		if (sessionId.equals(getCurrentSessionName())) {
 			updateModeDisplay();
 			scheduleRefresh();
+
+			if (isWaitingForModel && approved && hasValidModel()) {
+				Display.getDefault().asyncExec(() -> {
+					try {
+						handleSend();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				});
+			}
 		}
 	}
 
@@ -1077,6 +1110,15 @@ public class AiChatPage extends AEvoPage {
 
 	public void updateConfiguration(java.util.Map<String, Object> settings) {
 		OrchestratorServiceImpl.getInstance().updateConfiguration(getCurrentSessionName(), settings);
+		if (isWaitingForModel && hasValidModel()) {
+			Display.getDefault().asyncExec(() -> {
+				try {
+					handleSend();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			});
+		}
 	}
 
 	public void handleFeedbackLevelChange(FeedbackLevel level) {
