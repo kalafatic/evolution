@@ -18,9 +18,17 @@ public class McpRequestDialog extends Dialog {
     private Text paramsText;
     private String method;
     private String params;
+    private String initialMethod = "ping";
+    private String initialParams = "{}";
 
     public McpRequestDialog(Shell parentShell) {
         super(parentShell);
+    }
+
+    public McpRequestDialog(Shell parentShell, String initialMethod, String initialParams) {
+        super(parentShell);
+        this.initialMethod = initialMethod;
+        this.initialParams = initialParams;
     }
 
     @Override
@@ -32,7 +40,7 @@ public class McpRequestDialog extends Dialog {
         methodLabel.setText("Method:");
         methodText = new Text(container, SWT.BORDER);
         methodText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
-        methodText.setText("ping");
+        methodText.setText(initialMethod);
 
         Label paramsLabel = new Label(container, SWT.NONE);
         paramsLabel.setText("Parameters (JSON):");
@@ -42,7 +50,7 @@ public class McpRequestDialog extends Dialog {
         gd.heightHint = 150;
         gd.widthHint = 400;
         paramsText.setLayoutData(gd);
-        paramsText.setText("{}");
+        paramsText.setText(initialParams);
 
         return container;
     }

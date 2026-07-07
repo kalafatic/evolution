@@ -50,12 +50,27 @@ public class McpSettingsPage extends AEvoPage {
 				McpClient client = new McpClient(url);
 				String response = client.initialize();
 				configGroup.setStatus(true, "Connected");
+
+				String additionalInfo = "";
+				if (url.contains("38080")) {
+					try {
+						String docContent = client.readResource("docs://README.md");
+						if (docContent != null && !docContent.isEmpty()) {
+							additionalInfo = "\n\nDemo Resource (README.md):\n"
+									+ (docContent.length() > 200 ? docContent.substring(0, 200) + "..." : docContent);
+						}
+					} catch (Exception e) {
+						additionalInfo = "\n\nCould not read demo resource: " + e.getMessage();
+					}
+				}
+
+				String finalAdditionalInfo = additionalInfo;
 				Display.getDefault().asyncExec(() -> {
 					if (isDisposed())
 						return;
 					MessageBox mb = new MessageBox(getShell(), SWT.ICON_INFORMATION | SWT.OK);
 					mb.setText("Success");
-					mb.setMessage("Connected to MCP server successfully.\n" + response);
+					mb.setMessage("Connected to MCP server successfully.\n" + response + finalAdditionalInfo);
 					mb.open();
 				});
 			} catch (Exception ex) {
@@ -96,7 +111,16 @@ public class McpSettingsPage extends AEvoPage {
 			eu.kalafatic.evolution.controller.log.Log.log("MCP Server URL cannot be empty.");
 			return;
 		}
-		McpRequestDialog dialog = new McpRequestDialog(getShell());
+
+		String defaultMethod = "ping";
+		String defaultParams = "{}";
+
+		if (url.contains("38080")) {
+			defaultMethod = "resources/read";
+			defaultParams = "{\"uri\": \"docs://README.md\"}";
+		}
+
+		McpRequestDialog dialog = new McpRequestDialog(getShell(), defaultMethod, defaultParams);
 		if (dialog.open() == org.eclipse.jface.window.Window.OK) {
 			String method = dialog.getMethod();
 			String params = dialog.getParams();
