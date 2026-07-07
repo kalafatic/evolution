@@ -473,6 +473,19 @@ public class AiChatPage extends AEvoPage {
 
 		if (projection.isRunning()) return; // Prevent duplicate sessions for same ID
 
+		// Validate LLM selection before starting task
+		java.util.Map<String, Object> config = projection.getConfiguration();
+		int modeVal = (int) config.getOrDefault("aiMode", orchestrator != null ? orchestrator.getAiMode().getValue() : 0);
+		AiMode mode = AiMode.get(modeVal);
+		String modelName = (String) config.getOrDefault(mode == AiMode.LOCAL ? "localModel" : "remoteModel", null);
+		if (modelName == null && orchestrator != null) {
+			modelName = (mode == AiMode.LOCAL) ? orchestrator.getLocalModel() : orchestrator.getRemoteModel();
+		}
+		if (modelName == null || modelName.isEmpty() || "NOT SET".equals(modelName)) {
+			outputController.submitMessage(currentSessionId, currentSessionId + "__" + System.currentTimeMillis(), "Evo", "No LLM model is selected for " + mode.getName() + " mode. Please select a model in the settings or Chat Management section before proceeding.", "ai waiting", MessagePriority.USER_ACTION_REQUIRED, false);
+			return;
+		}
+
 		if (request.isEmpty()) {
 			if (AiMode.MEDIATED.getName().equals(chatMgmtGroup.getAiModeCombo().getItem(chatMgmtGroup.getAiModeCombo().getSelectionIndex()))) {
 				//processLogEntry("Evo: Please provide a request or instruction to proceed.");
