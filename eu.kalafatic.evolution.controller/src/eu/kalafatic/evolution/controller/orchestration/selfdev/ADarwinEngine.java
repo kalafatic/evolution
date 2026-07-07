@@ -1952,7 +1952,7 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 						eu.kalafatic.evolution.controller.tools.GitTool gitTool = new eu.kalafatic.evolution.controller.tools.GitTool();
 						String diffCommand = (baseCommit != null) ? "diff " + baseCommit + " HEAD" : "diff HEAD";
 
-						String diff = gitTool.execute("diff HEAD", tempDir, variantContext);
+						String diff = gitTool.execute(diffCommand, tempDir, variantContext);
 
 						RuntimeEvent event = new RuntimeEvent(
 								eu.kalafatic.evolution.controller.workflow.RuntimeEventType.TOOL_EXECUTION_SUCCEEDED,
