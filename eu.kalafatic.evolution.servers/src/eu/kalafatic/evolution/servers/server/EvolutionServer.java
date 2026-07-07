@@ -82,8 +82,6 @@ public class EvolutionServer extends NanoHTTPD {
     public void startServer() throws IOException {
         start(NanoHTTPD.SOCKET_READ_TIMEOUT, false);
         System.out.println("Server started on port " + getListeningPort());
-        startMcpServer();
-        startDemoMcpServer();
     }
 
     private void startDemoMcpServer() {
