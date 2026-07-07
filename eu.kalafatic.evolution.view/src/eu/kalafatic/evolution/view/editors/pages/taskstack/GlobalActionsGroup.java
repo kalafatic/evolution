@@ -68,17 +68,6 @@ public class GlobalActionsGroup extends AEvoGroup {
         executeBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {  
-            	try {
-					TreeItem[] items = page.getTaskStackGroup().getTreeViewer().getTree().getItems();
-					for (TreeItem item : items) {
-						if (item.getChecked()) {
-							orchestrator.getTasks().add((Task) item.getData());
-						}            		
-					    System.out.println("Task: " + item.getText() + " - Selected: " + item.getChecked());				    
-					} 
-				} catch (Exception e1) {
-					e1.printStackTrace();
-				}
 				page.executeSelected();
             }
         });
@@ -129,17 +118,17 @@ public class GlobalActionsGroup extends AEvoGroup {
 
     private void applyBatchSettings() {
         if (orchestrator == null) return;
-        for (eu.kalafatic.evolution.model.orchestration.Task task : orchestrator.getTasks()) {
+        applyBatchSettingsRecursive(orchestrator.getTasks());
+        page.updateUIFromModel();
+    }
+
+    private void applyBatchSettingsRecursive(List<Task> tasks) {
+        for (Task task : tasks) {
             if (task.isSelected()) {
                 applyToTask(task);
             }
-            for (eu.kalafatic.evolution.model.orchestration.Task sub : task.getSubTasks()) {
-                if (sub.isSelected()) {
-                    applyToTask(sub);
-                }
-            }
+            applyBatchSettingsRecursive(task.getSubTasks());
         }
-        page.updateUIFromModel();
     }
 
     private void applyToTask(eu.kalafatic.evolution.model.orchestration.Task task) {

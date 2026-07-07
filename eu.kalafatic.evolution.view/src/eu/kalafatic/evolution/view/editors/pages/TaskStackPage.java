@@ -33,7 +33,7 @@ public class TaskStackPage extends AEvoPage {
     private GlobalActionsGroup globalActionsGroup;
     private TaskStackGroup taskStackGroup;
     private List<Task> executionQueue = new ArrayList<>();
-    private Task currentlyExecutingTask = null;
+    private List<Task> activeTasks = new ArrayList<>();
 
     private Adapter modelAdapter = new EContentAdapter() {
         @Override
@@ -41,10 +41,13 @@ public class TaskStackPage extends AEvoPage {
             super.notifyChanged(notification);
             if (notification.isTouch()) return;
 
-            if (currentlyExecutingTask != null && notification.getNotifier() == currentlyExecutingTask && notification.getFeatureID(Task.class) == OrchestrationPackage.TASK__STATUS) {
+            if (notification.getNotifier() instanceof Task && notification.getFeatureID(Task.class) == OrchestrationPackage.TASK__STATUS) {
                 TaskStatus newStatus = (TaskStatus) notification.getNewValue();
+                Task task = (Task) notification.getNotifier();
                 if (newStatus == TaskStatus.DONE || newStatus == TaskStatus.FAILED) {
-                    currentlyExecutingTask = null;
+                    synchronized (activeTasks) {
+                        activeTasks.remove(task);
+                    }
                     processNextInQueue();
                 }
             }
@@ -62,8 +65,8 @@ public class TaskStackPage extends AEvoPage {
         body.setLayout(new GridLayout(1, false));
         setContent(body);
 
-        globalActionsGroup = new GlobalActionsGroup(toolkit, body, editor, orchestrator, this);
         taskStackGroup = new TaskStackGroup(toolkit, body, editor, orchestrator, this);
+        globalActionsGroup = new GlobalActionsGroup(toolkit, body, editor, orchestrator, this);
 
         setOrchestrator(orchestrator);
         // startTimer();
@@ -174,15 +177,16 @@ public class TaskStackPage extends AEvoPage {
     }
 
     public void selectAll(boolean select) {
-        for (Task task : orchestrator.getTasks()) {
-            task.setSelected(select);
-            
-            for (Task subTask : task.getSubTasks()) {
-            	subTask.setSelected(select);
-            }
-        }
+        selectAllRecursive(orchestrator.getTasks(), select);
         updateUIFromModel();
         setDirty(true);
+    }
+
+    private void selectAllRecursive(List<Task> tasks, boolean select) {
+        for (Task task : tasks) {
+            task.setSelected(select);
+            selectAllRecursive(task.getSubTasks(), select);
+        }
     }
 
     public void addNewPlan() {
@@ -324,6 +328,10 @@ public class TaskStackPage extends AEvoPage {
 
         if (selectedTasks.isEmpty()) return;
 
+        for (Task t : selectedTasks) {
+            t.setStatus(TaskStatus.PENDING);
+        }
+
         executionQueue.addAll(selectedTasks);
         processNextInQueue();
     }
@@ -338,19 +346,30 @@ public class TaskStackPage extends AEvoPage {
     }
 
     public void runSingleTask(Task task) {
-        if (currentlyExecutingTask == null) {
-            currentlyExecutingTask = task;
-            editor.runTaskInChat(task);
-        } else {
-            executionQueue.add(task);
+        synchronized (activeTasks) {
+            int limit = (taskStackGroup != null && taskStackGroup.isParallel()) ? 3 : 1;
+            if (activeTasks.size() < limit) {
+                activeTasks.add(task);
+                task.setStatus(TaskStatus.RUNNING);
+                editor.runTaskInChat(task);
+            } else {
+                task.setStatus(TaskStatus.PENDING);
+                executionQueue.add(task);
+            }
         }
     }
 
     private void processNextInQueue() {
-        if (currentlyExecutingTask != null || executionQueue.isEmpty()) return;
-
-        currentlyExecutingTask = executionQueue.remove(0);
-        editor.runTaskInChat(currentlyExecutingTask);
+        synchronized (activeTasks) {
+            if (executionQueue.isEmpty()) return;
+            int limit = (taskStackGroup != null && taskStackGroup.isParallel()) ? 3 : 1;
+            while (activeTasks.size() < limit && !executionQueue.isEmpty()) {
+                Task next = executionQueue.remove(0);
+                activeTasks.add(next);
+                next.setStatus(TaskStatus.RUNNING);
+                editor.runTaskInChat(next);
+            }
+        }
     }
 
     public void setDirty(boolean dirty) {
