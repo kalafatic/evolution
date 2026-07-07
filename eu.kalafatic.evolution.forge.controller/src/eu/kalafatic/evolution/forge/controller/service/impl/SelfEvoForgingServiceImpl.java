@@ -82,8 +82,14 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                 String targetName = "evo";
                 Path modelfilePath = exportPath.resolve("Modelfile");
                 if (Files.exists(modelfilePath)) {
-                    String modelfileContent = Files.readString(modelfilePath);
-                    createModel("http://localhost:11434", modelName, modelfileContent);
+                    try {
+                        String modelfileContent = Files.readString(modelfilePath);
+                        System.out.println("[SelfEvo] Registering model in Ollama as '" + targetName + "'...");
+                        createModel("http://localhost:11434", targetName, modelfileContent);
+                        System.out.println("[SelfEvo] Model registered successfully.");
+                    } catch (Exception ex) {
+                        System.err.println("[SelfEvo] Ollama registration failed (non-blocking): " + ex.getMessage());
+                    }
                 }
                 
                 updateStats(sessionId, new ForgingStats("COMPLETE", 100, 0, 0, samples.size(), 0.0, "DONE"));
@@ -112,7 +118,7 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
       HttpRequest request = HttpRequest.newBuilder()
               .uri(URI.create(createUrl))
               .header("Content-Type", "application/json")
-              .timeout(Duration.ofMinutes(5))
+              .timeout(Duration.ofMinutes(1))
               .POST(HttpRequest.BodyPublishers.ofString(jsonObject.toString()))
               .build();
 
