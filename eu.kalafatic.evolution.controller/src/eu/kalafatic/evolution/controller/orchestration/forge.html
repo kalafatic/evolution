@@ -700,15 +700,14 @@
         </div>
     </div>
 
-    <link rel="stylesheet" href="/creatic.css">
-    <script src="/creatic.js"></script>
-    <script src="/forge-viz/viz-architecture.js"></script>
-    <script src="/forge-viz/viz-dataset.js"></script>
-    <script src="/forge-viz/viz-training.js"></script>
-    <script src="/forge-viz/viz-evolution.js"></script>
-    <script src="/forge-viz/viz-walkthrough.js"></script>
-    <script src="/forge-viz/viz-self-evo.js"></script>
-    <script src="/forge-viz/viz-interactive-demos.js"></script>
+    <link rel="stylesheet" href="creatic.css">
+    <script src="creatic.js"></script>
+    <script src="forge-viz/viz-architecture.js"></script>
+    <script src="forge-viz/viz-dataset.js"></script>
+    <script src="forge-viz/viz-training.js"></script>
+    <script src="forge-viz/viz-evolution.js"></script>
+    <script src="forge-viz/viz-walkthrough.js"></script>
+    <script src="forge-viz/viz-interactive-demos.js"></script>
     <script>
         let serverPort = 48080;
         let activeSessionId = null;
@@ -1314,24 +1313,9 @@
 
         async function startTraining() {
             if (!activeSessionId) {
-                if (currentViz === 'INTERACTIVE_LLM_EVO' && window.runLlmEvoLifecycle) {
-                    window.runLlmEvoLifecycle();
-                    return;
-                }
-                if (currentViz === 'INTERACTIVE_SELF_EVO' && window.runSelfEvoSimulation) {
-                    window.runSelfEvoSimulation();
-                    return;
-                }
                 log("No active session to train.");
                 return;
             }
-
-            const session = sessions.find(s => s.id === activeSessionId);
-            if (session && session.modelType === 'SELF_EVO' && window.startForging) {
-                window.startForging();
-                return;
-            }
-
             isTraining = true;
             document.getElementById('train-btn').disabled = true;
             document.getElementById('stop-btn').disabled = false;
@@ -1497,12 +1481,6 @@
                     return;
                 } else if (currentViz === 'INTERACTIVE_LLM') {
                     renderInteractiveLlmDemo();
-                    return;
-                } else if (currentViz === 'INTERACTIVE_LLM_EVO') {
-                    renderInteractiveLlmEvoDemo();
-                    return;
-                } else if (currentViz === 'INTERACTIVE_SELF_EVO') {
-                    renderInteractiveSelfEvoDemo();
                     return;
                 }
                 return;

@@ -120,13 +120,13 @@ public interface ServerSettings extends EObject {
 
 	/**
 	 * Returns the value of the '<em><b>Mcp Port</b></em>' attribute.
-	 * The default value is <code>"58080"</code>.
+	 * The default value is <code>"38080"</code>.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @return the value of the '<em>Mcp Port</em>' attribute.
 	 * @see #setMcpPort(int)
 	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getServerSettings_McpPort()
-	 * @model default="58080"
+	 * @model default="38080"
 	 * @generated
 	 */
 	int getMcpPort();

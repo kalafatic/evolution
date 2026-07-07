@@ -117,7 +117,7 @@ public class ServerSettingsImpl extends MinimalEObjectImpl.Container implements 
 	 * @generated
 	 * @ordered
 	 */
-	protected static final int MCP_PORT_EDEFAULT = 58080;
+	protected static final int MCP_PORT_EDEFAULT = 38080;
 
 	/**
 	 * The cached value of the '{@link #getMcpPort() <em>Mcp Port</em>}' attribute.
