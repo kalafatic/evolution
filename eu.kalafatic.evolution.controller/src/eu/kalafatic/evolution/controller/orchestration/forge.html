@@ -437,6 +437,7 @@
 
     </style>
     <script src="/auth-integration.js"></script>
+    <script src="forge-viz/viz-self-evo.js"></script>
 </head>
 <body>
     <div id="layout">
@@ -980,9 +981,12 @@
             });
 
             // UI locking based on workflow
+            const session = sessions.find(s => s.id === activeSessionId);
+            const isSelfEvo = session && session.modelType === 'SELF_EVO';
+
             document.getElementById('confirm-props-btn').disabled = (currentIndex !== 1 && currentIndex !== 0);
             document.getElementById('dataset-selector').disabled = (currentIndex < 2);
-            document.getElementById('train-btn').disabled = (currentIndex < 3);
+            document.getElementById('train-btn').disabled = isSelfEvo ? (currentIndex < 2) : (currentIndex < 3);
 
             // Highlight properties panel if review is mandatory
             const propPanel = document.getElementById('properties-panel');
@@ -1053,10 +1057,16 @@
 
         async function confirmProperties() {
             if (!activeSessionId) return;
-            log("Properties confirmed. Moving to dataset selection.");
+
+            const session = sessions.find(s => s.id === activeSessionId);
+            const isSelfEvo = session && session.modelType === 'SELF_EVO';
+            const nextStatus = isSelfEvo ? 'DATASET_SELECTED' : 'PROPERTIES_CONFIRMED';
+
+            log(`Properties confirmed. Moving to ${isSelfEvo ? 'pipeline activation' : 'dataset selection'}.`);
+
             await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/uistate/forge.workflow.status?runtime=SWT`, {
                 method: 'POST',
-                body: JSON.stringify({ value: 'PROPERTIES_CONFIRMED' })
+                body: JSON.stringify({ value: nextStatus })
             });
             await fetchModel(activeSessionId);
         }
@@ -1316,6 +1326,24 @@
                 log("No active session to train.");
                 return;
             }
+
+            const session = sessions.find(s => s.id === activeSessionId);
+            if (session && session.modelType === 'SELF_EVO') {
+                if (window.startForging) {
+                    isTraining = true;
+                    document.getElementById('train-btn').disabled = true;
+                    document.getElementById('stop-btn').disabled = false;
+
+                    await window.startForging();
+                    await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/uistate/forge.workflow.status?runtime=SWT`, {
+                        method: 'POST',
+                        body: JSON.stringify({ value: 'TRAINING_ACTIVE' })
+                    });
+                    await fetchModel(activeSessionId);
+                    return;
+                }
+            }
+
             isTraining = true;
             document.getElementById('train-btn').disabled = true;
             document.getElementById('stop-btn').disabled = false;
@@ -1330,7 +1358,6 @@
             if (window.forgeAction) forgeAction("UPDATE_STATUS", JSON.stringify({ sessionId: activeSessionId, status: "TRAINING" }));
 
             // Update session status in local state for immediate guidance refresh
-            const session = sessions.find(s => s.id === activeSessionId);
             if (session) session.status = 'TRAINING';
             updateGuidance();
             await fetchModel(activeSessionId);
