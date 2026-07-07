@@ -54,6 +54,31 @@ public class McpSettingsPage extends AEvoPage {
         }).start();
     }
 
+    public void startDemoServer() {
+        new Thread(() -> {
+            try {
+                eu.kalafatic.evolution.controller.orchestration.mcp.McpDemoServerManager.getInstance().start();
+                Display.getDefault().asyncExec(() -> {
+                    if (isDisposed()) return;
+                    configGroup.updateDemoStatus();
+                    MessageBox mb = new MessageBox(getShell(), SWT.ICON_INFORMATION | SWT.OK);
+                    mb.setText("Success");
+                    mb.setMessage("MCP Demo Documentation Server started on port 38080.");
+                    mb.open();
+                });
+            } catch (Exception ex) {
+                Display.getDefault().asyncExec(() -> {
+                    if (isDisposed()) return;
+                    configGroup.updateDemoStatus();
+                    MessageBox mb = new MessageBox(getShell(), SWT.ICON_ERROR | SWT.OK);
+                    mb.setText("Error");
+                    mb.setMessage("Failed to start MCP Demo Server: " + ex.getMessage());
+                    mb.open();
+                });
+            }
+        }).start();
+    }
+
     public void openRequestDialog(String url) {
         if (url.isEmpty()) { MessageBox mb = new MessageBox(getShell(), SWT.ICON_ERROR | SWT.OK); mb.setText("Error"); mb.setMessage("MCP Server URL cannot be empty."); mb.open(); return; }
         McpRequestDialog dialog = new McpRequestDialog(getShell());

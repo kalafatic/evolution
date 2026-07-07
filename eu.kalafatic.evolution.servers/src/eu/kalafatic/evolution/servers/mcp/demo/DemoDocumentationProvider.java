@@ -52,6 +52,12 @@ public class DemoDocumentationProvider extends NanoHTTPD {
             docsDir.mkdirs();
         }
 
+        // Only create sample files if the directory is empty or contains no markdown files
+        List<DemoDocumentScanner.DocumentInfo> existingDocs = service.listDocuments();
+        if (!existingDocs.isEmpty()) {
+            return;
+        }
+
         createSampleFile("README.md", "# Demo Documentation\n\nThis is a demo MCP documentation server.\n\nIt exposes Markdown documents that can later be indexed by the Evolution LLM.");
         createSampleFile("getting-started.md", "# Getting Started\n\nTo use this server, simply query the endpoints provided.");
         createSampleFile("architecture.md", "# Architecture\n\nThis demo server follows a clean separation of concerns.");

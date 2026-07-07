@@ -145,8 +145,13 @@ public class McpClient {
         request.put("method", method);
         request.put("params", params);
 
+        String effectiveUrl = serverUrl;
+        if (!effectiveUrl.startsWith("http://") && !effectiveUrl.startsWith("https://")) {
+            effectiveUrl = "http://" + effectiveUrl;
+        }
+
         HttpRequest httpRequest = HttpRequest.newBuilder()
-                .uri(URI.create(serverUrl))
+                .uri(URI.create(effectiveUrl))
                 .header("Content-Type", "application/json")
                 .timeout(Duration.ofSeconds(30))
                 .POST(HttpRequest.BodyPublishers.ofString(request.toString()))

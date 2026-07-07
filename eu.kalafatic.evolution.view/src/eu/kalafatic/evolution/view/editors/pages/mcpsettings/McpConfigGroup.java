@@ -17,6 +17,7 @@ public class McpConfigGroup extends AEvoGroup {
     private Button mcpEnabledBtn;
     private Text mcpPortText;
     private org.eclipse.swt.widgets.Label statusLabel;
+    private org.eclipse.swt.widgets.Label demoStatusLabel;
     private McpSettingsPage page;
 
     public McpConfigGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, McpSettingsPage page) {
@@ -93,6 +94,15 @@ public class McpConfigGroup extends AEvoGroup {
             }
         });
 
+        Button startDemoBtn = GUIFactory.INSTANCE.createButton(group, "Start Demo Server", 150);
+        startDemoBtn.setToolTipText("Start the local MCP Demo Documentation Server on port 38080.");
+        startDemoBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                page.startDemoServer();
+            }
+        });
+
         Button refreshAllBtn = GUIFactory.INSTANCE.createButton(group, "Connect & Refresh All", 180);
         refreshAllBtn.setToolTipText("Initialize connection and refresh all tools, resources, and prompts.");
         refreshAllBtn.addSelectionListener(new SelectionAdapter() {
@@ -107,6 +117,9 @@ public class McpConfigGroup extends AEvoGroup {
 
         GUIFactory.INSTANCE.createLabel(group, "Status:");
         statusLabel = GUIFactory.INSTANCE.createLabel(group, "Unknown");
+
+        GUIFactory.INSTANCE.createLabel(group, "Demo Server:");
+        demoStatusLabel = GUIFactory.INSTANCE.createLabel(group, "Stopped");
     }
 
     public void setStatus(boolean success, String message) {
@@ -128,6 +141,14 @@ public class McpConfigGroup extends AEvoGroup {
                 setTextSafe(mcpPortText, String.valueOf(orchestrator.getServerSettings().getMcpPort()));
             }
         }
+        updateDemoStatus();
+    }
+
+    public void updateDemoStatus() {
+        if (demoStatusLabel == null || demoStatusLabel.isDisposed()) return;
+        boolean running = eu.kalafatic.evolution.controller.orchestration.mcp.McpDemoServerManager.getInstance().isRunning();
+        demoStatusLabel.setText(running ? "Running" : "Stopped");
+        demoStatusLabel.setForeground(running ? darkGreen : darkRed);
     }
 
     public String getUrl() {
