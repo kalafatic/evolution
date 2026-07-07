@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class OllamaExporter {
-    public void export(String modelName, Path outputPath, EvoLlmModel model) throws IOException {
+	public void export(String modelName, Path outputPath, EvoLlmModel model) throws IOException {
         Files.createDirectories(outputPath);
         
         // Generate Modelfile

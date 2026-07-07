@@ -94,7 +94,7 @@ public class PropertiesPage extends AEvoPage {
 				Display.getDefault().timerExec(1000, timer);
 			}
 		});
-
+		modelsGroup = new ModelsGroup(toolkit, comp, editor, orchestrator, this);
 		orchestratorGroup = new OrchestratorGroup(toolkit, comp, editor, orchestrator);
 		llmSettingsGroup = new LlmSettingsGroup(toolkit, comp, editor, orchestrator);
 		ollamaSettingsGroup = new OllamaSettingsGroup(toolkit, comp, editor, orchestrator, this);
@@ -103,7 +103,6 @@ public class PropertiesPage extends AEvoPage {
 		additionalAiToolsGroup = new AdditionalAiToolsGroup(toolkit, comp, editor, orchestrator);
 		mcpOpenAiGroup = new McpOpenAiGroup(toolkit, comp, editor, orchestrator, this);
 		aiChatModelsGroup = new AiChatModelsGroup(toolkit, comp, editor, orchestrator, this);
-		modelsGroup = new ModelsGroup(toolkit, comp, editor, orchestrator, this);
 
 		ModifyListener ml = e -> {
 			if (orchestrator != null && !isUpdating) {

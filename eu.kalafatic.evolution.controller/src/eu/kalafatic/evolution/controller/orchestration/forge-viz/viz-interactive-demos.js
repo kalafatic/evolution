@@ -235,43 +235,156 @@ window.forwardDemo = function() {
     log("Forward pass simulated with numerical I/O.");
 };
 
-// ============== INTERACTIVE LLM DEMO ==============
+// ============== INTERACTIVE LLM EVO DEMO ==============
 
-window.renderInteractiveLlmDemo = function() {
+window.renderInteractiveLlmEvoDemo = function() {
     const area = document.getElementById('viz-area');
     area.innerHTML = `
-        <div style="padding:20px; text-align:center; height:100%; width:100%; background:#fff; color:#333;">
-            <h3 style="color:var(--accent)">Interactive LLM: Token Prediction</h3>
-            <p style="font-size:0.9em; color:#666;">Observe how the transformer predicts the next token based on context.</p>
+        <div style="padding:20px; text-align:center; height:100%; width:100%; background:#fff; color:#333; overflow-y:auto;">
+            <h3 style="color:var(--accent)">LLM-EVO: Educational Lifecycle</h3>
+            <p style="font-size:0.9em; color:#666;">Visualizing the complete lifecycle from raw documents to GGUF deployment.</p>
 
-            <div style="margin:20px auto; max-width:500px; padding:15px; border:1px solid #ddd; border-radius:8px; background:#f9f9f9; text-align:left;">
-                <div style="font-weight:bold; margin-bottom:10px; font-size:0.8em; color:#888;">CONTEXT WINDOW</div>
-                <div id="llm-context" style="font-family:monospace; font-size:1.1em; line-height:1.6;">
-                    The quick brown fox <span style="background:#fff9c4; border-bottom:2px solid #fbc02d;">jumps</span>
+            <div style="display:flex; justify-content:center; gap:10px; margin-top:20px; flex-wrap:wrap;">
+                <div class="evo-stage-card" id="stage-data">
+                    <div style="font-size:1.2em;">📄</div>
+                    <div style="font-size:0.7em; font-weight:bold;">Data Loading</div>
+                    <div style="font-size:0.6em; color:#888;">Markdown/PDF</div>
+                </div>
+                <div class="evo-stage-arrow">➜</div>
+                <div class="evo-stage-card" id="stage-tokenizer">
+                    <div style="font-size:1.2em;">🔡</div>
+                    <div style="font-size:0.7em; font-weight:bold;">Tokenization</div>
+                    <div style="font-size:0.6em; color:#888;">SimpleBPE</div>
+                </div>
+                <div class="evo-stage-arrow">➜</div>
+                <div class="evo-stage-card" id="stage-transformer">
+                    <div style="font-size:1.2em;">🧠</div>
+                    <div style="font-size:0.7em; font-weight:bold;">Transformer</div>
+                    <div style="font-size:0.6em; color:#888;">Attention/FFN</div>
+                </div>
+                <div class="evo-stage-arrow">➜</div>
+                <div class="evo-stage-card" id="stage-export">
+                    <div style="font-size:1.2em;">📦</div>
+                    <div style="font-size:0.7em; font-weight:bold;">GGUF Export</div>
+                    <div style="font-size:0.6em; color:#888;">Ollama/Local</div>
                 </div>
             </div>
 
-            <div style="display:flex; justify-content:center; gap:20px; margin-top:30px;">
-                <div style="width:150px;">
-                    <div style="font-size:0.7em; color:#999; margin-bottom:5px;">TOP CANDIDATES</div>
-                    <div id="llm-candidates"></div>
-                </div>
-                <div style="flex:1; max-width:300px;">
-                    <div style="height:100px; display:flex; align-items:flex-end; gap:5px; border-bottom:1px solid #ccc; padding-bottom:5px;">
-                        <div style="flex:1; height:80%; background:var(--accent);"></div>
-                        <div style="flex:1; height:40%; background:#ccc;"></div>
-                        <div style="flex:1; height:20%; background:#ccc;"></div>
-                        <div style="flex:1; height:10%; background:#ccc;"></div>
-                    </div>
-                    <div style="font-size:0.7em; color:#999; margin-top:5px;">PROBABILITY DISTRIBUTION</div>
+            <div id="evo-display-area" style="margin-top:25px; padding:15px; border:1px solid #ddd; border-radius:8px; background:#f9f9f9; min-height:150px; text-align:left;">
+                <div style="font-weight:bold; margin-bottom:10px; font-size:0.8em; color:#888;" id="evo-display-title">LIFECYCLE STATUS</div>
+                <div id="evo-display-content" style="font-size:0.9em; line-height:1.4;">
+                    Select a stage above to see details or click 'Run Lifecycle' to simulate the process.
                 </div>
             </div>
 
-            <button class="btn btn-primary" style="margin-top:30px;" onclick="stepLlmDemo()">Predict Next Token</button>
+            <div style="margin-top:20px; display:flex; justify-content:center; gap:10px;">
+                <button class="btn btn-primary" onclick="runLlmEvoLifecycle()">Run Lifecycle</button>
+                <button class="btn" onclick="resetLlmEvoLifecycle()">Reset</button>
+            </div>
+
+            <style>
+                .evo-stage-card {
+                    width: 80px; padding: 10px; border: 1px solid #ddd; border-radius: 6px;
+                    cursor: pointer; transition: all 0.3s;
+                }
+                .evo-stage-card:hover { border-color: var(--accent); background: #f0f7ff; }
+                .evo-stage-card.active { border-color: var(--accent); background: #e8f0fe; box-shadow: 0 0 8px rgba(0,122,204,0.3); }
+                .evo-stage-arrow { align-self: center; color: #ccc; }
+            </style>
         </div>
     `;
-    updateLlmCandidates();
+
+    document.getElementById('stage-data').onclick = () => showEvoStage('data');
+    document.getElementById('stage-tokenizer').onclick = () => showEvoStage('tokenizer');
+    document.getElementById('stage-transformer').onclick = () => showEvoStage('transformer');
+    document.getElementById('stage-export').onclick = () => showEvoStage('export');
 };
+
+// Aliasing for backward compatibility if needed, but we will update forge.html
+window.renderInteractiveLlmDemo = window.renderInteractiveLlmEvoDemo;
+
+let evoInterval = null;
+window.runLlmEvoLifecycle = async function() {
+    resetLlmEvoLifecycle();
+    const stages = ['data', 'tokenizer', 'transformer', 'export'];
+    let i = 0;
+
+    evoInterval = setInterval(() => {
+        if (i >= stages.length) {
+            clearInterval(evoInterval);
+            return;
+        }
+        showEvoStage(stages[i]);
+        i++;
+    }, 2000);
+};
+
+window.resetLlmEvoLifecycle = function() {
+    if (evoInterval) clearInterval(evoInterval);
+    document.querySelectorAll('.evo-stage-card').forEach(c => c.classList.remove('active'));
+    document.getElementById('evo-display-title').textContent = 'LIFECYCLE STATUS';
+    document.getElementById('evo-display-content').textContent = "Select a stage above to see details or click 'Run Lifecycle' to simulate the process.";
+};
+
+function showEvoStage(stage) {
+    document.querySelectorAll('.evo-stage-card').forEach(c => c.classList.remove('active'));
+    document.getElementById('stage-' + stage).classList.add('active');
+
+    const title = document.getElementById('evo-display-title');
+    const content = document.getElementById('evo-display-content');
+
+    switch(stage) {
+        case 'data':
+            title.textContent = 'DATA LOADING & CLEANING';
+            content.innerHTML = `
+                <div style="font-family:monospace; color:#444; background:#eee; padding:8px; border-radius:4px; font-size:0.8em;">
+                    # Project Readme<br>
+                    This is a sample project for evolution.<br>
+                    ---<br>
+                    Scanning: 12 files discovered.<br>
+                    Filtering: .gitignore applied.
+                </div>
+                <div style="margin-top:10px; font-size:0.85em;">Discovered information carriers and normalized Markdown content for training.</div>
+            `;
+            break;
+        case 'tokenizer':
+            title.textContent = 'TOKENIZATION (SimpleBPE)';
+            content.innerHTML = `
+                <div style="display:flex; flex-wrap:wrap; gap:4px;">
+                    <span style="background:#e8f0fe; padding:2px 4px; border-radius:3px;">The</span>
+                    <span style="background:#e8f0fe; padding:2px 4px; border-radius:3px;">quick</span>
+                    <span style="background:#e8f0fe; padding:2px 4px; border-radius:3px;">brown</span>
+                    <span style="background:#e8f0fe; padding:2px 4px; border-radius:3px;">fox</span>
+                </div>
+                <div style="margin-top:10px; font-size:0.85em;">Converting text to numerical indices using a Byte Pair Encoding vocabulary.</div>
+            `;
+            break;
+        case 'transformer':
+            title.textContent = 'TRANSFORMER ARCHITECTURE';
+            content.innerHTML = `
+                <ul style="font-size:0.85em; padding-left:20px;">
+                    <li><b>Embedding:</b> Continuous vector representation.</li>
+                    <li><b>Attention:</b> Multi-head self-attention mechanisms.</li>
+                    <li><b>FFN:</b> Feed-forward neural networks.</li>
+                    <li><b>LayerNorm:</b> Maintaining activation stability.</li>
+                </ul>
+                <div style="margin-top:5px; font-style:italic; font-size:0.8em; color:var(--accent);">Forward pass executing...</div>
+            `;
+            break;
+        case 'export':
+            title.textContent = 'GGUF EXPORT & DEPLOYMENT';
+            content.innerHTML = `
+                <div style="background:#333; color:#89d185; padding:10px; border-radius:4px; font-family:monospace; font-size:0.8em;">
+                    > Exporting LoRA adapters...<br>
+                    > Merging weights...<br>
+                    > Quantizing to Q4_K_M...<br>
+                    > Registering 'evo-model' in Ollama.<br>
+                    SUCCESS: Model ready at localhost:11434
+                </div>
+            `;
+            break;
+    }
+}
 
 let llmTokens = ["The", "quick", "brown", "fox", "jumps", "over", "the", "lazy", "dog"];
 let llmIndex = 5;
@@ -493,38 +606,33 @@ window.forwardMlp = function() {
     document.getElementById('demo-mlp-out').innerText = y.toFixed(4);
 };
 
-// ============== INTERACTIVE TRANSFORMER DEMO ==============
+// ============== INTERACTIVE TRANSFORMER EVO DEMO ==============
 
-window.renderInteractiveTransformerDemo = function() {
+window.renderInteractiveTransformerEvoDemo = function() {
     const area = document.getElementById('viz-area');
     area.innerHTML = `
         <div id="demo-tf-container" style="padding:20px; text-align:center; height:100%; width:100%; background:#20242b; color:white; overflow:auto;">
-            <h2 style="margin:0 0 10px 0;">Mini Transformer Demo</h2>
+            <h2 style="margin:0 0 10px 0;">LLM-EVO: Transformer Architecture</h2>
             <div id="demo-tf-pipeline" style="display:flex; justify-content:center; align-items:center; gap:12px; padding:20px; flex-wrap:wrap;"></div>
             <div style="display:flex; gap:15px; padding:15px; text-align:left;">
                 <div style="flex:1; background:#2d323b; border-radius:8px; padding:15px;">
-                    <h3 style="margin-top:0;">Prompt</h3>
+                    <h3 style="margin-top:0;">Input Tokens</h3>
                     <textarea id="demo-tf-prompt" rows="4" style="width:100%; box-sizing:border-box; background:#fff; color:#000; padding:8px; border-radius:4px; font-family:inherit;">The quick brown fox</textarea>
-                    <button class="btn btn-primary" onclick="runTransformer()" style="margin-top:10px; width:100%;">Run Transformer</button>
-                    <h3 style="margin-top:15px;">Tokens</h3>
-                    <div id="demo-tf-tokens" style="min-height:40px; border:1px solid #444; padding:5px; border-radius:4px; background:#1a1d23;"></div>
+                    <button class="btn btn-primary" onclick="runTransformer()" style="margin-top:10px; width:100%;">Run Forward Pass</button>
+                    <div id="demo-tf-tokens" style="margin-top:15px; min-height:40px; border:1px solid #444; padding:5px; border-radius:4px; background:#1a1d23;"></div>
                 </div>
                 <div style="flex:1; background:#2d323b; border-radius:8px; padding:15px;">
-                    <h3 style="margin-top:0;">Configuration</h3>
+                    <h3 style="margin-top:0;">Hyperparameters</h3>
                     <div style="margin-bottom:10px;">
-                        <div style="font-size:0.8em; color:#aaa; margin-bottom:4px;">Transformer Layers</div>
-                        <input id="demo-tf-layers" type="number" value="2" min="1" max="8" style="width:100%; background:#fff; color:#000; padding:4px; box-sizing:border-box;">
+                        <div style="font-size:0.8em; color:#aaa; margin-bottom:4px;">Model Dimension (d_model)</div>
+                        <input id="demo-tf-hidden" type="number" value="256" style="width:100%; background:#fff; color:#000; padding:4px; box-sizing:border-box;">
                     </div>
                     <div style="margin-bottom:10px;">
                         <div style="font-size:0.8em; color:#aaa; margin-bottom:4px;">Attention Heads</div>
                         <input id="demo-tf-heads" type="number" value="4" style="width:100%; background:#fff; color:#000; padding:4px; box-sizing:border-box;">
                     </div>
-                    <div style="margin-bottom:10px;">
-                        <div style="font-size:0.8em; color:#aaa; margin-bottom:4px;">Hidden Size</div>
-                        <input id="demo-tf-hidden" type="number" value="256" style="width:100%; background:#fff; color:#000; padding:4px; box-sizing:border-box;">
-                    </div>
-                    <button class="btn" onclick="buildTransformer()" style="width:100%;">Apply</button>
-                    <h3 style="margin-top:15px;">Output</h3>
+                    <button class="btn" onclick="buildTransformer()" style="width:100%;">Apply Architecture</button>
+                    <h3 style="margin-top:15px;">Execution Output</h3>
                     <div id="demo-tf-output" style="margin-top:10px; font-style:italic; color:#ff9800;">-</div>
                 </div>
             </div>
@@ -533,8 +641,9 @@ window.renderInteractiveTransformerDemo = function() {
                     width:110px; height:50px; background:#394150; border-radius:8px;
                     display:flex; justify-content:center; align-items:center;
                     text-align:center; transition:.3s; font-size:0.75em; font-weight:bold;
-                    border: 1px solid #555;
+                    border: 1px solid #555; cursor:pointer;
                 }
+                .demo-tf-block:hover { border-color: var(--accent); }
                 .demo-tf-block.active { background:#4CAF50; transform:scale(1.1); box-shadow: 0 0 10px #4CAF50; border-color:white; }
                 .demo-tf-arrow { font-size:18px; color:#888; }
                 .demo-tf-token {
@@ -549,19 +658,23 @@ window.renderInteractiveTransformerDemo = function() {
     buildTransformer();
 };
 
-function tfBlock(name){ return "<div class='demo-tf-block'>"+name+"</div>"; }
+// Aliasing for backward compatibility
+window.renderInteractiveTransformerDemo = window.renderInteractiveTransformerEvoDemo;
+
+function tfBlock(name, desc){ 
+    return `<div class='demo-tf-block' onclick='alert("${desc}")'>${name}</div>`; 
+}
 function tfArrow(){ return "<div class='demo-tf-arrow'>➜</div>"; }
 
 window.buildTransformer = function() {
     const pipeline = document.getElementById('demo-tf-pipeline');
     if (!pipeline) return;
     let html="";
-    html+=tfBlock("Tokenizer"); html+=tfArrow();
-    html+=tfBlock("Embedding"); html+=tfArrow();
-    html+=tfBlock("Attention"); html+=tfArrow();
-    html+=tfBlock("FFN"); html+=tfArrow();
-    html+=tfBlock("LayerNorm"); html+=tfArrow();
-    html+=tfBlock("Output");
+    html+=tfBlock("Embedding", "Converts token IDs into continuous vectors."); html+=tfArrow();
+    html+=tfBlock("Attention", "Computes context-aware representations by looking at other tokens."); html+=tfArrow();
+    html+=tfBlock("FFN", "Applies non-linear transformations to each position independently."); html+=tfArrow();
+    html+=tfBlock("LayerNorm", "Normalizes activations to improve training stability."); html+=tfArrow();
+    html+=tfBlock("Output", "Final linear layer and softmax for token prediction.");
     pipeline.innerHTML=html;
 };
 
@@ -591,92 +704,5 @@ window.runTransformer = async function() {
     }
     output.textContent = "Generated: " + prompt.value + " ...";
 };
-
-// ============== INTERACTIVE LLM-EVO DEMO ==============
-
-window.renderInteractiveLlmEvoDemo = function() {
-    const area = document.getElementById('viz-area');
-    area.innerHTML = `
-        <div style="padding:20px; height:100%; width:100%; background:#fff; color:#333; overflow:auto; display:flex; flex-direction:column;">
-            <div style="text-align:center; margin-bottom:20px;">
-                <h3 style="color:var(--accent)">LLM-EVO: Educational Pipeline</h3>
-                <p style="font-size:0.9em; color:#666;">Understand every internal component of your custom LLM.</p>
-            </div>
-
-            <div id="llm-evo-pipeline" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px; padding:0 20px;">
-                ${renderEvoStep("Markdown", "docs/*.md", "active")}
-                ${renderEvoArrow()}
-                ${renderEvoStep("Tokenizer", "Vocab: 4096", "")}
-                ${renderEvoArrow()}
-                ${renderEvoStep("Transformer", "Layers: 2", "")}
-                ${renderEvoArrow()}
-                ${renderEvoStep("Training", "Loss: 2.14", "")}
-                ${renderEvoArrow()}
-                ${renderEvoStep("Ollama", "Model: evo", "")}
-            </div>
-
-            <div id="llm-evo-explanation" style="flex:1; border:1px solid #eee; border-radius:8px; padding:20px; background:#fcfcfc;">
-                <h4 id="evo-stage-title" style="margin-top:0; color:var(--accent);">Stage: Markdown Loader</h4>
-                <div id="evo-stage-content" style="font-size:0.9em; line-height:1.6; color:#444;">
-                    <p>Loads all Markdown files from the project directory recursively.</p>
-                    <pre style="background:#eee; padding:10px; border-radius:4px;">Files Found: 12\nTotal Characters: 45,231</pre>
-                </div>
-                <div id="evo-stage-details" style="margin-top:20px; padding-top:15px; border-top:1px dashed #ccc; font-size:0.85em; color:#666;">
-                    <b>Educational Note:</b> This stage creates the raw corpus. Pre-processing here is critical for model quality.
-                </div>
-            </div>
-
-            <div style="margin-top:20px; display:flex; gap:10px; justify-content:center;">
-                <button class="btn btn-primary" onclick="prevEvoStage()">Previous</button>
-                <button class="btn btn-primary" onclick="nextEvoStage()">Next Stage</button>
-            </div>
-        </div>
-    `;
-};
-
-let currentEvoStage = 0;
-const evoStages = [
-    { title: "Markdown Loader", content: "Loads all Markdown files from the project directory recursively. It respects .gitignore and focuses on UTF-8 content.", code: "Files Found: 12\nTotal Characters: 45,231", note: "This stage creates the raw corpus. Pre-processing here is critical for model quality." },
-    { title: "Tokenizer (BPE)", content: "Converts text into numerical tokens using Byte Pair Encoding. This helps the model handle unknown words by breaking them into sub-words.", code: "Token: 'Evolution' -> [432]\nToken: 'AI' -> [12, 54]", note: "BPE balances vocabulary size and sequence length." },
-    { title: "Transformer Block", content: "The heart of the LLM. It uses Multi-Head Attention to understand relationships between tokens regardless of their distance.", code: "Embedding Dim: 256\nHeads: 8\nAttention: Dot-Product", note: "Attention mechanism allows the model to 'focus' on relevant context." },
-    { title: "Training Loop", content: "Adjusts weights using backpropagation to minimize the prediction loss. It tracks perplexity and accuracy over time.", code: "Epoch 5/10\nLoss: 1.23\nAccuracy: 42%", note: "Gradient descent iteratively improves the model's predictions." },
-    { title: "Ollama Export", content: "Converts the trained weights into a GGUF package and generates a Modelfile for immediate deployment.", code: "export to: ./dist/evo.gguf\nModelfile created.", note: "Integration with Ollama allows using the custom model in any application." }
-];
-
-function renderEvoStep(name, sub, status) {
-    return `
-        <div class="evo-step-node ${status}" style="text-align:center; flex:1; padding:10px; border:2px solid #ddd; border-radius:8px; background:white; cursor:pointer; margin:0 5px;">
-            <div style="font-weight:bold; font-size:0.85em;">${name}</div>
-            <div style="font-size:0.7em; color:#888;">${sub}</div>
-        </div>
-    `;
-}
-
-function renderEvoArrow() {
-    return `<div style="color:#ccc; font-size:1.2em;">➔</div>`;
-}
-
-window.nextEvoStage = function() {
-    currentEvoStage = (currentEvoStage + 1) % evoStages.length;
-    updateEvoUI();
-};
-
-window.prevEvoStage = function() {
-    currentEvoStage = (currentEvoStage - 1 + evoStages.length) % evoStages.length;
-    updateEvoUI();
-};
-
-function updateEvoUI() {
-    const stage = evoStages[currentEvoStage];
-    document.getElementById('evo-stage-title').textContent = "Stage: " + stage.title;
-    document.getElementById('evo-stage-content').innerHTML = `<p>${stage.content}</p><pre style="background:#eee; padding:10px; border-radius:4px;">${stage.code}</pre>`;
-    document.getElementById('evo-stage-details').innerHTML = `<b>Educational Note:</b> ${stage.note}`;
-    
-    const nodes = document.querySelectorAll('.evo-step-node');
-    nodes.forEach((n, i) => {
-        n.style.borderColor = (i === currentEvoStage) ? 'var(--accent)' : '#ddd';
-        n.style.background = (i === currentEvoStage) ? '#eff6ff' : 'white';
-    });
-}
 
 })();

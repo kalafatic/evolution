@@ -107,7 +107,8 @@
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="remoteModel" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="aiMode" lowerBound="1"
         eType="#//AiMode"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="mcpServerUrl" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="mcpServerUrl" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+        defaultValueLiteral="localhost:38080"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="openAiToken" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="openAiModel" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="localModel" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
@@ -161,7 +162,7 @@
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="mcpEnabled" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
         defaultValueLiteral="true"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="mcpPort" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"
-        defaultValueLiteral="58080"/>
+        defaultValueLiteral="38080"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="authenticate" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
         defaultValueLiteral="false"/>
   </eClassifiers>
