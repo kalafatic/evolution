@@ -22,8 +22,15 @@ public class McpDemoServerManager {
     }
 
     public synchronized void start() throws IOException {
-        if (demoServer != null) {
-            stop();
+        if (demoServer != null && demoServer.isAlive()) {
+            return; // Already running
+        }
+
+        // Check if port is in use
+        try (java.net.ServerSocket ss = new java.net.ServerSocket(port)) {
+            // Port is free
+        } catch (IOException e) {
+            throw new IOException("Port " + port + " is already in use. MCP Demo Server cannot start.");
         }
 
         DemoConfiguration config = new DemoConfiguration();
