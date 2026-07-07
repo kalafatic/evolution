@@ -413,6 +413,28 @@
         .demo-step.active { font-weight: bold; color: var(--accent); }
         .demo-step.completed { text-decoration: line-through; color: var(--success); }
 
+        /* Evolutionary Pipeline Styles */
+        .evo-stage-card {
+            width: 90px; padding: 12px; border: 1px solid #ddd; border-radius: 8px;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); background: #fff;
+            cursor: pointer;
+        }
+        .evo-stage-card:hover { border-color: var(--accent); background: #f0f7ff; }
+        .evo-stage-card.active { border-color: var(--accent); background: #e8f0fe; box-shadow: 0 0 15px rgba(0,122,204,0.4); transform: scale(1.1); z-index: 10; }
+        .evo-stage-card.completed { border-color: var(--success); background: #f6fff6; }
+        .evo-stage-card.completed div { color: var(--success) !important; }
+        .evo-stage-arrow { align-self: center; color: #ccc; font-weight: bold; }
+
+        .progress-glow {
+            position: absolute; top: 0; right: 0; bottom: 0; width: 30px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            animation: slide-glow 1.5s infinite;
+        }
+        @keyframes slide-glow {
+            from { transform: translateX(-500px); }
+            to { transform: translateX(500px); }
+        }
+
     </style>
     <script src="/auth-integration.js"></script>
 </head>
@@ -679,14 +701,14 @@
     </div>
 
     <link rel="stylesheet" href="/creatic.css">
-    <script src="creatic.js"></script>
-    <script src="forge-viz/viz-architecture.js"></script>
-    <script src="forge-viz/viz-dataset.js"></script>
-    <script src="forge-viz/viz-training.js"></script>
-    <script src="forge-viz/viz-evolution.js"></script>
-    <script src="forge-viz/viz-walkthrough.js"></script>
-    <script src="forge-viz/viz-self-evo.js"></script>
-    <script src="forge-viz/viz-interactive-demos.js"></script>
+    <script src="/creatic.js"></script>
+    <script src="/forge-viz/viz-architecture.js"></script>
+    <script src="/forge-viz/viz-dataset.js"></script>
+    <script src="/forge-viz/viz-training.js"></script>
+    <script src="/forge-viz/viz-evolution.js"></script>
+    <script src="/forge-viz/viz-walkthrough.js"></script>
+    <script src="/forge-viz/viz-self-evo.js"></script>
+    <script src="/forge-viz/viz-interactive-demos.js"></script>
     <script>
         let serverPort = 48080;
         let activeSessionId = null;
@@ -1292,9 +1314,24 @@
 
         async function startTraining() {
             if (!activeSessionId) {
+                if (currentViz === 'INTERACTIVE_LLM_EVO' && window.runLlmEvoLifecycle) {
+                    window.runLlmEvoLifecycle();
+                    return;
+                }
+                if (currentViz === 'INTERACTIVE_SELF_EVO' && window.runSelfEvoSimulation) {
+                    window.runSelfEvoSimulation();
+                    return;
+                }
                 log("No active session to train.");
                 return;
             }
+
+            const session = sessions.find(s => s.id === activeSessionId);
+            if (session && session.modelType === 'SELF_EVO' && window.startForging) {
+                window.startForging();
+                return;
+            }
+
             isTraining = true;
             document.getElementById('train-btn').disabled = true;
             document.getElementById('stop-btn').disabled = false;
@@ -1465,7 +1502,7 @@
                     renderInteractiveLlmEvoDemo();
                     return;
                 } else if (currentViz === 'INTERACTIVE_SELF_EVO') {
-                    renderSelfEvoViz({ status: 'IDLE', progress: 0 });
+                    renderInteractiveSelfEvoDemo();
                     return;
                 }
                 return;
@@ -1577,6 +1614,9 @@
         }
 
         async function setInteractiveDemo(type) {
+            currentViz = 'INTERACTIVE_' + type;
+            document.getElementById('viz-selector').value = currentViz;
+
             if (type === 'SELF_EVO') {
                 // If there is already a SELF_EVO session, select it and show its live viz
                 let session = sessions.find(s => s.modelType === 'SELF_EVO');
@@ -1584,29 +1624,29 @@
                     selectSession(session.id);
                     currentViz = 'SELF_EVO';
                     document.getElementById('viz-selector').value = 'SELF_EVO';
-                    onVizChange();
-                    return;
                 } else {
-                    // Create one
-                    log("Creating new Self-Evo session for interactive demo...");
+                    // Try to create one, but don't block the interactive simulation view
+                    log("Creating new Self-Evo session for background forging...");
                     try {
                         const res = await fetch(getBaseUrl() + `/forge/session?runtime=SWT`, {
                             method: 'POST',
                             body: JSON.stringify({ name: "Self-Evo Live", modelType: 'SELF_EVO' })
                         });
-                        const data = await res.json();
-                        await loadSessions();
-                        selectSession(data.id);
-                        currentViz = 'SELF_EVO';
-                        document.getElementById('viz-selector').value = 'SELF_EVO';
-                        onVizChange();
-                        return;
-                    } catch (e) { log(`Error: ${e.message}`); }
+                        if (res.ok) {
+                            const data = await res.json();
+                            await loadSessions();
+                            if (data && data.id) {
+                                selectSession(data.id);
+                                currentViz = 'SELF_EVO';
+                                document.getElementById('viz-selector').value = 'SELF_EVO';
+                            }
+                        }
+                    } catch (e) {
+                        log(`Note: Background session creation for Self-Evo failed (${e.message}). Using simulation mode.`);
+                    }
                 }
             }
 
-            currentViz = 'INTERACTIVE_' + type;
-            document.getElementById('viz-selector').value = currentViz;
             onVizChange();
         }
 

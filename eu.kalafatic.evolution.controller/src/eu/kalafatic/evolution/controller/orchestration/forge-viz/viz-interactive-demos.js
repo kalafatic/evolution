@@ -281,16 +281,6 @@ window.renderInteractiveLlmEvoDemo = function() {
                 <button class="btn btn-primary" onclick="runLlmEvoLifecycle()">Run Lifecycle</button>
                 <button class="btn" onclick="resetLlmEvoLifecycle()">Reset</button>
             </div>
-
-            <style>
-                .evo-stage-card {
-                    width: 80px; padding: 10px; border: 1px solid #ddd; border-radius: 6px;
-                    cursor: pointer; transition: all 0.3s;
-                }
-                .evo-stage-card:hover { border-color: var(--accent); background: #f0f7ff; }
-                .evo-stage-card.active { border-color: var(--accent); background: #e8f0fe; box-shadow: 0 0 8px rgba(0,122,204,0.3); }
-                .evo-stage-arrow { align-self: center; color: #ccc; }
-            </style>
         </div>
     `;
 
