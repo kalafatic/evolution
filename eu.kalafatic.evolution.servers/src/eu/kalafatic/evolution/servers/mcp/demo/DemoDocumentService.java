@@ -22,10 +22,22 @@ public class DemoDocumentService {
     }
 
     public DocumentContent getDocument(String path) throws IOException {
-        File root = new File(rootFolder).getCanonicalFile();
-        File file = new File(root, path).getCanonicalFile();
+        File root = new File(rootFolder).getAbsoluteFile();
+        try {
+            root = root.getCanonicalFile();
+        } catch (IOException e) {
+            // Fallback to absolute if canonical fails
+        }
+
+        File file = new File(root, path).getAbsoluteFile();
+        try {
+            file = file.getCanonicalFile();
+        } catch (IOException e) {
+            // Fallback to absolute
+        }
+
         if (!file.getPath().startsWith(root.getPath())) {
-            throw new SecurityException("Access denied: path is outside documentation folder");
+            throw new SecurityException("Access denied: path is outside documentation folder: " + file.getPath() + " vs " + root.getPath());
         }
         if (!file.exists() || !file.isFile()) {
             return null;
