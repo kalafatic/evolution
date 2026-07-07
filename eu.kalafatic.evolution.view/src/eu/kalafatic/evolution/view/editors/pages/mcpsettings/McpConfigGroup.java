@@ -94,7 +94,7 @@ public class McpConfigGroup extends AEvoGroup {
             }
         });
 
-        Button startDemoBtn = GUIFactory.INSTANCE.createButton(group, "Start Demo Server", 150);
+        Button startDemoBtn = GUIFactory.INSTANCE.createButton(group, "START SERVER", 150);
         startDemoBtn.setToolTipText("Start the local MCP Demo Documentation Server on port 38080.");
         startDemoBtn.addSelectionListener(new SelectionAdapter() {
             @Override

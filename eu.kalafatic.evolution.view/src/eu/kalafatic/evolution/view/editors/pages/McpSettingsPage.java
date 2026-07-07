@@ -65,6 +65,7 @@ public class McpSettingsPage extends AEvoPage {
                 Display.getDefault().asyncExec(() -> {
                     if (isDisposed()) return;
                     configGroup.updateDemoStatus();
+                    refreshUI();
                     MessageBox mb = new MessageBox(getShell(), SWT.ICON_INFORMATION | SWT.OK);
                     mb.setText("Success");
                     mb.setMessage("MCP Demo Documentation Server started on port 38080.");
@@ -123,7 +124,9 @@ public class McpSettingsPage extends AEvoPage {
         resourcesGroup.clear();
         new Thread(() -> {
             try {
-                McpClient client = new McpClient(url); String resourcesJson = client.listResources(); JSONArray resources = new JSONArray(resourcesJson);
+                McpClient client = new McpClient(url);
+                client.initialize();
+                String resourcesJson = client.listResources(); JSONArray resources = new JSONArray(resourcesJson);
                 Display.getDefault().asyncExec(() -> { if (resourcesGroup == null || resourcesGroup.isDisposed()) return; resourcesGroup.getGroup().setBackground(null); for (int i = 0; i < resources.length(); i++) { JSONObject res = resources.getJSONObject(i); resourcesGroup.addItem(res.optString("name", "N/A"), res.optString("uri", "N/A"), res.optString("mimeType", "N/A"), res.optString("description", "")); } });
             } catch (Exception ex) {
                 Display.getDefault().asyncExec(() -> { if (resourcesGroup == null || resourcesGroup.isDisposed()) return; resourcesGroup.getGroup().setBackground(lightRed); handleRefreshError("Failed to list resources", ex); });
@@ -137,7 +140,9 @@ public class McpSettingsPage extends AEvoPage {
         toolsGroup.clear();
         new Thread(() -> {
             try {
-                McpClient client = new McpClient(url); String toolsJson = client.listTools(); JSONArray tools = new JSONArray(toolsJson);
+                McpClient client = new McpClient(url);
+                client.initialize();
+                String toolsJson = client.listTools(); JSONArray tools = new JSONArray(toolsJson);
                 Display.getDefault().asyncExec(() -> { if (toolsGroup == null || toolsGroup.isDisposed()) return; toolsGroup.getGroup().setBackground(null); for (int i = 0; i < tools.length(); i++) { JSONObject tool = tools.getJSONObject(i); toolsGroup.addItem(tool.optString("name", "N/A"), tool.optString("description", ""), tool.optJSONObject("inputSchema") != null ? tool.optJSONObject("inputSchema").toString() : "{}"); } });
             } catch (Exception ex) {
                 Display.getDefault().asyncExec(() -> { if (toolsGroup == null || toolsGroup.isDisposed()) return; toolsGroup.getGroup().setBackground(lightRed); handleRefreshError("Failed to list tools", ex); });
@@ -151,7 +156,9 @@ public class McpSettingsPage extends AEvoPage {
         promptsGroup.clear();
         new Thread(() -> {
             try {
-                McpClient client = new McpClient(url); String promptsJson = client.listPrompts(); JSONArray prompts = new JSONArray(promptsJson);
+                McpClient client = new McpClient(url);
+                client.initialize();
+                String promptsJson = client.listPrompts(); JSONArray prompts = new JSONArray(promptsJson);
                 Display.getDefault().asyncExec(() -> { if (promptsGroup == null || promptsGroup.isDisposed()) return; promptsGroup.getGroup().setBackground(null); for (int i = 0; i < prompts.length(); i++) { JSONObject prompt = prompts.getJSONObject(i); promptsGroup.addItem(prompt.optString("name", "N/A"), prompt.optString("description", ""), prompt.optJSONArray("arguments") != null ? prompt.optJSONArray("arguments").toString() : "[]"); } });
             } catch (Exception ex) {
                 Display.getDefault().asyncExec(() -> { if (promptsGroup == null || promptsGroup.isDisposed()) return; promptsGroup.getGroup().setBackground(lightRed); handleRefreshError("Failed to list prompts", ex); });
@@ -164,11 +171,11 @@ public class McpSettingsPage extends AEvoPage {
         String message = prefix + ": " + (ex.getMessage() != null ? ex.getMessage() : ex.toString());
         if (ex instanceof java.net.ConnectException || ex.getCause() instanceof java.net.ConnectException) {
             message = prefix + ": Connection refused. Is the MCP server running at " + configGroup.getUrl() + "?";
+            eu.kalafatic.evolution.controller.log.Log.log(message);
+        } else {
+            eu.kalafatic.evolution.controller.log.Log.log(this, ex);
+            eu.kalafatic.evolution.controller.log.Log.log(message);
         }
-
-        final String finalMsg = message;
-        eu.kalafatic.evolution.controller.log.Log.log(this, ex);
-        eu.kalafatic.evolution.controller.log.Log.log(finalMsg);
     }
 
     @Override
