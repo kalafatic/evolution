@@ -860,31 +860,65 @@ public class AiChatPage extends AEvoPage {
 	}
 
 	private AiMode getSelectedAiMode() {
-		RuntimeProjection projection = ProjectionService.getInstance().getProjection(getCurrentSessionName());
-		java.util.Map<String, Object> config = projection.getConfiguration();
+		if (chatMgmtGroup != null && chatMgmtGroup.getAiModeCombo() != null && !chatMgmtGroup.getAiModeCombo().isDisposed()) {
+			int selection = chatMgmtGroup.getAiModeCombo().getSelectionIndex();
+			if (selection >= 0) return AiMode.get(selection);
+		}
 
 		if (currentSession != null && currentSession.getAiMode() != null) return currentSession.getAiMode();
 		if (orchestrator != null) return orchestrator.getAiMode();
 
+		RuntimeProjection projection = ProjectionService.getInstance().getProjection(getCurrentSessionName());
+		java.util.Map<String, Object> config = projection.getConfiguration();
 		int modeVal = (int) config.getOrDefault("aiMode", 0);
 		return AiMode.get(modeVal);
 	}
 
 	private String getSelectedModelName() {
-		RuntimeProjection projection = ProjectionService.getInstance().getProjection(getCurrentSessionName());
-		java.util.Map<String, Object> config = projection.getConfiguration();
 		AiMode mode = getSelectedAiMode();
 
+		if (chatMgmtGroup != null) {
+			String val = (mode == AiMode.REMOTE) ? chatMgmtGroup.getRemoteModel() : chatMgmtGroup.getLocalModel();
+			if (val != null && !val.isEmpty() && !"NOT SET".equals(val)) return val;
+
+			// Fallback to the other combo if the primary one is empty, especially for MEDIATED/HYBRID
+			if (mode != AiMode.REMOTE) {
+				val = chatMgmtGroup.getRemoteModel();
+				if (val != null && !val.isEmpty() && !"NOT SET".equals(val)) return val;
+			} else {
+				val = chatMgmtGroup.getLocalModel();
+				if (val != null && !val.isEmpty() && !"NOT SET".equals(val)) return val;
+			}
+		}
+
 		String modelName = null;
-		if (mode == AiMode.LOCAL) {
-			if (currentSession != null && currentSession.getLocalModel() != null && !currentSession.getLocalModel().isEmpty()) modelName = currentSession.getLocalModel();
-			else if (orchestrator != null && orchestrator.getLocalModel() != null && !orchestrator.getLocalModel().isEmpty()) modelName = orchestrator.getLocalModel();
-			else modelName = (String) config.get("localModel");
-		} else {
+		if (mode == AiMode.REMOTE) {
 			if (currentSession != null && currentSession.getRemoteModel() != null && !currentSession.getRemoteModel().isEmpty()) modelName = currentSession.getRemoteModel();
 			else if (orchestrator != null && orchestrator.getRemoteModel() != null && !orchestrator.getRemoteModel().isEmpty()) modelName = orchestrator.getRemoteModel();
-			else modelName = (String) config.get("remoteModel");
+			else if (orchestrator != null && orchestrator.getOpenAiModel() != null && !orchestrator.getOpenAiModel().isEmpty()) modelName = orchestrator.getOpenAiModel();
+		} else {
+			if (currentSession != null && currentSession.getLocalModel() != null && !currentSession.getLocalModel().isEmpty()) modelName = currentSession.getLocalModel();
+			else if (orchestrator != null && orchestrator.getLocalModel() != null && !orchestrator.getLocalModel().isEmpty()) modelName = orchestrator.getLocalModel();
+			else if (orchestrator != null && orchestrator.getOllama() != null && orchestrator.getOllama().getModel() != null && !orchestrator.getOllama().getModel().isEmpty()) modelName = orchestrator.getOllama().getModel();
+			else if (orchestrator != null && orchestrator.getHybridModel() != null && !orchestrator.getHybridModel().isEmpty()) modelName = orchestrator.getHybridModel();
 		}
+
+		// Absolute fallback: try ANY model field in orchestrator if still empty
+		if (modelName == null || modelName.isEmpty() || "NOT SET".equals(modelName)) {
+			if (orchestrator != null) {
+				if (orchestrator.getRemoteModel() != null && !orchestrator.getRemoteModel().isEmpty()) modelName = orchestrator.getRemoteModel();
+				else if (orchestrator.getLocalModel() != null && !orchestrator.getLocalModel().isEmpty()) modelName = orchestrator.getLocalModel();
+				else if (orchestrator.getOpenAiModel() != null && !orchestrator.getOpenAiModel().isEmpty()) modelName = orchestrator.getOpenAiModel();
+			}
+		}
+
+		if (modelName == null || modelName.isEmpty() || "NOT SET".equals(modelName)) {
+			RuntimeProjection projection = ProjectionService.getInstance().getProjection(getCurrentSessionName());
+			java.util.Map<String, Object> config = projection.getConfiguration();
+			modelName = (String) config.get(mode == AiMode.REMOTE ? "remoteModel" : "localModel");
+			if (modelName == null || modelName.isEmpty()) modelName = (String) config.get(mode == AiMode.REMOTE ? "localModel" : "remoteModel");
+		}
+
 		return modelName;
 	}
 
