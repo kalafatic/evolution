@@ -154,21 +154,29 @@ public class McpConfigGroup extends AEvoGroup {
 
 	@Override
 	protected void refreshUI() {
+		boolean running = eu.kalafatic.evolution.controller.orchestration.mcp.McpDemoServerManager.getInstance()
+				.isRunning();
 		if (orchestrator != null) {
 			setTextSafe(mcpUrlText, orchestrator.getMcpServerUrl());
 			if (orchestrator.getServerSettings() != null) {
+				// Sync model with reality if needed
+				if (running && !orchestrator.getServerSettings().isMcpEnabled()) {
+					orchestrator.getServerSettings().setMcpEnabled(true);
+				}
 				mcpEnabledBtn.setSelection(orchestrator.getServerSettings().isMcpEnabled());
 				setTextSafe(mcpPortText, String.valueOf(orchestrator.getServerSettings().getMcpPort()));
 			}
 		}
-		updateDemoStatus();
+		updateDemoStatus(running);
 	}
 
 	public void updateDemoStatus() {
+		updateDemoStatus(eu.kalafatic.evolution.controller.orchestration.mcp.McpDemoServerManager.getInstance().isRunning());
+	}
+
+	private void updateDemoStatus(boolean running) {
 		if (demoStatusLabel == null || demoStatusLabel.isDisposed())
 			return;
-		boolean running = eu.kalafatic.evolution.controller.orchestration.mcp.McpDemoServerManager.getInstance()
-				.isRunning();
 		demoStatusLabel.setText(running ? "Running" : "Stopped");
 		demoStatusLabel.setForeground(running ? lightGreen : lightRed);
 	}

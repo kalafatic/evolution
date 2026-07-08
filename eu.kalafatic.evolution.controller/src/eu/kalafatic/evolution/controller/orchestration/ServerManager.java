@@ -51,6 +51,13 @@ public class ServerManager {
         server.startServer();
         activeServers.put(port, server);
         this.primaryPort = port;
+
+        // Auto-start MCP Demo Server
+        try {
+            eu.kalafatic.evolution.controller.orchestration.mcp.McpDemoServerManager.getInstance().start();
+        } catch (IOException e) {
+            eu.kalafatic.utils.log.Log.log("Could not auto-start MCP Demo Server: " + e.getMessage());
+        }
     }
 
     public synchronized void stop(int port) {

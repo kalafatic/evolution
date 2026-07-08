@@ -20,6 +20,10 @@ public class JsonRpcDispatcher {
         this.promptRegistry = promptRegistry;
     }
 
+    public ToolRegistry getToolRegistry() {
+        return toolRegistry;
+    }
+
     public McpResponse dispatch(McpRequest request) {
         String method = request.getMethod();
         Object id = request.getId();
