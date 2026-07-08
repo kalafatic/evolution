@@ -166,91 +166,9 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 		String request = taskRequest.getPrompt();
 		OrchestrationState state = context.getOrchestrationState();
 
-		// ============================================================
-		// 1. CLASSIFY THE PROMPT
-		// Everything is evolution — chat is just 1-2 branches
-		// ============================================================
-		// ============================================================
-		// 1. LLM-POWERED INTENT ANALYSIS
-		// ============================================================
-		PromptIntentAnalyzer.IntentResult intent = intentAnalyzer.analyze(request, context);
-		context.log("[DARWIN] Intent Analysis: " + intent.toString());
-
-		// ============================================================
-		// 2. ROUTE BASED ON INTENT
-		// ============================================================
-		if (intent.isChat()) {
-			context.log("[DARWIN] CHAT detected. Using minimal evolution.");
-//	        state.getMetadata().put("isChatRequest", true);
-//
-//	        // Set CHAT profile
-//	        EvolutionProfile chatProfile = EvolutionProfile.create(CapabilityType.CHAT, 1);
-//	        context.getOrchestrationState().setExecutionProfile(chatProfile);
-//
-//	        // CHAT FLOW FIX: Start at synthesis phase to allow one-pass generation
-//	        state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(EvolutionPhase.FINAL_SYNTHESIS));
-//	        state.setIterationCount(0);
-
-			context.log("[DARWIN] CHAT detected. Using minimal evolution.");
-			state.getMetadata().put("isChatRequest", true);
-
-			// Set CHAT profile
-			EvolutionProfile chatProfile = EvolutionProfile.create(CapabilityType.CHAT, 1);
-			context.getOrchestrationState().setExecutionProfile(chatProfile);
-
-			// Skip discovery and go directly to chat handling
-			OrchestratorResponse chatResponse = new OrchestratorResponse();
-			chatResponse.setResultType(ResultType.CHAT);
-
-			// Generate chat response directly - skip all evolution
-			String chatResponseText = generateChatResponse(request, context);
-			chatResponse.setSummary(chatResponseText);
-
-			// Store the response
-			state.getMetadata().put("chatResponse", chatResponseText);
-
-			// Transition to DONE
-			iterationManager.transition(SystemState.DONE, context);
-
-			// Assemble final response
-			FinalResponseAssembler assembler = new FinalResponseAssembler();
-			FinalResponse finalResponse = assembler.assemble(context, chatResponseText, true, context.getStartTime());
-			chatResponse.setFinalResponse(finalResponse);
-
-			return chatResponse;
-
-		} else if (intent.isControl()) {
-			context.log("[DARWIN] CONTROL detected.");
-
-			// ✅ CRITICAL FIX: If we are waiting for input, satisfy it directly instead of starting a new loop
-			if (context.isWaitingForInput()) {
-				context.log("[DARWIN] Satisfying pending input request with CONTROL command: " + request);
-				context.provideInput(request);
-
-				OrchestratorResponse controlAck = new OrchestratorResponse();
-				controlAck.setResultType(ResultType.CHAT);
-				controlAck.setSummary("Processing command: " + request);
-				return controlAck;
-			}
-
-			state.getMetadata().put("pendingControlCommand", request);
-
-		} else {
-			// ============================================================
-			// TASK: RESET THE CHAT FLAG!
-			// ============================================================
-			context.log("[DARWIN] TASK detected. Using full evolution.");
-
-			// ✅ CRITICAL FIX: Remove the chat flag
-			state.getMetadata().remove("isChatRequest");
-
-			// Also ensure we don't have any stale chat profile
-			// If profile is CHAT, reset it
-			if (context.getExecutionProfile() != null
-					&& context.getExecutionProfile().getCapability() == CapabilityType.CHAT) {
-				EvolutionProfile taskProfile = EvolutionProfile.create(CapabilityType.CODE, 2);
-				context.getOrchestrationState().setExecutionProfile(taskProfile);
-			}
+		OrchestratorResponse intentResponse = handleIntentRouting(request, iterationManager);
+		if (intentResponse != null) {
+			return intentResponse;
 		}
 
 		Map<String, Object> contextMap = taskRequest.getContext();
@@ -565,7 +483,7 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 	/**
 	 * Generates a direct chat response without evolution.
 	 */
-	private String generateChatResponse(String request, TaskContext context) {
+	protected String generateChatResponse(String request, TaskContext context) {
 		try {
 			String systemInstruction = "You are a friendly, helpful AI assistant. "
 					+ "RESPOND CONVERSATIONALLY. DO NOT generate code. "
@@ -3316,5 +3234,100 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 	@Override
 	public AiService getAiservice() {
 		return aiService;
+	}
+
+	/**
+	 * Identifies common greetings to allow short-circuiting for pure pleasantries
+	 * even in technical modes.
+	 */
+	protected boolean isSimpleGreeting(String prompt) {
+		if (prompt == null)
+			return false;
+		String p = prompt.trim().toLowerCase();
+		if (p.length() > 20)
+			return false; // Greetings are usually short
+		return p.matches("^(hi|hello|hey|greetings|morning|afternoon|evening|hola|yo|sup|hi there|hello there)(\\s*|!|\\.|\\?)*$");
+	}
+
+	/**
+	 * Common intent routing and short-circuit logic.
+	 * Returns an OrchestratorResponse if short-circuiting is required, null otherwise.
+	 */
+	protected OrchestratorResponse handleIntentRouting(String request, IterationManager iterationManager) throws Exception {
+		OrchestrationState state = context.getOrchestrationState();
+		PromptIntentAnalyzer.IntentResult intent = intentAnalyzer.analyze(request, context);
+		context.log("[DARWIN] Intent Analysis: " + intent.toString());
+
+		boolean isForcedTechnicalMode = ModeRecognizer.isForcedTechnicalMode(context);
+		boolean isSimpleGreeting = isSimpleGreeting(request);
+
+		if (intent.isChat() && (!isForcedTechnicalMode || isSimpleGreeting)) {
+			context.log("[DARWIN] CHAT detected. Using minimal evolution.");
+			state.getMetadata().put("isChatRequest", true);
+
+			// Set CHAT profile
+			EvolutionProfile chatProfile = EvolutionProfile.create(CapabilityType.CHAT, 1);
+			context.getOrchestrationState().setExecutionProfile(chatProfile);
+
+			// Skip discovery and go directly to chat handling
+			OrchestratorResponse chatResponse = new OrchestratorResponse();
+			chatResponse.setResultType(ResultType.CHAT);
+
+			// Generate chat response directly - skip all evolution
+			String chatResponseText = generateChatResponse(request, context);
+			chatResponse.setSummary(chatResponseText);
+
+			// Store the response
+			state.getMetadata().put("chatResponse", chatResponseText);
+
+			// Transition to DONE
+			iterationManager.transition(SystemState.DONE, context);
+
+			// Assemble final response
+			FinalResponseAssembler assembler = new FinalResponseAssembler();
+			FinalResponse finalResponse = assembler.assemble(context, chatResponseText, true, context.getStartTime());
+			chatResponse.setFinalResponse(finalResponse);
+
+			return chatResponse;
+
+		} else if (intent.isControl()) {
+			context.log("[DARWIN] CONTROL detected.");
+
+			// CRITICAL FIX: If we are waiting for input, satisfy it directly instead of starting a new loop
+			if (context.isWaitingForInput()) {
+				context.log("[DARWIN] Satisfying pending input request with CONTROL command: " + request);
+				context.provideInput(request);
+
+				OrchestratorResponse controlAck = new OrchestratorResponse();
+				controlAck.setResultType(ResultType.CHAT);
+				controlAck.setSummary("Processing command: " + request);
+				return controlAck;
+			}
+
+			state.getMetadata().put("pendingControlCommand", request);
+			return null;
+
+		} else {
+			// ============================================================
+			// TASK or FORCED TECHNICAL MODE: RESET THE CHAT FLAG!
+			// ============================================================
+			if (intent.isChat()) {
+				context.log("[DARWIN] CHAT intent detected, but mode is forced technical (" + platformType
+						+ "). Proceeding with evolution for: " + request);
+			} else {
+				context.log("[DARWIN] TASK detected. Using full evolution.");
+			}
+
+			// ✅ CRITICAL FIX: Remove the chat flag
+			state.getMetadata().remove("isChatRequest");
+
+			// Also ensure we don't have any stale chat profile
+			if (context.getExecutionProfile() != null
+					&& context.getExecutionProfile().getCapability() == CapabilityType.CHAT) {
+				EvolutionProfile taskProfile = EvolutionProfile.create(CapabilityType.CODE, 2);
+				context.getOrchestrationState().setExecutionProfile(taskProfile);
+			}
+			return null;
+		}
 	}
 }

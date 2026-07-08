@@ -85,39 +85,9 @@ public class CodingEngine extends ADarwinEngine {
 		String request = taskRequest.getPrompt();
 		OrchestrationState state = context.getOrchestrationState();
 
-		// ============================================================
-		// 1. CLASSIFY THE PROMPT
-		// Everything is evolution — chat is just 1-2 branches
-		// ============================================================
-		// ============================================================
-		// 1. LLM-POWERED INTENT ANALYSIS
-		// ============================================================
-		PromptIntentAnalyzer.IntentResult intent = intentAnalyzer.analyze(request, context);
-		context.log("[DARWIN] Intent Analysis: " + intent.toString());
-
-		// ============================================================
-		// 2. ROUTE BASED ON INTENT
-		// ============================================================
-		if (intent.isControl()) {
-			context.log("[DARWIN] CONTROL detected.");
-			state.getMetadata().put("pendingControlCommand", request);
-
-		} else {
-			// ============================================================
-			// TASK: RESET THE CHAT FLAG!
-			// ============================================================
-			context.log("[DARWIN] TASK detected. Using full evolution.");
-
-			// ✅ CRITICAL FIX: Remove the chat flag
-			state.getMetadata().remove("isChatRequest");
-
-			// Also ensure we don't have any stale chat profile
-			// If profile is CHAT, reset it
-			if (context.getExecutionProfile() != null
-					&& context.getExecutionProfile().getCapability() == CapabilityType.CHAT) {
-				EvolutionProfile taskProfile = EvolutionProfile.create(CapabilityType.CODE, 2);
-				context.getOrchestrationState().setExecutionProfile(taskProfile);
-			}
+		OrchestratorResponse intentResponse = handleIntentRouting(request, iterationManager);
+		if (intentResponse != null) {
+			return intentResponse;
 		}
 
 		Map<String, Object> contextMap = taskRequest.getContext();

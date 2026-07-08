@@ -8,6 +8,7 @@ import eu.kalafatic.evolution.controller.agents.PromptIntentAnalyzer.IntentResul
 import eu.kalafatic.evolution.controller.orchestration.PlatformType;
 import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait;
 import eu.kalafatic.evolution.model.orchestration.AiMode;
 
 /**
@@ -86,17 +87,23 @@ public class ModeRecognizer {
 	}
 
 	public static boolean isSelfDevMode(TaskContext context) {
-		return (context.getOrchestrator() != null) && (context.getOrchestrator().getAiChat() != null)
-				&& (context.getOrchestrator().getAiChat().getPromptInstructions() != null)
-				&& (context.getOrchestrator().getAiChat().getPromptInstructions().isSelfIterativeMode());
+		return (context.getOrchestrator() != null && context.getOrchestrator().getAiChat() != null
+				&& context.getOrchestrator().getAiChat().getPromptInstructions() != null
+				&& context.getOrchestrator().getAiChat().getPromptInstructions().isSelfIterativeMode())
+				|| (context.getBehaviorProfile() != null && context.getBehaviorProfile().hasTrait(BehaviorTrait.WORKFLOW_SELF_DEV));
 	}
 
 	public static boolean isMediatedMode(TaskContext context) {
-		return (context.getOrchestrator() != null) && (AiMode.MEDIATED.equals(context.getOrchestrator().getAiMode()));
+		return (context.getOrchestrator() != null && AiMode.MEDIATED.equals(context.getOrchestrator().getAiMode()))
+				|| (context.getBehaviorProfile() != null && context.getBehaviorProfile().hasTrait(BehaviorTrait.WORKFLOW_EXPORT_ONLY));
 	}
 
 	public static boolean isIntentMode(TaskContext context) {
 		return (context.getOrchestrator() != null) && (AiMode.INTENT.equals(context.getOrchestrator().getAiMode()));
+	}
+
+	public static boolean isForcedTechnicalMode(TaskContext context) {
+		return isSelfDevMode(context) || isMediatedMode(context) || isIntentMode(context);
 	}
 
 	public boolean isChatMode(TaskContext context) {
