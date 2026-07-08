@@ -862,6 +862,21 @@ public class ArchitecturePage extends AEvoPage {
         Display.getDefault().asyncExec(() -> {
             if (browser == null || browser.isDisposed() || showingSnapshot) return;
 
+            if (currentMode == ViewMode.GENOME) {
+                String genomeJson = loadGenomeJson();
+                if (!isJsReady) return;
+                browser.execute("if(window.updateGenome) { window.updateGenome(" + genomeJson + "); }");
+
+                // Update sidebar state
+                JSONObject sidebarData = new JSONObject();
+                sidebarData.put("mode", currentMode.name());
+                sidebarData.put("target", currentTargetPath);
+                sidebarData.put("defaultTarget", defaultTargetPath);
+                sidebarData.put("history", new JSONArray(targetHistory));
+                browser.execute("if(window.updateSidebar) { window.updateSidebar(" + sidebarData.toString() + "); }");
+                return;
+            }
+
             DesignModel model = extractModel();
             String json = renderer.serializeModel(model);
 
@@ -908,7 +923,8 @@ public class ArchitecturePage extends AEvoPage {
                 baseUrl = bundleRoot.toString();
             }
 
-            String html = renderer.render(model, currentMode.name(), currentTargetPath, defaultTargetPath, targetHistory, orchestrator.getGenomeSnapshots(), currentSnapshotTimestamp, baseUrl);
+            String genomeJson = (currentMode == ViewMode.GENOME) ? loadGenomeJson() : "{}";
+            String html = renderer.render(model, currentMode.name(), currentTargetPath, defaultTargetPath, targetHistory, orchestrator.getGenomeSnapshots(), currentSnapshotTimestamp, baseUrl, genomeJson);
             browser.setText(html);
         } catch (Exception e) {
             e.printStackTrace();
@@ -916,14 +932,32 @@ public class ArchitecturePage extends AEvoPage {
     }
 
     public enum ViewMode {
-        USE_CASES, SUBSYSTEMS, COMPONENTS, KNOWLEDGE_GRAPH
+        USE_CASES, SUBSYSTEMS, COMPONENTS, KNOWLEDGE_GRAPH, GENOME
     }
 
     private ViewMode currentMode = ViewMode.COMPONENTS;
 
     public void setViewMode(ViewMode mode) {
+        ViewMode oldMode = this.currentMode;
         this.currentMode = mode;
-        scheduleRefresh();
+        if (oldMode == ViewMode.GENOME || mode == ViewMode.GENOME) {
+            initBrowser();
+        } else {
+            scheduleRefresh();
+        }
+    }
+
+    private String loadGenomeJson() {
+        if (currentTargetPath == null) return "{}";
+        java.io.File genomeFile = new java.io.File(currentTargetPath, "genome/current/genome.json");
+        if (!genomeFile.exists()) {
+            return "{}";
+        }
+        try {
+            return java.nio.file.Files.readString(genomeFile.toPath());
+        } catch (java.io.IOException e) {
+            return "{}";
+        }
     }
 
     private DesignModel extractModel() {

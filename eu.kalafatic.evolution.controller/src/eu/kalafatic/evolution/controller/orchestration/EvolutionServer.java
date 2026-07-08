@@ -148,6 +148,12 @@ public class EvolutionServer extends NanoHTTPD {
         if (uri.endsWith("/architecture.css")) {
             return handleGetResource("/architecture.css", "text/css");
         }
+        if (uri.endsWith("/genome.js")) {
+            return handleGetResource("/genome.js", "application/javascript");
+        }
+        if (uri.endsWith("/genome.css")) {
+            return handleGetResource("/genome.css", "text/css");
+        }
 
         // 3. Environment-Aware Authorization Check
         try {
