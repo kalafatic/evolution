@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP Demo Server</title>
+    <style>
+        :root {
+            --bg-color: #f4f4f9;
+            --text-color: #333;
+            --card-bg: #fff;
+            --border-color: #ddd;
+            --primary-color: #007bff;
+            --primary-hover: #0056b3;
+            --success-color: #28a745;
+            --error-color: #dc3545;
+            --secondary-color: #6c757d;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #1e1e1e;
+                --text-color: #e0e0e0;
+                --card-bg: #2d2d2d;
+                --border-color: #444;
+                --primary-color: #3794ff;
+            }
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        header {
+            width: 100%;
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        h1 { margin: 0; }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .grid { grid-template-columns: 1fr; }
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 5px;
+        }
+
+        .info-item {
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .info-label { font-weight: bold; }
+        .status-running { color: var(--success-color); }
+
+        .tool-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .tool-item {
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .tool-item:hover {
+            background-color: rgba(0, 123, 255, 0.1);
+        }
+
+        .tool-item.selected {
+            border-color: var(--primary-color);
+            background-color: rgba(0, 123, 255, 0.05);
+        }
+
+        .tool-name { font-weight: bold; color: var(--primary-color); }
+        .tool-desc { font-size: 0.9rem; margin-top: 5px; }
+
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+
+        select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: monospace;
+            box-sizing: border-box;
+            margin-bottom: 15px;
+        }
+
+        textarea { height: 150px; resize: vertical; }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: opacity 0.2s;
+        }
+
+        button:hover { opacity: 0.8; }
+
+        .btn-primary { background-color: var(--primary-color); color: white; }
+        .btn-secondary { background-color: var(--secondary-color); color: white; }
+        .btn-success { background-color: var(--success-color); color: white; }
+
+        .response-area {
+            background-color: #000;
+            color: #0f0;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: monospace;
+            min-height: 200px;
+            white-space: pre-wrap;
+            overflow-x: auto;
+            position: relative;
+        }
+
+        .response-meta {
+            margin-top: 10px;
+            font-size: 0.8rem;
+            color: var(--secondary-color);
+            display: flex;
+            gap: 20px;
+        }
+
+        .status-badge {
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .status-ok { background-color: var(--success-color); color: white; }
+        .status-error { background-color: var(--error-color); color: white; }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>MCP Demo Server Interface</h1>
+    </header>
+
+    <div class="grid">
+        <aside>
+            <div class="card">
+                <div class="card-title">Connection Info</div>
+                <div class="info-item">
+                    <span class="info-label">Status:</span>
+                    <span id="server-status" class="status-running">Running</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Endpoint:</span>
+                    <span>/mcp</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Tools:</span>
+                    <span id="tool-count">0</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Version:</span>
+                    <span id="server-version">1.0</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Uptime:</span>
+                    <span id="server-uptime">N/A</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Current Time:</span>
+                    <span id="current-time"></span>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Tool Explorer</div>
+                <div id="tool-list" class="tool-list">
+                    <p>Loading tools...</p>
+                </div>
+            </div>
+        </aside>
+
+        <main>
+            <div class="card">
+                <div class="card-title">Request Editor</div>
+                <label for="tool-select">Select Tool:</label>
+                <select id="tool-select" onchange="onToolSelectChange()">
+                    <option value="">-- Choose a tool --</option>
+                </select>
+
+                <label for="request-args">Arguments (JSON):</label>
+                <textarea id="request-args" placeholder='{ "arg": "value" }'></textarea>
+
+                <div class="actions">
+                    <button class="btn-primary" onclick="executeTool()">Execute</button>
+                    <button class="btn-secondary" onclick="formatJson()">Format JSON</button>
+                    <button class="btn-secondary" onclick="clearRequest()">Clear</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Response Viewer</div>
+                <div id="response-viewer" class="response-area">Waiting for execution...</div>
+
+                <div class="response-meta">
+                    <span id="exec-status"></span>
+                    <span id="exec-time"></span>
+                </div>
+
+                <div class="actions" style="margin-top: 15px;">
+                    <button class="btn-secondary" onclick="copyResponse()">Copy</button>
+                    <button class="btn-secondary" onclick="downloadResponse()">Download JSON</button>
+                    <button class="btn-secondary" onclick="clearResponse()">Clear</button>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<script>
+    let registeredTools = [];
+
+    async function loadInfo() {
+        try {
+            const response = await fetch('/ui/info');
+            const info = await response.json();
+            document.getElementById('server-version').textContent = info.version || '1.0';
+            document.getElementById('server-uptime').textContent = info.uptime || 'N/A';
+        } catch (e) {
+            console.error('Failed to load server info', e);
+        }
+    }
+
+    async function loadTools() {
+        try {
+            const response = await fetch('/ui/tools');
+            registeredTools = await response.json();
+
+            const toolList = document.getElementById('tool-list');
+            const toolSelect = document.getElementById('tool-select');
+
+            toolList.innerHTML = '';
+            toolSelect.innerHTML = '<option value="">-- Choose a tool --</option>';
+            document.getElementById('tool-count').textContent = registeredTools.length;
+
+            registeredTools.forEach(tool => {
+                // List item
+                const div = document.createElement('div');
+                div.className = 'tool-item';
+                div.id = `tool-item-${tool.name}`;
+                div.onclick = () => selectTool(tool.name);
+                div.innerHTML = `
+                    <div class="tool-name">${tool.name}</div>
+                    <div class="tool-desc">${tool.description}</div>
+                `;
+                toolList.appendChild(div);
+
+                // Select option
+                const option = document.createElement('option');
+                option.value = tool.name;
+                option.textContent = tool.name;
+                toolSelect.appendChild(option);
+            });
+        } catch (e) {
+            document.getElementById('tool-list').innerHTML = '<p style="color:red">Failed to load tools</p>';
+        }
+    }
+
+    function selectTool(name) {
+        document.querySelectorAll('.tool-item').forEach(el => el.classList.remove('selected'));
+        const item = document.getElementById(`tool-item-${name}`);
+        if (item) item.classList.add('selected');
+
+        document.getElementById('tool-select').value = name;
+
+        const tool = registeredTools.find(t => t.name === name);
+        if (tool && tool.inputSchema) {
+            // Provide a template based on schema if possible, or just empty object
+            document.getElementById('request-args').value = JSON.stringify({}, null, 2);
+        }
+    }
+
+    function onToolSelectChange() {
+        const name = document.getElementById('tool-select').value;
+        if (name) selectTool(name);
+    }
+
+    async function executeTool() {
+        const toolName = document.getElementById('tool-select').value;
+        const argsText = document.getElementById('request-args').value;
+
+        if (!toolName) {
+            alert('Please select a tool');
+            return;
+        }
+
+        let args;
+        try {
+            args = JSON.parse(argsText || '{}');
+        } catch (e) {
+            alert('Invalid JSON in arguments');
+            return;
+        }
+
+        const responseViewer = document.getElementById('response-viewer');
+        const execStatus = document.getElementById('exec-status');
+        const execTime = document.getElementById('exec-time');
+
+        responseViewer.textContent = 'Executing...';
+        execStatus.innerHTML = '';
+        execTime.textContent = '';
+
+        const startTime = performance.now();
+        try {
+            const response = await fetch('/ui/execute', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tool: toolName, arguments: args })
+            });
+
+            const result = await response.json();
+            const duration = (performance.now() - startTime).toFixed(0);
+
+            responseViewer.textContent = JSON.stringify(result, null, 2);
+            execTime.textContent = `Time: ${duration}ms`;
+
+            if (response.ok && !result.isError) {
+                execStatus.innerHTML = '<span class="status-badge status-ok">Success</span>';
+            } else {
+                execStatus.innerHTML = '<span class="status-badge status-error">Error</span>';
+            }
+        } catch (e) {
+            responseViewer.textContent = 'Network Error: ' + e.message;
+            execStatus.innerHTML = '<span class="status-badge status-error">Error</span>';
+        }
+    }
+
+    function formatJson() {
+        const textarea = document.getElementById('request-args');
+        try {
+            const obj = JSON.parse(textarea.value);
+            textarea.value = JSON.stringify(obj, null, 2);
+        } catch (e) {
+            alert('Cannot format: Invalid JSON');
+        }
+    }
+
+    function clearRequest() {
+        document.getElementById('tool-select').value = '';
+        document.getElementById('request-args').value = '';
+        document.querySelectorAll('.tool-item').forEach(el => el.classList.remove('selected'));
+    }
+
+    function clearResponse() {
+        document.getElementById('response-viewer').textContent = 'Waiting for execution...';
+        document.getElementById('exec-status').innerHTML = '';
+        document.getElementById('exec-time').textContent = '';
+    }
+
+    function copyResponse() {
+        const content = document.getElementById('response-viewer').textContent;
+        navigator.clipboard.writeText(content).then(() => {
+            alert('Response copied to clipboard');
+        });
+    }
+
+    function downloadResponse() {
+        const content = document.getElementById('response-viewer').textContent;
+        const blob = new Blob([content], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `mcp-response-${Date.now()}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    function updateTime() {
+        document.getElementById('current-time').textContent = new Date().toLocaleTimeString();
+    }
+
+    // Init
+    updateTime();
+    setInterval(updateTime, 1000);
+    loadInfo();
+    loadTools();
+</script>
+
+</body>
+</html>
