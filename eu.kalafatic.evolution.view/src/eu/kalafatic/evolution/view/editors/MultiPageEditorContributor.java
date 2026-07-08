@@ -6,6 +6,7 @@ import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.ui.IActionBars;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IWorkbenchActionConstants;
+import org.eclipse.ui.IWorkbenchPartSite;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.actions.ActionFactory;
 import org.eclipse.ui.ide.IDE;
@@ -47,19 +48,27 @@ public class MultiPageEditorContributor extends MultiPageEditorActionBarContribu
 	@Override
 	public void setActiveEditor(IEditorPart part) {
 		super.setActiveEditor(part);
+		updateUndoRedo(part);
+	}
+
+	private void updateUndoRedo(IEditorPart part) {
+		IUndoContext context = null;
+		IWorkbenchPartSite site = null;
 		if (part != null) {
-			IUndoContext context = part.getAdapter(IUndoContext.class);
-			if (context != null) {
-				if (undoAction == null) {
-					undoAction = new UndoActionHandler(part.getSite(), context);
-				} else {
-					undoAction.setContext(context);
-				}
-				if (redoAction == null) {
-					redoAction = new RedoActionHandler(part.getSite(), context);
-				} else {
-					redoAction.setContext(context);
-				}
+			context = part.getAdapter(IUndoContext.class);
+			site = part.getSite();
+		}
+
+		if (context != null && site != null) {
+			if (undoAction == null) {
+				undoAction = new UndoActionHandler(site, context);
+			} else {
+				undoAction.setContext(context);
+			}
+			if (redoAction == null) {
+				redoAction = new RedoActionHandler(site, context);
+			} else {
+				redoAction.setContext(context);
 			}
 		}
 	}
@@ -69,6 +78,7 @@ public class MultiPageEditorContributor extends MultiPageEditorActionBarContribu
 			return;
 
 		activeEditorPart = part;
+		updateUndoRedo(part);
 
 		IActionBars actionBars = getActionBars();
 		if (actionBars != null) {
@@ -78,6 +88,7 @@ public class MultiPageEditorContributor extends MultiPageEditorActionBarContribu
 			actionBars.setGlobalActionHandler(
 				ActionFactory.DELETE.getId(),
 				getAction(editor, ITextEditorActionConstants.DELETE));
+
 			IAction undo = getAction(editor, ITextEditorActionConstants.UNDO);
 			if (undo == null) {
 				undo = undoAction;
