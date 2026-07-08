@@ -914,6 +914,25 @@ public class ArchitecturePage extends AEvoPage {
     private void initBrowser() {
         if (browser == null || browser.isDisposed()) return;
         try {
+            if (currentMode == ViewMode.GENOME) {
+                String genomeJson = loadGenomeJson();
+
+                String baseUrl = "";
+                org.osgi.framework.Bundle bundle = org.eclipse.core.runtime.Platform.getBundle("eu.kalafatic.evolution.controller");
+                if (bundle != null) {
+                    URL bundleRoot = FileLocator.toFileURL(bundle.getEntry("/"));
+                    baseUrl = bundleRoot.toString();
+                }
+
+                String html = eu.kalafatic.evolution.selfdev.genome.util.DashboardTemplate.getHtml(
+                    orchestrator != null && orchestrator.getName() != null ? orchestrator.getName() : "Evolution",
+                    "live",
+                    "", "", "", genomeJson, baseUrl
+                );
+                browser.setText(html);
+                return;
+            }
+
             DesignModel model = extractModel();
 
             String baseUrl = "";
@@ -923,8 +942,7 @@ public class ArchitecturePage extends AEvoPage {
                 baseUrl = bundleRoot.toString();
             }
 
-            String genomeJson = (currentMode == ViewMode.GENOME) ? loadGenomeJson() : "{}";
-            String html = renderer.render(model, currentMode.name(), currentTargetPath, defaultTargetPath, targetHistory, orchestrator.getGenomeSnapshots(), currentSnapshotTimestamp, baseUrl, genomeJson);
+            String html = renderer.render(model, currentMode.name(), currentTargetPath, defaultTargetPath, targetHistory, orchestrator.getGenomeSnapshots(), currentSnapshotTimestamp, baseUrl, "{}");
             browser.setText(html);
         } catch (Exception e) {
             e.printStackTrace();
