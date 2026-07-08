@@ -28,12 +28,22 @@ public class DesignRenderer {
     }
 
     public String render(DesignModel model, String viewMode, String targetPath, String defaultPath, java.util.List<String> history, java.util.List<GenomeSnapshot> snapshots, String currentSnapshot, String baseUrl) {
+        return render(model, viewMode, targetPath, defaultPath, history, snapshots, currentSnapshot, baseUrl, "{}");
+    }
+
+    public String render(DesignModel model, String viewMode, String targetPath, String defaultPath, java.util.List<String> history, java.util.List<GenomeSnapshot> snapshots, String currentSnapshot, String baseUrl, String genomeJson) {
         if (model != null) {
             eu.kalafatic.evolution.controller.log.Log.log("[DESIGN_RENDERER] Rendering model: " + model.getName() + " with " + model.getComponents().size() + " components. Mode: " + viewMode);
         }
-        String template = eu.kalafatic.evolution.controller.tools.FileTool.readResource("/template.html");
+
+        String templatePath = "/template.html";
+        if ("GENOME".equals(viewMode)) {
+            templatePath = "/genome.html";
+        }
+
+        String template = eu.kalafatic.evolution.controller.tools.FileTool.readResource(templatePath);
         if (template == null) {
-            eu.kalafatic.evolution.controller.log.Log.log("[DESIGN_RENDERER] ERROR: template.html not found in bundle resources!");
+            eu.kalafatic.evolution.controller.log.Log.log("[DESIGN_RENDERER] ERROR: " + templatePath + " not found in bundle resources!");
             return "Error: Template not found";
         }
 
@@ -67,7 +77,8 @@ public class DesignRenderer {
             .replace("{{TARGET_HISTORY_JSON}}", new org.json.JSONArray(history).toString())
             .replace("{{SNAPSHOTS_JSON}}", snapArray.toString())
             .replace("{{CURRENT_SNAPSHOT_JSON}}", currentSnapshotJson)
-            .replace("{{NAVIGATOR_JS}}", navigatorJs);
+            .replace("{{NAVIGATOR_JS}}", navigatorJs)
+            .replace("{{GENOME_JSON}}", genomeJson != null ? genomeJson : "{}");
     }
 
     public String serializeModel(DesignModel model) {

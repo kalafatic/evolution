@@ -33,7 +33,7 @@ public class ArchitectureController {
     private final DesignRenderer renderer = new DesignRenderer();
 
     public enum ViewMode {
-        USE_CASES, SUBSYSTEMS, COMPONENTS, KNOWLEDGE_GRAPH
+        USE_CASES, SUBSYSTEMS, COMPONENTS, KNOWLEDGE_GRAPH, GENOME
     }
 
     public String renderArchitecture(Orchestrator orchestrator, String targetPath, String modeStr) {
@@ -48,7 +48,24 @@ public class ArchitectureController {
         } catch (Exception e) {}
 
         DesignModel model = extractModel(orchestrator, targetPath, mode);
-        return renderer.render(model, mode.name(), targetPath, new ArrayList<>());
+
+        String genomeJson = "{}";
+        if (mode == ViewMode.GENOME) {
+            genomeJson = loadGenomeJson(targetPath);
+        }
+
+        return renderer.render(model, mode.name(), targetPath, null, new ArrayList<>(), new ArrayList<>(), null, "", genomeJson);
+    }
+
+    private String loadGenomeJson(String targetPath) {
+        if (targetPath == null || targetPath.isEmpty()) return "{}";
+        File genomeFile = new File(targetPath, "genome/current/genome.json");
+        if (!genomeFile.exists()) return "{}";
+        try {
+            return Files.readString(genomeFile.toPath());
+        } catch (IOException e) {
+            return "{}";
+        }
     }
 
     public DesignModel extractModel(Orchestrator orchestrator, String targetPath, ViewMode mode) {

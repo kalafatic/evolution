@@ -1,0 +1,71 @@
+/* Genome Visualization Styles */
+
+.node {
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.node:hover {
+    filter: brightness(1.1);
+}
+
+.node rect {
+    stroke-width: 2px;
+    fill: #ffffff;
+}
+
+.node text {
+    font-size: 11px;
+    fill: #333333;
+    pointer-events: none;
+    font-weight: 600;
+}
+
+.node-description {
+    font-size: 9px;
+    fill: #666;
+    pointer-events: none;
+}
+
+.link {
+    stroke: #999;
+    stroke-width: 1.5px;
+    fill: none;
+    transition: stroke 0.2s;
+}
+
+.link-label {
+    font-size: 8px;
+    fill: #888;
+    pointer-events: none;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.graph-root {
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+/* Dark theme support (optional) */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-primary: #1e1e1e;
+        --bg-secondary: #252526;
+        --border: #3c3c3c;
+        --text: #cccccc;
+        --text-dim: #888888;
+        --accent: #0e639c;
+    }
+
+    .node rect {
+        fill: #2d2d2d;
+    }
+
+    .node text {
+        fill: #e0e0e0;
+    }
+}
