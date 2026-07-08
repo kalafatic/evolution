@@ -110,7 +110,11 @@ public class NetworkSettingsGroup extends AEvoGroup {
     protected void refreshUI() {
         if (networkViewer != null && !networkViewer.getControl().isDisposed()) {
             if (orchestrator != null) {
-                networkViewer.setInput(orchestrator.getNetworkEntries().toArray());
+                // Filter out null entries to prevent AssertionFailedException in JFace
+                Object[] entries = orchestrator.getNetworkEntries().stream()
+                        .filter(java.util.Objects::nonNull)
+                        .toArray();
+                networkViewer.setInput(entries);
             } else {
                 networkViewer.setInput(new Object[0]);
             }

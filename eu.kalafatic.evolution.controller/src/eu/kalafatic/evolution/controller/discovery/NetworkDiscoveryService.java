@@ -11,6 +11,8 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.eclipse.swt.widgets.Display;
+
 import eu.kalafatic.evolution.model.orchestration.NetworkEntry;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
@@ -29,35 +31,39 @@ public class NetworkDiscoveryService {
         Set<String> discoveredUrls = new HashSet<>();
         scanDirectory(rootDir, discoveredUrls);
 
-        // Sync with model
-        List<NetworkEntry> existing = new ArrayList<>(orchestrator.getNetworkEntries());
+        // Sync with model - must be thread safe for EMF/UI
+        Display.getDefault().asyncExec(() -> {
+            List<NetworkEntry> existing = new ArrayList<>(orchestrator.getNetworkEntries());
 
-        for (String urlStr : discoveredUrls) {
-            if (isAlreadyPresent(existing, urlStr)) continue;
+            for (String urlStr : discoveredUrls) {
+                if (isAlreadyPresent(existing, urlStr)) continue;
 
-            try {
-                URI uri = new URI(urlStr);
-                NetworkEntry entry = OrchestrationFactory.eINSTANCE.createNetworkEntry();
-                entry.setAddress(urlStr);
-                entry.setHost(uri.getHost());
-                entry.setPort(uri.getPort() != -1 ? uri.getPort() : (urlStr.startsWith("https") ? 443 : 80));
-                entry.setType("Discovered");
-                entry.setNote("Found in source code analysis");
+                try {
+                    URI uri = new URI(urlStr);
+                    NetworkEntry entry = OrchestrationFactory.eINSTANCE.createNetworkEntry();
+                    entry.setAddress(urlStr);
+                    entry.setHost(uri.getHost());
+                    entry.setPort(uri.getPort() != -1 ? uri.getPort() : (urlStr.startsWith("https") ? 443 : 80));
+                    entry.setType("Discovered");
+                    entry.setNote("Found in source code analysis");
 
-                orchestrator.getNetworkEntries().add(entry);
-            } catch (Exception e) {
-                // Ignore invalid URIs
+                    orchestrator.getNetworkEntries().add(entry);
+                } catch (Exception e) {
+                    // Ignore invalid URIs
+                }
             }
-        }
+        });
     }
 
     private boolean isAlreadyPresent(List<NetworkEntry> existing, String url) {
-        return existing.stream().anyMatch(e -> url.equals(entryToUrl(e)));
+        if (existing == null || url == null) return false;
+        return existing.stream().anyMatch(e -> e != null && url.equals(entryToUrl(e)));
     }
 
     private String entryToUrl(NetworkEntry e) {
+        if (e == null) return "";
         if (e.getAddress() != null) return e.getAddress();
-        return (e.getPort() == 443 ? "https://" : "http://") + e.getHost() + ":" + e.getPort();
+        return (e.getPort() == 443 ? "https://" : "http://") + (e.getHost() != null ? e.getHost() : "localhost") + ":" + e.getPort();
     }
 
     private void scanDirectory(File dir, Set<String> urls) {
