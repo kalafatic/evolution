@@ -110,12 +110,24 @@
     }
 
     window.updateGenome = function(data) {
-        if (!data || !data.identity) {
-            document.getElementById("empty-state").classList.add("active");
+        if (!data || (!data.identity && !data.name)) {
+            const emptyState = document.getElementById("empty-state");
+            if (emptyState) emptyState.classList.add("active");
             svg.innerHTML = '';
             return;
         }
-        document.getElementById("empty-state").classList.remove("active");
+        const emptyState = document.getElementById("empty-state");
+        if (emptyState) emptyState.classList.remove("active");
+
+        // Handle both full genome and simple model
+        if (!data.identity && data.name) {
+            data = {
+                identity: { name: data.name, version: '1.0' },
+                concepts: data.components ? data.components.map(c => c.name) : [],
+                moduleMap: {}
+            };
+        }
+
         renderGenome(data);
     };
 
