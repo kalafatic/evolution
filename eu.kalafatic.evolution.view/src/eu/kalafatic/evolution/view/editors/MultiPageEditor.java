@@ -297,7 +297,27 @@ public class MultiPageEditor extends MultiPageEditorPart {
                 @Override
                 protected void execute(IProgressMonitor monitor) throws org.eclipse.core.runtime.CoreException {
                     SubMonitor sub = SubMonitor.convert(monitor, 100);
-                    if (resource != null) {
+                    if (resource != null && textEditor != null) {
+                        try {
+                            java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+                            resource.save(baos, java.util.Collections.EMPTY_MAP);
+                            String serializedModel = baos.toString("UTF-8");
+
+                            org.eclipse.jface.text.IDocument doc = textEditor.getDocumentProvider().getDocument(textEditor.getEditorInput());
+                            if (doc != null) {
+                                if (!serializedModel.equals(doc.get())) {
+                                    doc.set(serializedModel);
+                                }
+                            }
+                        } catch (Exception e) {
+                            try {
+                                ProjectModelManager.getInstance().saveResource(resource);
+                            } catch (IOException ex) {
+                                throw new org.eclipse.core.runtime.CoreException(new org.eclipse.core.runtime.Status(org.eclipse.core.runtime.IStatus.ERROR, "eu.kalafatic.evolution.view", ex.getMessage(), ex));
+                            }
+                        }
+                        sub.worked(50);
+                    } else if (resource != null) {
                         try {
                             ProjectModelManager.getInstance().saveResource(resource);
                             sub.worked(50);
