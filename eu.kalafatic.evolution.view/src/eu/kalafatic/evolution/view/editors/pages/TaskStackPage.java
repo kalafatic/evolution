@@ -48,6 +48,9 @@ public class TaskStackPage extends AEvoPage {
                     synchronized (activeTasks) {
                         activeTasks.remove(task);
                     }
+                    if (newStatus == TaskStatus.FAILED) {
+                        cancelSubsequentPlanTasks(task);
+                    }
                     processNextInQueue();
                 }
             }
@@ -322,7 +325,33 @@ public class TaskStackPage extends AEvoPage {
         parent.getSubTasks().removeAll(subTasksToRemove);
     }
 
+    private void ensurePlanIds() {
+        if (orchestrator == null) return;
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmm");
+        long counter = System.currentTimeMillis();
+        for (Task task : orchestrator.getTasks()) {
+            if (task.getId() == null || task.getId().isEmpty()) {
+                task.setId("P-" + sdf.format(new Date()) + "-" + (counter++ % 1000));
+            }
+            ensureSubTaskIds(task);
+        }
+    }
+
+    private void ensureSubTaskIds(Task parent) {
+        long counter = System.currentTimeMillis();
+        for (Task subTask : parent.getSubTasks()) {
+            if (subTask.getId() == null || subTask.getId().isEmpty()) {
+                subTask.setId("T-" + (counter++ % 100000));
+            }
+            ensureSubTaskIds(subTask);
+        }
+    }
+
     public void executeSelected() {
+        ensurePlanIds();
+        if (editor != null) {
+            editor.doSave(new org.eclipse.core.runtime.NullProgressMonitor());
+        }
         List<Task> selectedTasks = new ArrayList<>();
         collectSelectedTasks(orchestrator.getTasks(), selectedTasks);
 
@@ -337,15 +366,31 @@ public class TaskStackPage extends AEvoPage {
     }
 
     private void collectSelectedTasks(List<Task> tasks, List<Task> collected) {
+        collectSelectedTasks(tasks, collected, false);
+    }
+
+    private void collectSelectedTasks(List<Task> tasks, List<Task> collected, boolean parentSelected) {
         for (Task task : tasks) {
-            if (task.isSelected() && (task.getStatus() == TaskStatus.READY || task.getStatus() == TaskStatus.PENDING)) {
-                collected.add(task);
+            boolean isSelected = task.isSelected() || parentSelected;
+            boolean hasChildren = !task.getSubTasks().isEmpty();
+            boolean hasPrompt = task.getPrompt() != null && !task.getPrompt().trim().isEmpty();
+
+            if (hasChildren && !hasPrompt) {
+                collectSelectedTasks(task.getSubTasks(), collected, isSelected);
+            } else {
+                if (isSelected && (task.getStatus() == TaskStatus.READY || task.getStatus() == TaskStatus.PENDING)) {
+                    collected.add(task);
+                }
+                collectSelectedTasks(task.getSubTasks(), collected, isSelected);
             }
-            collectSelectedTasks(task.getSubTasks(), collected);
         }
     }
 
     public void runSingleTask(Task task) {
+        ensurePlanIds();
+        if (editor != null) {
+            editor.doSave(new org.eclipse.core.runtime.NullProgressMonitor());
+        }
         synchronized (activeTasks) {
             int limit = (taskStackGroup != null && taskStackGroup.isParallel()) ? 3 : 1;
             if (activeTasks.size() < limit) {
@@ -359,15 +404,61 @@ public class TaskStackPage extends AEvoPage {
         }
     }
 
+    private Task getTopLevelPlan(Task task) {
+        if (task == null) return null;
+        if (task.eContainer() instanceof Task) {
+            return getTopLevelPlan((Task) task.eContainer());
+        }
+        return task;
+    }
+
+    private void cancelSubsequentPlanTasks(Task failedTask) {
+        Task plan = getTopLevelPlan(failedTask);
+        if (plan == null) return;
+        synchronized (activeTasks) {
+            List<Task> toCancel = new ArrayList<>();
+            for (Task candidate : executionQueue) {
+                if (getTopLevelPlan(candidate) == plan) {
+                    toCancel.add(candidate);
+                }
+            }
+            executionQueue.removeAll(toCancel);
+            for (Task t : toCancel) {
+                t.setStatus(TaskStatus.FAILED);
+            }
+        }
+    }
+
     private void processNextInQueue() {
         synchronized (activeTasks) {
             if (executionQueue.isEmpty()) return;
             int limit = (taskStackGroup != null && taskStackGroup.isParallel()) ? 3 : 1;
-            while (activeTasks.size() < limit && !executionQueue.isEmpty()) {
-                Task next = executionQueue.remove(0);
-                activeTasks.add(next);
-                next.setStatus(TaskStatus.RUNNING);
-                editor.runTaskInChat(next);
+
+            while (activeTasks.size() < limit) {
+                Task nextToRun = null;
+                for (Task candidate : executionQueue) {
+                    Task candidatePlan = getTopLevelPlan(candidate);
+                    boolean planHasActiveTasks = false;
+                    for (Task active : activeTasks) {
+                        if (getTopLevelPlan(active) == candidatePlan) {
+                            planHasActiveTasks = true;
+                            break;
+                        }
+                    }
+                    if (!planHasActiveTasks) {
+                        nextToRun = candidate;
+                        break;
+                    }
+                }
+
+                if (nextToRun != null) {
+                    executionQueue.remove(nextToRun);
+                    activeTasks.add(nextToRun);
+                    nextToRun.setStatus(TaskStatus.RUNNING);
+                    editor.runTaskInChat(nextToRun);
+                } else {
+                    break;
+                }
             }
         }
     }
