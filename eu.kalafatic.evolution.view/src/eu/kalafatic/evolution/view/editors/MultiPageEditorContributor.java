@@ -28,6 +28,8 @@ public class MultiPageEditorContributor extends MultiPageEditorActionBarContribu
 	private Action sampleAction;
 	private UndoActionHandler undoAction;
 	private RedoActionHandler redoAction;
+	private MultiPageEditor multiPageEditor;
+
 	/**
 	 * Creates a multi-page contributor.
 	 */
