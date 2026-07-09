@@ -415,41 +415,7 @@ public class DynamicSiblingGenerator2 {
     }
 
     private String extractCode(String response, String format) {
-        // Try to extract from code blocks first
-        Pattern codeBlockPattern = Pattern.compile(
-            "```(?:java)?\\s*\\n(.*?)\\n```", 
-            Pattern.DOTALL
-        );
-        Matcher matcher = codeBlockPattern.matcher(response);
-        if (matcher.find()) {
-            return matcher.group(1).trim();
-        }
-        
-        // If it's CODE_ONLY format, return as-is
-        if ("CODE_ONLY".equals(format)) {
-            return response.trim();
-        }
-        
-        // Try to extract from STEP_BY_STEP format
-        if ("STEP_BY_STEP".equals(format)) {
-            Pattern stepPattern = Pattern.compile(
-                "CODE:\\s*\\n?```(?:java)?\\s*\\n(.*?)\\n```", 
-                Pattern.DOTALL
-            );
-            matcher = stepPattern.matcher(response);
-            if (matcher.find()) {
-                return matcher.group(1).trim();
-            }
-        }
-        
-        // Try to extract from JSON
-        try {
-            JSONObject obj = new JSONObject(response);
-            return obj.optString("code", obj.optString("implementation", response));
-        } catch (Exception e) {
-            // Return raw response
-            return response;
-        }
+        return eu.kalafatic.evolution.controller.orchestration.util.CodeExtractor.extractCode(response);
     }
     
     private String extractClassName(String code) {
