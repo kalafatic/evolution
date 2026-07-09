@@ -81,594 +81,664 @@ import eu.kalafatic.evolution.view.views.EvoNavigator;
 
 public class MultiPageEditor extends MultiPageEditorPart {
 
-    public static final String ID = "eu.kalafatic.evolution.view.editors.MultiPageEditor";
-    
-    private TextEditor textEditor;
-    private AiChatPage aiChatPage;
-    private ArchitecturePage architecturePage;
-    private PropertiesPage propertiesPage;
-    private McpSettingsPage mcpSettingsPage;   
-    private GraphPage graphPage;
-    private BrowserPage browserPage;
-    private ApprovalPage approvalPage;
-    private DevelopmentPage developmentPage;
-    private ToolsPage toolsPage;
-    private TestsPage testsPage;
-    private IterationPage iterationPage;
-    private TaskStackPage taskStackPage;
-    private ContextPage contextPage;
-    private PeerReviewPage peerReviewPage;
-    private ComparePage comparePage;
-    private ForgePage forgePage;
-    private ServerPage serverPage;
-    private SettingsPage settingsPage;
+	public static final String ID = "eu.kalafatic.evolution.view.editors.MultiPageEditor";
 
-    private Orchestrator orchestrator;
-    private TaskContext currentContext;
-    private volatile boolean isDirty = false;
-    private Resource resource;
-    private volatile IUndoContext undoContext;
-    private EditorResourceChangeListener resourceListener;
-    private EditorSelectionListener selectionListener;
-    private org.eclipse.jface.text.ITextSelection lastTextSelection;
-    
-    private Color lightGreen, lightRed, lightOrange, lightBlue, lightPurple, lightCyan;
-    
-    private AtomicBoolean refreshScheduled = new AtomicBoolean(false);
+	private TextEditor textEditor;
+	private AiChatPage aiChatPage;
+	private ArchitecturePage architecturePage;
+	private PropertiesPage propertiesPage;
+	private McpSettingsPage mcpSettingsPage;
+	private GraphPage graphPage;
+	private BrowserPage browserPage;
+	private ApprovalPage approvalPage;
+	private DevelopmentPage developmentPage;
+	private ToolsPage toolsPage;
+	private TestsPage testsPage;
+	private IterationPage iterationPage;
+	private TaskStackPage taskStackPage;
+	private ContextPage contextPage;
+	private PeerReviewPage peerReviewPage;
+	private ComparePage comparePage;
+	private ForgePage forgePage;
+	private ServerPage serverPage;
+	private SettingsPage settingsPage;
 
-    private IResourceChangeListener workspaceListener = new IResourceChangeListener() {
-        @Override
-        public void resourceChanged(IResourceChangeEvent event) {
-            if (event.getType() == IResourceChangeEvent.POST_CHANGE) {
-                try {
-                    event.getDelta().accept(new IResourceDeltaVisitor() {
-                        @Override
-                        public boolean visit(IResourceDelta delta) throws org.eclipse.core.runtime.CoreException {
-                            IResource resource = delta.getResource();
-                            if (resource instanceof IFile) {
-                                // Refresh navigator if a file changed
-                                Display.getDefault().asyncExec(() -> {
-                                    refreshNavigator(resource);
-                                });
-                            }
-                            return true;
-                        }
-                    });
-                } catch (org.eclipse.core.runtime.CoreException e) {
-                    // Ignore
-                }
-            }
-        }
-    };
+	private Orchestrator orchestrator;
+	private TaskContext currentContext;
+	private volatile boolean isDirty = false;
+	private Resource resource;
+	private volatile IUndoContext undoContext;
+	private EditorResourceChangeListener resourceListener;
+	private EditorSelectionListener selectionListener;
+	private org.eclipse.jface.text.ITextSelection lastTextSelection;
 
-    private Adapter modelAdapter = new EContentAdapter() {
-        @Override
-        public void notifyChanged(Notification notification) {
-            super.notifyChanged(notification);
-            if (notification.isTouch()) return;
+	private Color lightGreen, lightRed, lightOrange, lightBlue, lightPurple, lightCyan;
 
-            int eventType = notification.getEventType();
-            if (eventType == Notification.SET ||
-                eventType == Notification.ADD ||
-                eventType == Notification.REMOVE ||
-                eventType == Notification.UNSET ||
-                eventType == Notification.MOVE) {
+	private AtomicBoolean refreshScheduled = new AtomicBoolean(false);
 
-                Display.getDefault().asyncExec(() -> {
-                    if (!getContainer().isDisposed()) {
-                        setDirty(true);
-                    }
-                });
+	private IResourceChangeListener workspaceListener = new IResourceChangeListener() {
+		@Override
+		public void resourceChanged(IResourceChangeEvent event) {
+			if (event.getType() == IResourceChangeEvent.POST_CHANGE) {
+				try {
+					event.getDelta().accept(new IResourceDeltaVisitor() {
+						@Override
+						public boolean visit(IResourceDelta delta) throws org.eclipse.core.runtime.CoreException {
+							IResource resource = delta.getResource();
+							if (resource instanceof IFile) {
+								// Refresh navigator if a file changed
+								Display.getDefault().asyncExec(() -> {
+									refreshNavigator(resource);
+								});
+							}
+							return true;
+						}
+					});
+				} catch (org.eclipse.core.runtime.CoreException e) {
+					// Ignore
+				}
+			}
+		}
+	};
 
-                // Only schedule refresh for meaningful changes
-                if (refreshScheduled.compareAndSet(false, true)) {
-                    Display.getDefault().asyncExec(() -> {
-                        refreshScheduled.set(false);
+	private Adapter modelAdapter = new EContentAdapter() {
+		@Override
+		public void notifyChanged(Notification notification) {
+			super.notifyChanged(notification);
+			if (notification.isTouch())
+				return;
 
-                        if (!getContainer().isDisposed()) {
-                            refreshPages();
-                        }
-                    });
-                }
-            }
-        }
-    };
+			int eventType = notification.getEventType();
+			if (eventType == Notification.SET || eventType == Notification.ADD || eventType == Notification.REMOVE
+					|| eventType == Notification.UNSET || eventType == Notification.MOVE) {
 
-    public MultiPageEditor() {
-        super();
-        // Initialize undo context early to prevent AssertionFailedException (null argument)
-        // in OperationHistoryActionHandler when document changes occur during save.
-        undoContext = new ObjectUndoContext(this);
-    }
+				Display.getDefault().asyncExec(() -> {
+					if (!getContainer().isDisposed()) {
+						setDirty(true);
+					}
+				});
 
-    @Override
-    public void init(IEditorSite site, IEditorInput input) throws PartInitException {
-        // Ensure undo context is initialized before the platform tries to access it
-        if (undoContext == null) {
-            undoContext = new ObjectUndoContext(this);
-        }
-     // Important: Register with the operation history
-        IOperationHistory history = OperationHistoryFactory.getOperationHistory();
-        history.addOperationApprover(new LinearUndoViolationUserApprover(undoContext, this)); // optional
-        super.init(site, input);
-    }
+				// Only schedule refresh for meaningful changes
+				if (refreshScheduled.compareAndSet(false, true)) {
+					Display.getDefault().asyncExec(() -> {
+						refreshScheduled.set(false);
 
-    @Override
-    protected void createPages() {
-        loadModel();
-        try {
-        	
-        	this.lightGreen = new Color(Display.getDefault(), 220, 255, 220);
-            this.lightRed = new Color(Display.getDefault(), 255, 220, 220);
-            this.lightOrange = new Color(Display.getDefault(), 255, 240, 200);
-            this.lightBlue = new Color(Display.getDefault(), 220, 240, 255);
-            this.lightPurple = new Color(Display.getDefault(), 240, 220, 255);
-            this.lightCyan = new Color(Display.getDefault(), 220, 255, 255);
-            
-            if (orchestrator != null) {
-                aiChatPage = AiChatPageFactory.createAiChatPage(this, orchestrator);
-                architecturePage = ArchitecturePageFactory.createArchitecturePage(this, orchestrator);
-                
-                forgePage = ForgePageFactory.createForgePage(this, orchestrator);
-                int forgeIdx = addPage(forgePage);
-                setPageText(forgeIdx, "Forge Models");
-               
-                
-                developmentPage = DevelopmentPageFactory.createDevelopmentPage(this, orchestrator);
-                iterationPage = IterationPageFactory.createIterationPage(this, orchestrator);
-                taskStackPage = TaskStackPageFactory.createTaskStackPage(this, orchestrator);              
-               
-                
-                serverPage = ServerPageFactory.createServerPage(this, orchestrator);                
-                mcpSettingsPage = McpSettingsPageFactory.createMcpSettingsPage(this, orchestrator);              
-                browserPage = BrowserPageFactory.createBrowserPage(this, orchestrator);                               
-                
-                testsPage = TestsPageFactory.createTestsPage(this, orchestrator);
-               
-                contextPage = ContextPageFactory.createContextPage(this, orchestrator);
-                
-                approvalPage = ApprovalPageFactory.createApprovalPage(this, orchestrator);
-                peerReviewPage = PeerReviewPageFactory.createPeerReviewPage(this, orchestrator);
-               
-                graphPage = GraphPageFactory.createGraphPage(this, orchestrator);
-               
-                toolsPage = ToolsPageFactory.createToolsPage(this, orchestrator);
-               
-                propertiesPage = PropertiesPageFactory.createPropertiesPage(this, orchestrator);
-                settingsPage = SettingsPageFactory.createSettingsPage(this, orchestrator);
-                
-                comparePage = ComparePageFactory.createComparePage(this, orchestrator);
-                textEditor = new NestedTextEditor();
-                int index = addPage(textEditor, getEditorInput());
-                setPageText(index, "Editor");
+						if (!getContainer().isDisposed()) {
+							refreshPages();
+						}
+					});
+				}
+			}
+		}
+	};
 
-                
-                
-            } else {
-                Composite placeholder = new Composite(getContainer(), SWT.NONE);
-                placeholder.setLayout(new FillLayout());
-                Label label = new Label(placeholder, SWT.CENTER);
-                label.setText("No Orchestrator Loaded. Please ensure the file contains at least one Orchestration.");
-                int index = addPage(placeholder);
-                setPageText(index, "Error");
-            }
-        } catch (PartInitException e) {
-            ErrorDialog.openError(getSite().getShell(), "Error creating pages", null, e.getStatus());
-        }
+	public MultiPageEditor() {
+		super();
+		// Initialize undo context early to prevent AssertionFailedException (null
+		// argument)
+		// in OperationHistoryActionHandler when document changes occur during save.
+		undoContext = new ObjectUndoContext(this);
+	}
 
-        resourceListener = new EditorResourceChangeListener(this);
-        ResourcesPlugin.getWorkspace().addResourceChangeListener(resourceListener);
-        ResourcesPlugin.getWorkspace().addResourceChangeListener(workspaceListener, IResourceChangeEvent.POST_CHANGE);
+	@Override
+	public void init(IEditorSite site, IEditorInput input) throws PartInitException {
+		// Ensure undo context is initialized before the platform tries to access it
+		if (undoContext == null) {
+			undoContext = new ObjectUndoContext(this);
+		}
+		// Important: Register with the operation history
+		IOperationHistory history = OperationHistoryFactory.getOperationHistory();
+		history.addOperationApprover(new LinearUndoViolationUserApprover(undoContext, this)); // optional
+		super.init(site, input);
+	}
 
-        selectionListener = new EditorSelectionListener(this);
-        getSite().getWorkbenchWindow().getSelectionService().addSelectionListener(selectionListener);
-    }
+	@Override
+	protected void createPages() {
+		loadModel();
+		try {
 
-    private void loadModel() {
-        ProjectModelManager modelManager = ProjectModelManager.getInstance();
-        IEditorInput input = getEditorInput();
-        if (input instanceof IFileEditorInput) {
-            IFile file = ((IFileEditorInput) input).getFile();
-            setPartName(file.getProject().getName());
-            try {
-                orchestrator = modelManager.loadOrchestrator(file);
-                if (orchestrator != null) {
-                    resource = orchestrator.eResource();
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        } else if (input instanceof OrchestratorEditorInput) {
-            orchestrator = ((OrchestratorEditorInput) input).getOrchestrator();
-            resource = orchestrator.eResource();
-        }
+			this.lightGreen = new Color(Display.getDefault(), 220, 255, 220);
+			this.lightRed = new Color(Display.getDefault(), 255, 220, 220);
+			this.lightOrange = new Color(Display.getDefault(), 255, 240, 200);
+			this.lightBlue = new Color(Display.getDefault(), 220, 240, 255);
+			this.lightPurple = new Color(Display.getDefault(), 240, 220, 255);
+			this.lightCyan = new Color(Display.getDefault(), 220, 255, 255);
 
-        if (orchestrator != null) {
-            orchestrator.eAdapters().add(modelAdapter);
-            eu.kalafatic.evolution.controller.orchestration.OrchestratorServiceImpl.getInstance().setOrchestrator(orchestrator);
-        }
-    }
+			if (orchestrator != null) {
+				aiChatPage = AiChatPageFactory.createAiChatPage(this, orchestrator);
+				architecturePage = ArchitecturePageFactory.createArchitecturePage(this, orchestrator);
 
-    @Override
-    public void doSave(IProgressMonitor monitor) {
-        SubMonitor subMonitor = SubMonitor.convert(monitor, "Saving", 100);
-        try {
-            org.eclipse.ui.actions.WorkspaceModifyOperation operation = new org.eclipse.ui.actions.WorkspaceModifyOperation() {
-                @Override
-                protected void execute(IProgressMonitor monitor) throws org.eclipse.core.runtime.CoreException {
-                    SubMonitor sub = SubMonitor.convert(monitor, 100);
-                    if (resource != null) {
-                        try {
-                            ProjectModelManager.getInstance().saveResource(resource);
-                            sub.worked(50);
-                        } catch (IOException e) {
-                            throw new org.eclipse.core.runtime.CoreException(new org.eclipse.core.runtime.Status(org.eclipse.core.runtime.IStatus.ERROR, "eu.kalafatic.evolution.view", e.getMessage(), e));
-                        }
-                    }
-                    if (textEditor != null) {
-                        textEditor.doSave(sub.split(50));
-                    }
-                }
-            };
-            operation.run(subMonitor);
-            setDirty(false);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-    
-    /*@Override
-    public void doSave(IProgressMonitor monitor) {
-        SubMonitor sub = SubMonitor.convert(monitor, "Saving", 100);
-        try {
-            /**
-             * Synchronize model -> editor document ONLY.
-             * DO NOT physically write the file here.
-             */
-            /*if (resource != null) {
-                ProjectModelManager.getInstance().saveResource(resource);
-            }
-            /*
-             * Let Eclipse editor own the actual save.
-             */
-            /*if (textEditor != null) {
-                textEditor.doSave(sub.split(100));
-            }
-            setDirty(false);
+				forgePage = ForgePageFactory.createForgePage(this, orchestrator);
+				int forgeIdx = addPage(forgePage);
+				setPageText(forgeIdx, "Forge Models");
 
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }*/
+				developmentPage = DevelopmentPageFactory.createDevelopmentPage(this, orchestrator);
+				iterationPage = IterationPageFactory.createIterationPage(this, orchestrator);
+				taskStackPage = TaskStackPageFactory.createTaskStackPage(this, orchestrator);
 
-    @Override
-    public void doSaveAs() {
-        IEditorPart editor = getEditor(1);
-        if (editor != null) {
-            editor.doSaveAs();
-            setPageText(1, editor.getTitle());
-            setInput(editor.getEditorInput());
-        }
-    }
+				serverPage = ServerPageFactory.createServerPage(this, orchestrator);
+				mcpSettingsPage = McpSettingsPageFactory.createMcpSettingsPage(this, orchestrator);
+				browserPage = BrowserPageFactory.createBrowserPage(this, orchestrator);
 
-    @Override
-    public boolean isSaveAsAllowed() { return true; }
+				testsPage = TestsPageFactory.createTestsPage(this, orchestrator);
 
-    @Override
-    public void setFocus() {
-        int index = getActivePage();
-        if (index != -1) getControl(index).setFocus();
-    }
+				contextPage = ContextPageFactory.createContextPage(this, orchestrator);
 
-    public Object getActivePageInstance() {
-        int index = getActivePage();
-        if (index != -1) return getControl(index);
-        return null;
-    }
+				approvalPage = ApprovalPageFactory.createApprovalPage(this, orchestrator);
+				peerReviewPage = PeerReviewPageFactory.createPeerReviewPage(this, orchestrator);
 
-    @Override
-    public void dispose() {
-        if (resourceListener != null) ResourcesPlugin.getWorkspace().removeResourceChangeListener(resourceListener);
-        if (workspaceListener != null) ResourcesPlugin.getWorkspace().removeResourceChangeListener(workspaceListener);
-        if (selectionListener != null) getSite().getWorkbenchWindow().getSelectionService().removeSelectionListener(selectionListener);
-        if (orchestrator != null) orchestrator.eAdapters().remove(modelAdapter);
+				graphPage = GraphPageFactory.createGraphPage(this, orchestrator);
 
-        if (lightGreen != null && !lightGreen.isDisposed()) lightGreen.dispose();
-        if (lightRed != null && !lightRed.isDisposed()) lightRed.dispose();
-        if (lightOrange != null && !lightOrange.isDisposed()) lightOrange.dispose();
-        if (lightBlue != null && !lightBlue.isDisposed()) lightBlue.dispose();
-        if (lightPurple != null && !lightPurple.isDisposed()) lightPurple.dispose();
-        if (lightCyan != null && !lightCyan.isDisposed()) lightCyan.dispose();
+				toolsPage = ToolsPageFactory.createToolsPage(this, orchestrator);
 
-        // Dispose of the undo context and clean up the operation history
-        if (undoContext != null) {
-            IOperationHistory history = OperationHistoryFactory.getOperationHistory();
-            history.dispose(undoContext, true, true, true);
-        }
+				propertiesPage = PropertiesPageFactory.createPropertiesPage(this, orchestrator);
+				settingsPage = SettingsPageFactory.createSettingsPage(this, orchestrator);
 
-        super.dispose();
-    }
+				comparePage = ComparePageFactory.createComparePage(this, orchestrator);
+				textEditor = new NestedTextEditor();
+				int index = addPage(textEditor, getEditorInput());
+				setPageText(index, "Editor");
 
-    @Override
-    public boolean isDirty() { return isDirty || (textEditor != null && textEditor.isDirty()); }
+			} else {
+				Composite placeholder = new Composite(getContainer(), SWT.NONE);
+				placeholder.setLayout(new FillLayout());
+				Label label = new Label(placeholder, SWT.CENTER);
+				label.setText("No Orchestrator Loaded. Please ensure the file contains at least one Orchestration.");
+				int index = addPage(placeholder);
+				setPageText(index, "Error");
+			}
+		} catch (PartInitException e) {
+			ErrorDialog.openError(getSite().getShell(), "Error creating pages", null, e.getStatus());
+		}
 
-    public void setDirty(boolean dirty) {
-        if (this.isDirty != dirty) {
-            this.isDirty = dirty;
-            Display.getDefault().asyncExec(() -> {
-                if (getContainer() != null && !getContainer().isDisposed()) {
-                    firePropertyChange(IEditorPart.PROP_DIRTY);
-                }
-            });
-        }
-    }
+		resourceListener = new EditorResourceChangeListener(this);
+		ResourcesPlugin.getWorkspace().addResourceChangeListener(resourceListener);
+		ResourcesPlugin.getWorkspace().addResourceChangeListener(workspaceListener, IResourceChangeEvent.POST_CHANGE);
 
-    public void setOrchestrator(Orchestrator orchestrator) {
-        if (this.orchestrator != null) {
-            this.orchestrator.eAdapters().remove(modelAdapter);
-        }
-        this.orchestrator = orchestrator;
-        if (this.orchestrator != null) {
-            this.orchestrator.eAdapters().add(modelAdapter);
-            eu.kalafatic.evolution.controller.orchestration.OrchestratorServiceImpl.getInstance().setOrchestrator(orchestrator);
-        }
+		selectionListener = new EditorSelectionListener(this);
+		getSite().getWorkbenchWindow().getSelectionService().addSelectionListener(selectionListener);
+	}
 
-        if (aiChatPage != null) aiChatPage.setOrchestrator(orchestrator);
-        if (architecturePage != null) architecturePage.setOrchestrator(orchestrator);
-        if (propertiesPage != null) propertiesPage.setOrchestrator(orchestrator);
-        if (mcpSettingsPage != null) mcpSettingsPage.setOrchestrator(orchestrator);
-        if (graphPage != null) graphPage.setOrchestrator(orchestrator);
-        if (browserPage != null) browserPage.setOrchestrator(orchestrator);
-        if (approvalPage != null) approvalPage.setOrchestrator(orchestrator);
-        if (developmentPage != null) developmentPage.setOrchestrator(orchestrator);
-        if (toolsPage != null) toolsPage.setOrchestrator(orchestrator);
-        if (testsPage != null) testsPage.setOrchestrator(orchestrator);
-        if (iterationPage != null) iterationPage.setOrchestrator(orchestrator);
-        if (peerReviewPage != null) peerReviewPage.setOrchestrator(orchestrator);
-        if (taskStackPage != null) taskStackPage.setOrchestrator(orchestrator);
-        if (contextPage != null) contextPage.setOrchestrator(orchestrator);
-        if (serverPage != null) serverPage.setOrchestrator(orchestrator);
-        if (forgePage != null) forgePage.setOrchestrator(orchestrator);
-        if (settingsPage != null) settingsPage.setOrchestrator(orchestrator);
-    }
+	private void loadModel() {
+		ProjectModelManager modelManager = ProjectModelManager.getInstance();
+		IEditorInput input = getEditorInput();
+		if (input instanceof IFileEditorInput) {
+			IFile file = ((IFileEditorInput) input).getFile();
+			setPartName(file.getProject().getName());
+			try {
+				orchestrator = modelManager.loadOrchestrator(file);
+				if (orchestrator != null) {
+					resource = orchestrator.eResource();
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		} else if (input instanceof OrchestratorEditorInput) {
+			orchestrator = ((OrchestratorEditorInput) input).getOrchestrator();
+			resource = orchestrator.eResource();
+		}
 
-    public void reloadModel() {
-        loadModel();
-        if (orchestrator != null) {
-            setOrchestrator(orchestrator);
-        }
-    }
+		if (orchestrator != null) {
+			orchestrator.eAdapters().add(modelAdapter);
+			eu.kalafatic.evolution.controller.orchestration.OrchestratorServiceImpl.getInstance()
+					.setOrchestrator(orchestrator);
+		}
+	}
 
-    public void setCurrentContext(TaskContext context) {
-        this.currentContext = context;
-    }
+	@Override
+	public void doSave(IProgressMonitor monitor) {
+		SubMonitor subMonitor = SubMonitor.convert(monitor, "Saving", 100);
+		try {
+			org.eclipse.ui.actions.WorkspaceModifyOperation operation = new org.eclipse.ui.actions.WorkspaceModifyOperation() {
+				@Override
+				protected void execute(IProgressMonitor monitor) throws org.eclipse.core.runtime.CoreException {
+					SubMonitor sub = SubMonitor.convert(monitor, 100);
+					if (resource != null && textEditor != null) {
+						try {
+							java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+							resource.save(baos, java.util.Collections.EMPTY_MAP);
+							String serializedModel = baos.toString("UTF-8");
 
-    public TaskContext getCurrentContext() {
-        return currentContext;
-    }
+							org.eclipse.jface.text.IDocument doc = textEditor.getDocumentProvider()
+									.getDocument(textEditor.getEditorInput());
+							if (doc != null) {
+								if (!serializedModel.equals(doc.get())) {
+									doc.set(serializedModel);
+								}
+							}
+						} catch (Exception e) {
+							try {
+								ProjectModelManager.getInstance().saveResource(resource);
+							} catch (IOException ex) {
+								throw new org.eclipse.core.runtime.CoreException(
+										new org.eclipse.core.runtime.Status(org.eclipse.core.runtime.IStatus.ERROR,
+												"eu.kalafatic.evolution.view", ex.getMessage(), ex));
+							}
+						}
+						sub.worked(50);
+					} else if (resource != null) {
+						try {
+							ProjectModelManager.getInstance().saveResource(resource);
+							sub.worked(50);
+						} catch (IOException e) {
+							throw new org.eclipse.core.runtime.CoreException(
+									new org.eclipse.core.runtime.Status(org.eclipse.core.runtime.IStatus.ERROR,
+											"eu.kalafatic.evolution.view", e.getMessage(), e));
+						}
+					}
+					if (textEditor != null) {
+						textEditor.doSave(sub.split(50));
+					}
+				}
+			};
+			operation.run(subMonitor);
+			setDirty(false);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
 
-    public org.eclipse.jface.text.ITextSelection getLastTextSelection() {
-        return lastTextSelection;
-    }
+	/*
+	 * @Override public void doSave(IProgressMonitor monitor) { SubMonitor sub =
+	 * SubMonitor.convert(monitor, "Saving", 100); try { /** Synchronize model ->
+	 * editor document ONLY. DO NOT physically write the file here.
+	 */
+	/*
+	 * if (resource != null) {
+	 * ProjectModelManager.getInstance().saveResource(resource); } /* Let Eclipse
+	 * editor own the actual save.
+	 */
+	/*
+	 * if (textEditor != null) { textEditor.doSave(sub.split(100)); }
+	 * setDirty(false);
+	 * 
+	 * } catch (Exception e) { e.printStackTrace(); } }
+	 */
 
-    public void setLastTextSelection(org.eclipse.jface.text.ITextSelection lastTextSelection) {
-        this.lastTextSelection = lastTextSelection;
-    }
+	@Override
+	public void doSaveAs() {
+		IEditorPart editor = getEditor(1);
+		if (editor != null) {
+			editor.doSaveAs();
+			setPageText(1, editor.getTitle());
+			setInput(editor.getEditorInput());
+		}
+	}
 
-    public void refreshNavigator(IResource resource) {
-        org.eclipse.ui.IViewPart view = getSite().getPage().findView("eu.kalafatic.views.EvoNavigator");
-        if (view instanceof EvoNavigator) {
-            ((EvoNavigator) view).refreshAndExpand(resource);
-        }
-    }
+	@Override
+	public boolean isSaveAsAllowed() {
+		return true;
+	}
 
-    public void refreshPages() {
-        if (orchestrator == null) return;
-        if (aiChatPage != null) aiChatPage.scheduleRefresh();
-        if (architecturePage != null) architecturePage.scheduleRefresh();
-        if (propertiesPage != null) propertiesPage.scheduleRefresh();
-        if (toolsPage != null) toolsPage.scheduleRefresh();
-        if (taskStackPage != null) taskStackPage.scheduleRefresh();
-        if (testsPage != null) testsPage.scheduleRefresh();
-        if (iterationPage != null) iterationPage.scheduleRefresh();
-        if (peerReviewPage != null) peerReviewPage.scheduleRefresh();
-        if (mcpSettingsPage != null) mcpSettingsPage.scheduleRefresh();
-        if (contextPage != null) contextPage.refreshUI(); // TODO: refactor ContextPage if needed
-        if (serverPage != null) serverPage.scheduleRefresh();
-        if (forgePage != null) forgePage.scheduleRefresh();
-        if (settingsPage != null) settingsPage.scheduleRefresh();
-        if (approvalPage != null) approvalPage.scheduleRefresh();
-        if (developmentPage != null) developmentPage.scheduleRefresh();
+	@Override
+	public void setFocus() {
+		int index = getActivePage();
+		if (index != -1)
+			getControl(index).setFocus();
+	}
 
-        int active = getActivePage();
-        if (active != -1 && getControl(active) == comparePage) {
-            refreshComparePage();
-        }
-    }
+	public Object getActivePageInstance() {
+		int index = getActivePage();
+		if (index != -1)
+			return getControl(index);
+		return null;
+	}
 
-    private void refreshComparePage() {
-        if (comparePage == null || orchestrator == null || getEditorInput() == null) return;
-        if (!(getEditorInput() instanceof IFileEditorInput)) return;
+	@Override
+	public void dispose() {
+		if (resourceListener != null)
+			ResourcesPlugin.getWorkspace().removeResourceChangeListener(resourceListener);
+		if (workspaceListener != null)
+			ResourcesPlugin.getWorkspace().removeResourceChangeListener(workspaceListener);
+		if (selectionListener != null)
+			getSite().getWorkbenchWindow().getSelectionService().removeSelectionListener(selectionListener);
+		if (orchestrator != null)
+			orchestrator.eAdapters().remove(modelAdapter);
 
-        IFile file = ((IFileEditorInput) getEditorInput()).getFile();
-        updateComparePage(file);
-    }
+		if (lightGreen != null && !lightGreen.isDisposed())
+			lightGreen.dispose();
+		if (lightRed != null && !lightRed.isDisposed())
+			lightRed.dispose();
+		if (lightOrange != null && !lightOrange.isDisposed())
+			lightOrange.dispose();
+		if (lightBlue != null && !lightBlue.isDisposed())
+			lightBlue.dispose();
+		if (lightPurple != null && !lightPurple.isDisposed())
+			lightPurple.dispose();
+		if (lightCyan != null && !lightCyan.isDisposed())
+			lightCyan.dispose();
 
-    public void showComparePage(IFile file) {
-        if (comparePage == null) return;
-        updateComparePage(file);
-        setActivePageByControl(comparePage);
-    }
+		// Dispose of the undo context and clean up the operation history
+		if (undoContext != null) {
+			IOperationHistory history = OperationHistoryFactory.getOperationHistory();
+			history.dispose(undoContext, true, true, true);
+		}
 
-    private void updateComparePage(IFile file) {
-        if (orchestrator == null || orchestrator.getAiChat() == null ||
-            orchestrator.getAiChat().getPromptInstructions() == null ||
-            !orchestrator.getAiChat().getPromptInstructions().isGitAutomation()) {
-            return;
-        }
+		super.dispose();
+	}
 
-        Job job = new Job("Fetching Git content") {
-            @Override
-            protected IStatus run(IProgressMonitor monitor) {
-                java.io.File workingDir = file.getProject().getLocation().toFile();
-                String relativePath = file.getProjectRelativePath().toString();
-                try {
-                    eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider vcs = new eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider();
-                    String headContent = vcs.getFileContent(workingDir, "HEAD", relativePath);
-                    if (headContent != null) {
-                        Display.getDefault().asyncExec(() -> {
-                            if (!comparePage.isDisposed()) {
-                                comparePage.setInput(file, new StringElement(headContent, file.getName(), file.getFileExtension()), "Local File", "Git HEAD");
-                            }
-                        });
-                    }
-                } catch (Exception e) {
-                    // Probably not a git repo or file not in git
-                }
-                return Status.OK_STATUS;
-            }
-        };
-        job.schedule();
-    }
+	@Override
+	public boolean isDirty() {
+		return isDirty || (textEditor != null && textEditor.isDirty());
+	}
 
-    public void showApprovalPage() {
-        setActivePageByControl(approvalPage);
-    }
+	public void setDirty(boolean dirty) {
+		if (this.isDirty != dirty) {
+			this.isDirty = dirty;
+			Display.getDefault().asyncExec(() -> {
+				if (getContainer() != null && !getContainer().isDisposed()) {
+					firePropertyChange(IEditorPart.PROP_DIRTY);
+				}
+			});
+		}
+	}
 
-    public void showAiChatPage() {
-        setActivePageByControl(aiChatPage);
-    }
+	public void setOrchestrator(Orchestrator orchestrator) {
+		if (this.orchestrator != null) {
+			this.orchestrator.eAdapters().remove(modelAdapter);
+		}
+		this.orchestrator = orchestrator;
+		if (this.orchestrator != null) {
+			this.orchestrator.eAdapters().add(modelAdapter);
+			eu.kalafatic.evolution.controller.orchestration.OrchestratorServiceImpl.getInstance()
+					.setOrchestrator(orchestrator);
+		}
 
-    public void showArchitecturePage() {
-        setActivePageByControl(architecturePage);
-    }
+		if (aiChatPage != null)
+			aiChatPage.setOrchestrator(orchestrator);
+		if (architecturePage != null)
+			architecturePage.setOrchestrator(orchestrator);
+		if (propertiesPage != null)
+			propertiesPage.setOrchestrator(orchestrator);
+		if (mcpSettingsPage != null)
+			mcpSettingsPage.setOrchestrator(orchestrator);
+		if (graphPage != null)
+			graphPage.setOrchestrator(orchestrator);
+		if (browserPage != null)
+			browserPage.setOrchestrator(orchestrator);
+		if (approvalPage != null)
+			approvalPage.setOrchestrator(orchestrator);
+		if (developmentPage != null)
+			developmentPage.setOrchestrator(orchestrator);
+		if (toolsPage != null)
+			toolsPage.setOrchestrator(orchestrator);
+		if (testsPage != null)
+			testsPage.setOrchestrator(orchestrator);
+		if (iterationPage != null)
+			iterationPage.setOrchestrator(orchestrator);
+		if (peerReviewPage != null)
+			peerReviewPage.setOrchestrator(orchestrator);
+		if (taskStackPage != null)
+			taskStackPage.setOrchestrator(orchestrator);
+		if (contextPage != null)
+			contextPage.setOrchestrator(orchestrator);
+		if (serverPage != null)
+			serverPage.setOrchestrator(orchestrator);
+		if (forgePage != null)
+			forgePage.setOrchestrator(orchestrator);
+		if (settingsPage != null)
+			settingsPage.setOrchestrator(orchestrator);
+	}
 
-    public void showIterationPage() {
-        setActivePageByControl(iterationPage);
-    }
+	public void reloadModel() {
+		loadModel();
+		if (orchestrator != null) {
+			setOrchestrator(orchestrator);
+		}
+	}
 
-    public void showPeerReviewPage() {
-        setActivePageByControl(peerReviewPage);
-    }
+	public void setCurrentContext(TaskContext context) {
+		this.currentContext = context;
+	}
 
-    public void runTaskInChat(Task task)  {
-        try {
+	public TaskContext getCurrentContext() {
+		return currentContext;
+	}
+
+	public org.eclipse.jface.text.ITextSelection getLastTextSelection() {
+		return lastTextSelection;
+	}
+
+	public void setLastTextSelection(org.eclipse.jface.text.ITextSelection lastTextSelection) {
+		this.lastTextSelection = lastTextSelection;
+	}
+
+	public void refreshNavigator(IResource resource) {
+		org.eclipse.ui.IViewPart view = getSite().getPage().findView("eu.kalafatic.views.EvoNavigator");
+		if (view instanceof EvoNavigator) {
+			((EvoNavigator) view).refreshAndExpand(resource);
+		}
+	}
+
+	public void refreshPages() {
+		if (orchestrator == null)
+			return;
+		if (aiChatPage != null)
+			aiChatPage.scheduleRefresh();
+		if (architecturePage != null)
+			architecturePage.scheduleRefresh();
+		if (propertiesPage != null)
+			propertiesPage.scheduleRefresh();
+		if (toolsPage != null)
+			toolsPage.scheduleRefresh();
+		if (taskStackPage != null)
+			taskStackPage.scheduleRefresh();
+		if (testsPage != null)
+			testsPage.scheduleRefresh();
+		if (iterationPage != null)
+			iterationPage.scheduleRefresh();
+		if (peerReviewPage != null)
+			peerReviewPage.scheduleRefresh();
+		if (mcpSettingsPage != null)
+			mcpSettingsPage.scheduleRefresh();
+		if (contextPage != null)
+			contextPage.refreshUI(); // TODO: refactor ContextPage if needed
+		if (serverPage != null)
+			serverPage.scheduleRefresh();
+		if (forgePage != null)
+			forgePage.scheduleRefresh();
+		if (settingsPage != null)
+			settingsPage.scheduleRefresh();
+		if (approvalPage != null)
+			approvalPage.scheduleRefresh();
+		if (developmentPage != null)
+			developmentPage.scheduleRefresh();
+
+		int active = getActivePage();
+		if (active != -1 && getControl(active) == comparePage) {
+			refreshComparePage();
+		}
+	}
+
+	private void refreshComparePage() {
+		if (comparePage == null || orchestrator == null || getEditorInput() == null)
+			return;
+		if (!(getEditorInput() instanceof IFileEditorInput))
+			return;
+
+		IFile file = ((IFileEditorInput) getEditorInput()).getFile();
+		updateComparePage(file);
+	}
+
+	public void showComparePage(IFile file) {
+		if (comparePage == null)
+			return;
+		updateComparePage(file);
+		setActivePageByControl(comparePage);
+	}
+
+	private void updateComparePage(IFile file) {
+		if (orchestrator == null || orchestrator.getAiChat() == null
+				|| orchestrator.getAiChat().getPromptInstructions() == null
+				|| !orchestrator.getAiChat().getPromptInstructions().isGitAutomation()) {
+			return;
+		}
+
+		Job job = new Job("Fetching Git content") {
+			@Override
+			protected IStatus run(IProgressMonitor monitor) {
+				java.io.File workingDir = file.getProject().getLocation().toFile();
+				String relativePath = file.getProjectRelativePath().toString();
+				try {
+					eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider vcs = new eu.kalafatic.evolution.controller.vcs.GitVersionControlProvider();
+					String headContent = vcs.getFileContent(workingDir, "HEAD", relativePath);
+					if (headContent != null) {
+						Display.getDefault().asyncExec(() -> {
+							if (!comparePage.isDisposed()) {
+								comparePage.setInput(file,
+										new StringElement(headContent, file.getName(), file.getFileExtension()),
+										"Local File", "Git HEAD");
+							}
+						});
+					}
+				} catch (Exception e) {
+					// Probably not a git repo or file not in git
+				}
+				return Status.OK_STATUS;
+			}
+		};
+		job.schedule();
+	}
+
+	public void showApprovalPage() {
+		setActivePageByControl(approvalPage);
+	}
+
+	public void showAiChatPage() {
+		setActivePageByControl(aiChatPage);
+	}
+
+	public void showArchitecturePage() {
+		setActivePageByControl(architecturePage);
+	}
+
+	public void showIterationPage() {
+		setActivePageByControl(iterationPage);
+	}
+
+	public void showPeerReviewPage() {
+		setActivePageByControl(peerReviewPage);
+	}
+
+	public void runTaskInChat(Task task) {
+		try {
 			if (aiChatPage != null) {
-			    showAiChatPage();
-			    aiChatPage.runTask(task);
+				showAiChatPage();
+				aiChatPage.runTask(task);
 			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-    }
+	}
 
-    public void openTaskResult(Task task) {
-        if (aiChatPage != null) {
-            showAiChatPage();
-            // If the task has an ID, we could try to switch to that thread
-            if (task.getId() != null) {
-                aiChatPage.switchSession(task.getId());
-            }
-        }
-    }
+	public void openTaskResult(Task task) {
+		if (aiChatPage != null) {
+			showAiChatPage();
+			// If the task has an ID, we could try to switch to that thread
+			if (task.getId() != null) {
+				aiChatPage.switchSession(task.getId());
+			}
+		}
+	}
 
-    private void setActivePageByControl(Control control) {
-        for (int i = 0; i < getPageCount(); i++) {
-            if (getControl(i) == control) {
-                setActivePage(i);
-                break;
-            }
-        }
-    }
+	private void setActivePageByControl(Control control) {
+		for (int i = 0; i < getPageCount(); i++) {
+			if (getControl(i) == control) {
+				setActivePage(i);
+				break;
+			}
+		}
+	}
 
-    public void selectNode(Object element) {
-        if (graphPage != null) {
-            graphPage.selectNode(element);
-        }
-    }
+	public void selectNode(Object element) {
+		if (graphPage != null) {
+			graphPage.selectNode(element);
+		}
+	}
 
-    @Override
-    protected void pageChange(int newPageIndex) {
-        // Null guard for e4Context in PartSite, which can be null during early initialization
-        // or during specific layout transitions in some Eclipse versions.
-        if (getSite() == null) {
-             return;
-        }
+	@Override
+	protected void pageChange(int newPageIndex) {
+		// Null guard for e4Context in PartSite, which can be null during early
+		// initialization
+		// or during specific layout transitions in some Eclipse versions.
+		if (getSite() == null) {
+			return;
+		}
 
-        super.pageChange(newPageIndex);
+		super.pageChange(newPageIndex);
 
-        // Update the action bar contributor to ensure the platform's global actions
-        // (like Undo/Redo) track the active editor in the multi-page context.
-        IEditorActionBarContributor contributor = getEditorSite().getActionBarContributor();
-        if (contributor instanceof MultiPageEditorActionBarContributor) {
-            ((MultiPageEditorActionBarContributor) contributor).setActivePage(getEditor(newPageIndex));
-        }
-        // Force update of action bars / undo context when switching pages
-        IEditorPart activeEditor = getEditor(newPageIndex);
-        if (activeEditor != null) {
-        	getEditorSite().getActionBars().updateActionBars();
-        }
+		// Update the action bar contributor to ensure the platform's global actions
+		// (like Undo/Redo) track the active editor in the multi-page context.
+		IEditorActionBarContributor contributor = getEditorSite().getActionBarContributor();
+		if (contributor instanceof MultiPageEditorActionBarContributor) {
+			((MultiPageEditorActionBarContributor) contributor).setActivePage(getEditor(newPageIndex));
+		}
+		// Force update of action bars / undo context when switching pages
+		IEditorPart activeEditor = getEditor(newPageIndex);
+		if (activeEditor != null) {
+			getEditorSite().getActionBars().updateActionBars();
+		}
 
-        Control control = getControl(newPageIndex);
-        if (control == comparePage && comparePage != null) {
-            refreshComparePage();
-        } else if (control == architecturePage && architecturePage != null) {
-            architecturePage.scheduleRefresh();
-        }
-    }
+		Control control = getControl(newPageIndex);
+		if (control == comparePage && comparePage != null) {
+			refreshComparePage();
+		} else if (control == architecturePage && architecturePage != null) {
+			architecturePage.scheduleRefresh();
+		}
+	}
 
-    public void gotoMarker(IMarker marker) {
-        setActivePage(1);
-        IDE.gotoMarker(textEditor, marker);
-    }
+	public void gotoMarker(IMarker marker) {
+		setActivePage(1);
+		IDE.gotoMarker(textEditor, marker);
+	}
 
-    @Override
-    public <T> T getAdapter(Class<T> key) {
-        if (IUndoContext.class.equals(key)) {
-            if (undoContext == null) {
-                undoContext = new ObjectUndoContext(this);
-            }
-            return key.cast(undoContext);
-        }
-        if (key.equals(IContentOutlinePage.class)) {
-            if (textEditor != null) {
-                return textEditor.getAdapter(key);
-            }
-        }
-        if (key.equals(IPropertySheetPage.class)) {
-            if (textEditor != null) {
-                return textEditor.getAdapter(key);
-            }
-        }
-        if (key.equals(IGotoMarker.class)) {
-            return key.cast(this);
-        }
-        if (key.equals(ITextEditor.class)) {
-            return key.cast(textEditor);
-        }
-        return super.getAdapter(key);
-    }
+	@Override
+	public <T> T getAdapter(Class<T> key) {
+		if (IUndoContext.class.equals(key)) {
+			if (undoContext == null) {
+				undoContext = new ObjectUndoContext(this);
+			}
+			return key.cast(undoContext);
+		}
+		if (key.equals(IContentOutlinePage.class)) {
+			if (textEditor != null) {
+				return textEditor.getAdapter(key);
+			}
+		}
+		if (key.equals(IPropertySheetPage.class)) {
+			if (textEditor != null) {
+				return textEditor.getAdapter(key);
+			}
+		}
+		if (key.equals(IGotoMarker.class)) {
+			return key.cast(this);
+		}
+		if (key.equals(ITextEditor.class)) {
+			return key.cast(textEditor);
+		}
+		return super.getAdapter(key);
+	}
 
-    @Override
-    public Composite getContainer() {
-        return super.getContainer();
-    }
+	@Override
+	public Composite getContainer() {
+		return super.getContainer();
+	}
 
-    @Override
-    public int addPage(Control control) {
-        return super.addPage(control);
-    }
+	@Override
+	public int addPage(Control control) {
+		return super.addPage(control);
+	}
 
-    @Override
-    public int addPage(IEditorPart editor, IEditorInput input) throws PartInitException {
-        return super.addPage(editor, input);
-    }
+	@Override
+	public int addPage(IEditorPart editor, IEditorInput input) throws PartInitException {
+		return super.addPage(editor, input);
+	}
 
-    @Override
-    public void setPageText(int index, String text) {
-        super.setPageText(index, text);
-    }
+	@Override
+	public void setPageText(int index, String text) {
+		super.setPageText(index, text);
+	}
 
 	public Color getLightGreen() {
 		return lightGreen;
@@ -694,49 +764,50 @@ public class MultiPageEditor extends MultiPageEditorPart {
 		this.lightOrange = lightOrange;
 	}
 
-    public Color getLightBlue() {
-        return lightBlue;
-    }
+	public Color getLightBlue() {
+		return lightBlue;
+	}
 
-    public void setLightBlue(Color lightBlue) {
-        this.lightBlue = lightBlue;
-    }
+	public void setLightBlue(Color lightBlue) {
+		this.lightBlue = lightBlue;
+	}
 
-    public Color getLightPurple() {
-        return lightPurple;
-    }
+	public Color getLightPurple() {
+		return lightPurple;
+	}
 
-    public void setLightPurple(Color lightPurple) {
-        this.lightPurple = lightPurple;
-    }
+	public void setLightPurple(Color lightPurple) {
+		this.lightPurple = lightPurple;
+	}
 
-    public Color getLightCyan() {
-        return lightCyan;
-    }
+	public Color getLightCyan() {
+		return lightCyan;
+	}
 
-    public void setLightCyan(Color lightCyan) {
-        this.lightCyan = lightCyan;
-    }
+	public void setLightCyan(Color lightCyan) {
+		this.lightCyan = lightCyan;
+	}
 
-    /**
-     * @evo:17:A reason=programmatic-access
-     */
-    public AiChatPage getAiChatPage() {
-        return aiChatPage;
-    }
+	/**
+	 * @evo:17:A reason=programmatic-access
+	 */
+	public AiChatPage getAiChatPage() {
+		return aiChatPage;
+	}
 
-    /**
-     * Nested text editor that explicitly delegates its undo context to the parent MultiPageEditor.
-     * This ensures that document changes in the text editor are correctly attributed to the
-     * shared undo history, avoiding the null context crash in OperationHistoryActionHandler.
-     */
-    private class NestedTextEditor extends TextEditor {
-        @Override
-        public <T> T getAdapter(Class<T> adapter) {
-            if (IUndoContext.class.equals(adapter)) {
-                return adapter.cast(MultiPageEditor.this.undoContext);
-            }
-            return super.getAdapter(adapter);
-        }
-    }
+	/**
+	 * Nested text editor that explicitly delegates its undo context to the parent
+	 * MultiPageEditor. This ensures that document changes in the text editor are
+	 * correctly attributed to the shared undo history, avoiding the null context
+	 * crash in OperationHistoryActionHandler.
+	 */
+	private class NestedTextEditor extends TextEditor {
+		@Override
+		public <T> T getAdapter(Class<T> adapter) {
+			if (IUndoContext.class.equals(adapter)) {
+				return adapter.cast(MultiPageEditor.this.undoContext);
+			}
+			return super.getAdapter(adapter);
+		}
+	}
 }
