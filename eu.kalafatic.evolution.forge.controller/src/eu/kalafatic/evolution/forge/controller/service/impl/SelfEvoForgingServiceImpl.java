@@ -44,19 +44,45 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
         updateStats(sessionId, new ForgingStats("STARTING", 0, 0, 0, 0, 0.0, "0"));
 
         executor.submit(() -> {
+            long timestamp = System.currentTimeMillis();
+            Path runFolder = Paths.get("dist/forging-" + sessionId + "-" + timestamp);
+            Path logFile = runFolder.resolve("forging.log");
             try {
+                Files.createDirectories(runFolder);
+
+                JSONObject infoJson = new JSONObject();
+                infoJson.put("sessionId", sessionId);
+                infoJson.put("modelType", "SELF_EVO");
+                infoJson.put("projectPath", projectPath.toAbsolutePath().toString());
+                infoJson.put("timestamp", timestamp);
+                infoJson.put("startTime", new java.util.Date(timestamp).toString());
+                Files.writeString(runFolder.resolve("session_info.json"), infoJson.toString(4));
+
+                logToFile(logFile, "Starting forging session: " + sessionId + " at " + infoJson.getString("startTime"));
+
                 // REAL PIPELINE IMPLEMENTATION
                 MarkdownLoader loader = new MarkdownLoader();
                 MarkdownCleaner cleaner = new MarkdownCleaner();
                 
                 updateStats(sessionId, new ForgingStats("SCANNING", 10, 0, 0, 0, 0.0, "0"));
+                logToFile(logFile, "Stage: SCANNING");
                 String corpus = loader.loadFromDirectory(projectPath);
                 String cleanCorpus = cleaner.clean(corpus);
+                logToFile(logFile, "Scanning complete. Corpus length: " + corpus.length() + " chars, Cleaned length: " + cleanCorpus.length() + " chars.");
+
+                JSONObject stage1 = new JSONObject();
+                stage1.put("stage", "SCANNING");
+                stage1.put("rawCorpusLength", corpus.length());
+                stage1.put("cleanCorpusLength", cleanCorpus.length());
+                stage1.put("sample", cleanCorpus.substring(0, Math.min(1000, cleanCorpus.length())));
+                Files.writeString(runFolder.resolve("stage_1_scanner_result.json"), stage1.toString(4));
                 
                 updateStats(sessionId, new ForgingStats("ENHANCING", 30, 0, 0, 0, 0.0, "0"));
+                logToFile(logFile, "Stage: ENHANCING");
                 SimpleBPETokenizer tokenizer = new SimpleBPETokenizer();
                 tokenizer.train(cleanCorpus, 4096);
                 List<Integer> allTokens = tokenizer.encode(cleanCorpus);
+                logToFile(logFile, "Tokenization complete. Vocabulary size: " + tokenizer.getVocabSize() + ", Total tokens: " + allTokens.size());
                 
                 VocabularyBuilder vocabBuilder = new VocabularyBuilder();
                 // Map of tokens for vocab builder (simplified)
@@ -64,19 +90,56 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                 
                 DatasetBuilder datasetBuilder = new DatasetBuilder();
                 List<DatasetBuilder.Sample> samples = datasetBuilder.buildSlidingWindow(allTokens, 16, 8);
+                logToFile(logFile, "Dataset builder complete. Generated " + samples.size() + " training samples.");
+
+                JSONObject stage2 = new JSONObject();
+                stage2.put("stage", "ENHANCING");
+                stage2.put("vocabSize", tokenizer.getVocabSize());
+                stage2.put("totalTokens", allTokens.size());
+                stage2.put("samplesGenerated", samples.size());
+                JSONArray tokenSample = new JSONArray();
+                for (int i = 0; i < Math.min(100, allTokens.size()); i++) {
+                    tokenSample.put(allTokens.get(i));
+                }
+                stage2.put("tokenSample", tokenSample);
+                Files.writeString(runFolder.resolve("stage_2_enhancer_result.json"), stage2.toString(4));
                 
                 updateStats(sessionId, new ForgingStats("TRAINING", 60, 0, 0, samples.size(), 0.0, "1/1"));
+                logToFile(logFile, "Stage: TRAINING. Training EvoLlmModel with sliding window samples...");
                 EvoLlmModel model = new EvoLlmModel(tokenizer.getVocabSize(), 128, 4, 2, 512, 16);
                 EvoLlmTrainer trainer = new EvoLlmTrainer(model);
                 trainer.train(samples, 1);
+                logToFile(logFile, "Training complete.");
+
+                JSONObject stage3 = new JSONObject();
+                stage3.put("stage", "TRAINING");
+                stage3.put("samplesTrained", samples.size());
+                stage3.put("epochs", 1);
+                JSONObject arch = new JSONObject();
+                arch.put("vocabSize", tokenizer.getVocabSize());
+                arch.put("hiddenSize", 128);
+                arch.put("attentionHeads", 4);
+                arch.put("layers", 2);
+                stage3.put("architecture", arch);
+                Files.writeString(runFolder.resolve("stage_3_trainer_result.json"), stage3.toString(4));
                 
                 updateStats(sessionId, new ForgingStats("EXPORTING", 80, 0, 0, samples.size(), 0.0, "1/1"));
+                logToFile(logFile, "Stage: EXPORTING. Exporting model LoRA adapters...");
                 OllamaExporter exporter = new OllamaExporter();
                 Path exportPath = Paths.get("dist/evo-" + sessionId);
                 String modelName = "evo-" + sessionId;
                 exporter.export(modelName, exportPath, model);
+                logToFile(logFile, "Export complete. Model output written to: " + exportPath.toAbsolutePath().toString());
+
+                JSONObject stage4 = new JSONObject();
+                stage4.put("stage", "EXPORTING");
+                stage4.put("modelName", modelName);
+                stage4.put("exportPath", exportPath.toAbsolutePath().toString());
+                stage4.put("success", true);
+                Files.writeString(runFolder.resolve("stage_4_exporter_result.json"), stage4.toString(4));
 
                 updateStats(sessionId, new ForgingStats("EXPORT_GGUF", 90, 0, 0, samples.size(), 0.0, "OLLAMA"));
+                logToFile(logFile, "Stage: EXPORT_GGUF. Registering model in Ollama...");
                
                 // For 'SELF_EVO' interactive demo consistency, ensure we register the model as 'evo'
                 String targetName = "evo";
@@ -85,28 +148,59 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                     try {
                         String modelfileContent = Files.readString(modelfilePath);
                         String ollamaUrl = "http://localhost:11434";
-                        if (pingOllama(ollamaUrl)) {
-                            // Fetch available models and rewrite the FROM line if llama3.2:3b is not present
+                        boolean pingOk = pingOllama(ollamaUrl);
+                        boolean registered = false;
+                        String baseModelUsed = "llama3.2:3b";
+
+                        if (pingOk) {
                             String availableModel = getFirstAvailableModel(ollamaUrl);
                             if (availableModel != null && !availableModel.equals("llama3.2:3b")) {
-                                System.out.println("[SelfEvo] Rewriting FROM in Modelfile from llama3.2:3b to " + availableModel);
+                                baseModelUsed = availableModel;
+                                logToFile(logFile, "[EXPORT_GGUF] Rewriting FROM in Modelfile from llama3.2:3b to " + availableModel);
                                 modelfileContent = modelfileContent.replaceAll("(?m)^FROM\\s+llama3.2:3b", "FROM " + availableModel);
                                 Files.writeString(modelfilePath, modelfileContent);
                             }
-                            System.out.println("[SelfEvo] Registering model in Ollama as '" + targetName + "'...");
+                            logToFile(logFile, "[EXPORT_GGUF] Registering model in Ollama as '" + targetName + "'...");
                             createModel(ollamaUrl, targetName, modelfileContent);
-                            System.out.println("[SelfEvo] Model registered successfully.");
+                            logToFile(logFile, "[EXPORT_GGUF] Model registered successfully.");
+                            registered = true;
                         } else {
-                            System.out.println("[SelfEvo] Ollama is not running on " + ollamaUrl + ", skipping model registration.");
+                            logToFile(logFile, "[EXPORT_GGUF] Ollama is not running on " + ollamaUrl + ", skipping model registration.");
                         }
+
+                        JSONObject stage5 = new JSONObject();
+                        stage5.put("stage", "OLLAMA_REGISTRATION");
+                        stage5.put("targetModel", targetName);
+                        stage5.put("ollamaOnline", pingOk);
+                        stage5.put("baseModelUsed", baseModelUsed);
+                        stage5.put("registrationSuccess", registered);
+                        Files.writeString(runFolder.resolve("stage_5_registration_result.json"), stage5.toString(4));
                     } catch (Exception ex) {
-                        System.err.println("[SelfEvo] Ollama registration failed (non-blocking): " + ex.getMessage());
+                        logToFile(logFile, "[EXPORT_GGUF] Ollama registration failed (non-blocking): " + ex.getMessage());
+
+                        JSONObject stage5 = new JSONObject();
+                        stage5.put("stage", "OLLAMA_REGISTRATION");
+                        stage5.put("targetModel", targetName);
+                        stage5.put("error", ex.getMessage());
+                        stage5.put("registrationSuccess", false);
+                        Files.writeString(runFolder.resolve("stage_5_registration_result.json"), stage5.toString(4));
                     }
                 }
                 
+                logToFile(logFile, "Stage: COMPLETE. Forging process completed successfully!");
                 updateStats(sessionId, new ForgingStats("COMPLETE", 100, 0, 0, samples.size(), 0.0, "DONE"));
 
             } catch (Exception e) {
+                logToFile(logFile, "Stage: ERROR. Forging process failed: " + e.getMessage());
+                try {
+                    JSONObject errorObj = new JSONObject();
+                    errorObj.put("sessionId", sessionId);
+                    errorObj.put("error", e.getMessage());
+                    java.io.StringWriter sw = new java.io.StringWriter();
+                    e.printStackTrace(new java.io.PrintWriter(sw));
+                    errorObj.put("stackTrace", sw.toString());
+                    Files.writeString(runFolder.resolve("error_result.json"), errorObj.toString(4));
+                } catch (Exception ex) {}
                 e.printStackTrace();
                 updateStats(sessionId, new ForgingStats("ERROR", 0, 0, 0, 0, 0.0, "ERR"));
             }
@@ -229,6 +323,16 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
 //      }
 //      return result;
 //  }
+
+  private void logToFile(Path logFile, String msg) {
+      try {
+          String formatted = String.format("[%s] %s\n", java.time.Instant.now().toString(), msg);
+          Files.writeString(logFile, formatted, java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND);
+          System.out.println(msg);
+      } catch (Exception e) {
+          e.printStackTrace();
+      }
+  }
 
     private void updateStats(String sessionId, ForgingStats stats) {
         sessionStats.put(sessionId, stats);
