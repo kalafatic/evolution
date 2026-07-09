@@ -18,11 +18,16 @@ import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.taskstack.*;
+import eu.kalafatic.evolution.view.projection.ProjectionService;
+import eu.kalafatic.evolution.view.projection.RuntimeProjection;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
+import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class TaskStackPage extends AEvoPage {
@@ -34,6 +39,10 @@ public class TaskStackPage extends AEvoPage {
     private TaskStackGroup taskStackGroup;
     private List<Task> executionQueue = new ArrayList<>();
     private List<Task> activeTasks = new ArrayList<>();
+
+    private Consumer<RuntimeProjection> taskStackProjectionObserver = projection -> {
+        handleProjectionUpdate(projection);
+    };
 
     private Adapter modelAdapter = new EContentAdapter() {
         @Override
@@ -72,7 +81,65 @@ public class TaskStackPage extends AEvoPage {
         globalActionsGroup = new GlobalActionsGroup(toolkit, body, editor, orchestrator, this);
 
         setOrchestrator(orchestrator);
+        ProjectionService.getInstance().subscribe(taskStackProjectionObserver);
         // startTimer();
+    }
+
+    private String getSessionId(Task task) {
+        if (task == null) return "Default";
+        if (task.eContainer() instanceof Task) {
+            return getSessionId((Task) task.eContainer());
+        }
+        return task.getId() != null ? task.getId() : "Default";
+    }
+
+    private void handleProjectionUpdate(RuntimeProjection projection) {
+        if (projection == null) return;
+        String sessionId = projection.getSessionId();
+        if (sessionId == null) return;
+
+        List<Task> completedTasks = new ArrayList<>();
+        List<Task> failedTasks = new ArrayList<>();
+
+        synchronized (activeTasks) {
+            for (Task task : activeTasks) {
+                if (sessionId.equals(getSessionId(task))) {
+                    if (!projection.isRunning()) {
+                        List<RuntimeEvent> events = projection.getEvents();
+                        boolean failed = false;
+                        if (events != null && !events.isEmpty()) {
+                            for (int i = events.size() - 1; i >= 0; i--) {
+                                RuntimeEvent e = events.get(i);
+                                if (e.getType() == RuntimeEventType.TASK_FAILED || e.getType() == RuntimeEventType.COMMAND_FAILED) {
+                                    failed = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (failed) {
+                            failedTasks.add(task);
+                        } else {
+                            completedTasks.add(task);
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!completedTasks.isEmpty() || !failedTasks.isEmpty()) {
+            Display.getDefault().asyncExec(() -> {
+                if (isDisposed()) return;
+
+                for (Task t : completedTasks) {
+                    t.setStatus(TaskStatus.DONE);
+                }
+                for (Task t : failedTasks) {
+                    t.setStatus(TaskStatus.FAILED);
+                }
+
+                setDirty(true);
+            });
+        }
     }
 
     private void startTimer() {
@@ -469,6 +536,7 @@ public class TaskStackPage extends AEvoPage {
 
     @Override
     public void dispose() {
+        ProjectionService.getInstance().unsubscribe(taskStackProjectionObserver);
         if (orchestrator != null) orchestrator.eAdapters().remove(modelAdapter);
         super.dispose();
     }
