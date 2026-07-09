@@ -30,7 +30,7 @@ public class FileCollectionEditor extends MultiPageEditorPart {
         FileCollectionEditorInput input = (FileCollectionEditorInput) getEditorInput();
         for (IFile file : input.getFiles()) {
             try {
-                TextEditor editor = new TextEditor();
+                TextEditor editor = new SafeTextEditor();
                 int index = addPage(editor, new FileEditorInput(file));
                 setPageText(index, file.getName());
             } catch (PartInitException e) {

@@ -143,7 +143,7 @@ public class MediatedEditor extends MultiPageEditorPart {
 
     private void addFileTab(File file, String label) {
         try {
-            TextEditor editor = new TextEditor();
+            TextEditor editor = new SafeTextEditor();
             IFileStore fileStore = EFS.getLocalFileSystem().getStore(new Path(file.getAbsolutePath()));
             int index = addPage(editor, new FileStoreEditorInput(fileStore));
             setPageText(index, label);
