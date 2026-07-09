@@ -27,6 +27,8 @@ public class MultiPageEditorContributor extends MultiPageEditorActionBarContribu
 	private Action sampleAction;
 	private UndoActionHandler undoAction;
 	private RedoActionHandler redoAction;
+	private MultiPageEditor multiPageEditor;
+
 	/**
 	 * Creates a multi-page contributor.
 	 */
@@ -48,6 +50,9 @@ public class MultiPageEditorContributor extends MultiPageEditorActionBarContribu
 	@Override
 	public void setActiveEditor(IEditorPart part) {
 		super.setActiveEditor(part);
+		if (part instanceof MultiPageEditor) {
+			this.multiPageEditor = (MultiPageEditor) part;
+		}
 		updateUndoRedo(part);
 	}
 
@@ -57,6 +62,18 @@ public class MultiPageEditorContributor extends MultiPageEditorActionBarContribu
 		if (part != null) {
 			context = part.getAdapter(IUndoContext.class);
 			site = part.getSite();
+		}
+
+		if (context == null || site == null) {
+			if (multiPageEditor != null) {
+				context = multiPageEditor.getAdapter(IUndoContext.class);
+				site = multiPageEditor.getSite();
+			}
+		}
+
+		if (context == null) {
+			// If even the multiPageEditor has no context, create a safe fallback ObjectUndoContext
+			context = new org.eclipse.core.commands.operations.ObjectUndoContext(this);
 		}
 
 		if (context != null && site != null) {
