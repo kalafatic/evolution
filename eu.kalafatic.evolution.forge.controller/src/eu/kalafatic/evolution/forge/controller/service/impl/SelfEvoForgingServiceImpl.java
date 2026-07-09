@@ -84,9 +84,21 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                 if (Files.exists(modelfilePath)) {
                     try {
                         String modelfileContent = Files.readString(modelfilePath);
-                        System.out.println("[SelfEvo] Registering model in Ollama as '" + targetName + "'...");
-                        createModel("http://localhost:11434", targetName, modelfileContent);
-                        System.out.println("[SelfEvo] Model registered successfully.");
+                        String ollamaUrl = "http://localhost:11434";
+                        if (pingOllama(ollamaUrl)) {
+                            // Fetch available models and rewrite the FROM line if llama3.2:3b is not present
+                            String availableModel = getFirstAvailableModel(ollamaUrl);
+                            if (availableModel != null && !availableModel.equals("llama3.2:3b")) {
+                                System.out.println("[SelfEvo] Rewriting FROM in Modelfile from llama3.2:3b to " + availableModel);
+                                modelfileContent = modelfileContent.replaceAll("(?m)^FROM\\s+llama3.2:3b", "FROM " + availableModel);
+                                Files.writeString(modelfilePath, modelfileContent);
+                            }
+                            System.out.println("[SelfEvo] Registering model in Ollama as '" + targetName + "'...");
+                            createModel(ollamaUrl, targetName, modelfileContent);
+                            System.out.println("[SelfEvo] Model registered successfully.");
+                        } else {
+                            System.out.println("[SelfEvo] Ollama is not running on " + ollamaUrl + ", skipping model registration.");
+                        }
                     } catch (Exception ex) {
                         System.err.println("[SelfEvo] Ollama registration failed (non-blocking): " + ex.getMessage());
                     }
@@ -118,7 +130,7 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
       HttpRequest request = HttpRequest.newBuilder()
               .uri(URI.create(createUrl))
               .header("Content-Type", "application/json")
-              .timeout(Duration.ofMinutes(1))
+              .timeout(Duration.ofMinutes(2))
               .POST(HttpRequest.BodyPublishers.ofString(jsonObject.toString()))
               .build();
 
@@ -130,6 +142,52 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
 
       //refreshModels();
       return response.body();
+  }
+
+  private boolean pingOllama(String baseUrl) {
+      try {
+          HttpRequest request = HttpRequest.newBuilder()
+                  .uri(URI.create(baseUrl))
+                  .timeout(Duration.ofSeconds(2))
+                  .GET()
+                  .build();
+          HttpResponse<Void> response = createClient().send(request, HttpResponse.BodyHandlers.discarding());
+          return response.statusCode() == 200;
+      } catch (Exception e) {
+          return false;
+      }
+  }
+
+  private String getFirstAvailableModel(String baseUrl) {
+      try {
+          String tagsUrl = baseUrl + (baseUrl.endsWith("/") ? "" : "/") + "api/tags";
+          HttpRequest request = HttpRequest.newBuilder()
+                  .uri(URI.create(tagsUrl))
+                  .timeout(Duration.ofSeconds(5))
+                  .GET()
+                  .build();
+
+          HttpResponse<String> response = createClient().send(request, HttpResponse.BodyHandlers.ofString());
+          if (response.statusCode() == 200) {
+              JSONObject obj = new JSONObject(response.body());
+              JSONArray models = obj.getJSONArray("models");
+              if (models.length() > 0) {
+                  // See if llama3.2:3b is in the list
+                  for (int i = 0; i < models.length(); i++) {
+                      JSONObject m = models.getJSONObject(i);
+                      String name = m.getString("name");
+                      if (name.contains("llama3.2:3b")) {
+                          return "llama3.2:3b";
+                      }
+                  }
+                  // Otherwise, return the first one available
+                  return models.getJSONObject(0).getString("name");
+              }
+          }
+      } catch (Exception e) {
+          // Ignore, default to llama3.2:3b
+      }
+      return "llama3.2:3b";
   }
   
   private HttpClient createClient() {
