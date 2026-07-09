@@ -45,7 +45,7 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
 
         executor.submit(() -> {
             long timestamp = System.currentTimeMillis();
-            Path runFolder = Paths.get("dist/forging-" + sessionId + "-" + timestamp);
+            Path runFolder = projectPath.resolve("dist/forging-" + sessionId + "-" + timestamp);
             Path logFile = runFolder.resolve("forging.log");
             try {
                 Files.createDirectories(runFolder);
@@ -126,7 +126,7 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                 updateStats(sessionId, new ForgingStats("EXPORTING", 80, 0, 0, samples.size(), 0.0, "1/1", runFolder.toAbsolutePath().toString()));
                 logToFile(logFile, "Stage: EXPORTING. Exporting model LoRA adapters...");
                 OllamaExporter exporter = new OllamaExporter();
-                Path exportPath = Paths.get("dist/evo-" + sessionId);
+                Path exportPath = projectPath.resolve("dist/evo-" + sessionId);
                 String modelName = "evo-" + sessionId;
                 exporter.export(modelName, exportPath, model);
                 logToFile(logFile, "Export complete. Model output written to: " + exportPath.toAbsolutePath().toString());
