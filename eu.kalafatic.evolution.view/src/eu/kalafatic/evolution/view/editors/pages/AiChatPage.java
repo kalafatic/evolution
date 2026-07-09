@@ -1020,12 +1020,20 @@ public class AiChatPage extends AEvoPage {
 	public void handleOpenDiff(String path) {
 		if (path == null || path.isEmpty()) return;
 
-		if (path.startsWith("file://")) {
-			path = path.substring(7);
-			// On Windows, file:///C:/path/to/file -> /C:/path/to/file or C:/path/to/file
-			if (path.startsWith("/") && path.length() > 2 && path.charAt(2) == ':') {
-				path = path.substring(1);
+		if (path.startsWith("file://") && !path.startsWith("file:///")) {
+			path = path.replaceFirst("file://", "file:///");
+		}
+
+		if (path.startsWith("file:")) {
+			try {
+				path = new java.net.URI(path).getPath();
+			} catch (Exception e) {
+				path = path.replaceFirst("^file:/+", "");
 			}
+		}
+
+		if (path.startsWith("/") && path.length() > 2 && path.charAt(2) == ':') {
+			path = path.substring(1);
 		}
 
 		// Strip status prefix if present (e.g. "M src/File.java" -> "src/File.java")
@@ -1034,7 +1042,10 @@ public class AiChatPage extends AEvoPage {
 		}
 
 		File projectRoot = getProjectRoot();
-		File file = path.contains(":") ? new File(path) : new File(projectRoot, path);
+		File file = new File(path);
+		if (!file.isAbsolute()) {
+			file = new File(projectRoot, path);
+		}
 
 		// Ensure workspace is in sync before looking for the file
 		try {
@@ -1068,15 +1079,27 @@ public class AiChatPage extends AEvoPage {
 	public void handleOpenMediatedEditor(String path) {
 		if (path == null || path.isEmpty()) return;
 
-		if (path.startsWith("file://")) {
-			path = path.substring(7);
-			if (path.startsWith("/") && path.length() > 2 && path.charAt(2) == ':') {
-				path = path.substring(1);
+		if (path.startsWith("file://") && !path.startsWith("file:///")) {
+			path = path.replaceFirst("file://", "file:///");
+		}
+
+		if (path.startsWith("file:")) {
+			try {
+				path = new java.net.URI(path).getPath();
+			} catch (Exception e) {
+				path = path.replaceFirst("^file:/+", "");
 			}
 		}
 
+		if (path.startsWith("/") && path.length() > 2 && path.charAt(2) == ':') {
+			path = path.substring(1);
+		}
+
 		File projectRoot = getProjectRoot();
-		File file = path.contains(":") ? new File(path) : new File(projectRoot, path);
+		File file = new File(path);
+		if (!file.isAbsolute()) {
+			file = new File(projectRoot, path);
+		}
 
 		if (file.exists()) {
 			IFile iFile = ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(new Path(file.getAbsolutePath()));
@@ -1100,7 +1123,27 @@ public class AiChatPage extends AEvoPage {
 		File projectRoot = getProjectRoot();
 
 		for (String path : paths) {
-			File file = path.contains(":") ? new File(path) : new File(projectRoot, path);
+			if (path.startsWith("file://") && !path.startsWith("file:///")) {
+				path = path.replaceFirst("file://", "file:///");
+			}
+
+			if (path.startsWith("file:")) {
+				try {
+					path = new java.net.URI(path).getPath();
+				} catch (Exception e) {
+					path = path.replaceFirst("^file:/+", "");
+				}
+			}
+
+			if (path.startsWith("/") && path.length() > 2 && path.charAt(2) == ':') {
+				path = path.substring(1);
+			}
+
+			File file = new File(path);
+			if (!file.isAbsolute()) {
+				file = new File(projectRoot, path);
+			}
+
 			if (file.exists()) {
 				IFile iFile = ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(new Path(file.getAbsolutePath()));
 				if (iFile != null) files.add(iFile);

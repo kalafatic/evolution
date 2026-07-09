@@ -21,4 +21,38 @@ public class PathExtractionTest {
         // Mixed cases
         assertEquals("Main.java", "oPeRaTiOnAl: cReAtE Main.java".replaceFirst(regex, "").trim());
     }
+
+    @Test
+    public void testFileUriDecoding() throws Exception {
+        String[] cases = {
+            "file:/C:/Users/abc/mediated_export.zip",
+            "file:///C:/Users/abc/mediated_export.zip",
+            "file://C:/Users/abc/mediated_export.zip",
+            "file:/C:/My%20Folder/mediated_export.zip"
+        };
+        String[] expected = {
+            "C:/Users/abc/mediated_export.zip",
+            "C:/Users/abc/mediated_export.zip",
+            "C:/Users/abc/mediated_export.zip",
+            "C:/My Folder/mediated_export.zip"
+        };
+
+        for (int i = 0; i < cases.length; i++) {
+            String path = cases[i];
+            if (path.startsWith("file://") && !path.startsWith("file:///")) {
+                path = path.replaceFirst("file://", "file:///");
+            }
+            if (path.startsWith("file:")) {
+                try {
+                    path = new java.net.URI(path).getPath();
+                } catch (Exception e) {
+                    path = path.replaceFirst("^file:/+", "");
+                }
+            }
+            if (path.startsWith("/") && path.length() > 2 && path.charAt(2) == ':') {
+                path = path.substring(1);
+            }
+            assertEquals(expected[i], path);
+        }
+    }
 }
