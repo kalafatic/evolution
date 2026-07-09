@@ -24,6 +24,7 @@ import org.eclipse.ui.texteditor.ITextEditorActionConstants;
  */
 public class MultiPageEditorContributor extends MultiPageEditorActionBarContributor {
 	private IEditorPart activeEditorPart;
+	private MultiPageEditor mainEditor;
 	private Action sampleAction;
 	private UndoActionHandler undoAction;
 	private RedoActionHandler redoAction;
@@ -51,7 +52,7 @@ public class MultiPageEditorContributor extends MultiPageEditorActionBarContribu
 	public void setActiveEditor(IEditorPart part) {
 		super.setActiveEditor(part);
 		if (part instanceof MultiPageEditor) {
-			this.multiPageEditor = (MultiPageEditor) part;
+			this.mainEditor = (MultiPageEditor) part;
 		}
 		updateUndoRedo(part);
 	}
@@ -65,15 +66,10 @@ public class MultiPageEditorContributor extends MultiPageEditorActionBarContribu
 		}
 
 		if (context == null || site == null) {
-			if (multiPageEditor != null) {
-				context = multiPageEditor.getAdapter(IUndoContext.class);
-				site = multiPageEditor.getSite();
+			if (mainEditor != null) {
+				context = mainEditor.getAdapter(IUndoContext.class);
+				site = mainEditor.getSite();
 			}
-		}
-
-		if (context == null) {
-			// If even the multiPageEditor has no context, create a safe fallback ObjectUndoContext
-			context = new org.eclipse.core.commands.operations.ObjectUndoContext(this);
 		}
 
 		if (context != null && site != null) {
