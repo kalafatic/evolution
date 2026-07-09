@@ -23,6 +23,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.osgi.framework.Bundle;
 
+import eu.kalafatic.evolution.controller.manager.OllamaManager;
 import eu.kalafatic.evolution.controller.manager.OllamaModel;
 import eu.kalafatic.evolution.controller.manager.OllamaService;
 import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
@@ -54,6 +55,7 @@ import fi.iki.elonen.NanoHTTPD;
 public class EvolutionServer extends NanoHTTPD {
 
     private final Map<String, ServerSession> activeSessions = new ConcurrentHashMap<>();
+    private final java.util.Set<String> completedForgingRefreshes = ConcurrentHashMap.newKeySet();
     private final AuthService authService;
     private final AuthController authController;
     private final ArchitectureController architectureController;
@@ -459,6 +461,25 @@ public class EvolutionServer extends NanoHTTPD {
 
     private Response handleGetForgingStats(String sessionId) {
         eu.kalafatic.evolution.forge.controller.service.SelfEvoForgingService.ForgingStats stats = selfEvoService.getStats(sessionId);
+
+        // Auto-refresh Ollama models when status transitions to COMPLETE
+        if ("COMPLETE".equals(stats.status())) {
+            if (completedForgingRefreshes.add(sessionId)) {
+                try {
+                    String ollamaUrl = "http://localhost:11434";
+                    Orchestrator orch = OrchestratorServiceImpl.getInstance().getOrchestrator();
+                    if (orch != null && orch.getOllama() != null) {
+                        ollamaUrl = orch.getOllama().getUrl();
+                    }
+                    OllamaManager.getInstance().getService(ollamaUrl).refreshModels();
+                } catch (Exception e) {
+                    // Ignore any refresh errors during stats polling
+                }
+            }
+        } else {
+            completedForgingRefreshes.remove(sessionId);
+        }
+
         JSONObject json = new JSONObject()
             .put("status", stats.status())
             .put("progress", stats.progress())
@@ -466,7 +487,8 @@ public class EvolutionServer extends NanoHTTPD {
             .put("totalFiles", stats.totalFiles())
             .put("instructionsGenerated", stats.instructionsGenerated())
             .put("currentLoss", stats.currentLoss())
-            .put("currentEpoch", stats.currentEpoch());
+            .put("currentEpoch", stats.currentEpoch())
+            .put("outputFolder", stats.outputFolder());
         return newFixedLengthResponse(Response.Status.OK, "application/json", json.toString());
     }
 

@@ -14,6 +14,7 @@ public interface SelfEvoForgingService {
         int totalFiles,
         int instructionsGenerated,
         double currentLoss,
-        String currentEpoch
+        String currentEpoch,
+        String outputFolder
     ) {}
 }

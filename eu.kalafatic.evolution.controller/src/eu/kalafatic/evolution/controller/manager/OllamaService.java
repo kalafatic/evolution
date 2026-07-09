@@ -26,7 +26,7 @@ public class OllamaService {
 
     private List<OllamaModel> cachedModels = null;
     private long lastModelRefresh = 0;
-    private static final long CACHE_TTL = Duration.ofMinutes(5).toMillis();
+    private static final long CACHE_TTL = Duration.ofSeconds(15).toMillis();
 
     // Advanced options
     private float temperature = 0.7f;

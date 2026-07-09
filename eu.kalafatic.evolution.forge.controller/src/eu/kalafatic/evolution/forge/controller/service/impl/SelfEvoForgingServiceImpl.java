@@ -41,7 +41,7 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
 
     @Override
     public void startForging(String sessionId, Path projectPath) throws Exception {
-        updateStats(sessionId, new ForgingStats("STARTING", 0, 0, 0, 0, 0.0, "0"));
+        updateStats(sessionId, new ForgingStats("STARTING", 0, 0, 0, 0, 0.0, "0", ""));
 
         executor.submit(() -> {
             long timestamp = System.currentTimeMillis();
@@ -64,7 +64,7 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                 MarkdownLoader loader = new MarkdownLoader();
                 MarkdownCleaner cleaner = new MarkdownCleaner();
                 
-                updateStats(sessionId, new ForgingStats("SCANNING", 10, 0, 0, 0, 0.0, "0"));
+                updateStats(sessionId, new ForgingStats("SCANNING", 10, 0, 0, 0, 0.0, "0", runFolder.toAbsolutePath().toString()));
                 logToFile(logFile, "Stage: SCANNING");
                 String corpus = loader.loadFromDirectory(projectPath);
                 String cleanCorpus = cleaner.clean(corpus);
@@ -77,7 +77,7 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                 stage1.put("sample", cleanCorpus.substring(0, Math.min(1000, cleanCorpus.length())));
                 Files.writeString(runFolder.resolve("stage_1_scanner_result.json"), stage1.toString(4));
                 
-                updateStats(sessionId, new ForgingStats("ENHANCING", 30, 0, 0, 0, 0.0, "0"));
+                updateStats(sessionId, new ForgingStats("ENHANCING", 30, 0, 0, 0, 0.0, "0", runFolder.toAbsolutePath().toString()));
                 logToFile(logFile, "Stage: ENHANCING");
                 SimpleBPETokenizer tokenizer = new SimpleBPETokenizer();
                 tokenizer.train(cleanCorpus, 4096);
@@ -104,7 +104,7 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                 stage2.put("tokenSample", tokenSample);
                 Files.writeString(runFolder.resolve("stage_2_enhancer_result.json"), stage2.toString(4));
                 
-                updateStats(sessionId, new ForgingStats("TRAINING", 60, 0, 0, samples.size(), 0.0, "1/1"));
+                updateStats(sessionId, new ForgingStats("TRAINING", 60, 0, 0, samples.size(), 0.0, "1/1", runFolder.toAbsolutePath().toString()));
                 logToFile(logFile, "Stage: TRAINING. Training EvoLlmModel with sliding window samples...");
                 EvoLlmModel model = new EvoLlmModel(tokenizer.getVocabSize(), 128, 4, 2, 512, 16);
                 EvoLlmTrainer trainer = new EvoLlmTrainer(model);
@@ -123,7 +123,7 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                 stage3.put("architecture", arch);
                 Files.writeString(runFolder.resolve("stage_3_trainer_result.json"), stage3.toString(4));
                 
-                updateStats(sessionId, new ForgingStats("EXPORTING", 80, 0, 0, samples.size(), 0.0, "1/1"));
+                updateStats(sessionId, new ForgingStats("EXPORTING", 80, 0, 0, samples.size(), 0.0, "1/1", runFolder.toAbsolutePath().toString()));
                 logToFile(logFile, "Stage: EXPORTING. Exporting model LoRA adapters...");
                 OllamaExporter exporter = new OllamaExporter();
                 Path exportPath = Paths.get("dist/evo-" + sessionId);
@@ -138,7 +138,7 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                 stage4.put("success", true);
                 Files.writeString(runFolder.resolve("stage_4_exporter_result.json"), stage4.toString(4));
 
-                updateStats(sessionId, new ForgingStats("EXPORT_GGUF", 90, 0, 0, samples.size(), 0.0, "OLLAMA"));
+                updateStats(sessionId, new ForgingStats("EXPORT_GGUF", 90, 0, 0, samples.size(), 0.0, "OLLAMA", runFolder.toAbsolutePath().toString()));
                 logToFile(logFile, "Stage: EXPORT_GGUF. Registering model in Ollama...");
                
                 // For 'SELF_EVO' interactive demo consistency, ensure we register the model as 'evo'
@@ -188,7 +188,7 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                 }
                 
                 logToFile(logFile, "Stage: COMPLETE. Forging process completed successfully!");
-                updateStats(sessionId, new ForgingStats("COMPLETE", 100, 0, 0, samples.size(), 0.0, "DONE"));
+                updateStats(sessionId, new ForgingStats("COMPLETE", 100, 0, 0, samples.size(), 0.0, "DONE", runFolder.toAbsolutePath().toString()));
 
             } catch (Exception e) {
                 logToFile(logFile, "Stage: ERROR. Forging process failed: " + e.getMessage());
@@ -202,7 +202,7 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                     Files.writeString(runFolder.resolve("error_result.json"), errorObj.toString(4));
                 } catch (Exception ex) {}
                 e.printStackTrace();
-                updateStats(sessionId, new ForgingStats("ERROR", 0, 0, 0, 0, 0.0, "ERR"));
+                updateStats(sessionId, new ForgingStats("ERROR", 0, 0, 0, 0, 0.0, "ERR", runFolder != null ? runFolder.toAbsolutePath().toString() : ""));
             }
         });
     }
@@ -340,7 +340,7 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
 
     @Override
     public ForgingStats getStats(String sessionId) {
-        return sessionStats.getOrDefault(sessionId, new ForgingStats("IDLE", 0, 0, 0, 0, 0.0, "0"));
+        return sessionStats.getOrDefault(sessionId, new ForgingStats("IDLE", 0, 0, 0, 0, 0.0, "0", ""));
     }
 
     @Override

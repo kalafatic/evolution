@@ -3,6 +3,7 @@
  */
 (function() {
     window.renderSelfEvoViz = function(stats) {
+        window.currentSelfEvoStats = stats;
         const area = document.getElementById('viz-area');
         const details = document.getElementById('viz-details-content');
 
@@ -15,25 +16,25 @@
                 <p style="font-size:0.9em; color:#666;">Autonomous codebase analysis and project-specific LLM generation.</p>
 
                 <div style="display:flex; justify-content:center; gap:10px; margin-top:20px; flex-wrap:wrap;">
-                    <div class="evo-stage-card ${status === 'SCANNING' ? 'active' : (status !== 'IDLE' && status !== 'STARTING' ? 'completed' : '')}" id="stage-scan">
+                    <div class="evo-stage-card ${status === 'SCANNING' ? 'active' : (status !== 'IDLE' && status !== 'STARTING' ? 'completed' : '')}" id="stage-scan" onclick="window.showStageInfo('Scanner')">
                         <div style="font-size:1.2em;">🔍</div>
                         <div style="font-size:0.7em; font-weight:bold;">Scanner</div>
                         <div style="font-size:0.6em; color:#888;">Code Discovery</div>
                     </div>
                     <div class="evo-stage-arrow">➜</div>
-                    <div class="evo-stage-card ${status === 'ENHANCING' ? 'active' : (['TRAINING', 'EXPORT_GGUF', 'COMPLETE'].includes(status) ? 'completed' : '')}" id="stage-enhance">
+                    <div class="evo-stage-card ${status === 'ENHANCING' ? 'active' : (['TRAINING', 'EXPORT_GGUF', 'COMPLETE'].includes(status) ? 'completed' : '')}" id="stage-enhance" onclick="window.showStageInfo('Enhancer')">
                         <div style="font-size:1.2em;">🪄</div>
                         <div style="font-size:0.7em; font-weight:bold;">Enhancer</div>
                         <div style="font-size:0.6em; color:#888;">Synthetic Data</div>
                     </div>
                     <div class="evo-stage-arrow">➜</div>
-                    <div class="evo-stage-card ${status === 'TRAINING' ? 'active' : (['EXPORT_GGUF', 'COMPLETE'].includes(status) ? 'completed' : '')}" id="stage-train">
+                    <div class="evo-stage-card ${status === 'TRAINING' ? 'active' : (['EXPORT_GGUF', 'COMPLETE'].includes(status) ? 'completed' : '')}" id="stage-train" onclick="window.showStageInfo('Trainer')">
                         <div style="font-size:1.2em;">⚙️</div>
                         <div style="font-size:0.7em; font-weight:bold;">Trainer</div>
                         <div style="font-size:0.6em; color:#888;">Fine-Tuning</div>
                     </div>
                     <div class="evo-stage-arrow">➜</div>
-                    <div class="evo-stage-card ${status === 'EXPORT_GGUF' || status === 'EXPORTING' ? 'active' : (status === 'COMPLETE' ? 'completed' : '')}" id="stage-export">
+                    <div class="evo-stage-card ${status === 'EXPORT_GGUF' || status === 'EXPORTING' ? 'active' : (status === 'COMPLETE' ? 'completed' : '')}" id="stage-export" onclick="window.showStageInfo('Deployment')">
                         <div style="font-size:1.2em;">📦</div>
                         <div style="font-size:0.7em; font-weight:bold;">Deployment</div>
                         <div style="font-size:0.6em; color:#888;">Ollama GGUF</div>
@@ -159,25 +160,25 @@
                 <p style="font-size:0.9em; color:#666;">Experience the autonomous model creation pipeline.</p>
 
                 <div style="display:flex; justify-content:center; gap:10px; margin-top:20px; flex-wrap:wrap;">
-                    <div class="evo-stage-card" id="stage-scan">
+                    <div class="evo-stage-card" id="stage-scan" onclick="window.showStageInfo('Scanner')">
                         <div style="font-size:1.2em;">🔍</div>
                         <div style="font-size:0.7em; font-weight:bold;">Scanner</div>
                         <div style="font-size:0.6em; color:#888;">Code Discovery</div>
                     </div>
                     <div class="evo-stage-arrow">➜</div>
-                    <div class="evo-stage-card" id="stage-enhance">
+                    <div class="evo-stage-card" id="stage-enhance" onclick="window.showStageInfo('Enhancer')">
                         <div style="font-size:1.2em;">🪄</div>
                         <div style="font-size:0.7em; font-weight:bold;">Enhancer</div>
                         <div style="font-size:0.6em; color:#888;">Synthetic Data</div>
                     </div>
                     <div class="evo-stage-arrow">➜</div>
-                    <div class="evo-stage-card" id="stage-train">
+                    <div class="evo-stage-card" id="stage-train" onclick="window.showStageInfo('Trainer')">
                         <div style="font-size:1.2em;">⚙️</div>
                         <div style="font-size:0.7em; font-weight:bold;">Trainer</div>
                         <div style="font-size:0.6em; color:#888;">Fine-Tuning</div>
                     </div>
                     <div class="evo-stage-arrow">➜</div>
-                    <div class="evo-stage-card" id="stage-export">
+                    <div class="evo-stage-card" id="stage-export" onclick="window.showStageInfo('Deployment')">
                         <div style="font-size:1.2em;">📦</div>
                         <div style="font-size:0.7em; font-weight:bold;">Deployment</div>
                         <div style="font-size:0.6em; color:#888;">Ollama GGUF</div>
@@ -284,4 +285,42 @@
                 break;
         }
     }
+
+    window.showStageInfo = function(stageName) {
+        const stats = window.currentSelfEvoStats;
+        const folder = (stats && stats.outputFolder) ? stats.outputFolder : "dist/";
+
+        let overlay = document.getElementById('stage-info-modal');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'stage-info-modal';
+            overlay.style.position = 'fixed';
+            overlay.style.top = '0';
+            overlay.style.left = '0';
+            overlay.style.width = '100%';
+            overlay.style.height = '100%';
+            overlay.style.backgroundColor = 'rgba(0,0,0,0.5)';
+            overlay.style.display = 'flex';
+            overlay.style.justifyContent = 'center';
+            overlay.style.alignItems = 'center';
+            overlay.style.zIndex = '10000';
+            document.body.appendChild(overlay);
+        }
+
+        overlay.style.display = 'flex';
+        overlay.innerHTML = `
+            <div style="background: white; padding: 25px; border-radius: 8px; max-width: 450px; width: 90%; box-shadow: 0 4px 15px rgba(0,0,0,0.25); text-align: left; position: relative; font-family: 'Outfit', 'Segoe UI', system-ui, sans-serif; color: #333;">
+                <button onclick="document.getElementById('stage-info-modal').style.display='none'" style="position: absolute; top: 12px; right: 12px; border: none; background: transparent; font-size: 1.6em; cursor: pointer; color: #888; font-weight: bold; line-height: 1;">&times;</button>
+                <h3 style="margin-top: 0; color: #ff5200; border-bottom: 2px solid #ff5200; padding-bottom: 8px; font-size: 1.25em; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;">${stageName} Stage Info</h3>
+                <p style="font-size: 0.9em; line-height: 1.5; color: #555; margin-bottom: 15px;">The Self-Evo pipeline executes this stage to analyze code and generate custom models. Artifacts and diagnostics are actively logged below.</p>
+                <div style="margin: 15px 0; padding: 12px; background: #fafafa; border: 1px solid #e2e8f0; border-radius: 6px; word-break: break-all;">
+                    <span style="font-size: 0.75em; color: #718096; font-weight: 900; display: block; margin-bottom: 4px; letter-spacing: 0.5px; text-transform: uppercase;">OUTPUT FOLDER LINK:</span>
+                    <a href="file:///${folder.replace(/\\/g, '/')}" target="_blank" style="color: #ff5200; font-weight: 800; text-decoration: underline; font-family: monospace; font-size: 0.85em;">${folder}</a>
+                </div>
+                <div style="text-align: right; margin-top: 20px;">
+                    <button onclick="document.getElementById('stage-info-modal').style.display='none'" class="btn btn-primary" style="padding: 6px 18px; font-size: 0.8em; font-weight: 800; border-radius: 20px; cursor: pointer; text-transform: uppercase; border: none; background: linear-gradient(135deg, #ff8a00 0%, #e52e00 100%); color: white; box-shadow: 0 4px 10px rgba(255,82,0,0.2);">Close</button>
+                </div>
+            </div>
+        `;
+    };
 })();
