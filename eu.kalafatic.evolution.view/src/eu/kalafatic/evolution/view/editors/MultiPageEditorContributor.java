@@ -24,6 +24,7 @@ import org.eclipse.ui.texteditor.ITextEditorActionConstants;
  */
 public class MultiPageEditorContributor extends MultiPageEditorActionBarContributor {
 	private IEditorPart activeEditorPart;
+	private MultiPageEditor mainEditor;
 	private Action sampleAction;
 	private UndoActionHandler undoAction;
 	private RedoActionHandler redoAction;
@@ -48,6 +49,9 @@ public class MultiPageEditorContributor extends MultiPageEditorActionBarContribu
 	@Override
 	public void setActiveEditor(IEditorPart part) {
 		super.setActiveEditor(part);
+		if (part instanceof MultiPageEditor) {
+			this.mainEditor = (MultiPageEditor) part;
+		}
 		updateUndoRedo(part);
 	}
 
@@ -57,6 +61,13 @@ public class MultiPageEditorContributor extends MultiPageEditorActionBarContribu
 		if (part != null) {
 			context = part.getAdapter(IUndoContext.class);
 			site = part.getSite();
+		}
+
+		if (context == null || site == null) {
+			if (mainEditor != null) {
+				context = mainEditor.getAdapter(IUndoContext.class);
+				site = mainEditor.getSite();
+			}
 		}
 
 		if (context != null && site != null) {
