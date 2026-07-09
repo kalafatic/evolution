@@ -1,6 +1,7 @@
 package eu.kalafatic.evolution.view.editors;
 
 import org.eclipse.core.commands.operations.IUndoContext;
+import org.eclipse.core.commands.operations.ObjectUndoContext;
 import org.eclipse.jface.action.*;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.ui.IActionBars;
@@ -67,22 +68,42 @@ public class MultiPageEditorContributor extends MultiPageEditorActionBarContribu
 
 		if (context == null || site == null) {
 			if (mainEditor != null) {
-				context = mainEditor.getAdapter(IUndoContext.class);
-				site = mainEditor.getSite();
+				if (context == null) {
+					context = mainEditor.getAdapter(IUndoContext.class);
+				}
+				if (site == null) {
+					site = mainEditor.getSite();
+				}
 			}
 		}
 
-		if (context != null && site != null) {
-			if (undoAction == null) {
-				undoAction = new UndoActionHandler(site, context);
-			} else {
-				undoAction.setContext(context);
+		if (context == null) {
+			context = new ObjectUndoContext(part != null ? part : (mainEditor != null ? mainEditor : this));
+		}
+
+		if (site == null) {
+			try {
+				if (PlatformUI.getWorkbench() != null &&
+					PlatformUI.getWorkbench().getActiveWorkbenchWindow() != null &&
+					PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage() != null &&
+					PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActivePart() != null) {
+					site = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActivePart().getSite();
+				}
+			} catch (Exception e) {
+				// Ignore
 			}
-			if (redoAction == null) {
-				redoAction = new RedoActionHandler(site, context);
-			} else {
-				redoAction.setContext(context);
-			}
+		}
+
+		if (undoAction != null) {
+			undoAction.setContext(context);
+		} else if (site != null) {
+			undoAction = new UndoActionHandler(site, context);
+		}
+
+		if (redoAction != null) {
+			redoAction.setContext(context);
+		} else if (site != null) {
+			redoAction = new RedoActionHandler(site, context);
 		}
 	}
 
