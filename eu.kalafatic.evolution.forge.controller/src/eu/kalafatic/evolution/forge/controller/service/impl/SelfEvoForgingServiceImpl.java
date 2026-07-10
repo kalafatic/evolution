@@ -131,10 +131,22 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                 exporter.export(modelName, exportPath, model);
                 logToFile(logFile, "Export complete. Model output written to: " + exportPath.toAbsolutePath().toString());
 
+                // Copy export artifacts to the run folder so they are persistent and easy to find
+                if (Files.exists(exportPath.resolve("evo.gguf"))) {
+                    Files.copy(exportPath.resolve("evo.gguf"), runFolder.resolve("evo.gguf"), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                }
+                if (Files.exists(exportPath.resolve("Modelfile"))) {
+                    Files.copy(exportPath.resolve("Modelfile"), runFolder.resolve("Modelfile"), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                }
+                if (Files.exists(exportPath.resolve("weights.bin"))) {
+                    Files.copy(exportPath.resolve("weights.bin"), runFolder.resolve("weights.bin"), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                }
+
                 JSONObject stage4 = new JSONObject();
                 stage4.put("stage", "EXPORTING");
                 stage4.put("modelName", modelName);
                 stage4.put("exportPath", exportPath.toAbsolutePath().toString());
+                stage4.put("runFolderExportedGguf", runFolder.resolve("evo.gguf").toAbsolutePath().toString());
                 stage4.put("success", true);
                 Files.writeString(runFolder.resolve("stage_4_exporter_result.json"), stage4.toString(4));
 
