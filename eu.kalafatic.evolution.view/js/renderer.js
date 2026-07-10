@@ -221,8 +221,12 @@ window.ChatApp.Renderer = {
 
         // Markdown Links [text](url)
         html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, text, url) => {
-             if (url.startsWith('file://')) {
-                  return `<a onclick="window.ChatApp.Actions.callJava('openDiff', '-1', '${window.ChatApp.Utils.escapeJs(url)}')"><b>${text}</b></a>`;
+             if (url.startsWith('file:') || url.startsWith('file://')) {
+                  if (url.toLowerCase().endsWith('.zip')) {
+                      return `<a onclick="window.ChatApp.Actions.callJava('openInMediatedEditor', '-1', '${window.ChatApp.Utils.escapeJs(url)}')"><b>${text}</b></a>`;
+                  } else {
+                      return `<a onclick="window.ChatApp.Actions.callJava('openDiff', '-1', '${window.ChatApp.Utils.escapeJs(url)}')"><b>${text}</b></a>`;
+                  }
              }
              return `<a href="${url}" target="_blank">${text}</a>`;
         });
