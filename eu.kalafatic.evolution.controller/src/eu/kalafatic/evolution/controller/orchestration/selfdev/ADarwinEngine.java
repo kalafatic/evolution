@@ -1500,6 +1500,7 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 			// IMPORTANT: We MUST re-evaluate the winner in the target branch context to
 			// persist changes,
 			// even if it was pre-evaluated in a temporary worktree.
+			selectedVariant.setActivationState(BranchVariant.ActivationState.ACTIVE);
 			winningContext = evaluateVariantParallel(selectedVariant, manager.getTaskPlanner(), context, baseCommit,
 					decision.getPressure(), manager);
 
@@ -1764,8 +1765,9 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 		}
 	}
 
-	private VariantExecutionContext evaluateVariantParallel(BranchVariant variant, TaskPlanner planner,
+	protected VariantExecutionContext evaluateVariantParallel(BranchVariant variant, TaskPlanner planner,
 			TaskContext context, String baseCommit, EvolutionaryPressureVector pressure, IterationManager manager) {
+		final boolean isWinnerExecution = (variant != null && variant.getActivationState() == BranchVariant.ActivationState.ACTIVE);
 		File tempDir = null;
 		AuthorityController authority = context.getKernelContext().getAuthority();
 		VariantExecutionContext variantExecContext = new VariantExecutionContext(variant.getId());
@@ -2018,6 +2020,18 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 			return variantExecContext;
 		} finally {
 			if (tempDir != null && !context.getMetadata().containsKey("testMode") && !isMediated) {
+				// FIX: Copy files back to target project root if this is the winner execution
+				// and we are working in an isolated directory (e.g. non-git copy or broken git).
+				if (isWinnerExecution && !tempDir.equals(context.getProjectRoot())) {
+					context.log("[DARWIN] Winner execution finalization: Persisting files from "
+							+ tempDir.getAbsolutePath() + " back to project root " + context.getProjectRoot().getAbsolutePath());
+					try {
+						copyDirectory(tempDir, context.getProjectRoot());
+					} catch (Exception e) {
+						context.log("[DARWIN] Winner execution: Failed to persist files back to project root: " + e.getMessage());
+					}
+				}
+
 				try {
 					manager.getGitManager().removeWorktree(tempDir.getAbsolutePath());
 				} catch (Exception e) {
