@@ -1769,6 +1769,7 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 		File tempDir = null;
 		AuthorityController authority = context.getKernelContext().getAuthority();
 		VariantExecutionContext variantExecContext = new VariantExecutionContext(variant.getId());
+		boolean isWinnerExecution = variant.getActivationState() == BranchVariant.ActivationState.ACTIVE;
 
 		boolean isMediated = ModeRecognizer.isMediatedMode(context);
 		boolean isChatMode = modeRecognizer.isChatMode(context);
@@ -2018,6 +2019,19 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 			return variantExecContext;
 		} finally {
 			if (tempDir != null && !context.getMetadata().containsKey("testMode") && !isMediated) {
+				boolean isFresh = false;
+				try {
+					isFresh = manager.getGitManager().getHeadCommit() == null;
+				} catch (Exception e) {
+					isFresh = true;
+				}
+				if (isWinnerExecution && (!manager.getGitManager().isGitRepository() || isFresh)) {
+					try {
+						copyDirectory(tempDir, context.getProjectRoot());
+					} catch (Exception e) {
+						context.log("[DARWIN] Failed to persist modified files to project root: " + e.getMessage());
+					}
+				}
 				try {
 					manager.getGitManager().removeWorktree(tempDir.getAbsolutePath());
 				} catch (Exception e) {
