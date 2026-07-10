@@ -275,6 +275,7 @@ public class EvolutionServer extends NanoHTTPD {
                         if (subAction.equals("/forging/start")) return handleStartForging(id);
                         if (subAction.equals("/demo")) return handleRunForgeDemo(id);
                         if (subAction.equals("/generate-architecture")) return handleGenerateArchitecture(id, session);
+                        if (subAction.equals("/open-folder")) return handleOpenFolder(id);
                     }
                 } else {
                     if (Method.GET.equals(method)) return handleGetForgeSession(id);
@@ -418,6 +419,39 @@ public class EvolutionServer extends NanoHTTPD {
 
         return newFixedLengthResponse(Response.Status.OK, "application/json",
             new JSONObject().put("status", "success").toString());
+    }
+
+    private Response handleOpenFolder(String sessionId) {
+        try {
+            File targetDir = null;
+            File distDir = new File("dist");
+            if (distDir.exists() && distDir.isDirectory()) {
+                File[] matchingDirs = distDir.listFiles((dir, name) -> name.startsWith("forging-" + sessionId + "-"));
+                if (matchingDirs != null && matchingDirs.length > 0) {
+                    File latestDir = matchingDirs[0];
+                    for (File d : matchingDirs) {
+                        if (d.lastModified() > latestDir.lastModified()) {
+                            latestDir = d;
+                        }
+                    }
+                    targetDir = latestDir;
+                }
+            }
+            if (targetDir == null) {
+                targetDir = new File("dist/evo-" + sessionId);
+            }
+            if (!targetDir.exists()) {
+                targetDir = new File("dist");
+            }
+
+            if (targetDir.exists() && java.awt.Desktop.isDesktopSupported()) {
+                java.awt.Desktop.getDesktop().open(targetDir);
+                return newFixedLengthResponse(Response.Status.OK, "application/json", "{\"status\": \"ok\"}");
+            }
+            return newFixedLengthResponse(Response.Status.NOT_FOUND, "application/json", "{\"error\": \"Folder not found or Desktop not supported\"}");
+        } catch (Exception e) {
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", "{\"error\": \"" + e.getMessage() + "\"}");
+        }
     }
 
     private boolean isPathSafe(File file) {

@@ -141,7 +141,7 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                 updateStats(sessionId, new ForgingStats("EXPORT_GGUF", 90, 0, 0, samples.size(), 0.0, "OLLAMA", runFolder.toAbsolutePath().toString()));
                 logToFile(logFile, "Stage: EXPORT_GGUF. Registering model in Ollama...");
                
-                // For 'SELF_EVO' interactive demo consistency, ensure we register the model as 'evo'
+                // For 'SELF_EVO' interactive demo consistency, ensure we register the model as 'evo' and uniquely as 'evo-{sessionId}'
                 String targetName = "evo";
                 Path modelfilePath = exportPath.resolve("Modelfile");
                 if (Files.exists(modelfilePath)) {
@@ -149,7 +149,8 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                         String modelfileContent = Files.readString(modelfilePath);
                         String ollamaUrl = "http://localhost:11434";
                         boolean pingOk = pingOllama(ollamaUrl);
-                        boolean registered = false;
+                        boolean registeredUnique = false;
+                        boolean registeredAlias = false;
                         String baseModelUsed = "llama3.2:3b";
 
                         if (pingOk) {
@@ -160,27 +161,37 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                                 modelfileContent = modelfileContent.replaceAll("(?m)^FROM\\s+llama3.2:3b", "FROM " + availableModel);
                                 Files.writeString(modelfilePath, modelfileContent);
                             }
-                            logToFile(logFile, "[EXPORT_GGUF] Registering model in Ollama as '" + targetName + "'...");
+
+                            logToFile(logFile, "[EXPORT_GGUF] Registering unique model in Ollama as '" + modelName + "'...");
+                            createModel(ollamaUrl, modelName, modelfileContent);
+                            logToFile(logFile, "[EXPORT_GGUF] Unique model registered successfully.");
+                            registeredUnique = true;
+
+                            logToFile(logFile, "[EXPORT_GGUF] Registering alias model in Ollama as '" + targetName + "'...");
                             createModel(ollamaUrl, targetName, modelfileContent);
-                            logToFile(logFile, "[EXPORT_GGUF] Model registered successfully.");
-                            registered = true;
+                            logToFile(logFile, "[EXPORT_GGUF] Alias model registered successfully.");
+                            registeredAlias = true;
                         } else {
                             logToFile(logFile, "[EXPORT_GGUF] Ollama is not running on " + ollamaUrl + ", skipping model registration.");
                         }
 
                         JSONObject stage5 = new JSONObject();
                         stage5.put("stage", "OLLAMA_REGISTRATION");
-                        stage5.put("targetModel", targetName);
+                        stage5.put("uniqueModel", modelName);
+                        stage5.put("aliasModel", targetName);
                         stage5.put("ollamaOnline", pingOk);
                         stage5.put("baseModelUsed", baseModelUsed);
-                        stage5.put("registrationSuccess", registered);
+                        stage5.put("uniqueRegistered", registeredUnique);
+                        stage5.put("aliasRegistered", registeredAlias);
+                        stage5.put("registrationSuccess", registeredUnique && registeredAlias);
                         Files.writeString(runFolder.resolve("stage_5_registration_result.json"), stage5.toString(4));
                     } catch (Exception ex) {
                         logToFile(logFile, "[EXPORT_GGUF] Ollama registration failed (non-blocking): " + ex.getMessage());
 
                         JSONObject stage5 = new JSONObject();
                         stage5.put("stage", "OLLAMA_REGISTRATION");
-                        stage5.put("targetModel", targetName);
+                        stage5.put("uniqueModel", modelName);
+                        stage5.put("aliasModel", targetName);
                         stage5.put("error", ex.getMessage());
                         stage5.put("registrationSuccess", false);
                         Files.writeString(runFolder.resolve("stage_5_registration_result.json"), stage5.toString(4));
