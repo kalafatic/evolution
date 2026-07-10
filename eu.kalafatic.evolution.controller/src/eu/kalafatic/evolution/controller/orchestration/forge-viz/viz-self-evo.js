@@ -58,7 +58,10 @@
                     <button class="btn btn-primary" onclick="startForging()" ${status !== 'IDLE' && status !== 'COMPLETE' && status !== 'ERROR' ? 'disabled' : ''} style="padding: 10px 25px; font-weight: bold;">
                         ${status === 'IDLE' ? '🚀 Start Forging Process' : '🔄 Restart Forging'}
                     </button>
-                    ${status === 'COMPLETE' ? `<button class="btn" onclick="alert('Model ready in Ollama!')">Check Model</button>` : ''}
+                    ${status === 'COMPLETE' ? `
+                        <button class="btn" onclick="alert('Model ready in Ollama!')">Check Model</button>
+                        <button class="btn" onclick="openModelFolder()"><span style="margin-right:4px;">📁</span>Locate Model</button>
+                    ` : ''}
                 </div>
             </div>
         `;
@@ -147,6 +150,18 @@
                 throw new Error("Failed to start forging process");
             }
         } catch (e) { log("Start forging error: " + e.message); }
+    };
+
+    window.openModelFolder = async function() {
+        log("Opening model folder on host...");
+        try {
+            const res = await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/open-folder?runtime=SWT`, { method: 'POST' });
+            if (res.ok) {
+                log("Model folder opened successfully.");
+            } else {
+                throw new Error("Failed to open model folder");
+            }
+        } catch (e) { log("Open folder error: " + e.message); }
     };
 
     // ============== INTERACTIVE SELF-EVO DEMO (SIMULATION) ==============
