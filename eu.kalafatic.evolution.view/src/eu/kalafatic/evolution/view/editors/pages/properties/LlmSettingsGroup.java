@@ -7,13 +7,14 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
+import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
 import eu.kalafatic.utils.factories.GUIFactory;
 
 public class LlmSettingsGroup extends AEvoGroup {
-    private Text llmModelText, llmTempText;
+    private Text llmModelText, llmTempText, llmSelectedModelText;
     private ControlDecoration llmTempDecorator, llmModelDecorator;
 
     public LlmSettingsGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
@@ -29,6 +30,10 @@ public class LlmSettingsGroup extends AEvoGroup {
         GUIFactory.INSTANCE.createLabel(group, "Temperature:");
         llmTempText = GUIFactory.INSTANCE.createText(group);
         GUIFactory.INSTANCE.createEditButton(group, llmTempText);
+        GUIFactory.INSTANCE.createLabel(group, "Selected Model:");
+        llmSelectedModelText = GUIFactory.INSTANCE.createText(group);
+        llmSelectedModelText.setEditable(false);
+        GUIFactory.INSTANCE.createEditButton(group, llmSelectedModelText);
 
         llmTempDecorator = new ControlDecoration(llmTempText, SWT.TOP | SWT.LEFT);
         llmTempDecorator.setImage(FieldDecorationRegistry.getDefault().getFieldDecoration(FieldDecorationRegistry.DEC_ERROR).getImage());
@@ -45,6 +50,20 @@ public class LlmSettingsGroup extends AEvoGroup {
             String model = orchestrator.getLlm().getModel() != null ? orchestrator.getLlm().getModel() : "";
             setTextSafe(llmModelText, model);
             setTextSafe(llmTempText, String.valueOf(orchestrator.getLlm().getTemperature()));
+
+            String selectedModel = "";
+            AiMode mode = orchestrator.getAiMode();
+            if (mode == AiMode.REMOTE) {
+                selectedModel = (orchestrator.getRemoteModel() != null && !orchestrator.getRemoteModel().isEmpty()) ? orchestrator.getRemoteModel() : orchestrator.getOpenAiModel();
+            } else if (mode == AiMode.HYBRID) {
+                selectedModel = (orchestrator.getHybridModel() != null && !orchestrator.getHybridModel().isEmpty()) ? orchestrator.getHybridModel() : "";
+            } else {
+                selectedModel = (orchestrator.getLocalModel() != null && !orchestrator.getLocalModel().isEmpty()) ? orchestrator.getLocalModel() : "";
+            }
+            if (selectedModel == null || selectedModel.isEmpty()) {
+                selectedModel = "NOT SET";
+            }
+            setTextSafe(llmSelectedModelText, selectedModel);
 
             // Verify token
             eu.kalafatic.evolution.controller.security.TokenSecurityService.ResolvedProvider resolved =
@@ -77,6 +96,6 @@ public class LlmSettingsGroup extends AEvoGroup {
 
     @Override
     public Text[] getTextFields() {
-        return new Text[] { llmModelText, llmTempText };
+        return new Text[] { llmModelText, llmTempText, llmSelectedModelText };
     }
 }

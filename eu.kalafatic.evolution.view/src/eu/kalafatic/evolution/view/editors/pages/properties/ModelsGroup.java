@@ -20,6 +20,8 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
@@ -51,6 +53,8 @@ public class ModelsGroup extends AEvoGroup {
     private CheckboxTableViewer viewer;
     private List<AIProvider> modelItems = new ArrayList<>();
     private eu.kalafatic.evolution.view.editors.pages.PropertiesPage page;
+    private Font boldFont;
+    private Color orangeColor;
 
     public ModelsGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, eu.kalafatic.evolution.view.editors.pages.PropertiesPage page) {
         super(editor, orchestrator);
@@ -66,6 +70,14 @@ public class ModelsGroup extends AEvoGroup {
         table.setHeaderVisible(true);
         table.setLinesVisible(true);
         table.setLayoutData(new GridData(GridData.FILL_BOTH));
+        table.addDisposeListener(e -> {
+            if (boldFont != null && !boldFont.isDisposed()) {
+                boldFont.dispose();
+            }
+            if (orangeColor != null && !orangeColor.isDisposed()) {
+                orangeColor.dispose();
+            }
+        });
 
         createColumns();
 
@@ -167,13 +179,97 @@ public class ModelsGroup extends AEvoGroup {
         return null;
     }
 
+    private boolean isEvoModel(AIProvider item) {
+        if (item == null || item.getName() == null) return false;
+        String name = item.getName().toLowerCase();
+        return name.equals("evo") || name.contains("evo");
+    }
+
+    private Font getBoldFont() {
+        if (boldFont == null || boldFont.isDisposed()) {
+            Font defaultFont = viewer.getTable().getFont();
+            FontData[] fontData = defaultFont.getFontData();
+            for (FontData fd : fontData) {
+                fd.setStyle(SWT.BOLD);
+            }
+            boldFont = new Font(Display.getDefault(), fontData);
+        }
+        return boldFont;
+    }
+
+    private Color getOrangeColor() {
+        if (orangeColor == null || orangeColor.isDisposed()) {
+            orangeColor = new Color(Display.getDefault(), 237, 108, 2);
+        }
+        return orangeColor;
+    }
+
+    private class ModelLabelProvider extends ColumnLabelProvider {
+        @Override
+        public Font getFont(Object element) {
+            if (isEvoModel((AIProvider) element)) {
+                return getBoldFont();
+            }
+            return super.getFont(element);
+        }
+
+        @Override
+        public Color getForeground(Object element) {
+            if (isEvoModel((AIProvider) element)) {
+                return getOrangeColor();
+            }
+            return super.getForeground(element);
+        }
+    }
+
+    public static String getModelAbsolutePath(Orchestrator orchestrator, AIProvider provider) {
+        if (provider == null) return "";
+        String url = provider.getUrl();
+        if (url != null) {
+            File file = new File(url);
+            if (file.isAbsolute() && file.exists()) {
+                return file.getAbsolutePath();
+            }
+        }
+        if (provider.isLocal()) {
+            String name = provider.getName();
+            if (name != null && !name.isEmpty()) {
+                File file = new File(name);
+                if (file.isAbsolute() && file.exists()) {
+                    return file.getAbsolutePath();
+                }
+                String modelName = name;
+                String tag = "latest";
+                if (name.contains(":")) {
+                    int colonIdx = name.indexOf(":");
+                    modelName = name.substring(0, colonIdx);
+                    tag = name.substring(colonIdx + 1);
+                }
+                String userHome = System.getProperty("user.home");
+                File ollamaModelsDir = null;
+                if (orchestrator != null && orchestrator.getOllama() != null && orchestrator.getOllama().getPath() != null && !orchestrator.getOllama().getPath().isEmpty()) {
+                    ollamaModelsDir = new File(orchestrator.getOllama().getPath());
+                } else {
+                    ollamaModelsDir = new File(userHome, ".ollama/models");
+                }
+
+                File manifestFile = new File(ollamaModelsDir, "manifests/registry.ollama.ai/library/" + modelName + "/" + tag);
+                if (manifestFile.exists()) {
+                    return manifestFile.getAbsolutePath();
+                }
+                return manifestFile.getAbsolutePath();
+            }
+        }
+        return "";
+    }
+
     private void createColumns() {
-        String[] titles = { "Select", "State", "Name", "Type", "Path/URL", "Token", "Rating (A/CH/P)" };
-        int[] bounds = { 50, 60, 150, 60, 250, 80, 120 };
+        String[] titles = { "Select", "State", "Name", "Type", "Path/URL", "Path", "Token", "Rating (A/CH/P)" };
+        int[] bounds = { 50, 60, 150, 60, 250, 250, 80, 120 };
 
         // Select (Checkbox column)
         TableViewerColumn colSelect = createTableViewerColumn(titles[0], bounds[0]);
-        colSelect.setLabelProvider(new ColumnLabelProvider() {
+        colSelect.setLabelProvider(new ModelLabelProvider() {
             @Override
             public String getText(Object element) {
                 return "";
@@ -182,7 +278,7 @@ public class ModelsGroup extends AEvoGroup {
 
         // State
         TableViewerColumn colState = createTableViewerColumn(titles[1], bounds[1]);
-        colState.setLabelProvider(new ColumnLabelProvider() {
+        colState.setLabelProvider(new ModelLabelProvider() {
             @Override
             public String getText(Object element) {
                 String s = ((AIProvider) element).getState();
@@ -201,7 +297,7 @@ public class ModelsGroup extends AEvoGroup {
 
         // Name
         TableViewerColumn colName = createTableViewerColumn(titles[2], bounds[2]);
-        colName.setLabelProvider(new ColumnLabelProvider() {
+        colName.setLabelProvider(new ModelLabelProvider() {
             @Override
             public String getText(Object element) {
                 return ((AIProvider) element).getName();
@@ -214,7 +310,7 @@ public class ModelsGroup extends AEvoGroup {
 
         // Local
         TableViewerColumn colLocal = createTableViewerColumn(titles[3], bounds[3]);
-        colLocal.setLabelProvider(new ColumnLabelProvider() {
+        colLocal.setLabelProvider(new ModelLabelProvider() {
             @Override
             public String getText(Object element) {
                 AIProvider item = (AIProvider) element;
@@ -229,7 +325,7 @@ public class ModelsGroup extends AEvoGroup {
 
         // Path/URL
         TableViewerColumn colPath = createTableViewerColumn(titles[4], bounds[4]);
-        colPath.setLabelProvider(new ColumnLabelProvider() {
+        colPath.setLabelProvider(new ModelLabelProvider() {
             @Override
             public String getText(Object element) {
                 return ((AIProvider) element).getUrl();
@@ -240,9 +336,22 @@ public class ModelsGroup extends AEvoGroup {
             }
         });
 
+        // Path (Absolute File Path)
+        TableViewerColumn colAbsPath = createTableViewerColumn(titles[5], bounds[5]);
+        colAbsPath.setLabelProvider(new ModelLabelProvider() {
+            @Override
+            public String getText(Object element) {
+                return getModelAbsolutePath(orchestrator, (AIProvider) element);
+            }
+            @Override
+            public Color getBackground(Object element) {
+                return getSafeColor(getModelColor((AIProvider) element));
+            }
+        });
+
         // Token
-        TableViewerColumn colToken = createTableViewerColumn(titles[5], bounds[5]);
-        colToken.setLabelProvider(new ColumnLabelProvider() {
+        TableViewerColumn colToken = createTableViewerColumn(titles[6], bounds[6]);
+        colToken.setLabelProvider(new ModelLabelProvider() {
             @Override
             public String getText(Object element) {
                 String t = ((AIProvider) element).getApiKey();
@@ -256,8 +365,8 @@ public class ModelsGroup extends AEvoGroup {
         });
 
         // Rating
-        TableViewerColumn colRating = createTableViewerColumn(titles[6], bounds[6]);
-        colRating.setLabelProvider(new ColumnLabelProvider() {
+        TableViewerColumn colRating = createTableViewerColumn(titles[7], bounds[7]);
+        colRating.setLabelProvider(new ModelLabelProvider() {
             @Override
             public String getText(Object element) {
                 AIProvider item = (AIProvider) element;
