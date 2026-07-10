@@ -268,6 +268,7 @@ public class EvolutionServer extends NanoHTTPD {
                         if (subAction.equals("/snapshots")) return handleGetForgeSnapshots(id);
                         if (subAction.equals("/forging/stats")) return handleGetForgingStats(id);
                         if (subAction.equals("/events")) return handleGetForgeEvents(id);
+                        if (subAction.equals("/datasources")) return handleGetDatasources(id);
                     } else if (Method.POST.equals(method)) {
                         if (subAction.equals("/model")) return handleUpdateForgeModel(id, session);
                         if (subAction.equals("/clone")) return handleCloneForgeSession(id, session);
@@ -276,6 +277,7 @@ public class EvolutionServer extends NanoHTTPD {
                         if (subAction.equals("/demo")) return handleRunForgeDemo(id);
                         if (subAction.equals("/generate-architecture")) return handleGenerateArchitecture(id, session);
                         if (subAction.equals("/open-folder")) return handleOpenFolder(id);
+                        if (subAction.equals("/datasources")) return handleUpdateDatasources(id, session);
                     }
                 } else {
                     if (Method.GET.equals(method)) return handleGetForgeSession(id);
@@ -528,11 +530,73 @@ public class EvolutionServer extends NanoHTTPD {
 
     private Response handleStartForging(String sessionId) {
         try {
-            selfEvoService.startForging(sessionId, new File(".").toPath());
+            eu.kalafatic.evolution.model.orchestration.ForgeSession s = ForgeSessionManager.getInstance().findSession(sessionId);
+            List<String> dataSources = new ArrayList<>();
+            if (s != null) {
+                String datasetBindings = s.getModelState().getDatasetBindings();
+                if (datasetBindings != null && !datasetBindings.trim().isEmpty() && !datasetBindings.equals("[]")) {
+                    try {
+                        JSONArray arr = new JSONArray(datasetBindings);
+                        for (int i = 0; i < arr.length(); i++) {
+                            dataSources.add(arr.getString(i));
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+            if (dataSources.isEmpty()) {
+                dataSources.add("c:\\Users\\petrk\\git\\evolution");
+            }
+
+            selfEvoService.startForging(sessionId, new File(".").toPath(), dataSources);
             return newFixedLengthResponse(Response.Status.OK, "application/json", "{\"status\": \"started\"}");
         } catch (Exception e) {
             return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", e.getMessage());
         }
+    }
+
+    private Response handleGetDatasources(String id) {
+        eu.kalafatic.evolution.model.orchestration.ForgeSession s = ForgeSessionManager.getInstance().findSession(id);
+        if (s == null) return newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "Session not found");
+
+        String datasetBindings = s.getModelState().getDatasetBindings();
+        JSONArray arr;
+        if (datasetBindings == null || datasetBindings.trim().isEmpty() || datasetBindings.equals("[]")) {
+            arr = new JSONArray();
+            arr.put("c:\\Users\\petrk\\git\\evolution");
+        } else {
+            try {
+                arr = new JSONArray(datasetBindings);
+            } catch (Exception e) {
+                arr = new JSONArray();
+                arr.put("c:\\Users\\petrk\\git\\evolution");
+            }
+        }
+        return newFixedLengthResponse(Response.Status.OK, "application/json", arr.toString());
+    }
+
+    private Response handleUpdateDatasources(String id, IHTTPSession session) throws IOException, ResponseException {
+        Map<String, String> files = new HashMap<>();
+        session.parseBody(files);
+        String postData = files.get("postData");
+
+        eu.kalafatic.evolution.model.orchestration.ForgeSession s = ForgeSessionManager.getInstance().findSession(id);
+        if (s == null) return newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "Session not found");
+
+        s.getModelState().setDatasetBindings(postData);
+        s.setLastModified(System.currentTimeMillis());
+
+        try {
+            Orchestrator orch = OrchestratorServiceImpl.getInstance().getOrchestrator();
+            if (orch != null && orch.eResource() != null) {
+                ProjectModelManager.getInstance().saveResource(orch.eResource());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return newFixedLengthResponse(Response.Status.OK, "application/json", "{\"status\": \"ok\"}");
     }
 
     private Response handleGetSettings() {

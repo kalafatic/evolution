@@ -2,6 +2,105 @@
  * Visualization for Self-Evo Forging process.
  */
 (function() {
+    let lastLoadedSessionId = null;
+    window.currentDatasources = [];
+
+    window.loadDatasources = async function() {
+        try {
+            const res = await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/datasources?runtime=SWT`);
+            if (res.ok) {
+                window.currentDatasources = await res.json();
+                window.renderDatasourcesTable();
+            }
+        } catch (e) {
+            console.error("Failed to load data sources", e);
+        }
+    };
+
+    window.renderDatasourcesTable = function() {
+        const listBody = document.getElementById('datasources-list');
+        if (!listBody) return;
+
+        if (!window.currentDatasources || window.currentDatasources.length === 0) {
+            listBody.innerHTML = `<tr><td colspan="2" style="padding: 10px; text-align: center; color: #888; font-style: italic;">No data sources selected. Default: c:\\Users\\petrk\\git\\evolution</td></tr>`;
+            return;
+        }
+
+        listBody.innerHTML = window.currentDatasources.map((src, idx) => `
+            <tr style="border-bottom: 1px solid #eee;">
+                <td style="padding: 6px; word-break: break-all; font-family: monospace; text-align: left;">${src}</td>
+                <td style="padding: 6px; text-align: center;">
+                    <button class="btn btn-sm" onclick="removeDatasource(${idx})" style="padding: 2px 6px; font-size: 0.75em; color: var(--error); border-color: var(--error); background: transparent;">Remove</button>
+                </td>
+            </tr>
+        `).join('');
+    };
+
+    window.triggerBrowseFolder = function() {
+        if (window.browseDirectory) {
+            const path = window.browseDirectory();
+            if (path) {
+                document.getElementById('datasource-input').value = path;
+            }
+        } else {
+            const path = prompt("Enter directory path manually:");
+            if (path) {
+                document.getElementById('datasource-input').value = path;
+            }
+        }
+    };
+
+    window.triggerBrowseFile = function() {
+        if (window.browseFile) {
+            const path = window.browseFile();
+            if (path) {
+                document.getElementById('datasource-input').value = path;
+            }
+        } else {
+            const path = prompt("Enter file path manually:");
+            if (path) {
+                document.getElementById('datasource-input').value = path;
+            }
+        }
+    };
+
+    window.addDatasource = function() {
+        const input = document.getElementById('datasource-input');
+        if (!input) return;
+        const val = input.value.trim();
+        if (val) {
+            if (!window.currentDatasources.includes(val)) {
+                window.currentDatasources.push(val);
+                window.renderDatasourcesTable();
+                input.value = '';
+            } else {
+                alert("This path is already added.");
+            }
+        }
+    };
+
+    window.removeDatasource = function(idx) {
+        window.currentDatasources.splice(idx, 1);
+        window.renderDatasourcesTable();
+    };
+
+    window.saveDatasources = async function() {
+        try {
+            const res = await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/datasources?runtime=SWT`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify(window.currentDatasources)
+            });
+            if (res.ok) {
+                alert("Data sources saved successfully.");
+            } else {
+                alert("Failed to save data sources: " + res.statusText);
+            }
+        } catch (e) {
+            alert("Error saving data sources: " + e.message);
+        }
+    };
+
     window.renderSelfEvoViz = function(stats) {
         window.currentSelfEvoStats = stats;
         const area = document.getElementById('viz-area');
@@ -9,6 +108,11 @@
 
         const progress = stats ? (stats.progress || 0) : 0;
         const status = stats ? (stats.status || 'IDLE') : 'IDLE';
+
+        if (lastLoadedSessionId !== activeSessionId) {
+            lastLoadedSessionId = activeSessionId;
+            window.loadDatasources();
+        }
 
         area.innerHTML = `
             <div style="padding:20px; text-align:center; height:100%; width:100%; background:#fff; color:#333; overflow-y:auto;">
@@ -47,6 +151,40 @@
                     </div>
                 </div>
                 <p style="font-size:0.75em; color:var(--text-dim); font-weight:bold;">${progress}% - ${status}</p>
+
+                <!-- LLM Forge Data Sources Card -->
+                <div style="max-width:600px; margin: 20px auto; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background: #fafafa; text-align: left;">
+                    <h4 style="margin-top: 0; color: var(--accent); font-size: 0.95em; display: flex; align-items: center; gap: 6px;">
+                        <span>📁</span> LLM Forge Data Sources Target Model Object
+                    </h4>
+                    <p style="font-size: 0.8em; color: #666; margin-bottom: 10px;">Select directories/files with markdown (.md) training data for Self-Evo forging.</p>
+
+                    <div style="max-height: 120px; overflow-y: auto; border: 1px solid #ccc; border-radius: 4px; background: #fff; margin-bottom: 10px;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.85em;">
+                            <thead>
+                                <tr style="background: #f0f0f0; border-bottom: 1px solid #ddd;">
+                                    <th style="padding: 6px; text-align: left; width: 80%;">Path</th>
+                                    <th style="padding: 6px; text-align: center; width: 20%;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="datasources-list">
+                                <tr><td colspan="2" style="padding: 10px; text-align: center; color: #888; font-style: italic;">Loading data sources...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div style="display: flex; gap: 8px; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; gap: 6px; flex-grow: 1;">
+                            <input type="text" id="datasource-input" placeholder="Enter file or folder path..." style="padding: 6px; font-size: 0.85em; flex-grow: 1; border: 1px solid #ccc; border-radius: 4px;" />
+                            <button class="btn btn-sm" onclick="triggerBrowseFolder()" style="padding: 4px 8px; font-size: 0.8em; background: #e2e8f0; border: 1px solid #cbd5e1; color: #334155; border-radius: 4px; cursor: pointer;">Folder 📂</button>
+                            <button class="btn btn-sm" onclick="triggerBrowseFile()" style="padding: 4px 8px; font-size: 0.8em; background: #e2e8f0; border: 1px solid #cbd5e1; color: #334155; border-radius: 4px; cursor: pointer;">File 📄</button>
+                        </div>
+                        <div style="display: flex; gap: 6px;">
+                            <button class="btn btn-sm btn-primary" onclick="addDatasource()" style="padding: 6px 12px; font-size: 0.8em;">Add</button>
+                            <button class="btn btn-sm" onclick="saveDatasources()" style="padding: 6px 12px; font-size: 0.8em; background: var(--success); color: white; border: none; cursor: pointer;">Save</button>
+                        </div>
+                    </div>
+                </div>
 
                 <div id="forging-display-area" style="margin-top:15px; padding:15px; border:1px solid #ddd; border-radius:8px; background:#f9f9f9; min-height:140px; text-align:left; max-width:600px; margin-left:auto; margin-right:auto; font-family: monospace;">
                     <div style="font-weight:bold; margin-bottom:10px; font-size:0.8em; color:#888; font-family: sans-serif;">PIPELINE TELEMETRY</div>
@@ -87,6 +225,8 @@
                 ` : ''}
             `;
         }
+
+        window.renderDatasourcesTable();
     };
 
     function renderTelemetry(stats) {
