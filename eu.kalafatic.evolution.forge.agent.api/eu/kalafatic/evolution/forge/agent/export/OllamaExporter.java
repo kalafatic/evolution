@@ -13,7 +13,7 @@ public class OllamaExporter {
         // Generate Modelfile
         List<String> modelfile = new ArrayList<>();
         modelfile.add("FROM llama3.2:3b");
-        modelfile.add("ADAPTER " + outputPath.resolve("weights.bin").toAbsolutePath().toString());
+        modelfile.add("ADAPTER " + outputPath.resolve("evo.gguf").toAbsolutePath().toString().replace("\\", "/"));
         modelfile.add("PARAMETER temperature 0.7");
         modelfile.add("PARAMETER stop \"<EOS>\"");
         modelfile.add("SYSTEM \"\"\"You are an Evolution AI assistant specialized in this project codebase.\"\"\"");
