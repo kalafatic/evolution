@@ -206,7 +206,7 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 				new ProjectManager().refreshAllProjects();
 				
 				
-				EclipseGitEvoTool.registerRepositoriesInGitView();
+				EclipseGitEvoTool.initializeRepositories();
 			}
 		});
 	}
