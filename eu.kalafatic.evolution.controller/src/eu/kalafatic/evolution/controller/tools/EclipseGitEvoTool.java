@@ -402,6 +402,19 @@ public class EclipseGitEvoTool {
 									CommonViewer viewer = ((CommonNavigator) view).getCommonViewer();
 									viewer.refresh();
 								}
+								try {
+									Method getCommonViewer = view.getClass().getMethod("getCommonViewer");
+									if (getCommonViewer != null) {
+										Object viewer = getCommonViewer.invoke(view);
+										if (viewer != null) {
+											Method refresh = viewer.getClass().getMethod("refresh");
+											if (refresh != null) {
+												refresh.invoke(viewer);
+												log("Refreshed RepositoriesView CommonViewer reflectively");
+											}
+										}
+									}
+								} catch (Exception ex) {}
 							}
 						}
 					}
@@ -506,56 +519,93 @@ public static boolean isGitRepository(File repoDir) {
 	public static void createAndShowRepository(File repoDir) {
 		Git git = null;
 		try {
-			if (isGitRepository(repoDir)) {
-				log("Repository already exists at: " + repoDir.getAbsolutePath());
-				git = Git.open(repoDir, FS.DETECTED);
+			File gitDir = new File(repoDir, ".git").getCanonicalFile();
+			File canonicalRepoDir = gitDir.getParentFile();
+
+			if (isGitRepository(canonicalRepoDir)) {
+				log("Repository already exists at: " + canonicalRepoDir.getAbsolutePath());
+				git = Git.open(canonicalRepoDir, FS.DETECTED);
 			} else {
 				// 1. Create the repo using JGit
-				git = Git.init().setDirectory(repoDir).call();
+				git = Git.init().setDirectory(canonicalRepoDir).call();
+				log("Created new repository at: " + canonicalRepoDir.getAbsolutePath());
 			}		
-			
-			File gitDir = new File(repoDir, ".git");
 
-			// 2. Register it with EGit (triggers view refresh)
-			RepositoryUtil.INSTANCE.addConfiguredRepository(gitDir);
-
-			// 3. Clean up
+			// 2. Clean up
 			git.close();
 
 		} catch (Exception e) {
-			log("Failed to register with EGit: " + e.getMessage());
+			log("Failed to create/open repository JGit: " + e.getMessage());
 		}
 	}
 		// --- Integration Helpers ---
 
 	private static void addToEgitView(String localPath) {
 		try {
-			File gitDir = localPath.endsWith(".git") ? new  File(localPath) : new File(localPath, ".git");
-			gitDir.mkdirs();
+			File gitDir = localPath.endsWith(".git") ? new File(localPath) : new File(localPath, ".git");
+			gitDir = gitDir.getCanonicalFile();
+			gitDir.getParentFile().mkdirs();
 			createAndShowRepository(gitDir.getParentFile());
 
-			if (!gitDir.exists()) {
-				gitDir.createNewFile();
-				createAndShowRepository(gitDir.getParentFile());
+			List<Object> utils = new ArrayList<>();
+			
+			// 1. RepositoryUtil.INSTANCE
+			try {
+				utils.add(org.eclipse.egit.core.RepositoryUtil.INSTANCE);
+			} catch (Throwable t) {}
+
+			// 2. Activator.getDefault().getRepositoryUtil()
+			try {
+				Class<?> activatorClass = Class.forName("org.eclipse.egit.core.Activator");
+				Object activator = activatorClass.getMethod("getDefault").invoke(null);
+				if (activator != null) {
+					Object repoUtil = activator.getClass().getMethod("getRepositoryUtil").invoke(activator);
+					if (repoUtil != null && !utils.contains(repoUtil)) {
+						utils.add(repoUtil);
+					}
+				}
+			} catch (Throwable t) {}
+
+			// 3. EGit UI Activator
+			try {
+				Class<?> activatorClass = Class.forName("org.eclipse.egit.ui.Activator");
+				Object activator = activatorClass.getMethod("getDefault").invoke(null);
+				if (activator != null) {
+					Object repoUtil = activator.getClass().getMethod("getRepositoryUtil").invoke(activator);
+					if (repoUtil != null && !utils.contains(repoUtil)) {
+						utils.add(repoUtil);
+					}
+				}
+			} catch (Throwable t) {}
+
+			// 4. Fallback reflection (static getInstance)
+			try {
+				Class<?> utilClass = Class.forName("org.eclipse.egit.core.RepositoryUtil");
+				Object repoUtil = utilClass.getMethod("getInstance").invoke(null);
+				if (repoUtil != null && !utils.contains(repoUtil)) {
+					utils.add(repoUtil);
+				}
+			} catch (Throwable t) {}
+
+			// Now invoke addConfiguredRepository on all discovered instances!
+			for (Object util : utils) {
+				try {
+					Method addMethod = util.getClass().getMethod("addConfiguredRepository", File.class);
+					Boolean added = (Boolean) addMethod.invoke(util, gitDir);
+					log("Added repository to EGit view instance (" + util.getClass().getName() + "): " + added + " -> " + gitDir.getAbsolutePath());
+				} catch (Throwable t) {
+					log("Failed to register with instance: " + t.getMessage());
+				}
 			}
-			
-			
-			Class<?> clazz = Class.forName("org.eclipse.egit.core.RepositoryUtil");
 
-			// Get RepositoryUtil.INSTANCE
-			Object repositoryUtil = clazz.getField("INSTANCE").get(null);
+			// Also use GitRegistryHelper for the view side
+			try {
+				Class<?> helperClass = Class.forName("eu.kalafatic.evolution.view.util.GitRegistryHelper");
+				Method regMethod = helperClass.getMethod("registerGitRepository", File.class);
+				regMethod.invoke(null, gitDir.getParentFile());
+				log("Invoked GitRegistryHelper reflectively");
+			} catch (Throwable t) {}
 
-			// Get addConfiguredRepository(File)
-			Method addMethod = clazz.getMethod("addConfiguredRepository", File.class);
-
-			// Invoke it
-			Boolean added = (Boolean) addMethod.invoke(repositoryUtil, gitDir);
-
-			System.out.println("Repository added: " + added);
-
-			log("Added to EGit view: " + gitDir.getAbsolutePath());
-			
-			
 		} catch (Exception e) {
 			log("Failed to register with EGit: " + e.getMessage());
 		}
