@@ -42,7 +42,7 @@ import org.eclipse.ui.navigator.CommonViewer;
  * Central utility for programmatically managing multiple Git repositories used
  * by the Evo project.
  */
-public class EclipseGitEvoTool {
+public class EclipseGitEvoTool3 {
 	
 	public static final String PROTECTED_BRANCH = "master";
 
@@ -189,10 +189,10 @@ public class EclipseGitEvoTool {
 	public static void registerRepository(RepoConfig repo) {
 		registry.put(repo.id, repo);
 		
-		EclipseGitEvoTool.changeRemoteUrl(repo.id, repo.defaultRemote);
-		EclipseGitEvoTool.changeRepositoryLocation(repo.id, repo.defaultLocalPath);
-		EclipseGitEvoTool.changeBranch(repo.id, repo.defaultBranch);
-		EclipseGitEvoTool.changeCredentials(repo.id, repo.defaultUsername, repo.defaultPassword);
+		EclipseGitEvoTool3.changeRemoteUrl(repo.id, repo.defaultRemote);
+		EclipseGitEvoTool3.changeRepositoryLocation(repo.id, repo.defaultLocalPath);
+		EclipseGitEvoTool3.changeBranch(repo.id, repo.defaultBranch);
+		EclipseGitEvoTool3.changeCredentials(repo.id, repo.defaultUsername, repo.defaultPassword);
 	}
 
 	public static List<String> getRegisteredRepositoryIds() {

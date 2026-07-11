@@ -4,8 +4,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.net.URL;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -18,8 +18,6 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
-import org.eclipse.core.runtime.NullProgressMonitor;
-import org.eclipse.core.runtime.preferences.InstanceScope;
 import org.eclipse.egit.core.RepositoryUtil;
 import org.eclipse.jgit.api.CloneCommand;
 import org.eclipse.jgit.api.Git;
@@ -30,21 +28,20 @@ import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.eclipse.jgit.util.FS;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.IViewPart;
-import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPage;
-import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.navigator.CommonNavigator;
 import org.eclipse.ui.navigator.CommonViewer;
 
+import org.eclipse.egit.core.Activator;
+import org.eclipse.egit.core.RepositoryCache;
+
 /**
  * Central utility for programmatically managing multiple Git repositories used
  * by the Evo project.
  */
-public class EclipseGitEvoTool {
-	
-	public static final String PROTECTED_BRANCH = "master";
+public class EclipseGitEvoTool2 {
 
 	// --- Repo IDs ---
 	public static final String REPO_EVOLUTION = "evolution";
@@ -189,10 +186,10 @@ public class EclipseGitEvoTool {
 	public static void registerRepository(RepoConfig repo) {
 		registry.put(repo.id, repo);
 		
-		EclipseGitEvoTool.changeRemoteUrl(repo.id, repo.defaultRemote);
-		EclipseGitEvoTool.changeRepositoryLocation(repo.id, repo.defaultLocalPath);
-		EclipseGitEvoTool.changeBranch(repo.id, repo.defaultBranch);
-		EclipseGitEvoTool.changeCredentials(repo.id, repo.defaultUsername, repo.defaultPassword);
+		EclipseGitEvoTool2.changeRemoteUrl(repo.id, repo.defaultRemote);
+		EclipseGitEvoTool2.changeRepositoryLocation(repo.id, repo.defaultLocalPath);
+		EclipseGitEvoTool2.changeBranch(repo.id, repo.defaultBranch);
+		EclipseGitEvoTool2.changeCredentials(repo.id, repo.defaultUsername, repo.defaultPassword);
 	}
 
 	public static List<String> getRegisteredRepositoryIds() {
@@ -302,29 +299,11 @@ public class EclipseGitEvoTool {
 				log(id + " register: " + registerResult.getMessage());
 			}
 		}
-		lockMasterBranchForPush();
-		
-		// Force multiple refresh attempts with increasing delays
-		Display.getDefault().timerExec(1000, () -> forceRefreshGitView());
-		Display.getDefault().timerExec(3000, () -> forceRefreshGitView());
-		Display.getDefault().timerExec(5000, () -> forceRefreshGitView());
-		
+		Display.getDefault().timerExec(2000, () -> refreshGitView());
 		
 		
 		log("Initialization complete.");
 		return new GitOpResult(OpStatus.SUCCESS, "Repositories initialized");
-	}
-	
-	// Call this after initializeRepositories()
-	public static void lockMasterBranchForPush() {
-	    log("Locking master branch for push (pull remains enabled)...");
-	    
-	    // Store protection flag
-	    config.setProperty(REPO_EVOLUTION + ".push.protected", "true");
-	    config.setProperty(REPO_EVOLUTION + ".protected.branch", PROTECTED_BRANCH);
-	    saveConfiguration();
-	    
-	    log("Master branch is now PUSH-PROTECTED. Only PULL is allowed.");
 	}
 
 	public static GitOpResult checkRepositories() {
@@ -377,7 +356,7 @@ public class EclipseGitEvoTool {
 		for (String id : registry.keySet())
 			registerRepositoriesInGitView(id);
 		
-		Display.getDefault().timerExec(3000, () -> forceRefreshGitView());
+		Display.getDefault().timerExec(2000, () -> refreshGitView());
 		
 		return new GitOpResult(OpStatus.SUCCESS, "All repositories registered");
 	}
@@ -386,426 +365,76 @@ public class EclipseGitEvoTool {
 		String path = getRepositoryPath(id);
 		if (path == null)
 			return new GitOpResult(OpStatus.FAILED, "Repo not found: " + id);
-		
-		// Properly register the repository
-		boolean registered = registerRepositoryWithEGit(path);
-		
-		if (registered) {
-			return new GitOpResult(OpStatus.SUCCESS, "Registered");
-		} else {
-			return new GitOpResult(OpStatus.WARNING, "Registration attempted but may need manual refresh");
-		}
+		addToEgitView(path);
+		return new GitOpResult(OpStatus.SUCCESS, "Registered");
 	}
-	
-	private static void forceRefreshGitView() {
-	    log("Forcing Git Repositories View refresh...");
-
-	    Display.getDefault().asyncExec(() -> {
-	        try {
-	            IWorkbench workbench = PlatformUI.getWorkbench();
-	            if (workbench == null) return;
-
-	            IWorkbenchWindow window = workbench.getActiveWorkbenchWindow();
-	            if (window == null) return;
-
-	            IWorkbenchPage page = window.getActivePage();
-	            if (page == null) return;
-
-	            // Open or find the view
-	            IViewPart viewPart = page.findView("org.eclipse.egit.ui.RepositoriesView");
-	            if (viewPart == null) {
-	                viewPart = page.showView("org.eclipse.egit.ui.RepositoriesView", 
-	                                       null, IWorkbenchPage.VIEW_VISIBLE);
-	                log("Opened Git Repositories View");
-	            }
-
-	            if (viewPart instanceof CommonNavigator) {
-	                CommonNavigator navigator = (CommonNavigator) viewPart;
-	                CommonViewer viewer = navigator.getCommonViewer();
-
-	                if (viewer != null) {
-	                    // Critical: force full reload
-	                    viewer.setInput(null);
-	                    viewer.setInput(ResourcesPlugin.getWorkspace().getRoot()); // or RepositoryUtil
-	                    viewer.refresh(true);
-	                    viewer.expandToLevel(2);
-	                    log("Successfully refreshed CommonViewer");
-	                }
-	            }
-
-	            // Extra safety
-	            ResourcesPlugin.getWorkspace().getRoot().refreshLocal(IResource.DEPTH_INFINITE, null);
-
-	        } catch (Exception e) {
-	            log("Refresh failed: " + e.getMessage());
-	            e.printStackTrace();
-	        }
-	    });
-	}
-	/**
-	 * Slightly more polished one for production:
-	 */
-//	private static void forceRefreshGitView() {
-//	    log("Forcing Git Repositories View refresh...");
-//
-//	    Display.getDefault().asyncExec(() -> {
-//	        try {
-//	            IWorkbenchPage page = PlatformUI.getWorkbench()
-//	                    .getActiveWorkbenchWindow().getActivePage();
-//
-//	            IViewPart view = page.findView("org.eclipse.egit.ui.RepositoriesView");
-//	            if (view == null) {
-//	                view = page.showView("org.eclipse.egit.ui.RepositoriesView");
-//	            }
-//
-//	            if (view instanceof CommonNavigator) {
-//	                CommonViewer viewer = ((CommonNavigator) view).getCommonViewer();
-//	                if (viewer != null) {
-//	                    Object oldInput = viewer.getInput();
-//	                    viewer.setInput(null);                    // clear
-//	                    viewer.setInput(oldInput != null ? oldInput : 
-//	                                   RepositoryUtil.INSTANCE.getConfiguredRepositories());
-//	                    viewer.refresh(true);
-//	                    viewer.expandToLevel(2);
-//	                    log("Git Repositories View refreshed successfully");
-//	                }
-//	            }
-//	        } catch (Exception e) {
-//	            log("Refresh error: " + e.getMessage());
-//	        }
-//	    });
-//	}
-
-	// --- FIXED: Proper Repository Registration using only public API ---
-
-//	private static boolean registerRepositoryWithEGit(String localPath) {
-//		try {
-//			File gitDir = localPath.endsWith(".git") ? new File(localPath) : new File(localPath, ".git");
-//			gitDir = gitDir.getCanonicalFile();
-//			File repoDir = gitDir.getParentFile();
-//			
-//			if (!gitDir.exists() || !gitDir.isDirectory()) {
-//				log("Git directory does not exist: " + gitDir.getAbsolutePath());
-//				return false;
-//			}
-//
-//			log("Registering repository: " + repoDir.getAbsolutePath());
-//
-//			// Use RepositoryUtil.INSTANCE (public API)
-//			try {
-//				RepositoryUtil repoUtil = RepositoryUtil.INSTANCE;
-//				if (repoUtil != null) {
-//					// Check if already registered
-//					List<String> configured = repoUtil.getConfiguredRepositories();
-//					String path = gitDir.getAbsolutePath();
-//					
-//					if (configured == null || !configured.contains(path)) {
-//						repoUtil.addConfiguredRepository(gitDir);
-//						log("Added repository via RepositoryUtil.INSTANCE");
-//					} else {
-//						log("Repository already registered in RepositoryUtil");
-//					}
-//				}
-//			} catch (Exception e) {
-//				log("RepositoryUtil.INSTANCE failed: " + e.getMessage());
-//			}
-//
-//			// Direct preference writing (backup method using public API)
-//			try {
-//				String key = "GitRepositoriesView.configuredRepositories";
-//				String canonicalPath = gitDir.getCanonicalPath();
-//				String slashPath = canonicalPath.replace('\\', '/');
-//
-//				// Get existing repositories from preferences
-//				org.eclipse.core.runtime.preferences.IEclipsePreferences prefs = 
-//					InstanceScope.INSTANCE.getNode("org.eclipse.egit.ui");
-//				
-//				if (prefs != null) {
-//					String existing = prefs.get(key, "");
-//					List<String> paths = new ArrayList<>();
-//					
-//					if (existing != null && !existing.isEmpty()) {
-//						for (String p : existing.split("\n")) {
-//							if (!p.trim().isEmpty()) {
-//								paths.add(p.trim());
-//							}
-//						}
-//					}
-//
-//					// Add if not already present
-//					boolean modified = false;
-//					if (!paths.contains(canonicalPath)) {
-//						paths.add(canonicalPath);
-//						modified = true;
-//					}
-//					if (!paths.contains(slashPath)) {
-//						paths.add(slashPath);
-//						modified = true;
-//					}
-//
-//					if (modified) {
-//						StringBuilder sb = new StringBuilder();
-//						for (String p : paths) {
-//							if (sb.length() > 0) sb.append("\n");
-//							sb.append(p);
-//						}
-//						prefs.put(key, sb.toString());
-//						prefs.flush();
-//						log("Updated preference for repository");
-//					}
-//				}
-//			} catch (Exception e) {
-//				log("Preference update failed: " + e.getMessage());
-//			}
-//
-//			return true;
-//			
-//		} catch (Exception e) {
-//			log("Failed to register repository: " + e.getMessage());
-//			e.printStackTrace();
-//			return false;
-//		}
-//	}
-
-	private static boolean registerRepositoryWithEGit(String localPath) {
-	    try {
-	        File gitDir = localPath.endsWith(".git") ? new File(localPath) : new File(localPath, ".git");
-	        gitDir = gitDir.getCanonicalFile();
-
-	        if (!gitDir.exists() || !gitDir.isDirectory()) {
-	            log("Git directory does not exist: " + gitDir);
-	            return false;
-	        }
-
-	        RepositoryUtil repoUtil = RepositoryUtil.INSTANCE;
-	        List<String> configured = repoUtil.getConfiguredRepositories();
-	        String canonicalPath = gitDir.getCanonicalPath();
-
-	        if (!configured.contains(canonicalPath)) {
-	            boolean added = repoUtil.addConfiguredRepository(gitDir);
-	            log(added ? "Added to EGit: " + canonicalPath : "Already known or failed");
-	        } else {
-	            log("Already registered: " + canonicalPath);
-	        }
-
-	        // Update preferences as backup (EGit reads from here)
-	        updateEgitPreferences(canonicalPath);
-
-	        return true;
-	    } catch (Exception e) {
-	        log("Failed to register: " + e.getMessage());
-	        e.printStackTrace();
-	        return false;
-	    }
-	}
-	
-	
-	private static void updateEgitPreferences(String repoPath) {
-	    try {
-	        org.eclipse.core.runtime.preferences.IEclipsePreferences prefs = 
-	            InstanceScope.INSTANCE.getNode("org.eclipse.egit.ui");
-	        
-	        String key = "GitRepositoriesView.configuredRepositories";
-	        String existing = prefs.get(key, "");
-	        
-	        List<String> paths = new ArrayList<>();
-	        if (!existing.isEmpty()) {
-	            for (String p : existing.split("\n")) {
-	                if (!p.trim().isEmpty()) paths.add(p.trim());
-	            }
-	        }
-
-	        if (!paths.contains(repoPath)) {
-	            paths.add(repoPath);
-	            StringBuilder sb = new StringBuilder();
-	            for (String p : paths) {
-	                if (sb.length() > 0) sb.append("\n");
-	                sb.append(p);
-	            }
-	            prefs.put(key, sb.toString());
-	            prefs.flush();
-	        }
-	    } catch (Exception e) {
-	        log("Preference update failed: " + e.getMessage());
-	    }
-	}
-
-	private static void removeFromEgitView(String localPath) {
-	    try {
-	        File gitDir = new File(localPath.endsWith(".git") ? localPath : new File(localPath, ".git").getCanonicalPath());
-	        RepositoryUtil repoUtil = RepositoryUtil.INSTANCE;
-	        repoUtil.removeDir(gitDir);  // This is the public API method
-	    } catch (Exception e) {
-	        log("Remove failed: " + e.getMessage());
-	    }
-	}
-	
-//	private static void removeFromEgitView(String localPath) {
-//		try {
-//			File gitDir = new File(localPath, ".git");
-//			if (!gitDir.exists())
-//				return;
-//				
-//			RepositoryUtil repoUtil = RepositoryUtil.INSTANCE;
-//			if (repoUtil != null) {
-//				// Check if configured using getConfiguredRepositories
-//				List<String> configured = repoUtil.getConfiguredRepositories();
-//				String path = gitDir.getAbsolutePath();
-//				if (configured != null && configured.contains(path)) {
-//					repoUtil.removeDir(gitDir);
-//					log("Removed from EGit view: " + gitDir.getAbsolutePath());
-//				}
-//			}
-//		} catch (Exception e) {
-//			log("Failed to remove from EGit: " + e.getMessage());
-//		}
-//	}
-
-	// --- ULTRA AGGRESSIVE View Refresh ---
-
-//	private static void forceRefreshGitView() {
-//		log("Forcing Git view refresh...");
-//
-//		Display.getDefault().asyncExec(() -> {
-//			try {
-//				// 1. Re-register all repositories
-//				for (String id : registry.keySet()) {
-//					String path = getRepositoryPath(id);
-//					if (path != null) {
-//						registerRepositoryWithEGit(path);
-//					}
-//				}
-//
-//				// 2. Try to refresh the EGit view using multiple approaches
-//				var workbench = PlatformUI.getWorkbench();
-//				if (workbench != null) {
-//					var window = workbench.getActiveWorkbenchWindow();
-//					if (window != null) {
-//						IWorkbenchPage page = window.getActivePage();
-//						if (page != null) {
-//							IViewPart view = page.findView("org.eclipse.egit.ui.RepositoriesView");
-//							
-//							// If view doesn't exist, create it
-//							if (view == null) {
-//								try {
-//									view = page.showView("org.eclipse.egit.ui.RepositoriesView");
-//									log("Opened RepositoriesView");
-//								} catch (PartInitException e) {
-//									log("Failed to open RepositoriesView: " + e.getMessage());
-//								}
-//							}
-//							
-//							if (view != null) {
-//								// APPROACH 1: Try to access and refresh the internal repository model
-//								try {
-//									// Get the viewer
-//									CommonViewer viewer = null;
-//									if (view instanceof CommonNavigator) {
-//										viewer = ((CommonNavigator) view).getCommonViewer();
-//									} else {
-//										// Try reflection
-//										Method getViewer = view.getClass().getMethod("getCommonViewer");
-//										viewer = (CommonViewer) getViewer.invoke(view);
-//									}
-//									
-//									if (viewer != null) {
-//										// Refresh the viewer
-//										viewer.refresh();
-//										log("Refreshed CommonViewer");
-//										
-//										// Try to expand all to force loading
-//										viewer.expandAll();
-//										log("Expanded all nodes");
-//										
-//										// Try to get the input and refresh it
-//										Object input = viewer.getInput();
-//										if (input != null) {
-//											// Try to call refresh on the input if it has a refresh method
-//											try {
-//												Method refreshMethod = input.getClass().getMethod("refresh");
-//												refreshMethod.invoke(input);
-//												log("Refreshed viewer input");
-//											} catch (Exception e) {
-//												// Silent fail
-//											}
-//										}
-//									}
-//								} catch (Exception e) {
-//									log("Failed to refresh CommonViewer: " + e.getMessage());
-//								}
-//								
-//								// APPROACH 2: Try to update the view's model directly using reflection
-//								try {
-//									// Look for internal fields that might hold the repository list
-//									Field[] fields = view.getClass().getDeclaredFields();
-//									for (Field field : fields) {
-//										field.setAccessible(true);
-//										try {
-//											Object value = field.get(view);
-//											if (value != null) {
-//												// Check if it's a collection or has a refresh method
-//												if (value instanceof List || value instanceof Map || value instanceof java.util.Set) {
-//													log("Found collection field: " + field.getName());
-//													// Try to call refresh on the parent
-//													try {
-//														Method refreshMethod = view.getClass().getMethod("refresh");
-//														refreshMethod.invoke(view);
-//														log("Called refresh on view");
-//													} catch (Exception e) {
-//														// Silent fail
-//													}
-//												}
-//											}
-//										} catch (Exception e) {
-//											// Silent fail
-//										}
-//									}
-//								} catch (Exception e) {
-//									// Silent fail
-//								}
-//								
-//								// APPROACH 3: Close and reopen the view with a longer delay
-//								try {
-//									page.hideView(view);
-//									Display.getDefault().timerExec(1000, () -> {
-//										try {
-//											IWorkbenchPage currentPage = PlatformUI.getWorkbench()
-//												.getActiveWorkbenchWindow().getActivePage();
-//											if (currentPage != null) {
-//												currentPage.showView("org.eclipse.egit.ui.RepositoriesView");
-//												log("Re-opened RepositoriesView with delay");
-//											}
-//										} catch (Exception e) {
-//											log("Failed to re-open view: " + e.getMessage());
-//										}
-//									});
-//								} catch (Exception e) {
-//									log("Failed to hide/show view: " + e.getMessage());
-//								}
-//							}
-//						}
-//					}
-//				}
-//
-//				// 3. Refresh workspace
-//				ResourcesPlugin.getWorkspace().getRoot().refreshLocal(IResource.DEPTH_INFINITE, new NullProgressMonitor());
-//				log("Workspace refreshed");
-//
-//				// 4. Try to force a UI update
-//				Display.getDefault().update();
-//
-//			} catch (Exception e) {
-//				log("Failed to refresh Git view: " + e.getMessage());
-//				e.printStackTrace();
-//			}
-//		});
-//	}
 
 	public static void refreshGitView() {
-		forceRefreshGitView();
-	}
+		log("Refreshing Git view...");
 
-	// --- Repository Status ---
+		Display.getDefault().asyncExec(() -> {
+			log("Refreshing Git view...");
+
+			try {
+
+				for (Entry<String, RepoConfig> entry : registry.entrySet()) {
+					String id = entry.getKey();
+					String path = getRepositoryPath(id);
+					if (path != null) {
+						log("Refreshing repo: " + id + " at " + path);
+						// removeFromEgitView(path);
+						addToEgitView(path);
+					}
+
+				}
+
+				// Find the view by its ID (typically "org.eclipse.egit.ui.RepositoriesView")
+				var workbench = PlatformUI.getWorkbench();
+				if (workbench != null) {
+					var window = workbench.getActiveWorkbenchWindow();
+					if (window != null) {
+						IWorkbenchPage page = window.getActivePage();
+						if (page != null) {
+							IViewPart view = page.findView("org.eclipse.egit.ui.RepositoriesView");
+							if (view != null) {
+								// If it's a CommonNavigator view, get its viewer and refresh
+								if (view instanceof CommonNavigator) {
+									CommonViewer viewer = ((CommonNavigator) view).getCommonViewer();
+									viewer.refresh();
+								}
+								try {
+									Method getCommonViewer = view.getClass().getMethod("getCommonViewer");
+									if (getCommonViewer != null) {
+										Object viewer = getCommonViewer.invoke(view);
+										if (viewer != null) {
+											Method refresh = viewer.getClass().getMethod("refresh");
+											if (refresh != null) {
+												refresh.invoke(viewer);
+												log("Refreshed RepositoriesView CommonViewer reflectively");
+											}
+										}
+									}
+								} catch (Exception ex) {}
+							}
+						}
+					}
+				}
+
+				// Method 2: Force refresh of EGit's internal cache
+				// Activator.getDefault().getRepositoryCache().refresh();
+				
+				// Method 3: Notify the workspace
+
+				ResourcesPlugin.getWorkspace().getRoot().refreshLocal(IResource.DEPTH_INFINITE, null);
+
+			} catch (CoreException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			// For other views, you might need to cast to a specific type
+
+		});
+	}
 
 	private static RepoStatus getRepoStatusById(String id) {
 		String path = getRepositoryPath(id);
@@ -867,6 +496,10 @@ public class EclipseGitEvoTool {
 		config.setProperty(AUTO_CLONE_KEY, String.valueOf(autoClone));
 		config.setProperty(AUTO_REGISTER_KEY, String.valueOf(autoRegister));
 
+		// Ensure all registered repo configs that might have been updated are reflected
+		// in the properties
+		// This is handled by the changeXXX methods which update 'config' directly.
+
 		try (FileOutputStream out = new FileOutputStream(configFile)) {
 			config.store(out, "Evo Git Tool Settings");
 		} catch (IOException e) {
@@ -874,14 +507,15 @@ public class EclipseGitEvoTool {
 		}
 	}
 	
-	public static boolean isGitRepository(File repoDir) {
-		try {    	
-			File gitDir = repoDir.getName().equals(".git") ? repoDir : new File(repoDir, ".git");
-			return FileKey.isGitRepository(gitDir, FS.DETECTED);
-		} catch (Exception e) {
-			return false;
-		}
-	}
+
+public static boolean isGitRepository(File repoDir) {
+    try {    	
+        File gitDir = repoDir.getName().equals(".git") ? repoDir : new File(repoDir, ".git");
+        return FileKey.isGitRepository(gitDir, FS.DETECTED);
+    } catch (Exception e) {
+        return false;
+    }
+}
 
 	public static void createAndShowRepository(File repoDir) {
 		Git git = null;
@@ -905,8 +539,139 @@ public class EclipseGitEvoTool {
 			log("Failed to create/open repository JGit: " + e.getMessage());
 		}
 	}
+		// --- Integration Helpers ---
 
-	// --- Git Operations ---
+	private static void addToEgitView(String localPath) {
+		try {
+			File gitDir = localPath.endsWith(".git") ? new File(localPath) : new File(localPath, ".git");
+			gitDir = gitDir.getCanonicalFile();
+			gitDir.getParentFile().mkdirs();
+			createAndShowRepository(gitDir.getParentFile());
+
+			List<Object> utils = new ArrayList<>();
+			
+			// 1. RepositoryUtil.INSTANCE
+			try {
+				utils.add(org.eclipse.egit.core.RepositoryUtil.INSTANCE);
+			} catch (Throwable t) {}
+
+			// 2. Activator.getDefault().getRepositoryUtil()
+			try {
+				Class<?> activatorClass = Class.forName("org.eclipse.egit.core.Activator");
+				Object activator = activatorClass.getMethod("getDefault").invoke(null);
+				if (activator != null) {
+					Object repoUtil = activator.getClass().getMethod("getRepositoryUtil").invoke(activator);
+					if (repoUtil != null && !utils.contains(repoUtil)) {
+						utils.add(repoUtil);
+					}
+				}
+			} catch (Throwable t) {}
+
+			// 3. EGit UI Activator
+			try {
+				Class<?> activatorClass = Class.forName("org.eclipse.egit.ui.Activator");
+				Object activator = activatorClass.getMethod("getDefault").invoke(null);
+				if (activator != null) {
+					Object repoUtil = activator.getClass().getMethod("getRepositoryUtil").invoke(activator);
+					if (repoUtil != null && !utils.contains(repoUtil)) {
+						utils.add(repoUtil);
+					}
+				}
+			} catch (Throwable t) {}
+
+			// 4. Fallback reflection (static getInstance)
+			try {
+				Class<?> utilClass = Class.forName("org.eclipse.egit.core.RepositoryUtil");
+				Object repoUtil = utilClass.getMethod("getInstance").invoke(null);
+				if (repoUtil != null && !utils.contains(repoUtil)) {
+					utils.add(repoUtil);
+				}
+			} catch (Throwable t) {}
+
+			// Now invoke addConfiguredRepository on all discovered instances!
+			for (Object util : utils) {
+				try {
+					Method addMethod = util.getClass().getMethod("addConfiguredRepository", File.class);
+					Boolean added = (Boolean) addMethod.invoke(util, gitDir);
+					log("Added repository to EGit view instance (" + util.getClass().getName() + "): " + added + " -> " + gitDir.getAbsolutePath());
+				} catch (Throwable t) {
+					log("Failed to register with instance: " + t.getMessage());
+				}
+			}
+
+			// Also write directly to eclipse preferences
+			try {
+				String key = "GitRepositoriesView.configuredRepositories";
+				String canonicalPath = gitDir.getCanonicalPath();
+				String slashPath = canonicalPath.replace('\\', '/');
+
+				String[] prefNodes = { "org.eclipse.egit.core", "org.eclipse.egit.ui" };
+				for (String nodeName : prefNodes) {
+					org.eclipse.core.runtime.preferences.IEclipsePreferences prefs =
+						org.eclipse.core.runtime.preferences.InstanceScope.INSTANCE.getNode(nodeName);
+					if (prefs != null) {
+						String existing = prefs.get(key, "");
+						List<String> paths = new ArrayList<>();
+						if (existing != null && !existing.isEmpty()) {
+							for (String p : existing.split("\n")) {
+								if (!p.trim().isEmpty()) {
+									paths.add(p.trim());
+								}
+							}
+						}
+
+						boolean modified = false;
+						if (!paths.contains(canonicalPath)) {
+							paths.add(canonicalPath);
+							modified = true;
+						}
+						if (!paths.contains(slashPath)) {
+							paths.add(slashPath);
+							modified = true;
+						}
+
+						if (modified) {
+							StringBuilder sb = new StringBuilder();
+							for (String p : paths) {
+								if (sb.length() > 0) sb.append("\n");
+								sb.append(p);
+							}
+							prefs.put(key, sb.toString());
+							prefs.flush();
+							log("Directly wrote repository path to " + nodeName + " preferences: " + canonicalPath);
+						}
+					}
+				}
+			} catch (Throwable t) {
+				log("Failed to write directly to preferences: " + t.getMessage());
+			}
+
+			// Also use GitRegistryHelper for the view side
+			try {
+				Class<?> helperClass = Class.forName("eu.kalafatic.evolution.view.util.GitRegistryHelper");
+				Method regMethod = helperClass.getMethod("registerGitRepository", File.class);
+				regMethod.invoke(null, gitDir.getParentFile());
+				log("Invoked GitRegistryHelper reflectively");
+			} catch (Throwable t) {}
+
+		} catch (Exception e) {
+			log("Failed to register with EGit: " + e.getMessage());
+		}
+	}
+
+	private static void removeFromEgitView(String localPath) {
+		File gitDir = new File(localPath, ".git");
+		if (!gitDir.exists())
+			return;
+		try {
+			Class<?> utilClass = Class.forName("org.eclipse.egit.core.RepositoryUtil");
+			Object util = utilClass.getMethod("getInstance").invoke(null);
+			util.getClass().getMethod("removeRepository", String.class).invoke(util, gitDir.getAbsolutePath());
+			log("Removed from EGit view: " + gitDir.getAbsolutePath());
+		} catch (Exception e) {
+			log("Failed to remove from EGit: " + e.getMessage());
+		}
+	}
 
 	private static GitOpResult cloneIfMissing(String id, String remoteUrl, String localPath) {
 		File dir = new File(localPath);
@@ -944,6 +709,80 @@ public class EclipseGitEvoTool {
 		}
 	}
 
+	public void scanAndRegisterRepositories() {
+		try {
+			IProject[] projects = ResourcesPlugin.getWorkspace().getRoot().getProjects();
+			RepositoryCache cache = RepositoryCache.INSTANCE;
+			int count = 0;
+
+			for (IProject project : projects) {
+				if (project.exists()) {
+					File projectDir = project.getLocation().toFile();
+					File gitDir = new File(projectDir, ".git");
+
+					if (gitDir.exists() && gitDir.isDirectory()) {
+						try {
+							// This will add the repository to EGit's cache
+							Repository repo = cache.lookupRepository(gitDir);
+							count++;
+							System.out.println("Registered repository: " + project.getName());
+						} catch (Exception e) {
+							System.err.println("Failed to register repo for: " + project.getName());
+							e.printStackTrace();
+						}
+					}
+				}
+			}
+
+			System.out.println("Registered " + count + " Git repositories");
+
+			// Refresh the view
+			Display.getDefault().timerExec(2000, () -> refreshGitView());
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+//	private void registerAllGitRepositories() {
+//		try {
+//			// Get all projects in workspace
+//			IProject[] projects = ResourcesPlugin.getWorkspace().getRoot().getProjects();
+//			RepositoryCache cache = Activator.getDefault().getRepositoryCache();
+//			int registered = 0;
+//
+//			for (IProject project : projects) {
+//				if (project.exists()) {
+//					File projectDir = project.getLocation().toFile();
+//					File gitDir = new File(projectDir, ".git");
+//
+//					// Check if this project has a Git repository
+//					if (gitDir.exists() && gitDir.isDirectory()) {
+//						try {
+//							// Open the repository
+//							Repository repo = new FileRepositoryBuilder().setGitDir(gitDir).build();
+//
+//							// Register with EGit
+//							cache.addRepository(repo);
+//							registered++;
+//
+//							System.out.println("Registered repository: " + project.getName());
+//
+//						} catch (Exception e) {
+//							System.err.println("Failed to register repo for: " + project.getName());
+//							e.printStackTrace();
+//						}
+//					}
+//				}
+//			}
+//
+//			System.out.println("Registered " + registered + " Git repositories");
+//
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
+//	}
+
 	// --- Core Git Operations via JGit ---
 
 	public static GitOpResult commit(String id, String message) {
@@ -962,60 +801,25 @@ public class EclipseGitEvoTool {
 		}
 	}
 
-//	public static GitOpResult push(String id) {
-//		String path = getRepositoryPath(id);
-//		if (path == null) return new GitOpResult(OpStatus.FAILED, "Repo path is null");
-//		File repoDir = new File(path);
-//		if (repoDir.getName().equals(".git")) {
-//			repoDir = repoDir.getParentFile();
-//		}
-//		try (Git git = Git.open(repoDir)) {
-//			String user = getRepositoryUsername(id);
-//			String pass = getRepositoryPassword(id);
-//			var pushCmd = git.push();
-//			if (user != null && !user.isEmpty() && pass != null && !pass.isEmpty()) {
-//				pushCmd.setCredentialsProvider(new UsernamePasswordCredentialsProvider(user, pass));
-//			}
-//			pushCmd.call();
-//			return new GitOpResult(OpStatus.SUCCESS, "Pushed successfully");
-//		} catch (Exception e) {
-//			return new GitOpResult(OpStatus.FAILED, "Push failed: " + e.getMessage());
-//		}
-//	}
-	
 	public static GitOpResult push(String id) {
-	    String path = getRepositoryPath(id);
-	    if (path == null) 
-	        return new GitOpResult(OpStatus.FAILED, "Repo path is null");
-
-	    // Check protection for evolution repo
-	    if (REPO_EVOLUTION.equals(id)) {
-	        String protectedBranch = config.getProperty(id + ".protected.branch", "master");
-	        String currentBranch = getCurrentBranch(id);
-	        
-	        if (protectedBranch.equals(currentBranch)) {
-	            String msg = "PUSH BLOCKED! Master branch is locked. Use Pull Request instead.";
-	            log("[PROTECTED] " + msg);
-	            return new GitOpResult(OpStatus.FAILED, msg);
-	        }
-	    }
-
-	    // Normal push if not blocked
-	    try (Git git = Git.open(new File(path))) {
-	        String user = getRepositoryUsername(id);
-	        String pass = getRepositoryPassword(id);
-	        
-	        var pushCmd = git.push();
-	        if (user != null && !user.isEmpty() && pass != null && !pass.isEmpty()) {
-	            pushCmd.setCredentialsProvider(new UsernamePasswordCredentialsProvider(user, pass));
-	        }
-	        
-	        pushCmd.call();
-	        return new GitOpResult(OpStatus.SUCCESS, "Pushed successfully");
-	        
-	    } catch (Exception e) {
-	        return new GitOpResult(OpStatus.FAILED, "Push failed: " + e.getMessage());
-	    }
+		String path = getRepositoryPath(id);
+		if (path == null) return new GitOpResult(OpStatus.FAILED, "Repo path is null");
+		File repoDir = new File(path);
+		if (repoDir.getName().equals(".git")) {
+			repoDir = repoDir.getParentFile();
+		}
+		try (Git git = Git.open(repoDir)) {
+			String user = getRepositoryUsername(id);
+			String pass = getRepositoryPassword(id);
+			var pushCmd = git.push();
+			if (user != null && !user.isEmpty() && pass != null && !pass.isEmpty()) {
+				pushCmd.setCredentialsProvider(new UsernamePasswordCredentialsProvider(user, pass));
+			}
+			pushCmd.call();
+			return new GitOpResult(OpStatus.SUCCESS, "Pushed successfully");
+		} catch (Exception e) {
+			return new GitOpResult(OpStatus.FAILED, "Push failed: " + e.getMessage());
+		}
 	}
 
 	public static GitOpResult pull(String id) {
@@ -1131,10 +935,10 @@ public class EclipseGitEvoTool {
 	public static GitOpResult createEvoBranch(String branch) { return createBranch(REPO_EVOLUTION, branch); }
 
 	// --- LLM (REPO_LLM) Shortcuts ---
-		public static GitOpResult commitLlm(String message) { return commit(REPO_LLM, message); }
-		public static GitOpResult rollbackLlm() { return rollback(REPO_LLM); }
-		public static GitOpResult pushLlm() { return push(REPO_LLM); }
-		public static GitOpResult pullLlm() { return pull(REPO_LLM); }
-		public static GitOpResult checkoutLlm(String branch, boolean force) { return checkout(REPO_LLM, branch, force); }
-		public static GitOpResult createLlmBranch(String branch) { return createBranch(REPO_LLM, branch); }
-	}
+	public static GitOpResult commitLlm(String message) { return commit(REPO_LLM, message); }
+	public static GitOpResult rollbackLlm() { return rollback(REPO_LLM); }
+	public static GitOpResult pushLlm() { return push(REPO_LLM); }
+	public static GitOpResult pullLlm() { return pull(REPO_LLM); }
+	public static GitOpResult checkoutLlm(String branch, boolean force) { return checkout(REPO_LLM, branch, force); }
+	public static GitOpResult createLlmBranch(String branch) { return createBranch(REPO_LLM, branch); }
+}

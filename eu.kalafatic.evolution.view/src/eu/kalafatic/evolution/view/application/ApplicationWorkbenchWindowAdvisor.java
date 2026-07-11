@@ -207,6 +207,8 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 				
 				
 				EclipseGitEvoTool.initializeRepositories();
+				
+				EclipseGitEvoTool.lockMasterBranchForPush();
 			}
 		});
 	}
