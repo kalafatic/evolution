@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Method;
+import java.net.URL;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -20,11 +22,14 @@ import org.eclipse.egit.core.RepositoryUtil;
 import org.eclipse.jgit.api.CloneCommand;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.lib.RepositoryCache.FileKey;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
+import org.eclipse.jgit.util.FS;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.IViewPart;
 import org.eclipse.ui.IWorkbenchPage;
+import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.navigator.CommonNavigator;
 import org.eclipse.ui.navigator.CommonViewer;
@@ -137,30 +142,39 @@ public class EclipseGitEvoTool {
 	public static String getEvolutionDefaultPath() {
 		try {
 			File workspaceDir = ResourcesPlugin.getWorkspace().getRoot().getLocation().toFile();
+			new File(System.getProperty("user.home") + "git/evolution/.git").mkdirs();
 			// evolution path: ${workspace_loc}/../evolution
-			return new File(workspaceDir.getParentFile(), "evolution").getAbsolutePath();
+			// return new File(workspaceDir.getParentFile(), "evolution").getAbsolutePath();
+
+			return Paths.get(System.getProperty("user.home"), "git", "evolution", ".git").toString();
+
 		} catch (Exception e) {
-			return Paths.get(System.getProperty("user.home"), "git", "evolution").toString();
+			return Paths.get(System.getProperty("user.home"), "git", "evolution", ".git").toString();
 		}
 	}
 
 	public static String getEvoDefaultPath() {
 		try {
 			File workspaceDir = ResourcesPlugin.getWorkspace().getRoot().getLocation().toFile();
+			new File(workspaceDir + "/evo/.git").mkdirs();
 			// evo path: ${workspace_loc}/evo
-			return new File(workspaceDir, "evo").getAbsolutePath();
+			return new File(workspaceDir + "/evo", ".git").getAbsolutePath();
 		} catch (Exception e) {
-			return Paths.get(System.getProperty("user.home"), "git", "evo").toString();
+			// return Paths.get(System.getProperty("user.home"), "git", "evo").toString();
+			return Paths.get(System.getProperty("user.home"), "git", "evo", ".git").toString();
 		}
 	}
 
 	public static String getLlmDefaultPath() {
 		try {
 			File workspaceDir = ResourcesPlugin.getWorkspace().getRoot().getLocation().toFile();
+			new File(workspaceDir + "/llm/.git").mkdirs();
 			// LLM path: ${workspace_loc}/llm
-			return new File(workspaceDir, "llm").getAbsolutePath();
+
+			return new File(workspaceDir + "/llm", ".git").getAbsolutePath();
 		} catch (Exception e) {
-			return Paths.get(System.getProperty("user.home"), "git", "llm").toString();
+			// return Paths.get(System.getProperty("user.home"), "git", "llm").toString();
+			return Paths.get(System.getProperty("user.home"), "git", "llm", ".git").toString();
 		}
 	}
 
@@ -172,6 +186,11 @@ public class EclipseGitEvoTool {
 
 	public static void registerRepository(RepoConfig repo) {
 		registry.put(repo.id, repo);
+		
+		EclipseGitEvoTool.changeRemoteUrl(repo.id, repo.defaultRemote);
+		EclipseGitEvoTool.changeRepositoryLocation(repo.id, repo.defaultLocalPath);
+		EclipseGitEvoTool.changeBranch(repo.id, repo.defaultBranch);
+		EclipseGitEvoTool.changeCredentials(repo.id, repo.defaultUsername, repo.defaultPassword);
 	}
 
 	public static List<String> getRegisteredRepositoryIds() {
@@ -281,7 +300,9 @@ public class EclipseGitEvoTool {
 				log(id + " register: " + registerResult.getMessage());
 			}
 		}
-		refreshGitView();
+		Display.getDefault().timerExec(2000, () -> refreshGitView());
+		
+		
 		log("Initialization complete.");
 		return new GitOpResult(OpStatus.SUCCESS, "Repositories initialized");
 	}
@@ -335,6 +356,9 @@ public class EclipseGitEvoTool {
 	public static GitOpResult registerRepositoriesInGitView() {
 		for (String id : registry.keySet())
 			registerRepositoriesInGitView(id);
+		
+		Display.getDefault().timerExec(2000, () -> refreshGitView());
+		
 		return new GitOpResult(OpStatus.SUCCESS, "All repositories registered");
 	}
 
@@ -379,7 +403,7 @@ public class EclipseGitEvoTool {
 
 				// Method 2: Force refresh of EGit's internal cache
 				// Activator.getDefault().getRepositoryCache().refresh();
-
+				
 				// Method 3: Notify the workspace
 
 				ResourcesPlugin.getWorkspace().getRoot().refreshLocal(IResource.DEPTH_INFINITE, null);
@@ -460,39 +484,69 @@ public class EclipseGitEvoTool {
 			log("Failed to save configuration: " + e.getMessage());
 		}
 	}
+	
 
-	public static void createAndShowRepository(File projectDir) {
+public static boolean isGitRepository(File repoDir) {
+    try {    	
+    	return FileKey.isGitRepository(repoDir, FS.DETECTED);
+    } catch (Exception e) {
+        return false;
+    }
+}
+
+	public static void createAndShowRepository(File repoDir) {
+		Git git = null;
 		try {
-			// 1. Create the repo using JGit
-			Git git = Git.init().setDirectory(projectDir).call();
+			if (isGitRepository(repoDir)) {
+				log("Repository already exists at: " + repoDir.getAbsolutePath());
+				git = Git.open(repoDir, FS.DETECTED);
+			} else {
+				// 1. Create the repo using JGit
+				git = Git.init().setDirectory(repoDir).call();
+			}		
+			
+			File gitDir = new File(repoDir, ".git");
 
 			// 2. Register it with EGit (triggers view refresh)
-			RepositoryUtil.INSTANCE.addConfiguredRepository(projectDir);
+			RepositoryUtil.INSTANCE.addConfiguredRepository(gitDir);
 
 			// 3. Clean up
 			git.close();
 
 		} catch (Exception e) {
-			// Handle errors
+			log("Failed to register with EGit: " + e.getMessage());
 		}
 	}
-
-	// --- Integration Helpers ---
+		// --- Integration Helpers ---
 
 	private static void addToEgitView(String localPath) {
 		try {
-			File gitDir = new File(localPath, ".git");
-			gitDir.getParentFile().mkdirs();
+			File gitDir = localPath.endsWith(".git") ? new  File(localPath) : new File(localPath, ".git");
+			gitDir.mkdirs();
+			createAndShowRepository(gitDir.getParentFile());
 
 			if (!gitDir.exists()) {
 				gitDir.createNewFile();
-				createAndShowRepository(gitDir);
+				createAndShowRepository(gitDir.getParentFile());
 			}
+			
+			
+			Class<?> clazz = Class.forName("org.eclipse.egit.core.RepositoryUtil");
 
-			Class<?> utilClass = Class.forName("org.eclipse.egit.core.RepositoryUtil");
-			Object util = utilClass.getMethod("getInstance").invoke(null);
-			util.getClass().getMethod("addConfiguredRepository", File.class).invoke(util, gitDir);
+			// Get RepositoryUtil.INSTANCE
+			Object repositoryUtil = clazz.getField("INSTANCE").get(null);
+
+			// Get addConfiguredRepository(File)
+			Method addMethod = clazz.getMethod("addConfiguredRepository", File.class);
+
+			// Invoke it
+			Boolean added = (Boolean) addMethod.invoke(repositoryUtil, gitDir);
+
+			System.out.println("Repository added: " + added);
+
 			log("Added to EGit view: " + gitDir.getAbsolutePath());
+			
+			
 		} catch (Exception e) {
 			log("Failed to register with EGit: " + e.getMessage());
 		}
@@ -544,42 +598,41 @@ public class EclipseGitEvoTool {
 			}
 		}
 	}
-	
+
 	public void scanAndRegisterRepositories() {
-        try {
-            IProject[] projects = ResourcesPlugin.getWorkspace().getRoot().getProjects();
-            RepositoryCache cache = RepositoryCache.INSTANCE;
-            int count = 0;
-            
-            for (IProject project : projects) {
-                if (project.exists()) {
-                    File projectDir = project.getLocation().toFile();
-                    File gitDir = new File(projectDir, ".git");
-                    
-                    if (gitDir.exists() && gitDir.isDirectory()) {
-                        try {
-                            // This will add the repository to EGit's cache
-                            Repository repo = cache.lookupRepository(gitDir);
-                            count++;
-                            System.out.println("Registered repository: " + project.getName());
-                        } catch (Exception e) {
-                            System.err.println("Failed to register repo for: " + project.getName());
-                            e.printStackTrace();
-                        }
-                    }
-                }
-            }
-            
-            System.out.println("Registered " + count + " Git repositories");
-            
-            // Refresh the view
-            refreshGitView();
-            
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-  
+		try {
+			IProject[] projects = ResourcesPlugin.getWorkspace().getRoot().getProjects();
+			RepositoryCache cache = RepositoryCache.INSTANCE;
+			int count = 0;
+
+			for (IProject project : projects) {
+				if (project.exists()) {
+					File projectDir = project.getLocation().toFile();
+					File gitDir = new File(projectDir, ".git");
+
+					if (gitDir.exists() && gitDir.isDirectory()) {
+						try {
+							// This will add the repository to EGit's cache
+							Repository repo = cache.lookupRepository(gitDir);
+							count++;
+							System.out.println("Registered repository: " + project.getName());
+						} catch (Exception e) {
+							System.err.println("Failed to register repo for: " + project.getName());
+							e.printStackTrace();
+						}
+					}
+				}
+			}
+
+			System.out.println("Registered " + count + " Git repositories");
+
+			// Refresh the view
+			Display.getDefault().timerExec(2000, () -> refreshGitView());
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
 
 //	private void registerAllGitRepositories() {
 //		try {

@@ -1,9 +1,10 @@
 package eu.kalafatic.evolution.forge.controller.service;
 
 import java.nio.file.Path;
+import java.util.List;
 
 public interface SelfEvoForgingService {
-    void startForging(String sessionId, Path projectPath) throws Exception;
+    void startForging(String sessionId, Path projectPath, List<String> dataSources) throws Exception;
     ForgingStats getStats(String sessionId);
     void stopForging(String sessionId);
 

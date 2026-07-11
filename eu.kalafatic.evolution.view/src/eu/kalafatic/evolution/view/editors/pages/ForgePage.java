@@ -83,6 +83,34 @@ public class ForgePage extends AEvoPage {
             }
         };
 
+        new BrowserFunction(browser, "browseDirectory") {
+            @Override
+            public Object function(Object[] arguments) {
+                if (browser.isDisposed()) return null;
+                final String[] result = new String[1];
+                Display.getDefault().syncExec(() -> {
+                    org.eclipse.swt.widgets.DirectoryDialog dialog = new org.eclipse.swt.widgets.DirectoryDialog(browser.getShell());
+                    dialog.setText("Select Data Source Directory");
+                    result[0] = dialog.open();
+                });
+                return result[0];
+            }
+        };
+
+        new BrowserFunction(browser, "browseFile") {
+            @Override
+            public Object function(Object[] arguments) {
+                if (browser.isDisposed()) return null;
+                final String[] result = new String[1];
+                Display.getDefault().syncExec(() -> {
+                    org.eclipse.swt.widgets.FileDialog dialog = new org.eclipse.swt.widgets.FileDialog(browser.getShell(), org.eclipse.swt.SWT.OPEN);
+                    dialog.setText("Select Data Source File");
+                    result[0] = dialog.open();
+                });
+                return result[0];
+            }
+        };
+
         new BrowserFunction(browser, "logFunction") {
             @Override
             public Object function(Object[] arguments) {

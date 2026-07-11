@@ -286,6 +286,18 @@
             display: flex;
             gap: 15px;
             height: 450px;
+            position: relative;
+        }
+        #viz-container.expanded {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 9999;
+            background: var(--bg-primary);
+            padding: 15px;
+            box-sizing: border-box;
         }
         #viz-area {
             flex-grow: 1;
@@ -579,6 +591,9 @@
                 </div>
 
                 <div id="viz-container">
+                    <button id="viz-expand-btn" onclick="toggleVizExpand()" style="position: absolute; top: 10px; right: 275px; z-index: 1000; background: rgba(255,255,255,0.9); border: 1px solid var(--border); border-radius: 4px; padding: 6px 12px; font-size: 0.8em; cursor: pointer; display: flex; align-items: center; gap: 4px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1); color: #333;">
+                        <span>🗖</span> Expand
+                    </button>
                     <div id="viz-area">
                         <!-- Dynamic HTML visualization -->
                     </div>
@@ -710,6 +725,21 @@
     </div>
 
     <script>
+        function toggleVizExpand() {
+            const container = document.getElementById('viz-container');
+            const btn = document.getElementById('viz-expand-btn');
+            if (!container || !btn) return;
+            
+            const isExpanded = container.classList.toggle('expanded');
+            if (isExpanded) {
+                btn.innerHTML = '<span>🗗</span> Collapse';
+                btn.style.right = '285px';
+            } else {
+                btn.innerHTML = '<span>🗖</span> Expand';
+                btn.style.right = '275px';
+            }
+        }
+
         let serverPort = 48080;
         let activeSessionId = null;
         let sessions = [];

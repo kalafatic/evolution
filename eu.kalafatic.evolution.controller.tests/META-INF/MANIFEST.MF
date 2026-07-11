@@ -6,6 +6,8 @@ Bundle-Version: 2.6.5.qualifier
 Require-Bundle: org.eclipse.core.runtime,
  eu.kalafatic.evolution.controller;bundle-version="2.6.5";visibility:=reexport,
  eu.kalafatic.evolution.model;bundle-version="2.6.5",
+ eu.kalafatic.evolution.forge.agent.api;bundle-version="2.6.5",
+ eu.kalafatic.evolution.forge.model;bundle-version="2.6.5",
   org.junit;bundle-version="4.13.2"
 Bundle-RequiredExecutionEnvironment: JavaSE-21
 Automatic-Module-Name: eu.kalafatic.evolution.controller.tests
