@@ -510,7 +510,8 @@ public class EclipseGitEvoTool {
 
 public static boolean isGitRepository(File repoDir) {
     try {    	
-    	return FileKey.isGitRepository(repoDir, FS.DETECTED);
+        File gitDir = repoDir.getName().equals(".git") ? repoDir : new File(repoDir, ".git");
+        return FileKey.isGitRepository(gitDir, FS.DETECTED);
     } catch (Exception e) {
         return false;
     }
@@ -596,6 +597,53 @@ public static boolean isGitRepository(File repoDir) {
 				} catch (Throwable t) {
 					log("Failed to register with instance: " + t.getMessage());
 				}
+			}
+
+			// Also write directly to eclipse preferences
+			try {
+				String key = "GitRepositoriesView.configuredRepositories";
+				String canonicalPath = gitDir.getCanonicalPath();
+				String slashPath = canonicalPath.replace('\\', '/');
+
+				String[] prefNodes = { "org.eclipse.egit.core", "org.eclipse.egit.ui" };
+				for (String nodeName : prefNodes) {
+					org.eclipse.core.runtime.preferences.IEclipsePreferences prefs =
+						org.eclipse.core.runtime.preferences.InstanceScope.INSTANCE.getNode(nodeName);
+					if (prefs != null) {
+						String existing = prefs.get(key, "");
+						List<String> paths = new ArrayList<>();
+						if (existing != null && !existing.isEmpty()) {
+							for (String p : existing.split("\n")) {
+								if (!p.trim().isEmpty()) {
+									paths.add(p.trim());
+								}
+							}
+						}
+
+						boolean modified = false;
+						if (!paths.contains(canonicalPath)) {
+							paths.add(canonicalPath);
+							modified = true;
+						}
+						if (!paths.contains(slashPath)) {
+							paths.add(slashPath);
+							modified = true;
+						}
+
+						if (modified) {
+							StringBuilder sb = new StringBuilder();
+							for (String p : paths) {
+								if (sb.length() > 0) sb.append("\n");
+								sb.append(p);
+							}
+							prefs.put(key, sb.toString());
+							prefs.flush();
+							log("Directly wrote repository path to " + nodeName + " preferences: " + canonicalPath);
+						}
+					}
+				}
+			} catch (Throwable t) {
+				log("Failed to write directly to preferences: " + t.getMessage());
 			}
 
 			// Also use GitRegistryHelper for the view side
