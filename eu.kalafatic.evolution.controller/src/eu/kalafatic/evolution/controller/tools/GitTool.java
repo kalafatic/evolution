@@ -224,4 +224,42 @@ public class GitTool implements ITool {
         }
         return branches;
     }
+
+    // --- Specialized Programmatic Git Methods for Evolution Loops, Self-Dev, and LLM Forging ---
+
+    public String commitWorkspace(File workingDir, String message, TaskContext context) throws Exception {
+        if (context != null) context.log("GitTool: Committing workspace (Darwin evolution loop)...");
+        return execute("commit -m \"" + message + "\"", workingDir, context);
+    }
+
+    public String commitSelfDev(File workingDir, String message, TaskContext context) throws Exception {
+        if (context != null) context.log("GitTool: Committing self-development (Evo repo) changes...");
+        return execute("commit -m \"" + message + "\"", workingDir, context);
+    }
+
+    public String commitLlmForging(File workingDir, String message, TaskContext context) throws Exception {
+        if (context != null) context.log("GitTool: Committing LLM Forging (LLM repo) changes...");
+        return execute("commit -m \"" + message + "\"", workingDir, context);
+    }
+
+    public String checkoutBranch(File workingDir, String branch, TaskContext context) throws Exception {
+        return execute("checkout " + branch, workingDir, context);
+    }
+
+    public String createBranch(File workingDir, String branch, TaskContext context) throws Exception {
+        return execute("checkout -b " + branch, workingDir, context);
+    }
+
+    public String pushToOrigin(File workingDir, String branch, TaskContext context) throws Exception {
+        return execute("push", workingDir, context);
+    }
+
+    public String pullFromOrigin(File workingDir, String branch, TaskContext context) throws Exception {
+        return execute("pull", workingDir, context);
+    }
+
+    public String rollback(File workingDir, TaskContext context) throws Exception {
+        execute("reset --hard HEAD", workingDir, context);
+        return execute("clean -fd", workingDir, context);
+    }
 }
