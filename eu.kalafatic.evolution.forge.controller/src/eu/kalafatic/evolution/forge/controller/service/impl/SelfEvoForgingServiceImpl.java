@@ -213,6 +213,17 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                     Files.copy(exportPath.resolve("weights.bin"), runFolder.resolve("weights.bin"), StandardCopyOption.REPLACE_EXISTING);
                 }
 
+                // Copy GGUF to default Ollama models location to ensure Ollama can always find and load it
+                Path ollamaHomeModels = Paths.get(System.getProperty("user.home")).resolve(".ollama/models");
+                try {
+                    Files.createDirectories(ollamaHomeModels);
+                    Files.copy(exportPath.resolve("evo.gguf"), ollamaHomeModels.resolve("evo.gguf"), StandardCopyOption.REPLACE_EXISTING);
+                    Files.copy(exportPath.resolve("evo.gguf"), ollamaHomeModels.resolve("evo-" + sessionId + ".gguf"), StandardCopyOption.REPLACE_EXISTING);
+                    logToFile(logFile, "[EXPORT_GGUF] Programmatically copied GGUF files to default Ollama models directory: " + ollamaHomeModels.toAbsolutePath().toString());
+                } catch (Exception ex) {
+                    logToFile(logFile, "[EXPORT_GGUF] Warning: Programmatic GGUF copy to default Ollama models directory failed: " + ex.getMessage());
+                }
+
                 JSONObject stage4 = new JSONObject();
                 stage4.put("stage", "EXPORTING");
                 stage4.put("modelName", modelName);
@@ -244,13 +255,23 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                                 Files.writeString(modelfilePath, modelfileContent);
                             }
 
+                            // Build unique and alias Modelfile contents pointing directly to the GGUF copies inside the default Ollama models location (and comment them out to prevent Ollama loader from crashing)
+                            String uniqueModelfile = modelfileContent.replaceAll(
+                                "(?m)^(?:#\\s*)?ADAPTER\\s+.*", 
+                                "# ADAPTER " + ollamaHomeModels.resolve("evo-" + sessionId + ".gguf").toAbsolutePath().toString().replace("\\", "/")
+                            );
+                            String aliasModelfile = modelfileContent.replaceAll(
+                                "(?m)^(?:#\\s*)?ADAPTER\\s+.*", 
+                                "# ADAPTER " + ollamaHomeModels.resolve("evo.gguf").toAbsolutePath().toString().replace("\\", "/")
+                            );
+
                             logToFile(logFile, "[EXPORT_GGUF] Registering unique model in Ollama as '" + modelName + "'...");
-                            createModel(ollamaUrl, modelName, modelfileContent);
+                            createModel(ollamaUrl, modelName, uniqueModelfile);
                             logToFile(logFile, "[EXPORT_GGUF] Unique model registered successfully.");
                             registeredUnique = true;
 
                             logToFile(logFile, "[EXPORT_GGUF] Registering alias model in Ollama as '" + targetName + "'...");
-                            createModel(ollamaUrl, targetName, modelfileContent);
+                            createModel(ollamaUrl, targetName, aliasModelfile);
                             logToFile(logFile, "[EXPORT_GGUF] Alias model registered successfully.");
                             registeredAlias = true;
                         } else {
