@@ -189,23 +189,10 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                 exporter.export(modelName, exportPath, model);
                 logToFile(logFile, "Export complete. Model output written to: " + exportPath.toAbsolutePath().toString());
 
-                // Generate mock-structured evo.gguf file to guarantee package completeness
-                byte[] ggufBytes = new byte[1024];
-                ggufBytes[0] = 'G';
-                ggufBytes[1] = 'G';
-                ggufBytes[2] = 'U';
-                ggufBytes[3] = 'F';
-                ggufBytes[4] = 3; // version 3
-                ggufBytes[5] = 0;
-                ggufBytes[6] = 0;
-                ggufBytes[7] = 0;
-                for (int i = 8; i < ggufBytes.length; i++) {
-                    ggufBytes[i] = (byte)(i % 256);
+                // Copy generated Modelfile, weights.bin, and evo.gguf to runFolder to guarantee package completeness
+                if (Files.exists(exportPath.resolve("evo.gguf"))) {
+                    Files.copy(exportPath.resolve("evo.gguf"), runFolder.resolve("evo.gguf"), StandardCopyOption.REPLACE_EXISTING);
                 }
-                Files.write(exportPath.resolve("evo.gguf"), ggufBytes);
-                Files.write(runFolder.resolve("evo.gguf"), ggufBytes);
-                
-                // Duplicate Modelfile and weights.bin from exportPath to runFolder to guarantee package completeness
                 if (Files.exists(exportPath.resolve("Modelfile"))) {
                     Files.copy(exportPath.resolve("Modelfile"), runFolder.resolve("Modelfile"), StandardCopyOption.REPLACE_EXISTING);
                 }
@@ -213,13 +200,17 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                     Files.copy(exportPath.resolve("weights.bin"), runFolder.resolve("weights.bin"), StandardCopyOption.REPLACE_EXISTING);
                 }
 
-                // Copy GGUF to default Ollama models location to ensure Ollama can always find and load it
+                // Double-down/validate copying of GGUF files to Ollama default location (already done in exporter, but verified/repeated here for maximum robustness)
                 Path ollamaHomeModels = Paths.get(System.getProperty("user.home")).resolve(".ollama/models");
                 try {
                     Files.createDirectories(ollamaHomeModels);
-                    Files.copy(exportPath.resolve("evo.gguf"), ollamaHomeModels.resolve("evo.gguf"), StandardCopyOption.REPLACE_EXISTING);
-                    Files.copy(exportPath.resolve("evo.gguf"), ollamaHomeModels.resolve("evo-" + sessionId + ".gguf"), StandardCopyOption.REPLACE_EXISTING);
-                    logToFile(logFile, "[EXPORT_GGUF] Programmatically copied GGUF files to default Ollama models directory: " + ollamaHomeModels.toAbsolutePath().toString());
+                    if (Files.exists(exportPath.resolve("evo.gguf"))) {
+                        Files.copy(exportPath.resolve("evo.gguf"), ollamaHomeModels.resolve("evo.gguf"), StandardCopyOption.REPLACE_EXISTING);
+                        Files.copy(exportPath.resolve("evo.gguf"), ollamaHomeModels.resolve("evo-" + sessionId + ".gguf"), StandardCopyOption.REPLACE_EXISTING);
+                        logToFile(logFile, "[EXPORT_GGUF] Programmatically copied GGUF files to default Ollama models directory: " + ollamaHomeModels.toAbsolutePath().toString());
+                    } else {
+                        logToFile(logFile, "[EXPORT_GGUF] Warning: evo.gguf file was not found in export path during registration stage.");
+                    }
                 } catch (Exception ex) {
                     logToFile(logFile, "[EXPORT_GGUF] Warning: Programmatic GGUF copy to default Ollama models directory failed: " + ex.getMessage());
                 }
