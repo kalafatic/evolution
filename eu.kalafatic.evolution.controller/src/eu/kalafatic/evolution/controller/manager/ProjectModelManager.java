@@ -624,6 +624,62 @@ public class ProjectModelManager {
             models.add(item);
         }
 
+        // 5. Scan local exported and default Ollama models to ensure forged evo models are ALWAYS listed
+        try {
+            // Check default Ollama folder
+            File ollamaHomeModelsDir = new File(System.getProperty("user.home"), ".ollama/models");
+            if (ollamaHomeModelsDir.exists() && ollamaHomeModelsDir.isDirectory()) {
+                File[] files = ollamaHomeModelsDir.listFiles((dir, name) -> name.toLowerCase().endsWith(".gguf") && name.toLowerCase().contains("evo"));
+                if (files != null) {
+                    for (File f : files) {
+                        String filename = f.getName();
+                        String modelName = filename.substring(0, filename.length() - 5); // remove .gguf
+                        if (models.stream().noneMatch(i -> i.getName().equalsIgnoreCase(modelName))) {
+                            AIProvider item = factory.createAIProvider();
+                            item.setName(modelName);
+                            item.setLocal(true);
+                            item.setUrl(ollamaUrl);
+                            item.setState("OK");
+                            item.setFormat("ollama");
+                            item.setStateDescription("Locally forged model in Ollama folder");
+                            models.add(item);
+                        }
+                    }
+                }
+            }
+
+            // Check codebase dist folder
+            String codebasePath = getCodebasePath();
+            if (codebasePath != null) {
+                File distDir = new File(codebasePath, "dist");
+                if (distDir.exists() && distDir.isDirectory()) {
+                    File[] subdirs = distDir.listFiles(File::isDirectory);
+                    if (subdirs != null) {
+                        for (File subdir : subdirs) {
+                            if (subdir.getName().startsWith("evo-") || subdir.getName().startsWith("forging-")) {
+                                File ggufFile = new File(subdir, "evo.gguf");
+                                if (ggufFile.exists()) {
+                                    String modelName = subdir.getName().startsWith("evo-") ? subdir.getName() : "evo-" + subdir.getName().substring(8);
+                                    if (models.stream().noneMatch(i -> i.getName().equalsIgnoreCase(modelName))) {
+                                        AIProvider item = factory.createAIProvider();
+                                        item.setName(modelName);
+                                        item.setLocal(true);
+                                        item.setUrl(ollamaUrl);
+                                        item.setState("OK");
+                                        item.setFormat("ollama");
+                                        item.setStateDescription("Exported forged model in dist folder");
+                                        models.add(item);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception ex) {
+            // Silent fallback
+        }
+
         return models;
     }
 

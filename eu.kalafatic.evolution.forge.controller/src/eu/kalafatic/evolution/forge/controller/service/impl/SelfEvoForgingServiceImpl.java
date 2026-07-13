@@ -246,14 +246,14 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                                 Files.writeString(modelfilePath, modelfileContent);
                             }
 
-                            // Build unique and alias Modelfile contents pointing directly to the GGUF copies inside the default Ollama models location (and comment them out to prevent Ollama loader from crashing)
+                            // Build unique and alias Modelfile contents pointing directly to the GGUF copies inside the default Ollama models location (uncommented since GGUF header is now valid)
                             String uniqueModelfile = modelfileContent.replaceAll(
                                 "(?m)^(?:#\\s*)?ADAPTER\\s+.*", 
-                                "# ADAPTER " + ollamaHomeModels.resolve("evo-" + sessionId + ".gguf").toAbsolutePath().toString().replace("\\", "/")
+                                "ADAPTER " + ollamaHomeModels.resolve("evo-" + sessionId + ".gguf").toAbsolutePath().toString().replace("\\", "/")
                             );
                             String aliasModelfile = modelfileContent.replaceAll(
                                 "(?m)^(?:#\\s*)?ADAPTER\\s+.*", 
-                                "# ADAPTER " + ollamaHomeModels.resolve("evo.gguf").toAbsolutePath().toString().replace("\\", "/")
+                                "ADAPTER " + ollamaHomeModels.resolve("evo.gguf").toAbsolutePath().toString().replace("\\", "/")
                             );
 
                             logToFile(logFile, "[EXPORT_GGUF] Registering unique model in Ollama as '" + modelName + "'...");
