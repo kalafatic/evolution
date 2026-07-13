@@ -6,13 +6,16 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.UUID;
 
 import org.junit.Before;
 import org.junit.Test;
 
+import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
 import eu.kalafatic.evolution.forge.agent.export.OllamaExporter;
 import eu.kalafatic.evolution.forge.model.llm.EvoLlmModel;
+import eu.kalafatic.evolution.model.orchestration.AIProvider;
 
 /**
  * Integration and Verification tests for the Self-Evo GGUF Generation and Ollama Integration.
@@ -44,6 +47,17 @@ public class SelfEvoForgingIntegrationTest {
         assertTrue("Modelfile must be exported", Files.exists(modelfilePath));
         assertTrue("weights.bin must be exported", Files.exists(weightsPath));
         assertTrue("evo.gguf must be exported", Files.exists(ggufPath));
+
+        // Verify Modelfile contains uncommented ADAPTER pointing to evo.gguf
+        List<String> lines = Files.readAllLines(modelfilePath);
+        boolean foundUncommentedAdapter = false;
+        for (String line : lines) {
+            if (line.trim().startsWith("ADAPTER") && line.contains("evo.gguf")) {
+                foundUncommentedAdapter = true;
+                break;
+            }
+        }
+        assertTrue("Modelfile must contain an uncommented ADAPTER directive for the exported GGUF file", foundUncommentedAdapter);
 
         // Read and verify GGUF header structure
         byte[] bytes = Files.readAllBytes(ggufPath);
@@ -88,6 +102,21 @@ public class SelfEvoForgingIntegrationTest {
         // Verify GGUF was programmatically copied to default Ollama models folder
         assertTrue("evo.gguf must be programmatically copied to ~/.ollama/models/", Files.exists(expectedGgufInOllama));
         assertTrue(modelName + ".gguf must be programmatically copied to ~/.ollama/models/", Files.exists(expectedUniqueGgufInOllama));
+
+        // Verify that ProjectModelManager successfully lists the copied models
+        List<AIProvider> allModels = ProjectModelManager.getInstance().getAllModels(null);
+        boolean foundUniqueInList = false;
+        boolean foundEvoInList = false;
+        for (AIProvider item : allModels) {
+            if (item.getName().equalsIgnoreCase(modelName)) {
+                foundUniqueInList = true;
+            }
+            if (item.getName().equalsIgnoreCase("evo")) {
+                foundEvoInList = true;
+            }
+        }
+        assertTrue("ProjectModelManager must list the newly copied unique model", foundUniqueInList);
+        assertTrue("ProjectModelManager must list the 'evo' alias model", foundEvoInList);
 
         // Clean up copied files to prevent cluttering the host home directory
         try {

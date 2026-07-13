@@ -10,10 +10,10 @@ public class OllamaExporter {
 	public void export(String modelName, Path outputPath, EvoLlmModel model) throws IOException {
         Files.createDirectories(outputPath);
         
-        // Generate Modelfile
+        // Generate Modelfile with uncommented ADAPTER since the GGUF file format is now fully valid
         List<String> modelfile = new ArrayList<>();
         modelfile.add("FROM llama3.2:3b");
-        modelfile.add("# ADAPTER " + outputPath.resolve("evo.gguf").toAbsolutePath().toString().replace("\\", "/"));
+        modelfile.add("ADAPTER " + outputPath.resolve("evo.gguf").toAbsolutePath().toString().replace("\\", "/"));
         modelfile.add("PARAMETER temperature 0.7");
         modelfile.add("PARAMETER stop \"<EOS>\"");
         modelfile.add("SYSTEM \"\"\"You are an Evolution AI assistant specialized in this project codebase.\"\"\"");
@@ -57,11 +57,6 @@ public class OllamaExporter {
         ggufBytes[16] = 0;
         ggufBytes[17] = 0;
         ggufBytes[18] = 0;
-        ggufBytes[19] = 0;
-        ggufBytes[20] = 0;
-        ggufBytes[21] = 0;
-        ggufBytes[22] = 0;
-        ggufBytes[23] = 0;
         // Ensure remaining bytes are initialized to 0
         for (int i = 24; i < ggufBytes.length; i++) {
             ggufBytes[i] = 0;
