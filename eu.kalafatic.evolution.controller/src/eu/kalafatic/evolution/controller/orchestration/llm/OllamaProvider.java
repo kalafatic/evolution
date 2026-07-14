@@ -45,6 +45,79 @@ public class OllamaProvider implements ILlmProvider {
         service.setModel(model);
         service.setTemperature(temperature);
 
+        // Self-healing for missing forged models (e.g. "evo")
+        if (model != null && model.toLowerCase().contains("evo")) {
+            try {
+                List<OllamaModel> available = service.loadModels();
+                boolean found = false;
+                for (OllamaModel m : available) {
+                    if (m.getName().equalsIgnoreCase(model) || m.getName().startsWith(model + ":")) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    if (context != null) context.log("Ollama: Forged model '" + model + "' not found in Ollama tags. Triggering self-healing registration...");
+                    java.io.File ggufFile = new java.io.File(System.getProperty("user.home"), ".ollama/models/" + model + ".gguf");
+                    if (!ggufFile.exists()) {
+                        ggufFile = new java.io.File(System.getProperty("user.home"), ".ollama/models/evo.gguf");
+                    }
+                    if (!ggufFile.exists()) {
+                        // Fallback to codebase dist folder
+                        String codebasePath = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getCodebasePath();
+                        if (codebasePath != null) {
+                            java.io.File distDir = new java.io.File(codebasePath, "dist");
+                            if (distDir.exists() && distDir.isDirectory()) {
+                                java.io.File[] subdirs = distDir.listFiles(java.io.File::isDirectory);
+                                if (subdirs != null) {
+                                    for (java.io.File subdir : subdirs) {
+                                        if (subdir.getName().equalsIgnoreCase(model) || subdir.getName().startsWith("evo-")) {
+                                            java.io.File f = new java.io.File(subdir, "evo.gguf");
+                                            if (f.exists()) {
+                                                ggufFile = f;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if (ggufFile.exists()) {
+                        // Resolve first available base model to avoid download freezes
+                        String baseModel = "llama3.2:3b";
+                        if (!available.isEmpty()) {
+                            for (OllamaModel m : available) {
+                                if (m.getName().contains("llama3.2:3b")) {
+                                    baseModel = "llama3.2:3b";
+                                    break;
+                                }
+                            }
+                            if (baseModel.equals("llama3.2:3b") && !available.get(0).getName().equalsIgnoreCase(model)) {
+                                baseModel = available.get(0).getName();
+                            }
+                        }
+
+                        String ggufPathNormalized = ggufFile.getAbsolutePath().replace("\\", "/");
+                        String modelfileContent = "FROM " + baseModel + "\n" +
+                                                 "ADAPTER " + ggufPathNormalized + "\n" +
+                                                 "PARAMETER temperature 0.7\n" +
+                                                 "PARAMETER stop \"<EOS>\"\n" +
+                                                 "SYSTEM \"\"\"You are an Evolution AI assistant specialized in this project codebase.\"\"\"";
+
+                        if (context != null) context.log("Ollama: Programmatically creating model '" + model + "' from: " + ggufPathNormalized);
+                        service.createModel(model, modelfileContent);
+                        if (context != null) context.log("Ollama: Self-healing registration complete for '" + model + "'.");
+                    } else {
+                        if (context != null) context.log("Ollama: Warning - GGUF file for '" + model + "' was not found, cannot self-heal.");
+                    }
+                }
+            } catch (Exception ex) {
+                if (context != null) context.log("Ollama: Self-healing registration failed: " + ex.getMessage());
+            }
+        }
+
         try {
             String sessionId = context.getSessionId();
             if (sessionId == null) sessionId = "Default";
