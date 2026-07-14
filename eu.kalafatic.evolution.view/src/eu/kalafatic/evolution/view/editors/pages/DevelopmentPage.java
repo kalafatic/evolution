@@ -170,11 +170,26 @@ public class DevelopmentPage extends AEvoPage {
         loadTableData();
 
         Composite sdControlPanel = toolkit.createComposite(selfDevComp);
-        sdControlPanel.setLayout(new GridLayout(3, false));
+        sdControlPanel.setLayout(new GridLayout(5, false));
         sdControlPanel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         Button runSelectedBtn = GUIFactory.INSTANCE.createButton(sdControlPanel, "▶ Run Selected");
         runSelectedBtn.addSelectionListener(new SelectionAdapter() {
             @Override public void widgetSelected(SelectionEvent e) { runSelected(); }
+        });
+
+        Button selectAllBtn = GUIFactory.INSTANCE.createButton(sdControlPanel, "☑ Select All");
+        selectAllBtn.addSelectionListener(new SelectionAdapter() {
+            @Override public void widgetSelected(SelectionEvent e) { selectAll(true); }
+        });
+
+        Button unselectAllBtn = GUIFactory.INSTANCE.createButton(sdControlPanel, "☐ Unselect All");
+        unselectAllBtn.addSelectionListener(new SelectionAdapter() {
+            @Override public void widgetSelected(SelectionEvent e) { selectAll(false); }
+        });
+
+        Button debugBtn = GUIFactory.INSTANCE.createButton(sdControlPanel, "🐞 Debug");
+        debugBtn.addSelectionListener(new SelectionAdapter() {
+            @Override public void widgetSelected(SelectionEvent e) { runDebug(); }
         });
 
         sdTable.addListener(SWT.MouseDown, event -> {
@@ -392,6 +407,131 @@ public class DevelopmentPage extends AEvoPage {
         if (orchestrator != null && orchestrator.getSelfDevSession() != null) {
             if (new SelfDevEditDialog(getShell(), orchestrator.getSelfDevSession(), this).open() == org.eclipse.jface.window.Window.OK) updateSessionStatus();
         }
+    }
+
+    private void selectAll(boolean select) {
+        if (selfDevTable.getInput() instanceof List<?> rows) {
+            for (Object obj : rows) {
+                if (obj instanceof SelfDevRow row) {
+                    row.selected = select;
+                }
+            }
+            for (org.eclipse.swt.widgets.TableItem item : selfDevTable.getTable().getItems()) {
+                item.setChecked(select);
+            }
+        }
+    }
+
+    private void resetAllStatuses() {
+        if (selfDevTable.getInput() instanceof List<?> rows) {
+            for (Object obj : rows) {
+                if (obj instanceof SelfDevRow row) {
+                    row.status = "ready";
+                }
+            }
+            selfDevTable.refresh();
+        }
+    }
+
+    private void runDebug() {
+        resetAllStatuses();
+        new Thread(() -> {
+            if (!(selfDevTable.getInput() instanceof List<?> rows)) return;
+            if (bootstrapController != null) {
+                bootstrapController.setDebugMode(true);
+            }
+            for (Object obj : rows) {
+                if (!(obj instanceof SelfDevRow row)) continue;
+                Display.getDefault().syncExec(() -> {
+                    row.status = "running";
+                    selfDevTable.refresh(row);
+                });
+                String result = "";
+                boolean failed = false;
+                try {
+                    switch (row.name) {
+                        case SelfDevRow.GIT_CHECK:
+                            result = bootstrapController.check("GIT");
+                            if (result.contains("ERROR") || result.contains("fail")) failed = true;
+                            break;
+                        case SelfDevRow.MAVEN_CHECK:
+                            result = bootstrapController.check("MAVEN");
+                            if (result.contains("ERROR") || result.contains("fail")) failed = true;
+                            break;
+                        case SelfDevRow.LLM_CHECK:
+                            result = bootstrapController.check("LLM");
+                            if (result.contains("ERROR") || result.contains("fail")) failed = true;
+                            break;
+                        case SelfDevRow.GENOME_CHECK:
+                            result = bootstrapController.check("GENOME");
+                            if (result.contains("ERROR") || result.contains("fail")) failed = true;
+                            break;
+                        case SelfDevRow.PERM_CHECK:
+                            result = bootstrapController.check("PERMISSIONS");
+                            if (result.contains("ERROR") || result.contains("fail")) failed = true;
+                            break;
+                        case SelfDevRow.COPY_SOURCE:
+                            result = bootstrapController.check("COPY");
+                            if (result.contains("ERROR") || result.contains("fail")) failed = true;
+                            break;
+                        case SelfDevRow.BUILD_PROJECT:
+                            result = bootstrapController.check("BUILD");
+                            if (result.contains("ERROR") || result.contains("fail")) failed = true;
+                            break;
+                        case SelfDevRow.EXPORT_PRODUCT:
+                            result = bootstrapController.check("EXPORT");
+                            if (result.contains("ERROR") || result.contains("fail")) failed = true;
+                            break;
+                        case SelfDevRow.SUPERVISOR_LOOP:
+                            bootstrapController.startBootstrap();
+                            result = "RUNNING";
+                            break;
+                        case SelfDevRow.SELF_DEV_LOOP:
+                            Display.getDefault().syncExec(() -> {
+                                RuntimeProjection projection = ProjectionService.getInstance().getProjection(getCurrentSessionName());
+                                if (projection.isRunning()) {
+                                    OrchestratorServiceImpl.getInstance().shutdownSession(getCurrentSessionName());
+                                }
+                                TaskRequest req = new TaskRequest("Start Self-Dev Bootstrap", projectRoot);
+                                req.getContext().put("orchestrator", orchestrator);
+                                req.getContext().put("sessionId", getCurrentSessionName());
+                                req.getContext().put("debug", true);
+                                req.getContext().put("mode", "DEBUG");
+                                OrchestratorServiceImpl.getInstance().submit(getCurrentSessionName(), req);
+                            });
+                            result = "RUNNING";
+                            break;
+                    }
+                } catch (Exception e) {
+                    result = "ERROR: " + e.getMessage();
+                    failed = true;
+                }
+                final String finalResult = result;
+                final boolean finalFailed = failed;
+                Display.getDefault().syncExec(() -> {
+                    row.status = finalResult;
+                    selfDevTable.refresh(row);
+                });
+                if (finalFailed) {
+                    final String phaseName = row.name;
+                    Display.getDefault().asyncExec(() -> {
+                        org.eclipse.jface.dialogs.MessageDialog.openError(
+                            getShell(),
+                            "Debug Phase Failed",
+                            "Debug execution stopped because key phase '" + phaseName + "' failed.\n\n" +
+                            "Reason/Detailed Info:\n" + finalResult
+                        );
+                    });
+                    break;
+                }
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+        }).start();
     }
 
     private void runSelected() {
