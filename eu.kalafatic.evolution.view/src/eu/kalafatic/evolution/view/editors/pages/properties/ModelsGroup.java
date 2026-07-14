@@ -582,6 +582,18 @@ public class ModelsGroup extends AEvoGroup {
         }
     }
 
+    private void deleteDirectoryRecursive(File file) {
+        if (file.isDirectory()) {
+            File[] files = file.listFiles();
+            if (files != null) {
+                for (File f : files) {
+                    deleteDirectoryRecursive(f);
+                }
+            }
+        }
+        file.delete();
+    }
+
     private void handleRemoveModel() {
         Object[] checked = viewer.getCheckedElements();
         if (checked.length == 0) {
@@ -597,10 +609,72 @@ public class ModelsGroup extends AEvoGroup {
             return;
         }
 
+        boolean hasLocal = false;
         for (Object obj : checked) {
             AIProvider item = (AIProvider) obj;
             if (item.isLocal()) {
+                hasLocal = true;
                 runTerminalCommand("ollama rm " + item.getName());
+
+                if (orchestrator != null) {
+                    AIProvider realProvider = orchestrator.getAiProviders().stream()
+                            .filter(p -> p.getName().equalsIgnoreCase(item.getName()))
+                            .findFirst().orElse(null);
+
+                    if (realProvider != null) {
+                        orchestrator.getAiProviders().remove(realProvider);
+                        editor.setDirty(true);
+                    }
+                }
+
+                // Delete GGUF files in default Ollama directory
+                File ollamaHomeModelsDir = new File(System.getProperty("user.home"), ".ollama/models");
+                if (ollamaHomeModelsDir.exists() && ollamaHomeModelsDir.isDirectory()) {
+                    File f1 = new File(ollamaHomeModelsDir, item.getName() + ".gguf");
+                    if (f1.exists()) {
+                        f1.delete();
+                    }
+                    if ("evo".equalsIgnoreCase(item.getName())) {
+                        File f2 = new File(ollamaHomeModelsDir, "evo.gguf");
+                        if (f2.exists()) {
+                            f2.delete();
+                        }
+                    }
+                }
+
+                // Delete GGUF files / forging folders in codebase dist folder
+                String codebasePath = ProjectModelManager.getCodebasePath();
+                if (codebasePath != null) {
+                    File distDir = new File(codebasePath, "dist");
+                    if (distDir.exists() && distDir.isDirectory()) {
+                        File[] subdirs = distDir.listFiles(File::isDirectory);
+                        if (subdirs != null) {
+                            for (File subdir : subdirs) {
+                                String name = item.getName();
+                                boolean matches = subdir.getName().equalsIgnoreCase(name);
+                                if (!matches && name.startsWith("evo-")) {
+                                    String suffix = name.substring(4);
+                                    matches = subdir.getName().equalsIgnoreCase("forging-" + suffix);
+                                }
+                                if (matches) {
+                                    deleteDirectoryRecursive(subdir);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Delete from demo folder if applicable
+                if (item.getName().startsWith("demo/")) {
+                    String cleanName = item.getName().substring(5); // remove "demo/"
+                    File demoDir = new File("./forge-lab/forge-model/src/main/resources/model/demo/");
+                    if (demoDir.exists() && demoDir.isDirectory()) {
+                        File f = new File(demoDir, cleanName + ".gguf");
+                        if (f.exists()) {
+                            f.delete();
+                        }
+                    }
+                }
             } else {
                 if (orchestrator != null) {
                     AIProvider realProvider = orchestrator.getAiProviders().stream()
@@ -617,7 +691,9 @@ public class ModelsGroup extends AEvoGroup {
                 }
             }
         }
-        refreshUI();
+        if (!hasLocal) {
+            load();
+        }
     }
 
     private void runTerminalCommand(String command) {
@@ -632,7 +708,7 @@ public class ModelsGroup extends AEvoGroup {
                 String output = shell.execute(command, workingDir, null);
                 Display.getDefault().asyncExec(() -> {
                     MessageDialog.openInformation(group.getShell(), "Terminal Output", output);
-                    refreshUI();
+                    load();
                 });
             } catch (Exception e) {
                 Display.getDefault().asyncExec(() -> {
