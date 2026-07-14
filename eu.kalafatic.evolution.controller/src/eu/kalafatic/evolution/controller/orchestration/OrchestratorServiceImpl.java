@@ -12,6 +12,7 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.PromptInstructions;
 import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.utils.log.Log;
+import org.eclipse.emf.ecore.util.EcoreUtil;
 
 /**
  * Implementation of OrchestratorService.
@@ -22,6 +23,13 @@ public class OrchestratorServiceImpl implements OrchestratorService {
     @Override
     public OrchestratorResponse handle(TaskRequest request) {
         Orchestrator inputOrchModel = (Orchestrator) request.getContext().get("orchestrator");
+        if (inputOrchModel == null) inputOrchModel = this.orchestrator;
+
+        // SESSION ISOLATION: Use a clone for execution to prevent state bleed
+        if (inputOrchModel != null) {
+            inputOrchModel = EcoreUtil.copy(inputOrchModel);
+        }
+
         TaskContext context = (TaskContext) request.getContext().get("taskContext");
 
         String sessionId = (String) request.getContext().get("sessionId");
@@ -58,7 +66,15 @@ public class OrchestratorServiceImpl implements OrchestratorService {
 
     @Override
     public TaskResult execute(TaskRequest request) {
-        final Orchestrator inputOrchModel = (Orchestrator) request.getContext().get("orchestrator");
+        Orchestrator tempModel = (Orchestrator) request.getContext().get("orchestrator");
+        if (tempModel == null) tempModel = this.orchestrator;
+
+        // SESSION ISOLATION
+        if (tempModel != null) {
+            tempModel = EcoreUtil.copy(tempModel);
+        }
+
+        final Orchestrator inputOrchModel = tempModel;
         String sessionId = (String) request.getContext().get("sessionId");
         if (sessionId == null || sessionId.isEmpty()) {
             sessionId = (inputOrchModel != null && inputOrchModel.getId() != null && !inputOrchModel.getId().isEmpty()) ?
@@ -339,6 +355,13 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                 Orchestrator orchModel = (Orchestrator) request.getContext().get("orchestrator");
                 if (orchModel == null) orchModel = this.orchestrator;
 
+                // SESSION ISOLATION: Create a detached clone of the orchestrator model for this session
+                // to prevent concurrent modification and state bleed (e.g. aiMode, localModel).
+                final Orchestrator originalOrch = orchModel;
+                if (orchModel != null) {
+                    orchModel = EcoreUtil.copy(orchModel);
+                }
+
                 orchModel = ensureOrchestratorModel(orchModel, sessionId);
 
                 // Sync session settings to model/context if available
@@ -397,6 +420,18 @@ public class OrchestratorServiceImpl implements OrchestratorService {
 
                 KernelFacade kernel = new KernelFacade();
                 OrchestratorResponse response = kernel.handle(request, context);
+
+                // Propagate discovered tasks back to original model for UI visibility
+                if (originalOrch != null && orchModel != originalOrch) {
+                    synchronized (originalOrch) {
+                        for (Task t : orchModel.getTasks()) {
+                            boolean exists = originalOrch.getTasks().stream().anyMatch(ot -> t.getId() != null && t.getId().equals(ot.getId()));
+                            if (!exists) {
+                                originalOrch.getTasks().add(EcoreUtil.copy(t));
+                            }
+                        }
+                    }
+                }
 
                 // Use content for Final Response to include Markdown and file links
                 processLogEntry("Final Response: " + response.getContent(), sessionId, turnId);
