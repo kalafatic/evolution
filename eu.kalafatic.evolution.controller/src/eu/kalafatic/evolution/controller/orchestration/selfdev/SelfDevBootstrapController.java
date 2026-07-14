@@ -229,8 +229,14 @@ public class SelfDevBootstrapController {
     }
 
     private String checkGenome() {
-        File genomeDir = new File(projectRoot, "eu.kalafatic.evolution.selfdev.genome");
-        if (genomeDir.exists() && new File(genomeDir, "pom.xml").exists()) return "CHECKED";
+        File dir = projectRoot;
+        while (dir != null) {
+            File genomeDir = new File(dir, "eu.kalafatic.evolution.selfdev.genome");
+            if (genomeDir.exists() && new File(genomeDir, "pom.xml").exists()) {
+                return "CHECKED";
+            }
+            dir = dir.getParentFile();
+        }
         return "ERROR: Genome module missing";
     }
 
