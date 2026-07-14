@@ -2963,7 +2963,7 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 			minBranchingLimit = 2;
 			break;
 		case HYBRID_MANUAL_EXPORT:
-			minBranchingLimit = 4;
+			minBranchingLimit = 2;
 			break;
 		case SELF_DEV_MODE:
 			minBranchingLimit = 2;
@@ -2982,18 +2982,21 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 			branchingLimit = expansionValue <= 5 ? 1 : 2;
 			break;
 		case ASSISTED_CODING:
-			branchingLimit = expansionValue <= 5 ? 2 : 4;
+			branchingLimit = expansionValue <= 5 ? 3 : 4;
 			break;
 		case HYBRID_MANUAL_EXPORT:
-			branchingLimit = expansionValue <= 5 ? 4 : 6;
+			branchingLimit = expansionValue <= 5 ? 3 : 4;
 			break;
 		case SELF_DEV_MODE:
-			branchingLimit = expansionValue <= 5 ? 2 : 4;
+			branchingLimit = expansionValue <= 5 ? 3 : 4;
+			break;
+		case DARWIN_MODE:
+			branchingLimit = expansionValue <= 5 ? 3 : 4;
 			break;
 
 		default:
 			context.log("[DARWIN] Unknown platform type: " + platformType + ". Using default branching.");
-			branchingLimit = expansionValue <= 5 ? 2 : 3;
+			branchingLimit = expansionValue <= 5 ? 3 : 4;
 		}
 		// MANDATE: Never more than 8. Darwin decides, not LLM.
 		return Math.min(branchingLimit, 8);
