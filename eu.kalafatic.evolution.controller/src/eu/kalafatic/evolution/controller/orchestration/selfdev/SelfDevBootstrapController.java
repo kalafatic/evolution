@@ -9,6 +9,8 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.ArrayList;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -28,6 +30,15 @@ public class SelfDevBootstrapController {
     private final File runDir;
     private final Orchestrator orchestrator;
     private static volatile Process supervisorProcess;
+    private boolean debugMode = false;
+
+    public void setDebugMode(boolean debugMode) {
+        this.debugMode = debugMode;
+    }
+
+    public boolean isDebugMode() {
+        return this.debugMode;
+    }
 
     public SelfDevBootstrapController(File projectRoot, Orchestrator orchestrator) {
         this.projectRoot = projectRoot;
@@ -41,7 +52,22 @@ public class SelfDevBootstrapController {
     private void ensureSupervisorRunning() {
         if (isSupervisorAlive()) return;
         try {
-            ProcessBuilder pb = new ProcessBuilder("java", "-jar", getSupervisorJarPath(), projectRoot.getAbsolutePath());
+            List<String> cmd = new ArrayList<>();
+            cmd.add("java");
+            if (debugMode) {
+                cmd.add("-Devo.mode=debug");
+                cmd.add("-Ddebug=true");
+            }
+            cmd.add("-jar");
+            cmd.add(getSupervisorJarPath());
+            cmd.add(projectRoot.getAbsolutePath());
+            if (debugMode) {
+                cmd.add("--debug");
+            }
+            ProcessBuilder pb = new ProcessBuilder(cmd);
+            if (debugMode) {
+                pb.environment().put("EVO_DEBUG", "true");
+            }
             pb.directory(projectRoot);
             pb.redirectErrorStream(true);
             supervisorProcess = pb.start();
@@ -90,7 +116,12 @@ public class SelfDevBootstrapController {
         state.put("active", true);
         state.put("iteration", 0);
         state.put("goal", "self-development");
-        state.put("mode", "DARWIN");
+        if (debugMode) {
+            state.put("mode", "DEBUG");
+            state.put("debug", true);
+        } else {
+            state.put("mode", "DARWIN");
+        }
         state.put("plan", new JSONArray());
         state.put("contextPath", contextFile.getAbsolutePath());
         Files.write(stateFile.toPath(), state.toString(4).getBytes());
