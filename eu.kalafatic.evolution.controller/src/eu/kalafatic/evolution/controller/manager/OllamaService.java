@@ -244,6 +244,7 @@ public class OllamaService {
         String createUrl = this.baseUrl + (this.baseUrl.endsWith("/") ? "" : "/") + "api/create";
 
         JSONObject jsonObject = new JSONObject();
+        jsonObject.put("name", modelName);
         jsonObject.put("model", modelName);
         jsonObject.put("modelfile", modelfileContent);
         jsonObject.put("stream", false);

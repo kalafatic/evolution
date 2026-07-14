@@ -561,8 +561,20 @@ public class ProjectModelManager {
         String ollamaUrl = (orchestrator != null && orchestrator.getOllama() != null) ? orchestrator.getOllama().getUrl() : "http://localhost:11434";
         OllamaService ollamaService = OllamaManager.getInstance().getService(ollamaUrl);
 
+        java.util.Set<String> localNames = new java.util.HashSet<>();
+        boolean ollamaOnline = false;
+
         try {
             List<OllamaModel> localModels = ollamaService.loadModels();
+            ollamaOnline = true;
+            for (OllamaModel m : localModels) {
+                String nameLower = m.getName().toLowerCase();
+                localNames.add(nameLower);
+                if (nameLower.contains(":")) {
+                    localNames.add(nameLower.split(":")[0]);
+                }
+            }
+
             for (OllamaModel m : localModels) {
                 // Only add if not already in models (which contains EMF providers)
                 if (models.stream().noneMatch(i -> i.getName().equalsIgnoreCase(m.getName()))) {
@@ -572,56 +584,65 @@ public class ProjectModelManager {
                     item.setUrl(ollamaUrl);
                     item.setState("OK");
                     item.setFormat("ollama");
+                    item.setStateDescription("Model is registered and ready in Ollama.");
                     models.add(item);
-                } else {
-                    // Update state of existing EMF provider if it matches local model
-                    models.stream()
-                        .filter(i -> i.isLocal() && i.getName().equalsIgnoreCase(m.getName()))
-                        .forEach(i -> {
-                            i.setState("OK");
-                            i.setStateDescription("Model found in Ollama.");
-                        });
                 }
             }
+        } catch (Exception e) {
+            // Ollama is offline, handle below
+        }
 
-            // Mark EMF local providers NOT found in Ollama
-            models.stream()
-                .filter(i -> i.isLocal() && i.getState() != null && !i.getState().equals("OK"))
-                .forEach(i -> {
-                    i.setState("ERR");
-                    i.setStateDescription("Model NOT found in Ollama. Please download it.");
-                });
-
-            // 4. Scan local demo models
-            File demoDir = new File("./forge-lab/forge-model/src/main/resources/model/demo/");
-            if (demoDir.exists() && demoDir.isDirectory()) {
-                File[] files = demoDir.listFiles((dir, name) -> name.endsWith(".gguf"));
-                if (files != null) {
-                    for (File f : files) {
-                        String modelName = "demo/" + f.getName().replace(".gguf", "");
-                        if (models.stream().noneMatch(i -> i.getName().equalsIgnoreCase(modelName))) {
-                            AIProvider item = factory.createAIProvider();
-                            item.setName(modelName);
-                            item.setLocal(true);
-                            item.setUrl(f.getAbsolutePath());
-                            item.setState("OK");
-                            item.setFormat("ollama");
-                            item.setStateDescription("Locally forged demo model");
-                            models.add(item);
+        // Helper to check if a model file exists on disk
+        java.util.function.BiFunction<String, String, Boolean> checkGgufOnDisk = (modelName, targetName) -> {
+            // Check default Ollama folder
+            File ollamaHomeModelsDir = new File(System.getProperty("user.home"), ".ollama/models");
+            if (ollamaHomeModelsDir.exists() && ollamaHomeModelsDir.isDirectory()) {
+                File f1 = new File(ollamaHomeModelsDir, modelName + ".gguf");
+                File f2 = new File(ollamaHomeModelsDir, "evo.gguf");
+                if (f1.exists() || (modelName.equalsIgnoreCase("evo") && f2.exists())) {
+                    return true;
+                }
+            }
+            // Check codebase dist folder
+            String codebasePath = getCodebasePath();
+            if (codebasePath != null) {
+                File distDir = new File(codebasePath, "dist");
+                if (distDir.exists() && distDir.isDirectory()) {
+                    File[] subdirs = distDir.listFiles(File::isDirectory);
+                    if (subdirs != null) {
+                        for (File subdir : subdirs) {
+                            if (subdir.getName().equalsIgnoreCase(modelName) || subdir.getName().startsWith("evo-")) {
+                                File f = new File(subdir, "evo.gguf");
+                                if (f.exists()) {
+                                    return true;
+                                }
+                            }
                         }
                     }
                 }
             }
+            return false;
+        };
 
-        } catch (Exception e) {
-            // If it fails, maybe Ollama is offline
-            AIProvider item = factory.createAIProvider();
-            item.setName("Ollama");
-            item.setLocal(true);
-            item.setUrl(ollamaUrl);
-            item.setState("ERR");
-            item.setStateDescription("Ollama server offline");
-            models.add(item);
+        // 4. Scan local demo models
+        File demoDir = new File("./forge-lab/forge-model/src/main/resources/model/demo/");
+        if (demoDir.exists() && demoDir.isDirectory()) {
+            File[] files = demoDir.listFiles((dir, name) -> name.endsWith(".gguf"));
+            if (files != null) {
+                for (File f : files) {
+                    String modelName = "demo/" + f.getName().replace(".gguf", "");
+                    if (models.stream().noneMatch(i -> i.getName().equalsIgnoreCase(modelName))) {
+                        AIProvider item = factory.createAIProvider();
+                        item.setName(modelName);
+                        item.setLocal(true);
+                        item.setUrl(f.getAbsolutePath());
+                        item.setState("OK");
+                        item.setFormat("ollama");
+                        item.setStateDescription("Locally forged demo model");
+                        models.add(item);
+                    }
+                }
+            }
         }
 
         // 5. Scan local exported and default Ollama models to ensure forged evo models are ALWAYS listed
@@ -639,9 +660,15 @@ public class ProjectModelManager {
                             item.setName(modelName);
                             item.setLocal(true);
                             item.setUrl(ollamaUrl);
-                            item.setState("OK");
                             item.setFormat("ollama");
-                            item.setStateDescription("Locally forged model in Ollama folder");
+                            // Since we didn't find it in registered localModels, but it is on disk:
+                            if (ollamaOnline) {
+                                item.setState("NA");
+                                item.setStateDescription("Model GGUF exists on disk but is not registered in Ollama. Self-healing will register it on first use.");
+                            } else {
+                                item.setState("ERR");
+                                item.setStateDescription("Ollama server offline");
+                            }
                             models.add(item);
                         }
                     }
@@ -665,9 +692,14 @@ public class ProjectModelManager {
                                         item.setName(modelName);
                                         item.setLocal(true);
                                         item.setUrl(ollamaUrl);
-                                        item.setState("OK");
                                         item.setFormat("ollama");
-                                        item.setStateDescription("Exported forged model in dist folder");
+                                        if (ollamaOnline) {
+                                            item.setState("NA");
+                                            item.setStateDescription("Exported forged model in dist folder - GGUF exists on disk but is not registered in Ollama.");
+                                        } else {
+                                            item.setState("ERR");
+                                            item.setStateDescription("Ollama server offline");
+                                        }
                                         models.add(item);
                                     }
                                 }
@@ -678,6 +710,31 @@ public class ProjectModelManager {
             }
         } catch (Exception ex) {
             // Silent fallback
+        }
+
+        // 6. Final verification and status update for ALL local models (including EMF models) in the list
+        for (AIProvider item : models) {
+            if (item.isLocal() && !item.getName().startsWith("demo/")) {
+                if (!ollamaOnline) {
+                    item.setState("ERR");
+                    item.setStateDescription("Ollama server offline");
+                } else {
+                    boolean foundInOllama = localNames.contains(item.getName().toLowerCase());
+                    if (foundInOllama) {
+                        item.setState("OK");
+                        item.setStateDescription("Model is registered and ready in Ollama.");
+                    } else {
+                        boolean existsOnDisk = checkGgufOnDisk.apply(item.getName(), "evo");
+                        if (existsOnDisk) {
+                            item.setState("NA");
+                            item.setStateDescription("Model GGUF exists on disk but is not registered in Ollama. Self-healing will register it on first use.");
+                        } else {
+                            item.setState("ERR");
+                            item.setStateDescription("Model NOT found in Ollama and GGUF is missing.");
+                        }
+                    }
+                }
+            }
         }
 
         return models;
