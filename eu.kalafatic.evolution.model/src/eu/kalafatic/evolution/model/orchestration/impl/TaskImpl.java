@@ -547,7 +547,7 @@ public class TaskImpl extends MinimalEObjectImpl.Container implements Task {
 	 * @generated
 	 * @ordered
 	 */
-	protected static final boolean AUTO_ESCALATE_EDEFAULT = true;
+	protected static final boolean AUTO_ESCALATE_EDEFAULT = false;
 
 	/**
 	 * The cached value of the '{@link #isAutoEscalate() <em>Auto Escalate</em>}' attribute.
