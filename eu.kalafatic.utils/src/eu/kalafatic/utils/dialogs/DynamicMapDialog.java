@@ -237,9 +237,53 @@ public class DynamicMapDialog extends TitleAreaDialog {
 					currentPath = ((Combo) input).getText();
 				}
 
+				String filterPath = currentPath;
+				String fileName = "";
+				if (filterPath != null && !filterPath.isEmpty()) {
+					java.io.File file = new java.io.File(filterPath);
+					if (!file.isAbsolute()) {
+						String codebase = null;
+						try {
+							Class<?> pmmClass = Class.forName("eu.kalafatic.evolution.controller.manager.ProjectModelManager");
+							java.lang.reflect.Method m = pmmClass.getMethod("getCodebasePath");
+							codebase = (String) m.invoke(null);
+						} catch (Throwable t) {}
+						if (codebase == null) {
+							try {
+								Class<?> pmClass = Class.forName("eu.kalafatic.evolution.view.provider.ProjectManager");
+								java.lang.reflect.Method m = pmClass.getMethod("getCodebasePath");
+								codebase = (String) m.invoke(null);
+							} catch (Throwable t) {}
+						}
+						if (codebase != null) {
+							file = new java.io.File(codebase, filterPath);
+						}
+					}
+					if (file.exists()) {
+						if (file.isFile()) {
+							filterPath = file.getParent();
+							fileName = file.getName();
+						} else {
+							filterPath = file.getAbsolutePath();
+						}
+					} else {
+						fileName = file.getName();
+						java.io.File parentFile = file.getParentFile();
+						while (parentFile != null) {
+							if (parentFile.exists() && parentFile.isDirectory()) {
+								filterPath = parentFile.getAbsolutePath();
+								break;
+							}
+							parentFile = parentFile.getParentFile();
+						}
+					}
+				}
+
 				if (field.has(DynamicField.DIRECTORY)) {
 					DirectoryDialog dialog = new DirectoryDialog(getShell());
-					dialog.setFilterPath(currentPath);
+					if (filterPath != null && !filterPath.isEmpty()) {
+						dialog.setFilterPath(filterPath);
+					}
 					String path = dialog.open();
 					if (path != null) {
 						if (input instanceof Text) {
@@ -250,8 +294,12 @@ public class DynamicMapDialog extends TitleAreaDialog {
 					}
 				} else {
 					FileDialog dialog = new FileDialog(getShell(), SWT.OPEN);
-					dialog.setFileName(currentPath);
-					dialog.setFilterPath(currentPath);
+					if (fileName != null && !fileName.isEmpty()) {
+						dialog.setFileName(fileName);
+					}
+					if (filterPath != null && !filterPath.isEmpty()) {
+						dialog.setFilterPath(filterPath);
+					}
 					String path = dialog.open();
 					if (path != null) {
 						if (input instanceof Text) {

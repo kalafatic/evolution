@@ -190,7 +190,7 @@ public class ProjectModelManager {
             SupervisorSettings supervisor = OrchestrationFactory.eINSTANCE.createSupervisorSettings();
             // OS-independent paths using user.home
             supervisor.setExecutablePath(new java.io.File(userHome, "supervisor/bin/").getPath());
-            supervisor.setSourcePath(new java.io.File(userHome, "supervisor/sources/").getPath());
+            supervisor.setSourcePath(new java.io.File(userHome, "supervisor/source").getPath());
             orchestrator.setSupervisorSettings(supervisor);
         }
 
