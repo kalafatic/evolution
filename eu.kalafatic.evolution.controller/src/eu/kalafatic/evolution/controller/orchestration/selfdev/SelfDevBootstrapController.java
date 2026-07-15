@@ -230,14 +230,34 @@ public class SelfDevBootstrapController {
 
     private String checkGenome() {
         File dir = projectRoot;
+        File genomeModuleDir = null;
         while (dir != null) {
-            File genomeDir = new File(dir, "eu.kalafatic.evolution.selfdev.genome");
-            if (genomeDir.exists() && new File(genomeDir, "pom.xml").exists()) {
-                return "CHECKED";
+            File testDir = new File(dir, "eu.kalafatic.evolution.selfdev.genome");
+            if (testDir.exists() && new File(testDir, "pom.xml").exists()) {
+                genomeModuleDir = testDir;
+                break;
             }
             dir = dir.getParentFile();
         }
-        return "ERROR: Genome module missing";
+
+        if (genomeModuleDir == null) {
+            return "ERROR: Genome module missing";
+        }
+
+        try {
+            System.out.println("[GENOME_INTEGRATION] Found genome module. Integrating and updating project genome in: " + projectRoot.getAbsolutePath());
+            eu.kalafatic.evolution.selfdev.genome.hub.SelfDevGenomeHub.getInstance()
+                .updateGenome(projectRoot, projectRoot.getName(), "v1.0.0");
+
+            File genomeJson = new File(projectRoot, "genome/current/genome.json");
+            if (genomeJson.exists()) {
+                return "CHECKED (Updated)";
+            } else {
+                return "ERROR: Failed to generate genome.json in project root";
+            }
+        } catch (Exception e) {
+            return "ERROR: Genome update failed: " + e.getMessage();
+        }
     }
 
     private String checkPermissions() {
