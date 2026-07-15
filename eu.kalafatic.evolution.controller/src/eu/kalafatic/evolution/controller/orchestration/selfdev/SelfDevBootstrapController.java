@@ -170,7 +170,7 @@ public class SelfDevBootstrapController {
             case "LLM" -> checkLlm();
             case "GENOME" -> checkGenome();
             case "PERMISSIONS" -> checkPermissions();
-            case "COPY" -> callSupervisor("/copy?src=" + encode(projectRoot.getAbsolutePath()) + "&dest=" + encode(new File(runDir, "workspace").getAbsolutePath()));
+            case "COPY" -> copyCodebaseToSupervisorSource();
             case "BUILD" -> callSupervisor("/build?path=" + encode(new File(runDir, "workspace").getAbsolutePath()));
             case "EXPORT" -> checkExport();
             default -> "UNKNOWN";
@@ -276,5 +276,97 @@ public class SelfDevBootstrapController {
             if (jars != null && jars.length > 0) return "READY: " + jars[0].getName();
         }
         return "ERROR: Artifact not found. Run Build first.";
+    }
+
+    private String copyCodebaseToSupervisorSource() {
+        String srcPath = null;
+        try {
+            Class<?> pmClass = Class.forName("eu.kalafatic.evolution.view.provider.ProjectManager");
+            java.lang.reflect.Method m = pmClass.getMethod("getCodebasePath");
+            srcPath = (String) m.invoke(null);
+        } catch (Throwable t) {
+            // fallback
+        }
+        if (srcPath == null) {
+            srcPath = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getCodebasePath();
+        }
+        if (srcPath == null) {
+            return "ERROR: Could not resolve codebase path";
+        }
+
+        String destPath = null;
+        if (orchestrator != null && orchestrator.getSupervisorSettings() != null) {
+            destPath = orchestrator.getSupervisorSettings().getSourcePath();
+        }
+        if (destPath == null || destPath.trim().isEmpty()) {
+            destPath = new File(System.getProperty("user.home"), "supervisor/source").getPath();
+        }
+
+        File src = new File(srcPath);
+        File dest = new File(destPath);
+
+        if (!src.exists()) {
+            return "ERROR: Source path does not exist: " + src.getAbsolutePath();
+        }
+
+        final int[] filesCopied = {0};
+
+        try {
+            if (dest.exists()) {
+                deleteRecursively(dest);
+            }
+            dest.mkdirs();
+
+            final java.nio.file.Path sourcePath = src.toPath();
+            final java.nio.file.Path targetPath = dest.toPath();
+
+            java.nio.file.Files.walkFileTree(sourcePath, new java.nio.file.SimpleFileVisitor<java.nio.file.Path>() {
+                @Override
+                public java.nio.file.FileVisitResult preVisitDirectory(java.nio.file.Path dir, java.nio.file.attribute.BasicFileAttributes attrs) throws IOException {
+                    String name = dir.getFileName().toString();
+                    if (name.equals(".git") || name.equals("target") || name.equals("self-dev-run") ||
+                        name.equals(".settings") || name.equals(".mvn") || name.equals(".metadata") ||
+                        name.equals("bin") || name.equals("iterations") || name.equals("orchestrator")) {
+                        return java.nio.file.FileVisitResult.SKIP_SUBTREE;
+                    }
+                    java.nio.file.Path targetDir = targetPath.resolve(sourcePath.relativize(dir));
+                    if (!java.nio.file.Files.exists(targetDir)) {
+                        java.nio.file.Files.createDirectories(targetDir);
+                    }
+                    return java.nio.file.FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public java.nio.file.FileVisitResult visitFile(java.nio.file.Path file, java.nio.file.attribute.BasicFileAttributes attrs) throws IOException {
+                    String name = file.getFileName().toString();
+                    if (name.equals(".git") || name.equals("target") || name.equals("self-dev-run") ||
+                        name.equals(".settings") || name.equals(".mvn") || name.equals(".metadata") ||
+                        name.equals("bin") || name.equals("iterations") || name.equals("orchestrator")) {
+                        return java.nio.file.FileVisitResult.CONTINUE;
+                    }
+                    java.nio.file.Path targetFile = targetPath.resolve(sourcePath.relativize(file));
+                    java.nio.file.Files.copy(file, targetFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                    filesCopied[0]++;
+                    return java.nio.file.FileVisitResult.CONTINUE;
+                }
+            });
+            return "SUCCESS: " + filesCopied[0] + " files";
+        } catch (IOException e) {
+            return "ERROR: " + e.getMessage();
+        }
+    }
+
+    private void deleteRecursively(File file) throws IOException {
+        if (file.isDirectory()) {
+            File[] files = file.listFiles();
+            if (files != null) {
+                for (File f : files) {
+                    deleteRecursively(f);
+                }
+            }
+        }
+        if (!file.delete() && file.exists()) {
+            throw new IOException("Failed to delete: " + file.getAbsolutePath());
+        }
     }
 }
