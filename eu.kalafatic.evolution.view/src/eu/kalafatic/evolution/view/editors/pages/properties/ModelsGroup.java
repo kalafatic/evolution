@@ -609,24 +609,10 @@ public class ModelsGroup extends AEvoGroup {
             return;
         }
 
-        boolean hasLocal = false;
+        boolean ranTerminal = false;
         for (Object obj : checked) {
             AIProvider item = (AIProvider) obj;
             if (item.isLocal()) {
-                hasLocal = true;
-                runTerminalCommand("ollama rm " + item.getName());
-
-                if (orchestrator != null) {
-                    AIProvider realProvider = orchestrator.getAiProviders().stream()
-                            .filter(p -> p.getName().equalsIgnoreCase(item.getName()))
-                            .findFirst().orElse(null);
-
-                    if (realProvider != null) {
-                        orchestrator.getAiProviders().remove(realProvider);
-                        editor.setDirty(true);
-                    }
-                }
-
                 // Delete GGUF files in default Ollama directory
                 File ollamaHomeModelsDir = new File(System.getProperty("user.home"), ".ollama/models");
                 if (ollamaHomeModelsDir.exists() && ollamaHomeModelsDir.isDirectory()) {
@@ -675,6 +661,23 @@ public class ModelsGroup extends AEvoGroup {
                         }
                     }
                 }
+
+                if (orchestrator != null) {
+                    AIProvider realProvider = orchestrator.getAiProviders().stream()
+                            .filter(p -> p.getName().equalsIgnoreCase(item.getName()))
+                            .findFirst().orElse(null);
+
+                    if (realProvider != null) {
+                        orchestrator.getAiProviders().remove(realProvider);
+                        editor.setDirty(true);
+                    }
+                }
+
+                // Run ollama rm only if it is actually registered in Ollama (state is OK)
+                if ("OK".equals(item.getState())) {
+                    ranTerminal = true;
+                    runTerminalCommand("ollama rm " + item.getName());
+                }
             } else {
                 if (orchestrator != null) {
                     AIProvider realProvider = orchestrator.getAiProviders().stream()
@@ -691,7 +694,7 @@ public class ModelsGroup extends AEvoGroup {
                 }
             }
         }
-        if (!hasLocal) {
+        if (!ranTerminal) {
             load();
         }
     }
@@ -712,7 +715,14 @@ public class ModelsGroup extends AEvoGroup {
                 });
             } catch (Exception e) {
                 Display.getDefault().asyncExec(() -> {
-                    MessageDialog.openError(group.getShell(), "Command Error", e.getMessage());
+                    // Even if terminal command fails, we still load to ensure UI reflects other changes
+                    String msg = e.getMessage();
+                    if (msg != null && (msg.contains("not found") || msg.contains("exit code 1"))) {
+                        // Silent or just reload
+                    } else {
+                        MessageDialog.openError(group.getShell(), "Command Error", e.getMessage());
+                    }
+                    load();
                 });
             }
         }).start();
