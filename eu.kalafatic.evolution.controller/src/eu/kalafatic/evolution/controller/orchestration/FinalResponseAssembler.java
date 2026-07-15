@@ -11,6 +11,7 @@ import eu.kalafatic.evolution.controller.orchestration.intent.IntentDimension;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionResult;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationRecord;
 import eu.kalafatic.evolution.controller.orchestration.util.FileFilterUtil;
+import eu.kalafatic.evolution.controller.orchestration.goal.GoalModel;
 import eu.kalafatic.evolution.controller.supervision.DecisionSnapshot;
 import eu.kalafatic.evolution.model.orchestration.Task;
 
@@ -22,11 +23,37 @@ public class FinalResponseAssembler {
     public FinalResponse assemble(TaskContext context, String summary, boolean success, Instant startTime) {
         OrchestrationState state = context.getOrchestrationState();
 
+        eu.kalafatic.evolution.controller.kernel.EvolutionProfile profile = context.getExecutionProfile();
+
+        // Null-safety fallback for ExecutionProfile
+        if (profile == null) {
+            profile = eu.kalafatic.evolution.controller.kernel.EvolutionIntensityCalculator.calculate(context, null, null);
+            context.getOrchestrationState().setExecutionProfile(profile);
+        }
+
+        boolean isChat = profile.getCapability() == eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType.CHAT;
+
+        Object goalModelObj = state.getMetadata().get("goalModel");
+        GoalModel goalModel = null;
+        if (goalModelObj instanceof GoalModel) {
+            goalModel = (GoalModel) goalModelObj;
+        } else if (goalModelObj instanceof Map) {
+            try {
+                goalModel = new com.fasterxml.jackson.databind.ObjectMapper()
+                        .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                        .convertValue(goalModelObj, GoalModel.class);
+            } catch (Exception e) {}
+        }
+
+        boolean isSimple = isChat
+                || (context.getPlatformMode() != null && context.getPlatformMode().getType() == PlatformType.SIMPLE_CHAT)
+                || (goalModel != null && "SIMPLE".equalsIgnoreCase(goalModel.getComplexity()));
+
         // 1. Collect proposals/thoughts
         List<String> proposals = collectProposals(context);
 
-        // 2. Track files
-        List<FileReference> files = collectFiles(context);
+        // 2. Track files (simple workflows or chats shouldn't return file links in the final response)
+        List<FileReference> files = isSimple ? new ArrayList<>() : collectFiles(context);
 
         // 3. Execution metrics
         ExecutionMetrics metrics = null;
@@ -51,15 +78,6 @@ public class FinalResponseAssembler {
 
         String executionStatus = buildExecutionStatus(context, success);
         String accomplishments = buildAccomplishments(context);
-        eu.kalafatic.evolution.controller.kernel.EvolutionProfile profile = context.getExecutionProfile();
-
-        // Null-safety fallback for ExecutionProfile
-        if (profile == null) {
-            profile = eu.kalafatic.evolution.controller.kernel.EvolutionIntensityCalculator.calculate(context, null, null);
-            context.getOrchestrationState().setExecutionProfile(profile);
-        }
-
-        boolean isChat = profile.getCapability() == eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType.CHAT;
 
         // Standardized Summary Construction
         StringBuilder sb = new StringBuilder();
@@ -133,7 +151,7 @@ public class FinalResponseAssembler {
             }
         }
 
-        if (finalProfile.shouldShowRepositoryChanges() || !isChat) {
+        if (!isSimple && (finalProfile.shouldShowRepositoryChanges() || !isChat)) {
             sb.append("### 📂 Repository Changes\n---\n");
             if (files.isEmpty()) {
                 sb.append("_No physical changes detected._\n\n");
@@ -165,7 +183,7 @@ public class FinalResponseAssembler {
             }
         }
 
-        if (finalProfile.shouldPerformRealityCheck() || !isChat) {
+        if (!isSimple && (finalProfile.shouldPerformRealityCheck() || !isChat)) {
             sb.append("### 🔍 Verification\n---\n");
             Object lastDecisionObj = state.getMetadata().get("lastDecisionSnapshot");
             DecisionSnapshot lastDecision = null;
@@ -209,7 +227,7 @@ public class FinalResponseAssembler {
             sb.append("✓ Static review passed\n\n");
         }
 
-        if (finalProfile.requiresRepository() || !isChat) {
+        if (!isSimple && (finalProfile.requiresRepository() || !isChat)) {
             sb.append("### ⚖️ Git State\n---\n");
             try {
                 eu.kalafatic.evolution.controller.orchestration.selfdev.GitManager git = context.getKernelContext().getGitManager();
