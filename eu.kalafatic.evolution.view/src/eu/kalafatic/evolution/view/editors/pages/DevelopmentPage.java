@@ -235,7 +235,7 @@ public class DevelopmentPage extends AEvoPage {
         sdData.add(new SelfDevRow(3, SelfDevRow.LLM_CHECK, llmModel, "ready"));
         sdData.add(new SelfDevRow(4, SelfDevRow.GENOME_CHECK, "supervisor.genome", "ready"));
         sdData.add(new SelfDevRow(5, SelfDevRow.PERM_CHECK, "supervisor.fs", "ready"));
-        sdData.add(new SelfDevRow(6, SelfDevRow.COPY_SOURCE, targetPath, "ready"));
+        sdData.add(new SelfDevRow(6, SelfDevRow.COPY_SOURCE, getSupervisorSourcePath(), "ready"));
         sdData.add(new SelfDevRow(7, SelfDevRow.BUILD_PROJECT, targetPath, "ready"));
         sdData.add(new SelfDevRow(8, SelfDevRow.EXPORT_PRODUCT, targetPath + "/export", "ready"));
         sdData.add(new SelfDevRow(9, SelfDevRow.SUPERVISOR_LOOP, "supervisor.exe", "ready"));
@@ -251,6 +251,17 @@ public class DevelopmentPage extends AEvoPage {
             targetPath = orchestrator.getSupervisorSettings().getExecutablePath();
         }
         return targetPath != null ? targetPath : "sandbox.copy";
+    }
+
+    private String getSupervisorSourcePath() {
+        String sourcePath = null;
+        if (orchestrator != null && orchestrator.getSupervisorSettings() != null) {
+            sourcePath = orchestrator.getSupervisorSettings().getSourcePath();
+        }
+        if (sourcePath == null || sourcePath.trim().isEmpty()) {
+            sourcePath = new File(System.getProperty("user.home"), "supervisor/source").getPath();
+        }
+        return sourcePath;
     }
 
     private void createSelfDevContextMenu() {
@@ -392,6 +403,9 @@ public class DevelopmentPage extends AEvoPage {
                 orchestrator.getLlm().setModel(row.path);
                 break;
             case SelfDevRow.COPY_SOURCE:
+                if (orchestrator.getSupervisorSettings() == null) orchestrator.setSupervisorSettings(eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createSupervisorSettings());
+                orchestrator.getSupervisorSettings().setSourcePath(row.path);
+                break;
             case SelfDevRow.BUILD_PROJECT:
                 if (orchestrator.getSupervisorSettings() == null) orchestrator.setSupervisorSettings(eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createSupervisorSettings());
                 orchestrator.getSupervisorSettings().setExecutablePath(row.path);
@@ -573,8 +587,8 @@ public class DevelopmentPage extends AEvoPage {
                         row.path = orchestrator.getMaven().getGoals().toString();
                     } else if (SelfDevRow.LLM_CHECK.equals(row.name) && orchestrator != null && orchestrator.getLlm() != null) {
                         row.path = orchestrator.getLlm().getModel();
-                    } else if (SelfDevRow.COPY_SOURCE.equals(row.name) && targetPath != null) {
-                        row.path = targetPath;
+                    } else if (SelfDevRow.COPY_SOURCE.equals(row.name)) {
+                        row.path = getSupervisorSourcePath();
                     }
                 }
             }

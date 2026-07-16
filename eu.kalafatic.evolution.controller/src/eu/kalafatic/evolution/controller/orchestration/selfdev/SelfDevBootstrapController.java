@@ -241,6 +241,17 @@ public class SelfDevBootstrapController {
         }
 
         if (genomeModuleDir == null) {
+            String codebasePath = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getCodebasePath();
+            if (codebasePath != null) {
+                File cbDir = new File(codebasePath);
+                File testDir = new File(cbDir, "eu.kalafatic.evolution.selfdev.genome");
+                if (testDir.exists() && new File(testDir, "pom.xml").exists()) {
+                    genomeModuleDir = testDir;
+                }
+            }
+        }
+
+        if (genomeModuleDir == null) {
             return "ERROR: Genome module missing";
         }
 
@@ -323,6 +334,13 @@ public class SelfDevBootstrapController {
             java.nio.file.Files.walkFileTree(sourcePath, new java.nio.file.SimpleFileVisitor<java.nio.file.Path>() {
                 @Override
                 public java.nio.file.FileVisitResult preVisitDirectory(java.nio.file.Path dir, java.nio.file.attribute.BasicFileAttributes attrs) throws IOException {
+                    if (dir.equals(sourcePath)) {
+                        java.nio.file.Path targetDir = targetPath.resolve(sourcePath.relativize(dir));
+                        if (!java.nio.file.Files.exists(targetDir)) {
+                            java.nio.file.Files.createDirectories(targetDir);
+                        }
+                        return java.nio.file.FileVisitResult.CONTINUE;
+                    }
                     String name = dir.getFileName().toString();
                     if (name.equals(".git") || name.equals("target") || name.equals("self-dev-run") ||
                         name.equals(".settings") || name.equals(".mvn") || name.equals(".metadata") ||

@@ -36,6 +36,13 @@ public class CodebaseCopyTool {
             Files.walkFileTree(source.toPath(), new SimpleFileVisitor<Path>() {
                 @Override
                 public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+                    if (dir.equals(source.toPath())) {
+                        Path targetDir = target.toPath().resolve(source.toPath().relativize(dir));
+                        if (!Files.exists(targetDir)) {
+                            Files.createDirectories(targetDir);
+                        }
+                        return FileVisitResult.CONTINUE;
+                    }
                     if (isExcluded(dir.toFile(), config)) {
                         return FileVisitResult.SKIP_SUBTREE;
                     }
