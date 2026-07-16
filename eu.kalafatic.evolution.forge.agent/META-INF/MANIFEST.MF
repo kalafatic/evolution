@@ -9,9 +9,6 @@ Require-Bundle: eu.kalafatic.evolution.forge.math,
  eu.kalafatic.evolution.forge.agent.api,
  eu.kalafatic.evolution.controller
 Export-Package: eu.kalafatic.evolution.forge.agent
-Import-Package: com.fasterxml.jackson.databind,
- eu.kalafatic.evolution.forge.model,
- fi.iki.elonen
 Bundle-ClassPath: .,
  lib/json-20140107.jar,
  lib/jackson-annotations-2.17.0.jar,
