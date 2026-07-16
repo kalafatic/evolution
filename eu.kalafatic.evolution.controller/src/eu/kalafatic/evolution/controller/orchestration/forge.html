@@ -691,6 +691,21 @@
                 <button class="btn btn-sm" style="width: 100%; margin-top: 8px;" data-guidance="Trigger an evaluation run to measure the model's performance on the validation set." onclick="runEvaluation()">Evaluate Now</button>
             </div>
 
+            <!-- EXPORT TARGETS PANEL -->
+            <div class="panel" id="targets-panel">
+                <h3>Export Targets & Diagnostics</h3>
+                <div class="control-group">
+                    <label>Default Ollama Models directory</label>
+                    <input type="text" id="target-ollama-path" readonly value="~/.ollama/models" style="background:#f4f4f4; color:#555; cursor:text;">
+                </div>
+                <div class="control-group">
+                    <label>Workspace Source Models directory</label>
+                    <input type="text" id="target-source-path" readonly value="source/models" style="background:#f4f4f4; color:#555; cursor:text;">
+                </div>
+                <button class="btn btn-sm btn-primary" style="width: 100%; margin-top: 10px;" onclick="testLlmModel()" data-guidance="Run diagnostics and connection testing for the forged 'evo' model.">🧪 Test EVO Model</button>
+                <div id="llm-test-result" style="font-size: 0.75em; margin-top: 8px; color: var(--text-dim); line-height: 1.3;"></div>
+            </div>
+
             <!-- OBSERVABILITY PANEL -->
             <div class="panel" style="flex-grow: 1; border-bottom: none;">
                 <h3>Observability</h3>
@@ -782,7 +797,56 @@
             loadSessions();
             updateButtonState();
             initResizer();
+            loadTargets();
         };
+
+        async function loadTargets() {
+            try {
+                const res = await fetch(getBaseUrl() + `/server/orchestrator/settings?runtime=SWT`);
+                if (res.ok) {
+                    const settings = await res.json();
+                    if (settings.ollamaTargetDir) {
+                        document.getElementById('target-ollama-path').value = settings.ollamaTargetDir;
+                    }
+                    if (settings.workspaceTargetDir) {
+                        document.getElementById('target-source-path').value = settings.workspaceTargetDir;
+                    }
+                }
+            } catch (e) {
+                log(`Error loading targets: ${e.message}`);
+            }
+        }
+
+        async function testLlmModel() {
+            const resultDiv = document.getElementById('llm-test-result');
+            resultDiv.innerHTML = "<i>Testing model connection and latency...</i>";
+            try {
+                const res = await fetch(getBaseUrl() + `/forge/llm/test?model=evo&runtime=SWT`, { method: 'POST' });
+                if (res.ok) {
+                    const report = await res.json();
+                    if (report.status === 'SUCCESS') {
+                        resultDiv.innerHTML = `
+                            <span style="color:var(--success); font-weight:bold;">✓ Test Passed</span><br/>
+                            <b>Ollama:</b> Online (${report.version})<br/>
+                            <b>Model 'evo':</b> Found<br/>
+                            <b>Response:</b> ${report.test_prompt_response}<br/>
+                            <b>Latency:</b> ${report.latency_ms}ms
+                        `;
+                    } else {
+                        resultDiv.innerHTML = `
+                            <span style="color:var(--error); font-weight:bold;">✗ Test Failed</span><br/>
+                            <b>Ollama Online:</b> ${report.ollama_online}<br/>
+                            <b>Model Found:</b> ${report.model_found}<br/>
+                            <b>Error:</b> ${report.error || 'Unknown error'}
+                        `;
+                    }
+                } else {
+                    resultDiv.innerHTML = `<span style="color:var(--error)">HTTP Error ${res.status}</span>`;
+                }
+            } catch (e) {
+                resultDiv.innerHTML = `<span style="color:var(--error)">Error: ${e.message}</span>`;
+            }
+        }
 
         function initResizer() {
             const resizer = document.getElementById('panel-resizer');

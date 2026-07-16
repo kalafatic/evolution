@@ -74,7 +74,12 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                 List<String> activeSources = dataSources;
                 if (activeSources == null || activeSources.isEmpty()) {
                     activeSources = new ArrayList<>();
-                    activeSources.add("c:\\Users\\petrk\\git\\evolution");
+                    String codebase = getCodebasePathViaReflection();
+                    if (codebase != null) {
+                        activeSources.add(codebase);
+                    } else {
+                        activeSources.add("c:\\Users\\petrk\\git\\evolution");
+                    }
                 }
                 
                 logToFile(logFile, "Scanning " + activeSources.size() + " data sources.");
@@ -188,6 +193,28 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                 String modelName = "evo-" + sessionId;
                 exporter.export(modelName, exportPath, model);
                 logToFile(logFile, "Export complete. Model output written to: " + exportPath.toAbsolutePath().toString());
+
+                // Export Targets Improvement: First copy to source/models/ folder (create in source folder if not exist)
+                String targetCodebase = getCodebasePathViaReflection();
+                if (targetCodebase != null) {
+                    Path sourceModelsDir = Paths.get(targetCodebase).resolve("source/models");
+                    try {
+                        Files.createDirectories(sourceModelsDir);
+                        if (Files.exists(exportPath.resolve("evo.gguf"))) {
+                            Files.copy(exportPath.resolve("evo.gguf"), sourceModelsDir.resolve("evo.gguf"), StandardCopyOption.REPLACE_EXISTING);
+                            Files.copy(exportPath.resolve("evo.gguf"), sourceModelsDir.resolve("evo-" + sessionId + ".gguf"), StandardCopyOption.REPLACE_EXISTING);
+                            logToFile(logFile, "[EXPORT_GGUF] Programmatically copied GGUF files to workspace source models directory: " + sourceModelsDir.toAbsolutePath().toString());
+                        }
+                        if (Files.exists(exportPath.resolve("Modelfile"))) {
+                            Files.copy(exportPath.resolve("Modelfile"), sourceModelsDir.resolve("Modelfile"), StandardCopyOption.REPLACE_EXISTING);
+                        }
+                        if (Files.exists(exportPath.resolve("weights.bin"))) {
+                            Files.copy(exportPath.resolve("weights.bin"), sourceModelsDir.resolve("weights.bin"), StandardCopyOption.REPLACE_EXISTING);
+                        }
+                    } catch (Exception ex) {
+                        logToFile(logFile, "[EXPORT_GGUF] Warning: Copying to source/models/ directory failed: " + ex.getMessage());
+                    }
+                }
 
                 // Copy generated Modelfile, weights.bin, and evo.gguf to runFolder to guarantee package completeness
                 if (Files.exists(exportPath.resolve("evo.gguf"))) {
@@ -327,6 +354,23 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
       jsonObject.put("modelfile", modelfileContent);
       jsonObject.put("stream", false);
 
+      String fromValue = null;
+      if (modelfileContent != null) {
+          for (String line : modelfileContent.split("\n")) {
+              line = line.trim();
+              if (line.toUpperCase().startsWith("FROM ")) {
+                  fromValue = line.substring(5).trim();
+                  if (fromValue.startsWith("\"") && fromValue.endsWith("\"") && fromValue.length() >= 2) {
+                      fromValue = fromValue.substring(1, fromValue.length() - 1);
+                  }
+                  break;
+              }
+          }
+      }
+      if (fromValue != null && !fromValue.isEmpty()) {
+          jsonObject.put("from", fromValue);
+      }
+
       HttpRequest request = HttpRequest.newBuilder()
               .uri(URI.create(createUrl))
               .header("Content-Type", "application/json")
@@ -452,5 +496,14 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
     @Override
     public void stopForging(String sessionId) {
         sessionStats.remove(sessionId);
+    }
+
+    private String getCodebasePathViaReflection() {
+        try {
+            Class<?> clazz = Class.forName("eu.kalafatic.evolution.controller.manager.ProjectModelManager");
+            return (String) clazz.getMethod("getCodebasePath").invoke(null);
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

@@ -249,6 +249,23 @@ public class OllamaService {
         jsonObject.put("modelfile", modelfileContent);
         jsonObject.put("stream", false);
 
+        String fromValue = null;
+        if (modelfileContent != null) {
+            for (String line : modelfileContent.split("\n")) {
+                line = line.trim();
+                if (line.toUpperCase().startsWith("FROM ")) {
+                    fromValue = line.substring(5).trim();
+                    if (fromValue.startsWith("\"") && fromValue.endsWith("\"") && fromValue.length() >= 2) {
+                        fromValue = fromValue.substring(1, fromValue.length() - 1);
+                    }
+                    break;
+                }
+            }
+        }
+        if (fromValue != null && !fromValue.isEmpty()) {
+            jsonObject.put("from", fromValue);
+        }
+
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(createUrl))
                 .header("Content-Type", "application/json")

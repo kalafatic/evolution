@@ -245,6 +245,8 @@ public class EvolutionServer extends NanoHTTPD {
                 return handleGetForgeSessions();
             } else if (Method.POST.equals(method) && "/forge/session".equals(uri)) {
                 return handleCreateForgeSession(session);
+            } else if (Method.POST.equals(method) && "/forge/llm/test".equals(uri)) {
+                return handleTestLlmModel(session);
             } else if (Method.POST.equals(method) && uri.startsWith("/forge/session/") && uri.endsWith("/generate-architecture")) {
                 String id = uri.substring("/forge/session/".length(), uri.length() - "/generate-architecture".length());
                 return handleGenerateArchitecture(id, session);
@@ -528,6 +530,61 @@ public class EvolutionServer extends NanoHTTPD {
         return newFixedLengthResponse(Response.Status.OK, "application/json", json.toString());
     }
 
+    private Response handleTestLlmModel(IHTTPSession session) {
+        String modelName = session.getParms().get("model");
+        if (modelName == null || modelName.isEmpty()) modelName = "evo";
+
+        JSONObject report = new JSONObject();
+        String ollamaUrl = "http://localhost:11434";
+        Orchestrator orch = OrchestratorServiceImpl.getInstance().getOrchestrator();
+        if (orch != null && orch.getOllama() != null) {
+            ollamaUrl = orch.getOllama().getUrl();
+        }
+
+        OllamaService service = OllamaManager.getInstance().getService(ollamaUrl);
+        boolean online = service.ping();
+        report.put("ollama_online", online);
+        report.put("version", online ? service.getVersion() : "N/A");
+
+        if (!online) {
+            report.put("status", "ERROR");
+            report.put("error", "Ollama server is offline.");
+            return newFixedLengthResponse(Response.Status.OK, "application/json", report.toString());
+        }
+
+        List<OllamaModel> models = service.loadModels();
+        boolean found = false;
+        for (OllamaModel m : models) {
+            if (m.getName().equalsIgnoreCase(modelName) || m.getName().startsWith(modelName + ":")) {
+                found = true;
+                break;
+            }
+        }
+        report.put("model_found", found);
+
+        if (!found) {
+            report.put("status", "ERROR");
+            report.put("error", "Model '" + modelName + "' is not registered in Ollama.");
+            return newFixedLengthResponse(Response.Status.OK, "application/json", report.toString());
+        }
+
+        // Test generation and measure latency
+        long start = System.currentTimeMillis();
+        try {
+            service.setModel(modelName);
+            String response = service.generate("Reply with exactly: OK");
+            long latency = System.currentTimeMillis() - start;
+            report.put("test_prompt_response", response.trim());
+            report.put("latency_ms", latency);
+            report.put("status", "SUCCESS");
+        } catch (Exception e) {
+            report.put("status", "ERROR");
+            report.put("error", "Generation failed: " + e.getMessage());
+        }
+
+        return newFixedLengthResponse(Response.Status.OK, "application/json", report.toString());
+    }
+
     private Response handleStartForging(String sessionId) {
         try {
             eu.kalafatic.evolution.model.orchestration.ForgeSession s = ForgeSessionManager.getInstance().findSession(sessionId);
@@ -546,7 +603,12 @@ public class EvolutionServer extends NanoHTTPD {
                 }
             }
             if (dataSources.isEmpty()) {
-                dataSources.add("c:\\Users\\petrk\\git\\evolution");
+                String codebase = ProjectModelManager.getCodebasePath();
+                if (codebase != null) {
+                    dataSources.add(codebase);
+                } else {
+                    dataSources.add("c:\\Users\\petrk\\git\\evolution");
+                }
             }
 
             selfEvoService.startForging(sessionId, new File(".").toPath(), dataSources);
@@ -564,13 +626,23 @@ public class EvolutionServer extends NanoHTTPD {
         JSONArray arr;
         if (datasetBindings == null || datasetBindings.trim().isEmpty() || datasetBindings.equals("[]")) {
             arr = new JSONArray();
-            arr.put("c:\\Users\\petrk\\git\\evolution");
+            String codebase = ProjectModelManager.getCodebasePath();
+            if (codebase != null) {
+                arr.put(codebase);
+            } else {
+                arr.put("c:\\Users\\petrk\\git\\evolution");
+            }
         } else {
             try {
                 arr = new JSONArray(datasetBindings);
             } catch (Exception e) {
                 arr = new JSONArray();
-                arr.put("c:\\Users\\petrk\\git\\evolution");
+                String codebase = ProjectModelManager.getCodebasePath();
+                if (codebase != null) {
+                    arr.put(codebase);
+                } else {
+                    arr.put("c:\\Users\\petrk\\git\\evolution");
+                }
             }
         }
         return newFixedLengthResponse(Response.Status.OK, "application/json", arr.toString());
@@ -610,6 +682,15 @@ public class EvolutionServer extends NanoHTTPD {
         json.put("localModel", orch.getLocalModel());
         json.put("remoteModel", orch.getRemoteModel());
         json.put("darwinMode", orch.isDarwinMode());
+
+        String userHome = System.getProperty("user.home");
+        File ollamaHomeModels = new File(userHome, ".ollama/models");
+        json.put("ollamaTargetDir", ollamaHomeModels.getAbsolutePath());
+
+        String codebase = ProjectModelManager.getCodebasePath();
+        File sourceModels = new File(codebase != null ? codebase : System.getProperty("user.dir"), "source/models");
+        json.put("workspaceTargetDir", sourceModels.getAbsolutePath());
+
         if (orch.getServerSettings() != null) {
             json.put("authenticate", orch.getServerSettings().isAuthenticate());
         }

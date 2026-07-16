@@ -603,8 +603,19 @@ public class ProjectModelManager {
                     return true;
                 }
             }
-            // Check codebase dist folder
+            // Check workspace source/models folder
             String codebasePath = getCodebasePath();
+            if (codebasePath != null) {
+                File sourceModelsDir = new File(codebasePath, "source/models");
+                if (sourceModelsDir.exists() && sourceModelsDir.isDirectory()) {
+                    File f1 = new File(sourceModelsDir, modelName + ".gguf");
+                    File f2 = new File(sourceModelsDir, "evo.gguf");
+                    if (f1.exists() || (modelName.equalsIgnoreCase("evo") && f2.exists())) {
+                        return true;
+                    }
+                }
+            }
+            // Check codebase dist folder
             if (codebasePath != null) {
                 File distDir = new File(codebasePath, "dist");
                 if (distDir.exists() && distDir.isDirectory()) {
@@ -675,8 +686,37 @@ public class ProjectModelManager {
                 }
             }
 
-            // Check codebase dist folder
+            // Check workspace source/models folder
             String codebasePath = getCodebasePath();
+            if (codebasePath != null) {
+                File sourceModelsDir = new File(codebasePath, "source/models");
+                if (sourceModelsDir.exists() && sourceModelsDir.isDirectory()) {
+                    File[] files = sourceModelsDir.listFiles((dir, name) -> name.toLowerCase().endsWith(".gguf") && name.toLowerCase().contains("evo"));
+                    if (files != null) {
+                        for (File f : files) {
+                            String filename = f.getName();
+                            String modelName = filename.substring(0, filename.length() - 5); // remove .gguf
+                            if (models.stream().noneMatch(i -> i.getName().equalsIgnoreCase(modelName))) {
+                                AIProvider item = factory.createAIProvider();
+                                item.setName(modelName);
+                                item.setLocal(true);
+                                item.setUrl(ollamaUrl);
+                                item.setFormat("ollama");
+                                if (ollamaOnline) {
+                                    item.setState("NA");
+                                    item.setStateDescription("Model in source/models folder - GGUF exists on disk but is not registered in Ollama.");
+                                } else {
+                                    item.setState("ERR");
+                                    item.setStateDescription("Ollama server offline");
+                                }
+                                models.add(item);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Check codebase dist folder
             if (codebasePath != null) {
                 File distDir = new File(codebasePath, "dist");
                 if (distDir.exists() && distDir.isDirectory()) {
