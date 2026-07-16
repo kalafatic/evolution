@@ -33,6 +33,7 @@ public class SelfDevBootstrapController {
     private boolean debugMode = false;
 
     public void setDebugMode(boolean debugMode) {
+        System.out.println("[SelfDevBootstrapController] Debug mode set to: " + debugMode);
         this.debugMode = debugMode;
     }
 
@@ -41,16 +42,26 @@ public class SelfDevBootstrapController {
     }
 
     public SelfDevBootstrapController(File projectRoot, Orchestrator orchestrator) {
+        System.out.println("[SelfDevBootstrapController] Initializing. projectRoot: "
+            + (projectRoot != null ? projectRoot.getAbsolutePath() : "null"));
         this.projectRoot = projectRoot;
         this.orchestrator = orchestrator;
         this.runDir = new File(projectRoot, "self-dev-run");
         if (!runDir.exists()) {
-            runDir.mkdirs();
+            boolean created = runDir.mkdirs();
+            System.out.println("[SelfDevBootstrapController] Run directory created: " + created + " -> " + runDir.getAbsolutePath());
+        } else {
+            System.out.println("[SelfDevBootstrapController] Run directory already exists: " + runDir.getAbsolutePath());
         }
     }
 
     private void ensureSupervisorRunning() {
-        if (isSupervisorAlive()) return;
+        System.out.println("[SelfDevBootstrapController] Checking if supervisor is alive...");
+        if (isSupervisorAlive()) {
+            System.out.println("[SelfDevBootstrapController] Supervisor is already running and responding.");
+            return;
+        }
+        System.out.println("[SelfDevBootstrapController] Supervisor is not running. Starting new supervisor process...");
         try {
             List<String> cmd = new ArrayList<>();
             cmd.add("java");
@@ -59,11 +70,13 @@ public class SelfDevBootstrapController {
                 cmd.add("-Ddebug=true");
             }
             cmd.add("-jar");
-            cmd.add(getSupervisorJarPath());
+            String supervisorJarPath = getSupervisorJarPath();
+            cmd.add(supervisorJarPath);
             cmd.add(projectRoot.getAbsolutePath());
             if (debugMode) {
                 cmd.add("--debug");
             }
+            System.out.println("[SelfDevBootstrapController] Launch command: " + String.join(" ", cmd));
             ProcessBuilder pb = new ProcessBuilder(cmd);
             if (debugMode) {
                 pb.environment().put("EVO_DEBUG", "true");
@@ -71,47 +84,82 @@ public class SelfDevBootstrapController {
             pb.directory(projectRoot);
             pb.redirectErrorStream(true);
             supervisorProcess = pb.start();
+            System.out.println("[SelfDevBootstrapController] Supervisor process started successfully. PID details: " + supervisorProcess.toHandle().pid());
             
             new Thread(() -> {
+                System.out.println("[SelfDevBootstrapController] Started thread to read Supervisor console stream.");
                 try (BufferedReader reader = new BufferedReader(new InputStreamReader(supervisorProcess.getInputStream()))) {
                     String line;
-                    while ((line = reader.readLine()) != null) System.out.println("[Supervisor] " + line);
-                } catch (IOException e) {}
+                    while ((line = reader.readLine()) != null) {
+                        System.out.println("[Supervisor] " + line);
+                    }
+                } catch (IOException e) {
+                    System.err.println("[SelfDevBootstrapController] Exception while reading Supervisor output: " + e.getMessage());
+                }
             }).start();
 
             waitUntilReady();
         } catch (IOException e) {
-            System.err.println("Failed to start Supervisor: " + e.getMessage());
+            System.err.println("[SelfDevBootstrapController] Failed to start Supervisor: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
     private boolean isSupervisorAlive() {
         try {
             URL url = new URL("http://localhost:8089/ping");
+            System.out.println("[SelfDevBootstrapController] Pinging supervisor at: " + url);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setConnectTimeout(500);
-            return conn.getResponseCode() == 200;
-        } catch (Exception e) { return false; }
+            int code = conn.getResponseCode();
+            System.out.println("[SelfDevBootstrapController] Ping response code: " + code);
+            return code == 200;
+        } catch (Exception e) {
+            System.out.println("[SelfDevBootstrapController] Supervisor ping failed (not responding/unreachable). Details: " + e.getMessage());
+            return false;
+        }
     }
 
     private void waitUntilReady() {
+        System.out.println("[SelfDevBootstrapController] Waiting for supervisor HTTP server to be ready (up to 10 seconds)...");
         for (int i = 0; i < 10; i++) {
-            if (isSupervisorAlive()) return;
-            try { Thread.sleep(1000); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+            if (isSupervisorAlive()) {
+                System.out.println("[SelfDevBootstrapController] Supervisor HTTP server is ready!");
+                return;
+            }
+            try {
+                System.out.println("[SelfDevBootstrapController] Sleeping 1 second (attempt " + (i + 1) + "/10)...");
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                System.err.println("[SelfDevBootstrapController] Sleep interrupted during wait loop.");
+                Thread.currentThread().interrupt();
+            }
         }
+        System.err.println("[SelfDevBootstrapController] Supervisor did not respond to ping within 10 seconds.");
     }
 
     private String getSupervisorJarPath() {
         File supervisorDir = new File(projectRoot, "eu.kalafatic.evolution.supervisor/target");
+        System.out.println("[SelfDevBootstrapController] Scanning for supervisor shaded JAR in: " + supervisorDir.getAbsolutePath());
         File[] jars = supervisorDir.listFiles((dir, name) -> name.endsWith("-shaded.jar"));
-        if (jars != null && jars.length > 0) return jars[0].getAbsolutePath();
-        return new File(supervisorDir, "eu.kalafatic.evolution.supervisor-1.0.0-SNAPSHOT.jar").getAbsolutePath();
+        if (jars != null && jars.length > 0) {
+            String path = jars[0].getAbsolutePath();
+            System.out.println("[SelfDevBootstrapController] Found shaded supervisor jar: " + path);
+            return path;
+        }
+        File fallbackJar = new File(supervisorDir, "eu.kalafatic.evolution.supervisor-1.0.0-SNAPSHOT.jar");
+        System.out.println("[SelfDevBootstrapController] No shaded jar found, falling back to: " + fallbackJar.getAbsolutePath());
+        return fallbackJar.getAbsolutePath();
     }
 
     public void startBootstrap() throws IOException {
+        System.out.println("[SelfDevBootstrapController] Starting bootstrap process...");
         ensureSupervisorRunning();
         File stateFile = new File(runDir, "state.json");
         File contextFile = new File(runDir, "context.json");
+        System.out.println("[SelfDevBootstrapController] Creating state file: " + stateFile.getAbsolutePath());
+        System.out.println("[SelfDevBootstrapController] Creating context file: " + contextFile.getAbsolutePath());
+
         JSONObject state = new JSONObject();
         state.put("active", true);
         state.put("iteration", 0);
@@ -124,8 +172,12 @@ public class SelfDevBootstrapController {
         }
         state.put("plan", new JSONArray());
         state.put("contextPath", contextFile.getAbsolutePath());
+
+        System.out.println("[SelfDevBootstrapController] Writing state.json...");
         Files.write(stateFile.toPath(), state.toString(4).getBytes());
+
         try {
+            System.out.println("[SelfDevBootstrapController] Building task context and serializing context.json...");
             Task task = OrchestrationFactory.eINSTANCE.createTask();
             task.setGoal("self-development");
             task.setName("Autonomous improvement");
@@ -133,38 +185,65 @@ public class SelfDevBootstrapController {
             ContextPackage pkg = ContextBuilder.build(task, taskContext);
             ObjectMapper mapper = new ObjectMapper();
             mapper.writerWithDefaultPrettyPrinter().writeValue(contextFile, pkg);
-        } catch (Exception e) {}
+            System.out.println("[SelfDevBootstrapController] Context serialized successfully.");
+        } catch (Exception e) {
+            System.err.println("[SelfDevBootstrapController] Error generating context package during bootstrap: " + e.getMessage());
+            e.printStackTrace();
+        }
+
         JSONObject bootstrap = new JSONObject();
         bootstrap.put("sourcePath", projectRoot.getAbsolutePath());
         bootstrap.put("targetPath", new File(runDir, "workspace").getAbsolutePath());
         bootstrap.put("action", "BUILD_AND_START");
         bootstrap.put("statePath", stateFile.getAbsolutePath());
-        Files.write(new File(runDir, "bootstrap.json").toPath(), bootstrap.toString(4).getBytes());
+
+        File bootstrapFile = new File(runDir, "bootstrap.json");
+        System.out.println("[SelfDevBootstrapController] Writing bootstrap.json to: " + bootstrapFile.getAbsolutePath());
+        Files.write(bootstrapFile.toPath(), bootstrap.toString(4).getBytes());
+        System.out.println("[SelfDevBootstrapController] Bootstrap process successfully started.");
     }
 
     public void stopBootstrap() {
+        System.out.println("[SelfDevBootstrapController] Requesting to stop Supervisor...");
         if (supervisorProcess != null) {
+            System.out.println("[SelfDevBootstrapController] Destroying supervisor process...");
             supervisorProcess.destroy();
             supervisorProcess = null;
+            System.out.println("[SelfDevBootstrapController] Supervisor process destroyed.");
+        } else {
+            System.out.println("[SelfDevBootstrapController] Supervisor process was not running (null).");
         }
     }
 
     public JSONObject getStatus() {
         File statusFile = new File(runDir, "status.json");
+        System.out.println("[SelfDevBootstrapController] Checking status.json existence: " + statusFile.getAbsolutePath());
         if (statusFile.exists()) {
             try {
                 String content = new String(Files.readAllBytes(statusFile.toPath()));
-                if (!content.trim().isEmpty()) return new JSONObject(content);
-            } catch (Exception e) {}
+                System.out.println("[SelfDevBootstrapController] Read status.json content: " + content.trim());
+                if (!content.trim().isEmpty()) {
+                    return new JSONObject(content);
+                }
+            } catch (Exception e) {
+                System.err.println("[SelfDevBootstrapController] Failed to parse status.json: " + e.getMessage());
+            }
         }
-        return isSupervisorAlive() ? new JSONObject().put("phase", "RUNNING") : new JSONObject().put("phase", "STOPPED");
+        boolean alive = isSupervisorAlive();
+        System.out.println("[SelfDevBootstrapController] status.json not found or empty. Supervisor alive state: " + alive);
+        return alive ? new JSONObject().put("phase", "RUNNING") : new JSONObject().put("phase", "STOPPED");
     }
 
-    public boolean isRunning() { return isSupervisorAlive(); }
+    public boolean isRunning() {
+        boolean alive = isSupervisorAlive();
+        System.out.println("[SelfDevBootstrapController] isRunning check returned: " + alive);
+        return alive;
+    }
 
     public String check(String type) {
+        System.out.println("[SelfDevBootstrapController] Executing check for type: " + type);
         ensureSupervisorRunning();
-        return switch (type.toUpperCase()) {
+        String result = switch (type.toUpperCase()) {
             case "GIT" -> checkGit();
             case "MAVEN" -> checkMaven();
             case "LLM" -> checkLlm();
@@ -173,135 +252,270 @@ public class SelfDevBootstrapController {
             case "COPY" -> copyCodebaseToSupervisorSource();
             case "BUILD" -> callSupervisor("/build?path=" + encode(new File(runDir, "workspace").getAbsolutePath()));
             case "EXPORT" -> checkExport();
-            default -> "UNKNOWN";
+            default -> {
+                System.err.println("[SelfDevBootstrapController] Unknown check type: " + type);
+                yield "UNKNOWN";
+            }
         };
+        System.out.println("[SelfDevBootstrapController] Check for " + type + " result: " + result);
+        return result;
     }
 
     private String encode(String s) { return URLEncoder.encode(s, StandardCharsets.UTF_8); }
 
     private String callSupervisor(String endpoint) {
+        System.out.println("[SelfDevBootstrapController] Calling supervisor endpoint: " + endpoint);
         try {
             URL url = new URL("http://localhost:8089" + endpoint);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
+            int responseCode = conn.getResponseCode();
+            System.out.println("[SelfDevBootstrapController] Supervisor HTTP " + responseCode + " for: " + endpoint);
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
                 String line;
                 StringBuilder res = new StringBuilder();
                 while ((line = reader.readLine()) != null) res.append(line);
-                return res.toString();
+                String body = res.toString();
+                System.out.println("[SelfDevBootstrapController] Supervisor response body: " + body);
+                return body;
             }
-        } catch (Exception e) { return "ERROR: " + e.getMessage(); }
+        } catch (Exception e) {
+            System.err.println("[SelfDevBootstrapController] Failed to call supervisor on " + endpoint + ": " + e.getMessage());
+            return "ERROR: " + e.getMessage();
+        }
     }
 
     private String checkGit() {
+        System.out.println("[SelfDevBootstrapController] Checking Git configuration...");
         try {
             File gitDir = new File(projectRoot, ".git");
-            if (!gitDir.exists()) return "ERROR: Not a Git repository";
+            System.out.println("[SelfDevBootstrapController] Checking Git directory presence at: " + gitDir.getAbsolutePath());
+            if (!gitDir.exists()) {
+                System.err.println("[SelfDevBootstrapController] Git check failed: Not a Git repository.");
+                return "ERROR: Not a Git repository";
+            }
             ProcessBuilder pb = new ProcessBuilder("git", "status", "--porcelain");
             pb.directory(projectRoot);
             Process p = pb.start();
             p.getInputStream().readAllBytes();
+            int exitCode = p.waitFor();
+            System.out.println("[SelfDevBootstrapController] git status finished with exit code: " + exitCode);
             return "CHECKED";
-        } catch (Exception e) { return "ERROR: " + e.getMessage(); }
+        } catch (Exception e) {
+            System.err.println("[SelfDevBootstrapController] Git check exception: " + e.getMessage());
+            return "ERROR: " + e.getMessage();
+        }
     }
 
     private String checkMaven() {
+        System.out.println("[SelfDevBootstrapController] Checking Maven configuration...");
         try {
             String mvnCmd = System.getProperty("os.name").toLowerCase().contains("win") ? "mvn.cmd" : "mvn";
+            System.out.println("[SelfDevBootstrapController] Using Maven command: " + mvnCmd);
             ProcessBuilder pb = new ProcessBuilder(mvnCmd, "-version");
             pb.directory(projectRoot);
             Process p = pb.start();
-            if (p.waitFor() == 0) return "CHECKED";
+            int exitCode = p.waitFor();
+            System.out.println("[SelfDevBootstrapController] mvn -version finished with exit code: " + exitCode);
+            if (exitCode == 0) return "CHECKED";
             return "ERROR: Maven failed";
-        } catch (Exception e) { return "ERROR: Maven not found"; }
+        } catch (Exception e) {
+            System.err.println("[SelfDevBootstrapController] Maven check exception: " + e.getMessage());
+            return "ERROR: Maven not found";
+        }
     }
 
     private String checkLlm() {
+        System.out.println("[SelfDevBootstrapController] Checking LLM connectivity...");
         try {
-            if (orchestrator != null && !orchestrator.getAiProviders().isEmpty()) return "CHECKED";
+            if (orchestrator != null && !orchestrator.getAiProviders().isEmpty()) {
+                System.out.println("[SelfDevBootstrapController] Orchestrator contains configured AI providers. LLM check passed.");
+                return "CHECKED";
+            }
             URL url = new URL("http://localhost:11434/api/tags");
+            System.out.println("[SelfDevBootstrapController] Pinging Ollama tags endpoint: " + url);
             HttpURLConnection con = (HttpURLConnection) url.openConnection();
             con.setRequestMethod("GET");
             con.setConnectTimeout(2000);
-            if (con.getResponseCode() == 200) return "CHECKED";
+            int code = con.getResponseCode();
+            System.out.println("[SelfDevBootstrapController] Ollama ping response code: " + code);
+            if (code == 200) return "CHECKED";
             return "ERROR: LLM unreachable";
-        } catch (Exception e) { return "ERROR: " + e.getMessage(); }
+        } catch (Exception e) {
+            System.err.println("[SelfDevBootstrapController] LLM connectivity check exception: " + e.getMessage());
+            return "ERROR: " + e.getMessage();
+        }
+    }
+
+    private String compileGenomeModule(File genomeModuleDir) {
+        try {
+            System.out.println("[SelfDevBootstrapController] Compiling and packaging genome module: " + genomeModuleDir.getAbsolutePath());
+            String mvnCmd = System.getProperty("os.name").toLowerCase().contains("win") ? "mvn.cmd" : "mvn";
+            File parentDir = genomeModuleDir.getParentFile();
+            System.out.println("[SelfDevBootstrapController] Executing build in parent directory: " + parentDir.getAbsolutePath() + " to resolve reactor siblings.");
+
+            ProcessBuilder pb = new ProcessBuilder(mvnCmd, "clean", "compile", "-pl", "eu.kalafatic.evolution.selfdev.genome", "-am", "-DskipTests");
+            pb.directory(parentDir);
+            pb.redirectErrorStream(true);
+            Process p = pb.start();
+
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    System.out.println("[Genome Build] " + line);
+                }
+            }
+            int exitCode = p.waitFor();
+            System.out.println("[SelfDevBootstrapController] Genome module build finished with exit code: " + exitCode);
+            if (exitCode == 0) {
+                return "SUCCESS";
+            } else {
+                return "ERROR: Build failed (exit code " + exitCode + ")";
+            }
+        } catch (Exception e) {
+            System.err.println("[SelfDevBootstrapController] Failed to compile genome module: " + e.getMessage());
+            e.printStackTrace();
+            return "ERROR: " + e.getMessage();
+        }
     }
 
     private String checkGenome() {
+        System.out.println("[SelfDevBootstrapController] Starting GENOME Check. projectRoot: " + (projectRoot != null ? projectRoot.getAbsolutePath() : "null"));
         File dir = projectRoot;
         File genomeModuleDir = null;
+
+        // 1. Scan upwards from projectRoot
         while (dir != null) {
             File testDir = new File(dir, "eu.kalafatic.evolution.selfdev.genome");
+            System.out.println("[SelfDevBootstrapController] Scanning parent path: " + dir.getAbsolutePath() + " - checking for " + testDir.getName());
             if (testDir.exists() && new File(testDir, "pom.xml").exists()) {
                 genomeModuleDir = testDir;
+                System.out.println("[SelfDevBootstrapController] Found genome module dir via parent scan: " + genomeModuleDir.getAbsolutePath());
                 break;
             }
             dir = dir.getParentFile();
         }
 
-        if (genomeModuleDir == null) {
-            String codebasePath = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getCodebasePath();
-            if (codebasePath != null) {
-                File cbDir = new File(codebasePath);
-                File testDir = new File(cbDir, "eu.kalafatic.evolution.selfdev.genome");
+        // 2. Scan siblings of projectRoot as fallback
+        if (genomeModuleDir == null && projectRoot != null && projectRoot.getParentFile() != null) {
+            File testDir = new File(projectRoot.getParentFile(), "eu.kalafatic.evolution.selfdev.genome");
+            System.out.println("[SelfDevBootstrapController] Checking projectRoot sibling path: " + testDir.getAbsolutePath());
+            if (testDir.exists() && new File(testDir, "pom.xml").exists()) {
+                genomeModuleDir = testDir;
+                System.out.println("[SelfDevBootstrapController] Found genome module dir via sibling scan: " + genomeModuleDir.getAbsolutePath());
+            }
+        }
+
+        // 3. Scan codebasePath as fallback
+        String codebasePath = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getCodebasePath();
+        System.out.println("[SelfDevBootstrapController] ProjectModelManager.getCodebasePath() returned: " + codebasePath);
+        if (genomeModuleDir == null && codebasePath != null) {
+            File cbDir = new File(codebasePath);
+            File testDir = new File(cbDir, "eu.kalafatic.evolution.selfdev.genome");
+            System.out.println("[SelfDevBootstrapController] Checking codebasePath: " + testDir.getAbsolutePath());
+            if (testDir.exists() && new File(testDir, "pom.xml").exists()) {
+                genomeModuleDir = testDir;
+                System.out.println("[SelfDevBootstrapController] Found genome module dir via codebasePath scan: " + genomeModuleDir.getAbsolutePath());
+            }
+        }
+
+        // 4. Scan parent of codebasePath as fallback
+        if (genomeModuleDir == null && codebasePath != null) {
+            File cbDir = new File(codebasePath);
+            if (cbDir.getParentFile() != null) {
+                File testDir = new File(cbDir.getParentFile(), "eu.kalafatic.evolution.selfdev.genome");
+                System.out.println("[SelfDevBootstrapController] Checking parent of codebasePath: " + testDir.getAbsolutePath());
                 if (testDir.exists() && new File(testDir, "pom.xml").exists()) {
                     genomeModuleDir = testDir;
+                    System.out.println("[SelfDevBootstrapController] Found genome module dir via parent codebasePath scan: " + genomeModuleDir.getAbsolutePath());
                 }
             }
         }
 
         if (genomeModuleDir == null) {
+            System.err.println("[SelfDevBootstrapController] GENOME Check failed: Genome module 'eu.kalafatic.evolution.selfdev.genome' could not be located in any known workspace directories.");
             return "ERROR: Genome module missing";
         }
 
+        // Compile/build the genome module using Maven to ensure it is built/deployed/exported properly
+        String buildRes = compileGenomeModule(genomeModuleDir);
+        if (buildRes.startsWith("ERROR")) {
+            System.err.println("[SelfDevBootstrapController] GENOME Check failed during module compilation: " + buildRes);
+            return "ERROR: Genome module build/compilation failed: " + buildRes;
+        }
+
         try {
-            System.out.println("[GENOME_INTEGRATION] Found genome module. Integrating and updating project genome in: " + projectRoot.getAbsolutePath());
+            System.out.println("[SelfDevBootstrapController] Integrating and updating project genome in: " + projectRoot.getAbsolutePath());
             eu.kalafatic.evolution.selfdev.genome.hub.SelfDevGenomeHub.getInstance()
                 .updateGenome(projectRoot, projectRoot.getName(), "v1.0.0");
 
             File genomeJson = new File(projectRoot, "genome/current/genome.json");
             if (genomeJson.exists()) {
+                System.out.println("[SelfDevBootstrapController] GENOME Check successful. Generated genome.json: " + genomeJson.getAbsolutePath());
                 return "CHECKED (Updated)";
             } else {
+                System.err.println("[SelfDevBootstrapController] GENOME Check failed: genome.json was not generated in project root: " + projectRoot.getAbsolutePath());
                 return "ERROR: Failed to generate genome.json in project root";
             }
-        } catch (Exception e) {
+        } catch (Throwable e) {
+            System.err.println("[SelfDevBootstrapController] GENOME Check failed with Throwable during updateGenome execution: " + e.getMessage());
+            e.printStackTrace();
             return "ERROR: Genome update failed: " + e.getMessage();
         }
     }
 
     private String checkPermissions() {
+        System.out.println("[SelfDevBootstrapController] Checking filesystem permissions...");
         if (runDir.exists() && runDir.canWrite()) {
             File testFile = new File(runDir, ".perm-test");
-            try { if (testFile.createNewFile()) { testFile.delete(); return "CHECKED"; } } catch (IOException e) {}
+            try {
+                if (testFile.createNewFile()) {
+                    boolean deleted = testFile.delete();
+                    System.out.println("[SelfDevBootstrapController] Created and deleted perm test file. deleted: " + deleted);
+                    return "CHECKED";
+                }
+            } catch (IOException e) {
+                System.err.println("[SelfDevBootstrapController] Filesystem permission check IOException: " + e.getMessage());
+            }
         }
+        System.err.println("[SelfDevBootstrapController] Filesystem permission check failed. RunDir: " + runDir.getAbsolutePath());
         return "ERROR: No write access to " + runDir.getName();
     }
 
     private String checkExport() {
+        System.out.println("[SelfDevBootstrapController] Checking exported supervisor artifact...");
         File sandbox = new File(runDir, "workspace");
         File supervisorTarget = new File(sandbox, "eu.kalafatic.evolution.supervisor/target");
+        System.out.println("[SelfDevBootstrapController] Looking for built shaded jar in sandbox: " + supervisorTarget.getAbsolutePath());
         if (supervisorTarget.exists()) {
             File[] jars = supervisorTarget.listFiles((dir, name) -> name.endsWith("-shaded.jar"));
-            if (jars != null && jars.length > 0) return "READY: " + jars[0].getName();
+            if (jars != null && jars.length > 0) {
+                System.out.println("[SelfDevBootstrapController] Found exported shaded supervisor jar: " + jars[0].getName());
+                return "READY: " + jars[0].getName();
+            }
         }
+        System.err.println("[SelfDevBootstrapController] Exported supervisor artifact not found in sandbox target.");
         return "ERROR: Artifact not found. Run Build first.";
     }
 
     private String copyCodebaseToSupervisorSource() {
+        System.out.println("[SelfDevBootstrapController] Initiating Codebase Copy task...");
         String srcPath = null;
         try {
+            System.out.println("[SelfDevBootstrapController] Reflectively querying ProjectManager.getCodebasePath()...");
             Class<?> pmClass = Class.forName("eu.kalafatic.evolution.view.provider.ProjectManager");
             java.lang.reflect.Method m = pmClass.getMethod("getCodebasePath");
             srcPath = (String) m.invoke(null);
+            System.out.println("[SelfDevBootstrapController] ProjectManager.getCodebasePath() returned: " + srcPath);
         } catch (Throwable t) {
-            // fallback
+            System.out.println("[SelfDevBootstrapController] ProjectManager.getCodebasePath() fallback via reflection ignored: " + t.getMessage());
         }
         if (srcPath == null) {
             srcPath = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getCodebasePath();
+            System.out.println("[SelfDevBootstrapController] Falling back to ProjectModelManager.getCodebasePath(): " + srcPath);
         }
         if (srcPath == null) {
+            System.err.println("[SelfDevBootstrapController] Codebase Copy failed: Could not resolve codebase source path.");
             return "ERROR: Could not resolve codebase path";
         }
 
@@ -315,8 +529,11 @@ public class SelfDevBootstrapController {
 
         File src = new File(srcPath);
         File dest = new File(destPath);
+        System.out.println("[SelfDevBootstrapController] Source directory: " + src.getAbsolutePath());
+        System.out.println("[SelfDevBootstrapController] Destination directory: " + dest.getAbsolutePath());
 
         if (!src.exists()) {
+            System.err.println("[SelfDevBootstrapController] Codebase Copy failed: Source directory does not exist.");
             return "ERROR: Source path does not exist: " + src.getAbsolutePath();
         }
 
@@ -324,6 +541,7 @@ public class SelfDevBootstrapController {
 
         try {
             if (dest.exists()) {
+                System.out.println("[SelfDevBootstrapController] Destination folder exists. Deleting recursively: " + dest.getAbsolutePath());
                 deleteRecursively(dest);
             }
             dest.mkdirs();
@@ -331,6 +549,7 @@ public class SelfDevBootstrapController {
             final java.nio.file.Path sourcePath = src.toPath();
             final java.nio.file.Path targetPath = dest.toPath();
 
+            System.out.println("[SelfDevBootstrapController] Walking source directory tree...");
             java.nio.file.Files.walkFileTree(sourcePath, new java.nio.file.SimpleFileVisitor<java.nio.file.Path>() {
                 @Override
                 public java.nio.file.FileVisitResult preVisitDirectory(java.nio.file.Path dir, java.nio.file.attribute.BasicFileAttributes attrs) throws IOException {
@@ -368,8 +587,11 @@ public class SelfDevBootstrapController {
                     return java.nio.file.FileVisitResult.CONTINUE;
                 }
             });
+            System.out.println("[SelfDevBootstrapController] Codebase Copy successful. Total files copied: " + filesCopied[0]);
             return "SUCCESS: " + filesCopied[0] + " files";
         } catch (IOException e) {
+            System.err.println("[SelfDevBootstrapController] Codebase Copy IOException: " + e.getMessage());
+            e.printStackTrace();
             return "ERROR: " + e.getMessage();
         }
     }
