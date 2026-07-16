@@ -34,4 +34,8 @@ public class PositionalEncoding {
         System.arraycopy(encoding.getData(), 0, posPart.getData(), 0, seqLen * dModel);
         return input.add(posPart);
     }
+
+    public Tensor backward(Tensor dOutput) {
+        return dOutput;
+    }
 }
