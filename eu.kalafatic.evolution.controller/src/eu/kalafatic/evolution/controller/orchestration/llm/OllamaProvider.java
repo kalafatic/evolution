@@ -63,6 +63,24 @@ public class OllamaProvider implements ILlmProvider {
                         ggufFile = new java.io.File(System.getProperty("user.home"), ".ollama/models/evo.gguf");
                     }
                     if (!ggufFile.exists()) {
+                        // Fallback to workspace source/models folder
+                        String codebasePath = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getCodebasePath();
+                        if (codebasePath != null) {
+                            java.io.File sourceModelsDir = new java.io.File(codebasePath, "source/models");
+                            if (sourceModelsDir.exists() && sourceModelsDir.isDirectory()) {
+                                java.io.File f = new java.io.File(sourceModelsDir, model + ".gguf");
+                                if (f.exists()) {
+                                    ggufFile = f;
+                                } else {
+                                    f = new java.io.File(sourceModelsDir, "evo.gguf");
+                                    if (f.exists()) {
+                                        ggufFile = f;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (!ggufFile.exists()) {
                         // Fallback to codebase dist folder
                         String codebasePath = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getCodebasePath();
                         if (codebasePath != null) {
