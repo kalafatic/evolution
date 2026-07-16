@@ -23,12 +23,22 @@ public class FinalResponseAssemblerTest {
         tempDir = File.createTempFile("evo-test-root", "");
         tempDir.delete();
         tempDir.mkdirs();
+        SessionManager.getInstance().shutdownAll();
+    }
+
+    @org.junit.After
+    public void tearDown() throws Exception {
+        SessionManager.getInstance().shutdownAll();
     }
 
     @Test
     public void testAssembleWithSimpleGoalComplexity() throws Exception {
         TaskContext context = new TaskContext(orchestrator, tempDir);
         context.setSessionId("test-session-simple");
+        context.getOrchestrationState().setRawInput("create java class which can print text");
+
+        SessionContainer session = SessionManager.getInstance().getOrCreateSession("test-session-simple");
+        session.getCognitiveState().setCurrentCapability(eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType.CODE);
 
         // Setup GoalModel in metadata with SIMPLE complexity
         GoalModel goalModel = new GoalModel();
@@ -46,13 +56,13 @@ public class FinalResponseAssemblerTest {
         FinalResponse response = assembler.assemble(context, "Completed simple test", true, Instant.now());
 
         assertNotNull(response);
-        // Ensure files list in final response is completely empty for SIMPLE complexity
-        assertTrue("Files should be empty for simple complexity", response.getFiles().isEmpty());
+        // Ensure files list in final response is NOT empty for SIMPLE complexity coding tasks
+        assertFalse("Files should not be empty for simple complexity coding tasks", response.getFiles().isEmpty());
 
-        // Ensure the string representation does not contain any file references
+        // Ensure the string representation contains the file references/links
         String output = response.toString();
-        assertFalse("Output should not contain Modified Files block", output.contains("Modified Files"));
-        assertFalse("Output should not contain file links", output.contains("file://"));
+        assertTrue("Output should contain Modified Files block", output.contains("Modified Files"));
+        assertTrue("Output should contain file links", output.contains("file://"));
         assertFalse("Output should not contain Repository Changes block", output.contains("Repository Changes"));
         assertFalse("Output should not contain Verification block", output.contains("Verification"));
     }
@@ -61,6 +71,9 @@ public class FinalResponseAssemblerTest {
     public void testAssembleWithSimpleChatMode() throws Exception {
         TaskContext context = new TaskContext(orchestrator, tempDir);
         context.setSessionId("test-session-chat");
+
+        SessionContainer session = SessionManager.getInstance().getOrCreateSession("test-session-chat");
+        session.getCognitiveState().setCurrentCapability(eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType.CHAT);
 
         // Set platform mode to SIMPLE_CHAT
         PlatformMode platformMode = new PlatformMode(PlatformType.SIMPLE_CHAT, null, 1, false);
@@ -88,6 +101,10 @@ public class FinalResponseAssemblerTest {
     public void testAssembleStandardWorkflow() throws Exception {
         TaskContext context = new TaskContext(orchestrator, tempDir);
         context.setSessionId("test-session-standard");
+        context.getOrchestrationState().setRawInput("create java class which can print text");
+
+        SessionContainer session = SessionManager.getInstance().getOrCreateSession("test-session-standard");
+        session.getCognitiveState().setCurrentCapability(eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType.CODE);
 
         // Setup GoalModel in metadata with MEDIUM complexity
         GoalModel goalModel = new GoalModel();

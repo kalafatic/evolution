@@ -45,15 +45,17 @@ public class FinalResponseAssembler {
             } catch (Exception e) {}
         }
 
-        boolean isSimple = isChat
-                || (context.getPlatformMode() != null && context.getPlatformMode().getType() == PlatformType.SIMPLE_CHAT)
+        boolean isSimpleChat = isChat
+                || (context.getPlatformMode() != null && context.getPlatformMode().getType() == PlatformType.SIMPLE_CHAT);
+
+        boolean isSimple = isSimpleChat
                 || (goalModel != null && "SIMPLE".equalsIgnoreCase(goalModel.getComplexity()));
 
         // 1. Collect proposals/thoughts
         List<String> proposals = collectProposals(context);
 
         // 2. Track files (simple workflows or chats shouldn't return file links in the final response)
-        List<FileReference> files = isSimple ? new ArrayList<>() : collectFiles(context);
+        List<FileReference> files = isSimpleChat ? new ArrayList<>() : collectFiles(context);
 
         // 3. Execution metrics
         ExecutionMetrics metrics = null;
