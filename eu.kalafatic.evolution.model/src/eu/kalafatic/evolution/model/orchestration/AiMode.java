@@ -76,7 +76,17 @@ public enum AiMode implements Enumerator {
 	 * @generated
 	 * @ordered
 	 */
-	INTENT(5, "INTENT", "Intent");
+	INTENT(5, "INTENT", "Intent"),
+
+	/**
+	 * The '<em><b>FORGE</b></em>' literal object.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #FORGE_VALUE
+	 * @generated
+	 * @ordered
+	 */
+	FORGE(6, "FORGE", "Forge");
 
 	/**
 	 * The '<em><b>LOCAL</b></em>' literal value.
@@ -145,6 +155,17 @@ public enum AiMode implements Enumerator {
 	public static final int INTENT_VALUE = 5;
 
 	/**
+	 * The '<em><b>FORGE</b></em>' literal value.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #FORGE
+	 * @model literal="Forge"
+	 * @generated
+	 * @ordered
+	 */
+	public static final int FORGE_VALUE = 6;
+
+	/**
 	 * An array of all the '<em><b>Ai Mode</b></em>' enumerators.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -158,6 +179,7 @@ public enum AiMode implements Enumerator {
 			PROXY,
 			MEDIATED,
 			INTENT,
+			FORGE,
 		};
 
 	/**
@@ -220,6 +242,7 @@ public enum AiMode implements Enumerator {
 			case PROXY_VALUE: return PROXY;
 			case MEDIATED_VALUE: return MEDIATED;
 			case INTENT_VALUE: return INTENT;
+			case FORGE_VALUE: return FORGE;
 		}
 		return null;
 	}
