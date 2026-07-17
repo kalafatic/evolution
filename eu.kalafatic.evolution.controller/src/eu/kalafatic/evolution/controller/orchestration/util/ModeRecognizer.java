@@ -28,6 +28,9 @@ public class ModeRecognizer {
 	 * Determines the current mode.
 	 */
 	public String determineMode(TaskContext context) {
+		if (isForgeMode(context)) {
+			return "FORGE";
+		}
 		if (isSelfDevMode(context)) {
 			return "SELF_DEV";
 		}
@@ -41,6 +44,9 @@ public class ModeRecognizer {
 	}
 
 	public static PlatformType determineType(IntentResult intentResult, TaskContext context) {
+		if (isForgeMode(context)) {
+			return PlatformType.FORGE;
+		}
 		if (isSelfDevMode(context)) {
 			return PlatformType.SELF_DEV_MODE;
 		}
@@ -67,6 +73,9 @@ public class ModeRecognizer {
 	}
 
 	public static PlatformType determineType(TaskContext context) {
+		if (isForgeMode(context)) {
+			return PlatformType.FORGE;
+		}
 		if (isSelfDevMode(context)) {
 			return PlatformType.SELF_DEV_MODE;
 		}
@@ -84,6 +93,10 @@ public class ModeRecognizer {
 		}
 		return PlatformType.SIMPLE_CHAT;
 //		return PlatformType.DARWIN_MODE;
+	}
+
+	public static boolean isForgeMode(TaskContext context) {
+		return (context.getOrchestrator() != null && AiMode.FORGE.equals(context.getOrchestrator().getAiMode()));
 	}
 
 	public static boolean isSelfDevMode(TaskContext context) {
