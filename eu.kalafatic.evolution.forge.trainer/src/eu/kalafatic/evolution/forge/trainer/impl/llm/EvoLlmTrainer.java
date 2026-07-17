@@ -3,6 +3,8 @@ package eu.kalafatic.evolution.forge.trainer.impl.llm;
 import eu.kalafatic.evolution.forge.model.llm.EvoLlmModel;
 import eu.kalafatic.evolution.forge.data.impl.DatasetBuilder;
 import eu.kalafatic.evolution.forge.math.api.Tensor;
+import eu.kalafatic.evolution.forge.math.core.SimpleTensor;
+import eu.kalafatic.evolution.forge.trainer.impl.EvoAdamW;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -15,82 +17,68 @@ public class EvoLlmTrainer {
     }
 
     public void train(List<DatasetBuilder.Sample> samples, int epochs) {
-        System.out.println("[Training] Starting training with " + samples.size() + " samples.");
+        System.out.println("[Training] Starting genuine EVO training with " + samples.size() + " samples.");
+        EvoAdamW optimizer = new EvoAdamW(0.01f, 0.9f, 0.999f, 1e-8f, 0.01f);
+
         for (int epoch = 0; epoch < epochs; epoch++) {
             double epochLoss = 0;
             long startTime = System.currentTimeMillis();
+            int totalTokensTrained = 0;
             
             for (DatasetBuilder.Sample sample : samples) {
+                // Zero gradients
+                model.parameters().forEach(Tensor::zeroGrad);
+
                 int[] inputIds = sample.input.stream().mapToInt(i -> i).toArray();
                 Tensor logits = model.forward(inputIds);
-                
-                // Simplified Backpropagation:
-                // We update the weights of the Linear Head (lmHead) based on the cross-entropy gradient.
-                // grad_logits = softmax(logits) - target_one_hot
-                updateLmHead(logits, sample.target, 0.01f);
-                
-                double loss = calculateSimplifiedLoss(logits, sample.target);
+                totalTokensTrained += inputIds.length;
+
+                // Real loss & cross-entropy gradient
+                float[] logitsData = logits.getData();
+                int seqLen = (int) logits.getShape()[0];
+                int vocabSize = (int) logits.getShape()[1];
+                int lastOffset = (seqLen - 1) * vocabSize;
+                int target = sample.target;
+
+                // Softmax
+                float max = Float.NEGATIVE_INFINITY;
+                for (int i = 0; i < vocabSize; i++) {
+                    if (logitsData[lastOffset + i] > max) max = logitsData[lastOffset + i];
+                }
+                float sum = 0;
+                float[] probs = new float[vocabSize];
+                for (int i = 0; i < vocabSize; i++) {
+                    probs[i] = (float) Math.exp(logitsData[lastOffset + i] - max);
+                    sum += probs[i];
+                }
+                for (int i = 0; i < vocabSize; i++) probs[i] /= sum;
+
+                double loss = -Math.log(Math.max(probs[target], 1e-10));
                 epochLoss += loss;
+
+                // Compute dLogits gradient
+                Tensor dLogits = new SimpleTensor(seqLen, vocabSize);
+                float[] dLogitsData = dLogits.getData();
+                probs[target] -= 1.0f; // cross entropy grad
+                for (int i = 0; i < vocabSize; i++) {
+                    dLogitsData[lastOffset + i] = probs[i];
+                }
+
+                // Real Backpropagation
+                model.backward(dLogits);
+
+                // Optimizer Step
+                optimizer.step(model.parameters());
             }
             
             double avgLoss = epochLoss / samples.size();
             lossHistory.add(avgLoss);
             long duration = System.currentTimeMillis() - startTime;
-            System.out.println(String.format("[Training] Epoch %d/%d - Loss: %.4f - Duration: %dms", 
-                epoch + 1, epochs, avgLoss, duration));
-        }
-    }
+            double tokensPerSec = duration > 0 ? (totalTokensTrained * 1000.0 / duration) : 0;
 
-    private void updateLmHead(Tensor logits, int target, float lr) {
-        float[] data = logits.getData();
-        int seqLen = (int) logits.getShape()[0];
-        int vocabSize = (int) logits.getShape()[1];
-        int lastTokenOffset = (seqLen - 1) * vocabSize;
-        
-        // Softmax
-        float max = Float.NEGATIVE_INFINITY;
-        for (int i = 0; i < vocabSize; i++) {
-            if (data[lastTokenOffset + i] > max) max = data[lastTokenOffset + i];
+            System.out.println(String.format("[EVO Training]\nEpoch %d/%d\nLoss: %.4f\nTokens: %d\nTime: %ds\nTokens/sec: %.2f\nLearning Rate: %.6f\n",
+                epoch + 1, epochs, avgLoss, totalTokensTrained, duration / 1000, tokensPerSec, optimizer.getLr()));
         }
-        float sum = 0;
-        float[] probs = new float[vocabSize];
-        for (int i = 0; i < vocabSize; i++) {
-            probs[i] = (float) Math.exp(data[lastTokenOffset + i] - max);
-            sum += probs[i];
-        }
-        for (int i = 0; i < vocabSize; i++) probs[i] /= sum;
-
-        // Gradient: probs[target] -= 1
-        probs[target] -= 1.0f;
-        
-        // Simple SGD update for lmHead weights
-        float[] headData = model.getLmHead().getData();
-        for (int i = 0; i < vocabSize; i++) {
-            // Very simplified: update only the bias-like effect for the specific token
-            headData[i] -= probs[i] * lr; 
-        }
-    }
-
-    private double calculateSimplifiedLoss(Tensor logits, int target) {
-        // Simple CrossEntropy simulation: -log(softmax(logits)[target])
-        float[] data = logits.getData();
-        int seqLen = (int) logits.getShape()[0];
-        int vocabSize = (int) logits.getShape()[1];
-        
-        // Use last token prediction
-        int lastTokenOffset = (seqLen - 1) * vocabSize;
-        float max = Float.NEGATIVE_INFINITY;
-        for (int i = 0; i < vocabSize; i++) {
-            if (data[lastTokenOffset + i] > max) max = data[lastTokenOffset + i];
-        }
-        
-        double sum = 0;
-        for (int i = 0; i < vocabSize; i++) {
-            sum += Math.exp(data[lastTokenOffset + i] - max);
-        }
-        
-        double prob = Math.exp(data[lastTokenOffset + target] - max) / sum;
-        return -Math.log(Math.max(prob, 1e-10));
     }
 
     public List<Double> getLossHistory() { return lossHistory; }

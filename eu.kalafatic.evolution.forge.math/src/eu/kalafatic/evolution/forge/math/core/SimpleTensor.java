@@ -5,6 +5,7 @@ import eu.kalafatic.evolution.forge.math.api.Tensor;
 public class SimpleTensor implements Tensor {
     private final long[] shape;
     private final float[] data;
+    private final float[] grad;
     private final int rank;
     private final long size;
 
@@ -17,6 +18,7 @@ public class SimpleTensor implements Tensor {
         }
         this.size = totalSize;
         this.data = new float[(int) size];
+        this.grad = new float[(int) size];
     }
 
     public SimpleTensor(long[] shape, float[] data) {
@@ -24,6 +26,25 @@ public class SimpleTensor implements Tensor {
         this.rank = shape.length;
         this.data = data;
         this.size = data.length;
+        this.grad = new float[(int) size];
+    }
+
+    public SimpleTensor(long[] shape, float[] data, float[] grad) {
+        this.shape = shape;
+        this.rank = shape.length;
+        this.data = data;
+        this.grad = grad;
+        this.size = data.length;
+    }
+
+    @Override
+    public float[] getGrad() {
+        return grad;
+    }
+
+    @Override
+    public void zeroGrad() {
+        java.util.Arrays.fill(grad, 0.0f);
     }
 
     @Override
@@ -73,7 +94,6 @@ public class SimpleTensor implements Tensor {
 
     @Override
     public Tensor softmax() {
-        // Simple softmax implementation for rank 1 or 2
         float[] resultData = new float[(int) size];
         if (rank == 1) {
             float max = Float.NEGATIVE_INFINITY;

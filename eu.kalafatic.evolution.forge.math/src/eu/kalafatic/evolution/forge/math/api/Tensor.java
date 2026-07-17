@@ -3,6 +3,8 @@ package eu.kalafatic.evolution.forge.math.api;
 public interface Tensor {
     long[] getShape();
     float[] getData();
+    float[] getGrad();
+    void zeroGrad();
     float getValue(long... indices);
     void setValue(float value, long... indices);
 

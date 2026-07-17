@@ -8,6 +8,7 @@ public class Embedding {
     private final Tensor weights;
     private final int vocabSize;
     private final int embeddingDim;
+    private int[] lastTokenIds;
 
     public Embedding(int vocabSize, int embeddingDim) {
         this.vocabSize = vocabSize;
@@ -24,7 +25,12 @@ public class Embedding {
         }
     }
 
+    public Tensor getWeights() {
+        return weights;
+    }
+
     public Tensor forward(int[] tokenIds) {
+        this.lastTokenIds = tokenIds.clone();
         int seqLen = tokenIds.length;
         Tensor result = new SimpleTensor(seqLen, embeddingDim);
         float[] resData = result.getData();
@@ -36,5 +42,19 @@ public class Embedding {
             System.arraycopy(wData, tokenId * embeddingDim, resData, i * embeddingDim, embeddingDim);
         }
         return result;
+    }
+
+    public void backward(Tensor dOutput) {
+        if (lastTokenIds == null) return;
+        float[] dOutData = dOutput.getData();
+        float[] wGrad = weights.getGrad();
+        int seqLen = lastTokenIds.length;
+        for (int i = 0; i < seqLen; i++) {
+            int tokenId = lastTokenIds[i];
+            if (tokenId < 0 || tokenId >= vocabSize) tokenId = 1;
+            for (int j = 0; j < embeddingDim; j++) {
+                wGrad[tokenId * embeddingDim + j] += dOutData[i * embeddingDim + j];
+            }
+        }
     }
 }
