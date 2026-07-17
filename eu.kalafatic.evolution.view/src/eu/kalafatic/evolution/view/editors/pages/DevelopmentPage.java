@@ -90,6 +90,7 @@ public class DevelopmentPage extends AEvoPage {
     private Label sessionProgressLabel;
     private TableViewer selfDevTable;
     private ImageRegistry imageRegistry;
+    private Color lightOrangeColor;
     private VizGroup vizGroup;
     private InteractiveWorkflowGroup workflowGroup;
     private SupervisorGroup supervisorGroup;
@@ -100,6 +101,7 @@ public class DevelopmentPage extends AEvoPage {
     public DevelopmentPage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
         super(parent, editor, orchestrator);
         this.setLayout(new GridLayout(1, false));
+        this.lightOrangeColor = new Color(Display.getDefault(), 255, 220, 180);
         initImageRegistry();
         initMemoryService();
         createControl();
@@ -324,9 +326,18 @@ public class DevelopmentPage extends AEvoPage {
         @Override public Color getBackground(Object element, int columnIndex) {
             SelfDevRow row = (SelfDevRow) element;
             String status = row.status.toLowerCase();
-            if (status.contains("error") || status.contains("fail")) return FUIConstants.LIGHT_RED;
-            if (status.contains("checked") || status.equals("success") || status.equals("running")) return FUIConstants.LIGHT_GREEN;
-            if (status.equals("ready")) return FUIConstants.GRADIENT;
+            if (status.contains("error") || status.contains("fail")) {
+                return FUIConstants.LIGHT_RED;
+            }
+            if (status.contains("checking") || status.contains("running") || status.contains("applying") || status.contains("building") || status.contains("starting")) {
+                return lightOrangeColor;
+            }
+            if (status.contains("checked") || status.contains("success") || status.contains("ok") || status.contains("updated") || status.startsWith("ready:")) {
+                return FUIConstants.LIGHT_GREEN;
+            }
+            if (status.equals("ready")) {
+                return FUIConstants.GRADIENT;
+            }
             return null;
         }
     }
@@ -528,15 +539,28 @@ public class DevelopmentPage extends AEvoPage {
                 });
                 if (finalFailed) {
                     final String phaseName = row.name;
-                    Display.getDefault().asyncExec(() -> {
-                        org.eclipse.jface.dialogs.MessageDialog.openError(
+                    final String finalResultStr = finalResult;
+                    final boolean[] shouldContinue = { false };
+                    Display.getDefault().syncExec(() -> {
+                        org.eclipse.jface.dialogs.MessageDialog dialog = new org.eclipse.jface.dialogs.MessageDialog(
                             getShell(),
                             "Debug Phase Failed",
-                            "Debug execution stopped because key phase '" + phaseName + "' failed.\n\n" +
-                            "Reason/Detailed Info:\n" + finalResult
+                            null,
+                            "Debug execution phase '" + phaseName + "' failed.\n\n" +
+                            "Reason/Detailed Info:\n" + finalResultStr + "\n\n" +
+                            "Would you like to continue to the next phase?",
+                            org.eclipse.jface.dialogs.MessageDialog.ERROR,
+                            new String[] { "Continue Next", "Stop Debug" },
+                            0
                         );
+                        int code = dialog.open();
+                        if (code == 0) {
+                            shouldContinue[0] = true;
+                        }
                     });
-                    break;
+                    if (!shouldContinue[0]) {
+                        break;
+                    }
                 }
                 try {
                     Thread.sleep(500);
@@ -631,5 +655,11 @@ public class DevelopmentPage extends AEvoPage {
 
     private String getHtmlTemplate() { return "<html><body><div id='info'>AI Network Structure</div><script>function updateGraph(data) {}</script></body></html>"; }
     @Override public void setOrchestrator(Orchestrator o) { super.setOrchestrator(o); initMemoryService(); if (archViz != null) archViz.setOrchestrator(o); scheduleRefresh(); }
-    @Override public void dispose() { if (imageRegistry != null) imageRegistry.dispose(); if (vizGroup != null) vizGroup.dispose(); if (workflowGroup != null) workflowGroup.dispose(); super.dispose(); }
+    @Override public void dispose() {
+        if (imageRegistry != null) imageRegistry.dispose();
+        if (vizGroup != null) vizGroup.dispose();
+        if (workflowGroup != null) workflowGroup.dispose();
+        if (lightOrangeColor != null) lightOrangeColor.dispose();
+        super.dispose();
+    }
 }
