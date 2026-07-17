@@ -5,6 +5,7 @@ Bundle-SymbolicName: eu.kalafatic.evolution.supervisor
 Bundle-Version: 2.6.5.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-21
 Automatic-Module-Name: eu.kalafatic.evolution.supervisor
+Require-Bundle: eu.kalafatic.evolution.selfdev.genome;bundle-version="2.6.5"
 Export-Package: eu.kalafatic.evolution.supervisor,
  eu.kalafatic.evolution.supervisor.bootstrap,
  fi.iki.elonen,
