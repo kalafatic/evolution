@@ -412,6 +412,7 @@ public class AiChatPage extends AEvoPage {
 
 
 	public void handleSend() throws IOException {
+		if (currentSession == null) initializeSessions();
 		instructionsGroup.resetBackground();
 		String request = instructionsGroup.getRequest();
 		String currentSessionId = getCurrentSessionName();
@@ -485,19 +486,37 @@ public class AiChatPage extends AEvoPage {
 
 		isWaitingForModel = false;
 
-		if (request.isEmpty()) {
-			if (AiMode.MEDIATED.getName().equals(chatMgmtGroup.getAiModeCombo().getItem(chatMgmtGroup.getAiModeCombo().getSelectionIndex()))) {
-				//processLogEntry("Evo: Please provide a request or instruction to proceed.");
-				request = Files.readString(java.nio.file.Path.of("prompts", "mediated.md"), StandardCharsets.UTF_8);
-			} else 	if (AiMode.INTENT.getName().equals(chatMgmtGroup.getAiModeCombo().getItem(chatMgmtGroup.getAiModeCombo().getSelectionIndex()))) {
-				request = Files.readString(java.nio.file.Path.of("prompts", "intent.md"), StandardCharsets.UTF_8);
-			} else {
-				//processLogEntry("Evo: Request is empty. Please enter a valid instruction or question.");
-				return;				
+		AiMode selectedMode = getSelectedAiMode();
+		boolean isTargetValidFolder = false;
+		if (currentSession != null && currentSession.getTargetPath() != null && !currentSession.getTargetPath().isEmpty()) {
+			File targetFile = new File(currentSession.getTargetPath());
+			if (targetFile.exists() && targetFile.isDirectory()) {
+				isTargetValidFolder = true;
 			}
 		}
 
-		if (currentSession == null) initializeSessions();
+		if (request.isEmpty()) {
+			if (selectedMode == AiMode.MEDIATED) {
+				if (isTargetValidFolder) {
+					request = Files.readString(java.nio.file.Path.of("prompts", "mediated.md"), StandardCharsets.UTF_8);
+				} else {
+					processLogEntry("Evo: Target is not a valid folder. Mediated mode requires a valid target directory.");
+					return;
+				}
+			} else if (selectedMode == AiMode.FORGE) {
+				if (isTargetValidFolder) {
+					request = "Train local EVO LLM model on the target documentation folder: " + currentSession.getTargetPath();
+				} else {
+					processLogEntry("Evo: Target is not a valid folder. Forge mode requires a valid target directory.");
+					return;
+				}
+			} else if (selectedMode == AiMode.INTENT) {
+				request = Files.readString(java.nio.file.Path.of("prompts", "intent.md"), StandardCharsets.UTF_8);
+			} else {
+				processLogEntry("Evo: Request is empty. Please enter a valid instruction or question.");
+				return;
+			}
+		}
 
 		// --- FAST MODE ROUTING: Determine if this is a simple chat request before starting Self-Dev/Darwin ---
 		ModeRouter modeRouter = new ModeRouter();
