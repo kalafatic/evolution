@@ -324,6 +324,9 @@ public class DevelopmentPage extends AEvoPage {
         }
         @Override public Color getForeground(Object element, int columnIndex) { return null; }
         @Override public Color getBackground(Object element, int columnIndex) {
+            return getBackground(element);
+        }
+        @Override public Color getBackground(Object element) {
             SelfDevRow row = (SelfDevRow) element;
             String status = row.status.toLowerCase();
             if (status.contains("error") || status.contains("fail")) {
@@ -351,22 +354,44 @@ public class DevelopmentPage extends AEvoPage {
     }
 
     private void handleActionInternal(SelfDevRow row) {
+        System.out.println("[DevelopmentPage] [ACTION_TRIGGERED] User clicked action for row: " + (row != null ? row.name : "null") + ", path=" + (row != null ? row.path : "null") + ", currentStatus=" + (row != null ? row.status : "null"));
         if (SelfDevRow.SELF_DEV_LOOP.equals(row.name)) {
             RuntimeProjection projection = ProjectionService.getInstance().getProjection(getCurrentSessionName());
-            if (projection.isRunning()) OrchestratorServiceImpl.getInstance().shutdownSession(getCurrentSessionName());
-            else {
+            System.out.println("[DevelopmentPage] [SELF_DEV_LOOP] Projection current running status: " + projection.isRunning());
+            if (projection.isRunning()) {
+                System.out.println("[DevelopmentPage] [SELF_DEV_LOOP] Requesting shutdown for session: " + getCurrentSessionName());
+                OrchestratorServiceImpl.getInstance().shutdownSession(getCurrentSessionName());
+            } else {
+                System.out.println("[DevelopmentPage] [SELF_DEV_LOOP] Submitting TaskRequest to start Self-Dev Bootstrap for projectRoot: " + (projectRoot != null ? projectRoot.getAbsolutePath() : "null"));
                 TaskRequest req = new TaskRequest("Start Self-Dev Bootstrap", projectRoot);
                 req.getContext().put("orchestrator", orchestrator);
                 req.getContext().put("sessionId", getCurrentSessionName());
                 OrchestratorServiceImpl.getInstance().submit(getCurrentSessionName(), req);
             }
         } else if (SelfDevRow.SUPERVISOR_LOOP.equals(row.name)) {
-            if (bootstrapController.isRunning()) { bootstrapController.stopBootstrap(); row.status = "STOPPED"; }
-            else { try { bootstrapController.startBootstrap(); row.status = "RUNNING"; } catch (Exception e) { row.status = "ERROR"; } }
+            System.out.println("[DevelopmentPage] [SUPERVISOR_LOOP] Controller alive: " + bootstrapController.isRunning());
+            if (bootstrapController.isRunning()) {
+                System.out.println("[DevelopmentPage] [SUPERVISOR_LOOP] Requesting stopBootstrap()");
+                bootstrapController.stopBootstrap();
+                row.status = "STOPPED";
+            } else {
+                try {
+                    System.out.println("[DevelopmentPage] [SUPERVISOR_LOOP] Requesting startBootstrap()");
+                    bootstrapController.startBootstrap();
+                    row.status = "RUNNING";
+                } catch (Exception e) {
+                    System.err.println("[DevelopmentPage] [SUPERVISOR_LOOP_ERROR] Failed to start bootstrap: " + e.getMessage());
+                    row.status = "ERROR";
+                }
+            }
             selfDevTable.refresh(row);
-        } else if (SelfDevRow.COPY_SOURCE.equals(row.name)) executeBackgroundTask(row, "COPY");
-        else if (SelfDevRow.BUILD_PROJECT.equals(row.name)) executeBackgroundTask(row, "BUILD");
-        else {
+        } else if (SelfDevRow.COPY_SOURCE.equals(row.name)) {
+            System.out.println("[DevelopmentPage] [COPY_SOURCE] Initiating background task execution.");
+            executeBackgroundTask(row, "COPY");
+        } else if (SelfDevRow.BUILD_PROJECT.equals(row.name)) {
+            System.out.println("[DevelopmentPage] [BUILD_PROJECT] Initiating background task execution.");
+            executeBackgroundTask(row, "BUILD");
+        } else {
             String type = switch(row.name) {
                 case SelfDevRow.GIT_CHECK -> "GIT";
                 case SelfDevRow.MAVEN_CHECK -> "MAVEN";
@@ -376,15 +401,28 @@ public class DevelopmentPage extends AEvoPage {
                 case SelfDevRow.EXPORT_PRODUCT -> "EXPORT";
                 default -> null;
             };
-            if (type != null) { row.status = bootstrapController.check(type); selfDevTable.refresh(row); }
+            System.out.println("[DevelopmentPage] [ACTION] Mapped row: '" + row.name + "' to check type: '" + type + "'");
+            if (type != null) {
+                row.status = bootstrapController.check(type);
+                System.out.println("[DevelopmentPage] [ACTION_RESULT] Check type: " + type + ", returned status: " + row.status);
+                selfDevTable.refresh(row);
+            }
         }
     }
 
     private void executeBackgroundTask(SelfDevRow row, String type) {
+        System.out.println("[DevelopmentPage] [BACKGROUND_TASK_START] Submitting background execution for type: " + type + ", row: " + row.name);
         row.status = "running"; selfDevTable.refresh(row);
         new Thread(() -> {
             String res = bootstrapController.check(type);
-            Display.getDefault().asyncExec(() -> { if (!selfDevTable.getTable().isDisposed()) { row.status = res; selfDevTable.refresh(row); } });
+            System.out.println("[DevelopmentPage] [BACKGROUND_TASK_END] Background task " + type + " finished. Result: " + res);
+            Display.getDefault().asyncExec(() -> {
+                if (!selfDevTable.getTable().isDisposed()) {
+                    row.status = res;
+                    selfDevTable.refresh(row);
+                    System.out.println("[DevelopmentPage] [BACKGROUND_TASK_UI_UPDATED] UI row " + row.name + " updated with status: " + res);
+                }
+            });
         }).start();
     }
 
@@ -459,14 +497,21 @@ public class DevelopmentPage extends AEvoPage {
     }
 
     private void runDebug() {
+        System.out.println("[DevelopmentPage] [RUN_DEBUG_START] Resetting statuses and preparing to launch debug thread...");
         resetAllStatuses();
         new Thread(() -> {
-            if (!(selfDevTable.getInput() instanceof List<?> rows)) return;
+            if (!(selfDevTable.getInput() instanceof List<?> rows)) {
+                System.err.println("[DevelopmentPage] [RUN_DEBUG_FAIL] Table input is not a valid list of SelfDevRow rows.");
+                return;
+            }
+            System.out.println("[DevelopmentPage] [RUN_DEBUG] Starting sequential phase verification. Number of tasks: " + rows.size());
             if (bootstrapController != null) {
+                System.out.println("[DevelopmentPage] [RUN_DEBUG] Setting bootstrapController debugMode = true.");
                 bootstrapController.setDebugMode(true);
             }
             for (Object obj : rows) {
                 if (!(obj instanceof SelfDevRow row)) continue;
+                System.out.println("[DevelopmentPage] [RUN_DEBUG_STEP] Starting phase: " + row.name + ", expected path/URL: " + row.path + ", currentStatus: " + row.status);
                 Display.getDefault().syncExec(() -> {
                     row.status = "running";
                     selfDevTable.refresh(row);
@@ -528,11 +573,14 @@ public class DevelopmentPage extends AEvoPage {
                             break;
                     }
                 } catch (Exception e) {
+                    System.err.println("[DevelopmentPage] [RUN_DEBUG_STEP_ERROR] Exception in execution of phase " + row.name + ": " + e.getMessage());
+                    e.printStackTrace();
                     result = "ERROR: " + e.getMessage();
                     failed = true;
                 }
                 final String finalResult = result;
                 final boolean finalFailed = failed;
+                System.out.println("[DevelopmentPage] [RUN_DEBUG_STEP_RESULT] Phase: " + row.name + ", finalFailed: " + finalFailed + ", finalResult: " + finalResult);
                 Display.getDefault().syncExec(() -> {
                     row.status = finalResult;
                     selfDevTable.refresh(row);
@@ -541,6 +589,7 @@ public class DevelopmentPage extends AEvoPage {
                     final String phaseName = row.name;
                     final String finalResultStr = finalResult;
                     final boolean[] shouldContinue = { false };
+                    System.out.println("[DevelopmentPage] [RUN_DEBUG_STEP_PROMPT] Prompting user with MessageDialog for phase: " + phaseName);
                     Display.getDefault().syncExec(() -> {
                         org.eclipse.jface.dialogs.MessageDialog dialog = new org.eclipse.jface.dialogs.MessageDialog(
                             getShell(),
@@ -554,17 +603,23 @@ public class DevelopmentPage extends AEvoPage {
                             0
                         );
                         int code = dialog.open();
+                        System.out.println("[DevelopmentPage] [RUN_DEBUG_STEP_PROMPT_RESPONSE] User selected button index: " + code);
                         if (code == 0) {
                             shouldContinue[0] = true;
                         }
                     });
                     if (!shouldContinue[0]) {
+                        System.out.println("[DevelopmentPage] [RUN_DEBUG_STOP] Breaking sequential phase execution loop.");
                         break;
+                    } else {
+                        System.out.println("[DevelopmentPage] [RUN_DEBUG_CONTINUE] Continuing to next phase as requested by user.");
                     }
                 }
                 try {
+                    System.out.println("[DevelopmentPage] [RUN_DEBUG_STEP_COMPLETE] Sleeping 500ms before next phase.");
                     Thread.sleep(500);
                 } catch (InterruptedException e) {
+                    System.err.println("[DevelopmentPage] [RUN_DEBUG_INTERRUPTED] Debug thread was interrupted.");
                     Thread.currentThread().interrupt();
                     break;
                 }
