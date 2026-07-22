@@ -28,6 +28,9 @@ import eu.kalafatic.evolution.controller.orchestration.SystemState;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.TaskRequest;
 import eu.kalafatic.evolution.controller.orchestration.IterationManager;
+import eu.kalafatic.evolution.controller.orchestration.FinalResponse;
+import eu.kalafatic.evolution.controller.orchestration.ExecutionMetrics;
+import eu.kalafatic.evolution.controller.orchestration.FileReference;
 import eu.kalafatic.evolution.model.orchestration.ChatSession;
 
 import eu.kalafatic.evolution.forge.data.impl.DatasetBuilder;
@@ -373,7 +376,17 @@ public class DarwinLlmInstance extends ADarwinEngine {
 
         OrchestratorResponse response = new OrchestratorResponse();
         response.setResultType(ResultType.CHAT);
-        response.setSummary(summaryBuilder.toString());
+
+        FinalResponse finalResponse = new FinalResponse(
+            summaryBuilder.toString(),
+            new ArrayList<String>(),
+            new ArrayList<FileReference>(),
+            true,
+            null,
+            "Execution completed successfully.",
+            new ExecutionMetrics(context.getStartTime(), Instant.now())
+        );
+        response.setFinalResponse(finalResponse);
 
         iterationManager.transition(SystemState.DONE, context);
         EvolutionProgressPublisher.completeIteration(context);
