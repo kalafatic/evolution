@@ -242,8 +242,17 @@ public class SelfDevBootstrapController {
     }
 
     public String check(String type) {
-        System.out.println("[SelfDevBootstrapController] [CHECK_START] Executing check for type: " + type);
-        System.out.println("[SelfDevBootstrapController] [CHECK_START] Current variables: projectRoot=" + (projectRoot != null ? projectRoot.getAbsolutePath() : "null") + ", runDir=" + (runDir != null ? runDir.getAbsolutePath() : "null") + ", orchestrator=" + (orchestrator != null ? orchestrator.toString() : "null"));
+        String dashedBorder = "==========================================================================";
+        System.out.println(dashedBorder);
+        System.out.println("[PROCESS_VISUALIZATION] STARTING PRE-FLIGHT CHECK: [" + type.toUpperCase() + "]");
+        System.out.println("  [Ready] ──▶ [Checking] ──▶ [Verified/Error]");
+        System.out.println("  Current Status Indicator: [Checking]");
+        System.out.println("  Parameters:");
+        System.out.println("    - projectRoot: " + (projectRoot != null ? projectRoot.getAbsolutePath() : "null"));
+        System.out.println("    - runDir:      " + (runDir != null ? runDir.getAbsolutePath() : "null"));
+        System.out.println("    - Mode:        " + (debugMode ? "DEBUG" : "STANDARD"));
+        System.out.println(dashedBorder);
+
         ensureSupervisorRunning();
         String result = switch (type.toUpperCase()) {
             case "GIT" -> checkGit();
@@ -263,7 +272,12 @@ public class SelfDevBootstrapController {
                 yield "UNKNOWN";
             }
         };
-        System.out.println("[SelfDevBootstrapController] [CHECK_END] Check for type " + type + " completed. Returned: " + result);
+
+        System.out.println(dashedBorder);
+        System.out.println("[PROCESS_VISUALIZATION] PRE-FLIGHT CHECK TASK ENDED: [" + type.toUpperCase() + "]");
+        System.out.println("  Result Outcome: [" + result + "]");
+        System.out.println("  [Ready] ──▶ [Checking] ──▶ [" + (result.startsWith("ERROR") ? "Error" : "Verified") + "]");
+        System.out.println(dashedBorder);
         return result;
     }
 
@@ -462,6 +476,27 @@ public class SelfDevBootstrapController {
                     genomeModuleDir = testDir;
                     System.out.println("[SelfDevBootstrapController] [CHECK_GENOME] Found genome module dir via parent codebasePath scan: " + genomeModuleDir.getAbsolutePath());
                 }
+            }
+        }
+
+        // 5. Scan using EclipseGitEvoTool fallback
+        if (genomeModuleDir == null) {
+            try {
+                Class<?> gitToolClass = Class.forName("eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool");
+                java.lang.reflect.Method getEvoRepoMethod = gitToolClass.getMethod("getEvolutionRepository");
+                String evoRepoPath = (String) getEvoRepoMethod.invoke(null);
+                System.out.println("[SelfDevBootstrapController] [CHECK_GENOME] EclipseGitEvoTool.getEvolutionRepository() returned: " + evoRepoPath);
+                if (evoRepoPath != null) {
+                    File evoDir = new File(evoRepoPath);
+                    File testDir = new File(evoDir, "eu.kalafatic.evolution.selfdev.genome");
+                    System.out.println("[SelfDevBootstrapController] [CHECK_GENOME] Checking EclipseGitEvoTool path fallback: " + testDir.getAbsolutePath());
+                    if (testDir.exists() && new File(testDir, "pom.xml").exists()) {
+                        genomeModuleDir = testDir;
+                        System.out.println("[SelfDevBootstrapController] [CHECK_GENOME] Found genome module dir via EclipseGitEvoTool scan: " + genomeModuleDir.getAbsolutePath());
+                    }
+                }
+            } catch (Throwable t) {
+                System.out.println("[SelfDevBootstrapController] [CHECK_GENOME] Failed to query EclipseGitEvoTool fallback: " + t.getMessage());
             }
         }
 
