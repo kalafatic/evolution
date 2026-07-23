@@ -611,7 +611,77 @@ public class EvolutionServer extends NanoHTTPD {
                 }
             }
 
+            SessionContainer sessionCont = SessionManager.getInstance().getOrCreateSession(sessionId);
+            final eu.kalafatic.evolution.controller.workflow.RuntimeEventBus bus = sessionCont.getEventBus();
+            if (bus != null) {
+                bus.publish(new eu.kalafatic.evolution.controller.workflow.RuntimeEvent(
+                    eu.kalafatic.evolution.controller.workflow.RuntimeEventType.MODE_CHANGED,
+                    sessionId, "EvolutionServer", "FORGE"
+                ));
+            }
+
             selfEvoService.startForging(sessionId, new File(".").toPath(), dataSources);
+
+            if (bus != null) {
+                new Thread(() -> {
+                    String lastStatus = "";
+                    while (true) {
+                        try {
+                            Thread.sleep(300);
+                            eu.kalafatic.evolution.forge.controller.service.SelfEvoForgingService.ForgingStats stats = selfEvoService.getStats(sessionId);
+                            String status = stats.status();
+                            if (status == null) status = "IDLE";
+
+                            if (!status.equals(lastStatus)) {
+                                lastStatus = status;
+                                eu.kalafatic.evolution.controller.workflow.RuntimeEventType type = switch (status) {
+                                    case "STARTING" -> eu.kalafatic.evolution.controller.workflow.RuntimeEventType.FLOW_STARTED;
+                                    case "SCANNING" -> eu.kalafatic.evolution.controller.workflow.RuntimeEventType.FORGE_SESSION_CREATED;
+                                    case "ENHANCING" -> eu.kalafatic.evolution.controller.workflow.RuntimeEventType.FORGE_MODEL_CHANGED;
+                                    case "TRAINING" -> eu.kalafatic.evolution.controller.workflow.RuntimeEventType.FORGE_TRAINING_STARTED;
+                                    case "EXPORTING" -> eu.kalafatic.evolution.controller.workflow.RuntimeEventType.EXPORT_READY;
+                                    case "EXPORT_GGUF" -> eu.kalafatic.evolution.controller.workflow.RuntimeEventType.DEPLOYMENT_STARTED;
+                                    case "COMPLETE" -> eu.kalafatic.evolution.controller.workflow.RuntimeEventType.FLOW_COMPLETED;
+                                    case "ERROR" -> eu.kalafatic.evolution.controller.workflow.RuntimeEventType.TASK_FAILED;
+                                    default -> eu.kalafatic.evolution.controller.workflow.RuntimeEventType.VIEW_UPDATED;
+                                };
+
+                                eu.kalafatic.evolution.controller.workflow.RuntimeEvent ev = new eu.kalafatic.evolution.controller.workflow.RuntimeEvent(type, sessionId, "ForgeService", status)
+                                    .withMetadata("status", status)
+                                    .withMetadata("progress", stats.progress())
+                                    .withMetadata("filesScanned", stats.filesScanned())
+                                    .withMetadata("totalFiles", stats.totalFiles())
+                                    .withMetadata("instructionsGenerated", stats.instructionsGenerated())
+                                    .withMetadata("currentLoss", stats.currentLoss())
+                                    .withMetadata("currentEpoch", stats.currentEpoch())
+                                    .withMetadata("outputFolder", stats.outputFolder());
+
+                                bus.publish(ev);
+                            } else if ("TRAINING".equals(status) || "SCANNING".equals(status) || "ENHANCING".equals(status) || "EXPORTING".equals(status) || "EXPORT_GGUF".equals(status)) {
+                                eu.kalafatic.evolution.controller.workflow.RuntimeEvent ev = new eu.kalafatic.evolution.controller.workflow.RuntimeEvent(eu.kalafatic.evolution.controller.workflow.RuntimeEventType.EVOLUTION_PROGRESS, sessionId, "ForgeService", status)
+                                    .withMetadata("status", status)
+                                    .withMetadata("progress", stats.progress())
+                                    .withMetadata("filesScanned", stats.filesScanned())
+                                    .withMetadata("totalFiles", stats.totalFiles())
+                                    .withMetadata("instructionsGenerated", stats.instructionsGenerated())
+                                    .withMetadata("currentLoss", stats.currentLoss())
+                                    .withMetadata("currentEpoch", stats.currentEpoch())
+                                    .withMetadata("outputFolder", stats.outputFolder());
+
+                                bus.publish(ev);
+                            }
+
+                            if ("COMPLETE".equals(status) || "ERROR".equals(status) || "IDLE".equals(status)) {
+                                break;
+                            }
+                        } catch (Exception ex) {
+                            ex.printStackTrace();
+                            break;
+                        }
+                    }
+                }, "ForgeStatsPoller-" + sessionId).start();
+            }
+
             return newFixedLengthResponse(Response.Status.OK, "application/json", "{\"status\": \"started\"}");
         } catch (Exception e) {
             return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", e.getMessage());
