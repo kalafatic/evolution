@@ -18,6 +18,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
+import eu.kalafatic.evolution.controller.orchestration.EvolutionProgressEvent;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionProgressPublisher;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionStage;
 import eu.kalafatic.evolution.controller.orchestration.OrchestrationState;
@@ -185,13 +186,31 @@ public class DarwinLlmInstance extends ADarwinEngine {
             EvolutionProgressPublisher.startIteration(context, gen, gen, "forge-lineage", 1, generations, 1, 3);
             EvolutionProgressPublisher.updateStage(context, EvolutionStage.GENERATE_BRANCH);
 
+            // Sync the initial active branch statuses
+            List<EvolutionProgressEvent.BranchStatus> branchStatuses = new ArrayList<>();
+            char bChar = 'A';
+            for (LlmConfig config : candidates) {
+                EvolutionProgressEvent.BranchStatus bs = new EvolutionProgressEvent.BranchStatus();
+                bs.setId("gen_" + gen + "_candidate_" + bChar);
+                bs.setStrategy("Candidate " + bChar + " (" + config + ")");
+                bs.setStatus("active");
+                bs.setScore(0.0);
+                branchStatuses.add(bs);
+                bChar++;
+            }
+            EvolutionProgressPublisher.syncBranches(context, branchStatuses);
+
             List<CandidateResult> results = new ArrayList<>();
             char candChar = 'A';
 
             for (LlmConfig config : candidates) {
+                String candidateId = "gen_" + gen + "_candidate_" + candChar;
                 String candidateName = "Candidate " + candChar;
                 context.log("[FORGE] Training " + candidateName + " (" + config + ")...");
                 logs.add(candidateName + "\nTraining...\n");
+
+                EvolutionProgressPublisher.updateActiveModel(context, "evo-candidate", "Training " + candidateName);
+                EvolutionProgressPublisher.updateBranchStatus(context, candidateId, candidateName + " (" + config + ")", "verifying", null);
 
                 long startTime = System.currentTimeMillis();
 
@@ -233,6 +252,9 @@ public class DarwinLlmInstance extends ADarwinEngine {
                     candidateName, loss, paramCount, durationMs, fitness));
                 logs.add(String.format("Loss %.4f\n-----------------\n", loss));
 
+                double uiScore = Math.max(0.01, 1.0 / (1.0 + fitness));
+                EvolutionProgressPublisher.updateBranchStatus(context, candidateId, candidateName + " (" + config + ")", "scoring", uiScore);
+
                 results.add(new CandidateResult(candidateName, config, loss, paramCount, durationMs, fitness));
                 candChar++;
             }
@@ -253,6 +275,29 @@ public class DarwinLlmInstance extends ADarwinEngine {
             genReports.add(genReport);
 
             overallWinner = genWinner;
+
+            // Update the winner and rejected branch statuses for the UI
+            String winnerBranchId = "gen_" + gen + "_candidate_" + genWinner.name.substring(genWinner.name.length() - 1);
+            EvolutionProgressPublisher.setWinnerId(context, winnerBranchId);
+
+            List<EvolutionProgressEvent.BranchStatus> updatedStatuses = new ArrayList<>();
+            for (CandidateResult r : results) {
+                char charSuffix = r.name.substring(r.name.length() - 1).charAt(0);
+                String bId = "gen_" + gen + "_candidate_" + charSuffix;
+                EvolutionProgressEvent.BranchStatus bs = new EvolutionProgressEvent.BranchStatus();
+                bs.setId(bId);
+                bs.setStrategy(r.name + " (" + r.config + ")");
+                double rUiScore = Math.max(0.01, 1.0 / (1.0 + r.fitness));
+                bs.setScore(rUiScore);
+                if (bId.equals(winnerBranchId)) {
+                    bs.setStatus("active");
+                } else {
+                    bs.setStatus("rejected");
+                }
+                updatedStatuses.add(bs);
+            }
+            EvolutionProgressPublisher.syncBranches(context, updatedStatuses);
+            EvolutionProgressPublisher.completeIteration(context);
 
             // Generate candidates for the next generation via mutation
             if (gen < generations) {
