@@ -77,6 +77,7 @@ import eu.kalafatic.evolution.view.editors.pages.aichat.ChatMgmtGroup;
 import eu.kalafatic.evolution.view.editors.pages.aichat.FeedbackGroup;
 import eu.kalafatic.evolution.view.editors.pages.aichat.InstructionsGroup;
 import eu.kalafatic.evolution.view.editors.pages.aichat.SystemStatusGroup;
+import eu.kalafatic.evolution.view.editors.pages.development.InteractiveWorkflowGroup;
 import eu.kalafatic.evolution.view.projection.ProjectionService;
 import eu.kalafatic.evolution.view.projection.RuntimeProjection;
 
@@ -99,6 +100,7 @@ public class AiChatPage extends AEvoPage {
 	private ChatGroup chatGroup;
 	private SystemStatusGroup systemStatusGroup;
 	private FeedbackGroup feedbackGroup;
+	private InteractiveWorkflowGroup workflowGroup;
 	private ConversationOutputController outputController;
 	private String currentTurnId;
 
@@ -177,6 +179,10 @@ public class AiChatPage extends AEvoPage {
 					});
 				}
 
+				if (workflowGroup != null) {
+					workflowGroup.dispose();
+				}
+
 				if (chatFont != null && !chatFont.isDisposed()) chatFont.dispose();
 				if (bannerFont != null && !bannerFont.isDisposed()) bannerFont.dispose();
 				if (colorWaiting != null && !colorWaiting.isDisposed()) colorWaiting.dispose();
@@ -199,10 +205,15 @@ public class AiChatPage extends AEvoPage {
 		systemStatusGroup = new SystemStatusGroup(toolkit, content, editor, orchestrator);
 		chatMgmtGroup = new ChatMgmtGroup(toolkit, content, editor, orchestrator, this);
 
-		// Main resizable area
-		SashForm mainSash = new SashForm(content, SWT.VERTICAL | SWT.SMOOTH);
+		// Main horizontal split sash
+		SashForm horizontalSash = new SashForm(content, SWT.HORIZONTAL | SWT.SMOOTH);
+		GridData horizontalSashGd = new GridData(GridData.FILL_BOTH);
+		horizontalSashGd.heightHint = 800; // Give it a reasonable initial size
+		horizontalSash.setLayoutData(horizontalSashGd);
+
+		// Left side: Main resizable chat area
+		SashForm mainSash = new SashForm(horizontalSash, SWT.VERTICAL | SWT.SMOOTH);
 		GridData sashGd = new GridData(GridData.FILL_BOTH);
-		sashGd.heightHint = 800; // Give it a reasonable initial size
 		mainSash.setLayoutData(sashGd);
 
 		chatGroup = new ChatGroup(toolkit, mainSash, editor, orchestrator, chatFont, this);
@@ -228,6 +239,11 @@ public class AiChatPage extends AEvoPage {
 		feedbackGroup = new FeedbackGroup(toolkit, footerContainer, editor, orchestrator, this);
 
 		mainSash.setWeights(new int[] { 50, 20, 30 });
+
+		// Right side: Interactive Workflow Group
+		workflowGroup = new InteractiveWorkflowGroup(toolkit, horizontalSash, editor, orchestrator, getCurrentSessionName());
+
+		horizontalSash.setWeights(new int[] { 65, 35 });
 
 		initializeSessions();
 
@@ -689,6 +705,10 @@ public class AiChatPage extends AEvoPage {
 					// Force UI groups to reload from the new session object
 					if (chatMgmtGroup != null) chatMgmtGroup.scheduleRefresh();
 					if (instructionsGroup != null) instructionsGroup.scheduleRefresh();
+					if (workflowGroup != null) {
+						workflowGroup.setSessionId(sessionId);
+						workflowGroup.scheduleRefresh();
+					}
 				});
 	}
 
@@ -865,6 +885,11 @@ public class AiChatPage extends AEvoPage {
 				instructionsGroup.setOrchestrationRunning(projection.isRunning());
 				instructionsGroup.setPaused(projection.isPaused());
 				chatGroup.setThinking(projection.isRunning() && !projection.isPaused());
+
+				if (workflowGroup != null) {
+					workflowGroup.setSessionId(getCurrentSessionName());
+					workflowGroup.scheduleRefresh();
+				}
 
 				// Centralize layout at the end of refresh
 				updateScrolledContent();

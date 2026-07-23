@@ -76,6 +76,13 @@ public class IterationPage extends AEvoPage {
 	private String[] stepNames = { "PLAN", "CODE", "TEST", "SCORE", "SELECT", "MERGE" };
 	private java.util.Timer pollTimer;
 
+	// Caching fields for high-performance log refreshes
+	private long lastLogFileSize = 0;
+	private long lastLogFileModified = 0;
+	private String lastIterFilter = "";
+	private String lastBranchFilter = "";
+	private String lastLevelFilter = "";
+
 	public IterationPage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
 		super(parent, editor, orchestrator);
 		this.setLayout(new GridLayout(1, false));
@@ -351,7 +358,14 @@ public class IterationPage extends AEvoPage {
 			for (Integer num : iterationNumbers) {
 				logIterationFilter.add(String.valueOf(num));
 			}
-			logIterationFilter.setText(selected.isEmpty() ? "All" : selected);
+			boolean hasSelected = false;
+			for (String item : logIterationFilter.getItems()) {
+				if (item.equals(selected)) {
+					hasSelected = true;
+					break;
+				}
+			}
+			logIterationFilter.setText(hasSelected ? selected : "All");
 		}
 	}
 
@@ -360,6 +374,7 @@ public class IterationPage extends AEvoPage {
 			goalLabel.setText("Goal: N/A");
 			resultLabel.setText("Result: N/A");
 			branchTable.setInput(Collections.emptyList());
+			updateFlow(null);
 			return;
 		}
 
@@ -396,7 +411,7 @@ public class IterationPage extends AEvoPage {
 
 		if (selected == null) {
 			detailsText.setText("");
-			updateFlow(false);
+			updateFlow(null);
 			return;
 		}
 
@@ -416,7 +431,7 @@ public class IterationPage extends AEvoPage {
 		}
 		detailsText.setText(sb.toString());
 
-		updateFlow("SUCCESS".equals(selected.getResult()));
+		updateFlow(selected);
 	}
 
 	private void syncFiltersWithSelection() {
@@ -465,6 +480,24 @@ public class IterationPage extends AEvoPage {
 			return;
 		}
 
+		long currentSize = logFile.length();
+		long currentModified = logFile.lastModified();
+
+		// Highly optimized cache bypass check
+		if (currentSize == lastLogFileSize &&
+			currentModified == lastLogFileModified &&
+			iterFilter.equals(lastIterFilter) &&
+			branchFilter.equals(lastBranchFilter) &&
+			levelFilter.equals(lastLevelFilter)) {
+			return; // Skip parsing if nothing changed
+		}
+
+		lastLogFileSize = currentSize;
+		lastLogFileModified = currentModified;
+		lastIterFilter = iterFilter;
+		lastBranchFilter = branchFilter;
+		lastLevelFilter = levelFilter;
+
 		StringBuilder sb = new StringBuilder();
 		try (BufferedReader reader = new BufferedReader(new FileReader(logFile))) {
 			String line;
@@ -512,21 +545,69 @@ public class IterationPage extends AEvoPage {
 		return true;
 	}
 
-	private void updateFlow(boolean success) {
+	private void updateFlow(IterationRecord selected) {
+		if (selected == null) {
+			boolean changed = false;
+			for (int i = 0; i < 6; i++) {
+				Color targetColor = Display.getCurrent().getSystemColor(SWT.COLOR_DARK_GRAY);
+				String targetText = stepNames[i];
+				if (!targetColor.equals(flowSteps[i].getForeground())) {
+					flowSteps[i].setForeground(targetColor);
+					changed = true;
+				}
+				if (!targetText.equals(flowSteps[i].getText())) {
+					flowSteps[i].setText(targetText);
+					changed = true;
+				}
+			}
+			if (changed) {
+				flowComposite.layout();
+			}
+			return;
+		}
+
+		boolean isSuccess = "SUCCESS".equals(selected.getResult());
+		boolean isFailed = "FAILED".equals(selected.getResult());
+		String phase = selected.getStrategy() != null ? selected.getStrategy().toUpperCase() : "";
+
+		int activeIndex = -1;
+		if (phase.contains("PLAN")) activeIndex = 0;
+		else if (phase.contains("CODE")) activeIndex = 1;
+		else if (phase.contains("TEST") || phase.contains("VERIFY")) activeIndex = 2;
+		else if (phase.contains("SCORE") || phase.contains("EVAL")) activeIndex = 3;
+		else if (phase.contains("SELECT")) activeIndex = 4;
+		else if (phase.contains("MERGE") || phase.contains("INTEGRAT")) activeIndex = 5;
+
 		boolean changed = false;
 		for (int i = 0; i < 6; i++) {
 			Color targetColor;
 			String targetText;
-			if (success) {
+
+			if (isSuccess) {
 				targetColor = Display.getCurrent().getSystemColor(SWT.COLOR_DARK_GREEN);
 				targetText = stepNames[i] + " \u2714";
-			} else {
-				if (i <= 3) {
+			} else if (isFailed) {
+				if (activeIndex != -1 && i == activeIndex) {
+					targetColor = Display.getCurrent().getSystemColor(SWT.COLOR_RED);
+					targetText = stepNames[i] + " \u2718";
+				} else if (activeIndex != -1 && i < activeIndex) {
 					targetColor = Display.getCurrent().getSystemColor(SWT.COLOR_DARK_GREEN);
 					targetText = stepNames[i] + " \u2714";
 				} else {
-					targetColor = Display.getCurrent().getSystemColor(SWT.COLOR_RED);
-					targetText = stepNames[i] + " \u2718";
+					targetColor = Display.getCurrent().getSystemColor(SWT.COLOR_DARK_GRAY);
+					targetText = stepNames[i];
+				}
+			} else {
+				// Running / Active
+				if (activeIndex != -1 && i < activeIndex) {
+					targetColor = Display.getCurrent().getSystemColor(SWT.COLOR_DARK_GREEN);
+					targetText = stepNames[i] + " \u2714";
+				} else if (activeIndex != -1 && i == activeIndex) {
+					targetColor = Display.getCurrent().getSystemColor(SWT.COLOR_BLUE);
+					targetText = stepNames[i] + " \u25B6";
+				} else {
+					targetColor = Display.getCurrent().getSystemColor(SWT.COLOR_DARK_GRAY);
+					targetText = stepNames[i];
 				}
 			}
 
@@ -555,14 +636,22 @@ public class IterationPage extends AEvoPage {
 				}
 
 				boolean memoryChanged = (memoryService != null) && memoryService.refresh();
+				boolean sessionRunning = false;
+				if (orchestrator != null && orchestrator.getSelfDevSession() != null) {
+					sessionRunning = !orchestrator.getSelfDevSession().getIterations().isEmpty();
+				}
+
+				final boolean forceUpdate = memoryChanged || sessionRunning;
 
 				Display.getDefault().asyncExec(() -> {
 					if (!isDisposed()) {
-						if (memoryChanged) {
+						if (forceUpdate) {
 							refreshData();
 							updateUI();
 							updateSessionStatus();
 						}
+						// Robust, high-performance real-time log refresh
+						refreshLogs();
 					}
 				});
 			}
