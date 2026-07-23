@@ -369,23 +369,41 @@ public class SelfDevBootstrapController {
             File parentDir = genomeModuleDir.getParentFile();
             System.out.println("[SelfDevBootstrapController] Executing build in parent directory: " + parentDir.getAbsolutePath() + " to resolve reactor siblings.");
 
-            ProcessBuilder pb = new ProcessBuilder(mvnCmd, "clean", "compile", "-pl", "eu.kalafatic.evolution.selfdev.genome", "-am", "-DskipTests");
-            pb.directory(parentDir);
-            pb.redirectErrorStream(true);
-            Process p = pb.start();
-
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
+            // Step 1: Clean ONLY the genome module
+            System.out.println("[SelfDevBootstrapController] Step 1: Running clean on eu.kalafatic.evolution.selfdev.genome only");
+            ProcessBuilder pbClean = new ProcessBuilder(mvnCmd, "clean", "-pl", "eu.kalafatic.evolution.selfdev.genome");
+            pbClean.directory(parentDir);
+            pbClean.redirectErrorStream(true);
+            Process pClean = pbClean.start();
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(pClean.getInputStream()))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    System.out.println("[Genome Build] " + line);
+                    System.out.println("[Genome Clean] " + line);
                 }
             }
-            int exitCode = p.waitFor();
-            System.out.println("[SelfDevBootstrapController] Genome module build finished with exit code: " + exitCode);
-            if (exitCode == 0) {
+            int cleanExitCode = pClean.waitFor();
+            System.out.println("[SelfDevBootstrapController] Genome clean finished with exit code: " + cleanExitCode);
+
+            // Step 2: Compile the genome module and dependencies as needed, without cleaning them
+            System.out.println("[SelfDevBootstrapController] Step 2: Running compile on eu.kalafatic.evolution.selfdev.genome with dependencies");
+            ProcessBuilder pbCompile = new ProcessBuilder(mvnCmd, "compile", "-pl", "eu.kalafatic.evolution.selfdev.genome", "-am", "-DskipTests");
+            pbCompile.directory(parentDir);
+            pbCompile.redirectErrorStream(true);
+            Process pCompile = pbCompile.start();
+
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(pCompile.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    System.out.println("[Genome Compile] " + line);
+                }
+            }
+            int compileExitCode = pCompile.waitFor();
+            System.out.println("[SelfDevBootstrapController] Genome compile finished with exit code: " + compileExitCode);
+
+            if (cleanExitCode == 0 && compileExitCode == 0) {
                 return "SUCCESS";
             } else {
-                return "ERROR: Build failed (exit code " + exitCode + ")";
+                return "ERROR: Build failed (clean exit code " + cleanExitCode + ", compile exit code " + compileExitCode + ")";
             }
         } catch (Exception e) {
             System.err.println("[SelfDevBootstrapController] Failed to compile genome module: " + e.getMessage());
@@ -463,8 +481,30 @@ public class SelfDevBootstrapController {
 
         try {
             System.out.println("[SelfDevBootstrapController] [CHECK_GENOME] Integrating and updating project genome in projectRoot: " + projectRoot.getAbsolutePath() + ", projectName: " + projectRoot.getName());
-            eu.kalafatic.evolution.selfdev.genome.hub.SelfDevGenomeHub.getInstance()
-                .updateGenome(projectRoot, projectRoot.getName(), "v1.0.0");
+
+            Class<?> hubClass = null;
+            try {
+                hubClass = Class.forName("eu.kalafatic.evolution.selfdev.genome.hub.SelfDevGenomeHub");
+                System.out.println("[SelfDevBootstrapController] [CHECK_GENOME] Loaded SelfDevGenomeHub via default Class.forName");
+            } catch (Throwable t) {
+                System.out.println("[SelfDevBootstrapController] [CHECK_GENOME] Default ClassLoader failed to load SelfDevGenomeHub: " + t.getMessage() + ". Trying URLClassLoader fallback...");
+                File classesDir = new File(genomeModuleDir, "target/classes");
+                if (classesDir.exists()) {
+                    java.net.URL[] urls = new java.net.URL[] { classesDir.toURI().toURL() };
+                    ClassLoader parentLoader = SelfDevBootstrapController.class.getClassLoader();
+                    java.net.URLClassLoader urlLoader = new java.net.URLClassLoader(urls, parentLoader);
+                    hubClass = urlLoader.loadClass("eu.kalafatic.evolution.selfdev.genome.hub.SelfDevGenomeHub");
+                    System.out.println("[SelfDevBootstrapController] [CHECK_GENOME] Loaded SelfDevGenomeHub via URLClassLoader pointing to: " + classesDir.getAbsolutePath());
+                } else {
+                    throw new ClassNotFoundException("Genome target/classes directory not found: " + classesDir.getAbsolutePath(), t);
+                }
+            }
+
+            java.lang.reflect.Method getInstanceMethod = hubClass.getMethod("getInstance");
+            Object hubInstance = getInstanceMethod.invoke(null);
+
+            java.lang.reflect.Method updateGenomeMethod = hubClass.getMethod("updateGenome", File.class, String.class, String.class);
+            updateGenomeMethod.invoke(hubInstance, projectRoot, projectRoot.getName(), "v1.0.0");
 
             File genomeJson = new File(projectRoot, "genome/current/genome.json");
             System.out.println("[SelfDevBootstrapController] [CHECK_GENOME] Checking generated genome.json path: " + genomeJson.getAbsolutePath() + ", exists: " + genomeJson.exists());
