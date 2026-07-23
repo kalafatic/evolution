@@ -6,19 +6,31 @@
     <link rel="stylesheet" href="workflow.css">
     <script src="d3.v7.min.js"></script>
 </head>
-<body class="xp-bg">
-    <div class="window-frame" style="width: 100%; height: 100%; border:none; border-radius:0;">
-        <div class="title-bar">
+<body class="xp-bg" style="margin:0; padding:0; height:100vh; overflow:hidden;">
+    <div class="window-frame" style="width: 100%; height: 100vh; border:none; border-radius:0; display:flex; flex-direction:column;">
+        <div class="title-bar" style="flex-shrink:0;">
             <div class="title-text">Workflow Monitor</div>
             <div class="title-controls">
                 <button class="control-btn minimize">_</button>
                 <button class="control-btn maximize">□</button>
             </div>
         </div>
-        <div style="flex:1; background: white; overflow: hidden; position: relative;">
-    <div id="workflow-container">
-        <svg id="workflow-svg"></svg>
+        <div style="flex:1; display:flex; flex-direction:column; background: white; overflow: hidden; position: relative; width:100%; height:100%;">
+    <div id="workflow-container" style="width:100%; height:100%; flex:1;">
+        <svg id="workflow-svg" style="width:100%; height:100%; display:block;"></svg>
     </div>
+    <div id="tooltip" class="flow-tooltip" style="opacity: 0; position: absolute; pointer-events: none; z-index: 1000; background: rgba(15, 23, 42, 0.95); color: white; padding: 12px; border-radius: 8px; font-size: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: 1px solid #334155; max-width: 250px;"></div>
+
+    <div id="details-panel" class="details-card hidden">
+        <div class="details-header">
+            <span id="details-title">Select a node</span>
+            <button class="close-details" onclick="closeDetails()">×</button>
+        </div>
+        <div id="details-content">
+            <p class="placeholder-text">Click any node in the diagram to view real-time metrics, configure settings, and inspect stage details.</p>
+        </div>
+    </div>
+
     <div id="controls" style="position: absolute; bottom: 10px; right: 10px; z-index: 10;">
         <button onclick="applyZoom(1.2)">+</button>
         <button onclick="applyZoom(0.8)">-</button>

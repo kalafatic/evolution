@@ -108,6 +108,190 @@ public class WorkflowGraphManager implements RuntimeEventListener {
 			case STEP_RESUMED:
 				handleStepResumed(event);
 				break;
+			case FORGE_SESSION_CREATED:
+			case FORGE_SESSION_SWITCHED:
+				setupForgeTemplate();
+				break;
+			case FORGE_MODEL_CHANGED:
+				handleForgeModelChanged(event);
+				break;
+			case FORGE_DATASET_IMPORTED:
+				handleForgeDatasetImported(event);
+				break;
+			case FORGE_TRAINING_STARTED:
+				handleForgeTrainingStarted(event);
+				break;
+			case FORGE_TRAINING_STOPPED:
+				handleForgeTrainingStopped(event);
+				break;
+			case FORGE_TRAINING_FAILED:
+				handleForgeTrainingFailed(event);
+				break;
+			case FORGE_SNAPSHOT_CREATED:
+				handleForgeSnapshotCreated(event);
+				break;
+			case EVOLUTION_PROGRESS:
+				handleForgeProgress(event);
+				break;
+			}
+		}
+
+		private void handleForgeModelChanged(RuntimeEvent event) {
+			setupForgeTemplateIfNeeded();
+			GraphEntity scanner = entities.get("scanner");
+			if (scanner != null) {
+				scanner.setStatus("DONE");
+				if (event.getMetadata().containsKey("filesScanned")) {
+					scanner.setRuntimeState(event.getMetadata().get("filesScanned") + " files found");
+					scanner.getMetadata().put("Files Scanned", event.getMetadata().get("filesScanned"));
+				} else {
+					scanner.setRuntimeState("Scanning completed");
+				}
+			}
+			GraphEntity enhancer = entities.get("enhancer");
+			if (enhancer != null) {
+				enhancer.setStatus("RUNNING");
+				enhancer.setRuntimeState("Analyzing & Enhancing...");
+			}
+		}
+
+		private void handleForgeDatasetImported(RuntimeEvent event) {
+			setupForgeTemplateIfNeeded();
+			GraphEntity enhancer = entities.get("enhancer");
+			if (enhancer != null) {
+				enhancer.setStatus("DONE");
+				if (event.getMetadata().containsKey("instructionsGenerated")) {
+					enhancer.setRuntimeState(event.getMetadata().get("instructionsGenerated") + " samples generated");
+					enhancer.getMetadata().put("Samples", event.getMetadata().get("instructionsGenerated"));
+				} else {
+					enhancer.setRuntimeState("Dataset Synthesized");
+				}
+			}
+			GraphEntity trainer = entities.get("trainer");
+			if (trainer != null) {
+				trainer.setStatus("RUNNING");
+				trainer.setRuntimeState("Configuring Trainer...");
+			}
+		}
+
+		private void handleForgeTrainingStarted(RuntimeEvent event) {
+			setupForgeTemplateIfNeeded();
+			GraphEntity enhancer = entities.get("enhancer");
+			if (enhancer != null && !"DONE".equals(enhancer.getStatus())) {
+				enhancer.setStatus("DONE");
+			}
+			GraphEntity trainer = entities.get("trainer");
+			if (trainer != null) {
+				trainer.setStatus("RUNNING");
+				trainer.setRuntimeState("Epoch 1/1: Training...");
+				if (event.getMetadata().containsKey("currentLoss")) {
+					trainer.getMetadata().put("Loss", event.getMetadata().get("currentLoss"));
+				}
+			}
+		}
+
+		private void handleForgeTrainingStopped(RuntimeEvent event) {
+			setupForgeTemplateIfNeeded();
+			GraphEntity trainer = entities.get("trainer");
+			if (trainer != null) {
+				trainer.setStatus("IDLE");
+				trainer.setRuntimeState("Training stopped");
+			}
+		}
+
+		private void handleForgeTrainingFailed(RuntimeEvent event) {
+			setupForgeTemplateIfNeeded();
+			GraphEntity trainer = entities.get("trainer");
+			if (trainer != null) {
+				trainer.setStatus("FAILED");
+				trainer.setRuntimeState("Failed: " + event.getPayload().toString());
+			}
+		}
+
+		private void handleForgeSnapshotCreated(RuntimeEvent event) {
+			setupForgeTemplateIfNeeded();
+			GraphEntity registration = entities.get("registration");
+			if (registration != null) {
+				registration.setStatus("DONE");
+				registration.setRuntimeState("Snapshot created");
+			}
+		}
+
+		private void handleForgeProgress(RuntimeEvent event) {
+			setupForgeTemplateIfNeeded();
+			Map<String, Object> meta = event.getMetadata();
+			String status = (String) meta.getOrDefault("status", "RUNNING");
+
+			if ("SCANNING".equals(status)) {
+				GraphEntity scanner = entities.get("scanner");
+				if (scanner != null) {
+					scanner.setStatus("RUNNING");
+					scanner.setRuntimeState("Scanning codebase...");
+					if (meta.containsKey("filesScanned")) {
+						scanner.setRuntimeState("Scanned " + meta.get("filesScanned") + " files");
+						scanner.getMetadata().put("Files Scanned", meta.get("filesScanned"));
+					}
+				}
+			} else if ("ENHANCING".equals(status)) {
+				GraphEntity scanner = entities.get("scanner");
+				if (scanner != null) scanner.setStatus("DONE");
+
+				GraphEntity enhancer = entities.get("enhancer");
+				if (enhancer != null) {
+					enhancer.setStatus("RUNNING");
+					enhancer.setRuntimeState("Synthesizing dataset...");
+				}
+			} else if ("TRAINING".equals(status)) {
+				GraphEntity scanner = entities.get("scanner");
+				if (scanner != null) scanner.setStatus("DONE");
+				GraphEntity enhancer = entities.get("enhancer");
+				if (enhancer != null) enhancer.setStatus("DONE");
+
+				GraphEntity trainer = entities.get("trainer");
+				if (trainer != null) {
+					trainer.setStatus("RUNNING");
+					Object lossObj = meta.getOrDefault("currentLoss", 0.0);
+					double loss = (lossObj instanceof Number) ? ((Number) lossObj).doubleValue() : 0.0;
+					String epoch = String.valueOf(meta.getOrDefault("currentEpoch", "1/1"));
+					trainer.setRuntimeState("Loss: " + String.format("%.4f", loss) + " (Epoch: " + epoch + ")");
+					trainer.getMetadata().put("Loss", loss);
+					trainer.getMetadata().put("Epoch", epoch);
+				}
+			} else if ("EXPORTING".equals(status)) {
+				GraphEntity trainer = entities.get("trainer");
+				if (trainer != null) trainer.setStatus("DONE");
+
+				GraphEntity exporter = entities.get("exporter");
+				if (exporter != null) {
+					exporter.setStatus("RUNNING");
+					exporter.setRuntimeState("Compiling GGUF...");
+					if (meta.containsKey("outputFolder")) {
+						exporter.getMetadata().put("Output Folder", meta.get("outputFolder"));
+					}
+				}
+			} else if ("EXPORT_GGUF".equals(status)) {
+				GraphEntity exporter = entities.get("exporter");
+				if (exporter != null) exporter.setStatus("DONE");
+
+				GraphEntity registration = entities.get("registration");
+				if (registration != null) {
+					registration.setStatus("RUNNING");
+					registration.setRuntimeState("Registering with Ollama...");
+				}
+			} else if ("COMPLETE".equals(status)) {
+				for (GraphEntity entity : entities.values()) {
+					if (!"user".equals(entity.getId()) && !"forge_engine".equals(entity.getId())) {
+						entity.setStatus("DONE");
+					}
+				}
+				GraphEntity forge = entities.get("forge_engine");
+				if (forge != null) forge.setStatus("DONE");
+			}
+		}
+
+		private void setupForgeTemplateIfNeeded() {
+			if (!entities.containsKey("scanner")) {
+				setupForgeTemplate();
 			}
 		}
 
@@ -222,6 +406,8 @@ public class WorkflowGraphManager implements RuntimeEventListener {
 				setupMediatedTemplate();
 			} else if ("ASSISTED_CODING".equals(mode)) {
 				setupAssistedCodingTemplate();
+			} else if ("FORGE".equals(mode)) {
+				setupForgeTemplate();
 			} else {
 				setupDefaultTemplate();
 			}
@@ -260,25 +446,26 @@ public class WorkflowGraphManager implements RuntimeEventListener {
 		}
 
 		private void setupSelfDevTemplate() {
-			if (!entities.containsKey("supervisor")) {
-				addEntity("supervisor", EntityType.SUPERVISOR);
-				addLink("user", "supervisor", "trigger");
-			}
-			if (!entities.containsKey("evolution_loop")) {
-				addEntity("evolution_loop", EntityType.EVOLUTION_LOOP);
-				addLink("supervisor", "evolution_loop", "manages");
-			}
+			entities.clear();
+			links.clear();
+			addEntity("user", EntityType.USER);
+			addEntity("supervisor", EntityType.SUPERVISOR);
+			addEntity("evolution_loop", EntityType.EVOLUTION_LOOP);
+			addLink("user", "supervisor", "trigger");
+			addLink("supervisor", "evolution_loop", "manages");
 		}
 
 		private void setupMediatedTemplate() {
-			if (!entities.containsKey("mediated_flow")) {
-				addEntity("mediated_flow", EntityType.MEDIATED_FLOW);
-				addLink("user", "mediated_flow", "trigger");
-			}
-			if (!entities.containsKey("zip_export")) {
-				addEntity("zip_export", EntityType.ZIP_EXPORT);
-				addLink("mediated_flow", "zip_export", "produces");
-			}
+			entities.clear();
+			links.clear();
+			addEntity("user", EntityType.USER);
+			addEntity("mediated_flow", EntityType.MEDIATED_FLOW);
+			addEntity("zip_export", EntityType.ZIP_EXPORT);
+			addEntity("workspace", EntityType.SELF_DEV_TASK);
+
+			addLink("user", "mediated_flow", "trigger");
+			addLink("mediated_flow", "workspace", "updates");
+			addLink("mediated_flow", "zip_export", "produces");
 		}
 
 		private void handleMutating(RuntimeEvent event) {
@@ -288,7 +475,6 @@ public class WorkflowGraphManager implements RuntimeEventListener {
 		}
 
 		private void handleMutationReview(RuntimeEvent event) {
-			// Payload should contain variant metadata
 			if (event.getPayload() instanceof JSONArray) {
 				JSONArray variants = (JSONArray) event.getPayload();
 				String parentId = (String) event.getMetadata().getOrDefault("parentId", "evolution_loop");
@@ -306,6 +492,9 @@ public class WorkflowGraphManager implements RuntimeEventListener {
 		}
 
 		private void setupDarwinTemplate() {
+			entities.clear();
+			links.clear();
+			addEntity("user", EntityType.USER);
 			addEntity("darwin_engine", EntityType.SUPERVISOR);
 			addEntity("mutation_loop", EntityType.EVOLUTION_LOOP);
 			addLink("user", "darwin_engine", "trigger");
@@ -313,13 +502,79 @@ public class WorkflowGraphManager implements RuntimeEventListener {
 		}
 
 		private void setupDefaultTemplate() {
+			entities.clear();
+			links.clear();
+			addEntity("user", EntityType.USER);
 			addEntity("orchestrator", EntityType.SUPERVISOR);
+			addEntity("local_llm", EntityType.LOCAL_LLM);
+			addEntity("remote_llm", EntityType.REMOTE_LLM);
+
 			addLink("user", "orchestrator", "trigger");
+			addLink("orchestrator", "local_llm", "query");
+			addLink("orchestrator", "remote_llm", "query");
+
+			SessionContainer session = SessionManager.getInstance().getSession(sessionId);
+			if (session instanceof eu.kalafatic.evolution.controller.orchestration.SessionContext) {
+				eu.kalafatic.evolution.controller.orchestration.SessionContext ctx = (eu.kalafatic.evolution.controller.orchestration.SessionContext) session;
+				if (ctx.getTaskContext() != null && ctx.getTaskContext().getOrchestrator() != null) {
+					eu.kalafatic.evolution.model.orchestration.Orchestrator orch = ctx.getTaskContext().getOrchestrator();
+					if (eu.kalafatic.evolution.model.orchestration.AiMode.REMOTE.equals(orch.getAiMode())) {
+						entities.get("remote_llm").setStatus("RUNNING");
+						entities.get("local_llm").setStatus("IDLE");
+					} else {
+						entities.get("local_llm").setStatus("RUNNING");
+						entities.get("remote_llm").setStatus("IDLE");
+					}
+				} else {
+					entities.get("local_llm").setStatus("RUNNING");
+					entities.get("remote_llm").setStatus("IDLE");
+				}
+			} else {
+				entities.get("local_llm").setStatus("RUNNING");
+				entities.get("remote_llm").setStatus("IDLE");
+			}
 		}
 
 		private void setupAssistedCodingTemplate() {
+			entities.clear();
+			links.clear();
+			addEntity("user", EntityType.USER);
 			addEntity("assisted_coding", EntityType.SUPERVISOR);
+			addEntity("llm", EntityType.LOCAL_LLM);
+			addEntity("workspace", EntityType.SELF_DEV_TASK);
+			addEntity("maven", EntityType.SELF_DEV_TASK);
+
 			addLink("user", "assisted_coding", "trigger");
+			addLink("assisted_coding", "llm", "query");
+			addLink("assisted_coding", "workspace", "code");
+			addLink("workspace", "maven", "build");
+		}
+
+		private void setupForgeTemplate() {
+			entities.clear();
+			links.clear();
+
+			addEntity("user", EntityType.USER);
+			addEntity("forge_engine", EntityType.SUPERVISOR);
+			addEntity("scanner", EntityType.SELF_DEV_TASK);
+			addEntity("enhancer", EntityType.SELF_DEV_TASK);
+			addEntity("trainer", EntityType.EVOLUTION_LOOP);
+			addEntity("exporter", EntityType.ZIP_EXPORT);
+			addEntity("registration", EntityType.DEPLOYMENT_TARGET);
+
+			addLink("user", "forge_engine", "trigger");
+			addLink("forge_engine", "scanner", "manages");
+			addLink("scanner", "enhancer", "pipeline");
+			addLink("enhancer", "trainer", "pipeline");
+			addLink("trainer", "exporter", "pipeline");
+			addLink("exporter", "registration", "pipeline");
+
+			entities.get("forge_engine").setStatus("RUNNING");
+			entities.get("scanner").setStatus("PENDING");
+			entities.get("enhancer").setStatus("PENDING");
+			entities.get("trainer").setStatus("PENDING");
+			entities.get("exporter").setStatus("PENDING");
+			entities.get("registration").setStatus("PENDING");
 		}
 
 		public JSONObject getGraphJson() {

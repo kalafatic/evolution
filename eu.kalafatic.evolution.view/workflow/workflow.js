@@ -5,6 +5,76 @@
     let width = window.innerWidth;
     let height = window.innerHeight;
 
+    const nodeNotes = {
+        'user': 'Represents the active developer triggering evolutionary tasks, reviewing mutant code proposals, and directing training pipelines.',
+        'forge_engine': 'The centralized LLM Forging Supervisor. Oversees the complete pipeline of scanning codebase files, synthesizing instructions, training deep representations, compiling GGUF models, and registering them inside Ollama.',
+        'scanner': 'Codebase Scanning & Corpus Discovery. Crawls the target repository (respecting .gitignore files), filters non-relevant formats, and cleans documentation into a synchronized character corpus.',
+        'enhancer': 'Instruction Synthesizer & Tokenizer. Trains a local BPE vocabulary (4096 merges) and generates sliding window instruction-response sample vectors (context size 16, stride 8) to prepare optimal training dataset inputs.',
+        'trainer': 'Causal Backpropagation & Loss Optimization. Implements a zero-dependency Decoder-only Transformer inside JVM. Calculates cross-entropy losses, estimates soft-probabilities, and adjusts network weights with an AdamW optimizer.',
+        'exporter': 'Ollama GGUF compiler. Programmatically constructs fully compliant, aligned GGUF little-endian binaries. Serializes float weights, formats Modelfile instructions, and exports assets to dist/ and workspace target directories.',
+        'registration': 'Ollama Server Integration. Checks if Ollama is online, matches available tags to prevent download timeouts, replaces Windows path backslashes, and registers the newly forged model programmatically via HTTP/CLI.',
+        'orchestrator': 'The main evolutionary RCP orchestrator. Receives tasks, routes execution contexts, schedules background jobs, and synchronizes EMF model configurations.',
+        'local_llm': 'Local Large Language Model (e.g., Llama-3.2, Qwen-2). Runs entirely offline in the local Ollama instance for secure private reasoning.',
+        'remote_llm': 'Remote Frontier Language Model (e.g., OpenAI GPT-4o, Anthropic Claude 3.5 Sonnet). Accessible via secure API proxies for heavy reasoning workloads.',
+        'assisted_coding': 'Assisted coding agent. Translates natural language requirements into concrete, clean Java source implementations with auto-complete proposals.',
+        'mediated_flow': 'Mediated orchestration engine. Runs highly structured workflows requiring human-in-the-loop validation of generated patch bundles.',
+        'zip_export': 'ZIP patch bundler. Compiles modified source files, resource assets, and dependency metadata into a compact ZIP package ready for deployment.',
+        'workspace': 'Active Eclipse Developer Workspace. Contains the target project sources, EMF models, configurations, and test suites.'
+    };
+
+    window.closeDetails = function() {
+        d3.select("#details-panel").classed("hidden", true);
+    };
+
+    function showNodeDetails(node) {
+        const panel = d3.select("#details-panel");
+        panel.classed("hidden", false);
+
+        d3.select("#details-title").text(node.id.toUpperCase());
+
+        let html = `
+            <div class="metric-row">
+                <span class="metric-label">Node Type:</span>
+                <span class="metric-value">${node.type}</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Status:</span>
+                <span class="node-status-badge status-${node.status.toLowerCase()}">${node.status}</span>
+            </div>
+        `;
+
+        if (node.runtimeState) {
+            html += `
+                <div class="metric-row">
+                    <span class="metric-label">Runtime State:</span>
+                    <span class="metric-value">${node.runtimeState}</span>
+                </div>
+            `;
+        }
+
+        if (node.metadata && Object.keys(node.metadata).length > 0) {
+            html += `<h4 style="margin: 14px 0 8px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; font-size:11px; color:#475569; font-weight:700;">METRICS & TELEMETRY</h4>`;
+            for (const [key, val] of Object.entries(node.metadata)) {
+                html += `
+                    <div class="metric-row">
+                        <span class="metric-label">${key}:</span>
+                        <span class="metric-value">${val}</span>
+                    </div>
+                `;
+            }
+        }
+
+        const note = nodeNotes[node.id.toLowerCase()] || nodeNotes[node.type.toLowerCase()] || "Interactive node representing an active evolution task step.";
+        html += `
+            <div class="node-notes">
+                <strong>Architectural Note:</strong><br/>
+                ${note}
+            </div>
+        `;
+
+        d3.select("#details-content").html(html);
+    }
+
     const gMain = svg.append("g");
     const gLinks = gMain.append("g").attr("class", "links");
     const gNodes = gMain.append("g").attr("class", "nodes");
@@ -177,6 +247,8 @@
                 return `M${x0},${y0} C${(x0 + x1) / 2},${y0} ${(x0 + x1) / 2},${y1} ${x1},${y1}`;
             });
 
+        const tooltip = d3.select("#tooltip");
+
         // Draw Nodes
         const nodeGroups = gNodes.selectAll(".node")
             .data(nodes, d => d.id)
@@ -189,7 +261,29 @@
                 return cls;
             })
             .attr("transform", d => `translate(${d.x}, ${d.y})`)
+            .on("mouseover", (event, d) => {
+                tooltip.transition().duration(200).style("opacity", 0.95);
+                let tooltipHtml = `<h4>${d.id.toUpperCase()}</h4>`;
+                tooltipHtml += `<p><strong>Type:</strong> ${d.type}</p>`;
+                tooltipHtml += `<p><strong>Status:</strong> ${d.status}</p>`;
+                if (d.runtimeState) {
+                    tooltipHtml += `<p><strong>State:</strong> ${d.runtimeState}</p>`;
+                }
+                tooltip.html(tooltipHtml)
+                    .style("left", (event.pageX + 15) + "px")
+                    .style("top", (event.pageY - 15) + "px");
+            })
+            .on("mousemove", (event) => {
+                tooltip
+                    .style("left", (event.pageX + 15) + "px")
+                    .style("top", (event.pageY - 15) + "px");
+            })
+            .on("mouseout", () => {
+                tooltip.transition().duration(200).style("opacity", 0);
+            })
             .on("click", (event, d) => {
+                event.stopPropagation();
+                showNodeDetails(d);
                 if (window.javaAction) window.javaAction(d.id, 'CLICK');
             });
 
