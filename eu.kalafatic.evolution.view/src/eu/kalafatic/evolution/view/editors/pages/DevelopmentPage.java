@@ -172,11 +172,16 @@ public class DevelopmentPage extends AEvoPage {
         loadTableData();
 
         Composite sdControlPanel = toolkit.createComposite(selfDevComp);
-        sdControlPanel.setLayout(new GridLayout(5, false));
+        sdControlPanel.setLayout(new GridLayout(6, false));
         sdControlPanel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         Button runSelectedBtn = GUIFactory.INSTANCE.createButton(sdControlPanel, "▶ Run Selected");
         runSelectedBtn.addSelectionListener(new SelectionAdapter() {
             @Override public void widgetSelected(SelectionEvent e) { runSelected(); }
+        });
+
+        Button stopSelectedBtn = GUIFactory.INSTANCE.createButton(sdControlPanel, "■ Stop Selected");
+        stopSelectedBtn.addSelectionListener(new SelectionAdapter() {
+            @Override public void widgetSelected(SelectionEvent e) { stopSelected(); }
         });
 
         Button selectAllBtn = GUIFactory.INSTANCE.createButton(sdControlPanel, "☑ Select All");
@@ -631,6 +636,34 @@ public class DevelopmentPage extends AEvoPage {
         if (selfDevTable.getInput() instanceof List<?> rows) {
             for (Object obj : rows) {
                 if (obj instanceof SelfDevRow row && row.selected) handleActionInternal(row);
+            }
+        }
+    }
+
+    private void stopSelected() {
+        if (selfDevTable.getInput() instanceof List<?> rows) {
+            for (Object obj : rows) {
+                if (obj instanceof SelfDevRow row && row.selected) {
+                    System.out.println("[DevelopmentPage] [STOP_SELECTED] Stopping selected row: " + row.name);
+                    if (SelfDevRow.SELF_DEV_LOOP.equals(row.name)) {
+                        RuntimeProjection projection = ProjectionService.getInstance().getProjection(getCurrentSessionName());
+                        if (projection.isRunning()) {
+                            System.out.println("[DevelopmentPage] [STOP_SELECTED] Shutting down self-dev session: " + getCurrentSessionName());
+                            OrchestratorServiceImpl.getInstance().shutdownSession(getCurrentSessionName());
+                        }
+                        row.status = "ready";
+                    } else if (SelfDevRow.SUPERVISOR_LOOP.equals(row.name)) {
+                        if (bootstrapController.isRunning()) {
+                            System.out.println("[DevelopmentPage] [STOP_SELECTED] Stopping supervisor bootstrap...");
+                            bootstrapController.stopBootstrap();
+                        }
+                        row.status = "STOPPED";
+                    } else {
+                        // Reset background check tasks
+                        row.status = "ready";
+                    }
+                    selfDevTable.refresh(row);
+                }
             }
         }
     }
