@@ -1,0 +1,14 @@
+{
+  "concepts": [],
+  "identity": {
+    "name": ".",
+    "version": "v1.0.0",
+    "timestamp": "230726_034847"
+  },
+  "executionFlows": {
+    "orchestration": [],
+    "data": [],
+    "control": []
+  },
+  "moduleMap": {}
+}
