@@ -138,16 +138,142 @@ public class SelfDevBootstrapController {
         System.err.println("[SelfDevBootstrapController] Supervisor did not respond to ping within 10 seconds.");
     }
 
+    private File findSupervisorDir() {
+        File dir = projectRoot;
+        File supervisorDir = null;
+
+        // 1. Scan upwards from projectRoot
+        while (dir != null) {
+            File testDir = new File(dir, "eu.kalafatic.evolution.supervisor");
+            System.out.println("[SelfDevBootstrapController] [SUPERVISOR_FIND] Scanning parent path: " + dir.getAbsolutePath() + " for: " + testDir.getName());
+            if (testDir.exists() && new File(testDir, "pom.xml").exists()) {
+                supervisorDir = testDir;
+                System.out.println("[SelfDevBootstrapController] [SUPERVISOR_FIND] Found supervisor dir via parent scan: " + supervisorDir.getAbsolutePath());
+                break;
+            }
+            dir = dir.getParentFile();
+        }
+
+        // 2. Scan siblings of projectRoot as fallback
+        if (supervisorDir == null && projectRoot != null && projectRoot.getParentFile() != null) {
+            File testDir = new File(projectRoot.getParentFile(), "eu.kalafatic.evolution.supervisor");
+            System.out.println("[SelfDevBootstrapController] [SUPERVISOR_FIND] Checking sibling path fallback: " + testDir.getAbsolutePath());
+            if (testDir.exists() && new File(testDir, "pom.xml").exists()) {
+                supervisorDir = testDir;
+                System.out.println("[SelfDevBootstrapController] [SUPERVISOR_FIND] Found supervisor dir via sibling scan: " + supervisorDir.getAbsolutePath());
+            }
+        }
+
+        // 3. Scan codebasePath as fallback
+        String codebasePath = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getCodebasePath();
+        System.out.println("[SelfDevBootstrapController] [SUPERVISOR_FIND] ProjectModelManager.getCodebasePath() returned: " + codebasePath);
+        if (supervisorDir == null && codebasePath != null) {
+            File cbDir = new File(codebasePath);
+            File testDir = new File(cbDir, "eu.kalafatic.evolution.supervisor");
+            System.out.println("[SelfDevBootstrapController] [SUPERVISOR_FIND] Checking codebasePath path fallback: " + testDir.getAbsolutePath());
+            if (testDir.exists() && new File(testDir, "pom.xml").exists()) {
+                supervisorDir = testDir;
+                System.out.println("[SelfDevBootstrapController] [SUPERVISOR_FIND] Found supervisor dir via codebasePath scan: " + supervisorDir.getAbsolutePath());
+            }
+        }
+
+        // 4. Scan parent of codebasePath as fallback
+        if (supervisorDir == null && codebasePath != null) {
+            File cbDir = new File(codebasePath);
+            if (cbDir.getParentFile() != null) {
+                File testDir = new File(cbDir.getParentFile(), "eu.kalafatic.evolution.supervisor");
+                System.out.println("[SelfDevBootstrapController] [SUPERVISOR_FIND] Checking parent of codebasePath path fallback: " + testDir.getAbsolutePath());
+                if (testDir.exists() && new File(testDir, "pom.xml").exists()) {
+                    supervisorDir = testDir;
+                    System.out.println("[SelfDevBootstrapController] [SUPERVISOR_FIND] Found supervisor dir via parent codebasePath scan: " + supervisorDir.getAbsolutePath());
+                }
+            }
+        }
+
+        // 5. Scan using EclipseGitEvoTool fallback
+        if (supervisorDir == null) {
+            try {
+                Class<?> gitToolClass = Class.forName("eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool");
+                java.lang.reflect.Method getEvoRepoMethod = gitToolClass.getMethod("getEvolutionRepository");
+                String evoRepoPath = (String) getEvoRepoMethod.invoke(null);
+                System.out.println("[SelfDevBootstrapController] [SUPERVISOR_FIND] EclipseGitEvoTool.getEvolutionRepository() returned: " + evoRepoPath);
+                if (evoRepoPath != null) {
+                    File evoDir = new File(evoRepoPath);
+                    File testDir = new File(evoDir, "eu.kalafatic.evolution.supervisor");
+                    System.out.println("[SelfDevBootstrapController] [SUPERVISOR_FIND] Checking EclipseGitEvoTool path fallback: " + testDir.getAbsolutePath());
+                    if (testDir.exists() && new File(testDir, "pom.xml").exists()) {
+                        supervisorDir = testDir;
+                        System.out.println("[SelfDevBootstrapController] [SUPERVISOR_FIND] Found supervisor dir via EclipseGitEvoTool scan: " + supervisorDir.getAbsolutePath());
+                    }
+                }
+            } catch (Throwable t) {
+                System.out.println("[SelfDevBootstrapController] [SUPERVISOR_FIND] Failed to query EclipseGitEvoTool fallback: " + t.getMessage());
+            }
+        }
+
+        // Fallback to projectRoot if still null
+        if (supervisorDir == null) {
+            supervisorDir = new File(projectRoot, "eu.kalafatic.evolution.supervisor");
+            System.out.println("[SelfDevBootstrapController] [SUPERVISOR_FIND] All scans failed. Falling back to projectRoot: " + supervisorDir.getAbsolutePath());
+        }
+
+        return supervisorDir;
+    }
+
+    private String compileSupervisorModule(File supervisorDir) {
+        try {
+            System.out.println("[SelfDevBootstrapController] Compiling and packaging supervisor module: " + supervisorDir.getAbsolutePath());
+            String mvnCmd = System.getProperty("os.name").toLowerCase().contains("win") ? "mvn.cmd" : "mvn";
+            File parentDir = supervisorDir.getParentFile();
+            System.out.println("[SelfDevBootstrapController] Executing build in parent directory: " + parentDir.getAbsolutePath() + " to package supervisor.");
+
+            ProcessBuilder pbCompile = new ProcessBuilder(mvnCmd, "package", "-pl", "eu.kalafatic.evolution.supervisor", "-am", "-DskipTests");
+            pbCompile.directory(parentDir);
+            pbCompile.redirectErrorStream(true);
+            Process pCompile = pbCompile.start();
+
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(pCompile.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    System.out.println("[Supervisor Compile] " + line);
+                }
+            }
+            int compileExitCode = pCompile.waitFor();
+            System.out.println("[SelfDevBootstrapController] Supervisor compile finished with exit code: " + compileExitCode);
+
+            if (compileExitCode == 0) {
+                return "SUCCESS";
+            } else {
+                return "ERROR: Supervisor build failed (exit code " + compileExitCode + ")";
+            }
+        } catch (Exception e) {
+            System.err.println("[SelfDevBootstrapController] Failed to compile supervisor module: " + e.getMessage());
+            e.printStackTrace();
+            return "ERROR: " + e.getMessage();
+        }
+    }
+
     private String getSupervisorJarPath() {
-        File supervisorDir = new File(projectRoot, "eu.kalafatic.evolution.supervisor/target");
-        System.out.println("[SelfDevBootstrapController] Scanning for supervisor shaded JAR in: " + supervisorDir.getAbsolutePath());
-        File[] jars = supervisorDir.listFiles((dir, name) -> name.endsWith("-shaded.jar"));
+        File supervisorDir = findSupervisorDir();
+        File targetDir = new File(supervisorDir, "target");
+        System.out.println("[SelfDevBootstrapController] Scanning for supervisor shaded JAR in: " + targetDir.getAbsolutePath());
+
+        File[] jars = targetDir.exists() ? targetDir.listFiles((dir, name) -> name.endsWith("-shaded.jar")) : null;
+        if (jars == null || jars.length == 0) {
+            System.out.println("[SelfDevBootstrapController] Supervisor shaded JAR not found. Attempting to build supervisor module...");
+            String buildResult = compileSupervisorModule(supervisorDir);
+            System.out.println("[SelfDevBootstrapController] Supervisor build result: " + buildResult);
+            jars = targetDir.exists() ? targetDir.listFiles((dir, name) -> name.endsWith("-shaded.jar")) : null;
+        }
+
         if (jars != null && jars.length > 0) {
             String path = jars[0].getAbsolutePath();
             System.out.println("[SelfDevBootstrapController] Found shaded supervisor jar: " + path);
             return path;
         }
-        File fallbackJar = new File(supervisorDir, "eu.kalafatic.evolution.supervisor-1.0.0-SNAPSHOT.jar");
+
+        // Final fallback
+        File fallbackJar = new File(targetDir, "eu.kalafatic.evolution.supervisor-1.0.0-SNAPSHOT.jar");
         System.out.println("[SelfDevBootstrapController] No shaded jar found, falling back to: " + fallbackJar.getAbsolutePath());
         return fallbackJar.getAbsolutePath();
     }
