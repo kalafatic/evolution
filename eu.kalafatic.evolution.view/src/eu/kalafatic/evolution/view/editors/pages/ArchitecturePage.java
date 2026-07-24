@@ -51,6 +51,8 @@ public class ArchitecturePage extends AEvoPage {
     private String lastJson = "";
     private String lastTargetPath = "";
     private boolean showingSnapshot = false;
+    private DesignModel cachedFullModel = null;
+    private String cachedFullModelPath = null;
     private String currentSnapshotTimestamp = null;
 
     private String currentTargetPath;
@@ -197,24 +199,31 @@ public class ArchitecturePage extends AEvoPage {
         Display.getDefault().asyncExec(() -> {
             switch (action) {
                 case "REFRESH":
+                    invalidateInMemoryCache();
                     scheduleRefresh();
                     break;
                 case "DISCOVER":
+                    invalidateInMemoryCache();
                     handleDiscover();
                     break;
                 case "DISCOVER_INTENT":
+                    invalidateInMemoryCache();
                     handleDiscoverIntent();
                     break;
                 case "UPDATE_GENOME":
+                    invalidateInMemoryCache();
                     handleUpdateGenome();
                     break;
                 case "GENERATE_MILESTONE":
+                    invalidateInMemoryCache();
                     handleGenerateMilestone();
                     break;
                 case "SELECT_SNAPSHOT":
+                    invalidateInMemoryCache();
                     handleSelectSnapshot(id);
                     break;
                 case "GENERATE_METADATA":
+                    invalidateInMemoryCache();
                     handleGenerateMetadata();
                     break;
                 case "EXPORT_HTML":
@@ -385,7 +394,13 @@ public class ArchitecturePage extends AEvoPage {
         }
     }
 
+    public void invalidateInMemoryCache() {
+        this.cachedFullModel = null;
+        this.cachedFullModelPath = null;
+    }
+
     private void invalidateCache() {
+        invalidateInMemoryCache();
         if (orchestrator == null || orchestrator.getSharedMemory() == null) return;
         try {
             String sid = (orchestrator.getSelfDevSession() != null) ? orchestrator.getSelfDevSession().getId() : "discovery-session";
@@ -865,6 +880,12 @@ public class ArchitecturePage extends AEvoPage {
             if (currentMode == ViewMode.GENOME) {
                 String genomeJson = loadGenomeJson();
                 if (!isJsReady) return;
+                if (genomeJson.equals(lastJson) && currentTargetPath.equals(lastTargetPath)) {
+                    return;
+                }
+                lastJson = genomeJson;
+                lastTargetPath = currentTargetPath;
+
                 browser.execute("if(window.updateGenome) { window.updateGenome(" + genomeJson + "); }");
 
                 // Update sidebar state
@@ -884,6 +905,12 @@ public class ArchitecturePage extends AEvoPage {
                  // Initial values are already in INITIAL_MODEL via initBrowser's renderer.render()
                  return;
             }
+
+            if (json.equals(lastJson) && currentTargetPath.equals(lastTargetPath)) {
+                return;
+            }
+            lastJson = json;
+            lastTargetPath = currentTargetPath;
 
             // Synchronize project title
             if (model != null && model.getName() != null) {
@@ -914,6 +941,8 @@ public class ArchitecturePage extends AEvoPage {
     private void initBrowser() {
         if (browser == null || browser.isDisposed()) return;
         try {
+            lastJson = "";
+            lastTargetPath = "";
             if (currentMode == ViewMode.GENOME) {
                 String genomeJson = loadGenomeJson();
 
@@ -989,7 +1018,12 @@ public class ArchitecturePage extends AEvoPage {
             return filterModel(cached, currentMode);
         }
 
-        // 2. Initial view: physical scan for metadata
+        // 2. Try in-memory cached scanned model next
+        if (cachedFullModel != null && currentTargetPath.equals(cachedFullModelPath)) {
+            return filterModel(cachedFullModel, currentMode);
+        }
+
+        // 3. Initial view: physical scan for metadata
         DesignModel model = discoverArchitectureNodes(root);
         eu.kalafatic.evolution.controller.log.Log.log("[ARCH_PAGE] Discovered " + model.getComponents().size() + " components via node scan.");
 
@@ -1013,6 +1047,10 @@ public class ArchitecturePage extends AEvoPage {
         if (model.getComponents().isEmpty()) {
             return createDefaultModel();
         }
+
+        // Cache the scanned model in-memory for subsequent fast UI refreshes
+        cachedFullModel = model;
+        cachedFullModelPath = currentTargetPath;
 
         return filterModel(model, currentMode);
     }
