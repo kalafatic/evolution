@@ -516,7 +516,7 @@ public class SelfDevBootstrapController {
 
         try {
             System.out.println("[SelfDevBootstrapController] [CHECK_GENOME] Integrating and updating project genome in projectRoot: " + projectRoot.getAbsolutePath() + ", projectName: " + projectRoot.getName());
-
+            
             Class<?> hubClass = null;
             try {
                 hubClass = Class.forName("eu.kalafatic.evolution.selfdev.genome.hub.SelfDevGenomeHub");
@@ -537,7 +537,7 @@ public class SelfDevBootstrapController {
 
             java.lang.reflect.Method getInstanceMethod = hubClass.getMethod("getInstance");
             Object hubInstance = getInstanceMethod.invoke(null);
-
+            
             java.lang.reflect.Method updateGenomeMethod = hubClass.getMethod("updateGenome", File.class, String.class, String.class);
             updateGenomeMethod.invoke(hubInstance, projectRoot, projectRoot.getName(), "v1.0.0");
 

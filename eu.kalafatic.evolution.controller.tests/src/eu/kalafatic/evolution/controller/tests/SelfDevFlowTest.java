@@ -13,13 +13,13 @@ public class SelfDevFlowTest {
     public void testCheckGenome() throws Exception {
         File projectRoot = new File(".").getAbsoluteFile();
         System.out.println("Project Root in Test: " + projectRoot.getAbsolutePath());
-
+        
         Orchestrator orchestrator = OrchestrationFactory.eINSTANCE.createOrchestrator();
         SelfDevBootstrapController controller = new SelfDevBootstrapController(projectRoot, orchestrator);
-
+        
         Method checkGenomeMethod = SelfDevBootstrapController.class.getDeclaredMethod("checkGenome");
         checkGenomeMethod.setAccessible(true);
-
+        
         String result = (String) checkGenomeMethod.invoke(controller);
         System.out.println("Result of checkGenome: " + result);
         assertNotNull(result);
