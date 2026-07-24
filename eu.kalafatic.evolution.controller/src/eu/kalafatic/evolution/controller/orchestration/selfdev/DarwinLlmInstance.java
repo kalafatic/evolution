@@ -311,6 +311,10 @@ public class DarwinLlmInstance extends ADarwinEngine {
         // --- WINNER EXPORT ---
         context.log("[FORGE] Evolution complete. Overall Winner: " + overallWinner.config);
 
+        // Generate Dynamic Model Name (based on context target folder, winning config, and timestamp)
+        String dynamicModelName = generateDynamicModelName(context, overallWinner.config, targetPath);
+        context.log("[FORGE] Dynamically generated winning model ID: " + dynamicModelName);
+
         // Create new workspace output folder for the winning model
         File workspaceDir;
         String workspacePathStr = ProjectModelManager.getWorkspacePath();
@@ -320,7 +324,7 @@ public class DarwinLlmInstance extends ADarwinEngine {
             workspaceDir = context.getProjectRoot().getParentFile();
         }
 
-        File forgeOutputDir = new File(workspaceDir, "forge-output/evo-llm-001");
+        File forgeOutputDir = new File(workspaceDir, "forge-output/" + dynamicModelName);
         if (forgeOutputDir.exists()) {
             deleteDirectory(forgeOutputDir);
         }
@@ -345,7 +349,7 @@ public class DarwinLlmInstance extends ADarwinEngine {
 
         // Export via OllamaExporter
         OllamaExporter exporter = new OllamaExporter();
-        exporter.export("evo-llm-001", forgeOutputDir.toPath(), winningModel);
+        exporter.export(dynamicModelName, forgeOutputDir.toPath(), winningModel);
 
         // Save tokenizer.json
         JSONObject tokJson = new JSONObject();
@@ -374,7 +378,7 @@ public class DarwinLlmInstance extends ADarwinEngine {
 
         // Save training-report.json
         JSONObject reportJson = new JSONObject();
-        reportJson.put("modelName", "evo-llm-001");
+        reportJson.put("modelName", dynamicModelName);
         reportJson.put("generationsTrained", generations);
         reportJson.put("cleanCorpusChars", cleanCorpus.length());
         reportJson.put("finalLoss", overallWinner.loss);
@@ -395,7 +399,7 @@ public class DarwinLlmInstance extends ADarwinEngine {
         StringBuilder summaryBuilder = new StringBuilder();
         summaryBuilder.append("# Generation completed successfully!\n\n");
         summaryBuilder.append(String.join("\n", logs)).append("\n");
-        summaryBuilder.append("### Winning Model: **evo-llm-001**\n\n");
+        summaryBuilder.append("### Winning Model: **" + dynamicModelName + "**\n\n");
         summaryBuilder.append("**Configuration:**\n");
         summaryBuilder.append(String.format("- **Vocabulary Size:** %d\n", overallWinner.config.vocabSize));
         summaryBuilder.append(String.format("- **Embedding Size:** %d\n", overallWinner.config.embeddingSize));
@@ -410,7 +414,7 @@ public class DarwinLlmInstance extends ADarwinEngine {
 
         summaryBuilder.append("### Generated Artifacts & Export Location:\n");
         String uriPrefix = "file:///" + forgeOutputDir.getAbsolutePath().replace("\\", "/");
-        summaryBuilder.append(String.format("- **Output Folder:** [%s/](%s/)\n", "forge-output/evo-llm-001", uriPrefix));
+        summaryBuilder.append(String.format("- **Output Folder:** [%s/](%s/)\n", "forge-output/" + dynamicModelName, uriPrefix));
         summaryBuilder.append(String.format("- **Model GGUF:** [evo.gguf](%s/evo.gguf)\n", uriPrefix));
         summaryBuilder.append(String.format("- **Ollama Modelfile:** [Modelfile](%s/Modelfile)\n", uriPrefix));
         summaryBuilder.append(String.format("- **Vocabulary / Tokenizer:** [tokenizer.json](%s/tokenizer.json)\n", uriPrefix));
@@ -468,6 +472,25 @@ public class DarwinLlmInstance extends ADarwinEngine {
         }
 
         return new LlmConfig(vocabSize, embeddingSize, layers, heads);
+    }
+
+    public String generateDynamicModelName(TaskContext context, LlmConfig winner, String targetPath) {
+        String folderName = "generic";
+        if (targetPath != null && !targetPath.isEmpty()) {
+            File folder = new File(targetPath);
+            folderName = folder.getName().toLowerCase()
+                .replaceAll("[^a-zA-Z0-9-]", "-")
+                .replaceAll("-+", "-");
+        }
+
+        String archSignature = String.format("v%d-e%d-l%d-h%d",
+            winner.vocabSize, winner.embeddingSize, winner.layers, winner.heads);
+
+        String timestamp = java.time.format.DateTimeFormatter
+            .ofPattern("ddMMyy_HHmmss")
+            .format(java.time.LocalDateTime.now());
+
+        return String.format("evo-%s-%s-%s", folderName, archSignature, timestamp);
     }
 
     @Override
