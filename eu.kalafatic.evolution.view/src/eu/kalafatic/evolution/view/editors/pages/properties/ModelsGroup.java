@@ -167,9 +167,97 @@ public class ModelsGroup extends AEvoGroup {
         return null;
     }
 
+    private String getModelUrl(AIProvider item) {
+        if (item == null) return "";
+        if (item.isLocal()) {
+            if (orchestrator != null && orchestrator.getOllama() != null) {
+                return orchestrator.getOllama().getUrl();
+            }
+            if (item.getUrl() != null && item.getUrl().startsWith("http")) {
+                return item.getUrl();
+            }
+            return "http://localhost:11434";
+        }
+        return item.getUrl() != null ? item.getUrl() : "";
+    }
+
+    private String getModelPath(AIProvider item) {
+        if (item == null) return "";
+
+        // For demo models, item.getUrl() already has the absolute path of the demo GGUF file!
+        if (item.getName() != null && item.getName().startsWith("demo/")) {
+            return item.getUrl() != null ? item.getUrl() : "";
+        }
+
+        // If it's a remote model, path doesn't exist
+        if (!item.isLocal()) {
+            return "";
+        }
+
+        String modelName = item.getName();
+        if (modelName == null) return "";
+
+        // Check default Ollama folder
+        File ollamaHomeModelsDir = new File(System.getProperty("user.home"), ".ollama/models");
+        if (ollamaHomeModelsDir.exists() && ollamaHomeModelsDir.isDirectory()) {
+            File f1 = new File(ollamaHomeModelsDir, modelName + ".gguf");
+            if (f1.exists()) {
+                return f1.getAbsolutePath();
+            }
+            if (modelName.equalsIgnoreCase("evo")) {
+                File f2 = new File(ollamaHomeModelsDir, "evo.gguf");
+                if (f2.exists()) {
+                    return f2.getAbsolutePath();
+                }
+            }
+        }
+
+        // Check workspace source/models folder
+        String codebasePath = ProjectModelManager.getCodebasePath();
+        if (codebasePath != null) {
+            File sourceModelsDir = new File(codebasePath, "source/models");
+            if (sourceModelsDir.exists() && sourceModelsDir.isDirectory()) {
+                File f1 = new File(sourceModelsDir, modelName + ".gguf");
+                if (f1.exists()) {
+                    return f1.getAbsolutePath();
+                }
+                if (modelName.equalsIgnoreCase("evo")) {
+                    File f2 = new File(sourceModelsDir, "evo.gguf");
+                    if (f2.exists()) {
+                        return f2.getAbsolutePath();
+                    }
+                }
+            }
+        }
+
+        // Check codebase dist folder
+        if (codebasePath != null) {
+            File distDir = new File(codebasePath, "dist");
+            if (distDir.exists() && distDir.isDirectory()) {
+                File[] subdirs = distDir.listFiles(File::isDirectory);
+                if (subdirs != null) {
+                    for (File subdir : subdirs) {
+                        if (subdir.getName().equalsIgnoreCase(modelName) || subdir.getName().startsWith("evo-")) {
+                            File f = new File(subdir, "evo.gguf");
+                            if (f.exists()) {
+                                // For forging/dist folders, if the subdir matches or maps to modelName, return that
+                                String expectedModelName = subdir.getName().startsWith("evo-") ? subdir.getName() : "evo-" + subdir.getName().substring(8);
+                                if (expectedModelName.equalsIgnoreCase(modelName) || subdir.getName().equalsIgnoreCase(modelName)) {
+                                    return f.getAbsolutePath();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return "";
+    }
+
     private void createColumns() {
-        String[] titles = { "Select", "State", "Name", "Type", "Path/URL", "Token", "Rating (A/CH/P)" };
-        int[] bounds = { 50, 60, 150, 60, 250, 80, 120 };
+        String[] titles = { "Select", "State", "Name", "Type", "URL", "Path", "Token", "Rating (A/CH/P)" };
+        int[] bounds = { 50, 60, 150, 60, 200, 250, 80, 120 };
 
         // Select (Checkbox column)
         TableViewerColumn colSelect = createTableViewerColumn(titles[0], bounds[0]);
@@ -227,12 +315,25 @@ public class ModelsGroup extends AEvoGroup {
             }
         });
 
-        // Path/URL
-        TableViewerColumn colPath = createTableViewerColumn(titles[4], bounds[4]);
+        // URL
+        TableViewerColumn colUrl = createTableViewerColumn(titles[4], bounds[4]);
+        colUrl.setLabelProvider(new ColumnLabelProvider() {
+            @Override
+            public String getText(Object element) {
+                return getModelUrl((AIProvider) element);
+            }
+            @Override
+            public Color getBackground(Object element) {
+                return getSafeColor(getModelColor((AIProvider) element));
+            }
+        });
+
+        // Path
+        TableViewerColumn colPath = createTableViewerColumn(titles[5], bounds[5]);
         colPath.setLabelProvider(new ColumnLabelProvider() {
             @Override
             public String getText(Object element) {
-                return ((AIProvider) element).getUrl();
+                return getModelPath((AIProvider) element);
             }
             @Override
             public Color getBackground(Object element) {
@@ -241,7 +342,7 @@ public class ModelsGroup extends AEvoGroup {
         });
 
         // Token
-        TableViewerColumn colToken = createTableViewerColumn(titles[5], bounds[5]);
+        TableViewerColumn colToken = createTableViewerColumn(titles[6], bounds[6]);
         colToken.setLabelProvider(new ColumnLabelProvider() {
             @Override
             public String getText(Object element) {
@@ -256,7 +357,7 @@ public class ModelsGroup extends AEvoGroup {
         });
 
         // Rating
-        TableViewerColumn colRating = createTableViewerColumn(titles[6], bounds[6]);
+        TableViewerColumn colRating = createTableViewerColumn(titles[7], bounds[7]);
         colRating.setLabelProvider(new ColumnLabelProvider() {
             @Override
             public String getText(Object element) {
