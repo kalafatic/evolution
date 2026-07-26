@@ -114,4 +114,52 @@ public class CodeExtractorTest {
                 "public class SignatureClass {\n" +
                 "}", extracted);
     }
+
+    @Test
+    public void testTrailingTruncationOnJavaStarter() {
+        String input = "public class TextPrinter {\n" +
+                "    public void print(String text) {\n" +
+                "        System.out.println(text);\n" +
+                "    }\n" +
+                "}\n" +
+                "This class prints text to the console, satisfying the user's requirements.";
+        String extracted = CodeExtractor.extractCode(input);
+        assertEquals("public class TextPrinter {\n" +
+                "    public void print(String text) {\n" +
+                "        System.out.println(text);\n" +
+                "    }\n" +
+                "}", extracted);
+    }
+
+    @Test
+    public void testMarkdownExtractionTakesPrecedence() {
+        // Starts with Java starter (class), but also has markdown backticks block inside
+        String input = "class TextPrinter {\n" +
+                "```java\n" +
+                "class ActualClass {}\n" +
+                "```\n" +
+                "}";
+        String extracted = CodeExtractor.extractCode(input);
+        assertEquals("class ActualClass {}", extracted);
+    }
+
+    @Test
+    public void testBraceCountingWithCommentsAndStrings() {
+        String input = "package com.example;\n" +
+                "public class RobustPrinter {\n" +
+                "    // A comment with } closed brace\n" +
+                "    /* A multi-line \n" +
+                "       comment with } closed brace */\n" +
+                "    public String text = \"this is { nested brace } string\";\n" +
+                "} \n" +
+                "Trailing conversational nonsense here.";
+        String extracted = CodeExtractor.extractCode(input);
+        assertEquals("package com.example;\n" +
+                "public class RobustPrinter {\n" +
+                "    // A comment with } closed brace\n" +
+                "    /* A multi-line \n" +
+                "       comment with } closed brace */\n" +
+                "    public String text = \"this is { nested brace } string\";\n" +
+                "}", extracted);
+    }
 }

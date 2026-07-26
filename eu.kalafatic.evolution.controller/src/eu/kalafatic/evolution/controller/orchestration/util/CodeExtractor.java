@@ -23,21 +23,6 @@ public class CodeExtractor {
         trimmed = trimmed.replaceAll("(?is)<think>.*?</think>", "").trim();
         if (trimmed.isEmpty()) return "";
 
-        // 1.5. If the text already starts with common Java file starters, return it as-is
-        if (trimmed.startsWith("package ") ||
-            trimmed.startsWith("import ") ||
-            trimmed.startsWith("public ") ||
-            trimmed.startsWith("class ") ||
-            trimmed.startsWith("interface ") ||
-            trimmed.startsWith("enum ") ||
-            trimmed.startsWith("abstract ") ||
-            trimmed.startsWith("final ") ||
-            trimmed.startsWith("@") ||
-            trimmed.startsWith("//") ||
-            trimmed.startsWith("/*")) {
-            return trimmed;
-        }
-
         // 2. Check if the text is a JSON object
         if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
             String codeFromJson = extractFromJson(trimmed);
@@ -46,7 +31,7 @@ public class CodeExtractor {
             }
         }
 
-        // 3. Check for markdown code blocks (``` ... ```)
+        // 3. Check for markdown code blocks (``` ... ```) first before Java starters check
         if (trimmed.contains("```")) {
             int firstBackticks = trimmed.indexOf("```");
             int lastBackticks = trimmed.lastIndexOf("```");
@@ -73,6 +58,21 @@ public class CodeExtractor {
                     return blockContent;
                 }
             }
+        }
+
+        // 1.5. If the text already starts with common Java file starters, return it with trailing text truncated
+        if (trimmed.startsWith("package ") ||
+            trimmed.startsWith("import ") ||
+            trimmed.startsWith("public ") ||
+            trimmed.startsWith("class ") ||
+            trimmed.startsWith("interface ") ||
+            trimmed.startsWith("enum ") ||
+            trimmed.startsWith("abstract ") ||
+            trimmed.startsWith("final ") ||
+            trimmed.startsWith("@") ||
+            trimmed.startsWith("//") ||
+            trimmed.startsWith("/*")) {
+            return truncateTrailingText(trimmed);
         }
 
         // 4. Handle prefix labels like "CODE:", "Implementation:", "Java Code:" etc.
@@ -128,6 +128,92 @@ public class CodeExtractor {
         }
 
         return trimmed;
+    }
+
+    /**
+     * Safely truncates trailing conversational/non-code text by finding where the matching
+     * class-level braces end.
+     */
+    private static String truncateTrailingText(String text) {
+        if (text == null || text.isEmpty()) return "";
+
+        int firstBrace = text.indexOf('{');
+        if (firstBrace == -1) {
+            return text;
+        }
+
+        int braceCount = 0;
+        boolean inString = false;
+        boolean inChar = false;
+        boolean inSingleLineComment = false;
+        boolean inMultiLineComment = false;
+
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+
+            // Handle comments
+            if (inSingleLineComment) {
+                if (c == '\n' || c == '\r') {
+                    inSingleLineComment = false;
+                }
+                continue;
+            }
+            if (inMultiLineComment) {
+                if (c == '/' && i > 0 && text.charAt(i - 1) == '*') {
+                    inMultiLineComment = false;
+                }
+                continue;
+            }
+
+            // Check comment start
+            if (!inString && !inChar) {
+                if (c == '/' && i + 1 < text.length() && text.charAt(i + 1) == '/') {
+                    inSingleLineComment = true;
+                    i++;
+                    continue;
+                }
+                if (c == '/' && i + 1 < text.length() && text.charAt(i + 1) == '*') {
+                    inMultiLineComment = true;
+                    i++;
+                    continue;
+                }
+            }
+
+            // Handle string and character literals
+            if (c == '"' && !inChar) {
+                // Check if escaped
+                if (i == 0 || text.charAt(i - 1) != '\\') {
+                    inString = !inString;
+                }
+                continue;
+            }
+            if (c == '\'' && !inString) {
+                // Check if escaped
+                if (i == 0 || text.charAt(i - 1) != '\\') {
+                    inChar = !inChar;
+                }
+                continue;
+            }
+
+            if (inString || inChar) {
+                continue;
+            }
+
+            if (c == '{') {
+                braceCount++;
+            } else if (c == '}') {
+                braceCount--;
+                if (braceCount == 0) {
+                    // We found the matching closing brace for the top-level declaration!
+                    // Return the substring up to and including this brace.
+                    return text.substring(0, i + 1).trim();
+                }
+            }
+        }
+
+        // If brace counting didn't perfectly match (e.g. malformed or outer brackets missing),
+        // we fallback to returning the trimmed input.
+        return text;
     }
 
     private static String extractFromJson(String jsonText) {
