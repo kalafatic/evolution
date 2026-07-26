@@ -49,19 +49,42 @@ public class SimpleBPETokenizer implements Tokenizer {
     @Override
     public List<Integer> encode(String text) {
         List<Integer> tokens = new ArrayList<>();
-        // Greedy longest match
+        if (text == null || text.isEmpty()) {
+            return tokens;
+        }
+
+        // Group vocabulary keys by their starting character for O(1) starting prefix lookup.
+        // Also keep them sorted by length descending so the first match we find is the longest match.
+        Map<Character, List<String>> prefixMap = new HashMap<>();
+        for (String key : vocab.keySet()) {
+            if (key == null || key.isEmpty()) continue;
+            char firstChar = key.charAt(0);
+            prefixMap.computeIfAbsent(firstChar, k -> new ArrayList<>()).add(key);
+        }
+
+        // Sort each list by length descending to ensure longest match is checked first
+        for (List<String> list : prefixMap.values()) {
+            list.sort((s1, s2) -> Integer.compare(s2.length(), s1.length()));
+        }
+
         int i = 0;
-        while (i < text.length()) {
+        int len = text.length();
+        while (i < len) {
+            char currentChar = text.charAt(i);
+            List<String> candidates = prefixMap.get(currentChar);
             String match = null;
             int matchLen = 0;
-            for (String v : vocab.keySet()) {
-                if (text.startsWith(v, i)) {
-                    if (v.length() > matchLen) {
+
+            if (candidates != null) {
+                for (String v : candidates) {
+                    if (text.startsWith(v, i)) {
                         match = v;
                         matchLen = v.length();
+                        break; // Sorted by length descending, so first match is the longest!
                     }
                 }
             }
+
             if (match != null) {
                 tokens.add(vocab.get(match));
                 i += matchLen;

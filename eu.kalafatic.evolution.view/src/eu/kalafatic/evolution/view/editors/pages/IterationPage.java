@@ -498,16 +498,28 @@ public class IterationPage extends AEvoPage {
 		lastBranchFilter = branchFilter;
 		lastLevelFilter = levelFilter;
 
-		StringBuilder sb = new StringBuilder();
+		List<String> matchingLines = new ArrayList<>();
 		try (BufferedReader reader = new BufferedReader(new FileReader(logFile))) {
 			String line;
 			while ((line = reader.readLine()) != null) {
 				if (filterLogLine(line, iterFilter, branchFilter, levelFilter)) {
-					sb.append(line).append("\n");
+					matchingLines.add(line);
+					// Bounded sliding window of matching lines to prevent heap exhaustion
+					if (matchingLines.size() > 5000) {
+						matchingLines.remove(0);
+					}
 				}
 			}
 		} catch (Exception e) {
-			sb.append("Error reading logs: ").append(e.getMessage());
+			matchingLines.add("Error reading logs: " + e.getMessage());
+		}
+
+		// Keep only the last 1000 matched lines for StyledText display to prevent SWT text layout OOM
+		int maxLinesToShow = 1000;
+		int startIdx = Math.max(0, matchingLines.size() - maxLinesToShow);
+		StringBuilder sb = new StringBuilder();
+		for (int i = startIdx; i < matchingLines.size(); i++) {
+			sb.append(matchingLines.get(i)).append("\n");
 		}
 
 		if (sb.length() == 0) {
