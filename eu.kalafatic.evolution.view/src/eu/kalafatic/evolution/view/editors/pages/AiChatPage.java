@@ -1151,6 +1151,7 @@ public class AiChatPage extends AEvoPage {
 				Display.getDefault().asyncExec(() -> {
 					if (isDisposed()) return;
 					try {
+						editor.refreshNavigator(iFile);
 						IDE.openEditor(editor.getSite().getPage(), iFile, eu.kalafatic.evolution.view.editors.MediatedEditor.ID);
 					} catch (Exception e) {
 						e.printStackTrace();
