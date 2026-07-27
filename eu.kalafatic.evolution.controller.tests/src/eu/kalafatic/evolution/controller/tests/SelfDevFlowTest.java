@@ -25,4 +25,25 @@ public class SelfDevFlowTest {
         assertNotNull(result);
         assertFalse(result.startsWith("ERROR"));
     }
+
+    @Test
+    public void testCompileSupervisorModule() throws Exception {
+        File projectRoot = new File(".").getAbsoluteFile();
+        Orchestrator orchestrator = OrchestrationFactory.eINSTANCE.createOrchestrator();
+        SelfDevBootstrapController controller = new SelfDevBootstrapController(projectRoot, orchestrator);
+
+        Method findSupervisorDirMethod = SelfDevBootstrapController.class.getDeclaredMethod("findSupervisorDir");
+        findSupervisorDirMethod.setAccessible(true);
+        File supervisorDir = (File) findSupervisorDirMethod.invoke(controller);
+        assertNotNull(supervisorDir);
+        assertTrue(supervisorDir.exists());
+
+        Method compileSupervisorModuleMethod = SelfDevBootstrapController.class.getDeclaredMethod("compileSupervisorModule", File.class);
+        compileSupervisorModuleMethod.setAccessible(true);
+
+        String result = (String) compileSupervisorModuleMethod.invoke(controller, supervisorDir);
+        System.out.println("Result of compileSupervisorModule: " + result);
+        assertNotNull(result);
+        assertEquals("SUCCESS", result);
+    }
 }
