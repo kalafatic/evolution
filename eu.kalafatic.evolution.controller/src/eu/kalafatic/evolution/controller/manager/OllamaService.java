@@ -349,6 +349,21 @@ public class OllamaService {
      * Pulls a model from Ollama.
      */
     public void pullModel(String modelName, Consumer<ProgressUpdate> progressCallback) throws Exception {
+        // Explicit User Approval Check before pulling
+        final boolean[] approved = new boolean[1];
+        org.eclipse.swt.widgets.Display.getDefault().syncExec(() -> {
+            org.eclipse.swt.widgets.Shell activeShell = org.eclipse.swt.widgets.Display.getDefault().getActiveShell();
+            if (activeShell == null && org.eclipse.ui.PlatformUI.isWorkbenchRunning() && org.eclipse.ui.PlatformUI.getWorkbench().getActiveWorkbenchWindow() != null) {
+                activeShell = org.eclipse.ui.PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
+            }
+            approved[0] = org.eclipse.jface.dialogs.MessageDialog.openQuestion(activeShell,
+                "Ollama Model Download Approval",
+                "The application is requesting to pull/download the model '" + modelName + "' from Ollama registry. Do you approve this download action?");
+        });
+        if (!approved[0]) {
+            throw new java.util.concurrent.CancellationException("Ollama model pull was cancelled/rejected by the user.");
+        }
+
         String pullUrl = this.baseUrl + (this.baseUrl.endsWith("/") ? "" : "/") + "api/pull";
         JSONObject requestBody = new JSONObject();
         requestBody.put("name", modelName);
