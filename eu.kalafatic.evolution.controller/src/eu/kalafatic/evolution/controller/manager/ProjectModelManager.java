@@ -632,6 +632,24 @@ public class ProjectModelManager {
                     }
                 }
             }
+            // Check forge-output folder
+            String workspacePathStr = getWorkspacePath();
+            if (workspacePathStr != null && !workspacePathStr.isEmpty()) {
+                File forgeOutputDir = new File(workspacePathStr, "forge-output");
+                if (forgeOutputDir.exists() && forgeOutputDir.isDirectory()) {
+                    File[] subdirs = forgeOutputDir.listFiles(File::isDirectory);
+                    if (subdirs != null) {
+                        for (File subdir : subdirs) {
+                            if (subdir.getName().equalsIgnoreCase(modelName) || subdir.getName().startsWith("evo-")) {
+                                File f = new File(subdir, "evo.gguf");
+                                if (f.exists()) {
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             return false;
         };
 
@@ -736,6 +754,40 @@ public class ProjectModelManager {
                                         if (ollamaOnline) {
                                             item.setState("NA");
                                             item.setStateDescription("Exported forged model in dist folder - GGUF exists on disk but is not registered in Ollama.");
+                                        } else {
+                                            item.setState("ERR");
+                                            item.setStateDescription("Ollama server offline");
+                                        }
+                                        models.add(item);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Check forge-output folder
+            String workspacePathStr = getWorkspacePath();
+            if (workspacePathStr != null && !workspacePathStr.isEmpty()) {
+                File forgeOutputDir = new File(workspacePathStr, "forge-output");
+                if (forgeOutputDir.exists() && forgeOutputDir.isDirectory()) {
+                    File[] subdirs = forgeOutputDir.listFiles(File::isDirectory);
+                    if (subdirs != null) {
+                        for (File subdir : subdirs) {
+                            if (subdir.getName().startsWith("evo-")) {
+                                File ggufFile = new File(subdir, "evo.gguf");
+                                if (ggufFile.exists()) {
+                                    String modelName = subdir.getName();
+                                    if (models.stream().noneMatch(i -> i.getName().equalsIgnoreCase(modelName))) {
+                                        AIProvider item = factory.createAIProvider();
+                                        item.setName(modelName);
+                                        item.setLocal(true);
+                                        item.setUrl(ollamaUrl);
+                                        item.setFormat("ollama");
+                                        if (ollamaOnline) {
+                                            item.setState("NA");
+                                            item.setStateDescription("Exported forged model in forge-output folder - GGUF exists on disk but is not registered in Ollama.");
                                         } else {
                                             item.setState("ERR");
                                             item.setStateDescription("Ollama server offline");

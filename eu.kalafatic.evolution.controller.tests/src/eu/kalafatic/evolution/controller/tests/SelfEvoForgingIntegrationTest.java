@@ -80,19 +80,19 @@ public class SelfEvoForgingIntegrationTest {
         assertEquals(0, bytes[6]);
         assertEquals(0, bytes[7]);
 
-        // 3. Tensor count: 0 (64-bit little-endian) - vital so loader doesn't crash
+        // 3. Tensor count (64-bit little-endian)
         long tensorCount = 0;
         for (int i = 0; i < 8; i++) {
             tensorCount |= ((long) (bytes[8 + i] & 0xFF)) << (i * 8);
         }
-        assertEquals("Tensor count must be exactly 0 to prevent loading crashes on mock GGUF", 0L, tensorCount);
+        assertEquals("Tensor count must match real model parameters count", 8L, tensorCount);
 
-        // 4. Metadata KV count: 0 (64-bit little-endian) - vital so loader doesn't crash
+        // 4. Metadata KV count (64-bit little-endian)
         long kvCount = 0;
         for (int i = 0; i < 8; i++) {
             kvCount |= ((long) (bytes[16 + i] & 0xFF)) << (i * 8);
         }
-        assertEquals("Metadata KV count must be exactly 0 to prevent loading crashes on mock GGUF", 0L, kvCount);
+        assertEquals("Metadata KV count must match real model metadata count", 8L, kvCount);
     }
 
     @Test

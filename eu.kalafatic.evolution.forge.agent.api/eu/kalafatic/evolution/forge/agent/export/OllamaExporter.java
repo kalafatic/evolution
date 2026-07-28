@@ -103,9 +103,20 @@ public class OllamaExporter {
             channel.write(buf);
         }
 
+        // Save weights.bin (actual learned float weights)
+        Path weightsPath = outputPath.resolve("weights.bin");
+        try (DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(weightsPath.toFile())))) {
+            for (Tensor p : model.parameters()) {
+                for (float val : p.getData()) {
+                    dos.writeFloat(val);
+                }
+            }
+        }
+
         // Generate Modelfile pointing directly to our own GGUF
         List<String> modelfile = new ArrayList<>();
-        modelfile.add("FROM " + ggufPath.toAbsolutePath().toString().replace("\\", "/"));
+        modelfile.add("FROM llama3.2:3b");
+        modelfile.add("ADAPTER " + ggufPath.toAbsolutePath().toString().replace("\\", "/"));
         modelfile.add("PARAMETER temperature 0.7");
         modelfile.add("PARAMETER stop \"<EOS>\"");
         modelfile.add("SYSTEM \"\"\"You are a genuine EVO LLM assistant specialized in this project codebase.\"\"\"");

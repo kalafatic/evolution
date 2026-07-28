@@ -189,8 +189,9 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                 updateStats(sessionId, new ForgingStats("EXPORTING", 80, totalFilesScanned, totalFilesFound, samples.size(), 0.0, "1/1", runFolder.toAbsolutePath().toString()));
                 logToFile(logFile, "Stage: EXPORTING. Exporting model LoRA adapters...");
                 OllamaExporter exporter = new OllamaExporter();
-                Path exportPath = projectPath.resolve("dist/evo-" + sessionId);
-                String modelName = "evo-" + sessionId;
+                String dateVersion = new java.text.SimpleDateFormat("yyyyMMdd_HHmmss").format(new java.util.Date(timestamp));
+                String modelName = "evo-" + sessionId + "-" + dateVersion;
+                Path exportPath = projectPath.resolve("dist/" + modelName);
                 exporter.export(modelName, exportPath, model);
                 logToFile(logFile, "Export complete. Model output written to: " + exportPath.toAbsolutePath().toString());
 
@@ -202,7 +203,7 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                         Files.createDirectories(sourceModelsDir);
                         if (Files.exists(exportPath.resolve("evo.gguf"))) {
                             Files.copy(exportPath.resolve("evo.gguf"), sourceModelsDir.resolve("evo.gguf"), StandardCopyOption.REPLACE_EXISTING);
-                            Files.copy(exportPath.resolve("evo.gguf"), sourceModelsDir.resolve("evo-" + sessionId + ".gguf"), StandardCopyOption.REPLACE_EXISTING);
+                            Files.copy(exportPath.resolve("evo.gguf"), sourceModelsDir.resolve(modelName + ".gguf"), StandardCopyOption.REPLACE_EXISTING);
                             logToFile(logFile, "[EXPORT_GGUF] Programmatically copied GGUF files to workspace source models directory: " + sourceModelsDir.toAbsolutePath().toString());
                         }
                         if (Files.exists(exportPath.resolve("Modelfile"))) {
@@ -233,7 +234,7 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                     Files.createDirectories(ollamaHomeModels);
                     if (Files.exists(exportPath.resolve("evo.gguf"))) {
                         Files.copy(exportPath.resolve("evo.gguf"), ollamaHomeModels.resolve("evo.gguf"), StandardCopyOption.REPLACE_EXISTING);
-                        Files.copy(exportPath.resolve("evo.gguf"), ollamaHomeModels.resolve("evo-" + sessionId + ".gguf"), StandardCopyOption.REPLACE_EXISTING);
+                        Files.copy(exportPath.resolve("evo.gguf"), ollamaHomeModels.resolve(modelName + ".gguf"), StandardCopyOption.REPLACE_EXISTING);
                         logToFile(logFile, "[EXPORT_GGUF] Programmatically copied GGUF files to default Ollama models directory: " + ollamaHomeModels.toAbsolutePath().toString());
                     } else {
                         logToFile(logFile, "[EXPORT_GGUF] Warning: evo.gguf file was not found in export path during registration stage.");
@@ -276,7 +277,7 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                             // Build unique and alias Modelfile contents pointing directly to the GGUF copies inside the default Ollama models location (uncommented since GGUF header is now valid)
                             String uniqueModelfile = modelfileContent.replaceAll(
                                 "(?m)^(?:#\\s*)?ADAPTER\\s+.*", 
-                                "ADAPTER " + ollamaHomeModels.resolve("evo-" + sessionId + ".gguf").toAbsolutePath().toString().replace("\\", "/")
+                                "ADAPTER " + ollamaHomeModels.resolve(modelName + ".gguf").toAbsolutePath().toString().replace("\\", "/")
                             );
                             String aliasModelfile = modelfileContent.replaceAll(
                                 "(?m)^(?:#\\s*)?ADAPTER\\s+.*", 
