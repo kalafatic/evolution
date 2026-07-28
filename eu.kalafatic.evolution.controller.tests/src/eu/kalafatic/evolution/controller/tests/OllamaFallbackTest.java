@@ -35,16 +35,29 @@ public class OllamaFallbackTest {
         server.createContext("/api/chat", new HttpHandler() {
             @Override
             public void handle(HttpExchange exchange) throws IOException {
-                int count = generateCallCount.incrementAndGet();
-                if (count == 1) {
-                    // Return memory error
+                byte[] bytes = exchange.getRequestBody().readAllBytes();
+                String requestBody = new String(bytes);
+                JSONObject reqJson = new JSONObject(requestBody);
+                String requestedModel = reqJson.optString("model", "");
+
+                generateCallCount.incrementAndGet();
+
+                if (requestedModel.toLowerCase().contains("evo")) {
+                    // Always fail for 'evo' model with unable to load model error to trigger self-healing and then fallback
+                    String response = "{\"error\":\"unable to load model: C:\\\\Users\\\\petrk\\\\.ollama\\\\models\\\\blobs\\\\sha256-f3df8489485a4c2095c1a12d2e035728c1ca6dd8374d64aea25c0e7dcb752b27\"}";
+                    exchange.sendResponseHeaders(500, response.length());
+                    try (OutputStream os = exchange.getResponseBody()) {
+                        os.write(response.getBytes());
+                    }
+                } else if (requestedModel.equals("large-model:latest")) {
+                    // Memory error to test memory fallback
                     String response = "{\"error\":\"model requires more system memory (6.6 GiB) than is available (4.9 GiB)\"}";
                     exchange.sendResponseHeaders(500, response.length());
                     try (OutputStream os = exchange.getResponseBody()) {
                         os.write(response.getBytes());
                     }
                 } else {
-                    // Return success
+                    // Success for small-model or other fallback models
                     JSONObject resp = new JSONObject();
                     JSONObject msg = new JSONObject();
                     msg.put("role", "assistant");
@@ -55,6 +68,19 @@ public class OllamaFallbackTest {
                     try (OutputStream os = exchange.getResponseBody()) {
                         os.write(response.getBytes());
                     }
+                }
+            }
+        });
+
+        server.createContext("/api/create", new HttpHandler() {
+            @Override
+            public void handle(HttpExchange exchange) throws IOException {
+                JSONObject resp = new JSONObject();
+                resp.put("status", "success");
+                String response = resp.toString();
+                exchange.sendResponseHeaders(200, response.length());
+                try (OutputStream os = exchange.getResponseBody()) {
+                    os.write(response.getBytes());
                 }
             }
         });
@@ -115,5 +141,25 @@ public class OllamaFallbackTest {
         assertEquals(1, tagsCallCount.get());
         assertEquals("small-model:latest", orchestrator.getOllama().getModel());
         assertEquals("small-model:latest", orchestrator.getLocalModel());
+    }
+
+    @Test
+    public void testEvoModelFallback() throws Exception {
+        Orchestrator orchestrator = OrchestrationFactory.eINSTANCE.createOrchestrator();
+        Ollama ollama = OrchestrationFactory.eINSTANCE.createOllama();
+        ollama.setUrl("http://localhost:" + port);
+        ollama.setModel("evo");
+        orchestrator.setOllama(ollama);
+        orchestrator.setLocalModel("evo");
+
+        OllamaProvider provider = new OllamaProvider();
+        TaskContext context = new TaskContext(orchestrator, null);
+
+        // This should trigger self-healing and fallback to large-model:latest/small-model:latest
+        String result = provider.sendRequest(orchestrator, "test prompt", 0.7f, null, context);
+
+        assertEquals("Fallback success", result);
+        assertNotEquals("evo", orchestrator.getOllama().getModel());
+        assertNotEquals("evo", orchestrator.getLocalModel());
     }
 }

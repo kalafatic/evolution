@@ -153,14 +153,24 @@ public class OllamaProvider implements ILlmProvider {
         } catch (Exception e) {
             String errorBody = e.getMessage();
             if (errorBody != null && (errorBody.contains("unable to load model") || errorBody.contains("500") || errorBody.contains("404"))) {
-                if (model != null && model.toLowerCase().contains("evo") && depth == 0) {
-                    if (context != null) context.log("Ollama: Model '" + model + "' failed to load (corrupted or missing). Triggering self-healing repair...");
-                    try {
-                        triggerSelfHealing(orchestrator, model, service, context);
-                        // Retry with same model
+                if (model != null && model.toLowerCase().contains("evo")) {
+                    if (depth == 0) {
+                        if (context != null) context.log("Ollama: Model '" + model + "' failed to load (corrupted or missing). Triggering self-healing repair...");
+                        try {
+                            triggerSelfHealing(orchestrator, model, service, context);
+                            // Retry with same model
+                            return sendRequestWithRetry(orchestrator, prompt, temperature, proxyUrl, context, depth + 1);
+                        } catch (Exception ex) {
+                            if (context != null) context.log("Ollama: Self-healing repair failed: " + ex.getMessage());
+                        }
+                    }
+
+                    // If self-healing failed, or if we are already at depth > 0, fallback to a working local model.
+                    String fallbackModel = findWorkingFallbackModel(service, context);
+                    if (fallbackModel != null && !fallbackModel.equalsIgnoreCase(model)) {
+                        if (context != null) context.log("Ollama: 'evo' model failed to load. Falling back to working model: " + fallbackModel);
+                        updateOrchestratorModel(orchestrator, fallbackModel);
                         return sendRequestWithRetry(orchestrator, prompt, temperature, proxyUrl, context, depth + 1);
-                    } catch (Exception ex) {
-                        if (context != null) context.log("Ollama: Self-healing repair failed: " + ex.getMessage());
                     }
                 }
             }
@@ -223,6 +233,23 @@ public class OllamaProvider implements ILlmProvider {
             case "TiB" -> 1024L * 1024 * 1024 * 1024;
             default -> 1L;
         };
+    }
+
+    private String findWorkingFallbackModel(OllamaService service, TaskContext context) {
+        try {
+            List<OllamaModel> available = service.loadModels();
+            if (available != null && !available.isEmpty()) {
+                for (OllamaModel m : available) {
+                    if (m.getName() != null && !m.getName().toLowerCase().contains("evo")) {
+                        return m.getName();
+                    }
+                }
+                return available.get(0).getName();
+            }
+        } catch (Exception e) {
+            if (context != null) context.log("Ollama: Failed to find working fallback model: " + e.getMessage());
+        }
+        return "llama3.2:3b";
     }
 
     private void updateOrchestratorModel(Orchestrator orchestrator, String newModel) {
