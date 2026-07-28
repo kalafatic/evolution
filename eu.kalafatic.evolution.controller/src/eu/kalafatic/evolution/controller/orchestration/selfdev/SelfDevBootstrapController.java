@@ -244,7 +244,24 @@ public class SelfDevBootstrapController {
             if (compileExitCode == 0) {
                 return "SUCCESS";
             } else {
-                return "ERROR: Supervisor build failed (exit code " + compileExitCode + ")";
+                System.out.println("[SelfDevBootstrapController] Reactor build failed. Falling back to standalone build directly inside: " + supervisorDir.getAbsolutePath());
+                ProcessBuilder pbFallback = new ProcessBuilder(mvnCmd, "clean", "package", "-DskipTests");
+                pbFallback.directory(supervisorDir);
+                pbFallback.redirectErrorStream(true);
+                Process pFallback = pbFallback.start();
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(pFallback.getInputStream()))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        System.out.println("[Supervisor Standalone Compile] " + line);
+                    }
+                }
+                int fallbackExitCode = pFallback.waitFor();
+                System.out.println("[SelfDevBootstrapController] Supervisor standalone compile finished with exit code: " + fallbackExitCode);
+                if (fallbackExitCode == 0) {
+                    return "SUCCESS";
+                } else {
+                    return "ERROR: Supervisor build failed both in reactor and standalone (exit code " + fallbackExitCode + ")";
+                }
             }
         } catch (Exception e) {
             System.err.println("[SelfDevBootstrapController] Failed to compile supervisor module: " + e.getMessage());
