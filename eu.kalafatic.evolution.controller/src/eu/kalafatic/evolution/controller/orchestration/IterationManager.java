@@ -1517,11 +1517,27 @@ public class IterationManager {
 					model.getInfluenceGraph().putAll((Map<String, Double>) influence);
 			}
 
-			File exportPackage = exportManager.createUnifiedExport(model, MediatedExportManager.ExportProfile.FULL,
-					request, context.getProjectRoot(), outputPath, context.getSessionId());
+			File resourcesDir = new File(context.getProjectRoot(), "src/main/resources");
+			if (!resourcesDir.exists()) {
+				resourcesDir = new File(context.getProjectRoot(), "resources");
+			}
+			if (!resourcesDir.exists()) {
+				resourcesDir.mkdirs();
+			}
 
-			// Record as a change so it appears in Changes view
-			context.getFileChangeTracker().recordChange(exportPackage.getName(), FileChangeTracker.ChangeType.NEW);
+			File exportPackage = exportManager.createUnifiedExport(model, MediatedExportManager.ExportProfile.FULL,
+					request, context.getProjectRoot(), resourcesDir.getAbsolutePath(), context.getSessionId());
+
+			// Record as a change so it appears in Changes view with relative path
+			String relativeZipPath = context.getProjectRoot().toPath().relativize(exportPackage.toPath()).toString().replace('\\', '/');
+			context.getFileChangeTracker().recordChange(relativeZipPath, FileChangeTracker.ChangeType.NEW);
+
+			// Explicitly trigger workspace refresh using Eclipse Core Resources API
+			try {
+				org.eclipse.core.resources.ResourcesPlugin.getWorkspace().getRoot().refreshLocal(org.eclipse.core.resources.IResource.DEPTH_INFINITE, null);
+			} catch (Throwable t) {
+				context.log("[KERNEL] Warning: Workspace refresh failed or not in OSGi environment: " + t.getMessage());
+			}
 
 			StringBuilder summaryBuilder = new StringBuilder();
 			summaryBuilder.append("### Mediated Darwin Evolution Complete\n\n");
