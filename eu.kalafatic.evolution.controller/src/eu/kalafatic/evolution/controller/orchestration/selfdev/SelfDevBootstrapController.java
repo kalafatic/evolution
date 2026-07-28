@@ -106,18 +106,22 @@ public class SelfDevBootstrapController {
     }
 
     private boolean isSupervisorAlive() {
-        try {
-            URL url = new URL("http://localhost:8089/ping");
-            System.out.println("[SelfDevBootstrapController] Pinging supervisor at: " + url);
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setConnectTimeout(500);
-            int code = conn.getResponseCode();
-            System.out.println("[SelfDevBootstrapController] Ping response code: " + code);
-            return code == 200;
-        } catch (Exception e) {
-            System.out.println("[SelfDevBootstrapController] Supervisor ping failed (not responding/unreachable). Details: " + e.getMessage());
-            return false;
+        for (String host : new String[]{"127.0.0.1", "localhost"}) {
+            try {
+                URL url = new URL("http://" + host + ":8089/ping");
+                System.out.println("[SelfDevBootstrapController] Pinging supervisor at: " + url);
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setConnectTimeout(500);
+                int code = conn.getResponseCode();
+                System.out.println("[SelfDevBootstrapController] Ping response code: " + code);
+                if (code == 200) {
+                    return true;
+                }
+            } catch (Exception e) {
+                System.out.println("[SelfDevBootstrapController] Supervisor ping failed for " + host + ". Details: " + e.getMessage());
+            }
         }
+        return false;
     }
 
     private void waitUntilReady() {
@@ -277,10 +281,24 @@ public class SelfDevBootstrapController {
 
         File[] jars = targetDir.exists() ? targetDir.listFiles((dir, name) -> name.endsWith("-shaded.jar")) : null;
         if (jars == null || jars.length == 0) {
+            File fallbackJar = new File(targetDir, "eu.kalafatic.evolution.supervisor-1.0.0-SNAPSHOT.jar");
+            if (fallbackJar.exists()) {
+                System.out.println("[SelfDevBootstrapController] Found fallback supervisor jar: " + fallbackJar.getAbsolutePath());
+                jars = new File[]{fallbackJar};
+            }
+        }
+
+        if (jars == null || jars.length == 0) {
             System.out.println("[SelfDevBootstrapController] Supervisor shaded JAR not found. Attempting to build supervisor module...");
             String buildResult = compileSupervisorModule(supervisorDir);
             System.out.println("[SelfDevBootstrapController] Supervisor build result: " + buildResult);
             jars = targetDir.exists() ? targetDir.listFiles((dir, name) -> name.endsWith("-shaded.jar")) : null;
+            if (jars == null || jars.length == 0) {
+                File fallbackJar = new File(targetDir, "eu.kalafatic.evolution.supervisor-1.0.0-SNAPSHOT.jar");
+                if (fallbackJar.exists()) {
+                    jars = new File[]{fallbackJar};
+                }
+            }
         }
 
         if (jars != null && jars.length > 0) {
@@ -428,24 +446,28 @@ public class SelfDevBootstrapController {
 
     private String callSupervisor(String endpoint) {
         System.out.println("[SelfDevBootstrapController] Calling supervisor endpoint: " + endpoint);
-        try {
-            URL url = new URL("http://localhost:8089" + endpoint);
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("GET");
-            int responseCode = conn.getResponseCode();
-            System.out.println("[SelfDevBootstrapController] Supervisor HTTP " + responseCode + " for: " + endpoint);
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
-                String line;
-                StringBuilder res = new StringBuilder();
-                while ((line = reader.readLine()) != null) res.append(line);
-                String body = res.toString();
-                System.out.println("[SelfDevBootstrapController] Supervisor response body: " + body);
-                return body;
+        Exception lastEx = null;
+        for (String host : new String[]{"127.0.0.1", "localhost"}) {
+            try {
+                URL url = new URL("http://" + host + ":8089" + endpoint);
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("GET");
+                int responseCode = conn.getResponseCode();
+                System.out.println("[SelfDevBootstrapController] Supervisor HTTP " + responseCode + " for: " + endpoint);
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
+                    String line;
+                    StringBuilder res = new StringBuilder();
+                    while ((line = reader.readLine()) != null) res.append(line);
+                    String body = res.toString();
+                    System.out.println("[SelfDevBootstrapController] Supervisor response body: " + body);
+                    return body;
+                }
+            } catch (Exception e) {
+                System.err.println("[SelfDevBootstrapController] Failed to call supervisor on " + host + " for " + endpoint + ": " + e.getMessage());
+                lastEx = e;
             }
-        } catch (Exception e) {
-            System.err.println("[SelfDevBootstrapController] Failed to call supervisor on " + endpoint + ": " + e.getMessage());
-            return "ERROR: " + e.getMessage();
         }
+        return "ERROR: " + (lastEx != null ? lastEx.getMessage() : "Unknown connection error");
     }
 
     private String checkGit() {
