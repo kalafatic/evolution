@@ -494,7 +494,22 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                 priority = MessagePriority.NORMAL;
             }
         } else if (trimmedText.startsWith("Final Response: ")) {
-            sender = "Final Response";
+            String modelName = null;
+            try {
+                SessionContainer session = SessionManager.getInstance().getSession(sessionId);
+                TaskContext context = (session instanceof SessionContext) ? ((SessionContext)session).getTaskContext() : null;
+                if (context != null && context.getOrchestrator() != null && context.getOrchestrator().getOllama() != null) {
+                    modelName = context.getOrchestrator().getOllama().getModel();
+                }
+            } catch (Exception e) {}
+            if (modelName == null && this.orchestrator != null && this.orchestrator.getOllama() != null) {
+                modelName = this.orchestrator.getOllama().getModel();
+            }
+            if (modelName != null && !modelName.isEmpty()) {
+                sender = "Final Response (" + modelName + ")";
+            } else {
+                sender = "Final Response";
+            }
             content = trimmedText.substring(16);
             agentType = "final-response";
             priority = MessagePriority.FINAL;

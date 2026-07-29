@@ -29,6 +29,10 @@ public class OllamaProvider implements ILlmProvider {
     }
 
     private void triggerSelfHealing(Orchestrator orchestrator, String model, OllamaService service, TaskContext context) throws Exception {
+        triggerSelfHealing(orchestrator, model, service, context, true);
+    }
+
+    private void triggerSelfHealing(Orchestrator orchestrator, String model, OllamaService service, TaskContext context, boolean useAdapter) throws Exception {
         java.io.File ggufFile = new java.io.File(System.getProperty("user.home"), ".ollama/models/" + model + ".gguf");
         if (!ggufFile.exists()) {
             ggufFile = new java.io.File(System.getProperty("user.home"), ".ollama/models/evo.gguf");
@@ -90,14 +94,28 @@ public class OllamaProvider implements ILlmProvider {
             }
 
             String ggufPathNormalized = ggufFile.getAbsolutePath().replace("\\", "/");
-            String modelfileContent = "FROM " + baseModel + "\n" +
-                                     "ADAPTER " + ggufPathNormalized + "\n" +
-                                     "PARAMETER temperature 0.7\n" +
-                                     "PARAMETER stop \"<EOS>\"\n" +
-                                     "SYSTEM \"\"\"You are an Evolution AI assistant specialized in this project codebase.\"\"\"";
+            StringBuilder modelfileBuilder = new StringBuilder();
+            modelfileBuilder.append("FROM ").append(baseModel).append("\n");
+            if (useAdapter) {
+                modelfileBuilder.append("ADAPTER ").append(ggufPathNormalized).append("\n");
+            } else {
+                modelfileBuilder.append("# ADAPTER ").append(ggufPathNormalized).append(" (disabled due to Ollama loading/architecture limitations)\n");
+            }
+            modelfileBuilder.append("PARAMETER temperature 0.7\n");
+            modelfileBuilder.append("PARAMETER stop \"<EOS>\"\n");
+            modelfileBuilder.append("SYSTEM \"\"\"You are an Evolution AI assistant specialized in this project codebase.\"\"\"");
+            String modelfileContent = modelfileBuilder.toString();
 
-            if (context != null) context.log("Ollama: Programmatically creating model '" + model + "' from: " + ggufPathNormalized);
-            service.createModel(model, modelfileContent);
+            if (context != null) {
+                context.log("Ollama: Programmatically creating model '" + model + "' (useAdapter=" + useAdapter + ")");
+                context.log("Ollama: Resolved GGUF file: " + ggufFile.getAbsolutePath() + " (Exists: " + ggufFile.exists() + ", Size: " + ggufFile.length() + " bytes)");
+                context.log("Ollama: Generated Modelfile content:\n" + modelfileContent);
+            }
+
+            service.createModel(model, modelfileContent, line -> {
+                if (context != null) context.log("[Ollama-Create] " + line);
+            });
+
             if (context != null) context.log("Ollama: Self-healing registration complete for '" + model + "'.");
         } else {
             if (context != null) context.log("Ollama: Warning - GGUF file for '" + model + "' was not found, cannot self-heal.");
@@ -155,9 +173,9 @@ public class OllamaProvider implements ILlmProvider {
             if (errorBody != null && (errorBody.contains("unable to load model") || errorBody.contains("500") || errorBody.contains("404"))) {
                 if (model != null && model.toLowerCase().contains("evo")) {
                     if (depth == 0) {
-                        if (context != null) context.log("Ollama: Model '" + model + "' failed to load (corrupted or missing). Triggering self-healing repair...");
+                        if (context != null) context.log("Ollama: Model '" + model + "' failed to load (corrupted or missing). Triggering self-healing repair without ADAPTER to resolve Ollama loading/architecture limitations...");
                         try {
-                            triggerSelfHealing(orchestrator, model, service, context);
+                            triggerSelfHealing(orchestrator, model, service, context, false);
                             // Retry with same model
                             return sendRequestWithRetry(orchestrator, prompt, temperature, proxyUrl, context, depth + 1);
                         } catch (Exception ex) {
