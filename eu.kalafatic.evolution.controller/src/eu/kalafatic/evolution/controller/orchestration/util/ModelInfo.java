@@ -1,21 +1,21 @@
 package eu.kalafatic.evolution.controller.orchestration.util;
 
 public class ModelInfo {
-    String modelName;
-    boolean success;
-    String error;
+    public String modelName;
+    public boolean success;
+    public String error;
     
-    long parameterCount;
-    String parameterSizeDisplay;
+    public long parameterCount;
+    public String parameterSizeDisplay;
     
-    boolean isQuantized;
-    String quantization;
+    public boolean isQuantized;
+    public String quantization;
     
-    String modifiedAt;
-    String modelFamily;
-    String template;
-    String system;
-    String parameters;
+    public String modifiedAt;
+    public String modelFamily;
+    public String template;
+    public String system;
+    public String parameters;
     
     public boolean isSmall() {
         return parameterCount > 0 && parameterCount < 3_000_000_000L;
