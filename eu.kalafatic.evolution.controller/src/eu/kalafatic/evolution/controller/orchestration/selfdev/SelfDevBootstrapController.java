@@ -11,6 +11,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -61,6 +62,18 @@ public class SelfDevBootstrapController {
             System.out.println("[SelfDevBootstrapController] Supervisor is already running and responding.");
             return;
         }
+
+        if (supervisorProcess != null) {
+            System.out.println("[SelfDevBootstrapController] Supervisor process exists but is not responding to ping. Forcibly destroying existing process...");
+            supervisorProcess.destroyForcibly();
+            try {
+                supervisorProcess.waitFor(2, TimeUnit.SECONDS);
+            } catch (InterruptedException ignored) {
+                Thread.currentThread().interrupt();
+            }
+            supervisorProcess = null;
+        }
+
         System.out.println("[SelfDevBootstrapController] Supervisor is not running. Starting new supervisor process...");
         try {
             List<String> cmd = new ArrayList<>();
@@ -369,7 +382,7 @@ public class SelfDevBootstrapController {
         System.out.println("[SelfDevBootstrapController] Requesting to stop Supervisor...");
         if (supervisorProcess != null) {
             System.out.println("[SelfDevBootstrapController] Destroying supervisor process...");
-            supervisorProcess.destroy();
+            supervisorProcess.destroyForcibly();
             supervisorProcess = null;
             System.out.println("[SelfDevBootstrapController] Supervisor process destroyed.");
         } else {
@@ -405,7 +418,7 @@ public class SelfDevBootstrapController {
     public String check(String type) {
         String dashedBorder = "==========================================================================";
         System.out.println(dashedBorder);
-        System.out.println("[PROCESS_VISUALIZATION] STARTING PRE-FLIGHT CHECK: [" + type.toUpperCase() + "]");
+        System.out.println("[PROCESS_VISUAL_CHECK] START PRE-FLIGHT CHECK: [" + type.toUpperCase() + "]");
         System.out.println("  [Ready] ──▶ [Checking] ──▶ [Verified/Error]");
         System.out.println("  Current Status Indicator: [Checking]");
         System.out.println("  Parameters:");
@@ -414,7 +427,10 @@ public class SelfDevBootstrapController {
         System.out.println("    - Mode:        " + (debugMode ? "DEBUG" : "STANDARD"));
         System.out.println(dashedBorder);
 
-        ensureSupervisorRunning();
+        if (type.equalsIgnoreCase("BUILD")) {
+            ensureSupervisorRunning();
+        }
+
         String result = switch (type.toUpperCase()) {
             case "GIT" -> checkGit();
             case "MAVEN" -> checkMaven();
@@ -435,7 +451,7 @@ public class SelfDevBootstrapController {
         };
 
         System.out.println(dashedBorder);
-        System.out.println("[PROCESS_VISUALIZATION] PRE-FLIGHT CHECK TASK ENDED: [" + type.toUpperCase() + "]");
+        System.out.println("[PROCESS_VISUAL_CHECK] PRE-FLIGHT CHECK TASK ENDED: [" + type.toUpperCase() + "]");
         System.out.println("  Result Outcome: [" + result + "]");
         System.out.println("  [Ready] ──▶ [Checking] ──▶ [" + (result.startsWith("ERROR") ? "Error" : "Verified") + "]");
         System.out.println(dashedBorder);
@@ -471,7 +487,9 @@ public class SelfDevBootstrapController {
     }
 
     private String checkGit() {
+        long startTime = System.currentTimeMillis();
         System.out.println("[SelfDevBootstrapController] [CHECK_GIT] Starting Git configuration check...");
+        System.out.println("[SelfDevBootstrapController] [CHECK_GIT] Project Root: " + (projectRoot != null ? projectRoot.getAbsolutePath() : "null"));
         try {
             File gitDir = new File(projectRoot, ".git");
             System.out.println("[SelfDevBootstrapController] [CHECK_GIT] Verifying Git directory at: " + gitDir.getAbsolutePath());
@@ -482,13 +500,26 @@ public class SelfDevBootstrapController {
             System.out.println("[SelfDevBootstrapController] [CHECK_GIT] Executing 'git status --porcelain' in directory: " + projectRoot.getAbsolutePath());
             ProcessBuilder pb = new ProcessBuilder("git", "status", "--porcelain");
             pb.directory(projectRoot);
+            pb.redirectErrorStream(true);
             Process p = pb.start();
-            p.getInputStream().readAllBytes();
+
+            StringBuilder output = new StringBuilder();
+            try (BufferedReader r = new BufferedReader(new InputStreamReader(p.getInputStream(), StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = r.readLine()) != null) {
+                    output.append(line).append("\n");
+                    System.out.println("[SelfDevBootstrapController] [CHECK_GIT_OUTPUT] " + line);
+                }
+            }
+
             int exitCode = p.waitFor();
-            System.out.println("[SelfDevBootstrapController] [CHECK_GIT] 'git status --porcelain' exited with code: " + exitCode);
+            long duration = System.currentTimeMillis() - startTime;
+            System.out.println("[SelfDevBootstrapController] [CHECK_GIT] 'git status --porcelain' exited with code: " + exitCode + " (took " + duration + "ms)");
             if (exitCode == 0) {
+                System.out.println("[SelfDevBootstrapController] [CHECK_GIT_SUCCESS] Git repository is valid. Pending changes count: " + output.toString().split("\n").length);
                 return "CHECKED";
             } else {
+                System.err.println("[SelfDevBootstrapController] [CHECK_GIT_FAIL] Git command failed with exit code: " + exitCode);
                 return "ERROR: git command failed with exit code " + exitCode;
             }
         } catch (Exception e) {
@@ -499,17 +530,35 @@ public class SelfDevBootstrapController {
     }
 
     private String checkMaven() {
+        long startTime = System.currentTimeMillis();
         System.out.println("[SelfDevBootstrapController] [CHECK_MAVEN] Starting Maven check...");
+        System.out.println("[SelfDevBootstrapController] [CHECK_MAVEN] Project Root: " + (projectRoot != null ? projectRoot.getAbsolutePath() : "null"));
         try {
             String mvnCmd = System.getProperty("os.name").toLowerCase().contains("win") ? "mvn.cmd" : "mvn";
             System.out.println("[SelfDevBootstrapController] [CHECK_MAVEN] OS: " + System.getProperty("os.name") + ", Maven Executable: " + mvnCmd);
             System.out.println("[SelfDevBootstrapController] [CHECK_MAVEN] Executing '" + mvnCmd + " -version' in directory: " + projectRoot.getAbsolutePath());
             ProcessBuilder pb = new ProcessBuilder(mvnCmd, "-version");
             pb.directory(projectRoot);
+            pb.redirectErrorStream(true);
             Process p = pb.start();
+
+            StringBuilder output = new StringBuilder();
+            try (BufferedReader r = new BufferedReader(new InputStreamReader(p.getInputStream(), StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = r.readLine()) != null) {
+                    output.append(line).append("\n");
+                    System.out.println("[SelfDevBootstrapController] [CHECK_MAVEN_OUTPUT] " + line);
+                }
+            }
+
             int exitCode = p.waitFor();
-            System.out.println("[SelfDevBootstrapController] [CHECK_MAVEN] '" + mvnCmd + " -version' exited with code: " + exitCode);
-            if (exitCode == 0) return "CHECKED";
+            long duration = System.currentTimeMillis() - startTime;
+            System.out.println("[SelfDevBootstrapController] [CHECK_MAVEN] '" + mvnCmd + " -version' exited with code: " + exitCode + " (took " + duration + "ms)");
+            if (exitCode == 0) {
+                System.out.println("[SelfDevBootstrapController] [CHECK_MAVEN_SUCCESS] Maven installation verified.");
+                return "CHECKED";
+            }
+            System.err.println("[SelfDevBootstrapController] [CHECK_MAVEN_FAIL] Maven command failed with exit code " + exitCode);
             return "ERROR: Maven command failed with exit code " + exitCode;
         } catch (Exception e) {
             System.err.println("[SelfDevBootstrapController] [CHECK_MAVEN_ERROR] Exception: " + e.getMessage());
@@ -519,10 +568,16 @@ public class SelfDevBootstrapController {
     }
 
     private String checkLlm() {
+        long startTime = System.currentTimeMillis();
         System.out.println("[SelfDevBootstrapController] [CHECK_LLM] Starting LLM connectivity check...");
         try {
             if (orchestrator != null && !orchestrator.getAiProviders().isEmpty()) {
-                System.out.println("[SelfDevBootstrapController] [CHECK_LLM] Active AI providers in orchestrator: " + orchestrator.getAiProviders().size() + ". LLM check passed.");
+                System.out.println("[SelfDevBootstrapController] [CHECK_LLM] Active AI providers in orchestrator: " + orchestrator.getAiProviders().size());
+                for (int i = 0; i < orchestrator.getAiProviders().size(); i++) {
+                    System.out.println("[SelfDevBootstrapController] [CHECK_LLM] Provider #" + i + ": " + orchestrator.getAiProviders().get(i).toString());
+                }
+                long duration = System.currentTimeMillis() - startTime;
+                System.out.println("[SelfDevBootstrapController] [CHECK_LLM_SUCCESS] Orchestrator has active AI providers (took " + duration + "ms). LLM check passed.");
                 return "CHECKED";
             }
             URL url = new URL("http://localhost:11434/api/tags");
@@ -530,9 +585,15 @@ public class SelfDevBootstrapController {
             HttpURLConnection con = (HttpURLConnection) url.openConnection();
             con.setRequestMethod("GET");
             con.setConnectTimeout(2000);
+            con.setReadTimeout(2000);
             int code = con.getResponseCode();
-            System.out.println("[SelfDevBootstrapController] [CHECK_LLM] Ollama response code: " + code);
-            if (code == 200) return "CHECKED";
+            long duration = System.currentTimeMillis() - startTime;
+            System.out.println("[SelfDevBootstrapController] [CHECK_LLM] Ollama response code: " + code + " (took " + duration + "ms)");
+            if (code == 200) {
+                System.out.println("[SelfDevBootstrapController] [CHECK_LLM_SUCCESS] Ollama is online and responsive.");
+                return "CHECKED";
+            }
+            System.err.println("[SelfDevBootstrapController] [CHECK_LLM_FAIL] LLM unreachable. HTTP Code: " + code);
             return "ERROR: LLM unreachable. HTTP Code: " + code;
         } catch (Exception e) {
             System.err.println("[SelfDevBootstrapController] [CHECK_LLM_ERROR] Connectivity check failed with exception: " + e.getMessage());
@@ -592,6 +653,7 @@ public class SelfDevBootstrapController {
     }
 
     private String checkGenome() {
+        long startTime = System.currentTimeMillis();
         System.out.println("[SelfDevBootstrapController] [CHECK_GENOME] Starting GENOME Check. projectRoot: " + (projectRoot != null ? projectRoot.getAbsolutePath() : "null"));
         File dir = projectRoot;
         File genomeModuleDir = null;
@@ -708,8 +770,9 @@ public class SelfDevBootstrapController {
 
             File genomeJson = new File(projectRoot, "genome/current/genome.json");
             System.out.println("[SelfDevBootstrapController] [CHECK_GENOME] Checking generated genome.json path: " + genomeJson.getAbsolutePath() + ", exists: " + genomeJson.exists());
+            long duration = System.currentTimeMillis() - startTime;
             if (genomeJson.exists()) {
-                System.out.println("[SelfDevBootstrapController] [CHECK_GENOME_SUCCESS] GENOME Check successful. Generated genome.json: " + genomeJson.getAbsolutePath());
+                System.out.println("[SelfDevBootstrapController] [CHECK_GENOME_SUCCESS] GENOME Check successful. Generated genome.json: " + genomeJson.getAbsolutePath() + " (size: " + genomeJson.length() + " bytes, took " + duration + "ms)");
                 return "CHECKED (Updated)";
             } else {
                 System.err.println("[SelfDevBootstrapController] [CHECK_GENOME_FAIL] GENOME Check failed: genome.json was not generated in project root: " + projectRoot.getAbsolutePath());
@@ -723,15 +786,17 @@ public class SelfDevBootstrapController {
     }
 
     private String checkPermissions() {
+        long startTime = System.currentTimeMillis();
         System.out.println("[SelfDevBootstrapController] [CHECK_PERMISSIONS] Starting filesystem permissions check...");
-        System.out.println("[SelfDevBootstrapController] [CHECK_PERMISSIONS] runDir: " + runDir.getAbsolutePath() + ", exists: " + runDir.exists() + ", canWrite: " + runDir.canWrite());
+        System.out.println("[SelfDevBootstrapController] [CHECK_PERMISSIONS] RunDir: " + runDir.getAbsolutePath() + ", exists: " + runDir.exists() + ", canRead: " + runDir.canRead() + ", canWrite: " + runDir.canWrite());
         if (runDir.exists() && runDir.canWrite()) {
             File testFile = new File(runDir, ".perm-test");
             System.out.println("[SelfDevBootstrapController] [CHECK_PERMISSIONS] Creating testing file: " + testFile.getAbsolutePath());
             try {
                 if (testFile.createNewFile()) {
                     boolean deleted = testFile.delete();
-                    System.out.println("[SelfDevBootstrapController] [CHECK_PERMISSIONS] Created and deleted perm test file successfully. deleted: " + deleted);
+                    long duration = System.currentTimeMillis() - startTime;
+                    System.out.println("[SelfDevBootstrapController] [CHECK_PERMISSIONS_SUCCESS] Created and deleted perm test file successfully. deleted: " + deleted + " (took " + duration + "ms)");
                     return "CHECKED";
                 }
             } catch (IOException e) {
@@ -743,6 +808,7 @@ public class SelfDevBootstrapController {
     }
 
     private String checkExport() {
+        long startTime = System.currentTimeMillis();
         System.out.println("[SelfDevBootstrapController] [CHECK_EXPORT] Checking exported supervisor artifact...");
         File sandbox = new File(runDir, "workspace");
         File supervisorTarget = new File(sandbox, "eu.kalafatic.evolution.supervisor/target");
@@ -750,7 +816,8 @@ public class SelfDevBootstrapController {
         if (supervisorTarget.exists()) {
             File[] jars = supervisorTarget.listFiles((dir, name) -> name.endsWith("-shaded.jar"));
             if (jars != null && jars.length > 0) {
-                System.out.println("[SelfDevBootstrapController] [CHECK_EXPORT_SUCCESS] Found exported shaded supervisor jar: " + jars[0].getAbsolutePath() + " (size: " + jars[0].length() + " bytes)");
+                long duration = System.currentTimeMillis() - startTime;
+                System.out.println("[SelfDevBootstrapController] [CHECK_EXPORT_SUCCESS] Found exported shaded supervisor jar: " + jars[0].getAbsolutePath() + " (size: " + jars[0].length() + " bytes, took " + duration + "ms)");
                 return "READY: " + jars[0].getName();
             }
         }
@@ -759,23 +826,24 @@ public class SelfDevBootstrapController {
     }
 
     private String copyCodebaseToSupervisorSource() {
-        System.out.println("[SelfDevBootstrapController] Initiating Codebase Copy task...");
+        long startTime = System.currentTimeMillis();
+        System.out.println("[SelfDevBootstrapController] [COPY] Initiating Codebase Copy task...");
         String srcPath = null;
         try {
-            System.out.println("[SelfDevBootstrapController] Reflectively querying ProjectManager.getCodebasePath()...");
+            System.out.println("[SelfDevBootstrapController] [COPY] Reflectively querying ProjectManager.getCodebasePath()...");
             Class<?> pmClass = Class.forName("eu.kalafatic.evolution.view.provider.ProjectManager");
             java.lang.reflect.Method m = pmClass.getMethod("getCodebasePath");
             srcPath = (String) m.invoke(null);
-            System.out.println("[SelfDevBootstrapController] ProjectManager.getCodebasePath() returned: " + srcPath);
+            System.out.println("[SelfDevBootstrapController] [COPY] ProjectManager.getCodebasePath() returned: " + srcPath);
         } catch (Throwable t) {
-            System.out.println("[SelfDevBootstrapController] ProjectManager.getCodebasePath() fallback via reflection ignored: " + t.getMessage());
+            System.out.println("[SelfDevBootstrapController] [COPY] ProjectManager.getCodebasePath() fallback via reflection ignored: " + t.getMessage());
         }
         if (srcPath == null) {
             srcPath = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getCodebasePath();
-            System.out.println("[SelfDevBootstrapController] Falling back to ProjectModelManager.getCodebasePath(): " + srcPath);
+            System.out.println("[SelfDevBootstrapController] [COPY] Falling back to ProjectModelManager.getCodebasePath(): " + srcPath);
         }
         if (srcPath == null) {
-            System.err.println("[SelfDevBootstrapController] Codebase Copy failed: Could not resolve codebase source path.");
+            System.err.println("[SelfDevBootstrapController] [COPY_FAIL] Codebase Copy failed: Could not resolve codebase source path.");
             return "ERROR: Could not resolve codebase path";
         }
 
@@ -789,11 +857,11 @@ public class SelfDevBootstrapController {
 
         File src = new File(srcPath);
         File dest = new File(destPath);
-        System.out.println("[SelfDevBootstrapController] Source directory: " + src.getAbsolutePath());
-        System.out.println("[SelfDevBootstrapController] Destination directory: " + dest.getAbsolutePath());
+        System.out.println("[SelfDevBootstrapController] [COPY] Source directory: " + src.getAbsolutePath());
+        System.out.println("[SelfDevBootstrapController] [COPY] Destination directory: " + dest.getAbsolutePath());
 
         if (!src.exists()) {
-            System.err.println("[SelfDevBootstrapController] Codebase Copy failed: Source directory does not exist.");
+            System.err.println("[SelfDevBootstrapController] [COPY_FAIL] Codebase Copy failed: Source directory does not exist.");
             return "ERROR: Source path does not exist: " + src.getAbsolutePath();
         }
 
@@ -801,7 +869,7 @@ public class SelfDevBootstrapController {
 
         try {
             if (dest.exists()) {
-                System.out.println("[SelfDevBootstrapController] Destination folder exists. Deleting recursively: " + dest.getAbsolutePath());
+                System.out.println("[SelfDevBootstrapController] [COPY] Destination folder exists. Deleting recursively: " + dest.getAbsolutePath());
                 deleteRecursively(dest);
             }
             dest.mkdirs();
@@ -809,7 +877,7 @@ public class SelfDevBootstrapController {
             final java.nio.file.Path sourcePath = src.toPath();
             final java.nio.file.Path targetPath = dest.toPath();
 
-            System.out.println("[SelfDevBootstrapController] Walking source directory tree...");
+            System.out.println("[SelfDevBootstrapController] [COPY] Walking source directory tree...");
             java.nio.file.Files.walkFileTree(sourcePath, new java.nio.file.SimpleFileVisitor<java.nio.file.Path>() {
                 @Override
                 public java.nio.file.FileVisitResult preVisitDirectory(java.nio.file.Path dir, java.nio.file.attribute.BasicFileAttributes attrs) throws IOException {
@@ -824,6 +892,7 @@ public class SelfDevBootstrapController {
                     if (name.equals(".git") || name.equals("target") || name.equals("self-dev-run") ||
                         name.equals(".settings") || name.equals(".mvn") || name.equals(".metadata") ||
                         name.equals("bin") || name.equals("iterations") || name.equals("orchestrator")) {
+                        System.out.println("[SelfDevBootstrapController] [COPY] Skipping excluded directory: " + dir);
                         return java.nio.file.FileVisitResult.SKIP_SUBTREE;
                     }
                     java.nio.file.Path targetDir = targetPath.resolve(sourcePath.relativize(dir));
@@ -847,10 +916,11 @@ public class SelfDevBootstrapController {
                     return java.nio.file.FileVisitResult.CONTINUE;
                 }
             });
-            System.out.println("[SelfDevBootstrapController] Codebase Copy successful. Total files copied: " + filesCopied[0]);
+            long duration = System.currentTimeMillis() - startTime;
+            System.out.println("[SelfDevBootstrapController] [COPY_SUCCESS] Codebase Copy successful. Total files copied: " + filesCopied[0] + " (took " + duration + "ms)");
             return "SUCCESS: " + filesCopied[0] + " files";
         } catch (IOException e) {
-            System.err.println("[SelfDevBootstrapController] Codebase Copy IOException: " + e.getMessage());
+            System.err.println("[SelfDevBootstrapController] [COPY_ERROR] Codebase Copy IOException: " + e.getMessage());
             e.printStackTrace();
             return "ERROR: " + e.getMessage();
         }
