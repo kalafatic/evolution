@@ -98,4 +98,81 @@ public class FeedbackService {
             Log.log(this, e);
         }
     }
+
+    /**
+     * Records usage for a given AI provider.
+     * @param orchestrator The orchestrator instance.
+     * @param modelName The name of the model being used.
+     */
+    public void recordUsage(Orchestrator orchestrator, String modelName) {
+        if (orchestrator == null || modelName == null || modelName.isEmpty()) return;
+
+        orchestrator.getAiProviders().stream()
+            .filter(p -> modelName.equals(p.getName()))
+            .findFirst()
+            .ifPresentOrElse(
+                provider -> updateProviderUsageAndRating(orchestrator, provider),
+                () -> {
+                    // Create and add provider if not already present
+                    try {
+                        AIProvider newProvider = eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createAIProvider();
+                        newProvider.setName(modelName);
+                        newProvider.setLocal(true);
+
+                        eu.kalafatic.evolution.controller.providers.ProviderConfig config = eu.kalafatic.evolution.controller.providers.AiProviders.PROVIDERS.get(modelName.toLowerCase());
+                        if (config != null) {
+                            newProvider.setLocal(false);
+                            newProvider.setUrl(config.getEndpointUrl());
+                            newProvider.setFormat(config.getFormat());
+                        } else {
+                            String ollamaUrl = (orchestrator.getOllama() != null) ? orchestrator.getOllama().getUrl() : "http://localhost:11434";
+                            newProvider.setUrl(ollamaUrl);
+                            newProvider.setFormat("ollama");
+                        }
+                        orchestrator.getAiProviders().add(newProvider);
+                        updateProviderUsageAndRating(orchestrator, newProvider);
+                    } catch (Exception e) {
+                        Log.log(this, e);
+                    }
+                }
+            );
+    }
+
+    private void updateProviderUsageAndRating(Orchestrator orchestrator, AIProvider provider) {
+        try {
+            String stateDesc = provider.getStateDescription();
+            JSONObject meta = new JSONObject();
+            if (stateDesc != null && stateDesc.startsWith("{")) {
+                meta = new JSONObject(stateDesc);
+            }
+
+            int usageCount = meta.optInt("usageCount", 0);
+            usageCount++;
+            meta.put("usageCount", usageCount);
+
+            provider.setStateDescription(meta.toString());
+
+            // Improve ratings: the more used, the higher the ratings
+            int currentRating = provider.getRating();
+            if (currentRating == 0) {
+                currentRating = 50; // default base
+            }
+            provider.setRating(Math.min(100, currentRating + 1));
+
+            int currentChat = provider.getRatingChat();
+            if (currentChat == 0) currentChat = 50;
+            provider.setRatingChat(Math.min(100, currentChat + 1));
+
+            int currentProg = provider.getRatingProgramming();
+            if (currentProg == 0) currentProg = 50;
+            provider.setRatingProgramming(Math.min(100, currentProg + 1));
+
+            int currentAnalyze = provider.getRatingAnalyze();
+            if (currentAnalyze == 0) currentAnalyze = 50;
+            provider.setRatingAnalyze(Math.min(100, currentAnalyze + 1));
+
+        } catch (Exception e) {
+            Log.log(this, e);
+        }
+    }
 }

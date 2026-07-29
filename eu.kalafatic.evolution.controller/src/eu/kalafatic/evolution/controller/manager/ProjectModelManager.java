@@ -829,6 +829,17 @@ public class ProjectModelManager {
             }
         }
 
+        // Sort models descending by rating, with a secondary sort alphabetically by name
+        models.sort((m1, m2) -> {
+            int comp = Integer.compare(m2.getRating(), m1.getRating());
+            if (comp != 0) {
+                return comp;
+            }
+            String n1 = m1.getName() != null ? m1.getName() : "";
+            String n2 = m2.getName() != null ? m2.getName() : "";
+            return n1.compareToIgnoreCase(n2);
+        });
+
         return models;
     }
 
