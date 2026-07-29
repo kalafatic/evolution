@@ -138,12 +138,23 @@ public class OllamaExporter {
 
         // Auto-create model in Ollama
         try {
-            System.out.println("[Export] Programmatically executing: 'ollama create evo -f Modelfile'...");
-            ProcessBuilder pb = new ProcessBuilder("ollama", "create", "evo", "-f", outputPath.resolve("Modelfile").toAbsolutePath().toString());
+            String nameToRegister = (modelName != null && !modelName.isEmpty()) ? modelName : "evo";
+            System.out.println("[Export] Programmatically executing: 'ollama create " + nameToRegister + " -f Modelfile'...");
+            ProcessBuilder pb = new ProcessBuilder("ollama", "create", nameToRegister, "-f", outputPath.resolve("Modelfile").toAbsolutePath().toString());
             pb.inheritIO();
             Process p = pb.start();
             p.waitFor();
-            System.out.println("[Export] 'ollama create evo' finished with exit code: " + p.exitValue());
+            System.out.println("[Export] 'ollama create " + nameToRegister + "' finished with exit code: " + p.exitValue());
+
+            // Also register standard "evo" as an alias
+            if (!"evo".equals(nameToRegister)) {
+                System.out.println("[Export] Programmatically executing: 'ollama create evo -f Modelfile'...");
+                ProcessBuilder pbAlias = new ProcessBuilder("ollama", "create", "evo", "-f", outputPath.resolve("Modelfile").toAbsolutePath().toString());
+                pbAlias.inheritIO();
+                Process pAlias = pbAlias.start();
+                pAlias.waitFor();
+                System.out.println("[Export] 'ollama create evo' finished with exit code: " + pAlias.exitValue());
+            }
         } catch (Exception e) {
             System.err.println("[Export] Warning: Could not register model in Ollama: " + e.getMessage());
         }

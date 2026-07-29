@@ -274,15 +274,19 @@ public class OllamaService {
             if (!present) {
                 final boolean[] approved = new boolean[1];
                 final String base = baseModel;
-                org.eclipse.swt.widgets.Display.getDefault().syncExec(() -> {
-                    org.eclipse.swt.widgets.Shell activeShell = org.eclipse.swt.widgets.Display.getDefault().getActiveShell();
-                    if (activeShell == null && org.eclipse.ui.PlatformUI.isWorkbenchRunning() && org.eclipse.ui.PlatformUI.getWorkbench().getActiveWorkbenchWindow() != null) {
-                        activeShell = org.eclipse.ui.PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
-                    }
-                    approved[0] = org.eclipse.jface.dialogs.MessageDialog.openQuestion(activeShell,
-                        "External Base Model Download Approval Required",
-                        "The application is about to register model '" + modelName + "' which requires downloading/pulling the external base model '" + base + "' (~2GB+ from Ollama registry). Do you approve downloading this external model?");
-                });
+                if (org.eclipse.ui.PlatformUI.isWorkbenchRunning()) {
+                    org.eclipse.swt.widgets.Display.getDefault().syncExec(() -> {
+                        org.eclipse.swt.widgets.Shell activeShell = org.eclipse.swt.widgets.Display.getDefault().getActiveShell();
+                        if (activeShell == null && org.eclipse.ui.PlatformUI.getWorkbench().getActiveWorkbenchWindow() != null) {
+                            activeShell = org.eclipse.ui.PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
+                        }
+                        approved[0] = org.eclipse.jface.dialogs.MessageDialog.openQuestion(activeShell,
+                            "External Base Model Download Approval Required",
+                            "The application is about to register model '" + modelName + "' which requires downloading/pulling the external base model '" + base + "' (~2GB+ from Ollama registry). Do you approve downloading this external model?");
+                    });
+                } else {
+                    approved[0] = true;
+                }
                 if (!approved[0]) {
                     throw new java.util.concurrent.CancellationException("Model registration and base model pull was cancelled/rejected by the user.");
                 }
@@ -412,15 +416,19 @@ public class OllamaService {
     public void pullModel(String modelName, Consumer<ProgressUpdate> progressCallback) throws Exception {
         // Explicit User Approval Check before pulling
         final boolean[] approved = new boolean[1];
-        org.eclipse.swt.widgets.Display.getDefault().syncExec(() -> {
-            org.eclipse.swt.widgets.Shell activeShell = org.eclipse.swt.widgets.Display.getDefault().getActiveShell();
-            if (activeShell == null && org.eclipse.ui.PlatformUI.isWorkbenchRunning() && org.eclipse.ui.PlatformUI.getWorkbench().getActiveWorkbenchWindow() != null) {
-                activeShell = org.eclipse.ui.PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
-            }
-            approved[0] = org.eclipse.jface.dialogs.MessageDialog.openQuestion(activeShell,
-                "Ollama Model Download Approval",
-                "The application is requesting to pull/download the model '" + modelName + "' from Ollama registry. Do you approve this download action?");
-        });
+        if (org.eclipse.ui.PlatformUI.isWorkbenchRunning()) {
+            org.eclipse.swt.widgets.Display.getDefault().syncExec(() -> {
+                org.eclipse.swt.widgets.Shell activeShell = org.eclipse.swt.widgets.Display.getDefault().getActiveShell();
+                if (activeShell == null && org.eclipse.ui.PlatformUI.getWorkbench().getActiveWorkbenchWindow() != null) {
+                    activeShell = org.eclipse.ui.PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
+                }
+                approved[0] = org.eclipse.jface.dialogs.MessageDialog.openQuestion(activeShell,
+                    "Ollama Model Download Approval",
+                    "The application is requesting to pull/download the model '" + modelName + "' from Ollama registry. Do you approve this download action?");
+            });
+        } else {
+            approved[0] = true;
+        }
         if (!approved[0]) {
             throw new java.util.concurrent.CancellationException("Ollama model pull was cancelled/rejected by the user.");
         }
