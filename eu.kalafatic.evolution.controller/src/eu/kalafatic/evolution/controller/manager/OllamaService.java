@@ -241,6 +241,10 @@ public class OllamaService {
      * @return The status response from Ollama.
      */
     public String createModel(String modelName, String modelfileContent) throws Exception {
+        return createModel(modelName, modelfileContent, null);
+    }
+
+    public String createModel(String modelName, String modelfileContent, java.util.function.Consumer<String> logConsumer) throws Exception {
         // 1. Try to create the model using local 'ollama create' CLI first via ProcessBuilder
         try {
             java.nio.file.Path tempModelfile = java.nio.file.Files.createTempFile("Modelfile-temp-", ".tmp");
@@ -255,6 +259,9 @@ public class OllamaService {
                 String line;
                 while ((line = r.readLine()) != null) {
                     output.append(line).append("\n");
+                    if (logConsumer != null) {
+                        logConsumer.accept("CLI: " + line);
+                    }
                 }
             }
             int exitCode = p.waitFor();
@@ -263,18 +270,25 @@ public class OllamaService {
             } catch (Exception ignored) {}
 
             if (exitCode == 0) {
-                System.out.println("Ollama CLI model creation succeeded: " + output.toString());
+                String successMsg = "Ollama CLI model creation succeeded: " + output.toString();
+                System.out.println(successMsg);
+                if (logConsumer != null) logConsumer.accept(successMsg);
                 refreshModels();
                 return "{\"status\":\"success\"}";
             } else {
-                System.err.println("Ollama CLI model creation failed with exit code " + exitCode + ". Output: " + output.toString() + ". Falling back to HTTP API...");
+                String failMsg = "Ollama CLI model creation failed with exit code " + exitCode + ". Output: " + output.toString() + ". Falling back to HTTP API...";
+                System.err.println(failMsg);
+                if (logConsumer != null) logConsumer.accept(failMsg);
             }
         } catch (Exception e) {
-            System.err.println("Ollama CLI model creation failed: " + e.getMessage() + ". Falling back to HTTP API...");
+            String exMsg = "Ollama CLI model creation failed: " + e.getMessage() + ". Falling back to HTTP API...";
+            System.err.println(exMsg);
+            if (logConsumer != null) logConsumer.accept(exMsg);
         }
 
         // 2. HTTP API Fallback
         String createUrl = this.baseUrl + (this.baseUrl.endsWith("/") ? "" : "/") + "api/create";
+        if (logConsumer != null) logConsumer.accept("HTTP API: Fallback triggering at " + createUrl);
 
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("name", modelName);
@@ -309,9 +323,12 @@ public class OllamaService {
         HttpResponse<String> response = createClient().send(request, HttpResponse.BodyHandlers.ofString());
 
         if (response.statusCode() != 200) {
-            throw new RuntimeException("Ollama create model error: " + response.statusCode() + " - " + response.body());
+            String errorMsg = "Ollama create model error: " + response.statusCode() + " - " + response.body();
+            if (logConsumer != null) logConsumer.accept(errorMsg);
+            throw new RuntimeException(errorMsg);
         }
 
+        if (logConsumer != null) logConsumer.accept("HTTP API: Model registration successful. Response: " + response.body());
         refreshModels();
         return response.body();
     }
