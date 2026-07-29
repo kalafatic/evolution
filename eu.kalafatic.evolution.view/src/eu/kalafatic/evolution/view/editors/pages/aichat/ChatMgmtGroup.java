@@ -50,13 +50,21 @@ public class ChatMgmtGroup extends AEvoGroup {
     private void createControl(FormToolkit toolkit, Composite parent) {
         group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Chat Management", 2, true);
        
-        Composite sessionsComp = GUIFactory.INSTANCE.createComposite(group, 6, SWT.BORDER);
+        Composite sessionsComp = GUIFactory.INSTANCE.createComposite(group, 7, SWT.BORDER);
 
         Button newSessionButton = GUIFactory.INSTANCE.createButton(sessionsComp, "New Session");
         newSessionButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 page.createNewSession();
+            }
+        });
+
+        Button identifyButton = GUIFactory.INSTANCE.createButton(sessionsComp, "Identify LLM/Process");
+        identifyButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                page.identifyLlmAndProcess();
             }
         });
         

@@ -737,6 +737,176 @@ public class AiChatPage extends AEvoPage {
 		}
 	}
 
+	public void identifyLlmAndProcess() {
+		// 1. Create a special session
+		createNewSession("Identify_Model");
+
+		// 2. We will generate the agent report
+		String sessionId = currentSession.getId();
+		String turnId = sessionId + "__" + System.currentTimeMillis();
+
+		// Submit the User message starting the identification
+		outputController.submitMessage(sessionId, turnId, "You", "Identify current LLM and system processes.", "user", MessagePriority.NORMAL, false);
+
+		// Submit an initial Progress message from the Agent
+		outputController.submitMessage(sessionId, turnId, "Evo Agent", "Scanning system processes, Ollama service, and active model configuration...", "ai progress", MessagePriority.PROGRESS, false);
+
+		// Run the detection in a separate thread to keep SWT UI completely responsive
+		new Thread(() -> {
+			try {
+				// Detect Ollama and Model details
+				String localModel = chatMgmtGroup != null ? chatMgmtGroup.getLocalModel() : (orchestrator != null ? orchestrator.getLocalModel() : "Not Set");
+				String remoteModel = chatMgmtGroup != null ? chatMgmtGroup.getRemoteModel() : (orchestrator != null ? orchestrator.getRemoteModel() : "Not Set");
+
+				AiMode activeMode = AiMode.LOCAL;
+				if (chatMgmtGroup != null && chatMgmtGroup.getAiModeCombo() != null) {
+					int selIdx = chatMgmtGroup.getAiModeCombo().getSelectionIndex();
+					if (selIdx >= 0) activeMode = AiMode.get(selIdx);
+				} else if (orchestrator != null) {
+					activeMode = orchestrator.getAiMode();
+				}
+
+				String ollamaUrl = "http://localhost:11434";
+				if (orchestrator != null && orchestrator.getOllama() != null && orchestrator.getOllama().getUrl() != null) {
+					ollamaUrl = orchestrator.getOllama().getUrl();
+				}
+
+				boolean isOllamaOnline = false;
+				String ollamaVer = "Unknown";
+				try {
+					java.net.URL url = new java.net.URL(ollamaUrl);
+					java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+					conn.setRequestMethod("GET");
+					conn.setConnectTimeout(1500);
+					conn.setReadTimeout(1500);
+					int respCode = conn.getResponseCode();
+					if (respCode == 200) {
+						isOllamaOnline = true;
+						// Also try /api/version if possible
+						try {
+							java.net.URL verUrl = new java.net.URL(ollamaUrl + "/api/version");
+							java.net.HttpURLConnection verConn = (java.net.HttpURLConnection) verUrl.openConnection();
+							verConn.setRequestMethod("GET");
+							verConn.setConnectTimeout(1000);
+							if (verConn.getResponseCode() == 200) {
+								try (java.io.InputStream in = verConn.getInputStream()) {
+									String verJson = new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+									org.json.JSONObject obj = new org.json.JSONObject(verJson);
+									ollamaVer = obj.optString("version", "Unknown");
+								}
+							}
+						} catch (Exception e) {}
+					}
+				} catch (Exception ex) {}
+
+				// Query local model details using OllamaModelInfo
+				eu.kalafatic.evolution.controller.orchestration.util.OllamaModelInfo infoExtractor = new eu.kalafatic.evolution.controller.orchestration.util.OllamaModelInfo();
+				eu.kalafatic.evolution.controller.orchestration.util.ModelInfo modelInfo = infoExtractor.getModelInfo(localModel);
+
+				// System Processes & Environment
+				boolean isOllamaProcessRunning = false;
+				try {
+					isOllamaProcessRunning = ProcessHandle.allProcesses()
+						.anyMatch(ph -> ph.info().command().orElse("").toLowerCase().contains("ollama"));
+				} catch (Throwable t) {}
+
+				String osName = System.getProperty("os.name");
+				String osVersion = System.getProperty("os.version");
+				String osArch = System.getProperty("os.arch");
+
+				String javaVersion = System.getProperty("java.version");
+				String javaVendor = System.getProperty("java.vendor");
+				String javaVm = System.getProperty("java.vm.name");
+
+				long maxMem = Runtime.getRuntime().maxMemory() / (1024 * 1024);
+				long totalMem = Runtime.getRuntime().totalMemory() / (1024 * 1024);
+				long freeMem = Runtime.getRuntime().freeMemory() / (1024 * 1024);
+
+				String gitVersion = runCommand("git", "--version");
+				String pythonVersion = runCommand("python", "--version");
+				if (pythonVersion.startsWith("Not found") || pythonVersion.isEmpty()) {
+					pythonVersion = runCommand("python3", "--version");
+				}
+				String nodeVersion = runCommand("node", "--version");
+
+				// Build Markdown report
+				StringBuilder sb = new StringBuilder();
+				sb.append("### 🕵️ Agent Environmental & LLM Diagnostic Report\n\n");
+
+				sb.append("**1. Active AI Configuration**\n");
+				sb.append("- **Active AI Mode:** `").append(activeMode != null ? activeMode.getName() : "Not Set").append("`\n");
+				sb.append("- **Selected Local Model:** `").append(localModel).append("`\n");
+				sb.append("- **Selected Remote Model:** `").append(remoteModel).append("`\n");
+				sb.append("- **Ollama Service URL:** `").append(ollamaUrl).append("`\n");
+				sb.append("- **Ollama Connection:** ").append(isOllamaOnline ? "🟢 **Online** (Version: `" + ollamaVer + "`)" : "🔴 **Offline/Unreachable**").append("\n");
+				sb.append("- **Ollama Process Running:** ").append(isOllamaProcessRunning ? "🟢 **Yes**" : "⚪ **No/Undetected in local VM**").append("\n\n");
+
+				sb.append("**2. Detailed Model Information (Local Model)**\n");
+				if (modelInfo != null && modelInfo.success) {
+					sb.append("- **Model Name:** `").append(modelInfo.modelName).append("`\n");
+					sb.append("- **Family:** `").append(modelInfo.modelFamily).append("`\n");
+					sb.append("- **Parameter Size:** `").append(modelInfo.parameterSizeDisplay).append("` (").append(modelInfo.parameterCount).append(" parameters)\n");
+					sb.append("- **Quantization:** `").append(modelInfo.quantization != null && !modelInfo.quantization.isEmpty() ? modelInfo.quantization : "None/Full").append("` (Is Quantized: `").append(modelInfo.isQuantized).append("`)\n");
+					sb.append("- **Last Modified:** `").append(modelInfo.modifiedAt).append("`\n");
+					sb.append("- **Model Capabilities:**\n");
+					sb.append("  - Complex JSON Support: `").append(modelInfo.canHandleComplexJson()).append("`\n");
+					sb.append("  - Code Generation Aptitude: `").append(modelInfo.canHandleCodeGeneration()).append("`\n");
+					sb.append("  - Abstract Reasoning Support: `").append(modelInfo.canHandleAbstractReasoning()).append("`\n");
+
+					if (modelInfo.system != null && !modelInfo.system.trim().isEmpty()) {
+						sb.append("- **System Instructions:**\n```\n").append(modelInfo.system.trim()).append("\n```\n");
+					}
+					if (modelInfo.parameters != null && !modelInfo.parameters.trim().isEmpty()) {
+						sb.append("- **Model Parameters:**\n```\n").append(modelInfo.parameters.trim()).append("\n```\n");
+					}
+				} else {
+					sb.append("⚠️ *Could not retrieve detailed metadata for local model '").append(localModel).append("' via Ollama API.*");
+					if (modelInfo != null && modelInfo.error != null) {
+						sb.append(" (Error: ").append(modelInfo.error).append(")");
+					}
+					sb.append("\n");
+				}
+				sb.append("\n");
+
+				sb.append("**3. System Environment & Processes**\n");
+				sb.append("- **Operating System:** `").append(osName).append("` (Version: `").append(osVersion).append("`, Arch: `").append(osArch).append("`)\n");
+				sb.append("- **Java Runtime:** `").append(javaVersion).append("` (Vendor: `").append(javaVendor).append("`, VM: `").append(javaVm).append("`)\n");
+				sb.append("- **JVM Memory:** Allocated `").append(totalMem).append(" MB` / Free `").append(freeMem).append(" MB` (Max allowed: `").append(maxMem).append(" MB`)\n");
+				sb.append("- **Git Client:** `").append(gitVersion).append("`\n");
+				sb.append("- **Python Runtime:** `").append(pythonVersion).append("`\n");
+				sb.append("- **Node.js Runtime:** `").append(nodeVersion).append("`\n");
+
+				String report = sb.toString();
+
+				// Submit the final output
+				outputController.submitMessage(sessionId, turnId, "Evo Agent", report, "ai final-response", MessagePriority.FINAL, true);
+
+			} catch (Exception ex) {
+				outputController.submitMessage(sessionId, turnId, "Evo Agent", "Error during identification: " + ex.getMessage(), "ai error", MessagePriority.FINAL, true);
+			}
+		}).start();
+	}
+
+	private String runCommand(String... cmd) {
+		try {
+			Process p = new ProcessBuilder(cmd).start();
+			try (java.io.InputStream in = p.getInputStream();
+				 java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(in))) {
+				String output = reader.lines().collect(Collectors.joining("\n")).trim();
+				if (output.isEmpty()) {
+					// Check error stream just in case
+					try (java.io.InputStream err = p.getErrorStream();
+						 java.io.BufferedReader errReader = new java.io.BufferedReader(new java.io.InputStreamReader(err))) {
+						output = errReader.lines().collect(Collectors.joining("\n")).trim();
+					}
+				}
+				return output.isEmpty() ? "Unknown version/No output" : output;
+			}
+		} catch (Exception e) {
+			return "Not found / Not installed";
+		}
+	}
+
 	public void cleanChat() {
 		chatGroup.clear();
 		editor.setDirty(true);
