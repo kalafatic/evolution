@@ -347,6 +347,21 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
    * @return The status response from Ollama.
    */
   public String createModel(String baseUrl, String modelName, String modelfileContent) throws Exception {
+      // Explicit User Approval Check before creating/registering model
+      final boolean[] approved = new boolean[1];
+      org.eclipse.swt.widgets.Display.getDefault().syncExec(() -> {
+          org.eclipse.swt.widgets.Shell activeShell = org.eclipse.swt.widgets.Display.getDefault().getActiveShell();
+          if (activeShell == null && org.eclipse.ui.PlatformUI.isWorkbenchRunning() && org.eclipse.ui.PlatformUI.getWorkbench().getActiveWorkbenchWindow() != null) {
+              activeShell = org.eclipse.ui.PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
+          }
+          approved[0] = org.eclipse.jface.dialogs.MessageDialog.openQuestion(activeShell,
+              "Ollama Model Registration Approval",
+              "The forging pipeline wants to register/create the model '" + modelName + "' in your Ollama server. Do you approve this registration action?");
+      });
+      if (!approved[0]) {
+          throw new java.util.concurrent.CancellationException("Model registration cancelled/rejected by user.");
+      }
+
       // 1. Try to create the model using local 'ollama create' CLI first via ProcessBuilder
       try {
           java.nio.file.Path tempModelfile = java.nio.file.Files.createTempFile("Modelfile-temp-", ".tmp");

@@ -60,6 +60,15 @@ public class SetupOllamaModelWizard extends Wizard implements INewWizard {
     @Override
     public boolean performFinish() {
         String modelName = page.getModelName();
+
+        // Explicit User Approval Check before pulling
+        boolean approved = org.eclipse.jface.dialogs.MessageDialog.openQuestion(getShell(),
+            "Ollama Model Download Approval",
+            "The wizard is about to download/pull the model '" + modelName + "' from Ollama registry. Do you approve this download action?");
+        if (!approved) {
+            return false;
+        }
+
         if (orchestrator.getOllama() != null) {
             orchestrator.getOllama().setModel(modelName);
         }
