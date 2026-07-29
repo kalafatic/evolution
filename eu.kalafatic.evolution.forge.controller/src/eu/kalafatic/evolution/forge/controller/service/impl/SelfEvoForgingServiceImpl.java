@@ -347,6 +347,64 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
    * @return The status response from Ollama.
    */
   public String createModel(String baseUrl, String modelName, String modelfileContent) throws Exception {
+      // Parse the base model "FROM" command
+      String baseModel = null;
+      if (modelfileContent != null) {
+          for (String line : modelfileContent.split("\n")) {
+              line = line.trim();
+              if (line.toUpperCase().startsWith("FROM ")) {
+                  baseModel = line.substring(5).trim();
+                  if (baseModel.startsWith("\"") && baseModel.endsWith("\"") && baseModel.length() >= 2) {
+                      baseModel = baseModel.substring(1, baseModel.length() - 1);
+                  }
+                  break;
+              }
+          }
+      }
+
+      // If base model is an external model registry reference (doesn't point to a local GGUF path),
+      // check if it is already present in local tags. If not, request user approval first!
+      if (baseModel != null && !baseModel.isEmpty() && !baseModel.equalsIgnoreCase("void") && !baseModel.contains("/") && !baseModel.contains("\\")) {
+          boolean present = false;
+          try {
+              String tagsUrl = baseUrl + (baseUrl.endsWith("/") ? "" : "/") + "api/tags";
+              HttpRequest request = HttpRequest.newBuilder()
+                      .uri(URI.create(tagsUrl))
+                      .timeout(Duration.ofSeconds(5))
+                      .GET()
+                      .build();
+              HttpResponse<String> response = createClient().send(request, HttpResponse.BodyHandlers.ofString());
+              if (response.statusCode() == 200) {
+                  JSONObject obj = new JSONObject(response.body());
+                  JSONArray models = obj.getJSONArray("models");
+                  for (int i = 0; i < models.length(); i++) {
+                      String mName = models.getJSONObject(i).getString("name");
+                      if (mName.equalsIgnoreCase(baseModel) || mName.startsWith(baseModel + ":")) {
+                          present = true;
+                          break;
+                      }
+                  }
+              }
+          } catch (Exception ignored) {}
+
+          if (!present) {
+              final boolean[] approvedBase = new boolean[1];
+              final String base = baseModel;
+              org.eclipse.swt.widgets.Display.getDefault().syncExec(() -> {
+                  org.eclipse.swt.widgets.Shell activeShell = org.eclipse.swt.widgets.Display.getDefault().getActiveShell();
+                  if (activeShell == null && org.eclipse.ui.PlatformUI.isWorkbenchRunning() && org.eclipse.ui.PlatformUI.getWorkbench().getActiveWorkbenchWindow() != null) {
+                      activeShell = org.eclipse.ui.PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
+                  }
+                  approvedBase[0] = org.eclipse.jface.dialogs.MessageDialog.openQuestion(activeShell,
+                      "External Base Model Download Approval Required",
+                      "The forging pipeline is about to register model '" + modelName + "' which requires downloading/pulling the external base model '" + base + "' (~2GB+ from Ollama registry). Do you approve downloading this external model?");
+              });
+              if (!approvedBase[0]) {
+                  throw new java.util.concurrent.CancellationException("Model registration and base model pull was cancelled/rejected by the user.");
+              }
+          }
+      }
+
       // Explicit User Approval Check before creating/registering model
       final boolean[] approved = new boolean[1];
       org.eclipse.swt.widgets.Display.getDefault().syncExec(() -> {

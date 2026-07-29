@@ -241,6 +241,50 @@ public class OllamaService {
      * @return The status response from Ollama.
      */
     public String createModel(String modelName, String modelfileContent) throws Exception {
+        // Parse the base model "FROM" command
+        String baseModel = null;
+        if (modelfileContent != null) {
+            for (String line : modelfileContent.split("\n")) {
+                line = line.trim();
+                if (line.toUpperCase().startsWith("FROM ")) {
+                    baseModel = line.substring(5).trim();
+                    if (baseModel.startsWith("\"") && baseModel.endsWith("\"") && baseModel.length() >= 2) {
+                        baseModel = baseModel.substring(1, baseModel.length() - 1);
+                    }
+                    break;
+                }
+            }
+        }
+
+        // If base model is an external model registry reference (doesn't point to a local GGUF path),
+        // check if it is already present in local tags. If not, request user approval first!
+        if (baseModel != null && !baseModel.isEmpty() && !baseModel.equalsIgnoreCase("void") && !baseModel.contains("/") && !baseModel.contains("\\")) {
+            List<OllamaModel> localModels = loadModels();
+            boolean present = false;
+            for (OllamaModel m : localModels) {
+                if (m.getName().equalsIgnoreCase(baseModel) || m.getName().startsWith(baseModel + ":")) {
+                    present = true;
+                    break;
+                }
+            }
+            if (!present) {
+                final boolean[] approved = new boolean[1];
+                final String base = baseModel;
+                org.eclipse.swt.widgets.Display.getDefault().syncExec(() -> {
+                    org.eclipse.swt.widgets.Shell activeShell = org.eclipse.swt.widgets.Display.getDefault().getActiveShell();
+                    if (activeShell == null && org.eclipse.ui.PlatformUI.isWorkbenchRunning() && org.eclipse.ui.PlatformUI.getWorkbench().getActiveWorkbenchWindow() != null) {
+                        activeShell = org.eclipse.ui.PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
+                    }
+                    approved[0] = org.eclipse.jface.dialogs.MessageDialog.openQuestion(activeShell,
+                        "External Base Model Download Approval Required",
+                        "The application is about to register model '" + modelName + "' which requires downloading/pulling the external base model '" + base + "' (~2GB+ from Ollama registry). Do you approve downloading this external model?");
+                });
+                if (!approved[0]) {
+                    throw new java.util.concurrent.CancellationException("Model registration and base model pull was cancelled/rejected by the user.");
+                }
+            }
+        }
+
         // 1. Try to create the model using local 'ollama create' CLI first via ProcessBuilder
         try {
             java.nio.file.Path tempModelfile = java.nio.file.Files.createTempFile("Modelfile-temp-", ".tmp");
