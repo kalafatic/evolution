@@ -398,7 +398,7 @@ public class ModelsGroup extends AEvoGroup {
     }
 
     private static class ModelComparator extends org.eclipse.jface.viewers.ViewerComparator {
-        private int propertyIndex = 0;
+        private int propertyIndex = 2; // Default to Rating column (index 2 in compare)
         private static final int DESCENDING = 1;
         private int direction = DESCENDING;
 

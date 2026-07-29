@@ -32,31 +32,55 @@ public class LlmRouter {
      * Routes the request to the appropriate LLM provider.
      */
     public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
-        if (context != null) {
-            String activeModel = "unknown";
-            if (orchestrator != null) {
-                AiMode mode = orchestrator.getAiMode();
-                if (mode == AiMode.REMOTE) {
-                    activeModel = orchestrator.getRemoteModel();
-                } else if (mode == AiMode.HYBRID) {
-                    activeModel = (orchestrator.getHybridModel() != null) ? orchestrator.getHybridModel() : "Hybrid";
-                } else {
-                    // LOCAL, PROXY, MEDIATED, INTENT or default
-                    activeModel = (orchestrator.getOllama() != null) ? orchestrator.getOllama().getModel() : orchestrator.getLocalModel();
+        String activeModel = "unknown";
+        if (orchestrator != null) {
+            AiMode mode = orchestrator.getAiMode();
+            if (mode == AiMode.REMOTE) {
+                activeModel = orchestrator.getRemoteModel();
+            } else if (mode == AiMode.HYBRID) {
+                activeModel = orchestrator.getHybridModel();
+                if (activeModel == null || activeModel.isEmpty()) {
+                    activeModel = orchestrator.getLocalModel();
+                }
+                if (activeModel == null || activeModel.isEmpty()) {
+                    activeModel = (orchestrator.getOllama() != null) ? orchestrator.getOllama().getModel() : "Hybrid";
+                }
+            } else {
+                activeModel = orchestrator.getLocalModel();
+                if (activeModel == null || activeModel.isEmpty()) {
+                    activeModel = (orchestrator.getOllama() != null) ? orchestrator.getOllama().getModel() : "local";
                 }
             }
+        }
+
+        if (context != null) {
             context.log("Stage: LLM\nProvider: dynamic\nModel: " + (activeModel != null ? activeModel : "unknown"));
             context.log("LlmRouter: Routing request via dynamic policies.");
         }
 
+        String response = null;
         for (IRoutingPolicy policy : RoutingPolicyRegistry.getPolicies()) {
             if (policy.applies(orchestrator, context)) {
-                return policy.handle(this, orchestrator, prompt, temperature, proxyUrl, context);
+                response = policy.handle(this, orchestrator, prompt, temperature, proxyUrl, context);
+                break;
             }
         }
 
-        // Default fallback to local
-        return sendLocalRequest(orchestrator, prompt, temperature, proxyUrl, context);
+        if (response == null) {
+            // Default fallback to local
+            response = sendLocalRequest(orchestrator, prompt, temperature, proxyUrl, context);
+        }
+
+        // Record successful usage to improve rating
+        if (response != null && !response.isEmpty() && orchestrator != null && activeModel != null && !"unknown".equals(activeModel)) {
+            try {
+                eu.kalafatic.evolution.controller.services.FeedbackService.getInstance().recordUsage(orchestrator, activeModel);
+            } catch (Exception e) {
+                // Ignore silent failure
+            }
+        }
+
+        return response;
     }
 
     public String sendLocalRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
