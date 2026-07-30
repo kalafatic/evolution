@@ -194,6 +194,12 @@ public class ProjectModelManager {
             supervisor.setExecutablePath(new java.io.File(baseDir, "builds").getPath());
             supervisor.setSourcePath(new java.io.File(baseDir, "sources").getPath());
             orchestrator.setSupervisorSettings(supervisor);
+        } else {
+            // Migrate any existing paths in supervisorSettings!
+            String oldExec = orchestrator.getSupervisorSettings().getExecutablePath();
+            String oldSrc = orchestrator.getSupervisorSettings().getSourcePath();
+            if (oldExec != null) orchestrator.getSupervisorSettings().setExecutablePath(migratePath(oldExec));
+            if (oldSrc != null) orchestrator.getSupervisorSettings().setSourcePath(migratePath(oldSrc));
         }
 
         if (orchestrator.getSupervisorSettings().getGit() == null) {
@@ -1111,4 +1117,46 @@ public class ProjectModelManager {
 	public String getWorkspaceFolderPath() {
 		return getWorkspacePath();
 	}
+
+    public static String migratePath(String path) {
+        if (path == null) return null;
+        String dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("ddMMyy"));
+
+        // Normalize backslashes/forwardslashes to simplify comparisons
+        String normalized = path.replace("\\", "/");
+
+        String oldPrefix1 = "C:/Users/petrk/supervisor";
+        String oldHomePrefix = System.getProperty("user.home").replace("\\", "/") + "/supervisor";
+
+        String newPrefix = "C:/Users/petrk/projects/evo/supervisor/" + dateStr;
+        String newHomePrefix = System.getProperty("user.home").replace("\\", "/") + "/projects/evo/supervisor/" + dateStr;
+
+        if (normalized.startsWith(oldPrefix1)) {
+            String remainder = normalized.substring(oldPrefix1.length());
+            if (remainder.equals("/source") || remainder.equals("/sources")) {
+                remainder = "/sources";
+            } else if (remainder.equals("/bin") || remainder.equals("/builds")) {
+                remainder = "/builds";
+            } else if (remainder.equals("/bin/export") || remainder.equals("/export")) {
+                remainder = "/export";
+            }
+            String migrated = newPrefix + remainder;
+            return path.contains("\\") ? migrated.replace("/", "\\") : migrated;
+        }
+
+        if (normalized.startsWith(oldHomePrefix)) {
+            String remainder = normalized.substring(oldHomePrefix.length());
+            if (remainder.equals("/source") || remainder.equals("/sources")) {
+                remainder = "/sources";
+            } else if (remainder.equals("/bin") || remainder.equals("/builds")) {
+                remainder = "/builds";
+            } else if (remainder.equals("/bin/export") || remainder.equals("/export")) {
+                remainder = "/export";
+            }
+            String migrated = newHomePrefix + remainder;
+            return path.contains("\\") ? migrated.replace("/", "\\") : migrated;
+        }
+
+        return path;
+    }
 }

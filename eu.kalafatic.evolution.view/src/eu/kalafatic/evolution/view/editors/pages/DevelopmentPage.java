@@ -269,7 +269,7 @@ public class DevelopmentPage extends AEvoPage {
             String dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("ddMMyy"));
             targetPath = new File(new File(System.getProperty("user.home"), "projects/evo/supervisor"), dateStr + "/builds").getPath();
         }
-        return targetPath;
+        return eu.kalafatic.evolution.controller.manager.ProjectModelManager.migratePath(targetPath);
     }
 
     private String getSupervisorSourcePath() {
@@ -281,7 +281,7 @@ public class DevelopmentPage extends AEvoPage {
             String dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("ddMMyy"));
             sourcePath = new File(new File(System.getProperty("user.home"), "projects/evo/supervisor"), dateStr + "/sources").getPath();
         }
-        return sourcePath;
+        return eu.kalafatic.evolution.controller.manager.ProjectModelManager.migratePath(sourcePath);
     }
 
     private void createSelfDevContextMenu() {
