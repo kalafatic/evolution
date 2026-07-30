@@ -751,26 +751,28 @@ public class AiChatPage extends AEvoPage {
 		// Submit an initial Progress message from the Agent
 		outputController.submitMessage(sessionId, turnId, "Evo Agent", "Scanning system processes, Ollama service, and active model configuration...", "ai progress", MessagePriority.PROGRESS, false);
 
+		// Detect Ollama and Model details (on SWT UI Thread before spawning background thread)
+		final String localModel = chatMgmtGroup != null ? chatMgmtGroup.getLocalModel() : (orchestrator != null ? orchestrator.getLocalModel() : "Not Set");
+		final String remoteModel = chatMgmtGroup != null ? chatMgmtGroup.getRemoteModel() : (orchestrator != null ? orchestrator.getRemoteModel() : "Not Set");
+
+		AiMode tempActiveMode = AiMode.LOCAL;
+		if (chatMgmtGroup != null && chatMgmtGroup.getAiModeCombo() != null) {
+			int selIdx = chatMgmtGroup.getAiModeCombo().getSelectionIndex();
+			if (selIdx >= 0) tempActiveMode = AiMode.get(selIdx);
+		} else if (orchestrator != null) {
+			tempActiveMode = orchestrator.getAiMode();
+		}
+		final AiMode activeMode = tempActiveMode;
+
+		String tempOllamaUrl = "http://localhost:11434";
+		if (orchestrator != null && orchestrator.getOllama() != null && orchestrator.getOllama().getUrl() != null) {
+			tempOllamaUrl = orchestrator.getOllama().getUrl();
+		}
+		final String ollamaUrl = tempOllamaUrl;
+
 		// Run the detection in a separate thread to keep SWT UI completely responsive
 		new Thread(() -> {
 			try {
-				// Detect Ollama and Model details
-				String localModel = chatMgmtGroup != null ? chatMgmtGroup.getLocalModel() : (orchestrator != null ? orchestrator.getLocalModel() : "Not Set");
-				String remoteModel = chatMgmtGroup != null ? chatMgmtGroup.getRemoteModel() : (orchestrator != null ? orchestrator.getRemoteModel() : "Not Set");
-
-				AiMode activeMode = AiMode.LOCAL;
-				if (chatMgmtGroup != null && chatMgmtGroup.getAiModeCombo() != null) {
-					int selIdx = chatMgmtGroup.getAiModeCombo().getSelectionIndex();
-					if (selIdx >= 0) activeMode = AiMode.get(selIdx);
-				} else if (orchestrator != null) {
-					activeMode = orchestrator.getAiMode();
-				}
-
-				String ollamaUrl = "http://localhost:11434";
-				if (orchestrator != null && orchestrator.getOllama() != null && orchestrator.getOllama().getUrl() != null) {
-					ollamaUrl = orchestrator.getOllama().getUrl();
-				}
-
 				boolean isOllamaOnline = false;
 				String ollamaVer = "Unknown";
 				try {
