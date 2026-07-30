@@ -390,15 +390,19 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
           if (!present) {
               final boolean[] approvedBase = new boolean[1];
               final String base = baseModel;
-              org.eclipse.swt.widgets.Display.getDefault().syncExec(() -> {
-                  org.eclipse.swt.widgets.Shell activeShell = org.eclipse.swt.widgets.Display.getDefault().getActiveShell();
-                  if (activeShell == null && org.eclipse.ui.PlatformUI.isWorkbenchRunning() && org.eclipse.ui.PlatformUI.getWorkbench().getActiveWorkbenchWindow() != null) {
-                      activeShell = org.eclipse.ui.PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
-                  }
-                  approvedBase[0] = org.eclipse.jface.dialogs.MessageDialog.openQuestion(activeShell,
-                      "External Base Model Download Approval Required",
-                      "The forging pipeline is about to register model '" + modelName + "' which requires downloading/pulling the external base model '" + base + "' (~2GB+ from Ollama registry). Do you approve downloading this external model?");
-              });
+              if (org.eclipse.ui.PlatformUI.isWorkbenchRunning()) {
+                  org.eclipse.swt.widgets.Display.getDefault().syncExec(() -> {
+                      org.eclipse.swt.widgets.Shell activeShell = org.eclipse.swt.widgets.Display.getDefault().getActiveShell();
+                      if (activeShell == null && org.eclipse.ui.PlatformUI.getWorkbench().getActiveWorkbenchWindow() != null) {
+                          activeShell = org.eclipse.ui.PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
+                      }
+                      approvedBase[0] = org.eclipse.jface.dialogs.MessageDialog.openQuestion(activeShell,
+                          "External Base Model Download Approval Required",
+                          "The forging pipeline is about to register model '" + modelName + "' which requires downloading/pulling the external base model '" + base + "' (~2GB+ from Ollama registry). Do you approve downloading this external model?");
+                  });
+              } else {
+                  approvedBase[0] = true;
+              }
               if (!approvedBase[0]) {
                   throw new java.util.concurrent.CancellationException("Model registration and base model pull was cancelled/rejected by the user.");
               }
@@ -407,15 +411,19 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
 
       // Explicit User Approval Check before creating/registering model
       final boolean[] approved = new boolean[1];
-      org.eclipse.swt.widgets.Display.getDefault().syncExec(() -> {
-          org.eclipse.swt.widgets.Shell activeShell = org.eclipse.swt.widgets.Display.getDefault().getActiveShell();
-          if (activeShell == null && org.eclipse.ui.PlatformUI.isWorkbenchRunning() && org.eclipse.ui.PlatformUI.getWorkbench().getActiveWorkbenchWindow() != null) {
-              activeShell = org.eclipse.ui.PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
-          }
-          approved[0] = org.eclipse.jface.dialogs.MessageDialog.openQuestion(activeShell,
-              "Ollama Model Registration Approval",
-              "The forging pipeline wants to register/create the model '" + modelName + "' in your Ollama server. Do you approve this registration action?");
-      });
+      if (org.eclipse.ui.PlatformUI.isWorkbenchRunning()) {
+          org.eclipse.swt.widgets.Display.getDefault().syncExec(() -> {
+              org.eclipse.swt.widgets.Shell activeShell = org.eclipse.swt.widgets.Display.getDefault().getActiveShell();
+              if (activeShell == null && org.eclipse.ui.PlatformUI.getWorkbench().getActiveWorkbenchWindow() != null) {
+                  activeShell = org.eclipse.ui.PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
+              }
+              approved[0] = org.eclipse.jface.dialogs.MessageDialog.openQuestion(activeShell,
+                  "Ollama Model Registration Approval",
+                  "The forging pipeline wants to register/create the model '" + modelName + "' in your Ollama server. Do you approve this registration action?");
+          });
+      } else {
+          approved[0] = true;
+      }
       if (!approved[0]) {
           throw new java.util.concurrent.CancellationException("Model registration cancelled/rejected by user.");
       }
