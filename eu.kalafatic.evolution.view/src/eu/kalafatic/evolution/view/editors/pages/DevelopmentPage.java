@@ -246,6 +246,14 @@ public class DevelopmentPage extends AEvoPage {
         String llmModel = (orchestrator != null && orchestrator.getLlm() != null) ? orchestrator.getLlm().getModel() : "supervisor.llm";
         String targetPath = getTargetPath();
         
+        String exportPath;
+        if (targetPath != null && (targetPath.endsWith("builds") || targetPath.endsWith("builds/") || targetPath.endsWith("builds\\"))) {
+            File parent = new File(targetPath).getParentFile();
+            exportPath = new File(parent, "export").getPath();
+        } else {
+            exportPath = targetPath + "/export";
+        }
+
         sdData.add(new SelfDevRow(1, SelfDevRow.GIT_CHECK, gitUrl, "ready"));
         sdData.add(new SelfDevRow(2, SelfDevRow.MAVEN_CHECK, mvnPath, "ready"));
         sdData.add(new SelfDevRow(3, SelfDevRow.LLM_CHECK, llmModel, "ready"));
@@ -253,7 +261,7 @@ public class DevelopmentPage extends AEvoPage {
         sdData.add(new SelfDevRow(5, SelfDevRow.PERM_CHECK, "supervisor.fs", "ready"));
         sdData.add(new SelfDevRow(6, SelfDevRow.COPY_SOURCE, getSupervisorSourcePath(), "ready"));
         sdData.add(new SelfDevRow(7, SelfDevRow.BUILD_PROJECT, targetPath, "ready"));
-        sdData.add(new SelfDevRow(8, SelfDevRow.EXPORT_PRODUCT, targetPath + "/export", "ready"));
+        sdData.add(new SelfDevRow(8, SelfDevRow.EXPORT_PRODUCT, exportPath, "ready"));
         sdData.add(new SelfDevRow(9, SelfDevRow.SUPERVISOR_LOOP, "supervisor.exe", "ready"));
         sdData.add(new SelfDevRow(10, SelfDevRow.SELF_DEV_LOOP, "orchestrator", "ready"));
         selfDevTable.setInput(sdData);
@@ -266,7 +274,11 @@ public class DevelopmentPage extends AEvoPage {
         if (targetPath == null && orchestrator != null && orchestrator.getSupervisorSettings() != null) {
             targetPath = orchestrator.getSupervisorSettings().getExecutablePath();
         }
-        return targetPath != null ? targetPath : "sandbox.copy";
+        if (targetPath == null) {
+            String dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("ddMMyy"));
+            targetPath = new File(new File(System.getProperty("user.home"), "projects/evo/supervisor"), dateStr + "/builds").getPath();
+        }
+        return targetPath;
     }
 
     private String getSupervisorSourcePath() {
@@ -275,7 +287,8 @@ public class DevelopmentPage extends AEvoPage {
             sourcePath = orchestrator.getSupervisorSettings().getSourcePath();
         }
         if (sourcePath == null || sourcePath.trim().isEmpty()) {
-            sourcePath = new File(System.getProperty("user.home"), "supervisor/source").getPath();
+            String dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("ddMMyy"));
+            sourcePath = new File(new File(System.getProperty("user.home"), "projects/evo/supervisor"), dateStr + "/sources").getPath();
         }
         return sourcePath;
     }

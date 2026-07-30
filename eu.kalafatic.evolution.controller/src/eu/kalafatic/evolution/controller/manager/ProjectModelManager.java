@@ -188,9 +188,11 @@ public class ProjectModelManager {
 
         if (orchestrator.getSupervisorSettings() == null) {
             SupervisorSettings supervisor = OrchestrationFactory.eINSTANCE.createSupervisorSettings();
-            // OS-independent paths using user.home
-            supervisor.setExecutablePath(new java.io.File(userHome, "supervisor/bin/").getPath());
-            supervisor.setSourcePath(new java.io.File(userHome, "supervisor/source").getPath());
+            // OS-independent paths using user.home and dynamic DDMMYY date format
+            String dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("ddMMyy"));
+            java.io.File baseDir = new java.io.File(new java.io.File(userHome, "projects/evo/supervisor"), dateStr);
+            supervisor.setExecutablePath(new java.io.File(baseDir, "builds").getPath());
+            supervisor.setSourcePath(new java.io.File(baseDir, "sources").getPath());
             orchestrator.setSupervisorSettings(supervisor);
         }
 

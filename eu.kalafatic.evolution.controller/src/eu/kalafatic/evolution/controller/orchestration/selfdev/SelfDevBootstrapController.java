@@ -438,11 +438,7 @@ public class SelfDevBootstrapController {
             case "GENOME" -> checkGenome();
             case "PERMISSIONS" -> checkPermissions();
             case "COPY" -> copyCodebaseToSupervisorSource();
-            case "BUILD" -> {
-                String buildWorkspacePath = new File(runDir, "workspace").getAbsolutePath();
-                System.out.println("[SelfDevBootstrapController] [CHECK_BUILD] Dispatching BUILD call to supervisor. path=" + buildWorkspacePath);
-                yield callSupervisor("/build?path=" + encode(buildWorkspacePath));
-            }
+            case "BUILD" -> runBuildAndCopy();
             case "EXPORT" -> checkExport();
             default -> {
                 System.err.println("[SelfDevBootstrapController] [CHECK_UNKNOWN] Unknown check type requested: " + type);
@@ -456,6 +452,62 @@ public class SelfDevBootstrapController {
         System.out.println("  [Ready] ──▶ [Checking] ──▶ [" + (result.startsWith("ERROR") ? "Error" : "Verified") + "]");
         System.out.println(dashedBorder);
         return result;
+    }
+
+    private String runBuildAndCopy() {
+        String buildWorkspacePath = null;
+        if (orchestrator != null && orchestrator.getSupervisorSettings() != null) {
+            buildWorkspacePath = orchestrator.getSupervisorSettings().getSourcePath();
+        }
+        if (buildWorkspacePath == null || buildWorkspacePath.trim().isEmpty()) {
+            String dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("ddMMyy"));
+            buildWorkspacePath = new File(new File(System.getProperty("user.home"), "projects/evo/supervisor"), dateStr + "/sources").getPath();
+        }
+        System.out.println("[SelfDevBootstrapController] [CHECK_BUILD] Dispatching BUILD call to supervisor. path=" + buildWorkspacePath);
+        String response = callSupervisor("/build?path=" + encode(buildWorkspacePath));
+        if (response != null && response.startsWith("SUCCESS")) {
+            try {
+                File srcTarget = new File(buildWorkspacePath, "eu.kalafatic.evolution.supervisor/target");
+                if (srcTarget.exists()) {
+                    File[] jars = srcTarget.listFiles((dir, name) -> name.endsWith("-shaded.jar") || name.endsWith(".jar"));
+                    if (jars != null && jars.length > 0) {
+                        String buildPath = null;
+                        if (orchestrator != null && orchestrator.getSupervisorSettings() != null) {
+                            buildPath = orchestrator.getSupervisorSettings().getExecutablePath();
+                        }
+                        if (buildPath == null || buildPath.trim().isEmpty()) {
+                            String dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("ddMMyy"));
+                            buildPath = new File(new File(System.getProperty("user.home"), "projects/evo/supervisor"), dateStr + "/builds").getPath();
+                        }
+                        File buildDir = new File(buildPath);
+                        if (!buildDir.exists()) {
+                            buildDir.mkdirs();
+                        }
+                        String exportPath = null;
+                        if (buildPath.endsWith("builds") || buildPath.endsWith("builds/") || buildPath.endsWith("builds\\")) {
+                            exportPath = new File(buildDir.getParentFile(), "export").getPath();
+                        } else {
+                            exportPath = buildPath + "/export";
+                        }
+                        File exportDir = new File(exportPath);
+                        if (!exportDir.exists()) {
+                            exportDir.mkdirs();
+                        }
+                        for (File jar : jars) {
+                            File destJar = new File(buildDir, jar.getName());
+                            System.out.println("[SelfDevBootstrapController] [CHECK_BUILD] Copying produced jar to builds: " + destJar.getAbsolutePath());
+                            Files.copy(jar.toPath(), destJar.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                            File destExportJar = new File(exportDir, jar.getName());
+                            System.out.println("[SelfDevBootstrapController] [CHECK_BUILD] Copying produced jar to export: " + destExportJar.getAbsolutePath());
+                            Files.copy(jar.toPath(), destExportJar.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                        }
+                    }
+                }
+            } catch (IOException e) {
+                System.err.println("[SelfDevBootstrapController] [CHECK_BUILD] Failed to copy build artifact to bin/export folder: " + e.getMessage());
+            }
+        }
+        return response;
     }
 
     private String encode(String s) { return URLEncoder.encode(s, StandardCharsets.UTF_8); }
@@ -810,6 +862,32 @@ public class SelfDevBootstrapController {
     private String checkExport() {
         long startTime = System.currentTimeMillis();
         System.out.println("[SelfDevBootstrapController] [CHECK_EXPORT] Checking exported supervisor artifact...");
+        String exportPath = null;
+        if (orchestrator != null && orchestrator.getSupervisorSettings() != null) {
+            String targetPath = orchestrator.getSupervisorSettings().getExecutablePath();
+            if (targetPath != null) {
+                if (targetPath.endsWith("builds") || targetPath.endsWith("builds/") || targetPath.endsWith("builds\\")) {
+                    File parent = new File(targetPath).getParentFile();
+                    exportPath = new File(parent, "export").getPath();
+                } else {
+                    exportPath = targetPath + "/export";
+                }
+            }
+        }
+        if (exportPath == null) {
+            String dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("ddMMyy"));
+            exportPath = new File(new File(System.getProperty("user.home"), "projects/evo/supervisor"), dateStr + "/export").getPath();
+        }
+        File exportDir = new File(exportPath);
+        System.out.println("[SelfDevBootstrapController] [CHECK_EXPORT] Scanning export directory: " + exportDir.getAbsolutePath() + ", exists: " + exportDir.exists());
+        if (exportDir.exists()) {
+            File[] jars = exportDir.listFiles((dir, name) -> name.endsWith("-shaded.jar") || name.endsWith(".jar"));
+            if (jars != null && jars.length > 0) {
+                long duration = System.currentTimeMillis() - startTime;
+                System.out.println("[SelfDevBootstrapController] [CHECK_EXPORT_SUCCESS] Found exported shaded supervisor jar in export folder: " + jars[0].getAbsolutePath() + " (size: " + jars[0].length() + " bytes, took " + duration + "ms)");
+                return "READY: " + jars[0].getName();
+            }
+        }
         File sandbox = new File(runDir, "workspace");
         File supervisorTarget = new File(sandbox, "eu.kalafatic.evolution.supervisor/target");
         System.out.println("[SelfDevBootstrapController] [CHECK_EXPORT] Scanning sandbox target directory: " + supervisorTarget.getAbsolutePath() + ", exists: " + supervisorTarget.exists());
@@ -821,7 +899,7 @@ public class SelfDevBootstrapController {
                 return "READY: " + jars[0].getName();
             }
         }
-        System.err.println("[SelfDevBootstrapController] [CHECK_EXPORT_FAIL] Exported supervisor artifact not found in sandbox target: " + supervisorTarget.getAbsolutePath());
+        System.err.println("[SelfDevBootstrapController] [CHECK_EXPORT_FAIL] Exported supervisor artifact not found in export: " + exportDir.getAbsolutePath() + " or sandbox: " + supervisorTarget.getAbsolutePath());
         return "ERROR: Artifact not found. Run Build first.";
     }
 
@@ -852,7 +930,8 @@ public class SelfDevBootstrapController {
             destPath = orchestrator.getSupervisorSettings().getSourcePath();
         }
         if (destPath == null || destPath.trim().isEmpty()) {
-            destPath = new File(System.getProperty("user.home"), "supervisor/source").getPath();
+            String dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("ddMMyy"));
+            destPath = new File(new File(System.getProperty("user.home"), "projects/evo/supervisor"), dateStr + "/sources").getPath();
         }
 
         File src = new File(srcPath);
