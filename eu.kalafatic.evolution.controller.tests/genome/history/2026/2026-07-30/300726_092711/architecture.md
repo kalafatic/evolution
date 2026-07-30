@@ -3,7 +3,7 @@ id: arch-overview
 title: Architecture Overview
 documentType: ARCHITECTURE
 summaryLevel: HIGH
-created: 2026-07-30T09:27:11.851717156
+created: 2026-07-30T09:27:11.868221837
 generatedBy: EVO Genome Agent
 status: PUBLISHED
 importance: MEDIUM
