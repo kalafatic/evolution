@@ -81,15 +81,36 @@ public class OllamaProvider implements ILlmProvider {
             List<OllamaModel> available = service.loadModels();
             // Resolve first available base model to avoid download freezes
             String baseModel = "llama3.2:3b";
+            boolean hasLlama = false;
             if (!available.isEmpty()) {
                 for (OllamaModel m : available) {
                     if (m.getName().contains("llama3.2:3b")) {
                         baseModel = "llama3.2:3b";
+                        hasLlama = true;
                         break;
                     }
                 }
-                if (baseModel.equals("llama3.2:3b") && !available.get(0).getName().equalsIgnoreCase(model)) {
-                    baseModel = available.get(0).getName();
+                if (!hasLlama) {
+                    // Try to find any standard (non-evo) model that is not the target model
+                    for (OllamaModel m : available) {
+                        String mName = m.getName();
+                        if (!mName.equalsIgnoreCase(model) && !mName.toLowerCase().startsWith(model.toLowerCase() + ":") && !mName.toLowerCase().contains("evo")) {
+                            baseModel = mName;
+                            hasLlama = true;
+                            break;
+                        }
+                    }
+                    if (!hasLlama) {
+                        // Fallback to the first available model that is not the target model
+                        for (OllamaModel m : available) {
+                            String mName = m.getName();
+                            if (!mName.equalsIgnoreCase(model) && !mName.toLowerCase().startsWith(model.toLowerCase() + ":")) {
+                                baseModel = mName;
+                                hasLlama = true;
+                                break;
+                            }
+                        }
+                    }
                 }
             }
 

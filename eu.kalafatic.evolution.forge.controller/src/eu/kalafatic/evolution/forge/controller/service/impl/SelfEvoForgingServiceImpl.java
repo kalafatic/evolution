@@ -267,7 +267,7 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
 
                         if (pingOk) {
                             String availableModel = getFirstAvailableModel(ollamaUrl);
-                            if (availableModel != null && !availableModel.equals("llama3.2:3b")) {
+                            if (availableModel != null && !availableModel.equals("llama3.2:3b") && !availableModel.toLowerCase().contains("evo")) {
                                 baseModelUsed = availableModel;
                                 logToFile(logFile, "[EXPORT_GGUF] Rewriting FROM in Modelfile from llama3.2:3b to " + availableModel);
                                 modelfileContent = modelfileContent.replaceAll("(?m)^FROM\\s+llama3.2:3b", "FROM " + availableModel);
@@ -530,7 +530,15 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                           return "llama3.2:3b";
                       }
                   }
-                  // Otherwise, return the first one available
+                  // Otherwise, try to return the first standard non-evo model
+                  for (int i = 0; i < models.length(); i++) {
+                      JSONObject m = models.getJSONObject(i);
+                      String name = m.getString("name");
+                      if (!name.toLowerCase().contains("evo")) {
+                          return name;
+                      }
+                  }
+                  // Fallback to the first model in the list
                   return models.getJSONObject(0).getString("name");
               }
           }
