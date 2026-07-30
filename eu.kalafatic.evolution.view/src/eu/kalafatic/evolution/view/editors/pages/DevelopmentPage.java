@@ -98,6 +98,15 @@ public class DevelopmentPage extends AEvoPage {
     private boolean isLoaded = false;
     private String lastJson = "";
 
+    @Override
+    protected String getCurrentSessionName() {
+        String sid = super.getCurrentSessionName();
+        if (sid == null || sid.trim().isEmpty()) {
+            return "Default";
+        }
+        return sid;
+    }
+
     public DevelopmentPage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
         super(parent, editor, orchestrator);
         this.setLayout(new GridLayout(1, false));
