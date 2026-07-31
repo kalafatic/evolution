@@ -24,6 +24,9 @@ public class OllamaModelInfo {
     // Known model sizes for fallback
     private static final Map<String, Long> KNOWN_MODEL_SIZES = new HashMap<>();
     static {
+        // Forged EVO model family
+        KNOWN_MODEL_SIZES.put("evo", 1_440_768L);
+
         // Gemma family
         KNOWN_MODEL_SIZES.put("gemma3:1b", 1_000_000_000L);
         KNOWN_MODEL_SIZES.put("gemma3:2b", 2_000_000_000L);
@@ -270,6 +273,7 @@ public class OllamaModelInfo {
     
     private String detectModelFamily(String modelName) {
         String lower = modelName.toLowerCase();
+        if (lower.contains("evo")) return "llama"; // Since EVO is a Llama-based architecture
         if (lower.contains("gemma")) return "gemma";
         if (lower.contains("llama")) return "llama";
         if (lower.contains("qwen")) return "qwen";
