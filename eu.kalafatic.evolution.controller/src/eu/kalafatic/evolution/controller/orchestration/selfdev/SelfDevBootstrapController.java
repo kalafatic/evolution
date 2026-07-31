@@ -501,9 +501,40 @@ public class SelfDevBootstrapController {
             String dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("ddMMyy"));
             buildWorkspacePath = new File(new File(System.getProperty("user.home"), "projects/evo/supervisor"), dateStr + "/sources").getPath();
         }
-        System.out.println("[SelfDevBootstrapController] [CHECK_BUILD] Dispatching BUILD call to supervisor. path=" + buildWorkspacePath);
-        String response = callSupervisor("/build?path=" + encode(buildWorkspacePath));
-        if (response != null && response.startsWith("SUCCESS")) {
+
+        System.out.println("[SelfDevBootstrapController] [CHECK_BUILD] Starting local Maven build on sources folder: " + buildWorkspacePath);
+        long startTime = System.currentTimeMillis();
+        String response = "ERROR";
+        try {
+            String mvnCmd = System.getProperty("os.name").toLowerCase().contains("win") ? "mvn.cmd" : "mvn";
+            ProcessBuilder pb = new ProcessBuilder(mvnCmd, "clean", "package", "-DskipTests");
+            pb.directory(new File(buildWorkspacePath));
+            pb.redirectErrorStream(true);
+            Process p = pb.start();
+
+            StringBuilder buildOutput = new StringBuilder();
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream(), StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    buildOutput.append(line).append("\n");
+                    System.out.println("[Local Build] " + line);
+                }
+            }
+            int exitCode = p.waitFor();
+            long duration = System.currentTimeMillis() - startTime;
+            System.out.println("[SelfDevBootstrapController] [CHECK_BUILD] Local build finished with exit code: " + exitCode + " (took " + duration + "ms)");
+            if (exitCode == 0) {
+                response = "SUCCESS (" + duration + "ms)";
+            } else {
+                response = "ERROR: Build failed with exit code " + exitCode;
+            }
+        } catch (Exception e) {
+            System.err.println("[SelfDevBootstrapController] [CHECK_BUILD] Failed to run local build: " + e.getMessage());
+            e.printStackTrace();
+            response = "ERROR: " + e.getMessage();
+        }
+
+        if (response.startsWith("SUCCESS")) {
             try {
                 String buildPath = null;
                 if (orchestrator != null && orchestrator.getSupervisorSettings() != null) {
