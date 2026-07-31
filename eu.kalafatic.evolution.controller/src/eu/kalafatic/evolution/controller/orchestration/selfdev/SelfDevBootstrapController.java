@@ -427,13 +427,16 @@ public class SelfDevBootstrapController {
         System.out.println("    - Mode:        " + (debugMode ? "DEBUG" : "STANDARD"));
         System.out.println(dashedBorder);
 
-        if (type.equalsIgnoreCase("BUILD")) {
+        if (type.equalsIgnoreCase("BUILD") || type.equalsIgnoreCase("SUPERVISOR") || type.equalsIgnoreCase("GIT_SUPERVISOR") || type.equalsIgnoreCase("MAVEN_SUPERVISOR")) {
             ensureSupervisorRunning();
         }
 
         String result = switch (type.toUpperCase()) {
-            case "GIT" -> checkGit();
-            case "MAVEN" -> checkMaven();
+            case "GIT", "GIT_EVO" -> checkGit();
+            case "GIT_SUPERVISOR" -> checkGitSupervisor();
+            case "MAVEN", "MAVEN_EVO" -> checkMaven();
+            case "MAVEN_SUPERVISOR" -> checkMavenSupervisor();
+            case "SUPERVISOR" -> checkSupervisor();
             case "LLM" -> checkLlm();
             case "GENOME" -> checkGenome();
             case "PERMISSIONS" -> checkPermissions();
@@ -594,6 +597,57 @@ public class SelfDevBootstrapController {
             }
         }
         return "ERROR: " + (lastEx != null ? lastEx.getMessage() : "Unknown connection error");
+    }
+
+    private String checkGitSupervisor() {
+        System.out.println("[SelfDevBootstrapController] [CHECK_GIT_SUPERVISOR] Starting Git configuration check on Supervisor...");
+        ensureSupervisorRunning();
+        String localPath = null;
+        if (orchestrator != null && orchestrator.getGit() != null) {
+            localPath = orchestrator.getGit().getLocalPath();
+        }
+        if (localPath == null || localPath.isEmpty()) {
+            localPath = eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.getRepositoryPath(eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.REPO_EVOLUTION);
+        }
+        String endpoint = "/git-check";
+        if (localPath != null && !localPath.isEmpty()) {
+            endpoint += "?path=" + encode(localPath);
+        }
+        String response = callSupervisor(endpoint);
+        System.out.println("[SelfDevBootstrapController] [CHECK_GIT_SUPERVISOR] Supervisor response: " + response);
+        return response;
+    }
+
+    private String checkMavenSupervisor() {
+        System.out.println("[SelfDevBootstrapController] [CHECK_MAVEN_SUPERVISOR] Starting Maven check on Supervisor...");
+        ensureSupervisorRunning();
+        String response = callSupervisor("/maven-check");
+        System.out.println("[SelfDevBootstrapController] [CHECK_MAVEN_SUPERVISOR] Supervisor response: " + response);
+        return response;
+    }
+
+    private String checkSupervisor() {
+        System.out.println("[SelfDevBootstrapController] [CHECK_SUPERVISOR] Checking external supervisor...");
+        File supervisorDir = findSupervisorDir();
+        if (supervisorDir == null || !supervisorDir.exists()) {
+            System.err.println("[SelfDevBootstrapController] [CHECK_SUPERVISOR_FAIL] Supervisor directory not found.");
+            return "ERROR: Supervisor directory not found";
+        }
+        System.out.println("[SelfDevBootstrapController] [CHECK_SUPERVISOR] Copying/compiling supervisor module...");
+        String compileRes = compileSupervisorModule(supervisorDir);
+        if (compileRes.startsWith("ERROR")) {
+            System.err.println("[SelfDevBootstrapController] [CHECK_SUPERVISOR_FAIL] Supervisor compile failed: " + compileRes);
+            return compileRes;
+        }
+        System.out.println("[SelfDevBootstrapController] [CHECK_SUPERVISOR] Running supervisor...");
+        ensureSupervisorRunning();
+        if (isSupervisorAlive()) {
+            System.out.println("[SelfDevBootstrapController] [CHECK_SUPERVISOR_SUCCESS] Supervisor is running and responsive.");
+            return "CHECKED (Running)";
+        } else {
+            System.err.println("[SelfDevBootstrapController] [CHECK_SUPERVISOR_FAIL] Supervisor failed to respond to ping.");
+            return "ERROR: Supervisor not responding";
+        }
     }
 
     private String checkGit() {

@@ -24,14 +24,14 @@ public class RowEditDialog extends DynamicMapDialog {
         fields.put(NAME, new DynamicField("Name:", DynamicField.TYPE_TEXT, row.name));
 
         int pathFlags = DynamicField.TYPE_TEXT;
-        if (SelfDevRow.GIT_CHECK.equals(row.name)) {
+        if (SelfDevRow.GIT_CHECK.equals(row.name) || SelfDevRow.GIT_CHECK_EVO.equals(row.name) || SelfDevRow.GIT_CHECK_SUPERVISOR.equals(row.name)) {
             // Git could be a directory if it's a local path
             pathFlags |= DynamicField.DIRECTORY;
         } else if (SelfDevRow.COPY_SOURCE.equals(row.name) ||
                    SelfDevRow.BUILD_PROJECT.equals(row.name) ||
                    SelfDevRow.EXPORT_PRODUCT.equals(row.name)) {
             pathFlags |= DynamicField.DIRECTORY;
-        } else if (SelfDevRow.SUPERVISOR_LOOP.equals(row.name)) {
+        } else if (SelfDevRow.SUPERVISOR_LOOP.equals(row.name) || SelfDevRow.SUPERVISOR_CHECK.equals(row.name)) {
             pathFlags |= DynamicField.FILE;
         }
 
