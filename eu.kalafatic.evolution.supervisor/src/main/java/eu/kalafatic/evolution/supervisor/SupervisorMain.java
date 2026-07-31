@@ -13,6 +13,7 @@ import eu.kalafatic.evolution.supervisor.bootstrap.BuildResult;
 
 public class SupervisorMain extends NanoHTTPD {
     private static File baseDir;
+    private static volatile Process activeEvoProcess;
 
     public SupervisorMain(int port) {
         super(port);
@@ -137,7 +138,115 @@ public class SupervisorMain extends NanoHTTPD {
             return newFixedLengthResponse(result.isSuccess() ? "SUCCESS (" + result.getExecutionTimeMs() + "ms). Log: logs/build.log" : "ERROR: Build failed. See logs/build.log");
         }
 
+        if ("/export".equals(uri)) {
+            String workspace = session.getParms().get("path");
+            if (workspace == null || workspace.trim().isEmpty()) {
+                workspace = baseDir != null ? baseDir.getAbsolutePath() : ".";
+            }
+            File srcDir = new File(workspace);
+            File parentDir = srcDir.getParentFile();
+            if (parentDir == null) parentDir = srcDir;
+            File exportDir = new File(parentDir, "export");
+            if (!exportDir.exists()) {
+                exportDir.mkdirs();
+            }
+            try {
+                int copiedCount = copyJars(srcDir, exportDir);
+                if (copiedCount > 0) {
+                    return newFixedLengthResponse("SUCCESS: Exported " + copiedCount + " jars to " + exportDir.getAbsolutePath());
+                } else {
+                    return newFixedLengthResponse("ERROR: No runnable jars found in " + srcDir.getAbsolutePath() + ". Please build first.");
+                }
+            } catch (Exception e) {
+                return newFixedLengthResponse("ERROR: " + e.getMessage());
+            }
+        }
+
+        if ("/start-evo".equals(uri)) {
+            String workspace = session.getParms().get("path");
+            if (workspace == null || workspace.trim().isEmpty()) {
+                workspace = baseDir != null ? baseDir.getAbsolutePath() : ".";
+            }
+            File srcDir = new File(workspace);
+            File parentDir = srcDir.getParentFile();
+            if (parentDir == null) parentDir = srcDir;
+            File exportDir = new File(parentDir, "export");
+            File[] jars = exportDir.exists() ? exportDir.listFiles((dir, name) -> name.endsWith(".jar")) : null;
+            if (jars == null || jars.length == 0) {
+                return newFixedLengthResponse("ERROR: No exported products found in " + exportDir.getAbsolutePath() + ". Please export first.");
+            }
+            File runnableJar = jars[0];
+            for (File jar : jars) {
+                if (jar.getName().contains("-shaded")) {
+                    runnableJar = jar;
+                    break;
+                }
+            }
+            try {
+                if (activeEvoProcess != null && activeEvoProcess.isAlive()) {
+                    return newFixedLengthResponse("READY (Running) - Already started.");
+                }
+                ProcessBuilder pb = new ProcessBuilder("java", "-jar", runnableJar.getAbsolutePath());
+                pb.directory(exportDir);
+                activeEvoProcess = pb.start();
+                new Thread(() -> {
+                    try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(activeEvoProcess.getInputStream()))) {
+                        while (reader.readLine() != null) {}
+                    } catch (Exception ignored) {}
+                }).start();
+                return newFixedLengthResponse("SUCCESS: Started product " + runnableJar.getName());
+            } catch (Exception e) {
+                return newFixedLengthResponse("ERROR: " + e.getMessage());
+            }
+        }
+
+        if ("/stop-evo".equals(uri)) {
+            if (activeEvoProcess != null && activeEvoProcess.isAlive()) {
+                activeEvoProcess.destroyForcibly();
+                try {
+                    activeEvoProcess.waitFor(2, java.util.concurrent.TimeUnit.SECONDS);
+                } catch (Exception ignored) {}
+                activeEvoProcess = null;
+                return newFixedLengthResponse("SUCCESS: Stopped running product.");
+            } else {
+                activeEvoProcess = null;
+                return newFixedLengthResponse("READY (Stopped) - Product was not running.");
+            }
+        }
+
         return newFixedLengthResponse(Response.Status.NOT_FOUND, NanoHTTPD.MIME_PLAINTEXT, "Not Found");
+    }
+
+    private static int copyJars(File dir, File exportDir) {
+        int count = 0;
+        if (dir.isDirectory()) {
+            if (dir.getName().equals("target")) {
+                File[] files = dir.listFiles();
+                if (files != null) {
+                    for (File f : files) {
+                        if (f.isFile() && f.getName().endsWith(".jar")) {
+                            try {
+                                java.nio.file.Files.copy(f.toPath(), new File(exportDir, f.getName()).toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                                count++;
+                            } catch (Exception ignored) {}
+                        }
+                    }
+                }
+                return count;
+            }
+            File[] files = dir.listFiles();
+            if (files != null) {
+                for (File f : files) {
+                    if (f.isDirectory()) {
+                        String name = f.getName();
+                        if (!name.equals(".git") && !name.equals("self-dev-run") && !name.equals(".settings") && !name.equals(".metadata") && !name.equals("bin")) {
+                            count += copyJars(f, exportDir);
+                        }
+                    }
+                }
+            }
+        }
+        return count;
     }
 
     private void saveLog(String workspace, BuildResult result) {

@@ -506,24 +506,6 @@ public class AiChatPage extends AEvoPage {
 		isWaitingForModel = false;
 
 		AiMode selectedMode = getSelectedAiMode();
-		if (currentSession != null && (currentSession.getTargetPath() == null || currentSession.getTargetPath().isEmpty() || !(new File(currentSession.getTargetPath()).exists()))) {
-			if (selectedMode == AiMode.FORGE) {
-				String evoRepo = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getInstance().findEvolutionRepository();
-				if (evoRepo != null) {
-					File docsDir = new File(evoRepo, "docs");
-					if (docsDir.exists() && docsDir.isDirectory()) {
-						currentSession.setTargetPath(docsDir.getAbsolutePath());
-					}
-				}
-				if (currentSession.getTargetPath() == null || currentSession.getTargetPath().isEmpty() || !(new File(currentSession.getTargetPath()).exists())) {
-					File localDocs = new File("docs");
-					if (localDocs.exists() && localDocs.isDirectory()) {
-						currentSession.setTargetPath(localDocs.getAbsolutePath());
-					}
-				}
-			}
-		}
-
 		boolean isTargetValidFolder = false;
 		if (currentSession != null && currentSession.getTargetPath() != null && !currentSession.getTargetPath().isEmpty()) {
 			File targetFile = new File(currentSession.getTargetPath());
