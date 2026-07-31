@@ -230,6 +230,7 @@ public class OllamaProvider implements ILlmProvider {
                     boolean approved = false;
                     if (org.eclipse.ui.PlatformUI.isWorkbenchRunning()) {
                         final boolean[] approvedArr = new boolean[1];
+                        final String finalMemModel = memoryFallbackModel;
                         org.eclipse.swt.widgets.Display.getDefault().syncExec(() -> {
                             org.eclipse.swt.widgets.Shell activeShell = org.eclipse.swt.widgets.Display.getDefault().getActiveShell();
                             if (activeShell == null && org.eclipse.ui.PlatformUI.getWorkbench().getActiveWorkbenchWindow() != null) {
@@ -241,7 +242,6 @@ public class OllamaProvider implements ILlmProvider {
                         });
                         approved = approvedArr[0];
                     } else {
-                        // Headless/test environments automatically approve
                         approved = true;
                     }
 

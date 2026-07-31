@@ -59,6 +59,11 @@ public class DevelopmentPage extends AEvoPage {
     public static class SelfDevRow {
         public static final String GIT_CHECK = "Git Check";
         public static final String MAVEN_CHECK = "Maven Check";
+        public static final String GIT_CHECK_EVO = "Git Check (Evo)";
+        public static final String GIT_CHECK_SUPERVISOR = "Git Check (Supervisor)";
+        public static final String MAVEN_CHECK_EVO = "Maven Check (Evo)";
+        public static final String MAVEN_CHECK_SUPERVISOR = "Maven Check (Supervisor)";
+        public static final String SUPERVISOR_CHECK = "Supervisor Check";
         public static final String LLM_CHECK = "LLM Check";
         public static final String GENOME_CHECK = "Genome Check";
         public static final String PERM_CHECK = "Permissions Check";
@@ -73,12 +78,18 @@ public class DevelopmentPage extends AEvoPage {
         public String name;
         public String path;
         public String status;
+        public String executor;
 
         public SelfDevRow(int order, String name, String path, String status) {
+            this(order, name, path, status, "NA");
+        }
+
+        public SelfDevRow(int order, String name, String path, String status, String executor) {
             this.order = order;
             this.name = name;
             this.path = path;
             this.status = status;
+            this.executor = executor;
             this.selected = false;
         }
     }
@@ -263,16 +274,19 @@ public class DevelopmentPage extends AEvoPage {
             exportPath = targetPath + "/export";
         }
 
-        sdData.add(new SelfDevRow(1, SelfDevRow.GIT_CHECK, gitPathUrl, "ready"));
-        sdData.add(new SelfDevRow(2, SelfDevRow.MAVEN_CHECK, mvnPath, "ready"));
-        sdData.add(new SelfDevRow(3, SelfDevRow.LLM_CHECK, llmModel, "ready"));
-        sdData.add(new SelfDevRow(4, SelfDevRow.GENOME_CHECK, "supervisor.genome", "ready"));
-        sdData.add(new SelfDevRow(5, SelfDevRow.PERM_CHECK, "supervisor.fs", "ready"));
-        sdData.add(new SelfDevRow(6, SelfDevRow.COPY_SOURCE, getSupervisorSourcePath(), "ready"));
-        sdData.add(new SelfDevRow(7, SelfDevRow.BUILD_PROJECT, targetPath, "ready"));
-        sdData.add(new SelfDevRow(8, SelfDevRow.EXPORT_PRODUCT, exportPath, "ready"));
-        sdData.add(new SelfDevRow(9, SelfDevRow.SUPERVISOR_LOOP, "supervisor.exe", "ready"));
-        sdData.add(new SelfDevRow(10, SelfDevRow.SELF_DEV_LOOP, "orchestrator", "ready"));
+        sdData.add(new SelfDevRow(1, SelfDevRow.GIT_CHECK_EVO, gitPathUrl, "ready", "evo"));
+        sdData.add(new SelfDevRow(2, SelfDevRow.GIT_CHECK_SUPERVISOR, gitPathUrl, "ready", "supervisor"));
+        sdData.add(new SelfDevRow(3, SelfDevRow.MAVEN_CHECK_EVO, mvnPath, "ready", "evo"));
+        sdData.add(new SelfDevRow(4, SelfDevRow.MAVEN_CHECK_SUPERVISOR, mvnPath, "ready", "supervisor"));
+        sdData.add(new SelfDevRow(5, SelfDevRow.LLM_CHECK, llmModel, "ready", "evo"));
+        sdData.add(new SelfDevRow(6, SelfDevRow.GENOME_CHECK, "supervisor.genome", "ready", "evo"));
+        sdData.add(new SelfDevRow(7, SelfDevRow.PERM_CHECK, "supervisor.fs", "ready", "evo"));
+        sdData.add(new SelfDevRow(8, SelfDevRow.COPY_SOURCE, getSupervisorSourcePath(), "ready", "evo"));
+        sdData.add(new SelfDevRow(9, SelfDevRow.BUILD_PROJECT, targetPath, "ready", "evo"));
+        sdData.add(new SelfDevRow(10, SelfDevRow.EXPORT_PRODUCT, exportPath, "ready", "evo"));
+        sdData.add(new SelfDevRow(11, SelfDevRow.SUPERVISOR_CHECK, "supervisor.exe", "ready", "evo"));
+        sdData.add(new SelfDevRow(12, SelfDevRow.SUPERVISOR_LOOP, "supervisor.exe", "ready", "NA"));
+        sdData.add(new SelfDevRow(13, SelfDevRow.SELF_DEV_LOOP, "orchestrator", "ready", "NA"));
         selfDevTable.setInput(sdData);
     }
 
@@ -328,8 +342,8 @@ public class DevelopmentPage extends AEvoPage {
     }
 
     private void createSelfDevColumns() {
-        String[] titles = { "#", "Action", "Edit", "Name", "Path/URL", "Status" };
-        int[] bounds = { 40, 100, 50, 150, 250, 150 };
+        String[] titles = { "#", "Action", "Edit", "Executed From", "Name", "Path/URL", "Status" };
+        int[] bounds = { 40, 100, 50, 120, 150, 250, 150 };
         for (int i = 0; i < titles.length; i++) {
             TableViewerColumn col = new TableViewerColumn(selfDevTable, SWT.NONE);
             col.getColumn().setText(titles[i]);
@@ -348,9 +362,10 @@ public class DevelopmentPage extends AEvoPage {
                 case 0 -> String.valueOf(row.order);
                 case 1 -> ("running".equals(row.status)) ? "\u23F8 \u23F9" : "\u25B6";
                 case 2 -> "\u270E";
-                case 3 -> row.name;
-                case 4 -> row.path;
-                case 5 -> row.status;
+                case 3 -> row.executor != null ? row.executor : "NA";
+                case 4 -> row.name;
+                case 5 -> row.path;
+                case 6 -> row.status;
                 default -> "";
             };
         }
@@ -427,10 +442,15 @@ public class DevelopmentPage extends AEvoPage {
         } else if (SelfDevRow.BUILD_PROJECT.equals(row.name)) {
             System.out.println("[DevelopmentPage] [BUILD_PROJECT] Initiating background task execution.");
             executeBackgroundTask(row, "BUILD");
+        } else if (SelfDevRow.SUPERVISOR_CHECK.equals(row.name)) {
+            System.out.println("[DevelopmentPage] [SUPERVISOR_CHECK] Initiating background task execution.");
+            executeBackgroundTask(row, "SUPERVISOR");
         } else {
             String type = switch(row.name) {
-                case SelfDevRow.GIT_CHECK -> "GIT";
-                case SelfDevRow.MAVEN_CHECK -> "MAVEN";
+                case SelfDevRow.GIT_CHECK_EVO -> "GIT_EVO";
+                case SelfDevRow.GIT_CHECK_SUPERVISOR -> "GIT_SUPERVISOR";
+                case SelfDevRow.MAVEN_CHECK_EVO -> "MAVEN_EVO";
+                case SelfDevRow.MAVEN_CHECK_SUPERVISOR -> "MAVEN_SUPERVISOR";
                 case SelfDevRow.LLM_CHECK -> "LLM";
                 case SelfDevRow.GENOME_CHECK -> "GENOME";
                 case SelfDevRow.PERM_CHECK -> "PERMISSIONS";
@@ -439,9 +459,13 @@ public class DevelopmentPage extends AEvoPage {
             };
             System.out.println("[DevelopmentPage] [ACTION] Mapped row: '" + row.name + "' to check type: '" + type + "'");
             if (type != null) {
-                row.status = bootstrapController.check(type);
-                System.out.println("[DevelopmentPage] [ACTION_RESULT] Check type: " + type + ", returned status: " + row.status);
-                selfDevTable.refresh(row);
+                if (type.contains("SUPERVISOR") || type.equals("COPY") || type.equals("BUILD")) {
+                    executeBackgroundTask(row, type);
+                } else {
+                    row.status = bootstrapController.check(type);
+                    System.out.println("[DevelopmentPage] [ACTION_RESULT] Check type: " + type + ", returned status: " + row.status);
+                    selfDevTable.refresh(row);
+                }
             }
         }
     }
@@ -473,7 +497,8 @@ public class DevelopmentPage extends AEvoPage {
     private void syncRowToModel(SelfDevRow row) {
         if (orchestrator == null) return;
         switch (row.name) {
-            case SelfDevRow.GIT_CHECK:
+            case SelfDevRow.GIT_CHECK_EVO:
+            case SelfDevRow.GIT_CHECK_SUPERVISOR:
                 if (orchestrator.getGit() == null) orchestrator.setGit(eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createGit());
                 String pathVal = row.path;
                 if (pathVal != null) {
@@ -490,7 +515,8 @@ public class DevelopmentPage extends AEvoPage {
                     }
                 }
                 break;
-            case SelfDevRow.MAVEN_CHECK:
+            case SelfDevRow.MAVEN_CHECK_EVO:
+            case SelfDevRow.MAVEN_CHECK_SUPERVISOR:
                 if (orchestrator.getMaven() == null) orchestrator.setMaven(eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createMaven());
                 orchestrator.getMaven().getGoals().clear();
                 String[] goals = row.path.replace("[", "").replace("]", "").split(",");
@@ -569,12 +595,24 @@ public class DevelopmentPage extends AEvoPage {
                 boolean failed = false;
                 try {
                     switch (row.name) {
-                        case SelfDevRow.GIT_CHECK:
-                            result = bootstrapController.check("GIT");
+                        case SelfDevRow.GIT_CHECK_EVO:
+                            result = bootstrapController.check("GIT_EVO");
                             if (result.contains("ERROR") || result.contains("fail")) failed = true;
                             break;
-                        case SelfDevRow.MAVEN_CHECK:
-                            result = bootstrapController.check("MAVEN");
+                        case SelfDevRow.GIT_CHECK_SUPERVISOR:
+                            result = bootstrapController.check("GIT_SUPERVISOR");
+                            if (result.contains("ERROR") || result.contains("fail")) failed = true;
+                            break;
+                        case SelfDevRow.MAVEN_CHECK_EVO:
+                            result = bootstrapController.check("MAVEN_EVO");
+                            if (result.contains("ERROR") || result.contains("fail")) failed = true;
+                            break;
+                        case SelfDevRow.MAVEN_CHECK_SUPERVISOR:
+                            result = bootstrapController.check("MAVEN_SUPERVISOR");
+                            if (result.contains("ERROR") || result.contains("fail")) failed = true;
+                            break;
+                        case SelfDevRow.SUPERVISOR_CHECK:
+                            result = bootstrapController.check("SUPERVISOR");
                             if (result.contains("ERROR") || result.contains("fail")) failed = true;
                             break;
                         case SelfDevRow.LLM_CHECK:
@@ -737,7 +775,7 @@ public class DevelopmentPage extends AEvoPage {
             String targetPath = getTargetPath();
             for (Object obj : rows) {
                 if (obj instanceof SelfDevRow row) {
-                    if (SelfDevRow.GIT_CHECK.equals(row.name) && orchestrator != null && orchestrator.getGit() != null) {
+                    if ((SelfDevRow.GIT_CHECK_EVO.equals(row.name) || SelfDevRow.GIT_CHECK_SUPERVISOR.equals(row.name)) && orchestrator != null && orchestrator.getGit() != null) {
                         String lp = orchestrator.getGit().getLocalPath();
                         String url = orchestrator.getGit().getRepositoryUrl();
                         if (lp == null || lp.isEmpty()) {
@@ -747,7 +785,7 @@ public class DevelopmentPage extends AEvoPage {
                             url = eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.getRepositoryRemote(eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.REPO_EVOLUTION);
                         }
                         row.path = lp + "/" + url;
-                    } else if (SelfDevRow.MAVEN_CHECK.equals(row.name) && orchestrator != null && orchestrator.getMaven() != null) {
+                    } else if ((SelfDevRow.MAVEN_CHECK_EVO.equals(row.name) || SelfDevRow.MAVEN_CHECK_SUPERVISOR.equals(row.name)) && orchestrator != null && orchestrator.getMaven() != null) {
                         row.path = orchestrator.getMaven().getGoals().toString();
                     } else if (SelfDevRow.LLM_CHECK.equals(row.name) && orchestrator != null && orchestrator.getLlm() != null) {
                         row.path = orchestrator.getLlm().getModel();
