@@ -241,7 +241,16 @@ public class DevelopmentPage extends AEvoPage {
     private void loadTableData() {
         List<SelfDevRow> sdData = new ArrayList<>();
 
-        String gitUrl = (orchestrator != null && orchestrator.getGit() != null) ? orchestrator.getGit().getRepositoryUrl() : "supervisor.git";
+        String localPath = (orchestrator != null && orchestrator.getGit() != null) ? orchestrator.getGit().getLocalPath() : "";
+        String repoUrl = (orchestrator != null && orchestrator.getGit() != null) ? orchestrator.getGit().getRepositoryUrl() : "";
+        if (localPath == null || localPath.isEmpty()) {
+            localPath = eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.getRepositoryPath(eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.REPO_EVOLUTION);
+        }
+        if (repoUrl == null || repoUrl.isEmpty()) {
+            repoUrl = eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.getRepositoryRemote(eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.REPO_EVOLUTION);
+        }
+        String gitPathUrl = localPath + "/" + repoUrl;
+
         String mvnPath = (orchestrator != null && orchestrator.getMaven() != null) ? orchestrator.getMaven().getGoals().toString() : "supervisor.maven";
         String llmModel = (orchestrator != null && orchestrator.getLlm() != null) ? orchestrator.getLlm().getModel() : "supervisor.llm";
         String targetPath = getTargetPath();
@@ -254,7 +263,7 @@ public class DevelopmentPage extends AEvoPage {
             exportPath = targetPath + "/export";
         }
 
-        sdData.add(new SelfDevRow(1, SelfDevRow.GIT_CHECK, gitUrl, "ready"));
+        sdData.add(new SelfDevRow(1, SelfDevRow.GIT_CHECK, gitPathUrl, "ready"));
         sdData.add(new SelfDevRow(2, SelfDevRow.MAVEN_CHECK, mvnPath, "ready"));
         sdData.add(new SelfDevRow(3, SelfDevRow.LLM_CHECK, llmModel, "ready"));
         sdData.add(new SelfDevRow(4, SelfDevRow.GENOME_CHECK, "supervisor.genome", "ready"));
@@ -466,7 +475,20 @@ public class DevelopmentPage extends AEvoPage {
         switch (row.name) {
             case SelfDevRow.GIT_CHECK:
                 if (orchestrator.getGit() == null) orchestrator.setGit(eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createGit());
-                orchestrator.getGit().setRepositoryUrl(row.path);
+                String pathVal = row.path;
+                if (pathVal != null) {
+                    if (pathVal.contains("/http://") || pathVal.contains("/https://")) {
+                        int index = pathVal.indexOf("/http");
+                        String local = pathVal.substring(0, index);
+                        String remote = pathVal.substring(index + 1);
+                        orchestrator.getGit().setLocalPath(local);
+                        orchestrator.getGit().setRepositoryUrl(remote);
+                    } else if (pathVal.contains("://")) {
+                        orchestrator.getGit().setRepositoryUrl(pathVal);
+                    } else {
+                        orchestrator.getGit().setLocalPath(pathVal);
+                    }
+                }
                 break;
             case SelfDevRow.MAVEN_CHECK:
                 if (orchestrator.getMaven() == null) orchestrator.setMaven(eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createMaven());
@@ -716,7 +738,15 @@ public class DevelopmentPage extends AEvoPage {
             for (Object obj : rows) {
                 if (obj instanceof SelfDevRow row) {
                     if (SelfDevRow.GIT_CHECK.equals(row.name) && orchestrator != null && orchestrator.getGit() != null) {
-                        row.path = orchestrator.getGit().getRepositoryUrl();
+                        String lp = orchestrator.getGit().getLocalPath();
+                        String url = orchestrator.getGit().getRepositoryUrl();
+                        if (lp == null || lp.isEmpty()) {
+                            lp = eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.getRepositoryPath(eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.REPO_EVOLUTION);
+                        }
+                        if (url == null || url.isEmpty()) {
+                            url = eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.getRepositoryRemote(eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.REPO_EVOLUTION);
+                        }
+                        row.path = lp + "/" + url;
                     } else if (SelfDevRow.MAVEN_CHECK.equals(row.name) && orchestrator != null && orchestrator.getMaven() != null) {
                         row.path = orchestrator.getMaven().getGoals().toString();
                     } else if (SelfDevRow.LLM_CHECK.equals(row.name) && orchestrator != null && orchestrator.getLlm() != null) {
