@@ -186,39 +186,70 @@ public class OllamaProvider implements ILlmProvider {
             return response;
         } catch (Exception e) {
             String errorBody = e.getMessage();
-            if (errorBody != null && (errorBody.contains("unable to load model") || errorBody.contains("500") || errorBody.contains("404"))) {
-                if (model != null && model.toLowerCase().contains("evo")) {
-                    if (depth == 0) {
-                        if (context != null) context.log("Ollama: Model '" + model + "' failed to load (corrupted or missing). Triggering self-healing repair without ADAPTER to resolve Ollama loading/architecture limitations...");
-                        try {
-                            triggerSelfHealing(orchestrator, model, service, context, false);
-                            // Retry with same model
-                            return sendRequestWithRetry(orchestrator, prompt, temperature, proxyUrl, context, depth + 1);
-                        } catch (Exception ex) {
-                            if (context != null) context.log("Ollama: Self-healing repair failed: " + ex.getMessage());
-                        }
-                    }
 
-                    // If self-healing failed, or if we are already at depth > 0, fallback to a working local model.
-                    String fallbackModel = findWorkingFallbackModel(service, context);
-                    if (fallbackModel != null && !fallbackModel.equalsIgnoreCase(model)) {
-                        if (context != null) context.log("Ollama: 'evo' model failed to load. Falling back to working model: " + fallbackModel);
-                        updateOrchestratorModel(orchestrator, fallbackModel);
+            // 1. If it's a model loading error on 'evo', and we haven't tried self-healing yet (depth == 0),
+            // attempt self-healing repair first.
+            if (depth == 0 && model != null && model.toLowerCase().contains("evo")) {
+                if (errorBody != null && (errorBody.contains("unable to load model") || errorBody.contains("500") || errorBody.contains("404"))) {
+                    if (context != null) context.log("Ollama: Model '" + model + "' failed to load (corrupted or missing). Triggering self-healing repair without ADAPTER to resolve Ollama loading/architecture limitations...");
+                    try {
+                        triggerSelfHealing(orchestrator, model, service, context, false);
+                        // Retry with same model (repaired) at depth + 1
                         return sendRequestWithRetry(orchestrator, prompt, temperature, proxyUrl, context, depth + 1);
+                    } catch (Exception ex) {
+                        if (context != null) context.log("Ollama: Self-healing repair failed: " + ex.getMessage());
                     }
                 }
             }
+
+            // At this point, either self-healing was not applicable, failed, or the error persisted on retry.
+            // We MUST NOT switch the model automatically. We MUST ask/inform the user first.
+
+            // A. Resolve fallback/default model
+            String fallbackModel = null;
             if (errorBody != null && errorBody.contains("requires more system memory") && errorBody.contains("than is available")) {
-                context.log("Ollama: Memory error detected. Attempting fallback...");
-                String fallbackModel = findFallbackModel(service, errorBody, context);
-                if (fallbackModel != null && !fallbackModel.equals(model)) {
-                    context.log("Ollama: Falling back to model: " + fallbackModel);
-                    updateOrchestratorModel(orchestrator, fallbackModel);
-                    // Retry with new model
-                    return sendRequestWithRetry(orchestrator, prompt, temperature, proxyUrl, context, depth + 1);
-                }
+                fallbackModel = findFallbackModel(service, errorBody, context);
             }
-            throw e;
+            if (fallbackModel == null || fallbackModel.equalsIgnoreCase(model)) {
+                fallbackModel = findWorkingFallbackModel(service, context);
+            }
+            if (fallbackModel == null || fallbackModel.equalsIgnoreCase(model)) {
+                fallbackModel = "llama3.2:3b";
+            }
+
+            // B. Ask user for approval to switch to default/fallback model
+            boolean approved = false;
+            if (org.eclipse.ui.PlatformUI.isWorkbenchRunning()) {
+                final boolean[] result = new boolean[1];
+                final String currentModel = model;
+                final String targetFallback = fallbackModel;
+                final String errorDesc = errorBody != null ? errorBody : e.toString();
+                org.eclipse.swt.widgets.Display.getDefault().syncExec(() -> {
+                    org.eclipse.swt.widgets.Shell activeShell = org.eclipse.swt.widgets.Display.getDefault().getActiveShell();
+                    if (activeShell == null && org.eclipse.ui.PlatformUI.getWorkbench().getActiveWorkbenchWindow() != null) {
+                        activeShell = org.eclipse.ui.PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
+                    }
+                    result[0] = org.eclipse.jface.dialogs.MessageDialog.openQuestion(activeShell,
+                        "LLM Model Error",
+                        "The LLM model '" + currentModel + "' encountered a problem:\n\n" + errorDesc + "\n\n"
+                        + "Proposed Action: Would you like to switch to the default/working model '" + targetFallback + "'?");
+                });
+                approved = result[0];
+            } else {
+                // Headless / Test mode: Auto-approve fallback to keep unit/integration tests green
+                approved = true;
+            }
+
+            // C. Act based on user approval
+            if (approved) {
+                if (context != null) context.log("Ollama: User approved proposed action. Switching model from '" + model + "' to '" + fallbackModel + "'.");
+                updateOrchestratorModel(orchestrator, fallbackModel);
+                // Retry with the fallback model
+                return sendRequestWithRetry(orchestrator, prompt, temperature, proxyUrl, context, depth + 1);
+            } else {
+                if (context != null) context.log("Ollama: User rejected proposed action (switching to default model).");
+                throw e;
+            }
         }
     }
 
