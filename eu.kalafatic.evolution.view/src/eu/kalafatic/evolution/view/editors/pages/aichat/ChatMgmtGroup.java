@@ -59,11 +59,11 @@ public class ChatMgmtGroup extends AEvoGroup {
                 page.createNewSession();
             }
         });
-
+       
         
         sessionCombo = GUIFactory.INSTANCE.createCombo(sessionsComp);
         ((GridData)sessionCombo.getLayoutData()).widthHint = 100;
-
+        
         sessionCombo.add(page.getCurrentSessionName());
         sessionCombo.select(0);
         sessionCombo.addSelectionListener(new SelectionAdapter() {
@@ -72,7 +72,7 @@ public class ChatMgmtGroup extends AEvoGroup {
                 page.switchSession(sessionCombo.getText());
             }
         });
-
+        
         Button identifyButton = GUIFactory.INSTANCE.createButton(sessionsComp, "Identify LLM");
         identifyButton.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -118,7 +118,7 @@ public class ChatMgmtGroup extends AEvoGroup {
         GridData gd = new GridData(SWT.FILL, SWT.CENTER, true, true);
         gd.verticalSpan = 2;
         compositeRemote.setLayoutData(gd);
-
+        
         GUIFactory.INSTANCE.createLabel(compositeRemote, "AI Remote:");
         aiRemoteCombo = GUIFactory.INSTANCE.createCombo(compositeRemote);
         ((GridData)aiRemoteCombo.getLayoutData()).widthHint = 100;
@@ -152,7 +152,7 @@ public class ChatMgmtGroup extends AEvoGroup {
 
         GUIFactory.INSTANCE.createLabel(compositeRemote, "API URL:");
         remoteUrlText = GUIFactory.INSTANCE.createText(compositeRemote);
-        GUIFactory.INSTANCE.createEditButton(compositeRemote, remoteUrlText);
+        GUIFactory.INSTANCE.createEditButton(compositeRemote, remoteUrlText);        
 
         // AI Settings part (merged)
         compositeLocal = GUIFactory.INSTANCE.createComposite(group, 3, SWT.BORDER);
@@ -161,10 +161,10 @@ public class ChatMgmtGroup extends AEvoGroup {
         GUIFactory.INSTANCE.createLabel(compositeLocal, "AI Mode:", SWT.NONE, GUIFactory.BUTTON_WIDTH);
         aiModeCombo = GUIFactory.INSTANCE.createCombo(compositeLocal, AiMode.values());
         ((GridData)aiModeCombo.getLayoutData()).widthHint = 100;
-
+        
         Button targetButton = GUIFactory.INSTANCE.createButton(compositeLocal, "Target");
         targetButton.setBackground(lightOrange);
-
+        
         targetButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -183,9 +183,9 @@ public class ChatMgmtGroup extends AEvoGroup {
         Button connectionButton = GUIFactory.INSTANCE.createButton(compositeLocal, "Test Connection");
         connectionButton.addSelectionListener(new SelectionAdapter() {
             public void widgetSelected(SelectionEvent e) {
-
+            	
                 if (orchestrator != null) {        
-
+                    
                     int testLLM = OllamaProvider.testLLM(orchestrator.getOllama().getUrl(), localModelCombo.getText());
                     String message = HTTPUtils.getMessage(testLLM);
                     
@@ -193,7 +193,7 @@ public class ChatMgmtGroup extends AEvoGroup {
 					messageBox.setText("Response");
 					messageBox.setMessage("Ollama + " + localModelCombo.getText() + " : " + message);
 					messageBox.open();
-
+                    
                 } else {
                     MessageBox messageBox = new MessageBox(page.getShell(), SWT.ICON_WARNING | SWT.OK);
                     messageBox.setText("Warning");
