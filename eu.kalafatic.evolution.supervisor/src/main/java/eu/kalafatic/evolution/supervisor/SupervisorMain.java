@@ -46,6 +46,59 @@ public class SupervisorMain extends NanoHTTPD {
     public Response serve(IHTTPSession session) {
         String uri = session.getUri();
         if ("/ping".equals(uri)) return newFixedLengthResponse("READY");
+
+        if ("/git-check".equals(uri)) {
+            String workspace = session.getParms().get("path");
+            if (workspace == null || workspace.trim().isEmpty()) {
+                workspace = baseDir != null ? baseDir.getAbsolutePath() : ".";
+            }
+            File localDir = new File(workspace);
+            try {
+                ProcessBuilder pb = new ProcessBuilder("git", "status", "--porcelain");
+                pb.directory(localDir);
+                pb.redirectErrorStream(true);
+                Process p = pb.start();
+                StringBuilder output = new StringBuilder();
+                try (java.io.BufferedReader r = new java.io.BufferedReader(new java.io.InputStreamReader(p.getInputStream(), java.nio.charset.StandardCharsets.UTF_8))) {
+                    String line;
+                    while ((line = r.readLine()) != null) {
+                        output.append(line).append("\n");
+                    }
+                }
+                int exitCode = p.waitFor();
+                if (exitCode == 0) {
+                    return newFixedLengthResponse("CHECKED (Supervisor) - Pending changes: " + output.toString().split("\n").length);
+                } else {
+                    return newFixedLengthResponse("ERROR: git command failed with exit code " + exitCode);
+                }
+            } catch (Exception e) {
+                return newFixedLengthResponse("ERROR: " + e.getMessage());
+            }
+        }
+
+        if ("/maven-check".equals(uri)) {
+            try {
+                String mvnCmd = System.getProperty("os.name").toLowerCase().contains("win") ? "mvn.cmd" : "mvn";
+                ProcessBuilder pb = new ProcessBuilder(mvnCmd, "-version");
+                pb.redirectErrorStream(true);
+                Process p = pb.start();
+                StringBuilder output = new StringBuilder();
+                try (java.io.BufferedReader r = new java.io.BufferedReader(new java.io.InputStreamReader(p.getInputStream(), java.nio.charset.StandardCharsets.UTF_8))) {
+                    String line;
+                    while ((line = r.readLine()) != null) {
+                        output.append(line).append("\n");
+                    }
+                }
+                int exitCode = p.waitFor();
+                if (exitCode == 0) {
+                    return newFixedLengthResponse("CHECKED (Supervisor)");
+                } else {
+                    return newFixedLengthResponse("ERROR: mvn -version exited with code " + exitCode);
+                }
+            } catch (Exception e) {
+                return newFixedLengthResponse("ERROR: " + e.getMessage());
+            }
+        }
         
         if ("/copy".equals(uri)) {
             String src = session.getParms().get("src");
