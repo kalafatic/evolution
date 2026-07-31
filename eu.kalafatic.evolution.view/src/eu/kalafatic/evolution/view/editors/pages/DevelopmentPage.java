@@ -69,7 +69,13 @@ public class DevelopmentPage extends AEvoPage {
         public static final String PERM_CHECK = "Permissions Check";
         public static final String COPY_SOURCE = "Copy Source";
         public static final String BUILD_PROJECT = "Build Project";
+        public static final String BUILD_PROJECT_EVO = "Build Project (Evo)";
+        public static final String BUILD_PROJECT_SUPERVISOR = "Build Project (Supervisor)";
         public static final String EXPORT_PRODUCT = "Export Product";
+        public static final String EXPORT_PRODUCT_EVO = "Export Product (Evo)";
+        public static final String EXPORT_PRODUCT_SUPERVISOR = "Export Product (Supervisor)";
+        public static final String START_EVO_PRODUCT_SUPERVISOR = "Start Evo Product (Supervisor)";
+        public static final String STOP_EVO_PRODUCT_SUPERVISOR = "Stop Evo Product (Supervisor)";
         public static final String SUPERVISOR_LOOP = "Supervisor Engine";
         public static final String SELF_DEV_LOOP = "Self-Dev Loop";
 
@@ -282,11 +288,15 @@ public class DevelopmentPage extends AEvoPage {
         sdData.add(new SelfDevRow(6, SelfDevRow.GENOME_CHECK, "supervisor.genome", "ready", "evo"));
         sdData.add(new SelfDevRow(7, SelfDevRow.PERM_CHECK, "supervisor.fs", "ready", "evo"));
         sdData.add(new SelfDevRow(8, SelfDevRow.COPY_SOURCE, getSupervisorSourcePath(), "ready", "evo"));
-        sdData.add(new SelfDevRow(9, SelfDevRow.BUILD_PROJECT, targetPath, "ready", "evo"));
-        sdData.add(new SelfDevRow(10, SelfDevRow.EXPORT_PRODUCT, exportPath, "ready", "evo"));
-        sdData.add(new SelfDevRow(11, SelfDevRow.SUPERVISOR_CHECK, "supervisor.exe", "ready", "evo"));
-        sdData.add(new SelfDevRow(12, SelfDevRow.SUPERVISOR_LOOP, "supervisor.exe", "ready", "NA"));
-        sdData.add(new SelfDevRow(13, SelfDevRow.SELF_DEV_LOOP, "orchestrator", "ready", "NA"));
+        sdData.add(new SelfDevRow(9, SelfDevRow.BUILD_PROJECT_EVO, targetPath, "ready", "evo"));
+        sdData.add(new SelfDevRow(10, SelfDevRow.BUILD_PROJECT_SUPERVISOR, targetPath, "ready", "supervisor"));
+        sdData.add(new SelfDevRow(11, SelfDevRow.EXPORT_PRODUCT_EVO, exportPath, "ready", "evo"));
+        sdData.add(new SelfDevRow(12, SelfDevRow.EXPORT_PRODUCT_SUPERVISOR, exportPath, "ready", "supervisor"));
+        sdData.add(new SelfDevRow(13, SelfDevRow.START_EVO_PRODUCT_SUPERVISOR, exportPath, "ready", "supervisor"));
+        sdData.add(new SelfDevRow(14, SelfDevRow.STOP_EVO_PRODUCT_SUPERVISOR, exportPath, "ready", "supervisor"));
+        sdData.add(new SelfDevRow(15, SelfDevRow.SUPERVISOR_CHECK, "supervisor.exe", "ready", "evo"));
+        sdData.add(new SelfDevRow(16, SelfDevRow.SUPERVISOR_LOOP, "supervisor.exe", "ready", "NA"));
+        sdData.add(new SelfDevRow(17, SelfDevRow.SELF_DEV_LOOP, "orchestrator", "ready", "NA"));
         selfDevTable.setInput(sdData);
     }
 
@@ -439,9 +449,12 @@ public class DevelopmentPage extends AEvoPage {
         } else if (SelfDevRow.COPY_SOURCE.equals(row.name)) {
             System.out.println("[DevelopmentPage] [COPY_SOURCE] Initiating background task execution.");
             executeBackgroundTask(row, "COPY");
-        } else if (SelfDevRow.BUILD_PROJECT.equals(row.name)) {
-            System.out.println("[DevelopmentPage] [BUILD_PROJECT] Initiating background task execution.");
-            executeBackgroundTask(row, "BUILD");
+        } else if (SelfDevRow.BUILD_PROJECT_EVO.equals(row.name)) {
+            System.out.println("[DevelopmentPage] [BUILD_PROJECT_EVO] Initiating background task execution.");
+            executeBackgroundTask(row, "BUILD_EVO");
+        } else if (SelfDevRow.BUILD_PROJECT_SUPERVISOR.equals(row.name)) {
+            System.out.println("[DevelopmentPage] [BUILD_PROJECT_SUPERVISOR] Initiating background task execution.");
+            executeBackgroundTask(row, "BUILD_SUPERVISOR");
         } else if (SelfDevRow.SUPERVISOR_CHECK.equals(row.name)) {
             System.out.println("[DevelopmentPage] [SUPERVISOR_CHECK] Initiating background task execution.");
             executeBackgroundTask(row, "SUPERVISOR");
@@ -454,12 +467,15 @@ public class DevelopmentPage extends AEvoPage {
                 case SelfDevRow.LLM_CHECK -> "LLM";
                 case SelfDevRow.GENOME_CHECK -> "GENOME";
                 case SelfDevRow.PERM_CHECK -> "PERMISSIONS";
-                case SelfDevRow.EXPORT_PRODUCT -> "EXPORT";
+                case SelfDevRow.EXPORT_PRODUCT_EVO -> "EXPORT_EVO";
+                case SelfDevRow.EXPORT_PRODUCT_SUPERVISOR -> "EXPORT_SUPERVISOR";
+                case SelfDevRow.START_EVO_PRODUCT_SUPERVISOR -> "START_EVO_SUPERVISOR";
+                case SelfDevRow.STOP_EVO_PRODUCT_SUPERVISOR -> "STOP_EVO_SUPERVISOR";
                 default -> null;
             };
             System.out.println("[DevelopmentPage] [ACTION] Mapped row: '" + row.name + "' to check type: '" + type + "'");
             if (type != null) {
-                if (type.contains("SUPERVISOR") || type.equals("COPY") || type.equals("BUILD")) {
+                if (type.contains("SUPERVISOR") || type.equals("COPY") || type.startsWith("BUILD") || type.startsWith("EXPORT")) {
                     executeBackgroundTask(row, type);
                 } else {
                     row.status = bootstrapController.check(type);
@@ -530,7 +546,8 @@ public class DevelopmentPage extends AEvoPage {
                 if (orchestrator.getSupervisorSettings() == null) orchestrator.setSupervisorSettings(eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createSupervisorSettings());
                 orchestrator.getSupervisorSettings().setSourcePath(row.path);
                 break;
-            case SelfDevRow.BUILD_PROJECT:
+            case SelfDevRow.BUILD_PROJECT_EVO:
+            case SelfDevRow.BUILD_PROJECT_SUPERVISOR:
                 if (orchestrator.getSupervisorSettings() == null) orchestrator.setSupervisorSettings(eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createSupervisorSettings());
                 orchestrator.getSupervisorSettings().setExecutablePath(row.path);
                 break;
@@ -631,12 +648,28 @@ public class DevelopmentPage extends AEvoPage {
                             result = bootstrapController.check("COPY");
                             if (result.contains("ERROR") || result.contains("fail")) failed = true;
                             break;
-                        case SelfDevRow.BUILD_PROJECT:
-                            result = bootstrapController.check("BUILD");
+                        case SelfDevRow.BUILD_PROJECT_EVO:
+                            result = bootstrapController.check("BUILD_EVO");
                             if (result.contains("ERROR") || result.contains("fail")) failed = true;
                             break;
-                        case SelfDevRow.EXPORT_PRODUCT:
-                            result = bootstrapController.check("EXPORT");
+                        case SelfDevRow.BUILD_PROJECT_SUPERVISOR:
+                            result = bootstrapController.check("BUILD_SUPERVISOR");
+                            if (result.contains("ERROR") || result.contains("fail")) failed = true;
+                            break;
+                        case SelfDevRow.EXPORT_PRODUCT_EVO:
+                            result = bootstrapController.check("EXPORT_EVO");
+                            if (result.contains("ERROR") || result.contains("fail")) failed = true;
+                            break;
+                        case SelfDevRow.EXPORT_PRODUCT_SUPERVISOR:
+                            result = bootstrapController.check("EXPORT_SUPERVISOR");
+                            if (result.contains("ERROR") || result.contains("fail")) failed = true;
+                            break;
+                        case SelfDevRow.START_EVO_PRODUCT_SUPERVISOR:
+                            result = bootstrapController.check("START_EVO_SUPERVISOR");
+                            if (result.contains("ERROR") || result.contains("fail")) failed = true;
+                            break;
+                        case SelfDevRow.STOP_EVO_PRODUCT_SUPERVISOR:
+                            result = bootstrapController.check("STOP_EVO_SUPERVISOR");
                             if (result.contains("ERROR") || result.contains("fail")) failed = true;
                             break;
                         case SelfDevRow.SUPERVISOR_LOOP:
@@ -791,6 +824,17 @@ public class DevelopmentPage extends AEvoPage {
                         row.path = orchestrator.getLlm().getModel();
                     } else if (SelfDevRow.COPY_SOURCE.equals(row.name)) {
                         row.path = getSupervisorSourcePath();
+                    } else if (SelfDevRow.BUILD_PROJECT_EVO.equals(row.name) || SelfDevRow.BUILD_PROJECT_SUPERVISOR.equals(row.name)) {
+                        row.path = targetPath;
+                    } else if (SelfDevRow.EXPORT_PRODUCT_EVO.equals(row.name) || SelfDevRow.EXPORT_PRODUCT_SUPERVISOR.equals(row.name) || SelfDevRow.START_EVO_PRODUCT_SUPERVISOR.equals(row.name) || SelfDevRow.STOP_EVO_PRODUCT_SUPERVISOR.equals(row.name)) {
+                        String exportPath;
+                        if (targetPath != null && (targetPath.endsWith("builds") || targetPath.endsWith("builds/") || targetPath.endsWith("builds\\"))) {
+                            File parent = new File(targetPath).getParentFile();
+                            exportPath = new File(parent, "export").getPath();
+                        } else {
+                            exportPath = targetPath + "/export";
+                        }
+                        row.path = exportPath;
                     }
                 }
             }

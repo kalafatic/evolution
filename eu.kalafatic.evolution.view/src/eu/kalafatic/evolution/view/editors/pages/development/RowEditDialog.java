@@ -29,7 +29,13 @@ public class RowEditDialog extends DynamicMapDialog {
             pathFlags |= DynamicField.DIRECTORY;
         } else if (SelfDevRow.COPY_SOURCE.equals(row.name) ||
                    SelfDevRow.BUILD_PROJECT.equals(row.name) ||
-                   SelfDevRow.EXPORT_PRODUCT.equals(row.name)) {
+                   SelfDevRow.BUILD_PROJECT_EVO.equals(row.name) ||
+                   SelfDevRow.BUILD_PROJECT_SUPERVISOR.equals(row.name) ||
+                   SelfDevRow.EXPORT_PRODUCT.equals(row.name) ||
+                   SelfDevRow.EXPORT_PRODUCT_EVO.equals(row.name) ||
+                   SelfDevRow.EXPORT_PRODUCT_SUPERVISOR.equals(row.name) ||
+                   SelfDevRow.START_EVO_PRODUCT_SUPERVISOR.equals(row.name) ||
+                   SelfDevRow.STOP_EVO_PRODUCT_SUPERVISOR.equals(row.name)) {
             pathFlags |= DynamicField.DIRECTORY;
         } else if (SelfDevRow.SUPERVISOR_LOOP.equals(row.name) || SelfDevRow.SUPERVISOR_CHECK.equals(row.name)) {
             pathFlags |= DynamicField.FILE;

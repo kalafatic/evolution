@@ -427,7 +427,7 @@ public class SelfDevBootstrapController {
         System.out.println("    - Mode:        " + (debugMode ? "DEBUG" : "STANDARD"));
         System.out.println(dashedBorder);
 
-        if (type.equalsIgnoreCase("BUILD") || type.equalsIgnoreCase("SUPERVISOR") || type.equalsIgnoreCase("GIT_SUPERVISOR") || type.equalsIgnoreCase("MAVEN_SUPERVISOR")) {
+        if (type.equalsIgnoreCase("BUILD") || type.equalsIgnoreCase("SUPERVISOR") || type.equalsIgnoreCase("GIT_SUPERVISOR") || type.equalsIgnoreCase("MAVEN_SUPERVISOR") || type.equalsIgnoreCase("BUILD_SUPERVISOR") || type.equalsIgnoreCase("EXPORT_SUPERVISOR") || type.equalsIgnoreCase("START_EVO_SUPERVISOR") || type.equalsIgnoreCase("STOP_EVO_SUPERVISOR")) {
             ensureSupervisorRunning();
         }
 
@@ -441,8 +441,12 @@ public class SelfDevBootstrapController {
             case "GENOME" -> checkGenome();
             case "PERMISSIONS" -> checkPermissions();
             case "COPY" -> copyCodebaseToSupervisorSource();
-            case "BUILD" -> runBuildAndCopy();
-            case "EXPORT" -> checkExport();
+            case "BUILD", "BUILD_EVO" -> runBuildAndCopy();
+            case "BUILD_SUPERVISOR" -> checkBuildSupervisor();
+            case "EXPORT", "EXPORT_EVO" -> checkExport();
+            case "EXPORT_SUPERVISOR" -> checkExportSupervisor();
+            case "START_EVO_SUPERVISOR" -> checkStartEvoSupervisor();
+            case "STOP_EVO_SUPERVISOR" -> checkStopEvoSupervisor();
             default -> {
                 System.err.println("[SelfDevBootstrapController] [CHECK_UNKNOWN] Unknown check type requested: " + type);
                 yield "UNKNOWN";
@@ -597,6 +601,65 @@ public class SelfDevBootstrapController {
             }
         }
         return "ERROR: " + (lastEx != null ? lastEx.getMessage() : "Unknown connection error");
+    }
+
+    private String checkBuildSupervisor() {
+        System.out.println("[SelfDevBootstrapController] [CHECK_BUILD_SUPERVISOR] Starting build check on Supervisor...");
+        ensureSupervisorRunning();
+        String buildWorkspacePath = null;
+        if (orchestrator != null && orchestrator.getSupervisorSettings() != null) {
+            buildWorkspacePath = orchestrator.getSupervisorSettings().getSourcePath();
+        }
+        if (buildWorkspacePath == null || buildWorkspacePath.trim().isEmpty()) {
+            String dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("ddMMyy"));
+            buildWorkspacePath = new File(new File(System.getProperty("user.home"), "projects/evo/supervisor"), dateStr + "/sources").getPath();
+        }
+        String endpoint = "/build?path=" + encode(buildWorkspacePath);
+        String response = callSupervisor(endpoint);
+        System.out.println("[SelfDevBootstrapController] [CHECK_BUILD_SUPERVISOR] Supervisor response: " + response);
+        return response;
+    }
+
+    private String checkExportSupervisor() {
+        System.out.println("[SelfDevBootstrapController] [CHECK_EXPORT_SUPERVISOR] Starting export check on Supervisor...");
+        ensureSupervisorRunning();
+        String buildWorkspacePath = null;
+        if (orchestrator != null && orchestrator.getSupervisorSettings() != null) {
+            buildWorkspacePath = orchestrator.getSupervisorSettings().getSourcePath();
+        }
+        if (buildWorkspacePath == null || buildWorkspacePath.trim().isEmpty()) {
+            String dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("ddMMyy"));
+            buildWorkspacePath = new File(new File(System.getProperty("user.home"), "projects/evo/supervisor"), dateStr + "/sources").getPath();
+        }
+        String endpoint = "/export?path=" + encode(buildWorkspacePath);
+        String response = callSupervisor(endpoint);
+        System.out.println("[SelfDevBootstrapController] [CHECK_EXPORT_SUPERVISOR] Supervisor response: " + response);
+        return response;
+    }
+
+    private String checkStartEvoSupervisor() {
+        System.out.println("[SelfDevBootstrapController] [CHECK_START_EVO_SUPERVISOR] Starting export evo check on Supervisor...");
+        ensureSupervisorRunning();
+        String buildWorkspacePath = null;
+        if (orchestrator != null && orchestrator.getSupervisorSettings() != null) {
+            buildWorkspacePath = orchestrator.getSupervisorSettings().getSourcePath();
+        }
+        if (buildWorkspacePath == null || buildWorkspacePath.trim().isEmpty()) {
+            String dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("ddMMyy"));
+            buildWorkspacePath = new File(new File(System.getProperty("user.home"), "projects/evo/supervisor"), dateStr + "/sources").getPath();
+        }
+        String endpoint = "/start-evo?path=" + encode(buildWorkspacePath);
+        String response = callSupervisor(endpoint);
+        System.out.println("[SelfDevBootstrapController] [CHECK_START_EVO_SUPERVISOR] Supervisor response: " + response);
+        return response;
+    }
+
+    private String checkStopEvoSupervisor() {
+        System.out.println("[SelfDevBootstrapController] [CHECK_STOP_EVO_SUPERVISOR] Starting stop evo check on Supervisor...");
+        ensureSupervisorRunning();
+        String response = callSupervisor("/stop-evo");
+        System.out.println("[SelfDevBootstrapController] [CHECK_STOP_EVO_SUPERVISOR] Supervisor response: " + response);
+        return response;
     }
 
     private String checkGitSupervisor() {
