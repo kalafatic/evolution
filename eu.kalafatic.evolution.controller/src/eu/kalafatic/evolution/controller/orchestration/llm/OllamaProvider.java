@@ -186,18 +186,6 @@ public class OllamaProvider implements ILlmProvider {
             return response;
         } catch (Exception e) {
             String errorBody = e.getMessage();
-            if (errorBody != null && (errorBody.contains("unable to load model") || errorBody.contains("500") || errorBody.contains("404"))) {
-                if (model != null && model.toLowerCase().contains("evo")) {
-                    if (depth == 0) {
-                        if (context != null) context.log("Ollama: Model '" + model + "' failed to load (corrupted or missing). Triggering self-healing repair without ADAPTER to resolve Ollama loading/architecture limitations...");
-                        try {
-                            triggerSelfHealing(orchestrator, model, service, context, false);
-                            // Retry with same model
-                            return sendRequestWithRetry(orchestrator, prompt, temperature, proxyUrl, context, depth + 1);
-                        } catch (Exception ex) {
-                            if (context != null) context.log("Ollama: Self-healing repair failed: " + ex.getMessage());
-                        }
-                    }
 
                     // If self-healing failed, or if we are already at depth > 0, fallback to a working local model.
                     final String fallbackModel = findWorkingFallbackModel(service, context);
@@ -230,6 +218,12 @@ public class OllamaProvider implements ILlmProvider {
                     }
                 }
             }
+
+            // At this point, either self-healing was not applicable, failed, or the error persisted on retry.
+            // We MUST NOT switch the model automatically. We MUST ask/inform the user first.
+
+            // A. Resolve fallback/default model
+            String fallbackModel = null;
             if (errorBody != null && errorBody.contains("requires more system memory") && errorBody.contains("than is available")) {
                 context.log("Ollama: Memory error detected. Attempting fallback...");
                 final String fallbackModel = findFallbackModel(service, errorBody, context);
@@ -262,7 +256,6 @@ public class OllamaProvider implements ILlmProvider {
                     }
                 }
             }
-            throw e;
         }
     }
 

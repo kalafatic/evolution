@@ -59,22 +59,25 @@ public class ChatMgmtGroup extends AEvoGroup {
                 page.createNewSession();
             }
         });
-
-        Button identifyButton = GUIFactory.INSTANCE.createButton(sessionsComp, "Identify LLM/Process");
-        identifyButton.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                page.identifyLlmAndProcess();
-            }
-        });
+       
         
         sessionCombo = GUIFactory.INSTANCE.createCombo(sessionsComp);
+        ((GridData)sessionCombo.getLayoutData()).widthHint = 100;
+        
         sessionCombo.add(page.getCurrentSessionName());
         sessionCombo.select(0);
         sessionCombo.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 page.switchSession(sessionCombo.getText());
+            }
+        });
+        
+        Button identifyButton = GUIFactory.INSTANCE.createButton(sessionsComp, "Identify LLM");
+        identifyButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                page.identifyLlmAndProcess();
             }
         });
 
@@ -118,6 +121,7 @@ public class ChatMgmtGroup extends AEvoGroup {
         
         GUIFactory.INSTANCE.createLabel(compositeRemote, "AI Remote:");
         aiRemoteCombo = GUIFactory.INSTANCE.createCombo(compositeRemote);
+        ((GridData)aiRemoteCombo.getLayoutData()).widthHint = 100;
 
         Button connectionButtonRemote = GUIFactory.INSTANCE.createButton(compositeRemote, "Test Connection");
         connectionButtonRemote.addSelectionListener(new SelectionAdapter() {
@@ -156,6 +160,8 @@ public class ChatMgmtGroup extends AEvoGroup {
         
         GUIFactory.INSTANCE.createLabel(compositeLocal, "AI Mode:", SWT.NONE, GUIFactory.BUTTON_WIDTH);
         aiModeCombo = GUIFactory.INSTANCE.createCombo(compositeLocal, AiMode.values());
+        ((GridData)aiModeCombo.getLayoutData()).widthHint = 100;
+        
         Button targetButton = GUIFactory.INSTANCE.createButton(compositeLocal, "Target");
         targetButton.setBackground(lightOrange);
         
@@ -172,6 +178,7 @@ public class ChatMgmtGroup extends AEvoGroup {
 
         GUIFactory.INSTANCE.createLabel(compositeLocal, "Model:", SWT.NONE, GUIFactory.BUTTON_WIDTH);
         localModelCombo = selectModel(compositeLocal);
+        ((GridData)localModelCombo.getLayoutData()).widthHint = 100;
         
         Button connectionButton = GUIFactory.INSTANCE.createButton(compositeLocal, "Test Connection");
         connectionButton.addSelectionListener(new SelectionAdapter() {
@@ -235,6 +242,7 @@ public class ChatMgmtGroup extends AEvoGroup {
                 page.saveLastUsedSettings();
             }
         });
+        group.layout(true, true);
     }
 
     private Combo selectModel(Composite parent) {
@@ -325,6 +333,7 @@ public class ChatMgmtGroup extends AEvoGroup {
                 isUpdating = false;
             }
         }
+        group.layout(true, true);
     }
 
 
