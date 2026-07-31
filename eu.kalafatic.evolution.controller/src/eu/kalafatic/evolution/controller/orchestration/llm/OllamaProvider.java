@@ -116,15 +116,10 @@ public class OllamaProvider implements ILlmProvider {
 
             String ggufPathNormalized = ggufFile.getAbsolutePath().replace("\\", "/");
             StringBuilder modelfileBuilder = new StringBuilder();
-            modelfileBuilder.append("FROM ").append(baseModel).append("\n");
-            if (useAdapter) {
-                modelfileBuilder.append("ADAPTER ").append(ggufPathNormalized).append("\n");
-            } else {
-                modelfileBuilder.append("# ADAPTER ").append(ggufPathNormalized).append(" (disabled due to Ollama loading/architecture limitations)\n");
-            }
-            modelfileBuilder.append("PARAMETER temperature 0.7\n");
+            modelfileBuilder.append("FROM ").append(ggufPathNormalized).append("\n");
+            modelfileBuilder.append("PARAMETER temperature 0.2\n");
             modelfileBuilder.append("PARAMETER stop \"<EOS>\"\n");
-            modelfileBuilder.append("SYSTEM \"\"\"You are an Evolution AI assistant specialized in this project codebase.\"\"\"");
+            modelfileBuilder.append("SYSTEM \"\"\"You are EVO, a specialized language model trained on Evolution project knowledge.\"\"\"");
             String modelfileContent = modelfileBuilder.toString();
 
             if (context != null) {

@@ -53,16 +53,16 @@ public class SelfEvoForgingIntegrationTest {
         assertTrue("weights.bin must be exported", Files.exists(weightsPath));
         assertTrue("evo.gguf must be exported", Files.exists(ggufPath));
 
-        // Verify Modelfile contains uncommented ADAPTER pointing to evo.gguf
+        // Verify Modelfile contains uncommented FROM or ADAPTER pointing to evo.gguf
         List<String> lines = Files.readAllLines(modelfilePath);
-        boolean foundUncommentedAdapter = false;
+        boolean foundUncommentedAdapterOrFrom = false;
         for (String line : lines) {
-            if (line.trim().startsWith("ADAPTER") && line.contains("evo.gguf")) {
-                foundUncommentedAdapter = true;
+            if ((line.trim().startsWith("ADAPTER") || line.trim().startsWith("FROM")) && line.contains("evo.gguf")) {
+                foundUncommentedAdapterOrFrom = true;
                 break;
             }
         }
-        assertTrue("Modelfile must contain an uncommented ADAPTER directive for the exported GGUF file", foundUncommentedAdapter);
+        assertTrue("Modelfile must contain an uncommented FROM or ADAPTER directive for the exported GGUF file", foundUncommentedAdapterOrFrom);
 
         // Read and verify GGUF header structure
         byte[] bytes = Files.readAllBytes(ggufPath);
@@ -85,14 +85,14 @@ public class SelfEvoForgingIntegrationTest {
         for (int i = 0; i < 8; i++) {
             tensorCount |= ((long) (bytes[8 + i] & 0xFF)) << (i * 8);
         }
-        assertEquals("Tensor count must match real model parameters count", 8L, tensorCount);
+        assertEquals("Tensor count must match real model parameters count", 12L, tensorCount);
 
         // 4. Metadata KV count (64-bit little-endian)
         long kvCount = 0;
         for (int i = 0; i < 8; i++) {
             kvCount |= ((long) (bytes[16 + i] & 0xFF)) << (i * 8);
         }
-        assertEquals("Metadata KV count must match real model metadata count", 8L, kvCount);
+        assertEquals("Metadata KV count must match real model metadata count", 13L, kvCount);
     }
 
     @Test
