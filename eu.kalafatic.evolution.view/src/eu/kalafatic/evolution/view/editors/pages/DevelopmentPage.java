@@ -280,23 +280,23 @@ public class DevelopmentPage extends AEvoPage {
             exportPath = targetPath + "/export";
         }
 
-        sdData.add(new SelfDevRow(1, SelfDevRow.GIT_CHECK_EVO, gitPathUrl, "ready", "evo"));
-        sdData.add(new SelfDevRow(2, SelfDevRow.GIT_CHECK_SUPERVISOR, gitPathUrl, "ready", "supervisor"));
-        sdData.add(new SelfDevRow(3, SelfDevRow.MAVEN_CHECK_EVO, mvnPath, "ready", "evo"));
-        sdData.add(new SelfDevRow(4, SelfDevRow.MAVEN_CHECK_SUPERVISOR, mvnPath, "ready", "supervisor"));
-        sdData.add(new SelfDevRow(5, SelfDevRow.LLM_CHECK, llmModel, "ready", "evo"));
-        sdData.add(new SelfDevRow(6, SelfDevRow.GENOME_CHECK, "supervisor.genome", "ready", "evo"));
-        sdData.add(new SelfDevRow(7, SelfDevRow.PERM_CHECK, "supervisor.fs", "ready", "evo"));
-        sdData.add(new SelfDevRow(8, SelfDevRow.COPY_SOURCE, getSupervisorSourcePath(), "ready", "evo"));
-        sdData.add(new SelfDevRow(9, SelfDevRow.BUILD_PROJECT_EVO, targetPath, "ready", "evo"));
-        sdData.add(new SelfDevRow(10, SelfDevRow.BUILD_PROJECT_SUPERVISOR, targetPath, "ready", "supervisor"));
-        sdData.add(new SelfDevRow(11, SelfDevRow.EXPORT_PRODUCT_EVO, exportPath, "ready", "evo"));
-        sdData.add(new SelfDevRow(12, SelfDevRow.EXPORT_PRODUCT_SUPERVISOR, exportPath, "ready", "supervisor"));
-        sdData.add(new SelfDevRow(13, SelfDevRow.START_EVO_PRODUCT_SUPERVISOR, exportPath, "ready", "supervisor"));
-        sdData.add(new SelfDevRow(14, SelfDevRow.STOP_EVO_PRODUCT_SUPERVISOR, exportPath, "ready", "supervisor"));
-        sdData.add(new SelfDevRow(15, SelfDevRow.SUPERVISOR_CHECK, "supervisor.exe", "ready", "evo"));
-        sdData.add(new SelfDevRow(16, SelfDevRow.SUPERVISOR_LOOP, "supervisor.exe", "ready", "NA"));
-        sdData.add(new SelfDevRow(17, SelfDevRow.SELF_DEV_LOOP, "orchestrator", "ready", "NA"));
+        sdData.add(new SelfDevRow(1, SelfDevRow.SUPERVISOR_CHECK, "supervisor.exe", "ready", "evo"));
+        sdData.add(new SelfDevRow(2, SelfDevRow.GIT_CHECK_EVO, gitPathUrl, "ready", "evo"));
+        sdData.add(new SelfDevRow(3, SelfDevRow.GIT_CHECK_SUPERVISOR, gitPathUrl, "ready", "supervisor"));
+        sdData.add(new SelfDevRow(4, SelfDevRow.MAVEN_CHECK_EVO, mvnPath, "ready", "evo"));
+        sdData.add(new SelfDevRow(5, SelfDevRow.MAVEN_CHECK_SUPERVISOR, mvnPath, "ready", "supervisor"));
+        sdData.add(new SelfDevRow(6, SelfDevRow.LLM_CHECK, llmModel, "ready", "evo"));
+        sdData.add(new SelfDevRow(7, SelfDevRow.GENOME_CHECK, "supervisor.genome", "ready", "evo"));
+        sdData.add(new SelfDevRow(8, SelfDevRow.PERM_CHECK, "supervisor.fs", "ready", "evo"));
+        sdData.add(new SelfDevRow(9, SelfDevRow.COPY_SOURCE, getSupervisorSourcePath(), "ready", "evo"));
+        sdData.add(new SelfDevRow(10, SelfDevRow.BUILD_PROJECT_EVO, targetPath, "ready", "evo"));
+        sdData.add(new SelfDevRow(11, SelfDevRow.BUILD_PROJECT_SUPERVISOR, targetPath, "ready", "supervisor"));
+        sdData.add(new SelfDevRow(12, SelfDevRow.EXPORT_PRODUCT_EVO, exportPath, "ready", "evo"));
+        sdData.add(new SelfDevRow(13, SelfDevRow.EXPORT_PRODUCT_SUPERVISOR, exportPath, "ready", "supervisor"));
+        sdData.add(new SelfDevRow(14, SelfDevRow.START_EVO_PRODUCT_SUPERVISOR, exportPath, "ready", "supervisor"));
+        sdData.add(new SelfDevRow(15, SelfDevRow.SUPERVISOR_LOOP, "supervisor.exe", "ready", "NA"));
+        sdData.add(new SelfDevRow(16, SelfDevRow.SELF_DEV_LOOP, "orchestrator", "ready", "NA"));
+        sdData.add(new SelfDevRow(17, SelfDevRow.STOP_EVO_PRODUCT_SUPERVISOR, exportPath, "ready", "supervisor"));
         selfDevTable.setInput(sdData);
     }
 
