@@ -216,21 +216,20 @@ public class OllamaProvider implements ILlmProvider {
                             throw new Exception("Ollama model '" + model + "' failed to load and user rejected the fallback model '" + fallbackModel + "'.");
                         }
                     }
-                }
-            }
 
             // At this point, either self-healing was not applicable, failed, or the error persisted on retry.
             // We MUST NOT switch the model automatically. We MUST ask/inform the user first.
 
             // A. Resolve fallback/default model
-            String fallbackModel = null;
+            String fallbackModelMem = null;
             if (errorBody != null && errorBody.contains("requires more system memory") && errorBody.contains("than is available")) {
                 context.log("Ollama: Memory error detected. Attempting fallback...");
-                final String fallbackModel = findFallbackModel(service, errorBody, context);
-                if (fallbackModel != null && !fallbackModel.equals(model)) {
+                fallbackModelMem = findFallbackModel(service, errorBody, context);
+                if (fallbackModelMem != null && !fallbackModelMem.equals(model)) {
                     boolean approved = false;
                     if (org.eclipse.ui.PlatformUI.isWorkbenchRunning()) {
                         final boolean[] approvedArr = new boolean[1];
+                        final String finalFallback = fallbackModelMem;
                         org.eclipse.swt.widgets.Display.getDefault().syncExec(() -> {
                             org.eclipse.swt.widgets.Shell activeShell = org.eclipse.swt.widgets.Display.getDefault().getActiveShell();
                             if (activeShell == null && org.eclipse.ui.PlatformUI.getWorkbench().getActiveWorkbenchWindow() != null) {
@@ -238,7 +237,7 @@ public class OllamaProvider implements ILlmProvider {
                             }
                             approvedArr[0] = org.eclipse.jface.dialogs.MessageDialog.openQuestion(activeShell,
                                 "Ollama Out of Memory",
-                                "The model '" + model + "' requires more system memory than is available. Do you want to switch to the fallback model '" + fallbackModel + "'?");
+                                "The model '" + model + "' requires more system memory than is available. Do you want to switch to the fallback model '" + finalFallback + "'?");
                         });
                         approved = approvedArr[0];
                     } else {
@@ -247,15 +246,16 @@ public class OllamaProvider implements ILlmProvider {
                     }
 
                     if (approved) {
-                        context.log("Ollama: Falling back to model: " + fallbackModel);
-                        updateOrchestratorModel(orchestrator, fallbackModel);
+                        context.log("Ollama: Falling back to model: " + fallbackModelMem);
+                        updateOrchestratorModel(orchestrator, fallbackModelMem);
                         // Retry with new model
                         return sendRequestWithRetry(orchestrator, prompt, temperature, proxyUrl, context, depth + 1);
                     } else {
-                        throw new Exception("Ollama memory error for model '" + model + "' and user rejected fallback model '" + fallbackModel + "'.");
+                        throw new Exception("Ollama memory error for model '" + model + "' and user rejected fallback model '" + fallbackModelMem + "'.");
                     }
                 }
             }
+            throw e;
         }
     }
 
