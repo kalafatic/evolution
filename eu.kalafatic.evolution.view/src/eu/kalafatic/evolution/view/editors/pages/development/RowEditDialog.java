@@ -28,6 +28,8 @@ public class RowEditDialog extends DynamicMapDialog {
             // Git could be a directory if it's a local path
             pathFlags |= DynamicField.DIRECTORY;
         } else if (SelfDevRow.COPY_SOURCE.equals(row.name) ||
+                   SelfDevRow.COPY_SUPERVISOR_SRC.equals(row.name) ||
+                   SelfDevRow.BUILD_SUPERVISOR_LOCAL.equals(row.name) ||
                    SelfDevRow.BUILD_PROJECT.equals(row.name) ||
                    SelfDevRow.BUILD_PROJECT_EVO.equals(row.name) ||
                    SelfDevRow.BUILD_PROJECT_SUPERVISOR.equals(row.name) ||

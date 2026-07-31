@@ -64,6 +64,8 @@ public class DevelopmentPage extends AEvoPage {
         public static final String MAVEN_CHECK_EVO = "Maven Check (Evo)";
         public static final String MAVEN_CHECK_SUPERVISOR = "Maven Check (Supervisor)";
         public static final String SUPERVISOR_CHECK = "Supervisor Check";
+        public static final String COPY_SUPERVISOR_SRC = "Copy Supervisor Source";
+        public static final String BUILD_SUPERVISOR_LOCAL = "Build Supervisor";
         public static final String LLM_CHECK = "LLM Check";
         public static final String GENOME_CHECK = "Genome Check";
         public static final String PERM_CHECK = "Permissions Check";
@@ -280,23 +282,29 @@ public class DevelopmentPage extends AEvoPage {
             exportPath = targetPath + "/export";
         }
 
-        sdData.add(new SelfDevRow(1, SelfDevRow.SUPERVISOR_CHECK, "supervisor.exe", "ready", "evo"));
-        sdData.add(new SelfDevRow(2, SelfDevRow.GIT_CHECK_EVO, gitPathUrl, "ready", "evo"));
-        sdData.add(new SelfDevRow(3, SelfDevRow.GIT_CHECK_SUPERVISOR, gitPathUrl, "ready", "supervisor"));
-        sdData.add(new SelfDevRow(4, SelfDevRow.MAVEN_CHECK_EVO, mvnPath, "ready", "evo"));
-        sdData.add(new SelfDevRow(5, SelfDevRow.MAVEN_CHECK_SUPERVISOR, mvnPath, "ready", "supervisor"));
-        sdData.add(new SelfDevRow(6, SelfDevRow.LLM_CHECK, llmModel, "ready", "evo"));
-        sdData.add(new SelfDevRow(7, SelfDevRow.GENOME_CHECK, "supervisor.genome", "ready", "evo"));
-        sdData.add(new SelfDevRow(8, SelfDevRow.PERM_CHECK, "supervisor.fs", "ready", "evo"));
-        sdData.add(new SelfDevRow(9, SelfDevRow.COPY_SOURCE, getSupervisorSourcePath(), "ready", "evo"));
-        sdData.add(new SelfDevRow(10, SelfDevRow.BUILD_PROJECT_EVO, targetPath, "ready", "evo"));
-        sdData.add(new SelfDevRow(11, SelfDevRow.BUILD_PROJECT_SUPERVISOR, targetPath, "ready", "supervisor"));
-        sdData.add(new SelfDevRow(12, SelfDevRow.EXPORT_PRODUCT_EVO, exportPath, "ready", "evo"));
-        sdData.add(new SelfDevRow(13, SelfDevRow.EXPORT_PRODUCT_SUPERVISOR, exportPath, "ready", "supervisor"));
-        sdData.add(new SelfDevRow(14, SelfDevRow.START_EVO_PRODUCT_SUPERVISOR, exportPath, "ready", "supervisor"));
-        sdData.add(new SelfDevRow(15, SelfDevRow.SUPERVISOR_LOOP, "supervisor.exe", "ready", "NA"));
-        sdData.add(new SelfDevRow(16, SelfDevRow.SELF_DEV_LOOP, "orchestrator", "ready", "NA"));
-        sdData.add(new SelfDevRow(17, SelfDevRow.STOP_EVO_PRODUCT_SUPERVISOR, exportPath, "ready", "supervisor"));
+        String dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("ddMMyy"));
+        String customSuperSrc = new File(new File(System.getProperty("user.home"), "projects/evo/supervisor"), dateStr + "/src").getPath();
+        String customSuperBin = new File(new File(System.getProperty("user.home"), "projects/evo/supervisor"), dateStr + "/bin").getPath();
+
+        sdData.add(new SelfDevRow(1, SelfDevRow.COPY_SUPERVISOR_SRC, customSuperSrc, "ready", "evo"));
+        sdData.add(new SelfDevRow(2, SelfDevRow.BUILD_SUPERVISOR_LOCAL, customSuperBin, "ready", "evo"));
+        sdData.add(new SelfDevRow(3, SelfDevRow.SUPERVISOR_CHECK, "supervisor.exe", "ready", "evo"));
+        sdData.add(new SelfDevRow(4, SelfDevRow.GIT_CHECK_EVO, gitPathUrl, "ready", "evo"));
+        sdData.add(new SelfDevRow(5, SelfDevRow.GIT_CHECK_SUPERVISOR, gitPathUrl, "ready", "supervisor"));
+        sdData.add(new SelfDevRow(6, SelfDevRow.MAVEN_CHECK_EVO, mvnPath, "ready", "evo"));
+        sdData.add(new SelfDevRow(7, SelfDevRow.MAVEN_CHECK_SUPERVISOR, mvnPath, "ready", "supervisor"));
+        sdData.add(new SelfDevRow(8, SelfDevRow.LLM_CHECK, llmModel, "ready", "evo"));
+        sdData.add(new SelfDevRow(9, SelfDevRow.GENOME_CHECK, "supervisor.genome", "ready", "evo"));
+        sdData.add(new SelfDevRow(10, SelfDevRow.PERM_CHECK, "supervisor.fs", "ready", "evo"));
+        sdData.add(new SelfDevRow(11, SelfDevRow.COPY_SOURCE, getSupervisorSourcePath(), "ready", "evo"));
+        sdData.add(new SelfDevRow(12, SelfDevRow.BUILD_PROJECT_EVO, targetPath, "ready", "evo"));
+        sdData.add(new SelfDevRow(13, SelfDevRow.BUILD_PROJECT_SUPERVISOR, targetPath, "ready", "supervisor"));
+        sdData.add(new SelfDevRow(14, SelfDevRow.EXPORT_PRODUCT_EVO, exportPath, "ready", "evo"));
+        sdData.add(new SelfDevRow(15, SelfDevRow.EXPORT_PRODUCT_SUPERVISOR, exportPath, "ready", "supervisor"));
+        sdData.add(new SelfDevRow(16, SelfDevRow.START_EVO_PRODUCT_SUPERVISOR, exportPath, "ready", "supervisor"));
+        sdData.add(new SelfDevRow(17, SelfDevRow.SUPERVISOR_LOOP, "supervisor.exe", "ready", "NA"));
+        sdData.add(new SelfDevRow(18, SelfDevRow.SELF_DEV_LOOP, "orchestrator", "ready", "NA"));
+        sdData.add(new SelfDevRow(19, SelfDevRow.STOP_EVO_PRODUCT_SUPERVISOR, exportPath, "ready", "supervisor"));
         selfDevTable.setInput(sdData);
     }
 
@@ -446,6 +454,12 @@ public class DevelopmentPage extends AEvoPage {
                 }
             }
             selfDevTable.refresh(row);
+        } else if (SelfDevRow.COPY_SUPERVISOR_SRC.equals(row.name)) {
+            System.out.println("[DevelopmentPage] [COPY_SUPERVISOR_SRC] Initiating background task execution.");
+            executeBackgroundTask(row, "COPY_SUPERVISOR");
+        } else if (SelfDevRow.BUILD_SUPERVISOR_LOCAL.equals(row.name)) {
+            System.out.println("[DevelopmentPage] [BUILD_SUPERVISOR_LOCAL] Initiating background task execution.");
+            executeBackgroundTask(row, "BUILD_SUPERVISOR_LOCAL");
         } else if (SelfDevRow.COPY_SOURCE.equals(row.name)) {
             System.out.println("[DevelopmentPage] [COPY_SOURCE] Initiating background task execution.");
             executeBackgroundTask(row, "COPY");
@@ -612,6 +626,14 @@ public class DevelopmentPage extends AEvoPage {
                 boolean failed = false;
                 try {
                     switch (row.name) {
+                        case SelfDevRow.COPY_SUPERVISOR_SRC:
+                            result = bootstrapController.check("COPY_SUPERVISOR");
+                            if (result.contains("ERROR") || result.contains("fail")) failed = true;
+                            break;
+                        case SelfDevRow.BUILD_SUPERVISOR_LOCAL:
+                            result = bootstrapController.check("BUILD_SUPERVISOR_LOCAL");
+                            if (result.contains("ERROR") || result.contains("fail")) failed = true;
+                            break;
                         case SelfDevRow.GIT_CHECK_EVO:
                             result = bootstrapController.check("GIT_EVO");
                             if (result.contains("ERROR") || result.contains("fail")) failed = true;
@@ -822,6 +844,12 @@ public class DevelopmentPage extends AEvoPage {
                         row.path = orchestrator.getMaven().getGoals().toString();
                     } else if (SelfDevRow.LLM_CHECK.equals(row.name) && orchestrator != null && orchestrator.getLlm() != null) {
                         row.path = orchestrator.getLlm().getModel();
+                    } else if (SelfDevRow.COPY_SUPERVISOR_SRC.equals(row.name)) {
+                        String dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("ddMMyy"));
+                        row.path = new File(new File(System.getProperty("user.home"), "projects/evo/supervisor"), dateStr + "/src").getPath();
+                    } else if (SelfDevRow.BUILD_SUPERVISOR_LOCAL.equals(row.name)) {
+                        String dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("ddMMyy"));
+                        row.path = new File(new File(System.getProperty("user.home"), "projects/evo/supervisor"), dateStr + "/bin").getPath();
                     } else if (SelfDevRow.COPY_SOURCE.equals(row.name)) {
                         row.path = getSupervisorSourcePath();
                     } else if (SelfDevRow.BUILD_PROJECT_EVO.equals(row.name) || SelfDevRow.BUILD_PROJECT_SUPERVISOR.equals(row.name)) {

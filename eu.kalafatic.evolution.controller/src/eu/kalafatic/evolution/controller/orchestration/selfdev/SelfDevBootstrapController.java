@@ -288,6 +288,24 @@ public class SelfDevBootstrapController {
     }
 
     private String getSupervisorJarPath() {
+        String dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("ddMMyy"));
+        File customBinDir = new File(new File(System.getProperty("user.home"), "projects/evo/supervisor"), dateStr + "/bin");
+        if (customBinDir.exists()) {
+            File[] customJars = customBinDir.listFiles((dir, name) -> name.endsWith("-shaded.jar") || name.endsWith(".jar"));
+            if (customJars != null && customJars.length > 0) {
+                File runnableJar = customJars[0];
+                for (File jar : customJars) {
+                    if (jar.getName().contains("-shaded")) {
+                        runnableJar = jar;
+                        break;
+                    }
+                }
+                String path = runnableJar.getAbsolutePath();
+                System.out.println("[SelfDevBootstrapController] Found supervisor jar in custom bin: " + path);
+                return path;
+            }
+        }
+
         File supervisorDir = findSupervisorDir();
         File targetDir = new File(supervisorDir, "target");
         System.out.println("[SelfDevBootstrapController] Scanning for supervisor shaded JAR in: " + targetDir.getAbsolutePath());
@@ -437,6 +455,8 @@ public class SelfDevBootstrapController {
             case "MAVEN", "MAVEN_EVO" -> checkMaven();
             case "MAVEN_SUPERVISOR" -> checkMavenSupervisor();
             case "SUPERVISOR" -> checkSupervisor();
+            case "COPY_SUPERVISOR" -> copySupervisorSource();
+            case "BUILD_SUPERVISOR_LOCAL" -> buildSupervisorLocal();
             case "LLM" -> checkLlm();
             case "GENOME" -> checkGenome();
             case "PERMISSIONS" -> checkPermissions();
@@ -573,6 +593,120 @@ public class SelfDevBootstrapController {
             }
         }
         return response;
+    }
+
+    private String copySupervisorSource() {
+        long startTime = System.currentTimeMillis();
+        System.out.println("[SelfDevBootstrapController] [COPY_SUPERVISOR] Starting Copy Supervisor Source...");
+        File srcDir = findSupervisorDir();
+        if (srcDir == null || !srcDir.exists()) {
+            return "ERROR: Supervisor source directory not found";
+        }
+        String dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("ddMMyy"));
+        File destDir = new File(new File(System.getProperty("user.home"), "projects/evo/supervisor"), dateStr + "/src");
+
+        System.out.println("[SelfDevBootstrapController] [COPY_SUPERVISOR] Source: " + srcDir.getAbsolutePath());
+        System.out.println("[SelfDevBootstrapController] [COPY_SUPERVISOR] Destination: " + destDir.getAbsolutePath());
+
+        try {
+            if (destDir.exists()) {
+                deleteRecursively(destDir);
+            }
+            destDir.mkdirs();
+            copyFolder(srcDir.toPath(), destDir.toPath());
+            long duration = System.currentTimeMillis() - startTime;
+            return "SUCCESS (" + duration + "ms)";
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "ERROR: " + e.getMessage();
+        }
+    }
+
+    private void copyFolder(java.nio.file.Path source, java.nio.file.Path target) throws IOException {
+        java.nio.file.Files.walkFileTree(source, new java.nio.file.SimpleFileVisitor<java.nio.file.Path>() {
+            @Override
+            public java.nio.file.FileVisitResult preVisitDirectory(java.nio.file.Path dir, java.nio.file.attribute.BasicFileAttributes attrs) throws IOException {
+                if (dir.equals(source)) {
+                    java.nio.file.Path targetDir = target.resolve(source.relativize(dir));
+                    if (!java.nio.file.Files.exists(targetDir)) {
+                        java.nio.file.Files.createDirectories(targetDir);
+                    }
+                    return java.nio.file.FileVisitResult.CONTINUE;
+                }
+                String name = dir.getFileName().toString();
+                if (name.equals(".git") || name.equals("target") || name.equals("self-dev-run") ||
+                    name.equals(".settings") || name.equals(".mvn") || name.equals(".metadata") ||
+                    name.equals("bin") || name.equals("iterations") || name.equals("orchestrator")) {
+                    return java.nio.file.FileVisitResult.SKIP_SUBTREE;
+                }
+                java.nio.file.Path targetDir = target.resolve(source.relativize(dir));
+                if (!java.nio.file.Files.exists(targetDir)) {
+                    java.nio.file.Files.createDirectories(targetDir);
+                }
+                return java.nio.file.FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public java.nio.file.FileVisitResult visitFile(java.nio.file.Path file, java.nio.file.attribute.BasicFileAttributes attrs) throws IOException {
+                String name = file.getFileName().toString();
+                if (name.equals(".git") || name.equals("target") || name.equals("self-dev-run") ||
+                    name.equals(".settings") || name.equals(".mvn") || name.equals(".metadata") ||
+                    name.equals("bin") || name.equals("iterations") || name.equals("orchestrator")) {
+                    return java.nio.file.FileVisitResult.CONTINUE;
+                }
+                java.nio.file.Path targetFile = target.resolve(source.relativize(file));
+                java.nio.file.Files.copy(file, targetFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                return java.nio.file.FileVisitResult.CONTINUE;
+            }
+        });
+    }
+
+    private String buildSupervisorLocal() {
+        long startTime = System.currentTimeMillis();
+        System.out.println("[SelfDevBootstrapController] [BUILD_SUPERVISOR_LOCAL] Starting Build Supervisor...");
+        String dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("ddMMyy"));
+        File srcDir = new File(new File(System.getProperty("user.home"), "projects/evo/supervisor"), dateStr + "/src");
+        File binDir = new File(new File(System.getProperty("user.home"), "projects/evo/supervisor"), dateStr + "/bin");
+
+        if (!srcDir.exists()) {
+            return "ERROR: Supervisor src directory not found. Run 'Copy Supervisor Source' first.";
+        }
+        if (!binDir.exists()) {
+            binDir.mkdirs();
+        }
+
+        try {
+            System.out.println("[SelfDevBootstrapController] [BUILD_SUPERVISOR_LOCAL] Executing build in: " + srcDir.getAbsolutePath());
+            String mvnCmd = System.getProperty("os.name").toLowerCase().contains("win") ? "mvn.cmd" : "mvn";
+            ProcessBuilder pb = new ProcessBuilder(mvnCmd, "clean", "package", "-DskipTests");
+            pb.directory(srcDir);
+            pb.redirectErrorStream(true);
+            Process p = pb.start();
+
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream(), StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    System.out.println("[Local Supervisor Build] " + line);
+                }
+            }
+            int exitCode = p.waitFor();
+            long duration = System.currentTimeMillis() - startTime;
+            if (exitCode == 0) {
+                File targetDir = new File(srcDir, "target");
+                File[] jars = targetDir.listFiles((dir, name) -> name.endsWith(".jar"));
+                if (jars != null) {
+                    for (File jar : jars) {
+                        Files.copy(jar.toPath(), new File(binDir, jar.getName()).toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                    }
+                }
+                return "SUCCESS (" + duration + "ms)";
+            } else {
+                return "ERROR: Maven build failed with exit code " + exitCode;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "ERROR: " + e.getMessage();
+        }
     }
 
     private String encode(String s) { return URLEncoder.encode(s, StandardCharsets.UTF_8); }
