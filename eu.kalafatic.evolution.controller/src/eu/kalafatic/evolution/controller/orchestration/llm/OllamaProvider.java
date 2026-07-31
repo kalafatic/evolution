@@ -189,6 +189,17 @@ public class OllamaProvider implements ILlmProvider {
 
             // 1. Model load failure fallback
             if (errorBody != null && (errorBody.contains("not found") || errorBody.contains("failed to load") || errorBody.contains("unable to load") || errorBody.contains("500") || errorBody.contains("404"))) {
+                if (depth == 0 && model != null && model.toLowerCase().contains("evo")) {
+                    try {
+                        if (context != null) context.log("Ollama: Error loading forged model '" + model + "'. Triggering self-healing/repair...");
+                        triggerSelfHealing(orchestrator, model, service, context);
+                        if (context != null) context.log("Ollama: Self-healing registration complete. Retrying request...");
+                        return sendRequestWithRetry(orchestrator, prompt, temperature, proxyUrl, context, depth + 1);
+                    } catch (Exception ex) {
+                        if (context != null) context.log("Ollama: Self-healing repair failed: " + ex.getMessage());
+                    }
+                }
+
                 final String fallbackModel = findWorkingFallbackModel(service, context);
                 if (fallbackModel != null && !fallbackModel.equalsIgnoreCase(model)) {
                     boolean approved = false;
