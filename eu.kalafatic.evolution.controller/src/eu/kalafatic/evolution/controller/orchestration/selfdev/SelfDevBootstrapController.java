@@ -454,6 +454,44 @@ public class SelfDevBootstrapController {
         return result;
     }
 
+    private void findAndCopyJars(File dir, File buildDir, File exportDir) {
+        if (dir.isDirectory()) {
+            if (dir.getName().equals("target")) {
+                File[] files = dir.listFiles();
+                if (files != null) {
+                    for (File f : files) {
+                        if (f.isFile() && f.getName().endsWith(".jar")) {
+                            try {
+                                File destJar = new File(buildDir, f.getName());
+                                System.out.println("[SelfDevBootstrapController] [CHECK_BUILD] Copying produced jar to builds: " + destJar.getAbsolutePath());
+                                Files.copy(f.toPath(), destJar.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                                if (exportDir != null) {
+                                    File destExportJar = new File(exportDir, f.getName());
+                                    System.out.println("[SelfDevBootstrapController] [CHECK_BUILD] Copying produced jar to export: " + destExportJar.getAbsolutePath());
+                                    Files.copy(f.toPath(), destExportJar.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                                }
+                            } catch (Exception e) {
+                                System.err.println("[SelfDevBootstrapController] [CHECK_BUILD] Failed to copy " + f.getName() + ": " + e.getMessage());
+                            }
+                        }
+                    }
+                }
+                return; // Don't recurse into target itself
+            }
+            File[] subDirs = dir.listFiles();
+            if (subDirs != null) {
+                for (File sub : subDirs) {
+                    if (sub.isDirectory()) {
+                        String name = sub.getName();
+                        if (!name.equals(".git") && !name.equals("self-dev-run") && !name.equals(".settings") && !name.equals(".metadata") && !name.equals("bin") && !name.equals("iterations") && !name.equals("orchestrator")) {
+                            findAndCopyJars(sub, buildDir, exportDir);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     private String runBuildAndCopy() {
         String buildWorkspacePath = null;
         if (orchestrator != null && orchestrator.getSupervisorSettings() != null) {
@@ -467,44 +505,33 @@ public class SelfDevBootstrapController {
         String response = callSupervisor("/build?path=" + encode(buildWorkspacePath));
         if (response != null && response.startsWith("SUCCESS")) {
             try {
-                File srcTarget = new File(buildWorkspacePath, "eu.kalafatic.evolution.supervisor/target");
-                if (srcTarget.exists()) {
-                    File[] jars = srcTarget.listFiles((dir, name) -> name.endsWith("-shaded.jar") || name.endsWith(".jar"));
-                    if (jars != null && jars.length > 0) {
-                        String buildPath = null;
-                        if (orchestrator != null && orchestrator.getSupervisorSettings() != null) {
-                            buildPath = orchestrator.getSupervisorSettings().getExecutablePath();
-                        }
-                        if (buildPath == null || buildPath.trim().isEmpty()) {
-                            String dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("ddMMyy"));
-                            buildPath = new File(new File(System.getProperty("user.home"), "projects/evo/supervisor"), dateStr + "/builds").getPath();
-                        }
-                        File buildDir = new File(buildPath);
-                        if (!buildDir.exists()) {
-                            buildDir.mkdirs();
-                        }
-                        String exportPath = null;
-                        if (buildPath.endsWith("builds") || buildPath.endsWith("builds/") || buildPath.endsWith("builds\\")) {
-                            exportPath = new File(buildDir.getParentFile(), "export").getPath();
-                        } else {
-                            exportPath = buildPath + "/export";
-                        }
-                        File exportDir = new File(exportPath);
-                        if (!exportDir.exists()) {
-                            exportDir.mkdirs();
-                        }
-                        for (File jar : jars) {
-                            File destJar = new File(buildDir, jar.getName());
-                            System.out.println("[SelfDevBootstrapController] [CHECK_BUILD] Copying produced jar to builds: " + destJar.getAbsolutePath());
-                            Files.copy(jar.toPath(), destJar.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-                            File destExportJar = new File(exportDir, jar.getName());
-                            System.out.println("[SelfDevBootstrapController] [CHECK_BUILD] Copying produced jar to export: " + destExportJar.getAbsolutePath());
-                            Files.copy(jar.toPath(), destExportJar.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-                        }
-                    }
+                String buildPath = null;
+                if (orchestrator != null && orchestrator.getSupervisorSettings() != null) {
+                    buildPath = orchestrator.getSupervisorSettings().getExecutablePath();
                 }
-            } catch (IOException e) {
-                System.err.println("[SelfDevBootstrapController] [CHECK_BUILD] Failed to copy build artifact to bin/export folder: " + e.getMessage());
+                if (buildPath == null || buildPath.trim().isEmpty()) {
+                    String dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("ddMMyy"));
+                    buildPath = new File(new File(System.getProperty("user.home"), "projects/evo/supervisor"), dateStr + "/builds").getPath();
+                }
+                File buildDir = new File(buildPath);
+                if (!buildDir.exists()) {
+                    buildDir.mkdirs();
+                }
+                String exportPath = null;
+                if (buildPath.endsWith("builds") || buildPath.endsWith("builds/") || buildPath.endsWith("builds\\")) {
+                    exportPath = new File(buildDir.getParentFile(), "export").getPath();
+                } else {
+                    exportPath = buildPath + "/export";
+                }
+                File exportDir = new File(exportPath);
+                if (!exportDir.exists()) {
+                    exportDir.mkdirs();
+                }
+
+                findAndCopyJars(new File(buildWorkspacePath), buildDir, exportDir);
+
+            } catch (Exception e) {
+                System.err.println("[SelfDevBootstrapController] [CHECK_BUILD] Failed to copy build artifact: " + e.getMessage());
             }
         }
         return response;
@@ -541,17 +568,97 @@ public class SelfDevBootstrapController {
     private String checkGit() {
         long startTime = System.currentTimeMillis();
         System.out.println("[SelfDevBootstrapController] [CHECK_GIT] Starting Git configuration check...");
-        System.out.println("[SelfDevBootstrapController] [CHECK_GIT] Project Root: " + (projectRoot != null ? projectRoot.getAbsolutePath() : "null"));
+
+        String localPath = null;
+        String repositoryUrl = null;
+        if (orchestrator != null && orchestrator.getGit() != null) {
+            localPath = orchestrator.getGit().getLocalPath();
+            repositoryUrl = orchestrator.getGit().getRepositoryUrl();
+        }
+        if (localPath == null || localPath.isEmpty()) {
+            localPath = eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.getRepositoryPath(eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.REPO_EVOLUTION);
+        }
+        if (repositoryUrl == null || repositoryUrl.isEmpty()) {
+            repositoryUrl = eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.getRepositoryRemote(eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.REPO_EVOLUTION);
+        }
+
+        File localDir = new File(localPath);
+        System.out.println("[SelfDevBootstrapController] [CHECK_GIT] Local path: " + localDir.getAbsolutePath());
+        System.out.println("[SelfDevBootstrapController] [CHECK_GIT] Repository URL: " + repositoryUrl);
+
+        String gitAction = "";
         try {
-            File gitDir = new File(projectRoot, ".git");
-            System.out.println("[SelfDevBootstrapController] [CHECK_GIT] Verifying Git directory at: " + gitDir.getAbsolutePath());
-            if (!gitDir.exists()) {
-                System.err.println("[SelfDevBootstrapController] [CHECK_GIT_FAIL] Git folder missing. Not a Git repository.");
-                return "ERROR: Not a Git repository";
+            if (!localDir.exists()) {
+                localDir.mkdirs();
             }
-            System.out.println("[SelfDevBootstrapController] [CHECK_GIT] Executing 'git status --porcelain' in directory: " + projectRoot.getAbsolutePath());
+            File gitDir = new File(localDir, ".git");
+            if (!gitDir.exists()) {
+                // Clone
+                System.out.println("[SelfDevBootstrapController] [CHECK_GIT] Local folder does not contain .git. Starting clone...");
+                org.eclipse.jgit.api.CloneCommand cloneCmd = org.eclipse.jgit.api.Git.cloneRepository()
+                    .setURI(repositoryUrl)
+                    .setDirectory(localDir)
+                    .setCloneAllBranches(true)
+                    .setBare(false);
+
+                if (orchestrator != null && orchestrator.getGit() != null) {
+                    String user = orchestrator.getGit().getUsername();
+                    String pass = orchestrator.getGit().getPassword();
+                    if (user != null && !user.isEmpty() && pass != null && !pass.isEmpty()) {
+                        cloneCmd.setCredentialsProvider(new org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider(user, pass));
+                    }
+                }
+                try (org.eclipse.jgit.api.Git git = cloneCmd.call()) {
+                    System.out.println("[SelfDevBootstrapController] [CHECK_GIT_SUCCESS] Clone completed successfully.");
+                    gitAction = " (Cloned)";
+                }
+            } else {
+                // Pull
+                System.out.println("[SelfDevBootstrapController] [CHECK_GIT] Local folder is already a git repository. Starting pull...");
+                try (org.eclipse.jgit.api.Git git = org.eclipse.jgit.api.Git.open(localDir)) {
+                    org.eclipse.jgit.api.PullCommand pullCmd = git.pull();
+                    if (orchestrator != null && orchestrator.getGit() != null) {
+                        String user = orchestrator.getGit().getUsername();
+                        String pass = orchestrator.getGit().getPassword();
+                        if (user != null && !user.isEmpty() && pass != null && !pass.isEmpty()) {
+                            pullCmd.setCredentialsProvider(new org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider(user, pass));
+                        }
+                    }
+                    pullCmd.call();
+                    System.out.println("[SelfDevBootstrapController] [CHECK_GIT_SUCCESS] Pull completed successfully.");
+                    gitAction = " (Pulled)";
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("[SelfDevBootstrapController] [CHECK_GIT_ERROR] JGit clone/pull failed: " + e.getMessage() + ". Trying OS process fallback.");
+            try {
+                File gitDir = new File(localDir, ".git");
+                if (!gitDir.exists()) {
+                    System.out.println("[SelfDevBootstrapController] [CHECK_GIT] Fallback 'git clone' in progress...");
+                    ProcessBuilder pb = new ProcessBuilder("git", "clone", repositoryUrl, localDir.getAbsolutePath());
+                    pb.redirectErrorStream(true);
+                    Process p = pb.start();
+                    p.waitFor();
+                    gitAction = " (Cloned)";
+                } else {
+                    System.out.println("[SelfDevBootstrapController] [CHECK_GIT] Fallback 'git pull' in progress...");
+                    ProcessBuilder pb = new ProcessBuilder("git", "pull");
+                    pb.directory(localDir);
+                    pb.redirectErrorStream(true);
+                    Process p = pb.start();
+                    p.waitFor();
+                    gitAction = " (Pulled)";
+                }
+            } catch (Exception ex) {
+                System.err.println("[SelfDevBootstrapController] [CHECK_GIT_ERROR] Fallback clone/pull failed: " + ex.getMessage());
+                return "ERROR: clone/pull failed: " + ex.getMessage();
+            }
+        }
+
+        try {
+            System.out.println("[SelfDevBootstrapController] [CHECK_GIT] Executing 'git status --porcelain' in directory: " + localDir.getAbsolutePath());
             ProcessBuilder pb = new ProcessBuilder("git", "status", "--porcelain");
-            pb.directory(projectRoot);
+            pb.directory(localDir);
             pb.redirectErrorStream(true);
             Process p = pb.start();
 
@@ -569,7 +676,7 @@ public class SelfDevBootstrapController {
             System.out.println("[SelfDevBootstrapController] [CHECK_GIT] 'git status --porcelain' exited with code: " + exitCode + " (took " + duration + "ms)");
             if (exitCode == 0) {
                 System.out.println("[SelfDevBootstrapController] [CHECK_GIT_SUCCESS] Git repository is valid. Pending changes count: " + output.toString().split("\n").length);
-                return "CHECKED";
+                return "CHECKED" + gitAction;
             } else {
                 System.err.println("[SelfDevBootstrapController] [CHECK_GIT_FAIL] Git command failed with exit code: " + exitCode);
                 return "ERROR: git command failed with exit code " + exitCode;
@@ -861,66 +968,107 @@ public class SelfDevBootstrapController {
 
     private String checkExport() {
         long startTime = System.currentTimeMillis();
-        System.out.println("[SelfDevBootstrapController] [CHECK_EXPORT] Checking exported supervisor artifact...");
-        String exportPath = null;
+        System.out.println("[SelfDevBootstrapController] [CHECK_EXPORT] Starting Export generation from builded classes...");
+
+        String buildPath = null;
         if (orchestrator != null && orchestrator.getSupervisorSettings() != null) {
-            String targetPath = orchestrator.getSupervisorSettings().getExecutablePath();
-            if (targetPath != null) {
-                if (targetPath.endsWith("builds") || targetPath.endsWith("builds/") || targetPath.endsWith("builds\\")) {
-                    File parent = new File(targetPath).getParentFile();
-                    exportPath = new File(parent, "export").getPath();
-                } else {
-                    exportPath = targetPath + "/export";
+            buildPath = orchestrator.getSupervisorSettings().getExecutablePath();
+        }
+        if (buildPath == null || buildPath.trim().isEmpty()) {
+            String dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("ddMMyy"));
+            buildPath = new File(new File(System.getProperty("user.home"), "projects/evo/supervisor"), dateStr + "/builds").getPath();
+        }
+        File buildDir = new File(buildPath);
+
+        String exportPath = null;
+        if (buildPath.endsWith("builds") || buildPath.endsWith("builds/") || buildPath.endsWith("builds\\")) {
+            exportPath = new File(buildDir.getParentFile(), "export").getPath();
+        } else {
+            exportPath = buildPath + "/export";
+        }
+        File exportDir = new File(exportPath);
+        if (!exportDir.exists()) {
+            exportDir.mkdirs();
+        }
+
+        // Copy existing Jars from builds directory
+        File[] buildJars = buildDir.exists() ? buildDir.listFiles((dir, name) -> name.endsWith(".jar")) : null;
+        if (buildJars != null && buildJars.length > 0) {
+            for (File jar : buildJars) {
+                try {
+                    File destJar = new File(exportDir, jar.getName());
+                    System.out.println("[SelfDevBootstrapController] [CHECK_EXPORT] Copying build jar to export: " + destJar.getAbsolutePath());
+                    Files.copy(jar.toPath(), destJar.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                } catch (IOException e) {
+                    System.err.println("[SelfDevBootstrapController] [CHECK_EXPORT] Failed to copy build jar: " + e.getMessage());
                 }
             }
         }
-        if (exportPath == null) {
+
+        // Try finding Jars in target folders of the sources directory and copying them
+        String buildWorkspacePath = null;
+        if (orchestrator != null && orchestrator.getSupervisorSettings() != null) {
+            buildWorkspacePath = orchestrator.getSupervisorSettings().getSourcePath();
+        }
+        if (buildWorkspacePath == null || buildWorkspacePath.trim().isEmpty()) {
             String dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("ddMMyy"));
-            exportPath = new File(new File(System.getProperty("user.home"), "projects/evo/supervisor"), dateStr + "/export").getPath();
+            buildWorkspacePath = new File(new File(System.getProperty("user.home"), "projects/evo/supervisor"), dateStr + "/sources").getPath();
         }
-        File exportDir = new File(exportPath);
-        System.out.println("[SelfDevBootstrapController] [CHECK_EXPORT] Scanning export directory: " + exportDir.getAbsolutePath() + ", exists: " + exportDir.exists());
-        if (exportDir.exists()) {
-            File[] jars = exportDir.listFiles((dir, name) -> name.endsWith("-shaded.jar") || name.endsWith(".jar"));
-            if (jars != null && jars.length > 0) {
-                long duration = System.currentTimeMillis() - startTime;
-                System.out.println("[SelfDevBootstrapController] [CHECK_EXPORT_SUCCESS] Found exported shaded supervisor jar in export folder: " + jars[0].getAbsolutePath() + " (size: " + jars[0].length() + " bytes, took " + duration + "ms)");
-                return "READY: " + jars[0].getName();
+        File sourcesDir = new File(buildWorkspacePath);
+        if (sourcesDir.exists()) {
+            findAndCopyJars(sourcesDir, buildDir, exportDir);
+        }
+
+        // Check if export directory has the runnable jar
+        File[] exportJars = exportDir.listFiles((dir, name) -> name.endsWith("-shaded.jar") || name.endsWith(".jar"));
+        if (exportJars != null && exportJars.length > 0) {
+            File runnableJar = exportJars[0];
+            for (File jar : exportJars) {
+                if (jar.getName().contains("-shaded")) {
+                    runnableJar = jar;
+                    break;
+                }
+            }
+            long duration = System.currentTimeMillis() - startTime;
+            System.out.println("[SelfDevBootstrapController] [CHECK_EXPORT_SUCCESS] Generated/Found runnable EVO product in export folder: " + runnableJar.getAbsolutePath() + " (took " + duration + "ms)");
+            return "READY: " + runnableJar.getName();
+        }
+
+        // If we still don't have any JAR, run a package build to generate it!
+        System.out.println("[SelfDevBootstrapController] [CHECK_EXPORT] No jars found. Running build to generate runnable product...");
+        String buildRes = runBuildAndCopy();
+        if (buildRes != null && buildRes.startsWith("SUCCESS")) {
+            exportJars = exportDir.listFiles((dir, name) -> name.endsWith("-shaded.jar") || name.endsWith(".jar"));
+            if (exportJars != null && exportJars.length > 0) {
+                File runnableJar = exportJars[0];
+                for (File jar : exportJars) {
+                    if (jar.getName().contains("-shaded")) {
+                        runnableJar = jar;
+                        break;
+                    }
+                }
+                return "READY: " + runnableJar.getName();
             }
         }
-        File sandbox = new File(runDir, "workspace");
-        File supervisorTarget = new File(sandbox, "eu.kalafatic.evolution.supervisor/target");
-        System.out.println("[SelfDevBootstrapController] [CHECK_EXPORT] Scanning sandbox target directory: " + supervisorTarget.getAbsolutePath() + ", exists: " + supervisorTarget.exists());
-        if (supervisorTarget.exists()) {
-            File[] jars = supervisorTarget.listFiles((dir, name) -> name.endsWith("-shaded.jar"));
-            if (jars != null && jars.length > 0) {
-                long duration = System.currentTimeMillis() - startTime;
-                System.out.println("[SelfDevBootstrapController] [CHECK_EXPORT_SUCCESS] Found exported shaded supervisor jar: " + jars[0].getAbsolutePath() + " (size: " + jars[0].length() + " bytes, took " + duration + "ms)");
-                return "READY: " + jars[0].getName();
-            }
-        }
-        System.err.println("[SelfDevBootstrapController] [CHECK_EXPORT_FAIL] Exported supervisor artifact not found in export: " + exportDir.getAbsolutePath() + " or sandbox: " + supervisorTarget.getAbsolutePath());
-        return "ERROR: Artifact not found. Run Build first.";
+
+        return "ERROR: Runnable EVO product could not be generated. Please run Build first.";
     }
 
     private String copyCodebaseToSupervisorSource() {
         long startTime = System.currentTimeMillis();
         System.out.println("[SelfDevBootstrapController] [COPY] Initiating Codebase Copy task...");
         String srcPath = null;
-        try {
-            System.out.println("[SelfDevBootstrapController] [COPY] Reflectively querying ProjectManager.getCodebasePath()...");
-            Class<?> pmClass = Class.forName("eu.kalafatic.evolution.view.provider.ProjectManager");
-            java.lang.reflect.Method m = pmClass.getMethod("getCodebasePath");
-            srcPath = (String) m.invoke(null);
-            System.out.println("[SelfDevBootstrapController] [COPY] ProjectManager.getCodebasePath() returned: " + srcPath);
-        } catch (Throwable t) {
-            System.out.println("[SelfDevBootstrapController] [COPY] ProjectManager.getCodebasePath() fallback via reflection ignored: " + t.getMessage());
+        if (orchestrator != null && orchestrator.getGit() != null) {
+            srcPath = orchestrator.getGit().getLocalPath();
         }
-        if (srcPath == null) {
+        if (srcPath == null || srcPath.trim().isEmpty()) {
+            srcPath = eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.getRepositoryPath(eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.REPO_EVOLUTION);
+        }
+        if (srcPath == null || srcPath.trim().isEmpty()) {
             srcPath = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getCodebasePath();
             System.out.println("[SelfDevBootstrapController] [COPY] Falling back to ProjectModelManager.getCodebasePath(): " + srcPath);
         }
-        if (srcPath == null) {
+        if (srcPath == null || srcPath.trim().isEmpty()) {
             System.err.println("[SelfDevBootstrapController] [COPY_FAIL] Codebase Copy failed: Could not resolve codebase source path.");
             return "ERROR: Could not resolve codebase path";
         }
