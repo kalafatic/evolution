@@ -85,10 +85,16 @@ public class ChatMgmtGroup extends AEvoGroup {
         });
         
         sessionCombo = GUIFactory.INSTANCE.createCombo(sessionsComp);
-        GridData sessionComboGd = new GridData(SWT.FILL, SWT.CENTER, true, false);
-        sessionComboGd.widthHint = 100;
-        sessionCombo.setLayoutData(sessionComboGd);
         sessionCombo.setVisibleItemCount(100);
+        {
+            GridData gdSession = (GridData) sessionCombo.getLayoutData();
+            if (gdSession == null) {
+                gdSession = new GridData();
+                sessionCombo.setLayoutData(gdSession);
+            }
+            gdSession.widthHint = 100;
+        }
+        
         sessionCombo.add(page.getCurrentSessionName());
         sessionCombo.select(0);
         sessionCombo.addSelectionListener(new SelectionAdapter() {
@@ -143,6 +149,54 @@ public class ChatMgmtGroup extends AEvoGroup {
             }
         });
         
+        compositeRemote = GUIFactory.INSTANCE.createComposite(group, 3, SWT.BORDER);
+        GridData gd = new GridData(SWT.FILL, SWT.CENTER, true, true);
+        gd.verticalSpan = 2;
+        compositeRemote.setLayoutData(gd);
+        
+        GUIFactory.INSTANCE.createLabel(compositeRemote, "AI Remote:");
+        aiRemoteCombo = GUIFactory.INSTANCE.createCombo(compositeRemote);
+        aiRemoteCombo.setVisibleItemCount(100);
+        {
+            GridData gdRemote = (GridData) aiRemoteCombo.getLayoutData();
+            if (gdRemote == null) {
+                gdRemote = new GridData();
+                aiRemoteCombo.setLayoutData(gdRemote);
+            }
+            gdRemote.widthHint = 100;
+        }
+
+        Button connectionButtonRemote = GUIFactory.INSTANCE.createButton(compositeRemote, "Test Connection");
+        connectionButtonRemote.addSelectionListener(new SelectionAdapter() {
+            public void widgetSelected(SelectionEvent e) {
+                if (orchestrator != null) {
+                    page.testAiConnectionRemote(aiModeCombo.getSelectionIndex(), aiRemoteCombo.getText(),
+                            remoteTokenText.getText(), remoteUrlText.getText());
+                } else {
+                    MessageBox messageBox = new MessageBox(page.getShell(), SWT.ICON_WARNING | SWT.OK);
+                    messageBox.setText("Warning");
+                    messageBox.setMessage("Orchestrator not loaded.");
+                    messageBox.open();
+                }
+            }
+        });
+
+        GUIFactory.INSTANCE.createLabel(compositeRemote, "Token:");
+        remoteTokenText = GUIFactory.INSTANCE.createPasswordText(compositeRemote);
+        Button editTokenBtn = GUIFactory.INSTANCE.createEditButton(compositeRemote, remoteTokenText);
+        editTokenBtn.setText("\u2699"); // Gear icon
+        editTokenBtn.setToolTipText("Detailed Configuration");
+        editTokenBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                handleDetailedConfig();
+            }
+        });
+
+        GUIFactory.INSTANCE.createLabel(compositeRemote, "API URL:");
+        remoteUrlText = GUIFactory.INSTANCE.createText(compositeRemote);
+        GUIFactory.INSTANCE.createEditButton(compositeRemote, remoteUrlText);        
+
         // AI Settings part (merged)
         compositeLocal = GUIFactory.INSTANCE.createComposite(group, 3, SWT.BORDER);
         compositeLocal.setBackground(lightGreen);
@@ -157,11 +211,16 @@ public class ChatMgmtGroup extends AEvoGroup {
         
         GUIFactory.INSTANCE.createLabel(compositeLocal, "AI Mode:", SWT.NONE, GUIFactory.BUTTON_WIDTH);
         aiModeCombo = GUIFactory.INSTANCE.createCombo(compositeLocal, AiMode.values());
-        GridData aiModeGd = new GridData(SWT.FILL, SWT.CENTER, true, false);
-        aiModeGd.widthHint = 100;
-        aiModeCombo.setLayoutData(aiModeGd);
         aiModeCombo.setVisibleItemCount(100);
-
+        {
+            GridData gdMode = (GridData) aiModeCombo.getLayoutData();
+            if (gdMode == null) {
+                gdMode = new GridData();
+                aiModeCombo.setLayoutData(gdMode);
+            }
+            gdMode.widthHint = 100;
+        }
+        
         Button targetButton = GUIFactory.INSTANCE.createButton(compositeLocal, "Target");
         targetButton.setBackground(lightOrange);
         targetButton.addSelectionListener(new SelectionAdapter() {
@@ -177,6 +236,15 @@ public class ChatMgmtGroup extends AEvoGroup {
 
         GUIFactory.INSTANCE.createLabel(compositeLocal, "Model:", SWT.NONE, GUIFactory.BUTTON_WIDTH);
         localModelCombo = selectModel(compositeLocal);
+        localModelCombo.setVisibleItemCount(100);
+        {
+            GridData gdLocal = (GridData) localModelCombo.getLayoutData();
+            if (gdLocal == null) {
+                gdLocal = new GridData();
+                localModelCombo.setLayoutData(gdLocal);
+            }
+            gdLocal.widthHint = 100;
+        }
         
         Button connectionButton = GUIFactory.INSTANCE.createButton(compositeLocal, "Test Connection");
         GridData connectionButtonGd = new GridData(SWT.FILL, SWT.CENTER, false, false);
@@ -294,9 +362,6 @@ public class ChatMgmtGroup extends AEvoGroup {
 
     private Combo selectModel(Composite parent) {
         Combo combo = GUIFactory.INSTANCE.createCombo(parent);
-        GridData localModelGd = new GridData(SWT.FILL, SWT.CENTER, true, false);
-        localModelGd.widthHint = 100;
-        combo.setLayoutData(localModelGd);
         combo.setVisibleItemCount(100);
         // selection listener
         combo.addListener(SWT.Selection, e -> {
