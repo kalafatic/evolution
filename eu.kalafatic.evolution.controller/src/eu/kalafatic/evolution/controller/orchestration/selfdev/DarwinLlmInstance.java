@@ -450,18 +450,17 @@ public class DarwinLlmInstance extends ADarwinEngine {
         // ensuring standard Ollama can load and run it natively with 100% success!
         try {
             StringBuilder modelfileBuilder = new StringBuilder();
-            modelfileBuilder.append("FROM ").append(baseModel).append("\n");
-            // Disable ADAPTER to ensure Ollama runs it natively without architecture mismatch limitations
-            modelfileBuilder.append("# ADAPTER ").append(forgeOutputDir.getAbsolutePath().replace("\\", "/")).append("/evo.gguf (disabled due to Ollama architecture limitations)\n");
+            modelfileBuilder.append("FROM ").append(forgeOutputDir.getAbsolutePath().replace("\\", "/")).append("/exports/ollama/evo.gguf\n");
             modelfileBuilder.append(String.format(java.util.Locale.US, "PARAMETER temperature %.4f\n", overallWinner.config.temperature));
             modelfileBuilder.append(String.format(java.util.Locale.US, "PARAMETER top_p %.4f\n", overallWinner.config.topP));
             modelfileBuilder.append(String.format("PARAMETER top_k %d\n", overallWinner.config.topK));
             modelfileBuilder.append(String.format(java.util.Locale.US, "PARAMETER repeat_penalty %.4f\n", overallWinner.config.repeatPenalty));
             modelfileBuilder.append("PARAMETER stop \"<EOS>\"\n");
-            modelfileBuilder.append("SYSTEM \"\"\"You are a genuine EVO LLM assistant specialized in this project codebase.\"\"\"");
+            modelfileBuilder.append("SYSTEM \"\"\"You are EVO, a specialized language model trained on Evolution project knowledge.\"\"\"");
 
             String finalModelfileContent = modelfileBuilder.toString();
             Files.writeString(forgeOutputDir.toPath().resolve("Modelfile"), finalModelfileContent);
+            Files.writeString(forgeOutputDir.toPath().resolve("exports/ollama/Modelfile"), finalModelfileContent);
 
             context.log("[FORGE] Overwrote Modelfile with evolved parameters:\n" + finalModelfileContent);
 
