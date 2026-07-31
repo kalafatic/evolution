@@ -187,43 +187,46 @@ public class OllamaProvider implements ILlmProvider {
         } catch (Exception e) {
             String errorBody = e.getMessage();
 
-            // 1. Model load failure fallback
-            if (errorBody != null && (errorBody.contains("not found") || errorBody.contains("failed to load") || errorBody.contains("unable to load") || errorBody.contains("500") || errorBody.contains("404"))) {
-                final String fallbackModel = findWorkingFallbackModel(service, context);
-                if (fallbackModel != null && !fallbackModel.equalsIgnoreCase(model)) {
-                    boolean approved = false;
-                    if (org.eclipse.ui.PlatformUI.isWorkbenchRunning()) {
-                        final boolean[] approvedArr = new boolean[1];
-                        org.eclipse.swt.widgets.Display.getDefault().syncExec(() -> {
-                            org.eclipse.swt.widgets.Shell activeShell = org.eclipse.swt.widgets.Display.getDefault().getActiveShell();
-                            if (activeShell == null && org.eclipse.ui.PlatformUI.getWorkbench().getActiveWorkbenchWindow() != null) {
-                                activeShell = org.eclipse.ui.PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
-                            }
-                            approvedArr[0] = org.eclipse.jface.dialogs.MessageDialog.openQuestion(activeShell,
-                                "Ollama Model Load Failure",
-                                "The model '" + model + "' failed to load. Do you want to switch to the working fallback model '" + fallbackModel + "'?");
-                        });
-                        approved = approvedArr[0];
-                    } else {
-                        approved = true;
-                    }
+            // If self-healing failed, or if we are already at depth > 0, fallback to a working local model.
+            final String fallbackModel = findWorkingFallbackModel(service, context);
+            if (fallbackModel != null && !fallbackModel.equalsIgnoreCase(model)) {
+                boolean approved = false;
+                if (org.eclipse.ui.PlatformUI.isWorkbenchRunning()) {
+                    final boolean[] approvedArr = new boolean[1];
+                    org.eclipse.swt.widgets.Display.getDefault().syncExec(() -> {
+                        org.eclipse.swt.widgets.Shell activeShell = org.eclipse.swt.widgets.Display.getDefault().getActiveShell();
+                        if (activeShell == null && org.eclipse.ui.PlatformUI.getWorkbench().getActiveWorkbenchWindow() != null) {
+                            activeShell = org.eclipse.ui.PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
+                        }
+                        approvedArr[0] = org.eclipse.jface.dialogs.MessageDialog.openQuestion(activeShell,
+                            "Ollama Model Load Failure",
+                            "The model '" + model + "' failed to load. Do you want to switch to the working fallback model '" + fallbackModel + "'?");
+                    });
+                    approved = approvedArr[0];
+                } else {
+                    // Headless/test environments automatically approve
+                    approved = true;
+                }
 
-                    if (approved) {
-                        if (context != null) context.log("Ollama: 'evo' model failed to load. Falling back to working model: " + fallbackModel);
-                        updateOrchestratorModel(orchestrator, fallbackModel);
-                        return sendRequestWithRetry(orchestrator, prompt, temperature, proxyUrl, context, depth + 1);
-                    } else {
-                        throw new Exception("Ollama model '" + model + "' failed to load and user rejected the fallback model '" + fallbackModel + "'.");
-                    }
+                if (approved) {
+                    if (context != null) context.log("Ollama: 'evo' model failed to load. Falling back to working model: " + fallbackModel);
+                    updateOrchestratorModel(orchestrator, fallbackModel);
+                    return sendRequestWithRetry(orchestrator, prompt, temperature, proxyUrl, context, depth + 1);
+                } else {
+                    throw new Exception("Ollama model '" + model + "' failed to load and user rejected the fallback model '" + fallbackModel + "'.");
                 }
             }
 
-            // 2. Memory limit fallback
+            // At this point, either self-healing was not applicable, failed, or the error persisted on retry.
+            // We MUST NOT switch the model automatically. We MUST ask/inform the user first.
+
+            // A. Resolve fallback/default model
             String memoryFallbackModel = null;
             if (errorBody != null && errorBody.contains("requires more system memory") && errorBody.contains("than is available")) {
                 if (context != null) context.log("Ollama: Memory error detected. Attempting fallback...");
                 memoryFallbackModel = findFallbackModel(service, errorBody, context);
                 if (memoryFallbackModel != null && !memoryFallbackModel.equals(model)) {
+                    final String finalFallbackModel = memoryFallbackModel;
                     boolean approved = false;
                     if (org.eclipse.ui.PlatformUI.isWorkbenchRunning()) {
                         final boolean[] approvedArr = new boolean[1];
@@ -235,7 +238,7 @@ public class OllamaProvider implements ILlmProvider {
                             }
                             approvedArr[0] = org.eclipse.jface.dialogs.MessageDialog.openQuestion(activeShell,
                                 "Ollama Out of Memory",
-                                "The model '" + model + "' requires more system memory than is available. Do you want to switch to the fallback model '" + finalMemModel + "'?");
+                                "The model '" + model + "' requires more system memory than is available. Do you want to switch to the fallback model '" + finalFallbackModel + "'?");
                         });
                         approved = approvedArr[0];
                     } else {
@@ -243,11 +246,12 @@ public class OllamaProvider implements ILlmProvider {
                     }
 
                     if (approved) {
-                        if (context != null) context.log("Ollama: Falling back to model: " + memoryFallbackModel);
-                        updateOrchestratorModel(orchestrator, memoryFallbackModel);
+                        if (context != null) context.log("Ollama: Falling back to model: " + finalFallbackModel);
+                        updateOrchestratorModel(orchestrator, finalFallbackModel);
+                        // Retry with new model
                         return sendRequestWithRetry(orchestrator, prompt, temperature, proxyUrl, context, depth + 1);
                     } else {
-                        throw new Exception("Ollama memory error for model '" + model + "' and user rejected fallback model '" + memoryFallbackModel + "'.");
+                        throw new Exception("Ollama memory error for model '" + model + "' and user rejected fallback model '" + finalFallbackModel + "'.");
                     }
                 }
             }
