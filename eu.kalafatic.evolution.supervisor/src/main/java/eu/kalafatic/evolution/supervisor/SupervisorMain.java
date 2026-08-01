@@ -16,7 +16,7 @@ public class SupervisorMain extends NanoHTTPD {
     private static volatile Process activeEvoProcess;
 
     public SupervisorMain(int port) {
-        super(port);
+        super("127.0.0.1", port);
     }
 
     public static void main(String[] args) {
