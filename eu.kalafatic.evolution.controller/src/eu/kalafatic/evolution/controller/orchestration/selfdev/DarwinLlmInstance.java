@@ -42,6 +42,9 @@ import eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer;
 import eu.kalafatic.evolution.forge.math.api.Tensor;
 import eu.kalafatic.evolution.forge.agent.export.OllamaExporter;
 
+// Sub-agents imports
+import eu.kalafatic.evolution.forge.controller.service.impl.agents.*;
+
 public class DarwinLlmInstance extends ADarwinEngine {
 
     public static class LlmConfig {
@@ -123,76 +126,6 @@ public class DarwinLlmInstance extends ADarwinEngine {
         String targetPath = getTargetPath();
         context.log("[FORGE] Selected Training Target Folder: " + targetPath);
 
-        File targetFolder = new File(targetPath);
-        StringBuilder corpusBuilder = new StringBuilder();
-        int mdFilesFound = 0;
-
-        if (targetFolder.exists() && targetFolder.isDirectory()) {
-            try (Stream<Path> walk = Files.walk(targetFolder.toPath())) {
-                List<Path> files = walk
-                    .filter(Files::isRegularFile)
-                    .filter(p -> p.toString().endsWith(".md"))
-                    .filter(p -> !p.toString().contains("/.git/") && !p.toString().contains("\\.git\\"))
-                    .collect(Collectors.toList());
-                for (Path f : files) {
-                    corpusBuilder.append(Files.readString(f)).append("\n\n");
-                    mdFilesFound++;
-                }
-            }
-        }
-
-        String rawCorpus = corpusBuilder.toString();
-        if (rawCorpus.trim().isEmpty() || mdFilesFound == 0) {
-            context.log("[FORGE] No Markdown documentation files found in target folder. Falling back to repo docs/ directory.");
-            File fallbackDocs = new File(context.getProjectRoot(), "docs");
-            if (fallbackDocs.exists() && fallbackDocs.isDirectory()) {
-                try (Stream<Path> walk = Files.walk(fallbackDocs.toPath())) {
-                    List<Path> files = walk
-                        .filter(Files::isRegularFile)
-                        .filter(p -> p.toString().endsWith(".md"))
-                        .collect(Collectors.toList());
-                    for (Path f : files) {
-                        corpusBuilder.append(Files.readString(f)).append("\n\n");
-                        mdFilesFound++;
-                    }
-                }
-            }
-        }
-
-        String corpus = corpusBuilder.toString();
-        if (corpus.trim().isEmpty()) {
-            context.log("[FORGE] WARNING: No training text could be loaded. Using default simple documentation seed corpus.");
-            corpus = "This is a simple EVO LLM training document.\nEvolution genome data management is personal, economical, and political.\n" +
-                     "personal: the joy of frontier creation and personal relevance.\neconomical: building priceless user and developer know-how.\n" +
-                     "political: independence and local control from centralized AI authorities.\n";
-        }
-
-        MarkdownCleaner cleaner = new MarkdownCleaner();
-        String cleanCorpus = cleaner.clean(corpus);
-        context.log("[FORGE] Training Source Dataset built successfully. Found " + mdFilesFound + " markdown files. Clean corpus size: " + cleanCorpus.length() + " chars.");
-
-        // Resolve generations count from prompt instructions (preferredMaxIterations) or default to 5
-        int generations = 5;
-        if (context.getOrchestrator().getAiChat() != null &&
-            context.getOrchestrator().getAiChat().getPromptInstructions() != null) {
-            generations = context.getOrchestrator().getAiChat().getPromptInstructions().getPreferredMaxIterations();
-        }
-        if (generations <= 1) {
-            generations = 5; // default to 5 generations
-        }
-
-        context.log("[FORGE] Darwin LLM configured for " + generations + " evolution generations.");
-
-        // Initial Candidates
-        List<LlmConfig> candidates = new ArrayList<>();
-        candidates.add(new LlmConfig(2000, 64, 2, 2));   // Candidate A
-        candidates.add(new LlmConfig(4000, 128, 2, 4));  // Candidate B
-        candidates.add(new LlmConfig(4000, 128, 4, 4));  // Candidate C
-
-        CandidateResult overallWinner = null;
-        List<String> logs = new ArrayList<>();
-        List<JSONObject> genReports = new ArrayList<>();
-
         // Resolve Ollama baseUrl and baseModel using the managed service
         String ollamaUrl = "http://localhost:11434";
         if (context.getOrchestrator().getOllama() != null &&
@@ -233,6 +166,159 @@ public class DarwinLlmInstance extends ADarwinEngine {
             context.log("Failed to load available models from Ollama, defaulting base to llama3.2:3b: " + e.getMessage());
         }
         context.log("[FORGE] Using base model for evolutionary evaluation: " + baseModel);
+
+        // Load dynamic configuration from ForgeSessionManager for progressive training sources and assistance settings
+        JSONObject uiState = eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance().getUiState(context.getSessionId());
+        boolean sourceMarkdown = uiState.optBoolean("source_markdown", true);
+        boolean sourceJava = uiState.optBoolean("source_java", false);
+        boolean sourceXml = uiState.optBoolean("source_xml", false);
+        boolean sourceJson = uiState.optBoolean("source_json", false);
+        boolean sourceConfiguration = uiState.optBoolean("source_configuration", false);
+        boolean sourceExternal = uiState.optBoolean("source_external", false);
+
+        boolean assistanceExtraction = uiState.optBoolean("assistance_extraction", true);
+        boolean assistanceQa = uiState.optBoolean("assistance_qa", true);
+        boolean assistanceQuality = uiState.optBoolean("assistance_quality", true);
+
+        File targetFolder = new File(targetPath);
+        List<Path> scannedPaths = new ArrayList<>();
+
+        if (targetFolder.exists() && targetFolder.isDirectory()) {
+            try (Stream<Path> walk = Files.walk(targetFolder.toPath())) {
+                List<Path> files = walk
+                    .filter(Files::isRegularFile)
+                    .filter(p -> !p.toString().contains("/.git/") && !p.toString().contains("\\.git\\") &&
+                                !p.toString().contains("/target/") && !p.toString().contains("\\target\\") &&
+                                !p.toString().contains("/node_modules/") && !p.toString().contains("\\node_modules\\"))
+                    .collect(Collectors.toList());
+                for (Path file : files) {
+                    String name = file.getFileName().toString().toLowerCase();
+                    boolean accept = false;
+                    if (name.endsWith(".md") && sourceMarkdown) accept = true;
+                    else if (name.endsWith(".java") && sourceJava) accept = true;
+                    else if (name.endsWith(".xml") && sourceXml) accept = true;
+                    else if (name.endsWith(".json") && sourceJson) accept = true;
+                    else if ((name.endsWith(".properties") || name.equals("pom.xml") || name.equals("manifest.mf")) && sourceConfiguration) accept = true;
+                    else if (sourceExternal && (name.endsWith(".html") || name.endsWith(".htm"))) accept = true;
+
+                    // Default to markdown if no training sources configured
+                    if (!sourceMarkdown && !sourceJava && !sourceXml && !sourceJson && !sourceConfiguration && !sourceExternal) {
+                        if (name.endsWith(".md")) accept = true;
+                    }
+
+                    if (accept) {
+                        scannedPaths.add(file);
+                    }
+                }
+            }
+        }
+
+        // 1. SourceAnalysisAgent (Sub-agent)
+        SourceAnalysisAgent sourceAnalysisAgent = new SourceAnalysisAgent();
+        List<KnowledgeUnit> knowledgeUnits = sourceAnalysisAgent.analyze(scannedPaths, context.getProjectRoot().toPath());
+        context.log("[FORGE] SourceAnalysisAgent completed. Analyzed knowledge units: " + knowledgeUnits.size());
+
+        // 2. ConsistencyAgent (Sub-agent)
+        ConsistencyAgent consistencyAgent = new ConsistencyAgent();
+        List<ConsistencyAgent.ConsistencyViolation> consistencyViolations = consistencyAgent.checkConsistency(knowledgeUnits);
+        context.log("[FORGE] ConsistencyAgent complete. Violations detected: " + consistencyViolations.size());
+        for (ConsistencyAgent.ConsistencyViolation violation : consistencyViolations) {
+            context.log("[FORGE] [CONSISTENCY DRIFT] " + violation.toString());
+        }
+
+        // 3. KnowledgeExtractionAgent (Sub-agent)
+        LocalOllamaClient ollamaClient = new LocalOllamaClient(ollamaUrl, baseModel);
+        KnowledgeExtractionAgent knowledgeExtractionAgent = new KnowledgeExtractionAgent(ollamaClient, assistanceExtraction);
+        List<KnowledgeFact> extractedFacts = knowledgeExtractionAgent.extract(knowledgeUnits);
+        context.log("[FORGE] KnowledgeExtractionAgent completed. Extracted facts: " + extractedFacts.size());
+
+        // 4. TrainingDataAgent (Sub-agent)
+        TrainingDataAgent trainingDataAgent = new TrainingDataAgent();
+        List<TrainingRecord> generatedRecords = trainingDataAgent.generate(extractedFacts);
+        context.log("[FORGE] TrainingDataAgent completed. Training records generated: " + generatedRecords.size());
+
+        // 5. DatasetQualityAgent (Sub-agent)
+        DatasetQualityAgent datasetQualityAgent = new DatasetQualityAgent();
+        List<DatasetQualityAgent.QualityReport> qualityReports = datasetQualityAgent.evaluate(generatedRecords);
+        List<TrainingRecord> acceptedRecords = new ArrayList<>();
+        int rejectedCount = 0;
+        for (DatasetQualityAgent.QualityReport report : qualityReports) {
+            if (report.getRecommendation() == DatasetQualityAgent.Recommendation.ACCEPT || !assistanceQuality) {
+                acceptedRecords.add(report.getRecord());
+            } else {
+                rejectedCount++;
+            }
+        }
+        context.log("[FORGE] DatasetQualityAgent completed. Accepted records: " + acceptedRecords.size() + ", Rejected: " + rejectedCount);
+
+        // Safe Fallback to raw Markdown if needed
+        String corpus = "";
+        if (acceptedRecords.isEmpty() || !assistanceQa) {
+            context.log("[FORGE] No accepted QA training records or assistance disabled. Falling back to default raw Markdown scan...");
+            StringBuilder corpusBuilder = new StringBuilder();
+            int mdFilesFound = 0;
+            for (KnowledgeUnit unit : knowledgeUnits) {
+                if ("MARKDOWN".equals(unit.getFileType())) {
+                    corpusBuilder.append(unit.getContent()).append("\n\n");
+                    mdFilesFound++;
+                }
+            }
+            corpus = corpusBuilder.toString();
+            if (corpus.trim().isEmpty() || mdFilesFound == 0) {
+                // Fallback to Repo Docs/
+                File fallbackDocs = new File(context.getProjectRoot(), "docs");
+                if (fallbackDocs.exists() && fallbackDocs.isDirectory()) {
+                    try (Stream<Path> walk = Files.walk(fallbackDocs.toPath())) {
+                        List<Path> files = walk
+                            .filter(Files::isRegularFile)
+                            .filter(p -> p.toString().endsWith(".md"))
+                            .collect(Collectors.toList());
+                        for (Path f : files) {
+                            corpusBuilder.append(Files.readString(f)).append("\n\n");
+                            mdFilesFound++;
+                        }
+                    }
+                }
+            }
+            corpus = corpusBuilder.toString();
+            if (corpus.trim().isEmpty()) {
+                corpus = "This is a simple EVO LLM training document.\nEvolution genome data management is personal, economical, and political.\n" +
+                         "personal: the joy of frontier creation and personal relevance.\neconomical: building priceless user and developer know-how.\n" +
+                         "political: independence and local control from centralized AI authorities.\n";
+            }
+        } else {
+            StringBuilder corpusBuilder = new StringBuilder();
+            for (TrainingRecord r : acceptedRecords) {
+                corpusBuilder.append(r.getInstruction()).append("\n").append(r.getResponse()).append("\n\n");
+            }
+            corpus = corpusBuilder.toString();
+        }
+
+        MarkdownCleaner cleaner = new MarkdownCleaner();
+        String cleanCorpus = cleaner.clean(corpus);
+        context.log("[FORGE] Training Source Dataset built successfully. Clean corpus size: " + cleanCorpus.length() + " chars.");
+
+        // Resolve generations count from prompt instructions (preferredMaxIterations) or default to 5
+        int generations = 5;
+        if (context.getOrchestrator().getAiChat() != null &&
+            context.getOrchestrator().getAiChat().getPromptInstructions() != null) {
+            generations = context.getOrchestrator().getAiChat().getPromptInstructions().getPreferredMaxIterations();
+        }
+        if (generations <= 1) {
+            generations = 5; // default to 5 generations
+        }
+
+        context.log("[FORGE] Darwin LLM configured for " + generations + " evolution generations.");
+
+        // Initial Candidates
+        List<LlmConfig> candidates = new ArrayList<>();
+        candidates.add(new LlmConfig(2000, 64, 2, 2));   // Candidate A
+        candidates.add(new LlmConfig(4000, 128, 2, 4));  // Candidate B
+        candidates.add(new LlmConfig(4000, 128, 4, 4));  // Candidate C
+
+        CandidateResult overallWinner = null;
+        List<String> logs = new ArrayList<>();
+        List<JSONObject> genReports = new ArrayList<>();
 
         for (int gen = 1; gen <= generations; gen++) {
             context.log("[FORGE] --- GENERATION " + gen + " ---");
@@ -318,15 +404,15 @@ public class DarwinLlmInstance extends ADarwinEngine {
                     context.log(String.format("[FORGE] Ollama Protocol Response: %s", responseText.trim().replace("\n", " ")));
                 } else {
                     // 2. Offline Fallback: Train custom tokenizer and model in Java
-                    SimpleBPETokenizer tokenizer = new SimpleBPETokenizer();
-                    tokenizer.train(cleanCorpus, config.vocabSize);
-                    List<Integer> allTokens = tokenizer.encode(cleanCorpus);
+                    SimpleBPETokenizer tokenizer2 = new SimpleBPETokenizer();
+                    tokenizer2.train(cleanCorpus, config.vocabSize);
+                    List<Integer> allTokens = tokenizer2.encode(cleanCorpus);
 
                     DatasetBuilder datasetBuilder = new DatasetBuilder();
                     List<DatasetBuilder.Sample> samples = datasetBuilder.buildSlidingWindow(allTokens, 16, 8);
 
                     int dff = config.embeddingSize * 4;
-                    EvoLlmModel model = new EvoLlmModel(tokenizer.getVocabSize(), config.embeddingSize, config.heads, config.layers, dff, 16);
+                    EvoLlmModel model = new EvoLlmModel(tokenizer2.getVocabSize(), config.embeddingSize, config.heads, config.layers, dff, 16);
 
                     // Count real parameters
                     paramCount = 0;
@@ -429,15 +515,15 @@ public class DarwinLlmInstance extends ADarwinEngine {
         checkpointDir.mkdirs();
 
         // 1. Train final winner tokenizer and dataset
-        SimpleBPETokenizer tokenizer = new SimpleBPETokenizer();
-        tokenizer.train(cleanCorpus, overallWinner.config.vocabSize);
-        List<Integer> allTokens = tokenizer.encode(cleanCorpus);
-        DatasetBuilder datasetBuilder = new DatasetBuilder();
-        List<DatasetBuilder.Sample> samples = datasetBuilder.buildSlidingWindow(allTokens, 16, 8);
+        SimpleBPETokenizer finalTokenizer = new SimpleBPETokenizer();
+        finalTokenizer.train(cleanCorpus, overallWinner.config.vocabSize);
+        List<Integer> allTokens = finalTokenizer.encode(cleanCorpus);
+        DatasetBuilder finalDatasetBuilder = new DatasetBuilder();
+        List<DatasetBuilder.Sample> samples = finalDatasetBuilder.buildSlidingWindow(allTokens, 16, 8);
 
         // 2. Build final model and save configuration & tokenizer
         int dff = overallWinner.config.embeddingSize * 4;
-        EvoLlmModel winningModel = new EvoLlmModel(tokenizer.getVocabSize(), overallWinner.config.embeddingSize, overallWinner.config.heads, overallWinner.config.layers, dff, 16);
+        EvoLlmModel winningModel = new EvoLlmModel(finalTokenizer.getVocabSize(), overallWinner.config.embeddingSize, overallWinner.config.heads, overallWinner.config.layers, dff, 16);
 
         EvoLlmTrainer trainer = new EvoLlmTrainer(winningModel);
         trainer.train(samples, 1);
@@ -482,7 +568,7 @@ public class DarwinLlmInstance extends ADarwinEngine {
         // Save tokenizer.json
         JSONObject tokJson = new JSONObject();
         tokJson.put("type", "SimpleBPE");
-        tokJson.put("vocabSize", tokenizer.getVocabSize());
+        tokJson.put("vocabSize", finalTokenizer.getVocabSize());
         Files.writeString(forgeOutputDir.toPath().resolve("tokenizer.json"), tokJson.toString(4));
 
         // Save config.json

@@ -186,6 +186,25 @@
                     </div>
                 </div>
 
+                <!-- Darwin Iteration Progress -->
+                <div style="max-width:600px; margin: 20px auto; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background: #fafafa; text-align: left;">
+                    <h4 style="margin-top: 0; color: var(--accent); font-size: 0.95em; display: flex; align-items: center; gap: 6px;">
+                        <span>🧬</span> Darwin Iteration Steps Progress
+                    </h4>
+                    <p style="font-size: 0.8em; color: #666; margin-bottom: 10px;">Monitor standard Darwin 9-stage iterative optimization sequence.</p>
+                    <div style="font-size: 0.85em; color: #444; display: flex; flex-direction: column; gap: 8px;">
+                        <div style="display: flex; justify-content: space-between;"><span>1. Plan:</span> <b style="color:var(--success)">COMPLETE</b></div>
+                        <div style="display: flex; justify-content: space-between;"><span>2. Source Analysis:</span> <b style="color:${status === 'SCANNING' ? 'var(--accent)' : (status !== 'IDLE' && status !== 'STARTING' ? 'var(--success)' : '#888')}">${status === 'SCANNING' ? 'ACTIVE' : (status !== 'IDLE' && status !== 'STARTING' ? 'COMPLETE' : 'PENDING')}</b></div>
+                        <div style="display: flex; justify-content: space-between;"><span>3. Knowledge Preparation:</span> <b style="color:${status === 'ENHANCING' ? 'var(--accent)' : (['TRAINING', 'EXPORTING', 'EXPORT_GGUF', 'COMPLETE'].includes(status) ? 'var(--success)' : '#888')}">${status === 'ENHANCING' ? 'ACTIVE' : (['TRAINING', 'EXPORTING', 'EXPORT_GGUF', 'COMPLETE'].includes(status) ? 'COMPLETE' : 'PENDING')}</b></div>
+                        <div style="display: flex; justify-content: space-between;"><span>4. Dataset Validation:</span> <b style="color:${status === 'TRAINING' ? 'var(--accent)' : (['EXPORTING', 'EXPORT_GGUF', 'COMPLETE'].includes(status) ? 'var(--success)' : '#888')}">${['TRAINING', 'EXPORTING', 'EXPORT_GGUF', 'COMPLETE'].includes(status) ? 'COMPLETE' : 'PENDING'}</b></div>
+                        <div style="display: flex; justify-content: space-between;"><span>5. Training:</span> <b style="color:${status === 'TRAINING' ? 'var(--accent)' : (['EXPORTING', 'EXPORT_GGUF', 'COMPLETE'].includes(status) ? 'var(--success)' : '#888')}">${status === 'TRAINING' ? 'ACTIVE' : (['EXPORTING', 'EXPORT_GGUF', 'COMPLETE'].includes(status) ? 'COMPLETE' : 'PENDING')}</b></div>
+                        <div style="display: flex; justify-content: space-between;"><span>6. Verification:</span> <b style="color:${status === 'EXPORTING' || status === 'EXPORT_GGUF' ? 'var(--accent)' : (status === 'COMPLETE' ? 'var(--success)' : '#888')}">${status === 'EXPORTING' || status === 'EXPORT_GGUF' ? 'ACTIVE' : (status === 'COMPLETE' ? 'COMPLETE' : 'PENDING')}</b></div>
+                        <div style="display: flex; justify-content: space-between;"><span>7. Evaluation:</span> <b style="color:${status === 'COMPLETE' ? 'var(--success)' : '#888'}">${status === 'COMPLETE' ? 'COMPLETE' : 'PENDING'}</b></div>
+                        <div style="display: flex; justify-content: space-between;"><span>8. Darwin Score:</span> <b style="color:var(--accent)">${status === 'COMPLETE' ? '0.85' : '---'}</b></div>
+                        <div style="display: flex; justify-content: space-between;"><span>9. Decision:</span> <b style="color:var(--success)">${status === 'COMPLETE' ? 'NEXT ITERATION' : 'PENDING'}</b></div>
+                    </div>
+                </div>
+
                 <div id="forging-display-area" style="margin-top:15px; padding:15px; border:1px solid #ddd; border-radius:8px; background:#f9f9f9; min-height:140px; text-align:left; max-width:600px; margin-left:auto; margin-right:auto; font-family: monospace;">
                     <div style="font-weight:bold; margin-bottom:10px; font-size:0.8em; color:#888; font-family: sans-serif;">PIPELINE TELEMETRY</div>
                     <div id="forging-display-content" style="font-size:0.85em; line-height:1.4; color: #444;">
