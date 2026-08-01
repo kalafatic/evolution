@@ -449,29 +449,68 @@ public class SelfDevBootstrapController {
             ensureSupervisorRunning();
         }
 
-        String result = switch (type.toUpperCase()) {
-            case "GIT", "GIT_EVO" -> checkGit();
-            case "GIT_SUPERVISOR" -> checkGitSupervisor();
-            case "MAVEN", "MAVEN_EVO" -> checkMaven();
-            case "MAVEN_SUPERVISOR" -> checkMavenSupervisor();
-            case "SUPERVISOR" -> checkSupervisor();
-            case "COPY_SUPERVISOR" -> copySupervisorSource();
-            case "BUILD_SUPERVISOR_LOCAL" -> buildSupervisorLocal();
-            case "LLM" -> checkLlm();
-            case "GENOME" -> checkGenome();
-            case "PERMISSIONS" -> checkPermissions();
-            case "COPY" -> copyCodebaseToSupervisorSource();
-            case "BUILD", "BUILD_EVO" -> runBuildAndCopy();
-            case "BUILD_SUPERVISOR" -> checkBuildSupervisor();
-            case "EXPORT", "EXPORT_EVO" -> checkExport();
-            case "EXPORT_SUPERVISOR" -> checkExportSupervisor();
-            case "START_EVO_SUPERVISOR" -> checkStartEvoSupervisor();
-            case "STOP_EVO_SUPERVISOR" -> checkStopEvoSupervisor();
-            default -> {
-                System.err.println("[SelfDevBootstrapController] [CHECK_UNKNOWN] Unknown check type requested: " + type);
-                yield "UNKNOWN";
-            }
+        AbstractBootstrapTask task = switch (type.toUpperCase()) {
+            case "GIT", "GIT_EVO" -> new AbstractBootstrapTask("Git Check", projectRoot, runDir) {
+                @Override protected String run() throws Exception { return checkGit(); }
+            };
+            case "GIT_SUPERVISOR" -> new AbstractBootstrapTask("Git Check (Supervisor)", projectRoot, runDir) {
+                @Override protected String run() throws Exception { return checkGitSupervisor(); }
+            };
+            case "MAVEN", "MAVEN_EVO" -> new AbstractBootstrapTask("Maven Check", projectRoot, runDir) {
+                @Override protected String run() throws Exception { return checkMaven(); }
+            };
+            case "MAVEN_SUPERVISOR" -> new AbstractBootstrapTask("Maven Check (Supervisor)", projectRoot, runDir) {
+                @Override protected String run() throws Exception { return checkMavenSupervisor(); }
+            };
+            case "SUPERVISOR" -> new AbstractBootstrapTask("Supervisor Check", projectRoot, runDir) {
+                @Override protected String run() throws Exception { return checkSupervisor(); }
+            };
+            case "COPY_SUPERVISOR" -> new AbstractBootstrapTask("Copy Supervisor Source", projectRoot, runDir) {
+                @Override protected String run() throws Exception { return copySupervisorSource(); }
+            };
+            case "BUILD_SUPERVISOR_LOCAL" -> new AbstractBootstrapTask("Build Supervisor Local", projectRoot, runDir) {
+                @Override protected String run() throws Exception { return buildSupervisorLocal(); }
+            };
+            case "LLM" -> new AbstractBootstrapTask("LLM Check", projectRoot, runDir) {
+                @Override protected String run() throws Exception { return checkLlm(); }
+            };
+            case "GENOME" -> new AbstractBootstrapTask("Genome Check", projectRoot, runDir) {
+                @Override protected String run() throws Exception { return checkGenome(); }
+            };
+            case "PERMISSIONS" -> new AbstractBootstrapTask("Permissions Check", projectRoot, runDir) {
+                @Override protected String run() throws Exception { return checkPermissions(); }
+            };
+            case "COPY" -> new AbstractBootstrapTask("Copy Source", projectRoot, runDir) {
+                @Override protected String run() throws Exception { return copyCodebaseToSupervisorSource(); }
+            };
+            case "BUILD", "BUILD_EVO" -> new AbstractBootstrapTask("Build Project (Evo)", projectRoot, runDir) {
+                @Override protected String run() throws Exception { return runBuildAndCopy(); }
+            };
+            case "BUILD_SUPERVISOR" -> new AbstractBootstrapTask("Build Project (Supervisor)", projectRoot, runDir) {
+                @Override protected String run() throws Exception { return checkBuildSupervisor(); }
+            };
+            case "EXPORT", "EXPORT_EVO" -> new AbstractBootstrapTask("Export Product (Evo)", projectRoot, runDir) {
+                @Override protected String run() throws Exception { return checkExport(); }
+            };
+            case "EXPORT_SUPERVISOR" -> new AbstractBootstrapTask("Export Product (Supervisor)", projectRoot, runDir) {
+                @Override protected String run() throws Exception { return checkExportSupervisor(); }
+            };
+            case "START_EVO_SUPERVISOR" -> new AbstractBootstrapTask("Start Evo Product (Supervisor)", projectRoot, runDir) {
+                @Override protected String run() throws Exception { return checkStartEvoSupervisor(); }
+            };
+            case "STOP_EVO_SUPERVISOR" -> new AbstractBootstrapTask("Stop Evo Product (Supervisor)", projectRoot, runDir) {
+                @Override protected String run() throws Exception { return checkStopEvoSupervisor(); }
+            };
+            default -> null;
         };
+
+        String result;
+        if (task != null) {
+            result = task.execute();
+        } else {
+            System.err.println("[SelfDevBootstrapController] [CHECK_UNKNOWN] Unknown check type requested: " + type);
+            result = "UNKNOWN";
+        }
 
         System.out.println(dashedBorder);
         System.out.println("[PROCESS_VISUAL_CHECK] PRE-FLIGHT CHECK TASK ENDED: [" + type.toUpperCase() + "]");
