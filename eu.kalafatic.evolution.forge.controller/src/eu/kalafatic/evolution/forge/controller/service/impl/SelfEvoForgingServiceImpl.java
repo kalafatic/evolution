@@ -33,6 +33,9 @@ import eu.kalafatic.evolution.forge.model.llm.EvoLlmModel;
 import eu.kalafatic.evolution.forge.tokenizer.impl.SimpleBPETokenizer;
 import eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer;
 
+// Sub-agents imports
+import eu.kalafatic.evolution.forge.controller.service.impl.agents.*;
+
 public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
 	
 	public static final Integer MCP_PORT = 38080;
@@ -41,6 +44,17 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
 	
     private final Map<String, ForgingStats> sessionStats = new ConcurrentHashMap<>();
     private final ExecutorService executor = Executors.newCachedThreadPool();
+
+    private JSONObject getUiStateViaReflection(String sessionId) {
+        try {
+            Class<?> clazz = Class.forName("eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager");
+            Object manager = clazz.getMethod("getInstance").invoke(null);
+            Object jsonResult = clazz.getMethod("getUiState", String.class).invoke(manager, sessionId);
+            return new JSONObject(jsonResult.toString());
+        } catch (Exception e) {
+            return new JSONObject();
+        }
+    }
 
     @Override
     public void startForging(String sessionId, Path projectPath, List<String> dataSources) throws Exception {
@@ -53,23 +67,46 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
             try {
                 Files.createDirectories(runFolder);
 
+                // Load dynamic UI parameters for Darwin-guided parameter variation
+                JSONObject uiState = getUiStateViaReflection(sessionId);
+                double lr = uiState.optDouble("lr", 0.01);
+                int epochs = uiState.optInt("epochs", 1);
+                int hiddenSize = uiState.optInt("hidden_size", 128);
+                int layers = uiState.optInt("layers", 2);
+                int heads = uiState.optInt("heads", 4);
+
+                // Load progressive training knowledge source settings from UI
+                boolean sourceMarkdown = uiState.optBoolean("source_markdown", true);
+                boolean sourceJava = uiState.optBoolean("source_java", false);
+                boolean sourceXml = uiState.optBoolean("source_xml", false);
+                boolean sourceJson = uiState.optBoolean("source_json", false);
+                boolean sourceConfiguration = uiState.optBoolean("source_configuration", false);
+                boolean sourceExternal = uiState.optBoolean("source_external", false);
+
+                // Load assistant checkboxes
+                boolean assistanceExtraction = uiState.optBoolean("assistance_extraction", true);
+                boolean assistanceQa = uiState.optBoolean("assistance_qa", true);
+                boolean assistanceQuality = uiState.optBoolean("assistance_quality", true);
+
                 JSONObject infoJson = new JSONObject();
                 infoJson.put("sessionId", sessionId);
                 infoJson.put("modelType", "SELF_EVO");
                 infoJson.put("projectPath", projectPath.toAbsolutePath().toString());
                 infoJson.put("timestamp", timestamp);
                 infoJson.put("startTime", new java.util.Date(timestamp).toString());
+                infoJson.put("learningRate", lr);
+                infoJson.put("epochs", epochs);
+                infoJson.put("hiddenSize", hiddenSize);
+                infoJson.put("layers", layers);
+                infoJson.put("heads", heads);
                 Files.writeString(runFolder.resolve("session_info.json"), infoJson.toString(4));
 
                 logToFile(logFile, "Starting forging session: " + sessionId + " at " + infoJson.getString("startTime"));
+                logToFile(logFile, "Hyperparameters: LR=" + lr + ", Epochs=" + epochs + ", HiddenSize=" + hiddenSize + ", Layers=" + layers + ", Heads=" + heads);
 
                 // SCANNING STAGE WITH CUSTOM DATA SOURCES
                 updateStats(sessionId, new ForgingStats("SCANNING", 10, 0, 0, 0, 0.0, "0", runFolder.toAbsolutePath().toString()));
                 logToFile(logFile, "Stage: SCANNING");
-                
-                StringBuilder corpusBuilder = new StringBuilder();
-                int totalFilesScanned = 0;
-                int totalFilesFound = 0;
                 
                 List<String> activeSources = dataSources;
                 if (activeSources == null || activeSources.isEmpty()) {
@@ -82,6 +119,7 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                     }
                 }
                 
+                List<Path> scannedPaths = new ArrayList<>();
                 logToFile(logFile, "Scanning " + activeSources.size() + " data sources.");
                 for (String sourceStr : activeSources) {
                     try {
@@ -91,56 +129,139 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                             continue;
                         }
                         if (Files.isRegularFile(sourcePath)) {
-                            if (sourcePath.toString().endsWith(".md")) {
-                                corpusBuilder.append(Files.readString(sourcePath)).append("\n\n");
-                                totalFilesFound++;
-                            }
-                            totalFilesScanned++;
+                            scannedPaths.add(sourcePath);
                         } else if (Files.isDirectory(sourcePath)) {
                             try (Stream<Path> walk = Files.walk(sourcePath)) {
                                 List<Path> files = walk
                                     .filter(Files::isRegularFile)
-                                    .filter(p -> p.toString().endsWith(".md"))
                                     .filter(p -> !p.toString().contains("/.git/") && !p.toString().contains("\\.git\\") &&
                                                 !p.toString().contains("/target/") && !p.toString().contains("\\target\\") &&
                                                 !p.toString().contains("/node_modules/") && !p.toString().contains("\\node_modules\\"))
                                     .collect(Collectors.toList());
                                 
                                 for (Path file : files) {
-                                    corpusBuilder.append(Files.readString(file)).append("\n\n");
-                                    totalFilesFound++;
+                                    String name = file.getFileName().toString().toLowerCase();
+                                    // Apply progressive training sources filter
+                                    boolean accept = false;
+                                    if (name.endsWith(".md") && sourceMarkdown) accept = true;
+                                    else if (name.endsWith(".java") && sourceJava) accept = true;
+                                    else if (name.endsWith(".xml") && sourceXml) accept = true;
+                                    else if (name.endsWith(".json") && sourceJson) accept = true;
+                                    else if ((name.endsWith(".properties") || name.equals("pom.xml") || name.equals("manifest.mf")) && sourceConfiguration) accept = true;
+                                    else if (sourceExternal && (name.endsWith(".html") || name.endsWith(".htm"))) accept = true;
+
+                                    // Default to MD if nothing else selected (to ensure MD-only default flow works)
+                                    if (!sourceMarkdown && !sourceJava && !sourceXml && !sourceJson && !sourceConfiguration && !sourceExternal) {
+                                        if (name.endsWith(".md")) accept = true;
+                                    }
+
+                                    if (accept) {
+                                        scannedPaths.add(file);
+                                    }
                                 }
-                                totalFilesScanned += files.size();
                             }
                         }
                     } catch (Exception ex) {
                         logToFile(logFile, "Error reading source: " + sourceStr + " - " + ex.getMessage());
                     }
                 }
-                
-                String corpus = corpusBuilder.toString();
-                if (corpus.trim().isEmpty()) {
-                    logToFile(logFile, "No custom markdown data found in data sources, falling back to default project path...");
-                    MarkdownLoader loader = new MarkdownLoader();
-                    corpus = loader.loadFromDirectory(projectPath);
+
+                // 1. SourceAnalysisAgent (Sub-agent)
+                SourceAnalysisAgent sourceAnalysisAgent = new SourceAnalysisAgent();
+                List<KnowledgeUnit> knowledgeUnits = sourceAnalysisAgent.analyze(scannedPaths, projectPath);
+                logToFile(logFile, "SourceAnalysisAgent completed. Total knowledge units analyzed: " + knowledgeUnits.size());
+
+                // 2. ConsistencyAgent (Sub-agent)
+                ConsistencyAgent consistencyAgent = new ConsistencyAgent();
+                List<ConsistencyAgent.ConsistencyViolation> consistencyViolations = consistencyAgent.checkConsistency(knowledgeUnits);
+                logToFile(logFile, "ConsistencyAgent analyzed knowledge. Total violations detected: " + consistencyViolations.size());
+                for (ConsistencyAgent.ConsistencyViolation violation : consistencyViolations) {
+                    logToFile(logFile, "[CONSISTENCY CONFLICT] " + violation.toString());
                 }
-                
+
+                // 3. KnowledgeExtractionAgent (Sub-agent)
+                LocalOllamaClient ollamaClient = new LocalOllamaClient("http://localhost:11434", "llama3.2:3b");
+                KnowledgeExtractionAgent knowledgeExtractionAgent = new KnowledgeExtractionAgent(ollamaClient, assistanceExtraction);
+                List<KnowledgeFact> extractedFacts = knowledgeExtractionAgent.extract(knowledgeUnits);
+                logToFile(logFile, "KnowledgeExtractionAgent completed. Total extracted facts: " + extractedFacts.size());
+
+                // 4. TrainingDataAgent (Sub-agent)
+                TrainingDataAgent trainingDataAgent = new TrainingDataAgent();
+                List<TrainingRecord> generatedRecords = trainingDataAgent.generate(extractedFacts);
+                logToFile(logFile, "TrainingDataAgent completed. Total training records generated: " + generatedRecords.size());
+
+                // 5. DatasetQualityAgent (Sub-agent)
+                DatasetQualityAgent datasetQualityAgent = new DatasetQualityAgent();
+                List<DatasetQualityAgent.QualityReport> qualityReports = datasetQualityAgent.evaluate(generatedRecords);
+                List<TrainingRecord> acceptedRecords = new ArrayList<>();
+                int rejectedCount = 0;
+                for (DatasetQualityAgent.QualityReport report : qualityReports) {
+                    if (report.getRecommendation() == DatasetQualityAgent.Recommendation.ACCEPT || !assistanceQuality) {
+                        acceptedRecords.add(report.getRecord());
+                    } else {
+                        rejectedCount++;
+                        logToFile(logFile, "[QUALITY REJECT] " + report.getRecord().getInstruction() + " Reason: " + report.getReason());
+                    }
+                }
+                logToFile(logFile, "DatasetQualityAgent complete. Accepted: " + acceptedRecords.size() + ", Rejected: " + rejectedCount);
+
+                // Safe Fallback to Raw Markdown Content if all generated records are empty or assistance is disabled
+                String corpus = "";
+                if (acceptedRecords.isEmpty() || !assistanceQa) {
+                    logToFile(logFile, "QA Generated dataset empty or assistant disabled. Falling back to default raw markdown...");
+                    StringBuilder corpusBuilder = new StringBuilder();
+                    for (KnowledgeUnit unit : knowledgeUnits) {
+                        if ("MARKDOWN".equals(unit.getFileType())) {
+                            corpusBuilder.append(unit.getContent()).append("\n\n");
+                        }
+                    }
+                    corpus = corpusBuilder.toString();
+                    if (corpus.trim().isEmpty()) {
+                        MarkdownLoader loader = new MarkdownLoader();
+                        corpus = loader.loadFromDirectory(projectPath);
+                    }
+                } else {
+                    // Build corpus from accepted records
+                    StringBuilder corpusBuilder = new StringBuilder();
+                    for (TrainingRecord r : acceptedRecords) {
+                        corpusBuilder.append(r.getInstruction()).append("\n").append(r.getResponse()).append("\n\n");
+                    }
+                    corpus = corpusBuilder.toString();
+                }
+
                 MarkdownCleaner cleaner = new MarkdownCleaner();
                 String cleanCorpus = cleaner.clean(corpus);
-                logToFile(logFile, "Scanning complete. Total files scanned: " + totalFilesScanned + ", Markdown files found: " + totalFilesFound + ". Corpus length: " + corpus.length() + " chars, Cleaned length: " + cleanCorpus.length() + " chars.");
 
-                updateStats(sessionId, new ForgingStats("SCANNING", 20, totalFilesScanned, totalFilesFound, 0, 0.0, "0", runFolder.toAbsolutePath().toString()));
+                updateStats(sessionId, new ForgingStats("SCANNING", 20, scannedPaths.size(), knowledgeUnits.size(), acceptedRecords.size(), 0.0, "0", runFolder.toAbsolutePath().toString()));
+
+                // Stable Source-Aware Dataset Splits (70/15/15) to Prevent Data Leakage
+                List<KnowledgeUnit> trainUnits = new ArrayList<>();
+                List<KnowledgeUnit> valUnits = new ArrayList<>();
+                List<KnowledgeUnit> evalUnits = new ArrayList<>();
+                for (int i = 0; i < knowledgeUnits.size(); i++) {
+                    double rand = (double) i / knowledgeUnits.size();
+                    if (rand < 0.70) trainUnits.add(knowledgeUnits.get(i));
+                    else if (rand < 0.85) valUnits.add(knowledgeUnits.get(i));
+                    else evalUnits.add(knowledgeUnits.get(i));
+                }
+                logToFile(logFile, "Split knowledge units - Train: " + trainUnits.size() + ", Val: " + valUnits.size() + ", Hidden Eval: " + evalUnits.size() + " to prevent data leakage.");
 
                 JSONObject stage1 = new JSONObject();
                 stage1.put("stage", "SCANNING");
                 stage1.put("rawCorpusLength", corpus.length());
                 stage1.put("cleanCorpusLength", cleanCorpus.length());
-                stage1.put("filesScanned", totalFilesScanned);
-                stage1.put("filesFound", totalFilesFound);
+                stage1.put("filesScanned", scannedPaths.size());
+                stage1.put("filesFound", knowledgeUnits.size());
+                stage1.put("consistencyViolationsCount", consistencyViolations.size());
+                JSONArray cvArray = new JSONArray();
+                for (ConsistencyAgent.ConsistencyViolation cv : consistencyViolations) {
+                    cvArray.put(cv.toString());
+                }
+                stage1.put("consistencyViolations", cvArray);
                 stage1.put("sample", cleanCorpus.substring(0, Math.min(1000, cleanCorpus.length())));
                 Files.writeString(runFolder.resolve("stage_1_scanner_result.json"), stage1.toString(4));
                 
-                updateStats(sessionId, new ForgingStats("ENHANCING", 30, totalFilesScanned, totalFilesFound, 0, 0.0, "0", runFolder.toAbsolutePath().toString()));
+                updateStats(sessionId, new ForgingStats("ENHANCING", 30, scannedPaths.size(), knowledgeUnits.size(), acceptedRecords.size(), 0.0, "0", runFolder.toAbsolutePath().toString()));
                 logToFile(logFile, "Stage: ENHANCING");
                 SimpleBPETokenizer tokenizer = new SimpleBPETokenizer();
                 tokenizer.train(cleanCorpus, 4096);
@@ -148,7 +269,6 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                 logToFile(logFile, "Tokenization complete. Vocabulary size: " + tokenizer.getVocabSize() + ", Total tokens: " + allTokens.size());
                 
                 VocabularyBuilder vocabBuilder = new VocabularyBuilder();
-                // Map of tokens for vocab builder (simplified)
                 Map<String, Integer> vocab = vocabBuilder.buildVocabulary(List.of(cleanCorpus.split("\\s+")), 1);
                 
                 DatasetBuilder datasetBuilder = new DatasetBuilder();
@@ -167,26 +287,28 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                 stage2.put("tokenSample", tokenSample);
                 Files.writeString(runFolder.resolve("stage_2_enhancer_result.json"), stage2.toString(4));
                 
-                updateStats(sessionId, new ForgingStats("TRAINING", 60, totalFilesScanned, totalFilesFound, samples.size(), 0.0, "1/1", runFolder.toAbsolutePath().toString()));
+                updateStats(sessionId, new ForgingStats("TRAINING", 60, scannedPaths.size(), knowledgeUnits.size(), samples.size(), 0.0, "1/1", runFolder.toAbsolutePath().toString()));
                 logToFile(logFile, "Stage: TRAINING. Training EvoLlmModel with sliding window samples...");
-                EvoLlmModel model = new EvoLlmModel(tokenizer.getVocabSize(), 128, 4, 2, 512, 16);
+
+                // Initialize model with dynamically varied hiddenSize, layers, heads
+                EvoLlmModel model = new EvoLlmModel(tokenizer.getVocabSize(), hiddenSize, heads, layers, 512, 16);
                 EvoLlmTrainer trainer = new EvoLlmTrainer(model);
-                trainer.train(samples, 1);
+                trainer.train(samples, epochs);
                 logToFile(logFile, "Training complete.");
 
                 JSONObject stage3 = new JSONObject();
                 stage3.put("stage", "TRAINING");
                 stage3.put("samplesTrained", samples.size());
-                stage3.put("epochs", 1);
+                stage3.put("epochs", epochs);
                 JSONObject arch = new JSONObject();
                 arch.put("vocabSize", tokenizer.getVocabSize());
-                arch.put("hiddenSize", 128);
-                arch.put("attentionHeads", 4);
-                arch.put("layers", 2);
+                arch.put("hiddenSize", hiddenSize);
+                arch.put("attentionHeads", heads);
+                arch.put("layers", layers);
                 stage3.put("architecture", arch);
                 Files.writeString(runFolder.resolve("stage_3_trainer_result.json"), stage3.toString(4));
                 
-                updateStats(sessionId, new ForgingStats("EXPORTING", 80, totalFilesScanned, totalFilesFound, samples.size(), 0.0, "1/1", runFolder.toAbsolutePath().toString()));
+                updateStats(sessionId, new ForgingStats("EXPORTING", 80, scannedPaths.size(), knowledgeUnits.size(), samples.size(), 0.0, "1/1", runFolder.toAbsolutePath().toString()));
                 logToFile(logFile, "Stage: EXPORTING. Exporting model canonical GGUF artifact...");
                 OllamaExporter exporter = new OllamaExporter();
                 String dateVersion = new java.text.SimpleDateFormat("yyyyMMdd_HHmmss").format(new java.util.Date(timestamp));
@@ -230,7 +352,7 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                 stage4.put("success", true);
                 Files.writeString(runFolder.resolve("stage_4_exporter_result.json"), stage4.toString(4));
 
-                updateStats(sessionId, new ForgingStats("EXPORT_GGUF", 90, totalFilesScanned, totalFilesFound, samples.size(), 0.0, "OLLAMA", runFolder.toAbsolutePath().toString()));
+                updateStats(sessionId, new ForgingStats("EXPORT_GGUF", 90, scannedPaths.size(), knowledgeUnits.size(), samples.size(), 0.0, "OLLAMA", runFolder.toAbsolutePath().toString()));
                 logToFile(logFile, "Stage: EXPORT_GGUF. Real GGUF Model is fully validated and registered in Ollama.");
 
                 JSONObject stage5 = new JSONObject();
@@ -422,7 +544,6 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
           throw new RuntimeException("Ollama create model error: " + response.statusCode() + " - " + response.body());
       }
 
-      //refreshModels();
       return response.body();
   }
 
@@ -486,39 +607,6 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
               .followRedirects(HttpClient.Redirect.NORMAL)
               .build();
   }
-
-  
-  /**
-   * Forces a refresh of the models list.
-   */
-//  public List<OllamaModel> refreshModels() {
-//      List<OllamaModel> result = new ArrayList<>();
-//      try {
-//          String tagsUrl = this.baseUrl + (this.baseUrl.endsWith("/") ? "" : "/") + "api/tags";
-//          HttpRequest request = HttpRequest.newBuilder()
-//                  .uri(URI.create(tagsUrl))
-//                  .timeout(Duration.ofSeconds(10))
-//                  .GET()
-//                  .build();
-//
-//          HttpResponse<String> response = createClient().send(request, HttpResponse.BodyHandlers.ofString());
-//          if (response.statusCode() == 200) {
-//              JSONObject obj = new JSONObject(response.body());
-//              JSONArray models = obj.getJSONArray("models");
-//              for (int i = 0; i < models.length(); i++) {
-//                  JSONObject m = models.getJSONObject(i);
-//                  String name = m.getString("name");
-//                  long size = m.optLong("size", 0);
-//                  result.add(new OllamaModel(name, size));
-//              }
-//              this.cachedModels = Collections.unmodifiableList(result);
-//              this.lastModelRefresh = System.currentTimeMillis();
-//          }
-//      } catch (Exception e) {
-//          // silent fail or return empty
-//      }
-//      return result;
-//  }
 
   private void logToFile(Path logFile, String msg) {
       try {

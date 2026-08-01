@@ -30,7 +30,8 @@ Export-Package: eu.kalafatic.evolution.forge.controller.api,
  eu.kalafatic.evolution.forge.controller.impl,
  eu.kalafatic.evolution.forge.controller.repository,
  eu.kalafatic.evolution.forge.controller.service,
- eu.kalafatic.evolution.forge.controller.service.impl
+ eu.kalafatic.evolution.forge.controller.service.impl,
+ eu.kalafatic.evolution.forge.controller.service.impl.agents
 Bundle-ClassPath: .,
  lib/json-20140107.jar,
  lib/jackson-annotations-2.17.0.jar,

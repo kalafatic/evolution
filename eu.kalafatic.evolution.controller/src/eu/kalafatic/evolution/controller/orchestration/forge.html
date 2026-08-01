@@ -665,6 +665,31 @@
                 <button class="btn btn-sm btn-primary" style="width: 100%; margin-top: 10px;" onclick="confirmProperties()" id="confirm-props-btn">Confirm Properties</button>
             </div>
 
+            <!-- TRAINING SOURCES & LLM ASSISTANCE PANEL -->
+            <div class="panel" id="sources-assistance-panel">
+                <h3>Training Sources & Assistance</h3>
+                <div class="control-group">
+                    <label><b>Training Knowledge Sources</b></label>
+                    <div style="display: flex; flex-direction: column; gap: 4px; font-size: 0.85em; margin-top: 4px;">
+                        <label><input type="checkbox" id="source-markdown" checked onchange="persistUiState('source_markdown', this.checked)"> Markdown Documentation</label>
+                        <label><input type="checkbox" id="source-java" onchange="persistUiState('source_java', this.checked)"> Java Source Code</label>
+                        <label><input type="checkbox" id="source-xml" onchange="persistUiState('source_xml', this.checked)"> XML Specification</label>
+                        <label><input type="checkbox" id="source-json" onchange="persistUiState('source_json', this.checked)"> JSON Specification</label>
+                        <label><input type="checkbox" id="source-configuration" onchange="persistUiState('source_configuration', this.checked)"> Properties / OSGi Configuration</label>
+                        <label><input type="checkbox" id="source-external" onchange="persistUiState('source_external', this.checked)"> Curated External Web Sources</label>
+                    </div>
+                </div>
+                <hr style="border: 0; border-top: 1px solid var(--border); margin: 10px 0;">
+                <div class="control-group">
+                    <label><b>Local LLM Data Assistance</b></label>
+                    <div style="display: flex; flex-direction: column; gap: 4px; font-size: 0.85em; margin-top: 4px;">
+                        <label><input type="checkbox" id="assistance-extraction" checked onchange="persistUiState('assistance_extraction', this.checked)"> Knowledge Fact Extraction</label>
+                        <label><input type="checkbox" id="assistance-qa" checked onchange="persistUiState('assistance_qa', this.checked)"> Verified QA Pair Generation</label>
+                        <label><input type="checkbox" id="assistance-quality" checked onchange="persistUiState('assistance_quality', this.checked)"> Dataset Quality Review Agent</label>
+                    </div>
+                </div>
+            </div>
+
             <!-- DATASET PANEL -->
             <div class="panel">
                 <h3>Dataset</h3>
@@ -1102,6 +1127,19 @@
                 document.getElementById('batch').value = uiState.batch || 32;
                 document.getElementById('optimizer').value = uiState.optimizer || 'adam';
                 document.getElementById('epochs').value = uiState.epochs || 10;
+
+                if (document.getElementById('source-markdown')) {
+                    document.getElementById('source-markdown').checked = uiState.source_markdown !== false;
+                    document.getElementById('source-java').checked = !!uiState.source_java;
+                    document.getElementById('source-xml').checked = !!uiState.source_xml;
+                    document.getElementById('source-json').checked = !!uiState.source_json;
+                    document.getElementById('source-configuration').checked = !!uiState.source_configuration;
+                    document.getElementById('source-external').checked = !!uiState.source_external;
+
+                    document.getElementById('assistance-extraction').checked = uiState.assistance_extraction !== false;
+                    document.getElementById('assistance-qa').checked = uiState.assistance_qa !== false;
+                    document.getElementById('assistance-quality').checked = uiState.assistance_quality !== false;
+                }
 
                 const dynamic = document.getElementById('dynamic-properties');
                 dynamic.innerHTML = '';
