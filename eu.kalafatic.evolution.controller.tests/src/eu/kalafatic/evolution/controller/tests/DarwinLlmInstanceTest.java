@@ -12,9 +12,9 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import eu.kalafatic.evolution.controller.orchestration.selfdev.DarwinLlmInstance;
-import eu.kalafatic.evolution.controller.orchestration.selfdev.DarwinLlmInstance.LlmConfig;
-import eu.kalafatic.evolution.controller.orchestration.selfdev.DarwinLlmInstance.CandidateResult;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.LLMDarwinEngine;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.LLMDarwinEngine.LlmConfig;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.LLMDarwinEngine.CandidateResult;
 
 import eu.kalafatic.evolution.forge.data.impl.DatasetBuilder;
 import eu.kalafatic.evolution.forge.data.impl.MarkdownCleaner;

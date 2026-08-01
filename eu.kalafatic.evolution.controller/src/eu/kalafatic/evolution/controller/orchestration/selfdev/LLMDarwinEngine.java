@@ -45,7 +45,7 @@ import eu.kalafatic.evolution.forge.agent.export.OllamaExporter;
 // Sub-agents imports
 import eu.kalafatic.evolution.forge.controller.service.impl.agents.*;
 
-public class DarwinLlmInstance extends ADarwinEngine {
+public class LLMDarwinEngine extends ADarwinEngine {
 
     public static class LlmConfig {
         public int vocabSize;
@@ -97,7 +97,7 @@ public class DarwinLlmInstance extends ADarwinEngine {
         }
     }
 
-    public DarwinLlmInstance(TaskContext context, IterationMemoryService memoryService,
+    public LLMDarwinEngine(TaskContext context, IterationMemoryService memoryService,
                              SystemStateSignalProvider stateProvider) {
         super(context, memoryService, stateProvider, PlatformType.FORGE);
     }

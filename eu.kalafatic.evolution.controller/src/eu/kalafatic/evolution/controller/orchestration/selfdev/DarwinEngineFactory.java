@@ -16,7 +16,7 @@ public class DarwinEngineFactory {
         
         switch (platformType) {
             case FORGE:
-                return new DarwinLlmInstance(context, memoryService, stateProvider);
+                return new LLMDarwinEngine(context, memoryService, stateProvider);
             case SIMPLE_CHAT:
                 return new ChatEngine(context, memoryService, stateProvider);
             case ASSISTED_CODING: //return new DarwinEngine(context, memoryService, stateProvider);
