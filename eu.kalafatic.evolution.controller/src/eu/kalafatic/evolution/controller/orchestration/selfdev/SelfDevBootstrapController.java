@@ -651,7 +651,8 @@ public class SelfDevBootstrapController {
                 String name = file.getFileName().toString();
                 if (name.equals(".git") || name.equals("target") || name.equals("self-dev-run") ||
                     name.equals(".settings") || name.equals(".mvn") || name.equals(".metadata") ||
-                    name.equals("bin") || name.equals("iterations") || name.equals("orchestrator")) {
+                    name.equals("bin") || name.equals("iterations") || name.equals("orchestrator") ||
+                    name.equals("dependency-reduced-pom.xml")) {
                     return java.nio.file.FileVisitResult.CONTINUE;
                 }
                 java.nio.file.Path targetFile = target.resolve(source.relativize(file));
@@ -1415,7 +1416,8 @@ public class SelfDevBootstrapController {
                     String name = file.getFileName().toString();
                     if (name.equals(".git") || name.equals("target") || name.equals("self-dev-run") ||
                         name.equals(".settings") || name.equals(".mvn") || name.equals(".metadata") ||
-                        name.equals("bin") || name.equals("iterations") || name.equals("orchestrator")) {
+                        name.equals("bin") || name.equals("iterations") || name.equals("orchestrator") ||
+                        name.equals("dependency-reduced-pom.xml")) {
                         return java.nio.file.FileVisitResult.CONTINUE;
                     }
                     java.nio.file.Path targetFile = targetPath.resolve(sourcePath.relativize(file));
