@@ -124,7 +124,7 @@ public class SelfDevBootstrapController {
                 URL url = new URL("http://" + host + ":8089/ping");
                 System.out.println("[SelfDevBootstrapController] Pinging supervisor at: " + url);
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                conn.setConnectTimeout(500);
+                conn.setConnectTimeout(3000);
                 int code = conn.getResponseCode();
                 System.out.println("[SelfDevBootstrapController] Ping response code: " + code);
                 if (code == 200) {
@@ -291,7 +291,7 @@ public class SelfDevBootstrapController {
         String dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("ddMMyy"));
         File customBinDir = new File(new File(System.getProperty("user.home"), "projects/evo/supervisor"), dateStr + "/bin");
         if (customBinDir.exists()) {
-            File[] customJars = customBinDir.listFiles((dir, name) -> name.endsWith("-shaded.jar") || name.endsWith(".jar"));
+            File[] customJars = customBinDir.listFiles((dir, name) -> (name.endsWith("-shaded.jar") || name.endsWith(".jar")) && !name.startsWith("original-"));
             if (customJars != null && customJars.length > 0) {
                 File runnableJar = customJars[0];
                 for (File jar : customJars) {
@@ -703,7 +703,7 @@ public class SelfDevBootstrapController {
             long duration = System.currentTimeMillis() - startTime;
             if (exitCode == 0) {
                 File targetDir = new File(srcDir, "target");
-                File[] jars = targetDir.listFiles((dir, name) -> name.endsWith(".jar"));
+                File[] jars = targetDir.listFiles((dir, name) -> name.endsWith(".jar") && !name.startsWith("original-"));
                 if (jars != null) {
                     for (File jar : jars) {
                         Files.copy(jar.toPath(), new File(binDir, jar.getName()).toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
