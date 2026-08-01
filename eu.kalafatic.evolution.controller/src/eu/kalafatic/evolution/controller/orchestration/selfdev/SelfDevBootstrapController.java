@@ -664,6 +664,16 @@ public class SelfDevBootstrapController {
     private String buildSupervisorLocal() {
         long startTime = System.currentTimeMillis();
         System.out.println("[SelfDevBootstrapController] [BUILD_SUPERVISOR_LOCAL] Starting Build Supervisor...");
+
+        if (supervisorProcess != null) {
+            System.out.println("[SelfDevBootstrapController] [BUILD_SUPERVISOR_LOCAL] Forcibly destroying running supervisor process to unlock file lock...");
+            supervisorProcess.destroyForcibly();
+            try {
+                supervisorProcess.waitFor(2, TimeUnit.SECONDS);
+            } catch (InterruptedException ignored) {}
+            supervisorProcess = null;
+        }
+
         String dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("ddMMyy"));
         File srcDir = new File(new File(System.getProperty("user.home"), "projects/evo/supervisor"), dateStr + "/src");
         File binDir = new File(new File(System.getProperty("user.home"), "projects/evo/supervisor"), dateStr + "/bin");
@@ -825,17 +835,6 @@ public class SelfDevBootstrapController {
 
     private String checkSupervisor() {
         System.out.println("[SelfDevBootstrapController] [CHECK_SUPERVISOR] Checking external supervisor...");
-        File supervisorDir = findSupervisorDir();
-        if (supervisorDir == null || !supervisorDir.exists()) {
-            System.err.println("[SelfDevBootstrapController] [CHECK_SUPERVISOR_FAIL] Supervisor directory not found.");
-            return "ERROR: Supervisor directory not found";
-        }
-        System.out.println("[SelfDevBootstrapController] [CHECK_SUPERVISOR] Copying/compiling supervisor module...");
-        String compileRes = compileSupervisorModule(supervisorDir);
-        if (compileRes.startsWith("ERROR")) {
-            System.err.println("[SelfDevBootstrapController] [CHECK_SUPERVISOR_FAIL] Supervisor compile failed: " + compileRes);
-            return compileRes;
-        }
         System.out.println("[SelfDevBootstrapController] [CHECK_SUPERVISOR] Running supervisor...");
         ensureSupervisorRunning();
         if (isSupervisorAlive()) {
