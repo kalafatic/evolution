@@ -32,10 +32,12 @@ public class SupervisorMain extends NanoHTTPD {
 
         SupervisorMain server = new SupervisorMain(8089);
         try {
+            System.out.println("[HTTP] Attempting to start NanoHTTPD on port 8089...");
             server.start(NanoHTTPD.SOCKET_READ_TIMEOUT, false);
             System.out.println("[HTTP] Server started on port 8089");
-        } catch (Exception e) {
-            System.err.println("[HTTP] Failed to start server: " + e.getMessage());
+        } catch (Throwable t) {
+            System.err.println("[HTTP] Failed to start server: " + t.getMessage());
+            t.printStackTrace();
         }
 
         SelfDevSupervisor supervisor = new SelfDevSupervisor(baseDir);
