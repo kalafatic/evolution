@@ -45,6 +45,10 @@ public class OllamaExporter {
     }
 
     public void export(String modelName, Path outputPath, EvoLlmModel model) throws IOException {
+        export(modelName, outputPath, model, null);
+    }
+
+    public void export(String modelName, Path outputPath, EvoLlmModel model, java.util.Map<Integer, String> customVocab) throws IOException {
         System.out.println("[Export] Starting genuine EVO model export to: " + outputPath.toAbsolutePath());
 
         // 1. Enforce strict vocabulary and model shape invariants (Section 6)
@@ -240,10 +244,14 @@ public class OllamaExporter {
         float[] scores = new float[model.getVocabSize()];
         int[] tokenTypes = new int[model.getVocabSize()];
         for (int i = 0; i < model.getVocabSize(); i++) {
-            if (i == 0) tokens.add("<unk>");
-            else if (i == 1) tokens.add("<s>");
-            else if (i == 2) tokens.add("</s>");
-            else tokens.add("token_" + i);
+            if (customVocab != null && customVocab.containsKey(i)) {
+                tokens.add(customVocab.get(i));
+            } else {
+                if (i == 0) tokens.add("<unk>");
+                else if (i == 1) tokens.add("<s>");
+                else if (i == 2) tokens.add("</s>");
+                else tokens.add("token_" + i);
+            }
             scores[i] = 0.0f;
             tokenTypes[i] = (i < 3) ? 3 : 1; // Control token vs Normal token
         }
