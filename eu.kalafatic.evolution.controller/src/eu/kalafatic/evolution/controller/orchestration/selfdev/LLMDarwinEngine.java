@@ -561,7 +561,6 @@ public class LLMDarwinEngine extends ADarwinEngine {
                 long paramCount = 0;
                 double nativeFitness = 30.0;
                 double ollamaReferenceScore = 0.0;
-                double combinedFitness = 0.0;
 
                 // Path A: EVERY candidate is trained and evaluated using its own native EvoLlmModel.
                 boolean nativeSuccess = false;
@@ -590,7 +589,7 @@ public class LLMDarwinEngine extends ADarwinEngine {
                     String responseText = queryOllama(ollamaUrl, baseModel, validationPrompt, config);
                     ollamaSuccess = true;
 
-                    // Calculate reference score based on response quality parameters
+                    // Calculate reference score purely for diagnostic logging and metadata reports
                     double keywordMatchCount = 0;
                     String[] keywords = {"evolution", "personal", "economical", "political", "orchestrator", "darwin", "genome", "model", "forge", "java", "task"};
                     String lowerResponse = responseText.toLowerCase();
@@ -618,19 +617,20 @@ public class LLMDarwinEngine extends ADarwinEngine {
                     context.log("[FORGE] Optional Ollama reference query skipped: " + ex.getMessage());
                 }
 
-                // Compute combined fitness. Lower is better. Ensure native fitness dominates the score.
-                combinedFitness = nativeFitness + (ollamaSuccess ? (ollamaReferenceScore * 0.1) : 0.0);
+                // Candidate Selection / Fitness MUST strictly equal nativeFitness (which includes both train & validation losses)
+                // Ollama score does NOT participate in evolutionary ranking.
+                double candidateFitness = nativeFitness;
 
-                if (Double.isNaN(combinedFitness) || Double.isInfinite(combinedFitness)) combinedFitness = 40.0;
+                if (Double.isNaN(candidateFitness) || Double.isInfinite(candidateFitness)) candidateFitness = 40.0;
 
-                context.log(String.format("[FORGE] Completed %s. Native Loss: %.4f, Params: %d, Ollama Ref Loss: %.4f, Duration: %d ms, Combined Fitness: %.4f",
-                    candidateName, nativeLoss, paramCount, ollamaReferenceScore, durationMs, combinedFitness));
+                context.log(String.format("[FORGE] Completed %s. Native Val Loss: %.4f, Params: %d, Ollama Ref Loss: %.4f, Duration: %d ms, Candidate Fitness: %.4f",
+                    candidateName, nativeLoss, paramCount, ollamaReferenceScore, durationMs, candidateFitness));
                 logs.add(String.format("Loss %.4f\n-----------------\n", nativeLoss));
 
-                double uiScore = Math.max(0.01, 1.0 / (1.0 + combinedFitness));
+                double uiScore = Math.max(0.01, 1.0 / (1.0 + candidateFitness));
                 EvolutionProgressPublisher.updateBranchStatus(context, candidateId, candidateName + " (" + config + ")", "scoring", uiScore);
 
-                results.add(new CandidateResult(candidateName, config, nativeLoss, paramCount, durationMs, combinedFitness));
+                results.add(new CandidateResult(candidateName, config, nativeLoss, paramCount, durationMs, candidateFitness));
                 candIndex++;
             }
 
@@ -724,14 +724,18 @@ public class LLMDarwinEngine extends ADarwinEngine {
         finalTokenizer.train(cleanCorpus, overallWinner.config.vocabSize);
         List<Integer> allTokens = finalTokenizer.encode(cleanCorpus);
         if (allTokens.size() > MAX_TOKENS_LIMIT) {
-            allTokens = allTokens.subList(0, MAX_TOKENS_LIMIT);
+            List<Integer> truncated = new ArrayList<>(allTokens.subList(0, MAX_TOKENS_LIMIT));
+            allTokens.clear();
+            allTokens = truncated;
         }
         DatasetBuilder finalDatasetBuilder = new DatasetBuilder();
         int finalSeqLen = overallWinner.config.maxSeqLen;
         int finalStride = Math.max(1, finalSeqLen / 2);
         List<DatasetBuilder.Sample> samples = finalDatasetBuilder.buildSlidingWindow(allTokens, finalSeqLen, finalStride);
         if (samples.size() > MAX_TRAINING_SAMPLES) {
-            samples = samples.subList(0, MAX_TRAINING_SAMPLES);
+            List<DatasetBuilder.Sample> truncated = new ArrayList<>(samples.subList(0, MAX_TRAINING_SAMPLES));
+            samples.clear();
+            samples = truncated;
         }
 
         // Build final model and save configuration & tokenizer
@@ -880,6 +884,8 @@ public class LLMDarwinEngine extends ADarwinEngine {
         SimpleBPETokenizer tokenizer = null;
         List<Integer> allTokens = null;
         List<DatasetBuilder.Sample> samples = null;
+        List<DatasetBuilder.Sample> trainSamples = null;
+        List<DatasetBuilder.Sample> valSamples = null;
         EvoLlmModel model = null;
         EvoLlmTrainer trainer = null;
         try {
@@ -888,7 +894,9 @@ public class LLMDarwinEngine extends ADarwinEngine {
             allTokens = tokenizer.encode(cleanCorpus);
 
             if (allTokens.size() > MAX_TOKENS_LIMIT) {
-                allTokens = allTokens.subList(0, MAX_TOKENS_LIMIT);
+                List<Integer> truncated = new ArrayList<>(allTokens.subList(0, MAX_TOKENS_LIMIT));
+                allTokens.clear();
+                allTokens = truncated;
             }
 
             DatasetBuilder datasetBuilder = new DatasetBuilder();
@@ -897,8 +905,20 @@ public class LLMDarwinEngine extends ADarwinEngine {
             samples = datasetBuilder.buildSlidingWindow(allTokens, seqLen, stride);
 
             if (samples.size() > MAX_TRAINING_SAMPLES) {
-                samples = samples.subList(0, MAX_TRAINING_SAMPLES);
+                List<DatasetBuilder.Sample> truncated = new ArrayList<>(samples.subList(0, MAX_TRAINING_SAMPLES));
+                samples.clear();
+                samples = truncated;
             }
+
+            // Bounded, deterministic 80/20 train/validation split
+            int totalCount = samples.size();
+            int trainCount = (int) (totalCount * 0.8);
+            if (trainCount <= 0 && totalCount > 0) {
+                trainCount = totalCount;
+            }
+
+            trainSamples = new ArrayList<>(samples.subList(0, trainCount));
+            valSamples = new ArrayList<>(samples.subList(trainCount, totalCount));
 
             int dff = config.embeddingSize * 4;
             model = new EvoLlmModel(tokenizer.getVocabSize(), config.embeddingSize, config.heads, config.layers, dff, seqLen);
@@ -909,23 +929,68 @@ public class LLMDarwinEngine extends ADarwinEngine {
             }
 
             trainer = new EvoLlmTrainer(model);
-            trainer.train(samples, config.epochs);
-
-            double loss = trainer.getLossHistory().isEmpty() ? 2.5 : trainer.getLossHistory().get(trainer.getLossHistory().size() - 1);
-            if (Double.isNaN(loss) || Double.isInfinite(loss)) {
-                loss = 10.0;
+            double trainLoss = 2.5;
+            if (!trainSamples.isEmpty()) {
+                trainer.train(trainSamples, config.epochs);
+                trainLoss = trainer.getLossHistory().isEmpty() ? 2.5 : trainer.getLossHistory().get(trainer.getLossHistory().size() - 1);
             }
 
-            double sizePenalty = paramCount * 0.000001;
-            double fitness = loss + sizePenalty;
+            // Compute Validation Loss (forward pass only, no gradient backpropagation)
+            double valLossSum = 0;
+            int valCount = 0;
+            if (!valSamples.isEmpty()) {
+                for (DatasetBuilder.Sample valSample : valSamples) {
+                    int[] inputIds = valSample.input.stream().mapToInt(i -> i).toArray();
+                    Tensor logits = model.forward(inputIds);
+                    float[] logitsData = logits.getData();
+                    int sLen = (int) logits.getShape()[0];
+                    int vSize = (int) logits.getShape()[1];
+                    int lastOffset = (sLen - 1) * vSize;
+                    int target = valSample.target;
 
-            return new CandidateTrainingResult(loss, paramCount, fitness);
+                    // Softmax
+                    float max = Float.NEGATIVE_INFINITY;
+                    for (int i = 0; i < vSize; i++) {
+                        if (logitsData[lastOffset + i] > max) max = logitsData[lastOffset + i];
+                    }
+                    float sum = 0;
+                    float[] probs = new float[vSize];
+                    for (int i = 0; i < vSize; i++) {
+                        probs[i] = (float) Math.exp(logitsData[lastOffset + i] - max);
+                        sum += probs[i];
+                    }
+                    for (int i = 0; i < vSize; i++) probs[i] /= sum;
+
+                    double sampleLoss = -Math.log(Math.max(probs[target], 1e-10));
+                    valLossSum += sampleLoss;
+                    valCount++;
+                }
+            }
+
+            double valLoss = valCount > 0 ? (valLossSum / valCount) : trainLoss;
+
+            if (Double.isNaN(trainLoss) || Double.isInfinite(trainLoss)) {
+                trainLoss = 10.0;
+            }
+            if (Double.isNaN(valLoss) || Double.isInfinite(valLoss)) {
+                valLoss = 10.0;
+            }
+
+            // Combine validation loss (75%) and training loss (25%) with size penalty to prevent overfitting and encourage generalizability
+            double sizePenalty = paramCount * 0.000001;
+            double fitness = (valLoss * 0.75) + (trainLoss * 0.25) + sizePenalty;
+
+            return new CandidateTrainingResult(valLoss, paramCount, fitness);
         } finally {
             if (allTokens != null) allTokens.clear();
             if (samples != null) samples.clear();
+            if (trainSamples != null) trainSamples.clear();
+            if (valSamples != null) valSamples.clear();
             tokenizer = null;
             allTokens = null;
             samples = null;
+            trainSamples = null;
+            valSamples = null;
             model = null;
             trainer = null;
         }
