@@ -969,6 +969,15 @@ public class SelfDevBootstrapController {
                 // Pull
                 System.out.println("[SelfDevBootstrapController] [CHECK_GIT] Local folder is already a git repository. Starting pull...");
                 try (org.eclipse.jgit.api.Git git = org.eclipse.jgit.api.Git.open(localDir)) {
+                    // Reset and clean first to override all local changes
+                    try {
+                        System.out.println("[SelfDevBootstrapController] [CHECK_GIT] Discarding local changes to override all with incoming pull...");
+                        git.reset().setMode(org.eclipse.jgit.api.ResetCommand.ResetType.HARD).call();
+                        git.clean().setCleanDirectories(true).call();
+                    } catch (Exception resetEx) {
+                        System.err.println("[SelfDevBootstrapController] [CHECK_GIT_WARNING] JGit reset/clean failed: " + resetEx.getMessage());
+                    }
+
                     org.eclipse.jgit.api.PullCommand pullCmd = git.pull();
                     if (orchestrator != null && orchestrator.getGit() != null) {
                         String user = orchestrator.getGit().getUsername();
@@ -995,6 +1004,18 @@ public class SelfDevBootstrapController {
                     gitAction = " (Cloned)";
                 } else {
                     System.out.println("[SelfDevBootstrapController] [CHECK_GIT] Fallback 'git pull' in progress...");
+                    try {
+                        ProcessBuilder pbReset = new ProcessBuilder("git", "reset", "--hard");
+                        pbReset.directory(localDir);
+                        pbReset.start().waitFor();
+
+                        ProcessBuilder pbClean = new ProcessBuilder("git", "clean", "-fd");
+                        pbClean.directory(localDir);
+                        pbClean.start().waitFor();
+                    } catch (Exception resetEx) {
+                        System.err.println("[SelfDevBootstrapController] [CHECK_GIT_WARNING] OS git reset/clean failed: " + resetEx.getMessage());
+                    }
+
                     ProcessBuilder pb = new ProcessBuilder("git", "pull");
                     pb.directory(localDir);
                     pb.redirectErrorStream(true);
@@ -1541,7 +1562,7 @@ public class SelfDevBootstrapController {
         }
     }
 
-    private void deleteRecursively(File file) throws IOException {
+    private void deleteRecursively(File file) {
         if (file.isDirectory()) {
             File[] files = file.listFiles();
             if (files != null) {
@@ -1550,8 +1571,11 @@ public class SelfDevBootstrapController {
                 }
             }
         }
+        try {
+            file.setWritable(true);
+        } catch (Exception ignored) {}
         if (!file.delete() && file.exists()) {
-            throw new IOException("Failed to delete: " + file.getAbsolutePath());
+            System.err.println("[SelfDevBootstrapController] Warning: Failed to delete: " + file.getAbsolutePath() + " (will attempt to overwrite during copy)");
         }
     }
 }
