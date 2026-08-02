@@ -93,6 +93,20 @@ public class ProcessRunner {
         System.out.println("[PATCH] Applying diff to " + baseDir.getAbsolutePath());
         File patchFile = new File(baseDir, "temp.patch");
         try {
+            // Discard any local modifications and clean the directory first to ensure incoming patch overrides all old data
+            try {
+                System.out.println("[PATCH] Resetting and cleaning local workspace to override with incoming changes...");
+                ProcessBuilder pbReset = new ProcessBuilder("git", "reset", "--hard");
+                pbReset.directory(baseDir);
+                pbReset.start().waitFor();
+
+                ProcessBuilder pbClean = new ProcessBuilder("git", "clean", "-fd");
+                pbClean.directory(baseDir);
+                pbClean.start().waitFor();
+            } catch (Exception resetEx) {
+                System.err.println("[PATCH] Warning during local reset/clean: " + resetEx.getMessage());
+            }
+
             try (FileOutputStream fos = new FileOutputStream(patchFile)) {
                 fos.write(diff.getBytes());
             }

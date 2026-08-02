@@ -159,7 +159,20 @@ public class SelfDevBootstrapController {
         File dir = projectRoot;
         File supervisorDir = null;
 
-        // 0. Prioritize checking Git repository path first
+        // 0. Prioritize checking active workspace codebase path first
+        String codebasePath = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getCodebasePath();
+        if (codebasePath != null && !codebasePath.isEmpty()) {
+            File cbDir = new File(codebasePath);
+            File testDir = new File(cbDir, "eu.kalafatic.evolution.supervisor");
+            System.out.println("[SelfDevBootstrapController] [SUPERVISOR_FIND] Checking active workspace codebase path first: " + testDir.getAbsolutePath());
+            if (testDir.exists() && new File(testDir, "pom.xml").exists()) {
+                supervisorDir = testDir;
+                System.out.println("[SelfDevBootstrapController] [SUPERVISOR_FIND] Found supervisor dir via codebasePath: " + supervisorDir.getAbsolutePath());
+                return supervisorDir;
+            }
+        }
+
+        // 0.5. Fallback to Git repository path first
         String gitPath = null;
         if (orchestrator != null && orchestrator.getGit() != null) {
             gitPath = orchestrator.getGit().getLocalPath();
@@ -170,7 +183,7 @@ public class SelfDevBootstrapController {
         if (gitPath != null && !gitPath.isEmpty()) {
             File gitDir = new File(gitPath);
             File testDir = new File(gitDir, "eu.kalafatic.evolution.supervisor");
-            System.out.println("[SelfDevBootstrapController] [SUPERVISOR_FIND] Checking Git repository path first: " + testDir.getAbsolutePath());
+            System.out.println("[SelfDevBootstrapController] [SUPERVISOR_FIND] Checking Git repository path: " + testDir.getAbsolutePath());
             if (testDir.exists() && new File(testDir, "pom.xml").exists()) {
                 supervisorDir = testDir;
                 System.out.println("[SelfDevBootstrapController] [SUPERVISOR_FIND] Found supervisor dir via Git repository scan: " + supervisorDir.getAbsolutePath());
@@ -956,6 +969,15 @@ public class SelfDevBootstrapController {
                 // Pull
                 System.out.println("[SelfDevBootstrapController] [CHECK_GIT] Local folder is already a git repository. Starting pull...");
                 try (org.eclipse.jgit.api.Git git = org.eclipse.jgit.api.Git.open(localDir)) {
+                    // Reset and clean first to override all local changes
+                    try {
+                        System.out.println("[SelfDevBootstrapController] [CHECK_GIT] Discarding local changes to override all with incoming pull...");
+                        git.reset().setMode(org.eclipse.jgit.api.ResetCommand.ResetType.HARD).call();
+                        git.clean().setCleanDirectories(true).call();
+                    } catch (Exception resetEx) {
+                        System.err.println("[SelfDevBootstrapController] [CHECK_GIT_WARNING] JGit reset/clean failed: " + resetEx.getMessage());
+                    }
+
                     org.eclipse.jgit.api.PullCommand pullCmd = git.pull();
                     if (orchestrator != null && orchestrator.getGit() != null) {
                         String user = orchestrator.getGit().getUsername();
@@ -982,6 +1004,18 @@ public class SelfDevBootstrapController {
                     gitAction = " (Cloned)";
                 } else {
                     System.out.println("[SelfDevBootstrapController] [CHECK_GIT] Fallback 'git pull' in progress...");
+                    try {
+                        ProcessBuilder pbReset = new ProcessBuilder("git", "reset", "--hard");
+                        pbReset.directory(localDir);
+                        pbReset.start().waitFor();
+
+                        ProcessBuilder pbClean = new ProcessBuilder("git", "clean", "-fd");
+                        pbClean.directory(localDir);
+                        pbClean.start().waitFor();
+                    } catch (Exception resetEx) {
+                        System.err.println("[SelfDevBootstrapController] [CHECK_GIT_WARNING] OS git reset/clean failed: " + resetEx.getMessage());
+                    }
+
                     ProcessBuilder pb = new ProcessBuilder("git", "pull");
                     pb.directory(localDir);
                     pb.redirectErrorStream(true);
@@ -1156,21 +1190,35 @@ public class SelfDevBootstrapController {
         System.out.println("[SelfDevBootstrapController] [CHECK_GENOME] Starting GENOME Check. projectRoot: " + (projectRoot != null ? projectRoot.getAbsolutePath() : "null"));
         File genomeModuleDir = null;
 
-        // 0. Prioritize checking Git repository path first
-        String gitPath = null;
-        if (orchestrator != null && orchestrator.getGit() != null) {
-            gitPath = orchestrator.getGit().getLocalPath();
-        }
-        if (gitPath == null || gitPath.isEmpty()) {
-            gitPath = eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.getRepositoryPath(eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.REPO_EVOLUTION);
-        }
-        if (gitPath != null && !gitPath.isEmpty()) {
-            File gitDir = new File(gitPath);
-            File testDir = new File(gitDir, "eu.kalafatic.evolution.selfdev.genome");
-            System.out.println("[SelfDevBootstrapController] [CHECK_GENOME] Checking Git repository path first: " + testDir.getAbsolutePath());
+        // 0. Prioritize checking active workspace codebase path first
+        String codebasePath = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getCodebasePath();
+        if (codebasePath != null && !codebasePath.isEmpty()) {
+            File cbDir = new File(codebasePath);
+            File testDir = new File(cbDir, "eu.kalafatic.evolution.selfdev.genome");
+            System.out.println("[SelfDevBootstrapController] [CHECK_GENOME] Checking active workspace codebase path first: " + testDir.getAbsolutePath());
             if (testDir.exists() && new File(testDir, "pom.xml").exists()) {
                 genomeModuleDir = testDir;
-                System.out.println("[SelfDevBootstrapController] [CHECK_GENOME] Found genome module dir via Git repository scan: " + genomeModuleDir.getAbsolutePath());
+                System.out.println("[SelfDevBootstrapController] [CHECK_GENOME] Found genome module dir via codebasePath: " + genomeModuleDir.getAbsolutePath());
+            }
+        }
+
+        // 0.5. Fallback to Git repository path first
+        if (genomeModuleDir == null) {
+            String gitPath = null;
+            if (orchestrator != null && orchestrator.getGit() != null) {
+                gitPath = orchestrator.getGit().getLocalPath();
+            }
+            if (gitPath == null || gitPath.isEmpty()) {
+                gitPath = eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.getRepositoryPath(eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.REPO_EVOLUTION);
+            }
+            if (gitPath != null && !gitPath.isEmpty()) {
+                File gitDir = new File(gitPath);
+                File testDir = new File(gitDir, "eu.kalafatic.evolution.selfdev.genome");
+                System.out.println("[SelfDevBootstrapController] [CHECK_GENOME] Checking Git repository path first: " + testDir.getAbsolutePath());
+                if (testDir.exists() && new File(testDir, "pom.xml").exists()) {
+                    genomeModuleDir = testDir;
+                    System.out.println("[SelfDevBootstrapController] [CHECK_GENOME] Found genome module dir via Git repository scan: " + genomeModuleDir.getAbsolutePath());
+                }
             }
         }
 
@@ -1514,7 +1562,7 @@ public class SelfDevBootstrapController {
         }
     }
 
-    private void deleteRecursively(File file) throws IOException {
+    private void deleteRecursively(File file) {
         if (file.isDirectory()) {
             File[] files = file.listFiles();
             if (files != null) {
@@ -1523,8 +1571,11 @@ public class SelfDevBootstrapController {
                 }
             }
         }
+        try {
+            file.setWritable(true);
+        } catch (Exception ignored) {}
         if (!file.delete() && file.exists()) {
-            throw new IOException("Failed to delete: " + file.getAbsolutePath());
+            System.err.println("[SelfDevBootstrapController] Warning: Failed to delete: " + file.getAbsolutePath() + " (will attempt to overwrite during copy)");
         }
     }
 }
