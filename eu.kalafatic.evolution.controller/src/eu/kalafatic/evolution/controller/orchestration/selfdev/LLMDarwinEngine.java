@@ -7,12 +7,17 @@ import java.io.FileOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.net.URI;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -47,11 +52,47 @@ import eu.kalafatic.evolution.forge.controller.service.impl.agents.*;
 
 public class LLMDarwinEngine extends ADarwinEngine {
 
+    // Centralized model capacity profiles
+    public enum Profile {
+        SMALL(128, 3, 4, 64, 4, 4000),
+        DEFAULT(256, 6, 8, 128, 8, 8000),
+        LARGE(384, 8, 8, 256, 10, 16000);
+
+        public final int embeddingSize;
+        public final int layers;
+        public final int heads;
+        public final int maxSeqLen;
+        public final int epochs;
+        public final int vocabSize;
+
+        Profile(int embeddingSize, int layers, int heads, int maxSeqLen, int epochs, int vocabSize) {
+            this.embeddingSize = embeddingSize;
+            this.layers = layers;
+            this.heads = heads;
+            this.maxSeqLen = maxSeqLen;
+            this.epochs = epochs;
+            this.vocabSize = vocabSize;
+        }
+    }
+
+    // Configurable bounds on corpus files and sizes to prevent OutOfMemory
+    private static final int MAX_CORPUS_CHARS = 100_000;
+    private static final int MAX_CORPUS_FILES = 100;
+    private static final int MAX_TOKENS_LIMIT = 20_000;
+    private static final int MAX_TRAINING_SAMPLES = 5_000;
+
+    // Shared HttpClient with 10s connect timeout
+    private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
+            .connectTimeout(Duration.ofSeconds(10))
+            .build();
+
     public static class LlmConfig {
         public int vocabSize;
         public int embeddingSize;
         public int layers;
         public int heads;
+        public int maxSeqLen;
+        public int epochs;
 
         // Evolved Ollama parameters
         public float temperature;
@@ -59,11 +100,13 @@ public class LLMDarwinEngine extends ADarwinEngine {
         public int topK;
         public float repeatPenalty;
 
-        public LlmConfig(int vocabSize, int embeddingSize, int layers, int heads) {
+        public LlmConfig(int vocabSize, int embeddingSize, int layers, int heads, int maxSeqLen, int epochs) {
             this.vocabSize = vocabSize;
             this.embeddingSize = embeddingSize;
             this.layers = layers;
             this.heads = heads;
+            this.maxSeqLen = maxSeqLen;
+            this.epochs = epochs;
 
             // Derive initial Ollama parameters based on core fields
             this.temperature = Math.max(0.1f, Math.min(1.5f, (float) vocabSize / 4000.0f));
@@ -72,10 +115,19 @@ public class LLMDarwinEngine extends ADarwinEngine {
             this.repeatPenalty = Math.max(1.0f, Math.min(2.0f, 1.0f + (float) layers * 0.05f));
         }
 
+        // Keep original constructor for compatibility
+        public LlmConfig(int vocabSize, int embeddingSize, int layers, int heads) {
+            this(vocabSize, embeddingSize, layers, heads, 128, 8);
+        }
+
+        public int getMaxSeqLen() {
+            return maxSeqLen;
+        }
+
         @Override
         public String toString() {
-            return String.format("Vocab: %d, Embed: %d, Layers: %d, Heads: %d | Temp: %.2f, TopP: %.2f, TopK: %d, RepPen: %.2f",
-                vocabSize, embeddingSize, layers, heads, temperature, topP, topK, repeatPenalty);
+            return String.format("Vocab: %d, Embed: %d, Layers: %d, Heads: %d, SeqLen: %d, Epochs: %d | Temp: %.2f, TopP: %.2f, TopK: %d, RepPen: %.2f",
+                vocabSize, embeddingSize, layers, heads, maxSeqLen, epochs, temperature, topP, topK, repeatPenalty);
         }
     }
 
@@ -97,6 +149,18 @@ public class LLMDarwinEngine extends ADarwinEngine {
         }
     }
 
+    public static class CandidateTrainingResult {
+        public double loss;
+        public long paramCount;
+        public double fitness;
+
+        public CandidateTrainingResult(double loss, long paramCount, double fitness) {
+            this.loss = loss;
+            this.paramCount = paramCount;
+            this.fitness = fitness;
+        }
+    }
+
     public LLMDarwinEngine(TaskContext context, IterationMemoryService memoryService,
                              SystemStateSignalProvider stateProvider) {
         super(context, memoryService, stateProvider, PlatformType.FORGE);
@@ -111,6 +175,72 @@ public class LLMDarwinEngine extends ADarwinEngine {
             }
         }
         return context.getProjectRoot().getAbsolutePath();
+    }
+
+    /**
+     * Centralized null-safe preview helper.
+     */
+    private static String safePreview(String value, int maximumLength) {
+        if (value == null || value.isEmpty() || maximumLength <= 0) {
+            return "";
+        }
+        if (value.length() <= maximumLength) {
+            return value;
+        }
+        return value.substring(0, maximumLength);
+    }
+
+    /**
+     * Validates and normalizes candidate configurations to prevent multi-head attention division-by-zero
+     * or architectural invalidity. Clamps values to supported bounds.
+     */
+    private LlmConfig normalizeCandidateConfig(LlmConfig candidate) {
+        int vocabSize = Math.max(4000, Math.min(32000, candidate.vocabSize));
+        int embeddingSize = Math.max(128, Math.min(512, candidate.embeddingSize));
+        int layers = Math.max(2, Math.min(12, candidate.layers));
+        int heads = Math.max(1, Math.min(64, candidate.heads));
+        int maxSeqLen = Math.max(64, Math.min(256, candidate.maxSeqLen));
+        int epochs = Math.max(1, Math.min(20, candidate.epochs));
+
+        // Ensure heads divides embedding size perfectly
+        if (embeddingSize % heads != 0) {
+            int nearestHead = heads;
+            int minDiff = Integer.MAX_VALUE;
+            for (int h = 1; h <= embeddingSize; h++) {
+                if (embeddingSize % h == 0) {
+                    if (h >= 2 && h <= 32) {
+                        int diff = Math.abs(h - heads);
+                        if (diff < minDiff) {
+                            minDiff = diff;
+                            nearestHead = h;
+                        }
+                    }
+                }
+            }
+            if (embeddingSize % nearestHead != 0) {
+                nearestHead = 2;
+                if (embeddingSize % 2 != 0) {
+                    embeddingSize = (embeddingSize / 2) * 2;
+                    if (embeddingSize < 128) embeddingSize = 128;
+                }
+            }
+            context.log(String.format("[FORGE] Normalizing heads/embedding: original heads=%d, adjusted to %d to divide embedding size %d.",
+                heads, nearestHead, embeddingSize));
+            heads = nearestHead;
+        }
+
+        if (embeddingSize / heads <= 0) {
+            heads = 2;
+            embeddingSize = 128;
+        }
+
+        LlmConfig normalized = new LlmConfig(vocabSize, embeddingSize, layers, heads, maxSeqLen, epochs);
+        normalized.temperature = Math.max(0.1f, Math.min(1.5f, candidate.temperature));
+        normalized.topP = Math.max(0.1f, Math.min(1.0f, candidate.topP));
+        normalized.topK = Math.max(10, Math.min(100, candidate.topK));
+        normalized.repeatPenalty = Math.max(1.0f, Math.min(2.0f, candidate.repeatPenalty));
+
+        return normalized;
     }
 
     @Override
@@ -191,7 +321,12 @@ public class LLMDarwinEngine extends ADarwinEngine {
                                 !p.toString().contains("/target/") && !p.toString().contains("\\target\\") &&
                                 !p.toString().contains("/node_modules/") && !p.toString().contains("\\node_modules\\"))
                     .collect(Collectors.toList());
+                int fileCount = 0;
                 for (Path file : files) {
+                    if (fileCount >= MAX_CORPUS_FILES) {
+                        context.log("[FORGE] Corpus file limit reached. Skipping additional file scans.");
+                        break;
+                    }
                     String name = file.getFileName().toString().toLowerCase();
                     boolean accept = false;
                     if (name.endsWith(".md") && sourceMarkdown) accept = true;
@@ -208,6 +343,7 @@ public class LLMDarwinEngine extends ADarwinEngine {
 
                     if (accept) {
                         scannedPaths.add(file);
+                        fileCount++;
                     }
                 }
             }
@@ -296,6 +432,10 @@ public class LLMDarwinEngine extends ADarwinEngine {
 
         MarkdownCleaner cleaner = new MarkdownCleaner();
         String cleanCorpus = cleaner.clean(corpus);
+        if (cleanCorpus.length() > MAX_CORPUS_CHARS) {
+            context.log("[FORGE] Corpus character limit exceeded. Truncating clean corpus to " + MAX_CORPUS_CHARS + " chars.");
+            cleanCorpus = cleanCorpus.substring(0, MAX_CORPUS_CHARS);
+        }
         context.log("[FORGE] Training Source Dataset built successfully. Clean corpus size: " + cleanCorpus.length() + " chars.");
 
         // Resolve generations count from prompt instructions (preferredMaxIterations) or default to 5
@@ -310,11 +450,24 @@ public class LLMDarwinEngine extends ADarwinEngine {
 
         context.log("[FORGE] Darwin LLM configured for " + generations + " evolution generations.");
 
-        // Initial Candidates
+        // Assess JVM Memory to select safe profiles and keep performance snappy
+        long maxMemory = Runtime.getRuntime().maxMemory();
+        context.log("[FORGE] JVM Max Memory available: " + (maxMemory / (1024 * 1024)) + " MB");
+        Profile selectedProfile = Profile.DEFAULT;
+        if (maxMemory < 512 * 1024 * 1024) {
+            context.log("[FORGE] Tight memory environment. Downgrading candidates to SMALL profile.");
+            selectedProfile = Profile.SMALL;
+        }
+
+        // Initial Candidates based on safe profiles
         List<LlmConfig> candidates = new ArrayList<>();
-        candidates.add(new LlmConfig(2000, 64, 2, 2));   // Candidate A
-        candidates.add(new LlmConfig(4000, 128, 2, 4));  // Candidate B
-        candidates.add(new LlmConfig(4000, 128, 4, 4));  // Candidate C
+        candidates.add(new LlmConfig(selectedProfile.vocabSize, selectedProfile.embeddingSize, selectedProfile.layers, selectedProfile.heads, selectedProfile.maxSeqLen, selectedProfile.epochs));
+        candidates.add(new LlmConfig(selectedProfile.vocabSize, selectedProfile.embeddingSize, selectedProfile.layers + 1, selectedProfile.heads, selectedProfile.maxSeqLen, selectedProfile.epochs));
+        candidates.add(new LlmConfig(selectedProfile.vocabSize, selectedProfile.embeddingSize, selectedProfile.layers + 2, selectedProfile.heads, selectedProfile.maxSeqLen, selectedProfile.epochs));
+
+        for (int i = 0; i < candidates.size(); i++) {
+            candidates.set(i, normalizeCandidateConfig(candidates.get(i)));
+        }
 
         CandidateResult overallWinner = null;
         List<String> logs = new ArrayList<>();
@@ -353,31 +506,22 @@ public class LLMDarwinEngine extends ADarwinEngine {
                 EvolutionProgressPublisher.updateBranchStatus(context, candidateId, candidateName + " (" + config + ")", "verifying", null);
 
                 long startTime = System.currentTimeMillis();
-
-                // Compute parameter count for reference/penalties
-                long paramCount = config.vocabSize * config.embeddingSize + config.layers * (config.embeddingSize * config.embeddingSize * 4);
-
-                String responseText = "";
-                boolean ollamaSuccess = false;
+                double loss = 0.0;
+                long paramCount = 0;
+                double fitness = 0.0;
+                long durationMs = 0;
 
                 // 1. Core Ollama Protocol evaluation using the real local Ollama model
+                boolean ollamaSuccess = false;
                 try {
                     String validationPrompt = "Based on this project documentation:\n\n" +
-                        cleanCorpus.substring(0, Math.min(1000, cleanCorpus.length())) +
+                        safePreview(cleanCorpus, 1000) +
                         "\n\nSummarize the core architecture in exactly two concise sentences.";
 
-                    responseText = queryOllama(ollamaUrl, baseModel, validationPrompt, config);
+                    String responseText = queryOllama(ollamaUrl, baseModel, validationPrompt, config);
                     ollamaSuccess = true;
-                } catch (Exception ex) {
-                    context.log("[FORGE] Ollama protocol query failed for " + candidateName + " (falling back to simulated evaluation): " + ex.getMessage());
-                }
 
-                long durationMs = System.currentTimeMillis() - startTime;
-                double fitness = 0.0;
-                double loss = 0.0;
-
-                if (ollamaSuccess) {
-                    // Calculate real fitness based on Ollama response properties
+                    durationMs = System.currentTimeMillis() - startTime;
                     double keywordMatchCount = 0;
                     String[] keywords = {"evolution", "personal", "economical", "political", "orchestrator", "darwin", "genome", "model", "forge", "java", "task"};
                     String lowerResponse = responseText.toLowerCase();
@@ -400,34 +544,34 @@ public class LLMDarwinEngine extends ADarwinEngine {
                     double timePenalty = (durationMs / 1000.0) * 0.2;
                     fitness = contentLoss + lengthPenalty + timePenalty;
                     loss = contentLoss;
+                    paramCount = config.vocabSize * config.embeddingSize + config.layers * (config.embeddingSize * config.embeddingSize * 4);
 
-                    context.log(String.format("[FORGE] Ollama Protocol Response: %s", responseText.trim().replace("\n", " ")));
-                } else {
-                    // 2. Offline Fallback: Train custom tokenizer and model in Java
-                    SimpleBPETokenizer tokenizer2 = new SimpleBPETokenizer();
-                    tokenizer2.train(cleanCorpus, config.vocabSize);
-                    List<Integer> allTokens = tokenizer2.encode(cleanCorpus);
-
-                    DatasetBuilder datasetBuilder = new DatasetBuilder();
-                    List<DatasetBuilder.Sample> samples = datasetBuilder.buildSlidingWindow(allTokens, 16, 8);
-
-                    int dff = config.embeddingSize * 4;
-                    EvoLlmModel model = new EvoLlmModel(tokenizer2.getVocabSize(), config.embeddingSize, config.heads, config.layers, dff, 16);
-
-                    // Count real parameters
-                    paramCount = 0;
-                    for (Tensor p : model.parameters()) {
-                        paramCount += p.getData().length;
-                    }
-
-                    EvoLlmTrainer trainer = new EvoLlmTrainer(model);
-                    trainer.train(samples, 1);
-
-                    loss = trainer.getLossHistory().isEmpty() ? 2.5 : trainer.getLossHistory().get(trainer.getLossHistory().size() - 1);
-                    double sizePenalty = paramCount * 0.000001;
-                    double timePenalty = durationMs * 0.000001;
-                    fitness = loss + sizePenalty + timePenalty;
+                    context.log(String.format("[FORGE] Ollama Protocol Response: %s", safePreview(responseText.trim().replace("\n", " "), 500)));
+                } catch (InterruptedException ex) {
+                    context.log("[FORGE] Ollama protocol query was interrupted. Restoring interrupt status.");
+                    Thread.currentThread().interrupt();
+                } catch (Exception ex) {
+                    context.log("[FORGE] Ollama protocol query failed for " + candidateName + " (falling back to pure-Java offline training fallback): " + ex.getMessage());
                 }
+
+                // 2. Offline Fallback: Train custom tokenizer and model in Java
+                if (!ollamaSuccess) {
+                    try {
+                        CandidateTrainingResult trainingResult = runOfflineTraining(cleanCorpus, config);
+                        loss = trainingResult.loss;
+                        paramCount = trainingResult.paramCount;
+                        fitness = trainingResult.fitness;
+                    } catch (Exception e) {
+                        context.log("[FORGE] Pure-Java offline training failed for " + candidateName + " - assigning safe penalty score: " + e.getMessage());
+                        loss = 10.0;
+                        fitness = 25.0; // deterministically penalized
+                        paramCount = 1_000_000;
+                    }
+                    durationMs = System.currentTimeMillis() - startTime;
+                }
+
+                if (Double.isNaN(loss) || Double.isInfinite(loss)) loss = 10.0;
+                if (Double.isNaN(fitness) || Double.isInfinite(fitness)) fitness = 30.0;
 
                 context.log(String.format("[FORGE] Completed %s. Loss: %.4f, Params: %d, Duration: %d ms, Fitness: %.4f",
                     candidateName, loss, paramCount, durationMs, fitness));
@@ -440,8 +584,15 @@ public class LLMDarwinEngine extends ADarwinEngine {
                 candChar++;
             }
 
-            // Sort by fitness (lowest score is best)
-            results.sort((c1, c2) -> Double.compare(c1.fitness, c2.fitness));
+            // Stable deterministic sorting
+            results.sort((c1, c2) -> {
+                int cmp = Double.compare(c1.fitness, c2.fitness);
+                if (cmp != 0) return cmp;
+                int cmpLoss = Double.compare(c1.loss, c2.loss);
+                if (cmpLoss != 0) return cmpLoss;
+                return c1.name.compareTo(c2.name);
+            });
+
             CandidateResult genWinner = results.get(0);
             context.log("[FORGE] Generation " + gen + " Winner: " + genWinner.name + " (" + genWinner.config + ")");
             logs.add("Winner:\n" + genWinner.name + "\n\n");
@@ -518,22 +669,29 @@ public class LLMDarwinEngine extends ADarwinEngine {
         SimpleBPETokenizer finalTokenizer = new SimpleBPETokenizer();
         finalTokenizer.train(cleanCorpus, overallWinner.config.vocabSize);
         List<Integer> allTokens = finalTokenizer.encode(cleanCorpus);
+        if (allTokens.size() > MAX_TOKENS_LIMIT) {
+            allTokens = allTokens.subList(0, MAX_TOKENS_LIMIT);
+        }
         DatasetBuilder finalDatasetBuilder = new DatasetBuilder();
-        List<DatasetBuilder.Sample> samples = finalDatasetBuilder.buildSlidingWindow(allTokens, 16, 8);
+        int finalSeqLen = overallWinner.config.maxSeqLen;
+        int finalStride = Math.max(1, finalSeqLen / 2);
+        List<DatasetBuilder.Sample> samples = finalDatasetBuilder.buildSlidingWindow(allTokens, finalSeqLen, finalStride);
+        if (samples.size() > MAX_TRAINING_SAMPLES) {
+            samples = samples.subList(0, MAX_TRAINING_SAMPLES);
+        }
 
         // 2. Build final model and save configuration & tokenizer
         int dff = overallWinner.config.embeddingSize * 4;
-        EvoLlmModel winningModel = new EvoLlmModel(finalTokenizer.getVocabSize(), overallWinner.config.embeddingSize, overallWinner.config.heads, overallWinner.config.layers, dff, 16);
+        EvoLlmModel winningModel = new EvoLlmModel(finalTokenizer.getVocabSize(), overallWinner.config.embeddingSize, overallWinner.config.heads, overallWinner.config.layers, dff, finalSeqLen);
 
         EvoLlmTrainer trainer = new EvoLlmTrainer(winningModel);
-        trainer.train(samples, 1);
+        trainer.train(samples, overallWinner.config.epochs);
 
         // Export via OllamaExporter
         OllamaExporter exporter = new OllamaExporter();
         exporter.export(dynamicModelName, forgeOutputDir.toPath(), winningModel);
 
         // Overwrite the Modelfile with the winning candidate's optimized evolutionary Ollama parameters
-        // ensuring standard Ollama can load and run it natively with 100% success!
         try {
             StringBuilder modelfileBuilder = new StringBuilder();
             modelfileBuilder.append("FROM ").append(forgeOutputDir.getAbsolutePath().replace("\\", "/")).append("/exports/ollama/evo.gguf\n");
@@ -577,15 +735,21 @@ public class LLMDarwinEngine extends ADarwinEngine {
         configJson.put("embeddingSize", overallWinner.config.embeddingSize);
         configJson.put("layers", overallWinner.config.layers);
         configJson.put("heads", overallWinner.config.heads);
-        configJson.put("maxSeqLen", 16);
+        configJson.put("maxSeqLen", overallWinner.config.maxSeqLen);
         Files.writeString(forgeOutputDir.toPath().resolve("config.json"), configJson.toString(4));
 
-        // Save weights.bin (actual learned float weights)
+        // Save weights.bin atomically to avoid file corruption
         File weightsFile = new File(forgeOutputDir, "weights.bin");
-        try (DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(weightsFile)))) {
-            for (Tensor p : winningModel.parameters()) {
-                for (float val : p.getData()) {
-                    dos.writeFloat(val);
+        try {
+            writeWeightsAtomically(weightsFile.toPath(), winningModel);
+        } catch (Exception e) {
+            context.log("[FORGE] Error writing weights atomically: " + e.getMessage());
+            // Fallback to normal save if atomic writing failed
+            try (DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(weightsFile)))) {
+                for (Tensor p : winningModel.parameters()) {
+                    for (float val : p.getData()) {
+                        dos.writeFloat(val);
+                    }
                 }
             }
         }
@@ -657,35 +821,105 @@ public class LLMDarwinEngine extends ADarwinEngine {
         return response;
     }
 
+    /**
+     * Helper method to train custom tokenizer and model in Java cleanly to prevent strong memory retention.
+     */
+    private CandidateTrainingResult runOfflineTraining(String cleanCorpus, LlmConfig config) {
+        SimpleBPETokenizer tokenizer = new SimpleBPETokenizer();
+        tokenizer.train(cleanCorpus, config.vocabSize);
+        List<Integer> allTokens = tokenizer.encode(cleanCorpus);
+
+        if (allTokens.size() > MAX_TOKENS_LIMIT) {
+            allTokens = allTokens.subList(0, MAX_TOKENS_LIMIT);
+        }
+
+        DatasetBuilder datasetBuilder = new DatasetBuilder();
+        int seqLen = config.maxSeqLen;
+        int stride = Math.max(1, seqLen / 2);
+        List<DatasetBuilder.Sample> samples = datasetBuilder.buildSlidingWindow(allTokens, seqLen, stride);
+
+        if (samples.size() > MAX_TRAINING_SAMPLES) {
+            samples = samples.subList(0, MAX_TRAINING_SAMPLES);
+        }
+
+        int dff = config.embeddingSize * 4;
+        EvoLlmModel model = new EvoLlmModel(tokenizer.getVocabSize(), config.embeddingSize, config.heads, config.layers, dff, seqLen);
+
+        long paramCount = 0;
+        for (Tensor p : model.parameters()) {
+            paramCount += p.getData().length;
+        }
+
+        EvoLlmTrainer trainer = new EvoLlmTrainer(model);
+        trainer.train(samples, config.epochs);
+
+        double loss = trainer.getLossHistory().isEmpty() ? 2.5 : trainer.getLossHistory().get(trainer.getLossHistory().size() - 1);
+        if (Double.isNaN(loss) || Double.isInfinite(loss)) {
+            loss = 10.0;
+        }
+
+        double sizePenalty = paramCount * 0.000001;
+        double fitness = loss + sizePenalty;
+
+        return new CandidateTrainingResult(loss, paramCount, fitness);
+    }
+
+    /**
+     * Atomically writes weight files by writing to a temporary file first, flushing/closing, and then moving.
+     */
+    private void writeWeightsAtomically(Path target, EvoLlmModel model) throws Exception {
+        Path tempFile = target.getParent().resolve(target.getFileName().toString() + ".tmp");
+        try {
+            try (DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(tempFile.toFile())))) {
+                for (Tensor p : model.parameters()) {
+                    for (float val : p.getData()) {
+                        dos.writeFloat(val);
+                    }
+                }
+                dos.flush();
+            }
+            try {
+                Files.move(tempFile, target, java.nio.file.StandardCopyOption.REPLACE_EXISTING, java.nio.file.StandardCopyOption.ATOMIC_MOVE);
+            } catch (java.io.IOException e) {
+                // Fallback to non-atomic replace if system does not support atomic moves
+                Files.move(tempFile, target, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            }
+        } catch (Exception e) {
+            try {
+                Files.deleteIfExists(tempFile);
+            } catch (Exception ex) {
+                // ignore
+            }
+            throw e;
+        }
+    }
+
     private LlmConfig mutate(LlmConfig winner, int mutationIdx) {
         int vocabSize = winner.vocabSize;
         int embeddingSize = winner.embeddingSize;
         int layers = winner.layers;
         int heads = winner.heads;
+        int maxSeqLen = winner.maxSeqLen;
+        int epochs = winner.epochs;
 
         Random random = new Random();
         switch (mutationIdx) {
             case 1:
-                // Mutate embedding and vocabulary size
-                embeddingSize = Math.max(32, embeddingSize + (random.nextBoolean() ? 32 : -32));
-                vocabSize = Math.max(500, vocabSize + (random.nextBoolean() ? 500 : -500));
+                embeddingSize = Math.max(128, embeddingSize + (random.nextBoolean() ? 64 : -64));
+                vocabSize = Math.max(4000, vocabSize + (random.nextBoolean() ? 1000 : -1000));
                 break;
             case 2:
-                // Mutate layers and attention heads
-                layers = Math.max(1, layers + (random.nextBoolean() ? 1 : -1));
-                heads = Math.max(1, heads + (random.nextBoolean() ? 2 : -2));
+                layers = Math.max(2, layers + (random.nextBoolean() ? 1 : -1));
+                heads = Math.max(2, heads + (random.nextBoolean() ? 2 : -2));
+                break;
+            case 3:
+                maxSeqLen = Math.max(64, maxSeqLen + (random.nextBoolean() ? 32 : -32));
+                epochs = Math.max(1, epochs + (random.nextBoolean() ? 2 : -2));
                 break;
         }
 
-        // Ensure embeddingSize is divisible by heads for multi-head attention
-        if (embeddingSize % heads != 0) {
-            heads = 2; // fallback to 2 heads
-            if (embeddingSize % 2 != 0) {
-                embeddingSize = 64; // align embedding size to 64 if needed
-            }
-        }
-
-        LlmConfig mutated = new LlmConfig(vocabSize, embeddingSize, layers, heads);
+        LlmConfig mutated = new LlmConfig(vocabSize, embeddingSize, layers, heads, maxSeqLen, epochs);
+        mutated = normalizeCandidateConfig(mutated);
 
         // Evolve derived Ollama parameters with deltas for active exploration
         mutated.temperature = Math.max(0.1f, Math.min(1.5f, winner.temperature + (random.nextFloat() * 0.2f - 0.1f)));
@@ -697,10 +931,6 @@ public class LLMDarwinEngine extends ADarwinEngine {
     }
 
     private String queryOllama(String baseUrl, String baseModel, String prompt, LlmConfig config) throws Exception {
-        java.net.http.HttpClient client = java.net.http.HttpClient.newBuilder()
-                .connectTimeout(java.time.Duration.ofSeconds(10))
-                .build();
-
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("model", baseModel);
         jsonObject.put("prompt", prompt);
@@ -714,14 +944,14 @@ public class LLMDarwinEngine extends ADarwinEngine {
         jsonObject.put("options", options);
 
         String genUrl = baseUrl + (baseUrl.endsWith("/") ? "" : "/") + "api/generate";
-        java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
-                .uri(java.net.URI.create(genUrl))
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(genUrl))
                 .header("Content-Type", "application/json")
-                .timeout(java.time.Duration.ofSeconds(30))
-                .POST(java.net.http.HttpRequest.BodyPublishers.ofString(jsonObject.toString()))
+                .timeout(Duration.ofSeconds(60))
+                .POST(HttpRequest.BodyPublishers.ofString(jsonObject.toString()))
                 .build();
 
-        java.net.http.HttpResponse<String> response = client.send(request, java.net.http.HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
 
         if (response.statusCode() != 200) {
             throw new RuntimeException("HTTP " + response.statusCode() + ": " + response.body());

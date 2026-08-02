@@ -38,6 +38,54 @@ public class DarwinLlmInstanceTest {
     }
 
     @Test
+    public void testSafePreviewAndNormalization() {
+        // LLMDarwinEngine engine needs to be instantiated or we can use reflection if the method is private
+        // Actually safePreview is private static, and normalizeCandidateConfig is private
+        // Let's call them using reflection to verify exact correctness!
+        try {
+            java.lang.reflect.Method safePreviewMethod = LLMDarwinEngine.class.getDeclaredMethod("safePreview", String.class, int.class);
+            safePreviewMethod.setAccessible(true);
+
+            // Verify requirement 7: safePreview(null, 1000) does not throw and returns empty string
+            assertEquals("", safePreviewMethod.invoke(null, null, 1000));
+            // Verify requirement 8: safePreview("", 1000) does not throw and returns empty string
+            assertEquals("", safePreviewMethod.invoke(null, "", 1000));
+            // Verify requirement 9: safePreview(value, 0) returns an empty string
+            assertEquals("", safePreviewMethod.invoke(null, "some text", 0));
+            assertEquals("", safePreviewMethod.invoke(null, "some text", -5));
+
+            // Verify standard preview truncation
+            assertEquals("abc", safePreviewMethod.invoke(null, "abc", 1000));
+            assertEquals("abc", safePreviewMethod.invoke(null, "abcdef", 3));
+
+            // Verify normalization method ensures embeddingSize % heads == 0
+            java.lang.reflect.Method normalizeMethod = LLMDarwinEngine.class.getDeclaredMethod("normalizeCandidateConfig", LlmConfig.class);
+            normalizeMethod.setAccessible(true);
+
+            eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getOrCreateSession("Default");
+            eu.kalafatic.evolution.controller.orchestration.TaskContext dummyContext =
+                new eu.kalafatic.evolution.controller.orchestration.TaskContext(null, new File("."));
+            LLMDarwinEngine engine = new LLMDarwinEngine(dummyContext, null, null);
+
+            // Candidate with invalid divisibility
+            LlmConfig badConfig = new LlmConfig(1000, 128, 1, 5, 32, 2);
+            LlmConfig normalized = (LlmConfig) normalizeMethod.invoke(engine, badConfig);
+
+            // Should be divisible and head dimension > 0
+            assertTrue(normalized.embeddingSize % normalized.heads == 0);
+            assertTrue(normalized.embeddingSize / normalized.heads > 0);
+            // clamped values check
+            assertTrue(normalized.vocabSize >= 4000);
+            assertTrue(normalized.layers >= 2);
+            assertTrue(normalized.maxSeqLen >= 64);
+            assertTrue(normalized.epochs >= 1);
+
+        } catch (Exception e) {
+            fail("Exception in reflection tests: " + e.getMessage());
+        }
+    }
+
+    @Test
     public void testCandidateResultSorting() {
         List<CandidateResult> results = new ArrayList<>();
         results.add(new CandidateResult("Candidate A", new LlmConfig(2000, 64, 2, 2), 2.5, 1000, 500, 2.55));
@@ -108,5 +156,41 @@ public class DarwinLlmInstanceTest {
         assertFalse(trainer.getLossHistory().isEmpty());
         double loss = trainer.getLossHistory().get(0);
         assertTrue(loss > 0.0);
+    }
+
+    @Test
+    public void testAtomicWeightsWriting() throws Exception {
+        int vocabSize = 100;
+        int embeddingSize = 64;
+        int heads = 2;
+        int layers = 1;
+        int dff = 256;
+        int maxSeqLen = 16;
+
+        EvoLlmModel model = new EvoLlmModel(vocabSize, embeddingSize, heads, layers, dff, maxSeqLen);
+        File tempFile = tempFolder.newFile("weights.bin");
+        Path targetPath = tempFile.toPath();
+
+        // Safe cleanup
+        Files.deleteIfExists(targetPath);
+
+        java.lang.reflect.Method writeMethod = LLMDarwinEngine.class.getDeclaredMethod("writeWeightsAtomically", Path.class, EvoLlmModel.class);
+        writeMethod.setAccessible(true);
+
+        eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getOrCreateSession("Default");
+        eu.kalafatic.evolution.controller.orchestration.TaskContext dummyContext =
+            new eu.kalafatic.evolution.controller.orchestration.TaskContext(null, new File("."));
+        LLMDarwinEngine engine = new LLMDarwinEngine(dummyContext, null, null);
+
+        // Invoke atomic writing
+        writeMethod.invoke(engine, targetPath, model);
+
+        // Target should exist and have real written size (>0 bytes)
+        assertTrue(Files.exists(targetPath));
+        assertTrue(Files.size(targetPath) > 0);
+
+        // Temporary files should be cleaned up
+        Path tempPath = targetPath.getParent().resolve(targetPath.getFileName().toString() + ".tmp");
+        assertFalse(Files.exists(tempPath));
     }
 }
