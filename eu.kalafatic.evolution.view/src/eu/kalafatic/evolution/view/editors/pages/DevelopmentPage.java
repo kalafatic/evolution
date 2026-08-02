@@ -327,14 +327,14 @@ public class DevelopmentPage extends AEvoPage {
 		String customSuperBin = new File(new File(System.getProperty("user.home"), "projects/evo/supervisor"),
 				dateStr + "/bin").getPath();
 
-		sdData.add(new SelfDevRow(1, SelfDevRow.GIT_CHECK_EVO, gitPathUrl, "ready", "evo"));
-		sdData.add(new SelfDevRow(2, SelfDevRow.COPY_SUPERVISOR_SRC, customSuperSrc, "ready", "evo"));
-		sdData.add(new SelfDevRow(3, SelfDevRow.BUILD_SUPERVISOR_LOCAL, customSuperBin, "ready", "evo"));
-		sdData.add(new SelfDevRow(4, SelfDevRow.SUPERVISOR_CHECK, "supervisor.exe", "ready", "evo"));
-		sdData.add(new SelfDevRow(5, SelfDevRow.GIT_CHECK_SUPERVISOR, gitPathUrl, "ready", "supervisor"));
-		sdData.add(new SelfDevRow(6, SelfDevRow.MAVEN_CHECK_EVO, mvnPath, "ready", "evo"));
-		sdData.add(new SelfDevRow(7, SelfDevRow.MAVEN_CHECK_SUPERVISOR, mvnPath, "ready", "supervisor"));
-		sdData.add(new SelfDevRow(8, SelfDevRow.LLM_CHECK, llmModel, "ready", "evo"));
+		sdData.add(new SelfDevRow(1, SelfDevRow.LLM_CHECK, llmModel, "ready", "evo"));
+		sdData.add(new SelfDevRow(2, SelfDevRow.MAVEN_CHECK_EVO, mvnPath, "ready", "evo"));
+		sdData.add(new SelfDevRow(3, SelfDevRow.GIT_CHECK_EVO, gitPathUrl, "ready", "evo"));
+		sdData.add(new SelfDevRow(4, SelfDevRow.COPY_SUPERVISOR_SRC, customSuperSrc, "ready", "evo"));
+		sdData.add(new SelfDevRow(5, SelfDevRow.BUILD_SUPERVISOR_LOCAL, customSuperBin, "ready", "evo"));
+		sdData.add(new SelfDevRow(6, SelfDevRow.SUPERVISOR_CHECK, "supervisor.exe", "ready", "evo"));
+		sdData.add(new SelfDevRow(7, SelfDevRow.GIT_CHECK_SUPERVISOR, gitPathUrl, "ready", "supervisor"));
+		sdData.add(new SelfDevRow(8, SelfDevRow.MAVEN_CHECK_SUPERVISOR, mvnPath, "ready", "supervisor"));
 		sdData.add(new SelfDevRow(9, SelfDevRow.GENOME_CHECK, "supervisor.genome", "ready", "evo"));
 		sdData.add(new SelfDevRow(10, SelfDevRow.PERM_CHECK, "supervisor.fs", "ready", "evo"));
 		sdData.add(new SelfDevRow(11, SelfDevRow.COPY_SOURCE, getSupervisorSourcePath(), "ready", "evo"));
