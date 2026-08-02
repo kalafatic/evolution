@@ -155,14 +155,23 @@ public class LLMDarwinEngine extends ADarwinEngine {
         public long paramCount;
         public long durationMs;
         public double fitness;
+        public boolean failed;
+        public String failureReason;
 
-        public CandidateResult(String name, LlmConfig config, double loss, long paramCount, long durationMs, double fitness) {
+        public CandidateResult(String name, LlmConfig config, double loss, long paramCount, long durationMs, double fitness, boolean failed, String failureReason) {
             this.name = name;
             this.config = copyConfig(config);
             this.loss = loss;
             this.paramCount = paramCount;
             this.durationMs = durationMs;
             this.fitness = fitness;
+            this.failed = failed;
+            this.failureReason = failureReason;
+        }
+
+        // Keep old constructor for compatibility
+        public CandidateResult(String name, LlmConfig config, double loss, long paramCount, long durationMs, double fitness) {
+            this(name, config, loss, paramCount, durationMs, fitness, false, null);
         }
     }
 
@@ -208,12 +217,15 @@ public class LLMDarwinEngine extends ADarwinEngine {
     }
 
     /**
-     * Centralized candidate comparison method. Lower fitness is better.
+     * Centralized candidate comparison method. Lower fitness is better. Successful candidates always rank above failed ones.
      */
     private static int compareCandidates(CandidateResult c1, CandidateResult c2) {
         if (c1 == null && c2 == null) return 0;
         if (c1 == null) return 1;
         if (c2 == null) return -1;
+
+        if (c1.failed && !c2.failed) return 1;
+        if (!c1.failed && c2.failed) return -1;
 
         int cmp = Double.compare(c1.fitness, c2.fitness);
         if (cmp != 0) return cmp;
@@ -369,12 +381,9 @@ public class LLMDarwinEngine extends ADarwinEngine {
                                 !p.toString().contains("/target/") && !p.toString().contains("\\target\\") &&
                                 !p.toString().contains("/node_modules/") && !p.toString().contains("\\node_modules\\"))
                     .sorted() // Deterministic file ordering
+                    .limit(MAX_CORPUS_FILES)
                     .collect(Collectors.toList());
-                int fileCount = 0;
                 for (Path file : files) {
-                    if (fileCount >= MAX_CORPUS_FILES) {
-                        break;
-                    }
                     String name = file.getFileName().toString().toLowerCase();
                     boolean accept = false;
                     if (name.endsWith(".md") && sourceMarkdown) accept = true;
@@ -391,7 +400,6 @@ public class LLMDarwinEngine extends ADarwinEngine {
 
                     if (accept) {
                         scannedPaths.add(file);
-                        fileCount++;
                     }
                 }
             }
@@ -455,6 +463,7 @@ public class LLMDarwinEngine extends ADarwinEngine {
                             .filter(Files::isRegularFile)
                             .filter(p -> p.toString().endsWith(".md"))
                             .sorted()
+                            .limit(MAX_CORPUS_FILES)
                             .collect(Collectors.toList());
                         for (Path f : files) {
                             appendBounded(corpusBuilder, Files.readString(f), MAX_CORPUS_CHARS);
@@ -561,6 +570,8 @@ public class LLMDarwinEngine extends ADarwinEngine {
                 long paramCount = 0;
                 double nativeFitness = 30.0;
                 double ollamaReferenceScore = 0.0;
+                boolean candFailed = false;
+                String candFailureReason = null;
 
                 // Path A: EVERY candidate is trained and evaluated using its own native EvoLlmModel.
                 boolean nativeSuccess = false;
@@ -575,6 +586,8 @@ public class LLMDarwinEngine extends ADarwinEngine {
                     nativeLoss = 10.0;
                     nativeFitness = 30.0;
                     paramCount = 1_000_000;
+                    candFailed = true;
+                    candFailureReason = e.getMessage();
                 }
 
                 long durationMs = System.currentTimeMillis() - startTime;
@@ -630,18 +643,12 @@ public class LLMDarwinEngine extends ADarwinEngine {
                 double uiScore = Math.max(0.01, 1.0 / (1.0 + candidateFitness));
                 EvolutionProgressPublisher.updateBranchStatus(context, candidateId, candidateName + " (" + config + ")", "scoring", uiScore);
 
-                results.add(new CandidateResult(candidateName, config, nativeLoss, paramCount, durationMs, candidateFitness));
+                results.add(new CandidateResult(candidateName, config, nativeLoss, paramCount, durationMs, candidateFitness, candFailed, candFailureReason));
                 candIndex++;
             }
 
             // Stable deterministic sorting
-            results.sort((c1, c2) -> {
-                int cmp = Double.compare(c1.fitness, c2.fitness);
-                if (cmp != 0) return cmp;
-                int cmpLoss = Double.compare(c1.loss, c2.loss);
-                if (cmpLoss != 0) return cmpLoss;
-                return c1.name.compareTo(c2.name);
-            });
+            results.sort((c1, c2) -> compareCandidates(c1, c2));
 
             CandidateResult genWinner = results.get(0);
             context.log("[FORGE] Generation " + gen + " Winner: " + genWinner.name + " (" + genWinner.config + ")");
@@ -658,7 +665,7 @@ public class LLMDarwinEngine extends ADarwinEngine {
 
             // Correct overall winner logic across ALL generations (not just replacing with the final generation's winner)
             if (overallWinner == null || compareCandidates(genWinner, overallWinner) < 0) {
-                overallWinner = new CandidateResult(genWinner.name, genWinner.config, genWinner.loss, genWinner.paramCount, genWinner.durationMs, genWinner.fitness);
+                overallWinner = new CandidateResult(genWinner.name, genWinner.config, genWinner.loss, genWinner.paramCount, genWinner.durationMs, genWinner.fitness, genWinner.failed, genWinner.failureReason);
             }
 
             // Update the winner and rejected branch statuses for the UI
@@ -757,6 +764,7 @@ public class LLMDarwinEngine extends ADarwinEngine {
             modelfileBuilder.append(String.format(java.util.Locale.US, "PARAMETER top_p %.4f\n", overallWinner.config.topP));
             modelfileBuilder.append(String.format("PARAMETER top_k %d\n", overallWinner.config.topK));
             modelfileBuilder.append(String.format(java.util.Locale.US, "PARAMETER repeat_penalty %.4f\n", overallWinner.config.repeatPenalty));
+            modelfileBuilder.append(String.format("PARAMETER num_ctx %d\n", overallWinner.config.maxSeqLen));
             modelfileBuilder.append("PARAMETER stop \"<EOS>\"\n");
             modelfileBuilder.append("SYSTEM \"\"\"You are EVO, a specialized language model trained on Evolution project knowledge.\"\"\"");
 
