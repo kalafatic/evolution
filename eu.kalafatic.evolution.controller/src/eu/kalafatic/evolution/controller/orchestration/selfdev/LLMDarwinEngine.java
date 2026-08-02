@@ -754,7 +754,7 @@ public class LLMDarwinEngine extends ADarwinEngine {
 
         // Export GGUF via OllamaExporter
         OllamaExporter exporter = new OllamaExporter();
-        exporter.export(dynamicModelName, forgeOutputDir.toPath(), winningModel);
+        exporter.export(dynamicModelName, forgeOutputDir.toPath(), winningModel, finalTokenizer.getInvVocab());
 
         // Overwrite the Modelfile with the winning candidate's optimized evolutionary Ollama parameters
         try {
