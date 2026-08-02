@@ -159,6 +159,25 @@ public class SelfDevBootstrapController {
         File dir = projectRoot;
         File supervisorDir = null;
 
+        // 0. Prioritize checking Git repository path first
+        String gitPath = null;
+        if (orchestrator != null && orchestrator.getGit() != null) {
+            gitPath = orchestrator.getGit().getLocalPath();
+        }
+        if (gitPath == null || gitPath.isEmpty()) {
+            gitPath = eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.getRepositoryPath(eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.REPO_EVOLUTION);
+        }
+        if (gitPath != null && !gitPath.isEmpty()) {
+            File gitDir = new File(gitPath);
+            File testDir = new File(gitDir, "eu.kalafatic.evolution.supervisor");
+            System.out.println("[SelfDevBootstrapController] [SUPERVISOR_FIND] Checking Git repository path first: " + testDir.getAbsolutePath());
+            if (testDir.exists() && new File(testDir, "pom.xml").exists()) {
+                supervisorDir = testDir;
+                System.out.println("[SelfDevBootstrapController] [SUPERVISOR_FIND] Found supervisor dir via Git repository scan: " + supervisorDir.getAbsolutePath());
+                return supervisorDir;
+            }
+        }
+
         // 1. Scan upwards from projectRoot
         while (dir != null) {
             File testDir = new File(dir, "eu.kalafatic.evolution.supervisor");
@@ -1135,19 +1154,39 @@ public class SelfDevBootstrapController {
     private String checkGenome() {
         long startTime = System.currentTimeMillis();
         System.out.println("[SelfDevBootstrapController] [CHECK_GENOME] Starting GENOME Check. projectRoot: " + (projectRoot != null ? projectRoot.getAbsolutePath() : "null"));
-        File dir = projectRoot;
         File genomeModuleDir = null;
 
-        // 1. Scan upwards from projectRoot
-        while (dir != null) {
-            File testDir = new File(dir, "eu.kalafatic.evolution.selfdev.genome");
-            System.out.println("[SelfDevBootstrapController] [CHECK_GENOME] Scanning parent path: " + dir.getAbsolutePath() + " for: " + testDir.getName());
+        // 0. Prioritize checking Git repository path first
+        String gitPath = null;
+        if (orchestrator != null && orchestrator.getGit() != null) {
+            gitPath = orchestrator.getGit().getLocalPath();
+        }
+        if (gitPath == null || gitPath.isEmpty()) {
+            gitPath = eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.getRepositoryPath(eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.REPO_EVOLUTION);
+        }
+        if (gitPath != null && !gitPath.isEmpty()) {
+            File gitDir = new File(gitPath);
+            File testDir = new File(gitDir, "eu.kalafatic.evolution.selfdev.genome");
+            System.out.println("[SelfDevBootstrapController] [CHECK_GENOME] Checking Git repository path first: " + testDir.getAbsolutePath());
             if (testDir.exists() && new File(testDir, "pom.xml").exists()) {
                 genomeModuleDir = testDir;
-                System.out.println("[SelfDevBootstrapController] [CHECK_GENOME] Found genome module dir via parent scan: " + genomeModuleDir.getAbsolutePath());
-                break;
+                System.out.println("[SelfDevBootstrapController] [CHECK_GENOME] Found genome module dir via Git repository scan: " + genomeModuleDir.getAbsolutePath());
             }
-            dir = dir.getParentFile();
+        }
+
+        if (genomeModuleDir == null) {
+            File dir = projectRoot;
+            // 1. Scan upwards from projectRoot
+            while (dir != null) {
+                File testDir = new File(dir, "eu.kalafatic.evolution.selfdev.genome");
+                System.out.println("[SelfDevBootstrapController] [CHECK_GENOME] Scanning parent path: " + dir.getAbsolutePath() + " for: " + testDir.getName());
+                if (testDir.exists() && new File(testDir, "pom.xml").exists()) {
+                    genomeModuleDir = testDir;
+                    System.out.println("[SelfDevBootstrapController] [CHECK_GENOME] Found genome module dir via parent scan: " + genomeModuleDir.getAbsolutePath());
+                    break;
+                }
+                dir = dir.getParentFile();
+            }
         }
 
         // 2. Scan siblings of projectRoot as fallback

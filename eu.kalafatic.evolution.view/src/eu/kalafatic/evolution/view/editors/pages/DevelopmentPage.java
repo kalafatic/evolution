@@ -327,11 +327,11 @@ public class DevelopmentPage extends AEvoPage {
 		String customSuperBin = new File(new File(System.getProperty("user.home"), "projects/evo/supervisor"),
 				dateStr + "/bin").getPath();
 
-		sdData.add(new SelfDevRow(4, SelfDevRow.GIT_CHECK_EVO, gitPathUrl, "ready", "evo"));
+		sdData.add(new SelfDevRow(1, SelfDevRow.GIT_CHECK_EVO, gitPathUrl, "ready", "evo"));
+		sdData.add(new SelfDevRow(2, SelfDevRow.COPY_SUPERVISOR_SRC, customSuperSrc, "ready", "evo"));
+		sdData.add(new SelfDevRow(3, SelfDevRow.BUILD_SUPERVISOR_LOCAL, customSuperBin, "ready", "evo"));
+		sdData.add(new SelfDevRow(4, SelfDevRow.SUPERVISOR_CHECK, "supervisor.exe", "ready", "evo"));
 		sdData.add(new SelfDevRow(5, SelfDevRow.GIT_CHECK_SUPERVISOR, gitPathUrl, "ready", "supervisor"));
-		sdData.add(new SelfDevRow(1, SelfDevRow.COPY_SUPERVISOR_SRC, customSuperSrc, "ready", "evo"));
-		sdData.add(new SelfDevRow(2, SelfDevRow.BUILD_SUPERVISOR_LOCAL, customSuperBin, "ready", "evo"));
-		sdData.add(new SelfDevRow(3, SelfDevRow.SUPERVISOR_CHECK, "supervisor.exe", "ready", "evo"));
 		sdData.add(new SelfDevRow(6, SelfDevRow.MAVEN_CHECK_EVO, mvnPath, "ready", "evo"));
 		sdData.add(new SelfDevRow(7, SelfDevRow.MAVEN_CHECK_SUPERVISOR, mvnPath, "ready", "supervisor"));
 		sdData.add(new SelfDevRow(8, SelfDevRow.LLM_CHECK, llmModel, "ready", "evo"));
@@ -346,6 +346,8 @@ public class DevelopmentPage extends AEvoPage {
 		sdData.add(new SelfDevRow(17, SelfDevRow.SUPERVISOR_LOOP, "supervisor.exe", "ready", "NA"));
 		sdData.add(new SelfDevRow(18, SelfDevRow.SELF_DEV_LOOP, "orchestrator", "ready", "NA"));
 		sdData.add(new SelfDevRow(19, SelfDevRow.STOP_EVO_PRODUCT_SUPERVISOR, exportPath, "ready", "supervisor"));
+
+		sdData.sort((r1, r2) -> Integer.compare(r1.order, r2.order));
 		selfDevTable.setInput(sdData);
 	}
 
@@ -716,15 +718,21 @@ public class DevelopmentPage extends AEvoPage {
 						"[DevelopmentPage] [RUN_DEBUG_FAIL] Table input is not a valid list of SelfDevRow rows.");
 				return;
 			}
+			List<SelfDevRow> sortedRows = new ArrayList<>();
+			for (Object obj : rows) {
+				if (obj instanceof SelfDevRow r) {
+					sortedRows.add(r);
+				}
+			}
+			sortedRows.sort((r1, r2) -> Integer.compare(r1.order, r2.order));
+
 			System.out.println("[DevelopmentPage] [RUN_DEBUG] Starting sequential phase verification. Number of tasks: "
-					+ rows.size());
+					+ sortedRows.size());
 			if (bootstrapController != null) {
 				System.out.println("[DevelopmentPage] [RUN_DEBUG] Setting bootstrapController debugMode = true.");
 				bootstrapController.setDebugMode(true);
 			}
-			for (Object obj : rows) {
-				if (!(obj instanceof SelfDevRow row))
-					continue;
+			for (SelfDevRow row : sortedRows) {
 				System.out.println("[DevelopmentPage] [RUN_DEBUG_STEP] Starting phase: " + row.name
 						+ ", expected path/URL: " + row.path + ", currentStatus: " + row.status);
 				Display.getDefault().syncExec(() -> {
