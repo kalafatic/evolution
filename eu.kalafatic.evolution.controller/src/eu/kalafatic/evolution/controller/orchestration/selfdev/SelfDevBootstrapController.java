@@ -159,7 +159,20 @@ public class SelfDevBootstrapController {
         File dir = projectRoot;
         File supervisorDir = null;
 
-        // 0. Prioritize checking Git repository path first
+        // 0. Prioritize checking active workspace codebase path first
+        String codebasePath = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getCodebasePath();
+        if (codebasePath != null && !codebasePath.isEmpty()) {
+            File cbDir = new File(codebasePath);
+            File testDir = new File(cbDir, "eu.kalafatic.evolution.supervisor");
+            System.out.println("[SelfDevBootstrapController] [SUPERVISOR_FIND] Checking active workspace codebase path first: " + testDir.getAbsolutePath());
+            if (testDir.exists() && new File(testDir, "pom.xml").exists()) {
+                supervisorDir = testDir;
+                System.out.println("[SelfDevBootstrapController] [SUPERVISOR_FIND] Found supervisor dir via codebasePath: " + supervisorDir.getAbsolutePath());
+                return supervisorDir;
+            }
+        }
+
+        // 0.5. Fallback to Git repository path first
         String gitPath = null;
         if (orchestrator != null && orchestrator.getGit() != null) {
             gitPath = orchestrator.getGit().getLocalPath();
@@ -170,7 +183,7 @@ public class SelfDevBootstrapController {
         if (gitPath != null && !gitPath.isEmpty()) {
             File gitDir = new File(gitPath);
             File testDir = new File(gitDir, "eu.kalafatic.evolution.supervisor");
-            System.out.println("[SelfDevBootstrapController] [SUPERVISOR_FIND] Checking Git repository path first: " + testDir.getAbsolutePath());
+            System.out.println("[SelfDevBootstrapController] [SUPERVISOR_FIND] Checking Git repository path: " + testDir.getAbsolutePath());
             if (testDir.exists() && new File(testDir, "pom.xml").exists()) {
                 supervisorDir = testDir;
                 System.out.println("[SelfDevBootstrapController] [SUPERVISOR_FIND] Found supervisor dir via Git repository scan: " + supervisorDir.getAbsolutePath());
@@ -1156,21 +1169,35 @@ public class SelfDevBootstrapController {
         System.out.println("[SelfDevBootstrapController] [CHECK_GENOME] Starting GENOME Check. projectRoot: " + (projectRoot != null ? projectRoot.getAbsolutePath() : "null"));
         File genomeModuleDir = null;
 
-        // 0. Prioritize checking Git repository path first
-        String gitPath = null;
-        if (orchestrator != null && orchestrator.getGit() != null) {
-            gitPath = orchestrator.getGit().getLocalPath();
-        }
-        if (gitPath == null || gitPath.isEmpty()) {
-            gitPath = eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.getRepositoryPath(eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.REPO_EVOLUTION);
-        }
-        if (gitPath != null && !gitPath.isEmpty()) {
-            File gitDir = new File(gitPath);
-            File testDir = new File(gitDir, "eu.kalafatic.evolution.selfdev.genome");
-            System.out.println("[SelfDevBootstrapController] [CHECK_GENOME] Checking Git repository path first: " + testDir.getAbsolutePath());
+        // 0. Prioritize checking active workspace codebase path first
+        String codebasePath = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getCodebasePath();
+        if (codebasePath != null && !codebasePath.isEmpty()) {
+            File cbDir = new File(codebasePath);
+            File testDir = new File(cbDir, "eu.kalafatic.evolution.selfdev.genome");
+            System.out.println("[SelfDevBootstrapController] [CHECK_GENOME] Checking active workspace codebase path first: " + testDir.getAbsolutePath());
             if (testDir.exists() && new File(testDir, "pom.xml").exists()) {
                 genomeModuleDir = testDir;
-                System.out.println("[SelfDevBootstrapController] [CHECK_GENOME] Found genome module dir via Git repository scan: " + genomeModuleDir.getAbsolutePath());
+                System.out.println("[SelfDevBootstrapController] [CHECK_GENOME] Found genome module dir via codebasePath: " + genomeModuleDir.getAbsolutePath());
+            }
+        }
+
+        // 0.5. Fallback to Git repository path first
+        if (genomeModuleDir == null) {
+            String gitPath = null;
+            if (orchestrator != null && orchestrator.getGit() != null) {
+                gitPath = orchestrator.getGit().getLocalPath();
+            }
+            if (gitPath == null || gitPath.isEmpty()) {
+                gitPath = eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.getRepositoryPath(eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.REPO_EVOLUTION);
+            }
+            if (gitPath != null && !gitPath.isEmpty()) {
+                File gitDir = new File(gitPath);
+                File testDir = new File(gitDir, "eu.kalafatic.evolution.selfdev.genome");
+                System.out.println("[SelfDevBootstrapController] [CHECK_GENOME] Checking Git repository path first: " + testDir.getAbsolutePath());
+                if (testDir.exists() && new File(testDir, "pom.xml").exists()) {
+                    genomeModuleDir = testDir;
+                    System.out.println("[SelfDevBootstrapController] [CHECK_GENOME] Found genome module dir via Git repository scan: " + genomeModuleDir.getAbsolutePath());
+                }
             }
         }
 
