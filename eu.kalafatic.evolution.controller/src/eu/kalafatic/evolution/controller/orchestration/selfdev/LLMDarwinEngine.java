@@ -552,6 +552,27 @@ public class LLMDarwinEngine extends ADarwinEngine {
             }
             EvolutionProgressPublisher.syncBranches(context, branchStatuses);
 
+            // Publish initial [DARWIN_BRANCHES] JSON payload to UI for real-time visualization
+            JSONObject branchesJson = new JSONObject();
+            branchesJson.put("iteration", gen);
+            branchesJson.put("minIterations", 1);
+            branchesJson.put("maxIterations", generations);
+            branchesJson.put("branchingLimit", candidates.size());
+            branchesJson.put("minBranchingLimit", 1);
+            JSONArray branchesArr = new JSONArray();
+            bChar = 'A';
+            for (LlmConfig config : candidates) {
+                JSONObject bObj = new JSONObject();
+                bObj.put("id", "gen_" + gen + "_candidate_" + bChar);
+                bObj.put("strategy", "Candidate " + bChar + " (" + config + ")");
+                bObj.put("status", "active");
+                bObj.put("score", 0.0);
+                branchesArr.put(bObj);
+                bChar++;
+            }
+            branchesJson.put("branches", branchesArr);
+            context.log("[DARWIN_BRANCHES] " + branchesJson.toString());
+
             List<CandidateResult> results = new ArrayList<>();
             int candIndex = 0;
 
@@ -564,6 +585,33 @@ public class LLMDarwinEngine extends ADarwinEngine {
 
                 EvolutionProgressPublisher.updateActiveModel(context, "evo-candidate", "Evaluating " + candidateName);
                 EvolutionProgressPublisher.updateBranchStatus(context, candidateId, candidateName + " (" + config + ")", "verifying", null);
+
+                // Publish verifying status update to [DARWIN_BRANCHES] D3.js visualization graph
+                JSONObject verifyingBranchesJson = new JSONObject();
+                verifyingBranchesJson.put("iteration", gen);
+                JSONArray verifyingBranchesArr = new JSONArray();
+                char bCharVerify = 'A';
+                for (int i = 0; i < candidates.size(); i++) {
+                    JSONObject bObj = new JSONObject();
+                    String bId = "gen_" + gen + "_candidate_" + bCharVerify;
+                    bObj.put("id", bId);
+                    bObj.put("strategy", "Candidate " + bCharVerify + " (" + candidates.get(i) + ")");
+                    if (bId.equals(candidateId)) {
+                        bObj.put("status", "verifying");
+                        bObj.put("score", 0.0);
+                    } else if (i < candIndex) {
+                        double completedScore = Math.max(0.01, 1.0 / (1.0 + results.get(i).fitness));
+                        bObj.put("status", "completed");
+                        bObj.put("score", completedScore);
+                    } else {
+                        bObj.put("status", "active");
+                        bObj.put("score", 0.0);
+                    }
+                    verifyingBranchesArr.put(bObj);
+                    bCharVerify++;
+                }
+                verifyingBranchesJson.put("branches", verifyingBranchesArr);
+                context.log("[DARWIN_BRANCHES] " + verifyingBranchesJson.toString());
 
                 long startTime = System.currentTimeMillis();
                 double nativeLoss = 10.0;
@@ -643,6 +691,33 @@ public class LLMDarwinEngine extends ADarwinEngine {
                 double uiScore = Math.max(0.01, 1.0 / (1.0 + candidateFitness));
                 EvolutionProgressPublisher.updateBranchStatus(context, candidateId, candidateName + " (" + config + ")", "scoring", uiScore);
 
+                // Publish scoring update to [DARWIN_BRANCHES] D3.js visualization graph
+                JSONObject scoringBranchesJson = new JSONObject();
+                scoringBranchesJson.put("iteration", gen);
+                JSONArray scoringBranchesArr = new JSONArray();
+                char bCharScoring = 'A';
+                for (int i = 0; i < candidates.size(); i++) {
+                    JSONObject bObj = new JSONObject();
+                    String bId = "gen_" + gen + "_candidate_" + bCharScoring;
+                    bObj.put("id", bId);
+                    bObj.put("strategy", "Candidate " + bCharScoring + " (" + candidates.get(i) + ")");
+                    if (bId.equals(candidateId)) {
+                        bObj.put("status", "scoring");
+                        bObj.put("score", uiScore);
+                    } else if (i < candIndex) {
+                        double completedScore = Math.max(0.01, 1.0 / (1.0 + results.get(i).fitness));
+                        bObj.put("status", "completed");
+                        bObj.put("score", completedScore);
+                    } else {
+                        bObj.put("status", "active");
+                        bObj.put("score", 0.0);
+                    }
+                    scoringBranchesArr.put(bObj);
+                    bCharScoring++;
+                }
+                scoringBranchesJson.put("branches", scoringBranchesArr);
+                context.log("[DARWIN_BRANCHES] " + scoringBranchesJson.toString());
+
                 results.add(new CandidateResult(candidateName, config, nativeLoss, paramCount, durationMs, candidateFitness, candFailed, candFailureReason));
                 candIndex++;
             }
@@ -690,6 +765,45 @@ public class LLMDarwinEngine extends ADarwinEngine {
             }
             EvolutionProgressPublisher.syncBranches(context, updatedStatuses);
             EvolutionProgressPublisher.completeIteration(context);
+
+            // Publish final [DARWIN_BRANCHES] JSON payload with APPROVED status stamp to UI chat and workflow graphs
+            JSONObject finalGenBranchesJson = new JSONObject();
+            finalGenBranchesJson.put("iteration", gen);
+            finalGenBranchesJson.put("minIterations", 1);
+            finalGenBranchesJson.put("maxIterations", generations);
+            finalGenBranchesJson.put("branchingLimit", candidates.size());
+            finalGenBranchesJson.put("minBranchingLimit", 1);
+            JSONArray finalGenBranchesArr = new JSONArray();
+            char bCharFinal = 'A';
+            for (int i = 0; i < candidates.size(); i++) {
+                JSONObject bObj = new JSONObject();
+                String bId = "gen_" + gen + "_candidate_" + bCharFinal;
+                bObj.put("id", bId);
+                bObj.put("strategy", "Candidate " + bCharFinal + " (" + candidates.get(i) + ")");
+                double completedScore = Math.max(0.01, 1.0 / (1.0 + results.get(i).fitness));
+                bObj.put("score", completedScore);
+                if (bId.equals(winnerBranchId)) {
+                    bObj.put("status", "APPROVED");
+                    finalGenBranchesJson.put("winnerId", bId);
+                } else {
+                    bObj.put("status", "REJECTED");
+                }
+                finalGenBranchesArr.put(bObj);
+                bCharFinal++;
+            }
+            finalGenBranchesJson.put("branches", finalGenBranchesArr);
+
+            StringBuilder outcomeBuilder = new StringBuilder();
+            char bCharOutcome = 'A';
+            for (int i = 0; i < candidates.size(); i++) {
+                String bId = "gen_" + gen + "_candidate_" + bCharOutcome;
+                String status = bId.equals(winnerBranchId) ? "APPROVED" : "REJECTED";
+                outcomeBuilder.append("[").append(status).append(":").append(bId).append("] ");
+                bCharOutcome++;
+            }
+            outcomeBuilder.append("[DECISION:AUTO] ");
+            outcomeBuilder.append("[DARWIN_BRANCHES] ").append(finalGenBranchesJson.toString());
+            context.log(outcomeBuilder.toString());
 
             // Generate candidates for the next generation via mutation using reproducible configurations
             if (gen < generations) {
