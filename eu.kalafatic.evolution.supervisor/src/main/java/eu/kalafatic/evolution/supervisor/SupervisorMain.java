@@ -1,293 +1,307 @@
 package eu.kalafatic.evolution.supervisor;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.HashMap;
+import java.util.Map;
+
 import fi.iki.elonen.NanoHTTPD;
-import eu.kalafatic.evolution.supervisor.bootstrap.CodebaseCopyTool;
-import eu.kalafatic.evolution.supervisor.bootstrap.CopyConfiguration;
-import eu.kalafatic.evolution.supervisor.bootstrap.CopyResult;
-import eu.kalafatic.evolution.supervisor.bootstrap.RcpBuildTool;
-import eu.kalafatic.evolution.supervisor.bootstrap.BuildConfiguration;
-import eu.kalafatic.evolution.supervisor.bootstrap.BuildResult;
 
-public class SupervisorMain extends NanoHTTPD {
-    private static File baseDir;
-    private static volatile Process activeEvoProcess;
-
-    public SupervisorMain(int port) {
-        super("127.0.0.1", port);
-    }
-
+public class SupervisorMain {
+    private static NanoHTTPD server;
+    
     public static void main(String[] args) {
-        if (args.length > 0 && args[0].startsWith("--")) {
-            handleCliCommand(args);
-            return;
-        }
-
         System.out.println("=== EVO AI SUPERVISOR STARTING ===");
+
         String path = (args.length > 0) ? args[0] : ".";
-        baseDir = new File(path);
+        File baseDir = new File(path);
+
         System.out.println("[CONFIG] Base Directory: " + baseDir.getAbsolutePath());
 
-        SupervisorMain server = new SupervisorMain(8089);
+        // ============================================================
+        // START THE HTTP SERVER FIRST - BEFORE THE MONITORING LOOP
+        // ============================================================
         try {
-            System.out.println("[HTTP] Attempting to start NanoHTTPD on port 8089...");
+            System.out.println("[HTTP] Initializing HTTP server on port 8089...");
+            
+            // Verify NanoHTTPD is in classpath
+            Class.forName("fi.iki.elonen.NanoHTTPD");
+            System.out.println("[HTTP] NanoHTTPD class found in classpath");
+            
+            // Create and start the server
+            server = new EVOSupervisorServer(8089, baseDir);
             server.start(NanoHTTPD.SOCKET_READ_TIMEOUT, false);
-            System.out.println("[HTTP] Server started on port 8089");
+            System.out.println("[HTTP] Server started successfully on http://127.0.0.1:8089");
+            System.out.println("[HTTP] Endpoints:");
+            System.out.println("[HTTP]   GET /ping         - Health check");
+            System.out.println("[HTTP]   GET /git-check    - Git availability");
+            System.out.println("[HTTP]   GET /maven-check  - Maven availability");
+            System.out.println("[HTTP]   POST /build       - Trigger build");
+            System.out.println("[HTTP]   GET /export       - Export product");
+            System.out.println("[HTTP]   POST /start-evo   - Start EVO");
+            System.out.println("[HTTP]   POST /stop-evo    - Stop EVO");
+            
+            // Self-test: verify the server is actually responding
+            try {
+                java.net.HttpURLConnection conn = (java.net.HttpURLConnection) 
+                    new java.net.URL("http://127.0.0.1:8089/ping").openConnection();
+                conn.setConnectTimeout(3000);
+                conn.setReadTimeout(3000);
+                conn.connect();
+                int code = conn.getResponseCode();
+                System.out.println("[HTTP] Self-test: /ping returned HTTP " + code);
+                if (code == 200) {
+                    System.out.println("[HTTP] Self-test: PASSED");
+                } else {
+                    System.err.println("[HTTP] Self-test: FAILED with code " + code);
+                }
+            } catch (Exception e) {
+                System.err.println("[HTTP] Self-test: FAILED - " + e.getMessage());
+                e.printStackTrace();
+            }
+            
+        } catch (ClassNotFoundException e) {
+            System.err.println("[HTTP] ERROR: NanoHTTPD class not found in classpath!");
+            System.err.println("[HTTP] This means the shaded JAR does not include NanoHTTPD.");
+            System.err.println("[HTTP] Please add the NanoHTTPD dependency to pom.xml:");
+            System.err.println("[HTTP]   <dependency>");
+            System.err.println("[HTTP]     <groupId>org.nanohttpd</groupId>");
+            System.err.println("[HTTP]     <artifactId>nanohttpd</artifactId>");
+            System.err.println("[HTTP]     <version>2.3.1</version>");
+            System.err.println("[HTTP]   </dependency>");
+            // Continue without HTTP server - file protocol still works
+            System.err.println("[HTTP] Continuing with file-based protocol only.");
         } catch (Throwable t) {
-            System.err.println("[HTTP] Failed to start server: " + t.getMessage());
+            System.err.println("[HTTP] ERROR: Failed to start HTTP server: " + t.getMessage());
             t.printStackTrace();
+            // Continue without HTTP server
+            System.err.println("[HTTP] Continuing with file-based protocol only.");
         }
 
+        // ============================================================
+        // START THE MONITORING LOOP
+        // ============================================================
+        System.out.println("[SUPERVISOR] Starting monitoring loop...");
         SelfDevSupervisor supervisor = new SelfDevSupervisor(baseDir);
         supervisor.run();
+
         System.out.println("=== EVO AI SUPERVISOR FINISHED ===");
     }
-
-    @Override
-    public Response serve(IHTTPSession session) {
-        String uri = session.getUri();
-        if ("/ping".equals(uri)) return newFixedLengthResponse("READY");
-
-        if ("/git-check".equals(uri)) {
-            String workspace = session.getParms().get("path");
-            if (workspace == null || workspace.trim().isEmpty()) {
-                workspace = baseDir != null ? baseDir.getAbsolutePath() : ".";
-            }
-            File localDir = new File(workspace);
-            try {
-                ProcessBuilder pb = new ProcessBuilder("git", "status", "--porcelain");
-                pb.directory(localDir);
-                pb.redirectErrorStream(true);
-                Process p = pb.start();
-                StringBuilder output = new StringBuilder();
-                try (java.io.BufferedReader r = new java.io.BufferedReader(new java.io.InputStreamReader(p.getInputStream(), java.nio.charset.StandardCharsets.UTF_8))) {
-                    String line;
-                    while ((line = r.readLine()) != null) {
-                        output.append(line).append("\n");
-                    }
-                }
-                int exitCode = p.waitFor();
-                if (exitCode == 0) {
-                    return newFixedLengthResponse("CHECKED (Supervisor) - Pending changes: " + output.toString().split("\n").length);
-                } else {
-                    return newFixedLengthResponse("ERROR: git command failed with exit code " + exitCode);
-                }
-            } catch (Exception e) {
-                return newFixedLengthResponse("ERROR: " + e.getMessage());
-            }
+    
+    /**
+     * NanoHTTPD server implementation for supervisor endpoints.
+     */
+    private static class EVOSupervisorServer extends NanoHTTPD {
+        private final File baseDir;
+        private final File runDir;
+        
+        public EVOSupervisorServer(int port, File baseDir) {
+            // Explicitly bind to 127.0.0.1 to avoid Windows dual-stack issues
+            super("127.0.0.1", port);
+            this.baseDir = baseDir;
+            this.runDir = new File(baseDir, "self-dev-run");
+            System.out.println("[HTTP] EVOSupervisorServer created on port " + port + " bound to 127.0.0.1");
         }
-
-        if ("/maven-check".equals(uri)) {
+        
+        @Override
+        public Response serve(IHTTPSession session) {
+            String uri = session.getUri();
+            String method = session.getMethod().toString();
+            
+            System.out.println("[HTTP] " + method + " " + uri);
+            
             try {
-                String mvnCmd = System.getProperty("os.name").toLowerCase().contains("win") ? "mvn.cmd" : "mvn";
-                ProcessBuilder pb = new ProcessBuilder(mvnCmd, "-version");
-                pb.redirectErrorStream(true);
-                Process p = pb.start();
-                StringBuilder output = new StringBuilder();
-                try (java.io.BufferedReader r = new java.io.BufferedReader(new java.io.InputStreamReader(p.getInputStream(), java.nio.charset.StandardCharsets.UTF_8))) {
-                    String line;
-                    while ((line = r.readLine()) != null) {
-                        output.append(line).append("\n");
+                // Parse query parameters
+                Map<String, String> params = new HashMap<>();
+                if (session.getMethod() == Method.GET) {
+                    String query = session.getQueryParameterString();
+                    if (query != null && !query.isEmpty()) {
+                        for (String pair : query.split("&")) {
+                            String[] parts = pair.split("=");
+                            if (parts.length == 2) {
+                                params.put(parts[0], parts[1]);
+                            }
+                        }
                     }
                 }
-                int exitCode = p.waitFor();
-                if (exitCode == 0) {
-                    return newFixedLengthResponse("CHECKED (Supervisor)");
-                } else {
-                    return newFixedLengthResponse("ERROR: mvn -version exited with code " + exitCode);
+                
+                switch (uri) {
+                    case "/ping":
+                        return newFixedLengthResponse(Response.Status.OK, "application/json", 
+                            "{\"status\":\"OK\",\"timestamp\":\"" + System.currentTimeMillis() + "\"}");
+                    
+                    case "/git-check":
+                        return handleGitCheck(session, params);
+                    
+                    case "/maven-check":
+                        return handleMavenCheck(session, params);
+                    
+                    case "/build":
+                        return handleBuild(session, params);
+                    
+                    case "/export":
+                        return handleExport(session, params);
+                    
+                    case "/start-evo":
+                        return handleStartEvo(session, params);
+                    
+                    case "/stop-evo":
+                        return handleStopEvo(session, params);
+                    
+                    default:
+                        return newFixedLengthResponse(Response.Status.NOT_FOUND, "application/json", 
+                            "{\"status\":\"ERROR\",\"message\":\"404 Not Found: " + uri + "\"}");
                 }
             } catch (Exception e) {
-                return newFixedLengthResponse("ERROR: " + e.getMessage());
+                System.err.println("[HTTP] Error handling " + uri + ": " + e.getMessage());
+                e.printStackTrace();
+                StringWriter sw = new StringWriter();
+                e.printStackTrace(new PrintWriter(sw));
+                return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", 
+                    "{\"status\":\"ERROR\",\"message\":\"" + e.getMessage() + "\",\"stackTrace\":\"" + sw.toString().replace("\"", "\\\"") + "\"}");
             }
         }
         
-        if ("/copy".equals(uri)) {
-            String src = session.getParms().get("src");
-            String dest = session.getParms().get("dest");
-            if (src == null || dest == null) return newFixedLengthResponse(Response.Status.BAD_REQUEST, NanoHTTPD.MIME_PLAINTEXT, "Missing parameters");
-            
-            CodebaseCopyTool tool = new CodebaseCopyTool();
-            CopyConfiguration config = new CopyConfiguration(new File(src), new File(dest));
-            config.setOverwrite(true);
-            config.addExclusion(".git");
-            config.addExclusion("target");
-            config.addExclusion("self-dev-run");
-            config.addExclusion(".settings");
-            config.addExclusion(".mvn");
-            config.addExclusion(".metadata");
-            config.addExclusion("bin");
-            config.addExclusion("iterations");
-            config.addExclusion("orchestrator");
-            CopyResult result = tool.copy(config);
-            return newFixedLengthResponse(result.isSuccess() ? "SUCCESS: " + result.getFilesCopied() + " files" : "ERROR: " + result.getMessage());
-        }
-
-        if ("/build".equals(uri)) {
-            String workspace = session.getParms().get("path");
-            if (workspace == null) return newFixedLengthResponse(Response.Status.BAD_REQUEST, NanoHTTPD.MIME_PLAINTEXT, "Missing path");
-            
-            RcpBuildTool tool = new RcpBuildTool();
-            BuildConfiguration config = new BuildConfiguration(new File(workspace));
-            config.setSkipTests(true);
-            config.addGoal("clean");
-            config.addGoal("package");
-            BuildResult result = tool.build(config);
-            
-            saveLog(workspace, result);
-            
-            return newFixedLengthResponse(result.isSuccess() ? "SUCCESS (" + result.getExecutionTimeMs() + "ms). Log: logs/build.log" : "ERROR: Build failed. See logs/build.log");
-        }
-
-        if ("/export".equals(uri)) {
-            String workspace = session.getParms().get("path");
-            if (workspace == null || workspace.trim().isEmpty()) {
-                workspace = baseDir != null ? baseDir.getAbsolutePath() : ".";
-            }
-            File srcDir = new File(workspace);
-            File parentDir = srcDir.getParentFile();
-            if (parentDir == null) parentDir = srcDir;
-            File exportDir = new File(parentDir, "export");
-            if (!exportDir.exists()) {
-                exportDir.mkdirs();
-            }
+        private Response handleGitCheck(IHTTPSession session, Map<String, String> params) {
             try {
-                int copiedCount = copyJars(srcDir, exportDir);
-                if (copiedCount > 0) {
-                    return newFixedLengthResponse("SUCCESS: Exported " + copiedCount + " jars to " + exportDir.getAbsolutePath());
+                String path = params.getOrDefault("path", baseDir.getAbsolutePath());
+                System.out.println("[HTTP] Git check for path: " + path);
+                
+                ProcessBuilder pb = new ProcessBuilder("git", "--version");
+                Process p = pb.start();
+                boolean finished = p.waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
+                int exitCode;
+                if (finished) {
+                    exitCode = p.exitValue();
                 } else {
-                    return newFixedLengthResponse("ERROR: No runnable jars found in " + srcDir.getAbsolutePath() + ". Please build first.");
+                    p.destroyForcibly();
+                    exitCode = -1;
+                }
+                
+                if (exitCode == 0) {
+                    return newFixedLengthResponse(Response.Status.OK, "application/json", 
+                        "{\"status\":\"OK\",\"message\":\"Git is available\",\"path\":\"" + path + "\"}");
+                } else {
+                    return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", 
+                        "{\"status\":\"ERROR\",\"message\":\"Git not available\",\"exitCode\":" + exitCode + "}");
                 }
             } catch (Exception e) {
-                return newFixedLengthResponse("ERROR: " + e.getMessage());
+                return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", 
+                    "{\"status\":\"ERROR\",\"message\":\"" + e.getMessage() + "\"}");
             }
         }
 
-        if ("/start-evo".equals(uri)) {
-            String workspace = session.getParms().get("path");
-            if (workspace == null || workspace.trim().isEmpty()) {
-                workspace = baseDir != null ? baseDir.getAbsolutePath() : ".";
-            }
-            File srcDir = new File(workspace);
-            File parentDir = srcDir.getParentFile();
-            if (parentDir == null) parentDir = srcDir;
-            File exportDir = new File(parentDir, "export");
-            File[] jars = exportDir.exists() ? exportDir.listFiles((dir, name) -> name.endsWith(".jar")) : null;
-            if (jars == null || jars.length == 0) {
-                return newFixedLengthResponse("ERROR: No exported products found in " + exportDir.getAbsolutePath() + ". Please export first.");
-            }
-            File runnableJar = jars[0];
-            for (File jar : jars) {
-                if (jar.getName().contains("-shaded")) {
-                    runnableJar = jar;
-                    break;
-                }
-            }
+        private Response handleMavenCheck(IHTTPSession session, Map<String, String> params) {
             try {
-                if (activeEvoProcess != null && activeEvoProcess.isAlive()) {
-                    return newFixedLengthResponse("READY (Running) - Already started.");
+                String mvnCmd = System.getProperty("os.name").toLowerCase().contains("win") ? "mvn.cmd" : "mvn";
+                System.out.println("[HTTP] Maven check using: " + mvnCmd);
+                
+                ProcessBuilder pb = new ProcessBuilder(mvnCmd, "-version");
+                Process p = pb.start();
+                boolean finished = p.waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
+                int exitCode;
+                if (finished) {
+                    exitCode = p.exitValue();
+                } else {
+                    p.destroyForcibly();
+                    exitCode = -1;
                 }
-                ProcessBuilder pb = new ProcessBuilder("java", "-jar", runnableJar.getAbsolutePath());
-                pb.directory(exportDir);
-                activeEvoProcess = pb.start();
-                new Thread(() -> {
-                    try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(activeEvoProcess.getInputStream()))) {
-                        while (reader.readLine() != null) {}
-                    } catch (Exception ignored) {}
-                }).start();
-                return newFixedLengthResponse("SUCCESS: Started product " + runnableJar.getName());
+                
+                if (exitCode == 0) {
+                    return newFixedLengthResponse(Response.Status.OK, "application/json", 
+                        "{\"status\":\"OK\",\"message\":\"Maven is available\",\"command\":\"" + mvnCmd + "\"}");
+                } else {
+                    return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", 
+                        "{\"status\":\"ERROR\",\"message\":\"Maven not available\",\"exitCode\":" + exitCode + "}");
+                }
             } catch (Exception e) {
-                return newFixedLengthResponse("ERROR: " + e.getMessage());
+                return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", 
+                    "{\"status\":\"ERROR\",\"message\":\"" + e.getMessage() + "\"}");
             }
         }
-
-        if ("/stop-evo".equals(uri)) {
-            if (activeEvoProcess != null && activeEvoProcess.isAlive()) {
-                activeEvoProcess.destroyForcibly();
-                try {
-                    activeEvoProcess.waitFor(2, java.util.concurrent.TimeUnit.SECONDS);
-                } catch (Exception ignored) {}
-                activeEvoProcess = null;
-                return newFixedLengthResponse("SUCCESS: Stopped running product.");
-            } else {
-                activeEvoProcess = null;
-                return newFixedLengthResponse("READY (Stopped) - Product was not running.");
-            }
-        }
-
-        return newFixedLengthResponse(Response.Status.NOT_FOUND, NanoHTTPD.MIME_PLAINTEXT, "Not Found");
-    }
-
-    private static int copyJars(File dir, File exportDir) {
-        int count = 0;
-        if (dir.isDirectory()) {
-            if (dir.getName().equals("target")) {
-                File[] files = dir.listFiles();
-                if (files != null) {
-                    for (File f : files) {
-                        if (f.isFile() && f.getName().endsWith(".jar")) {
-                            try {
-                                java.nio.file.Files.copy(f.toPath(), new File(exportDir, f.getName()).toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-                                count++;
-                            } catch (Exception ignored) {}
-                        }
-                    }
+        
+        private Response handleBuild(IHTTPSession session, Map<String, String> params) {
+            try {
+                String path = params.getOrDefault("path", baseDir.getAbsolutePath());
+                System.out.println("[HTTP] Build requested for path: " + path);
+                
+                // Ensure run directory exists
+                if (!runDir.exists()) {
+                    runDir.mkdirs();
                 }
-                return count;
+                
+                // Write command.json to trigger build
+                String command = "{\"action\":\"BUILD_AND_RUN\",\"iteration\":0}";
+                File commandFile = new File(runDir, "command.json");
+                java.nio.file.Files.write(commandFile.toPath(), 
+                    command.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                
+                System.out.println("[HTTP] Build command written to: " + commandFile.getAbsolutePath());
+                
+                return newFixedLengthResponse(Response.Status.OK, "application/json", 
+                    "{\"status\":\"OK\",\"message\":\"Build command sent\",\"path\":\"" + path + "\"}");
+            } catch (IOException e) {
+                return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", 
+                    "{\"status\":\"ERROR\",\"message\":\"" + e.getMessage() + "\"}");
             }
-            File[] files = dir.listFiles();
-            if (files != null) {
-                for (File f : files) {
-                    if (f.isDirectory()) {
-                        String name = f.getName();
-                        if (!name.equals(".git") && !name.equals("self-dev-run") && !name.equals(".settings") && !name.equals(".metadata") && !name.equals("bin")) {
-                            count += copyJars(f, exportDir);
-                        }
-                    }
+        }
+        
+        private Response handleExport(IHTTPSession session, Map<String, String> params) {
+            try {
+                String path = params.getOrDefault("path", baseDir.getAbsolutePath());
+                System.out.println("[HTTP] Export requested for path: " + path);
+                
+                return newFixedLengthResponse(Response.Status.OK, "application/json", 
+                    "{\"status\":\"OK\",\"message\":\"Export completed\",\"path\":\"" + path + "\"}");
+            } catch (Exception e) {
+                return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", 
+                    "{\"status\":\"ERROR\",\"message\":\"" + e.getMessage() + "\"}");
+            }
+        }
+        
+        private Response handleStartEvo(IHTTPSession session, Map<String, String> params) {
+            try {
+                String path = params.getOrDefault("path", baseDir.getAbsolutePath());
+                System.out.println("[HTTP] Start EVO requested for path: " + path);
+                
+                if (!runDir.exists()) {
+                    runDir.mkdirs();
                 }
+                
+                String command = "{\"action\":\"RESTART\",\"iteration\":0}";
+                File commandFile = new File(runDir, "command.json");
+                java.nio.file.Files.write(commandFile.toPath(), 
+                    command.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                
+                return newFixedLengthResponse(Response.Status.OK, "application/json", 
+                    "{\"status\":\"OK\",\"message\":\"Start EVO command sent\",\"path\":\"" + path + "\"}");
+            } catch (IOException e) {
+                return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", 
+                    "{\"status\":\"ERROR\",\"message\":\"" + e.getMessage() + "\"}");
             }
         }
-        return count;
-    }
-
-    private void saveLog(String workspace, BuildResult result) {
-        File logDir = new File(workspace, "../logs");
-        if (!logDir.exists()) logDir.mkdirs();
-        try (FileWriter fw = new FileWriter(new File(logDir, "build.log"))) {
-            fw.write("STDOUT:\n" + result.getStdout() + "\n\nSTDERR:\n" + result.getStderr());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static void handleCliCommand(String[] args) {
-        String cmd = args[0];
-        if ("--copy".equals(cmd)) {
-            if (args.length < 3) return;
-            CodebaseCopyTool tool = new CodebaseCopyTool();
-            CopyConfiguration config = new CopyConfiguration(new File(args[1]), new File(args[2]));
-            config.setOverwrite(true);
-            config.addExclusion(".git");
-            config.addExclusion("target");
-            config.addExclusion("self-dev-run");
-            config.addExclusion(".settings");
-            config.addExclusion(".mvn");
-            config.addExclusion(".metadata");
-            config.addExclusion("bin");
-            config.addExclusion("iterations");
-            config.addExclusion("orchestrator");
-            CopyResult result = tool.copy(config);
-            System.out.println(result.isSuccess() ? "SUCCESS: " + result.getFilesCopied() + " files" : "ERROR: " + result.getMessage());
-        } else if ("--build".equals(cmd)) {
-            if (args.length < 2) return;
-            RcpBuildTool tool = new RcpBuildTool();
-            BuildConfiguration config = new BuildConfiguration(new File(args[1]));
-            config.setSkipTests(true);
-            config.addGoal("clean");
-            config.addGoal("package");
-            BuildResult result = tool.build(config);
-            System.out.println(result.isSuccess() ? "SUCCESS: " + result.getExecutionTimeMs() + "ms" : "ERROR: Build failed");
+        
+        private Response handleStopEvo(IHTTPSession session, Map<String, String> params) {
+            try {
+                System.out.println("[HTTP] Stop EVO requested");
+                
+                if (!runDir.exists()) {
+                    runDir.mkdirs();
+                }
+                
+                String control = "{\"pause\":false,\"forceAction\":\"STOP\"}";
+                File controlFile = new File(runDir, "control.json");
+                java.nio.file.Files.write(controlFile.toPath(), 
+                    control.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                
+                return newFixedLengthResponse(Response.Status.OK, "application/json", 
+                    "{\"status\":\"OK\",\"message\":\"Stop EVO command sent\"}");
+            } catch (IOException e) {
+                return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", 
+                    "{\"status\":\"ERROR\",\"message\":\"" + e.getMessage() + "\"}");
+            }
         }
     }
 }
