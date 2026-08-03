@@ -214,7 +214,7 @@ public class SelfDevBootstrapController {
         }
 
         // 3. Scan codebasePath as fallback
-        String codebasePath = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getCodebasePath();
+        codebasePath = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getCodebasePath();
         System.out.println("[SelfDevBootstrapController] [SUPERVISOR_FIND] ProjectModelManager.getCodebasePath() returned: " + codebasePath);
         if (supervisorDir == null && codebasePath != null) {
             File cbDir = new File(codebasePath);
@@ -1157,9 +1157,9 @@ public class SelfDevBootstrapController {
             int cleanExitCode = pClean.waitFor();
             System.out.println("[SelfDevBootstrapController] Genome clean finished with exit code: " + cleanExitCode);
 
-            // Step 2: Compile the genome module and dependencies as needed, without cleaning them
-            System.out.println("[SelfDevBootstrapController] Step 2: Running compile on eu.kalafatic.evolution.selfdev.genome with dependencies");
-            ProcessBuilder pbCompile = new ProcessBuilder(mvnCmd, "compile", "-pl", "eu.kalafatic.evolution.selfdev.genome", "-am", "-DskipTests");
+            // Step 2: Compile and install the genome module and dependencies to local .m2 repository
+            System.out.println("[SelfDevBootstrapController] Step 2: Running install on eu.kalafatic.evolution.selfdev.genome with dependencies");
+            ProcessBuilder pbCompile = new ProcessBuilder(mvnCmd, "install", "-pl", "eu.kalafatic.evolution.selfdev.genome", "-am", "-DskipTests");
             pbCompile.directory(parentDir);
             pbCompile.redirectErrorStream(true);
             Process pCompile = pbCompile.start();
@@ -1167,16 +1167,16 @@ public class SelfDevBootstrapController {
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(pCompile.getInputStream()))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    System.out.println("[Genome Compile] " + line);
+                    System.out.println("[Genome Install] " + line);
                 }
             }
             int compileExitCode = pCompile.waitFor();
-            System.out.println("[SelfDevBootstrapController] Genome compile finished with exit code: " + compileExitCode);
+            System.out.println("[SelfDevBootstrapController] Genome install finished with exit code: " + compileExitCode);
 
             if (cleanExitCode == 0 && compileExitCode == 0) {
                 return "SUCCESS";
             } else {
-                return "ERROR: Build failed (clean exit code " + cleanExitCode + ", compile exit code " + compileExitCode + ")";
+                return "ERROR: Build failed (clean exit code " + cleanExitCode + ", install exit code " + compileExitCode + ")";
             }
         } catch (Exception e) {
             System.err.println("[SelfDevBootstrapController] Failed to compile genome module: " + e.getMessage());
@@ -1248,7 +1248,7 @@ public class SelfDevBootstrapController {
         }
 
         // 3. Scan codebasePath as fallback
-        String codebasePath = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getCodebasePath();
+        codebasePath = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getCodebasePath();
         System.out.println("[SelfDevBootstrapController] [CHECK_GENOME] ProjectModelManager.getCodebasePath() returned: " + codebasePath);
         if (genomeModuleDir == null && codebasePath != null) {
             File cbDir = new File(codebasePath);
