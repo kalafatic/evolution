@@ -512,6 +512,23 @@ public class LLMDarwinEngine extends ADarwinEngine {
             generations = 5; // default to 5 generations
         }
 
+        boolean forceSolution = false;
+        if (context.getOrchestrationState().getMetadata().containsKey("forceSolution")) {
+            forceSolution = true;
+        }
+        if (taskRequest != null && taskRequest.getPrompt() != null) {
+            String promptLower = taskRequest.getPrompt().toLowerCase().trim();
+            if (promptLower.contains("force solution")) {
+                forceSolution = true;
+                context.getOrchestrationState().getMetadata().put("forceSolution", true);
+            }
+        }
+
+        if (forceSolution) {
+            generations = 1;
+            context.log("[FORGE] [STABILITY] Force Solution detected! Accelerating evolutionary search: generations set to 1, pruning candidate count, and reducing epochs to 1.");
+        }
+
         context.log("[FORGE] Darwin LLM configured for " + generations + " evolution generations.");
 
         // Assess JVM Memory to select safe profiles
@@ -520,9 +537,14 @@ public class LLMDarwinEngine extends ADarwinEngine {
 
         // Initial Candidates based on safe profiles
         List<LlmConfig> candidates = new ArrayList<>();
-        candidates.add(new LlmConfig(selectedProfile.vocabSize, selectedProfile.embeddingSize, selectedProfile.layers, selectedProfile.heads, selectedProfile.maxSeqLen, selectedProfile.epochs));
-        candidates.add(new LlmConfig(selectedProfile.vocabSize, selectedProfile.embeddingSize, selectedProfile.layers + 1, selectedProfile.heads, selectedProfile.maxSeqLen, selectedProfile.epochs));
-        candidates.add(new LlmConfig(selectedProfile.vocabSize, selectedProfile.embeddingSize, selectedProfile.layers + 2, selectedProfile.heads, selectedProfile.maxSeqLen, selectedProfile.epochs));
+        if (forceSolution) {
+            LlmConfig fastConfig = new LlmConfig(selectedProfile.vocabSize, selectedProfile.embeddingSize, selectedProfile.layers, selectedProfile.heads, selectedProfile.maxSeqLen, 1);
+            candidates.add(fastConfig);
+        } else {
+            candidates.add(new LlmConfig(selectedProfile.vocabSize, selectedProfile.embeddingSize, selectedProfile.layers, selectedProfile.heads, selectedProfile.maxSeqLen, selectedProfile.epochs));
+            candidates.add(new LlmConfig(selectedProfile.vocabSize, selectedProfile.embeddingSize, selectedProfile.layers + 1, selectedProfile.heads, selectedProfile.maxSeqLen, selectedProfile.epochs));
+            candidates.add(new LlmConfig(selectedProfile.vocabSize, selectedProfile.embeddingSize, selectedProfile.layers + 2, selectedProfile.heads, selectedProfile.maxSeqLen, selectedProfile.epochs));
+        }
 
         for (int i = 0; i < candidates.size(); i++) {
             candidates.set(i, normalizeCandidateConfig(candidates.get(i)));
@@ -864,7 +886,16 @@ public class LLMDarwinEngine extends ADarwinEngine {
         EvoLlmModel winningModel = new EvoLlmModel(finalTokenizer.getVocabSize(), overallWinner.config.embeddingSize, overallWinner.config.heads, overallWinner.config.layers, dff, finalSeqLen);
 
         EvoLlmTrainer trainer = new EvoLlmTrainer(winningModel);
-        trainer.train(samples, overallWinner.config.epochs);
+        trainer.setProgressListener((epoch, totalEpochs, sampleIndex, totalSamples, currentLoss) -> {
+            int logInterval = Math.max(1, totalSamples / 10);
+            if (sampleIndex % logInterval == 0 || sampleIndex == totalSamples) {
+                double pct = (double) sampleIndex / totalSamples * 100.0;
+                context.log(String.format("[EVO Training Progress] Global Winner Refinement - Epoch %d/%d | Progress: %d/%d (%.1f%%) | Loss: %.4f",
+                    epoch + 1, totalEpochs, sampleIndex, totalSamples, pct, currentLoss));
+            }
+        });
+        int finalEpochs = forceSolution ? 1 : overallWinner.config.epochs;
+        trainer.train(samples, finalEpochs);
 
         // Export GGUF via OllamaExporter
         OllamaExporter exporter = new OllamaExporter();
@@ -1051,6 +1082,14 @@ public class LLMDarwinEngine extends ADarwinEngine {
             }
 
             trainer = new EvoLlmTrainer(model);
+            trainer.setProgressListener((epoch, totalEpochs, sampleIndex, totalSamples, currentLoss) -> {
+                int logInterval = Math.max(1, totalSamples / 10);
+                if (sampleIndex % logInterval == 0 || sampleIndex == totalSamples) {
+                    double pct = (double) sampleIndex / totalSamples * 100.0;
+                    context.log(String.format("[EVO Training Progress] Candidate Evaluation - Epoch %d/%d | Progress: %d/%d (%.1f%%) | Loss: %.4f",
+                        epoch + 1, totalEpochs, sampleIndex, totalSamples, pct, currentLoss));
+                }
+            });
             double trainLoss = 2.5;
             if (!trainSamples.isEmpty()) {
                 trainer.train(trainSamples, config.epochs);
