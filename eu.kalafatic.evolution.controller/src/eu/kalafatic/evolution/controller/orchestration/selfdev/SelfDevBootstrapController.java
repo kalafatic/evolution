@@ -214,7 +214,7 @@ public class SelfDevBootstrapController {
         }
 
         // 3. Scan codebasePath as fallback
-        String codebasePath = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getCodebasePath();
+        codebasePath = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getCodebasePath();
         System.out.println("[SelfDevBootstrapController] [SUPERVISOR_FIND] ProjectModelManager.getCodebasePath() returned: " + codebasePath);
         if (supervisorDir == null && codebasePath != null) {
             File cbDir = new File(codebasePath);
@@ -1248,7 +1248,7 @@ public class SelfDevBootstrapController {
         }
 
         // 3. Scan codebasePath as fallback
-        String codebasePath = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getCodebasePath();
+        codebasePath = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getCodebasePath();
         System.out.println("[SelfDevBootstrapController] [CHECK_GENOME] ProjectModelManager.getCodebasePath() returned: " + codebasePath);
         if (genomeModuleDir == null && codebasePath != null) {
             File cbDir = new File(codebasePath);

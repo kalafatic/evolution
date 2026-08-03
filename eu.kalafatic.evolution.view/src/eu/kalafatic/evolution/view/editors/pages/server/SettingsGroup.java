@@ -123,7 +123,20 @@ public class SettingsGroup extends AToolGroup {
         createServerColumn("Action", 100, s -> "");
         createServerColumn("State", 80, s -> s.running ? "RUNNING" : "STOPPED");
         createServerColumn("Address", 150, s -> "localhost:" + s.port);
-        createServerColumn("Note", 200, s -> s.port == 48080 ? "Primary Port" : "Evolution Node");
+        createServerColumn("Note", 200, s -> {
+            int primary = 48080;
+            try { primary = Integer.parseInt(portText.getText()); } catch(Exception e) {}
+            if (s.port == primary) return "AI Inference Server";
+            if (s.port == primary + 10000) return "AI Chat Server";
+
+            int mcp = 38080;
+            if (orchestrator != null && orchestrator.getServerSettings() != null) {
+                mcp = orchestrator.getServerSettings().getMcpPort();
+            }
+            if (s.port == mcp) return "MCP Server";
+            if (s.port == 8089) return "Self-Dev Supervisor";
+            return "Evolution Node";
+        });
 
         // Tooltips for columns
         serverViewer.getTable().getColumn(0).setToolTipText("Click 'Start' or 'Stop' in this column to manage the server lifecycle.");
@@ -199,12 +212,29 @@ public class SettingsGroup extends AToolGroup {
             List<ServerStatus> list = new ArrayList<>();
             statuses.forEach((p, r) -> list.add(new ServerStatus(p, r)));
 
-            // Ensure primary port is in the list even if not running
+            // Ensure primary, secondary, MCP, and Supervisor ports are in the list even if not running
             int primary = 48080;
             try { primary = Integer.parseInt(portText.getText()); } catch(Exception e) {}
             final int finalPrimary = primary;
             if (list.stream().noneMatch(s -> s.port == finalPrimary)) {
                 list.add(new ServerStatus(finalPrimary, false));
+            }
+            int secondary = finalPrimary + 10000;
+            if (list.stream().noneMatch(s -> s.port == secondary)) {
+                list.add(new ServerStatus(secondary, false));
+            }
+
+            int mcp = 38080;
+            if (orchestrator != null && orchestrator.getServerSettings() != null) {
+                mcp = orchestrator.getServerSettings().getMcpPort();
+            }
+            final int finalMcp = mcp;
+            if (list.stream().noneMatch(s -> s.port == finalMcp)) {
+                list.add(new ServerStatus(finalMcp, false));
+            }
+
+            if (list.stream().noneMatch(s -> s.port == 8089)) {
+                list.add(new ServerStatus(8089, false));
             }
 
             serverViewer.setInput(list);
