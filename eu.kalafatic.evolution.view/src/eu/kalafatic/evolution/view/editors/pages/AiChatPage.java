@@ -244,9 +244,9 @@ public class AiChatPage extends AEvoPage {
 		mainSash.setWeights(new int[] { 50, 20, 30 });
 
 		// Right side: Interactive Workflow Group
-		workflowGroup = new InteractiveWorkflowGroup(toolkit, horizontalSash, editor, orchestrator, getCurrentSessionName());
-
-		horizontalSash.setWeights(new int[] { 65, 35 });
+//		workflowGroup = new InteractiveWorkflowGroup(toolkit, horizontalSash, editor, orchestrator, getCurrentSessionName());
+//
+//		horizontalSash.setWeights(new int[] { 65, 35 });
 
 		initializeSessions();
 
