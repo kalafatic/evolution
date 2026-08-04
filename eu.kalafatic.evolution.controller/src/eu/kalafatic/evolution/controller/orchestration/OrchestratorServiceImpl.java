@@ -32,6 +32,48 @@ public class OrchestratorServiceImpl implements OrchestratorService {
             ((SessionContext)session).getCognitiveState().processInteraction(request.getPrompt());
         }
 
+        // CONTINUATION HANDLING: If the session is waiting for input/approval, treat the prompt as a response
+        if (session instanceof SessionContext) {
+            TaskContext taskContext = ((SessionContext)session).getTaskContext();
+            if (taskContext != null && (taskContext.isWaitingForApproval() || taskContext.isWaitingForInput())) {
+                String prompt = request.getPrompt().trim();
+                boolean isControl = prompt.equalsIgnoreCase("yes") || prompt.equalsIgnoreCase("no") ||
+                                   prompt.toLowerCase().startsWith("select ") ||
+                                   prompt.toLowerCase().startsWith("approve variant ") ||
+                                   prompt.toLowerCase().startsWith("reject variant ") ||
+                                   prompt.toLowerCase().startsWith("keep variant ") ||
+                                   prompt.equalsIgnoreCase("force solution") ||
+                                   prompt.equalsIgnoreCase("approved") ||
+                                   prompt.equalsIgnoreCase("rejected") ||
+                                   prompt.equalsIgnoreCase("ok") ||
+                                   prompt.equalsIgnoreCase("okay") ||
+                                   prompt.equalsIgnoreCase("proceed") ||
+                                   prompt.matches("^(yes|y|ok|okay|approve|proceed|go ahead|yep|sure)$") ||
+                                   prompt.toLowerCase().contains("approve variant") ||
+                                   prompt.toLowerCase().contains("select variant");
+
+                if (isControl) {
+                    Log.log("[SERVICE] Continuation detected: " + prompt + ". Routing to existing wait.");
+                    if (taskContext.isWaitingForApproval()) {
+                        boolean approved = prompt.equalsIgnoreCase("yes") ||
+                                         prompt.equalsIgnoreCase("approved") ||
+                                         prompt.equalsIgnoreCase("proceed") ||
+                                         prompt.equalsIgnoreCase("ok") ||
+                                         prompt.toLowerCase().startsWith("approve variant ") ||
+                                         prompt.matches("^(yes|y|ok|okay|approve|proceed|go ahead|yep|sure)$");
+                        provideApproval(sessionId, approved);
+                    } else {
+                        provideInput(sessionId, prompt);
+                    }
+                    OrchestratorResponse response = new OrchestratorResponse();
+                    response.setResultType(ResultType.CHAT);
+                    response.setSummary("Continuation processed successfully.");
+                    response.setContent("Continuation processed successfully.");
+                    return response;
+                }
+            }
+        }
+
         inputOrchModel = ensureOrchestratorModel(inputOrchModel, sessionId);
 
         if (context == null) {
