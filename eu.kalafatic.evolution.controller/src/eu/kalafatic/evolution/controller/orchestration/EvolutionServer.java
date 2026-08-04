@@ -121,6 +121,15 @@ public class EvolutionServer extends NanoHTTPD {
         String uri = session.getUri();
         Method method = session.getMethod();
 
+        if ("/api/shutdown".equals(uri)) {
+            new Thread(() -> {
+                try { Thread.sleep(500); } catch (Exception ignored) {}
+                System.out.println("[SHUTDOWN] Exiting JVM as requested headlessly...");
+                System.exit(0);
+            }).start();
+            return newFixedLengthResponse(Response.Status.OK, "application/json", "{\"status\":\"SHUTTING_DOWN\"}");
+        }
+
         // 1. Authentication Routing
         if (uri.startsWith("/api/auth")) {
             return authController.handle(session);

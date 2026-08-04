@@ -39,6 +39,13 @@ public class ServerManager {
         boolean isSupervisor = port == 8089;
         boolean isSecondary = (port % 10000 == 8080 && port >= 50000) || port == 58080;
 
+        if (!isMcp && !isSupervisor && !isSecondary) {
+            java.io.File readyFile = new java.io.File("self-dev-run/evo_ready.txt");
+            if (readyFile.exists()) {
+                readyFile.delete();
+            }
+        }
+
         if (isMcp) {
             eu.kalafatic.evolution.controller.orchestration.mcp.McpDemoServerManager.getInstance().setPort(port);
             eu.kalafatic.evolution.controller.orchestration.mcp.McpDemoServerManager.getInstance().start();
@@ -71,6 +78,19 @@ public class ServerManager {
             server.startServer();
             activeServers.put(port, server);
             this.primaryPort = port;
+
+            // Write readiness marker file
+            java.io.File runDir = new java.io.File("self-dev-run");
+            if (!runDir.exists()) {
+                runDir.mkdirs();
+            }
+            java.io.File readyFile = new java.io.File(runDir, "evo_ready.txt");
+            try {
+                java.nio.file.Files.write(readyFile.toPath(), String.valueOf(System.currentTimeMillis()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                System.out.println("[ServerManager] Wrote readiness marker file to: " + readyFile.getAbsolutePath());
+            } catch (Exception e) {
+                System.err.println("[ServerManager] Failed to write readiness marker file: " + e.getMessage());
+            }
 
             // Auto-start MCP Demo Server
             try {

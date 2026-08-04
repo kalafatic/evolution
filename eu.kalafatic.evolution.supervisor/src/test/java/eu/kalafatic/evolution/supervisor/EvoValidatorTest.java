@@ -1,10 +1,10 @@
 package eu.kalafatic.evolution.supervisor;
 
 import org.junit.Test;
+import static org.junit.Assert.*;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.Arrays;
 import java.util.Collections;
 
 public class EvoValidatorTest {
@@ -25,9 +25,46 @@ public class EvoValidatorTest {
     }
 
     @Test
-    public void testMissingMarkerInPlannedFile() throws IOException {
-        // Since EvoValidator calls System.exit(1), testing failure cases is tricky in JUnit without a SecurityManager
-        // but we can at least verify it works for the happy path.
+    public void testProductLayoutValidation() throws IOException {
+        File tempDir = createTempDir("test-layout-valid");
+
+        File pluginsDir = new File(tempDir, "plugins");
+        File configDir = new File(tempDir, "configuration");
+        pluginsDir.mkdirs();
+        configDir.mkdirs();
+
+        if (PlatformInfo.isWindows()) {
+            File exeFile = new File(tempDir, "evo.exe");
+            exeFile.createNewFile();
+        } else {
+            File nativeFile = new File(tempDir, "evo");
+            File shFile = new File(tempDir, "evo.sh");
+            nativeFile.createNewFile();
+            shFile.createNewFile();
+        }
+
+        EvoProductValidator validator = new EvoProductValidator();
+        assertTrue(validator.validateLayout(tempDir));
+    }
+
+    @Test
+    public void testProductLayoutValidationMissingPlugins() throws IOException {
+        File tempDir = createTempDir("test-layout-invalid");
+        File configDir = new File(tempDir, "configuration");
+        configDir.mkdirs();
+
+        if (PlatformInfo.isWindows()) {
+            File exeFile = new File(tempDir, "evo.exe");
+            exeFile.createNewFile();
+        } else {
+            File nativeFile = new File(tempDir, "evo");
+            File shFile = new File(tempDir, "evo.sh");
+            nativeFile.createNewFile();
+            shFile.createNewFile();
+        }
+
+        EvoProductValidator validator = new EvoProductValidator();
+        assertFalse(validator.validateLayout(tempDir));
     }
 
     private File createTempDir(String name) throws IOException {

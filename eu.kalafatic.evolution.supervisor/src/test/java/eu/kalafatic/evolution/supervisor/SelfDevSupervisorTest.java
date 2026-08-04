@@ -288,6 +288,27 @@ public class SelfDevSupervisorTest {
     }
 
     @Test
+    public void testPlatformDetectionAndBuildCommandSelection() {
+        // Test OS Detection
+        PlatformInfo.OperatingSystem os = PlatformInfo.getOperatingSystem();
+        Assert.assertNotNull(os);
+
+        PlatformInfo.Architecture arch = PlatformInfo.getArchitecture();
+        Assert.assertNotNull(arch);
+
+        boolean isWin = PlatformInfo.isWindows();
+        boolean isLin = PlatformInfo.isLinux();
+
+        if (isWin) {
+            Assert.assertTrue(PlatformInfo.isWindows());
+            Assert.assertFalse(PlatformInfo.isLinux());
+        } else if (isLin) {
+            Assert.assertTrue(PlatformInfo.isLinux());
+            Assert.assertFalse(PlatformInfo.isWindows());
+        }
+    }
+
+    @Test
     public void testCleanEVOProcessShutdown() throws IOException {
         supervisor.getRunner().setMockBuildResult(true);
         supervisor.getRunner().setMockRCPResult(true);
