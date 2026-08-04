@@ -1125,6 +1125,19 @@ public class ProjectModelManager {
         // Normalize backslashes/forwardslashes to simplify comparisons
         String normalized = path.replace("\\", "/");
 
+        // 1. Replace any 6-digit date segment under projects/evo/supervisor/
+        if (normalized.contains("projects/evo/supervisor/")) {
+            normalized = normalized.replaceAll("(?i)projects/evo/supervisor/\\d{6}", "projects/evo/supervisor/" + dateStr);
+            return path.contains("\\") ? normalized.replace("/", "\\") : normalized;
+        }
+
+        // 2. Also handle if it contains supervisor/<some_old_date>
+        if (normalized.contains("supervisor/")) {
+            normalized = normalized.replaceAll("(?i)supervisor/\\d{6}", "projects/evo/supervisor/" + dateStr);
+            normalized = normalized.replaceAll("(?i)supervisor/(sources|builds|export|src|bin|sources-)", "projects/evo/supervisor/" + dateStr + "/$1");
+            return path.contains("\\") ? normalized.replace("/", "\\") : normalized;
+        }
+
         String oldPrefix1 = "C:/Users/petrk/supervisor";
         String oldHomePrefix = System.getProperty("user.home").replace("\\", "/") + "/supervisor";
 

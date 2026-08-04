@@ -37,6 +37,31 @@ public class OrchestrationPathTest {
     }
 
     @Test
+    public void testMigratePathRobustness() {
+        String dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("ddMMyy"));
+
+        // 1. Test migration of existing projects/evo/supervisor/ with old date (July 31, 2026 -> 310726)
+        String path1 = "C:\\Users\\petrk\\projects\\evo\\supervisor\\310726\\sources";
+        String migrated1 = eu.kalafatic.evolution.controller.manager.ProjectModelManager.migratePath(path1);
+        assertEquals("C:\\Users\\petrk\\projects\\evo\\supervisor\\" + dateStr + "\\sources", migrated1);
+
+        // 2. Test migration of supervisor/ without projects/evo/ and old date
+        String path2 = "C:\\Users\\petrk\\supervisor\\310726\\sources";
+        String migrated2 = eu.kalafatic.evolution.controller.manager.ProjectModelManager.migratePath(path2);
+        assertEquals("C:\\Users\\petrk\\projects\\evo\\supervisor\\" + dateStr + "\\sources", migrated2);
+
+        // 3. Test migration of old supervisor/ without date segment
+        String path3 = "C:\\Users\\petrk\\supervisor\\sources";
+        String migrated3 = eu.kalafatic.evolution.controller.manager.ProjectModelManager.migratePath(path3);
+        assertEquals("C:\\Users\\petrk\\projects\\evo\\supervisor\\" + dateStr + "\\sources", migrated3);
+
+        // 4. Test with forward slashes
+        String path4 = "C:/Users/petrk/projects/evo/supervisor/310726/builds";
+        String migrated4 = eu.kalafatic.evolution.controller.manager.ProjectModelManager.migratePath(path4);
+        assertEquals("C:/Users/petrk/projects/evo/supervisor/" + dateStr + "/builds", migrated4);
+    }
+
+    @Test
     public void testProjectManagerPathUtils() {
         // Test static methods on ProjectModelManager
         String codebasePathModel = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getCodebasePath();
