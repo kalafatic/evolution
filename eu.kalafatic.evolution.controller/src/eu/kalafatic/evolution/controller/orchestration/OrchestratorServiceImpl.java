@@ -262,20 +262,23 @@ public class OrchestratorServiceImpl implements OrchestratorService {
             if (settings.containsKey("autoApprove")) {
                 boolean autoApprove = (Boolean)settings.get("autoApprove");
                 pi.setAutoApprove(autoApprove);
+            }
+        }
 
-                if (session instanceof SessionContext) {
-                    TaskContext taskContext = ((SessionContext)session).getTaskContext();
-                    if (taskContext != null) {
-                        taskContext.setAutoApprove(autoApprove);
-                    }
+        if (settings.containsKey("autoApprove")) {
+            boolean autoApprove = (Boolean)settings.get("autoApprove");
+            if (session instanceof SessionContext) {
+                TaskContext taskContext = ((SessionContext)session).getTaskContext();
+                if (taskContext != null) {
+                    taskContext.setAutoApprove(autoApprove);
                 }
+            }
 
-                // If auto-approve is enabled while waiting, resume the session
-                if (autoApprove && session instanceof SessionContext) {
-                    TaskContext taskContext = ((SessionContext)session).getTaskContext();
-                    if (taskContext != null && (taskContext.isWaitingForApproval() || taskContext.isWaitingForInput())) {
-                        provideApproval(sessionId, true);
-                    }
+            // If auto-approve is enabled while waiting, resume the session
+            if (autoApprove && session instanceof SessionContext) {
+                TaskContext taskContext = ((SessionContext)session).getTaskContext();
+                if (taskContext != null && (taskContext.isWaitingForApproval() || taskContext.isWaitingForInput())) {
+                    provideApproval(sessionId, true);
                 }
             }
         }
