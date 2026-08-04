@@ -9,21 +9,33 @@ import java.util.List;
 import java.util.ArrayList;
 
 public class EvoLlmTrainer {
+    public interface ProgressListener {
+        void onProgress(int epoch, int totalEpochs, int sampleIndex, int totalSamples, double currentLoss);
+    }
+
     private final EvoLlmModel model;
     private final List<Double> lossHistory = new ArrayList<>();
+    private ProgressListener progressListener;
 
     public EvoLlmTrainer(EvoLlmModel model) {
         this.model = model;
+    }
+
+    public void setProgressListener(ProgressListener progressListener) {
+        this.progressListener = progressListener;
     }
 
     public void train(List<DatasetBuilder.Sample> samples, int epochs) {
         System.out.println("[Training] Starting genuine EVO training with " + samples.size() + " samples.");
         EvoAdamW optimizer = new EvoAdamW(0.01f, 0.9f, 0.999f, 1e-8f, 0.01f);
 
+        int totalSamples = samples.size();
+
         for (int epoch = 0; epoch < epochs; epoch++) {
             double epochLoss = 0;
             long startTime = System.currentTimeMillis();
             int totalTokensTrained = 0;
+            int sampleIndex = 0;
             
             for (DatasetBuilder.Sample sample : samples) {
                 // Zero gradients
@@ -69,6 +81,19 @@ public class EvoLlmTrainer {
 
                 // Optimizer Step
                 optimizer.step(model.parameters());
+
+                sampleIndex++;
+
+                if (progressListener != null) {
+                    progressListener.onProgress(epoch, epochs, sampleIndex, totalSamples, loss);
+                }
+
+                int logInterval = Math.max(1, totalSamples / 10);
+                if (sampleIndex % logInterval == 0 || sampleIndex == totalSamples) {
+                    double pct = (double) sampleIndex / totalSamples * 100.0;
+                    System.out.println(String.format("[EVO Training Progress] Epoch %d/%d | %d/%d samples (%.1f%%) | Loss: %.4f",
+                        epoch + 1, epochs, sampleIndex, totalSamples, pct, loss));
+                }
             }
             
             double avgLoss = epochLoss / samples.size();

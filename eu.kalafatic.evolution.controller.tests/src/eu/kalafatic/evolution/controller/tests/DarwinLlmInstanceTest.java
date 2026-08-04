@@ -193,4 +193,36 @@ public class DarwinLlmInstanceTest {
         Path tempPath = targetPath.getParent().resolve(targetPath.getFileName().toString() + ".tmp");
         assertFalse(Files.exists(tempPath));
     }
+
+    @Test
+    public void testProgressListenerAndReporting() {
+        int vocabSize = 50;
+        int embeddingSize = 32;
+        int heads = 2;
+        int layers = 1;
+        int dff = 128;
+        int maxSeqLen = 8;
+
+        EvoLlmModel model = new EvoLlmModel(vocabSize, embeddingSize, heads, layers, dff, maxSeqLen);
+        List<DatasetBuilder.Sample> samples = new ArrayList<>();
+        List<Integer> inputIds = new ArrayList<>();
+        for (int i = 0; i < maxSeqLen; i++) {
+            inputIds.add(i % vocabSize);
+        }
+        samples.add(new DatasetBuilder.Sample(inputIds, 5));
+
+        EvoLlmTrainer trainer = new EvoLlmTrainer(model);
+        final int[] progressCount = {0};
+        trainer.setProgressListener((epoch, totalEpochs, sampleIndex, totalSamples, currentLoss) -> {
+            progressCount[0]++;
+            assertEquals(0, epoch);
+            assertEquals(1, totalEpochs);
+            assertEquals(1, sampleIndex);
+            assertEquals(1, totalSamples);
+            assertTrue(currentLoss > 0.0);
+        });
+
+        trainer.train(samples, 1);
+        assertEquals(1, progressCount[0]);
+    }
 }
