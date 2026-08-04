@@ -481,6 +481,7 @@
 
         async function updateSettings() {
             const settings = {
+                sessionId: currentSessionId,
                 aiMode: document.getElementById('mode-select').value,
                 localModel: document.getElementById('local-model-select').value,
                 remoteModel: document.getElementById('remote-model-select').value,

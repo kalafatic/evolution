@@ -784,33 +784,35 @@ public class EvolutionServer extends NanoHTTPD {
         String postData = files.get("postData");
         JSONObject json = new JSONObject(postData);
 
-        Orchestrator orch = OrchestratorServiceImpl.getInstance().getOrchestrator();
-        if (orch != null) {
-            if (json.has("aiMode")) {
-                for (eu.kalafatic.evolution.model.orchestration.AiMode mode : eu.kalafatic.evolution.model.orchestration.AiMode.values()) {
-                    if (mode.getName().equalsIgnoreCase(json.getString("aiMode"))) {
-                        orch.setAiMode(mode);
-                        break;
-                    }
+        String sessionId = json.optString("sessionId", "Default");
+        Map<String, Object> settingsMap = new HashMap<>();
+
+        if (json.has("aiMode")) {
+            for (eu.kalafatic.evolution.model.orchestration.AiMode mode : eu.kalafatic.evolution.model.orchestration.AiMode.values()) {
+                if (mode.getName().equalsIgnoreCase(json.getString("aiMode"))) {
+                    settingsMap.put("aiMode", mode);
+                    break;
                 }
             }
-            if (json.has("localModel")) orch.setLocalModel(json.getString("localModel"));
-            if (json.has("remoteModel")) orch.setRemoteModel(json.getString("remoteModel"));
-            if (json.has("darwinMode")) orch.setDarwinMode(json.getBoolean("darwinMode"));
+        }
+        if (json.has("localModel")) settingsMap.put("localModel", json.getString("localModel"));
+        if (json.has("remoteModel")) settingsMap.put("remoteModel", json.getString("remoteModel"));
+        if (json.has("darwinMode")) settingsMap.put("darwinMode", json.getBoolean("darwinMode"));
+        if (json.has("iterativeMode")) settingsMap.put("iterativeMode", json.getBoolean("iterativeMode"));
+        if (json.has("selfIterativeMode")) settingsMap.put("selfIterativeMode", json.getBoolean("selfIterativeMode"));
+        if (json.has("stepMode")) settingsMap.put("stepMode", json.getBoolean("stepMode"));
+        if (json.has("autoApprove")) settingsMap.put("autoApprove", json.getBoolean("autoApprove"));
+        if (json.has("gitAutomation")) settingsMap.put("gitAutomation", json.getBoolean("gitAutomation"));
+        if (json.has("maxIterations")) settingsMap.put("maxIterations", json.getInt("maxIterations"));
+
+        OrchestratorServiceImpl.getInstance().updateConfiguration(sessionId, settingsMap);
+
+        Orchestrator orch = OrchestratorServiceImpl.getInstance().getOrchestrator();
+        if (orch != null) {
             if (json.has("authenticate") && orch.getServerSettings() != null) {
                 boolean auth = json.getBoolean("authenticate");
                 orch.getServerSettings().setAuthenticate(auth);
                 System.setProperty("evolution.api.authenticate", String.valueOf(auth));
-            }
-
-            if (orch.getAiChat() != null && orch.getAiChat().getPromptInstructions() != null) {
-                PromptInstructions instr = orch.getAiChat().getPromptInstructions();
-                if (json.has("iterativeMode")) instr.setIterativeMode(json.getBoolean("iterativeMode"));
-                if (json.has("selfIterativeMode")) instr.setSelfIterativeMode(json.getBoolean("selfIterativeMode"));
-                if (json.has("stepMode")) instr.setStepMode(json.getBoolean("stepMode"));
-                if (json.has("autoApprove")) instr.setAutoApprove(json.getBoolean("autoApprove"));
-                if (json.has("gitAutomation")) instr.setGitAutomation(json.getBoolean("gitAutomation"));
-                if (json.has("maxIterations")) instr.setPreferredMaxIterations(json.getInt("maxIterations"));
             }
         }
 
