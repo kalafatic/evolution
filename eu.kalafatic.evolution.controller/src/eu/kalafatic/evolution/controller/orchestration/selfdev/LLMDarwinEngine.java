@@ -748,6 +748,37 @@ public class LLMDarwinEngine extends ADarwinEngine {
             results.sort((c1, c2) -> compareCandidates(c1, c2));
 
             CandidateResult genWinner = results.get(0);
+
+            String selectedId = null;
+            if (!context.isAutoApprove()) {
+                List<eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant> variants = new ArrayList<>();
+                char bCharVar = 'A';
+                for (CandidateResult r : results) {
+                    eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant v = new eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant();
+                    String bId = "gen_" + gen + "_candidate_" + bCharVar;
+                    v.setId(bId);
+                    v.setBranchId(bId);
+                    v.setStrategy(r.name + " (" + r.config + ")");
+                    v.setScore(Math.max(0.01, 1.0 / (1.0 + r.fitness)));
+                    v.setSurvivalArgument(String.format("Loss: %.4f, Parameters: %d, Duration: %d ms", r.loss, r.paramCount, r.durationMs));
+                    v.setTradeoffs("Zero-dependency local Transformer architecture");
+                    v.setActivationState(eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant.ActivationState.ARCHIVED);
+                    variants.add(v);
+                    bCharVar++;
+                }
+
+                selectedId = iterationManager.handleVariantSelection(context, variants, "Darwin LLM Training Strategy Selection");
+                if (selectedId != null && !selectedId.isEmpty() && !"REGENERATE".equals(selectedId) && !"REGENERATE_SAME_DIMENSION".equals(selectedId) && !"STOP".equals(selectedId) && !"FAILED".equals(selectedId)) {
+                    char winnerSuffix = selectedId.charAt(selectedId.length() - 1);
+                    for (CandidateResult r : results) {
+                        if (r.name.endsWith(String.valueOf(winnerSuffix))) {
+                            genWinner = r;
+                            break;
+                        }
+                    }
+                }
+            }
+
             context.log("[FORGE] Generation " + gen + " Winner: " + genWinner.name + " (" + genWinner.config + ")");
             logs.add("Winner:\n" + genWinner.name + "\n\n");
 
@@ -823,7 +854,8 @@ public class LLMDarwinEngine extends ADarwinEngine {
                 outcomeBuilder.append("[").append(status).append(":").append(bId).append("] ");
                 bCharOutcome++;
             }
-            outcomeBuilder.append("[DECISION:AUTO] ");
+            String decisionType = (selectedId != null) ? "MANUAL" : "AUTO";
+            outcomeBuilder.append("[DECISION:").append(decisionType).append("] ");
             outcomeBuilder.append("[DARWIN_BRANCHES] ").append(finalGenBranchesJson.toString());
             context.log(outcomeBuilder.toString());
 
