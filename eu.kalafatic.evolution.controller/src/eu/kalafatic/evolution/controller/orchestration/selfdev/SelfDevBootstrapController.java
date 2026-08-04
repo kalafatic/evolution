@@ -937,15 +937,23 @@ public class SelfDevBootstrapController {
 
         String localPath = null;
         String repositoryUrl = null;
+        String branch = null;
         if (orchestrator != null && orchestrator.getGit() != null) {
             localPath = orchestrator.getGit().getLocalPath();
             repositoryUrl = orchestrator.getGit().getRepositoryUrl();
+            branch = orchestrator.getGit().getBranch();
         }
         if (localPath == null || localPath.isEmpty()) {
             localPath = eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.getRepositoryPath(eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.REPO_EVOLUTION);
         }
         if (repositoryUrl == null || repositoryUrl.isEmpty()) {
             repositoryUrl = eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.getRepositoryRemote(eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.REPO_EVOLUTION);
+        }
+        if (branch == null || branch.isEmpty()) {
+            branch = eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.getRepositoryBranch(eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.REPO_EVOLUTION);
+        }
+        if (branch == null || branch.isEmpty()) {
+            branch = "master";
         }
 
         File localDir = new File(localPath);
@@ -979,29 +987,31 @@ public class SelfDevBootstrapController {
                     gitAction = " (Cloned)";
                 }
             } else {
-                // Pull
-                System.out.println("[SelfDevBootstrapController] [CHECK_GIT] Local folder is already a git repository. Starting pull...");
+                // Pull (robust fetch + hard reset)
+                System.out.println("[SelfDevBootstrapController] [CHECK_GIT] Local folder is already a git repository. Starting robust fetch + hard reset...");
                 try (org.eclipse.jgit.api.Git git = org.eclipse.jgit.api.Git.open(localDir)) {
-                    // Reset and clean first to override all local changes
                     try {
-                        System.out.println("[SelfDevBootstrapController] [CHECK_GIT] Discarding local changes to override all with incoming pull...");
-                        git.reset().setMode(org.eclipse.jgit.api.ResetCommand.ResetType.HARD).call();
-                        git.clean().setCleanDirectories(true).call();
-                    } catch (Exception resetEx) {
-                        System.err.println("[SelfDevBootstrapController] [CHECK_GIT_WARNING] JGit reset/clean failed: " + resetEx.getMessage());
-                    }
-
-                    org.eclipse.jgit.api.PullCommand pullCmd = git.pull();
-                    if (orchestrator != null && orchestrator.getGit() != null) {
-                        String user = orchestrator.getGit().getUsername();
-                        String pass = orchestrator.getGit().getPassword();
-                        if (user != null && !user.isEmpty() && pass != null && !pass.isEmpty()) {
-                            pullCmd.setCredentialsProvider(new org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider(user, pass));
+                        System.out.println("[SelfDevBootstrapController] [CHECK_GIT] Fetching latest from remote to perform clean reset...");
+                        org.eclipse.jgit.api.FetchCommand fetchCmd = git.fetch();
+                        if (orchestrator != null && orchestrator.getGit() != null) {
+                            String user = orchestrator.getGit().getUsername();
+                            String pass = orchestrator.getGit().getPassword();
+                            if (user != null && !user.isEmpty() && pass != null && !pass.isEmpty()) {
+                                fetchCmd.setCredentialsProvider(new org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider(user, pass));
+                            }
                         }
+                        fetchCmd.call();
+
+                        String targetBranch = branch;
+                        System.out.println("[SelfDevBootstrapController] [CHECK_GIT] Hard resetting local branch to refs/remotes/origin/" + targetBranch + "...");
+                        git.reset().setMode(org.eclipse.jgit.api.ResetCommand.ResetType.HARD).setRef("refs/remotes/origin/" + targetBranch).call();
+                        git.clean().setCleanDirectories(true).call();
+                        System.out.println("[SelfDevBootstrapController] [CHECK_GIT_SUCCESS] Fetch and reset-to-remote completed successfully.");
+                        gitAction = " (Pulled)";
+                    } catch (Exception pullEx) {
+                        System.err.println("[SelfDevBootstrapController] [CHECK_GIT_WARNING] Clean JGit reset-to-remote failed: " + pullEx.getMessage());
+                        throw pullEx; // throw to trigger fallback
                     }
-                    pullCmd.call();
-                    System.out.println("[SelfDevBootstrapController] [CHECK_GIT_SUCCESS] Pull completed successfully.");
-                    gitAction = " (Pulled)";
                 }
             }
         } catch (Exception e) {
@@ -1016,9 +1026,14 @@ public class SelfDevBootstrapController {
                     p.waitFor();
                     gitAction = " (Cloned)";
                 } else {
-                    System.out.println("[SelfDevBootstrapController] [CHECK_GIT] Fallback 'git pull' in progress...");
+                    System.out.println("[SelfDevBootstrapController] [CHECK_GIT] Fallback fetch & hard reset in progress...");
+                    String targetBranch = branch;
                     try {
-                        ProcessBuilder pbReset = new ProcessBuilder("git", "reset", "--hard");
+                        ProcessBuilder pbFetch = new ProcessBuilder("git", "fetch", "origin");
+                        pbFetch.directory(localDir);
+                        pbFetch.start().waitFor();
+
+                        ProcessBuilder pbReset = new ProcessBuilder("git", "reset", "--hard", "origin/" + targetBranch);
                         pbReset.directory(localDir);
                         pbReset.start().waitFor();
 
@@ -1028,12 +1043,6 @@ public class SelfDevBootstrapController {
                     } catch (Exception resetEx) {
                         System.err.println("[SelfDevBootstrapController] [CHECK_GIT_WARNING] OS git reset/clean failed: " + resetEx.getMessage());
                     }
-
-                    ProcessBuilder pb = new ProcessBuilder("git", "pull");
-                    pb.directory(localDir);
-                    pb.redirectErrorStream(true);
-                    Process p = pb.start();
-                    p.waitFor();
                     gitAction = " (Pulled)";
                 }
             } catch (Exception ex) {
