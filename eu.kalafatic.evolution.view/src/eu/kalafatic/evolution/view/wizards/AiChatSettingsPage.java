@@ -30,7 +30,7 @@ public class AiChatSettingsPage extends AWizardPage {
         new Label(container, SWT.NONE).setText("Chat URL:");
         urlText = new Text(container, SWT.BORDER);
         urlText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        urlText.setText("http://localhost:58080/ai");
+        urlText.setText("http://localhost:48080/ai");
 
         urlDecorator = new ControlDecoration(urlText, SWT.TOP | SWT.LEFT);
         urlDecorator.setImage(FieldDecorationRegistry.getDefault()
