@@ -593,7 +593,7 @@ public class SelfDevBootstrapController {
     private String runBuildAndCopy() {
         String buildWorkspacePath = null;
         if (orchestrator != null && orchestrator.getSupervisorSettings() != null) {
-            buildWorkspacePath = orchestrator.getSupervisorSettings().getSourcePath();
+            buildWorkspacePath = eu.kalafatic.evolution.controller.manager.ProjectModelManager.migratePath(orchestrator.getSupervisorSettings().getSourcePath());
         }
         if (buildWorkspacePath == null || buildWorkspacePath.trim().isEmpty()) {
             String dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("ddMMyy"));
@@ -636,7 +636,7 @@ public class SelfDevBootstrapController {
             try {
                 String buildPath = null;
                 if (orchestrator != null && orchestrator.getSupervisorSettings() != null) {
-                    buildPath = orchestrator.getSupervisorSettings().getExecutablePath();
+                    buildPath = eu.kalafatic.evolution.controller.manager.ProjectModelManager.migratePath(orchestrator.getSupervisorSettings().getExecutablePath());
                 }
                 if (buildPath == null || buildPath.trim().isEmpty()) {
                     String dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("ddMMyy"));
@@ -837,7 +837,7 @@ public class SelfDevBootstrapController {
         ensureSupervisorRunning();
         String buildWorkspacePath = null;
         if (orchestrator != null && orchestrator.getSupervisorSettings() != null) {
-            buildWorkspacePath = orchestrator.getSupervisorSettings().getSourcePath();
+            buildWorkspacePath = eu.kalafatic.evolution.controller.manager.ProjectModelManager.migratePath(orchestrator.getSupervisorSettings().getSourcePath());
         }
         if (buildWorkspacePath == null || buildWorkspacePath.trim().isEmpty()) {
             String dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("ddMMyy"));
@@ -854,7 +854,7 @@ public class SelfDevBootstrapController {
         ensureSupervisorRunning();
         String buildWorkspacePath = null;
         if (orchestrator != null && orchestrator.getSupervisorSettings() != null) {
-            buildWorkspacePath = orchestrator.getSupervisorSettings().getSourcePath();
+            buildWorkspacePath = eu.kalafatic.evolution.controller.manager.ProjectModelManager.migratePath(orchestrator.getSupervisorSettings().getSourcePath());
         }
         if (buildWorkspacePath == null || buildWorkspacePath.trim().isEmpty()) {
             String dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("ddMMyy"));
@@ -871,7 +871,7 @@ public class SelfDevBootstrapController {
         ensureSupervisorRunning();
         String buildWorkspacePath = null;
         if (orchestrator != null && orchestrator.getSupervisorSettings() != null) {
-            buildWorkspacePath = orchestrator.getSupervisorSettings().getSourcePath();
+            buildWorkspacePath = eu.kalafatic.evolution.controller.manager.ProjectModelManager.migratePath(orchestrator.getSupervisorSettings().getSourcePath());
         }
         if (buildWorkspacePath == null || buildWorkspacePath.trim().isEmpty()) {
             String dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("ddMMyy"));
@@ -1399,7 +1399,7 @@ public class SelfDevBootstrapController {
 
         String buildPath = null;
         if (orchestrator != null && orchestrator.getSupervisorSettings() != null) {
-            buildPath = orchestrator.getSupervisorSettings().getExecutablePath();
+            buildPath = eu.kalafatic.evolution.controller.manager.ProjectModelManager.migratePath(orchestrator.getSupervisorSettings().getExecutablePath());
         }
         if (buildPath == null || buildPath.trim().isEmpty()) {
             String dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("ddMMyy"));
@@ -1435,7 +1435,7 @@ public class SelfDevBootstrapController {
         // Try finding Jars in target folders of the sources directory and copying them
         String buildWorkspacePath = null;
         if (orchestrator != null && orchestrator.getSupervisorSettings() != null) {
-            buildWorkspacePath = orchestrator.getSupervisorSettings().getSourcePath();
+            buildWorkspacePath = eu.kalafatic.evolution.controller.manager.ProjectModelManager.migratePath(orchestrator.getSupervisorSettings().getSourcePath());
         }
         if (buildWorkspacePath == null || buildWorkspacePath.trim().isEmpty()) {
             String dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("ddMMyy"));
@@ -1502,7 +1502,7 @@ public class SelfDevBootstrapController {
 
         String destPath = null;
         if (orchestrator != null && orchestrator.getSupervisorSettings() != null) {
-            destPath = orchestrator.getSupervisorSettings().getSourcePath();
+            destPath = eu.kalafatic.evolution.controller.manager.ProjectModelManager.migratePath(orchestrator.getSupervisorSettings().getSourcePath());
         }
         if (destPath == null || destPath.trim().isEmpty()) {
             String dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("ddMMyy"));
