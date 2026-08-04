@@ -573,7 +573,8 @@ public class SelfDevBootstrapController2 {
         String response = "ERROR";
         try {
             String mvnCmd = System.getProperty("os.name").toLowerCase().contains("win") ? "mvn.cmd" : "mvn";
-            ProcessBuilder pb = new ProcessBuilder(mvnCmd, "clean", "package", "-DskipTests");
+            // हेडलेस RCP उत्पाद का सही ढंग से निर्माण करने के लिए "verify" का उपयोग करें
+            ProcessBuilder pb = new ProcessBuilder(mvnCmd, "clean", "verify", "-DskipTests");
             pb.directory(new File(buildWorkspacePath));
             pb.redirectErrorStream(true);
             Process p = pb.start();
@@ -1421,6 +1422,37 @@ public class SelfDevBootstrapController2 {
         File sourcesDir = new File(buildWorkspacePath);
         if (sourcesDir.exists()) {
             findAndCopyJars(sourcesDir, buildDir, exportDir);
+
+            // Try finding product archives in targets of sources directory and copy them to export
+            File productsDir = new File(sourcesDir, "eu.kalafatic.evolution.repository/target/products");
+            if (productsDir.exists()) {
+                File[] archives = productsDir.listFiles((dir, name) -> name.endsWith(".zip") || name.endsWith(".tar.gz"));
+                if (archives != null) {
+                    for (File archive : archives) {
+                        try {
+                            String destName = archive.getName();
+                            if (destName.contains("win32")) {
+                                destName = "EVO-win-x64.zip";
+                            } else if (destName.contains("linux")) {
+                                destName = "EVO-linux-x64.tar.gz";
+                            }
+                            File destFile = new File(exportDir, destName);
+                            System.out.println("[SelfDevBootstrapController] [CHECK_EXPORT] Copying product archive to export: " + destFile.getAbsolutePath());
+                            java.nio.file.Files.copy(archive.toPath(), destFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                        } catch (IOException e) {
+                            System.err.println("[SelfDevBootstrapController] [CHECK_EXPORT] Failed to copy product archive: " + e.getMessage());
+                        }
+                    }
+                }
+            }
+        }
+
+        // Check if export directory has product archives
+        File[] exportArchives = exportDir.listFiles((dir, name) -> name.endsWith(".zip") || name.endsWith(".tar.gz"));
+        if (exportArchives != null && exportArchives.length > 0) {
+            long duration = System.currentTimeMillis() - startTime;
+            System.out.println("[SelfDevBootstrapController] [CHECK_EXPORT_SUCCESS] Generated/Found packaged RCP product in export folder: " + exportArchives[0].getAbsolutePath() + " (took " + duration + "ms)");
+            return "READY: " + exportArchives[0].getName();
         }
 
         // Check if export directory has the runnable jar

@@ -1,0 +1,162 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# 1. Locate repository root
+SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+cd "$SCRIPT_DIR"
+
+echo "============================================================"
+echo "EVO Headless RCP Build & Packaging System"
+echo "============================================================"
+
+# Detect OS
+OS_NAME="$(uname -s)"
+case "${OS_NAME}" in
+    Linux*)     HOST_OS=linux;;
+    Darwin*)    HOST_OS=macos;;
+    CYGWIN*|MINGW*|MSYS*) HOST_OS=windows;;
+    *)          HOST_OS=unknown;;
+esac
+
+TARGET_PLATFORM="${HOST_OS}"
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --platform)
+            TARGET_PLATFORM="$2"
+            shift 2
+            ;;
+        *)
+            echo "Unknown argument: $1" >&2
+            echo "Usage: $0 [--platform linux|windows|all]" >&2
+            exit 1
+            ;;
+    esac
+done
+
+echo "Host OS detected: ${HOST_OS}"
+echo "Target platform: ${TARGET_PLATFORM}"
+
+# Locate Maven Wrapper
+if [[ -f "./mvnw" ]]; then
+    MVNW="./mvnw"
+elif [[ -f "./mvnw.cmd" ]]; then
+    MVNW="./mvnw.cmd"
+else
+    echo "ERROR: Maven Wrapper not found!" >&2
+    exit 1
+fi
+
+chmod +x "${MVNW}" 2>/dev/null || true
+
+# Determine Maven profile
+PROFILE=""
+if [[ "${TARGET_PLATFORM}" == "windows" ]]; then
+    PROFILE="-Pwindows"
+elif [[ "${TARGET_PLATFORM}" == "linux" ]]; then
+    PROFILE="-Plinux"
+elif [[ "${TARGET_PLATFORM}" == "all" ]]; then
+    PROFILE="-Pall-platforms"
+else
+    # Fallback/Default
+    PROFILE="-Pall-platforms"
+fi
+
+echo "Running headless build via Maven Wrapper with profile: ${PROFILE}..."
+# Run maven build
+set +e
+"${MVNW}" clean verify -DskipTests "${PROFILE}"
+BUILD_EXIT_CODE=$?
+set -e
+
+if [[ ${BUILD_EXIT_CODE} -ne 0 ]]; then
+    echo "ERROR: Maven build failed with exit code ${BUILD_EXIT_CODE}" >&2
+    exit ${BUILD_EXIT_CODE}
+fi
+
+# Create release/ folder
+mkdir -p release
+
+PROD_FOUND=0
+PRODUCTS_DIR="eu.kalafatic.evolution.repository/target/products"
+
+echo "Publishing generated product artifacts to release/..."
+
+if [[ "${TARGET_PLATFORM}" == "windows" || "${TARGET_PLATFORM}" == "all" ]]; then
+    # Look for Windows zip
+    WIN_ZIP="${PRODUCTS_DIR}/evolution-win32.win32.x86_64.zip"
+    if [[ -f "${WIN_ZIP}" ]]; then
+        cp -f "${WIN_ZIP}" "release/EVO-win-x64.zip"
+        echo "SUCCESS: Published Windows x64 package: release/EVO-win-x64.zip"
+        PROD_FOUND=$((PROD_FOUND + 1))
+    fi
+fi
+
+if [[ "${TARGET_PLATFORM}" == "linux" || "${TARGET_PLATFORM}" == "all" || "${TARGET_PLATFORM}" == "macos" ]]; then
+    # Look for Linux tar.gz
+    LINUX_TAR="${PRODUCTS_DIR}/evolution-linux.gtk.x86_64.tar.gz"
+    if [[ -f "${LINUX_TAR}" ]]; then
+        cp -f "${LINUX_TAR}" "release/EVO-linux-x64.tar.gz"
+        echo "SUCCESS: Published Linux x64 package: release/EVO-linux-x64.tar.gz"
+        PROD_FOUND=$((PROD_FOUND + 1))
+    fi
+fi
+
+if [[ -f "release/EVO-linux-x64.tar.gz" ]]; then
+    echo "Injecting evo.sh into release/EVO-linux-x64.tar.gz and ensuring permissions..."
+    TEMP_EXTRACT_DIR="release/temp_extract"
+    rm -rf "${TEMP_EXTRACT_DIR}"
+    mkdir -p "${TEMP_EXTRACT_DIR}"
+    tar -xzf "release/EVO-linux-x64.tar.gz" -C "${TEMP_EXTRACT_DIR}"
+    PROD_ROOT_DIR="$(find "${TEMP_EXTRACT_DIR}" -mindepth 1 -maxdepth 1 -type d | head -n 1)"
+    if [[ -n "${PROD_ROOT_DIR}" ]]; then
+        cp -f "evo.sh" "${PROD_ROOT_DIR}/"
+        chmod +x "${PROD_ROOT_DIR}/evo" 2>/dev/null || true
+        chmod +x "${PROD_ROOT_DIR}/evo.sh" 2>/dev/null || true
+        cd "${TEMP_EXTRACT_DIR}"
+        DIR_NAME="$(basename "${PROD_ROOT_DIR}")"
+        tar -czf "../../release/EVO-linux-x64.tar.gz" "${DIR_NAME}"
+        cd ../..
+        echo "SUCCESS: Injected evo.sh and ensured executable permissions inside release/EVO-linux-x64.tar.gz"
+    fi
+    rm -rf "${TEMP_EXTRACT_DIR}"
+fi
+
+# Wildcard fallback if profiles created unexpected names
+if [[ ${PROD_FOUND} -eq 0 ]]; then
+    echo "No standard artifacts found. Performing wildcard search..."
+    find "${PRODUCTS_DIR}" -type f \( -name "evolution-*.zip" -o -name "evolution-*.tar.gz" \) 2>/dev/null | while read -r f; do
+        if [[ "${f}" == *.zip ]]; then
+            cp -f "${f}" "release/EVO-win-x64.zip"
+            echo "SUCCESS: Published Windows x64 package: release/EVO-win-x64.zip"
+            PROD_FOUND=$((PROD_FOUND + 1))
+        elif [[ "${f}" == *.tar.gz ]]; then
+            cp -f "${f}" "release/EVO-linux-x64.tar.gz"
+            echo "SUCCESS: Published Linux x64 package: release/EVO-linux-x64.tar.gz"
+            PROD_FOUND=$((PROD_FOUND + 1))
+        fi
+    done
+fi
+
+if [[ ${PROD_FOUND} -eq 0 ]]; then
+    echo "ERROR: Product was built but packaged archive files could not be located under ${PRODUCTS_DIR}!" >&2
+    exit 1
+fi
+
+# Generate checksums.txt
+echo "Generating checksums..."
+cd release
+rm -f checksums.txt
+if [[ -f "EVO-win-x64.zip" ]]; then
+    sha256sum "EVO-win-x64.zip" >> checksums.txt 2>/dev/null || sha256 "EVO-win-x64.zip" >> checksums.txt 2>/dev/null || md5sum "EVO-win-x64.zip" >> checksums.txt 2>/dev/null || true
+fi
+if [[ -f "EVO-linux-x64.tar.gz" ]]; then
+    sha256sum "EVO-linux-x64.tar.gz" >> checksums.txt 2>/dev/null || sha256 "EVO-linux-x64.tar.gz" >> checksums.txt 2>/dev/null || md5sum "EVO-linux-x64.tar.gz" >> checksums.txt 2>/dev/null || true
+fi
+echo "Checksums published in release/checksums.txt"
+
+echo "============================================================"
+echo "Headless RCP build, packaging, and validation complete."
+echo "============================================================"
+exit 0

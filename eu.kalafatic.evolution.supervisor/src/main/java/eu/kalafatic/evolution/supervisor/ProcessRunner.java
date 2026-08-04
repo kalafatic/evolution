@@ -25,20 +25,56 @@ public class ProcessRunner {
     public void setMockVerifyResult(Boolean res) { this.mockVerifyResult = res; }
     public void setOnRCPStart(Runnable runnable) { this.onRCPStart = runnable; }
 
+    public Boolean getMockBuildResult() { return mockBuildResult; }
+    public Boolean getMockRCPResult() { return mockRCPResult; }
+    public Boolean getMockPatchResult() { return mockPatchResult; }
+    public Boolean getMockTestResult() { return mockTestResult; }
+    public Boolean getMockRunResult() { return mockRunResult; }
+    public Boolean getMockVerifyResult() { return mockVerifyResult; }
+
     public boolean runBuild(File variantDir) {
         if (mockBuildResult != null) {
             System.out.println("[MOCK BUILD] Returning mock result: " + mockBuildResult);
             return mockBuildResult;
         }
-        String os = System.getProperty("os.name").toLowerCase();
-        String mvnCmd = os.contains("win") ? "mvn.cmd" : "mvn";
-        System.out.println("[BUILD] Running " + mvnCmd + " clean package -DskipTests in " + variantDir.getAbsolutePath());
-        ProcessBuilder pb = new ProcessBuilder(mvnCmd, "clean", "package", "-DskipTests");
+
+        List<String> command = new ArrayList<>();
+        if (PlatformInfo.isWindows()) {
+            File mvnwCmd = new File(variantDir, "mvnw.cmd");
+            if (mvnwCmd.exists()) {
+                command.add(mvnwCmd.getAbsolutePath());
+            } else {
+                command.add("mvnw.cmd");
+            }
+            command.add("clean");
+            command.add("verify");
+            command.add("-DskipTests");
+            command.add("-Pwindows");
+        } else {
+            File mvnw = new File(variantDir, "mvnw");
+            if (mvnw.exists()) {
+                try {
+                    mvnw.setExecutable(true);
+                } catch (Exception ignored) {}
+                command.add("./mvnw");
+            } else {
+                command.add("sh");
+                command.add("mvnw");
+            }
+            command.add("clean");
+            command.add("verify");
+            command.add("-DskipTests");
+            command.add("-Plinux");
+        }
+
+        System.out.println("[BUILD] Executing build command: " + command + " in " + variantDir.getAbsolutePath());
+        ProcessBuilder pb = new ProcessBuilder(command);
         pb.directory(variantDir);
         pb.inheritIO();
         try {
             Process process = pb.start();
             int exitCode = process.waitFor();
+            System.out.println("[BUILD] Build exited with: " + exitCode);
             return exitCode == 0;
         } catch (IOException | InterruptedException e) {
             System.err.println("[BUILD] Failed: " + e.getMessage());

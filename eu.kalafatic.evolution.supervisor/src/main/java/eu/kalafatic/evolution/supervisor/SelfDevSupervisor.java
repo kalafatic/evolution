@@ -174,12 +174,17 @@ public class SelfDevSupervisor {
                 saveState();
                 publishEvent("BUILD_STARTED", "Starting external build verification for: " + task.getId());
 
-                boolean buildOk = runner.runBuild(baseDir);
-                if (buildOk) {
+                EvoProductBuildService buildService = new EvoProductBuildService(baseDir, runner);
+                ProductBuildResult buildResult = buildService.buildProduct();
+                if (buildResult.isSuccessful()) {
                     publishEvent("BUILD_COMPLETED", "Build successful for: " + task.getId());
+                    if (buildResult.getArtifactPath() != null) {
+                        task.getMetadata().put("artifactPath", buildResult.getArtifactPath().toString());
+                    }
+                    saveState();
                 } else {
-                    publishEvent("BUILD_COMPLETED", "Build failed for: " + task.getId());
-                    handleTaskFailure(task, "BUILD_FAILED", "Project failed to compile cleanly after code changes.");
+                    publishEvent("BUILD_COMPLETED", "Build failed for: " + task.getId() + " - " + buildResult.getFailureSummary());
+                    handleTaskFailure(task, "BUILD_FAILED", "Project or product build failed: " + buildResult.getFailureSummary());
                     return;
                 }
             }
@@ -222,12 +227,23 @@ public class SelfDevSupervisor {
                 saveState();
                 publishEvent("VERIFICATION_COMPLETED", "Starting final health/acceptance checks for: " + task.getId());
 
-                boolean verifyOk = runner.verifyApplication(baseDir);
+                String pathStr = (String) task.getMetadata().get("artifactPath");
+                java.nio.file.Path artifactPath = null;
+                if (pathStr != null) {
+                    artifactPath = java.nio.file.Paths.get(pathStr);
+                } else {
+                    // Fallback discovery
+                    String expectedName = PlatformInfo.isWindows() ? "EVO-win-x64.zip" : "EVO-linux-x64.tar.gz";
+                    artifactPath = baseDir.toPath().resolve("release").resolve(expectedName);
+                }
+
+                EvoProductValidator productValidator = new EvoProductValidator(runner);
+                boolean verifyOk = productValidator.validateProduct(artifactPath);
                 if (verifyOk) {
                     publishEvent("VERIFICATION_COMPLETED", "Final verification passed for: " + task.getId());
                 } else {
                     publishEvent("VERIFICATION_COMPLETED", "Final verification failed for: " + task.getId());
-                    handleTaskFailure(task, "VERIFICATION_FAILED", "Health checks or acceptance criteria failed.");
+                    handleTaskFailure(task, "VERIFICATION_FAILED", "Product file structure, launch, or readiness checks failed.");
                     return;
                 }
             }
