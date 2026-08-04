@@ -164,4 +164,36 @@ public interface ServerSettings extends EObject {
 	 */
 	void setAuthenticate(boolean value);
 
+	/**
+	 * Returns the value of the '<em><b>Portal Port</b></em>' attribute.
+	 * The default value is <code>"58080"</code>.
+	 * @return the value of the '<em>Portal Port</em>' attribute.
+	 * @see #setPortalPort(int)
+	 * @model default="58080"
+	 */
+	int getPortalPort();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.ServerSettings#getPortalPort <em>Portal Port</em>}' attribute.
+	 * @param value the new value of the '<em>Portal Port</em>' attribute.
+	 * @see #getPortalPort()
+	 */
+	void setPortalPort(int value);
+
+	/**
+	 * Returns the value of the '<em><b>Portal Url</b></em>' attribute.
+	 * The default value is <code>"http://localhost:58080/dashboard.html"</code>.
+	 * @return the value of the '<em>Portal Url</em>' attribute.
+	 * @see #setPortalUrl(String)
+	 * @model default="http://localhost:58080/dashboard.html"
+	 */
+	String getPortalUrl();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.ServerSettings#getPortalUrl <em>Portal Url</em>}' attribute.
+	 * @param value the new value of the '<em>Portal Url</em>' attribute.
+	 * @see #getPortalUrl()
+	 */
+	void setPortalUrl(String value);
+
 } // ServerSettings
