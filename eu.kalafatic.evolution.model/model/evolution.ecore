@@ -165,6 +165,10 @@
         defaultValueLiteral="38080"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="authenticate" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
         defaultValueLiteral="false"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="portalPort" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"
+        defaultValueLiteral="58080"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="portalUrl" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+        defaultValueLiteral="http://localhost:58080/dashboard.html"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="ServerSession">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="id" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>

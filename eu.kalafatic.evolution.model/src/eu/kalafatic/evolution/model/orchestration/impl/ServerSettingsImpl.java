@@ -149,6 +149,37 @@ public class ServerSettingsImpl extends MinimalEObjectImpl.Container implements 
 	 */
 	protected boolean authenticate = AUTHENTICATE_EDEFAULT;
 
+	protected static final int PORTAL_PORT_EDEFAULT = 58080;
+	protected int portalPort = PORTAL_PORT_EDEFAULT;
+	protected static final String PORTAL_URL_EDEFAULT = "http://localhost:58080/dashboard.html";
+	protected String portalUrl = PORTAL_URL_EDEFAULT;
+
+	@Override
+	public int getPortalPort() {
+		return portalPort;
+	}
+
+	@Override
+	public void setPortalPort(int newPortalPort) {
+		int oldPortalPort = portalPort;
+		portalPort = newPortalPort;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, -1, oldPortalPort, portalPort));
+	}
+
+	@Override
+	public String getPortalUrl() {
+		return portalUrl;
+	}
+
+	@Override
+	public void setPortalUrl(String newPortalUrl) {
+		String oldPortalUrl = portalUrl;
+		portalUrl = newPortalUrl;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, -1, oldPortalUrl, portalUrl));
+	}
+
 	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -436,6 +467,10 @@ public class ServerSettingsImpl extends MinimalEObjectImpl.Container implements 
 		result.append(mcpPort);
 		result.append(", authenticate: ");
 		result.append(authenticate);
+		result.append(", portalPort: ");
+		result.append(portalPort);
+		result.append(", portalUrl: ");
+		result.append(portalUrl);
 		result.append(')');
 		return result.toString();
 	}
