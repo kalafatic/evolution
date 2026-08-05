@@ -974,16 +974,28 @@ public class LLMDarwinEngine extends ADarwinEngine {
         EvoLlmModel winningModel = new EvoLlmModel(finalTokenizer.getVocabSize(), overallWinner.config.embeddingSize, overallWinner.config.heads, overallWinner.config.layers, dff, finalSeqLen);
 
         EvoLlmTrainer trainer = new EvoLlmTrainer(winningModel);
-        trainer.setProgressListener((epoch, totalEpochs, sampleIndex, totalSamples, currentLoss) -> {
-            int logInterval = Math.max(1, totalSamples / 10);
-            if (sampleIndex % logInterval == 0 || sampleIndex == totalSamples) {
-                double pct = (double) sampleIndex / totalSamples * 100.0;
-                context.log(String.format("[EVO Training Progress] Global Winner Refinement - Epoch %d/%d | Progress: %d/%d (%.1f%%) | Loss: %.4f",
-                    epoch + 1, totalEpochs, sampleIndex, totalSamples, pct, currentLoss));
-            }
-        });
+        trainer.setJobId(dynamicModelName);
+
         int finalEpochs = forceSolution ? 1 : overallWinner.config.epochs;
-        trainer.train(samples, finalEpochs);
+
+        try (eu.kalafatic.evolution.forge.trainer.impl.llm.TrainingProgressReporter progressReporter =
+                new eu.kalafatic.evolution.forge.trainer.impl.llm.TrainingProgressReporter(forgeOutputDir.toPath())) {
+
+            progressReporter.addListener(progress -> {
+                EvolutionProgressPublisher.updateTrainingProgress(context, progress);
+            });
+
+            trainer.setProgressListener((epoch, totalEpochs, sampleIndex, totalSamples, currentLoss) -> {
+                int logInterval = Math.max(1, totalSamples / 10);
+                if (sampleIndex % logInterval == 0 || sampleIndex == totalSamples) {
+                    double pct = (double) sampleIndex / totalSamples * 100.0;
+                    context.log(String.format("[EVO Training Progress] Global Winner Refinement - Epoch %d/%d | Progress: %d/%d (%.1f%%) | Loss: %.4f",
+                        epoch + 1, totalEpochs, sampleIndex, totalSamples, pct, currentLoss));
+                }
+            });
+
+            trainer.train(samples, finalEpochs, progressReporter::report);
+        }
 
         // Export GGUF via OllamaExporter
         OllamaExporter exporter = new OllamaExporter();
