@@ -204,7 +204,9 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 		}
 
 		if (!isControl) {
-			iterationManager.transition(SystemState.INIT, context);
+			if (!context.getMetadata().containsKey("resume_manual_id")) {
+				iterationManager.transition(SystemState.INIT, context);
+			}
 			boolean isNewGoal = (checkpointGoal != null && !checkpointGoal.equalsIgnoreCase(request));
 			boolean isStaleTerminal = state.getCurrentPhase() != null && (state.getCurrentPhase().contains("TERMINAL")
 					|| state.getCurrentPhase().contains("SUCCESS") || state.getCurrentPhase().contains("SATISFIED"));
@@ -862,33 +864,15 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 		String manualId = resolveVariantSelection(variants, context, manager);
 
 		if (manualId == null) {
-			if (!context.isAutoApprove()) {
-				manualId = manager.handleVariantSelection(context, variants, goal);
-				if ("REGENERATE".equals(manualId) || "REGENERATE_SAME_DIMENSION".equals(manualId)) {
-					if ("REGENERATE_SAME_DIMENSION".equals(manualId)) {
-						context.getOrchestrationState().getMetadata().put("force_current_dimension", true);
-						// Record rejected strategies to ensure diversity in next attempt
-						List<String> rejectedStrategies = variants.stream()
-							.map(v -> v.getStrategy())
-							.collect(Collectors.toList());
-
-						Object existingRejected = context.getOrchestrationState().getMetadata().get("current_iteration_rejected_strategies");
-						if (existingRejected instanceof List) {
-							((List<String>) existingRejected).addAll(rejectedStrategies);
-						} else {
-							context.getOrchestrationState().getMetadata().put("current_iteration_rejected_strategies", new ArrayList<>(rejectedStrategies));
-						}
-					}
-					return runDarwinIteration(context, manager);
-				}
-				if (manualId == null || "STOP".equals(manualId) || "FAILED".equals(manualId)) {
-					EvaluationResult res = manager.failedResult();
-					res.setDecision(SelfDevDecision.STOP);
-					return res;
-				}
+			BranchVariant recommended = variants.stream().max((v1, v2) -> Double.compare(v1.getScore(), v2.getScore())).orElse(null);
+			DarwinApprovalResult approval = requestApproval(variants, recommended, manager);
+			if (approval.getAction() == DarwinApprovalResult.Action.WAIT) {
+				EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
+				res.setSuccess(true);
+				res.setDecision(SelfDevDecision.STOP);
+				return res;
 			} else {
-				context.log("[DARWIN] Adaptive Kernel: Auto-selecting best trajectory.");
-				manualId = selectionEngine.selectWinnerAuto(variants);
+				manualId = approval.getSelectedCandidateId();
 			}
 		}
 
@@ -946,6 +930,8 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 		// ============================================================
 
 		if (result.isSuccess()) {
+			context.getMetadata().remove("pending_candidates");
+			context.getMetadata().remove("resume_manual_id");
 			EvolutionPhase currentPhaseEnum = EvolutionPhase.fromString(state.getCurrentPhase());
 			EvolutionPhase nextPhase = manager.getEvolutionaryTrajectoryEngine().determineNextPhase(currentPhaseEnum,
 					manager.getActiveTrajectory(context), context);
@@ -1064,6 +1050,11 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 	protected String resolveVariantSelection(List<BranchVariant> variants, TaskContext context,
 			IterationManager manager) {
 
+		if (context.getMetadata().containsKey("resume_manual_id")) {
+			String resumedId = (String) context.getMetadata().remove("resume_manual_id");
+			return resumedId;
+		}
+
 		OrchestrationState state = context.getOrchestrationState();
 		String manualId = null;
 
@@ -1090,6 +1081,8 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 	 */
 	protected void handleIterationFailure(TaskContext context, IterationManager manager, EvaluationResult result)
 			throws Exception {
+		context.getMetadata().remove("pending_candidates");
+		context.getMetadata().remove("resume_manual_id");
 
 		context.log("[DARWIN] Iteration failed. Attempting recovery...");
 
@@ -1194,6 +1187,12 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 
 	public List<BranchVariant> generateProposals(TaskContext context, GoalModel goal, IterationManager manager)
 			throws Exception {
+		if (context.getMetadata().containsKey("pending_candidates")) {
+			@SuppressWarnings("unchecked")
+			List<BranchVariant> pending = (List<BranchVariant>) context.getMetadata().get("pending_candidates");
+			context.log("[DARWIN] Resuming with preserved candidates.");
+			return pending;
+		}
 		context.log("[DARWIN] Entering generateProposals for goal: " + goal.getPrimaryAction());
 		Iteration currentIterationModelImpl = manager.getCurrentIterationModel();
 		String iterId = currentIterationModelImpl != null ? currentIterationModelImpl.getId() : "default";
@@ -3331,5 +3330,167 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 			}
 			return null;
 		}
+	}
+
+	public DarwinApprovalResult requestApproval(
+		List<BranchVariant> candidates,
+		BranchVariant recommendedCandidate,
+		IterationManager iterationManager
+	) {
+		if (context.isAutoApprove()) {
+			context.log("[DARWIN] Auto-Approve enabled. Automatically selecting recommended candidate: " + recommendedCandidate.getId());
+			return new DarwinApprovalResult(DarwinApprovalResult.Action.CONTINUE, recommendedCandidate.getId());
+		}
+
+		// Manual Mode: Store evaluated candidates and recommended candidate in pending decision
+		context.getMetadata().put("pending_candidates", candidates);
+		context.getMetadata().put("recommended_candidate", recommendedCandidate);
+
+		// Transition through IterationManager to WAITING_FOR_USER_DECISION
+		if (iterationManager != null) {
+			iterationManager.transition(SystemState.WAITING_FOR_USER_DECISION, context);
+		} else {
+			eu.kalafatic.evolution.controller.orchestration.IterationManager.forceTransition(SystemState.WAITING_FOR_USER_DECISION, context);
+		}
+
+		// Publish candidate information to the existing Darwin/Evolution UI
+		emitDarwinBranches(context, candidates, recommendedCandidate);
+
+		context.log("[DARWIN] Manual Mode. Pausing Darwin loop and waiting for user decision.");
+		return new DarwinApprovalResult(DarwinApprovalResult.Action.WAIT, null);
+	}
+
+	private void emitDarwinBranches(TaskContext context, List<BranchVariant> candidates, BranchVariant recommended) {
+		StringBuilder outcomeBuilder = new StringBuilder("[DARWIN_BRANCHES] ");
+		outcomeBuilder.append("\nIteration ").append(context.getOrchestrationState().getIterationCount() + 1).append("\n");
+
+		org.json.JSONObject json = new org.json.JSONObject();
+		json.put("iteration", context.getOrchestrationState().getIterationCount() + 1);
+		org.json.JSONArray variantsArr = new org.json.JSONArray();
+		for (BranchVariant v : candidates) {
+			org.json.JSONObject vObj = new org.json.JSONObject();
+			vObj.put("id", v.getId());
+			vObj.put("strategy", v.getStrategy());
+			vObj.put("score", v.getScore());
+			vObj.put("survival_argument", v.getSurvivalArgument());
+			vObj.put("tradeoffs", v.getTradeoffs());
+			vObj.put("status", v.getActivationState().name());
+			variantsArr.put(vObj);
+
+			outcomeBuilder.append("  ├── ").append(v.getId()).append(" Strategy: ").append(v.getStrategy()).append("\n");
+		}
+		json.put("variants", variantsArr);
+		if (recommended != null) {
+			json.put("recommended", recommended.getId());
+		}
+		outcomeBuilder.append("[DECISION:MANUAL] ");
+		outcomeBuilder.append(json.toString());
+		context.log(outcomeBuilder.toString());
+	}
+
+	public static void handleUserDecision(TaskContext context, String prompt, eu.kalafatic.evolution.controller.orchestration.SessionContainer session) {
+		String upper = prompt.toUpperCase().trim();
+
+		@SuppressWarnings("unchecked")
+		List<BranchVariant> pending = (List<BranchVariant>) context.getMetadata().get("pending_candidates");
+		if (pending == null) {
+			context.log("[DARWIN] Error: No pending candidates found for resumption.");
+			eu.kalafatic.evolution.controller.orchestration.IterationManager.forceTransition(SystemState.FAILED, context);
+			return;
+		}
+
+		String candidateId = null;
+		boolean isSelect = false;
+		boolean isRetry = upper.startsWith("RETRY") || upper.startsWith("REGENERATE");
+		boolean isReject = upper.startsWith("REJECT") || upper.equals("REJECT_ALL");
+		boolean isCancel = upper.startsWith("CANCEL");
+
+		boolean isAutoApproveTriggered = upper.contains("AUTO_APPROVE") || upper.contains("AUTO-APPROVE") || context.isAutoApprove();
+		if (isAutoApproveTriggered) {
+			BranchVariant recommended = (BranchVariant) context.getMetadata().get("recommended_candidate");
+			if (recommended == null && pending != null && !pending.isEmpty()) {
+				recommended = pending.stream().max((v1, v2) -> Double.compare(v1.getScore(), v2.getScore())).orElse(null);
+			}
+			if (recommended != null) {
+				candidateId = recommended.getId();
+				isSelect = true;
+			}
+		} else if (upper.startsWith("SELECT_CANDIDATE ")) {
+			candidateId = prompt.substring("SELECT_CANDIDATE ".length()).trim();
+			isSelect = true;
+		} else if (upper.startsWith("SELECT ")) {
+			candidateId = prompt.substring("SELECT ".length()).trim();
+			isSelect = true;
+		} else if (upper.startsWith("APPROVE VARIANT ")) {
+			candidateId = prompt.substring("APPROVE VARIANT ".length()).trim();
+			isSelect = true;
+		} else if (pending.stream().anyMatch(v -> v.getId().equalsIgnoreCase(prompt))) {
+			candidateId = prompt;
+			isSelect = true;
+		} else if (!isRetry && !isReject && !isCancel) {
+			candidateId = prompt;
+			isSelect = true;
+		}
+
+		if (isSelect && candidateId != null) {
+			String finalCandidateId = candidateId;
+			BranchVariant selected = pending.stream()
+				.filter(v -> v.getId().equalsIgnoreCase(finalCandidateId) || v.getStrategy().equalsIgnoreCase(finalCandidateId))
+				.findFirst().orElse(null);
+
+			if (selected == null) {
+				String numeric = finalCandidateId.replaceAll("[^0-9]", "").trim();
+				if (!numeric.isEmpty()) {
+					try {
+						int index = Integer.parseInt(numeric) - 1;
+						if (index >= 0 && index < pending.size()) {
+							selected = pending.get(index);
+						}
+					} catch (NumberFormatException e) {}
+				}
+			}
+
+			if (selected != null) {
+				context.log("[DARWIN] User selected candidate: " + selected.getId() + " (" + selected.getStrategy() + ")");
+				context.getMetadata().put("resume_manual_id", selected.getId());
+				eu.kalafatic.evolution.controller.orchestration.IterationManager.forceTransition(SystemState.EXECUTING, context);
+
+				resumeEvolutionRun(context, session);
+			} else {
+				context.log("[DARWIN] Error: Selected candidate '" + finalCandidateId + "' is invalid or does not belong to the current pending Darwin session.");
+			}
+		} else if (isRetry) {
+			context.log("[DARWIN] User requested retry. Returning to candidate generation.");
+			context.getMetadata().remove("pending_candidates");
+			context.getMetadata().remove("resume_manual_id");
+			eu.kalafatic.evolution.controller.orchestration.IterationManager.forceTransition(SystemState.INIT, context);
+
+			resumeEvolutionRun(context, session);
+		} else if (isReject) {
+			context.log("[DARWIN] User rejected all candidates. Finishing as rejected.");
+			context.getMetadata().remove("pending_candidates");
+			context.getMetadata().remove("resume_manual_id");
+			eu.kalafatic.evolution.controller.orchestration.IterationManager.forceTransition(SystemState.FAILED, context);
+		} else if (isCancel) {
+			context.log("[DARWIN] User cancelled evolution. Safely releasing pending resources.");
+			context.getMetadata().remove("pending_candidates");
+			context.getMetadata().remove("resume_manual_id");
+			eu.kalafatic.evolution.controller.orchestration.IterationManager.forceTransition(SystemState.FAILED, context);
+		}
+	}
+
+	private static void resumeEvolutionRun(TaskContext context, eu.kalafatic.evolution.controller.orchestration.SessionContainer session) {
+		session.getExecutorService().submit(() -> {
+			try {
+				eu.kalafatic.evolution.controller.orchestration.KernelFacade kernel = new eu.kalafatic.evolution.controller.orchestration.KernelFacade();
+				eu.kalafatic.evolution.controller.orchestration.TaskRequest request = new eu.kalafatic.evolution.controller.orchestration.TaskRequest(context.getOrchestrationState().getRawInput(), context.getProjectRoot());
+				request.getContext().put("orchestrator", context.getOrchestrator());
+				request.getContext().put("sessionId", context.getSessionId());
+
+				kernel.handle(request, context);
+			} catch (Throwable e) {
+				context.log("[DARWIN] [CRITICAL] Error resuming evolution: " + e.getMessage());
+			}
+		});
 	}
 }

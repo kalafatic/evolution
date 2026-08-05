@@ -3,7 +3,7 @@ id: use-cases
 title: Use Cases and Behaviors
 documentType: REQUIREMENTS
 summaryLevel: DETAILED
-created: 2026-08-05T09:09:06.997195123
+created: 2026-08-04T07:22:04.902373647
 generatedBy: EVO Genome Agent
 status: PUBLISHED
 importance: MEDIUM

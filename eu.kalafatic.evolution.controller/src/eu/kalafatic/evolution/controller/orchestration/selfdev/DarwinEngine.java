@@ -119,7 +119,9 @@ public class DarwinEngine extends ADarwinEngine {
 		}
 
 		if (!isControl) {
-			iterationManager.transition(SystemState.INIT, context);
+			if (!context.getMetadata().containsKey("resume_manual_id")) {
+				iterationManager.transition(SystemState.INIT, context);
+			}
 			boolean isNewGoal = (checkpointGoal != null && !checkpointGoal.equalsIgnoreCase(request));
 			boolean isStaleTerminal = state.getCurrentPhase() != null && (state.getCurrentPhase().contains("TERMINAL")
 					|| state.getCurrentPhase().contains("SUCCESS") || state.getCurrentPhase().contains("SATISFIED"));
@@ -746,19 +748,15 @@ public class DarwinEngine extends ADarwinEngine {
 		String manualId = resolveVariantSelection(variants, context, manager);
 
 		if (manualId == null) {
-			if (!context.isAutoApprove()) {
-				manualId = manager.handleVariantSelection(context, variants, goal);
-				if ("REGENERATE".equals(manualId)) {
-					return runDarwinIteration(context, manager);
-				}
-				if (manualId == null || "STOP".equals(manualId) || "FAILED".equals(manualId)) {
-					EvaluationResult res = manager.failedResult();
-					res.setDecision(SelfDevDecision.STOP);
-					return res;
-				}
+			BranchVariant recommended = variants.stream().max((v1, v2) -> Double.compare(v1.getScore(), v2.getScore())).orElse(null);
+			DarwinApprovalResult approval = requestApproval(variants, recommended, manager);
+			if (approval.getAction() == DarwinApprovalResult.Action.WAIT) {
+				EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
+				res.setSuccess(true);
+				res.setDecision(SelfDevDecision.STOP);
+				return res;
 			} else {
-				context.log("[DARWIN] Adaptive Kernel: Auto-selecting best trajectory.");
-				manualId = selectionEngine.selectWinnerAuto(variants);
+				manualId = approval.getSelectedCandidateId();
 			}
 		}
 
@@ -817,6 +815,8 @@ public class DarwinEngine extends ADarwinEngine {
 		// ============================================================
 
 		if (result.isSuccess()) {
+			context.getMetadata().remove("pending_candidates");
+			context.getMetadata().remove("resume_manual_id");
 			EvolutionPhase currentPhaseEnum = EvolutionPhase.fromString(state.getCurrentPhase());
 			EvolutionPhase nextPhase = manager.getEvolutionaryTrajectoryEngine().determineNextPhase(currentPhaseEnum,
 					manager.getActiveTrajectory(context), context);
