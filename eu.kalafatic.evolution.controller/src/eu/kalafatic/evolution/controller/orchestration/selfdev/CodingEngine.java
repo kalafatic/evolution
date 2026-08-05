@@ -745,8 +745,8 @@ public class CodingEngine extends ADarwinEngine {
 
 		String manualId = resolveVariantSelection(variants, context, manager);
 
-		if (manualId == null && !context.isAutoApprove()) {
-			if (executionProfile.requireUserSelection() || !context.isAutoApprove()) {
+		if (manualId == null) {
+			if (!context.isAutoApprove()) {
 				manualId = manager.handleVariantSelection(context, variants, goal);
 				if ("REGENERATE".equals(manualId)) {
 					return runDarwinIteration(context, manager);

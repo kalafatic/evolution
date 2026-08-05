@@ -434,6 +434,17 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                         ((SessionContext)session).setTaskContext(context);
                     }
                 }
+
+                // Explicitly sync session's autoApprove selection to context
+                final TaskContext finalContext = context;
+                final String sidFilter = sessionId;
+                orchModel.getAiChat().getSessions().stream()
+                    .filter(s -> sidFilter.equals(s.getId()))
+                    .findFirst()
+                    .ifPresent(s -> {
+                        finalContext.setAutoApprove(s.isAutoApprove());
+                    });
+
                 context.getMetadata().put("sessionContext", session);
                 context.setStartTime(java.time.Instant.now());
 

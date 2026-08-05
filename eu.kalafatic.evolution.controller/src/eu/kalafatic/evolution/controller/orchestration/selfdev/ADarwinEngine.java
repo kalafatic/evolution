@@ -861,9 +861,8 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 
 		String manualId = resolveVariantSelection(variants, context, manager);
 
-		if (manualId == null && !context.isAutoApprove()) {
-			// REQUIREMENT 1: Always wait for user selection if AutoApprove is off
-			if (executionProfile.requireUserSelection() || !context.isAutoApprove()) {
+		if (manualId == null) {
+			if (!context.isAutoApprove()) {
 				manualId = manager.handleVariantSelection(context, variants, goal);
 				if ("REGENERATE".equals(manualId) || "REGENERATE_SAME_DIMENSION".equals(manualId)) {
 					if ("REGENERATE_SAME_DIMENSION".equals(manualId)) {
