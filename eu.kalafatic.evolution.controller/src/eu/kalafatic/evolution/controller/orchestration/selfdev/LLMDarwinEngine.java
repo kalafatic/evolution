@@ -553,8 +553,17 @@ public class LLMDarwinEngine extends ADarwinEngine {
         CandidateResult overallWinner = null;
         List<String> logs = new ArrayList<>();
         List<JSONObject> genReports = new ArrayList<>();
+        int startGen = 1;
 
-        for (int gen = 1; gen <= generations; gen++) {
+        if (context.getMetadata().containsKey("forge_resume_gen")) {
+            startGen = (Integer) context.getMetadata().get("forge_resume_gen");
+            overallWinner = (CandidateResult) context.getMetadata().get("forge_overall_winner");
+            logs = (List<String>) context.getMetadata().get("forge_logs");
+            genReports = (List<JSONObject>) context.getMetadata().get("forge_gen_reports");
+            candidates = (List<LlmConfig>) context.getMetadata().get("forge_candidates");
+        }
+
+        for (int gen = startGen; gen <= generations; gen++) {
             context.log("[FORGE] --- GENERATION " + gen + " ---");
             logs.add("Generation " + gen + "\n");
             EvolutionProgressPublisher.startIteration(context, gen, gen, "forge-lineage", 1, generations, 1, 3);
@@ -596,17 +605,24 @@ public class LLMDarwinEngine extends ADarwinEngine {
             context.log("[DARWIN_BRANCHES] " + branchesJson.toString());
 
             List<CandidateResult> results = new ArrayList<>();
+            boolean resumedResults = false;
+            if (context.getMetadata().containsKey("forge_current_results")) {
+                results = (List<CandidateResult>) context.getMetadata().remove("forge_current_results");
+                resumedResults = true;
+            }
+
             int candIndex = 0;
 
-            for (LlmConfig config : candidates) {
-                char candChar = (char) ('A' + candIndex);
-                String candidateId = "gen_" + gen + "_candidate_" + candChar;
-                String candidateName = "Candidate " + candChar;
-                context.log("[FORGE] Evaluating " + candidateName + " (" + config + ")...");
-                logs.add(candidateName + "\nEvaluating...\n");
+            if (!resumedResults) {
+                for (LlmConfig config : candidates) {
+                    char candChar = (char) ('A' + candIndex);
+                    String candidateId = "gen_" + gen + "_candidate_" + candChar;
+                    String candidateName = "Candidate " + candChar;
+                    context.log("[FORGE] Evaluating " + candidateName + " (" + config + ")...");
+                    logs.add(candidateName + "\nEvaluating...\n");
 
-                EvolutionProgressPublisher.updateActiveModel(context, "evo-candidate", "Evaluating " + candidateName);
-                EvolutionProgressPublisher.updateBranchStatus(context, candidateId, candidateName + " (" + config + ")", "verifying", null);
+                    EvolutionProgressPublisher.updateActiveModel(context, "evo-candidate", "Evaluating " + candidateName);
+                    EvolutionProgressPublisher.updateBranchStatus(context, candidateId, candidateName + " (" + config + ")", "verifying", null);
 
                 // Publish verifying status update to [DARWIN_BRANCHES] D3.js visualization graph
                 JSONObject verifyingBranchesJson = new JSONObject();
@@ -742,6 +758,7 @@ public class LLMDarwinEngine extends ADarwinEngine {
 
                 results.add(new CandidateResult(candidateName, config, nativeLoss, paramCount, durationMs, candidateFitness, candFailed, candFailureReason));
                 candIndex++;
+                }
             }
 
             // Stable deterministic sorting
@@ -750,31 +767,52 @@ public class LLMDarwinEngine extends ADarwinEngine {
             CandidateResult genWinner = results.get(0);
 
             String selectedId = null;
-            if (!context.isAutoApprove()) {
-                List<eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant> variants = new ArrayList<>();
-                char bCharVar = 'A';
-                for (CandidateResult r : results) {
-                    eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant v = new eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant();
-                    String bId = "gen_" + gen + "_candidate_" + bCharVar;
-                    v.setId(bId);
-                    v.setBranchId(bId);
-                    v.setStrategy(r.name + " (" + r.config + ")");
-                    v.setScore(Math.max(0.01, 1.0 / (1.0 + r.fitness)));
-                    v.setSurvivalArgument(String.format("Loss: %.4f, Parameters: %d, Duration: %d ms", r.loss, r.paramCount, r.durationMs));
-                    v.setTradeoffs("Zero-dependency local Transformer architecture");
-                    v.setActivationState(eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant.ActivationState.ARCHIVED);
-                    variants.add(v);
-                    bCharVar++;
-                }
+            List<eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant> variants = new ArrayList<>();
+            char bCharVar = 'A';
+            for (CandidateResult r : results) {
+                eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant v = new eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant();
+                String bId = "gen_" + gen + "_candidate_" + bCharVar;
+                v.setId(bId);
+                v.setBranchId(bId);
+                v.setStrategy(r.name + " (" + r.config + ")");
+                v.setScore(Math.max(0.01, 1.0 / (1.0 + r.fitness)));
+                v.setSurvivalArgument(String.format("Loss: %.4f, Parameters: %d, Duration: %d ms", r.loss, r.paramCount, r.durationMs));
+                v.setTradeoffs("Zero-dependency local Transformer architecture");
+                v.setActivationState(eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant.ActivationState.ARCHIVED);
+                variants.add(v);
+                bCharVar++;
+            }
 
-                selectedId = iterationManager.handleVariantSelection(context, variants, "Darwin LLM Training Strategy Selection");
-                if (selectedId != null && !selectedId.isEmpty() && !"REGENERATE".equals(selectedId) && !"REGENERATE_SAME_DIMENSION".equals(selectedId) && !"STOP".equals(selectedId) && !"FAILED".equals(selectedId)) {
-                    char winnerSuffix = selectedId.charAt(selectedId.length() - 1);
-                    for (CandidateResult r : results) {
-                        if (r.name.endsWith(String.valueOf(winnerSuffix))) {
-                            genWinner = r;
-                            break;
-                        }
+            eu.kalafatic.evolution.controller.orchestration.selfdev.BranchVariant recommended = variants.stream().max((v1, v2) -> Double.compare(v1.getScore(), v2.getScore())).orElse(null);
+
+            if (context.getMetadata().containsKey("resume_manual_id")) {
+                selectedId = (String) context.getMetadata().remove("resume_manual_id");
+            } else {
+                DarwinApprovalResult approval = requestApproval(variants, recommended, iterationManager);
+                if (approval.getAction() == DarwinApprovalResult.Action.WAIT) {
+                    context.getMetadata().put("forge_resume_gen", gen);
+                    context.getMetadata().put("forge_overall_winner", overallWinner);
+                    context.getMetadata().put("forge_logs", logs);
+                    context.getMetadata().put("forge_gen_reports", genReports);
+                    context.getMetadata().put("forge_candidates", candidates);
+                    context.getMetadata().put("forge_current_results", results);
+
+                    OrchestratorResponse waitResponse = new OrchestratorResponse();
+                    waitResponse.setResultType(ResultType.CHAT);
+                    waitResponse.setSummary("Evolution paused. Waiting for user decision.");
+                    waitResponse.setContent("Evolution paused. Waiting for user decision.");
+                    return waitResponse;
+                } else {
+                    selectedId = approval.getSelectedCandidateId();
+                }
+            }
+
+            if (selectedId != null && !selectedId.isEmpty() && !"REGENERATE".equals(selectedId) && !"REGENERATE_SAME_DIMENSION".equals(selectedId) && !"STOP".equals(selectedId) && !"FAILED".equals(selectedId)) {
+                char winnerSuffix = selectedId.charAt(selectedId.length() - 1);
+                for (CandidateResult r : results) {
+                    if (r.name.endsWith(String.valueOf(winnerSuffix))) {
+                        genWinner = r;
+                        break;
                     }
                 }
             }
@@ -869,6 +907,13 @@ public class LLMDarwinEngine extends ADarwinEngine {
         }
 
         // --- WINNER EXPORT ---
+        context.getMetadata().remove("forge_resume_gen");
+        context.getMetadata().remove("forge_overall_winner");
+        context.getMetadata().remove("forge_logs");
+        context.getMetadata().remove("forge_gen_reports");
+        context.getMetadata().remove("forge_candidates");
+        context.getMetadata().remove("forge_current_results");
+
         context.log("[FORGE] Evolution complete. Overall Winner across generations: " + overallWinner.config);
 
         // Generate Dynamic Model Name (based on context target folder, winning config, and timestamp)

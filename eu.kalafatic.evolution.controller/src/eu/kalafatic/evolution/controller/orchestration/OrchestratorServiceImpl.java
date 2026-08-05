@@ -35,6 +35,16 @@ public class OrchestratorServiceImpl implements OrchestratorService {
         // CONTINUATION HANDLING: If the session is waiting for input/approval, treat the prompt as a response
         if (session instanceof SessionContext) {
             TaskContext taskContext = ((SessionContext)session).getTaskContext();
+            if (taskContext != null && taskContext.getStateHolder().getState() == SystemState.WAITING_FOR_USER_DECISION) {
+                String prompt = request.getPrompt().trim();
+                Log.log("[SERVICE] WAITING_FOR_USER_DECISION continuation detected: " + prompt);
+                eu.kalafatic.evolution.controller.orchestration.selfdev.ADarwinEngine.handleUserDecision(taskContext, prompt, session);
+                OrchestratorResponse response = new OrchestratorResponse();
+                response.setResultType(ResultType.CHAT);
+                response.setSummary("Continuation processed successfully.");
+                response.setContent("Continuation processed successfully.");
+                return response;
+            }
             if (taskContext != null && (taskContext.isWaitingForApproval() || taskContext.isWaitingForInput())) {
                 String prompt = request.getPrompt().trim();
                 boolean isControl = prompt.equalsIgnoreCase("yes") || prompt.equalsIgnoreCase("no") ||
@@ -319,8 +329,13 @@ public class OrchestratorServiceImpl implements OrchestratorService {
             // If auto-approve is enabled while waiting, resume the session
             if (autoApprove && session instanceof SessionContext) {
                 TaskContext taskContext = ((SessionContext)session).getTaskContext();
-                if (taskContext != null && (taskContext.isWaitingForApproval() || taskContext.isWaitingForInput())) {
-                    provideApproval(sessionId, true);
+                if (taskContext != null) {
+                    if (taskContext.isWaitingForApproval() || taskContext.isWaitingForInput()) {
+                        provideApproval(sessionId, true);
+                    } else if (taskContext.getStateHolder().getState() == SystemState.WAITING_FOR_USER_DECISION) {
+                        Log.log("[SERVICE] Auto-Approve checked while waiting. Resuming automatically with recommended candidate.");
+                        eu.kalafatic.evolution.controller.orchestration.selfdev.ADarwinEngine.handleUserDecision(taskContext, "AUTO_APPROVE", session);
+                    }
                 }
             }
         }
@@ -344,6 +359,12 @@ public class OrchestratorServiceImpl implements OrchestratorService {
         // CONTINUATION HANDLING: If the session is waiting for input/approval, treat the prompt as a response
         if (session instanceof SessionContext) {
             TaskContext context = ((SessionContext)session).getTaskContext();
+            if (context != null && context.getStateHolder().getState() == SystemState.WAITING_FOR_USER_DECISION) {
+                String prompt = request.getPrompt().trim();
+                Log.log("[SERVICE] WAITING_FOR_USER_DECISION continuation detected: " + prompt);
+                eu.kalafatic.evolution.controller.orchestration.selfdev.ADarwinEngine.handleUserDecision(context, prompt, session);
+                return;
+            }
             if (context != null && (context.isWaitingForApproval() || context.isWaitingForInput())) {
                 String prompt = request.getPrompt().trim();
                 boolean isControl = prompt.equalsIgnoreCase("yes") || prompt.equalsIgnoreCase("no") ||
