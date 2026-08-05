@@ -332,61 +332,6 @@ public class ForgeSessionManager {
         }).start();
     }
 
-    public String getLatestPersistedTrainingState(String sessionId) {
-        String targetCodebase = null;
-        try {
-            Class<?> clazz = Class.forName("eu.kalafatic.evolution.controller.manager.ProjectModelManager");
-            targetCodebase = (String) clazz.getMethod("getCodebasePath").invoke(null);
-        } catch (Exception e) {}
-
-        if (targetCodebase == null) {
-            targetCodebase = System.getProperty("user.dir");
-        }
-
-        File workspaceDir = new File(targetCodebase);
-        File distDir = new File(workspaceDir, "dist");
-
-        File workspaceParentDir = workspaceDir.getParentFile();
-        File forgeOutputDirBase = workspaceParentDir != null ? new File(workspaceParentDir, "forge-output") : new File("forge-output");
-
-        List<File> candidateFolders = new ArrayList<>();
-        if (distDir.exists() && distDir.isDirectory()) {
-            File[] subdirs = distDir.listFiles();
-            if (subdirs != null) {
-                for (File sd : subdirs) {
-                    if (sd.isDirectory() && sd.getName().contains(sessionId)) {
-                        candidateFolders.add(sd);
-                    }
-                }
-            }
-        }
-        if (forgeOutputDirBase.exists() && forgeOutputDirBase.isDirectory()) {
-            File[] subdirs = forgeOutputDirBase.listFiles();
-            if (subdirs != null) {
-                for (File sd : subdirs) {
-                    if (sd.isDirectory() && sd.getName().contains(sessionId)) {
-                        candidateFolders.add(sd);
-                    }
-                }
-            }
-        }
-
-        if (!candidateFolders.isEmpty()) {
-            candidateFolders.sort((f1, f2) -> Long.compare(f2.lastModified(), f1.lastModified()));
-            File latestFolder = candidateFolders.get(0);
-            File stateFile = new File(latestFolder, "training-state.json");
-            if (stateFile.exists()) {
-                try {
-                    return java.nio.file.Files.readString(stateFile.toPath(), java.nio.charset.StandardCharsets.UTF_8);
-                } catch (Exception e) {
-                    System.err.println("Error reading persisted state file: " + e.getMessage());
-                }
-            }
-        }
-
-        return null;
-    }
-
     public List<RuntimeEvent> getRecentEvents(String sessionId) {
         return eventBuffer.getOrDefault(sessionId, new ArrayList<>());
     }

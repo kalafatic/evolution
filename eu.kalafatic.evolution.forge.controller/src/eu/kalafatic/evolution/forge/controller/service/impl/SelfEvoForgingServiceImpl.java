@@ -293,11 +293,7 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                 // Initialize model with dynamically varied hiddenSize, layers, heads
                 EvoLlmModel model = new EvoLlmModel(tokenizer.getVocabSize(), hiddenSize, heads, layers, 512, 16);
                 EvoLlmTrainer trainer = new EvoLlmTrainer(model);
-                trainer.setJobId(sessionId);
-                try (eu.kalafatic.evolution.forge.trainer.impl.llm.TrainingProgressReporter progressReporter =
-                        new eu.kalafatic.evolution.forge.trainer.impl.llm.TrainingProgressReporter(runFolder)) {
-                    trainer.train(samples, epochs, progressReporter::report);
-                }
+                trainer.train(samples, epochs);
                 logToFile(logFile, "Training complete.");
 
                 JSONObject stage3 = new JSONObject();

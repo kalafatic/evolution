@@ -106,56 +106,6 @@ public class EvolutionProgressPublisher {
         activeEvents.remove(context.getSessionId());
     }
 
-    public static void updateTrainingProgress(TaskContext context, eu.kalafatic.evolution.forge.trainer.impl.llm.TrainingProgress progress) {
-        if (progress == null) return;
-        JSONObject payload = new JSONObject();
-        payload.put("sessionId", context.getSessionId());
-        payload.put("jobId", progress.getJobId());
-        payload.put("status", progress.getStatus().name());
-        payload.put("phase", progress.getPhase());
-        payload.put("currentEpoch", progress.getCurrentEpoch());
-        payload.put("totalEpochs", progress.getTotalEpochs());
-        payload.put("currentStep", progress.getCurrentStep());
-        payload.put("totalSteps", progress.getTotalSteps());
-        payload.put("currentBatch", progress.getCurrentBatch());
-        payload.put("batchesPerEpoch", progress.getBatchesPerEpoch());
-        payload.put("progressPercent", progress.getProgressPercent());
-        payload.put("trainingLoss", progress.getTrainingLoss());
-        payload.put("validationLoss", progress.getValidationLoss());
-        payload.put("learningRate", progress.getLearningRate());
-        payload.put("stepsPerSecond", progress.getStepsPerSecond());
-        payload.put("elapsedMillis", progress.getElapsedMillis());
-        payload.put("estimatedRemainingMillis", progress.getEstimatedRemainingMillis());
-        payload.put("timestamp", progress.getTimestamp().toString());
-        payload.put("message", progress.getMessage());
-
-        // 1. Publish to RuntimeEventBus for real-time UI updates
-        RuntimeEvent runtimeEvent = new RuntimeEvent(
-                RuntimeEventType.EVOLUTION_PROGRESS,
-                context.getSessionId(),
-                "TrainingProgress",
-                payload.toString()
-        );
-
-        if (context.getKernelContext() != null && context.getKernelContext().getEventBus() != null) {
-             context.getKernelContext().getEventBus().publish(runtimeEvent);
-        }
-
-        // 2. Also send as a progress message to ConversationOutputController
-        String turnId = context.getSessionId() + "__training_" + progress.getJobId();
-        ConversationOutputController.getInstance().submitMessage(
-                context.getSessionId(),
-                turnId,
-                "Training Monitor",
-                payload.toString(),
-                "evolution-progress",
-                MessagePriority.PROGRESS,
-                progress.getStatus() == eu.kalafatic.evolution.forge.trainer.impl.llm.TrainingStatus.COMPLETED ||
-                progress.getStatus() == eu.kalafatic.evolution.forge.trainer.impl.llm.TrainingStatus.FAILED ||
-                progress.getStatus() == eu.kalafatic.evolution.forge.trainer.impl.llm.TrainingStatus.CANCELLED
-        );
-    }
-
     private static void publish(TaskContext context, EvolutionProgressEvent event) {
         populateSessionProperties(context, event);
         JSONObject payload = toJson(event);
