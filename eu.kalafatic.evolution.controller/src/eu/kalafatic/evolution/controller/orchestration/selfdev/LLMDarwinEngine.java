@@ -541,9 +541,12 @@ public class LLMDarwinEngine extends ADarwinEngine {
             LlmConfig fastConfig = new LlmConfig(selectedProfile.vocabSize, selectedProfile.embeddingSize, selectedProfile.layers, selectedProfile.heads, selectedProfile.maxSeqLen, 1);
             candidates.add(fastConfig);
         } else {
+            int expansionValue = getExpansionValue();
+            int branchingLimit = (expansionValue > 5) ? 2 : 1;
             candidates.add(new LlmConfig(selectedProfile.vocabSize, selectedProfile.embeddingSize, selectedProfile.layers, selectedProfile.heads, selectedProfile.maxSeqLen, selectedProfile.epochs));
-            candidates.add(new LlmConfig(selectedProfile.vocabSize, selectedProfile.embeddingSize, selectedProfile.layers + 1, selectedProfile.heads, selectedProfile.maxSeqLen, selectedProfile.epochs));
-            candidates.add(new LlmConfig(selectedProfile.vocabSize, selectedProfile.embeddingSize, selectedProfile.layers + 2, selectedProfile.heads, selectedProfile.maxSeqLen, selectedProfile.epochs));
+            if (branchingLimit >= 2) {
+                candidates.add(new LlmConfig(selectedProfile.vocabSize, selectedProfile.embeddingSize, selectedProfile.layers + 1, selectedProfile.heads, selectedProfile.maxSeqLen, selectedProfile.epochs));
+            }
         }
 
         for (int i = 0; i < candidates.size(); i++) {
@@ -900,9 +903,17 @@ public class LLMDarwinEngine extends ADarwinEngine {
             // Generate candidates for the next generation via mutation using reproducible configurations
             if (gen < generations) {
                 candidates = new ArrayList<>();
-                candidates.add(copyConfig(genWinner.config)); // Elite survival config copy to avoid aliasing
-                candidates.add(mutate(genWinner.config, 1, gen)); // Reproducible mutation type 1
-                candidates.add(mutate(genWinner.config, 2, gen)); // Reproducible mutation type 2
+                int expansionValue = getExpansionValue();
+                boolean seriousReason = (overallWinner != null && overallWinner.failed);
+                int currentBranchLimit = (expansionValue > 5 || seriousReason) ? 2 : 1;
+
+                if (currentBranchLimit == 1) {
+                    // Elite configuration is mutated directly to explore the space since we only have 1 slot
+                    candidates.add(mutate(overallWinner != null ? overallWinner.config : genWinner.config, 1, gen));
+                } else {
+                    candidates.add(copyConfig(genWinner.config)); // Elite survival config copy to avoid aliasing
+                    candidates.add(mutate(genWinner.config, 1, gen)); // Reproducible mutation type 1
+                }
             }
         }
 
