@@ -1165,11 +1165,23 @@ window.ChatApp.Renderer = {
         if (logsContainer) {
             const isAtBottom = logsContainer.scrollHeight - logsContainer.clientHeight <= logsContainer.scrollTop + 30;
 
-            logsContainer.innerHTML = window.evoProgressState.logs.map(log => `
-                <div class="log-entry ${log.severity}">
-                    <span style="color:#94a3b8; font-size:8px;">${log.time.split('T')[1]?.substring(0, 8) || ''}</span> ${log.text}
-                </div>
-            `).join('');
+            logsContainer.innerHTML = window.evoProgressState.logs.map(log => {
+                let timeStr = '';
+                if (log.time) {
+                    if (typeof log.time === 'string' && log.time.includes('T')) {
+                        timeStr = log.time.split('T')[1]?.substring(0, 8) || '';
+                    } else if (typeof log.time === 'number' || !isNaN(log.time)) {
+                        timeStr = new Date(Number(log.time)).toTimeString().substring(0, 8);
+                    } else {
+                        timeStr = String(log.time).substring(0, 8);
+                    }
+                }
+                return `
+                    <div class="log-entry ${log.severity}">
+                        <span style="color:#94a3b8; font-size:8px;">${timeStr}</span> ${log.text}
+                    </div>
+                `;
+            }).join('');
 
             if (isAtBottom) {
                 logsContainer.scrollTop = logsContainer.scrollHeight;
