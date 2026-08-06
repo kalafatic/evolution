@@ -429,7 +429,9 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 				iterationManager.transition(SystemState.FAILED, context);
 			} else {
 				// Final response handled inside evolve if terminal phase reached
-				if (!context.getStateHolder().getState().equals(SystemState.DONE)) {
+				if (context.getStateHolder().getState() == SystemState.WAITING_FOR_USER_DECISION) {
+					// Keep state as WAITING_FOR_USER_DECISION, do not transition to DONE
+				} else if (!context.getStateHolder().getState().equals(SystemState.DONE)) {
 					iterationManager.transition(SystemState.DONE, context);
 				}
 			}
@@ -567,6 +569,10 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 				context.log(sw.toString());
 				throw e;
 			}
+			if (context.getStateHolder().getState() == SystemState.WAITING_FOR_USER_DECISION) {
+				context.log("[DARWIN] Pausing loop in WAITING_FOR_USER_DECISION.");
+				break;
+			}
 			safetyCounter++;
 
 			// Evaluate Stability and Evolutionary Pressure
@@ -628,7 +634,9 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 		}
 
 		String summary;
-		if ((state.getCurrentPhase().contains("TERMINAL") || state.getCurrentPhase().contains("SYNTHESIS")
+		if (context.getStateHolder().getState() == SystemState.WAITING_FOR_USER_DECISION) {
+			summary = "Waiting for user decision...";
+		} else if ((state.getCurrentPhase().contains("TERMINAL") || state.getCurrentPhase().contains("SYNTHESIS")
 				|| state.getCurrentPhase().contains("DESIGN_SATISFIED"))
 				&& response.getResultType() != ResultType.ERROR) {
 			if (context.getBehaviorProfile().hasTrait(BehaviorTrait.WORKFLOW_EXPORT_ONLY)) {
