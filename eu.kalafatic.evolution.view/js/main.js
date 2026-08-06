@@ -43,9 +43,24 @@ window.ChatApp = window.ChatApp || {};
         if (!wrapper) return;
 
         wrapper.innerHTML = '';
-        window.ChatApp.Renderer.updateTreePanel(messages);
-        window.ChatApp.Renderer.updateProgressPanel(messages);
-        window.ChatApp.Renderer.updateCognitiveStatePanel(messages);
+        try {
+            window.ChatApp.Renderer.updateTreePanel(messages);
+        } catch (e) {
+            console.error('Error updating Tree panel:', e);
+            if (window.JavaLog) window.JavaLog('Error updating Tree panel: ' + e.message);
+        }
+        try {
+            window.ChatApp.Renderer.updateProgressPanel(messages);
+        } catch (e) {
+            console.error('Error updating Progress panel:', e);
+            if (window.JavaLog) window.JavaLog('Error updating Progress panel: ' + e.message);
+        }
+        try {
+            window.ChatApp.Renderer.updateCognitiveStatePanel(messages);
+        } catch (e) {
+            console.error('Error updating Cognitive panel:', e);
+            if (window.JavaLog) window.JavaLog('Error updating Cognitive panel: ' + e.message);
+        }
 
         messages.forEach(m => {
             try {
