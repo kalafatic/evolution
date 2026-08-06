@@ -1025,8 +1025,8 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 				context.log("[DARWIN] AUTO Mode: Downgrading CLARIFY_USER to AUTO_INFER.");
 				strategy = eu.kalafatic.evolution.controller.orchestration.intent.ClarificationPlanner.Strategy.AUTO_INFER;
 			} else {
-				context.log("[DARWIN] MANUAL Mode: Downgrading CLARIFY_USER to BRANCH_PARALLEL.");
-				strategy = eu.kalafatic.evolution.controller.orchestration.intent.ClarificationPlanner.Strategy.BRANCH_PARALLEL;
+				context.log("[DARWIN] MANUAL Mode: Pausing for user clarification.");
+				strategy = eu.kalafatic.evolution.controller.orchestration.intent.ClarificationPlanner.Strategy.CLARIFY_USER;
 			}
 		}
 

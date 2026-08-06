@@ -45,7 +45,17 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                 response.setContent("Continuation processed successfully.");
                 return response;
             }
-            if (taskContext != null && (taskContext.isWaitingForApproval() || taskContext.isWaitingForInput())) {
+            if (taskContext != null && taskContext.isWaitingForInput()) {
+                String prompt = request.getPrompt().trim();
+                Log.log("[SERVICE] Input continuation detected: " + prompt + ". Routing to existing wait.");
+                provideInput(sessionId, prompt);
+                OrchestratorResponse response = new OrchestratorResponse();
+                response.setResultType(ResultType.CHAT);
+                response.setSummary("Continuation processed successfully.");
+                response.setContent("Continuation processed successfully.");
+                return response;
+            }
+            if (taskContext != null && taskContext.isWaitingForApproval()) {
                 String prompt = request.getPrompt().trim();
                 boolean isControl = prompt.equalsIgnoreCase("yes") || prompt.equalsIgnoreCase("no") ||
                                    prompt.toLowerCase().startsWith("select ") ||
@@ -64,17 +74,13 @@ public class OrchestratorServiceImpl implements OrchestratorService {
 
                 if (isControl) {
                     Log.log("[SERVICE] Continuation detected: " + prompt + ". Routing to existing wait.");
-                    if (taskContext.isWaitingForApproval()) {
-                        boolean approved = prompt.equalsIgnoreCase("yes") ||
-                                         prompt.equalsIgnoreCase("approved") ||
-                                         prompt.equalsIgnoreCase("proceed") ||
-                                         prompt.equalsIgnoreCase("ok") ||
-                                         prompt.toLowerCase().startsWith("approve variant ") ||
-                                         prompt.matches("^(yes|y|ok|okay|approve|proceed|go ahead|yep|sure)$");
-                        provideApproval(sessionId, approved);
-                    } else {
-                        provideInput(sessionId, prompt);
-                    }
+                    boolean approved = prompt.equalsIgnoreCase("yes") ||
+                                     prompt.equalsIgnoreCase("approved") ||
+                                     prompt.equalsIgnoreCase("proceed") ||
+                                     prompt.equalsIgnoreCase("ok") ||
+                                     prompt.toLowerCase().startsWith("approve variant ") ||
+                                     prompt.matches("^(yes|y|ok|okay|approve|proceed|go ahead|yep|sure)$");
+                    provideApproval(sessionId, approved);
                     OrchestratorResponse response = new OrchestratorResponse();
                     response.setResultType(ResultType.CHAT);
                     response.setSummary("Continuation processed successfully.");
@@ -365,7 +371,13 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                 eu.kalafatic.evolution.controller.orchestration.selfdev.ADarwinEngine.handleUserDecision(context, prompt, session);
                 return;
             }
-            if (context != null && (context.isWaitingForApproval() || context.isWaitingForInput())) {
+            if (context != null && context.isWaitingForInput()) {
+                String prompt = request.getPrompt().trim();
+                Log.log("[SERVICE] Input continuation detected: " + prompt + ". Routing to existing wait.");
+                provideInput(sessionId, prompt);
+                return;
+            }
+            if (context != null && context.isWaitingForApproval()) {
                 String prompt = request.getPrompt().trim();
                 boolean isControl = prompt.equalsIgnoreCase("yes") || prompt.equalsIgnoreCase("no") ||
                                    prompt.toLowerCase().startsWith("select ") ||
@@ -384,17 +396,13 @@ public class OrchestratorServiceImpl implements OrchestratorService {
 
                 if (isControl) {
                     Log.log("[SERVICE] Continuation detected: " + prompt + ". Routing to existing wait.");
-                    if (context.isWaitingForApproval()) {
-                        boolean approved = prompt.equalsIgnoreCase("yes") ||
-                                         prompt.equalsIgnoreCase("approved") ||
-                                         prompt.equalsIgnoreCase("proceed") ||
-                                         prompt.equalsIgnoreCase("ok") ||
-                                         prompt.toLowerCase().startsWith("approve variant ") ||
-                                         prompt.matches("^(yes|y|ok|okay|approve|proceed|go ahead|yep|sure)$");
-                        provideApproval(sessionId, approved);
-                    } else {
-                        provideInput(sessionId, prompt);
-                    }
+                    boolean approved = prompt.equalsIgnoreCase("yes") ||
+                                     prompt.equalsIgnoreCase("approved") ||
+                                     prompt.equalsIgnoreCase("proceed") ||
+                                     prompt.equalsIgnoreCase("ok") ||
+                                     prompt.toLowerCase().startsWith("approve variant ") ||
+                                     prompt.matches("^(yes|y|ok|okay|approve|proceed|go ahead|yep|sure)$");
+                    provideApproval(sessionId, approved);
                     return;
                 }
             }

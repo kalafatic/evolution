@@ -633,6 +633,7 @@ public class IterationManager {
 		String clarificationRequest = planner.formatClarificationRequest(expansion, context);
 		// REMOVE: Premature log removed to prevent duplicate UI rendering now that
 		// requestInput handles the combined payload.
+		transition(SystemState.CLARIFYING, context);
 		String userResponse = context.requestInput(clarificationRequest).get();
 		String trimmed = (userResponse != null) ? userResponse.trim() : "";
 
