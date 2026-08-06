@@ -56,7 +56,17 @@ public class EvolutionIntensityCalculator {
         }
 
         // 3. Goal Complexity (Formal & Heuristic)
-        GoalModel goalModel = (GoalModel) context.getOrchestrationState().getMetadata().get("goalModel");
+        Object goalModelObj = context.getOrchestrationState().getMetadata().get("goalModel");
+        GoalModel goalModel = null;
+        if (goalModelObj instanceof GoalModel) {
+            goalModel = (GoalModel) goalModelObj;
+        } else if (goalModelObj instanceof java.util.Map) {
+            try {
+                goalModel = new com.fasterxml.jackson.databind.ObjectMapper()
+                    .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                    .convertValue(goalModelObj, GoalModel.class);
+            } catch (Exception e) {}
+        }
         if (goalModel != null) {
             String complexity = goalModel.getComplexity() != null ? goalModel.getComplexity().toUpperCase() : "MEDIUM";
             if ("SIMPLE".equals(complexity)) intensity -= 0.5;
