@@ -471,18 +471,24 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                 KernelFacade kernel = new KernelFacade();
                 OrchestratorResponse response = kernel.handle(request, context);
 
-                // Use content for Final Response to include Markdown and file links
-                processLogEntry("Final Response: " + response.getContent(), sessionId, turnId);
+                if (context.getStateHolder().getState() != SystemState.WAITING_FOR_USER_DECISION) {
+                    // Use content for Final Response to include Markdown and file links
+                    processLogEntry("Final Response: " + response.getContent(), sessionId, turnId);
+                }
 
                 // Refresh workspace
                 try {
                     org.eclipse.core.resources.ResourcesPlugin.getWorkspace().getRoot().refreshLocal(org.eclipse.core.resources.IResource.DEPTH_INFINITE, null);
                 } catch (Exception e) {
-                	  processLogEntry("Error: " + e.getMessage(), sessionId, turnId);
+                    if (context.getStateHolder().getState() != SystemState.WAITING_FOR_USER_DECISION) {
+                        processLogEntry("Error: " + e.getMessage(), sessionId, turnId);
+                    }
                 }
                 
 
-                bus.publish(new RuntimeEvent(RuntimeEventType.FLOW_COMPLETED, sessionId, "OrchestratorService", response));
+                if (context.getStateHolder().getState() != SystemState.WAITING_FOR_USER_DECISION) {
+                    bus.publish(new RuntimeEvent(RuntimeEventType.FLOW_COMPLETED, sessionId, "OrchestratorService", response));
+                }
             } catch (Throwable e) {
                 Log.log("CRITICAL ERROR in orchestration thread: " + e.getMessage());
                 processLogEntry("Error: " + e.getMessage(), sessionId, turnId);
