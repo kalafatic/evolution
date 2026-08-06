@@ -9,9 +9,13 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 
 import eu.kalafatic.evolution.controller.log.Log;
 import eu.kalafatic.evolution.controller.orchestration.Checkpoint;
@@ -48,6 +52,12 @@ public class IterationMemoryService {
         this.mapper = new ObjectMapper();
         this.mapper.enable(SerializationFeature.INDENT_OUTPUT);
         this.mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+        SimpleModule module = new SimpleModule();
+        module.addSerializer(org.json.JSONArray.class, new JSONArraySerializer());
+        module.addSerializer(org.json.JSONObject.class, new JSONObjectSerializer());
+        this.mapper.registerModule(module);
+
         refresh();
         Log.log("[MEMORY] IterationMemoryService initialized with root: " + this.projectRoot.getAbsolutePath() + " (found " + records.size() + " records)");
     }
@@ -441,5 +451,25 @@ public class IterationMemoryService {
         sb.append("- Explicitly Activated Lineage Branches: ").append(activeCount).append("\n");
 
         return sb.toString();
+    }
+
+    private static class JSONArraySerializer extends StdSerializer<org.json.JSONArray> {
+        public JSONArraySerializer() {
+            super(org.json.JSONArray.class);
+        }
+        @Override
+        public void serialize(org.json.JSONArray value, JsonGenerator gen, SerializerProvider provider) throws IOException {
+            gen.writeRawValue(value.toString());
+        }
+    }
+
+    private static class JSONObjectSerializer extends StdSerializer<org.json.JSONObject> {
+        public JSONObjectSerializer() {
+            super(org.json.JSONObject.class);
+        }
+        @Override
+        public void serialize(org.json.JSONObject value, JsonGenerator gen, SerializerProvider provider) throws IOException {
+            gen.writeRawValue(value.toString());
+        }
     }
 }
