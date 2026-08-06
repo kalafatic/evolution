@@ -289,6 +289,23 @@ public class SelfDevBootstrapController2 {
 
     private String getSupervisorJarPath() {
         String dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("ddMMyy"));
+        File customExportDir = new File(new File(System.getProperty("user.home"), "projects/evo/supervisor"), dateStr + "/export");
+        if (customExportDir.exists()) {
+            File[] customJars = customExportDir.listFiles((dir, name) -> (name.endsWith("-shaded.jar") || name.endsWith(".jar")) && name.contains("supervisor") && !name.startsWith("original-"));
+            if (customJars != null && customJars.length > 0) {
+                File runnableJar = customJars[0];
+                for (File jar : customJars) {
+                    if (jar.getName().contains("-shaded")) {
+                        runnableJar = jar;
+                        break;
+                    }
+                }
+                String path = runnableJar.getAbsolutePath();
+                System.out.println("[SelfDevBootstrapController] Found supervisor jar in custom export: " + path);
+                return path;
+            }
+        }
+
         File customBinDir = new File(new File(System.getProperty("user.home"), "projects/evo/supervisor"), dateStr + "/bin");
         if (customBinDir.exists()) {
             File[] customJars = customBinDir.listFiles((dir, name) -> (name.endsWith("-shaded.jar") || name.endsWith(".jar")) && !name.startsWith("original-"));

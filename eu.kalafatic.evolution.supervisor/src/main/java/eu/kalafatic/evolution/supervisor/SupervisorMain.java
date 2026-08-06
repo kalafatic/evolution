@@ -6,6 +6,9 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
 
 import fi.iki.elonen.NanoHTTPD;
 
@@ -96,6 +99,7 @@ public class SupervisorMain {
     private static class EVOSupervisorServer extends NanoHTTPD {
         private final File baseDir;
         private final File runDir;
+        private static volatile Process activeEvoProcess;
         
         public EVOSupervisorServer(int port, File baseDir) {
             // Explicitly bind to 127.0.0.1 to avoid Windows dual-stack issues
@@ -253,8 +257,50 @@ public class SupervisorMain {
                 String path = params.getOrDefault("path", baseDir.getAbsolutePath());
                 System.out.println("[HTTP] Export requested for path: " + path);
                 
+                File exportDir = new File(baseDir, "export");
+                if (!exportDir.exists()) {
+                    exportDir.mkdirs();
+                }
+
+                int copiedCount = 0;
+
+                // 1. Copy EVO jars from workspace (sources) target directories recursively
+                File sourcesDir = new File(path);
+                if (sourcesDir.exists()) {
+                    copiedCount += copyJars(sourcesDir, exportDir);
+                }
+
+                // 2. Copy supervisor jar from supervisor's bin or src/target
+                File binDir = new File(baseDir, "bin");
+                if (binDir.exists()) {
+                    File[] binJars = binDir.listFiles((dir, name) -> name.endsWith(".jar") && !name.startsWith("original-"));
+                    if (binJars != null) {
+                        for (File jar : binJars) {
+                            try {
+                                java.nio.file.Files.copy(jar.toPath(), new File(exportDir, jar.getName()).toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                                copiedCount++;
+                                System.out.println("[HTTP] Exported supervisor jar from bin: " + jar.getName());
+                            } catch (Exception ignored) {}
+                        }
+                    }
+                } else {
+                    File srcTargetDir = new File(baseDir, "src/target");
+                    if (srcTargetDir.exists()) {
+                        File[] targetJars = srcTargetDir.listFiles((dir, name) -> name.endsWith(".jar") && !name.startsWith("original-"));
+                        if (targetJars != null) {
+                            for (File jar : targetJars) {
+                                try {
+                                    java.nio.file.Files.copy(jar.toPath(), new File(exportDir, jar.getName()).toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                                    copiedCount++;
+                                    System.out.println("[HTTP] Exported supervisor jar from src/target: " + jar.getName());
+                                } catch (Exception ignored) {}
+                            }
+                        }
+                    }
+                }
+
                 return newFixedLengthResponse(Response.Status.OK, "application/json", 
-                    "{\"status\":\"OK\",\"message\":\"Export completed\",\"path\":\"" + path + "\"}");
+                    "{\"status\":\"OK\",\"message\":\"Export completed. Exported " + copiedCount + " jars.\",\"path\":\"" + path + "\"}");
             } catch (Exception e) {
                 return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", 
                     "{\"status\":\"ERROR\",\"message\":\"" + e.getMessage() + "\"}");
@@ -266,18 +312,95 @@ public class SupervisorMain {
                 String path = params.getOrDefault("path", baseDir.getAbsolutePath());
                 System.out.println("[HTTP] Start EVO requested for path: " + path);
                 
-                if (!runDir.exists()) {
-                    runDir.mkdirs();
+                // 1. Resolve exportDir
+                File exportDir = new File(baseDir, "export");
+                if (!exportDir.exists()) {
+                    return newFixedLengthResponse(Response.Status.OK, "application/json",
+                        "{\"status\":\"ERROR\",\"message\":\"No export folder found! Please run export first.\"}");
                 }
                 
-                String command = "{\"action\":\"RESTART\",\"iteration\":0}";
-                File commandFile = new File(runDir, "command.json");
-                java.nio.file.Files.write(commandFile.toPath(), 
-                    command.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                // 2. Find runnable jar
+                File[] jars = exportDir.listFiles((dir, name) -> name.endsWith(".jar") && !name.startsWith("original-"));
+                if (jars == null || jars.length == 0) {
+                    return newFixedLengthResponse(Response.Status.OK, "application/json",
+                        "{\"status\":\"ERROR\",\"message\":\"No jar files found in export folder!\"}");
+                }
+
+                File runnableJar = null;
+                // Prioritize shaded/controller/servers/product jar that is not supervisor
+                for (File jar : jars) {
+                    String name = jar.getName().toLowerCase();
+                    if (name.contains("supervisor")) {
+                        continue;
+                    }
+                    if (name.contains("-shaded")) {
+                        runnableJar = jar;
+                        break;
+                    }
+                }
+                if (runnableJar == null) {
+                    for (File jar : jars) {
+                        String name = jar.getName().toLowerCase();
+                        if (!name.contains("supervisor")) {
+                            runnableJar = jar;
+                            break;
+                        }
+                    }
+                }
+
+                if (runnableJar == null) {
+                    return newFixedLengthResponse(Response.Status.OK, "application/json",
+                        "{\"status\":\"ERROR\",\"message\":\"No runnable EVO jar found in export folder.\"}");
+                }
+
+                // 3. Stop existing EVO process if running
+                if (activeEvoProcess != null && activeEvoProcess.isAlive()) {
+                    System.out.println("[HTTP] EVO is already running. Stopping it first...");
+                    activeEvoProcess.destroyForcibly();
+                    try {
+                        activeEvoProcess.waitFor(2, TimeUnit.SECONDS);
+                    } catch (InterruptedException ignored) {}
+                }
+
+                // 4. Start currently exported EVO application
+                System.out.println("[HTTP] Launching exported EVO: " + runnableJar.getAbsolutePath());
+                List<String> command = new ArrayList<>();
+                command.add("java");
+                command.add("-jar");
+                command.add(runnableJar.getAbsolutePath());
+                command.add("--mode=SELF_DEV");
+                command.add("--variant=" + baseDir.getAbsolutePath());
+
+                ProcessBuilder pb = new ProcessBuilder(command);
+                pb.directory(exportDir);
+                pb.redirectErrorStream(true);
+                activeEvoProcess = pb.start();
+
+                // Read console stream in a background thread to prevent deadlocks
+                new Thread(() -> {
+                    System.out.println("[HTTP] Reading EVO process stdout/stderr...");
+                    try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(activeEvoProcess.getInputStream()))) {
+                        String line;
+                        while ((line = reader.readLine()) != null) {
+                            System.out.println("[EVO] " + line);
+                        }
+                    } catch (Exception ignored) {}
+                }).start();
+
+                // Write command.json for backward compatibility or status file logging
+                try {
+                    if (!runDir.exists()) {
+                        runDir.mkdirs();
+                    }
+                    String commandStr = "{\"action\":\"RESTART\",\"iteration\":0}";
+                    File commandFile = new File(runDir, "command.json");
+                    java.nio.file.Files.write(commandFile.toPath(),
+                        commandStr.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                } catch (Exception ignored) {}
                 
                 return newFixedLengthResponse(Response.Status.OK, "application/json", 
-                    "{\"status\":\"OK\",\"message\":\"Start EVO command sent\",\"path\":\"" + path + "\"}");
-            } catch (IOException e) {
+                    "{\"status\":\"OK\",\"message\":\"SUCCESS: Started product " + runnableJar.getName() + "\",\"path\":\"" + path + "\"}");
+            } catch (Exception e) {
                 return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", 
                     "{\"status\":\"ERROR\",\"message\":\"" + e.getMessage() + "\"}");
             }
@@ -296,12 +419,56 @@ public class SupervisorMain {
                 java.nio.file.Files.write(controlFile.toPath(), 
                     control.getBytes(java.nio.charset.StandardCharsets.UTF_8));
                 
+                if (activeEvoProcess != null && activeEvoProcess.isAlive()) {
+                    System.out.println("[HTTP] Forcibly destroying active EVO process...");
+                    activeEvoProcess.destroyForcibly();
+                    try {
+                        activeEvoProcess.waitFor(2, TimeUnit.SECONDS);
+                    } catch (InterruptedException ignored) {}
+                    activeEvoProcess = null;
+                    return newFixedLengthResponse(Response.Status.OK, "application/json",
+                        "{\"status\":\"OK\",\"message\":\"SUCCESS: Stopped running product.\"}");
+                }
+
+                activeEvoProcess = null;
                 return newFixedLengthResponse(Response.Status.OK, "application/json", 
-                    "{\"status\":\"OK\",\"message\":\"Stop EVO command sent\"}");
+                    "{\"status\":\"OK\",\"message\":\"READY (Stopped) - Product was not running.\"}");
             } catch (IOException e) {
                 return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", 
                     "{\"status\":\"ERROR\",\"message\":\"" + e.getMessage() + "\"}");
             }
+        }
+
+        private static int copyJars(File dir, File exportDir) {
+            int count = 0;
+            if (dir.isDirectory()) {
+                if (dir.getName().equals("target")) {
+                    File[] files = dir.listFiles();
+                    if (files != null) {
+                        for (File f : files) {
+                            if (f.isFile() && f.getName().endsWith(".jar")) {
+                                try {
+                                    java.nio.file.Files.copy(f.toPath(), new File(exportDir, f.getName()).toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                                    count++;
+                                } catch (Exception ignored) {}
+                            }
+                        }
+                    }
+                    return count;
+                }
+                File[] files = dir.listFiles();
+                if (files != null) {
+                    for (File f : files) {
+                        if (f.isDirectory()) {
+                            String name = f.getName();
+                            if (!name.equals(".git") && !name.equals("self-dev-run") && !name.equals(".settings") && !name.equals(".metadata") && !name.equals("bin")) {
+                                count += copyJars(f, exportDir);
+                            }
+                        }
+                    }
+                }
+            }
+            return count;
         }
     }
 }
