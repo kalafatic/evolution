@@ -36,7 +36,7 @@ public class EvoLlmTrainer {
             long startTime = System.currentTimeMillis();
             int totalTokensTrained = 0;
             int sampleIndex = 0;
-            
+
             for (DatasetBuilder.Sample sample : samples) {
                 // Zero gradients
                 model.parameters().forEach(Tensor::zeroGrad);
@@ -95,7 +95,7 @@ public class EvoLlmTrainer {
                         epoch + 1, epochs, sampleIndex, totalSamples, pct, loss));
                 }
             }
-            
+
             double avgLoss = epochLoss / samples.size();
             lossHistory.add(avgLoss);
             long duration = System.currentTimeMillis() - startTime;

@@ -910,7 +910,6 @@ window.ChatApp.Renderer = {
 
         const progressMessages = (messages || []).filter(m => (m.agentType || '').toLowerCase().includes('evolution-progress'));
         if (progressMessages.length === 0) return;
-        const lastMsg = progressMessages[progressMessages.length - 1];
 
         // Auto-open panel if closed and iteration is starting
         if ((!panel.style.width || panel.style.width === '0px' || panel.style.width === '0') && !document.body.classList.contains('simple')) {
@@ -919,95 +918,352 @@ window.ChatApp.Renderer = {
              if (window.ChatApp && window.ChatApp.UI) window.ChatApp.UI.updateLayout();
         }
 
-        try {
-            const data = JSON.parse(lastMsg.text);
-            const stages = [
-                { id: 'ITERATION_START', label: 'Iteration Started' },
-                { id: 'ANALYZE_PARENT', label: 'Parent Analysis' },
-                { id: 'GENERATE_BRANCH', label: 'Branch Generation' },
-                { id: 'VALIDATE_BRANCH', label: 'Validation' },
-                { id: 'SCORE_BRANCH', label: 'Scoring' },
-                { id: 'SELECT_WINNER', label: 'Selection' },
-                { id: 'SAVE_LINEAGE', label: 'Persist Lineage' },
-                { id: 'ITERATION_COMPLETE', label: 'Complete' }
-            ];
+        // Initialize central progress state
+        if (!window.evoProgressState) {
+            window.evoProgressState = {
+                overview: {},
+                training: {},
+                evolution: {},
+                metrics: [],
+                logs: []
+            };
+        }
 
-            const currentStageIdx = stages.findIndex(s => s.id === data.stage);
-            const percent = Math.round(((currentStageIdx + 1) / stages.length) * 100);
+        // Reset bounded lists and re-build from history
+        window.evoProgressState.metrics = [];
+        window.evoProgressState.logs = [];
+        let lastOverviewData = null;
 
-            let branchTableRows = (data.branches || []).map(b => `
-                <tr>
-                    <td>${b.id}</td>
-                    <td>${b.status || 'waiting'}</td>
-                    <td>${b.score !== undefined ? Math.round(b.score * 100) : '-'}</td>
-                </tr>
+        progressMessages.forEach(m => {
+            try {
+                const data = JSON.parse(m.text);
+
+                if (data.status !== undefined) {
+                    window.evoProgressState.training = data;
+
+                    if (data.status === 'TRAINING') {
+                        const pt = {
+                            step: data.currentStep,
+                            loss: data.trainingLoss,
+                            valLoss: data.validationLoss,
+                            speed: data.stepsPerSecond,
+                            percent: data.progressPercent,
+                            epoch: data.currentEpoch
+                        };
+                        window.evoProgressState.metrics.push(pt);
+                        if (window.evoProgressState.metrics.length > 1000) {
+                            window.evoProgressState.metrics.shift();
+                        }
+                    }
+
+                    const logMsg = data.message || `Training status changed to ${data.status}`;
+                    const severity = data.status === 'FAILED' ? 'error' : (data.status === 'COMPLETED' ? 'success' : 'info');
+                    window.evoProgressState.logs.push({
+                        time: data.timestamp || new Date().toISOString(),
+                        text: `[Training] ${logMsg}`,
+                        severity: severity
+                    });
+                    if (window.evoProgressState.logs.length > 500) {
+                        window.evoProgressState.logs.shift();
+                    }
+                } else if (data.stage !== undefined) {
+                    lastOverviewData = data;
+                    window.evoProgressState.overview = data;
+                    window.evoProgressState.evolution = data;
+
+                    window.evoProgressState.logs.push({
+                        time: data.timestamp || new Date().toISOString(),
+                        text: `[Evolution] Stage: ${data.stage} | Iteration: #${data.iterationCount}`,
+                        severity: 'info'
+                    });
+                    if (window.evoProgressState.logs.length > 500) {
+                        window.evoProgressState.logs.shift();
+                    }
+                }
+            } catch(e) {
+                console.error("Error parsing progress message:", e);
+            }
+        });
+
+        // 1. Update Overview UI
+        if (lastOverviewData) {
+            try {
+                const data = lastOverviewData;
+                const stages = [
+                    { id: 'ITERATION_START', label: 'Iteration Started' },
+                    { id: 'ANALYZE_PARENT', label: 'Parent Analysis' },
+                    { id: 'GENERATE_BRANCH', label: 'Branch Generation' },
+                    { id: 'VALIDATE_BRANCH', label: 'Validation' },
+                    { id: 'SCORE_BRANCH', label: 'Scoring' },
+                    { id: 'SELECT_WINNER', label: 'Selection' },
+                    { id: 'SAVE_LINEAGE', label: 'Persist Lineage' },
+                    { id: 'ITERATION_COMPLETE', label: 'Complete' }
+                ];
+
+                const currentStageIdx = stages.findIndex(s => s.id === data.stage);
+                const percent = Math.round(((currentStageIdx + 1) / stages.length) * 100);
+
+                let branchTableRows = (data.branches || []).map(b => `
+                    <tr>
+                        <td>${b.id}</td>
+                        <td>${b.status || 'waiting'}</td>
+                        <td>${b.score !== undefined ? Math.round(b.score * 100) : '-'}</td>
+                    </tr>
+                `).join('');
+
+                const now = Date.now();
+                const start = data.startTime || now;
+                const elapsed = Math.max(0, Math.round((now - start) / 1000));
+                const displayElapsed = elapsed > 36000 ? 0 : elapsed;
+                const minutes = Math.floor(displayElapsed / 60).toString().padStart(2, '0');
+                const seconds = (displayElapsed % 60).toString().padStart(2, '0');
+
+                content.innerHTML = `
+                    <div class="progress-monitor">
+                    <div class="progress-header">
+                        <span>Iteration <b>#${data.iterationCount}</b></span>
+                        <span>Generation <b>${data.generation}</b></span>
+                        <span>Lineage <b>${data.lineage}</b></span>
+                    </div>
+                    <div class="session-properties-row">
+                        <span class="badge ${data.autoApprove ? 'active' : ''}">Auto-Approve</span>
+                        <span class="badge ${data.gitAutomation ? 'active' : ''}">Auto-Git</span>
+                        <span class="badge ${data.stepMode ? 'active' : ''}">Step Mode</span>
+                        <span class="badge active">Max: ${data.maxIterations}</span>
+                    </div>
+                    <div class="global-progress-container">
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar-fill" style="width: ${percent}%"></div>
+                        </div>
+                        <div class="current-stage">${stages[currentStageIdx]?.label || data.stage}</div>
+                    </div>
+                    <div class="evolution-pipeline">
+                        ${stages.map((s, idx) => {
+                            let icon = '○';
+                            let statusClass = 'step-status-waiting';
+                            if (idx < currentStageIdx || data.stage === 'ITERATION_COMPLETE') {
+                                icon = '✓';
+                                statusClass = 'step-status-completed';
+                            } else if (idx === currentStageIdx) {
+                                icon = '►';
+                                statusClass = 'step-status-active';
+                            }
+                            return `<div class="pipeline-step ${statusClass}"><span class="step-icon">${icon}</span> ${s.label}</div>`;
+                        }).join('')}
+                    </div>
+                    <table class="branch-table">
+                        <thead>
+                            <tr><th>Branch</th><th>Status</th><th>Score</th></tr>
+                        </thead>
+                        <tbody>
+                            ${branchTableRows || '<tr><td colspan="3" style="text-align:center;color:var(--text-secondary)">No branches yet</td></tr>'}
+                        </tbody>
+                    </table>
+                    <div class="active-llm-panel">
+                        <div class="llm-info-row">
+                            <span class="llm-label">Active Model:</span>
+                            <span>${data.currentModel || 'local'}</span>
+                        </div>
+                        <div class="llm-info-row">
+                            <span class="llm-label">Task:</span>
+                            <span>${data.currentTask || 'Initializing...'}</span>
+                        </div>
+                        <div class="llm-info-row">
+                            <span class="llm-label">Elapsed:</span>
+                            <span>${minutes}:${seconds}</span>
+                        </div>
+                    </div>
+                    </div>
+                `;
+            } catch(e) { content.innerHTML = `<div class="bubble error">Failed to parse Progress: ${e.message}</div>`; }
+        }
+
+        // 2. Update Training UI
+        const train = window.evoProgressState.training;
+        if (train && train.status) {
+            const statusEl = document.getElementById('train-status');
+            const phaseEl = document.getElementById('train-phase');
+            const epochEl = document.getElementById('train-epoch');
+            const stepEl = document.getElementById('train-step');
+            const pctEl = document.getElementById('train-pct');
+            const lossEl = document.getElementById('train-loss');
+            const valEl = document.getElementById('train-val');
+            const lrEl = document.getElementById('train-lr');
+            const speedEl = document.getElementById('train-speed');
+            const elapsedEl = document.getElementById('train-elapsed');
+            const etaEl = document.getElementById('train-eta');
+            const msgEl = document.getElementById('train-msg');
+
+            if (statusEl) statusEl.textContent = train.status;
+            if (phaseEl) phaseEl.textContent = train.phase || 'TRAINING';
+            if (epochEl) epochEl.textContent = `${train.currentEpoch || 0} / ${train.totalEpochs || 0}`;
+            if (stepEl) stepEl.textContent = `${train.currentStep || 0} / ${train.totalSteps || 0}`;
+            if (pctEl) pctEl.textContent = train.progressPercent !== undefined && train.progressPercent >= 0 ? `${train.progressPercent.toFixed(1)}%` : '—';
+            if (lossEl) lossEl.textContent = train.trainingLoss !== undefined && train.trainingLoss > 0 ? train.trainingLoss.toFixed(4) : '—';
+            if (valEl) valEl.textContent = train.validationLoss !== undefined && train.validationLoss > 0 ? train.validationLoss.toFixed(4) : '—';
+            if (lrEl) lrEl.textContent = train.learningRate !== undefined && train.learningRate > 0 ? train.learningRate.toFixed(6) : '—';
+            if (speedEl) speedEl.textContent = train.stepsPerSecond !== undefined && train.stepsPerSecond > 0 ? `${train.stepsPerSecond.toFixed(1)} steps/sec` : '—';
+
+            if (elapsedEl) {
+                const elapsedSec = Math.floor((train.elapsedMillis || 0) / 1000);
+                const elapsedMin = Math.floor(elapsedSec / 60).toString().padStart(2, '0');
+                const elapsedSecRemaining = (elapsedSec % 60).toString().padStart(2, '0');
+                elapsedEl.textContent = `${elapsedMin}:${elapsedSecRemaining}`;
+            }
+
+            if (etaEl) {
+                if (train.estimatedRemainingMillis !== undefined && train.estimatedRemainingMillis > 0) {
+                    const remSec = Math.floor(train.estimatedRemainingMillis / 1000);
+                    const remMin = Math.floor(remSec / 60).toString().padStart(2, '0');
+                    const remSecRemaining = (remSec % 60).toString().padStart(2, '0');
+                    etaEl.textContent = `${remMin}:${remSecRemaining}`;
+                } else {
+                    etaEl.textContent = 'Calculating...';
+                }
+            }
+            if (msgEl) msgEl.textContent = train.message || '—';
+        }
+
+        // 3. Update Evolution UI
+        const evo = window.evoProgressState.evolution;
+        if (evo) {
+            const evoGenEl = document.getElementById('evo-gen');
+            const evoWinnerEl = document.getElementById('evo-winner');
+            const evoBranchesEl = document.getElementById('evo-branches-list');
+
+            if (evoGenEl) evoGenEl.textContent = `${evo.generation || 1} / ${evo.maxIterations || 5}`;
+            if (evoWinnerEl) evoWinnerEl.textContent = evo.winnerId || '—';
+
+            if (evoBranchesEl) {
+                let branchTableRows = (evo.branches || []).map(b => `
+                    <div class="training-info-row" style="border-bottom:1px solid #f1f5f9; padding:4px 0;">
+                        <span><b>${b.id}</b> (${b.status || 'waiting'})</span>
+                        <span style="font-weight:bold; color:#3b82f6;">Score: ${b.score !== undefined ? Math.round(b.score * 100) : '-'}</span>
+                    </div>
+                `).join('');
+                evoBranchesEl.innerHTML = branchTableRows || '<div style="text-align: center; color: #94a3b8; padding: 10px;">No branches yet</div>';
+            }
+        }
+
+        // 4. Update Metrics UI
+        const lastMetric = window.evoProgressState.metrics[window.evoProgressState.metrics.length - 1];
+        if (lastMetric) {
+            const currLossEl = document.getElementById('metric-curr-loss');
+            const throughputEl = document.getElementById('metric-throughput');
+            if (currLossEl) currLossEl.textContent = lastMetric.loss !== undefined ? lastMetric.loss.toFixed(4) : '—';
+            if (throughputEl) throughputEl.textContent = lastMetric.speed !== undefined ? `${lastMetric.speed.toFixed(1)} steps/sec` : '—';
+        }
+
+        // Re-draw chart if metrics tab is currently active
+        const activeTabButton = document.querySelector('.progress-tab.active');
+        if (activeTabButton && activeTabButton.id === 'tab-metrics') {
+            window.renderMetricsChart(window.evoProgressState.metrics);
+        }
+
+        // 5. Update Logs UI
+        const logsContainer = document.getElementById('progress-logs-container');
+        if (logsContainer) {
+            const isAtBottom = logsContainer.scrollHeight - logsContainer.clientHeight <= logsContainer.scrollTop + 30;
+
+            logsContainer.innerHTML = window.evoProgressState.logs.map(log => `
+                <div class="log-entry ${log.severity}">
+                    <span style="color:#94a3b8; font-size:8px;">${log.time.split('T')[1]?.substring(0, 8) || ''}</span> ${log.text}
+                </div>
             `).join('');
 
-            const now = Date.now();
-            const start = data.startTime || now;
-            const elapsed = Math.max(0, Math.round((now - start) / 1000));
-            // Guard against extreme elapsed times in mock data
-            const displayElapsed = elapsed > 36000 ? 0 : elapsed;
-            const minutes = Math.floor(displayElapsed / 60).toString().padStart(2, '0');
-            const seconds = (displayElapsed % 60).toString().padStart(2, '0');
-
-            content.innerHTML = `
-                <div class="progress-monitor">
-                <div class="progress-header">
-                    <span>Iteration <b>#${data.iterationCount}</b></span>
-                    <span>Generation <b>${data.generation}</b></span>
-                    <span>Lineage <b>${data.lineage}</b></span>
-                </div>
-                <div class="session-properties-row">
-                    <span class="badge ${data.autoApprove ? 'active' : ''}">Auto-Approve</span>
-                    <span class="badge ${data.gitAutomation ? 'active' : ''}">Auto-Git</span>
-                    <span class="badge ${data.stepMode ? 'active' : ''}">Step Mode</span>
-                    <span class="badge active">Max: ${data.maxIterations}</span>
-                </div>
-                <div class="global-progress-container">
-                    <div class="progress-bar-bg">
-                        <div class="progress-bar-fill" style="width: ${percent}%"></div>
-                    </div>
-                    <div class="current-stage">${stages[currentStageIdx]?.label || data.stage}</div>
-                </div>
-                <div class="evolution-pipeline">
-                    ${stages.map((s, idx) => {
-                        let icon = '○';
-                        let statusClass = 'step-status-waiting';
-                        if (idx < currentStageIdx || data.stage === 'ITERATION_COMPLETE') {
-                            icon = '✓';
-                            statusClass = 'step-status-completed';
-                        } else if (idx === currentStageIdx) {
-                            icon = '►';
-                            statusClass = 'step-status-active';
-                        }
-                        return `<div class="pipeline-step ${statusClass}"><span class="step-icon">${icon}</span> ${s.label}</div>`;
-                    }).join('')}
-                </div>
-                <table class="branch-table">
-                    <thead>
-                        <tr><th>Branch</th><th>Status</th><th>Score</th></tr>
-                    </thead>
-                    <tbody>
-                        ${branchTableRows || '<tr><td colspan="3" style="text-align:center;color:var(--text-secondary)">No branches yet</td></tr>'}
-                    </tbody>
-                </table>
-                <div class="active-llm-panel">
-                    <div class="llm-info-row">
-                        <span class="llm-label">Active Model:</span>
-                        <span>${data.currentModel || 'local'}</span>
-                    </div>
-                    <div class="llm-info-row">
-                        <span class="llm-label">Task:</span>
-                        <span>${data.currentTask || 'Initializing...'}</span>
-                    </div>
-                    <div class="llm-info-row">
-                        <span class="llm-label">Elapsed:</span>
-                        <span>${minutes}:${seconds}</span>
-                    </div>
-                </div>
-                </div>
-            `;
-        } catch(e) { content.innerHTML = `<div class="bubble error">Failed to parse Progress: ${e.message}</div>`; }
+            if (isAtBottom) {
+                logsContainer.scrollTop = logsContainer.scrollHeight;
+            }
+        }
     }
 };
+
+window.switchProgressTab = function(tabId) {
+    if (window.sessionStorage) {
+        window.sessionStorage.setItem('selected_progress_tab', tabId);
+    }
+    const tabs = document.querySelectorAll('.progress-tab');
+    tabs.forEach(t => {
+        if (t.id === 'tab-' + tabId) {
+            t.classList.add('active');
+            t.setAttribute('aria-selected', 'true');
+        } else {
+            t.classList.remove('active');
+            t.setAttribute('aria-selected', 'false');
+        }
+    });
+    const panels = document.querySelectorAll('.tab-panel');
+    panels.forEach(p => {
+        if (p.id === 'panel-' + tabId) {
+            p.style.display = 'block';
+        } else {
+            p.style.display = 'none';
+        }
+    });
+    if (tabId === 'metrics' && window.evoProgressState) {
+        window.renderMetricsChart(window.evoProgressState.metrics);
+    }
+};
+
+window.renderMetricsChart = function(metrics) {
+    const container = document.getElementById('metrics-chart');
+    if (!container) return;
+    if (!metrics || metrics.length === 0) {
+        container.innerHTML = '<div style="text-align: center; color: #94a3b8; padding-top: 40px;">No metrics recorded yet</div>';
+        return;
+    }
+    const points = metrics.filter(m => m.loss !== undefined && m.loss > 0);
+    if (points.length === 0) {
+        container.innerHTML = '<div style="text-align: center; color: #94a3b8; padding-top: 40px;">No loss data recorded yet</div>';
+        return;
+    }
+    const width = container.clientWidth || 300;
+    const height = 110;
+    let minLoss = Math.min(...points.map(p => p.loss));
+    let maxLoss = Math.max(...points.map(p => p.loss));
+    if (minLoss === maxLoss) {
+        minLoss = 0;
+        maxLoss = maxLoss + 1;
+    } else {
+        const padding = (maxLoss - minLoss) * 0.1;
+        minLoss = Math.max(0, minLoss - padding);
+        maxLoss = maxLoss + padding;
+    }
+    const xStep = width / Math.max(1, points.length - 1);
+    let lossPath = "";
+    points.forEach((p, idx) => {
+        const x = idx * xStep;
+        const y = height - ((p.loss - minLoss) / (maxLoss - minLoss)) * height;
+        if (idx === 0) {
+            lossPath += `M ${x} ${y}`;
+        } else {
+            lossPath += ` L ${x} ${y}`;
+        }
+    });
+    container.innerHTML = `
+        <svg width="100%" height="${height}" style="overflow: visible;">
+            <line x1="0" y1="0" x2="${width}" y2="0" stroke="#f1f5f9" stroke-width="1" />
+            <line x1="0" y1="${height/2}" x2="${width}" y2="${height/2}" stroke="#f1f5f9" stroke-dasharray="2,2" stroke-width="1" />
+            <line x1="0" y1="${height}" x2="${width}" y2="${height}" stroke="#e2e8f0" stroke-width="1" />
+            <path d="${lossPath}" fill="none" stroke="#3b82f6" stroke-width="2" />
+            <text x="5" y="12" fill="#64748b" font-size="8" font-weight="bold">Max: ${maxLoss.toFixed(4)}</text>
+            <text x="5" y="${height - 5}" fill="#64748b" font-size="8" font-weight="bold">Min: ${minLoss.toFixed(4)}</text>
+        </svg>
+    `;
+};
+
+window.initProgressTabs = function() {
+    let savedTab = 'overview';
+    if (window.sessionStorage) {
+        const stored = window.sessionStorage.getItem('selected_progress_tab');
+        if (stored) savedTab = stored;
+    }
+    window.switchProgressTab(savedTab);
+};
+
+// Automatically initialize progress tabs on document load/ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', window.initProgressTabs);
+} else {
+    window.initProgressTabs();
+}
