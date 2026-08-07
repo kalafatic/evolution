@@ -62,6 +62,8 @@ import eu.kalafatic.evolution.controller.orchestration.PlatformType;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.TaskRequest;
 import eu.kalafatic.evolution.controller.orchestration.llm.LlmRouter;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.ADarwinEngine;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.DarwinEngineRegistry;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
 import eu.kalafatic.evolution.controller.workflow.WorkflowStatus;
 import eu.kalafatic.evolution.controller.workflow.WorkflowStep;
@@ -1164,10 +1166,83 @@ public class AiChatPage extends AEvoPage {
 		return modelName != null && !modelName.isEmpty() && !"NOT SET".equals(modelName);
 	}
 
-	private void resumeWaitingSessions() {
-		// This should now be handled by OrchestratorServiceImpl directly if needed
-		// or via events.
+	/**
+	 * Resume approval with user-selected variant.
+	 * Called when user selects a variant from the UI.
+	 */
+	public void resumeApproval(String variantId) {
+	    String sessionId = getCurrentSessionName();
+	    if (sessionId == null || sessionId.isEmpty()) {
+	        return;
+	    }
+	    
+	    ADarwinEngine engine = DarwinEngineRegistry.get(sessionId);
+	    if (engine != null && engine.isWaitingForApproval()) {
+	        log("[APPROVAL] User selected variant: " + variantId);
+	        engine.resumeApproval(variantId);
+	    } else {
+	        log("[APPROVAL] No pending approval found.");
+	    }
 	}
+
+	/**
+	 * Resume approval with auto-approve.
+	 * Called when Auto-Approve checkbox is toggled ON.
+	 * @param autoApprove 
+	 */
+	public void resumeAutoApprove(boolean autoApprove) {
+		String sessionId = getCurrentSessionName();
+		if (sessionId == null || sessionId.isEmpty()) {
+			return;
+		}
+
+		ADarwinEngine engine = DarwinEngineRegistry.get(sessionId);
+
+		if (autoApprove) {
+			if (engine != null) {
+				log("[APPROVAL] Auto-approve triggered.");
+				engine.resumeAutoApprove();
+			} else {
+				log("[APPROVAL] No pending approval found for auto-approve.");
+			}
+		} else {
+			if (engine != null) {
+				log("[APPROVAL] Auto-approve triggered.");
+				engine.disableAutoApprove();
+				;
+			} else {
+				log("[APPROVAL] No pending approval found for auto-approve.");
+			}
+		}
+	}
+	
+	/**
+     * Log a message to the chat.
+     */
+    public void log(String message) {
+        if (message == null || message.isEmpty()) return;
+        String sessionId = getCurrentSessionName();
+        if (sessionId == null) sessionId = "Default";
+        String turnId = sessionId + "__" + System.currentTimeMillis();
+        outputController.submitMessage(sessionId, turnId, "Evo", message, "system", MessagePriority.NORMAL, false);
+    }
+
+	/**
+	 * Check if the engine is waiting for approval.
+	 */
+	public boolean isWaitingForApproval() {
+	    String sessionId = getCurrentSessionName();
+	    if (sessionId == null || sessionId.isEmpty()) {
+	        return false;
+	    }
+	    
+	    ADarwinEngine engine = DarwinEngineRegistry.get(sessionId);
+	    if (engine != null) {
+	        return engine.isWaitingForApproval();
+	    }
+	    return false;
+	}
+	
 
 	public void submitFeedback(int satisfaction, String comments) {
 		if (orchestrator != null) {

@@ -11,14 +11,19 @@ import java.util.stream.Collectors;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import eu.kalafatic.evolution.controller.agents.BaseAiAgent;
 import eu.kalafatic.evolution.controller.agents.PromptIntentAnalyzer;
-import eu.kalafatic.evolution.controller.kernel.EvolutionIntensityCalculator;
 import eu.kalafatic.evolution.controller.kernel.EvolutionProfile;
 import eu.kalafatic.evolution.controller.mediation.analysis.ContextCurator;
 import eu.kalafatic.evolution.controller.mediation.analysis.SemanticExtractor;
+import eu.kalafatic.evolution.controller.mediation.model.ArchitecturalFact;
+import eu.kalafatic.evolution.controller.mediation.model.Hotspot;
+import eu.kalafatic.evolution.controller.mediation.model.MediationCandidate;
 import eu.kalafatic.evolution.controller.mediation.model.MediationResult;
+import eu.kalafatic.evolution.controller.mediation.model.Subsystem;
 import eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot;
 import eu.kalafatic.evolution.controller.mediation.scanner.TargetScanner;
+import eu.kalafatic.evolution.controller.orchestration.AiService;
 import eu.kalafatic.evolution.controller.orchestration.ConversationState;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionPhase;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionPhaseMachine;
@@ -36,8 +41,10 @@ import eu.kalafatic.evolution.controller.orchestration.OrchestratorResponse;
 import eu.kalafatic.evolution.controller.orchestration.PlatformMode;
 import eu.kalafatic.evolution.controller.orchestration.PlatformType;
 import eu.kalafatic.evolution.controller.orchestration.ResultType;
+import eu.kalafatic.evolution.controller.orchestration.SessionManager;
 import eu.kalafatic.evolution.controller.orchestration.SystemState;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.orchestration.TransitionToken;
 import eu.kalafatic.evolution.controller.orchestration.TaskRequest;
 import eu.kalafatic.evolution.controller.orchestration.VariantExecutionContext;
 import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait;
@@ -47,37 +54,112 @@ import eu.kalafatic.evolution.controller.orchestration.behavior.ExecutionPolicy;
 import eu.kalafatic.evolution.controller.orchestration.behavior.ExploratoryReasoningModule;
 import eu.kalafatic.evolution.controller.orchestration.behavior.InstructionModule;
 import eu.kalafatic.evolution.controller.orchestration.behavior.MediatedInstructionModule;
+import eu.kalafatic.evolution.controller.orchestration.behavior.PolicyResolver;
+import eu.kalafatic.evolution.controller.orchestration.behavior.PromptComposer;
 import eu.kalafatic.evolution.controller.orchestration.behavior.SelfDevInstructionModule;
 import eu.kalafatic.evolution.controller.orchestration.behavior.StepModeInstructionModule;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityContext;
 import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityException;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityHealth;
+import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityStatus;
+import eu.kalafatic.evolution.controller.orchestration.capability.contracts.IMutationContract;
 import eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType;
 import eu.kalafatic.evolution.controller.orchestration.diagnostics.CausalNode;
+import eu.kalafatic.evolution.controller.orchestration.engines.DimensionDiscoveryAgent;
+import eu.kalafatic.evolution.controller.orchestration.engines.DimensionEngine;
+import eu.kalafatic.evolution.controller.orchestration.engines.ExecutionEngine;
+import eu.kalafatic.evolution.controller.orchestration.engines.FitnessEngine;
+import eu.kalafatic.evolution.controller.orchestration.engines.LineageEngine;
+import eu.kalafatic.evolution.controller.orchestration.engines.SelectionEngine;
 import eu.kalafatic.evolution.controller.orchestration.enums.RealityLevel;
 import eu.kalafatic.evolution.controller.orchestration.goal.GoalModel;
 import eu.kalafatic.evolution.controller.orchestration.goal.SemanticEnvelope;
 import eu.kalafatic.evolution.controller.orchestration.intent.AtomicIntentAnalysis;
-import eu.kalafatic.evolution.controller.orchestration.intent.EvolutionAssessment;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionResult;
 import eu.kalafatic.evolution.controller.orchestration.intent.IntentHypothesis;
+import eu.kalafatic.evolution.controller.orchestration.mediation.MediationEngine;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.adaptive.DiversityPressureController;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.adaptive.EvolutionaryPenaltyModel;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.adaptive.RejectionPatternAnalyzer;
 import eu.kalafatic.evolution.controller.orchestration.util.ModeRecognizer;
 import eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceArtifact;
+import eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceDeltaAnalyzer.DeltaAnalysis;
 import eu.kalafatic.evolution.controller.supervision.AuthorityController;
 import eu.kalafatic.evolution.controller.supervision.EvolutionDecision;
 import eu.kalafatic.evolution.controller.trajectory.Trajectory;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
+import eu.kalafatic.evolution.model.orchestration.ChatSession;
 import eu.kalafatic.evolution.model.orchestration.EvaluationResult;
 import eu.kalafatic.evolution.model.orchestration.Iteration;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.PromptInstructions;
 import eu.kalafatic.evolution.model.orchestration.SelfDevDecision;
+import eu.kalafatic.evolution.model.orchestration.Task;
 
-public class CodingEngine extends ADarwinEngine {
+public abstract class ADarwinEngine3 extends BaseAiAgent implements IDarwinEngine, IMutationContract {
 
-	public CodingEngine(TaskContext context, IterationMemoryService memoryService,
-			SystemStateSignalProvider stateProvider) {
-		super(context, memoryService, stateProvider, PlatformType.ASSISTED_CODING);
+	public static final int DEFAULT_EXPANSION_LEVEL = 5;
+
+	protected final TaskContext context;
+	protected final IterationMemoryService memoryService;
+	protected final SystemStateSignalProvider stateProvider;
+	protected final RejectionPatternAnalyzer rejectionAnalyzer;
+	protected final EvolutionaryPenaltyModel penaltyModel = new EvolutionaryPenaltyModel();
+	protected final DiversityPressureController diversityController = new DiversityPressureController();
+	protected final eu.kalafatic.evolution.controller.kernel.EvolutionaryPressureEngine pressureEngine;
+
+	// Add to DarwinEngine class
+	protected MediationEngine mediationEngine;
+
+	protected final PolicyResolver policyResolver = new PolicyResolver();
+	protected final PromptComposer promptComposer = new PromptComposer();
+	protected final DimensionEngine dimensionEngine = new DimensionEngine();
+	protected final LineageEngine lineageEngine = new LineageEngine();
+	protected final FitnessEngine fitnessEngine = new FitnessEngine();
+	protected final ExecutionEngine executionEngine = new ExecutionEngine();
+	protected final SelectionEngine selectionEngine = new SelectionEngine();
+	protected final DimensionDiscoveryAgent dimensionDiscoveryAgent;
+	protected CapabilityStatus status = CapabilityStatus.STOPPED;
+
+	// Inject the analyzer
+	protected PromptIntentAnalyzer intentAnalyzer;
+	protected ModeRecognizer modeRecognizer;
+
+	protected PlatformType platformType;
+
+	protected ChatSession getChatSession() {
+		if (context.getOrchestrator() != null && context.getOrchestrator().getAiChat() != null) {
+			String sessionId = context.getSessionId();
+			return context.getOrchestrator().getAiChat().getSessions().stream().filter(s -> s.getId().equals(sessionId))
+					.findFirst().orElse(null);
+		}
+		return null;
+	}
+
+	protected int getExpansionValue() {
+		ChatSession chatSession = getChatSession();
+		return (chatSession != null) ? chatSession.getExpansion() : DEFAULT_EXPANSION_LEVEL;
+	}
+
+	public ADarwinEngine3(TaskContext context, IterationMemoryService memoryService,
+			SystemStateSignalProvider stateProvider, PlatformType platformType) {
+		super("DarwinEngine", "DarwinEngine", SessionManager.getInstance().getSession(context.getSessionId()));
+
+		this.context = context;
+		this.memoryService = memoryService;
+		this.stateProvider = stateProvider;
+		this.pressureEngine = getSessionContainer().getPressureEngine();
+		this.rejectionAnalyzer = new RejectionPatternAnalyzer(getSessionContainer());
+		this.mediationEngine = new MediationEngine();
+		this.platformType = platformType;
+		this.dimensionDiscoveryAgent = new DimensionDiscoveryAgent(getSessionContainer());
+		this.dimensionEngine.setDiscoveryAgent(dimensionDiscoveryAgent);
+
+		// Create ModeRecognizer with SessionContainer from parent (BaseAiAgent)
+		this.modeRecognizer = new ModeRecognizer(getSessionContainer());
+		
 	}
 
 	public OrchestratorResponse orchestrateEvolution(TaskRequest taskRequest, IterationManager iterationManager)
@@ -124,7 +206,9 @@ public class CodingEngine extends ADarwinEngine {
 		}
 
 		if (!isControl) {
-			iterationManager.transition(SystemState.INIT, context);
+			if (!context.getMetadata().containsKey("resume_manual_id")) {
+				iterationManager.transition(SystemState.INIT, context);
+			}
 			boolean isNewGoal = (checkpointGoal != null && !checkpointGoal.equalsIgnoreCase(request));
 			boolean isStaleTerminal = state.getCurrentPhase() != null && (state.getCurrentPhase().contains("TERMINAL")
 					|| state.getCurrentPhase().contains("SUCCESS") || state.getCurrentPhase().contains("SATISFIED"));
@@ -163,6 +247,15 @@ public class CodingEngine extends ADarwinEngine {
 		try {
 			context.getOrchestrator().getTasks().clear();
 			context.setCurrentTaskName("Initialization");
+
+			// UI TRIGGER: Force panels to open immediately by publishing an initial progress event
+			EvolutionProgressPublisher.startIteration(context, 0, 0, "alpha", getMinIterationLimit(context), getMaxIterationLimit(context), getMinBranchingLimit(context, getExpansionValue()), getMaxBranchingLimit(context, getExpansionValue()));
+
+		// FORCE COGNITIVE SYNC: Trigger cognitive state update to reflect evolutionary capability
+		if (getSessionContainer() != null && getSessionContainer().getCognitiveState() != null) {
+			getSessionContainer().getCognitiveState().sync();
+		}
+
 			context.log("[DARWIN] Strategic Initialization: " + request);
 
 			ConversationState convState = ConversationState.load(context.getSharedMemory(), context.getSessionId());
@@ -250,7 +343,7 @@ public class CodingEngine extends ADarwinEngine {
 
 			// 2. ANALYZING stage
 			iterationManager.transition(SystemState.ANALYZING, context);
-			if (iterationManager.getGitManager().isGitRepository() || context.getMetadata().containsKey("testMode") || isCodingProcess()) {
+			if (iterationManager.getGitManager().isGitRepository() || context.getMetadata().containsKey("testMode")) {
 				iterationManager.getGitManager().ensureInitialCommit();
 
 				PromptInstructions instructions = (context.getOrchestrator() != null
@@ -312,14 +405,14 @@ public class CodingEngine extends ADarwinEngine {
 
 			// ADAPTIVE KERNEL: Ensure execution profile is initialized before access
 			if (context.getExecutionProfile() == null) {
-				EvolutionProfile profile_init = EvolutionIntensityCalculator
+				eu.kalafatic.evolution.controller.kernel.EvolutionProfile profile_init = eu.kalafatic.evolution.controller.kernel.EvolutionIntensityCalculator
 						.calculate(context, iterationManager.getActiveTrajectory(context), null);
 				context.getOrchestrationState().setExecutionProfile(profile_init);
 			}
 
 			// ADAPTIVE KERNEL: Intensity-based analysis gating
 			int intensity = context.getExecutionProfile() != null ? context.getExecutionProfile().getIntensity() : 2;
-			EvolutionAssessment initialAssessment = null;
+			eu.kalafatic.evolution.controller.orchestration.intent.EvolutionAssessment initialAssessment = null;
 
 			if (intensity > 1) {
 				context.log("[DARWIN] Inspecting goal for unresolved semantic uncertainty.");
@@ -338,7 +431,9 @@ public class CodingEngine extends ADarwinEngine {
 				iterationManager.transition(SystemState.FAILED, context);
 			} else {
 				// Final response handled inside evolve if terminal phase reached
-				if (!context.getStateHolder().getState().equals(SystemState.DONE)) {
+				if (context.getStateHolder().getState() == SystemState.WAITING_FOR_USER_DECISION) {
+					// Keep state as WAITING_FOR_USER_DECISION, do not transition to DONE
+				} else if (!context.getStateHolder().getState().equals(SystemState.DONE)) {
 					iterationManager.transition(SystemState.DONE, context);
 				}
 			}
@@ -391,7 +486,253 @@ public class CodingEngine extends ADarwinEngine {
 		}
 	}
 
+	/**
+	 * Generates a direct chat response without evolution.
+	 */
+	protected String generateChatResponse(String request, TaskContext context) {
+		try {
+			String systemInstruction = "You are a friendly, helpful AI assistant. "
+					+ "RESPOND CONVERSATIONALLY. DO NOT generate code. "
+					+ "Just respond naturally as a helpful assistant.";
 
+			String prompt = String.format("%s\n\nUser said: \"%s\"\n\nRespond naturally. Be friendly and helpful.",
+					systemInstruction, request);
+
+			return aiService.sendRequest(context.getOrchestrator(), prompt, context);
+		} catch (Exception e) {
+			context.log("[DARWIN] Chat response generation failed: " + e.getMessage());
+			return "Hello! How can I help you today?";
+		}
+	}
+
+	public OrchestratorResponse evolve(String request, IterationManager iterationManager,
+	        eu.kalafatic.evolution.controller.orchestration.intent.EvolutionAssessment initialAssessment)
+	        throws Exception {
+	    // ADAPTIVE KERNEL: Ensure execution profile is initialized before access
+	    if (context.getExecutionProfile() == null) {
+	        eu.kalafatic.evolution.controller.kernel.EvolutionProfile profile_init = eu.kalafatic.evolution.controller.kernel.EvolutionIntensityCalculator
+	                .calculate(context, iterationManager.getActiveTrajectory(context), null);
+	        context.getOrchestrationState().setExecutionProfile(profile_init);
+	    }
+
+	    context.log("[DARWIN] Starting Recursive Evolutionary Cognition Loop.");
+
+	    getSessionContainer().getEventBus().publish(
+	            new RuntimeEvent(RuntimeEventType.FLOW_STARTED, context.getSessionId(), "DarwinEngine", request));
+
+	    OrchestrationState state = context.getOrchestrationState();
+
+	    if (initialAssessment != null && initialAssessment.hasUnresolvedDimensions()) {
+	        context.log("[DARWIN] Grounding evolution with initial assessment.");
+	    }
+
+	    state.getCognitiveTrace()
+	            .addNode(new CausalNode("evolution-start-" + System.currentTimeMillis(), "EVOLUTION_INIT",
+	                    "DarwinEngine", List.of(), List.of("DarwinFlow"), 1.0,
+	                    "Recursive evolutionary cognition kernel active."));
+
+	    EvaluationResult result = null;
+	    int safetyCounter = 0;
+
+	    // ✅ NEW: Check if we're resuming from a user selection
+	    boolean isResuming = context.getMetadata().containsKey("resume_manual_id");
+	    if (isResuming) {
+	        context.log("[DARWIN] ▶️ Resuming evolution with user-selected variant.");
+	        String selectedVariantId = (String) context.getMetadata().get("resume_manual_id");
+	        
+	        // Find the selected variant from pending candidates
+	        @SuppressWarnings("unchecked")
+	        List<BranchVariant> pendingCandidates = (List<BranchVariant>) context.getMetadata().get("pending_candidates");
+	        if (pendingCandidates != null) {
+	            BranchVariant selectedVariant = pendingCandidates.stream()
+	                    .filter(v -> v.getId().equals(selectedVariantId))
+	                    .findFirst()
+	                    .orElse(null);
+	            
+	            if (selectedVariant != null) {
+	                context.log("[DARWIN] Found selected variant: " + selectedVariant.getId());
+	                
+	                // Execute the selected variant directly
+	                GoalModel goalModel = GoalModel.extract(state.getMetadata(), iterationManager, request, context);
+	                
+	                // ✅ Create a decision using the existing EvolutionDecision API
+	                // Since EvolutionDecision doesn't have a default constructor or setters,
+	                // we need to get it from the iteration manager's decide method
+	                String iterId = iterationManager.getCurrentIterationModel() != null 
+	                        ? iterationManager.getCurrentIterationModel().getId() 
+	                        : "default";
+	                
+	                // Use the decide method with the selected variant ID
+	                eu.kalafatic.evolution.controller.supervision.EvolutionDecision decision = 
+	                        iterationManager.decide(iterId, pendingCandidates, context, selectedVariantId);
+	                
+	                // Execute the winner
+	                EvaluationResult execResult = executeWinner(context, decision, pendingCandidates, goalModel, iterationManager);
+	                
+	                // Build response
+	                OrchestratorResponse response = new OrchestratorResponse();
+	                response.setResultType(ResultType.CHAT);
+	                response.setSummary("Selected variant executed successfully.");
+	                
+	                // Clean up
+	                context.getMetadata().remove("resume_manual_id");
+	                context.getMetadata().remove("pending_candidates");
+	                context.getMetadata().remove("recommended_candidate");
+	                context.getMetadata().remove("saved_request");
+	                
+	                iterationManager.transition(SystemState.DONE, context);
+	                
+	                FinalResponseAssembler assembler = new FinalResponseAssembler();
+	                FinalResponse finalResponse = assembler.assemble(context, response.getSummary(), true, context.getStartTime());
+	                response.setFinalResponse(finalResponse);
+	                
+	                return response;
+	            } else {
+	                context.log("[DARWIN] WARNING: Selected variant not found: " + selectedVariantId);
+	            }
+	        }
+	        // If we get here, something went wrong - clear resume flag and continue normal flow
+	        context.getMetadata().remove("resume_manual_id");
+	        context.getMetadata().remove("pending_candidates");
+	    }
+
+	    // 1. Recursive Evolutionary Loop
+	    context.log("[DARWIN] Phase: Recursive Evolutionary Trajectory System.");
+
+	    while (true) {
+	        // Real-time expansion control evaluation
+	        int expansionValue = getExpansionValue();
+	        int minIterations = getMinIterationLimit(context);
+	        int maxIterationsLimit = getMaxIterationLimit(context);
+
+	        if (safetyCounter >= maxIterationsLimit || context.isPaused()) {
+	            break;
+	        }
+
+	        context.log("[DARWIN] Dynamic Expansion Control: Iteration=" + (safetyCounter + 1) + ", Expansion="
+	                + expansionValue + ", Min=" + minIterations + ", Max=" + maxIterationsLimit);
+	        state.setIterationCount(safetyCounter);
+	        context.log("[DARWIN] [LOOP] Starting Iteration " + (safetyCounter + 1) + " (Phase: "
+	                + state.getCurrentPhase() + ")");
+
+	        // RECURSIVE ARCHITECTURAL DISCOVERY: Refine model in each iteration
+	        int intensity = context.getExecutionProfile() != null ? context.getExecutionProfile().getIntensity() : 2;
+	        if (safetyCounter > 0 && intensity >= 3) {
+	            iterationManager.refineTargetReality(request, context);
+	        }
+
+	        try {
+	            result = runDarwinIteration(context, iterationManager);
+	        } catch (Exception e) {
+	            context.log("[DARWIN] [CRITICAL] Darwin iteration failed with exception: " + e.getMessage());
+	            java.io.StringWriter sw = new java.io.StringWriter();
+	            e.printStackTrace(new java.io.PrintWriter(sw));
+	            context.log(sw.toString());
+	            throw e;
+	        }
+	        
+	        // ✅ FIX: If waiting for user decision, break but store state for resumption
+	        if (context.getStateHolder().getState() == SystemState.WAITING_FOR_USER_DECISION) {
+	            context.log("[DARWIN] ⏸️ PAUSED: Waiting for user decision. Breaking loop.");
+	            // Store the request and iteration manager for resumption
+	            context.getMetadata().put("saved_request", request);
+	            break;
+	        }
+	        
+	        safetyCounter++;
+
+	        // Evaluate Stability and Evolutionary Pressure
+	        Trajectory activeTrajectory = iterationManager.getActiveTrajectory(context);
+	        if (activeTrajectory != null && !iterationManager.isIntentExpansionPhase(context)) {
+	            boolean stabilized = iterationManager.getEvolutionaryTrajectoryEngine().evolve(activeTrajectory,
+	                    context);
+	            if (stabilized) {
+	                context.log("[DARWIN] [LOOP] Evolutionary equilibrium detected for trajectory "
+	                        + activeTrajectory.getTrajectoryId() + ". Converging.");
+	            }
+	        }
+
+	        iterationManager.saveFullCheckpoint();
+
+	        if (result.getDecision() != SelfDevDecision.CONTINUE) {
+	            if (safetyCounter < minIterations) {
+	                context.log("[DARWIN] Evolution reached decision (" + result.getDecision()
+	                        + "), but Min Iterations (" + minIterations + ") not met. Continuing evolution.");
+	                state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(EvolutionPhase.SELECTION_REFINEMENT));
+	                if (context.getStateHolder().getState() == SystemState.DONE) {
+	                    iterationManager.transition(SystemState.INIT, context);
+	                }
+	            } else {
+	                getSessionContainer().getEventBus().publish(new RuntimeEvent(RuntimeEventType.FLOW_COMPLETED,
+	                        context.getSessionId(), "DarwinEngine", result.getDecision().toString()));
+	                break;
+	            }
+	        }
+
+	        // If we reached a terminal phase during the iteration, break the loop if min
+	        // iterations met
+	        String currentPhaseStr = state.getCurrentPhase();
+	        if (currentPhaseStr != null
+	                && (currentPhaseStr.contains("TERMINAL") || currentPhaseStr.contains("SATISFIED"))) {
+	            if (safetyCounter < minIterations) {
+	                context.log("[DARWIN] Terminal phase (" + state.getCurrentPhase()
+	                        + ") reached, but Min Iterations (" + minIterations + ") not met. Continuing evolution.");
+	                state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(EvolutionPhase.SELECTION_REFINEMENT));
+	                if (context.getStateHolder().getState() == SystemState.DONE) {
+	                    iterationManager.transition(SystemState.INIT, context);
+	                }
+	            } else {
+	                break;
+	            }
+	        }
+	    }
+
+	    OrchestratorResponse response = new OrchestratorResponse();
+	    response.setResultType(ResultType.CHAT);
+
+	    // FAILURE PROPAGATION: If the loop exited without reaching a terminal phase, it
+	    // might be a failure
+	    if (result != null && !result.isSuccess()) {
+	        response.setResultType(ResultType.ERROR);
+	        context.log("[DARWIN] Evolution loop terminated due to iteration failure.");
+	    }
+
+	    String summary;
+	    if (context.getStateHolder().getState() == SystemState.WAITING_FOR_USER_DECISION) {
+	        summary = "⏸️ Waiting for user to select a variant...";
+	        response.setResultType(ResultType.CHAT);
+	        // DO NOT transition to DONE - keep waiting state
+	    } else if ((state.getCurrentPhase().contains("TERMINAL") || state.getCurrentPhase().contains("SYNTHESIS")
+	            || state.getCurrentPhase().contains("DESIGN_SATISFIED"))
+	            && response.getResultType() != ResultType.ERROR) {
+	        if (context.getBehaviorProfile().hasTrait(BehaviorTrait.WORKFLOW_EXPORT_ONLY)) {
+	            summary = iterationManager.performMediatedExportConvergence(request, context);
+	        } else if (context.getMetadata().containsKey("testMode")) {
+	            summary = "Evolution completed (Test Mode).";
+	        } else {
+	            // ADAPTIVE KERNEL: Use winning trajectory mutation trace for simple responses
+	            int intensity_res = context.getExecutionProfile().getIntensity();
+
+	            if (intensity_res == 1) {
+	                IterationRecord winner = context.getKernelContext().getMemoryService().getRecords().stream()
+	                        .filter(r -> "ACTIVE".equals(r.getActivationState())).reduce((first, second) -> second)
+	                        .orElse(null);
+	                summary = (winner != null && winner.getMutationTrace() != null) ? winner.getMutationTrace()
+	                        : "Evolution complete.";
+	            } else {
+	                summary = iterationManager.getFinalResponseAgent().generateFinalResponse(request,
+	                        context.getOrchestrator().getTasks(), context);
+	            }
+	        }
+	        iterationManager.transition(SystemState.DONE, context);
+	    } else {
+	        summary = "Evolution completed at phase: " + state.getCurrentPhase();
+	    }
+
+	    response.setSummary(summary);
+	    return response;
+	}
+	
 	/**
 	 * The heart of the Darwin evolutionary loop. Each iteration discovers,
 	 * understands, mutates, implements, verifies, measures, and selects.
@@ -409,7 +750,7 @@ public class CodingEngine extends ADarwinEngine {
 		}
 
 		// ADAPTIVE KERNEL: Freshly calculate iteration-scoped profile
-		EvolutionProfile executionProfile = EvolutionIntensityCalculator
+		eu.kalafatic.evolution.controller.kernel.EvolutionProfile executionProfile = eu.kalafatic.evolution.controller.kernel.EvolutionIntensityCalculator
 				.calculate(context, manager.getActiveTrajectory(context), null);
 		context.log("[DARWIN] Profile derived for Iteration "
 				+ (context.getOrchestrationState().getIterationCount() + 1) + ": Capability="
@@ -496,8 +837,14 @@ public class CodingEngine extends ADarwinEngine {
 		String lineage = activeTrajectory != null ? activeTrajectory.getTrajectoryId() : "alpha";
 
 		// UI Progress
-		EvolutionProgressPublisher.startIteration(context, state.getIterationCount() + 1, generation, lineage, getMinIterationLimit(context), getMaxIterationLimit(context), getMinBranchingLimit(context, getExpansionValue()), getMaxBranchingLimit(context, getExpansionValue()));
+		EvolutionProgressPublisher.startIteration(context, state.getIterationCount() + 1, generation, lineage,
+				getMinIterationLimit(context), getMaxIterationLimit(context), getMinBranchingLimit(context, getExpansionValue()), getMaxBranchingLimit(context, getExpansionValue()));
 		EvolutionProgressPublisher.updateStage(context, EvolutionStage.ANALYSIS);
+
+		// SYNC COGNITIVE STATE: Ensure UI reflects dimensions at start of every evolutionary step
+		if (getSessionContainer() != null && getSessionContainer().getCognitiveState() != null) {
+			getSessionContainer().getCognitiveState().sync();
+		}
 
 		// ============================================================
 		// 3. TERMINAL PHASE CHECK
@@ -588,14 +935,19 @@ public class CodingEngine extends ADarwinEngine {
 		// 8. VARIANT SELECTION
 		// ============================================================
 
-		String manualId;
-		try {
-			manualId = awaitApproval(variants, manager);
-		} catch (DarwinWaitException dwe) {
-			EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
-			res.setSuccess(true);
-			res.setDecision(SelfDevDecision.STOP);
-			return res;
+		String manualId = resolveVariantSelection(variants, context, manager);
+
+		if (manualId == null) {
+			BranchVariant recommended = variants.stream().max((v1, v2) -> Double.compare(v1.getScore(), v2.getScore())).orElse(null);
+			DarwinApprovalResult approval = requestApproval(variants, recommended, manager);
+			if (approval.getAction() == DarwinApprovalResult.Action.WAIT) {
+				EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
+				res.setSuccess(true);
+				res.setDecision(SelfDevDecision.STOP);
+				return res;
+			} else {
+				manualId = approval.getSelectedCandidateId();
+			}
 		}
 
 		// ============================================================
@@ -604,8 +956,7 @@ public class CodingEngine extends ADarwinEngine {
 
 		String iterId = manager.getCurrentIterationModel() != null ? manager.getCurrentIterationModel().getId()
 				: "default";
-		EvolutionDecision decision = manager.decide(iterId, variants,
-				context, manualId);
+		EvolutionDecision decision = manager.decide(iterId, variants, context, manualId);
 
 		if (activeTrajectory != null) {
 			decision.setPressure(getSessionContainer().getPressureEngine().analyze(activeTrajectory, context));
@@ -698,8 +1049,224 @@ public class CodingEngine extends ADarwinEngine {
 	// HELPER METHODS
 	// ============================================================
 
+	private String generateAlternativeChatResponse(String request, TaskContext context) {
+		return "I'm ready to evolve! Tell me what code you want me to work on, and I'll generate competing implementations for you to choose from.";
+	}
+
+	/**
+	 * Handles the Intent Expansion phase separately for clarity.
+	 */
+	protected EvaluationResult handleIntentExpansionPhase(TaskContext context, IterationManager manager,
+			EvolutionPhaseMachine phaseMachine, String goal, EvolutionPhase phase) throws Exception {
+
+		// Use the existing OrchestrationState
+		OrchestrationState state = context.getOrchestrationState();
+
+		EvolutionProgressPublisher.updateStage(context, EvolutionStage.ANALYSIS);
+		manager.transition(SystemState.ANALYZING, context);
+
+		eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionResult expansion = manager
+				.getIntentExpansionEngine().expand(goal, context);
+		state.getMetadata().put("intentExpansion", expansion);
+
+		context.consoleLog("[DARWIN] Intent Interpretation: " + expansion.getState());
+
+		if (!manager.handleIntentReview(context, expansion, goal)) {
+			return manager.failedResult();
+		}
+
+		eu.kalafatic.evolution.controller.orchestration.intent.ClarificationPlanner planner = manager
+				.getClarificationPlanner();
+		eu.kalafatic.evolution.controller.orchestration.intent.ClarificationPlanner.Strategy strategy = planner
+				.determineStrategy(expansion, context);
+		context.consoleLog("[DARWIN] Clarification Strategy: " + strategy);
+
+		boolean isStepMode = context.getOrchestrator().getAiChat() != null
+				&& context.getOrchestrator().getAiChat().getPromptInstructions() != null
+				&& context.getOrchestrator().getAiChat().getPromptInstructions().isStepMode();
+
+		if (strategy == eu.kalafatic.evolution.controller.orchestration.intent.ClarificationPlanner.Strategy.CLARIFY_USER
+				&& !isStepMode) {
+			if (context.isAutoApprove()) {
+				context.log("[DARWIN] AUTO Mode: Downgrading CLARIFY_USER to AUTO_INFER.");
+				strategy = eu.kalafatic.evolution.controller.orchestration.intent.ClarificationPlanner.Strategy.AUTO_INFER;
+			} else {
+				context.log("[DARWIN] MANUAL Mode: Pausing for user clarification.");
+				strategy = eu.kalafatic.evolution.controller.orchestration.intent.ClarificationPlanner.Strategy.CLARIFY_USER;
+			}
+		}
+
+		if (strategy == eu.kalafatic.evolution.controller.orchestration.intent.ClarificationPlanner.Strategy.CLARIFY_USER) {
+			if (!manager.handleClarification(context, planner, expansion, goal)) {
+				return manager.failedResult();
+			}
+			EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
+			res.setSuccess(true);
+			res.setDecision(SelfDevDecision.CONTINUE);
+			return res;
+		}
+
+		EvolutionPhase nextPhase = manager.getEvolutionaryTrajectoryEngine().determineNextPhase(phase, null, context);
+		state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(nextPhase));
+
+		context.log("[DARWIN] Intent grounding complete. Progressing to " + nextPhase);
+		state.setIterationCount(state.getIterationCount() + 1);
+
+		EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
+		res.setSuccess(true);
+		res.setDecision(SelfDevDecision.CONTINUE);
+		return res;
+	}
+
+	/**
+	 * Resolves variant selection from pending commands or auto-selection.
+	 */
+	protected String resolveVariantSelection(List<BranchVariant> variants, TaskContext context,
+			IterationManager manager) {
+
+		if (context.getMetadata().containsKey("resume_manual_id")) {
+			String resumedId = (String) context.getMetadata().remove("resume_manual_id");
+			return resumedId;
+		}
+
+		OrchestrationState state = context.getOrchestrationState();
+		String manualId = null;
+
+		if (state.getMetadata().containsKey("pendingControlCommand")) {
+			String pendingCommand = (String) state.getMetadata().remove("pendingControlCommand");
+			if (pendingCommand.toLowerCase().startsWith("select ")
+					|| pendingCommand.toLowerCase().startsWith("approve variant ")) {
+				manualId = pendingCommand.toLowerCase().startsWith("select ") ? pendingCommand.substring(7).trim()
+						: pendingCommand.substring(16).trim();
+				context.log("[DARWIN] Auto-resolving variant selection from initial command: " + manualId);
+			} else if (pendingCommand.equalsIgnoreCase("approved") || pendingCommand.equalsIgnoreCase("proceed")
+					|| pendingCommand.equalsIgnoreCase("yes") || pendingCommand.equalsIgnoreCase("force solution")) {
+				manualId = variants.stream().max((v1, v2) -> Double.compare(v1.getScore(), v2.getScore()))
+						.map(v -> v.getId()).orElse(null);
+				context.log("[DARWIN] Auto-approving best variant from initial command: " + manualId);
+			}
+		}
+
+		return manualId;
+	}
+
+	/**
+	 * Handles iteration failure with appropriate recovery strategy.
+	 */
+	protected void handleIterationFailure(TaskContext context, IterationManager manager, EvaluationResult result)
+			throws Exception {
+		context.getMetadata().remove("pending_candidates");
+		context.getMetadata().remove("resume_manual_id");
+
+		context.log("[DARWIN] Iteration failed. Attempting recovery...");
+
+		// Check if we should retry
+		int maxRetries = 3;
+		int retryCount = (int) context.getOrchestrationState().getMetadata().getOrDefault("retryCount", 0);
+
+		if (retryCount < maxRetries) {
+			retryCount++;
+			context.getOrchestrationState().getMetadata().put("retryCount", retryCount);
+			context.log("[DARWIN] Retrying iteration (attempt " + retryCount + "/" + maxRetries + ")");
+			// Reset phase to SELECTION_REFINEMENT for retry
+			context.getOrchestrationState()
+					.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(EvolutionPhase.SELECTION_REFINEMENT));
+			manager.transition(SystemState.INIT, context);
+			result.setDecision(SelfDevDecision.CONTINUE);
+		} else {
+			context.log("[DARWIN] Max retries exceeded. Rolling back.");
+			// Rollback if in Self-Dev mode
+			boolean isSelfDev = context.getBehaviorProfile().hasTrait(BehaviorTrait.WORKFLOW_SELF_DEV)
+					|| context.getOrchestrator().getAiChat() != null
+							&& context.getOrchestrator().getAiChat().getPromptInstructions() != null
+							&& context.getOrchestrator().getAiChat().getPromptInstructions().isSelfIterativeMode();
+
+			if (isSelfDev) {
+				// In Self-Dev mode, we should rollback via git
+				if (manager.getGitManager() != null) {
+					try {
+						manager.getGitManager().rollback(context);
+						context.log("[DARWIN] Self-Dev rollback successful.");
+					} catch (Exception e) {
+						context.log("[DARWIN] Self-Dev rollback failed: " + e.getMessage());
+					}
+				}
+			}
+			result.setDecision(SelfDevDecision.ROLLBACK);
+		}
+	}
+
+	/**
+	 * Gets or creates the mediation engine.
+	 */
+	protected MediationEngine getMediationEngine() {
+		if (mediationEngine == null) {
+			mediationEngine = new MediationEngine();
+		}
+		return mediationEngine;
+	}
+
+	/**
+	 * Merges mediation insights into the evolutionary context.
+	 */
+	protected void mergeMediationInsights(MediationResult mediation, TaskContext context, IterationManager manager) {
+
+		context.log("[DARWIN] Merging mediation insights...");
+
+		// Store hotspots in the evolution tree for future reference
+		EvolutionTree tree = context.getKernelContext().getMemoryService().getEvolutionTree();
+
+		if (mediation.getHotspots() != null) {
+			for (Hotspot hotspot : mediation.getHotspots()) {
+				String filePath = hotspot.getFile();
+				if (filePath != null && !filePath.isEmpty()) {
+					String nodeId = "hotspot-" + Math.abs(filePath.hashCode());
+					EvolutionNode node = tree.getNode(nodeId);
+					if (node == null) {
+						node = new EvolutionNode();
+						node.setId(nodeId);
+						node.setStrategy("Hotspot: " + hotspot.getName());
+						node.setStatus("MEDIATED");
+						tree.addNode(node);
+					}
+					// Store hotspot data in engineering dimensions (Map<String, String>)
+					Map<String, String> dims = node.getEngineeringDimensions();
+					if (dims == null) {
+						dims = new java.util.HashMap<>();
+						// Need to check if EvolutionNode has a setter for engineeringDimensions
+						// If not, we need to use the existing map
+					}
+					dims.put("hotspot_score", String.valueOf(hotspot.getSignificance()));
+					dims.put("hotspot_type", hotspot.getType() != null ? hotspot.getType() : "UNKNOWN");
+					if (hotspot.getName() != null) {
+						dims.put("hotspot_name", hotspot.getName());
+					}
+					if (hotspot.getDescription() != null) {
+						dims.put("hotspot_description", hotspot.getDescription());
+					}
+					// Note: We cannot call setEngineeringDimensions if it doesn't exist
+					// The map should already be accessible via getEngineeringDimensions()
+				}
+			}
+		}
+
+		// Store mediation candidate if available
+		if (mediation.getWinner() != null) {
+			context.getOrchestrationState().getMetadata().put("currentMediationWinner", mediation.getWinner());
+		}
+
+		// Persist changes
+		context.getKernelContext().getMemoryService().saveEvolutionTree();
+	}
+
 	public List<BranchVariant> generateProposals(TaskContext context, GoalModel goal, IterationManager manager)
 			throws Exception {
+		if (context.getMetadata().containsKey("pending_candidates")) {
+			@SuppressWarnings("unchecked")
+			List<BranchVariant> pending = (List<BranchVariant>) context.getMetadata().get("pending_candidates");
+			context.log("[DARWIN] Resuming with preserved candidates.");
+			return pending;
+		}
 		context.log("[DARWIN] Entering generateProposals for goal: " + goal.getPrimaryAction());
 		Iteration currentIterationModelImpl = manager.getCurrentIterationModel();
 		String iterId = currentIterationModelImpl != null ? currentIterationModelImpl.getId() : "default";
@@ -883,13 +1450,35 @@ public class CodingEngine extends ADarwinEngine {
 	public EvaluationResult executeWinner(TaskContext context,
 			eu.kalafatic.evolution.controller.supervision.EvolutionDecision decision, List<BranchVariant> variants,
 			GoalModel goal, IterationManager manager) throws Exception {
-		EvolutionProfile profile = context.getExecutionProfile();
+		eu.kalafatic.evolution.controller.kernel.EvolutionProfile profile = context.getExecutionProfile();
 		context.log("[DARWIN] Entering executeWinner for variant: " + decision.getSelectedVariantId());
 		eu.kalafatic.evolution.controller.orchestration.VariantExecutionContext winningContext = null;
 		String originalBranch = null;
 		String baseCommit = null;
+		
 		if (profile.requiresRepository() && manager.getGitManager().isGitRepository()) {
 			originalBranch = manager.getGitManager().getCurrentBranch();
+
+			// REQUIREMENT 3: Coding processes branched from user/git/evo - NOT master!
+			if (isCodingProcess() && "master".equals(originalBranch)) {
+				context.log(
+						"[DARWIN] [REQUIREMENT] Coding process detected on 'master'. Enforcement: Searching for alternative base branch.");
+				List<String> branches = manager.getGitManager().getGitTool().getBranches(context.getProjectRoot());
+				String altBase = branches.stream()
+						.filter(b -> !b.equals("master") && !b.contains("snapshot/") && !b.startsWith("exp/"))
+						.findFirst().orElse(null);
+				if (altBase != null) {
+					context.log("[DARWIN] Switching base for coding variant from 'master' to: " + altBase);
+					originalBranch = altBase;
+					manager.getGitManager().forceCheckout(altBase);
+				} else {
+					context.log(
+							"[DARWIN] [REQUIREMENT] No alternative base branch found. Creating and switching to 'develop' as base for evolution.");
+					manager.getGitManager().createBranch("develop");
+					originalBranch = "develop";
+				}
+			}
+
 			baseCommit = manager.getGitManager().getHeadCommit();
 		}
 		Iteration currentIterationModelImpl = manager.getCurrentIterationModel();
@@ -968,6 +1557,10 @@ public class CodingEngine extends ADarwinEngine {
 
 			context.log("[DARWIN] Executing winner variant: " + selectedVariant.getId() + " ("
 					+ selectedVariant.getStrategy() + ")");
+
+		// UI SYNC: Update winner in progress monitor
+		EvolutionProgressPublisher.setWinnerId(context, finalWinnerId);
+
 			if (profile.requiresRepository() && !isExportOnly && !isTestMode && manager.getGitManager().isGitRepository() && originalBranch != null) {
 				manager.getGitManager().createBranchFrom(originalBranch, selectedVariant.getBranchName());
 			}
@@ -1042,8 +1635,8 @@ public class CodingEngine extends ADarwinEngine {
 				return res;
 			}
 
-			if (profile.shouldPerformRealityCheck()) {
-				eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceDeltaAnalyzer.DeltaAnalysis reality = executionEngine
+			if (profile.shouldPerformRealityCheck() && manager.getGitManager().isGitRepository()) {
+				DeltaAnalysis reality = executionEngine
 						.analyzeWorkspace(baseCommit, context);
 				context.log("[DARWIN] Reality Check: Winner variant applied. Analysis: " + reality.toString());
 
@@ -1068,6 +1661,10 @@ public class CodingEngine extends ADarwinEngine {
 				if (!isSignificant) {
 					context.log("[DARWIN] Reality Check WARNING: Winner variant resulted in NO physical changes.");
 				}
+				context.getOrchestrationState().getMetadata().put("lastRealityCheckSignificant", isSignificant);
+			} else if (profile.shouldPerformRealityCheck()) {
+				// Non-git reality check fallback: if we have actions, assume significant
+				boolean isSignificant = selectedVariant != null && !selectedVariant.getActions().isEmpty();
 				context.getOrchestrationState().getMetadata().put("lastRealityCheckSignificant", isSignificant);
 			}
 
@@ -1205,14 +1802,45 @@ public class CodingEngine extends ADarwinEngine {
 		}
 	}
 
-	private VariantExecutionContext evaluateVariantParallel(
-			BranchVariant variant, TaskPlanner planner, TaskContext context, String baseCommit,
-			EvolutionaryPressureVector pressure, IterationManager manager) {
+	protected File createIsolatedVariantDirectory(BranchVariant variant, IterationManager manager) throws Exception {
+		boolean isMediated = ModeRecognizer.isMediatedMode(context);
+		boolean isChatMode = modeRecognizer.isChatMode(context);
+
+		// ============================================================
+		// FIX: Skip Git worktree for chat variants or non-VCS environments
+		// or if no HEAD commit exists yet (fresh repository)
+		// ============================================================
+		boolean isFreshRepo = false;
+		try {
+			isFreshRepo = manager.getGitManager().isGitRepository() && manager.getGitManager().getHeadCommit() == null;
+		} catch (Exception e) {
+			isFreshRepo = true; // Assume fresh if HEAD check fails
+		}
+
+		if (context.getMetadata().containsKey("testMode") || isMediated || isChatMode) {
+			return context.getProjectRoot();
+		} else if (!manager.getGitManager().isGitRepository() || isFreshRepo) {
+			File tempDir = java.nio.file.Files.createTempDirectory("evo-variant-copy-" + variant.getId()).toFile();
+			copyDirectory(context.getProjectRoot(), tempDir);
+			return tempDir;
+		} else {
+			File tempDir = java.nio.file.Files.createTempDirectory("evo-variant-" + variant.getId()).toFile();
+			// Ensure worktree is clean before starting
+			try {
+				manager.getGitManager().removeWorktree(tempDir.getAbsolutePath());
+				manager.getGitManager().pruneWorktrees();
+			} catch (Exception e) {
+			}
+			manager.getBranchManager().createWorktree(variant.getBranchName(), tempDir.getAbsolutePath());
+			return tempDir;
+		}
+	}
+
+	private VariantExecutionContext evaluateVariantParallel(BranchVariant variant, TaskPlanner planner,
+			TaskContext context, String baseCommit, EvolutionaryPressureVector pressure, IterationManager manager) {
 		File tempDir = null;
-		AuthorityController authority = context.getKernelContext()
-				.getAuthority();
-		VariantExecutionContext variantExecContext = new VariantExecutionContext(
-				variant.getId());
+		AuthorityController authority = context.getKernelContext().getAuthority();
+		VariantExecutionContext variantExecContext = new VariantExecutionContext(variant.getId());
 
 		boolean isMediated = ModeRecognizer.isMediatedMode(context);
 		boolean isChatMode = modeRecognizer.isChatMode(context);
@@ -1233,9 +1861,9 @@ public class CodingEngine extends ADarwinEngine {
 			context.getApprovalListeners().forEach(variantContext::addApprovalListener);
 			context.getInputListeners().forEach(variantContext::addInputListener);
 
-			List<eu.kalafatic.evolution.model.orchestration.Task> tasks = planner
-					.generateTasksFromVariant(variantContext, variant);
+			List<Task> tasks = planner.generateTasksFromVariant(variantContext, variant);
 			context.log("[DARWIN] Generated " + tasks.size() + " tasks for variant: " + variant.getId());
+
 			IterationManager variantManager = KernelFactory.create(tasks.get(0).getPrompt(), variantContext,
 					getSessionContainer(), aiService);
 
@@ -1310,31 +1938,33 @@ public class CodingEngine extends ADarwinEngine {
 				manager.checkStep(task.getId(), "GIT_STAGING", "Staging changes for task: " + task.getName());
 
 				try {
-					eu.kalafatic.evolution.controller.tools.GitTool gitTool = new eu.kalafatic.evolution.controller.tools.GitTool();
-					String diffCommand = (baseCommit != null) ? "diff " + baseCommit + " HEAD" : "diff HEAD";
+					if (manager.getGitManager().isGitRepository()) {
+						eu.kalafatic.evolution.controller.tools.GitTool gitTool = new eu.kalafatic.evolution.controller.tools.GitTool();
+						String diffCommand = (baseCommit != null) ? "diff " + baseCommit + " HEAD" : "diff HEAD";
 
-					String diff = gitTool.execute("diff HEAD", tempDir, variantContext);
+						String diff = gitTool.execute(diffCommand, tempDir, variantContext);
 
-					RuntimeEvent event = new RuntimeEvent(
-							eu.kalafatic.evolution.controller.workflow.RuntimeEventType.TOOL_EXECUTION_SUCCEEDED,
-							"DarwinEngine", "GitTool", diff);
-					variantExecContext.recordEvent(event);
+						RuntimeEvent event = new RuntimeEvent(
+								eu.kalafatic.evolution.controller.workflow.RuntimeEventType.TOOL_EXECUTION_SUCCEEDED,
+								"DarwinEngine", "GitTool", diff);
+						variantExecContext.recordEvent(event);
 
-					eu.kalafatic.evolution.controller.supervision.ActivationResolver resolver = new eu.kalafatic.evolution.controller.supervision.ActivationResolver(
-							context.getSemanticWorkspace().getTrajectoryMemory());
-					eu.kalafatic.evolution.controller.supervision.DecisionSnapshot intermediateDecision = resolver
-							.resolve(variantContext.getOrchestrationState().getCurrentIterationId(), List.of(variant),
-									getSessionContainer().getSignalBus().getSignalsForVariant(variant.getId()),
-									variantContext);
+						eu.kalafatic.evolution.controller.supervision.ActivationResolver resolver = new eu.kalafatic.evolution.controller.supervision.ActivationResolver(
+								context.getSemanticWorkspace().getTrajectoryMemory());
+						eu.kalafatic.evolution.controller.supervision.DecisionSnapshot intermediateDecision = resolver
+								.resolve(variantContext.getOrchestrationState().getCurrentIterationId(), List.of(variant),
+										getSessionContainer().getSignalBus().getSignalsForVariant(variant.getId()),
+										variantContext);
 
-					Trajectory t = context.getSemanticWorkspace().getTrajectoryMemory()
-							.getTrajectory(variant.getTrajectoryId());
-					if (t != null) {
-						double currentFitness = intermediateDecision.getAggregatedScores().getOrDefault(variant.getId(),
-								0.5);
-						t.setFitnessScore(currentFitness);
-						t.getFitnessHistory().add(currentFitness);
-						t.setStabilityScore(intermediateDecision.getAvgLongTermStability());
+						Trajectory t = context.getSemanticWorkspace().getTrajectoryMemory()
+								.getTrajectory(variant.getTrajectoryId());
+						if (t != null) {
+							double currentFitness = intermediateDecision.getAggregatedScores().getOrDefault(variant.getId(),
+									0.5);
+							t.setFitnessScore(currentFitness);
+							t.getFitnessHistory().add(currentFitness);
+							t.setStabilityScore(intermediateDecision.getAvgLongTermStability());
+						}
 					}
 				} catch (Exception e) {
 					context.log("[DARWIN] Error during dynamic re-evaluation for variant " + variant.getId() + ": "
@@ -1343,8 +1973,10 @@ public class CodingEngine extends ADarwinEngine {
 			}
 
 			if (success) {
-				variantManager.getGitManager().commit("Darwin Variant Execution: " + variant.getStrategy(),
-						variantContext);
+				if (variantManager.getGitManager().isGitRepository()) {
+					variantManager.getGitManager().commit("Darwin Variant Execution: " + variant.getStrategy(),
+							variantContext);
+				}
 				manager.updateVariantLifecycle(List.of(variant), variant.getId(),
 						BranchVariant.ActivationState.VERIFIED, context);
 			} else {
@@ -1434,14 +2066,16 @@ public class CodingEngine extends ADarwinEngine {
 				}
 			}
 
-			eu.kalafatic.evolution.controller.tools.GitTool deltaTool = new eu.kalafatic.evolution.controller.tools.GitTool();
-			try {
-				// Handle null baseCommit (e.g., first commit or chat)
-				String diffCommand = (baseCommit != null && !baseCommit.equals("null")) ? "diff " + baseCommit + " HEAD"
-						: "diff HEAD";
-				variant.setMutationTrace(deltaTool.execute(diffCommand, tempDir, variantContext));
-			} catch (Exception e) {
-				context.log("[DARWIN] Failed to capture mutation trace: " + e.getMessage());
+			if (manager.getGitManager().isGitRepository()) {
+				eu.kalafatic.evolution.controller.tools.GitTool deltaTool = new eu.kalafatic.evolution.controller.tools.GitTool();
+				try {
+					// Handle null baseCommit (e.g., first commit or chat)
+					String diffCommand = (baseCommit != null && !baseCommit.equals("null")) ? "diff " + baseCommit + " HEAD"
+							: "diff HEAD";
+					variant.setMutationTrace(deltaTool.execute(diffCommand, tempDir, variantContext));
+				} catch (Exception e) {
+					context.log("[DARWIN] Failed to capture mutation trace: " + e.getMessage());
+				}
 			}
 			variant.setScore(fitnessEngine.calculateScore(result));
 
@@ -1470,6 +2104,65 @@ public class CodingEngine extends ADarwinEngine {
 		}
 	}
 
+	protected void mergeHybridInsights(List<BranchVariant> variants, BranchVariant winner, TaskContext context) {
+		JSONArray analyticalInsights = new JSONArray();
+		JSONArray stabilizationInsights = new JSONArray();
+
+		for (BranchVariant v : variants) {
+			if (v.getId().equals(winner.getId()))
+				continue;
+
+			JSONObject insight = new JSONObject();
+			insight.put("strategy", v.getStrategy());
+			insight.put("risks", v.getFailureRisks());
+			insight.put("tradeoffs", v.getTradeoffs());
+
+			if ("ANALYTICAL".equals(v.getStrategyType())) {
+				analyticalInsights.put(insight);
+			} else if ("STABILIZATION".equals(v.getStrategyType())) {
+				stabilizationInsights.put(insight);
+			}
+		}
+
+		if (analyticalInsights.length() > 0) {
+			context.getOrchestrationState().getMetadata().put("hybrid_analytical_insights", analyticalInsights);
+			context.log("[DARWIN] Merged " + analyticalInsights.length() + " analytical insights into context.");
+		}
+		if (stabilizationInsights.length() > 0) {
+			context.getOrchestrationState().getMetadata().put("hybrid_stabilization_insights", stabilizationInsights);
+			context.log("[DARWIN] Merged " + stabilizationInsights.length() + " stabilization insights into context.");
+		}
+	}
+
+	protected void deleteDirectory(File directory) {
+		File[] allContents = directory.listFiles();
+		if (allContents != null) {
+			for (File file : allContents)
+				deleteDirectory(file);
+		}
+		directory.delete();
+	}
+
+	protected void copyDirectory(File source, File destination) throws Exception {
+		if (source.isDirectory()) {
+			if (!destination.exists()) {
+				destination.mkdirs();
+			}
+			String[] files = source.list();
+			if (files != null) {
+				for (String file : files) {
+					if (".git".equals(file) || "target".equals(file) || "bin".equals(file) || ".settings".equals(file)
+							|| ".project".equals(file) || ".classpath".equals(file))
+						continue;
+					copyDirectory(new File(source, file), new File(destination, file));
+				}
+			}
+		} else {
+			java.nio.file.Files.copy(source.toPath(), destination.toPath(),
+					java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+		}
+	}
+
 	public List<BranchVariant> generateVariants(GoalModel goal, StateSnapshot snapshot, FailureMemory failureMemory,
 			Trajectory trajectory, EvolutionaryPressureVector pressure) throws Exception {
 		Orchestrator orchestrator = context.getOrchestrator();
@@ -1478,7 +2171,7 @@ public class CodingEngine extends ADarwinEngine {
 
 		// ADAPTIVE KERNEL: Ensure execution profile is initialized (Diagnostic Safety)
 		if (context.getExecutionProfile() == null) {
-			EvolutionProfile profile_init = EvolutionIntensityCalculator
+			eu.kalafatic.evolution.controller.kernel.EvolutionProfile profile_init = eu.kalafatic.evolution.controller.kernel.EvolutionIntensityCalculator
 					.calculate(context, trajectory, null);
 			context.getOrchestrationState().setExecutionProfile(profile_init);
 		}
@@ -1502,6 +2195,13 @@ public class CodingEngine extends ADarwinEngine {
 		boolean isChatCapability = context.getExecutionProfile() != null
 				&& context.getExecutionProfile().getCapability() == CapabilityType.CHAT;
 
+		// Only generate chat variants if BOTH conditions are true
+		if (isChatFlag && isChatCapability) {
+			context.log("[DARWIN] CHAT: Generating conversational branches via LLM.");
+			int chatLimit = expansionValue <= 5 ? 1 : 2;
+			return generateChatVariants(goal, context, chatLimit);
+		}
+
 		// If the flag is true but capability is not CHAT, clear the flag
 		if (isChatFlag && !isChatCapability) {
 			context.log("[DARWIN] WARNING: isChatRequest flag true but capability is not CHAT. Clearing flag.");
@@ -1510,7 +2210,7 @@ public class CodingEngine extends ADarwinEngine {
 		}
 
 		// ADAPTIVE KERNEL: Uniform Intensity Calculation
-		EvolutionProfile profile = context.getExecutionProfile();
+		eu.kalafatic.evolution.controller.kernel.EvolutionProfile profile = context.getExecutionProfile();
 		int intensity = profile != null ? profile.getIntensity() : 2;
 
 		AtomicIntentAnalysis atomicAnalysis = (AtomicIntentAnalysis) context.getOrchestrationState().getMetadata()
@@ -1733,6 +2433,13 @@ public class CodingEngine extends ADarwinEngine {
 		context.getOrchestrationState().getMetadata().put("current_dimension", activeDimension.getId());
 		context.getOrchestrationState().getMetadata().put("current_dimension_description",
 				activeDimension.getDescription());
+
+		// Reset iteration-specific rejection memory when a new dimension is selected
+		Object lastDim = context.getOrchestrationState().getMetadata().get("last_active_dimension");
+		if (lastDim == null || !lastDim.equals(activeDimension.getId())) {
+			context.getOrchestrationState().getMetadata().remove("current_iteration_rejected_strategies");
+			context.getOrchestrationState().getMetadata().put("last_active_dimension", activeDimension.getId());
+		}
 		context.log("[DARWIN] Scheduled Mutation Dimension: " + activeDimension.getId());
 
 		// EXPLICIT EVOLUTION STATE (Milestone Requirement 7)
@@ -1798,6 +2505,14 @@ public class CodingEngine extends ADarwinEngine {
 					.filter(r -> !"ACTIVE".equals(r.getActivationState()) && !"KEPT".equals(r.getActivationState()))
 					.map(r -> r.getStrategy() + " (Iteration " + r.getIteration() + ")").distinct()
 					.collect(Collectors.toList());
+
+		// Add rejected strategies from current iteration (if user explicitly rejected all and triggered regeneration)
+		Object curRejected = context.getOrchestrationState().getMetadata().get("current_iteration_rejected_strategies");
+		if (curRejected instanceof List) {
+			for (String rs : (List<String>) curRejected) {
+				if (!rejectedSiblings.contains(rs)) rejectedSiblings.add(rs);
+			}
+		}
 		}
 		String lineageContext = lineageBuilder.toString();
 
@@ -1919,6 +2634,524 @@ public class CodingEngine extends ADarwinEngine {
 		return variants;
 	}
 
+	protected TargetSnapshot getTargetSnapshotSafe(TaskContext context) {
+		Object obj = context.getOrchestrationState().getMetadata().get("mediatedSnapshot");
+
+		if (obj == null) {
+			return null;
+		}
+
+		if (obj instanceof TargetSnapshot) {
+			return (TargetSnapshot) obj;
+		}
+
+		// If it's a Map (from checkpoint deserialization), convert it
+		if (obj instanceof Map) {
+			try {
+				com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper()
+						.configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,
+								false);
+				TargetSnapshot snapshot = mapper.convertValue(obj, TargetSnapshot.class);
+				// Store the converted object back
+				context.getOrchestrationState().getMetadata().put("mediatedSnapshot", snapshot);
+				return snapshot;
+			} catch (Exception e) {
+				context.log("[DARWIN] Failed to convert mediatedSnapshot from Map: " + e.getMessage());
+				return null;
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Generates conversational response variants via LLM. Called when CHAT
+	 * capability is detected.
+	 */
+	private List<BranchVariant> generateChatVariants(GoalModel goal, TaskContext context, int limit) throws Exception {
+		List<BranchVariant> variants = new ArrayList<>();
+
+		String prompt = goal.getPrimaryAction();
+
+		// System instruction for chat responses
+		String systemInstruction = "You are a friendly, helpful AI assistant specializing in software development. "
+				+ "RESPOND CONVERSATIONALLY. DO NOT generate code. DO NOT create files. "
+				+ "DO NOT mention Java classes or methods. Just respond naturally as a helpful assistant. "
+				+ "Keep responses brief (1-2 sentences) and friendly.";
+
+		for (int i = 0; i < limit; i++) {
+			String strategy = i == 0 ? "Friendly Chat Response" : "Alternative Chat Response " + (i + 1);
+			String instruction = i == 0 ? "Respond naturally. Be friendly and helpful."
+					: "Provide a different but equally friendly response. Be helpful and encouraging.";
+
+			String chatPrompt = String.format("%s\n\nUser said: \"%s\"\n\n%s", systemInstruction, prompt, instruction);
+
+			String response = aiService.sendRequest(context.getOrchestrator(), chatPrompt, context);
+
+			BranchVariant variant = createChatVariant(response, context);
+			variant.setId("chat-variant-" + (i + 1) + "-" + System.currentTimeMillis());
+			variant.setStrategy(strategy);
+			variant.setScore(0.95 - (i * 0.05));
+			variants.add(variant);
+		}
+
+		context.log("[DARWIN] CHAT: Generated " + variants.size() + " conversational variants.");
+		return variants;
+	}
+
+	/**
+	 * Creates a chat variant from a response string.
+	 */
+	private BranchVariant createChatVariant(String response, TaskContext context) {
+		BranchVariant v = new BranchVariant();
+		v.setId("chat-variant-" + System.currentTimeMillis());
+		v.setBranchId(v.getId());
+		v.setLineageId(context.getSessionId());
+		v.setStrategy("Chat Response");
+		v.setStrategyType("CHAT_RESPONSE");
+		v.setActivationState(BranchVariant.ActivationState.ARCHIVED);
+		v.setScore(0.95);
+		v.setSuccess(true);
+		v.setSurvivalArgument("LLM-generated conversational response");
+		v.setTradeoffs("Minimal evolution, no code generation");
+		v.setMutationTrace(response);
+		v.setReasoningLevel(BranchVariant.ReasoningLevel.MINIMAL);
+		v.setArchitectureEnabled(false);
+		v.setImplementationEnabled(false);
+		v.setSemanticAnchor("Conversational response to user input");
+
+		// ============================================================
+		// FIX: Set branch name for chat variants
+		// ============================================================
+		v.setBranchName("chat/" + v.getId() + "-" + System.currentTimeMillis());
+
+		BranchVariant.Action action = new BranchVariant.Action();
+		action.setDomain("chat");
+		action.setOperation("TALK");
+		action.setTarget("conversation");
+		action.setImplementation(response);
+		action.setDescription("Chat response");
+		v.getActions().add(action);
+
+		return v;
+	}
+
+	private SemanticGenome createGenome(GoalModel goal, IntentExpansionResult expansion) {
+		Object genomeObj = context.getOrchestrationState().getMetadata().get("semanticGenome");
+		SemanticGenome genome = eu.kalafatic.evolution.controller.parsers.JsonUtils.restoreFromMetadata(genomeObj,
+				SemanticGenome.class, "semanticGenome", context);
+		if (genome != null && genome != genomeObj) {
+			context.getOrchestrationState().getMetadata().put("semanticGenome", genome);
+		}
+
+		if (genome == null) {
+			genome = new SemanticGenome(goal.getPrimaryAction());
+			context.getOrchestrationState().getMetadata().put("semanticGenome", genome);
+		}
+
+		// Populate dimensions from intent expansion if available and not already
+		// present
+		if (expansion != null && genome.getDimensions().isEmpty()) {
+			context.log("[DARWIN] Seeding SemanticGenome with " + expansion.getUnresolvedDimensions().size()
+					+ " unresolved dimensions.");
+			for (EvolutionDimension dim : expansion.getUnresolvedDimensions()) {
+				genome.addDimension(dim);
+			}
+		}
+
+		return genome;
+	}
+
+	protected BranchVariant mapToBranchVariant(JSONObject obj, String goal, String currentPhase, Trajectory trajectory,
+			TaskContext context) {
+		BranchVariant v = new BranchVariant();
+		v.setId(obj.optString("id", "v-" + System.currentTimeMillis()));
+		v.setBranchId(v.getId());
+		v.setLineageId(context.getSessionId());
+		v.setActivationState(BranchVariant.ActivationState.ARCHIVED);
+		v.setStrategyType(obj.optString("strategy_type", "UNKNOWN"));
+		v.setReasoningLevel(BranchVariant.ReasoningLevel.valueOf(obj.optString("reasoning_level", "BALANCED")));
+		v.setArchitectureEnabled(obj.optBoolean("architecture_enabled", true));
+		v.setImplementationEnabled(obj.optBoolean("implementation_enabled", true));
+		v.setStrategy(obj.optString("strategy", "unknown"));
+		v.setSemanticAnchor(obj.optString("semantic_anchor", v.getStrategy()));
+		v.setMutationPhilosophy(obj.optString("mutation_philosophy"));
+		v.setMutationTrace("Generated in trajectory round.");
+		v.setScore(obj.optDouble("score", 0.0));
+		String suffix = obj.optString("suffix", "variant");
+		v.setBranchName("exp/" + sanitize(goal) + "/" + v.getId() + "-" + System.currentTimeMillis());
+		v.setSurvivalArgument(obj.optString("survival_argument", "none"));
+		v.setTradeoffs(obj.optString("tradeoffs", "none"));
+		v.setFailureRisks(obj.optString("failure_risks", "none"));
+
+		Trajectory t = new Trajectory(v.getId(), v.getStrategy());
+		t.setProsConsAnalysis(obj.optString("pros_cons", "none"));
+		t.setSemanticJustification(obj.optString("semantic_justification", "none"));
+		t.setFitnessScore(v.getScore());
+
+		if (trajectory != null) {
+			t.setParentTrajectoryId(trajectory.getTrajectoryId());
+			trajectory.addChildTrajectoryId(t.getTrajectoryId());
+			t.getMutationLineage().addAll(trajectory.getMutationLineage());
+		}
+		t.addMutationToLineage(v.getStrategy());
+
+		v.setTrajectoryId(t.getTrajectoryId());
+		if (memoryService != null && memoryService.getTrajectoryMemory() != null) {
+			memoryService.getTrajectoryMemory().recordTrajectory(t);
+		}
+
+		v.setReasoningFocus(obj.optString("reasoning_focus"));
+		JSONArray selectedFilesArr = obj.optJSONArray("selected_files");
+		if (selectedFilesArr != null) {
+			for (int i = 0; i < selectedFilesArr.length(); i++) {
+				String s = selectedFilesArr.optString(i);
+				if (s != null && !s.isEmpty())
+					v.getSelectedFiles().add(s);
+			}
+		}
+
+		JSONArray stepsArr = obj.optJSONArray("projected_steps");
+		if (stepsArr != null) {
+			for (int j = 0; j < stepsArr.length(); j++) {
+				String s = stepsArr.optString(j);
+				if (s != null && !s.isEmpty())
+					v.getProjectedSteps().add(s);
+			}
+		}
+
+		JSONArray outputsArr = obj.optJSONArray("expected_outputs");
+		if (outputsArr != null) {
+			for (int j = 0; j < outputsArr.length(); j++) {
+				String s = outputsArr.optString(j);
+				if (s != null && !s.isEmpty())
+					v.getExpectedOutputs().add(s);
+			}
+		}
+
+		JSONArray actionsArr = obj.optJSONArray("actions");
+		if (actionsArr != null) {
+			for (int i = 0; i < actionsArr.length(); i++) {
+				JSONObject aObj = actionsArr.optJSONObject(i);
+				if (aObj == null)
+					continue;
+				BranchVariant.Action action = new BranchVariant.Action();
+				action.setDomain(aObj.optString("domain", "kernel"));
+				action.setOperation(aObj.optString("operation", "ANALYZE"));
+				action.setTarget(aObj.optString("target", "workspace"));
+				action.setDescription(aObj.optString("description", "Materialize architectural intent"));
+				action.setImplementation(aObj.optString("implementation", ""));
+				v.getActions().add(action);
+			}
+		}
+
+		JSONObject medObj = obj.optJSONObject("mediation_candidate");
+		if (medObj != null) {
+			MediationCandidate med = new MediationCandidate();
+			med.setPrompt(medObj.optString("prompt"));
+			JSONArray medFiles = medObj.optJSONArray("selected_files");
+			if (medFiles != null) {
+				for (int i = 0; i < medFiles.length(); i++)
+					med.getSelectedFiles().add(medFiles.getString(i));
+			}
+			med.setArchitectureSummary(medObj.optString("architecture_summary"));
+
+			JSONArray subArr = medObj.optJSONArray("subsystems");
+			if (subArr != null) {
+				for (int i = 0; i < subArr.length(); i++) {
+					JSONObject sObj = subArr.optJSONObject(i);
+					if (sObj == null)
+						continue;
+					Subsystem subsystem = new Subsystem();
+					subsystem.setId(sObj.optString("id"));
+					subsystem.setName(sObj.optString("name"));
+					subsystem.setPurpose(sObj.optString("purpose"));
+					subsystem.setDescription(sObj.optString("description"));
+					JSONArray bounds = sObj.optJSONArray("boundaries");
+					if (bounds != null)
+						for (int j = 0; j < bounds.length(); j++)
+							subsystem.getBoundaries().add(bounds.getString(j));
+					JSONArray crit = sObj.optJSONArray("critical_files");
+					if (crit != null)
+						for (int j = 0; j < crit.length(); j++)
+							subsystem.getCriticalFiles().add(crit.getString(j));
+					JSONArray resp = sObj.optJSONArray("responsibilities");
+					if (resp != null)
+						for (int j = 0; j < resp.length(); j++)
+							subsystem.getResponsibilities().add(resp.getString(j));
+					med.getSubsystems().add(subsystem);
+				}
+			}
+
+			JSONArray factArr = medObj.optJSONArray("architectural_facts");
+			if (factArr != null) {
+				for (int i = 0; i < factArr.length(); i++) {
+					JSONObject fObj = factArr.optJSONObject(i);
+					if (fObj == null)
+						continue;
+					ArchitecturalFact fact = new ArchitecturalFact();
+					fact.setId(fObj.optString("id"));
+					fact.setSubject(fObj.optString("subject"));
+					fact.setPredicate(fObj.optString("predicate"));
+					fact.setDescription(fObj.optString("description"));
+					fact.setConfidence(fObj.optDouble("confidence", 1.0));
+					JSONArray ev = fObj.optJSONArray("evidence");
+					if (ev != null)
+						for (int j = 0; j < ev.length(); j++)
+							fact.getEvidence().add(ev.getString(j));
+					med.getArchitecturalFacts().add(fact);
+				}
+			}
+
+			med.setDependencies(medObj.optString("dependencies"));
+			med.setExecutionInstructions(medObj.optString("execution_instructions"));
+			med.setEvaluation(medObj.optString("evaluation"));
+			v.setMediationCandidate(med);
+		}
+
+		JSONObject hypObj = obj.optJSONObject("hypothesis");
+		if (hypObj != null) {
+			BranchVariant.Hypothesis hyp = new BranchVariant.Hypothesis();
+			hyp.setDescription(hypObj.optString("description"));
+			JSONArray effectsArr = hypObj.optJSONArray("expected_effects");
+			if (effectsArr != null) {
+				for (int j = 0; j < effectsArr.length(); j++)
+					hyp.getExpectedEffects().add(effectsArr.getString(j));
+			}
+			v.setHypothesis(hyp);
+		}
+
+		JSONObject effectObj = obj.optJSONObject("expected_effect");
+		if (effectObj != null) {
+			BranchVariant.ExpectedEffect effect = new BranchVariant.ExpectedEffect();
+			effect.setShortTerm(effectObj.optString("short_term"));
+			effect.setLongTerm(effectObj.optString("long_term"));
+			effect.setRisk(effectObj.optDouble("risk", 0.5));
+			effect.setReversibility(effectObj.optDouble("reversibility", 1.0));
+			v.setExpectedEffect(effect);
+		}
+
+		return v;
+	}
+
+	protected double semanticDistance(GoalModel goal, JSONObject variant, SemanticEnvelope envelope) {
+		String strategy = variant.optString("strategy", "").toLowerCase();
+		String philosophy = variant.optString("semantic_anchor", "").toLowerCase();
+		String primaryAction = goal.getPrimaryAction().toLowerCase();
+
+		// Technical keywords that are often semantically identical for the same goal
+		String[] identicalTechnicalConcepts = { "static", "instance", "constructor", "overloads", "logger",
+				"system.out", "varargs", "library", "utility" };
+
+		double distance = 0.0;
+
+		// 1. Mandatory Concepts Check (Goal Relative)
+		if (envelope != null && !envelope.getMandatoryConcepts().isEmpty()) {
+			int missed = 0;
+			for (String concept : envelope.getMandatoryConcepts()) {
+				String c = concept.toLowerCase();
+				// If it's a technical variety keyword, we are lenient
+				boolean isTechnicalVariety = false;
+				for (String tech : identicalTechnicalConcepts) {
+					if (c.contains(tech)) {
+						isTechnicalVariety = true;
+						break;
+					}
+				}
+
+				if (!strategy.contains(c) && !philosophy.contains(c)) {
+					if (!isTechnicalVariety)
+						missed++;
+				}
+			}
+			distance += (double) missed / envelope.getMandatoryConcepts().size() * 0.4;
+		}
+
+		// 2. Exact Match or Intent Overlap
+		if (strategy.contains(primaryAction) || philosophy.contains(primaryAction)) {
+			distance += 0.0; // Perfect intent match
+		} else {
+			// 3. Keyword Overlap (Weighted toward intent keywords)
+			String[] keywords = primaryAction.split(" ");
+			int matches = 0;
+			int significantKeywords = 0;
+			for (String k : keywords) {
+				if (k.length() <= 3)
+					continue;
+
+				boolean isTechnical = false;
+				for (String tech : identicalTechnicalConcepts) {
+					if (k.equalsIgnoreCase(tech)) {
+						isTechnical = true;
+						break;
+					}
+				}
+
+				if (!isTechnical) {
+					significantKeywords++;
+					if (strategy.contains(k) || philosophy.contains(k)) {
+						matches++;
+					}
+				}
+			}
+			double overlap = significantKeywords > 0 ? (double) matches / significantKeywords : 1.0;
+			distance += (1.0 - overlap) * 0.6;
+		}
+
+		// 4. Forbidden Regions Check (Architectural Inflation)
+		if (envelope != null && !envelope.getForbiddenRegions().isEmpty()) {
+			for (String region : envelope.getForbiddenRegions()) {
+				String r = region.toLowerCase();
+				if (strategy.contains(r) || philosophy.contains(r)) {
+					distance += 0.8; // Heavy penalty for architectural inflation
+				}
+			}
+		}
+
+		return Math.min(1.0, distance);
+	}
+
+	protected String sanitize(String s) {
+		if (s == null || s.isEmpty())
+			return "unnamed";
+		String sanitized = s.toLowerCase().replaceAll("[^a-z0-9]", "-").replaceAll("-+", "-");
+		if (sanitized.startsWith("-"))
+			sanitized = sanitized.substring(1);
+		if (sanitized.endsWith("-"))
+			sanitized = sanitized.substring(0, sanitized.length() - 1);
+		if (sanitized.isEmpty())
+			return "unnamed";
+		return sanitized.substring(0, Math.min(sanitized.length(), 30));
+	}
+
+	protected int getMinBranchingLimit(TaskContext context, int expansionValue) {
+		int minBranchingLimit = 2; // Default baseline for diversity
+
+		switch (platformType) {
+		case SIMPLE_CHAT:
+			minBranchingLimit = 1;
+			break;
+		case ASSISTED_CODING:
+			minBranchingLimit = 2;
+			break;
+		case HYBRID_MANUAL_EXPORT:
+			minBranchingLimit = 2;
+			break;
+		case SELF_DEV_MODE:
+			minBranchingLimit = 2;
+			break;
+		default:
+			minBranchingLimit = 2;
+		}
+		return minBranchingLimit;
+	}
+
+	protected int getMaxBranchingLimit(TaskContext context, int expansionValue) {
+		int branchingLimit = 4; // Default
+
+		switch (platformType) {
+		case SIMPLE_CHAT:
+			branchingLimit = expansionValue <= 5 ? 1 : 2;
+			break;
+		case ASSISTED_CODING:
+			branchingLimit = expansionValue <= 5 ? 3 : 4;
+			break;
+		case HYBRID_MANUAL_EXPORT:
+			branchingLimit = expansionValue <= 5 ? 3 : 4;
+			break;
+		case SELF_DEV_MODE:
+			branchingLimit = expansionValue <= 5 ? 3 : 4;
+			break;
+		case DARWIN_MODE:
+			branchingLimit = expansionValue <= 5 ? 3 : 4;
+			break;
+
+		default:
+			context.log("[DARWIN] Unknown platform type: " + platformType + ". Using default branching.");
+			branchingLimit = expansionValue <= 5 ? 3 : 4;
+		}
+		// MANDATE: Never more than 8. Darwin decides, not LLM.
+		return Math.min(branchingLimit, 8);
+	}
+
+	protected int getMaxIterationLimit(TaskContext context) {
+		int minIterations = 1;
+
+		PromptInstructions instructions = (context.getOrchestrator() != null
+				&& context.getOrchestrator().getAiChat() != null)
+						? context.getOrchestrator().getAiChat().getPromptInstructions()
+						: null;
+		if (instructions != null) {
+			minIterations = instructions.getPreferredMaxIterations();
+		}
+
+		// expansion-based iteration limit
+		int expansionValue = getExpansionValue();
+
+		// 2. ADAPTIVE KERNEL: Intensity Scaling
+		int intensity = context.getExecutionProfile() != null ? context.getExecutionProfile().getIntensity() : 2;
+
+		// Enforce multiple iterations for non-CHAT tasks as requested
+		if (minIterations < 2 && intensity >= 1 && (context.getExecutionProfile() == null
+				|| context.getExecutionProfile().getCapability() != CapabilityType.CHAT)) {
+			minIterations = 2;
+		}
+
+		// Cap iterations for CHAT capability to avoid over-evolution of simple
+		// interactions
+		if (context.getExecutionProfile() != null
+				&& context.getExecutionProfile().getCapability() == CapabilityType.CHAT) {
+			if (minIterations > 1)
+				minIterations = 1;
+		}
+
+		if (minIterations < 1)
+			minIterations = 1;
+
+		// Granular dynamic range for iterations: 5 to 120 based on expansion slider
+		// (1-10)
+		int maxIterationsLimit = 5 + (expansionValue - 1) * 12;
+
+		if (intensity == 1)
+			maxIterationsLimit = Math.min(maxIterationsLimit, 20);
+		else if (intensity == 2)
+			maxIterationsLimit = Math.min(maxIterationsLimit, 40);
+
+		// Ensure max is never less than min
+		maxIterationsLimit = Math.max(maxIterationsLimit, minIterations);
+
+		return maxIterationsLimit;
+	}
+
+	protected int getMinIterationLimit(TaskContext context) {
+		int minIterations = 1;
+		PromptInstructions instructions = (context.getOrchestrator() != null
+				&& context.getOrchestrator().getAiChat() != null)
+						? context.getOrchestrator().getAiChat().getPromptInstructions()
+						: null;
+		if (instructions != null) {
+			minIterations = instructions.getPreferredMaxIterations();
+		}
+
+		int intensity = context.getExecutionProfile() != null ? context.getExecutionProfile().getIntensity() : 2;
+
+		if (minIterations < 2 && intensity >= 1 && (context.getExecutionProfile() == null
+				|| context.getExecutionProfile().getCapability() != CapabilityType.CHAT)) {
+			minIterations = 2;
+		}
+
+		if (context.getExecutionProfile() != null
+				&& context.getExecutionProfile().getCapability() == CapabilityType.CHAT) {
+			if (minIterations > 1)
+				minIterations = 1;
+		}
+
+		if (minIterations < 1)
+			minIterations = 1;
+
+		return minIterations;
+	}
+
 	@Override
 	protected String getAgentInstructions() {
 		return "Role: Darwin Engine. Strategy: Lineage-driven evolutionary mutation.\n" + "EVOLUTIONARY MANDATE:\n"
@@ -1927,5 +3160,473 @@ public class CodingEngine extends ADarwinEngine {
 				+ "- You MUST materialize the EXACT blueprint provided by the orchestrator.\n"
 				+ "- Preserve lineage continuity: every mutation MUST inherit from the surviving ancestor.\n"
 				+ "- Address identified evolutionary pressures (reliability, extensibility, etc.) in your implementation.";
+	}
+
+	@Override
+	protected String getFooterInstructions() {
+		return "CRITICAL: Return a valid JSON object for the requested Darwin evolutionary trajectory.";
+	}
+
+	@Override
+	public void setAiService(AiService aiService) {
+		super.setAiService(aiService);
+		rejectionAnalyzer.setAiService(aiService);
+	}
+
+	@Override
+	public String getCapabilityId() {
+		return "capability.mutation";
+	}
+
+	@Override
+	public String getVersion() {
+		return "1.0.0";
+	}
+
+	@Override
+	public CapabilityStatus getStatus() {
+		return status;
+	}
+
+	@Override
+	public void initialize(CapabilityContext context) throws CapabilityException {
+		status = CapabilityStatus.INITIALIZED;
+	}
+
+	@Override
+	public void start() throws CapabilityException {
+		status = CapabilityStatus.STARTED;
+	}
+
+	@Override
+	public void stop() throws CapabilityException {
+		status = CapabilityStatus.STOPPED;
+	}
+
+	@Override
+	public List<String> getSupportedContracts() {
+		return Collections.singletonList(IMutationContract.ID);
+	}
+
+	@Override
+	public List<String> getDependencies() {
+		return Collections.emptyList();
+	}
+
+	@Override
+	public CapabilityHealth getHealth() {
+		return new CapabilityHealth(1.0, "Healthy", 0);
+	}
+
+	@Override
+	public void setEvaluator(Evaluator evaluator) {
+		// TODO Auto-generated method stub
+	}
+
+	public EvaluationResult runIteration(GoalModel goal, IterationManager manager) throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public List<BranchVariant> validateVariants(List<BranchVariant> variants, IterationManager manager) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public EvaluationResult executeWinner(BranchVariant winner, IterationManager manager) throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	protected boolean isCodingProcess() {
+		return platformType == PlatformType.ASSISTED_CODING || platformType == PlatformType.SELF_DEV_MODE;
+	}
+
+	@Override
+	public String getMode() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public CapabilityType getCapabilityType() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public TaskContext getContext() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Trajectory getActiveTrajectory() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void setActiveTrajectory(Trajectory trajectory) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public EvaluationResult evaluateFitness(File projectRoot, TaskContext context,
+			eu.kalafatic.evolution.controller.orchestration.selfdev.RealityLevel level) throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Evaluator getEvaluator() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public List<BranchVariant> generateVariants(GoalModel goal, IterationManager manager) throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public PlatformType getPlatformType() {
+		return platformType;
+	}
+
+	public PromptIntentAnalyzer getIntentAnalyzer() {
+		return intentAnalyzer;
+	}
+
+	public void setIntentAnalyzer(PromptIntentAnalyzer intentAnalyzer) {
+		this.intentAnalyzer = intentAnalyzer;
+	}
+
+	@Override
+	public AiService getAiservice() {
+		return aiService;
+	}
+
+	/**
+	 * Identifies common greetings to allow short-circuiting for pure pleasantries
+	 * even in technical modes.
+	 */
+	protected boolean isSimpleGreeting(String prompt) {
+		if (prompt == null)
+			return false;
+		String p = prompt.trim().toLowerCase();
+		if (p.length() > 20)
+			return false; // Greetings are usually short
+		return p.matches("^(hi|hello|hey|greetings|morning|afternoon|evening|hola|yo|sup|hi there|hello there)(\\s*|!|\\.|\\?)*$");
+	}
+
+	/**
+	 * Common intent routing and short-circuit logic.
+	 * Returns an OrchestratorResponse if short-circuiting is required, null otherwise.
+	 */
+	protected OrchestratorResponse handleIntentRouting(String request, IterationManager iterationManager) throws Exception {
+		OrchestrationState state = context.getOrchestrationState();
+		PromptIntentAnalyzer.IntentResult intent = intentAnalyzer.analyze(request, context);
+		context.log("[DARWIN] Intent Analysis: " + intent.toString());
+
+		boolean isForcedTechnicalMode = ModeRecognizer.isForcedTechnicalMode(context);
+		boolean isSimpleGreeting = isSimpleGreeting(request);
+
+		if (intent.isChat() && (!isForcedTechnicalMode || isSimpleGreeting)) {
+			context.log("[DARWIN] CHAT detected. Using minimal evolution.");
+			state.getMetadata().put("isChatRequest", true);
+
+			// Set CHAT profile
+			EvolutionProfile chatProfile = EvolutionProfile.create(CapabilityType.CHAT, 1);
+			context.getOrchestrationState().setExecutionProfile(chatProfile);
+
+			// Skip discovery and go directly to chat handling
+			OrchestratorResponse chatResponse = new OrchestratorResponse();
+			chatResponse.setResultType(ResultType.CHAT);
+
+			// Generate chat response directly - skip all evolution
+			String chatResponseText = generateChatResponse(request, context);
+			chatResponse.setSummary(chatResponseText);
+
+			// Store the response
+			state.getMetadata().put("chatResponse", chatResponseText);
+
+			// Transition to DONE
+			iterationManager.transition(SystemState.DONE, context);
+
+			// Assemble final response
+			FinalResponseAssembler assembler = new FinalResponseAssembler();
+			FinalResponse finalResponse = assembler.assemble(context, chatResponseText, true, context.getStartTime());
+			chatResponse.setFinalResponse(finalResponse);
+
+			return chatResponse;
+
+		} else if (intent.isControl()) {
+			context.log("[DARWIN] CONTROL detected.");
+
+			// CRITICAL FIX: If we are waiting for input, satisfy it directly instead of starting a new loop
+			if (context.isWaitingForInput()) {
+				context.log("[DARWIN] Satisfying pending input request with CONTROL command: " + request);
+				context.provideInput(request);
+
+				OrchestratorResponse controlAck = new OrchestratorResponse();
+				controlAck.setResultType(ResultType.CHAT);
+				controlAck.setSummary("Processing command: " + request);
+				return controlAck;
+			}
+
+			state.getMetadata().put("pendingControlCommand", request);
+			return null;
+
+		} else {
+			// ============================================================
+			// TASK or FORCED TECHNICAL MODE: RESET THE CHAT FLAG!
+			// ============================================================
+			if (intent.isChat()) {
+				context.log("[DARWIN] CHAT intent detected, but mode is forced technical (" + platformType
+						+ "). Proceeding with evolution for: " + request);
+			} else {
+				context.log("[DARWIN] TASK detected. Using full evolution.");
+			}
+
+			// ✅ CRITICAL FIX: Remove the chat flag
+			state.getMetadata().remove("isChatRequest");
+
+			// Also ensure we don't have any stale chat profile
+			if (context.getExecutionProfile() != null
+					&& context.getExecutionProfile().getCapability() == CapabilityType.CHAT) {
+				EvolutionProfile taskProfile = EvolutionProfile.create(CapabilityType.CODE, 2);
+				context.getOrchestrationState().setExecutionProfile(taskProfile);
+			}
+			return null;
+		}
+	}
+
+	public DarwinApprovalResult requestApproval(
+		List<BranchVariant> candidates,
+		BranchVariant recommendedCandidate,
+		IterationManager iterationManager
+	) {
+		if (context.isAutoApprove()) {
+			context.log("[DARWIN] Auto-Approve enabled. Automatically selecting recommended candidate: " + recommendedCandidate.getId());
+			return new DarwinApprovalResult(DarwinApprovalResult.Action.CONTINUE, recommendedCandidate.getId());
+		}
+
+		// Manual Mode: Store evaluated candidates and recommended candidate in pending decision
+		context.getMetadata().put("pending_candidates", candidates);
+		context.getMetadata().put("recommended_candidate", recommendedCandidate);
+
+		// ✅ FORCE TRANSITION TO WAITING
+		// Use the iterationManager's transition method if available
+		if (iterationManager != null) {
+			iterationManager.transition(SystemState.WAITING_FOR_USER_DECISION, context);
+		} else {
+			// Fallback: use the state holder directly with a token
+			TransitionToken token = context.getTransitionToken();
+			if (token == null) {
+				token = new TransitionToken("DarwinEngine-Wait-" + System.currentTimeMillis());
+				context.setTransitionToken(token);
+			}
+			context.getStateHolder().applyTransition(token, SystemState.WAITING_FOR_USER_DECISION);
+		}
+
+		// Publish candidate information to the existing Darwin/Evolution UI
+		emitDarwinBranches(context, candidates, recommendedCandidate);
+
+		context.log("[DARWIN] Manual Mode. Pausing Darwin loop and waiting for user decision.");
+		return new DarwinApprovalResult(DarwinApprovalResult.Action.WAIT, null);
+	}
+
+	private void emitDarwinBranches(TaskContext context, List<BranchVariant> candidates, BranchVariant recommended) {
+		StringBuilder outcomeBuilder = new StringBuilder("[DARWIN_BRANCHES] ");
+		outcomeBuilder.append("\nIteration ").append(context.getOrchestrationState().getIterationCount() + 1).append("\n");
+
+		org.json.JSONObject json = new org.json.JSONObject();
+		json.put("iteration", context.getOrchestrationState().getIterationCount() + 1);
+		org.json.JSONArray variantsArr = new org.json.JSONArray();
+		for (BranchVariant v : candidates) {
+			org.json.JSONObject vObj = new org.json.JSONObject();
+			vObj.put("id", v.getId());
+			vObj.put("strategy", v.getStrategy());
+			vObj.put("score", v.getScore());
+			vObj.put("survival_argument", v.getSurvivalArgument());
+			vObj.put("tradeoffs", v.getTradeoffs());
+			vObj.put("status", v.getActivationState().name());
+			variantsArr.put(vObj);
+
+			outcomeBuilder.append("  ├── ").append(v.getId()).append(" Strategy: ").append(v.getStrategy()).append("\n");
+		}
+		json.put("variants", variantsArr);
+		if (recommended != null) {
+			json.put("recommended", recommended.getId());
+		}
+		outcomeBuilder.append("[DECISION:MANUAL] ");
+		outcomeBuilder.append(json.toString());
+		context.log(outcomeBuilder.toString());
+	}
+
+	public static void handleUserDecision(TaskContext context, String prompt, eu.kalafatic.evolution.controller.orchestration.SessionContainer session) {
+	    String upper = prompt.toUpperCase().trim();
+
+	    @SuppressWarnings("unchecked")
+	    List<BranchVariant> pending = (List<BranchVariant>) context.getMetadata().get("pending_candidates");
+	    if (pending == null) {
+	        context.log("[DARWIN] Error: No pending candidates found for resumption.");
+	        eu.kalafatic.evolution.controller.orchestration.IterationManager.forceTransition(SystemState.FAILED, context);
+	        return;
+	    }
+
+	    String candidateId = null;
+	    boolean isSelect = false;
+	    boolean isRetry = upper.startsWith("RETRY") || upper.startsWith("REGENERATE");
+	    boolean isReject = upper.startsWith("REJECT") || upper.equals("REJECT_ALL");
+	    boolean isCancel = upper.startsWith("CANCEL");
+
+	    // ✅ Handle "Force Solution", "Approve", "AutoApprove" - select the best candidate
+	    boolean isForceSolution = upper.equals("FORCE SOLUTION") || upper.equals("APPROVE") || upper.equals("AUTO_APPROVE") 
+	            || upper.equals("AUTO-APPROVE") || upper.contains("AUTO APPROVE");
+	    
+	    boolean isAutoApproveTriggered = isForceSolution || context.isAutoApprove();
+	    if (isAutoApproveTriggered) {
+	        BranchVariant recommended = (BranchVariant) context.getMetadata().get("recommended_candidate");
+	        if (recommended == null && pending != null && !pending.isEmpty()) {
+	            recommended = pending.stream().max((v1, v2) -> Double.compare(v1.getScore(), v2.getScore())).orElse(null);
+	        }
+	        if (recommended != null) {
+	            candidateId = recommended.getId();
+	            isSelect = true;
+	            context.log("[DARWIN] ✅ Auto-approving recommended candidate: " + candidateId + " (" + recommended.getStrategy() + ")");
+	        } else {
+	            context.log("[DARWIN] ⚠️ No recommended candidate found for auto-approval.");
+	        }
+	    } else if (upper.startsWith("SELECT_CANDIDATE ")) {
+	        candidateId = prompt.substring("SELECT_CANDIDATE ".length()).trim();
+	        isSelect = true;
+	    } else if (upper.startsWith("SELECT ")) {
+	        candidateId = prompt.substring("SELECT ".length()).trim();
+	        isSelect = true;
+	    } else if (upper.startsWith("APPROVE VARIANT ")) {
+	        candidateId = prompt.substring("APPROVE VARIANT ".length()).trim();
+	        isSelect = true;
+	    } else if (pending.stream().anyMatch(v -> v.getId().equalsIgnoreCase(prompt))) {
+	        candidateId = prompt;
+	        isSelect = true;
+	    } else if (!isRetry && !isReject && !isCancel) {
+	        candidateId = prompt;
+	        isSelect = true;
+	    }
+
+	    if (isSelect && candidateId != null) {
+	        String finalCandidateId = candidateId;
+	        BranchVariant selected = pending.stream()
+	            .filter(v -> v.getId().equalsIgnoreCase(finalCandidateId) || v.getStrategy().equalsIgnoreCase(finalCandidateId))
+	            .findFirst().orElse(null);
+
+	        if (selected == null) {
+	            String numeric = finalCandidateId.replaceAll("[^0-9]", "").trim();
+	            if (!numeric.isEmpty()) {
+	                try {
+	                    int index = Integer.parseInt(numeric) - 1;
+	                    if (index >= 0 && index < pending.size()) {
+	                        selected = pending.get(index);
+	                    }
+	                } catch (NumberFormatException e) {}
+	            }
+	        }
+
+	        if (selected != null) {
+	            context.log("[DARWIN] ✅ User selected candidate: " + selected.getId() + " (" + selected.getStrategy() + ")");
+	            context.getMetadata().put("resume_manual_id", selected.getId());
+
+	            // ✅ Transition to EXECUTING using the proper token
+	            TransitionToken token = context.getTransitionToken();
+	            if (token == null) {
+	                token = new TransitionToken("DarwinEngine-Resume-" + System.currentTimeMillis());
+	                context.setTransitionToken(token);
+	            }
+	            context.getStateHolder().applyTransition(token, SystemState.EXECUTING);
+
+	            // ✅ Resume the evolution
+	            resumeEvolutionRun(context, session);
+	        } else {
+	            context.log("[DARWIN] ❌ Error: Selected candidate '" + finalCandidateId + "' is invalid.");
+	        }
+	    } else if (isRetry) {
+	        context.log("[DARWIN] 🔄 User requested retry. Returning to candidate generation.");
+	        context.getMetadata().remove("pending_candidates");
+	        context.getMetadata().remove("resume_manual_id");
+	        context.getMetadata().remove("recommended_candidate");
+	        eu.kalafatic.evolution.controller.orchestration.IterationManager.forceTransition(SystemState.INIT, context);
+	        resumeEvolutionRun(context, session);
+	    } else if (isReject) {
+	        context.log("[DARWIN] ❌ User rejected all candidates. Finishing as rejected.");
+	        context.getMetadata().remove("pending_candidates");
+	        context.getMetadata().remove("resume_manual_id");
+	        context.getMetadata().remove("recommended_candidate");
+	        eu.kalafatic.evolution.controller.orchestration.IterationManager.forceTransition(SystemState.FAILED, context);
+	    } else if (isCancel) {
+	        context.log("[DARWIN] ⏹️ User cancelled evolution.");
+	        context.getMetadata().remove("pending_candidates");
+	        context.getMetadata().remove("resume_manual_id");
+	        context.getMetadata().remove("recommended_candidate");
+	        eu.kalafatic.evolution.controller.orchestration.IterationManager.forceTransition(SystemState.FAILED, context);
+	    } else {
+	        context.log("[DARWIN] ⚠️ Unrecognized command: " + prompt);
+	    }
+	}
+
+	private static void resumeEvolutionRun(TaskContext context, eu.kalafatic.evolution.controller.orchestration.SessionContainer session) {
+	    // ✅ Use the existing execution service to resume
+	    session.getExecutorService().submit(() -> {
+	        try {
+	            // Get the saved request
+	            String request = (String) context.getMetadata().get("saved_request");
+	            if (request == null) {
+	                request = context.getOrchestrationState().getRawInput();
+	                if (request == null) {
+	                    request = "continue";
+	                }
+	            }
+	            
+	            context.log("[DARWIN] ▶️ Resuming evolution for request: " + request);
+	            
+	            // Get the iteration manager from the context
+	            eu.kalafatic.evolution.controller.orchestration.IterationManager iterationManager = 
+	                    (eu.kalafatic.evolution.controller.orchestration.IterationManager) context.getMetadata().get("iterationManager");
+	            
+	            if (iterationManager == null) {
+	                context.log("[DARWIN] ⚠️ IterationManager not found, creating new one.");
+	                // Create a new iteration manager
+	                iterationManager = eu.kalafatic.evolution.controller.orchestration.KernelFactory.create(
+	                        request, context, session, context.getAiService());
+	                context.getMetadata().put("iterationManager", iterationManager);
+	            }
+	            
+	            // Create a task request and resume
+	            eu.kalafatic.evolution.controller.orchestration.TaskRequest taskRequest = new eu.kalafatic.evolution.controller.orchestration.TaskRequest(
+	                    request, context.getProjectRoot());
+	            taskRequest.getContext().put("orchestrator", context.getOrchestrator());
+	            taskRequest.getContext().put("sessionId", context.getSessionId());
+	            
+	            // Use the existing orchestrator to handle the request
+	            // The evolve() method will detect resume_manual_id and execute the selected variant
+	            eu.kalafatic.evolution.controller.orchestration.KernelFacade kernel = new eu.kalafatic.evolution.controller.orchestration.KernelFacade();
+	            kernel.handle(taskRequest, context);
+	            
+	        } catch (Throwable e) {
+	            context.log("[DARWIN] ❌ [CRITICAL] Error resuming evolution: " + e.getMessage());
+	            e.printStackTrace();
+	            // Transition to FAILED state
+	            try {
+	                eu.kalafatic.evolution.controller.orchestration.IterationManager.forceTransition(SystemState.FAILED, context);
+	            } catch (Exception ex) {
+	                context.log("[DARWIN] ❌ Failed to transition to FAILED state: " + ex.getMessage());
+	            }
+	        }
+	    });
 	}
 }

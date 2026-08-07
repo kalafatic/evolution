@@ -103,7 +103,7 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 	public static final int DEFAULT_EXPANSION_LEVEL = 5;
 
 	protected final TaskContext context;
-	private final Object approvalLock = new Object();
+
 	private volatile String selectedWinnerId = null;
 	private volatile boolean approvalResumed = false;
 	protected final IterationMemoryService memoryService;
@@ -125,6 +125,11 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 	protected final SelectionEngine selectionEngine = new SelectionEngine();
 	protected final DimensionDiscoveryAgent dimensionDiscoveryAgent;
 	protected CapabilityStatus status = CapabilityStatus.STOPPED;
+	
+	 // ✅ Simple wait/notify fields
+    private final Object approvalLock = new Object();
+    private volatile ApprovalDecision pendingDecision = null;
+    private volatile boolean waitingForApproval = false;
 
 	// Inject the analyzer
 	protected PromptIntentAnalyzer intentAnalyzer;
@@ -162,6 +167,8 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 
 		// Create ModeRecognizer with SessionContainer from parent (BaseAiAgent)
 		this.modeRecognizer = new ModeRecognizer(getSessionContainer());
+		// ✅ Register this engine instance in the registry
+	    DarwinEngineRegistry.register(context.getSessionId(), this);
 	}
 
 	public OrchestratorResponse orchestrateEvolution(TaskRequest taskRequest, IterationManager iterationManager)
@@ -3258,6 +3265,13 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 			return false; // Greetings are usually short
 		return p.matches("^(hi|hello|hey|greetings|morning|afternoon|evening|hola|yo|sup|hi there|hello there)(\\s*|!|\\.|\\?)*$");
 	}
+	
+	 /**
+     * Check if the engine is currently waiting for approval.
+     */
+    public boolean isWaitingForApproval() {
+        return waitingForApproval;
+    }
 
 	/**
 	 * Common intent routing and short-circuit logic.
@@ -3394,13 +3408,18 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 		synchronized (approvalLock) {
 			selectedWinnerId = null;
 			approvalResumed = false;
-			while (!approvalResumed) {
+			
+			if (!approvalResumed) {
 				try {
+					waitingForApproval = true; // Set the waiting flag before waiting
+					
 					approvalLock.wait();
+					
+					//waitingForApproval = false; // Clear the waiting flag once resumed
 				} catch (InterruptedException e) {
 					Thread.currentThread().interrupt();
 					context.log("[DARWIN] Approval wait thread interrupted.");
-					break;
+					//break;
 				}
 			}
 		}
@@ -3421,6 +3440,54 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 			approvalLock.notifyAll();
 		}
 	}
+	
+	 /**
+     * Resume approval with auto-approve (selects best candidate).
+     * Called when Auto-Approve checkbox is toggled ON.
+     */
+    public void resumeAutoApprove() {
+        @SuppressWarnings("unchecked")
+        List<BranchVariant> candidates = (List<BranchVariant>) context.getMetadata().get("pending_candidates");
+        BranchVariant recommended = (BranchVariant) context.getMetadata().get("recommended_candidate");
+        
+        BranchVariant winner = (recommended != null) ? recommended : 
+                (candidates != null) ? candidates.stream().max((v1, v2) -> Double.compare(v1.getScore(), v2.getScore())).orElse(null) : null;
+        
+        if (winner != null) {
+        	selectedWinnerId = winner.getId();
+            context.log("[APPROVAL] ▶️ Auto-resuming with winner: " + winner.getId());
+            pendingDecision = new ApprovalDecision(winner.getId(), true, true);
+        } else {
+            context.log("[APPROVAL] ⚠️ No winner found for auto-resume.");
+            pendingDecision = ApprovalDecision.reject();
+        }
+        
+        waitingForApproval = false;
+        
+        // ✅ Wake up the waiting thread
+        synchronized (approvalLock) {
+            approvalLock.notifyAll();
+        }
+    }
+    
+    public void  disableAutoApprove(){
+    	 waitingForApproval = true;
+    }
+	
+	/**
+     * Resume approval with a decision.
+     * Called by the UI when user selects a variant.
+     */
+    public void resumeApproval(String variantId) {
+        context.log("[APPROVAL] ▶️ Resuming with variant: " + variantId);
+        pendingDecision = new ApprovalDecision(variantId, true, false);
+        waitingForApproval = false;
+        
+        // ✅ Wake up the waiting thread
+        synchronized (approvalLock) {
+            approvalLock.notifyAll();
+        }
+    }
 
 	public DarwinApprovalResult requestApproval(
 		List<BranchVariant> candidates,

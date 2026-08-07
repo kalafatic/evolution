@@ -62,7 +62,6 @@ import eu.kalafatic.evolution.controller.orchestration.intent.IntentHypothesis;
 import eu.kalafatic.evolution.controller.orchestration.util.ModeRecognizer;
 import eu.kalafatic.evolution.controller.orchestration.workspace.WorkspaceArtifact;
 import eu.kalafatic.evolution.controller.supervision.AuthorityController;
-import eu.kalafatic.evolution.controller.supervision.EvolutionDecision;
 import eu.kalafatic.evolution.controller.trajectory.Trajectory;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventType;
@@ -73,9 +72,9 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.PromptInstructions;
 import eu.kalafatic.evolution.model.orchestration.SelfDevDecision;
 
-public class CodingEngine extends ADarwinEngine {
+public class CodingEngine2 extends ADarwinEngine {
 
-	public CodingEngine(TaskContext context, IterationMemoryService memoryService,
+	public CodingEngine2(TaskContext context, IterationMemoryService memoryService,
 			SystemStateSignalProvider stateProvider) {
 		super(context, memoryService, stateProvider, PlatformType.ASSISTED_CODING);
 	}
@@ -83,6 +82,8 @@ public class CodingEngine extends ADarwinEngine {
 	public OrchestratorResponse orchestrateEvolution(TaskRequest taskRequest, IterationManager iterationManager)
 			throws Exception {
 		context.setStartTime(Instant.now());
+		// After creating the iteration manager, store it
+		context.getMetadata().put("iterationManager", iterationManager);
 		String request = taskRequest.getPrompt();
 		OrchestrationState state = context.getOrchestrationState();
 
@@ -588,14 +589,19 @@ public class CodingEngine extends ADarwinEngine {
 		// 8. VARIANT SELECTION
 		// ============================================================
 
-		String manualId;
-		try {
-			manualId = awaitApproval(variants, manager);
-		} catch (DarwinWaitException dwe) {
-			EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
-			res.setSuccess(true);
-			res.setDecision(SelfDevDecision.STOP);
-			return res;
+		String manualId = resolveVariantSelection(variants, context, manager);
+
+		if (manualId == null) {
+			BranchVariant recommended = variants.stream().max((v1, v2) -> Double.compare(v1.getScore(), v2.getScore())).orElse(null);
+			DarwinApprovalResult approval = requestApproval(variants, recommended, manager);
+			if (approval.getAction() == DarwinApprovalResult.Action.WAIT) {
+				EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
+				res.setSuccess(true);
+				res.setDecision(SelfDevDecision.STOP);
+				return res;
+			} else {
+				manualId = approval.getSelectedCandidateId();
+			}
 		}
 
 		// ============================================================
@@ -604,7 +610,7 @@ public class CodingEngine extends ADarwinEngine {
 
 		String iterId = manager.getCurrentIterationModel() != null ? manager.getCurrentIterationModel().getId()
 				: "default";
-		EvolutionDecision decision = manager.decide(iterId, variants,
+		eu.kalafatic.evolution.controller.supervision.EvolutionDecision decision = manager.decide(iterId, variants,
 				context, manualId);
 
 		if (activeTrajectory != null) {

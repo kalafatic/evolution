@@ -206,7 +206,7 @@ public class InstructionsGroup extends AEvoGroup {
         autoApproveCheck.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                boolean sel = autoApproveCheck.getSelection();
+                final boolean sel = autoApproveCheck.getSelection();
                 java.util.Map<String, Object> settings = new java.util.HashMap<>();
                 settings.put("autoApprove", sel);
                 page.updateConfiguration(settings);
@@ -222,6 +222,13 @@ public class InstructionsGroup extends AEvoGroup {
                 }
 
                 page.saveLastUsedSettings();
+                
+                // ✅ If auto-approve is enabled, resume any pending approval               
+                    page.getDisplay().asyncExec(() -> {
+                        page.log("[APPROVAL] Auto-Approve enabled - resuming..." + sel);
+                        page.resumeAutoApprove(sel);
+                    });
+                
             }
         });
 

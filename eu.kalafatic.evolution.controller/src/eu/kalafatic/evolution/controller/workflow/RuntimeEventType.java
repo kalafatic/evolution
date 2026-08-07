@@ -92,7 +92,8 @@ public enum RuntimeEventType {
     FORGE_DATASET_IMPORTED(EventCategory.EXECUTION),
     FORGE_SNAPSHOT_CREATED(EventCategory.EXECUTION),
     EVALUATION_COMPLETED(EventCategory.AGENT),
-    DEPLOYMENT_STARTED(EventCategory.EXECUTION);
+    DEPLOYMENT_STARTED(EventCategory.EXECUTION), 
+    APPROVAL_REQUIRED(EventCategory.EXECUTION);
 
     private final EventCategory category;
 
