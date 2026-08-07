@@ -116,9 +116,44 @@ public class OllamaProvider implements ILlmProvider {
                 }
                 sb.append("\n--- TROUBLESHOOTING ACTIONS ---\n").append(finalSuggestions);
 
-                org.eclipse.jface.dialogs.MessageDialog.openError(activeShell,
-                    "Ollama Model Loading Failure",
-                    sb.toString());
+                boolean keepOpen = true;
+                while (keepOpen) {
+                    org.eclipse.jface.dialogs.MessageDialog dialog = new org.eclipse.jface.dialogs.MessageDialog(
+                        activeShell,
+                        "Ollama Model Loading Failure",
+                        null,
+                        sb.toString(),
+                        org.eclipse.jface.dialogs.MessageDialog.ERROR,
+                        new String[] { "OK", "Copy Details", "Save Log..." },
+                        0
+                    );
+                    int buttonPressed = dialog.open();
+                    if (buttonPressed == 1) { // Copy Details
+                        org.eclipse.swt.dnd.Clipboard clipboard = new org.eclipse.swt.dnd.Clipboard(org.eclipse.swt.widgets.Display.getDefault());
+                        try {
+                            org.eclipse.swt.dnd.TextTransfer textTransfer = org.eclipse.swt.dnd.TextTransfer.getInstance();
+                            clipboard.setContents(new Object[] { sb.toString() }, new org.eclipse.swt.dnd.Transfer[] { textTransfer });
+                        } finally {
+                            clipboard.dispose();
+                        }
+                    } else if (buttonPressed == 2) { // Save Log
+                        org.eclipse.swt.widgets.FileDialog fileDialog = new org.eclipse.swt.widgets.FileDialog(activeShell, org.eclipse.swt.SWT.SAVE);
+                        fileDialog.setText("Save Ollama Error Log");
+                        fileDialog.setFilterExtensions(new String[] { "*.txt", "*.*" });
+                        fileDialog.setFileName("ollama-error-log-" + model + ".txt");
+                        String selectedPath = fileDialog.open();
+                        if (selectedPath != null) {
+                            try {
+                                java.nio.file.Files.writeString(java.nio.file.Path.of(selectedPath), sb.toString());
+                                org.eclipse.jface.dialogs.MessageDialog.openInformation(activeShell, "Save Successful", "Error log saved successfully to:\n" + selectedPath);
+                            } catch (Exception ex) {
+                                org.eclipse.jface.dialogs.MessageDialog.openError(activeShell, "Save Failed", "Failed to save error log:\n" + ex.getMessage());
+                            }
+                        }
+                    } else { // OK or Dialog closed
+                        keepOpen = false;
+                    }
+                }
             });
         }
     }
