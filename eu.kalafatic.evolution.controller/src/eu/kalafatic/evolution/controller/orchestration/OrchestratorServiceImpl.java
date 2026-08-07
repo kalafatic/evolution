@@ -465,6 +465,15 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                     }
                 }
                 context.getMetadata().put("sessionContext", session);
+
+                final TaskContext finalContext = context;
+                orchModel.getAiChat().getSessions().stream()
+                    .filter(s -> sid.equals(s.getId()))
+                    .findFirst()
+                    .ifPresent(s -> {
+                        finalContext.setAutoApprove(s.isAutoApprove());
+                    });
+
                 context.setStartTime(java.time.Instant.now());
 
                 // Clear any existing listeners from previous turns to prevent duplication

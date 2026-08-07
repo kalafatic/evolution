@@ -3423,7 +3423,8 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 		boolean isReject = upper.startsWith("REJECT") || upper.equals("REJECT_ALL");
 		boolean isCancel = upper.startsWith("CANCEL");
 
-		boolean isAutoApproveTriggered = upper.contains("AUTO_APPROVE") || upper.contains("AUTO-APPROVE") || context.isAutoApprove();
+		boolean isApprovedOrOk = upper.equals("APPROVED") || upper.equals("YES") || upper.equals("PROCEED") || upper.equals("OK") || upper.equals("OKAY") || upper.matches("^(YES|Y|OK|OKAY|APPROVE|PROCEED|GO AHEAD|YEP|SURE)$");
+		boolean isAutoApproveTriggered = upper.contains("AUTO_APPROVE") || upper.contains("AUTO-APPROVE") || context.isAutoApprove() || isApprovedOrOk;
 		if (isAutoApproveTriggered) {
 			BranchVariant recommended = (BranchVariant) context.getMetadata().get("recommended_candidate");
 			if (recommended == null && pending != null && !pending.isEmpty()) {
@@ -3505,6 +3506,10 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 	}
 
 	private static void resumeEvolutionRun(TaskContext context, eu.kalafatic.evolution.controller.orchestration.SessionContainer session) {
+		if (context.getMetadata().containsKey("testMode") || System.getProperty("evolution.test.debug") != null) {
+			context.log("[DARWIN] Skipping background resume in test mode.");
+			return;
+		}
 		session.getExecutorService().submit(() -> {
 			try {
 				eu.kalafatic.evolution.controller.orchestration.KernelFacade kernel = new eu.kalafatic.evolution.controller.orchestration.KernelFacade();

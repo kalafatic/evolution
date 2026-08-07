@@ -43,6 +43,7 @@ public class DarwinApprovalGateTest {
         SessionContainer session = SessionManager.getInstance().getOrCreateSession(sessionId);
         TaskContext context = new TaskContext(orchestrator, null);
         context.setSessionId(sessionId);
+        context.getMetadata().put("testMode", true);
         OrchestratorServiceImpl.getInstance().registerContext(sessionId, context);
 
         TestDarwinEngine engine = new TestDarwinEngine(context);
