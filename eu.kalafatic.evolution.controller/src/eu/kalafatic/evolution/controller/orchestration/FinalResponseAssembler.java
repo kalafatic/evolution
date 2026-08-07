@@ -153,7 +153,7 @@ public class FinalResponseAssembler {
             }
         }
 
-        if (!isSimple && (finalProfile.shouldShowRepositoryChanges() || !isChat)) {
+        if (!isSimpleChat && (finalProfile.shouldShowRepositoryChanges() || !isChat)) {
             sb.append("### 📂 Repository Changes\n---\n");
             if (files.isEmpty()) {
                 sb.append("_No physical changes detected._\n\n");
@@ -185,7 +185,7 @@ public class FinalResponseAssembler {
             }
         }
 
-        if (!isSimple && (finalProfile.shouldPerformRealityCheck() || !isChat)) {
+        if (!isSimpleChat && (finalProfile.shouldPerformRealityCheck() || !isChat)) {
             sb.append("### 🔍 Verification\n---\n");
             Object lastDecisionObj = state.getMetadata().get("lastDecisionSnapshot");
             DecisionSnapshot lastDecision = null;
@@ -229,7 +229,7 @@ public class FinalResponseAssembler {
             sb.append("✓ Static review passed\n\n");
         }
 
-        if (!isSimple && (finalProfile.requiresRepository() || !isChat)) {
+        if (!isSimpleChat && (finalProfile.requiresRepository() || !isChat)) {
             sb.append("### ⚖️ Git State\n---\n");
             try {
                 eu.kalafatic.evolution.controller.orchestration.selfdev.GitManager git = context.getKernelContext().getGitManager();
