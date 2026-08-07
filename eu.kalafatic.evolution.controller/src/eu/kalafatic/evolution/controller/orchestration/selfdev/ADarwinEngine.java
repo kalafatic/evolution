@@ -3356,16 +3356,22 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 	}
 
 	public String awaitApproval(List<BranchVariant> variants, IterationManager manager) {
+		context.log("[DARWIN] [DECISION_GATE] Presenting " + variants.size() + " branch variants to the decision authority:");
+		for (BranchVariant v : variants) {
+			context.log(String.format("  - Variant ID: %s | Score: %.2f | Strategy: %s | Survival Argument: %s",
+				v.getId(), v.getScore(), v.getStrategy(), v.getSurvivalArgument()));
+		}
+
 		if (context.isAutoApprove()) {
 			BranchVariant recommended = variants.stream().max((v1, v2) -> Double.compare(v1.getScore(), v2.getScore())).orElse(null);
 			String recommendedId = recommended != null ? recommended.getId() : null;
-			context.log("[DARWIN] Auto-Approve enabled. Automatically selecting recommended candidate: " + recommendedId);
+			context.log("[DARWIN] [DECISION_GATE] Auto-Approve enabled. Automatically selecting recommended candidate: " + recommendedId);
 			return recommendedId;
 		}
 
 		if (context.getMetadata().containsKey("resume_manual_id")) {
 			String resumedId = (String) context.getMetadata().remove("resume_manual_id");
-			context.log("[DARWIN] Resumed. Continuing with user-selected variant: " + resumedId);
+			context.log("[DARWIN] [DECISION_GATE] Resumed from checkpoint/metadata. Continuing with user-selected variant: " + resumedId);
 			return resumedId;
 		}
 
