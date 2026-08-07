@@ -25,7 +25,102 @@ public class OllamaProvider implements ILlmProvider {
 
     @Override
     public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
-        return sendRequestWithRetry(orchestrator, prompt, temperature, proxyUrl, context, 0);
+        try {
+            return sendRequestWithRetry(orchestrator, prompt, temperature, proxyUrl, context, 0);
+        } catch (Exception e) {
+            String model = (orchestrator != null && orchestrator.getOllama() != null) ? orchestrator.getOllama().getModel() : "evo";
+            showDetailedOllamaError(orchestrator, model, e, context);
+            throw e;
+        }
+    }
+
+    private void showDetailedOllamaError(Orchestrator orchestrator, String model, Throwable error, TaskContext context) {
+        String errorMsg = error.getMessage() != null ? error.getMessage() : error.toString();
+        String detectedCause = "Unknown system error occurred while communicating with Ollama.";
+        String suggestions = "";
+
+        // Determine if it's a connection exception
+        boolean isConnection = false;
+        Throwable temp = error;
+        while (temp != null) {
+            if (temp instanceof java.net.ConnectException || temp instanceof java.net.http.HttpConnectTimeoutException) {
+                isConnection = true;
+                break;
+            }
+            if (temp.getMessage() != null && (temp.getMessage().contains("Connection refused") || temp.getMessage().contains("connect timed out") || temp.getMessage().contains("unreachable"))) {
+                isConnection = true;
+                break;
+            }
+            temp = temp.getCause();
+        }
+
+        if (isConnection) {
+            detectedCause = "Ollama server is OFFLINE or UNREACHABLE.\n"
+                    + "The application was unable to establish a connection to the Ollama service on "
+                    + (orchestrator != null && orchestrator.getOllama() != null ? orchestrator.getOllama().getUrl() : "http://localhost:11434") + ".";
+            suggestions = "1. Please check if Ollama is running on your machine.\n"
+                    + "2. Start it using 'ollama serve' or open the Ollama desktop application.\n"
+                    + "3. Verify that the Ollama URL setting in the Evolution editor matches your running Ollama server.";
+        } else if (errorMsg.contains("not found") || errorMsg.contains("404")) {
+            detectedCause = "The model '" + model + "' was NOT FOUND or is NOT REGISTERED in Ollama.\n"
+                    + "Self-healing registration was either not triggered, or failed to complete.";
+            suggestions = "1. If this is a custom model ('evo'), verify that 'evo.gguf' is located in '~/.ollama/models/' or 'source/models/'.\n"
+                    + "2. Verify that the GGUF file has been successfully exported by the Forge ML subsystem.\n"
+                    + "3. Try pulling the base model if the Modelfile requires an external base model (e.g. 'llama3.2:3b').";
+        } else if (errorMsg.contains("failed to load") || errorMsg.contains("unable to load") || errorMsg.contains("500")) {
+            detectedCause = "The model '" + model + "' is registered but FAILED TO LOAD inside Ollama.\n"
+                    + "This typically indicates that the underlying GGUF binary weight file is corrupt, "
+                    + "contains invalid Windows backslash paths inside the Modelfile, or required base models are missing.";
+            suggestions = "1. Run 'ollama rm " + model + "' followed by a new evolution/forge cycle to re-register.\n"
+                    + "2. Verify that the base model 'llama3.2:3b' (or other configured base) is installed by running 'ollama pull llama3.2:3b'.\n"
+                    + "3. Check if there are backslash escape character problems (e.g. '\\U' parsed as unicode) inside the generated Modelfile.\n"
+                    + "4. Review Ollama server logs for specific loading errors (e.g. 'invalid gguf magic').";
+        } else if (errorMsg.contains("requires more system memory") || errorMsg.contains("than is available")) {
+            detectedCause = "Ollama OUT OF MEMORY (OOM) error detected.\n"
+                    + "The model '" + model + "' requires more system/GPU memory than is currently available on your machine.";
+            suggestions = "1. Free up system memory by closing other applications.\n"
+                    + "2. Switch to a smaller/quantized model parameter set (e.g. 1.4B instead of larger variants).\n"
+                    + "3. Check if your CPU/GPU hardware supports offloading the model size.";
+        } else {
+            detectedCause = "An exception occurred inside the Ollama provider pipeline.\n"
+                    + "Error details: " + errorMsg;
+            suggestions = "1. Verify Ollama API status.\n"
+                    + "2. Ensure the model has been trained and exported correctly with GGUF format.\n"
+                    + "3. Consult the application and Ollama console output for underlying stacktraces.";
+        }
+
+        // 1. Log detailed UI logs
+        if (context != null) {
+            context.log("Ollama Error Diagnostics [Model: " + model + "]:");
+            context.log("  > Exception: " + error.toString());
+            context.log("  > Detected Cause: " + detectedCause.replace("\n", " "));
+            context.log("  > Suggestions:\n" + suggestions);
+        }
+
+        // 2. Show detailed message box
+        if (org.eclipse.ui.PlatformUI.isWorkbenchRunning()) {
+            final String finalCause = detectedCause;
+            final String finalSuggestions = suggestions;
+            org.eclipse.swt.widgets.Display.getDefault().syncExec(() -> {
+                org.eclipse.swt.widgets.Shell activeShell = org.eclipse.swt.widgets.Display.getDefault().getActiveShell();
+                if (activeShell == null && org.eclipse.ui.PlatformUI.getWorkbench().getActiveWorkbenchWindow() != null) {
+                    activeShell = org.eclipse.ui.PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
+                }
+
+                StringBuilder sb = new StringBuilder();
+                sb.append("Ollama model '").append(model).append("' could not be loaded or executed.\n\n");
+                sb.append("--- DETAILED CAUSE ---\n").append(finalCause).append("\n\n");
+                sb.append("--- SYSTEM/OLLAMA EXCEPTION ---\n").append(error.toString()).append("\n");
+                if (error.getCause() != null) {
+                    sb.append("Caused by: ").append(error.getCause().toString()).append("\n");
+                }
+                sb.append("\n--- TROUBLESHOOTING ACTIONS ---\n").append(finalSuggestions);
+
+                org.eclipse.jface.dialogs.MessageDialog.openError(activeShell,
+                    "Ollama Model Loading Failure",
+                    sb.toString());
+            });
+        }
     }
 
     private void triggerSelfHealing(Orchestrator orchestrator, String model, OllamaService service, TaskContext context) throws Exception {
@@ -355,7 +450,12 @@ public class OllamaProvider implements ILlmProvider {
         OllamaService service = OllamaManager.getInstance().getService(baseUrl);
         service.setModel(model);
 
-        return service.analyzeImage(prompt, imagePath);
+        try {
+            return service.analyzeImage(prompt, imagePath);
+        } catch (Exception e) {
+            showDetailedOllamaError(orchestrator, model, e, context);
+            throw e;
+        }
     }
     
     public static int testLLM(String baseUrl, String model) {
