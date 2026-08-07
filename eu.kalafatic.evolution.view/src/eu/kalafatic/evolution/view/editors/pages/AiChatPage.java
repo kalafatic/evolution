@@ -1035,6 +1035,24 @@ public class AiChatPage extends AEvoPage {
 	public void setOrchestrator(Orchestrator orchestrator) {
 		super.setOrchestrator(orchestrator);
 		this.ollamaService = null;
+		if (instructionsGroup != null) {
+			instructionsGroup.setOrchestrator(orchestrator);
+		}
+		if (chatMgmtGroup != null) {
+			chatMgmtGroup.setOrchestrator(orchestrator);
+		}
+		if (chatGroup != null) {
+			chatGroup.setOrchestrator(orchestrator);
+		}
+		if (systemStatusGroup != null) {
+			systemStatusGroup.setOrchestrator(orchestrator);
+		}
+		if (feedbackGroup != null) {
+			feedbackGroup.setOrchestrator(orchestrator);
+		}
+		if (workflowGroup != null) {
+			workflowGroup.setOrchestrator(orchestrator);
+		}
 	}
 
 	@Override
