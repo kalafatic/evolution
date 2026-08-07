@@ -44,6 +44,7 @@ import eu.kalafatic.evolution.controller.orchestration.ResultType;
 import eu.kalafatic.evolution.controller.orchestration.SessionManager;
 import eu.kalafatic.evolution.controller.orchestration.SystemState;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.orchestration.TransitionToken;
 import eu.kalafatic.evolution.controller.orchestration.TaskRequest;
 import eu.kalafatic.evolution.controller.orchestration.VariantExecutionContext;
 import eu.kalafatic.evolution.controller.orchestration.behavior.BehaviorTrait;
@@ -570,7 +571,7 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 				throw e;
 			}
 			if (context.getStateHolder().getState() == SystemState.WAITING_FOR_USER_DECISION) {
-				context.log("[DARWIN] Pausing loop in WAITING_FOR_USER_DECISION.");
+				context.log("[DARWIN] ⏸️ PAUSED: Waiting for user decision. Breaking loop.");
 				break;
 			}
 			safetyCounter++;
@@ -635,7 +636,9 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 
 		String summary;
 		if (context.getStateHolder().getState() == SystemState.WAITING_FOR_USER_DECISION) {
-			summary = "Waiting for user decision...";
+			summary = "⏸️ Waiting for user to select a variant...";
+			response.setResultType(ResultType.CHAT);
+			// DO NOT transition to DONE - keep waiting state
 		} else if ((state.getCurrentPhase().contains("TERMINAL") || state.getCurrentPhase().contains("SYNTHESIS")
 				|| state.getCurrentPhase().contains("DESIGN_SATISFIED"))
 				&& response.getResultType() != ResultType.ERROR) {
@@ -3354,11 +3357,18 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 		context.getMetadata().put("pending_candidates", candidates);
 		context.getMetadata().put("recommended_candidate", recommendedCandidate);
 
-		// Transition through IterationManager to WAITING_FOR_USER_DECISION
+		// ✅ FORCE TRANSITION TO WAITING
+		// Use the iterationManager's transition method if available
 		if (iterationManager != null) {
 			iterationManager.transition(SystemState.WAITING_FOR_USER_DECISION, context);
 		} else {
-			eu.kalafatic.evolution.controller.orchestration.IterationManager.forceTransition(SystemState.WAITING_FOR_USER_DECISION, context);
+			// Fallback: use the state holder directly with a token
+			TransitionToken token = context.getTransitionToken();
+			if (token == null) {
+				token = new TransitionToken("DarwinEngine-Wait-" + System.currentTimeMillis());
+				context.setTransitionToken(token);
+			}
+			context.getStateHolder().applyTransition(token, SystemState.WAITING_FOR_USER_DECISION);
 		}
 
 		// Publish candidate information to the existing Darwin/Evolution UI
@@ -3461,7 +3471,14 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 			if (selected != null) {
 				context.log("[DARWIN] User selected candidate: " + selected.getId() + " (" + selected.getStrategy() + ")");
 				context.getMetadata().put("resume_manual_id", selected.getId());
-				eu.kalafatic.evolution.controller.orchestration.IterationManager.forceTransition(SystemState.EXECUTING, context);
+
+				// ✅ TRANSITION TO EXECUTING
+				TransitionToken token = context.getTransitionToken();
+				if (token == null) {
+					token = new TransitionToken("DarwinEngine-Resume-" + System.currentTimeMillis());
+					context.setTransitionToken(token);
+				}
+				context.getStateHolder().applyTransition(token, SystemState.EXECUTING);
 
 				resumeEvolutionRun(context, session);
 			} else {
