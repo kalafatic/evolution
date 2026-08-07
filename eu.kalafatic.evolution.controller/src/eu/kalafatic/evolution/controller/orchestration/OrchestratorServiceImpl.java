@@ -336,11 +336,11 @@ public class OrchestratorServiceImpl implements OrchestratorService {
             if (autoApprove && session instanceof SessionContext) {
                 TaskContext taskContext = ((SessionContext)session).getTaskContext();
                 if (taskContext != null) {
-                    if (taskContext.isWaitingForApproval() || taskContext.isWaitingForInput()) {
-                        provideApproval(sessionId, true);
-                    } else if (taskContext.getStateHolder().getState() == SystemState.WAITING_FOR_USER_DECISION) {
+                    if (taskContext.getStateHolder().getState() == SystemState.WAITING_FOR_USER_DECISION) {
                         Log.log("[SERVICE] Auto-Approve checked while waiting. Resuming automatically with recommended candidate.");
                         eu.kalafatic.evolution.controller.orchestration.selfdev.ADarwinEngine.handleUserDecision(taskContext, "AUTO_APPROVE", session);
+                    } else if (taskContext.isWaitingForApproval() || taskContext.isWaitingForInput()) {
+                        provideApproval(sessionId, true);
                     }
                 }
             }
