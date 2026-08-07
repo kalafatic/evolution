@@ -215,7 +215,8 @@ public class InstructionsGroup extends AEvoGroup {
                 if (session != null) {
                     session.setAutoApprove(sel);
                 }
-                PromptInstructions pi = (InstructionsGroup.this.orchestrator != null && InstructionsGroup.this.orchestrator.getAiChat() != null) ? InstructionsGroup.this.orchestrator.getAiChat().getPromptInstructions() : null;
+                Orchestrator pageOrch = page.getOrchestrator();
+                PromptInstructions pi = (pageOrch != null && pageOrch.getAiChat() != null) ? pageOrch.getAiChat().getPromptInstructions() : null;
                 if (pi != null) {
                     pi.setAutoApprove(sel);
                 }
@@ -363,11 +364,12 @@ public class InstructionsGroup extends AEvoGroup {
                 java.util.Map<String, Object> config = projection.getConfiguration();
 
                 ChatSession session = page.getCurrentSession();
-                PromptInstructions pi = (this.orchestrator != null && this.orchestrator.getAiChat() != null) ? this.orchestrator.getAiChat().getPromptInstructions() : null;
+                Orchestrator pageOrch = page.getOrchestrator();
+                PromptInstructions pi = (pageOrch != null && pageOrch.getAiChat() != null) ? pageOrch.getAiChat().getPromptInstructions() : null;
 
                 setSelectionSafe(iterativeCheck, (Boolean) config.getOrDefault("iterativeMode", session != null ? session.isIterativeMode() : (pi != null ? pi.isIterativeMode() : true)));
                 setSelectionSafe(selfIterativeCheck, (Boolean) config.getOrDefault("selfIterativeMode", session != null ? session.isSelfIterativeMode() : (pi != null ? pi.isSelfIterativeMode() : false)));
-                setSelectionSafe(darwinCheck, (Boolean) config.getOrDefault("darwinMode", session != null ? session.isDarwinMode() : (this.orchestrator != null ? this.orchestrator.isDarwinMode() : true)));
+                setSelectionSafe(darwinCheck, (Boolean) config.getOrDefault("darwinMode", session != null ? session.isDarwinMode() : (pageOrch != null ? pageOrch.isDarwinMode() : true)));
                 setSelectionSafe(gitAutomationCheck, (Boolean) config.getOrDefault("gitAutomation", session != null ? session.isGitAutomation() : (pi != null ? pi.isGitAutomation() : false)));
                 setSelectionSafe(stepModeCheck, (Boolean) config.getOrDefault("stepMode", session != null ? session.isStepMode() : (pi != null ? pi.isStepMode() : false)));
                 setSelectionSafe(autoApproveCheck, (Boolean) config.getOrDefault("autoApprove", session != null ? session.isAutoApprove() : (pi != null ? pi.isAutoApprove() : false)));
