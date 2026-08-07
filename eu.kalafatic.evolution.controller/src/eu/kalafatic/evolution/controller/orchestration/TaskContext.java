@@ -56,6 +56,7 @@ public class TaskContext {
     private final Map<String, Object> metadata = new ConcurrentHashMap<>();
     private final Object pauseLock = new Object();
     private AiService aiService = new AiService();
+    private TransitionToken transitionToken;
 
     public interface LogListener {
         void onLog(String message);
@@ -435,5 +436,13 @@ public class TaskContext {
 
     public Map<String, Object> getMetadata() {
         return metadata;
+    }
+
+    public TransitionToken getTransitionToken() {
+        return transitionToken;
+    }
+
+    public void setTransitionToken(TransitionToken transitionToken) {
+        this.transitionToken = transitionToken;
     }
 }

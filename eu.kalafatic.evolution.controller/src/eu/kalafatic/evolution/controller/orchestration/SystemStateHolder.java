@@ -25,7 +25,7 @@ public class SystemStateHolder {
      * @param newState The target state.
      * @throws NullPointerException if token or newState is null.
      */
-    void applyTransition(TransitionToken token, SystemState newState) {
+    public void applyTransition(TransitionToken token, SystemState newState) {
         Objects.requireNonNull(token, "TransitionToken is mandatory for state changes");
         Objects.requireNonNull(newState, "Target SystemState cannot be null");
         currentState = newState;

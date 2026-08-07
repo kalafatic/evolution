@@ -7,9 +7,25 @@ package eu.kalafatic.evolution.controller.orchestration;
  */
 public final class TransitionToken {
 
+    private String id;
+
     /**
-     * Package-private constructor to enforce control plane authority.
+     * Public constructor to support token-based transitions.
      */
-    TransitionToken() {
+    public TransitionToken() {
+    }
+
+    /**
+     * Public constructor with identifier to support token-based transitions with context.
+     */
+    public TransitionToken(String id) {
+        this.id = id;
+    }
+
+    /**
+     * Gets the token identifier.
+     */
+    public String getId() {
+        return id;
     }
 }
