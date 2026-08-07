@@ -492,7 +492,17 @@ public class MultiPageEditor extends MultiPageEditorPart {
 	}
 
 	public TaskContext getCurrentContext() {
-		return currentContext;
+		if (currentContext != null) {
+			return currentContext;
+		}
+		if (orchestrator != null && orchestrator.getId() != null) {
+			eu.kalafatic.evolution.controller.orchestration.SessionContainer session =
+				eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getSession(orchestrator.getId());
+			if (session instanceof eu.kalafatic.evolution.controller.orchestration.SessionContext) {
+				return ((eu.kalafatic.evolution.controller.orchestration.SessionContext) session).getTaskContext();
+			}
+		}
+		return null;
 	}
 
 	public org.eclipse.jface.text.ITextSelection getLastTextSelection() {

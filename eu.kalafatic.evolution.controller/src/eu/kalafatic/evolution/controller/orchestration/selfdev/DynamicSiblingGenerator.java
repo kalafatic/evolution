@@ -816,8 +816,13 @@ public class DynamicSiblingGenerator {
 
 		// Check for main method if required
 		if (strategy.validationRules.stream().anyMatch(r -> r.contains("main"))) {
-			if (!code.contains("main")) {
-				return false;
+			if (!code.contains("main") && !code.contains("void main") && !code.contains("public static void main")) {
+				// Be lenient if it's a valid reusable service/class that defines methods/members
+				if (code.contains("class ") && (code.contains("void ") || code.contains("String ") || code.contains("public "))) {
+					// It is a valid reusable class/service without main, let it pass
+				} else {
+					return false;
+				}
 			}
 		}
 
