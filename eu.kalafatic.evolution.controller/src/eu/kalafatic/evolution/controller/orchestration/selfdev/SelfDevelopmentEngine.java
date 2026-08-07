@@ -590,19 +590,14 @@ public class SelfDevelopmentEngine extends ADarwinEngine {
 		// 8. VARIANT SELECTION
 		// ============================================================
 
-		String manualId = resolveVariantSelection(variants, context, manager);
-
-		if (manualId == null) {
-			BranchVariant recommended = variants.stream().max((v1, v2) -> Double.compare(v1.getScore(), v2.getScore())).orElse(null);
-			DarwinApprovalResult approval = requestApproval(variants, recommended, manager);
-			if (approval.getAction() == DarwinApprovalResult.Action.WAIT) {
-				EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
-				res.setSuccess(true);
-				res.setDecision(SelfDevDecision.STOP);
-				return res;
-			} else {
-				manualId = approval.getSelectedCandidateId();
-			}
+		String manualId;
+		try {
+			manualId = awaitApproval(variants, manager);
+		} catch (DarwinWaitException dwe) {
+			EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
+			res.setSuccess(true);
+			res.setDecision(SelfDevDecision.STOP);
+			return res;
 		}
 
 		// ============================================================
@@ -712,97 +707,6 @@ public class SelfDevelopmentEngine extends ADarwinEngine {
 	    return "I'm ready to evolve! Tell me what code you want me to work on, and I'll generate competing implementations for you to choose from.";
 	}
 
-	/**
-	 * Handles the Intent Expansion phase separately for clarity.
-	 */
-	protected EvaluationResult handleIntentExpansionPhase(TaskContext context, IterationManager manager,
-			EvolutionPhaseMachine phaseMachine, String goal, EvolutionPhase phase) throws Exception {
-
-		// Use the existing OrchestrationState
-		OrchestrationState state = context.getOrchestrationState();
-
-		EvolutionProgressPublisher.updateStage(context, EvolutionStage.ANALYSIS);
-		manager.transition(SystemState.ANALYZING, context);
-
-		eu.kalafatic.evolution.controller.orchestration.intent.IntentExpansionResult expansion = manager
-				.getIntentExpansionEngine().expand(goal, context);
-		state.getMetadata().put("intentExpansion", expansion);
-
-		context.consoleLog("[DARWIN] Intent Interpretation: " + expansion.getState());
-
-		if (!manager.handleIntentReview(context, expansion, goal)) {
-			return manager.failedResult();
-		}
-
-		eu.kalafatic.evolution.controller.orchestration.intent.ClarificationPlanner planner = manager
-				.getClarificationPlanner();
-		eu.kalafatic.evolution.controller.orchestration.intent.ClarificationPlanner.Strategy strategy = planner
-				.determineStrategy(expansion, context);
-		context.consoleLog("[DARWIN] Clarification Strategy: " + strategy);
-
-		boolean isStepMode = context.getOrchestrator().getAiChat() != null
-				&& context.getOrchestrator().getAiChat().getPromptInstructions() != null
-				&& context.getOrchestrator().getAiChat().getPromptInstructions().isStepMode();
-
-		if (strategy == eu.kalafatic.evolution.controller.orchestration.intent.ClarificationPlanner.Strategy.CLARIFY_USER
-				&& !isStepMode) {
-			if (context.isAutoApprove()) {
-				context.log("[DARWIN] AUTO Mode: Downgrading CLARIFY_USER to AUTO_INFER.");
-				strategy = eu.kalafatic.evolution.controller.orchestration.intent.ClarificationPlanner.Strategy.AUTO_INFER;
-			} else {
-				context.log("[DARWIN] MANUAL Mode: Downgrading CLARIFY_USER to BRANCH_PARALLEL.");
-				strategy = eu.kalafatic.evolution.controller.orchestration.intent.ClarificationPlanner.Strategy.BRANCH_PARALLEL;
-			}
-		}
-
-		if (strategy == eu.kalafatic.evolution.controller.orchestration.intent.ClarificationPlanner.Strategy.CLARIFY_USER) {
-			if (!manager.handleClarification(context, planner, expansion, goal)) {
-				return manager.failedResult();
-			}
-			EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
-			res.setSuccess(true);
-			res.setDecision(SelfDevDecision.CONTINUE);
-			return res;
-		}
-
-		EvolutionPhase nextPhase = manager.getEvolutionaryTrajectoryEngine().determineNextPhase(phase, null, context);
-		state.setCurrentPhase(EvolutionPhaseMachine.toLegacyString(nextPhase));
-
-		context.log("[DARWIN] Intent grounding complete. Progressing to " + nextPhase);
-		state.setIterationCount(state.getIterationCount() + 1);
-
-		EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
-		res.setSuccess(true);
-		res.setDecision(SelfDevDecision.CONTINUE);
-		return res;
-	}
-
-	/**
-	 * Resolves variant selection from pending commands or auto-selection.
-	 */
-	protected String resolveVariantSelection(List<BranchVariant> variants, TaskContext context,
-			IterationManager manager) {
-
-		OrchestrationState state = context.getOrchestrationState();
-		String manualId = null;
-
-		if (state.getMetadata().containsKey("pendingControlCommand")) {
-			String pendingCommand = (String) state.getMetadata().remove("pendingControlCommand");
-			if (pendingCommand.toLowerCase().startsWith("select ")
-					|| pendingCommand.toLowerCase().startsWith("approve variant ")) {
-				manualId = pendingCommand.toLowerCase().startsWith("select ") ? pendingCommand.substring(7).trim()
-						: pendingCommand.substring(16).trim();
-				context.log("[DARWIN] Auto-resolving variant selection from initial command: " + manualId);
-			} else if (pendingCommand.equalsIgnoreCase("approved") || pendingCommand.equalsIgnoreCase("proceed")
-					|| pendingCommand.equalsIgnoreCase("yes") || pendingCommand.equalsIgnoreCase("force solution")) {
-				manualId = variants.stream().max((v1, v2) -> Double.compare(v1.getScore(), v2.getScore()))
-						.map(v -> v.getId()).orElse(null);
-				context.log("[DARWIN] Auto-approving best variant from initial command: " + manualId);
-			}
-		}
-
-		return manualId;
-	}
 
 	/**
 	 * Handles iteration failure with appropriate recovery strategy.

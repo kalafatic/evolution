@@ -587,19 +587,14 @@ public class ChatEngine extends ADarwinEngine {
 		// 8. VARIANT SELECTION
 		// ============================================================
 
-		String manualId = resolveVariantSelection(variants, context, manager);
-
-		if (manualId == null) {
-			BranchVariant recommended = variants.stream().max((v1, v2) -> Double.compare(v1.getScore(), v2.getScore())).orElse(null);
-			DarwinApprovalResult approval = requestApproval(variants, recommended, manager);
-			if (approval.getAction() == DarwinApprovalResult.Action.WAIT) {
-				EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
-				res.setSuccess(true);
-				res.setDecision(SelfDevDecision.STOP);
-				return res;
-			} else {
-				manualId = approval.getSelectedCandidateId();
-			}
+		String manualId;
+		try {
+			manualId = awaitApproval(variants, manager);
+		} catch (DarwinWaitException dwe) {
+			EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
+			res.setSuccess(true);
+			res.setDecision(SelfDevDecision.STOP);
+			return res;
 		}
 
 		// ============================================================

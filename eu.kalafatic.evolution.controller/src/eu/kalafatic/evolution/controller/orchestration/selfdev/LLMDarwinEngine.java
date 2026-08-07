@@ -791,8 +791,9 @@ public class LLMDarwinEngine extends ADarwinEngine {
             if (context.getMetadata().containsKey("resume_manual_id")) {
                 selectedId = (String) context.getMetadata().remove("resume_manual_id");
             } else {
-                DarwinApprovalResult approval = requestApproval(variants, recommended, iterationManager);
-                if (approval.getAction() == DarwinApprovalResult.Action.WAIT) {
+                try {
+                    selectedId = awaitApproval(variants, iterationManager);
+                } catch (DarwinWaitException dwe) {
                     context.getMetadata().put("forge_resume_gen", gen);
                     context.getMetadata().put("forge_overall_winner", overallWinner);
                     context.getMetadata().put("forge_logs", logs);
@@ -805,8 +806,6 @@ public class LLMDarwinEngine extends ADarwinEngine {
                     waitResponse.setSummary("Evolution paused. Waiting for user decision.");
                     waitResponse.setContent("Evolution paused. Waiting for user decision.");
                     return waitResponse;
-                } else {
-                    selectedId = approval.getSelectedCandidateId();
                 }
             }
 

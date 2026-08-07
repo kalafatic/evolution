@@ -103,6 +103,9 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 	public static final int DEFAULT_EXPANSION_LEVEL = 5;
 
 	protected final TaskContext context;
+	private final Object approvalLock = new Object();
+	private volatile String selectedWinnerId = null;
+	private volatile boolean approvalResumed = false;
 	protected final IterationMemoryService memoryService;
 	protected final SystemStateSignalProvider stateProvider;
 	protected final RejectionPatternAnalyzer rejectionAnalyzer;
@@ -872,19 +875,14 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 		// 8. VARIANT SELECTION
 		// ============================================================
 
-		String manualId = resolveVariantSelection(variants, context, manager);
-
-		if (manualId == null) {
-			BranchVariant recommended = variants.stream().max((v1, v2) -> Double.compare(v1.getScore(), v2.getScore())).orElse(null);
-			DarwinApprovalResult approval = requestApproval(variants, recommended, manager);
-			if (approval.getAction() == DarwinApprovalResult.Action.WAIT) {
-				EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
-				res.setSuccess(true);
-				res.setDecision(SelfDevDecision.STOP);
-				return res;
-			} else {
-				manualId = approval.getSelectedCandidateId();
-			}
+		String manualId;
+		try {
+			manualId = awaitApproval(variants, manager);
+		} catch (DarwinWaitException dwe) {
+			EvaluationResult res = OrchestrationFactory.eINSTANCE.createEvaluationResult();
+			res.setSuccess(true);
+			res.setDecision(SelfDevDecision.STOP);
+			return res;
 		}
 
 		// ============================================================
@@ -3343,6 +3341,87 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 		}
 	}
 
+	public String awaitApproval(List<BranchVariant> variants, IterationManager manager) {
+		if (context.isAutoApprove()) {
+			BranchVariant recommended = variants.stream().max((v1, v2) -> Double.compare(v1.getScore(), v2.getScore())).orElse(null);
+			String recommendedId = recommended != null ? recommended.getId() : null;
+			context.log("[DARWIN] Auto-Approve enabled. Automatically selecting recommended candidate: " + recommendedId);
+			return recommendedId;
+		}
+
+		if (context.getMetadata().containsKey("resume_manual_id")) {
+			String resumedId = (String) context.getMetadata().remove("resume_manual_id");
+			context.log("[DARWIN] Resumed. Continuing with user-selected variant: " + resumedId);
+			return resumedId;
+		}
+
+		// Register the current engine instance as active in context metadata
+		context.getMetadata().put("active_engine", this);
+
+		// Save checkpoint
+		if (manager != null) {
+			manager.saveFullCheckpoint();
+		}
+
+		// Transition to WAITING_FOR_USER_DECISION
+		if (manager != null) {
+			manager.transition(SystemState.WAITING_FOR_USER_DECISION, context);
+		} else {
+			TransitionToken token = context.getTransitionToken();
+			if (token == null) {
+				token = new TransitionToken("DarwinEngine-Wait-" + System.currentTimeMillis());
+				context.setTransitionToken(token);
+			}
+			context.getStateHolder().applyTransition(token, SystemState.WAITING_FOR_USER_DECISION);
+		}
+
+		// Register pending approval
+		context.getMetadata().put("pending_candidates", variants);
+		BranchVariant recommended = variants.stream().max((v1, v2) -> Double.compare(v1.getScore(), v2.getScore())).orElse(null);
+		if (recommended != null) {
+			context.getMetadata().put("recommended_candidate", recommended);
+		}
+
+		// Transition TaskResult status to WAITING_FOR_APPROVAL via TaskContext approval listeners
+		context.requestApproval("Darwin variant selection required.");
+
+		// Publish candidate info to UI
+		emitDarwinBranches(context, variants, recommended);
+
+		context.log("[DARWIN] Manual Mode. Pausing Darwin loop thread and waiting for user decision.");
+
+		// Reset synchronization variables and block on approvalLock
+		synchronized (approvalLock) {
+			selectedWinnerId = null;
+			approvalResumed = false;
+			while (!approvalResumed) {
+				try {
+					approvalLock.wait();
+				} catch (InterruptedException e) {
+					Thread.currentThread().interrupt();
+					context.log("[DARWIN] Approval wait thread interrupted.");
+					break;
+				}
+			}
+		}
+
+		// Return the selected winner ID after resumption
+		String manualId = selectedWinnerId;
+		if ("RETRY".equals(manualId) || "REGENERATE".equals(manualId) || "CANCEL".equals(manualId) || "REJECT".equals(manualId)) {
+			throw new DarwinWaitException("Darwin execution aborted/retried by user: " + manualId);
+		}
+		context.log("[DARWIN] Resumed thread. Selected winner ID: " + manualId);
+		return manualId;
+	}
+
+	public void resumeWithWinner(String winnerId) {
+		synchronized (approvalLock) {
+			this.selectedWinnerId = winnerId;
+			this.approvalResumed = true;
+			approvalLock.notifyAll();
+		}
+	}
+
 	public DarwinApprovalResult requestApproval(
 		List<BranchVariant> candidates,
 		BranchVariant recommendedCandidate,
@@ -3471,17 +3550,7 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 
 			if (selected != null) {
 				context.log("[DARWIN] User selected candidate: " + selected.getId() + " (" + selected.getStrategy() + ")");
-				context.getMetadata().put("resume_manual_id", selected.getId());
-
-				// ✅ TRANSITION TO EXECUTING
-				TransitionToken token = context.getTransitionToken();
-				if (token == null) {
-					token = new TransitionToken("DarwinEngine-Resume-" + System.currentTimeMillis());
-					context.setTransitionToken(token);
-				}
-				context.getStateHolder().applyTransition(token, SystemState.EXECUTING);
-
-				resumeEvolutionRun(context, session);
+				resume(context, selected.getId(), session);
 			} else {
 				context.log("[DARWIN] Error: Selected candidate '" + finalCandidateId + "' is invalid or does not belong to the current pending Darwin session.");
 			}
@@ -3491,17 +3560,57 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 			context.getMetadata().remove("resume_manual_id");
 			eu.kalafatic.evolution.controller.orchestration.IterationManager.forceTransition(SystemState.INIT, context);
 
+			// Wake up active engine thread so it terminates, then start new run
+			Object activeEngineObj = context.getMetadata().get("active_engine");
+			if (activeEngineObj instanceof ADarwinEngine) {
+				((ADarwinEngine) activeEngineObj).resumeWithWinner("RETRY");
+			}
 			resumeEvolutionRun(context, session);
 		} else if (isReject) {
 			context.log("[DARWIN] User rejected all candidates. Finishing as rejected.");
 			context.getMetadata().remove("pending_candidates");
 			context.getMetadata().remove("resume_manual_id");
 			eu.kalafatic.evolution.controller.orchestration.IterationManager.forceTransition(SystemState.FAILED, context);
+
+			// Wake up active engine thread so it terminates
+			Object activeEngineObj = context.getMetadata().get("active_engine");
+			if (activeEngineObj instanceof ADarwinEngine) {
+				((ADarwinEngine) activeEngineObj).resumeWithWinner("REJECT");
+			}
 		} else if (isCancel) {
 			context.log("[DARWIN] User cancelled evolution. Safely releasing pending resources.");
 			context.getMetadata().remove("pending_candidates");
 			context.getMetadata().remove("resume_manual_id");
 			eu.kalafatic.evolution.controller.orchestration.IterationManager.forceTransition(SystemState.FAILED, context);
+
+			// Wake up active engine thread so it terminates
+			Object activeEngineObj = context.getMetadata().get("active_engine");
+			if (activeEngineObj instanceof ADarwinEngine) {
+				((ADarwinEngine) activeEngineObj).resumeWithWinner("CANCEL");
+			}
+		}
+	}
+
+	public static void resume(TaskContext context, String selectionId, eu.kalafatic.evolution.controller.orchestration.SessionContainer session) {
+		context.getMetadata().put("resume_manual_id", selectionId);
+
+		// Transition SystemState to EXECUTING
+		TransitionToken token = context.getTransitionToken();
+		if (token == null) {
+			token = new TransitionToken("DarwinEngine-Resume-" + System.currentTimeMillis());
+			context.setTransitionToken(token);
+		}
+		context.getStateHolder().applyTransition(token, SystemState.EXECUTING);
+
+		// Check if there is an active engine waiting
+		Object activeEngineObj = context.getMetadata().get("active_engine");
+		if (activeEngineObj instanceof ADarwinEngine) {
+			ADarwinEngine activeEngine = (ADarwinEngine) activeEngineObj;
+			context.log("[DARWIN] Centralized resume: waking up waiting engine thread.");
+			activeEngine.resumeWithWinner(selectionId);
+		} else {
+			context.log("[DARWIN] Centralized resume: no active engine thread found. Falling back to stateful background resume.");
+			resumeEvolutionRun(context, session);
 		}
 	}
 
