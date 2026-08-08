@@ -1,6 +1,8 @@
 package eu.kalafatic.evolution.forge.agent.export;
 
 import eu.kalafatic.evolution.forge.model.llm.EvoLlmModel;
+import eu.kalafatic.evolution.forge.model.llm.EvoModelArtifact;
+import eu.kalafatic.evolution.forge.model.llm.EvoModelExporter;
 import eu.kalafatic.evolution.forge.math.api.Tensor;
 import eu.kalafatic.evolution.forge.math.core.SimpleTensor;
 
@@ -19,7 +21,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
-public class OllamaExporter {
+public class OllamaExporter implements EvoModelExporter {
 
     public static class NamedTensor {
         public final String name;
@@ -42,6 +44,14 @@ public class OllamaExporter {
         public String identityStatus = "OK";
         public String details = "";
         public String fallbackRequiredReason = null;
+    }
+
+    @Override
+    public void export(EvoModelArtifact artifact, Path outputPath) throws Exception {
+        EvoLlmModel model = artifact.createModel();
+        java.util.Map<Integer, String> customVocab = new java.util.HashMap<>();
+        artifact.getTokenizerVocab().forEach((k, v) -> customVocab.put(v, k));
+        export(artifact.getModelName(), outputPath, model, customVocab);
     }
 
     public void export(String modelName, Path outputPath, EvoLlmModel model) throws IOException {
