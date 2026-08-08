@@ -42,8 +42,6 @@ public class FeedbackGroup extends AEvoGroup {
     private Button[] levelButtons;
     
     private Label expansionValueLabel;
-    private Button autoEscalateCheck;
-    private Label autoStatusLabel;
     private boolean isUpdating = false;
 	private Composite feedbackBox;
 
@@ -65,17 +63,6 @@ public class FeedbackGroup extends AEvoGroup {
                     setSelectionSafe(levelButtons[i], FeedbackLevel.values()[i] == level);
                 }
             }
-            setSelectionSafe(autoEscalateCheck, task.isAutoEscalate());
-
-            eu.kalafatic.evolution.view.projection.RuntimeProjection projection = eu.kalafatic.evolution.view.projection.ProjectionService.getInstance().getProjection(page.getCurrentSessionName());
-                      
-
-            // Update (auto) status
-            if (task.isAutoEscalate() && level.getValue() > FeedbackLevel.SIMPLE_VALUE) {
-                setAutoStatus(level.getName() + " (auto)");
-            } else {
-                setAutoStatus("");
-            }       
         } finally {
             isUpdating = false;
         }
@@ -118,7 +105,7 @@ public class FeedbackGroup extends AEvoGroup {
         
         
      // 3. Feedback Level Controls (Always Visible inside the group)
-        Composite levelBox = GUIFactory.INSTANCE.createComposite(group, 3);
+        Composite levelBox = GUIFactory.INSTANCE.createComposite(group, 2);
        
 
         GUIFactory.INSTANCE.createLabel(levelBox, "Feedback Depth:");
@@ -142,19 +129,6 @@ public class FeedbackGroup extends AEvoGroup {
                 }
             });
         }
-
-        autoEscalateCheck = GUIFactory.INSTANCE.createButton(levelBox, "Auto Escalation", SWT.CHECK, GUIFactory.BUTTON_WIDTH);
-        autoEscalateCheck.setToolTipText("Automatically increase feedback level during failures.");
-        autoEscalateCheck.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                if (isUpdating) return;
-                if (orchestrator != null && !orchestrator.getTasks().isEmpty()) {
-                    orchestrator.getTasks().get(0).setAutoEscalate(autoEscalateCheck.getSelection());
-                    editor.setDirty(true);
-                }
-            }
-        });
         
 
         // 1. Satisfaction Box
@@ -193,11 +167,5 @@ public class FeedbackGroup extends AEvoGroup {
             setSelectionSafe(levelButtons[i], i == selectedIndex);
         }
         isUpdating = false;
-    }
-
-    public void setAutoStatus(String text) {
-        if (autoStatusLabel != null && !autoStatusLabel.isDisposed()) {
-            setTextSafe(autoStatusLabel, text);
-        }
     }
 }
