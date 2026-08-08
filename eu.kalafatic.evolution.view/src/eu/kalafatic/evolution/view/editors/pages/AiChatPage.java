@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.Path;
@@ -1329,8 +1330,61 @@ public class AiChatPage extends AEvoPage {
 		instructionsGroup.setCaretToEnd();
 	}
 
+	private IFile findIFile(File file, String origPath) {
+		if (file == null) return null;
+		IFile iFile = ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(new Path(file.getAbsolutePath()));
+		if (iFile == null) {
+			try {
+				IFile[] workspaceFiles = ResourcesPlugin.getWorkspace().getRoot().findFilesForLocationURI(file.toURI());
+				if (workspaceFiles != null && workspaceFiles.length > 0) {
+					iFile = workspaceFiles[0];
+				}
+			} catch (Exception e) {
+				// Ignore
+			}
+		}
+		if (iFile == null) {
+			// Find relative to any project in the workspace
+			String rel = null;
+			File projectRoot = getProjectRoot();
+			if (projectRoot != null) {
+				try {
+					String canonicalFile = file.getCanonicalPath().replace('\\', '/');
+					String canonicalRoot = projectRoot.getCanonicalPath().replace('\\', '/');
+					if (canonicalFile.startsWith(canonicalRoot)) {
+						rel = canonicalFile.substring(canonicalRoot.length());
+						if (rel.startsWith("/")) rel = rel.substring(1);
+					}
+				} catch (Exception e) {
+					// Fallback
+				}
+			}
+			if (rel == null && origPath != null) {
+				int srcIndex = origPath.replace('\\', '/').indexOf("/src/");
+				if (srcIndex != -1) {
+					rel = origPath.substring(srcIndex + 1);
+				} else {
+					rel = origPath;
+				}
+			}
+			if (rel != null) {
+				if (rel.startsWith("/")) rel = rel.substring(1);
+				for (IProject project : ResourcesPlugin.getWorkspace().getRoot().getProjects()) {
+					IFile candidate = project.getFile(new Path(rel));
+					if (candidate.exists()) {
+						iFile = candidate;
+						break;
+					}
+				}
+			}
+		}
+		return iFile;
+	}
+
 	public void handleOpenDiff(String path) {
 		if (path == null || path.isEmpty()) return;
+
+		String origPath = path;
 
 		if (path.startsWith("file://") && !path.startsWith("file:///")) {
 			path = path.replaceFirst("file://", "file:///");
@@ -1367,21 +1421,22 @@ public class AiChatPage extends AEvoPage {
 		}
 
 		if (file.exists()) {
-			IFile iFile = ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(new Path(file.getAbsolutePath()));
+			IFile iFile = findIFile(file, origPath);
 			if (iFile != null) {
 				final String finalPath = path;
+				final IFile finalIFile = iFile;
 				Display.getDefault().asyncExec(() -> {
 					if (isDisposed()) return;
-					editor.refreshNavigator(iFile);
+					editor.refreshNavigator(finalIFile);
 
 					// Open the actual file editor
 					try {
-						IDE.openEditor(editor.getSite().getPage(), iFile);
+						IDE.openEditor(editor.getSite().getPage(), finalIFile);
 					} catch (Exception e) {
 						// Fallback if editor cannot be opened
 					}
 
-					editor.showComparePage(iFile);
+					editor.showComparePage(finalIFile);
 					chatGroup.selectFile(finalPath);
 				});
 			}
@@ -1390,6 +1445,8 @@ public class AiChatPage extends AEvoPage {
 
 	public void handleOpenMediatedEditor(String path) {
 		if (path == null || path.isEmpty()) return;
+
+		String origPath = path;
 
 		if (path.startsWith("file://") && !path.startsWith("file:///")) {
 			path = path.replaceFirst("file://", "file:///");
@@ -1414,13 +1471,14 @@ public class AiChatPage extends AEvoPage {
 		}
 
 		if (file.exists()) {
-			IFile iFile = ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(new Path(file.getAbsolutePath()));
+			IFile iFile = findIFile(file, origPath);
 			if (iFile != null) {
+				final IFile finalIFile = iFile;
 				Display.getDefault().asyncExec(() -> {
 					if (isDisposed()) return;
 					try {
-						editor.refreshNavigator(iFile);
-						IDE.openEditor(editor.getSite().getPage(), iFile, eu.kalafatic.evolution.view.editors.MediatedEditor.ID);
+						editor.refreshNavigator(finalIFile);
+						IDE.openEditor(editor.getSite().getPage(), finalIFile, eu.kalafatic.evolution.view.editors.MediatedEditor.ID);
 					} catch (Exception e) {
 						e.printStackTrace();
 					}
@@ -1436,6 +1494,7 @@ public class AiChatPage extends AEvoPage {
 		File projectRoot = getProjectRoot();
 
 		for (String path : paths) {
+			String origPath = path;
 			if (path.startsWith("file://") && !path.startsWith("file:///")) {
 				path = path.replaceFirst("file://", "file:///");
 			}
@@ -1458,7 +1517,7 @@ public class AiChatPage extends AEvoPage {
 			}
 
 			if (file.exists()) {
-				IFile iFile = ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(new Path(file.getAbsolutePath()));
+				IFile iFile = findIFile(file, origPath);
 				if (iFile != null) files.add(iFile);
 			}
 		}
