@@ -110,6 +110,10 @@ public class SimpleBPETokenizer implements Tokenizer {
         return vocab.size();
     }
 
+    public Map<String, Integer> getVocab() {
+        return vocab;
+    }
+
     public Map<Integer, String> getInvVocab() {
         return invVocab;
     }

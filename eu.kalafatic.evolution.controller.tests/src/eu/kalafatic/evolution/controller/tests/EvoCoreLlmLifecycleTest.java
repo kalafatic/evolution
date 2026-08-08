@@ -160,13 +160,17 @@ public class EvoCoreLlmLifecycleTest {
             assertEquals((byte) 'F', bytes[3]);
         } finally {
             // cleanup
-            java.io.File[] files = tempDir.toFile().listFiles();
-            if (files != null) {
-                for (java.io.File f : files) {
-                    f.delete();
-                }
-            }
-            Files.delete(tempDir);
+            deleteDirectory(tempDir.toFile());
         }
+    }
+
+    private void deleteDirectory(java.io.File directory) {
+        java.io.File[] allContents = directory.listFiles();
+        if (allContents != null) {
+            for (java.io.File file : allContents) {
+                deleteDirectory(file);
+            }
+        }
+        directory.delete();
     }
 }
