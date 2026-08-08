@@ -223,21 +223,67 @@ public class OllamaExporter {
         buf.putLong(serializedTensors.size()); // tensor_count
 
         // Metadata Key-Value pairs
-        int kvCount = 13;
+        int kvCount = 18;
         buf.putLong(kvCount);
 
+        // Print Diagnostic Logging
+        System.out.println("[EVO-GGUF] Architecture: llama");
+        System.out.println("[EVO-GGUF] Vocabulary: " + model.getVocabSize());
+        System.out.println("[EVO-GGUF] Context: " + model.getMaxSeqLen());
+        System.out.println("[EVO-GGUF] Embedding: " + model.getDModel());
+        System.out.println("[EVO-GGUF] Layers: " + model.getNumBlocks());
+        System.out.println("[EVO-GGUF] Attention heads: " + model.getNumHeads());
+        System.out.println("[EVO-GGUF] KV heads: " + model.getNumHeads());
+        System.out.println("[EVO-GGUF] Feed-forward: " + model.getDff());
+        System.out.println("[EVO-GGUF] RMSNorm epsilon: 1e-5");
+        System.out.println("[EVO-GGUF] Tensor count: " + serializedTensors.size());
+        System.out.println("[EVO-GGUF] Metadata count: " + kvCount);
+
+        System.out.println("[EVO-GGUF] Key: general.architecture = llama");
         writeStringKV(buf, "general.architecture", "llama");
+
+        System.out.println("[EVO-GGUF] Key: general.name = EVO LLM");
         writeStringKV(buf, "general.name", "EVO LLM");
+
+        System.out.println("[EVO-GGUF] Key: llama.context_length = " + model.getMaxSeqLen());
         writeIntKV(buf, "llama.context_length", model.getMaxSeqLen());
+
+        System.out.println("[EVO-GGUF] Key: llama.embedding_length = " + model.getDModel());
         writeIntKV(buf, "llama.embedding_length", model.getDModel());
+
+        System.out.println("[EVO-GGUF] Key: llama.feed_forward_length = " + model.getDff());
         writeIntKV(buf, "llama.feed_forward_length", model.getDff());
+
+        System.out.println("[EVO-GGUF] Key: llama.block_count = " + model.getNumBlocks());
         writeIntKV(buf, "llama.block_count", model.getNumBlocks());
+
+        System.out.println("[EVO-GGUF] Key: llama.attention.head_count = " + model.getNumHeads());
         writeIntKV(buf, "llama.attention.head_count", model.getNumHeads());
+
+        System.out.println("[EVO-GGUF] Key: llama.attention.head_count_kv = " + model.getNumHeads());
         writeIntKV(buf, "llama.attention.head_count_kv", model.getNumHeads());
+
+        System.out.println("[EVO-GGUF] Key: llama.vocab_size = " + model.getVocabSize());
         writeIntKV(buf, "llama.vocab_size", model.getVocabSize());
 
+        System.out.println("[EVO-GGUF] Key: llama.attention.layer_norm_rms_epsilon = 1e-5");
+        writeFloatKV(buf, "llama.attention.layer_norm_rms_epsilon", 1e-5f);
+
+        System.out.println("[EVO-GGUF] Key: llama.rope.dimension_count = " + (model.getDModel() / model.getNumHeads()));
+        writeIntKV(buf, "llama.rope.dimension_count", model.getDModel() / model.getNumHeads());
+
         // Tokenizer metadata
+        System.out.println("[EVO-GGUF] Key: tokenizer.ggml.model = llama");
         writeStringKV(buf, "tokenizer.ggml.model", "llama");
+
+        System.out.println("[EVO-GGUF] Key: tokenizer.ggml.bos_token_id = 1");
+        writeIntKV(buf, "tokenizer.ggml.bos_token_id", 1);
+
+        System.out.println("[EVO-GGUF] Key: tokenizer.ggml.eos_token_id = 2");
+        writeIntKV(buf, "tokenizer.ggml.eos_token_id", 2);
+
+        System.out.println("[EVO-GGUF] Key: tokenizer.ggml.unknown_token_id = 0");
+        writeIntKV(buf, "tokenizer.ggml.unknown_token_id", 0);
 
         // Generate dynamic mock vocabulary to pass llama.cpp tokenizer validation
         List<String> tokens = new ArrayList<>();
@@ -256,8 +302,13 @@ public class OllamaExporter {
             tokenTypes[i] = (i < 3) ? 3 : 1; // Control token vs Normal token
         }
 
+        System.out.println("[EVO-GGUF] Key: tokenizer.ggml.tokens = [array of size " + model.getVocabSize() + "]");
         writeStringArrayKV(buf, "tokenizer.ggml.tokens", tokens);
+
+        System.out.println("[EVO-GGUF] Key: tokenizer.ggml.scores = [array of size " + model.getVocabSize() + "]");
         writeFloatArrayKV(buf, "tokenizer.ggml.scores", scores);
+
+        System.out.println("[EVO-GGUF] Key: tokenizer.ggml.token_type = [array of size " + model.getVocabSize() + "]");
         writeIntArrayKV(buf, "tokenizer.ggml.token_type", tokenTypes);
 
         // Tensor infos and offset calculations
@@ -561,6 +612,12 @@ public class OllamaExporter {
         writeString(buf, key);
         buf.putInt(8); // GGUF_METADATA_VALUE_TYPE_STRING
         writeString(buf, value);
+    }
+
+    private void writeFloatKV(ByteBuffer buf, String key, float value) {
+        writeString(buf, key);
+        buf.putInt(6); // GGUF_METADATA_VALUE_TYPE_FLOAT32
+        buf.putFloat(value);
     }
 
     private void writeIntKV(ByteBuffer buf, String key, int value) {
