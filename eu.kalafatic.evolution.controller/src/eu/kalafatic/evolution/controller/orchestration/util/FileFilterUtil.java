@@ -15,7 +15,11 @@ public class FileFilterUtil {
             lowerPath.startsWith("data/") ||
             lowerPath.startsWith(".git/") ||
             lowerPath.startsWith(".mvn/") ||
-            lowerPath.startsWith(".settings/")) {
+            lowerPath.startsWith(".settings/") ||
+            lowerPath.startsWith("self-dev-run/") ||
+            lowerPath.startsWith("genome/") ||
+            lowerPath.startsWith("target/") ||
+            lowerPath.startsWith("resources/")) {
             return true;
         }
 
@@ -32,7 +36,15 @@ public class FileFilterUtil {
             lowerPath.endsWith("_analysis.md") ||
             lowerPath.endsWith("_audit.md") ||
             lowerPath.endsWith("trajectory_map.json") ||
-            lowerPath.endsWith("semantic_overview.md")) {
+            lowerPath.endsWith("semantic_overview.md") ||
+            lowerPath.endsWith(".ai.json") ||
+            lowerPath.equals(".project") ||
+            lowerPath.equals(".classpath") ||
+            lowerPath.equals("plugin.xml") ||
+            lowerPath.equals("build.properties") ||
+            lowerPath.equals("plugin.properties") ||
+            lowerPath.endsWith(".zip") ||
+            lowerPath.endsWith(".tmp")) {
             return true;
         }
 
