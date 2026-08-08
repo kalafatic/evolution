@@ -41,6 +41,13 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
 import eu.kalafatic.utils.factories.GUIFactory;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import eu.kalafatic.evolution.forge.model.llm.EvoLlmModel;
+import eu.kalafatic.evolution.forge.model.llm.EvoModelSerializer;
+import eu.kalafatic.evolution.forge.agent.export.OllamaExporter;
 
 /**
  * @evo.lastModified: 13:A
@@ -84,7 +91,7 @@ public class ModelsGroup extends AEvoGroup {
 
 	public void createButtons(FormToolkit toolkit) {
 		Composite buttonBar = toolkit.createComposite(group);
-        buttonBar.setLayout(new GridLayout(8, false));
+        buttonBar.setLayout(new GridLayout(9, false));
         buttonBar.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, false));
         
         Button reloadButton = GUIFactory.INSTANCE.createButton(buttonBar, "Reload");
@@ -150,6 +157,20 @@ public class ModelsGroup extends AEvoGroup {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 editor.doSave(null);
+            }
+        });
+
+        Button exportButton = GUIFactory.INSTANCE.createButton(buttonBar, "Export");
+        exportButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                IStructuredSelection selection = (IStructuredSelection) viewer.getSelection();
+                if (selection.isEmpty()) {
+                    MessageDialog.openWarning(group.getShell(), "Export Model", "Please select a model in the table to export.");
+                    return;
+                }
+                AIProvider item = (AIProvider) selection.getFirstElement();
+                handleExportEvoModel(item);
             }
         });
 	}
@@ -451,6 +472,25 @@ public class ModelsGroup extends AEvoGroup {
     }
 
     private void fillContextMenu(IMenuManager manager) {
+        IStructuredSelection selection = (IStructuredSelection) viewer.getSelection();
+        boolean isEvoArtifact = false;
+        AIProvider selectedItem = null;
+        if (!selection.isEmpty()) {
+            selectedItem = (AIProvider) selection.getFirstElement();
+            if (selectedItem != null && selectedItem.isLocal()) {
+                String name = selectedItem.getName();
+                if (name != null) {
+                    String workspacePathStr = ProjectModelManager.getWorkspacePath();
+                    if (workspacePathStr != null) {
+                        File dir = new File(workspacePathStr, "forge-output/" + name);
+                        isEvoArtifact = dir.exists() && dir.isDirectory() &&
+                                       new File(dir, "weights.bin").exists() &&
+                                       new File(dir, "config.json").exists();
+                    }
+                }
+            }
+        }
+
         manager.add(new Action("Reload") {
             @Override public void run() {
                 String ollamaUrl = (orchestrator.getOllama() != null) ? orchestrator.getOllama().getUrl() : "http://localhost:11434";
@@ -464,6 +504,17 @@ public class ModelsGroup extends AEvoGroup {
         manager.add(new Action("Use") {
             @Override public void run() { handleUseModel(); }
         });
+
+        if (isEvoArtifact) {
+            final AIProvider finalItem = selectedItem;
+            manager.add(new Separator());
+            manager.add(new Action("Export EVO Model...") {
+                @Override public void run() {
+                    handleExportEvoModel(finalItem);
+                }
+            });
+        }
+
         manager.add(new Separator());
         manager.add(new Action("Add") {
             @Override public void run() { handleAddModel(); }
@@ -852,4 +903,162 @@ public class ModelsGroup extends AEvoGroup {
             });
         });
 	}
+
+    private void handleExportEvoModel(AIProvider item) {
+        if (item == null) return;
+
+        // 1. Verify it is a valid EVO model artifact
+        String workspacePathStr = ProjectModelManager.getWorkspacePath();
+        if (workspacePathStr == null) {
+            MessageDialog.openError(group.getShell(), "Export Error", "Workspace path not found.");
+            return;
+        }
+
+        File dir = new File(workspacePathStr, "forge-output/" + item.getName());
+        boolean isEvoArtifact = dir.exists() && dir.isDirectory() &&
+                               new File(dir, "weights.bin").exists() &&
+                               new File(dir, "config.json").exists();
+
+        if (!isEvoArtifact) {
+            MessageDialog.openError(group.getShell(), "Export Error",
+                    "Selected model is not a valid EVO model artifact on disk.\n" +
+                    "It must have 'weights.bin' and 'config.json' in 'forge-output/" + item.getName() + "'.");
+            return;
+        }
+
+        // 2. Prompt for Exporter target selection
+        String[] options = { "Ollama (Local GGUF)", "Standalone GGUF (Disk)", "Hugging Face (Weights/Config)" };
+        MessageDialog optionDialog = new MessageDialog(group.getShell(), "Export EVO Model Artifact", null,
+                "Select export format / exporter:", MessageDialog.QUESTION, options, 0);
+        int choice = optionDialog.open();
+        if (choice < 0) return; // User cancelled / closed the dialog
+
+        if (choice == 0) {
+            // Ollama (Local GGUF)
+            // Just run standard OllamaExporter background Job
+            org.eclipse.core.runtime.jobs.Job job = new org.eclipse.core.runtime.jobs.Job("Exporting Model to Ollama: " + item.getName()) {
+                @Override
+                protected org.eclipse.core.runtime.IStatus run(org.eclipse.core.runtime.IProgressMonitor monitor) {
+                    try {
+                        Path artifactPath = dir.toPath();
+                        EvoLlmModel model = EvoModelSerializer.load(artifactPath);
+                        OllamaExporter exporter = new OllamaExporter();
+                        exporter.export(item.getName(), artifactPath, model);
+
+                        Display.getDefault().asyncExec(() -> {
+                            load();
+                            MessageDialog.openInformation(group.getShell(), "Export Complete",
+                                    "Successfully exported and registered model '" + item.getName() + "' in Ollama.");
+                        });
+                        return org.eclipse.core.runtime.Status.OK_STATUS;
+                    } catch (Exception e) {
+                        Display.getDefault().asyncExec(() -> {
+                            MessageDialog.openError(group.getShell(), "Export Error", "Failed to export model: " + e.getMessage());
+                        });
+                        return org.eclipse.core.runtime.Status.CANCEL_STATUS;
+                    }
+                }
+            };
+            job.schedule();
+
+        } else if (choice == 1) {
+            // Standalone GGUF (Disk)
+            org.eclipse.swt.widgets.DirectoryDialog dirDialog = new org.eclipse.swt.widgets.DirectoryDialog(group.getShell());
+            dirDialog.setText("Select Standalone GGUF Export Target Directory");
+            String selectedDir = dirDialog.open();
+            if (selectedDir == null || selectedDir.trim().isEmpty()) return;
+
+            Path targetDir = Paths.get(selectedDir);
+
+            org.eclipse.core.runtime.jobs.Job job = new org.eclipse.core.runtime.jobs.Job("Exporting Standalone GGUF: " + item.getName()) {
+                @Override
+                protected org.eclipse.core.runtime.IStatus run(org.eclipse.core.runtime.IProgressMonitor monitor) {
+                    try {
+                        Path artifactPath = dir.toPath();
+
+                        // If gguf already exists in the artifact folder on disk, just copy it!
+                        Path existingGguf = artifactPath.resolve("exports/ollama/evo.gguf");
+                        Path existingModelfile = artifactPath.resolve("exports/ollama/Modelfile");
+
+                        if (Files.exists(existingGguf)) {
+                            Files.createDirectories(targetDir);
+                            Files.copy(existingGguf, targetDir.resolve(item.getName() + ".gguf"), StandardCopyOption.REPLACE_EXISTING);
+                            if (Files.exists(existingModelfile)) {
+                                Files.copy(existingModelfile, targetDir.resolve("Modelfile"), StandardCopyOption.REPLACE_EXISTING);
+                            }
+                        } else {
+                            // Otherwise load and export via exporter to the custom directory
+                            EvoLlmModel model = EvoModelSerializer.load(artifactPath);
+                            OllamaExporter exporter = new OllamaExporter();
+                            exporter.export(item.getName(), targetDir, model);
+                        }
+
+                        Display.getDefault().asyncExec(() -> {
+                            MessageDialog.openInformation(group.getShell(), "Export Complete",
+                                    "Successfully exported standalone GGUF files to: " + targetDir.toAbsolutePath());
+                        });
+                        return org.eclipse.core.runtime.Status.OK_STATUS;
+                    } catch (Exception e) {
+                        Display.getDefault().asyncExec(() -> {
+                            MessageDialog.openError(group.getShell(), "Export Error", "Failed to export standalone GGUF: " + e.getMessage());
+                        });
+                        return org.eclipse.core.runtime.Status.CANCEL_STATUS;
+                    }
+                }
+            };
+            job.schedule();
+
+        } else if (choice == 2) {
+            // Hugging Face (Weights/Config)
+            org.eclipse.swt.widgets.DirectoryDialog dirDialog = new org.eclipse.swt.widgets.DirectoryDialog(group.getShell());
+            dirDialog.setText("Select Hugging Face Format Export Target Directory");
+            String selectedDir = dirDialog.open();
+            if (selectedDir == null || selectedDir.trim().isEmpty()) return;
+
+            Path targetDir = Paths.get(selectedDir);
+
+            org.eclipse.core.runtime.jobs.Job job = new org.eclipse.core.runtime.jobs.Job("Exporting Hugging Face Format: " + item.getName()) {
+                @Override
+                protected org.eclipse.core.runtime.IStatus run(org.eclipse.core.runtime.IProgressMonitor monitor) {
+                    try {
+                        Path artifactPath = dir.toPath();
+                        Files.createDirectories(targetDir);
+
+                        // Copy config.json
+                        if (Files.exists(artifactPath.resolve("config.json"))) {
+                            Files.copy(artifactPath.resolve("config.json"), targetDir.resolve("config.json"), StandardCopyOption.REPLACE_EXISTING);
+                        }
+                        // Copy weights.bin
+                        if (Files.exists(artifactPath.resolve("weights.bin"))) {
+                            Files.copy(artifactPath.resolve("weights.bin"), targetDir.resolve("weights.bin"), StandardCopyOption.REPLACE_EXISTING);
+                        }
+                        // Copy tokenizer.json
+                        if (Files.exists(artifactPath.resolve("tokenizer.json"))) {
+                            Files.copy(artifactPath.resolve("tokenizer.json"), targetDir.resolve("tokenizer.json"), StandardCopyOption.REPLACE_EXISTING);
+                        }
+                        // Copy model-metadata.json
+                        if (Files.exists(artifactPath.resolve("model-metadata.json"))) {
+                            Files.copy(artifactPath.resolve("model-metadata.json"), targetDir.resolve("model-metadata.json"), StandardCopyOption.REPLACE_EXISTING);
+                        }
+                        // Copy training.json
+                        if (Files.exists(artifactPath.resolve("training.json"))) {
+                            Files.copy(artifactPath.resolve("training.json"), targetDir.resolve("training.json"), StandardCopyOption.REPLACE_EXISTING);
+                        }
+
+                        Display.getDefault().asyncExec(() -> {
+                            MessageDialog.openInformation(group.getShell(), "Export Complete",
+                                    "Successfully exported Hugging Face format files (weights, config, tokenizer) to: " + targetDir.toAbsolutePath());
+                        });
+                        return org.eclipse.core.runtime.Status.OK_STATUS;
+                    } catch (Exception e) {
+                        Display.getDefault().asyncExec(() -> {
+                            MessageDialog.openError(group.getShell(), "Export Error", "Failed to export Hugging Face format: " + e.getMessage());
+                        });
+                        return org.eclipse.core.runtime.Status.CANCEL_STATUS;
+                    }
+                }
+            };
+            job.schedule();
+        }
+    }
 }

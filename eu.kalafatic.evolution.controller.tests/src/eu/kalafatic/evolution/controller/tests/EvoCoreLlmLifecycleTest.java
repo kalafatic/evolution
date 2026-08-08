@@ -159,14 +159,20 @@ public class EvoCoreLlmLifecycleTest {
             assertEquals((byte) 'U', bytes[2]);
             assertEquals((byte) 'F', bytes[3]);
         } finally {
-            // cleanup
-            java.io.File[] files = tempDir.toFile().listFiles();
-            if (files != null) {
-                for (java.io.File f : files) {
-                    f.delete();
+            // cleanup recursively
+            deleteRecursive(tempDir.toFile());
+        }
+    }
+
+    private void deleteRecursive(java.io.File file) {
+        if (file.isDirectory()) {
+            java.io.File[] children = file.listFiles();
+            if (children != null) {
+                for (java.io.File child : children) {
+                    deleteRecursive(child);
                 }
             }
-            Files.delete(tempDir);
         }
+        file.delete();
     }
 }
