@@ -302,6 +302,7 @@ public class FinalResponseAssembler {
 
             File f = new File(projectRoot, relativePath);
             if (entry.getValue() != FileChangeTracker.ChangeType.REMOVED && !f.exists()) continue;
+            if (entry.getValue() != FileChangeTracker.ChangeType.REMOVED && f.isDirectory()) continue;
 
             String displayName = new File(relativePath).getName();
 

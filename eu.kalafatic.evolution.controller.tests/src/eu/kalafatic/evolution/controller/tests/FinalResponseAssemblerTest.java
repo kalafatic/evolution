@@ -63,8 +63,8 @@ public class FinalResponseAssemblerTest {
         String output = response.toString();
         assertTrue("Output should contain Modified Files block", output.contains("Modified Files"));
         assertTrue("Output should contain file links", output.contains("file://"));
-        assertFalse("Output should not contain Repository Changes block", output.contains("Repository Changes"));
-        assertFalse("Output should not contain Verification block", output.contains("Verification"));
+        assertTrue("Output should contain Repository Changes block", output.contains("Repository Changes"));
+        assertTrue("Output should contain Verification block", output.contains("Verification"));
     }
 
     @Test

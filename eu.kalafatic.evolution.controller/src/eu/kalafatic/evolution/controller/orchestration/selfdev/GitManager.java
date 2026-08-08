@@ -67,7 +67,7 @@ public class GitManager {
 
     public boolean isGitRepository() {
         File gitDir = new File(root, ".git");
-        return gitDir.exists() && gitDir.isDirectory();
+        return gitDir.exists() && (gitDir.isDirectory() || gitDir.isFile());
     }
 
     public void cleanupLocks() {
