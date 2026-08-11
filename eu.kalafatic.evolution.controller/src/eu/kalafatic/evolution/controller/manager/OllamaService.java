@@ -500,7 +500,8 @@ public class OllamaService {
                     JSONObject m = models.getJSONObject(i);
                     String name = m.getString("name");
                     long size = m.optLong("size", 0);
-                    result.add(new OllamaModel(name, size));
+                    String modifiedAt = m.optString("modified_at", "");
+                    result.add(new OllamaModel(name, size, modifiedAt));
                 }
                 this.cachedModels = Collections.unmodifiableList(result);
                 this.lastModelRefresh = System.currentTimeMillis();
