@@ -171,6 +171,49 @@ public class EvoModelPersistentArtifactTest {
     }
 
     @Test
+    public void testEvoFilePackagingLoadAndExport() throws Exception {
+        EvoModelArtifact originalArtifact = new EvoModelArtifact();
+        originalArtifact.initializeFromModel("packaged-model", originalModel, mockVocab);
+
+        Path evoFile = tempFolder.newFolder("evo-packed").toPath().resolve("my-model.evo");
+
+        // Save as single packaged file (.evo format)
+        originalArtifact.save(evoFile);
+
+        // Verify .evo package file exists and is indeed a packaged ZIP-archive file
+        assertTrue(Files.exists(evoFile));
+        assertFalse(Files.isDirectory(evoFile));
+        assertTrue(evoFile.getFileName().toString().endsWith(".evo"));
+
+        // Load packed .evo file directly
+        EvoModelArtifact loadedArtifact = EvoModelArtifact.load(evoFile);
+
+        // Verify fields
+        assertEquals("packaged-model", loadedArtifact.getModelName());
+        assertEquals(originalArtifact.getVocabSize(), loadedArtifact.getVocabSize());
+        assertEquals(originalArtifact.getEmbeddingSize(), loadedArtifact.getEmbeddingSize());
+
+        // Check weights equivalence
+        List<Tensor> origWeights = originalArtifact.getWeights();
+        List<Tensor> loadWeights = loadedArtifact.getWeights();
+        assertEquals(origWeights.size(), loadWeights.size());
+        for (int i = 0; i < origWeights.size(); i++) {
+            assertArrayEquals(origWeights.get(i).getData(), loadWeights.get(i).getData(), 1e-6f);
+        }
+
+        // Export directly from loaded artifact
+        OllamaExporter exporter = new OllamaExporter();
+        Path exportDir = tempFolder.newFolder("evo-packed-export").toPath();
+        exporter.export(loadedArtifact, exportDir);
+
+        Path ggufFile = exportDir.resolve("evo.gguf");
+        Path modelfile = exportDir.resolve("Modelfile");
+        assertTrue(Files.exists(ggufFile));
+        assertTrue(Files.exists(modelfile));
+        assertTrue(Files.size(ggufFile) > 1024);
+    }
+
+    @Test
     public void testCleanErrorHandlingOnMissingMetadata() throws Exception {
         EvoModelArtifact artifact = new EvoModelArtifact();
         artifact.initializeFromModel("evo-test-missing-meta", originalModel, mockVocab);
