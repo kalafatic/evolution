@@ -785,7 +785,9 @@ public class ProjectModelManager {
                         for (File subdir : subdirs) {
                             if (subdir.getName().startsWith("evo-")) {
                                 File ggufFile = new File(subdir, "evo.gguf");
-                                if (ggufFile.exists()) {
+                                File weightsFile = new File(subdir, "weights.bin");
+                                File configJsonFile = new File(subdir, "config.json");
+                                if (ggufFile.exists() || (weightsFile.exists() && configJsonFile.exists())) {
                                     String modelName = subdir.getName();
                                     if (models.stream().noneMatch(i -> i.getName().equalsIgnoreCase(modelName))) {
                                         AIProvider item = factory.createAIProvider();
@@ -794,8 +796,13 @@ public class ProjectModelManager {
                                         item.setUrl(ollamaUrl);
                                         item.setFormat("ollama");
                                         if (ollamaOnline) {
-                                            item.setState("NA");
-                                            item.setStateDescription("Exported forged model in forge-output folder - GGUF exists on disk but is not registered in Ollama.");
+                                            if (ggufFile.exists()) {
+                                                item.setState("NA");
+                                                item.setStateDescription("Exported forged model in forge-output folder - GGUF exists on disk but is not registered in Ollama.");
+                                            } else {
+                                                item.setState("NA");
+                                                item.setStateDescription("Forged model artifact in forge-output folder - weights and config exist, but GGUF is not exported yet.");
+                                            }
                                         } else {
                                             item.setState("ERR");
                                             item.setStateDescription("Ollama server offline");
@@ -829,8 +836,22 @@ public class ProjectModelManager {
                             item.setState("NA");
                             item.setStateDescription("Model GGUF exists on disk but is not registered in Ollama. Self-healing will register it on first use.");
                         } else {
-                            item.setState("ERR");
-                            item.setStateDescription("Model NOT found in Ollama and GGUF is missing.");
+                            // Check if it is an unexported artifact
+                            String wp = getWorkspacePath();
+                            boolean isArtifact = false;
+                            if (wp != null && !wp.isEmpty()) {
+                                File dir = new File(wp, "forge-output/" + item.getName());
+                                if (dir.exists() && dir.isDirectory() && new File(dir, "weights.bin").exists() && new File(dir, "config.json").exists()) {
+                                    isArtifact = true;
+                                }
+                            }
+                            if (isArtifact) {
+                                item.setState("NA");
+                                item.setStateDescription("Forged model artifact - weights and config exist. Ready to be exported.");
+                            } else {
+                                item.setState("ERR");
+                                item.setStateDescription("Model NOT found in Ollama and GGUF is missing.");
+                            }
                         }
                     }
                 }

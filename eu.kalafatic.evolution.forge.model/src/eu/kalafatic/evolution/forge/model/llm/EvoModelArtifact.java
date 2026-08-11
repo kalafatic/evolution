@@ -10,6 +10,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Self-contained native EVO model artifact.
@@ -122,9 +124,29 @@ public class EvoModelArtifact {
     }
 
     /**
-     * Saves the native model artifact to on-disk stable layout files.
+     * Saves the native model artifact as a single unified package with .evo extension,
+     * or as a directory structure for backward compatibility.
      */
-    public EvoModelArtifact save(Path dir) throws IOException {
+    public EvoModelArtifact save(Path targetPath) throws IOException {
+        if (Files.isDirectory(targetPath)) {
+            saveDirectory(targetPath);
+        } else {
+            Path evoFile = targetPath;
+            if (!evoFile.getFileName().toString().toLowerCase().endsWith(".evo")) {
+                evoFile = evoFile.getParent().resolve(evoFile.getFileName().toString() + ".evo");
+            }
+            Path tempDir = Files.createTempDirectory("evo-artifact-zip");
+            try {
+                saveDirectory(tempDir);
+                packZip(tempDir, evoFile);
+            } finally {
+                deleteDirectory(tempDir.toFile());
+            }
+        }
+        return this;
+    }
+
+    private void saveDirectory(Path dir) throws IOException {
         Files.createDirectories(dir);
 
         // 1. Serialize model.json (the stable manifest file)
@@ -243,18 +265,29 @@ public class EvoModelArtifact {
                 Files.deleteIfExists(tempFile);
             } catch (Exception ignored) {}
         }
-
-        return this;
     }
 
     /**
-     * Loads and validates a native model artifact from directory.
+     * Loads and validates a native model artifact from a directory or a packed .evo file.
      */
-    public static EvoModelArtifact load(Path dir) throws IOException {
-        if (!Files.exists(dir)) {
-            throw new FileNotFoundException("Model directory not found: " + dir);
+    public static EvoModelArtifact load(Path targetPath) throws IOException {
+        if (Files.isDirectory(targetPath)) {
+            return loadDirectory(targetPath);
+        } else {
+            if (!Files.exists(targetPath)) {
+                throw new FileNotFoundException("Model file not found: " + targetPath);
+            }
+            Path tempDir = Files.createTempDirectory("evo-artifact-unzip");
+            try {
+                unpackZip(targetPath, tempDir);
+                return loadDirectory(tempDir);
+            } finally {
+                deleteDirectory(tempDir.toFile());
+            }
         }
+    }
 
+    private static EvoModelArtifact loadDirectory(Path dir) throws IOException {
         Path manifestPath = dir.resolve("model.json");
         Path configPath = dir.resolve("config.json");
         Path tokenizerPath = dir.resolve("tokenizer.json");
@@ -400,6 +433,57 @@ public class EvoModelArtifact {
 
         artifact.validateModelIntegrity();
         return artifact;
+    }
+
+    private static void packZip(Path sourceDir, Path zipFile) throws IOException {
+        Files.createDirectories(zipFile.getParent());
+        try (java.util.zip.ZipOutputStream zos = new java.util.zip.ZipOutputStream(
+                new BufferedOutputStream(new FileOutputStream(zipFile.toFile())))) {
+            try (Stream<Path> paths = Files.walk(sourceDir)) {
+                List<Path> fileList = paths.filter(Files::isRegularFile).collect(Collectors.toList());
+                for (Path file : fileList) {
+                    String zipEntryName = sourceDir.relativize(file).toString().replace("\\", "/");
+                    java.util.zip.ZipEntry entry = new java.util.zip.ZipEntry(zipEntryName);
+                    zos.putNextEntry(entry);
+                    Files.copy(file, zos);
+                    zos.closeEntry();
+                }
+            }
+        }
+    }
+
+    private static void unpackZip(Path zipFile, Path targetDir) throws IOException {
+        Files.createDirectories(targetDir);
+        try (java.util.zip.ZipInputStream zis = new java.util.zip.ZipInputStream(
+                new BufferedInputStream(new FileInputStream(zipFile.toFile())))) {
+            java.util.zip.ZipEntry entry;
+            byte[] buffer = new byte[8192];
+            while ((entry = zis.getNextEntry()) != null) {
+                Path newPath = targetDir.resolve(entry.getName());
+                if (entry.isDirectory()) {
+                    Files.createDirectories(newPath);
+                } else {
+                    Files.createDirectories(newPath.getParent());
+                    try (OutputStream os = new BufferedOutputStream(new FileOutputStream(newPath.toFile()))) {
+                        int len;
+                        while ((len = zis.read(buffer)) > 0) {
+                            os.write(buffer, 0, len);
+                        }
+                    }
+                }
+                zis.closeEntry();
+            }
+        }
+    }
+
+    private static void deleteDirectory(java.io.File directory) {
+        java.io.File[] allContents = directory.listFiles();
+        if (allContents != null) {
+            for (java.io.File file : allContents) {
+                deleteDirectory(file);
+            }
+        }
+        directory.delete();
     }
 
     /**
