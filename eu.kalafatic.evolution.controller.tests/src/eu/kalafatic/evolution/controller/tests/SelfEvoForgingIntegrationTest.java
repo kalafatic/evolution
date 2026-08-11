@@ -92,7 +92,7 @@ public class SelfEvoForgingIntegrationTest {
         for (int i = 0; i < 8; i++) {
             kvCount |= ((long) (bytes[16 + i] & 0xFF)) << (i * 8);
         }
-        assertEquals("Metadata KV count must match real model metadata count", 13L, kvCount);
+        assertEquals("Metadata KV count must match real model metadata count", 21L, kvCount);
     }
 
     @Test
