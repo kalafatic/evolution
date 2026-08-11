@@ -94,7 +94,14 @@ public class SelfDevBootstrapController2 {
             if (debugMode) {
                 pb.environment().put("EVO_DEBUG", "true");
             }
-            pb.directory(projectRoot);
+            File supervisorJarFile = new File(supervisorJarPath);
+            File workingDir = supervisorJarFile.getParentFile();
+            if (workingDir != null && workingDir.exists()) {
+                System.out.println("[SelfDevBootstrapController] Starting supervisor from folder: " + workingDir.getAbsolutePath());
+                pb.directory(workingDir);
+            } else {
+                pb.directory(projectRoot);
+            }
             pb.redirectErrorStream(true);
             supervisorProcess = pb.start();
             System.out.println("[SelfDevBootstrapController] Supervisor process started successfully. PID details: " + supervisorProcess.toHandle().pid());
@@ -308,7 +315,7 @@ public class SelfDevBootstrapController2 {
 
         File customBinDir = new File(new File(System.getProperty("user.home"), "projects/evo/supervisor"), dateStr + "/bin");
         if (customBinDir.exists()) {
-            File[] customJars = customBinDir.listFiles((dir, name) -> (name.endsWith("-shaded.jar") || name.endsWith(".jar")) && !name.startsWith("original-"));
+            File[] customJars = customBinDir.listFiles((dir, name) -> (name.endsWith("-shaded.jar") || name.endsWith(".jar")) && name.contains("supervisor") && !name.startsWith("original-"));
             if (customJars != null && customJars.length > 0) {
                 File runnableJar = customJars[0];
                 for (File jar : customJars) {
