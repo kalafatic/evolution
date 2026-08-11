@@ -14,6 +14,7 @@ import fi.iki.elonen.NanoHTTPD;
 
 public class SupervisorMain {
     private static NanoHTTPD server;
+    private static NanoHTTPD controlServer;
     
     public static void main(String[] args) {
         System.out.println("=== EVO AI SUPERVISOR STARTING ===");
@@ -24,19 +25,25 @@ public class SupervisorMain {
         System.out.println("[CONFIG] Base Directory: " + baseDir.getAbsolutePath());
 
         // ============================================================
-        // START THE HTTP SERVER FIRST - BEFORE THE MONITORING LOOP
+        // START THE HTTP SERVERS FIRST - BEFORE THE MONITORING LOOP
         // ============================================================
         try {
-            System.out.println("[HTTP] Initializing HTTP server on port 8089...");
+            System.out.println("[HTTP] Initializing HTTP servers on port 8089 and 28080...");
             
             // Verify NanoHTTPD is in classpath
             Class.forName("fi.iki.elonen.NanoHTTPD");
             System.out.println("[HTTP] NanoHTTPD class found in classpath");
             
-            // Create and start the server
+            // 1. Create and start the main supervisor API server
             server = new EVOSupervisorServer(8089, baseDir);
             server.start(NanoHTTPD.SOCKET_READ_TIMEOUT, false);
-            System.out.println("[HTTP] Server started successfully on http://127.0.0.1:8089");
+            System.out.println("[HTTP] API Server started successfully on http://127.0.0.1:8089");
+
+            // 2. Create and start the premium control dashboard server
+            controlServer = new EVOSupervisorControlServer(28080, baseDir);
+            controlServer.start(NanoHTTPD.SOCKET_READ_TIMEOUT, false);
+            System.out.println("[HTTP] Control Dashboard started successfully on http://127.0.0.1:28080");
+
             System.out.println("[HTTP] Endpoints:");
             System.out.println("[HTTP]   GET /ping         - Health check");
             System.out.println("[HTTP]   GET /git-check    - Git availability");
