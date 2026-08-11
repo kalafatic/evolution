@@ -31,6 +31,8 @@ import org.eclipse.swt.widgets.Table;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 
 import eu.kalafatic.evolution.controller.manager.OllamaManager;
+import eu.kalafatic.evolution.controller.manager.OllamaService;
+import eu.kalafatic.evolution.controller.manager.OllamaModel;
 import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.providers.AiProviders;
@@ -255,9 +257,62 @@ public class ModelsGroup extends AEvoGroup {
         return "";
     }
 
+    private String getModelDate(AIProvider item) {
+        if (item == null) return "";
+
+        // 1. Try to get file modification time on disk
+        String path = getModelPath(item);
+        if (path != null && !path.isEmpty()) {
+            File f = new File(path);
+            if (f.exists()) {
+                java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                return sdf.format(new java.util.Date(f.lastModified()));
+            }
+        }
+
+        // 2. If it's a local model, check Ollama's registered models
+        if (item.isLocal()) {
+            try {
+                String ollamaUrl = getModelUrl(item);
+                if (ollamaUrl != null && !ollamaUrl.isEmpty()) {
+                    OllamaService service = OllamaManager.getInstance().getService(ollamaUrl);
+                    if (service != null) {
+                        List<OllamaModel> oModels = service.loadModels();
+                        if (oModels != null) {
+                            for (OllamaModel om : oModels) {
+                                if (om.getName().equalsIgnoreCase(item.getName())) {
+                                    String mod = om.getModifiedAt();
+                                    if (mod != null && !mod.isEmpty()) {
+                                        try {
+                                            String cleanMod = mod;
+                                            if (cleanMod.contains(".")) {
+                                                cleanMod = cleanMod.substring(0, cleanMod.indexOf("."));
+                                            }
+                                            cleanMod = cleanMod.replace("T", " ");
+                                            if (cleanMod.endsWith("Z")) {
+                                                cleanMod = cleanMod.substring(0, cleanMod.length() - 1);
+                                            }
+                                            return cleanMod;
+                                        } catch (Exception ex) {
+                                            return mod;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                // Ignore
+            }
+        }
+
+        return "";
+    }
+
     private void createColumns() {
-        String[] titles = { "Select", "State", "Name", "Type", "URL", "Path", "Token", "Rating (A/CH/P)" };
-        int[] bounds = { 50, 60, 150, 60, 200, 250, 80, 120 };
+        String[] titles = { "Select", "State", "Name", "Type", "URL", "Path", "Date", "Token", "Rating (A/CH/P)" };
+        int[] bounds = { 50, 60, 150, 60, 200, 250, 140, 80, 120 };
 
         // Select (Checkbox column)
         TableViewerColumn colSelect = createTableViewerColumn(titles[0], bounds[0]);
@@ -341,8 +396,21 @@ public class ModelsGroup extends AEvoGroup {
             }
         });
 
+        // Date
+        TableViewerColumn colDate = createTableViewerColumn(titles[6], bounds[6]);
+        colDate.setLabelProvider(new ColumnLabelProvider() {
+            @Override
+            public String getText(Object element) {
+                return getModelDate((AIProvider) element);
+            }
+            @Override
+            public Color getBackground(Object element) {
+                return getSafeColor(getModelColor((AIProvider) element));
+            }
+        });
+
         // Token
-        TableViewerColumn colToken = createTableViewerColumn(titles[6], bounds[6]);
+        TableViewerColumn colToken = createTableViewerColumn(titles[7], bounds[7]);
         colToken.setLabelProvider(new ColumnLabelProvider() {
             @Override
             public String getText(Object element) {
@@ -357,7 +425,7 @@ public class ModelsGroup extends AEvoGroup {
         });
 
         // Rating
-        TableViewerColumn colRating = createTableViewerColumn(titles[7], bounds[7]);
+        TableViewerColumn colRating = createTableViewerColumn(titles[8], bounds[8]);
         colRating.setLabelProvider(new ColumnLabelProvider() {
             @Override
             public String getText(Object element) {
@@ -370,11 +438,11 @@ public class ModelsGroup extends AEvoGroup {
             }
         });
 
-        setupSorting(colName, colState, colRating);
+        setupSorting(colName, colState, colRating, colDate);
     }
 
-    private void setupSorting(TableViewerColumn colName, TableViewerColumn colState, TableViewerColumn colRating) {
-        ModelComparator comparator = new ModelComparator();
+    private void setupSorting(TableViewerColumn colName, TableViewerColumn colState, TableViewerColumn colRating, TableViewerColumn colDate) {
+        ModelComparator comparator = new ModelComparator(this);
         viewer.setComparator(comparator);
 
         colName.getColumn().addSelectionListener(new SelectionAdapter() {
@@ -395,12 +463,23 @@ public class ModelsGroup extends AEvoGroup {
                 viewer.refresh();
             }
         });
+        colDate.getColumn().addSelectionListener(new SelectionAdapter() {
+            @Override public void widgetSelected(SelectionEvent e) {
+                comparator.setColumn(3);
+                viewer.refresh();
+            }
+        });
     }
 
     private static class ModelComparator extends org.eclipse.jface.viewers.ViewerComparator {
+        private final ModelsGroup group;
         private int propertyIndex = 2; // Default to Rating column (index 2 in compare)
         private static final int DESCENDING = 1;
         private int direction = DESCENDING;
+
+        public ModelComparator(ModelsGroup group) {
+            this.group = group;
+        }
 
         public void setColumn(int column) {
             if (column == this.propertyIndex) {
@@ -427,6 +506,11 @@ public class ModelsGroup extends AEvoGroup {
                 break;
             case 2: // Rating
                 rc = Integer.compare(m1.getRating(), m2.getRating());
+                break;
+            case 3: // Date
+                String d1 = group.getModelDate(m1);
+                String d2 = group.getModelDate(m2);
+                rc = d1.compareTo(d2);
                 break;
             default:
                 rc = 0;
@@ -479,9 +563,66 @@ public class ModelsGroup extends AEvoGroup {
             @Override public void run() { handleRemoveModel(); }
         });
         manager.add(new Separator());
+        manager.add(new Action("Export to ZIP") {
+            @Override public void run() { handleExportToZip(); }
+        });
+        manager.add(new Separator());
         manager.add(new Action("Save to Model") {
             @Override public void run() { editor.doSave(null); }
         });
+    }
+
+    private void handleExportToZip() {
+        IStructuredSelection selection = (IStructuredSelection) viewer.getSelection();
+        if (selection.isEmpty()) return;
+        AIProvider item = (AIProvider) selection.getFirstElement();
+
+        String path = getModelPath(item);
+        if (path == null || path.isEmpty()) {
+            MessageDialog.openError(group.getShell(), "Export Model", "Could not find physical file path for model: " + item.getName());
+            return;
+        }
+
+        File file = new File(path);
+        if (!file.exists()) {
+            MessageDialog.openError(group.getShell(), "Export Model", "Model GGUF file does not exist on disk: " + path);
+            return;
+        }
+
+        org.eclipse.swt.widgets.FileDialog dialog = new org.eclipse.swt.widgets.FileDialog(group.getShell(), SWT.SAVE);
+        dialog.setFilterExtensions(new String[] { "*.zip" });
+        dialog.setFileName(item.getName().replace("/", "_").replace(":", "_") + ".zip");
+        String destinationPath = dialog.open();
+
+        if (destinationPath != null) {
+            File zipFile = new File(destinationPath);
+            try {
+                File parentDir = file.getParentFile();
+                boolean isSpecificModelFolder = false;
+                if (parentDir != null && parentDir.isDirectory()) {
+                    String parentName = parentDir.getName().toLowerCase();
+                    if (parentName.startsWith("evo-") || parentName.startsWith("forging-") || (parentDir.getParentFile() != null && parentDir.getParentFile().getName().equalsIgnoreCase("forge-output"))) {
+                        isSpecificModelFolder = true;
+                    }
+                }
+
+                if (isSpecificModelFolder) {
+                    eu.kalafatic.evolution.view.util.ZipUtil.pack(parentDir, zipFile);
+                } else {
+                    // Create a single file zip containing the GGUF file
+                    try (java.util.zip.ZipOutputStream zos = new java.util.zip.ZipOutputStream(new java.io.FileOutputStream(zipFile))) {
+                        java.util.zip.ZipEntry zipEntry = new java.util.zip.ZipEntry(file.getName());
+                        zos.putNextEntry(zipEntry);
+                        java.nio.file.Files.copy(file.toPath(), zos);
+                        zos.closeEntry();
+                    }
+                }
+
+                MessageDialog.openInformation(group.getShell(), "Export Model", "Model exported successfully to " + zipFile.getAbsolutePath());
+            } catch (Exception ex) {
+                MessageDialog.openError(group.getShell(), "Export Model Error", "Failed to export model to ZIP: " + ex.getMessage());
+            }
+        }
     }
 
     private TableViewerColumn createTableViewerColumn(String title, int bound) {
