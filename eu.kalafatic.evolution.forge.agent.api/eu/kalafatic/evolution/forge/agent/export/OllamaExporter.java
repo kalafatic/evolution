@@ -99,18 +99,18 @@ public class OllamaExporter implements EvoModelExporter {
             Tensor w1 = modelParams.get(baseIdx + 4);
             Tensor w2 = modelParams.get(baseIdx + 5);
 
-            serializedTensors.add(new NamedTensor("blk." + i + ".attn_q.weight", wq));
-            serializedTensors.add(new NamedTensor("blk." + i + ".attn_k.weight", wk));
-            serializedTensors.add(new NamedTensor("blk." + i + ".attn_v.weight", wv));
-            serializedTensors.add(new NamedTensor("blk." + i + ".attn_output.weight", wo));
+            serializedTensors.add(new NamedTensor("blk." + i + ".attn_q.weight", wq.transpose()));
+            serializedTensors.add(new NamedTensor("blk." + i + ".attn_k.weight", wk.transpose()));
+            serializedTensors.add(new NamedTensor("blk." + i + ".attn_v.weight", wv.transpose()));
+            serializedTensors.add(new NamedTensor("blk." + i + ".attn_output.weight", wo.transpose()));
 
             // ffn_gate has same shape as w1 (up)
             Tensor ffnGate = new SimpleTensor(w1.getShape());
             Arrays.fill(ffnGate.getData(), 1.0f);
-            serializedTensors.add(new NamedTensor("blk." + i + ".ffn_gate.weight", ffnGate));
+            serializedTensors.add(new NamedTensor("blk." + i + ".ffn_gate.weight", ffnGate.transpose()));
 
-            serializedTensors.add(new NamedTensor("blk." + i + ".ffn_up.weight", w1));
-            serializedTensors.add(new NamedTensor("blk." + i + ".ffn_down.weight", w2));
+            serializedTensors.add(new NamedTensor("blk." + i + ".ffn_up.weight", w1.transpose()));
+            serializedTensors.add(new NamedTensor("blk." + i + ".ffn_down.weight", w2.transpose()));
 
             // RMSNorms
             Tensor attnNorm = new SimpleTensor(model.getDModel());
@@ -129,12 +129,82 @@ public class OllamaExporter implements EvoModelExporter {
 
         // output.weight is the last parameter
         Tensor lmHead = modelParams.get(modelParams.size() - 1);
-        serializedTensors.add(new NamedTensor("output.weight", lmHead));
+        serializedTensors.add(new NamedTensor("output.weight", lmHead.transpose()));
 
         // Reject export if zero tensors
         if (serializedTensors.isEmpty()) {
             throw new IllegalArgumentException("GGUF export rejected: No tensors found to export.");
         }
+
+        // GGUF Tensor Validation Phase
+        System.out.println("\n--- GGUF Tensor Validation ---");
+        for (NamedTensor nt : serializedTensors) {
+            String name = nt.name;
+            long[] shape = nt.tensor.getShape();
+
+            // Reconstructed GGML/GGUF dimension array (reversed from Java row-major order)
+            long[] ggufDims = new long[shape.length];
+            long product = 1;
+            for (int d = shape.length - 1; d >= 0; d--) {
+                ggufDims[shape.length - 1 - d] = shape[d];
+                product *= shape[d];
+            }
+
+            long actualElements = nt.tensor.getSize();
+            if (product != actualElements) {
+                String errorMsg = "Invalid GGUF tensor:\n" +
+                        "name=" + name + "\n" +
+                        "actual elements=" + actualElements + "\n" +
+                        "dimension product=" + product;
+                System.err.println(errorMsg);
+                throw new IllegalArgumentException(errorMsg);
+            }
+
+            // Define expected dimensions
+            long[] expected = null;
+            if ("token_embd.weight".equals(name) || "output.weight".equals(name)) {
+                expected = new long[] { model.getDModel(), model.getVocabSize() };
+            } else if (name.matches("blk\\.\\d+\\.attn_q\\.weight") ||
+                       name.matches("blk\\.\\d+\\.attn_k\\.weight") ||
+                       name.matches("blk\\.\\d+\\.attn_v\\.weight") ||
+                       name.matches("blk\\.\\d+\\.attn_output\\.weight")) {
+                expected = new long[] { model.getDModel(), model.getDModel() };
+            } else if (name.matches("blk\\.\\d+\\.ffn_gate\\.weight") ||
+                       name.matches("blk\\.\\d+\\.ffn_up\\.weight")) {
+                expected = new long[] { model.getDModel(), model.getDff() };
+            } else if (name.matches("blk\\.\\d+\\.ffn_down\\.weight")) {
+                expected = new long[] { model.getDff(), model.getDModel() };
+            } else if (name.matches("blk\\.\\d+\\.attn_norm\\.weight") ||
+                       name.matches("blk\\.\\d+\\.ffn_norm\\.weight") ||
+                       "output_norm.weight".equals(name)) {
+                expected = new long[] { model.getDModel() };
+            }
+
+            if (expected != null) {
+                if (ggufDims.length != expected.length) {
+                    String errorMsg = "Invalid GGUF tensor shape length:\n" +
+                            "name=" + name + "\n" +
+                            "expected length=" + expected.length + "\n" +
+                            "actual length=" + ggufDims.length;
+                    System.err.println(errorMsg);
+                    throw new IllegalArgumentException(errorMsg);
+                }
+                for (int d = 0; d < expected.length; d++) {
+                    if (ggufDims[d] != expected[d]) {
+                        String errorMsg = "Invalid GGUF tensor:\n" +
+                                "name=" + name + "\n" +
+                                "expected=" + java.util.Arrays.toString(expected) + "\n" +
+                                "actual=" + java.util.Arrays.toString(ggufDims) + "\n" +
+                                "elements=" + actualElements + "\n" +
+                                "expectedElements=" + product;
+                        System.err.println(errorMsg);
+                        throw new IllegalArgumentException(errorMsg);
+                    }
+                }
+            }
+            System.out.printf(java.util.Locale.US, "%-30s %-20s (Valid)%n", name, java.util.Arrays.toString(ggufDims));
+        }
+        System.out.println("------------------------------\n");
 
         // Create Canonical Artifact Directory Structure (Section 4)
         Files.createDirectories(outputPath);
@@ -233,7 +303,7 @@ public class OllamaExporter implements EvoModelExporter {
         buf.putLong(serializedTensors.size()); // tensor_count
 
         // Metadata Key-Value pairs
-        int kvCount = 18;
+        int kvCount = 21;
         buf.putLong(kvCount);
 
         // Print Diagnostic Logging
@@ -254,6 +324,9 @@ public class OllamaExporter implements EvoModelExporter {
 
         System.out.println("[EVO-GGUF] Key: general.name = EVO LLM");
         writeStringKV(buf, "general.name", "EVO LLM");
+
+        System.out.println("[EVO-GGUF] Key: general.file_type = 0");
+        writeIntKV(buf, "general.file_type", 0);
 
         System.out.println("[EVO-GGUF] Key: llama.context_length = " + model.getMaxSeqLen());
         writeIntKV(buf, "llama.context_length", model.getMaxSeqLen());
@@ -278,6 +351,12 @@ public class OllamaExporter implements EvoModelExporter {
 
         System.out.println("[EVO-GGUF] Key: llama.attention.layer_norm_rms_epsilon = 1e-5");
         writeFloatKV(buf, "llama.attention.layer_norm_rms_epsilon", 1e-5f);
+
+        System.out.println("[EVO-GGUF] Key: llama.attention.key_length = " + (model.getDModel() / model.getNumHeads()));
+        writeIntKV(buf, "llama.attention.key_length", model.getDModel() / model.getNumHeads());
+
+        System.out.println("[EVO-GGUF] Key: llama.attention.value_length = " + (model.getDModel() / model.getNumHeads()));
+        writeIntKV(buf, "llama.attention.value_length", model.getDModel() / model.getNumHeads());
 
         System.out.println("[EVO-GGUF] Key: llama.rope.dimension_count = " + (model.getDModel() / model.getNumHeads()));
         writeIntKV(buf, "llama.rope.dimension_count", model.getDModel() / model.getNumHeads());
