@@ -41,10 +41,10 @@ public class EvoModelPersistentArtifactTest {
         originalModel = new EvoLlmModel(100, 32, 2, 1, 128, 8);
         
         mockVocab = new LinkedHashMap<>();
-        mockVocab.put("<PAD>", 0);
-        mockVocab.put("<UNK>", 1);
-        mockVocab.put("<BOS>", 2);
-        mockVocab.put("<EOS>", 3);
+        mockVocab.put("<pad>", 0);
+        mockVocab.put("<unk>", 1);
+        mockVocab.put("<s>", 2);
+        mockVocab.put("</s>", 3);
         for (int i = 4; i < 100; i++) {
             mockVocab.put("token_" + i, i);
         }
@@ -301,8 +301,8 @@ public class EvoModelPersistentArtifactTest {
     public void testSafeVocabParsingWithCommasAndQuotes() throws Exception {
         // Build a mock vocabulary containing comma, space-comma, escaped quotes, and normal words
         Map<String, Integer> trickyVocab = new LinkedHashMap<>();
-        trickyVocab.put("<PAD>", 0);
-        trickyVocab.put("<UNK>", 1);
+        trickyVocab.put("<pad>", 0);
+        trickyVocab.put("<unk>", 1);
         trickyVocab.put(",", 2);
         trickyVocab.put("a,b", 3);
         trickyVocab.put("\"", 4);

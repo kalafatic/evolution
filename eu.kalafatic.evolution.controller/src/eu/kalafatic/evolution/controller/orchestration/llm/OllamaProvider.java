@@ -253,7 +253,7 @@ public class OllamaProvider implements ILlmProvider {
                 modelfileBuilder.append("FROM ").append(ggufPathNormalized).append("\n");
             }
             modelfileBuilder.append("PARAMETER temperature 0.2\n");
-            modelfileBuilder.append("PARAMETER stop \"<EOS>\"\n");
+            modelfileBuilder.append("PARAMETER stop \"</s>\"\n");
             modelfileBuilder.append("SYSTEM \"\"\"You are EVO, a specialized language model trained on Evolution project knowledge.\"\"\"");
             String modelfileContent = modelfileBuilder.toString();
 

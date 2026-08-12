@@ -18,7 +18,7 @@ public class WhitespaceTokenizer implements Tokenizer {
         String[] words = text.split("\\s+");
         List<Integer> tokens = new ArrayList<>();
         for (String word : words) {
-            tokens.add(vocab.getOrDefault(word, vocab.getOrDefault("<UNK>", 1)));
+            tokens.add(vocab.getOrDefault(word, vocab.getOrDefault("<unk>", 1)));
         }
         return tokens;
     }
@@ -27,7 +27,7 @@ public class WhitespaceTokenizer implements Tokenizer {
     public String decode(List<Integer> tokens) {
         StringBuilder sb = new StringBuilder();
         for (Integer token : tokens) {
-            sb.append(invVocab.getOrDefault(token, "<UNK>")).append(" ");
+            sb.append(invVocab.getOrDefault(token, "<unk>")).append(" ");
         }
         return sb.toString().trim();
     }

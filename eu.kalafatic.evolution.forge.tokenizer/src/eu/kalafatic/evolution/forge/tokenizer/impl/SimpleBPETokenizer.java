@@ -13,10 +13,10 @@ public class SimpleBPETokenizer implements Tokenizer {
 
     public void train(String corpus, int targetVocabSize) {
         vocab.clear();
-        vocab.put("<PAD>", 0);
-        vocab.put("<UNK>", 1);
-        vocab.put("<BOS>", 2);
-        vocab.put("<EOS>", 3);
+        vocab.put("<pad>", 0);
+        vocab.put("<unk>", 1);
+        vocab.put("<s>", 2);
+        vocab.put("</s>", 3);
 
         // Initial characters
         Set<String> chars = new HashSet<>();
@@ -89,7 +89,7 @@ public class SimpleBPETokenizer implements Tokenizer {
                 tokens.add(vocab.get(match));
                 i += matchLen;
             } else {
-                tokens.add(vocab.get("<UNK>"));
+                tokens.add(vocab.get("<unk>"));
                 i++;
             }
         }

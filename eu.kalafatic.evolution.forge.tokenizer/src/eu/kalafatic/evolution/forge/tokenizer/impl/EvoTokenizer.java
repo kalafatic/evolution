@@ -12,19 +12,19 @@ public class EvoTokenizer implements Tokenizer {
 
     public EvoTokenizer() {
         // Default minimal initialization
-        vocab.put("<PAD>", 0);
-        vocab.put("<UNK>", 1);
-        vocab.put("<BOS>", 2);
-        vocab.put("<EOS>", 3);
+        vocab.put("<pad>", 0);
+        vocab.put("<unk>", 1);
+        vocab.put("<s>", 2);
+        vocab.put("</s>", 3);
         updateInvVocab();
     }
 
     public void trainOnDocuments(List<Path> markdownFiles, int targetVocabSize) {
         vocab.clear();
-        vocab.put("<PAD>", 0);
-        vocab.put("<UNK>", 1);
-        vocab.put("<BOS>", 2);
-        vocab.put("<EOS>", 3);
+        vocab.put("<pad>", 0);
+        vocab.put("<unk>", 1);
+        vocab.put("<s>", 2);
+        vocab.put("</s>", 3);
 
         // Aggregate text
         StringBuilder corpusBuilder = new StringBuilder();
@@ -90,7 +90,7 @@ public class EvoTokenizer implements Tokenizer {
                 tokens.add(vocab.get(longestMatch));
                 i += longestLen;
             } else {
-                tokens.add(vocab.get("<UNK>"));
+                tokens.add(vocab.get("<unk>"));
                 i++;
             }
         }

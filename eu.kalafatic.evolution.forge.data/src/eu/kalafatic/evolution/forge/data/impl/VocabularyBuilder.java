@@ -17,10 +17,10 @@ public class VocabularyBuilder {
             .collect(Collectors.toList());
 
         Map<String, Integer> vocab = new LinkedHashMap<>();
-        vocab.put("<PAD>", 0);
-        vocab.put("<UNK>", 1);
-        vocab.put("<BOS>", 2);
-        vocab.put("<EOS>", 3);
+        vocab.put("<pad>", 0);
+        vocab.put("<unk>", 1);
+        vocab.put("<s>", 2);
+        vocab.put("</s>", 3);
 
         int id = 4;
         for (String token : vocabList) {

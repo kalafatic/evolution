@@ -24,7 +24,7 @@ public class WordTokenizer implements Tokenizer {
         
         List<Integer> tokens = new ArrayList<>();
         for (String word : words) {
-            tokens.add(vocab.getOrDefault(word, vocab.getOrDefault("<UNK>", 1)));
+            tokens.add(vocab.getOrDefault(word, vocab.getOrDefault("<unk>", 1)));
         }
         return tokens;
     }
@@ -33,7 +33,7 @@ public class WordTokenizer implements Tokenizer {
     public String decode(List<Integer> tokens) {
         StringBuilder sb = new StringBuilder();
         for (Integer token : tokens) {
-            sb.append(invVocab.getOrDefault(token, "<UNK>"));
+            sb.append(invVocab.getOrDefault(token, "<unk>"));
             // Add space if it's a word, but this is a simplified version
             sb.append(" ");
         }
