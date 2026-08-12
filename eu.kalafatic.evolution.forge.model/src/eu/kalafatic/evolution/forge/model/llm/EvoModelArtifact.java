@@ -499,17 +499,32 @@ public class EvoModelArtifact {
         if (blockEnd == -1) return vocabMap;
 
         String vocabBlock = json.substring(blockStart + 1, blockEnd);
-        String[] entries = vocabBlock.split(",");
-        for (String entry : entries) {
-            int colon = entry.indexOf(":");
-            if (colon == -1) continue;
-            String keyPart = entry.substring(0, colon).trim();
-            String valPart = entry.substring(colon + 1).trim();
+        int i = 0;
+        int len = vocabBlock.length();
+        while (i < len) {
+            // Find start of key
+            int keyStart = vocabBlock.indexOf('"', i);
+            if (keyStart == -1) break;
 
-            if (keyPart.startsWith("\"") && keyPart.endsWith("\"")) {
-                keyPart = keyPart.substring(1, keyPart.length() - 1);
+            // Find end of key (taking care of escaped quotes)
+            int keyEnd = -1;
+            boolean escaped = false;
+            for (int j = keyStart + 1; j < len; j++) {
+                char c = vocabBlock.charAt(j);
+                if (escaped) {
+                    escaped = false;
+                } else if (c == '\\') {
+                    escaped = true;
+                } else if (c == '"') {
+                    keyEnd = j;
+                    break;
+                }
             }
-            // unescape common keys
+            if (keyEnd == -1) break;
+
+            String keyPart = vocabBlock.substring(keyStart + 1, keyEnd);
+
+            // Unescape common keys
             keyPart = keyPart
                     .replace("\\\\", "\\")
                     .replace("\\\"", "\"")
@@ -517,10 +532,39 @@ public class EvoModelArtifact {
                     .replace("\\r", "\r")
                     .replace("\\t", "\t");
 
-            try {
-                int val = Integer.parseInt(valPart);
-                vocabMap.put(keyPart, val);
-            } catch (Exception ignored) {}
+            // Find the colon after keyEnd
+            int colonIdx = vocabBlock.indexOf(':', keyEnd + 1);
+            if (colonIdx == -1) {
+                i = keyEnd + 1;
+                continue;
+            }
+
+            // Read integer value after the colon
+            int valStart = -1;
+            int valEnd = -1;
+            for (int j = colonIdx + 1; j < len; j++) {
+                char c = vocabBlock.charAt(j);
+                if (Character.isDigit(c)) {
+                    if (valStart == -1) {
+                        valStart = j;
+                    }
+                    valEnd = j + 1;
+                } else {
+                    if (valStart != -1) {
+                        break;
+                    }
+                }
+            }
+
+            if (valStart != -1 && valEnd != -1) {
+                try {
+                    int val = Integer.parseInt(vocabBlock.substring(valStart, valEnd));
+                    vocabMap.put(keyPart, val);
+                } catch (Exception ignored) {}
+                i = valEnd;
+            } else {
+                i = colonIdx + 1;
+            }
         }
         return vocabMap;
     }
