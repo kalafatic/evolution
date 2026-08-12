@@ -297,6 +297,32 @@ public class EvoModelPersistentArtifactTest {
         assertEquals(32, ffnDownShape[1]); // dModel
     }
 
+    @Test
+    public void testSafeVocabParsingWithCommasAndQuotes() throws Exception {
+        // Build a mock vocabulary containing comma, space-comma, escaped quotes, and normal words
+        Map<String, Integer> trickyVocab = new LinkedHashMap<>();
+        trickyVocab.put("<PAD>", 0);
+        trickyVocab.put("<UNK>", 1);
+        trickyVocab.put(",", 2);
+        trickyVocab.put("a,b", 3);
+        trickyVocab.put("\"", 4);
+        trickyVocab.put("\\", 5);
+        trickyVocab.put("\n", 6);
+        trickyVocab.put("normal", 7);
+
+        EvoLlmModel trickyModel = new EvoLlmModel(trickyVocab.size(), 32, 2, 1, 128, 8);
+        EvoModelArtifact originalArtifact = new EvoModelArtifact();
+        originalArtifact.initializeFromModel("evo-tricky-vocab", trickyModel, trickyVocab);
+
+        Path trickyModelDir = tempFolder.newFolder("tricky-vocab-model").toPath();
+        originalArtifact.save(trickyModelDir);
+
+        // Load the artifact back and ensure vocabulary roundtrips perfectly
+        EvoModelArtifact loadedArtifact = EvoModelArtifact.load(trickyModelDir);
+        assertEquals(trickyVocab.size(), loadedArtifact.getTokenizerVocab().size());
+        assertEquals(trickyVocab, loadedArtifact.getTokenizerVocab());
+    }
+
     private String readGgufString(java.nio.ByteBuffer buf) {
         long len = buf.getLong();
         byte[] bytes = new byte[(int) len];
