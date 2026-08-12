@@ -9,6 +9,7 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.FormToolkit;
@@ -31,6 +32,8 @@ public class OllamaSettingsGroup extends AEvoGroup {
     private ControlDecoration ollamaUrlDecorator, ollamaPathDecorator, ollamaModelDecorator;
     private Combo modelCombo;
     private OllamaViewModel viewModel;
+    private Text terminalCommandText;
+    private Text terminalOutputText;
 
     public OllamaSettingsGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, PropertiesPage page) {
         super(editor, orchestrator);
@@ -80,6 +83,86 @@ public class OllamaSettingsGroup extends AEvoGroup {
         ollamaVersionText = GUIFactory.INSTANCE.createText(group);
         ollamaVersionText.setEditable(false);
         GUIFactory.INSTANCE.createLabel(group, "");
+
+        // Parameters Row
+        GUIFactory.INSTANCE.createLabel(group, "Parameters:");
+        terminalCommandText = GUIFactory.INSTANCE.createText(group);
+        String defaultCmd = System.getProperty("os.name").toLowerCase().contains("win")
+            ? "netstat -ano | findstr :11434"
+            : "netstat -ano | grep 11434";
+        terminalCommandText.setText(defaultCmd);
+
+        Button executeBtn = GUIFactory.INSTANCE.createButton(group, "Execute");
+        executeBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                String command = terminalCommandText.getText().trim();
+                if (command.isEmpty()) return;
+
+                executeBtn.setEnabled(false);
+                terminalOutputText.setText("Running command: " + command + "...\n");
+
+                org.eclipse.core.runtime.jobs.Job job = new org.eclipse.core.runtime.jobs.Job("Terminal Control: " + command) {
+                    @Override
+                    protected org.eclipse.core.runtime.IStatus run(org.eclipse.core.runtime.IProgressMonitor monitor) {
+                        StringBuilder output = new StringBuilder();
+                        try {
+                            String os = System.getProperty("os.name").toLowerCase();
+                            ProcessBuilder pb;
+                            if (os.contains("win")) {
+                                pb = new ProcessBuilder("cmd.exe", "/c", command);
+                            } else {
+                                pb = new ProcessBuilder("sh", "-c", command);
+                            }
+                            pb.redirectErrorStream(true);
+                            Process process = pb.start();
+
+                            try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(process.getInputStream()))) {
+                                String line;
+                                while ((line = reader.readLine()) != null) {
+                                    output.append(line).append("\n");
+                                }
+                            }
+
+                            process.waitFor(10, java.util.concurrent.TimeUnit.SECONDS);
+                        } catch (Exception ex) {
+                            output.append("Error executing command: ").append(ex.getMessage()).append("\n");
+                        }
+
+                        Display.getDefault().asyncExec(() -> {
+                            if (!terminalOutputText.isDisposed()) {
+                                terminalOutputText.setText(output.toString());
+                            }
+                            if (!executeBtn.isDisposed()) {
+                                executeBtn.setEnabled(true);
+                            }
+                        });
+                        return org.eclipse.core.runtime.Status.OK_STATUS;
+                    }
+                };
+                job.schedule();
+            }
+        });
+
+        // Output Row
+        GUIFactory.INSTANCE.createLabel(group, "Output:");
+        terminalOutputText = new Text(group, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL);
+        terminalOutputText.setEditable(false);
+        GridData outputGd = new GridData(GridData.FILL_HORIZONTAL);
+        outputGd.heightHint = 80;
+        terminalOutputText.setLayoutData(outputGd);
+
+        Button copyBtn = GUIFactory.INSTANCE.createButton(group, "Copy");
+        copyBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                String text = terminalOutputText.getText();
+                if (text == null || text.isEmpty()) return;
+                org.eclipse.swt.dnd.Clipboard cb = new org.eclipse.swt.dnd.Clipboard(group.getDisplay());
+                cb.setContents(new Object[] { text }, new org.eclipse.swt.dnd.Transfer[] { org.eclipse.swt.dnd.TextTransfer.getInstance() });
+                cb.dispose();
+            }
+        });
 
         ollamaUrlDecorator = new ControlDecoration(ollamaUrlText, SWT.TOP | SWT.LEFT);
         ollamaUrlDecorator.setImage(FieldDecorationRegistry.getDefault().getFieldDecoration(FieldDecorationRegistry.DEC_ERROR).getImage());
