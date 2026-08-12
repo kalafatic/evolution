@@ -365,31 +365,38 @@ public class OllamaExporter implements EvoModelExporter {
         System.out.println("[EVO-GGUF] Key: tokenizer.ggml.model = llama");
         writeStringKV(buf, "tokenizer.ggml.model", "llama");
 
-        System.out.println("[EVO-GGUF] Key: tokenizer.ggml.bos_token_id = 2");
-        writeIntKV(buf, "tokenizer.ggml.bos_token_id", 2);
+        System.out.println("[EVO-GGUF] Key: tokenizer.ggml.bos_token_id = 1");
+        writeIntKV(buf, "tokenizer.ggml.bos_token_id", 1);
 
-        System.out.println("[EVO-GGUF] Key: tokenizer.ggml.eos_token_id = 3");
-        writeIntKV(buf, "tokenizer.ggml.eos_token_id", 3);
+        System.out.println("[EVO-GGUF] Key: tokenizer.ggml.eos_token_id = 2");
+        writeIntKV(buf, "tokenizer.ggml.eos_token_id", 2);
 
-        System.out.println("[EVO-GGUF] Key: tokenizer.ggml.unknown_token_id = 1");
-        writeIntKV(buf, "tokenizer.ggml.unknown_token_id", 1);
+        System.out.println("[EVO-GGUF] Key: tokenizer.ggml.unknown_token_id = 0");
+        writeIntKV(buf, "tokenizer.ggml.unknown_token_id", 0);
 
-        // Generate dynamic mock vocabulary to pass llama.cpp tokenizer validation
+        // Generate dynamic vocabulary matching the requested order:
+        // 0: <unk>, 1: <s>, 2: </s>, 3: " "
         List<String> tokens = new ArrayList<>();
         float[] scores = new float[model.getVocabSize()];
         int[] tokenTypes = new int[model.getVocabSize()];
         for (int i = 0; i < model.getVocabSize(); i++) {
-            if (customVocab != null && customVocab.containsKey(i)) {
-                tokens.add(customVocab.get(i));
+            if (i == 0) {
+                tokens.add("<unk>");
+            } else if (i == 1) {
+                tokens.add("<s>");
+            } else if (i == 2) {
+                tokens.add("</s>");
+            } else if (i == 3) {
+                tokens.add(" ");
             } else {
-                if (i == 0) tokens.add("<pad>");
-                else if (i == 1) tokens.add("<unk>");
-                else if (i == 2) tokens.add("<s>");
-                else if (i == 3) tokens.add("</s>");
-                else tokens.add("token_" + i);
+                if (customVocab != null && customVocab.containsKey(i)) {
+                    tokens.add(customVocab.get(i));
+                } else {
+                    tokens.add("token_" + i);
+                }
             }
             scores[i] = 0.0f;
-            tokenTypes[i] = (i < 4) ? 3 : 1; // Control token vs Normal token
+            tokenTypes[i] = (i < 3) ? 3 : 1; // Index 0, 1, 2 are control tokens (3), the rest are normal (1)
         }
 
         System.out.println("[EVO-GGUF] Key: tokenizer.ggml.tokens = [array of size " + model.getVocabSize() + "]");
