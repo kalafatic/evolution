@@ -23,6 +23,8 @@ public class CognitiveStateEngine {
             eu.kalafatic.evolution.model.orchestration.AiMode uiMode = context.getOrchestrator().getAiMode();
             if (uiMode == eu.kalafatic.evolution.model.orchestration.AiMode.MEDIATED) {
                 signal = new CapabilitySignal(CapabilityType.MEDIATED, 10.0, 1.0, signal.getIntent(), null, "EXPLICIT_UI_MEDIATED");
+            } else if (uiMode == eu.kalafatic.evolution.model.orchestration.AiMode.FORGE) {
+                signal = new CapabilitySignal(CapabilityType.FORGE, 10.0, 1.0, SessionIntent.EVOLVING, null, "EXPLICIT_UI_FORGE");
             } else if (context.getOrchestrator().isDarwinMode() && signal.getCapability() == CapabilityType.CHAT) {
                 // If Darwin is on but prompt looks like chat, escalate to EVOLUTION
                 signal = new CapabilitySignal(CapabilityType.EVOLUTION, 5.0, 0.8, signal.getIntent(), null, "EXPLICIT_UI_DARWIN");
@@ -113,6 +115,7 @@ public class CognitiveStateEngine {
         switch (cap) {
             case SELF_DEV: targetDepth = 10; break;
             case EVOLUTION: targetDepth = 9; break;
+            case FORGE: targetDepth = 8; break;
             case ARCHITECTURE: targetDepth = 6; break;
             case CODE: targetDepth = 3; break;
             case CHAT: default: targetDepth = 1; break;
@@ -146,6 +149,8 @@ public class CognitiveStateEngine {
                 return CapabilityType.EVOLUTION;
             case HYBRID_MANUAL_EXPORT:
                 return CapabilityType.MEDIATED;
+            case FORGE:
+                return CapabilityType.FORGE;
             case ASSISTED_CODING:
                 return CapabilityType.CODE;
             case SIMPLE_CHAT:

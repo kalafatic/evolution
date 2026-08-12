@@ -31,9 +31,9 @@ public class CognitiveStateEngineTest {
         engine.processInteraction("java", state, context, null);
         assertEquals(CapabilityType.CHAT, state.getCurrentCapability());
 
-        // Multiple code signals should trigger transition (CODE weight is 3.0, threshold 5.0)
-        engine.processInteraction("class", state, context, null);
-        engine.processInteraction("method", state, context, null);
+        // Multiple code signals should trigger transition
+        engine.processInteraction("class code", state, context, null);
+        engine.processInteraction("method code", state, context, null);
 
         assertEquals(CapabilityType.CODE, state.getCurrentCapability());
     }
@@ -41,14 +41,13 @@ public class CognitiveStateEngineTest {
     @Test
     public void testCodeToArchitectureTransition() {
         // Set state to CODE
-        for(int i=0; i<5; i++) engine.processInteraction("java", state, context, null);
+        engine.processInteraction("class code", state, context, null);
+        engine.processInteraction("method code", state, context, null);
+        engine.processInteraction("compile java code", state, context, null);
         assertEquals(CapabilityType.CODE, state.getCurrentCapability());
 
-        // Architecture signal (weight 5.0)
-        engine.processInteraction("architecture", state, context, null);
-        // Hysteresis threshold is 5.0.
-
-        for(int i=0; i<3; i++) engine.processInteraction("repository module dependency", state, context, null);
+        // Architecture signal
+        for(int i=0; i<5; i++) engine.processInteraction("architecture repository module dependency graph structure component", state, context, null);
 
         assertEquals(CapabilityType.ARCHITECTURE, state.getCurrentCapability());
     }
@@ -103,8 +102,20 @@ public class CognitiveStateEngineTest {
         engine.processInteraction("Analyze repository", state, context, null);
         assertEquals(SessionIntent.ANALYZING, state.getCurrentIntent());
 
-        engine.processInteraction("Evolve architecture", state, context, null);
+        engine.processInteraction("Evolve darwin selection", state, context, null);
         assertEquals(SessionIntent.EVOLVING, state.getCurrentIntent());
+    }
+
+    @Test
+    public void testForgeModeTransition() {
+        // Explicitly set AiMode to FORGE
+        context.getOrchestrator().setAiMode(eu.kalafatic.evolution.model.orchestration.AiMode.FORGE);
+
+        // Processing 2 messages ensures history.size() >= 2 to transition direction from STABLE to EVOLVING
+        engine.processInteraction("hello", state, context, null);
+        engine.processInteraction("world", state, context, null);
+        assertEquals(CapabilityType.FORGE, state.getCurrentCapability());
+        assertEquals(CognitiveDirection.EVOLVING, state.getCurrentDirection());
     }
 
     @Test

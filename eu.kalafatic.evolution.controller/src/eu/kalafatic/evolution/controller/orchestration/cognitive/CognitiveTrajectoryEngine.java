@@ -81,7 +81,9 @@ public class CognitiveTrajectoryEngine {
 
     private int getOrdinal(CapabilityType type) {
         switch (type) {
-            case EVOLUTION: return 4;
+            case SELF_DEV: return 6;
+            case EVOLUTION: return 5;
+            case FORGE: return 4;
             case ARCHITECTURE: return 3;
             case CODE: return 2;
             case CHAT: return 1;
@@ -94,7 +96,10 @@ public class CognitiveTrajectoryEngine {
             case CHAT: return CognitiveDirection.EXPLORING;
             case CODE: return CognitiveDirection.CODING;
             case ARCHITECTURE: return CognitiveDirection.ANALYZING;
-            case EVOLUTION: return CognitiveDirection.EVOLVING;
+            case EVOLUTION:
+            case FORGE:
+            case SELF_DEV:
+                return CognitiveDirection.EVOLVING;
             default: return CognitiveDirection.STABLE;
         }
     }

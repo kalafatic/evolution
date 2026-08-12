@@ -115,7 +115,7 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                     if (codebase != null) {
                         activeSources.add(codebase);
                     } else {
-                        activeSources.add("c:\\Users\\petrk\\git\\evolution");
+                        activeSources.add(System.getProperty("user.dir"));
                     }
                 }
                 
@@ -293,6 +293,27 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                 // Initialize model with dynamically varied hiddenSize, layers, heads
                 EvoLlmModel model = new EvoLlmModel(tokenizer.getVocabSize(), hiddenSize, heads, layers, 512, 16);
                 EvoLlmTrainer trainer = new EvoLlmTrainer(model);
+
+                final int totalScanned = scannedPaths.size();
+                final int totalKUnits = knowledgeUnits.size();
+                final int totalSamples = samples.size();
+                final Path rf = runFolder;
+
+                trainer.setProgressListener((epoch, totalEpochs, sampleIndex, totalSamplesCount, currentLoss) -> {
+                    double pct = (double) sampleIndex / totalSamplesCount * 100.0;
+                    String epochStr = (epoch + 1) + "/" + totalEpochs;
+                    updateStats(sessionId, new ForgingStats(
+                        "TRAINING",
+                        60 + (int)(pct * 0.2),
+                        totalScanned,
+                        totalKUnits,
+                        totalSamples,
+                        currentLoss,
+                        epochStr,
+                        rf.toAbsolutePath().toString()
+                    ));
+                });
+
                 trainer.train(samples, epochs);
                 logToFile(logFile, "Training complete.");
 
@@ -396,6 +417,15 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
       // Parse the base model "FROM" command
       String baseModel = null;
       if (modelfileContent != null) {
+          String[] lines = modelfileContent.split("\n");
+          for (int i = 0; i < lines.length; i++) {
+              String trimLine = lines[i].trim();
+              if (trimLine.toUpperCase().startsWith("FROM ") || trimLine.toUpperCase().startsWith("ADAPTER ")) {
+                  lines[i] = lines[i].replace("\\", "/");
+              }
+          }
+          modelfileContent = String.join("\n", lines);
+
           for (String line : modelfileContent.split("\n")) {
               line = line.trim();
               if (line.toUpperCase().startsWith("FROM ")) {
@@ -528,7 +558,7 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
           }
       }
       if (fromValue != null && !fromValue.isEmpty()) {
-          jsonObject.put("from", fromValue);
+          jsonObject.put("from", fromValue.replace("\\", "/"));
       }
 
       HttpRequest request = HttpRequest.newBuilder()
