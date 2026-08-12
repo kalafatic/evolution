@@ -974,7 +974,7 @@ public class AiChatPage extends AEvoPage {
 	}
 
 	public File getProjectRoot() {
-		if (orchestrator != null && orchestrator.getAiMode() == AiMode.MEDIATED && currentSession != null) {
+		if (orchestrator != null && (orchestrator.getAiMode() == AiMode.MEDIATED || orchestrator.getAiMode() == AiMode.FORGE) && currentSession != null) {
 			String targetPath = currentSession.getTargetPath();
 			if (targetPath != null && !targetPath.isEmpty()) {
 				File targetFile = new File(targetPath);
