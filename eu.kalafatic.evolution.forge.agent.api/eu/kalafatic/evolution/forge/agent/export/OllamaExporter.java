@@ -365,14 +365,14 @@ public class OllamaExporter implements EvoModelExporter {
         System.out.println("[EVO-GGUF] Key: tokenizer.ggml.model = llama");
         writeStringKV(buf, "tokenizer.ggml.model", "llama");
 
-        System.out.println("[EVO-GGUF] Key: tokenizer.ggml.bos_token_id = 1");
-        writeIntKV(buf, "tokenizer.ggml.bos_token_id", 1);
+        System.out.println("[EVO-GGUF] Key: tokenizer.ggml.bos_token_id = 2");
+        writeIntKV(buf, "tokenizer.ggml.bos_token_id", 2);
 
-        System.out.println("[EVO-GGUF] Key: tokenizer.ggml.eos_token_id = 2");
-        writeIntKV(buf, "tokenizer.ggml.eos_token_id", 2);
+        System.out.println("[EVO-GGUF] Key: tokenizer.ggml.eos_token_id = 3");
+        writeIntKV(buf, "tokenizer.ggml.eos_token_id", 3);
 
-        System.out.println("[EVO-GGUF] Key: tokenizer.ggml.unknown_token_id = 0");
-        writeIntKV(buf, "tokenizer.ggml.unknown_token_id", 0);
+        System.out.println("[EVO-GGUF] Key: tokenizer.ggml.unknown_token_id = 1");
+        writeIntKV(buf, "tokenizer.ggml.unknown_token_id", 1);
 
         // Generate dynamic mock vocabulary to pass llama.cpp tokenizer validation
         List<String> tokens = new ArrayList<>();
@@ -382,13 +382,14 @@ public class OllamaExporter implements EvoModelExporter {
             if (customVocab != null && customVocab.containsKey(i)) {
                 tokens.add(customVocab.get(i));
             } else {
-                if (i == 0) tokens.add("<unk>");
-                else if (i == 1) tokens.add("<s>");
-                else if (i == 2) tokens.add("</s>");
+                if (i == 0) tokens.add("<pad>");
+                else if (i == 1) tokens.add("<unk>");
+                else if (i == 2) tokens.add("<s>");
+                else if (i == 3) tokens.add("</s>");
                 else tokens.add("token_" + i);
             }
             scores[i] = 0.0f;
-            tokenTypes[i] = (i < 3) ? 3 : 1; // Control token vs Normal token
+            tokenTypes[i] = (i < 4) ? 3 : 1; // Control token vs Normal token
         }
 
         System.out.println("[EVO-GGUF] Key: tokenizer.ggml.tokens = [array of size " + model.getVocabSize() + "]");
@@ -457,7 +458,7 @@ public class OllamaExporter implements EvoModelExporter {
         modelfile.add("FROM " + ggufPath.toAbsolutePath().toString().replace("\\", "/"));
         modelfile.add("PARAMETER temperature 0.2");
         modelfile.add("PARAMETER num_ctx " + model.getMaxSeqLen());
-        modelfile.add("PARAMETER stop \"<EOS>\"");
+        modelfile.add("PARAMETER stop \"</s>\"");
         modelfile.add("SYSTEM \"\"\"You are EVO, a specialized language model trained on Evolution project knowledge.\"\"\"");
 
         Files.write(exportsOllamaDir.resolve("Modelfile"), modelfile);

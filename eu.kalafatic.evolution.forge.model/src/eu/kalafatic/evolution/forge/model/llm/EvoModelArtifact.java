@@ -342,10 +342,10 @@ public class EvoModelArtifact {
             // MIGRATION / MOCK VOCABULARY GENERATION
             System.out.println("[Artifact] tokenizer.json missing. Generating safe vocabulary mapping...");
             Map<String, Integer> mockVocab = new LinkedHashMap<>();
-            mockVocab.put("<PAD>", 0);
-            mockVocab.put("<UNK>", 1);
-            mockVocab.put("<BOS>", 2);
-            mockVocab.put("<EOS>", 3);
+            mockVocab.put("<pad>", 0);
+            mockVocab.put("<unk>", 1);
+            mockVocab.put("<s>", 2);
+            mockVocab.put("</s>", 3);
             for (int i = 4; i < artifact.getVocabSize(); i++) {
                 mockVocab.put("token_" + i, i);
             }
