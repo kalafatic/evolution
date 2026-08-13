@@ -952,7 +952,17 @@ public class ModelsGroup extends AEvoGroup {
                 }
                 String output = shell.execute(command, workingDir, null);
                 Display.getDefault().asyncExec(() -> {
-                    MessageDialog.openInformation(group.getShell(), "Terminal Output", output);
+                    boolean isSuccess = false;
+                    if (command.startsWith("ollama rm")) {
+                        String lowerOutput = output != null ? output.toLowerCase() : "";
+                        if ((lowerOutput.contains("deleted") || lowerOutput.trim().isEmpty())
+                                && !lowerOutput.contains("error:") && !lowerOutput.contains("failed")) {
+                            isSuccess = true;
+                        }
+                    }
+                    if (!isSuccess) {
+                        MessageDialog.openInformation(group.getShell(), "Terminal Output", output);
+                    }
                     load();
                 });
             } catch (Exception e) {

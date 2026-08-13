@@ -709,9 +709,22 @@ window.ChatApp.Renderer = {
             const confPercent = Math.round((data.confidence || 0) * 100);
             const stabilityPercent = Math.round((data.stability || 0) * 100);
 
-            const trajectoryHtml = (data.trajectory || []).slice(-5).map(t =>
-                `<span class="trait-tag active" style="font-size: 9px; padding: 2px 4px;">${t}</span>`
-            ).join(' <span style="color:#94a3b8">→</span> ');
+            let traj = data.trajectory || [];
+            const currentCap = data.capability;
+            if (currentCap && (traj.length === 0 || traj[traj.length - 1] !== currentCap)) {
+                traj = [...traj, currentCap];
+            }
+            const mapCapabilityName = (name) => {
+                if (!name) return "";
+                const upper = name.toUpperCase();
+                if (upper === 'CODE') return 'CODING';
+                if (upper === 'INTENT_RECONSTRUCTION') return 'INTENT';
+                return upper;
+            };
+            const trajectoryHtml = traj.slice(-5).map(t => {
+                const label = mapCapabilityName(t);
+                return `<span class="trait-tag active" style="font-size: 9px; padding: 2px 4px;">${label}</span>`;
+            }).join(' <span style="color:#94a3b8">→</span> ');
 
             content.innerHTML = `
                 <div style="display: flex; flex-direction: column; gap: 8px; font-family: sans-serif;">
