@@ -37,7 +37,7 @@ public class PromptInstructionsImpl extends MinimalEObjectImpl.Container impleme
 	 * @generated
 	 * @ordered
 	 */
-	protected static final boolean AUTO_APPROVE_EDEFAULT = false;
+	protected static final boolean AUTO_APPROVE_EDEFAULT = true;
 
 	/**
 	 * The cached value of the '{@link #isAutoApprove() <em>Auto Approve</em>}' attribute.

@@ -25,6 +25,8 @@ public class CognitiveStateEngine {
                 signal = new CapabilitySignal(CapabilityType.MEDIATED, 10.0, 1.0, signal.getIntent(), null, "EXPLICIT_UI_MEDIATED");
             } else if (uiMode == eu.kalafatic.evolution.model.orchestration.AiMode.FORGE) {
                 signal = new CapabilitySignal(CapabilityType.FORGE, 10.0, 1.0, SessionIntent.EVOLVING, null, "EXPLICIT_UI_FORGE");
+            } else if (uiMode == eu.kalafatic.evolution.model.orchestration.AiMode.INTENT) {
+                signal = new CapabilitySignal(CapabilityType.INTENT_RECONSTRUCTION, 10.0, 1.0, signal.getIntent(), null, "EXPLICIT_UI_INTENT");
             } else if (context.getOrchestrator().isDarwinMode() && signal.getCapability() == CapabilityType.CHAT) {
                 // If Darwin is on but prompt looks like chat, escalate to EVOLUTION
                 signal = new CapabilitySignal(CapabilityType.EVOLUTION, 5.0, 0.8, signal.getIntent(), null, "EXPLICIT_UI_DARWIN");

@@ -379,7 +379,7 @@ public class InstructionsGroup extends AEvoGroup {
                 setSelectionSafe(darwinCheck, (Boolean) config.getOrDefault("darwinMode", session != null ? session.isDarwinMode() : (pageOrch != null ? pageOrch.isDarwinMode() : true)));
                 setSelectionSafe(gitAutomationCheck, (Boolean) config.getOrDefault("gitAutomation", session != null ? session.isGitAutomation() : (pi != null ? pi.isGitAutomation() : false)));
                 setSelectionSafe(stepModeCheck, (Boolean) config.getOrDefault("stepMode", session != null ? session.isStepMode() : (pi != null ? pi.isStepMode() : false)));
-                setSelectionSafe(autoApproveCheck, (Boolean) config.getOrDefault("autoApprove", session != null ? session.isAutoApprove() : (pi != null ? pi.isAutoApprove() : false)));
+                setSelectionSafe(autoApproveCheck, (Boolean) config.getOrDefault("autoApprove", session != null ? session.isAutoApprove() : (pi != null ? pi.isAutoApprove() : true)));
 
                 if (expansionScale != null && !expansionScale.isDisposed()) {
                     int defaultExpansion = session != null ? session.getExpansion() : 5;

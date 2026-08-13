@@ -34,6 +34,12 @@ public class ApproveFeatureFixTest {
         context.setSessionId(sessionId);
         OrchestratorServiceImpl.getInstance().registerContext(sessionId, context);
 
+        // Explicitly set autoApprove to false for the purpose of testing the transition/resume logic
+        context.setAutoApprove(false);
+        if (orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null) {
+            orchestrator.getAiChat().getPromptInstructions().setAutoApprove(false);
+        }
+
         assertFalse("Initially, autoApprove should be false", context.isAutoApprove());
 
         // Simulate engine waiting for variant selection via requestInput on a background thread
