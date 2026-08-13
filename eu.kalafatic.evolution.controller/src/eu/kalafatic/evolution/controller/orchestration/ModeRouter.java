@@ -41,6 +41,8 @@ public class ModeRouter {
 			return new DarwinFlow(aiService, manager);
 		case ASSISTED_CODING:
 			return new DarwinFlow(aiService, manager);
+		case FORGE:
+			return new DarwinFlow(aiService, manager);
 		case SIMPLE_CHAT:
 		default:
 			if (session != null) {
@@ -169,6 +171,15 @@ public class ModeRouter {
 				}
 				return createIntentReconstructionMode();
 			}
+			if (orchestrator.getAiMode() == eu.kalafatic.evolution.model.orchestration.AiMode.FORGE) {
+				String sessionId = orchestrator.getId();
+				SessionContainer session = (sessionId != null) ? SessionManager.getInstance().getSession(sessionId) : null;
+				if (session != null) {
+					session.getCognitiveState().setCurrentCapability(CapabilityType.FORGE);
+					new eu.kalafatic.evolution.controller.orchestration.cognitive.CognitiveStatePublisher().publish(null, session.getCognitiveState());
+				}
+				return createForgeMode();
+			}
 			if (orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null
 					&& orchestrator.getAiChat().getPromptInstructions().isSelfIterativeMode()) {
 				return createSelfDevMode();
@@ -210,6 +221,8 @@ public class ModeRouter {
 			return createSelfDevMode();
 		case INTENT_RECONSTRUCTION:
 			return createIntentReconstructionMode();
+		case FORGE:
+			return createForgeMode();
 		case EVOLUTION:
 			return createDarwinMode();
 		case ARCHITECTURE:
@@ -249,6 +262,10 @@ public class ModeRouter {
 
 	private PlatformMode createIntentReconstructionMode() {
 		return new PlatformMode(PlatformType.INTENT_RECONSTRUCTION, AutonomyLevel.MEDIUM, 3, false);
+	}
+
+	private PlatformMode createForgeMode() {
+		return new PlatformMode(PlatformType.FORGE, AutonomyLevel.MEDIUM, 3, false);
 	}
 
 }
