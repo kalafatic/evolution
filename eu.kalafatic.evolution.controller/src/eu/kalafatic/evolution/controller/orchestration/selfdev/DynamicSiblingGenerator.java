@@ -194,10 +194,12 @@ public class DynamicSiblingGenerator {
 		// ============================================================
 		DarwinVariantSpawner spawner = new DarwinVariantSpawner(aiService);
 
+		boolean isMediated = ModeRecognizer.isMediatedMode(context);
+
 		for (TrajectoryBlueprint bp : generatedBlueprints) {
 			JSONObject variant = spawner.spawnSingleBlueprint(goal, bp, basePrompt, lineageContext, rejectedSiblings,
 					null, // mutationContext
-					false, // isMediated
+					isMediated, // isMediated
 					context, activeDimension, genome);
 
 			if (variant != null) {
@@ -900,6 +902,17 @@ public class DynamicSiblingGenerator {
 	    med.put("execution_instructions", "Review the provided analysis package.");
 	    med.put("selected_files", new JSONArray());
 	    variant.put("mediation_candidate", med);
+
+	    // ACTION: Mediated mode uses ANALYZE workspace
+	    JSONObject action = new JSONObject();
+	    action.put("domain", "kernel");
+	    action.put("operation", "ANALYZE");
+	    action.put("target", "workspace");
+	    action.put("description", "Perform cognitive analysis of the repository");
+
+	    JSONArray actions = new JSONArray();
+	    actions.put(action);
+	    variant.put("actions", actions);
 	    
 	    return variant;
 	}
