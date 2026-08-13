@@ -520,7 +520,7 @@ public class AiChatPage extends AEvoPage {
 		if (request.isEmpty()) {
 			if (selectedMode == AiMode.MEDIATED) {
 				if (isTargetValidFolder) {
-					request = Files.readString(java.nio.file.Path.of("prompts", "mediated.md"), StandardCharsets.UTF_8);
+					request = loadPromptFile("mediated.md");
 				} else {
 					processLogEntry("Evo: Target is not a valid folder. Mediated mode requires a valid target directory.");
 					return;
@@ -533,7 +533,7 @@ public class AiChatPage extends AEvoPage {
 					return;
 				}
 			} else if (selectedMode == AiMode.INTENT) {
-				request = Files.readString(java.nio.file.Path.of("prompts", "intent.md"), StandardCharsets.UTF_8);
+				request = loadPromptFile("intent.md");
 			} else {
 				processLogEntry("Evo: Request is empty. Please enter a valid instruction or question.");
 				return;
@@ -1992,5 +1992,40 @@ public class AiChatPage extends AEvoPage {
 				Display.getDefault().asyncExec(() -> { if (isDisposed()) return; MessageBox mb = new MessageBox(getShell(), SWT.ICON_ERROR | SWT.OK); mb.setText("AI Connection Failed"); mb.setMessage("Error connecting to AI provider (settings NOT saved): " + ex.getMessage()); mb.open(); });
 			}
 		}).start();
+	}
+
+	private String loadPromptFile(String fileName) {
+		try {
+			Bundle bundle = FrameworkUtil.getBundle(AiChatPage.class);
+			if (bundle != null) {
+				URL url = bundle.getEntry("prompts/" + fileName);
+				if (url != null) {
+					try (InputStream in = url.openStream()) {
+						return new String(in.readAllBytes(), StandardCharsets.UTF_8);
+					}
+				}
+			}
+		} catch (Exception e) {
+			// Fallback to local files
+		}
+		// Fallback to filesystem if not in OSGi environment (e.g. tests)
+		try {
+			java.nio.file.Path localPath = java.nio.file.Path.of("prompts", fileName);
+			if (Files.exists(localPath)) {
+				return Files.readString(localPath, StandardCharsets.UTF_8);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		// Another fallback, try inside current bundle directory or root project folders
+		try {
+			java.nio.file.Path viewPath = java.nio.file.Path.of("eu.kalafatic.evolution.view", "prompts", fileName);
+			if (Files.exists(viewPath)) {
+				return Files.readString(viewPath, StandardCharsets.UTF_8);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return "";
 	}
 }
