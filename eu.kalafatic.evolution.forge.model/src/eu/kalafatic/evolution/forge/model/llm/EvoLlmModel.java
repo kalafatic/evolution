@@ -7,10 +7,10 @@ import java.util.List;
 
 public class EvoLlmModel {
     private final Embedding embedding;
-    private final PositionalEncoding posEncoding;  // Will be replaced with RoPE later
+    private final PositionalEncoding posEncoding;
     private final List<TransformerBlock> blocks;
     private final RMSNorm outputNorm;
-    private final Tensor lmHead; // Linear mapping to vocab size
+    private final Tensor lmHead;
 
     private final int vocabSize;
     private final int dModel;
@@ -19,7 +19,7 @@ public class EvoLlmModel {
     private final int dff;
     private final int maxSeqLen;
     
-    private Tensor lastX; // Cached input to outputNorm/lmHead for backward pass
+    private Tensor lastX;
 
     public EvoLlmModel(int vocabSize, int dModel, int numHeads, int numBlocks, int dff, int maxSeqLen) {
         this.vocabSize = vocabSize;
@@ -38,7 +38,6 @@ public class EvoLlmModel {
         this.outputNorm = new RMSNorm(dModel);
         this.lmHead = new SimpleTensor(dModel, vocabSize);
         
-        // Initialize head weights
         float[] hData = lmHead.getData();
         java.util.Random r = new java.util.Random();
         for (int i = 0; i < hData.length; i++) {
@@ -54,7 +53,6 @@ public class EvoLlmModel {
             x = block.forward(x);
         }
         
-        // Output normalization (standard LLaMA)
         this.lastX = outputNorm.forward(x);
         return this.lastX.matmul(lmHead);
     }
@@ -62,7 +60,6 @@ public class EvoLlmModel {
     public void backward(Tensor dLogits) {
         if (lastX == null) return;
 
-        // 1. lmHead backprop
         Tensor dx = dLogits.matmul(lmHead.transpose());
         Tensor dLmHead = lastX.transpose().matmul(dLogits);
         
@@ -72,18 +69,13 @@ public class EvoLlmModel {
             hGrad[i] += dHeadData[i];
         }
 
-        // 2. OutputNorm backprop
         dx = outputNorm.backward(dx);
 
-        // 3. TransformerBlocks in reverse order
         for (int i = blocks.size() - 1; i >= 0; i--) {
             dx = blocks.get(i).backward(dx);
         }
 
-        // 4. PositionalEncoding backprop
         dx = posEncoding.backward(dx);
-
-        // 5. Embedding backprop
         embedding.backward(dx);
     }
 
@@ -93,7 +85,7 @@ public class EvoLlmModel {
         // 1. Embedding
         params.add(embedding.getWeights());
         
-        // 2. For each block: attn_norm, WQ, WK, WV, WO, ffn_norm, W1, W2
+        // 2. For each block: attn_norm, WQ, WK, WV, WO, ffn_norm, W1 (gate), W3 (up), W2 (down)
         for (TransformerBlock block : blocks) {
             params.add(block.getAttnNorm().getWeight());   // attn_norm
             params.add(block.getAttention().getWQ());      // WQ
@@ -101,8 +93,9 @@ public class EvoLlmModel {
             params.add(block.getAttention().getWV());      // WV
             params.add(block.getAttention().getWO());      // WO
             params.add(block.getFfnNorm().getWeight());    // ffn_norm
-            params.add(block.getFfn().getW1());            // W1 (gate)
-            params.add(block.getFfn().getW2());            // W2 (down)
+            params.add(block.getFfn().getW1());            // ffn_gate (W1)
+            params.add(block.getFfn().getW3());            // ✅ ffn_up (W3) - ADD THIS
+            params.add(block.getFfn().getW2());            // ffn_down (W2)
         }
         
         // 3. Output Norm

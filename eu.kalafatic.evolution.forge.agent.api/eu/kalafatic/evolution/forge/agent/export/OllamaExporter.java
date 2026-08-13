@@ -94,20 +94,23 @@ public class OllamaExporter implements EvoModelExporter {
         // 1. Embedding
         serializedTensors.add(new NamedTensor("token_embd.weight", modelParams.get(0)));
         
-        // 2. Each block - 8 tensors per block
-        int paramsPerBlock = 8;
-        for (int i = 0; i < model.getNumBlocks(); i++) {
-            int baseIdx = 1 + i * paramsPerBlock;
-            
-            serializedTensors.add(new NamedTensor("blk." + i + ".attn_norm.weight", modelParams.get(baseIdx + 0)));
-            serializedTensors.add(new NamedTensor("blk." + i + ".attn_q.weight", transpose(modelParams.get(baseIdx + 1))));
-            serializedTensors.add(new NamedTensor("blk." + i + ".attn_k.weight", transpose(modelParams.get(baseIdx + 2))));
-            serializedTensors.add(new NamedTensor("blk." + i + ".attn_v.weight", transpose(modelParams.get(baseIdx + 3))));
-            serializedTensors.add(new NamedTensor("blk." + i + ".attn_output.weight", transpose(modelParams.get(baseIdx + 4))));
-            serializedTensors.add(new NamedTensor("blk." + i + ".ffn_norm.weight", modelParams.get(baseIdx + 5)));
-            serializedTensors.add(new NamedTensor("blk." + i + ".ffn_gate.weight", transpose(modelParams.get(baseIdx + 6))));
-            serializedTensors.add(new NamedTensor("blk." + i + ".ffn_down.weight", transpose(modelParams.get(baseIdx + 7))));
-        }
+     
+     // Each block has 9 parameters: attn_norm, WQ, WK, WV, WO, ffn_norm, W1, W3, W2
+     int paramsPerBlock = 9;  // Was 8!
+
+     for (int i = 0; i < model.getNumBlocks(); i++) {
+         int baseIdx = 1 + i * paramsPerBlock;
+         
+         serializedTensors.add(new NamedTensor("blk." + i + ".attn_norm.weight", modelParams.get(baseIdx + 0)));
+         serializedTensors.add(new NamedTensor("blk." + i + ".attn_q.weight", transpose(modelParams.get(baseIdx + 1))));
+         serializedTensors.add(new NamedTensor("blk." + i + ".attn_k.weight", transpose(modelParams.get(baseIdx + 2))));
+         serializedTensors.add(new NamedTensor("blk." + i + ".attn_v.weight", transpose(modelParams.get(baseIdx + 3))));
+         serializedTensors.add(new NamedTensor("blk." + i + ".attn_output.weight", transpose(modelParams.get(baseIdx + 4))));
+         serializedTensors.add(new NamedTensor("blk." + i + ".ffn_norm.weight", modelParams.get(baseIdx + 5)));
+         serializedTensors.add(new NamedTensor("blk." + i + ".ffn_gate.weight", transpose(modelParams.get(baseIdx + 6))));   // W1
+         serializedTensors.add(new NamedTensor("blk." + i + ".ffn_up.weight", transpose(modelParams.get(baseIdx + 7))));     // ✅ W3
+         serializedTensors.add(new NamedTensor("blk." + i + ".ffn_down.weight", transpose(modelParams.get(baseIdx + 8))));   // W2
+     }
         
         // 3. Output norm and LM head
         int outputNormIdx = 1 + model.getNumBlocks() * paramsPerBlock;
