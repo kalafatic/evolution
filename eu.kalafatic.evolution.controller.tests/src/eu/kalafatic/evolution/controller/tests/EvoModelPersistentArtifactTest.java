@@ -19,6 +19,7 @@ import eu.kalafatic.evolution.forge.math.api.Tensor;
 import eu.kalafatic.evolution.forge.model.llm.EvoLlmModel;
 import eu.kalafatic.evolution.forge.model.llm.EvoModelArtifact;
 import eu.kalafatic.evolution.forge.agent.export.OllamaExporter;
+import eu.kalafatic.evolution.forge.agent.export.OllamaExporterGPT;
 
 /**
  * High-precision validation tests for the native EVO persistent model artifact,
@@ -321,6 +322,133 @@ public class EvoModelPersistentArtifactTest {
         EvoModelArtifact loadedArtifact = EvoModelArtifact.load(trickyModelDir);
         assertEquals(trickyVocab.size(), loadedArtifact.getTokenizerVocab().size());
         assertEquals(trickyVocab, loadedArtifact.getTokenizerVocab());
+    }
+
+    @Test
+    public void testOllamaExporterGPTCompleteValidation() throws Exception {
+        EvoModelArtifact artifact = new EvoModelArtifact();
+        artifact.initializeFromModel("evo-test-gpt-exporter", originalModel, mockVocab);
+        artifact.save(modelDir);
+
+        OllamaExporterGPT exporter = new OllamaExporterGPT();
+        Path exportDir = tempFolder.newFolder("gguf-gpt-output").toPath();
+        exporter.export(artifact, exportDir);
+
+        Path ggufFile = exportDir.resolve("exports/ollama/evo.gguf");
+        assertTrue(Files.exists(ggufFile));
+
+        // Reopen the GGUF file from disk and perform byte-level parsing
+        byte[] bytes = Files.readAllBytes(ggufFile);
+        java.nio.ByteBuffer buf = java.nio.ByteBuffer.wrap(bytes);
+        buf.order(java.nio.ByteOrder.LITTLE_ENDIAN);
+
+        // Verify Magic and Version
+        byte[] magic = new byte[4];
+        buf.get(magic);
+        assertEquals("GGUF", new String(magic, java.nio.charset.StandardCharsets.UTF_8));
+        assertEquals(3, buf.getInt());
+
+        long tensorCount = buf.getLong();
+        long kvCount = buf.getLong();
+
+        // Parse and verify metadata entries
+        Map<String, Object> metadata = new HashMap<>();
+        for (int i = 0; i < kvCount; i++) {
+            String key = readGgufString(buf);
+            int type = buf.getInt();
+            Object value = parseAndSkipGgufValueForTest(buf, type);
+            metadata.put(key, value);
+        }
+
+        // Validate crucial architecture metadata
+        assertEquals("llama", metadata.get("general.architecture"));
+        assertEquals("EVO LLM", metadata.get("general.name"));
+        assertEquals(0, ((Number) metadata.get("general.file_type")).intValue());
+        assertEquals(32, ((Number) metadata.get("general.alignment")).intValue());
+        assertEquals(originalModel.getMaxSeqLen(), ((Number) metadata.get("llama.context_length")).intValue());
+        assertEquals(originalModel.getDModel(), ((Number) metadata.get("llama.embedding_length")).intValue());
+        assertEquals(originalModel.getNumBlocks(), ((Number) metadata.get("llama.block_count")).intValue());
+        assertEquals(originalModel.getDff(), ((Number) metadata.get("llama.feed_forward_length")).intValue());
+        assertEquals(originalModel.getVocabSize(), ((Number) metadata.get("llama.vocab_size")).intValue());
+
+        // Parse tensor descriptors and validate properties
+        Map<String, long[]> tensorShapes = new HashMap<>();
+        Map<String, Long> tensorOffsets = new HashMap<>();
+        for (int i = 0; i < tensorCount; i++) {
+            String name = readGgufString(buf);
+            int shapeLen = buf.getInt();
+            long[] dims = new long[shapeLen];
+            for (int d = 0; d < shapeLen; d++) {
+                dims[d] = buf.getLong();
+            }
+            int ggmlType = buf.getInt();
+            long offset = buf.getLong();
+
+            tensorShapes.put(name, dims);
+            tensorOffsets.put(name, offset);
+
+            // Alignment validation of offset to 32 bytes
+            assertEquals("Tensor " + name + " offset must be 32-byte aligned", 0, offset % 32);
+        }
+
+        // 1. Verify token_embd.weight has correct shape [32, 100] (which is [dModel, vocabSize])
+        assertTrue(tensorShapes.containsKey("token_embd.weight"));
+        long[] embedShape = tensorShapes.get("token_embd.weight");
+        assertEquals(2, embedShape.length);
+        assertEquals(originalModel.getDModel(), embedShape[0]); // 32
+        assertEquals(originalModel.getVocabSize(), embedShape[1]); // 100
+
+        // 2. Verify output.weight has correct shape [32, 100] (which is [dModel, vocabSize])
+        assertTrue(tensorShapes.containsKey("output.weight"));
+        long[] outputShape = tensorShapes.get("output.weight");
+        assertEquals(2, outputShape.length);
+        assertEquals(originalModel.getDModel(), outputShape[0]); // 32
+        assertEquals(originalModel.getVocabSize(), outputShape[1]); // 100
+
+        // 3. Verify FFN up and down shapes map correctly
+        assertTrue(tensorShapes.containsKey("blk.0.ffn_up.weight"));
+        long[] ffnUpShape = tensorShapes.get("blk.0.ffn_up.weight");
+        assertEquals(2, ffnUpShape.length);
+        assertEquals(originalModel.getDModel(), ffnUpShape[0]); // dModel (32)
+        assertEquals(originalModel.getDff(), ffnUpShape[1]); // dff (128)
+
+        assertTrue(tensorShapes.containsKey("blk.0.ffn_down.weight"));
+        long[] ffnDownShape = tensorShapes.get("blk.0.ffn_down.weight");
+        assertEquals(2, ffnDownShape.length);
+        assertEquals(originalModel.getDff(), ffnDownShape[0]); // dff (128)
+        assertEquals(originalModel.getDModel(), ffnDownShape[1]); // dModel (32)
+
+        // 4. Verify attention shapes
+        assertTrue(tensorShapes.containsKey("blk.0.attn_q.weight"));
+        long[] qShape = tensorShapes.get("blk.0.attn_q.weight");
+        assertEquals(2, qShape.length);
+        assertEquals(originalModel.getDModel(), qShape[0]); // 32
+        assertEquals(originalModel.getDModel(), qShape[1]); // 32
+    }
+
+    private Object parseAndSkipGgufValueForTest(java.nio.ByteBuffer buf, int type) {
+        if (type == 0) return (int) (buf.get() & 0xFF);
+        if (type == 1) return (int) buf.get();
+        if (type == 2) return buf.getShort() & 0xFFFF;
+        if (type == 3) return (int) buf.getShort();
+        if (type == 4) return buf.getInt();
+        if (type == 5) return buf.getInt();
+        if (type == 6) return buf.getFloat();
+        if (type == 7) return buf.get() != 0;
+        if (type == 8) return readGgufString(buf);
+        if (type == 9) {
+            int arrayType = buf.getInt();
+            long arrayLen = buf.getLong();
+            List<Object> items = new ArrayList<>();
+            for (long i = 0; i < arrayLen; i++) {
+                items.add(parseAndSkipGgufValueForTest(buf, arrayType));
+            }
+            return items;
+        }
+        if (type >= 10 && type <= 13) {
+            return buf.getLong();
+        }
+        throw new RuntimeException("Unknown metadata type: " + type);
     }
 
     private String readGgufString(java.nio.ByteBuffer buf) {
