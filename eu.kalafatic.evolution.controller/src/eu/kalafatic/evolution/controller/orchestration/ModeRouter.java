@@ -85,7 +85,36 @@ public class ModeRouter {
 		if (lower.contains("mode: mediated") || lower.contains("analyze target"))
 			return createHybridManualExportMode();
 
-		// 2. Use the cognitive pipeline for evidence-based detection
+		// 2. Check explicit Orchestrator model overrides (User UI selection)
+		if (orchestrator != null) {
+			if (orchestrator.getAiMode() == eu.kalafatic.evolution.model.orchestration.AiMode.MEDIATED) {
+				String sessionId = orchestrator.getId();
+				SessionContainer session = (sessionId != null) ? SessionManager.getInstance().getSession(sessionId) : null;
+				if (session != null) {
+					session.getCognitiveState().setCurrentCapability(CapabilityType.MEDIATED);
+					new eu.kalafatic.evolution.controller.orchestration.cognitive.CognitiveStatePublisher().publish(null, session.getCognitiveState());
+				}
+				return createHybridManualExportMode();
+			}
+			if (orchestrator.getAiMode() == eu.kalafatic.evolution.model.orchestration.AiMode.INTENT) {
+				String sessionId = orchestrator.getId();
+				SessionContainer session = (sessionId != null) ? SessionManager.getInstance().getSession(sessionId) : null;
+				if (session != null) {
+					session.getCognitiveState().setCurrentCapability(CapabilityType.INTENT_RECONSTRUCTION);
+					new eu.kalafatic.evolution.controller.orchestration.cognitive.CognitiveStatePublisher().publish(null, session.getCognitiveState());
+				}
+				return createIntentReconstructionMode();
+			}
+			if (orchestrator.getAiChat() != null && orchestrator.getAiChat().getPromptInstructions() != null
+					&& orchestrator.getAiChat().getPromptInstructions().isSelfIterativeMode()) {
+				return createSelfDevMode();
+			}
+			if (orchestrator.isDarwinMode()) {
+				return createDarwinMode();
+			}
+		}
+
+		// 3. Use the cognitive pipeline for evidence-based detection
 		CognitiveAnalysisPipeline pipeline = new CognitiveAnalysisPipeline();
 		CapabilityAnalysis analysis = pipeline.analyze(prompt);
 

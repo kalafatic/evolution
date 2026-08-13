@@ -41,7 +41,23 @@ public class MediatedModeIntegrationTest {
         mockLlm = new MockLlmProvider();
         aiService = new AiService() {
             @Override
+            public String sendRequest(Orchestrator orchestrator, String prompt) throws Exception {
+                return mockLlm.sendRequest(orchestrator, prompt, 0.7f, null, null);
+            }
+            @Override
+            public String sendRequest(Orchestrator orchestrator, String prompt, TaskContext context) throws Exception {
+                return mockLlm.sendRequest(orchestrator, prompt, 0.7f, null, context);
+            }
+            @Override
+            public String sendRequest(Orchestrator orchestrator, String prompt, String proxyUrl, TaskContext context) throws Exception {
+                return mockLlm.sendRequest(orchestrator, prompt, 0.7f, proxyUrl, context);
+            }
+            @Override
             public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
+                return mockLlm.sendRequest(orchestrator, prompt, temperature, proxyUrl, context);
+            }
+            @Override
+            public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context, String forcedModel) throws Exception {
                 return mockLlm.sendRequest(orchestrator, prompt, temperature, proxyUrl, context);
             }
         };
@@ -153,8 +169,18 @@ public class MediatedModeIntegrationTest {
         assertTrue("Summary should contain export package info", response.getSummary().contains("Export Package (ZIP):"));
         assertTrue("Summary should mention mediated Darwin", response.getSummary().contains("Mediated Darwin Evolution Complete"));
 
-        // Verify ZIP file creation
-        File[] files = context.getProjectRoot().listFiles((dir, name) -> name.startsWith("mediated_export_") && name.endsWith(".zip"));
+        // Verify ZIP file creation (recursively or checking resources folder)
+        File resourcesDir = new File(context.getProjectRoot(), "resources");
+        if (!resourcesDir.exists()) {
+            resourcesDir = new File(context.getProjectRoot(), "src/main/resources");
+        }
+        File[] files = null;
+        if (resourcesDir.exists()) {
+            files = resourcesDir.listFiles((dir, name) -> name.startsWith("mediated_export_") && name.endsWith(".zip"));
+        }
+        if (files == null || files.length == 0) {
+            files = context.getProjectRoot().listFiles((dir, name) -> name.startsWith("mediated_export_") && name.endsWith(".zip"));
+        }
         assertNotNull("ZIP file list should not be null", files);
         assertTrue("Export ZIP file should exist", files.length > 0);
 
