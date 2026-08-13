@@ -10,6 +10,7 @@ import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -320,49 +321,41 @@ public class OllamaExporter implements EvoModelExporter {
         return output.toString();
     }
 
+    
     private void writeGGUF(Path path, EvoLlmModel model, List<NamedTensor> tensors) throws IOException {
-        // Calculate total size
-        long totalTensorSize = 0;
-        for (NamedTensor nt : tensors) {
-            totalTensorSize += nt.tensor.getSize() * 4; // F32 = 4 bytes
-        }
-        // Add 10MB for headers and padding
-        int bufferSize = (int) Math.max(16 * 1024 * 1024, totalTensorSize + 10 * 1024 * 1024);
+        // Use a ByteArrayOutputStream for simplicity
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        DataOutputStream dos = new DataOutputStream(baos);
         
-        ByteBuffer buf = ByteBuffer.allocate(bufferSize);
-        buf.order(ByteOrder.LITTLE_ENDIAN);
-
-        // GGUF Header
-        buf.put("GGUF".getBytes());
-        buf.putInt(3); // version
-        buf.putLong(tensors.size()); // tensor_count
-
-        // Metadata count - 20 keys
+        // 1. HEADER
+        dos.writeBytes("GGUF");
+        dos.writeInt(3); // version
+        dos.writeLong(tensors.size()); // tensor_count
+        
+        // 2. METADATA
         int kvCount = 20;
-        buf.putLong(kvCount);
-
-        // Write all metadata keys
-        writeStringKV(buf, "general.architecture", "llama");
-        writeStringKV(buf, "general.name", "EVO LLM");
-        writeIntKV(buf, "general.file_type", 0);
-        writeIntKV(buf, "llama.context_length", model.getMaxSeqLen());
-        writeIntKV(buf, "llama.embedding_length", model.getDModel());
-        writeIntKV(buf, "llama.feed_forward_length", model.getDff());
-        writeIntKV(buf, "llama.block_count", model.getNumBlocks());
-        writeIntKV(buf, "llama.attention.head_count", model.getNumHeads());
-        writeIntKV(buf, "llama.attention.head_count_kv", model.getNumHeads());
-        writeIntKV(buf, "llama.vocab_size", model.getVocabSize());
-        writeFloatKV(buf, "llama.attention.layer_norm_rms_epsilon", 1e-5f);
-        writeIntKV(buf, "llama.attention.key_length", model.getDModel() / model.getNumHeads());
-        writeIntKV(buf, "llama.attention.value_length", model.getDModel() / model.getNumHeads());
-        writeIntKV(buf, "llama.rope.dimension_count", model.getDModel() / model.getNumHeads());
-
-        // Tokenizer metadata - NO tokenizer.ggml.model!
-        writeIntKV(buf, "tokenizer.ggml.bos_token_id", 1);
-        writeIntKV(buf, "tokenizer.ggml.eos_token_id", 2);
-        writeIntKV(buf, "tokenizer.ggml.unknown_token_id", 0);
-
-        // Build vocabulary
+        dos.writeLong(kvCount);
+        
+        // Write metadata using helper methods that write to DataOutputStream
+        writeStringKV(dos, "general.architecture", "llama");
+        writeStringKV(dos, "general.name", "EVO LLM");
+        writeIntKV(dos, "general.file_type", 0);
+        writeIntKV(dos, "llama.context_length", model.getMaxSeqLen());
+        writeIntKV(dos, "llama.embedding_length", model.getDModel());
+        writeIntKV(dos, "llama.feed_forward_length", model.getDff());
+        writeIntKV(dos, "llama.block_count", model.getNumBlocks());
+        writeIntKV(dos, "llama.attention.head_count", model.getNumHeads());
+        writeIntKV(dos, "llama.attention.head_count_kv", model.getNumHeads());
+        writeIntKV(dos, "llama.vocab_size", model.getVocabSize());
+        writeFloatKV(dos, "llama.attention.layer_norm_rms_epsilon", 1e-5f);
+        writeIntKV(dos, "llama.attention.key_length", model.getDModel() / model.getNumHeads());
+        writeIntKV(dos, "llama.attention.value_length", model.getDModel() / model.getNumHeads());
+        writeIntKV(dos, "llama.rope.dimension_count", model.getDModel() / model.getNumHeads());
+        writeIntKV(dos, "tokenizer.ggml.bos_token_id", 1);
+        writeIntKV(dos, "tokenizer.ggml.eos_token_id", 2);
+        writeIntKV(dos, "tokenizer.ggml.unknown_token_id", 0);
+        
+        // Vocabulary
         List<String> tokens = new ArrayList<>();
         float[] scores = new float[model.getVocabSize()];
         int[] tokenTypes = new int[model.getVocabSize()];
@@ -375,59 +368,122 @@ public class OllamaExporter implements EvoModelExporter {
             scores[i] = 0.0f;
             tokenTypes[i] = (i < 3) ? 3 : 1;
         }
-
-        writeStringArrayKV(buf, "tokenizer.ggml.tokens", tokens);
-        writeFloatArrayKV(buf, "tokenizer.ggml.scores", scores);
-        writeIntArrayKV(buf, "tokenizer.ggml.token_type", tokenTypes);
-
-        // Calculate offsets
-        long currentOffset = 0;
-        List<Long> tensorOffsets = new ArrayList<>();
+        
+        writeStringArrayKV(dos, "tokenizer.ggml.tokens", tokens);
+        writeFloatArrayKV(dos, "tokenizer.ggml.scores", scores);
+        writeIntArrayKV(dos, "tokenizer.ggml.token_type", tokenTypes);
+        
+        // 3. TENSOR INFO SECTION
+        // Calculate offsets first
+        long dataOffset = 0;
+        List<Long> offsets = new ArrayList<>();
         for (NamedTensor nt : tensors) {
-            currentOffset = (currentOffset + 31) & ~31;
-            tensorOffsets.add(currentOffset);
-            currentOffset += nt.tensor.getSize() * 4;
+            dataOffset = (dataOffset + 31) & ~31;
+            offsets.add(dataOffset);
+            dataOffset += nt.tensor.getSize() * 4; // F32
         }
-
+        
         // Write tensor info
         for (int i = 0; i < tensors.size(); i++) {
             NamedTensor nt = tensors.get(i);
-            writeString(buf, nt.name);
-
+            writeString(dos, nt.name);
+            
             long[] shape = nt.tensor.getShape();
-            buf.putInt(shape.length);
+            dos.writeInt(shape.length);
             for (int d = shape.length - 1; d >= 0; d--) {
-                buf.putLong(shape[d]);
+                dos.writeLong(shape[d]);
             }
-            buf.putInt(0); // F32
-            buf.putLong(tensorOffsets.get(i));
+            dos.writeInt(0); // F32
+            dos.writeLong(offsets.get(i));
         }
-
-        // Align to 32 bytes
-        int pos = buf.position();
-        int aligned = (pos + 31) & ~31;
-        while (buf.position() < aligned) {
-            buf.put((byte) 0);
+        
+        // 4. ALIGNMENT (32 bytes)
+        int headerEnd = baos.size();
+        int alignedEnd = (headerEnd + 31) & ~31;
+        while (baos.size() < alignedEnd) {
+            dos.writeByte(0);
         }
-
-        long tensorDataStart = buf.position();
-
-        // Write tensor data
+        
+        long tensorDataStart = baos.size();
+        
+        // 5. TENSOR DATA
         for (int i = 0; i < tensors.size(); i++) {
-            while ((buf.position() - tensorDataStart) < tensorOffsets.get(i)) {
-                buf.put((byte) 0);
+            // Pad to alignment
+            long currentPos = baos.size() - tensorDataStart;
+            if (currentPos < offsets.get(i)) {
+                long padding = offsets.get(i) - currentPos;
+                for (long p = 0; p < padding; p++) {
+                    dos.writeByte(0);
+                }
             }
+            
             NamedTensor nt = tensors.get(i);
             float[] data = nt.tensor.getData();
             for (float val : data) {
-                buf.putFloat(val);
+                dos.writeFloat(val);
             }
         }
+        
+        dos.flush();
+        
+        // Write to file
+        try (FileOutputStream fos = new FileOutputStream(path.toFile())) {
+            baos.writeTo(fos);
+        }
+    }
 
-        buf.flip();
-        try (FileOutputStream fos = new FileOutputStream(path.toFile());
-             FileChannel channel = fos.getChannel()) {
-            channel.write(buf);
+    // Helper methods for DataOutputStream
+    private void writeString(DataOutputStream dos, String str) throws IOException {
+        byte[] bytes = str.getBytes(StandardCharsets.UTF_8);
+        dos.writeLong(bytes.length);
+        dos.write(bytes);
+    }
+
+    private void writeStringKV(DataOutputStream dos, String key, String value) throws IOException {
+        writeString(dos, key);
+        dos.writeInt(8); // STRING
+        writeString(dos, value);
+    }
+
+    private void writeIntKV(DataOutputStream dos, String key, int value) throws IOException {
+        writeString(dos, key);
+        dos.writeInt(4); // UINT32
+        dos.writeInt(value);
+    }
+
+    private void writeFloatKV(DataOutputStream dos, String key, float value) throws IOException {
+        writeString(dos, key);
+        dos.writeInt(6); // FLOAT32
+        dos.writeFloat(value);
+    }
+
+    private void writeStringArrayKV(DataOutputStream dos, String key, List<String> values) throws IOException {
+        writeString(dos, key);
+        dos.writeInt(9); // ARRAY
+        dos.writeInt(8); // STRING
+        dos.writeLong(values.size());
+        for (String val : values) {
+            writeString(dos, val);
+        }
+    }
+
+    private void writeFloatArrayKV(DataOutputStream dos, String key, float[] values) throws IOException {
+        writeString(dos, key);
+        dos.writeInt(9); // ARRAY
+        dos.writeInt(6); // FLOAT32
+        dos.writeLong(values.length);
+        for (float val : values) {
+            dos.writeFloat(val);
+        }
+    }
+
+    private void writeIntArrayKV(DataOutputStream dos, String key, int[] values) throws IOException {
+        writeString(dos, key);
+        dos.writeInt(9); // ARRAY
+        dos.writeInt(5); // INT32
+        dos.writeLong(values.length);
+        for (int val : values) {
+            dos.writeInt(val);
         }
     }
 

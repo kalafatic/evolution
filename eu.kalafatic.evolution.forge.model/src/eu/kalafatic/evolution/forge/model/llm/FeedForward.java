@@ -13,7 +13,6 @@ public class FeedForward {
         this.W2 = new SimpleTensor(dff, dModel);
         this.W3 = new SimpleTensor(dModel, dff);
         
-        // Initialize
         java.util.Random r = new java.util.Random();
         for (Tensor t : new Tensor[]{W1, W2, W3}) {
             float[] data = t.getData();
@@ -24,15 +23,30 @@ public class FeedForward {
     }
     
     public Tensor forward(Tensor x) {
-        // Standard LLaMA FFN: SwiGLU
-        // gate = x * W1, up = x * W3, down = (gate * sigmoid(gate)) * up * W2
-        // Simplified to: x * W1 * W2 (for testing)
-        Tensor hidden = x.matmul(W1);
-        return hidden.matmul(W2);
+        // Proper SwiGLU: gate = x * W1, up = x * W3, output = swish(gate) * up * W2
+        Tensor gate = x.matmul(W1);
+        Tensor up = x.matmul(W3);
+        
+        // Apply Swish activation: swish(x) = x * sigmoid(x)
+        float[] gateData = gate.getData();
+        for (int i = 0; i < gateData.length; i++) {
+            float sigmoid = 1.0f / (1.0f + (float) Math.exp(-gateData[i]));
+            gateData[i] = gateData[i] * sigmoid;
+        }
+        
+        // Element-wise multiply gate with up
+        float[] upData = up.getData();
+        for (int i = 0; i < gateData.length; i++) {
+            gateData[i] = gateData[i] * upData[i];
+        }
+        
+        // Project down with W2
+        return gate.matmul(W2);
     }
     
     public Tensor backward(Tensor dOutput) {
-        return dOutput; // Simplified
+        // Simplified - full backward pass would be more complex
+        return dOutput;
     }
     
     public Tensor getW1() { return W1; }
