@@ -21,7 +21,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
-public class OllamaExporter implements EvoModelExporter {
+public class OllamaExporterDS implements EvoModelExporter {
 
     public static class NamedTensor {
         public final String name;
