@@ -107,43 +107,35 @@ public class OllamaExporterGPT implements EvoModelExporter {
         Tensor embed = modelParams.get(0);
         serializedTensors.add(new NamedTensor("token_embd.weight", embed)); // UNTRANSPOSED
 
-        int blockParamsCount = 6;
+        int blockParamsCount = 9;
         for (int i = 0; i < model.getNumBlocks(); i++) {
             int baseIdx = 1 + i * blockParamsCount;
-            Tensor wq = modelParams.get(baseIdx);
-            Tensor wk = modelParams.get(baseIdx + 1);
-            Tensor wv = modelParams.get(baseIdx + 2);
-            Tensor wo = modelParams.get(baseIdx + 3);
-            Tensor w1 = modelParams.get(baseIdx + 4);
-            Tensor w2 = modelParams.get(baseIdx + 5);
+            Tensor attnNorm = modelParams.get(baseIdx + 0);
+            Tensor wq = modelParams.get(baseIdx + 1);
+            Tensor wk = modelParams.get(baseIdx + 2);
+            Tensor wv = modelParams.get(baseIdx + 3);
+            Tensor wo = modelParams.get(baseIdx + 4);
+            Tensor ffnNorm = modelParams.get(baseIdx + 5);
+            Tensor w1 = modelParams.get(baseIdx + 6); // ffn_gate (W1)
+            Tensor w3 = modelParams.get(baseIdx + 7); // ffn_up (W3)
+            Tensor w2 = modelParams.get(baseIdx + 8); // ffn_down (W2)
 
             serializedTensors.add(new NamedTensor("blk." + i + ".attn_q.weight", wq.transpose()));
             serializedTensors.add(new NamedTensor("blk." + i + ".attn_k.weight", wk.transpose()));
             serializedTensors.add(new NamedTensor("blk." + i + ".attn_v.weight", wv.transpose()));
             serializedTensors.add(new NamedTensor("blk." + i + ".attn_output.weight", wo.transpose()));
 
-            // Mathematically correct conversion from standard MLP to SwiGLU:
-            // SwiGLU FFN(x) = (SiLU(x * ffn_gate) * (x * ffn_up)) * ffn_down.
-            // Since SiLU is a smooth approximation of ReLU, setting ffn_gate = W1 and ffn_up = W1
-            // calculates SiLU(x * W1) * (x * W1) * W2, which uses only the real learned weights W1 and W2.
-            // This is semantically correct and contains no artificial constant tensors.
             serializedTensors.add(new NamedTensor("blk." + i + ".ffn_gate.weight", w1.transpose()));
-            serializedTensors.add(new NamedTensor("blk." + i + ".ffn_up.weight", w1.transpose()));
+            serializedTensors.add(new NamedTensor("blk." + i + ".ffn_up.weight", w3.transpose()));
             serializedTensors.add(new NamedTensor("blk." + i + ".ffn_down.weight", w2.transpose()));
 
             // RMSNorms
-            Tensor attnNorm = new SimpleTensor(model.getDModel());
-            Arrays.fill(attnNorm.getData(), 1.0f);
             serializedTensors.add(new NamedTensor("blk." + i + ".attn_norm.weight", attnNorm));
-
-            Tensor ffnNorm = new SimpleTensor(model.getDModel());
-            Arrays.fill(ffnNorm.getData(), 1.0f);
             serializedTensors.add(new NamedTensor("blk." + i + ".ffn_norm.weight", ffnNorm));
         }
 
         // output_norm
-        Tensor outputNorm = new SimpleTensor(model.getDModel());
-        Arrays.fill(outputNorm.getData(), 1.0f);
+        Tensor outputNorm = modelParams.get(1 + model.getNumBlocks() * blockParamsCount);
         serializedTensors.add(new NamedTensor("output_norm.weight", outputNorm));
 
         // output.weight (LM Head)
