@@ -955,8 +955,7 @@ public class ModelsGroup extends AEvoGroup {
                     boolean isSuccess = false;
                     if (command.startsWith("ollama rm")) {
                         String lowerOutput = output != null ? output.toLowerCase() : "";
-                        if ((lowerOutput.contains("deleted") || lowerOutput.trim().isEmpty())
-                                && !lowerOutput.contains("error:") && !lowerOutput.contains("failed")) {
+                        if (!lowerOutput.contains("error:") && !lowerOutput.contains("failed")) {
                             isSuccess = true;
                         }
                     }
