@@ -31,6 +31,7 @@ public class LlamaService {
     private void initRunner() {
         if (modelPath != null && !modelPath.isEmpty() && new File(modelPath).exists()) {
             this.runner = LlamaCppRunner.builder(modelPath)
+                    .contextLength(2048)
                     .temperature(temperature)
                     .build();
         }
@@ -74,9 +75,23 @@ public class LlamaService {
 
         // Run inference via llama.cpp
         String answer = runner.generate(userInput);
+        answer = cleanLlamaOutput(answer);
 
         history.add(new Message("assistant", answer));
         return answer;
+    }
+
+    private String cleanLlamaOutput(String rawOutput) {
+        if (rawOutput == null || rawOutput.isEmpty()) return "";
+        StringBuilder sb = new StringBuilder();
+        for (String line : rawOutput.split("\r?\n")) {
+            String trimmed = line.trim();
+            if (trimmed.startsWith("llama_perf_") || trimmed.startsWith("llama_print_timings") || trimmed.startsWith("load_tensors")) {
+                continue;
+            }
+            sb.append(line).append("\n");
+        }
+        return sb.toString().trim();
     }
 
     /**

@@ -160,7 +160,7 @@ public class OllamaProvider implements ILlmProvider {
     }
 
     private void triggerSelfHealing(Orchestrator orchestrator, String model, OllamaService service, TaskContext context) throws Exception {
-        triggerSelfHealing(orchestrator, model, service, context, true);
+        triggerSelfHealing(orchestrator, model, service, context, false);
     }
 
     private void triggerSelfHealing(Orchestrator orchestrator, String model, OllamaService service, TaskContext context, boolean useAdapter) throws Exception {
