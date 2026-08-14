@@ -169,6 +169,24 @@ public class ChatMgmtGroup extends AEvoGroup {
         
         aiModeSetupCombo = GUIFactory.INSTANCE.createCombo(compositeLocal);
         ((GridData)aiModeSetupCombo.getLayoutData()).widthHint = 100;
+        for (ModelSizePreset.Size size : ModelSizePreset.Size.values()) {
+            aiModeSetupCombo.add(size.getDisplayName());
+        }
+        aiModeSetupCombo.select(2); // Default to SMALL
+
+        aiModeSetupCombo.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                int selIdx = aiModeSetupCombo.getSelectionIndex();
+                if (selIdx >= 0 && selIdx < ModelSizePreset.Size.values().length) {
+                    ModelSizePreset.Size selectedSize = ModelSizePreset.Size.values()[selIdx];
+                    Map<String, Object> settings = new HashMap<>();
+                    settings.put("modelSize", selectedSize.name());
+                    page.updateConfiguration(settings);
+                    page.saveLastUsedSettings();
+                }
+            }
+        });
         
         Button targetButton = GUIFactory.INSTANCE.createButton(compositeLocal, "Target");
         targetButton.setBackground(lightOrange);
@@ -240,12 +258,8 @@ public class ChatMgmtGroup extends AEvoGroup {
 						compositeRemote.setVisible(true);
 						break;
 					case FORGE:
-						
-						for (ModelSizePreset.Size size : ModelSizePreset.Size.values()) {				          
-							aiModeSetupCombo.add(size.getDisplayName());
-				        }
-						aiModeSetupCombo.select(2); // Default to SMALL
-					
+						compositeLocal.setVisible(true);
+						compositeRemote.setVisible(false);
 						break;
 				}
             }
@@ -365,11 +379,32 @@ public class ChatMgmtGroup extends AEvoGroup {
                         selectSafe(localModelCombo, model);
                     }
                 }
+
+                if (aiModeSetupCombo != null && !aiModeSetupCombo.isDisposed()) {
+                    String sizeName = (String) config.getOrDefault("modelSize", "SMALL");
+                    for (int i = 0; i < ModelSizePreset.Size.values().length; i++) {
+                        ModelSizePreset.Size s = ModelSizePreset.Size.values()[i];
+                        if (s.name().equalsIgnoreCase(sizeName) || s.getDisplayName().equalsIgnoreCase(sizeName)) {
+                            aiModeSetupCombo.select(i);
+                            break;
+                        }
+                    }
+                }
             } finally {
                 isUpdating = false;
             }
         }
         group.layout(true, true);
+    }
+
+    public String getSelectedModelSize() {
+        if (aiModeSetupCombo != null && !aiModeSetupCombo.isDisposed()) {
+            int selIdx = aiModeSetupCombo.getSelectionIndex();
+            if (selIdx >= 0 && selIdx < ModelSizePreset.Size.values().length) {
+                return ModelSizePreset.Size.values()[selIdx].name();
+            }
+        }
+        return "SMALL";
     }
 
 

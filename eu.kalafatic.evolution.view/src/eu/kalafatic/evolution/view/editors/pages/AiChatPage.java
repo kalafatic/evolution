@@ -362,6 +362,7 @@ public class AiChatPage extends AEvoPage {
 		if (orchestrator.getRemoteModel() != null) section.put("RemoteModel", orchestrator.getRemoteModel());
 		if (chatMgmtGroup != null && chatMgmtGroup.getRemoteToken() != null) section.put("RemoteToken_" + orchestrator.getRemoteModel(), chatMgmtGroup.getRemoteToken());
 		if (chatMgmtGroup != null && chatMgmtGroup.getRemoteUrl() != null) section.put("RemoteUrl_" + orchestrator.getRemoteModel(), chatMgmtGroup.getRemoteUrl());
+		if (chatMgmtGroup != null && chatMgmtGroup.getSelectedModelSize() != null) section.put("ModelSize", chatMgmtGroup.getSelectedModelSize());
 
 		if (currentSession != null) {
 			section.put("iterativeMode", currentSession.isIterativeMode());
@@ -408,6 +409,13 @@ public class AiChatPage extends AEvoPage {
 				if (orchestrator.getAiChat() == null) orchestrator.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
 				orchestrator.getAiChat().setUrl(url);
 			}
+		}
+
+		String modelSize = section.get("ModelSize");
+		if (modelSize != null) {
+			java.util.Map<String, Object> sizeSettings = new java.util.HashMap<>();
+			sizeSettings.put("modelSize", modelSize);
+			updateConfiguration(sizeSettings);
 		}
 
 		if (currentSession != null) {
@@ -527,7 +535,9 @@ public class AiChatPage extends AEvoPage {
 				}
 			} else if (selectedMode == AiMode.FORGE) {
 				if (isTargetValidFolder) {
-					request = "Train local EVO LLM model on the target documentation folder: " + currentSession.getTargetPath();
+					String modelSizeStr = chatMgmtGroup != null ? chatMgmtGroup.getSelectedModelSize() : "SMALL";
+					eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance().updateUiState(currentSessionId, "modelSize", modelSizeStr);
+					request = "Train local EVO LLM model (" + modelSizeStr + ") on the target documentation folder: " + currentSession.getTargetPath();
 				} else {
 					processLogEntry("Evo: Target is not a valid folder. Forge mode requires a valid target directory.");
 					return;

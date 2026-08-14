@@ -158,6 +158,31 @@ public class LlamaService {
             }
         }
 
+        // 6. Fallback to current working directory dist / source/models / forge-output
+        File userDir = new File(System.getProperty("user.dir"));
+        File[] candidateDirs = {
+            new File(userDir, "source/models"),
+            new File(userDir, "dist"),
+            new File(userDir, "forge-output")
+        };
+        for (File dir : candidateDirs) {
+            if (dir.exists() && dir.isDirectory()) {
+                File[] files = dir.listFiles((d, name) -> name.endsWith(".gguf"));
+                if (files != null && files.length > 0) {
+                    return files[0];
+                }
+                File[] subdirs = dir.listFiles(File::isDirectory);
+                if (subdirs != null) {
+                    for (File subdir : subdirs) {
+                        File f = new File(subdir, "evo.gguf");
+                        if (f.exists()) return f;
+                        File[] ggufs = subdir.listFiles((d, name) -> name.endsWith(".gguf"));
+                        if (ggufs != null && ggufs.length > 0) return ggufs[0];
+                    }
+                }
+            }
+        }
+
         return null;
     }
 

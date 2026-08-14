@@ -105,7 +105,12 @@ public class LlamaCppRunner {
         // Try multiple locations
         String[] searchPaths = {
             LLAMA_CPP_DIR + "/" + osDir + "/" + cliName,
+            LLAMA_CPP_DIR + "/linux/" + cliName,
+            LLAMA_CPP_DIR + "/win/" + cliName,
             LLAMA_CPP_DIR + "/" + cliName,
+            System.getProperty("user.dir") + "/eu.kalafatic.evolution.controller/lib/llama-cpp/" + osDir + "/" + cliName,
+            System.getProperty("user.dir") + "/eu.kalafatic.evolution.controller/lib/llama-cpp/linux/" + cliName,
+            System.getProperty("user.dir") + "/eu.kalafatic.evolution.controller/lib/llama-cpp/win/" + cliName,
             System.getProperty("user.home") + "/llama.cpp/" + cliName,
             System.getProperty("user.home") + "/llama.cpp/build/bin/" + cliName,
             "/usr/local/bin/llama-cli",
@@ -134,8 +139,8 @@ public class LlamaCppRunner {
     private String getOsDir() {
         if (IS_WINDOWS) return "win";
         if (IS_MAC) return "mac";
-        if (IS_LINUX) return "ubuntu";
-        return "ubuntu";
+        if (IS_LINUX) return "linux";
+        return "linux";
     }
     
     public boolean isAvailable() {
@@ -160,7 +165,7 @@ public class LlamaCppRunner {
             command.add(modelPath);
             command.add("-v");
             
-            ProcessBuilder pb = new ProcessBuilder(command);
+            ProcessBuilder pb = createProcessBuilder(command);
             pb.redirectErrorStream(true);
             Process p = pb.start();
             
@@ -231,7 +236,7 @@ public class LlamaCppRunner {
         command.add("--no-display-prompt");
         command.add("--simple-io");
         
-        ProcessBuilder pb = new ProcessBuilder(command);
+        ProcessBuilder pb = createProcessBuilder(command);
         pb.redirectErrorStream(true);
         Process p = pb.start();
         
@@ -265,7 +270,7 @@ public class LlamaCppRunner {
         command.add(modelPath);
         command.add("-v");
         
-        ProcessBuilder pb = new ProcessBuilder(command);
+        ProcessBuilder pb = createProcessBuilder(command);
         pb.redirectErrorStream(true);
         Process p = pb.start();
         
@@ -279,5 +284,21 @@ public class LlamaCppRunner {
         p.waitFor();
         
         return output.toString();
+    }
+
+    private ProcessBuilder createProcessBuilder(List<String> command) {
+        ProcessBuilder pb = new ProcessBuilder(command);
+        if (cliPath != null) {
+            Path cliParent = Paths.get(cliPath).getParent();
+            if (cliParent != null && Files.exists(cliParent)) {
+                pb.directory(cliParent.toFile());
+                if (!IS_WINDOWS) {
+                    String ldPath = pb.environment().get("LD_LIBRARY_PATH");
+                    String parentPath = cliParent.toAbsolutePath().toString();
+                    pb.environment().put("LD_LIBRARY_PATH", (ldPath != null && !ldPath.isEmpty()) ? parentPath + ":" + ldPath : parentPath);
+                }
+            }
+        }
+        return pb;
     }
 }
