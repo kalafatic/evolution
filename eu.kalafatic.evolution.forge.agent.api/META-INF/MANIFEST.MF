@@ -8,3 +8,5 @@ Require-Bundle: eu.kalafatic.evolution.forge.model,
  eu.kalafatic.evolution.forge.math
 Automatic-Module-Name: eu.kalafatic.evolution.forge.agent.api
 Bundle-RequiredExecutionEnvironment: JavaSE-21
+Bundle-ClassPath: .,
+ lib/json-20140107.jar

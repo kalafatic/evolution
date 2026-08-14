@@ -113,7 +113,18 @@ public class LlamaCppRunner {
         this.serverPort = builder.serverPort;
         
         // Ensure llama.cpp is available
-        ensureLlamaCppAvailable();
+        try {
+			LlamaCppBuilder.ensureLlamaCppAvailable();
+			
+			ensureLlamaCppAvailable();
+			
+		} catch (IOException | InterruptedException e) {
+		
+	          System.err.println("[LlamaCpp] Please build llama.cpp first.");            
+			e.printStackTrace();
+		}
+        
+        
     }
     
     /**
@@ -143,7 +154,7 @@ public class LlamaCppRunner {
         String executable = getExecutablePath();
         if (!Files.exists(Paths.get(executable))) {
             System.err.println("[LlamaCpp] llama-cli not found at: " + executable);
-            System.err.println("[LlamaCpp] Please build llama.cpp first.");
+            System.err.println("[LlamaCpp] Please build llama.cpp first.");            
         }
     }
     

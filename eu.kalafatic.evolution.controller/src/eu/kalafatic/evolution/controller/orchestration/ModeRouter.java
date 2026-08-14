@@ -4,6 +4,7 @@ import eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityAnaly
 import eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType;
 import eu.kalafatic.evolution.controller.orchestration.cognitive.CognitiveAnalysisPipeline;
 import eu.kalafatic.evolution.controller.orchestration.cognitive.CognitiveStateEngine;
+import eu.kalafatic.evolution.controller.orchestration.cognitive.CognitiveStatePublisher;
 import eu.kalafatic.evolution.controller.orchestration.cognitive.SessionCognitiveState;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 
@@ -103,7 +104,7 @@ public class ModeRouter {
 				SessionContainer session = (sessionId != null) ? SessionManager.getInstance().getSession(sessionId) : null;
 				if (session != null) {
 					session.getCognitiveState().setCurrentCapability(CapabilityType.INTENT_RECONSTRUCTION);
-					new eu.kalafatic.evolution.controller.orchestration.cognitive.CognitiveStatePublisher().publish(null, session.getCognitiveState());
+					new CognitiveStatePublisher().publish(null, session.getCognitiveState());
 				}
 				return createIntentReconstructionMode();
 			}
@@ -158,7 +159,7 @@ public class ModeRouter {
 				SessionContainer session = (sessionId != null) ? SessionManager.getInstance().getSession(sessionId) : null;
 				if (session != null) {
 					session.getCognitiveState().setCurrentCapability(CapabilityType.MEDIATED);
-					new eu.kalafatic.evolution.controller.orchestration.cognitive.CognitiveStatePublisher().publish(null, session.getCognitiveState());
+					new CognitiveStatePublisher().publish(null, session.getCognitiveState());
 				}
 				return createHybridManualExportMode();
 			}
@@ -167,7 +168,7 @@ public class ModeRouter {
 				SessionContainer session = (sessionId != null) ? SessionManager.getInstance().getSession(sessionId) : null;
 				if (session != null) {
 					session.getCognitiveState().setCurrentCapability(CapabilityType.INTENT_RECONSTRUCTION);
-					new eu.kalafatic.evolution.controller.orchestration.cognitive.CognitiveStatePublisher().publish(null, session.getCognitiveState());
+					new CognitiveStatePublisher().publish(null, session.getCognitiveState());
 				}
 				return createIntentReconstructionMode();
 			}
@@ -176,7 +177,7 @@ public class ModeRouter {
 				SessionContainer session = (sessionId != null) ? SessionManager.getInstance().getSession(sessionId) : null;
 				if (session != null) {
 					session.getCognitiveState().setCurrentCapability(CapabilityType.FORGE);
-					new eu.kalafatic.evolution.controller.orchestration.cognitive.CognitiveStatePublisher().publish(null, session.getCognitiveState());
+					new CognitiveStatePublisher().publish(null, session.getCognitiveState());
 				}
 				return createForgeMode();
 			}

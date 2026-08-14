@@ -325,7 +325,7 @@ public class OllamaExporter implements EvoModelExporter {
     private void writeGGUF(Path path, EvoLlmModel model, List<NamedTensor> tensors) throws IOException {
         long totalTensorSize = 0;
         for (NamedTensor nt : tensors) {
-            totalTensorSize += nt.tensor.getSize() * 4 + 128; // add buffer for padding/headers
+            totalTensorSize += nt.tensor.getSize() * 4 + 128;
         }
         int bufferSize = (int) Math.max(16 * 1024 * 1024, totalTensorSize + 10 * 1024 * 1024);
 
@@ -334,34 +334,71 @@ public class OllamaExporter implements EvoModelExporter {
         buf.order(ByteOrder.LITTLE_ENDIAN);
 
         // GGUF Header
-        buf.put("GGUF".getBytes()); // magic
-        buf.putInt(3); // version
-        buf.putLong(tensors.size()); // tensor_count
+        buf.put("GGUF".getBytes());
+        buf.putInt(3);
+        buf.putLong(tensors.size());
 
-        // Metadata Key-Value pairs
-        int kvCount = 20;
+        // Metadata count - 21 keys (correct count)
+        int kvCount = 21;
         buf.putLong(kvCount);
 
-        // Write metadata
+        // Write all 21 metadata keys in order
+        
+        // 1. general.architecture
         writeStringKV(buf, "general.architecture", "llama");
+        
+        // 2. general.name
         writeStringKV(buf, "general.name", "EVO LLM");
+        
+        // 3. general.file_type
         writeIntKV(buf, "general.file_type", 0);
+        
+        // 4. llama.context_length
         writeIntKV(buf, "llama.context_length", model.getMaxSeqLen());
+        
+        // 5. llama.embedding_length
         writeIntKV(buf, "llama.embedding_length", model.getDModel());
+        
+        // 6. llama.feed_forward_length
         writeIntKV(buf, "llama.feed_forward_length", model.getDff());
+        
+        // 7. llama.block_count
         writeIntKV(buf, "llama.block_count", model.getNumBlocks());
+        
+        // 8. llama.attention.head_count
         writeIntKV(buf, "llama.attention.head_count", model.getNumHeads());
+        
+        // 9. llama.attention.head_count_kv
         writeIntKV(buf, "llama.attention.head_count_kv", model.getNumHeads());
+        
+        // 10. llama.vocab_size
         writeIntKV(buf, "llama.vocab_size", model.getVocabSize());
+        
+        // 11. llama.attention.layer_norm_rms_epsilon
         writeFloatKV(buf, "llama.attention.layer_norm_rms_epsilon", 1e-5f);
+        
+        // 12. llama.attention.key_length
         writeIntKV(buf, "llama.attention.key_length", model.getDModel() / model.getNumHeads());
+        
+        // 13. llama.attention.value_length
         writeIntKV(buf, "llama.attention.value_length", model.getDModel() / model.getNumHeads());
+        
+        // 14. llama.rope.dimension_count
         writeIntKV(buf, "llama.rope.dimension_count", model.getDModel() / model.getNumHeads());
+        
+        // 15. tokenizer.ggml.model - ✅ ADD THIS (required for llama.cpp)
+        writeStringKV(buf, "tokenizer.ggml.model", "gpt-2");
+        
+        // 16. tokenizer.ggml.bos_token_id
         writeIntKV(buf, "tokenizer.ggml.bos_token_id", 1);
+        
+        // 17. tokenizer.ggml.eos_token_id
         writeIntKV(buf, "tokenizer.ggml.eos_token_id", 2);
+        
+        // 18. tokenizer.ggml.unknown_token_id
         writeIntKV(buf, "tokenizer.ggml.unknown_token_id", 0);
-
-        // Vocabulary
+        
+        // 19. tokenizer.ggml.tokens
         List<String> tokens = new ArrayList<>();
         float[] scores = new float[model.getVocabSize()];
         int[] tokenTypes = new int[model.getVocabSize()];
@@ -374,9 +411,12 @@ public class OllamaExporter implements EvoModelExporter {
             scores[i] = 0.0f;
             tokenTypes[i] = (i < 3) ? 3 : 1;
         }
-
         writeStringArrayKV(buf, "tokenizer.ggml.tokens", tokens);
+        
+        // 20. tokenizer.ggml.scores
         writeFloatArrayKV(buf, "tokenizer.ggml.scores", scores);
+        
+        // 21. tokenizer.ggml.token_type
         writeIntArrayKV(buf, "tokenizer.ggml.token_type", tokenTypes);
 
         // Tensor info section and offset calculation
@@ -385,7 +425,7 @@ public class OllamaExporter implements EvoModelExporter {
         for (NamedTensor nt : tensors) {
             currentOffset = (currentOffset + 31) & ~31;
             tensorOffsets.add(currentOffset);
-            currentOffset += nt.tensor.getSize() * 4; // F32
+            currentOffset += nt.tensor.getSize() * 4;
         }
 
         for (int i = 0; i < tensors.size(); i++) {
@@ -397,11 +437,11 @@ public class OllamaExporter implements EvoModelExporter {
             for (int d = shape.length - 1; d >= 0; d--) {
                 buf.putLong(shape[d]);
             }
-            buf.putInt(0); // ggml_type (0 = F32)
+            buf.putInt(0);
             buf.putLong(tensorOffsets.get(i));
         }
 
-        // Align to 32 bytes before tensor binary data starts
+        // Align to 32 bytes
         int bytesToWrite = buf.position();
         int aligned = (bytesToWrite + 31) & ~31;
         while (buf.position() < aligned) {
