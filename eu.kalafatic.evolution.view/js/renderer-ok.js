@@ -647,7 +647,7 @@ window.ChatApp.Renderer = {
                         <span style="font-size: 10px; color: #64748b; font-weight: 800;">CAPABILITY</span>
                         <div style="display: flex; align-items: center; gap: 4px;">
                             <span style="font-size: 9px; color: #94a3b8;">Depth ${data.depth}</span>
-                            <span class="badge active" style="background: #3b82f6; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold;">${data.capability}</span>
+                            <span class="badge active" style="background: #3b82f6; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold;">${mapCapabilityName(data.capability)}</span>
                         </div>
                     </div>
 

@@ -84,6 +84,15 @@ public class SessionCognitiveState {
             context = ((eu.kalafatic.evolution.controller.orchestration.SessionContext)session).getTaskContext();
         }
 
+        if (context == null) {
+            eu.kalafatic.evolution.model.orchestration.Orchestrator orch =
+                eu.kalafatic.evolution.controller.orchestration.OrchestratorServiceImpl.getInstance().getOrchestrator();
+            if (orch != null) {
+                context = new eu.kalafatic.evolution.controller.orchestration.TaskContext(orch, new java.io.File("."));
+                context.setSessionId(sessionId);
+            }
+        }
+
         engine.processInteraction(prompt, this, context, null);
     }
 
@@ -95,6 +104,15 @@ public class SessionCognitiveState {
         eu.kalafatic.evolution.controller.orchestration.TaskContext context = null;
         if (session instanceof eu.kalafatic.evolution.controller.orchestration.SessionContext) {
             context = ((eu.kalafatic.evolution.controller.orchestration.SessionContext)session).getTaskContext();
+        }
+
+        if (context == null) {
+            eu.kalafatic.evolution.model.orchestration.Orchestrator orch =
+                eu.kalafatic.evolution.controller.orchestration.OrchestratorServiceImpl.getInstance().getOrchestrator();
+            if (orch != null) {
+                context = new eu.kalafatic.evolution.controller.orchestration.TaskContext(orch, new java.io.File("."));
+                context.setSessionId(sessionId);
+            }
         }
 
         engine.sync(this, context);

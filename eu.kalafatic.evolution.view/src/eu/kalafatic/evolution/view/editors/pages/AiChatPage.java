@@ -615,6 +615,7 @@ public class AiChatPage extends AEvoPage {
 			defaultSession.setId("Default");
 			defaultSession.setIterativeMode(true);
 			defaultSession.setDarwinMode(true);
+			defaultSession.setAutoApprove(true);
 			sessionList.add(defaultSession);
 		}
 		currentSession = sessionList.get(0);
@@ -958,7 +959,7 @@ public class AiChatPage extends AEvoPage {
 		progressInit.put("generation", 1);
 		progressInit.put("lineage", "initial");
 		progressInit.put("stage", "ITERATION_START");
-		progressInit.put("autoApprove", currentSession != null ? currentSession.isAutoApprove() : false);
+		progressInit.put("autoApprove", currentSession != null ? currentSession.isAutoApprove() : true);
 		progressInit.put("gitAutomation", currentSession != null ? currentSession.isGitAutomation() : false);
 		progressInit.put("maxIterations", currentSession != null ? currentSession.getMaxIterations() : 1);
 		progressInit.put("startTime", System.currentTimeMillis());
@@ -1611,6 +1612,7 @@ public class AiChatPage extends AEvoPage {
 		if (!exists) {
 			ChatSession newSession = OrchestrationFactory.eINSTANCE.createChatSession();
 			newSession.setId(sessionId);
+			newSession.setAutoApprove(true);
 			orchestrator.getAiChat().getSessions().add(newSession);
 		}
 		switchSession(sessionId);

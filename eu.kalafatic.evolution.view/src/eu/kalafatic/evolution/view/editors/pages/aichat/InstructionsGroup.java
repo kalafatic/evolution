@@ -202,6 +202,7 @@ public class InstructionsGroup extends AEvoGroup {
         
 
         autoApproveCheck = GUIFactory.INSTANCE.createCheckButton(settingsComp, "Auto-Approve");
+        autoApproveCheck.setSelection(true);
         autoApproveCheck.setToolTipText("Automatically approve plans and file deletions.");
         autoApproveCheck.addSelectionListener(new SelectionAdapter() {
             @Override
