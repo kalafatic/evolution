@@ -16,6 +16,7 @@ import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 
+import eu.kalafatic.evolution.controller.manager.ModelSizePreset;
 import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
 import eu.kalafatic.evolution.controller.orchestration.llm.OllamaProvider;
 import eu.kalafatic.evolution.controller.providers.AiProviders;
@@ -38,6 +39,7 @@ public class ChatMgmtGroup extends AEvoGroup {
     private Combo localModelCombo;
     private Text remoteTokenText, remoteUrlText;
     private Composite compositeLocal, compositeRemote;
+	private Combo aiModeSetupCombo;
 
     public ChatMgmtGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, AiChatPage page) {
         super(editor, orchestrator);
@@ -158,12 +160,15 @@ public class ChatMgmtGroup extends AEvoGroup {
         GUIFactory.INSTANCE.createEditButton(compositeRemote, remoteUrlText);        
 
         // AI Settings part (merged)
-        compositeLocal = GUIFactory.INSTANCE.createComposite(group, 3, SWT.BORDER);
+        compositeLocal = GUIFactory.INSTANCE.createComposite(group, 4, SWT.BORDER);
         compositeLocal.setBackground(lightGreen);
         
         GUIFactory.INSTANCE.createLabel(compositeLocal, "AI Mode:", SWT.NONE, GUIFactory.BUTTON_WIDTH);
         aiModeCombo = GUIFactory.INSTANCE.createCombo(compositeLocal, AiMode.values());
         ((GridData)aiModeCombo.getLayoutData()).widthHint = 100;
+        
+        aiModeSetupCombo = GUIFactory.INSTANCE.createCombo(compositeLocal);
+        ((GridData)aiModeSetupCombo.getLayoutData()).widthHint = 100;
         
         Button targetButton = GUIFactory.INSTANCE.createButton(compositeLocal, "Target");
         targetButton.setBackground(lightOrange);
@@ -182,6 +187,7 @@ public class ChatMgmtGroup extends AEvoGroup {
         GUIFactory.INSTANCE.createLabel(compositeLocal, "Model:", SWT.NONE, GUIFactory.BUTTON_WIDTH);
         localModelCombo = selectModel(compositeLocal);
         ((GridData)localModelCombo.getLayoutData()).widthHint = 100;
+        ((GridData)localModelCombo.getLayoutData()).horizontalSpan = 2; // Merges across 3 columns
         
         Button connectionButton = GUIFactory.INSTANCE.createButton(compositeLocal, "Test Connection");
         connectionButton.addSelectionListener(new SelectionAdapter() {
@@ -210,13 +216,38 @@ public class ChatMgmtGroup extends AEvoGroup {
         aiModeCombo.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {            	
-            	ProjectModelManager.getInstance().updateAiMode(orchestrator, AiMode.get(aiModeCombo.getSelectionIndex()));
+            	AiMode aiMode = AiMode.get(aiModeCombo.getSelectionIndex());
+            	
+            	ProjectModelManager.getInstance().updateAiMode(orchestrator, aiMode);            	
                
             	Map<String, Object> settings = new HashMap<>();
                 settings.put("aiMode", aiModeCombo.getSelectionIndex());
                 page.updateConfiguration(settings);
                 page.saveLastUsedSettings();
                 page.updateModeDisplay();
+                
+                switch (aiMode) {
+					case LOCAL:
+					case HYBRID:
+						compositeLocal.setVisible(true);
+						compositeRemote.setVisible(false);
+						break;
+					case REMOTE:
+					case PROXY:
+					case MEDIATED:
+					case INTENT:
+						compositeLocal.setVisible(false);
+						compositeRemote.setVisible(true);
+						break;
+					case FORGE:
+						
+						for (ModelSizePreset.Size size : ModelSizePreset.Size.values()) {				          
+							aiModeSetupCombo.add(size.getDisplayName());
+				        }
+						aiModeSetupCombo.select(2); // Default to SMALL
+					
+						break;
+				}
             }
         });
 

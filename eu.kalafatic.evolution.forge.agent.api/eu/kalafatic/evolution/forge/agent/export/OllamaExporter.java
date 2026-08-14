@@ -338,11 +338,11 @@ public class OllamaExporter implements EvoModelExporter {
         buf.putInt(3);
         buf.putLong(tensors.size());
 
-        // Metadata count - 21 keys (correct count)
-        int kvCount = 21;
+        // Metadata count - 22 keys (added merges)
+        int kvCount = 22;
         buf.putLong(kvCount);
 
-        // Write all 21 metadata keys in order
+        // Write all 22 metadata keys in order
         
         // 1. general.architecture
         writeStringKV(buf, "general.architecture", "llama");
@@ -386,19 +386,24 @@ public class OllamaExporter implements EvoModelExporter {
         // 14. llama.rope.dimension_count
         writeIntKV(buf, "llama.rope.dimension_count", model.getDModel() / model.getNumHeads());
         
-        // 15. tokenizer.ggml.model - ✅ ADD THIS (required for llama.cpp)
-        writeStringKV(buf, "tokenizer.ggml.model", "llama");
+        // 15. tokenizer.ggml.model
+        writeStringKV(buf, "tokenizer.ggml.model", "gpt-2");  // ✅ Use gpt-2 for custom vocab
         
-        // 16. tokenizer.ggml.bos_token_id
+        // 16. tokenizer.ggml.merges - ✅ ADD THIS (required for GPT-2 tokenizer)
+        // Empty merges array for custom vocabulary
+        List<String> merges = new ArrayList<>();
+        writeStringArrayKV(buf, "tokenizer.ggml.merges", merges);
+        
+        // 17. tokenizer.ggml.bos_token_id
         writeIntKV(buf, "tokenizer.ggml.bos_token_id", 1);
         
-        // 17. tokenizer.ggml.eos_token_id
+        // 18. tokenizer.ggml.eos_token_id
         writeIntKV(buf, "tokenizer.ggml.eos_token_id", 2);
         
-        // 18. tokenizer.ggml.unknown_token_id
+        // 19. tokenizer.ggml.unknown_token_id
         writeIntKV(buf, "tokenizer.ggml.unknown_token_id", 0);
         
-        // 19. tokenizer.ggml.tokens
+        // 20. tokenizer.ggml.tokens
         List<String> tokens = new ArrayList<>();
         float[] scores = new float[model.getVocabSize()];
         int[] tokenTypes = new int[model.getVocabSize()];
@@ -409,14 +414,17 @@ public class OllamaExporter implements EvoModelExporter {
             else if (i == 3) tokens.add(" ");
             else tokens.add("token_" + i);
             scores[i] = 0.0f;
-            tokenTypes[i] = (i < 3) ? 3 : 1;
+            // GPT-2 token types: 0=normal, 1=unknown, 2=control
+            if (i == 0) tokenTypes[i] = 1;      // UNKNOWN
+            else if (i == 1 || i == 2) tokenTypes[i] = 2; // CONTROL
+            else tokenTypes[i] = 0;              // NORMAL
         }
         writeStringArrayKV(buf, "tokenizer.ggml.tokens", tokens);
         
-        // 20. tokenizer.ggml.scores
+        // 21. tokenizer.ggml.scores
         writeFloatArrayKV(buf, "tokenizer.ggml.scores", scores);
         
-        // 21. tokenizer.ggml.token_type
+        // 22. tokenizer.ggml.token_type
         writeIntArrayKV(buf, "tokenizer.ggml.token_type", tokenTypes);
 
         // Tensor info section and offset calculation
