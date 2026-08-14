@@ -2,8 +2,8 @@ package eu.kalafatic.evolution.controller.manager;
 
 
 
+import eu.kalafatic.evolution.forge.math.api.Tensor;
 import eu.kalafatic.evolution.forge.model.llm.EvoLlmModel;
-import eu.kalafatic.evolution.forge.model.llm.Tensor;
 
 public class ModelConfigurator {
     
@@ -34,7 +34,7 @@ public class ModelConfigurator {
     private static long countParameters(EvoLlmModel model) {
         long count = 0;
         for (Tensor t : model.parameters()) {
-            count += t.getSize();
+            count += t.getData().length;
         }
         return count;
     }

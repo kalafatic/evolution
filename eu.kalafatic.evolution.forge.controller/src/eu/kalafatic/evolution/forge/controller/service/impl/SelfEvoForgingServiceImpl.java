@@ -71,9 +71,29 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                 JSONObject uiState = getUiStateViaReflection(sessionId);
                 double lr = uiState.optDouble("lr", 0.01);
                 int epochs = uiState.optInt("epochs", 1);
+
+                String modelSizeName = uiState.optString("modelSize", "SMALL").toUpperCase();
                 int hiddenSize = uiState.optInt("hidden_size", 128);
                 int layers = uiState.optInt("layers", 2);
                 int heads = uiState.optInt("heads", 4);
+                int dff = hiddenSize * 4;
+                int maxSeqLen = 512;
+
+                if (modelSizeName.contains("TINY")) {
+                    hiddenSize = 64; heads = 4; layers = 3; dff = 256; maxSeqLen = 128;
+                } else if (modelSizeName.contains("VERY_SMALL") || modelSizeName.contains("VERY SMALL")) {
+                    hiddenSize = 128; heads = 4; layers = 4; dff = 512; maxSeqLen = 128;
+                } else if (modelSizeName.contains("SMALL")) {
+                    hiddenSize = 256; heads = 8; layers = 6; dff = 1024; maxSeqLen = 128;
+                } else if (modelSizeName.contains("MEDIUM")) {
+                    hiddenSize = 384; heads = 8; layers = 8; dff = 1536; maxSeqLen = 256;
+                } else if (modelSizeName.contains("LARGE")) {
+                    hiddenSize = 512; heads = 8; layers = 12; dff = 2048; maxSeqLen = 512;
+                } else if (modelSizeName.contains("XXL")) {
+                    hiddenSize = 1024; heads = 16; layers = 16; dff = 4096; maxSeqLen = 2048;
+                } else if (modelSizeName.contains("XL")) {
+                    hiddenSize = 768; heads = 12; layers = 12; dff = 3072; maxSeqLen = 1024;
+                }
 
                 // Load progressive training knowledge source settings from UI
                 boolean sourceMarkdown = uiState.optBoolean("source_markdown", true);
@@ -290,8 +310,8 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                 updateStats(sessionId, new ForgingStats("TRAINING", 60, scannedPaths.size(), knowledgeUnits.size(), samples.size(), 0.0, "1/1", runFolder.toAbsolutePath().toString()));
                 logToFile(logFile, "Stage: TRAINING. Training EvoLlmModel with sliding window samples...");
 
-                // Initialize model with dynamically varied hiddenSize, layers, heads
-                EvoLlmModel model = new EvoLlmModel(tokenizer.getVocabSize(), hiddenSize, heads, layers, 512, 16);
+                // Initialize model with dynamically varied hiddenSize, layers, heads, dff, maxSeqLen
+                EvoLlmModel model = new EvoLlmModel(tokenizer.getVocabSize(), hiddenSize, heads, layers, dff, maxSeqLen);
                 EvoLlmTrainer trainer = new EvoLlmTrainer(model);
 
                 final int totalScanned = scannedPaths.size();

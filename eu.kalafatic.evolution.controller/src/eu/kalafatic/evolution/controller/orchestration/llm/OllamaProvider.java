@@ -287,15 +287,18 @@ public class OllamaProvider implements ILlmProvider {
         String baseUrl = orchestrator.getOllama().getUrl();
         String model = orchestrator.getOllama().getModel();
 
-        // Route "evo" models via LlamaService (llama.cpp runner) if a GGUF is available
-        if (model != null && model.toLowerCase().contains("evo")) {
-            java.io.File ggufFile = LlamaService.resolveEvoModelPath(model);
+        boolean isEvoOrForge = (orchestrator != null && orchestrator.getAiMode() == eu.kalafatic.evolution.model.orchestration.AiMode.FORGE)
+                || (model != null && (model.toLowerCase().contains("evo") || model.toLowerCase().endsWith(".gguf")));
+
+        // Route "evo" / FORGE models via LlamaService (llama.cpp runner) if a GGUF is available
+        if (isEvoOrForge) {
+            java.io.File ggufFile = LlamaService.resolveEvoModelPath(model != null ? model : "evo");
             if (ggufFile != null && ggufFile.exists()) {
                 if (context != null) {
                     context.log("LlamaService: Intercepted model '" + model + "'. Routing request via LlamaService (llama.cpp) with GGUF: " + ggufFile.getAbsolutePath());
                 }
                 try {
-                    LlamaService llamaService = new LlamaService(model, ggufFile.getAbsolutePath());
+                    LlamaService llamaService = new LlamaService(model != null ? model : "evo", ggufFile.getAbsolutePath());
                     llamaService.setTemperature(temperature);
                     String sessionId = context != null ? context.getSessionId() : "Default";
                     String response = llamaService.chat(prompt, sessionId);
