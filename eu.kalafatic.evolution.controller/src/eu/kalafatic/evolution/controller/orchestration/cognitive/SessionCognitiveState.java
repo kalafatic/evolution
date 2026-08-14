@@ -30,6 +30,8 @@ public class SessionCognitiveState {
         for (CapabilityType type : CapabilityType.values()) {
             capabilityScores.put(type, 0.0);
         }
+        capabilityHistory.add(new CapabilitySignal(CapabilityType.CHAT, 1.0, SessionIntent.LEARNING, "INITIAL_STATE"));
+        trajectory.add(CapabilityType.CHAT);
     }
 
     public CapabilityType getCurrentCapability() { return currentCapability; }
