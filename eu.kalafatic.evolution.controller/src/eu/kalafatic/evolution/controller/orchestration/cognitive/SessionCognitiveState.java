@@ -30,8 +30,38 @@ public class SessionCognitiveState {
         for (CapabilityType type : CapabilityType.values()) {
             capabilityScores.put(type, 0.0);
         }
-        capabilityHistory.add(new CapabilitySignal(CapabilityType.CHAT, 1.0, SessionIntent.LEARNING, "INITIAL_STATE"));
-        trajectory.add(CapabilityType.CHAT);
+
+        CapabilityType initialCap = CapabilityType.CHAT;
+        try {
+            eu.kalafatic.evolution.model.orchestration.Orchestrator orch =
+                eu.kalafatic.evolution.controller.orchestration.OrchestratorServiceImpl.getInstance().getOrchestrator();
+            if (orch != null && orch.getAiMode() != null) {
+                switch (orch.getAiMode()) {
+                    case MEDIATED:
+                        initialCap = CapabilityType.MEDIATED;
+                        break;
+                    case INTENT:
+                        initialCap = CapabilityType.INTENT_RECONSTRUCTION;
+                        break;
+                    case FORGE:
+                        initialCap = CapabilityType.FORGE;
+                        break;
+                    default:
+                        if (orch.isDarwinMode()) {
+                            initialCap = CapabilityType.EVOLUTION;
+                        } else {
+                            initialCap = CapabilityType.CHAT;
+                        }
+                        break;
+                }
+            }
+        } catch (Exception e) {
+            // Fallback to CHAT
+        }
+
+        this.currentCapability = initialCap;
+        capabilityHistory.add(new CapabilitySignal(initialCap, 1.0, SessionIntent.LEARNING, "INITIAL_STATE"));
+        trajectory.add(initialCap);
     }
 
     public CapabilityType getCurrentCapability() { return currentCapability; }
