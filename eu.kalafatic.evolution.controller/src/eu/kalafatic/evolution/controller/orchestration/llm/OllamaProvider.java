@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import eu.kalafatic.evolution.controller.manager.LlamaService;
 import eu.kalafatic.evolution.controller.manager.OllamaManager;
 import eu.kalafatic.evolution.controller.manager.OllamaModel;
 import eu.kalafatic.evolution.controller.manager.OllamaService;
@@ -285,6 +286,34 @@ public class OllamaProvider implements ILlmProvider {
 
         String baseUrl = orchestrator.getOllama().getUrl();
         String model = orchestrator.getOllama().getModel();
+
+        // Route "evo" models via LlamaService (llama.cpp runner) if a GGUF is available
+        if (model != null && model.toLowerCase().contains("evo")) {
+            java.io.File ggufFile = LlamaService.resolveEvoModelPath(model);
+            if (ggufFile != null && ggufFile.exists()) {
+                if (context != null) {
+                    context.log("LlamaService: Intercepted model '" + model + "'. Routing request via LlamaService (llama.cpp) with GGUF: " + ggufFile.getAbsolutePath());
+                }
+                try {
+                    LlamaService llamaService = new LlamaService(model, ggufFile.getAbsolutePath());
+                    llamaService.setTemperature(temperature);
+                    String sessionId = context != null ? context.getSessionId() : "Default";
+                    String response = llamaService.chat(prompt, sessionId);
+                    if (context != null) {
+                        context.log("Stage: LLM\nProvider: LlamaService (llama.cpp)\nModel: " + model + "\nToken count: (estimated) " + (prompt.length() / 4) + "\nRaw response length: " + response.length());
+                    }
+                    return response;
+                } catch (Exception ex) {
+                    if (context != null) {
+                        context.log("LlamaService: Execution failed (" + ex.getMessage() + "). Falling back to default Ollama provider.");
+                    }
+                }
+            } else {
+                if (context != null) {
+                    context.log("LlamaService: GGUF file for '" + model + "' not found. Falling back to default Ollama provider.");
+                }
+            }
+        }
 
         // Use the managed service
         OllamaService service = OllamaManager.getInstance().getService(baseUrl);
