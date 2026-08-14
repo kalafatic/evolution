@@ -93,7 +93,7 @@ public class McpOpenAiGroup extends AEvoGroup {
     @Override
     public void updateModel() {
         if (orchestrator != null) {
-            ProjectModelManager.getInstance().updateAiMode(orchestrator, AiMode.get(aiModeCombo.getSelectionIndex()));
+            //ProjectModelManager.getInstance().updateAiMode(orchestrator, AiMode.get(aiModeCombo.getSelectionIndex()));
             ProjectModelManager.getInstance().updateMcpServerUrl(orchestrator, mcpUrlText.getText());
 
             eu.kalafatic.evolution.controller.security.TokenSecurityService.getInstance()

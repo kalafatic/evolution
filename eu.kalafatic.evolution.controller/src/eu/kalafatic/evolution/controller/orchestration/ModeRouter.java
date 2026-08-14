@@ -80,7 +80,7 @@ public class ModeRouter {
 			return createDarwinMode();
 		if (lower.contains("mode: self-dev"))
 			return createSelfDevMode();
-		if (lower.contains("mode: intent-reconstruction") || lower.contains("reconstruct intent"))
+		if (lower.contains("mode: intent-reconstruction") || lower.contains("reconstruct intent") || lower.contains("intent discovery"))
 			return createIntentReconstructionMode();
 		if (lower.contains("mode: intent") || lower.contains("reconstruct intent"))
 			return createIntentReconstructionMode();

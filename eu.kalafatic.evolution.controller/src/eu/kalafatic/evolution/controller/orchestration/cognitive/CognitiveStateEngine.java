@@ -1,6 +1,7 @@
 package eu.kalafatic.evolution.controller.orchestration.cognitive;
 
 import eu.kalafatic.evolution.controller.orchestration.ConfidenceLevel;
+import eu.kalafatic.evolution.model.orchestration.AiMode;
 
 /**
  * Orchestrates the cognitive state transitions and routing.
@@ -20,12 +21,12 @@ public class CognitiveStateEngine {
 
         // 1b. Check for explicit UI mode selection (Priority over prompt analysis)
         if (context != null && context.getOrchestrator() != null) {
-            eu.kalafatic.evolution.model.orchestration.AiMode uiMode = context.getOrchestrator().getAiMode();
-            if (uiMode == eu.kalafatic.evolution.model.orchestration.AiMode.MEDIATED) {
+            AiMode uiMode = context.getOrchestrator().getAiMode();
+            if (uiMode == AiMode.MEDIATED) {
                 signal = new CapabilitySignal(CapabilityType.MEDIATED, 10.0, 1.0, signal.getIntent(), null, "EXPLICIT_UI_MEDIATED");
-            } else if (uiMode == eu.kalafatic.evolution.model.orchestration.AiMode.FORGE) {
+            } else if (uiMode == AiMode.FORGE) {
                 signal = new CapabilitySignal(CapabilityType.FORGE, 10.0, 1.0, SessionIntent.EVOLVING, null, "EXPLICIT_UI_FORGE");
-            } else if (uiMode == eu.kalafatic.evolution.model.orchestration.AiMode.INTENT) {
+            } else if (uiMode == AiMode.INTENT) {
                 signal = new CapabilitySignal(CapabilityType.INTENT_RECONSTRUCTION, 10.0, 1.0, signal.getIntent(), null, "EXPLICIT_UI_INTENT");
             } else if (context.getOrchestrator().isDarwinMode() && signal.getCapability() == CapabilityType.CHAT) {
                 // If Darwin is on but prompt looks like chat, escalate to EVOLUTION

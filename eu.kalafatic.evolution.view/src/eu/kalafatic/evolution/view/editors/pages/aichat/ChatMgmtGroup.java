@@ -1,6 +1,9 @@
 package eu.kalafatic.evolution.view.editors.pages.aichat;
 
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -206,8 +209,10 @@ public class ChatMgmtGroup extends AEvoGroup {
 
         aiModeCombo.addSelectionListener(new SelectionAdapter() {
             @Override
-            public void widgetSelected(SelectionEvent e) {
-                java.util.Map<String, Object> settings = new java.util.HashMap<>();
+            public void widgetSelected(SelectionEvent e) {            	
+            	ProjectModelManager.getInstance().updateAiMode(orchestrator, AiMode.get(aiModeCombo.getSelectionIndex()));
+               
+            	Map<String, Object> settings = new HashMap<>();
                 settings.put("aiMode", aiModeCombo.getSelectionIndex());
                 page.updateConfiguration(settings);
                 page.saveLastUsedSettings();
@@ -218,7 +223,7 @@ public class ChatMgmtGroup extends AEvoGroup {
         aiRemoteCombo.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                java.util.Map<String, Object> settings = new java.util.HashMap<>();
+                Map<String, Object> settings = new HashMap<>();
                 settings.put("remoteModel", aiRemoteCombo.getText());
                 page.updateConfiguration(settings);
                 page.saveLastUsedSettings();
@@ -228,7 +233,7 @@ public class ChatMgmtGroup extends AEvoGroup {
 
         remoteTokenText.addModifyListener(e -> {
             if (!isUpdating) {
-                java.util.Map<String, Object> settings = new java.util.HashMap<>();
+                Map<String, Object> settings = new HashMap<>();
                 settings.put("token_" + aiRemoteCombo.getText(), remoteTokenText.getText());
                 page.updateConfiguration(settings);
                 page.saveLastUsedSettings();
@@ -236,7 +241,7 @@ public class ChatMgmtGroup extends AEvoGroup {
         });
         remoteUrlText.addModifyListener(e -> {
             if (!isUpdating) {
-                java.util.Map<String, Object> settings = new java.util.HashMap<>();
+                Map<String, Object> settings = new HashMap<>();
                 settings.put("url_" + aiRemoteCombo.getText(), remoteUrlText.getText());
                 page.updateConfiguration(settings);
                 page.saveLastUsedSettings();
@@ -251,7 +256,7 @@ public class ChatMgmtGroup extends AEvoGroup {
         combo.addListener(SWT.Selection, e -> {
             int index = combo.getSelectionIndex();
             if (index >= 0) {
-                java.util.Map<String, Object> settings = new java.util.HashMap<>();
+                Map<String, Object> settings = new HashMap<>();
                 settings.put("localModel", combo.getText());
                 page.updateConfiguration(settings);
                 page.saveLastUsedSettings();
@@ -282,7 +287,7 @@ public class ChatMgmtGroup extends AEvoGroup {
                 String currentRemote = aiRemoteCombo.getText();
                 List<String> remoteModels = ProjectModelManager.getInstance().getLlmModels(orchestrator, AiMode.REMOTE);
                 String[] newRemoteItems = remoteModels.toArray(new String[0]);
-                if (!java.util.Arrays.equals(aiRemoteCombo.getItems(), newRemoteItems)) {
+                if (!Arrays.equals(aiRemoteCombo.getItems(), newRemoteItems)) {
                     aiRemoteCombo.setItems(newRemoteItems);
                     if (!currentRemote.isEmpty()) {
                         int idx = aiRemoteCombo.indexOf(currentRemote);
@@ -316,7 +321,7 @@ public class ChatMgmtGroup extends AEvoGroup {
                     }
 
                     String[] newLocalItems = modelsToShow.toArray(new String[0]);
-                    if (!java.util.Arrays.equals(localModelCombo.getItems(), newLocalItems)) {
+                    if (!Arrays.equals(localModelCombo.getItems(), newLocalItems)) {
                         localModelCombo.setItems(newLocalItems);
                         if (!currentLocal.isEmpty()) {
                             int idx = localModelCombo.indexOf(currentLocal);
@@ -398,7 +403,7 @@ public class ChatMgmtGroup extends AEvoGroup {
 
     public void updateSessionCombo(String[] threads, String current) {
         if (sessionCombo.isDisposed()) return;
-        if (!java.util.Arrays.equals(sessionCombo.getItems(), threads)) {
+        if (!Arrays.equals(sessionCombo.getItems(), threads)) {
             sessionCombo.setItems(threads);
         }
         selectSafe(sessionCombo, current);
