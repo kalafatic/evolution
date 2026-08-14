@@ -387,7 +387,7 @@ public class OllamaExporter implements EvoModelExporter {
         writeIntKV(buf, "llama.rope.dimension_count", model.getDModel() / model.getNumHeads());
         
         // 15. tokenizer.ggml.model - ✅ ADD THIS (required for llama.cpp)
-        writeStringKV(buf, "tokenizer.ggml.model", "gpt-2");
+        writeStringKV(buf, "tokenizer.ggml.model", "llama");
         
         // 16. tokenizer.ggml.bos_token_id
         writeIntKV(buf, "tokenizer.ggml.bos_token_id", 1);
