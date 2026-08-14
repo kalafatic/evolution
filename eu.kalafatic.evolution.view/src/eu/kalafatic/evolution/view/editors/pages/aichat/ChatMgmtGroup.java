@@ -22,8 +22,10 @@ import eu.kalafatic.evolution.controller.orchestration.llm.OllamaProvider;
 import eu.kalafatic.evolution.controller.providers.AiProviders;
 import eu.kalafatic.evolution.controller.providers.ProviderConfig;
 import eu.kalafatic.evolution.model.orchestration.AiMode;
+import eu.kalafatic.evolution.model.orchestration.ChatSession;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.HTTPUtils;
+import eu.kalafatic.evolution.view.dialogs.MediatedTargetDialog;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
 import eu.kalafatic.evolution.view.editors.pages.AiChatPage;
@@ -194,9 +196,9 @@ public class ChatMgmtGroup extends AEvoGroup {
         targetButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                eu.kalafatic.evolution.model.orchestration.ChatSession session = page.getCurrentSession();
+                ChatSession session = page.getCurrentSession();
                 if (session != null) {
-                    eu.kalafatic.evolution.view.dialogs.MediatedTargetDialog dlg = new eu.kalafatic.evolution.view.dialogs.MediatedTargetDialog(page.getShell(), session, page.getProjectRoot(), editor);
+                   MediatedTargetDialog dlg = new MediatedTargetDialog(page.getShell(), session, page.getProjectRoot(), editor);
                     dlg.open();
                 }
             }
@@ -246,21 +248,21 @@ public class ChatMgmtGroup extends AEvoGroup {
                 
                 switch (aiMode) {
 					case LOCAL:
-					case HYBRID:
-						compositeLocal.setVisible(true);
-						compositeRemote.setVisible(false);
-						break;
-					case REMOTE:
-					case PROXY:
-					case MEDIATED:
-					case INTENT:
-						compositeLocal.setVisible(false);
-						compositeRemote.setVisible(true);
-						break;
-					case FORGE:
-						compositeLocal.setVisible(true);
-						compositeRemote.setVisible(false);
-						break;
+//					case HYBRID:
+//						compositeLocal.setVisible(true);
+//						compositeRemote.setVisible(false);
+//						break;
+//					case REMOTE:
+//					case PROXY:
+//					case MEDIATED:
+//					case INTENT:
+//						compositeLocal.setVisible(false);
+//						compositeRemote.setVisible(true);
+//						break;
+//					case FORGE:
+//						compositeLocal.setVisible(true);
+//						compositeRemote.setVisible(false);
+//						break;
 				}
             }
         });
@@ -380,16 +382,16 @@ public class ChatMgmtGroup extends AEvoGroup {
                     }
                 }
 
-                if (aiModeSetupCombo != null && !aiModeSetupCombo.isDisposed()) {
-                    String sizeName = (String) config.getOrDefault("modelSize", "SMALL");
-                    for (int i = 0; i < ModelSizePreset.Size.values().length; i++) {
-                        ModelSizePreset.Size s = ModelSizePreset.Size.values()[i];
-                        if (s.name().equalsIgnoreCase(sizeName) || s.getDisplayName().equalsIgnoreCase(sizeName)) {
-                            aiModeSetupCombo.select(i);
-                            break;
-                        }
-                    }
-                }
+//                if (aiModeSetupCombo != null && !aiModeSetupCombo.isDisposed()) {
+//                    String sizeName = (String) config.getOrDefault("modelSize", "SMALL");
+//                    for (int i = 0; i < ModelSizePreset.Size.values().length; i++) {
+//                        ModelSizePreset.Size s = ModelSizePreset.Size.values()[i];
+//                        if (s.name().equalsIgnoreCase(sizeName) || s.getDisplayName().equalsIgnoreCase(sizeName)) {
+//                            aiModeSetupCombo.select(i);
+//                            break;
+//                        }
+//                    }
+//                }
             } finally {
                 isUpdating = false;
             }
