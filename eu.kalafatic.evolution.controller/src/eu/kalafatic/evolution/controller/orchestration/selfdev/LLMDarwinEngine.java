@@ -24,6 +24,7 @@ import java.net.URI;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import eu.kalafatic.evolution.controller.manager.ModelSizePreset;
 import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionProgressEvent;
 import eu.kalafatic.evolution.controller.orchestration.EvolutionProgressPublisher;
@@ -533,21 +534,37 @@ public class LLMDarwinEngine extends ADarwinEngine {
 
         context.log("[FORGE] Darwin LLM configured for " + generations + " evolution generations.");
 
-        // Assess JVM Memory to select safe profiles
-        Profile selectedProfile = Profile.DEFAULT;
-        context.log("[FORGE] Standard profile selected: DEFAULT");
+        // Resolve model size preset from ForgeSessionManager uiState
+        String modelSizeName = uiState.optString("modelSize", "SMALL").toUpperCase();
+        ModelSizePreset.Size selectedPreset = ModelSizePreset.Size.SMALL;
+        for (ModelSizePreset.Size s : ModelSizePreset.Size.values()) {
+            if (s.name().equalsIgnoreCase(modelSizeName) || s.getDisplayName().toUpperCase().contains(modelSizeName)) {
+                selectedPreset = s;
+                break;
+            }
+        }
 
-        // Initial Candidates based on safe profiles
+        int pVocabSize = selectedPreset.getVocabSize() > 0 ? selectedPreset.getVocabSize() : 8000;
+        int pEmbedSize = selectedPreset.getDModel() > 0 ? selectedPreset.getDModel() : 384;
+        int pLayers = selectedPreset.getNumBlocks() > 0 ? selectedPreset.getNumBlocks() : 6;
+        int pHeads = selectedPreset.getNumHeads() > 0 ? selectedPreset.getNumHeads() : 8;
+        int pMaxSeqLen = selectedPreset.getMaxSeqLen() > 0 ? selectedPreset.getMaxSeqLen() : 128;
+        int pEpochs = 4;
+
+        context.log(String.format("[FORGE] Model size preset selected: %s (%s) -> Vocab: %d, Embed: %d, Layers: %d, Heads: %d, MaxSeqLen: %d",
+            selectedPreset.name(), selectedPreset.getDisplayName(), pVocabSize, pEmbedSize, pLayers, pHeads, pMaxSeqLen));
+
+        // Initial Candidates based on selected preset
         List<LlmConfig> candidates = new ArrayList<>();
         if (forceSolution) {
-            LlmConfig fastConfig = new LlmConfig(selectedProfile.vocabSize, selectedProfile.embeddingSize, selectedProfile.layers, selectedProfile.heads, selectedProfile.maxSeqLen, 1);
+            LlmConfig fastConfig = new LlmConfig(pVocabSize, pEmbedSize, pLayers, pHeads, pMaxSeqLen, 1);
             candidates.add(fastConfig);
         } else {
             int expansionValue = getExpansionValue();
             int branchingLimit = (expansionValue > 5) ? 2 : 1;
-            candidates.add(new LlmConfig(selectedProfile.vocabSize, selectedProfile.embeddingSize, selectedProfile.layers, selectedProfile.heads, selectedProfile.maxSeqLen, selectedProfile.epochs));
+            candidates.add(new LlmConfig(pVocabSize, pEmbedSize, pLayers, pHeads, pMaxSeqLen, pEpochs));
             if (branchingLimit >= 2) {
-                candidates.add(new LlmConfig(selectedProfile.vocabSize, selectedProfile.embeddingSize, selectedProfile.layers + 1, selectedProfile.heads, selectedProfile.maxSeqLen, selectedProfile.epochs));
+                candidates.add(new LlmConfig(pVocabSize, pEmbedSize, pLayers + 1, pHeads, pMaxSeqLen, pEpochs));
             }
         }
 

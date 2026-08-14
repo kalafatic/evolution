@@ -34,7 +34,7 @@ public class LlamaCppRunner {
      */
     public static class Builder {
         private final String modelPath;
-        private int contextLength = 128;
+        private int contextLength = 2048;
         private int threads = Runtime.getRuntime().availableProcessors();
         private float temperature = 0.2f;
         private int topK = 40;
@@ -250,7 +250,7 @@ public class LlamaCppRunner {
         
         int exitCode = p.waitFor();
         if (exitCode != 0) {
-            throw new IOException("llama-cli failed with exit code: " + exitCode);
+            throw new IOException("llama-cli failed with exit code: " + exitCode + "\nOutput: " + output.toString().trim());
         }
         
         return output.toString();
