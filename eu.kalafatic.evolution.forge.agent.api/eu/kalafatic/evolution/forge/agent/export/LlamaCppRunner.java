@@ -193,14 +193,55 @@ public class LlamaCppRunner {
         System.out.println("[LlamaCpp] Build complete.");
     }
     
+    private static String findExecutable(String name, String envVar, String defaultRelativePath) {
+        String envPath = System.getenv(envVar);
+        if (envPath != null && !envPath.isEmpty()) {
+            File f = new File(envPath);
+            if (f.exists() && f.isFile()) {
+                return f.getAbsolutePath();
+            }
+        }
+
+        String ext = IS_WINDOWS ? ".exe" : "";
+        String baseName = name + ext;
+
+        String[] relativeDirs = {
+            "",
+            "/build/bin/Release",
+            "/build/bin",
+            "/bin",
+            "/build/bin/Debug"
+        };
+        for (String dir : relativeDirs) {
+            File f = new File(LLAMA_CPP_DIR + dir, baseName);
+            if (f.exists() && f.isFile()) {
+                return f.getAbsolutePath();
+            }
+        }
+
+        String pathEnv = System.getenv("PATH");
+        if (pathEnv != null) {
+            String delimiter = File.pathSeparator;
+            String[] paths = pathEnv.split(java.util.regex.Pattern.quote(delimiter));
+            for (String p : paths) {
+                File f = new File(p, baseName);
+                if (f.exists() && f.isFile()) {
+                    return f.getAbsolutePath();
+                }
+            }
+        }
+
+        return LLAMA_CPP_DIR + defaultRelativePath;
+    }
+
     /**
      * Gets the path to the llama-cli executable
      */
     private String getExecutablePath() {
         if (IS_WINDOWS) {
-            return LLAMA_CPP_DIR + "/build/bin/Release/llama-cli.exe";
+            return findExecutable("llama-cli", "LLAMA_CLI_PATH", "/build/bin/Release/llama-cli.exe");
         } else {
-            return LLAMA_CPP_DIR + "/build/bin/llama-cli";
+            return findExecutable("llama-cli", "LLAMA_CLI_PATH", "/build/bin/llama-cli");
         }
     }
     
@@ -209,9 +250,9 @@ public class LlamaCppRunner {
      */
     private String getServerPath() {
         if (IS_WINDOWS) {
-            return LLAMA_CPP_DIR + "/build/bin/Release/llama-server.exe";
+            return findExecutable("llama-server", "LLAMA_SERVER_PATH", "/build/bin/Release/llama-server.exe");
         } else {
-            return LLAMA_CPP_DIR + "/build/bin/llama-server";
+            return findExecutable("llama-server", "LLAMA_SERVER_PATH", "/build/bin/llama-server");
         }
     }
     
