@@ -197,7 +197,7 @@ public class OllamaExporter implements EvoModelExporter {
 
         // 3. Compile Standalone GGUF file
         Path ggufPath = exportsOllamaDir.resolve("evo.gguf");
-        writeGGUF(ggufPath, model, serializedTensors);
+        writeGGUF(ggufPath, model, serializedTensors, customVocab);
 
         System.out.println("[Export] GGUF file written successfully: " + ggufPath.toAbsolutePath() + " (" + Files.size(ggufPath) + " bytes)");
 
@@ -322,7 +322,7 @@ public class OllamaExporter implements EvoModelExporter {
     }
 
     
-    private void writeGGUF(Path path, EvoLlmModel model, List<NamedTensor> tensors) throws IOException {
+    private void writeGGUF(Path path, EvoLlmModel model, List<NamedTensor> tensors, java.util.Map<Integer, String> customVocab) throws IOException {
         long totalTensorSize = 0;
         for (NamedTensor nt : tensors) {
             totalTensorSize += nt.tensor.getSize() * 4 + 128;
@@ -407,7 +407,13 @@ public class OllamaExporter implements EvoModelExporter {
             else if (i == 1) tokens.add("<s>");
             else if (i == 2) tokens.add("</s>");
             else if (i == 3) tokens.add(" ");
-            else tokens.add("token_" + i);
+            else {
+                if (customVocab != null && customVocab.containsKey(i)) {
+                    tokens.add(customVocab.get(i));
+                } else {
+                    tokens.add("token_" + i);
+                }
+            }
             scores[i] = 0.0f;
             // Token types: 3=control for <unk>, <s>, </s>; 1=normal for others
             tokenTypes[i] = (i < 3) ? 3 : 1;
