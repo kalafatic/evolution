@@ -102,38 +102,78 @@ public class LlamaCppRunner {
         String osDir = getOsDir();
         String cliName = IS_WINDOWS ? "llama-cli.exe" : "llama-cli";
         
-        // Try multiple locations
-        String[] searchPaths = {
-            LLAMA_CPP_DIR + "/" + osDir + "/" + cliName,
-            LLAMA_CPP_DIR + "/linux/" + cliName,
-            LLAMA_CPP_DIR + "/win/" + cliName,
-            LLAMA_CPP_DIR + "/" + cliName,
-            System.getProperty("user.dir") + "/eu.kalafatic.evolution.controller/lib/llama-cpp/" + osDir + "/" + cliName,
-            System.getProperty("user.dir") + "/eu.kalafatic.evolution.controller/lib/llama-cpp/linux/" + cliName,
-            System.getProperty("user.dir") + "/eu.kalafatic.evolution.controller/lib/llama-cpp/win/" + cliName,
-            System.getProperty("user.home") + "/llama.cpp/" + cliName,
-            System.getProperty("user.home") + "/llama.cpp/build/bin/" + cliName,
-            "/usr/local/bin/llama-cli",
-            "/usr/bin/llama-cli"
-        };
+        // 1. Try OSGi Bundle / Resource Extraction via Reflection
+        cliPath = resolveFromOsgiBundle(osDir, cliName);
         
-        for (String path : searchPaths) {
-            if (Files.exists(Paths.get(path))) {
-                cliPath = path;
-                System.out.println("[LlamaCpp] Found llama-cli at: " + cliPath);
-                break;
+        // 2. Fallback: Try filesystem search paths
+        if (cliPath == null) {
+            String[] searchPaths = {
+                LLAMA_CPP_DIR + "/" + osDir + "/" + cliName,
+                LLAMA_CPP_DIR + "/linux/" + cliName,
+                LLAMA_CPP_DIR + "/win/" + cliName,
+                LLAMA_CPP_DIR + "/" + cliName,
+                System.getProperty("user.dir") + "/eu.kalafatic.evolution.controller/lib/llama-cpp/" + osDir + "/" + cliName,
+                System.getProperty("user.dir") + "/eu.kalafatic.evolution.controller/lib/llama-cpp/linux/" + cliName,
+                System.getProperty("user.dir") + "/eu.kalafatic.evolution.controller/lib/llama-cpp/win/" + cliName,
+                System.getProperty("user.dir") + "/eu.kalafatic.evolution.forge.agent.api/lib/llama-cpp/" + osDir + "/" + cliName,
+                System.getProperty("user.home") + "/llama.cpp/" + cliName,
+                System.getProperty("user.home") + "/llama.cpp/build/bin/" + cliName,
+                "/usr/local/bin/llama-cli",
+                "/usr/bin/llama-cli"
+            };
+
+            for (String path : searchPaths) {
+                if (Files.exists(Paths.get(path))) {
+                    cliPath = path;
+                    System.out.println("[LlamaCpp] Found llama-cli at: " + cliPath);
+                    break;
+                }
             }
         }
         
-        if (cliPath == null) {
-            System.err.println("[LlamaCpp] llama-cli not found. Searched:");
-            for (String path : searchPaths) {
-                System.err.println("  - " + path);
+        if (cliPath != null) {
+            try {
+                File file = new File(cliPath);
+                if (!IS_WINDOWS && file.exists()) {
+                    file.setExecutable(true, false);
+                }
+            } catch (Exception e) {
+                // Non-critical permission log
             }
-            System.err.println("[LlamaCpp] Please place llama-cli in: " + LLAMA_CPP_DIR + "/" + getOsDir() + "/");
+        } else {
+            System.err.println("[LlamaCpp] llama-cli not found. Please place llama-cli in: " + LLAMA_CPP_DIR + "/" + getOsDir() + "/");
         }
         
         initialized = true;
+    }
+
+    private String resolveFromOsgiBundle(String osDir, String cliName) {
+        try {
+            Class<?> frameworkUtilClass = Class.forName("org.osgi.framework.FrameworkUtil");
+            Object bundle = frameworkUtilClass.getMethod("getBundle", Class.class).invoke(null, LlamaCppRunner.class);
+            if (bundle != null) {
+                String subPath = "/lib/llama-cpp/" + osDir + "/" + cliName;
+                Object entryUrl = bundle.getClass().getMethod("getEntry", String.class).invoke(bundle, subPath);
+                if (entryUrl == null) {
+                    subPath = "/lib/llama-cpp/" + cliName;
+                    entryUrl = bundle.getClass().getMethod("getEntry", String.class).invoke(bundle, subPath);
+                }
+                if (entryUrl != null) {
+                    Class<?> fileLocatorClass = Class.forName("org.eclipse.core.runtime.FileLocator");
+                    java.net.URL fileUrl = (java.net.URL) fileLocatorClass.getMethod("toFileURL", java.net.URL.class).invoke(null, entryUrl);
+                    if (fileUrl != null) {
+                        File extractedFile = new File(fileUrl.toURI());
+                        if (extractedFile.exists()) {
+                            System.out.println("[LlamaCpp] Resolved OSGi bundle path: " + extractedFile.getAbsolutePath());
+                            return extractedFile.getAbsolutePath();
+                        }
+                    }
+                }
+            }
+        } catch (Throwable t) {
+            // OSGi/Eclipse classes not present on context classpath - fallback to filesystem
+        }
+        return null;
     }
     
     private String getOsDir() {
