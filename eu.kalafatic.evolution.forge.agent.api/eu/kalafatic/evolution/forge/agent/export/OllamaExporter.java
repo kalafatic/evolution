@@ -338,11 +338,11 @@ public class OllamaExporter implements EvoModelExporter {
         buf.putInt(3);
         buf.putLong(tensors.size());
 
-        // Metadata count - 20 keys (omitting tokenizer.ggml.model and tokenizer.ggml.merges to avoid tokenizer crashes)
-        int kvCount = 20;
+        // Metadata count - 21 keys (set tokenizer.ggml.model = llama)
+        int kvCount = 21;
         buf.putLong(kvCount);
 
-        // Write all 20 metadata keys in order
+        // Write all 21 metadata keys in order
         
         // 1. general.architecture
         writeStringKV(buf, "general.architecture", "llama");
@@ -386,16 +386,19 @@ public class OllamaExporter implements EvoModelExporter {
         // 14. llama.rope.dimension_count
         writeIntKV(buf, "llama.rope.dimension_count", model.getDModel() / model.getNumHeads());
         
-        // 15. tokenizer.ggml.bos_token_id
+        // 15. tokenizer.ggml.model
+        writeStringKV(buf, "tokenizer.ggml.model", "llama");
+
+        // 16. tokenizer.ggml.bos_token_id
         writeIntKV(buf, "tokenizer.ggml.bos_token_id", 1);
         
-        // 16. tokenizer.ggml.eos_token_id
+        // 17. tokenizer.ggml.eos_token_id
         writeIntKV(buf, "tokenizer.ggml.eos_token_id", 2);
         
-        // 17. tokenizer.ggml.unknown_token_id
+        // 18. tokenizer.ggml.unknown_token_id
         writeIntKV(buf, "tokenizer.ggml.unknown_token_id", 0);
         
-        // 18. tokenizer.ggml.tokens
+        // 19. tokenizer.ggml.tokens
         List<String> tokens = new ArrayList<>();
         float[] scores = new float[model.getVocabSize()];
         int[] tokenTypes = new int[model.getVocabSize()];
@@ -411,10 +414,10 @@ public class OllamaExporter implements EvoModelExporter {
         }
         writeStringArrayKV(buf, "tokenizer.ggml.tokens", tokens);
         
-        // 19. tokenizer.ggml.scores
+        // 20. tokenizer.ggml.scores
         writeFloatArrayKV(buf, "tokenizer.ggml.scores", scores);
         
-        // 20. tokenizer.ggml.token_type
+        // 21. tokenizer.ggml.token_type
         writeIntArrayKV(buf, "tokenizer.ggml.token_type", tokenTypes);
 
         // Tensor info section and offset calculation
