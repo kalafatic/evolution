@@ -73,27 +73,19 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                 int epochs = uiState.optInt("epochs", 1);
 
                 String modelSizeName = uiState.optString("modelSize", "SMALL").toUpperCase();
-                int hiddenSize = uiState.optInt("hidden_size", 128);
-                int layers = uiState.optInt("layers", 2);
-                int heads = uiState.optInt("heads", 4);
+                int hiddenSize = uiState.optInt("hidden_size", 512);
+                int layers = uiState.optInt("layers", 8);
+                int heads = uiState.optInt("heads", 8);
                 int dff = hiddenSize * 4;
-                int maxSeqLen = 512;
+                int maxSeqLen = 1024;
 
-                if (modelSizeName.contains("TINY")) {
-                    hiddenSize = 64; heads = 4; layers = 3; dff = 256; maxSeqLen = 128;
-                } else if (modelSizeName.contains("VERY_SMALL") || modelSizeName.contains("VERY SMALL")) {
-                    hiddenSize = 128; heads = 4; layers = 4; dff = 512; maxSeqLen = 128;
-                } else if (modelSizeName.contains("SMALL")) {
-                    hiddenSize = 256; heads = 8; layers = 6; dff = 1024; maxSeqLen = 128;
-                } else if (modelSizeName.contains("MEDIUM")) {
-                    hiddenSize = 384; heads = 8; layers = 8; dff = 1536; maxSeqLen = 256;
-                } else if (modelSizeName.contains("LARGE")) {
-                    hiddenSize = 512; heads = 8; layers = 12; dff = 2048; maxSeqLen = 512;
-                } else if (modelSizeName.contains("XXL")) {
-                    hiddenSize = 1024; heads = 16; layers = 16; dff = 4096; maxSeqLen = 2048;
-                } else if (modelSizeName.contains("XL")) {
-                    hiddenSize = 768; heads = 12; layers = 12; dff = 3072; maxSeqLen = 1024;
-                }
+                int[] resolvedParams = new int[] { hiddenSize, layers, heads, dff, maxSeqLen };
+                resolveModelSizePreset(modelSizeName, resolvedParams);
+                hiddenSize = resolvedParams[0];
+                layers = resolvedParams[1];
+                heads = resolvedParams[2];
+                dff = resolvedParams[3];
+                maxSeqLen = resolvedParams[4];
 
                 // Load progressive training knowledge source settings from UI
                 boolean sourceMarkdown = uiState.optBoolean("source_markdown", true);
@@ -688,6 +680,53 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
             return (String) clazz.getMethod("getCodebasePath").invoke(null);
         } catch (Exception e) {
             return null;
+        }
+    }
+
+    private void resolveModelSizePreset(String modelSizeName, int[] targetParams) {
+        // targetParams: [hiddenSize/dModel, layers, heads, dff, maxSeqLen]
+        try {
+            Class<?> enumClass = Class.forName("eu.kalafatic.evolution.controller.manager.ModelSizePreset$Size");
+            Object[] enumConstants = enumClass.getEnumConstants();
+            Object matchedEnum = null;
+            if (enumConstants != null) {
+                for (Object constant : enumConstants) {
+                    String name = (String) enumClass.getMethod("name").invoke(constant);
+                    String displayName = (String) enumClass.getMethod("getDisplayName").invoke(constant);
+                    if (name.equalsIgnoreCase(modelSizeName) || displayName.toUpperCase().contains(modelSizeName.toUpperCase())) {
+                        matchedEnum = constant;
+                        break;
+                    }
+                }
+            }
+            if (matchedEnum != null) {
+                int dModel = (Integer) enumClass.getMethod("getDModel").invoke(matchedEnum);
+                int numBlocks = (Integer) enumClass.getMethod("getNumBlocks").invoke(matchedEnum);
+                int numHeads = (Integer) enumClass.getMethod("getNumHeads").invoke(matchedEnum);
+                int dff = (Integer) enumClass.getMethod("getDff").invoke(matchedEnum);
+                int maxSeqLen = (Integer) enumClass.getMethod("getMaxSeqLen").invoke(matchedEnum);
+
+                if (dModel > 0) targetParams[0] = dModel;
+                if (numBlocks > 0) targetParams[1] = numBlocks;
+                if (numHeads > 0) targetParams[2] = numHeads;
+                if (dff > 0) targetParams[3] = dff;
+                if (maxSeqLen > 0) targetParams[4] = maxSeqLen;
+            }
+        } catch (Exception e) {
+            // Fallback for standalone/headless test contexts where controller bundle may not be loaded
+            if (modelSizeName.contains("NANO")) {
+                targetParams[0] = 128; targetParams[1] = 3; targetParams[2] = 4; targetParams[3] = 256; targetParams[4] = 128;
+            } else if (modelSizeName.contains("MICRO")) {
+                targetParams[0] = 256; targetParams[1] = 4; targetParams[2] = 8; targetParams[3] = 512; targetParams[4] = 256;
+            } else if (modelSizeName.contains("TINY")) {
+                targetParams[0] = 384; targetParams[1] = 6; targetParams[2] = 8; targetParams[3] = 1024; targetParams[4] = 512;
+            } else if (modelSizeName.contains("SMALL")) {
+                targetParams[0] = 512; targetParams[1] = 8; targetParams[2] = 8; targetParams[3] = 2048; targetParams[4] = 1024;
+            } else if (modelSizeName.contains("MEDIUM")) {
+                targetParams[0] = 768; targetParams[1] = 12; targetParams[2] = 12; targetParams[3] = 3072; targetParams[4] = 2048;
+            } else if (modelSizeName.contains("LARGE")) {
+                targetParams[0] = 1024; targetParams[1] = 16; targetParams[2] = 16; targetParams[3] = 4096; targetParams[4] = 4096;
+            }
         }
     }
 }
