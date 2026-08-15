@@ -338,67 +338,52 @@ public class OllamaExporter implements EvoModelExporter {
         buf.putInt(3);
         buf.putLong(tensors.size());
 
-        // Metadata count - 21 keys (set tokenizer.ggml.model = llama)
-        int kvCount = 21;
+        // ============ METADATA COUNT - 25 KEYS ============
+        int kvCount = 25;
         buf.putLong(kvCount);
 
-        // Write all 21 metadata keys in order
-        
-        // 1. general.architecture
+        // 1-14. Model architecture
         writeStringKV(buf, "general.architecture", "llama");
-        
-        // 2. general.name
         writeStringKV(buf, "general.name", "EVO LLM");
-        
-        // 3. general.file_type
         writeIntKV(buf, "general.file_type", 0);
-        
-        // 4. llama.context_length
         writeIntKV(buf, "llama.context_length", model.getMaxSeqLen());
-        
-        // 5. llama.embedding_length
         writeIntKV(buf, "llama.embedding_length", model.getDModel());
-        
-        // 6. llama.feed_forward_length
         writeIntKV(buf, "llama.feed_forward_length", model.getDff());
-        
-        // 7. llama.block_count
         writeIntKV(buf, "llama.block_count", model.getNumBlocks());
-        
-        // 8. llama.attention.head_count
         writeIntKV(buf, "llama.attention.head_count", model.getNumHeads());
-        
-        // 9. llama.attention.head_count_kv
         writeIntKV(buf, "llama.attention.head_count_kv", model.getNumHeads());
-        
-        // 10. llama.vocab_size
         writeIntKV(buf, "llama.vocab_size", model.getVocabSize());
-        
-        // 11. llama.attention.layer_norm_rms_epsilon
         writeFloatKV(buf, "llama.attention.layer_norm_rms_epsilon", 1e-5f);
-        
-        // 12. llama.attention.key_length
         writeIntKV(buf, "llama.attention.key_length", model.getDModel() / model.getNumHeads());
-        
-        // 13. llama.attention.value_length
         writeIntKV(buf, "llama.attention.value_length", model.getDModel() / model.getNumHeads());
-        
-        // 14. llama.rope.dimension_count
         writeIntKV(buf, "llama.rope.dimension_count", model.getDModel() / model.getNumHeads());
-        
+
+        // ============ TOKENIZER METADATA ============
         // 15. tokenizer.ggml.model
         writeStringKV(buf, "tokenizer.ggml.model", "llama");
 
-        // 16. tokenizer.ggml.bos_token_id
+        // 16. tokenizer.ggml.add_bos_token - ✅ BOOL!
+        writeBoolKV(buf, "tokenizer.ggml.add_bos_token", true);
+
+        // 17. tokenizer.ggml.add_eos_token - ✅ BOOL!
+        writeBoolKV(buf, "tokenizer.ggml.add_eos_token", true);
+
+        // 18. tokenizer.ggml.clean_up_tokenization_spaces - ✅ BOOL!
+        writeBoolKV(buf, "tokenizer.ggml.clean_up_tokenization_spaces", false);
+
+        // 19. tokenizer.ggml.add_prefix_space - ✅ BOOL!
+        writeBoolKV(buf, "tokenizer.ggml.add_prefix_space", false);
+
+        // 20. tokenizer.ggml.bos_token_id
         writeIntKV(buf, "tokenizer.ggml.bos_token_id", 1);
-        
-        // 17. tokenizer.ggml.eos_token_id
+
+        // 21. tokenizer.ggml.eos_token_id
         writeIntKV(buf, "tokenizer.ggml.eos_token_id", 2);
-        
-        // 18. tokenizer.ggml.unknown_token_id
+
+        // 22. tokenizer.ggml.unknown_token_id
         writeIntKV(buf, "tokenizer.ggml.unknown_token_id", 0);
-        
-        // 19. tokenizer.ggml.tokens
+
+        // 23. tokenizer.ggml.tokens
         List<String> tokens = new ArrayList<>();
         float[] scores = new float[model.getVocabSize()];
         int[] tokenTypes = new int[model.getVocabSize()];
@@ -409,15 +394,16 @@ public class OllamaExporter implements EvoModelExporter {
             else if (i == 3) tokens.add(" ");
             else tokens.add("token_" + i);
             scores[i] = 0.0f;
-            // Token types: 3=control for <unk>, <s>, </s>; 1=normal for others
-            tokenTypes[i] = (i < 3) ? 3 : 1;
+            if (i == 0) tokenTypes[i] = 1;      // UNKNOWN
+            else if (i == 1 || i == 2) tokenTypes[i] = 2; // CONTROL
+            else tokenTypes[i] = 0;              // NORMAL
         }
         writeStringArrayKV(buf, "tokenizer.ggml.tokens", tokens);
-        
-        // 20. tokenizer.ggml.scores
+
+        // 24. tokenizer.ggml.scores
         writeFloatArrayKV(buf, "tokenizer.ggml.scores", scores);
-        
-        // 21. tokenizer.ggml.token_type
+
+        // 25. tokenizer.ggml.token_type
         writeIntArrayKV(buf, "tokenizer.ggml.token_type", tokenTypes);
 
         // Tensor info section and offset calculation
@@ -468,6 +454,13 @@ public class OllamaExporter implements EvoModelExporter {
              FileChannel channel = fos.getChannel()) {
             channel.write(buf);
         }
+    }
+
+    // ✅ NEW: Boolean KV writer
+    private void writeBoolKV(ByteBuffer buf, String key, boolean value) {
+        writeString(buf, key);
+        buf.putInt(5);  // GGUF_METADATA_VALUE_TYPE_BOOL
+        buf.put((byte) (value ? 1 : 0));
     }
 
     private Tensor transpose(Tensor t) {
