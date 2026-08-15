@@ -78,12 +78,30 @@ public class LlamaCppBuilder {
      * Tries to find existing llama.cpp binaries in common locations
      */
     private static boolean findExistingBinaries() {
+        String osDir = IS_WINDOWS ? "win" : (IS_MAC ? "mac" : "linux");
+        String cliName = IS_WINDOWS ? "llama-cli.exe" : "llama-cli";
+
+        String osgiPath = resolveFromOsgiBundle(osDir, cliName);
+        if (osgiPath != null && Files.exists(Paths.get(osgiPath))) {
+            llamaCliPath = osgiPath;
+            String serverPath = osgiPath.replace("cli", "server");
+            if (Files.exists(Paths.get(serverPath))) {
+                llamaServerPath = serverPath;
+            }
+            makeExecutableIfUnix(llamaCliPath);
+            System.out.println("[LlamaCpp] Found existing OSGi installation at: " + llamaCliPath);
+            return true;
+        }
+
         String[] searchPaths = {
+            System.getProperty("user.dir") + "/lib/llama-cpp/" + osDir + "/" + cliName,
+            System.getProperty("user.dir") + "/eu.kalafatic.evolution.controller/lib/llama-cpp/" + osDir + "/" + cliName,
+            System.getProperty("user.dir") + "/eu.kalafatic.evolution.forge.agent.api/lib/llama-cpp/" + osDir + "/" + cliName,
             System.getProperty("user.home") + "/llama.cpp/build/bin/llama-cli" + (IS_WINDOWS ? ".exe" : ""),
             System.getProperty("user.home") + "/llama.cpp/llama-cli" + (IS_WINDOWS ? ".exe" : ""),
             System.getProperty("user.home") + "/.local/bin/llama-cli" + (IS_WINDOWS ? ".exe" : ""),
             "/usr/local/bin/llama-cli" + (IS_WINDOWS ? ".exe" : ""),
-            "/usr/bin/llama-cli" + (IS_WINDOWS ? ".exe" : ""),
+            "/usr/bin/llama-cli" + (IS_WINDOWS ? ".exe" : "")
         };
         
         for (String path : searchPaths) {
@@ -93,11 +111,53 @@ public class LlamaCppBuilder {
                 if (Files.exists(Paths.get(serverPath))) {
                     llamaServerPath = serverPath;
                 }
+                makeExecutableIfUnix(llamaCliPath);
                 System.out.println("[LlamaCpp] Found existing installation at: " + path);
                 return true;
             }
         }
         return false;
+    }
+
+    private static String resolveFromOsgiBundle(String osDir, String cliName) {
+        try {
+            Class<?> frameworkUtilClass = Class.forName("org.osgi.framework.FrameworkUtil");
+            Object bundle = frameworkUtilClass.getMethod("getBundle", Class.class).invoke(null, LlamaCppBuilder.class);
+            if (bundle != null) {
+                String subPath = "/lib/llama-cpp/" + osDir + "/" + cliName;
+                Object entryUrl = bundle.getClass().getMethod("getEntry", String.class).invoke(bundle, subPath);
+                if (entryUrl == null) {
+                    subPath = "/lib/llama-cpp/" + cliName;
+                    entryUrl = bundle.getClass().getMethod("getEntry", String.class).invoke(bundle, subPath);
+                }
+                if (entryUrl != null) {
+                    Class<?> fileLocatorClass = Class.forName("org.eclipse.core.runtime.FileLocator");
+                    java.net.URL fileUrl = (java.net.URL) fileLocatorClass.getMethod("toFileURL", java.net.URL.class).invoke(null, entryUrl);
+                    if (fileUrl != null) {
+                        File extractedFile = new File(fileUrl.toURI());
+                        if (extractedFile.exists()) {
+                            return extractedFile.getAbsolutePath();
+                        }
+                    }
+                }
+            }
+        } catch (Throwable t) {
+            // Ignore OSGi reflection failures
+        }
+        return null;
+    }
+
+    private static void makeExecutableIfUnix(String filePath) {
+        if (!IS_WINDOWS && filePath != null) {
+            try {
+                File f = new File(filePath);
+                if (f.exists()) {
+                    f.setExecutable(true, false);
+                }
+            } catch (Exception e) {
+                // Ignore
+            }
+        }
     }
     
     /**
