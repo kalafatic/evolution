@@ -20,24 +20,6 @@ public class EvoLlmModel {
     private final int maxSeqLen;	// Maximum sequence length (usually 512-2048)
     
     private Tensor lastX;
-    
-// // 1. Extremely tiny (~0.5M params)
-//    EvoLlmModel tiny = new EvoLlmModel(50, 64, 4, 3, 256, 128);
-//
-//    // 2. Small (~6M params) - Your current model
-//    EvoLlmModel small = new EvoLlmModel(8000, 256, 8, 6, 1024, 128);
-//
-//    // 3. Medium (~50M params)
-//    EvoLlmModel medium = new EvoLlmModel(32000, 512, 8, 12, 2048, 512);
-//    
-// // 4. GPT-2 Small (~124M params)
-//    EvoLlmModel gpt2_small = new EvoLlmModel(50257, 768, 12, 12, 3072, 1024);
-//
-//    // 5. LLaMA 1B (~1.38B params)
-//    EvoLlmModel llama_1b = new EvoLlmModel(32000, 2048, 16, 16, 5504, 2048);
-//
-//    // 6. LLaMA 7B (~6.74B params)
-//    EvoLlmModel llama_7b = new EvoLlmModel(32000, 4096, 32, 32, 11008, 4096);
 
     public EvoLlmModel(int vocabSize, int dModel, int numHeads, int numBlocks, int dff, int maxSeqLen) {
         this.vocabSize = vocabSize;

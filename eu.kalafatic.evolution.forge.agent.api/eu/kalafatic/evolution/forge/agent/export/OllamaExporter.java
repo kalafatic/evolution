@@ -387,7 +387,7 @@ public class OllamaExporter implements EvoModelExporter {
         writeIntKV(buf, "llama.rope.dimension_count", model.getDModel() / model.getNumHeads());
         
         // 15. tokenizer.ggml.model
-        writeStringKV(buf, "tokenizer.ggml.model", "gpt-2");  // ✅ Use gpt-2 for custom vocab
+        writeStringKV(buf, "tokenizer.ggml.model", "llama");  // ✅ Use gpt-2 for custom vocab
         
         // 16. tokenizer.ggml.merges - ✅ ADD THIS (required for GPT-2 tokenizer)
         // Empty merges array for custom vocabulary
