@@ -411,7 +411,7 @@ public class AiChatPage extends AEvoPage {
 			}
 		}
 
-		String modelSize = section.get("ModelSize");
+		String modelSize = section.get("modelSize") != null ? section.get("modelSize") : section.get("ModelSize");
 		if (modelSize != null) {
 			java.util.Map<String, Object> sizeSettings = new java.util.HashMap<>();
 			sizeSettings.put("modelSize", modelSize);

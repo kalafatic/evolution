@@ -243,11 +243,11 @@ public class LLMDarwinEngine extends ADarwinEngine {
      * Validates and normalizes candidate configurations.
      */
     private LlmConfig normalizeCandidateConfig(LlmConfig candidate) {
-        int vocabSize = Math.max(4000, Math.min(32000, candidate.vocabSize));
-        int embeddingSize = Math.max(128, Math.min(512, candidate.embeddingSize));
-        int layers = Math.max(2, Math.min(12, candidate.layers));
-        int maxSeqLen = Math.max(64, Math.min(256, candidate.maxSeqLen));
-        int epochs = Math.max(1, Math.min(20, candidate.epochs));
+        int vocabSize = Math.max(500, Math.min(100000, candidate.vocabSize));
+        int embeddingSize = Math.max(64, Math.min(16384, candidate.embeddingSize));
+        int layers = Math.max(1, Math.min(128, candidate.layers));
+        int maxSeqLen = Math.max(64, Math.min(65536, candidate.maxSeqLen));
+        int epochs = Math.max(1, Math.min(100, candidate.epochs));
 
         // Find nearest supported head count that perfectly divides embeddingSize
         int bestHead = 8;
@@ -534,11 +534,30 @@ public class LLMDarwinEngine extends ADarwinEngine {
 
         context.log("[FORGE] Darwin LLM configured for " + generations + " evolution generations.");
 
-        // Resolve model size preset from ForgeSessionManager uiState
-        String modelSizeName = uiState.optString("modelSize", "SMALL").toUpperCase();
+        // Resolve model size preset from prompt or ForgeSessionManager uiState
+        String modelSizeName = uiState.optString("modelSize", "").toUpperCase();
+
+        if (taskRequest != null && taskRequest.getPrompt() != null) {
+            String promptUpper = taskRequest.getPrompt().toUpperCase();
+            for (ModelSizePreset.Size s : ModelSizePreset.Size.values()) {
+                if (promptUpper.contains("(" + s.name() + ")") ||
+                    promptUpper.contains("(" + s.getDisplayName().toUpperCase() + ")") ||
+                    promptUpper.contains("MODEL (" + s.name() + ")")) {
+                    modelSizeName = s.name();
+                    break;
+                }
+            }
+        }
+
+        if (modelSizeName.isEmpty()) {
+            modelSizeName = "SMALL";
+        }
+
         ModelSizePreset.Size selectedPreset = ModelSizePreset.Size.SMALL;
         for (ModelSizePreset.Size s : ModelSizePreset.Size.values()) {
-            if (s.name().equalsIgnoreCase(modelSizeName) || s.getDisplayName().toUpperCase().contains(modelSizeName)) {
+            if (s.name().equalsIgnoreCase(modelSizeName) ||
+                s.getDisplayName().toUpperCase().contains(modelSizeName) ||
+                modelSizeName.contains(s.name())) {
                 selectedPreset = s;
                 break;
             }
@@ -1295,11 +1314,11 @@ public class LLMDarwinEngine extends ADarwinEngine {
 
         switch (mutationIdx) {
             case 1:
-                embeddingSize = Math.max(128, embeddingSize + (random.nextBoolean() ? 64 : -64));
-                vocabSize = Math.max(4000, vocabSize + (random.nextBoolean() ? 1000 : -1000));
+                embeddingSize = Math.max(64, embeddingSize + (random.nextBoolean() ? 64 : -64));
+                vocabSize = Math.max(500, vocabSize + (random.nextBoolean() ? 500 : -500));
                 break;
             case 2:
-                layers = Math.max(2, layers + (random.nextBoolean() ? 1 : -1));
+                layers = Math.max(1, layers + (random.nextBoolean() ? 1 : -1));
                 heads = Math.max(2, heads + (random.nextBoolean() ? 2 : -2));
                 break;
             case 3:
