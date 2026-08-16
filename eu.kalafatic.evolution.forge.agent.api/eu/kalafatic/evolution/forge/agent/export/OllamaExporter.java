@@ -44,6 +44,18 @@ public class OllamaExporter implements EvoModelExporter {
         public String fallbackRequiredReason = null;
     }
 
+    private static class MetadataEntry {
+        final String key;
+        final int type;
+        final Object value;
+
+        MetadataEntry(String key, int type, Object value) {
+            this.key = key;
+            this.type = type;
+            this.value = value;
+        }
+    }
+
     // OS Detection helpers
     private static final boolean IS_WINDOWS = System.getProperty("os.name").toLowerCase().contains("win");
     private static final boolean IS_MAC = System.getProperty("os.name").toLowerCase().contains("mac");
@@ -95,23 +107,22 @@ public class OllamaExporter implements EvoModelExporter {
         // 1. Embedding
         serializedTensors.add(new NamedTensor("token_embd.weight", modelParams.get(0)));
         
-     
-     // Each block has 9 parameters: attn_norm, WQ, WK, WV, WO, ffn_norm, W1, W3, W2
-     int paramsPerBlock = 9;  // Was 8!
+        // Each block has 9 parameters: attn_norm, WQ, WK, WV, WO, ffn_norm, W1, W3, W2
+        int paramsPerBlock = 9;
 
-     for (int i = 0; i < model.getNumBlocks(); i++) {
-         int baseIdx = 1 + i * paramsPerBlock;
-         
-         serializedTensors.add(new NamedTensor("blk." + i + ".attn_norm.weight", modelParams.get(baseIdx + 0)));
-         serializedTensors.add(new NamedTensor("blk." + i + ".attn_q.weight", transpose(modelParams.get(baseIdx + 1))));
-         serializedTensors.add(new NamedTensor("blk." + i + ".attn_k.weight", transpose(modelParams.get(baseIdx + 2))));
-         serializedTensors.add(new NamedTensor("blk." + i + ".attn_v.weight", transpose(modelParams.get(baseIdx + 3))));
-         serializedTensors.add(new NamedTensor("blk." + i + ".attn_output.weight", transpose(modelParams.get(baseIdx + 4))));
-         serializedTensors.add(new NamedTensor("blk." + i + ".ffn_norm.weight", modelParams.get(baseIdx + 5)));
-         serializedTensors.add(new NamedTensor("blk." + i + ".ffn_gate.weight", transpose(modelParams.get(baseIdx + 6))));   // W1
-         serializedTensors.add(new NamedTensor("blk." + i + ".ffn_up.weight", transpose(modelParams.get(baseIdx + 7))));     // ✅ W3
-         serializedTensors.add(new NamedTensor("blk." + i + ".ffn_down.weight", transpose(modelParams.get(baseIdx + 8))));   // W2
-     }
+        for (int i = 0; i < model.getNumBlocks(); i++) {
+            int baseIdx = 1 + i * paramsPerBlock;
+
+            serializedTensors.add(new NamedTensor("blk." + i + ".attn_norm.weight", modelParams.get(baseIdx + 0)));
+            serializedTensors.add(new NamedTensor("blk." + i + ".attn_q.weight", transpose(modelParams.get(baseIdx + 1))));
+            serializedTensors.add(new NamedTensor("blk." + i + ".attn_k.weight", transpose(modelParams.get(baseIdx + 2))));
+            serializedTensors.add(new NamedTensor("blk." + i + ".attn_v.weight", transpose(modelParams.get(baseIdx + 3))));
+            serializedTensors.add(new NamedTensor("blk." + i + ".attn_output.weight", transpose(modelParams.get(baseIdx + 4))));
+            serializedTensors.add(new NamedTensor("blk." + i + ".ffn_norm.weight", modelParams.get(baseIdx + 5)));
+            serializedTensors.add(new NamedTensor("blk." + i + ".ffn_gate.weight", transpose(modelParams.get(baseIdx + 6))));   // W1
+            serializedTensors.add(new NamedTensor("blk." + i + ".ffn_up.weight", transpose(modelParams.get(baseIdx + 7))));     // W3
+            serializedTensors.add(new NamedTensor("blk." + i + ".ffn_down.weight", transpose(modelParams.get(baseIdx + 8))));   // W2
+        }
         
         // 3. Output norm and LM head
         int outputNormIdx = 1 + model.getNumBlocks() * paramsPerBlock;
@@ -227,9 +238,7 @@ public class OllamaExporter implements EvoModelExporter {
                 exportsOllamaDir.resolve("Modelfile").toAbsolutePath().toString());
             pb.redirectErrorStream(true);
             
-            // On Windows, we need to handle paths differently
             if (IS_WINDOWS) {
-                // Windows uses different path separator handling
                 String modelfilePath = exportsOllamaDir.resolve("Modelfile").toAbsolutePath().toString();
                 pb = new ProcessBuilder("ollama", "create", nameToRegister, "-f", modelfilePath);
                 pb.redirectErrorStream(true);
@@ -321,69 +330,32 @@ public class OllamaExporter implements EvoModelExporter {
         return output.toString();
     }
 
-    
     private void writeGGUF(Path path, EvoLlmModel model, List<NamedTensor> tensors, java.util.Map<Integer, String> customVocab) throws IOException {
-        long totalTensorSize = 0;
-        for (NamedTensor nt : tensors) {
-            totalTensorSize += nt.tensor.getSize() * 4 + 128;
-        }
-        int bufferSize = (int) Math.max(16 * 1024 * 1024, totalTensorSize + 10 * 1024 * 1024);
+        System.out.println("[Export] Writing Little-Endian GGUF file...");
 
-        System.out.println("[Export] Allocating " + (bufferSize / 1024 / 1024) + "MB byte buffer for GGUF serialization.");
-        ByteBuffer buf = ByteBuffer.allocate(bufferSize);
-        buf.order(ByteOrder.LITTLE_ENDIAN);
+        List<MetadataEntry> metadataList = new ArrayList<>();
+        metadataList.add(new MetadataEntry("general.architecture", 8, "llama"));
+        metadataList.add(new MetadataEntry("general.name", 8, "EVO LLM"));
+        metadataList.add(new MetadataEntry("general.file_type", 4, 0)); // F32
+        metadataList.add(new MetadataEntry("general.alignment", 4, 32)); // 32-byte alignment
+        metadataList.add(new MetadataEntry("llama.context_length", 4, model.getMaxSeqLen()));
+        metadataList.add(new MetadataEntry("llama.embedding_length", 4, model.getDModel()));
+        metadataList.add(new MetadataEntry("llama.feed_forward_length", 4, model.getDff()));
+        metadataList.add(new MetadataEntry("llama.block_count", 4, model.getNumBlocks()));
+        metadataList.add(new MetadataEntry("llama.attention.head_count", 4, model.getNumHeads()));
+        metadataList.add(new MetadataEntry("llama.attention.head_count_kv", 4, model.getNumHeads()));
+        metadataList.add(new MetadataEntry("llama.vocab_size", 4, model.getVocabSize()));
+        metadataList.add(new MetadataEntry("llama.attention.layer_norm_rms_epsilon", 6, 1e-5f));
+        metadataList.add(new MetadataEntry("llama.attention.key_length", 4, model.getDModel() / model.getNumHeads()));
+        metadataList.add(new MetadataEntry("llama.attention.value_length", 4, model.getDModel() / model.getNumHeads()));
+        metadataList.add(new MetadataEntry("llama.rope.dimension_count", 4, model.getDModel() / model.getNumHeads()));
+        metadataList.add(new MetadataEntry("llama.rope.freq_base", 6, 10000.0f));
 
-        // GGUF Header
-        buf.put("GGUF".getBytes());
-        buf.putInt(3);
-        buf.putLong(tensors.size());
+        metadataList.add(new MetadataEntry("tokenizer.ggml.model", 8, "llama"));
+        metadataList.add(new MetadataEntry("tokenizer.ggml.bos_token_id", 4, 1));
+        metadataList.add(new MetadataEntry("tokenizer.ggml.eos_token_id", 4, 2));
+        metadataList.add(new MetadataEntry("tokenizer.ggml.unknown_token_id", 4, 0));
 
-        // ============ METADATA COUNT - 25 KEYS ============
-        int kvCount = 25;
-        buf.putLong(kvCount);
-
-        // 1-14. Model architecture
-        writeStringKV(buf, "general.architecture", "llama");
-        writeStringKV(buf, "general.name", "EVO LLM");
-        writeIntKV(buf, "general.file_type", 0);
-        writeIntKV(buf, "llama.context_length", model.getMaxSeqLen());
-        writeIntKV(buf, "llama.embedding_length", model.getDModel());
-        writeIntKV(buf, "llama.feed_forward_length", model.getDff());
-        writeIntKV(buf, "llama.block_count", model.getNumBlocks());
-        writeIntKV(buf, "llama.attention.head_count", model.getNumHeads());
-        writeIntKV(buf, "llama.attention.head_count_kv", model.getNumHeads());
-        writeIntKV(buf, "llama.vocab_size", model.getVocabSize());
-        writeFloatKV(buf, "llama.attention.layer_norm_rms_epsilon", 1e-5f);
-        writeIntKV(buf, "llama.attention.key_length", model.getDModel() / model.getNumHeads());
-        writeIntKV(buf, "llama.attention.value_length", model.getDModel() / model.getNumHeads());
-        writeIntKV(buf, "llama.rope.dimension_count", model.getDModel() / model.getNumHeads());
-
-        // ============ TOKENIZER METADATA ============
-        // 15. tokenizer.ggml.model
-        writeStringKV(buf, "tokenizer.ggml.model", "llama");
-
-        // 16. tokenizer.ggml.add_bos_token - ✅ BOOL!
-        writeBoolKV(buf, "tokenizer.ggml.add_bos_token", true);
-
-        // 17. tokenizer.ggml.add_eos_token - ✅ BOOL!
-        writeBoolKV(buf, "tokenizer.ggml.add_eos_token", true);
-
-        // 18. tokenizer.ggml.clean_up_tokenization_spaces - ✅ BOOL!
-        writeBoolKV(buf, "tokenizer.ggml.clean_up_tokenization_spaces", false);
-
-        // 19. tokenizer.ggml.add_prefix_space - ✅ BOOL!
-        writeBoolKV(buf, "tokenizer.ggml.add_prefix_space", false);
-
-        // 20. tokenizer.ggml.bos_token_id
-        writeIntKV(buf, "tokenizer.ggml.bos_token_id", 1);
-
-        // 21. tokenizer.ggml.eos_token_id
-        writeIntKV(buf, "tokenizer.ggml.eos_token_id", 2);
-
-        // 22. tokenizer.ggml.unknown_token_id
-        writeIntKV(buf, "tokenizer.ggml.unknown_token_id", 0);
-
-        // 23. tokenizer.ggml.tokens
         List<String> tokens = new ArrayList<>();
         float[] scores = new float[model.getVocabSize()];
         int[] tokenTypes = new int[model.getVocabSize()];
@@ -400,27 +372,46 @@ public class OllamaExporter implements EvoModelExporter {
                 }
             }
             scores[i] = 0.0f;
-            if (i == 0) tokenTypes[i] = 1;      // UNKNOWN
-            else if (i == 1 || i == 2) tokenTypes[i] = 2; // CONTROL
-            else tokenTypes[i] = 0;              // NORMAL
+            tokenTypes[i] = (i < 3) ? 3 : 1; // Indices 0, 1, 2 are CONTROL (3), rest are NORMAL (1)
         }
-        writeStringArrayKV(buf, "tokenizer.ggml.tokens", tokens);
 
-        // 24. tokenizer.ggml.scores
-        writeFloatArrayKV(buf, "tokenizer.ggml.scores", scores);
+        metadataList.add(new MetadataEntry("tokenizer.ggml.tokens", 9, tokens));
+        metadataList.add(new MetadataEntry("tokenizer.ggml.scores", 9, scores));
+        metadataList.add(new MetadataEntry("tokenizer.ggml.token_type", 9, tokenTypes));
 
-        // 25. tokenizer.ggml.token_type
-        writeIntArrayKV(buf, "tokenizer.ggml.token_type", tokenTypes);
+        long totalTensorSize = 0;
+        for (NamedTensor nt : tensors) {
+            totalTensorSize += nt.tensor.getSize() * 4L + 128;
+        }
+        int bufferSize = (int) Math.max(16 * 1024 * 1024, totalTensorSize + 10 * 1024 * 1024);
 
-        // Tensor info section and offset calculation
+        System.out.println("[Export] Allocating " + (bufferSize / 1024 / 1024) + "MB Little-Endian buffer for GGUF serialization.");
+        ByteBuffer buf = ByteBuffer.allocate(bufferSize);
+        buf.order(ByteOrder.LITTLE_ENDIAN);
+
+        // Header
+        buf.put("GGUF".getBytes(StandardCharsets.UTF_8));
+        buf.putInt(3); // GGUF Version 3
+        buf.putLong(tensors.size());
+        buf.putLong(metadataList.size());
+
+        // Serialize metadata list
+        for (MetadataEntry me : metadataList) {
+            writeString(buf, me.key);
+            buf.putInt(me.type);
+            serializeMetadataValue(buf, me);
+        }
+
+        // Calculate tensor relative offsets aligned to 32 bytes
         long currentOffset = 0;
         List<Long> tensorOffsets = new ArrayList<>();
         for (NamedTensor nt : tensors) {
             currentOffset = (currentOffset + 31) & ~31;
             tensorOffsets.add(currentOffset);
-            currentOffset += nt.tensor.getSize() * 4;
+            currentOffset += nt.tensor.getSize() * 4L; // F32
         }
 
+        // Serialize tensor descriptors
         for (int i = 0; i < tensors.size(); i++) {
             NamedTensor nt = tensors.get(i);
             writeString(buf, nt.name);
@@ -430,11 +421,11 @@ public class OllamaExporter implements EvoModelExporter {
             for (int d = shape.length - 1; d >= 0; d--) {
                 buf.putLong(shape[d]);
             }
-            buf.putInt(0);
+            buf.putInt(0); // GGML type F32 = 0
             buf.putLong(tensorOffsets.get(i));
         }
 
-        // Align to 32 bytes
+        // Align starting position of tensor binary data to 32 bytes
         int bytesToWrite = buf.position();
         int aligned = (bytesToWrite + 31) & ~31;
         while (buf.position() < aligned) {
@@ -455,6 +446,13 @@ public class OllamaExporter implements EvoModelExporter {
             }
         }
 
+        // Pad end of file to 32 bytes
+        long totalDataWritten = buf.position() - tensorDataStart;
+        long alignedDataEnd = (totalDataWritten + 31) & ~31;
+        while ((buf.position() - tensorDataStart) < alignedDataEnd) {
+            buf.put((byte) 0);
+        }
+
         buf.flip();
         try (FileOutputStream fos = new FileOutputStream(path.toFile());
              FileChannel channel = fos.getChannel()) {
@@ -462,11 +460,38 @@ public class OllamaExporter implements EvoModelExporter {
         }
     }
 
-    // ✅ NEW: Boolean KV writer
-    private void writeBoolKV(ByteBuffer buf, String key, boolean value) {
-        writeString(buf, key);
-        buf.putInt(5);  // GGUF_METADATA_VALUE_TYPE_BOOL
-        buf.put((byte) (value ? 1 : 0));
+    private void serializeMetadataValue(ByteBuffer buf, MetadataEntry me) {
+        if (me.type == 4) { // UINT32
+            buf.putInt(((Number) me.value).intValue());
+        } else if (me.type == 6) { // FLOAT32
+            buf.putFloat(((Number) me.value).floatValue());
+        } else if (me.type == 8) { // STRING
+            writeString(buf, (String) me.value);
+        } else if (me.type == 9) { // ARRAY
+            if (me.value instanceof List) {
+                @SuppressWarnings("unchecked")
+                List<String> list = (List<String>) me.value;
+                buf.putInt(8); // STRING
+                buf.putLong(list.size());
+                for (String s : list) {
+                    writeString(buf, s);
+                }
+            } else if (me.value instanceof float[]) {
+                float[] arr = (float[]) me.value;
+                buf.putInt(6); // FLOAT32
+                buf.putLong(arr.length);
+                for (float f : arr) {
+                    buf.putFloat(f);
+                }
+            } else if (me.value instanceof int[]) {
+                int[] arr = (int[]) me.value;
+                buf.putInt(5); // INT32
+                buf.putLong(arr.length);
+                for (int i : arr) {
+                    buf.putInt(i);
+                }
+            }
+        }
     }
 
     private Tensor transpose(Tensor t) {
@@ -654,58 +679,10 @@ public class OllamaExporter implements EvoModelExporter {
         return res;
     }
 
-    private void writeStringKV(ByteBuffer buf, String key, String value) {
-        writeString(buf, key);
-        buf.putInt(8);
-        writeString(buf, value);
-    }
-
-    private void writeFloatKV(ByteBuffer buf, String key, float value) {
-        writeString(buf, key);
-        buf.putInt(6);
-        buf.putFloat(value);
-    }
-
-    private void writeIntKV(ByteBuffer buf, String key, int value) {
-        writeString(buf, key);
-        buf.putInt(4);
-        buf.putInt(value);
-    }
-
     private void writeString(ByteBuffer buf, String str) {
-        byte[] bytes = str.getBytes();
+        byte[] bytes = str.getBytes(StandardCharsets.UTF_8);
         buf.putLong(bytes.length);
         buf.put(bytes);
-    }
-
-    private void writeStringArrayKV(ByteBuffer buf, String key, List<String> values) {
-        writeString(buf, key);
-        buf.putInt(9);
-        buf.putInt(8);
-        buf.putLong(values.size());
-        for (String val : values) {
-            writeString(buf, val);
-        }
-    }
-
-    private void writeFloatArrayKV(ByteBuffer buf, String key, float[] values) {
-        writeString(buf, key);
-        buf.putInt(9);
-        buf.putInt(6);
-        buf.putLong(values.length);
-        for (float val : values) {
-            buf.putFloat(val);
-        }
-    }
-
-    private void writeIntArrayKV(ByteBuffer buf, String key, int[] values) {
-        writeString(buf, key);
-        buf.putInt(9);
-        buf.putInt(5);
-        buf.putLong(values.length);
-        for (int val : values) {
-            buf.putInt(val);
-        }
     }
 
     public boolean verifyExport(String modelName) {
