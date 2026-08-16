@@ -692,18 +692,12 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
             if (enumConstants != null) {
                 for (Object constant : enumConstants) {
                     String name = (String) enumClass.getMethod("name").invoke(constant);
-                    if (name.equalsIgnoreCase(modelSizeName)) {
+                    String displayName = (String) enumClass.getMethod("getDisplayName").invoke(constant);
+                    if (name.equalsIgnoreCase(modelSizeName) ||
+                        modelSizeName.toUpperCase().contains(name.toUpperCase()) ||
+                        (displayName != null && (displayName.equalsIgnoreCase(modelSizeName) || displayName.toUpperCase().contains(modelSizeName.toUpperCase()) || modelSizeName.toUpperCase().contains(displayName.toUpperCase())))) {
                         matchedEnum = constant;
                         break;
-                    }
-                }
-                if (matchedEnum == null) {
-                    for (Object constant : enumConstants) {
-                        String displayName = (String) enumClass.getMethod("getDisplayName").invoke(constant);
-                        if (displayName != null && displayName.equalsIgnoreCase(modelSizeName)) {
-                            matchedEnum = constant;
-                            break;
-                        }
                     }
                 }
             }

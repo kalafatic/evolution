@@ -174,7 +174,7 @@ public class ChatMgmtGroup extends AEvoGroup {
         for (ModelSizePreset.Size size : ModelSizePreset.Size.values()) {
             aiModeSetupCombo.add(size.getDisplayName());
         }
-        aiModeSetupCombo.select(2); // Default to SMALL
+        aiModeSetupCombo.select(3); // Default to SMALL (index 3)
 
         aiModeSetupCombo.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -382,16 +382,16 @@ public class ChatMgmtGroup extends AEvoGroup {
                     }
                 }
 
-//                if (aiModeSetupCombo != null && !aiModeSetupCombo.isDisposed()) {
-//                    String sizeName = (String) config.getOrDefault("modelSize", "SMALL");
-//                    for (int i = 0; i < ModelSizePreset.Size.values().length; i++) {
-//                        ModelSizePreset.Size s = ModelSizePreset.Size.values()[i];
-//                        if (s.name().equalsIgnoreCase(sizeName) || s.getDisplayName().equalsIgnoreCase(sizeName)) {
-//                            aiModeSetupCombo.select(i);
-//                            break;
-//                        }
-//                    }
-//                }
+                if (aiModeSetupCombo != null && !aiModeSetupCombo.isDisposed()) {
+                    String sizeName = (String) config.getOrDefault("modelSize", "SMALL");
+                    for (int i = 0; i < ModelSizePreset.Size.values().length; i++) {
+                        ModelSizePreset.Size s = ModelSizePreset.Size.values()[i];
+                        if (s.name().equalsIgnoreCase(sizeName) || s.getDisplayName().equalsIgnoreCase(sizeName) || sizeName.toUpperCase().contains(s.name())) {
+                            aiModeSetupCombo.select(i);
+                            break;
+                        }
+                    }
+                }
             } finally {
                 isUpdating = false;
             }

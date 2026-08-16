@@ -67,16 +67,17 @@ public class DarwinLlmInstanceTest {
                 new eu.kalafatic.evolution.controller.orchestration.TaskContext(null, new File("."));
             LLMDarwinEngine engine = new LLMDarwinEngine(dummyContext, null, null);
 
-            // Candidate with invalid divisibility
+            // Candidate with invalid divisibility (NANO preset values)
             LlmConfig badConfig = new LlmConfig(1000, 128, 1, 5, 32, 2);
             LlmConfig normalized = (LlmConfig) normalizeMethod.invoke(engine, badConfig);
 
             // Should be divisible and head dimension > 0
             assertTrue(normalized.embeddingSize % normalized.heads == 0);
             assertTrue(normalized.embeddingSize / normalized.heads > 0);
-            // clamped values check
-            assertTrue(normalized.vocabSize >= 4000);
-            assertTrue(normalized.layers >= 2);
+            // preserved preset parameters (NANO preset with vocab 1000 is preserved rather than forced to 4000)
+            assertEquals(1000, normalized.vocabSize);
+            assertEquals(128, normalized.embeddingSize);
+            assertTrue(normalized.layers >= 1);
             assertTrue(normalized.maxSeqLen >= 64);
             assertTrue(normalized.epochs >= 1);
 
