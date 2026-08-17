@@ -16,10 +16,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 
 public class OllamaExporterDS implements EvoModelExporter {
 
@@ -374,24 +371,31 @@ public class OllamaExporterDS implements EvoModelExporter {
         // Generate dynamic vocabulary matching the requested order:
         // 0: <unk>, 1: <s>, 2: </s>, 3: " "
         List<String> tokens = new ArrayList<>();
+        Set<String> seenTokens = new HashSet<>();
         float[] scores = new float[model.getVocabSize()];
         int[] tokenTypes = new int[model.getVocabSize()];
         for (int i = 0; i < model.getVocabSize(); i++) {
+            String token;
             if (i == 0) {
-                tokens.add("<unk>");
+                token = "<unk>";
             } else if (i == 1) {
-                tokens.add("<s>");
+                token = "<s>";
             } else if (i == 2) {
-                tokens.add("</s>");
+                token = "</s>";
             } else if (i == 3) {
-                tokens.add(" ");
+                token = " ";
             } else {
                 if (customVocab != null && customVocab.containsKey(i)) {
-                    tokens.add(customVocab.get(i));
+                    token = customVocab.get(i);
                 } else {
-                    tokens.add("token_" + i);
+                    token = "token_" + i;
                 }
             }
+            if (seenTokens.contains(token)) {
+                token = token + "_" + i;
+            }
+            seenTokens.add(token);
+            tokens.add(token);
             scores[i] = 0.0f;
             tokenTypes[i] = (i < 3) ? 3 : 1; // Index 0, 1, 2 are control tokens (3), the rest are normal (1)
         }

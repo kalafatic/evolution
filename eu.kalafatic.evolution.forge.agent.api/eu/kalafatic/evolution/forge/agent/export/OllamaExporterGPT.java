@@ -300,20 +300,27 @@ public class OllamaExporterGPT implements EvoModelExporter {
 
         // Create dynamic compliant vocabulary
         List<String> tokens = new ArrayList<>();
+        Set<String> seenTokens = new HashSet<>();
         float[] scores = new float[model.getVocabSize()];
         int[] tokenTypes = new int[model.getVocabSize()];
         for (int i = 0; i < model.getVocabSize(); i++) {
-            if (i == 0) tokens.add("<unk>");
-            else if (i == 1) tokens.add("<s>");
-            else if (i == 2) tokens.add("</s>");
-            else if (i == 3) tokens.add(" ");
+            String token;
+            if (i == 0) token = "<unk>";
+            else if (i == 1) token = "<s>";
+            else if (i == 2) token = "</s>";
+            else if (i == 3) token = " ";
             else {
                 if (customVocab != null && customVocab.containsKey(i)) {
-                    tokens.add(customVocab.get(i));
+                    token = customVocab.get(i);
                 } else {
-                    tokens.add("token_" + i);
+                    token = "token_" + i;
                 }
             }
+            if (seenTokens.contains(token)) {
+                token = token + "_" + i;
+            }
+            seenTokens.add(token);
+            tokens.add(token);
             scores[i] = 0.0f;
             tokenTypes[i] = (i < 3) ? 3 : 1; // Indices 0, 1, 2 are CONTROL (3), rest are NORMAL (1)
         }
