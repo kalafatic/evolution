@@ -255,6 +255,7 @@ public class OllamaExporterGPT implements EvoModelExporter {
 
         // Create dynamic compliant vocabulary with byte fallback tokens
         List<String> tokens = new ArrayList<>();
+        Set<String> seenTokens = new HashSet<>();
         float[] scores = new float[model.getVocabSize()];
         int[] tokenTypes = new int[model.getVocabSize()];
         int vocabSize = model.getVocabSize();
@@ -280,10 +281,15 @@ public class OllamaExporterGPT implements EvoModelExporter {
                 if (customVocab != null && customVocab.containsKey(i) && customVocab.get(i) != null) {
                     tokens.add(customVocab.get(i));
                 } else {
-                    tokens.add("token_" + i);
+                    token = "token_" + i;
                 }
                 tokenTypes[i] = 1; // NORMAL
             }
+            if (seenTokens.contains(token)) {
+                token = token + "_" + i;
+            }
+            seenTokens.add(token);
+            tokens.add(token);
             scores[i] = 0.0f;
         }
 

@@ -17,10 +17,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 
 public class OllamaExporter2 implements EvoModelExporter {
 
@@ -174,6 +171,7 @@ public class OllamaExporter2 implements EvoModelExporter {
         metadataList.add(new MetadataEntry("tokenizer.ggml.unknown_token_id", 4, 0));
 
         List<String> tokens = new ArrayList<>();
+        Set<String> seenTokens = new HashSet<>();
         float[] scores = new float[model.getVocabSize()];
         int[] tokenTypes = new int[model.getVocabSize()];
         int vocabSize = model.getVocabSize();
@@ -199,10 +197,15 @@ public class OllamaExporter2 implements EvoModelExporter {
                 if (customVocab != null && customVocab.containsKey(i) && customVocab.get(i) != null) {
                     tokens.add(customVocab.get(i));
                 } else {
-                    tokens.add("token_" + i);
+                    token = "token_" + i;
                 }
                 tokenTypes[i] = 1;
             }
+            if (seenTokens.contains(token)) {
+                token = token + "_" + i;
+            }
+            seenTokens.add(token);
+            tokens.add(token);
             scores[i] = 0.0f;
         }
 
