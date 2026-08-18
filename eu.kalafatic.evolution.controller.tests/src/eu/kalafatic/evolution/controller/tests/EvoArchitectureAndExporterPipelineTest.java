@@ -40,8 +40,8 @@ public class EvoArchitectureAndExporterPipelineTest {
             assertEquals(preset.getDff(), arch.getDff());
             assertEquals(preset.getMaxSeqLen(), arch.getMaxSeqLen());
 
-            // Instantiate float weight tensors only for models <= 50M params in unit tests to prevent OOM
-            if (preset.getParameterCount() <= 50) {
+            // Instantiate float weight tensors only for models <= 20M params in unit tests to prevent OOM
+            if (preset.getParameterCount() <= 20) {
                 EvoLlmModel model = new EvoLlmModel(arch);
                 assertEquals(arch, model.getArchitecture());
 
