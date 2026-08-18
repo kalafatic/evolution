@@ -142,6 +142,15 @@ public class ModelSizePreset {
         public int getMaxSeqLen() { return maxSeqLen; }
         public String getDescription() { return description; }
         public String getHardwareNote() { return hardwareNote; }
+
+        public eu.kalafatic.evolution.forge.model.llm.EvoLlmArchitecture toArchitecture() {
+            if (this == CUSTOM) {
+                return new eu.kalafatic.evolution.forge.model.llm.EvoLlmArchitecture(8000, 384, 8, 6, 1024, 512);
+            }
+            return new eu.kalafatic.evolution.forge.model.llm.EvoLlmArchitecture(
+                vocabSize, dModel, numHeads, numBlocks, dff, maxSeqLen
+            );
+        }
         
         // ============ CALCULATIONS ============
         public long getParameterCount() {

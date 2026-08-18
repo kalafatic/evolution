@@ -4,8 +4,6 @@ import eu.kalafatic.evolution.forge.math.api.Tensor;
 import eu.kalafatic.evolution.forge.math.core.SimpleTensor;
 
 import java.io.*;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -15,8 +13,8 @@ import java.util.stream.Stream;
 
 /**
  * Self-contained native EVO model artifact.
- * Holds all the architectural parameters, tokenizer state, sampling parameters,
- * and handles robust weight saving/loading independently of any external framework (like Ollama).
+ * Holds architectural configuration, tokenizer state, sampling parameters,
+ * and handles weight saving/loading independently of any external framework.
  */
 public class EvoModelArtifact {
 
@@ -31,14 +29,8 @@ public class EvoModelArtifact {
     private String architecture = "EVO_LLM";
     private long creationTimestamp = System.currentTimeMillis();
 
-    // Architectural Dimensions
-    private int vocabSize;
-    private int embeddingSize;
-    private int layers;
-    private int heads;
-    private int dff;
-    private int maxSeqLen;
-    private long parameterCount;
+    // Architectural Configuration
+    private EvoLlmArchitecture archConfig;
 
     // Sampling Configuration
     private float temperature = 0.2f;
@@ -46,8 +38,8 @@ public class EvoModelArtifact {
     private int topK = 40;
     private float repeatPenalty = 1.1f;
 
-    // Tokenizer mappings
-    private Map<String, Integer> tokenizerVocab = new LinkedHashMap<>();
+    // Tokenizer Artifact
+    private EvoTokenizerArtifact tokenizerArtifact = new EvoTokenizerArtifact();
 
     // Trained weights/parameters
     private List<Tensor> weights = new ArrayList<>();
@@ -60,7 +52,14 @@ public class EvoModelArtifact {
      */
     public EvoLlmModel createModel() {
         validateModelIntegrity();
-        EvoLlmModel model = new EvoLlmModel(vocabSize, embeddingSize, heads, layers, dff, maxSeqLen);
+        EvoLlmModel model = new EvoLlmModel(archConfig);
+
+        // Strict invariant check: recreated model architecture MUST match artifact architecture
+        if (!archConfig.equals(model.getArchitecture())) {
+            throw new IllegalStateException("Architecture invariant violation: artifact architecture "
+                    + archConfig + " does not match recreated model architecture " + model.getArchitecture());
+        }
+
         List<Tensor> modelParams = model.parameters();
         if (modelParams.size() != weights.size()) {
             throw new IllegalStateException("Tensor count mismatch: Model expected " + modelParams.size() 
@@ -83,13 +82,11 @@ public class EvoModelArtifact {
      */
     public void initializeFromModel(String modelName, EvoLlmModel model, Map<String, Integer> vocab) {
         this.modelName = modelName;
-        this.vocabSize = model.getVocabSize();
-        this.embeddingSize = model.getDModel();
-        this.layers = model.getNumBlocks();
-        this.heads = model.getNumHeads();
-        this.dff = model.getDff();
-        this.maxSeqLen = model.getMaxSeqLen();
-        this.tokenizerVocab = new LinkedHashMap<>(vocab);
+        this.archConfig = model.getArchitecture();
+
+        EvoTokenizerArtifact tokArtifact = new EvoTokenizerArtifact("SimpleBPE", vocab, 1, 2, 3, 0);
+        tokArtifact.padToSize(this.archConfig.getVocabSize());
+        this.tokenizerArtifact = tokArtifact;
         
         this.weights = new ArrayList<>();
         long totalParams = 0;
@@ -99,7 +96,24 @@ public class EvoModelArtifact {
             this.weights.add(new SimpleTensor(p.getShape(), dataCopy));
             totalParams += p.getData().length;
         }
-        this.parameterCount = totalParams;
+    }
+
+    public void initializeFromModel(String modelName, EvoLlmModel model, EvoTokenizerArtifact tokenizer) {
+        this.modelName = modelName;
+        this.archConfig = model.getArchitecture();
+
+        EvoTokenizerArtifact tokArtifact = tokenizer != null ? tokenizer : new EvoTokenizerArtifact();
+        tokArtifact.padToSize(this.archConfig.getVocabSize());
+        this.tokenizerArtifact = tokArtifact;
+
+        this.weights = new ArrayList<>();
+        long totalParams = 0;
+        for (Tensor p : model.parameters()) {
+            float[] dataCopy = new float[p.getData().length];
+            System.arraycopy(p.getData(), 0, dataCopy, 0, p.getData().length);
+            this.weights.add(new SimpleTensor(p.getShape(), dataCopy));
+            totalParams += p.getData().length;
+        }
     }
 
     /**
@@ -112,11 +126,14 @@ public class EvoModelArtifact {
         if (formatVersion != 1) {
             throw new IllegalArgumentException("Unsupported format version: " + formatVersion);
         }
-        if (vocabSize <= 0 || embeddingSize <= 0 || layers <= 0 || heads <= 0 || dff <= 0 || maxSeqLen <= 0) {
-            throw new IllegalArgumentException("Invalid architecture dimensions in artifact.");
+        if (archConfig == null) {
+            throw new IllegalArgumentException("Missing architecture configuration in artifact.");
         }
-        if (tokenizerVocab == null || tokenizerVocab.isEmpty()) {
-            throw new IllegalArgumentException("Tokenizer vocabulary is missing or empty.");
+        if (tokenizerArtifact == null || tokenizerArtifact.getVocab() == null || tokenizerArtifact.getVocab().isEmpty()) {
+            throw new IllegalArgumentException("Tokenizer artifact is missing or empty.");
+        }
+        if (tokenizerArtifact.getVocabSize() < archConfig.getVocabSize()) {
+            tokenizerArtifact.padToSize(archConfig.getVocabSize());
         }
         if (weights == null || weights.isEmpty()) {
             throw new IllegalArgumentException("Weights list is missing or empty.");
@@ -125,7 +142,7 @@ public class EvoModelArtifact {
 
     /**
      * Saves the native model artifact as a single unified package with .evo extension,
-     * or as a directory structure for backward compatibility.
+     * or as a directory structure.
      */
     public EvoModelArtifact save(Path targetPath) throws IOException {
         if (Files.isDirectory(targetPath)) {
@@ -148,6 +165,9 @@ public class EvoModelArtifact {
 
     private void saveDirectory(Path dir) throws IOException {
         Files.createDirectories(dir);
+        validateModelIntegrity();
+
+        long parameterCount = getParameterCount();
 
         // 1. Serialize model.json (the stable manifest file)
         StringBuilder sb = new StringBuilder();
@@ -157,12 +177,12 @@ public class EvoModelArtifact {
                 .append("  \"modelName\": \"").append(modelName).append("\",\n")
                 .append("  \"architecture\": \"").append(architecture).append("\",\n")
                 .append("  \"creationTimestamp\": ").append(creationTimestamp).append(",\n")
-                .append("  \"vocabSize\": ").append(vocabSize).append(",\n")
-                .append("  \"embeddingSize\": ").append(embeddingSize).append(",\n")
-                .append("  \"layers\": ").append(layers).append(",\n")
-                .append("  \"heads\": ").append(heads).append(",\n")
-                .append("  \"dff\": ").append(dff).append(",\n")
-                .append("  \"maxSeqLen\": ").append(maxSeqLen).append(",\n")
+                .append("  \"vocabSize\": ").append(archConfig.getVocabSize()).append(",\n")
+                .append("  \"embeddingSize\": ").append(archConfig.getDModel()).append(",\n")
+                .append("  \"layers\": ").append(archConfig.getNumBlocks()).append(",\n")
+                .append("  \"heads\": ").append(archConfig.getNumHeads()).append(",\n")
+                .append("  \"dff\": ").append(archConfig.getDff()).append(",\n")
+                .append("  \"maxSeqLen\": ").append(archConfig.getMaxSeqLen()).append(",\n")
                 .append("  \"parameterCount\": ").append(parameterCount).append(",\n")
                 .append("  \"temperature\": ").append(temperature).append(",\n")
                 .append("  \"top_p\": ").append(topP).append(",\n")
@@ -171,15 +191,15 @@ public class EvoModelArtifact {
                 .append("}");
         Files.writeString(dir.resolve("model.json"), sb.toString());
 
-        // 2. Also save legacy config.json and training.json files for backward compatibility
+        // 2. Also save config.json file for backward compatibility
         StringBuilder configJson = new StringBuilder();
         configJson.append("{\n")
-                .append("  \"vocabSize\": ").append(vocabSize).append(",\n")
-                .append("  \"dModel\": ").append(embeddingSize).append(",\n")
-                .append("  \"numHeads\": ").append(heads).append(",\n")
-                .append("  \"numBlocks\": ").append(layers).append(",\n")
-                .append("  \"dff\": ").append(dff).append(",\n")
-                .append("  \"maxSeqLen\": ").append(maxSeqLen).append("\n")
+                .append("  \"vocabSize\": ").append(archConfig.getVocabSize()).append(",\n")
+                .append("  \"dModel\": ").append(archConfig.getDModel()).append(",\n")
+                .append("  \"numHeads\": ").append(archConfig.getNumHeads()).append(",\n")
+                .append("  \"numBlocks\": ").append(archConfig.getNumBlocks()).append(",\n")
+                .append("  \"dff\": ").append(archConfig.getDff()).append(",\n")
+                .append("  \"maxSeqLen\": ").append(archConfig.getMaxSeqLen()).append("\n")
                 .append("}");
         Files.writeString(dir.resolve("config.json"), configJson.toString());
 
@@ -191,13 +211,18 @@ public class EvoModelArtifact {
         Files.writeString(dir.resolve("training.json"), trainingJson.toString());
 
         // 3. Serialize tokenizer.json (complete vocabulary / token mappings state)
+        Map<String, Integer> tokVocab = tokenizerArtifact.getVocab();
         StringBuilder tokBuilder = new StringBuilder();
         tokBuilder.append("{\n")
-                .append("  \"type\": \"SimpleBPE\",\n")
-                .append("  \"vocabSize\": ").append(vocabSize).append(",\n")
+                .append("  \"type\": \"").append(tokenizerArtifact.getTokenizerType()).append("\",\n")
+                .append("  \"vocabSize\": ").append(tokenizerArtifact.getVocabSize()).append(",\n")
+                .append("  \"unkId\": ").append(tokenizerArtifact.getUnkId()).append(",\n")
+                .append("  \"bosId\": ").append(tokenizerArtifact.getBosId()).append(",\n")
+                .append("  \"eosId\": ").append(tokenizerArtifact.getEosId()).append(",\n")
+                .append("  \"padId\": ").append(tokenizerArtifact.getPadId()).append(",\n")
                 .append("  \"vocab\": {\n");
         int count = 0;
-        for (Map.Entry<String, Integer> entry : tokenizerVocab.entrySet()) {
+        for (Map.Entry<String, Integer> entry : tokVocab.entrySet()) {
             String cleanKey = entry.getKey()
                     .replace("\\", "\\\\")
                     .replace("\"", "\\\"")
@@ -205,7 +230,7 @@ public class EvoModelArtifact {
                     .replace("\r", "\\r")
                     .replace("\t", "\\t");
             tokBuilder.append("    \"").append(cleanKey).append("\": ").append(entry.getValue());
-            if (++count < tokenizerVocab.size()) {
+            if (++count < tokVocab.size()) {
                 tokBuilder.append(",");
             }
             tokBuilder.append("\n");
@@ -213,39 +238,31 @@ public class EvoModelArtifact {
         tokBuilder.append("  }\n}");
         Files.writeString(dir.resolve("tokenizer.json"), tokBuilder.toString());
 
-        // 4. Save weights.bin atomically with custom headers & structure
+        // 4. Save weights.bin atomically
         Path weightsPath = dir.resolve("weights.bin");
         Path tempFile = dir.resolve("weights.bin." + UUID.randomUUID().toString() + ".tmp");
         try {
             try (DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(tempFile.toFile())))) {
-                // Header: MAGIC (3 bytes)
                 dos.write(MAGIC);
-                // Header: VERSION (2 bytes)
                 dos.writeShort(WEIGHTS_VERSION);
-                // Header: MODEL_ID String length + bytes
                 byte[] modelIdBytes = modelName.getBytes();
                 dos.writeInt(modelIdBytes.length);
                 dos.write(modelIdBytes);
-                // Header: TENSOR_COUNT (4 bytes)
                 dos.writeInt(weights.size());
 
-                // Metadata and data for each tensor
                 for (int i = 0; i < weights.size(); i++) {
                     Tensor t = weights.get(i);
-                    // Name or Index
                     String tensorName = "tensor_" + i;
                     byte[] nameBytes = tensorName.getBytes();
                     dos.writeInt(nameBytes.length);
                     dos.write(nameBytes);
 
-                    // Shape dimensions
                     long[] shape = t.getShape();
                     dos.writeInt(shape.length);
                     for (long dim : shape) {
                         dos.writeLong(dim);
                     }
 
-                    // Float32 Payload
                     float[] data = t.getData();
                     dos.writeInt(data.length);
                     for (float val : data) {
@@ -299,7 +316,14 @@ public class EvoModelArtifact {
 
         EvoModelArtifact artifact = new EvoModelArtifact();
 
-        // 1. Load stable manifest if present, else fallback to config.json migration
+        int vocabSize = 0;
+        int dModel = 0;
+        int layers = 0;
+        int heads = 0;
+        int dff = 0;
+        int maxSeqLen = 0;
+
+        // 1. Load stable manifest if present, else fallback to config.json
         if (Files.exists(manifestPath)) {
             String mJson = Files.readString(manifestPath);
             artifact.setFormat(parseStringField(mJson, "format"));
@@ -307,50 +331,59 @@ public class EvoModelArtifact {
             artifact.setModelName(parseStringField(mJson, "modelName"));
             artifact.setArchitecture(parseStringField(mJson, "architecture"));
             artifact.setCreationTimestamp(parseLongField(mJson, "creationTimestamp", System.currentTimeMillis()));
-            artifact.setVocabSize(parseIntField(mJson, "vocabSize", 0));
-            artifact.setEmbeddingSize(parseIntField(mJson, "embeddingSize", 0));
-            artifact.setLayers(parseIntField(mJson, "layers", 0));
-            artifact.setHeads(parseIntField(mJson, "heads", 0));
-            artifact.setDff(parseIntField(mJson, "dff", 0));
-            artifact.setMaxSeqLen(parseIntField(mJson, "maxSeqLen", 0));
-            artifact.setParameterCount(parseLongField(mJson, "parameterCount", 0));
+            vocabSize = parseIntField(mJson, "vocabSize", 0);
+            dModel = parseIntField(mJson, "embeddingSize", 0);
+            layers = parseIntField(mJson, "layers", 0);
+            heads = parseIntField(mJson, "heads", 0);
+            dff = parseIntField(mJson, "dff", 0);
+            maxSeqLen = parseIntField(mJson, "maxSeqLen", 0);
             artifact.setTemperature(parseFloatField(mJson, "temperature", 0.2f));
             artifact.setTopP(parseFloatField(mJson, "top_p", 0.9f));
             artifact.setTopK(parseIntField(mJson, "top_k", 40));
             artifact.setRepeatPenalty(parseFloatField(mJson, "repeat_penalty", 1.1f));
         } else if (Files.exists(configPath)) {
-            // BACKWARD COMPATIBILITY MIGRATION
-            System.out.println("[Artifact] model.json missing. Attempting backward compatibility load from config.json...");
             String cfgJson = Files.readString(configPath);
-            artifact.setVocabSize(parseIntField(cfgJson, "vocabSize", 0));
-            artifact.setEmbeddingSize(parseIntField(cfgJson, "dModel", 0));
-            artifact.setLayers(parseIntField(cfgJson, "numBlocks", 0));
-            artifact.setHeads(parseIntField(cfgJson, "numHeads", 0));
-            artifact.setDff(parseIntField(cfgJson, "dff", artifact.getEmbeddingSize() * 4));
-            artifact.setMaxSeqLen(parseIntField(cfgJson, "maxSeqLen", 0));
+            vocabSize = parseIntField(cfgJson, "vocabSize", 0);
+            dModel = parseIntField(cfgJson, "dModel", 0);
+            layers = parseIntField(cfgJson, "numBlocks", 0);
+            heads = parseIntField(cfgJson, "numHeads", 0);
+            dff = parseIntField(cfgJson, "dff", dModel * 4);
+            maxSeqLen = parseIntField(cfgJson, "maxSeqLen", 0);
             artifact.setModelName("migrated-" + dir.getFileName().toString());
         } else {
             throw new FileNotFoundException("Neither model.json nor config.json exists in " + dir);
         }
 
-        // 2. Load tokenizer vocabulary from tokenizer.json (complete map recovery)
+        if (dff <= dModel) {
+            dff = dModel * 4;
+        }
+
+        artifact.setArchitectureConfig(new EvoLlmArchitecture(vocabSize, dModel, heads, layers, dff, maxSeqLen));
+
+        // 2. Load tokenizer vocabulary from tokenizer.json
+        EvoTokenizerArtifact tokArtifact = new EvoTokenizerArtifact();
         if (Files.exists(tokenizerPath)) {
             String tJson = Files.readString(tokenizerPath);
+            tokArtifact.setTokenizerType(parseStringField(tJson, "type"));
+            tokArtifact.setUnkId(parseIntField(tJson, "unkId", 1));
+            tokArtifact.setBosId(parseIntField(tJson, "bosId", 2));
+            tokArtifact.setEosId(parseIntField(tJson, "eosId", 3));
+            tokArtifact.setPadId(parseIntField(tJson, "padId", 0));
             Map<String, Integer> vocabMap = parseVocabFromJson(tJson);
-            artifact.setTokenizerVocab(vocabMap);
+            tokArtifact.setVocab(vocabMap);
         } else {
-            // MIGRATION / MOCK VOCABULARY GENERATION
-            System.out.println("[Artifact] tokenizer.json missing. Generating safe vocabulary mapping...");
             Map<String, Integer> mockVocab = new LinkedHashMap<>();
-            mockVocab.put("<pad>", 0);
-            mockVocab.put("<unk>", 1);
-            mockVocab.put("<s>", 2);
-            mockVocab.put("</s>", 3);
-            for (int i = 4; i < artifact.getVocabSize(); i++) {
+            mockVocab.put("<unk>", 0);
+            mockVocab.put("<s>", 1);
+            mockVocab.put("</s>", 2);
+            mockVocab.put(" ", 3);
+            for (int i = 4; i < vocabSize; i++) {
                 mockVocab.put("token_" + i, i);
             }
-            artifact.setTokenizerVocab(mockVocab);
+            tokArtifact.setVocab(mockVocab);
         }
+        tokArtifact.padToSize(vocabSize);
+        artifact.setTokenizerArtifact(tokArtifact);
 
         // 3. Load & Validate binary weights
         long totalFileSize = Files.size(weightsPath);
@@ -359,11 +392,9 @@ public class EvoModelArtifact {
         }
 
         try (DataInputStream dis = new DataInputStream(new BufferedInputStream(new FileInputStream(weightsPath.toFile())))) {
-            // Read magic
             byte[] magicIn = new byte[3];
             dis.readFully(magicIn);
             if (Arrays.equals(magicIn, MAGIC)) {
-                // Structured weights.bin path
                 short version = dis.readShort();
                 if (version != WEIGHTS_VERSION) {
                     throw new IOException("Unsupported weights version: " + version);
@@ -374,7 +405,6 @@ public class EvoModelArtifact {
 
                 int tensorCount = dis.readInt();
                 List<Tensor> loadedTensors = new ArrayList<>();
-                long accParams = 0;
 
                 for (int i = 0; i < tensorCount; i++) {
                     int nameLen = dis.readInt();
@@ -394,26 +424,15 @@ public class EvoModelArtifact {
                     }
 
                     loadedTensors.add(new SimpleTensor(shape, data));
-                    accParams += dataLen;
                 }
 
                 artifact.setWeights(loadedTensors);
-                artifact.setParameterCount(accParams);
             } else {
-                // Fallback / legacy raw float stream weights loader
-                System.out.println("[Artifact] raw weights.bin stream detected. Falling back to structured parsing...");
-                dis.close(); // Reset streams
+                dis.close();
 
-                // We need the architecture dimensions to deserialize raw float weights
-                if (artifact.getVocabSize() <= 0 || artifact.getEmbeddingSize() <= 0) {
-                    throw new IOException("Cannot parse raw weights stream: missing valid configuration dimensions.");
-                }
-
-                EvoLlmModel tempModel = new EvoLlmModel(artifact.getVocabSize(), artifact.getEmbeddingSize(), 
-                        artifact.getHeads(), artifact.getLayers(), artifact.getDff(), artifact.getMaxSeqLen());
+                EvoLlmModel tempModel = new EvoLlmModel(artifact.getArchitectureConfig());
                 List<Tensor> params = tempModel.parameters();
                 List<Tensor> loadedTensors = new ArrayList<>();
-                long accParams = 0;
 
                 try (DataInputStream disRaw = new DataInputStream(new BufferedInputStream(new FileInputStream(weightsPath.toFile())))) {
                     for (Tensor p : params) {
@@ -422,12 +441,10 @@ public class EvoModelArtifact {
                             data[i] = disRaw.readFloat();
                         }
                         loadedTensors.add(new SimpleTensor(p.getShape(), data));
-                        accParams += data.length;
                     }
                 }
 
                 artifact.setWeights(loadedTensors);
-                artifact.setParameterCount(accParams);
             }
         }
 
@@ -486,27 +503,35 @@ public class EvoModelArtifact {
         directory.delete();
     }
 
-    /**
-     * Custom parsing for vocab block in tokenizer.json to avoid Jackson/JSON dependencies.
-     */
     private static Map<String, Integer> parseVocabFromJson(String json) {
         Map<String, Integer> vocabMap = new LinkedHashMap<>();
         int vocabStart = json.indexOf("\"vocab\"");
         if (vocabStart == -1) return vocabMap;
         int blockStart = json.indexOf("{", vocabStart);
         if (blockStart == -1) return vocabMap;
-        int blockEnd = json.indexOf("}", blockStart);
+
+        int braceDepth = 1;
+        int blockEnd = -1;
+        for (int i = blockStart + 1; i < json.length(); i++) {
+            char c = json.charAt(i);
+            if (c == '{') braceDepth++;
+            else if (c == '}') {
+                braceDepth--;
+                if (braceDepth == 0) {
+                    blockEnd = i;
+                    break;
+                }
+            }
+        }
         if (blockEnd == -1) return vocabMap;
 
         String vocabBlock = json.substring(blockStart + 1, blockEnd);
         int i = 0;
         int len = vocabBlock.length();
         while (i < len) {
-            // Find start of key
             int keyStart = vocabBlock.indexOf('"', i);
             if (keyStart == -1) break;
 
-            // Find end of key (taking care of escaped quotes)
             int keyEnd = -1;
             boolean escaped = false;
             for (int j = keyStart + 1; j < len; j++) {
@@ -523,8 +548,6 @@ public class EvoModelArtifact {
             if (keyEnd == -1) break;
 
             String keyPart = vocabBlock.substring(keyStart + 1, keyEnd);
-
-            // Unescape common keys
             keyPart = keyPart
                     .replace("\\\\", "\\")
                     .replace("\\\"", "\"")
@@ -532,14 +555,12 @@ public class EvoModelArtifact {
                     .replace("\\r", "\r")
                     .replace("\\t", "\t");
 
-            // Find the colon after keyEnd
             int colonIdx = vocabBlock.indexOf(':', keyEnd + 1);
             if (colonIdx == -1) {
                 i = keyEnd + 1;
                 continue;
             }
 
-            // Read integer value after the colon
             int valStart = -1;
             int valEnd = -1;
             for (int j = colonIdx + 1; j < len; j++) {
@@ -569,7 +590,6 @@ public class EvoModelArtifact {
         return vocabMap;
     }
 
-    // --- JSON PARSING HELPERS ---
     private static String parseStringField(String json, String key) {
         int idx = json.indexOf("\"" + key + "\"");
         if (idx == -1) return null;
@@ -644,26 +664,54 @@ public class EvoModelArtifact {
     public long getCreationTimestamp() { return creationTimestamp; }
     public void setCreationTimestamp(long creationTimestamp) { this.creationTimestamp = creationTimestamp; }
 
-    public int getVocabSize() { return vocabSize; }
-    public void setVocabSize(int vocabSize) { this.vocabSize = vocabSize; }
+    public EvoLlmArchitecture getArchitectureConfig() { return archConfig; }
+    public void setArchitectureConfig(EvoLlmArchitecture archConfig) { this.archConfig = archConfig; }
 
-    public int getEmbeddingSize() { return embeddingSize; }
-    public void setEmbeddingSize(int embeddingSize) { this.embeddingSize = embeddingSize; }
+    // Legacy / Convenience getters delegating to archConfig
+    public int getVocabSize() { return archConfig != null ? archConfig.getVocabSize() : 0; }
+    public void setVocabSize(int vocabSize) {
+        updateArchField(vocabSize, getEmbeddingSize(), getLayers(), getHeads(), getDff(), getMaxSeqLen());
+    }
 
-    public int getLayers() { return layers; }
-    public void setLayers(int layers) { this.layers = layers; }
+    public int getEmbeddingSize() { return archConfig != null ? archConfig.getDModel() : 0; }
+    public void setEmbeddingSize(int embeddingSize) {
+        updateArchField(getVocabSize(), embeddingSize, getLayers(), getHeads(), getDff(), getMaxSeqLen());
+    }
 
-    public int getHeads() { return heads; }
-    public void setHeads(int heads) { this.heads = heads; }
+    public int getLayers() { return archConfig != null ? archConfig.getNumBlocks() : 0; }
+    public void setLayers(int layers) {
+        updateArchField(getVocabSize(), getEmbeddingSize(), layers, getHeads(), getDff(), getMaxSeqLen());
+    }
 
-    public int getDff() { return dff; }
-    public void setDff(int dff) { this.dff = dff; }
+    public int getHeads() { return archConfig != null ? archConfig.getNumHeads() : 0; }
+    public void setHeads(int heads) {
+        updateArchField(getVocabSize(), getEmbeddingSize(), getLayers(), heads, getDff(), getMaxSeqLen());
+    }
 
-    public int getMaxSeqLen() { return maxSeqLen; }
-    public void setMaxSeqLen(int maxSeqLen) { this.maxSeqLen = maxSeqLen; }
+    public int getDff() { return archConfig != null ? archConfig.getDff() : 0; }
+    public void setDff(int dff) {
+        updateArchField(getVocabSize(), getEmbeddingSize(), getLayers(), getHeads(), dff, getMaxSeqLen());
+    }
 
-    public long getParameterCount() { return parameterCount; }
-    public void setParameterCount(long parameterCount) { this.parameterCount = parameterCount; }
+    public int getMaxSeqLen() { return archConfig != null ? archConfig.getMaxSeqLen() : 0; }
+    public void setMaxSeqLen(int maxSeqLen) {
+        updateArchField(getVocabSize(), getEmbeddingSize(), getLayers(), getHeads(), getDff(), maxSeqLen);
+    }
+
+    private void updateArchField(int vSize, int dModel, int layers, int heads, int dff, int maxSeq) {
+        if (vSize > 0 && dModel > 0 && layers > 0 && heads > 0 && maxSeq > 0) {
+            if (dff <= dModel) dff = dModel * 4;
+            this.archConfig = new EvoLlmArchitecture(vSize, dModel, heads, layers, dff, maxSeq);
+        }
+    }
+
+    public long getParameterCount() {
+        if (archConfig != null) {
+            return archConfig.getParameterCount();
+        }
+        return 0;
+    }
+    public void setParameterCount(long parameterCount) { /* Computed from archConfig */ }
 
     public float getTemperature() { return temperature; }
     public void setTemperature(float temperature) { this.temperature = temperature; }
@@ -677,8 +725,20 @@ public class EvoModelArtifact {
     public float getRepeatPenalty() { return repeatPenalty; }
     public void setRepeatPenalty(float repeatPenalty) { this.repeatPenalty = repeatPenalty; }
 
-    public Map<String, Integer> getTokenizerVocab() { return tokenizerVocab; }
-    public void setTokenizerVocab(Map<String, Integer> tokenizerVocab) { this.tokenizerVocab = tokenizerVocab; }
+    public EvoTokenizerArtifact getTokenizerArtifact() { return tokenizerArtifact; }
+    public void setTokenizerArtifact(EvoTokenizerArtifact tokenizerArtifact) {
+        this.tokenizerArtifact = tokenizerArtifact;
+    }
+
+    public Map<String, Integer> getTokenizerVocab() {
+        return tokenizerArtifact != null ? tokenizerArtifact.getVocab() : Collections.emptyMap();
+    }
+    public void setTokenizerVocab(Map<String, Integer> tokenizerVocab) {
+        if (this.tokenizerArtifact == null) {
+            this.tokenizerArtifact = new EvoTokenizerArtifact();
+        }
+        this.tokenizerArtifact.setVocab(tokenizerVocab);
+    }
 
     public List<Tensor> getWeights() { return weights; }
     public void setWeights(List<Tensor> weights) { this.weights = weights; }

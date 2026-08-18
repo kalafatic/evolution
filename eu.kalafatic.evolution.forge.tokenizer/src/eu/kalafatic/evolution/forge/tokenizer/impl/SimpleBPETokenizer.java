@@ -37,6 +37,11 @@ public class SimpleBPETokenizer implements Tokenizer {
                 vocab.put(word, id++);
             }
         }
+
+        while (vocab.size() < targetVocabSize) {
+            vocab.put("token_" + id, id);
+            id++;
+        }
         
         updateInvVocab();
     }

@@ -4,6 +4,7 @@ import eu.kalafatic.evolution.forge.math.api.Tensor;
 import eu.kalafatic.evolution.forge.math.core.SimpleTensor;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class EvoLlmModel {
     private final Embedding embedding;
@@ -12,37 +13,31 @@ public class EvoLlmModel {
     private final RMSNorm outputNorm;
     private final Tensor lmHead;
 
-    private final int vocabSize; 	// Vocabulary size (usually 50-50000)
-    private final int dModel;		// Model dimension (usually 256-4096)
-    private final int numHeads;		// Number of attention heads (4, 8, 12, 16, etc.)				
-    private final int numBlocks;	// Number of transformer layers (3, 6, 12, 24, etc.)
-    private final int dff;			// Feed-forward network dimension (usually 4*dModel)
-    private final int maxSeqLen;	// Maximum sequence length (usually 512-2048)
+    private final EvoLlmArchitecture architecture;
     
     private Tensor lastX;
 
-    public EvoLlmModel(int vocabSize, int dModel, int numHeads, int numBlocks, int dff, int maxSeqLen) {
-        this.vocabSize = vocabSize;
-        this.dModel = dModel;
-        this.numHeads = numHeads;
-        this.numBlocks = numBlocks;
-        this.dff = dff;
-        this.maxSeqLen = maxSeqLen;
+    public EvoLlmModel(EvoLlmArchitecture architecture) {
+        this.architecture = Objects.requireNonNull(architecture, "architecture cannot be null");
 
-        this.embedding = new Embedding(vocabSize, dModel);
-        this.posEncoding = new PositionalEncoding(maxSeqLen, dModel);
+        this.embedding = new Embedding(architecture.getVocabSize(), architecture.getDModel());
+        this.posEncoding = new PositionalEncoding(architecture.getMaxSeqLen(), architecture.getDModel());
         this.blocks = new ArrayList<>();
-        for (int i = 0; i < numBlocks; i++) {
-            blocks.add(new TransformerBlock(dModel, numHeads, dff));
+        for (int i = 0; i < architecture.getNumBlocks(); i++) {
+            blocks.add(new TransformerBlock(architecture.getDModel(), architecture.getNumHeads(), architecture.getDff()));
         }
-        this.outputNorm = new RMSNorm(dModel);
-        this.lmHead = new SimpleTensor(dModel, vocabSize);
+        this.outputNorm = new RMSNorm(architecture.getDModel());
+        this.lmHead = new SimpleTensor(architecture.getDModel(), architecture.getVocabSize());
         
         float[] hData = lmHead.getData();
         java.util.Random r = new java.util.Random();
         for (int i = 0; i < hData.length; i++) {
             hData[i] = (r.nextFloat() * 2 - 1) * 0.1f;
         }
+    }
+
+    public EvoLlmModel(int vocabSize, int dModel, int numHeads, int numBlocks, int dff, int maxSeqLen) {
+        this(new EvoLlmArchitecture(vocabSize, dModel, numHeads, numBlocks, dff, maxSeqLen));
     }
 
     public Tensor forward(int[] tokenIds) {
@@ -94,7 +89,7 @@ public class EvoLlmModel {
             params.add(block.getAttention().getWO());      // WO
             params.add(block.getFfnNorm().getWeight());    // ffn_norm
             params.add(block.getFfn().getW1());            // ffn_gate (W1)
-            params.add(block.getFfn().getW3());            // ✅ ffn_up (W3) - ADD THIS
+            params.add(block.getFfn().getW3());            // ffn_up (W3)
             params.add(block.getFfn().getW2());            // ffn_down (W2)
         }
         
@@ -107,12 +102,13 @@ public class EvoLlmModel {
         return params;
     }
     
-    public int getVocabSize() { return vocabSize; }
-    public int getDModel() { return dModel; }
-    public int getNumHeads() { return numHeads; }
-    public int getNumBlocks() { return numBlocks; }
-    public int getDff() { return dff; }
-    public int getMaxSeqLen() { return maxSeqLen; }
+    public EvoLlmArchitecture getArchitecture() { return architecture; }
+    public int getVocabSize() { return architecture.getVocabSize(); }
+    public int getDModel() { return architecture.getDModel(); }
+    public int getNumHeads() { return architecture.getNumHeads(); }
+    public int getNumBlocks() { return architecture.getNumBlocks(); }
+    public int getDff() { return architecture.getDff(); }
+    public int getMaxSeqLen() { return architecture.getMaxSeqLen(); }
     public Tensor getLmHead() { return lmHead; }
     public RMSNorm getOutputNorm() { return outputNorm; }
     public List<TransformerBlock> getBlocks() { return blocks; }
