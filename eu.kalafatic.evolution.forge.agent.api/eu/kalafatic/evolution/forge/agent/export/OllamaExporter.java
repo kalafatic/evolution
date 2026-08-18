@@ -208,9 +208,12 @@ public class OllamaExporter implements EvoModelExporter {
 
         // 3. Compile Standalone GGUF file
         Path ggufPath = exportsOllamaDir.resolve("evo.gguf");
-        writeGGUF(ggufPath, model, serializedTensors, customVocab);
+        int metadataCount = writeGGUF(ggufPath, model, serializedTensors, customVocab);
 
         System.out.println("[Export] GGUF file written successfully: " + ggufPath.toAbsolutePath() + " (" + Files.size(ggufPath) + " bytes)");
+
+        // Round-trip validation of written GGUF structure and bytes
+        validateGeneratedGguf(ggufPath, serializedTensors, model, metadataCount);
 
         // 4. Generate Modelfile
         List<String> modelfile = new ArrayList<>();
@@ -226,6 +229,24 @@ public class OllamaExporter implements EvoModelExporter {
         // Copy to root
         Files.copy(ggufPath, outputPath.resolve("evo.gguf"), StandardCopyOption.REPLACE_EXISTING);
         Files.copy(exportsOllamaDir.resolve("Modelfile"), outputPath.resolve("Modelfile"), StandardCopyOption.REPLACE_EXISTING);
+
+        // Save weights.bin at root
+        Path weightsPath = outputPath.resolve("weights.bin");
+        try (DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(weightsPath.toFile())))) {
+            for (Tensor p : modelParams) {
+                for (float val : p.getData()) dos.writeFloat(val);
+            }
+        }
+
+        // Copy GGUF model to Ollama default models directory as a fallback copy
+        Path ollamaHomeModels = Paths.get(System.getProperty("user.home")).resolve(".ollama/models");
+        try {
+            Files.createDirectories(ollamaHomeModels);
+            Files.copy(ggufPath, ollamaHomeModels.resolve("evo.gguf"), StandardCopyOption.REPLACE_EXISTING);
+            if (modelName != null && !modelName.isEmpty()) {
+                Files.copy(ggufPath, ollamaHomeModels.resolve(modelName + ".gguf"), StandardCopyOption.REPLACE_EXISTING);
+            }
+        } catch (Exception ignored) {}
 
         // 5. Register model
         boolean registrationSuccess = false;
@@ -330,7 +351,7 @@ public class OllamaExporter implements EvoModelExporter {
         return output.toString();
     }
 
-    private void writeGGUF(Path path, EvoLlmModel model, List<NamedTensor> tensors, java.util.Map<Integer, String> customVocab) throws IOException {
+    private int writeGGUF(Path path, EvoLlmModel model, List<NamedTensor> tensors, java.util.Map<Integer, String> customVocab) throws IOException {
         System.out.println("[Export] Writing Little-Endian GGUF file...");
 
         List<MetadataEntry> metadataList = new ArrayList<>();
@@ -386,13 +407,9 @@ public class OllamaExporter implements EvoModelExporter {
         metadataList.add(new MetadataEntry("tokenizer.ggml.scores", 9, scores));
         metadataList.add(new MetadataEntry("tokenizer.ggml.token_type", 9, tokenTypes));
 
-        long totalTensorSize = 0;
-        for (NamedTensor nt : tensors) {
-            totalTensorSize += nt.tensor.getSize() * 4L + 128;
-        }
-        int bufferSize = (int) Math.max(16 * 1024 * 1024, totalTensorSize + 10 * 1024 * 1024);
+        int bufferSize = calculateExactGgufSize(model, tensors, metadataList);
 
-        System.out.println("[Export] Allocating " + (bufferSize / 1024 / 1024) + "MB Little-Endian buffer for GGUF serialization.");
+        System.out.println("[Export] Allocating " + bufferSize + " bytes (" + (bufferSize / 1024) + " KB) Little-Endian buffer for GGUF serialization.");
         ByteBuffer buf = ByteBuffer.allocate(bufferSize);
         buf.order(ByteOrder.LITTLE_ENDIAN);
 
@@ -465,6 +482,256 @@ public class OllamaExporter implements EvoModelExporter {
              FileChannel channel = fos.getChannel()) {
             channel.write(buf);
         }
+
+        return metadataList.size();
+    }
+
+    private int calculateExactGgufSize(EvoLlmModel model, List<NamedTensor> tensors, List<MetadataEntry> metadataList) {
+        long size = 0;
+        // Header
+        size += 4; // "GGUF"
+        size += 4; // version (int32)
+        size += 8; // tensor count (uint64)
+        size += 8; // metadata count (uint64)
+
+        // Metadata entries
+        for (MetadataEntry me : metadataList) {
+            size += 8 + me.key.getBytes(StandardCharsets.UTF_8).length; // string: len(uint64) + bytes
+            size += 4; // type (int32)
+            size += getMetadataValueSize(me);
+        }
+
+        // Alignment after metadata / descriptors header
+        size = (size + 31) & ~31;
+
+        // Tensor descriptors
+        for (NamedTensor nt : tensors) {
+            size += 8 + nt.name.getBytes(StandardCharsets.UTF_8).length; // string: len(uint64) + bytes
+            long[] shape = nt.tensor.getShape();
+            size += 4; // shape.length (uint32)
+            size += shape.length * 8L; // shape dims (uint64 * n)
+            size += 4; // ggml_type (int32)
+            size += 8; // offset (uint64)
+        }
+
+        // Alignment before tensor binary data
+        size = (size + 31) & ~31;
+
+        // Tensor binary data
+        long currentOffset = 0;
+        for (NamedTensor nt : tensors) {
+            currentOffset = (currentOffset + 31) & ~31; // 32-byte alignment per tensor
+            currentOffset += nt.tensor.getSize() * 4L; // F32
+        }
+
+        size += currentOffset;
+        // Final 32-byte alignment
+        size = (size + 31) & ~31;
+
+        return (int) size;
+    }
+
+    private long getMetadataValueSize(MetadataEntry me) {
+        if (me.type == 4) { // UINT32
+            return 4;
+        } else if (me.type == 6) { // FLOAT32
+            return 4;
+        } else if (me.type == 8) { // STRING
+            return 8 + ((String) me.value).getBytes(StandardCharsets.UTF_8).length;
+        } else if (me.type == 9) { // ARRAY
+            long arrSize = 4 + 8; // array item type (uint32) + array length (uint64)
+            if (me.value instanceof List) {
+                @SuppressWarnings("unchecked")
+                List<String> list = (List<String>) me.value;
+                for (String s : list) {
+                    arrSize += 8 + s.getBytes(StandardCharsets.UTF_8).length;
+                }
+            } else if (me.value instanceof float[]) {
+                arrSize += ((float[]) me.value).length * 4L;
+            } else if (me.value instanceof int[]) {
+                arrSize += ((int[]) me.value).length * 4L;
+            }
+            return arrSize;
+        }
+        return 0;
+    }
+
+    private void validateGeneratedGguf(Path file, List<NamedTensor> expectedTensors, EvoLlmModel model, int expectedMetadataCount) throws IOException {
+        System.out.println("[Export] Reopening GGUF file to execute Round-Trip Validation...");
+        byte[] bytes = Files.readAllBytes(file);
+        ByteBuffer buf = ByteBuffer.wrap(bytes);
+        buf.order(ByteOrder.LITTLE_ENDIAN);
+
+        byte[] magic = new byte[4];
+        buf.get(magic);
+        String magicStr = new String(magic, StandardCharsets.UTF_8);
+        if (!"GGUF".equals(magicStr)) {
+            throw new IllegalArgumentException("Invalid GGUF magic: " + magicStr);
+        }
+
+        int version = buf.getInt();
+        if (version != 3) {
+            throw new IllegalArgumentException("Invalid GGUF version: " + version + " (expected 3)");
+        }
+
+        long parsedTensorCount = buf.getLong();
+        if (parsedTensorCount != expectedTensors.size()) {
+            throw new IllegalArgumentException("Invalid tensor count: " + parsedTensorCount + " (expected " + expectedTensors.size() + ")");
+        }
+
+        long parsedKvCount = buf.getLong();
+        if (parsedKvCount != expectedMetadataCount) {
+            throw new IllegalArgumentException("Invalid metadata count: " + parsedKvCount + " (expected " + expectedMetadataCount + ")");
+        }
+
+        System.out.println("[Export] Header is valid (Magic: GGUF, Version: 3, Tensors: " + parsedTensorCount + ", Metadata: " + parsedKvCount + ")");
+
+        for (int i = 0; i < parsedKvCount; i++) {
+            String key = readGgufString(buf);
+            int type = buf.getInt();
+            Object value = parseAndSkipGgufValue(buf, type);
+
+            if ("general.architecture".equals(key)) {
+                if (!"llama".equals(value)) {
+                    throw new IllegalArgumentException("Invalid architecture: " + value);
+                }
+            } else if ("llama.context_length".equals(key)) {
+                if (((Number) value).intValue() != model.getMaxSeqLen()) {
+                    throw new IllegalArgumentException("Context length mismatch");
+                }
+            } else if ("llama.embedding_length".equals(key)) {
+                if (((Number) value).intValue() != model.getDModel()) {
+                    throw new IllegalArgumentException("Embedding length mismatch");
+                }
+            } else if ("llama.block_count".equals(key)) {
+                if (((Number) value).intValue() != model.getNumBlocks()) {
+                    throw new IllegalArgumentException("Block count mismatch");
+                }
+            } else if ("llama.feed_forward_length".equals(key)) {
+                if (((Number) value).intValue() != model.getDff()) {
+                    throw new IllegalArgumentException("Feed forward length mismatch");
+                }
+            } else if ("llama.vocab_size".equals(key)) {
+                if (((Number) value).intValue() != model.getVocabSize()) {
+                    throw new IllegalArgumentException("Vocab size mismatch");
+                }
+            }
+        }
+
+        Map<String, ParsedTensorInfo> parsedTensors = new LinkedHashMap<>();
+        for (int i = 0; i < parsedTensorCount; i++) {
+            String name = readGgufString(buf);
+            int shapeLen = buf.getInt();
+            long[] shape = new long[shapeLen];
+            long product = 1;
+            for (int s = 0; s < shapeLen; s++) {
+                shape[s] = buf.getLong();
+                product *= shape[s];
+            }
+            int ggmlType = buf.getInt();
+            long offset = buf.getLong();
+
+            ParsedTensorInfo pti = new ParsedTensorInfo(name, shape, ggmlType, offset, product);
+            parsedTensors.put(name, pti);
+        }
+
+        long calculatedTensorDataStart = (buf.position() + 31) & ~31;
+
+        for (NamedTensor expected : expectedTensors) {
+            ParsedTensorInfo pti = parsedTensors.get(expected.name);
+            if (pti == null) {
+                throw new IllegalArgumentException("Missing expected GGUF tensor: " + expected.name);
+            }
+
+            long[] expectedShape = expected.tensor.getShape();
+            long[] ggufDims = pti.shape;
+
+            long[] expectedGgufDims = new long[expectedShape.length];
+            for (int d = expectedShape.length - 1; d >= 0; d--) {
+                expectedGgufDims[expectedShape.length - 1 - d] = expectedShape[d];
+            }
+
+            if (ggufDims.length != expectedGgufDims.length) {
+                throw new IllegalArgumentException("Tensor " + expected.name + " has wrong shape length");
+            }
+            for (int d = 0; d < ggufDims.length; d++) {
+                if (ggufDims[d] != expectedGgufDims[d]) {
+                    throw new IllegalArgumentException("Tensor " + expected.name + " shape mismatch. GGUF: " +
+                        Arrays.toString(ggufDims) + ", Expected: " + Arrays.toString(expectedGgufDims));
+                }
+            }
+
+            if (pti.offset % 32 != 0) {
+                throw new IllegalArgumentException("Tensor " + expected.name + " offset is not 32-byte aligned: " + pti.offset);
+            }
+
+            long absoluteOffset = calculatedTensorDataStart + pti.offset;
+            long sizeInBytes = pti.elementCount * 4L;
+            if (absoluteOffset + sizeInBytes > bytes.length) {
+                throw new IllegalArgumentException("Tensor " + expected.name + " bounds exceed GGUF file size.");
+            }
+
+            buf.position((int) absoluteOffset);
+            float[] expectedData = expected.tensor.getData();
+            for (int e = 0; e < pti.elementCount; e++) {
+                float ggufVal = buf.getFloat();
+                float origVal = expectedData[e];
+                if (Math.abs(ggufVal - origVal) > 1e-5f) {
+                    throw new IllegalArgumentException("Tensor data mismatch at index " + e + " for tensor " + expected.name +
+                        " (GGUF: " + ggufVal + ", Expected: " + origVal + ")");
+                }
+            }
+        }
+
+        System.out.println("[Export] Post-Write Round-Trip Validation: SUCCESS! Standard GGUF layout is fully correct.");
+    }
+
+    private static class ParsedTensorInfo {
+        final String name;
+        final long[] shape;
+        final int ggmlType;
+        final long offset;
+        final long elementCount;
+
+        ParsedTensorInfo(String name, long[] shape, int ggmlType, long offset, long elementCount) {
+            this.name = name;
+            this.shape = shape;
+            this.ggmlType = ggmlType;
+            this.offset = offset;
+            this.elementCount = elementCount;
+        }
+    }
+
+    private String readGgufString(ByteBuffer buf) {
+        long len = buf.getLong();
+        byte[] bytes = new byte[(int) len];
+        buf.get(bytes);
+        return new String(bytes, StandardCharsets.UTF_8);
+    }
+
+    private Object parseAndSkipGgufValue(ByteBuffer buf, int type) {
+        if (type == 0) return (int) (buf.get() & 0xFF);
+        if (type == 1) return (int) buf.get();
+        if (type == 2) return buf.getShort() & 0xFFFF;
+        if (type == 3) return (int) buf.getShort();
+        if (type == 4) return buf.getInt();
+        if (type == 5) return buf.getInt();
+        if (type == 6) return buf.getFloat();
+        if (type == 7) return buf.get() != 0;
+        if (type == 8) return readGgufString(buf);
+        if (type == 9) {
+            int itemType = buf.getInt();
+            long len = buf.getLong();
+            List<Object> items = new ArrayList<>();
+            for (long i = 0; i < len; i++) {
+                items.add(parseAndSkipGgufValue(buf, itemType));
+            }
+            return items;
+        }
+        if (type == 10 || type == 11 || type == 12 || type == 13) {
+            return buf.getLong();
+        }
+        throw new RuntimeException("Unknown GGUF metadata type: " + type);
     }
 
     private void serializeMetadataValue(ByteBuffer buf, MetadataEntry me) {
