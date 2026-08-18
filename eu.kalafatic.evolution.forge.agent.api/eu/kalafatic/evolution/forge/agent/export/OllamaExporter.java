@@ -84,6 +84,27 @@ public class OllamaExporter implements EvoModelExporter {
         if (modelParams.isEmpty()) {
             throw new IllegalArgumentException("GGUF export rejected: Model has 0 parameters.");
         }
+        
+        
+        System.out.println("========== EVO EXPORT ARCHITECTURE ==========");
+        System.out.println("Vocab       : " + model.getVocabSize());
+        System.out.println("DModel      : " + model.getDModel());
+        System.out.println("DFF         : " + model.getDff());
+        System.out.println("Blocks      : " + model.getNumBlocks());
+        System.out.println("Heads       : " + model.getNumHeads());
+        System.out.println("Context     : " + model.getMaxSeqLen());
+        System.out.println("Parameters  : " + model.parameters().size());
+
+        long totalElements = 0;
+        for (Tensor t : model.parameters()) {
+            System.out.println("  " + Arrays.toString(t.getShape()) +
+                               " = " + t.getSize());
+            totalElements += t.getSize();
+        }
+
+        System.out.println("Total elements : " + totalElements);
+        System.out.println("F32 payload    : " + (totalElements * 4L) + " bytes");
+        System.out.println("==============================================");
 
         long[] embedShape = modelParams.get(0).getShape();
         int embedVocabDim = (int) embedShape[0];
