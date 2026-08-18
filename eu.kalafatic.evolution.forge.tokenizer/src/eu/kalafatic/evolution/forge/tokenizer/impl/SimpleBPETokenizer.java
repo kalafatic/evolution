@@ -13,19 +13,27 @@ public class SimpleBPETokenizer implements Tokenizer {
 
     public void train(String corpus, int targetVocabSize) {
         vocab.clear();
-        vocab.put("<pad>", 0);
-        vocab.put("<unk>", 1);
-        vocab.put("<s>", 2);
-        vocab.put("</s>", 3);
+        vocab.put("<unk>", 0);
+        vocab.put("<s>", 1);
+        vocab.put("</s>", 2);
+        vocab.put(" ", 3);
+
+        int id = 4;
+        if (targetVocabSize >= 260) {
+            for (int b = 0; b < 256; b++) {
+                String byteToken = String.format("<0x%02X>", b);
+                vocab.put(byteToken, id++);
+            }
+        }
 
         // Initial characters
-        Set<String> chars = new HashSet<>();
-        for (char c : corpus.toCharArray()) {
-            chars.add(String.valueOf(c));
-        }
-        int id = 4;
-        for (String c : chars) {
-            vocab.put(c, id++);
+        if (corpus != null) {
+            for (char c : corpus.toCharArray()) {
+                String s = String.valueOf(c);
+                if (!vocab.containsKey(s) && vocab.size() < targetVocabSize) {
+                    vocab.put(s, id++);
+                }
+            }
         }
 
         // Simulating BPE merges
