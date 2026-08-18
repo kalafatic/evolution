@@ -25,6 +25,7 @@ public class TrainingDataCollectorManager {
         // Register default collectors
         registerCollector(new ProjectDataCollector());
         registerCollector(new DiskDataCollector());
+        registerCollector(new PdfDataCollector());
         registerCollector(new MCPDataCollector());
         registerCollector(new InternetDataCollector());
     }
