@@ -38,8 +38,12 @@ import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.TaskRequest;
 import eu.kalafatic.evolution.controller.orchestration.IterationManager;
 import eu.kalafatic.evolution.controller.orchestration.FinalResponse;
+import eu.kalafatic.evolution.controller.orchestration.FinalResponseAssembler;
 import eu.kalafatic.evolution.controller.orchestration.ExecutionMetrics;
+import eu.kalafatic.evolution.controller.orchestration.FileChangeTracker;
 import eu.kalafatic.evolution.controller.orchestration.FileReference;
+import eu.kalafatic.evolution.controller.orchestration.util.FileFilterUtil;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.GitManager;
 import eu.kalafatic.evolution.model.orchestration.ChatSession;
 
 import eu.kalafatic.evolution.forge.data.impl.DatasetBuilder;
@@ -982,7 +986,7 @@ public class LLMDarwinEngine extends ADarwinEngine {
         if (workspacePathStr != null && !workspacePathStr.isEmpty()) {
             workspaceDir = new File(workspacePathStr);
         } else {
-            workspaceDir = context.getProjectRoot().getParentFile();
+            workspaceDir = context.getProjectRoot();
         }
 
         File forgeOutputDir = new File(workspaceDir, "forge-output/" + dynamicModelName);
@@ -1097,6 +1101,20 @@ public class LLMDarwinEngine extends ADarwinEngine {
 
         context.log("[FORGE] Saved winning model artifacts successfully to " + forgeOutputDir.getAbsolutePath());
 
+        // Record all created artifacts in FileChangeTracker
+        recordCreatedFile(evoFilePath.toFile());
+        recordCreatedFile(forgeOutputDir);
+
+        // Stage created files in Git if in a Git repository
+        try {
+            GitManager gitManager = iterationManager.getGitManager();
+            if (gitManager != null && gitManager.isGitRepository()) {
+                gitManager.getGitTool().execute("add .", context.getProjectRoot(), context);
+            }
+        } catch (Exception e) {
+            context.log("[FORGE] Warning staging generated files in git: " + e.getMessage());
+        }
+
         // Prepare Final Markdown Summary
         StringBuilder summaryBuilder = new StringBuilder();
         summaryBuilder.append("# Generation completed successfully!\n\n");
@@ -1127,24 +1145,50 @@ public class LLMDarwinEngine extends ADarwinEngine {
         summaryBuilder.append(String.format("- **Checkpoint Directory:** [checkpoint/](%s/checkpoint/)\n", uriPrefix));
         summaryBuilder.append(String.format("- **Training Report:** [training-report.json](%s/training-report.json)\n", uriPrefix));
 
+        FinalResponseAssembler assembler = new FinalResponseAssembler();
+        FinalResponse finalResponse = assembler.assemble(
+            context,
+            summaryBuilder.toString(),
+            true,
+            context.getStartTime()
+        );
+
         OrchestratorResponse response = new OrchestratorResponse();
         response.setResultType(ResultType.CHAT);
-
-        FinalResponse finalResponse = new FinalResponse(
-            summaryBuilder.toString(),
-            new ArrayList<String>(),
-            new ArrayList<FileReference>(),
-            true,
-            null,
-            "Execution completed successfully.",
-            new ExecutionMetrics(context.getStartTime(), Instant.now())
-        );
         response.setFinalResponse(finalResponse);
 
         iterationManager.transition(SystemState.DONE, context);
         EvolutionProgressPublisher.completeIteration(context);
 
         return response;
+    }
+
+    private void recordCreatedFile(File file) {
+        if (file == null || !file.exists()) return;
+        if (file.isDirectory()) {
+            File[] children = file.listFiles();
+            if (children != null) {
+                for (File child : children) {
+                    recordCreatedFile(child);
+                }
+            }
+            return;
+        }
+        try {
+            Path projectPath = context.getProjectRoot().toPath().toAbsolutePath().normalize();
+            Path filePath = file.toPath().toAbsolutePath().normalize();
+            String relPath;
+            if (filePath.startsWith(projectPath)) {
+                relPath = projectPath.relativize(filePath).toString().replace('\\', '/');
+            } else {
+                relPath = projectPath.relativize(filePath).toString().replace('\\', '/');
+            }
+            if (!FileFilterUtil.isSystemFile(relPath)) {
+                context.getFileChangeTracker().recordChange(relPath, FileChangeTracker.ChangeType.NEW);
+            }
+        } catch (Exception e) {
+            context.log("[FORGE] Warning recording file change for " + file + ": " + e.getMessage());
+        }
     }
 
     /**
