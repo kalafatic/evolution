@@ -98,6 +98,7 @@ public class LLMDarwinEngine extends ADarwinEngine {
         public int embeddingSize;
         public int layers;
         public int heads;
+        public int dff;
         public int maxSeqLen;
         public int epochs;
 
@@ -107,11 +108,12 @@ public class LLMDarwinEngine extends ADarwinEngine {
         public int topK;
         public float repeatPenalty;
 
-        public LlmConfig(int vocabSize, int embeddingSize, int layers, int heads, int maxSeqLen, int epochs) {
+        public LlmConfig(int vocabSize, int embeddingSize, int layers, int heads, int dff, int maxSeqLen, int epochs) {
             this.vocabSize = vocabSize;
             this.embeddingSize = embeddingSize;
             this.layers = layers;
             this.heads = heads;
+            this.dff = dff > embeddingSize ? dff : embeddingSize * 4;
             this.maxSeqLen = maxSeqLen;
             this.epochs = epochs;
 
@@ -122,9 +124,13 @@ public class LLMDarwinEngine extends ADarwinEngine {
             this.repeatPenalty = Math.max(1.0f, Math.min(2.0f, 1.0f + (float) layers * 0.05f));
         }
 
+        public LlmConfig(int vocabSize, int embeddingSize, int layers, int heads, int maxSeqLen, int epochs) {
+            this(vocabSize, embeddingSize, layers, heads, embeddingSize * 4, maxSeqLen, epochs);
+        }
+
         // Keep original constructor for compatibility
         public LlmConfig(int vocabSize, int embeddingSize, int layers, int heads) {
-            this(vocabSize, embeddingSize, layers, heads, 128, 8);
+            this(vocabSize, embeddingSize, layers, heads, embeddingSize * 4, 128, 8);
         }
 
         public int getMaxSeqLen() {
@@ -133,8 +139,8 @@ public class LLMDarwinEngine extends ADarwinEngine {
 
         @Override
         public String toString() {
-            return String.format("Vocab: %d, Embed: %d, Layers: %d, Heads: %d, SeqLen: %d, Epochs: %d | Temp: %.2f, TopP: %.2f, TopK: %d, RepPen: %.2f",
-                vocabSize, embeddingSize, layers, heads, maxSeqLen, epochs, temperature, topP, topK, repeatPenalty);
+            return String.format("Vocab: %d, Embed: %d, Layers: %d, Heads: %d, DFF: %d, SeqLen: %d, Epochs: %d | Temp: %.2f, TopP: %.2f, TopK: %d, RepPen: %.2f",
+                vocabSize, embeddingSize, layers, heads, dff, maxSeqLen, epochs, temperature, topP, topK, repeatPenalty);
         }
     }
 
@@ -143,7 +149,7 @@ public class LLMDarwinEngine extends ADarwinEngine {
      */
     public static LlmConfig copyConfig(LlmConfig source) {
         if (source == null) return null;
-        LlmConfig copy = new LlmConfig(source.vocabSize, source.embeddingSize, source.layers, source.heads, source.maxSeqLen, source.epochs);
+        LlmConfig copy = new LlmConfig(source.vocabSize, source.embeddingSize, source.layers, source.heads, source.dff, source.maxSeqLen, source.epochs);
         copy.temperature = source.temperature;
         copy.topP = source.topP;
         copy.topK = source.topK;
@@ -248,6 +254,7 @@ public class LLMDarwinEngine extends ADarwinEngine {
         int layers = Math.max(1, Math.min(128, candidate.layers));
         int maxSeqLen = Math.max(64, Math.min(65536, candidate.maxSeqLen));
         int epochs = Math.max(1, Math.min(100, candidate.epochs));
+        int dff = candidate.dff > embeddingSize ? candidate.dff : embeddingSize * 4;
 
         // Find nearest supported head count that perfectly divides embeddingSize
         int bestHead = 8;
@@ -277,14 +284,14 @@ public class LLMDarwinEngine extends ADarwinEngine {
             }
         }
 
-        LlmConfig normalized = new LlmConfig(vocabSize, embeddingSize, layers, bestHead, maxSeqLen, epochs);
+        LlmConfig normalized = new LlmConfig(vocabSize, embeddingSize, layers, bestHead, dff, maxSeqLen, epochs);
         normalized.temperature = Math.max(0.1f, Math.min(1.5f, candidate.temperature));
         normalized.topP = Math.max(0.1f, Math.min(1.0f, candidate.topP));
         normalized.topK = Math.max(10, Math.min(100, candidate.topK));
         normalized.repeatPenalty = Math.max(1.0f, Math.min(2.0f, candidate.repeatPenalty));
 
         if (normalized.vocabSize != candidate.vocabSize || normalized.embeddingSize != candidate.embeddingSize ||
-            normalized.layers != candidate.layers || normalized.heads != candidate.heads ||
+            normalized.layers != candidate.layers || normalized.heads != candidate.heads || normalized.dff != candidate.dff ||
             normalized.maxSeqLen != candidate.maxSeqLen || normalized.epochs != candidate.epochs) {
             context.log(String.format("[FORGE] Normalized config: %s -> %s", candidate.toString(), normalized.toString()));
         }
@@ -567,23 +574,24 @@ public class LLMDarwinEngine extends ADarwinEngine {
         int pEmbedSize = selectedPreset.getDModel() > 0 ? selectedPreset.getDModel() : 384;
         int pLayers = selectedPreset.getNumBlocks() > 0 ? selectedPreset.getNumBlocks() : 6;
         int pHeads = selectedPreset.getNumHeads() > 0 ? selectedPreset.getNumHeads() : 8;
+        int pDff = selectedPreset.getDff() > 0 ? selectedPreset.getDff() : 1024;
         int pMaxSeqLen = selectedPreset.getMaxSeqLen() > 0 ? selectedPreset.getMaxSeqLen() : 128;
         int pEpochs = 4;
 
-        context.log(String.format("[FORGE] Model size preset selected: %s (%s) -> Vocab: %d, Embed: %d, Layers: %d, Heads: %d, MaxSeqLen: %d",
-            selectedPreset.name(), selectedPreset.getDisplayName(), pVocabSize, pEmbedSize, pLayers, pHeads, pMaxSeqLen));
+        context.log(String.format("[FORGE] Model size preset selected: %s (%s) -> Vocab: %d, Embed: %d, Layers: %d, Heads: %d, DFF: %d, MaxSeqLen: %d",
+            selectedPreset.name(), selectedPreset.getDisplayName(), pVocabSize, pEmbedSize, pLayers, pHeads, pDff, pMaxSeqLen));
 
         // Initial Candidates based on selected preset
         List<LlmConfig> candidates = new ArrayList<>();
         if (forceSolution) {
-            LlmConfig fastConfig = new LlmConfig(pVocabSize, pEmbedSize, pLayers, pHeads, pMaxSeqLen, 1);
+            LlmConfig fastConfig = new LlmConfig(pVocabSize, pEmbedSize, pLayers, pHeads, pDff, pMaxSeqLen, 1);
             candidates.add(fastConfig);
         } else {
             int expansionValue = getExpansionValue();
             int branchingLimit = (expansionValue > 5) ? 2 : 1;
-            candidates.add(new LlmConfig(pVocabSize, pEmbedSize, pLayers, pHeads, pMaxSeqLen, pEpochs));
+            candidates.add(new LlmConfig(pVocabSize, pEmbedSize, pLayers, pHeads, pDff, pMaxSeqLen, pEpochs));
             if (branchingLimit >= 2) {
-                candidates.add(new LlmConfig(pVocabSize, pEmbedSize, pLayers + 1, pHeads, pMaxSeqLen, pEpochs));
+                candidates.add(new LlmConfig(pVocabSize, pEmbedSize, pLayers + 1, pHeads, pDff, pMaxSeqLen, pEpochs));
             }
         }
 
@@ -1004,8 +1012,8 @@ public class LLMDarwinEngine extends ADarwinEngine {
         }
 
         // Build final model and save configuration & tokenizer
-        int dff = overallWinner.config.embeddingSize * 4;
-        EvoLlmModel winningModel = new EvoLlmModel(finalTokenizer.getVocabSize(), overallWinner.config.embeddingSize, overallWinner.config.heads, overallWinner.config.layers, dff, finalSeqLen);
+        int dff = overallWinner.config.dff;
+        EvoLlmModel winningModel = new EvoLlmModel(overallWinner.config.vocabSize, overallWinner.config.embeddingSize, overallWinner.config.heads, overallWinner.config.layers, dff, finalSeqLen);
 
         EvoLlmTrainer trainer = new EvoLlmTrainer(winningModel);
         trainer.setProgressListener((epoch, totalEpochs, sampleIndex, totalSamples, currentLoss) -> {
@@ -1182,8 +1190,8 @@ public class LLMDarwinEngine extends ADarwinEngine {
             trainSamples = new ArrayList<>(samples.subList(0, trainCount));
             valSamples = new ArrayList<>(samples.subList(trainCount, totalCount));
 
-            int dff = config.embeddingSize * 4;
-            model = new EvoLlmModel(tokenizer.getVocabSize(), config.embeddingSize, config.heads, config.layers, dff, seqLen);
+            int dff = config.dff;
+            model = new EvoLlmModel(config.vocabSize, config.embeddingSize, config.heads, config.layers, dff, seqLen);
 
             long paramCount = 0;
             for (Tensor p : model.parameters()) {
@@ -1305,6 +1313,7 @@ public class LLMDarwinEngine extends ADarwinEngine {
         int embeddingSize = winner.embeddingSize;
         int layers = winner.layers;
         int heads = winner.heads;
+        int dff = winner.dff;
         int maxSeqLen = winner.maxSeqLen;
         int epochs = winner.epochs;
 
@@ -1316,6 +1325,7 @@ public class LLMDarwinEngine extends ADarwinEngine {
             case 1:
                 embeddingSize = Math.max(64, embeddingSize + (random.nextBoolean() ? 64 : -64));
                 vocabSize = Math.max(500, vocabSize + (random.nextBoolean() ? 500 : -500));
+                dff = embeddingSize * 4;
                 break;
             case 2:
                 layers = Math.max(1, layers + (random.nextBoolean() ? 1 : -1));
@@ -1327,7 +1337,7 @@ public class LLMDarwinEngine extends ADarwinEngine {
                 break;
         }
 
-        LlmConfig mutated = new LlmConfig(vocabSize, embeddingSize, layers, heads, maxSeqLen, epochs);
+        LlmConfig mutated = new LlmConfig(vocabSize, embeddingSize, layers, heads, dff, maxSeqLen, epochs);
         mutated = normalizeCandidateConfig(mutated);
 
         // Evolve derived Ollama parameters with deltas for active exploration
