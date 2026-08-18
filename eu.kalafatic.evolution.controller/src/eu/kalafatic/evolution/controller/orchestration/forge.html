@@ -673,6 +673,7 @@
                     <div style="display: flex; flex-direction: column; gap: 4px; font-size: 0.85em; margin-top: 4px;">
                         <label><input type="checkbox" id="collector-project" checked onchange="persistUiState('collector_project', this.checked)"> Project Source Tree</label>
                         <label><input type="checkbox" id="collector-disk" onchange="persistUiState('collector_disk', this.checked)"> External Disk Paths</label>
+                        <label><input type="checkbox" id="collector-pdf" checked onchange="persistUiState('collector_pdf', this.checked)"> PDF Documents</label>
                         <label><input type="checkbox" id="collector-mcp" onchange="persistUiState('collector_mcp', this.checked)"> MCP Tools / Sources</label>
                         <label><input type="checkbox" id="collector-internet" onchange="persistUiState('collector_internet', this.checked)"> Internet Technical Content</label>
                     </div>
@@ -1141,6 +1142,7 @@
                 if (document.getElementById('source-markdown')) {
                     document.getElementById('collector-project').checked = uiState.collector_project !== false;
                     document.getElementById('collector-disk').checked = !!uiState.collector_disk;
+                    document.getElementById('collector-pdf').checked = uiState.collector_pdf !== false;
                     document.getElementById('collector-mcp').checked = !!uiState.collector_mcp;
                     document.getElementById('collector-internet').checked = !!uiState.collector_internet;
 

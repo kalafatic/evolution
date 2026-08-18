@@ -6,6 +6,7 @@ package eu.kalafatic.evolution.forge.data.api.collector;
 public enum CollectorType {
     PROJECT,
     DISK,
+    PDF,
     MCP,
     INTERNET,
     GIT,

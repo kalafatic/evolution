@@ -23,6 +23,7 @@ import eu.kalafatic.evolution.forge.data.impl.collector.DataPreparationPipeline;
 import eu.kalafatic.evolution.forge.data.impl.collector.DiskDataCollector;
 import eu.kalafatic.evolution.forge.data.impl.collector.InternetDataCollector;
 import eu.kalafatic.evolution.forge.data.impl.collector.MCPDataCollector;
+import eu.kalafatic.evolution.forge.data.impl.collector.PdfDataCollector;
 import eu.kalafatic.evolution.forge.data.impl.collector.ProjectDataCollector;
 import eu.kalafatic.evolution.forge.data.impl.collector.TrainingDataCollectorManager;
 
@@ -87,6 +88,39 @@ public class TrainingDataCollectorsTest {
         assertEquals("java", itemJava.getMetadata().get("language"));
         assertEquals("eu.kalafatic", itemJava.getMetadata().get("package"));
         assertEquals("Bar", itemJava.getMetadata().get("symbol"));
+    }
+
+    @Test
+    public void testPdfDataCollector() throws Exception {
+        PdfDataCollector collector = new PdfDataCollector();
+        assertEquals(CollectorType.PDF, collector.getType());
+        assertEquals("PDF Data Collector", collector.getName());
+
+        Path pdfFile = tempProjectDir.resolve("doc.pdf");
+        String dummyPdfContent =
+            "%PDF-1.4\n" +
+            "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n" +
+            "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n" +
+            "3 0 obj\n<< /Type /Page /Parent 2 0 R /Contents 4 0 R >>\nendobj\n" +
+            "4 0 obj\n<< /Length 55 >>\nstream\n" +
+            "BT\n" +
+            "(EVO Architecture PDF Documentation) Tj\n" +
+            "ET\n" +
+            "endstream\nendobj\n" +
+            "trailer\n<< /Root 1 0 R >>\n%%EOF";
+        Files.writeString(pdfFile, dummyPdfContent);
+
+        CollectionContext context = new CollectionContext();
+        context.setProjectDirectory(tempProjectDir.toFile());
+
+        CollectionResult result = collector.collect(context);
+        assertEquals(CollectionResult.Status.SUCCESS, result.getStatus());
+        assertEquals(1, result.getItems().size());
+
+        TrainingDataItem item = result.getItems().get(0);
+        assertEquals(SourceType.PDF, item.getSourceType());
+        assertEquals("doc.pdf", item.getTitle());
+        assertTrue(item.getContent().contains("EVO Architecture PDF Documentation"));
     }
 
     @Test
