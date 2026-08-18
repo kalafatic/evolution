@@ -5,4 +5,6 @@ Bundle-SymbolicName: eu.kalafatic.evolution.forge.data
 Bundle-Version: 2.6.5.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-21
 Export-Package: eu.kalafatic.evolution.forge.data.api,
- eu.kalafatic.evolution.forge.data.impl
+ eu.kalafatic.evolution.forge.data.api.collector,
+ eu.kalafatic.evolution.forge.data.impl,
+ eu.kalafatic.evolution.forge.data.impl.collector
