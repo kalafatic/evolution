@@ -210,17 +210,28 @@ public class LlamaCppRunner {
             Process p = pb.start();
             
             StringBuilder output = new StringBuilder();
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    output.append(line).append("\n");
-                    if (line.contains("llama_model_loader")) {
-                        System.out.println("[LlamaCpp] " + line);
+            Thread readerThread = new Thread(() -> {
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        output.append(line).append("\n");
+                        if (line.contains("llama_model_loader")) {
+                            System.out.println("[LlamaCpp] " + line);
+                        }
                     }
-                }
+                } catch (IOException ignored) {}
+            });
+            readerThread.setDaemon(true);
+            readerThread.start();
+
+            boolean finished = p.waitFor(15, TimeUnit.SECONDS);
+            if (!finished) {
+                p.destroyForcibly();
+                System.err.println("[LlamaCpp] Validation timed out after 15s");
+                return false;
             }
             
-            int exitCode = p.waitFor();
+            int exitCode = p.exitValue();
             boolean isValid = exitCode == 0 && output.toString().contains("llama_model_loader");
             
             if (isValid) {
@@ -281,14 +292,24 @@ public class LlamaCppRunner {
         Process p = pb.start();
         
         StringBuilder output = new StringBuilder();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                output.append(line).append("\n");
-            }
+        Thread readerThread = new Thread(() -> {
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    output.append(line).append("\n");
+                }
+            } catch (IOException ignored) {}
+        });
+        readerThread.setDaemon(true);
+        readerThread.start();
+
+        boolean finished = p.waitFor(30, TimeUnit.SECONDS);
+        if (!finished) {
+            p.destroyForcibly();
+            throw new IOException("llama-cli execution timed out after 30s");
         }
         
-        int exitCode = p.waitFor();
+        int exitCode = p.exitValue();
         if (exitCode != 0) {
             throw new IOException("llama-cli failed with exit code: " + exitCode + "\nOutput: " + output.toString().trim());
         }
@@ -315,13 +336,22 @@ public class LlamaCppRunner {
         Process p = pb.start();
         
         StringBuilder output = new StringBuilder();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                output.append(line).append("\n");
-            }
+        Thread readerThread = new Thread(() -> {
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    output.append(line).append("\n");
+                }
+            } catch (IOException ignored) {}
+        });
+        readerThread.setDaemon(true);
+        readerThread.start();
+
+        boolean finished = p.waitFor(15, TimeUnit.SECONDS);
+        if (!finished) {
+            p.destroyForcibly();
+            throw new IOException("llama-cli getModelInfo timed out after 15s");
         }
-        p.waitFor();
         
         return output.toString();
     }
