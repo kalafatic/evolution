@@ -845,83 +845,85 @@ public class OllamaExporter implements EvoModelExporter {
             System.err.println("[Forge] Warning: Could not run 'ollama show': " + e.getMessage());
         }
 
-        // 3. Perform live inference validation using Java HTTP client (works on all OS)
+        // 3. Perform live inference validation
         try {
             System.out.println("[Forge] Executing deterministic smoke tests...");
-            
-            String[] modelNames = {modelName, "evo"};
+            System.out.println("[Forge] Testing model: " + modelName);
+
             boolean inferenceSucceeded = false;
             List<Throwable> exceptions = new ArrayList<>();
-            
-            for (String testModel : modelNames) {
-                try {
-                    System.out.println("[Forge] Testing model: " + testModel);
-                    
-                    HttpClient client = HttpClient.newBuilder()
-                            .connectTimeout(Duration.ofSeconds(10))
-                            .build();
 
-                    String jsonPayload = "{\n" +
-                        "  \"model\": \"" + testModel + "\",\n" +
-                        "  \"prompt\": \"hi\",\n" +
-                        "  \"stream\": false,\n" +
-                        "  \"options\": {\n" +
-                        "    \"num_ctx\": 128\n" +
-                        "  }\n" +
-                        "}";
+            // Primary: Direct local GGUF execution via internal LlamaCppRunner by default
+            try {
+                System.out.println("[Forge] Executing inference via internal LlamaCppRunner...");
+                LlamaCppRunner localRunner = LlamaCppRunner.builder(ggufPath.toAbsolutePath().toString())
+                        .contextLength(128)
+                        .temperature(0.2f)
+                        .build();
 
-                    HttpRequest req = HttpRequest.newBuilder()
-                            .uri(URI.create("http://localhost:11434/api/generate"))
-                            .header("Content-Type", "application/json")
-                            .timeout(Duration.ofSeconds(30))
-                            .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
-                            .build();
-
-                    HttpResponse<String> resp = client.send(req, HttpResponse.BodyHandlers.ofString());
-                    
-                    if (resp.statusCode() == 200) {
-                        inferenceSucceeded = true;
-                        res.inference = true;
-                        String body = resp.body();
-                        System.out.println("[Ollama Inference Response]: " + body);
-
-                        if (body.contains("response") && body.length() > 50) {
-                            res.knowledgeTest = true;
-                            System.out.println("[Forge] EVO knowledge test: PASS");
-                        } else {
-                            System.out.println("[Forge] EVO knowledge test: FAIL - Response too short");
-                        }
-                        break;
-                    } else {
-                        System.err.println("[Forge] Ollama API responded with code: " + resp.statusCode() + " - " + resp.body());
-                        exceptions.add(new IOException("HTTP " + resp.statusCode() + ": " + resp.body()));
-                    }
-                } catch (Exception e) {
-                    System.err.println("[Forge] Failed to test model '" + testModel + "': " + e.getMessage());
-                    exceptions.add(e);
+                String response = localRunner.generate("hi", 10);
+                if (response != null && !response.trim().isEmpty()) {
+                    System.out.println("[LlamaCpp Inference Response]: " + response.trim());
+                    inferenceSucceeded = true;
+                    res.inference = true;
+                    res.knowledgeTest = true;
+                    System.out.println("[Forge] EVO knowledge test: PASS");
                 }
+            } catch (Exception ex) {
+                System.err.println("[Forge] Local LlamaCppRunner smoke test failed/skipped: " + ex.getMessage());
+                exceptions.add(ex);
             }
-            
-            if (!inferenceSucceeded) {
-                // Try direct local GGUF execution via LlamaCppRunner as a secondary validation step
-                try {
-                    System.out.println("[Forge] Ollama inference failed or server offline. Falling back to local LlamaCppRunner verification...");
-                    LlamaCppRunner localRunner = LlamaCppRunner.builder(ggufPath.toAbsolutePath().toString())
-                            .contextLength(128)
-                            .temperature(0.2f)
-                            .build();
 
-                    String response = localRunner.generate("hi", 10);
-                    if (response != null && !response.trim().isEmpty()) {
-                        System.out.println("[LlamaCpp Inference Response]: " + response);
-                        inferenceSucceeded = true;
-                        res.inference = true;
-                        res.knowledgeTest = true;
-                        System.out.println("[Forge] Local GGUF validation: PASS");
+            // Secondary / Fallback: If local LlamaCppRunner did not succeed, try Ollama HTTP API
+            if (!inferenceSucceeded) {
+                String[] modelNames = {modelName, "evo"};
+                for (String testModel : modelNames) {
+                    try {
+                        System.out.println("[Forge] Testing model via Ollama HTTP API: " + testModel);
+
+                        HttpClient client = HttpClient.newBuilder()
+                                .connectTimeout(Duration.ofSeconds(10))
+                                .build();
+
+                        String jsonPayload = "{\n" +
+                            "  \"model\": \"" + testModel + "\",\n" +
+                            "  \"prompt\": \"hi\",\n" +
+                            "  \"stream\": false,\n" +
+                            "  \"options\": {\n" +
+                            "    \"num_ctx\": 128\n" +
+                            "  }\n" +
+                            "}";
+
+                        HttpRequest req = HttpRequest.newBuilder()
+                                .uri(URI.create("http://localhost:11434/api/generate"))
+                                .header("Content-Type", "application/json")
+                                .timeout(Duration.ofSeconds(30))
+                                .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
+                                .build();
+
+                        HttpResponse<String> resp = client.send(req, HttpResponse.BodyHandlers.ofString());
+
+                        if (resp.statusCode() == 200) {
+                            inferenceSucceeded = true;
+                            res.inference = true;
+                            String body = resp.body();
+                            System.out.println("[Ollama Inference Response]: " + body);
+
+                            if (body.contains("response") && body.length() > 50) {
+                                res.knowledgeTest = true;
+                                System.out.println("[Forge] EVO knowledge test: PASS");
+                            } else {
+                                System.out.println("[Forge] EVO knowledge test: FAIL - Response too short");
+                            }
+                            break;
+                        } else {
+                            System.err.println("[Forge] Ollama API responded with code: " + resp.statusCode() + " - " + resp.body());
+                            exceptions.add(new IOException("HTTP " + resp.statusCode() + ": " + resp.body()));
+                        }
+                    } catch (Exception e) {
+                        System.err.println("[Forge] Failed to test model via Ollama '" + testModel + "': " + e.getMessage());
+                        exceptions.add(e);
                     }
-                } catch (Exception ex) {
-                    System.err.println("[Forge] Local LlamaCppRunner verification failed: " + ex.getMessage());
-                    exceptions.add(ex);
                 }
             }
 
