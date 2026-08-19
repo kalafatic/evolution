@@ -107,20 +107,26 @@ public class LlamaCppRunner {
         
         // 2. Fallback: Try filesystem search paths
         if (cliPath == null) {
-            String[] searchPaths = {
-                LLAMA_CPP_DIR + "/" + osDir + "/" + cliName,
-                LLAMA_CPP_DIR + "/linux/" + cliName,
-                LLAMA_CPP_DIR + "/win/" + cliName,
-                LLAMA_CPP_DIR + "/" + cliName,
-                System.getProperty("user.dir") + "/eu.kalafatic.evolution.controller/lib/llama-cpp/" + osDir + "/" + cliName,
-                System.getProperty("user.dir") + "/eu.kalafatic.evolution.controller/lib/llama-cpp/linux/" + cliName,
-                System.getProperty("user.dir") + "/eu.kalafatic.evolution.controller/lib/llama-cpp/win/" + cliName,
-                System.getProperty("user.dir") + "/eu.kalafatic.evolution.forge.agent.api/lib/llama-cpp/" + osDir + "/" + cliName,
-                System.getProperty("user.home") + "/llama.cpp/" + cliName,
-                System.getProperty("user.home") + "/llama.cpp/build/bin/" + cliName,
-                "/usr/local/bin/llama-cli",
-                "/usr/bin/llama-cli"
-            };
+            String codebasePath = getCodebasePathViaReflection();
+            List<String> searchPaths = new ArrayList<>();
+            if (codebasePath != null) {
+                searchPaths.add(codebasePath + "/eu.kalafatic.evolution.controller/lib/llama-cpp/" + osDir + "/" + cliName);
+                searchPaths.add(codebasePath + "/eu.kalafatic.evolution.controller/lib/llama-cpp/linux/" + cliName);
+                searchPaths.add(codebasePath + "/eu.kalafatic.evolution.controller/lib/llama-cpp/win/" + cliName);
+                searchPaths.add(codebasePath + "/lib/llama-cpp/" + osDir + "/" + cliName);
+            }
+            searchPaths.add(LLAMA_CPP_DIR + "/" + osDir + "/" + cliName);
+            searchPaths.add(LLAMA_CPP_DIR + "/linux/" + cliName);
+            searchPaths.add(LLAMA_CPP_DIR + "/win/" + cliName);
+            searchPaths.add(LLAMA_CPP_DIR + "/" + cliName);
+            searchPaths.add(System.getProperty("user.dir") + "/eu.kalafatic.evolution.controller/lib/llama-cpp/" + osDir + "/" + cliName);
+            searchPaths.add(System.getProperty("user.dir") + "/eu.kalafatic.evolution.controller/lib/llama-cpp/linux/" + cliName);
+            searchPaths.add(System.getProperty("user.dir") + "/eu.kalafatic.evolution.controller/lib/llama-cpp/win/" + cliName);
+            searchPaths.add(System.getProperty("user.dir") + "/eu.kalafatic.evolution.forge.agent.api/lib/llama-cpp/" + osDir + "/" + cliName);
+            searchPaths.add(System.getProperty("user.home") + "/llama.cpp/" + cliName);
+            searchPaths.add(System.getProperty("user.home") + "/llama.cpp/build/bin/" + cliName);
+            searchPaths.add("/usr/local/bin/llama-cli");
+            searchPaths.add("/usr/bin/llama-cli");
 
             for (String path : searchPaths) {
                 if (Files.exists(Paths.get(path))) {
@@ -145,6 +151,20 @@ public class LlamaCppRunner {
         }
         
         initialized = true;
+    }
+
+    private String getCodebasePathViaReflection() {
+        try {
+            Class<?> clazz = Class.forName("eu.kalafatic.evolution.controller.manager.ProjectModelManager");
+            return (String) clazz.getMethod("getCodebasePath").invoke(null);
+        } catch (Throwable t1) {
+            try {
+                Class<?> clazz = Class.forName("eu.kalafatic.evolution.view.provider.ProjectManager");
+                return (String) clazz.getMethod("getCodebasePath").invoke(null);
+            } catch (Throwable t2) {
+                return null;
+            }
+        }
     }
 
     private String resolveFromOsgiBundle(String osDir, String cliName) {
