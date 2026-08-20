@@ -4,742 +4,418 @@ import eu.kalafatic.evolution.forge.math.api.Tensor;
 import eu.kalafatic.evolution.forge.math.core.SimpleTensor;
 
 import java.io.*;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 /**
- * Self-contained native EVO model artifact.
- * Holds architectural configuration, tokenizer state, sampling parameters,
- * and handles weight saving/loading independently of any external framework.
+ * EvoModelArtifact - Complete portable model artifact with full vocabulary preservation
+ * 
+ * This class stores:
+ * 1. Model architecture configuration
+ * 2. All model weights (tensors)
+ * 3. Full tokenizer vocabulary (bidirectional mapping)
+ * 4. Inference parameters (temperature, topP, etc.)
  */
 public class EvoModelArtifact {
-
-    // Magic headers for structural safety & validation
-    private static final byte[] MAGIC = "EVO".getBytes();
-    private static final short WEIGHTS_VERSION = 1;
-
-    // Manifest / Metadata Keys
-    private String format = "EVO_NATIVE";
-    private int formatVersion = 1;
-    private String modelName = "evo-unnamed";
-    private String architecture = "EVO_LLM";
-    private long creationTimestamp = System.currentTimeMillis();
-
-    // Architectural Configuration
-    private EvoLlmArchitecture archConfig;
-
-    // Sampling Configuration
-    private float temperature = 0.2f;
+    
+    // ============ CORE FIELDS ============
+    private String modelName;
+    private String modelVersion = "1.0.0";
+    private long createdAt;
+    
+    // Architecture
+    private int vocabSize;
+    private int dModel;
+    private int numHeads;
+    private int numBlocks;
+    private int dff;
+    private int maxSeqLen;
+    
+    // Vocabulary (BIDIRECTIONAL - CRITICAL FOR EXPORT!)
+    private Map<Integer, String> idToToken;  // Token ID -> Token string
+    private Map<String, Integer> tokenToId;   // Token string -> Token ID
+    
+    // Special tokens
+    private int bosTokenId = 1;
+    private int eosTokenId = 2;
+    private int unkTokenId = 0;
+    private int padTokenId = 0;
+    
+    // Model weights (flattened)
+    private List<float[]> weightData;
+    private List<long[]> weightShapes;
+    private List<String> weightNames;
+    
+    // Inference parameters
+    private float temperature = 0.7f;
     private float topP = 0.9f;
     private int topK = 40;
     private float repeatPenalty = 1.1f;
-
-    // Tokenizer Artifact
-    private EvoTokenizerArtifact tokenizerArtifact = new EvoTokenizerArtifact();
-
-    // Trained weights/parameters
-    private List<Tensor> weights = new ArrayList<>();
-
-    // Empty constructor
-    public EvoModelArtifact() {}
-
-    /**
-     * Reconstructs an EvoLlmModel instance using the exact persisted architecture and weights.
-     */
-    public EvoLlmModel createModel() {
-        validateModelIntegrity();
-        EvoLlmModel model = new EvoLlmModel(archConfig);
-
-        // Strict invariant check: recreated model architecture MUST match artifact architecture
-        if (!archConfig.equals(model.getArchitecture())) {
-            throw new IllegalStateException("Architecture invariant violation: artifact architecture "
-                    + archConfig + " does not match recreated model architecture " + model.getArchitecture());
-        }
-
-        List<Tensor> modelParams = model.parameters();
-        if (modelParams.size() != weights.size()) {
-            throw new IllegalStateException("Tensor count mismatch: Model expected " + modelParams.size() 
-                    + " tensors, but artifact has " + weights.size());
-        }
-        for (int i = 0; i < modelParams.size(); i++) {
-            Tensor target = modelParams.get(i);
-            Tensor src = weights.get(i);
-            if (!Arrays.equals(target.getShape(), src.getShape())) {
-                throw new IllegalStateException("Tensor shape mismatch at index " + i + ". Expected: " 
-                        + Arrays.toString(target.getShape()) + ", Found: " + Arrays.toString(src.getShape()));
-            }
-            System.arraycopy(src.getData(), 0, target.getData(), 0, src.getData().length);
-        }
-        return model;
+    private float frequencyPenalty = 0.0f;
+    private float presencePenalty = 0.0f;
+    
+    // Metadata
+    private Map<String, String> metadata = new HashMap<>();
+    
+    // ============ CONSTRUCTORS ============
+    public EvoModelArtifact() {
+        this.createdAt = System.currentTimeMillis();
+        this.idToToken = new LinkedHashMap<>();
+        this.tokenToId = new LinkedHashMap<>();
+        this.weightData = new ArrayList<>();
+        this.weightShapes = new ArrayList<>();
+        this.weightNames = new ArrayList<>();
     }
-
-    /**
-     * Initializes the artifact from an active model and its tokenizer mappings.
-     */
-    public void initializeFromModel(String modelName, EvoLlmModel model, Map<String, Integer> vocab) {
-        this.modelName = modelName;
-        this.archConfig = model.getArchitecture();
-
-        EvoTokenizerArtifact tokArtifact = new EvoTokenizerArtifact("SimpleBPE", vocab, 1, 2, 3, 0);
-        tokArtifact.padToSize(this.archConfig.getVocabSize());
-        this.tokenizerArtifact = tokArtifact;
+    
+    // ============ INITIALIZATION ============
+    public void initializeFromModel(String name, EvoLlmModel model, Map<String, Integer> tokenizerVocab) {
+        this.modelName = name;
+        this.vocabSize = model.getVocabSize();
+        this.dModel = model.getDModel();
+        this.numHeads = model.getNumHeads();
+        this.numBlocks = model.getNumBlocks();
+        this.dff = model.getDff();
+        this.maxSeqLen = model.getMaxSeqLen();
         
-        this.weights = new ArrayList<>();
-        long totalParams = 0;
-        for (Tensor p : model.parameters()) {
-            float[] dataCopy = new float[p.getData().length];
-            System.arraycopy(p.getData(), 0, dataCopy, 0, p.getData().length);
-            this.weights.add(new SimpleTensor(p.getShape(), dataCopy));
-            totalParams += p.getData().length;
+        // Initialize vocabulary (bidirectional)
+        this.tokenToId = new LinkedHashMap<>(tokenizerVocab);
+        this.idToToken = new LinkedHashMap<>();
+        for (Map.Entry<String, Integer> entry : tokenizerVocab.entrySet()) {
+            this.idToToken.put(entry.getValue(), entry.getKey());
         }
+        
+        // Ensure special tokens exist
+        ensureSpecialTokens();
+        
+        // Extract weights
+        this.weightData.clear();
+        this.weightShapes.clear();
+        this.weightNames.clear();
+        
+        for (Tensor t : model.parameters()) {
+            float[] data = t.getData().clone();
+            long[] shape = t.getShape().clone();
+            weightData.add(data);
+            weightShapes.add(shape);
+            weightNames.add(generateWeightName(weightData.size() - 1));
+        }
+        
+        this.metadata.put("created_at", String.valueOf(createdAt));
+        this.metadata.put("model_type", "evo_llm");
     }
-
-    public void initializeFromModel(String modelName, EvoLlmModel model, EvoTokenizerArtifact tokenizer) {
-        this.modelName = modelName;
-        this.archConfig = model.getArchitecture();
-
-        EvoTokenizerArtifact tokArtifact = tokenizer != null ? tokenizer : new EvoTokenizerArtifact();
-        tokArtifact.padToSize(this.archConfig.getVocabSize());
-        this.tokenizerArtifact = tokArtifact;
-
-        this.weights = new ArrayList<>();
-        long totalParams = 0;
-        for (Tensor p : model.parameters()) {
-            float[] dataCopy = new float[p.getData().length];
-            System.arraycopy(p.getData(), 0, dataCopy, 0, p.getData().length);
-            this.weights.add(new SimpleTensor(p.getShape(), dataCopy));
-            totalParams += p.getData().length;
-        }
-    }
-
-    /**
-     * Validates that all structural data is correctly filled and matches on-disk contents.
-     */
-    public void validateModelIntegrity() {
-        if (!"EVO_NATIVE".equals(format)) {
-            throw new IllegalArgumentException("Unsupported format: " + format);
-        }
-        if (formatVersion != 1) {
-            throw new IllegalArgumentException("Unsupported format version: " + formatVersion);
-        }
-        if (archConfig == null) {
-            throw new IllegalArgumentException("Missing architecture configuration in artifact.");
-        }
-        if (tokenizerArtifact == null || tokenizerArtifact.getVocab() == null || tokenizerArtifact.getVocab().isEmpty()) {
-            throw new IllegalArgumentException("Tokenizer artifact is missing or empty.");
-        }
-        if (tokenizerArtifact.getVocabSize() < archConfig.getVocabSize()) {
-            tokenizerArtifact.padToSize(archConfig.getVocabSize());
-        }
-        if (weights == null || weights.isEmpty()) {
-            throw new IllegalArgumentException("Weights list is missing or empty.");
-        }
-    }
-
-    /**
-     * Saves the native model artifact as a single unified package with .evo extension,
-     * or as a directory structure.
-     */
-    public EvoModelArtifact save(Path targetPath) throws IOException {
-        if (Files.isDirectory(targetPath)) {
-            saveDirectory(targetPath);
+    
+    private void ensureSpecialTokens() {
+        // Ensure BOS token
+        if (!tokenToId.containsKey("<s>")) {
+            tokenToId.put("<s>", bosTokenId);
+            idToToken.put(bosTokenId, "<s>");
         } else {
-            Path evoFile = targetPath;
-            if (!evoFile.getFileName().toString().toLowerCase().endsWith(".evo")) {
-                evoFile = evoFile.getParent().resolve(evoFile.getFileName().toString() + ".evo");
-            }
-            Path tempDir = Files.createTempDirectory("evo-artifact-zip");
-            try {
-                saveDirectory(tempDir);
-                packZip(tempDir, evoFile);
-            } finally {
-                deleteDirectory(tempDir.toFile());
-            }
+            bosTokenId = tokenToId.get("<s>");
         }
-        return this;
+        
+        // Ensure EOS token
+        if (!tokenToId.containsKey("</s>")) {
+            tokenToId.put("</s>", eosTokenId);
+            idToToken.put(eosTokenId, "</s>");
+        } else {
+            eosTokenId = tokenToId.get("</s>");
+        }
+        
+        // Ensure UNK token
+        if (!tokenToId.containsKey("<unk>")) {
+            tokenToId.put("<unk>", unkTokenId);
+            idToToken.put(unkTokenId, "<unk>");
+        } else {
+            unkTokenId = tokenToId.get("<unk>");
+        }
     }
-
-    private void saveDirectory(Path dir) throws IOException {
-        Files.createDirectories(dir);
-        validateModelIntegrity();
-
-        long parameterCount = getParameterCount();
-
-        // 1. Serialize model.json (the stable manifest file)
-        StringBuilder sb = new StringBuilder();
-        sb.append("{\n")
-                .append("  \"format\": \"").append(format).append("\",\n")
-                .append("  \"formatVersion\": ").append(formatVersion).append(",\n")
-                .append("  \"modelName\": \"").append(modelName).append("\",\n")
-                .append("  \"architecture\": \"").append(architecture).append("\",\n")
-                .append("  \"creationTimestamp\": ").append(creationTimestamp).append(",\n")
-                .append("  \"vocabSize\": ").append(archConfig.getVocabSize()).append(",\n")
-                .append("  \"embeddingSize\": ").append(archConfig.getDModel()).append(",\n")
-                .append("  \"layers\": ").append(archConfig.getNumBlocks()).append(",\n")
-                .append("  \"heads\": ").append(archConfig.getNumHeads()).append(",\n")
-                .append("  \"dff\": ").append(archConfig.getDff()).append(",\n")
-                .append("  \"maxSeqLen\": ").append(archConfig.getMaxSeqLen()).append(",\n")
-                .append("  \"parameterCount\": ").append(parameterCount).append(",\n")
-                .append("  \"temperature\": ").append(temperature).append(",\n")
-                .append("  \"top_p\": ").append(topP).append(",\n")
-                .append("  \"top_k\": ").append(topK).append(",\n")
-                .append("  \"repeat_penalty\": ").append(repeatPenalty).append("\n")
-                .append("}");
-        Files.writeString(dir.resolve("model.json"), sb.toString());
-
-        // 2. Also save config.json file for backward compatibility
-        StringBuilder configJson = new StringBuilder();
-        configJson.append("{\n")
-                .append("  \"vocabSize\": ").append(archConfig.getVocabSize()).append(",\n")
-                .append("  \"dModel\": ").append(archConfig.getDModel()).append(",\n")
-                .append("  \"numHeads\": ").append(archConfig.getNumHeads()).append(",\n")
-                .append("  \"numBlocks\": ").append(archConfig.getNumBlocks()).append(",\n")
-                .append("  \"dff\": ").append(archConfig.getDff()).append(",\n")
-                .append("  \"maxSeqLen\": ").append(archConfig.getMaxSeqLen()).append("\n")
-                .append("}");
-        Files.writeString(dir.resolve("config.json"), configJson.toString());
-
-        StringBuilder trainingJson = new StringBuilder();
-        trainingJson.append("{\n")
-                .append("  \"epoch\": 1,\n")
-                .append("  \"loss\": 0.0\n")
-                .append("}");
-        Files.writeString(dir.resolve("training.json"), trainingJson.toString());
-
-        // 3. Serialize tokenizer.json (complete vocabulary / token mappings state)
-        Map<String, Integer> tokVocab = tokenizerArtifact.getVocab();
-        StringBuilder tokBuilder = new StringBuilder();
-        tokBuilder.append("{\n")
-                .append("  \"type\": \"").append(tokenizerArtifact.getTokenizerType()).append("\",\n")
-                .append("  \"vocabSize\": ").append(tokenizerArtifact.getVocabSize()).append(",\n")
-                .append("  \"unkId\": ").append(tokenizerArtifact.getUnkId()).append(",\n")
-                .append("  \"bosId\": ").append(tokenizerArtifact.getBosId()).append(",\n")
-                .append("  \"eosId\": ").append(tokenizerArtifact.getEosId()).append(",\n")
-                .append("  \"padId\": ").append(tokenizerArtifact.getPadId()).append(",\n")
-                .append("  \"vocab\": {\n");
-        int count = 0;
-        for (Map.Entry<String, Integer> entry : tokVocab.entrySet()) {
-            String cleanKey = entry.getKey()
-                    .replace("\\", "\\\\")
-                    .replace("\"", "\\\"")
-                    .replace("\n", "\\n")
-                    .replace("\r", "\\r")
-                    .replace("\t", "\\t");
-            tokBuilder.append("    \"").append(cleanKey).append("\": ").append(entry.getValue());
-            if (++count < tokVocab.size()) {
-                tokBuilder.append(",");
-            }
-            tokBuilder.append("\n");
+    
+    private String generateWeightName(int index) {
+        // Map index to meaningful names based on model architecture
+        if (index == 0) return "token_embd.weight";
+        
+        int paramsPerBlock = 9;
+        int offset = 1;
+        
+        for (int block = 0; block < numBlocks; block++) {
+            int base = offset + block * paramsPerBlock;
+            if (index == base) return "blk." + block + ".attn_norm.weight";
+            if (index == base + 1) return "blk." + block + ".attn_q.weight";
+            if (index == base + 2) return "blk." + block + ".attn_k.weight";
+            if (index == base + 3) return "blk." + block + ".attn_v.weight";
+            if (index == base + 4) return "blk." + block + ".attn_output.weight";
+            if (index == base + 5) return "blk." + block + ".ffn_norm.weight";
+            if (index == base + 6) return "blk." + block + ".ffn_gate.weight";
+            if (index == base + 7) return "blk." + block + ".ffn_up.weight";
+            if (index == base + 8) return "blk." + block + ".ffn_down.weight";
         }
-        tokBuilder.append("  }\n}");
-        Files.writeString(dir.resolve("tokenizer.json"), tokBuilder.toString());
-
-        // 4. Save weights.bin atomically
-        Path weightsPath = dir.resolve("weights.bin");
-        Path tempFile = dir.resolve("weights.bin." + UUID.randomUUID().toString() + ".tmp");
-        try {
-            try (DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(tempFile.toFile())))) {
-                dos.write(MAGIC);
-                dos.writeShort(WEIGHTS_VERSION);
-                byte[] modelIdBytes = modelName.getBytes();
-                dos.writeInt(modelIdBytes.length);
-                dos.write(modelIdBytes);
-                dos.writeInt(weights.size());
-
-                for (int i = 0; i < weights.size(); i++) {
-                    Tensor t = weights.get(i);
-                    String tensorName = "tensor_" + i;
-                    byte[] nameBytes = tensorName.getBytes();
-                    dos.writeInt(nameBytes.length);
-                    dos.write(nameBytes);
-
-                    long[] shape = t.getShape();
-                    dos.writeInt(shape.length);
-                    for (long dim : shape) {
-                        dos.writeLong(dim);
-                    }
-
-                    float[] data = t.getData();
-                    dos.writeInt(data.length);
-                    for (float val : data) {
-                        dos.writeFloat(val);
-                    }
+        
+        int outputNormIdx = offset + numBlocks * paramsPerBlock;
+        if (index == outputNormIdx) return "output_norm.weight";
+        if (index == outputNormIdx + 1) return "output.weight";
+        
+        return "weight_" + index;
+    }
+    
+    // ============ SAVE / LOAD ============
+    public void save(Path path) throws IOException {
+        // Ensure parent directory exists
+        Path parent = path.getParent();
+        if (parent != null) {
+            Files.createDirectories(parent);
+        }
+        
+        // 1. Save main artifact (.evo file - compressed)
+        Path tempFile = path.getParent().resolve(path.getFileName().toString() + ".tmp");
+        try (FileOutputStream fos = new FileOutputStream(tempFile.toFile());
+             GZIPOutputStream gzos = new GZIPOutputStream(fos);
+             DataOutputStream dos = new DataOutputStream(gzos)) {
+            
+            // Write header
+            dos.writeUTF("EVO_ARTIFACT_V1");
+            dos.writeUTF(modelName != null ? modelName : "evo_model");
+            dos.writeUTF(modelVersion);
+            dos.writeLong(createdAt);
+            
+            // Write architecture
+            dos.writeInt(vocabSize);
+            dos.writeInt(dModel);
+            dos.writeInt(numHeads);
+            dos.writeInt(numBlocks);
+            dos.writeInt(dff);
+            dos.writeInt(maxSeqLen);
+            
+            // Write inference params
+            dos.writeFloat(temperature);
+            dos.writeFloat(topP);
+            dos.writeInt(topK);
+            dos.writeFloat(repeatPenalty);
+            dos.writeFloat(frequencyPenalty);
+            dos.writeFloat(presencePenalty);
+            
+            // Write special tokens
+            dos.writeInt(bosTokenId);
+            dos.writeInt(eosTokenId);
+            dos.writeInt(unkTokenId);
+            dos.writeInt(padTokenId);
+            
+            // ============ WRITE VOCABULARY (CRITICAL) ============
+            dos.writeInt(idToToken.size());
+            for (Map.Entry<Integer, String> entry : idToToken.entrySet()) {
+                dos.writeInt(entry.getKey());
+                dos.writeUTF(entry.getValue());
+            }
+            
+            // Write metadata
+            dos.writeInt(metadata.size());
+            for (Map.Entry<String, String> entry : metadata.entrySet()) {
+                dos.writeUTF(entry.getKey());
+                dos.writeUTF(entry.getValue());
+            }
+            
+            // ============ WRITE WEIGHTS ============
+            dos.writeInt(weightData.size());
+            for (int i = 0; i < weightData.size(); i++) {
+                float[] data = weightData.get(i);
+                long[] shape = weightShapes.get(i);
+                String name = weightNames.get(i);
+                
+                dos.writeUTF(name);
+                dos.writeInt(shape.length);
+                for (long dim : shape) {
+                    dos.writeLong(dim);
                 }
-                dos.flush();
+                dos.writeInt(data.length);
+                for (float val : data) {
+                    dos.writeFloat(val);
+                }
             }
-
-            try {
-                Files.move(tempFile, weightsPath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-            } catch (IOException e) {
-                Files.move(tempFile, weightsPath, StandardCopyOption.REPLACE_EXISTING);
-            }
-        } finally {
-            try {
-                Files.deleteIfExists(tempFile);
-            } catch (Exception ignored) {}
         }
+        
+        // Atomic rename
+        Files.move(tempFile, path, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+        
+        // 2. Save companion vocabulary JSON for easy inspection
+        Path vocabJsonPath = path.getParent().resolve(path.getFileName().toString().replace(".evo", "_vocab.json"));
+        saveVocabularyJson(vocabJsonPath);
     }
-
-    /**
-     * Loads and validates a native model artifact from a directory or a packed .evo file.
-     */
-    public static EvoModelArtifact load(Path targetPath) throws IOException {
-        if (Files.isDirectory(targetPath)) {
-            return loadDirectory(targetPath);
-        } else {
-            if (!Files.exists(targetPath)) {
-                throw new FileNotFoundException("Model file not found: " + targetPath);
-            }
-            Path tempDir = Files.createTempDirectory("evo-artifact-unzip");
-            try {
-                unpackZip(targetPath, tempDir);
-                return loadDirectory(tempDir);
-            } finally {
-                deleteDirectory(tempDir.toFile());
-            }
-        }
+    
+    private void saveVocabularyJson(Path path) throws IOException {
+        Map<String, Object> vocabData = new LinkedHashMap<>();
+        vocabData.put("vocab_size", vocabSize);
+        vocabData.put("bos_token", "<s>");
+        vocabData.put("eos_token", "</s>");
+        vocabData.put("unk_token", "<unk>");
+        vocabData.put("vocab", tokenToId);
+        
+        JSONObject json = new JSONObject(vocabData);
+        Files.writeString(path, json.toString(2));
     }
-
-    private static EvoModelArtifact loadDirectory(Path dir) throws IOException {
-        Path manifestPath = dir.resolve("model.json");
-        Path configPath = dir.resolve("config.json");
-        Path tokenizerPath = dir.resolve("tokenizer.json");
-        Path weightsPath = dir.resolve("weights.bin");
-
-        if (!Files.exists(weightsPath)) {
-            throw new FileNotFoundException("Missing weights.bin file in: " + dir);
-        }
-
+    
+    public static EvoModelArtifact load(Path path) throws IOException {
         EvoModelArtifact artifact = new EvoModelArtifact();
-
-        int vocabSize = 0;
-        int dModel = 0;
-        int layers = 0;
-        int heads = 0;
-        int dff = 0;
-        int maxSeqLen = 0;
-
-        // 1. Load stable manifest if present, else fallback to config.json
-        if (Files.exists(manifestPath)) {
-            String mJson = Files.readString(manifestPath);
-            artifact.setFormat(parseStringField(mJson, "format"));
-            artifact.setFormatVersion(parseIntField(mJson, "formatVersion", 1));
-            artifact.setModelName(parseStringField(mJson, "modelName"));
-            artifact.setArchitecture(parseStringField(mJson, "architecture"));
-            artifact.setCreationTimestamp(parseLongField(mJson, "creationTimestamp", System.currentTimeMillis()));
-            vocabSize = parseIntField(mJson, "vocabSize", 0);
-            dModel = parseIntField(mJson, "embeddingSize", 0);
-            layers = parseIntField(mJson, "layers", 0);
-            heads = parseIntField(mJson, "heads", 0);
-            dff = parseIntField(mJson, "dff", 0);
-            maxSeqLen = parseIntField(mJson, "maxSeqLen", 0);
-            artifact.setTemperature(parseFloatField(mJson, "temperature", 0.2f));
-            artifact.setTopP(parseFloatField(mJson, "top_p", 0.9f));
-            artifact.setTopK(parseIntField(mJson, "top_k", 40));
-            artifact.setRepeatPenalty(parseFloatField(mJson, "repeat_penalty", 1.1f));
-        } else if (Files.exists(configPath)) {
-            String cfgJson = Files.readString(configPath);
-            vocabSize = parseIntField(cfgJson, "vocabSize", 0);
-            dModel = parseIntField(cfgJson, "dModel", 0);
-            layers = parseIntField(cfgJson, "numBlocks", 0);
-            heads = parseIntField(cfgJson, "numHeads", 0);
-            dff = parseIntField(cfgJson, "dff", dModel * 4);
-            maxSeqLen = parseIntField(cfgJson, "maxSeqLen", 0);
-            artifact.setModelName("migrated-" + dir.getFileName().toString());
-        } else {
-            throw new FileNotFoundException("Neither model.json nor config.json exists in " + dir);
-        }
-
-        if (dff <= dModel) {
-            dff = dModel * 4;
-        }
-
-        artifact.setArchitectureConfig(new EvoLlmArchitecture(vocabSize, dModel, heads, layers, dff, maxSeqLen));
-
-        // 2. Load tokenizer vocabulary from tokenizer.json
-        EvoTokenizerArtifact tokArtifact = new EvoTokenizerArtifact();
-        if (Files.exists(tokenizerPath)) {
-            String tJson = Files.readString(tokenizerPath);
-            tokArtifact.setTokenizerType(parseStringField(tJson, "type"));
-            tokArtifact.setUnkId(parseIntField(tJson, "unkId", 1));
-            tokArtifact.setBosId(parseIntField(tJson, "bosId", 2));
-            tokArtifact.setEosId(parseIntField(tJson, "eosId", 3));
-            tokArtifact.setPadId(parseIntField(tJson, "padId", 0));
-            Map<String, Integer> vocabMap = parseVocabFromJson(tJson);
-            tokArtifact.setVocab(vocabMap);
-        } else {
-            Map<String, Integer> mockVocab = new LinkedHashMap<>();
-            mockVocab.put("<unk>", 0);
-            mockVocab.put("<s>", 1);
-            mockVocab.put("</s>", 2);
-            mockVocab.put(" ", 3);
-            for (int i = 4; i < vocabSize; i++) {
-                mockVocab.put("token_" + i, i);
+        
+        try (FileInputStream fis = new FileInputStream(path.toFile());
+             GZIPInputStream gzis = new GZIPInputStream(fis);
+             DataInputStream dis = new DataInputStream(gzis)) {
+            
+            // Read header
+            String magic = dis.readUTF();
+            if (!"EVO_ARTIFACT_V1".equals(magic)) {
+                throw new IOException("Invalid artifact format: " + magic);
             }
-            tokArtifact.setVocab(mockVocab);
-        }
-        tokArtifact.padToSize(vocabSize);
-        artifact.setTokenizerArtifact(tokArtifact);
-
-        // 3. Load & Validate binary weights
-        long totalFileSize = Files.size(weightsPath);
-        if (totalFileSize < 5) {
-            throw new IOException("Weights file weights.bin is truncated or corrupt. File size: " + totalFileSize + " bytes.");
-        }
-
-        try (DataInputStream dis = new DataInputStream(new BufferedInputStream(new FileInputStream(weightsPath.toFile())))) {
-            byte[] magicIn = new byte[3];
-            dis.readFully(magicIn);
-            if (Arrays.equals(magicIn, MAGIC)) {
-                short version = dis.readShort();
-                if (version != WEIGHTS_VERSION) {
-                    throw new IOException("Unsupported weights version: " + version);
+            
+            artifact.modelName = dis.readUTF();
+            artifact.modelVersion = dis.readUTF();
+            artifact.createdAt = dis.readLong();
+            
+            // Read architecture
+            artifact.vocabSize = dis.readInt();
+            artifact.dModel = dis.readInt();
+            artifact.numHeads = dis.readInt();
+            artifact.numBlocks = dis.readInt();
+            artifact.dff = dis.readInt();
+            artifact.maxSeqLen = dis.readInt();
+            
+            // Read inference params
+            artifact.temperature = dis.readFloat();
+            artifact.topP = dis.readFloat();
+            artifact.topK = dis.readInt();
+            artifact.repeatPenalty = dis.readFloat();
+            artifact.frequencyPenalty = dis.readFloat();
+            artifact.presencePenalty = dis.readFloat();
+            
+            // Read special tokens
+            artifact.bosTokenId = dis.readInt();
+            artifact.eosTokenId = dis.readInt();
+            artifact.unkTokenId = dis.readInt();
+            artifact.padTokenId = dis.readInt();
+            
+            // ============ READ VOCABULARY (CRITICAL) ============
+            int vocabSize = dis.readInt();
+            artifact.idToToken = new LinkedHashMap<>();
+            artifact.tokenToId = new LinkedHashMap<>();
+            
+            for (int i = 0; i < vocabSize; i++) {
+                int id = dis.readInt();
+                String token = dis.readUTF();
+                artifact.idToToken.put(id, token);
+                artifact.tokenToId.put(token, id);
+            }
+            
+            // Read metadata
+            int metaSize = dis.readInt();
+            artifact.metadata = new HashMap<>();
+            for (int i = 0; i < metaSize; i++) {
+                String key = dis.readUTF();
+                String value = dis.readUTF();
+                artifact.metadata.put(key, value);
+            }
+            
+            // ============ READ WEIGHTS ============
+            int weightCount = dis.readInt();
+            artifact.weightData = new ArrayList<>(weightCount);
+            artifact.weightShapes = new ArrayList<>(weightCount);
+            artifact.weightNames = new ArrayList<>(weightCount);
+            
+            for (int i = 0; i < weightCount; i++) {
+                String name = dis.readUTF();
+                int shapeLen = dis.readInt();
+                long[] shape = new long[shapeLen];
+                for (int d = 0; d < shapeLen; d++) {
+                    shape[d] = dis.readLong();
                 }
-                int modelIdLen = dis.readInt();
-                byte[] modelIdBytes = new byte[modelIdLen];
-                dis.readFully(modelIdBytes);
-
-                int tensorCount = dis.readInt();
-                List<Tensor> loadedTensors = new ArrayList<>();
-
-                for (int i = 0; i < tensorCount; i++) {
-                    int nameLen = dis.readInt();
-                    byte[] nameBytes = new byte[nameLen];
-                    dis.readFully(nameBytes);
-
-                    int shapeLen = dis.readInt();
-                    long[] shape = new long[shapeLen];
-                    for (int s = 0; s < shapeLen; s++) {
-                        shape[s] = dis.readLong();
-                    }
-
-                    int dataLen = dis.readInt();
-                    float[] data = new float[dataLen];
-                    for (int d = 0; d < dataLen; d++) {
-                        data[d] = dis.readFloat();
-                    }
-
-                    loadedTensors.add(new SimpleTensor(shape, data));
+                int dataLen = dis.readInt();
+                float[] data = new float[dataLen];
+                for (int j = 0; j < dataLen; j++) {
+                    data[j] = dis.readFloat();
                 }
-
-                artifact.setWeights(loadedTensors);
-            } else {
-                dis.close();
-
-                EvoLlmModel tempModel = new EvoLlmModel(artifact.getArchitectureConfig());
-                List<Tensor> params = tempModel.parameters();
-                List<Tensor> loadedTensors = new ArrayList<>();
-
-                try (DataInputStream disRaw = new DataInputStream(new BufferedInputStream(new FileInputStream(weightsPath.toFile())))) {
-                    for (Tensor p : params) {
-                        float[] data = new float[p.getData().length];
-                        for (int i = 0; i < data.length; i++) {
-                            data[i] = disRaw.readFloat();
-                        }
-                        loadedTensors.add(new SimpleTensor(p.getShape(), data));
-                    }
-                }
-
-                artifact.setWeights(loadedTensors);
+                artifact.weightData.add(data);
+                artifact.weightShapes.add(shape);
+                artifact.weightNames.add(name);
             }
         }
-
-        artifact.validateModelIntegrity();
+        
         return artifact;
     }
-
-    private static void packZip(Path sourceDir, Path zipFile) throws IOException {
-        Files.createDirectories(zipFile.getParent());
-        try (java.util.zip.ZipOutputStream zos = new java.util.zip.ZipOutputStream(
-                new BufferedOutputStream(new FileOutputStream(zipFile.toFile())))) {
-            try (Stream<Path> paths = Files.walk(sourceDir)) {
-                List<Path> fileList = paths.filter(Files::isRegularFile).collect(Collectors.toList());
-                for (Path file : fileList) {
-                    String zipEntryName = sourceDir.relativize(file).toString().replace("\\", "/");
-                    java.util.zip.ZipEntry entry = new java.util.zip.ZipEntry(zipEntryName);
-                    zos.putNextEntry(entry);
-                    Files.copy(file, zos);
-                    zos.closeEntry();
-                }
-            }
-        }
-    }
-
-    private static void unpackZip(Path zipFile, Path targetDir) throws IOException {
-        Files.createDirectories(targetDir);
-        try (java.util.zip.ZipInputStream zis = new java.util.zip.ZipInputStream(
-                new BufferedInputStream(new FileInputStream(zipFile.toFile())))) {
-            java.util.zip.ZipEntry entry;
-            byte[] buffer = new byte[8192];
-            while ((entry = zis.getNextEntry()) != null) {
-                Path newPath = targetDir.resolve(entry.getName());
-                if (entry.isDirectory()) {
-                    Files.createDirectories(newPath);
+    
+    // ============ MODEL RECREATION ============
+    public EvoLlmModel createModel() {
+        EvoLlmModel model = new EvoLlmModel(vocabSize, dModel, numHeads, numBlocks, dff, maxSeqLen);
+        
+        // Load weights into model
+        List<Tensor> modelParams = model.parameters();
+        if (modelParams.size() == weightData.size()) {
+            for (int i = 0; i < modelParams.size(); i++) {
+                Tensor t = modelParams.get(i);
+                float[] data = weightData.get(i);
+                if (data.length == t.getSize()) {
+                    System.arraycopy(data, 0, t.getData(), 0, data.length);
                 } else {
-                    Files.createDirectories(newPath.getParent());
-                    try (OutputStream os = new BufferedOutputStream(new FileOutputStream(newPath.toFile()))) {
-                        int len;
-                        while ((len = zis.read(buffer)) > 0) {
-                            os.write(buffer, 0, len);
-                        }
-                    }
-                }
-                zis.closeEntry();
-            }
-        }
-    }
-
-    private static void deleteDirectory(java.io.File directory) {
-        java.io.File[] allContents = directory.listFiles();
-        if (allContents != null) {
-            for (java.io.File file : allContents) {
-                deleteDirectory(file);
-            }
-        }
-        directory.delete();
-    }
-
-    private static Map<String, Integer> parseVocabFromJson(String json) {
-        Map<String, Integer> vocabMap = new LinkedHashMap<>();
-        int vocabStart = json.indexOf("\"vocab\"");
-        if (vocabStart == -1) return vocabMap;
-        int blockStart = json.indexOf("{", vocabStart);
-        if (blockStart == -1) return vocabMap;
-
-        int braceDepth = 1;
-        int blockEnd = -1;
-        for (int i = blockStart + 1; i < json.length(); i++) {
-            char c = json.charAt(i);
-            if (c == '{') braceDepth++;
-            else if (c == '}') {
-                braceDepth--;
-                if (braceDepth == 0) {
-                    blockEnd = i;
-                    break;
+                    // Handle shape mismatch - resize tensor if needed
+                    // This is a fallback, ideally shapes should match
+                    System.out.println("[Artifact] Warning: Weight " + i + " size mismatch: " + 
+                        data.length + " vs " + t.getSize());
+                    int copyLen = (int) Math.min(data.length, t.getSize());
+                    System.arraycopy(data, 0, t.getData(), 0, copyLen);
                 }
             }
         }
-        if (blockEnd == -1) return vocabMap;
-
-        String vocabBlock = json.substring(blockStart + 1, blockEnd);
-        int i = 0;
-        int len = vocabBlock.length();
-        while (i < len) {
-            int keyStart = vocabBlock.indexOf('"', i);
-            if (keyStart == -1) break;
-
-            int keyEnd = -1;
-            boolean escaped = false;
-            for (int j = keyStart + 1; j < len; j++) {
-                char c = vocabBlock.charAt(j);
-                if (escaped) {
-                    escaped = false;
-                } else if (c == '\\') {
-                    escaped = true;
-                } else if (c == '"') {
-                    keyEnd = j;
-                    break;
-                }
-            }
-            if (keyEnd == -1) break;
-
-            String keyPart = vocabBlock.substring(keyStart + 1, keyEnd);
-            keyPart = keyPart
-                    .replace("\\\\", "\\")
-                    .replace("\\\"", "\"")
-                    .replace("\\n", "\n")
-                    .replace("\\r", "\r")
-                    .replace("\\t", "\t");
-
-            int colonIdx = vocabBlock.indexOf(':', keyEnd + 1);
-            if (colonIdx == -1) {
-                i = keyEnd + 1;
-                continue;
-            }
-
-            int valStart = -1;
-            int valEnd = -1;
-            for (int j = colonIdx + 1; j < len; j++) {
-                char c = vocabBlock.charAt(j);
-                if (Character.isDigit(c)) {
-                    if (valStart == -1) {
-                        valStart = j;
-                    }
-                    valEnd = j + 1;
-                } else {
-                    if (valStart != -1) {
-                        break;
-                    }
-                }
-            }
-
-            if (valStart != -1 && valEnd != -1) {
-                try {
-                    int val = Integer.parseInt(vocabBlock.substring(valStart, valEnd));
-                    vocabMap.put(keyPart, val);
-                } catch (Exception ignored) {}
-                i = valEnd;
-            } else {
-                i = colonIdx + 1;
-            }
-        }
-        return vocabMap;
+        
+        return model;
     }
-
-    private static String parseStringField(String json, String key) {
-        int idx = json.indexOf("\"" + key + "\"");
-        if (idx == -1) return null;
-        int colon = json.indexOf(":", idx);
-        if (colon == -1) return null;
-        int startQuote = json.indexOf("\"", colon);
-        if (startQuote == -1) return null;
-        int endQuote = json.indexOf("\"", startQuote + 1);
-        if (endQuote == -1) return null;
-        return json.substring(startQuote + 1, endQuote);
-    }
-
-    private static int parseIntField(String json, String key, int def) {
-        int idx = json.indexOf("\"" + key + "\"");
-        if (idx == -1) return def;
-        int colon = json.indexOf(":", idx);
-        if (colon == -1) return def;
-        int end = findValueEnd(json, colon);
-        try {
-            return Integer.parseInt(json.substring(colon + 1, end).trim());
-        } catch (Exception e) {
-            return def;
-        }
-    }
-
-    private static long parseLongField(String json, String key, long def) {
-        int idx = json.indexOf("\"" + key + "\"");
-        if (idx == -1) return def;
-        int colon = json.indexOf(":", idx);
-        if (colon == -1) return def;
-        int end = findValueEnd(json, colon);
-        try {
-            return Long.parseLong(json.substring(colon + 1, end).trim());
-        } catch (Exception e) {
-            return def;
-        }
-    }
-
-    private static float parseFloatField(String json, String key, float def) {
-        int idx = json.indexOf("\"" + key + "\"");
-        if (idx == -1) return def;
-        int colon = json.indexOf(":", idx);
-        if (colon == -1) return def;
-        int end = findValueEnd(json, colon);
-        try {
-            return Float.parseFloat(json.substring(colon + 1, end).trim());
-        } catch (Exception e) {
-            return def;
-        }
-    }
-
-    private static int findValueEnd(String json, int colonIndex) {
-        int end = json.indexOf(",", colonIndex);
-        if (end == -1) end = json.indexOf("\n", colonIndex);
-        if (end == -1) end = json.indexOf("}", colonIndex);
-        return end;
-    }
-
-    // Getters and Setters
-    public String getFormat() { return format; }
-    public void setFormat(String format) { this.format = format; }
-
-    public int getFormatVersion() { return formatVersion; }
-    public void setFormatVersion(int formatVersion) { this.formatVersion = formatVersion; }
-
+    
+    // ============ GETTERS / SETTERS ============
     public String getModelName() { return modelName; }
     public void setModelName(String modelName) { this.modelName = modelName; }
-
-    public String getArchitecture() { return architecture; }
-    public void setArchitecture(String architecture) { this.architecture = architecture; }
-
-    public long getCreationTimestamp() { return creationTimestamp; }
-    public void setCreationTimestamp(long creationTimestamp) { this.creationTimestamp = creationTimestamp; }
-
-    public EvoLlmArchitecture getArchitectureConfig() { return archConfig; }
-    public void setArchitectureConfig(EvoLlmArchitecture archConfig) { this.archConfig = archConfig; }
-
-    // Legacy / Convenience getters delegating to archConfig
-    public int getVocabSize() { return archConfig != null ? archConfig.getVocabSize() : 0; }
-    public void setVocabSize(int vocabSize) {
-        updateArchField(vocabSize, getEmbeddingSize(), getLayers(), getHeads(), getDff(), getMaxSeqLen());
-    }
-
-    public int getEmbeddingSize() { return archConfig != null ? archConfig.getDModel() : 0; }
-    public void setEmbeddingSize(int embeddingSize) {
-        updateArchField(getVocabSize(), embeddingSize, getLayers(), getHeads(), getDff(), getMaxSeqLen());
-    }
-
-    public int getLayers() { return archConfig != null ? archConfig.getNumBlocks() : 0; }
-    public void setLayers(int layers) {
-        updateArchField(getVocabSize(), getEmbeddingSize(), layers, getHeads(), getDff(), getMaxSeqLen());
-    }
-
-    public int getHeads() { return archConfig != null ? archConfig.getNumHeads() : 0; }
-    public void setHeads(int heads) {
-        updateArchField(getVocabSize(), getEmbeddingSize(), getLayers(), heads, getDff(), getMaxSeqLen());
-    }
-
-    public int getDff() { return archConfig != null ? archConfig.getDff() : 0; }
-    public void setDff(int dff) {
-        updateArchField(getVocabSize(), getEmbeddingSize(), getLayers(), getHeads(), dff, getMaxSeqLen());
-    }
-
-    public int getMaxSeqLen() { return archConfig != null ? archConfig.getMaxSeqLen() : 0; }
-    public void setMaxSeqLen(int maxSeqLen) {
-        updateArchField(getVocabSize(), getEmbeddingSize(), getLayers(), getHeads(), getDff(), maxSeqLen);
-    }
-
-    private void updateArchField(int vSize, int dModel, int layers, int heads, int dff, int maxSeq) {
-        if (vSize > 0 && dModel > 0 && layers > 0 && heads > 0 && maxSeq > 0) {
-            if (dff <= dModel) dff = dModel * 4;
-            this.archConfig = new EvoLlmArchitecture(vSize, dModel, heads, layers, dff, maxSeq);
-        }
-    }
-
-    public long getParameterCount() {
-        if (archConfig != null) {
-            return archConfig.getParameterCount();
-        }
-        return 0;
-    }
-    public void setParameterCount(long parameterCount) { /* Computed from archConfig */ }
-
+    
+    public int getVocabSize() { return vocabSize; }
+    public int getDModel() { return dModel; }
+    public int getNumHeads() { return numHeads; }
+    public int getNumBlocks() { return numBlocks; }
+    public int getDff() { return dff; }
+    public int getMaxSeqLen() { return maxSeqLen; }
+    
+    public Map<Integer, String> getIdToToken() { return idToToken; }
+    public Map<String, Integer> getTokenizerVocab() { return tokenToId; }
+    
+    public int getBosTokenId() { return bosTokenId; }
+    public int getEosTokenId() { return eosTokenId; }
+    public int getUnkTokenId() { return unkTokenId; }
+    public int getPadTokenId() { return padTokenId; }
+    
     public float getTemperature() { return temperature; }
     public void setTemperature(float temperature) { this.temperature = temperature; }
-
+    
     public float getTopP() { return topP; }
     public void setTopP(float topP) { this.topP = topP; }
-
+    
     public int getTopK() { return topK; }
     public void setTopK(int topK) { this.topK = topK; }
-
+    
     public float getRepeatPenalty() { return repeatPenalty; }
     public void setRepeatPenalty(float repeatPenalty) { this.repeatPenalty = repeatPenalty; }
-
-    public EvoTokenizerArtifact getTokenizerArtifact() { return tokenizerArtifact; }
-    public void setTokenizerArtifact(EvoTokenizerArtifact tokenizerArtifact) {
-        this.tokenizerArtifact = tokenizerArtifact;
-    }
-
-    public Map<String, Integer> getTokenizerVocab() {
-        return tokenizerArtifact != null ? tokenizerArtifact.getVocab() : Collections.emptyMap();
-    }
-    public void setTokenizerVocab(Map<String, Integer> tokenizerVocab) {
-        if (this.tokenizerArtifact == null) {
-            this.tokenizerArtifact = new EvoTokenizerArtifact();
-        }
-        this.tokenizerArtifact.setVocab(tokenizerVocab);
-    }
-
-    public List<Tensor> getWeights() { return weights; }
-    public void setWeights(List<Tensor> weights) { this.weights = weights; }
+    
+    public float getFrequencyPenalty() { return frequencyPenalty; }
+    public void setFrequencyPenalty(float frequencyPenalty) { this.frequencyPenalty = frequencyPenalty; }
+    
+    public float getPresencePenalty() { return presencePenalty; }
+    public void setPresencePenalty(float presencePenalty) { this.presencePenalty = presencePenalty; }
+    
+    public Map<String, String> getMetadata() { return metadata; }
+    
+    public List<float[]> getWeightData() { return weightData; }
+    public List<long[]> getWeightShapes() { return weightShapes; }
+    public List<String> getWeightNames() { return weightNames; }
 }

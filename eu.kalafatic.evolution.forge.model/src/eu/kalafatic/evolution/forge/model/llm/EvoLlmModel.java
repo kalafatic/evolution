@@ -4,6 +4,7 @@ import eu.kalafatic.evolution.forge.math.api.Tensor;
 import eu.kalafatic.evolution.forge.math.core.SimpleTensor;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 public class EvoLlmModel {
@@ -112,4 +113,6 @@ public class EvoLlmModel {
     public Tensor getLmHead() { return lmHead; }
     public RMSNorm getOutputNorm() { return outputNorm; }
     public List<TransformerBlock> getBlocks() { return blocks; }
+
+	
 }
