@@ -25,6 +25,8 @@ import eu.kalafatic.evolution.model.orchestration.AiMode;
 import eu.kalafatic.evolution.model.orchestration.ChatSession;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.HTTPUtils;
+import org.eclipse.jface.window.Window;
+import eu.kalafatic.evolution.view.dialogs.ForgeSettingsDialog;
 import eu.kalafatic.evolution.view.dialogs.MediatedTargetDialog;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
@@ -41,7 +43,7 @@ public class ChatMgmtGroup extends AEvoGroup {
     private Combo localModelCombo;
     private Text remoteTokenText, remoteUrlText;
     private Composite compositeLocal, compositeRemote;
-	private Combo aiModeSetupCombo;
+    private Button forgeSettingsBtn;
 
     public ChatMgmtGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, AiChatPage page) {
         super(editor, orchestrator);
@@ -169,24 +171,11 @@ public class ChatMgmtGroup extends AEvoGroup {
         aiModeCombo = GUIFactory.INSTANCE.createCombo(compositeLocal, AiMode.values());
         ((GridData)aiModeCombo.getLayoutData()).widthHint = 100;
         
-        aiModeSetupCombo = GUIFactory.INSTANCE.createCombo(compositeLocal);
-        ((GridData)aiModeSetupCombo.getLayoutData()).widthHint = 100;
-        for (ModelSizePreset.Size size : ModelSizePreset.Size.values()) {
-            aiModeSetupCombo.add(size.getDisplayName());
-        }
-        aiModeSetupCombo.select(3); // Default to SMALL (index 3)
-
-        aiModeSetupCombo.addSelectionListener(new SelectionAdapter() {
+        forgeSettingsBtn = GUIFactory.INSTANCE.createButton(compositeLocal, "Forge Settings");
+        forgeSettingsBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                int selIdx = aiModeSetupCombo.getSelectionIndex();
-                if (selIdx >= 0 && selIdx < ModelSizePreset.Size.values().length) {
-                    ModelSizePreset.Size selectedSize = ModelSizePreset.Size.values()[selIdx];
-                    Map<String, Object> settings = new HashMap<>();
-                    settings.put("modelSize", selectedSize.name());
-                    page.updateConfiguration(settings);
-                    page.saveLastUsedSettings();
-                }
+                openForgeSettingsDialog();
             }
         });
         
@@ -246,24 +235,9 @@ public class ChatMgmtGroup extends AEvoGroup {
                 page.saveLastUsedSettings();
                 page.updateModeDisplay();
                 
-                switch (aiMode) {
-					case LOCAL:
-//					case HYBRID:
-//						compositeLocal.setVisible(true);
-//						compositeRemote.setVisible(false);
-//						break;
-//					case REMOTE:
-//					case PROXY:
-//					case MEDIATED:
-//					case INTENT:
-//						compositeLocal.setVisible(false);
-//						compositeRemote.setVisible(true);
-//						break;
-//					case FORGE:
-//						compositeLocal.setVisible(true);
-//						compositeRemote.setVisible(false);
-//						break;
-				}
+                if (aiMode == AiMode.FORGE) {
+                    openForgeSettingsDialog();
+                }
             }
         });
 
@@ -389,11 +363,55 @@ public class ChatMgmtGroup extends AEvoGroup {
         group.layout(true, true);
     }
 
+    public void openForgeSettingsDialog() {
+        String currentSessionId = page.getCurrentSessionName();
+        eu.kalafatic.evolution.view.projection.RuntimeProjection projection = eu.kalafatic.evolution.view.projection.ProjectionService.getInstance().getProjection(currentSessionId);
+        Map<String, Object> config = projection.getConfiguration();
+
+        String currentSize = (String) config.getOrDefault("modelSize", "SMALL");
+        int currentEpochs = 32;
+        Object epObj = config.get("epochs");
+        if (epObj instanceof Number) {
+            currentEpochs = ((Number) epObj).intValue();
+        } else if (epObj instanceof String) {
+            try { currentEpochs = Integer.parseInt((String) epObj); } catch (Exception ex) {}
+        }
+
+        String currentLossThresh = (String) config.getOrDefault("lossThreshold", "Epoch 16-30: Loss 2-5 → Learning phrases");
+
+        ForgeSettingsDialog dlg = new ForgeSettingsDialog(page.getShell(), currentSize, currentEpochs, currentLossThresh);
+        if (dlg.open() == Window.OK) {
+            String selectedSize = dlg.getSelectedModelSize();
+            int epochs = dlg.getEpochs();
+            String lossThreshold = dlg.getLossThreshold();
+
+            Map<String, Object> settings = new HashMap<>();
+            settings.put("modelSize", selectedSize);
+            settings.put("epochs", epochs);
+            settings.put("lossThreshold", lossThreshold);
+            page.updateConfiguration(settings);
+            page.saveLastUsedSettings();
+
+            try {
+                Class<?> fsmClass = Class.forName("eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager");
+                Object instance = fsmClass.getMethod("getInstance").invoke(null);
+                fsmClass.getMethod("updateUiState", String.class, String.class, Object.class).invoke(instance, currentSessionId, "modelSize", selectedSize);
+                fsmClass.getMethod("updateUiState", String.class, String.class, Object.class).invoke(instance, currentSessionId, "epochs", epochs);
+                fsmClass.getMethod("updateUiState", String.class, String.class, Object.class).invoke(instance, currentSessionId, "lossThreshold", lossThreshold);
+            } catch (Exception ex) {
+                // Ignore if controller not loaded
+            }
+        }
+    }
+
     public String getSelectedModelSize() {
-        if (aiModeSetupCombo != null && !aiModeSetupCombo.isDisposed()) {
-            int selIdx = aiModeSetupCombo.getSelectionIndex();
-            if (selIdx >= 0 && selIdx < ModelSizePreset.Size.values().length) {
-                return ModelSizePreset.Size.values()[selIdx].name();
+        if (page != null && page.getCurrentSessionName() != null) {
+            eu.kalafatic.evolution.view.projection.RuntimeProjection projection = eu.kalafatic.evolution.view.projection.ProjectionService.getInstance().getProjection(page.getCurrentSessionName());
+            if (projection != null && projection.getConfiguration() != null) {
+                String size = (String) projection.getConfiguration().get("modelSize");
+                if (size != null && !size.isEmpty()) {
+                    return size;
+                }
             }
         }
         return "SMALL";
