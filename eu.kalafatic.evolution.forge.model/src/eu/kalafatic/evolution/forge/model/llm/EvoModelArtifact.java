@@ -386,6 +386,37 @@ public class EvoModelArtifact {
     public int getNumBlocks() { return numBlocks; }
     public int getDff() { return dff; }
     public int getMaxSeqLen() { return maxSeqLen; }
+
+    public EvoLlmArchitecture getArchitectureConfig() {
+        return new EvoLlmArchitecture(vocabSize, dModel, numHeads, numBlocks, dff, maxSeqLen);
+    }
+    public int getEmbeddingSize() { return dModel; }
+    public int getLayers() { return numBlocks; }
+    public int getHeads() { return numHeads; }
+
+    public long getParameterCount() {
+        long total = 0;
+        if (weightData != null) {
+            for (float[] w : weightData) {
+                if (w != null) total += w.length;
+            }
+        }
+        return total;
+    }
+
+    public List<Tensor> getWeights() {
+        List<Tensor> tensors = new ArrayList<>();
+        if (weightData != null && weightShapes != null) {
+            for (int i = 0; i < weightData.size(); i++) {
+                float[] data = weightData.get(i);
+                long[] shape = i < weightShapes.size() ? weightShapes.get(i) : new long[] { data.length };
+                SimpleTensor tensor = new SimpleTensor(shape);
+                System.arraycopy(data, 0, tensor.getData(), 0, Math.min(data.length, tensor.getData().length));
+                tensors.add(tensor);
+            }
+        }
+        return tensors;
+    }
     
     public Map<Integer, String> getIdToToken() { return idToToken; }
     public Map<String, Integer> getTokenizerVocab() { return tokenToId; }
