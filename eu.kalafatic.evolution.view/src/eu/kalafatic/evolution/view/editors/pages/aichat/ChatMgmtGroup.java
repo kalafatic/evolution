@@ -59,7 +59,7 @@ public class ChatMgmtGroup extends AEvoGroup {
     private void createControl(FormToolkit toolkit, Composite parent) {
         group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Chat Management", 2, true);
        
-        Composite sessionsComp = GUIFactory.INSTANCE.createComposite(group, 7, SWT.BORDER);
+        Composite sessionsComp = GUIFactory.INSTANCE.createComposite(group, 6, SWT.BORDER);
 
         Button newSessionButton = GUIFactory.INSTANCE.createButton(sessionsComp, "New Session");
         newSessionButton.addSelectionListener(new SelectionAdapter() {
@@ -80,16 +80,8 @@ public class ChatMgmtGroup extends AEvoGroup {
             public void widgetSelected(SelectionEvent e) {
                 page.switchSession(sessionCombo.getText());
             }
-        });
+        });       
         
-        Button identifyButton = GUIFactory.INSTANCE.createButton(sessionsComp, "Identify LLM");
-        identifyButton.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                page.identifyLlmAndProcess();
-            }
-        });
-
        
         Button byDateButton = GUIFactory.INSTANCE.createButton(sessionsComp, "By Date");
         byDateButton.addSelectionListener(new SelectionAdapter() {
@@ -196,7 +188,16 @@ public class ChatMgmtGroup extends AEvoGroup {
         GUIFactory.INSTANCE.createLabel(compositeLocal, "Model:", SWT.NONE, GUIFactory.BUTTON_WIDTH);
         localModelCombo = selectModel(compositeLocal);
         ((GridData)localModelCombo.getLayoutData()).widthHint = 100;
-        ((GridData)localModelCombo.getLayoutData()).horizontalSpan = 2; // Merges across 3 columns
+        //((GridData)localModelCombo.getLayoutData()).horizontalSpan = 2; // Merges across 3 columns
+        
+        Button identifyButton = GUIFactory.INSTANCE.createButton(compositeLocal, "Identify LLM");
+        identifyButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                page.identifyLlmAndProcess();
+            }
+        });
+
         
         Button connectionButton = GUIFactory.INSTANCE.createButton(compositeLocal, "Test Connection");
         connectionButton.addSelectionListener(new SelectionAdapter() {

@@ -212,7 +212,7 @@ public class ForgeSettingsDialog extends Dialog {
 
         // Colors
         Color grayColor = graphCanvas.getDisplay().getSystemColor(SWT.COLOR_GRAY);
-        Color lightGrayColor = graphCanvas.getDisplay().getSystemColor(SWT.COLOR_LIGHT_GRAY);
+        Color lightGrayColor = graphCanvas.getDisplay().getSystemColor(SWT.COLOR_WIDGET_LIGHT_SHADOW);
         Color blackColor = graphCanvas.getDisplay().getSystemColor(SWT.COLOR_BLACK);
         Color blueColor = graphCanvas.getDisplay().getSystemColor(SWT.COLOR_DARK_BLUE);
         Color redColor = graphCanvas.getDisplay().getSystemColor(SWT.COLOR_DARK_RED);
