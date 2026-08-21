@@ -364,6 +364,14 @@ public class AiChatPage extends AEvoPage {
 		if (chatMgmtGroup != null && chatMgmtGroup.getRemoteUrl() != null) section.put("RemoteUrl_" + orchestrator.getRemoteModel(), chatMgmtGroup.getRemoteUrl());
 		if (chatMgmtGroup != null && chatMgmtGroup.getSelectedModelSize() != null) section.put("ModelSize", chatMgmtGroup.getSelectedModelSize());
 
+		RuntimeProjection currentProj = ProjectionService.getInstance().getProjection(getCurrentSessionName());
+		if (currentProj != null && currentProj.getConfiguration() != null) {
+			Object ep = currentProj.getConfiguration().get("epochs");
+			if (ep != null) section.put("epochs", String.valueOf(ep));
+			Object lt = currentProj.getConfiguration().get("lossThreshold");
+			if (lt != null) section.put("lossThreshold", String.valueOf(lt));
+		}
+
 		if (currentSession != null) {
 			section.put("iterativeMode", currentSession.isIterativeMode());
 			section.put("selfIterativeMode", currentSession.isSelfIterativeMode());
@@ -412,9 +420,14 @@ public class AiChatPage extends AEvoPage {
 		}
 
 		String modelSize = section.get("modelSize") != null ? section.get("modelSize") : section.get("ModelSize");
-		if (modelSize != null) {
+		String savedEpochs = section.get("epochs");
+		String savedLossThresh = section.get("lossThreshold");
+
+		if (modelSize != null || savedEpochs != null || savedLossThresh != null) {
 			java.util.Map<String, Object> sizeSettings = new java.util.HashMap<>();
-			sizeSettings.put("modelSize", modelSize);
+			if (modelSize != null) sizeSettings.put("modelSize", modelSize);
+			if (savedEpochs != null) sizeSettings.put("epochs", savedEpochs);
+			if (savedLossThresh != null) sizeSettings.put("lossThreshold", savedLossThresh);
 			updateConfiguration(sizeSettings);
 		}
 
