@@ -611,7 +611,7 @@ public class LLMDarwinEngine extends ADarwinEngine {
 		int pHeads = selectedPreset.getNumHeads() > 0 ? selectedPreset.getNumHeads() : 8;
 		int pDff = selectedPreset.getDff() > 0 ? selectedPreset.getDff() : 1024;
 		int pMaxSeqLen = selectedPreset.getMaxSeqLen() > 0 ? selectedPreset.getMaxSeqLen() : 128;
-		int pEpochs = 64; // For 1MB corpus with 16M model parameters, 64 epochs is a reasonable starting point for convergence.
+		int pEpochs = uiState.optInt("epochs", 64);
 
 		context.log(String.format(
 				"[FORGE] Model size preset selected: %s (%s) -> Vocab: %d, Embed: %d, Layers: %d, Heads: %d, DFF: %d, MaxSeqLen: %d",
@@ -1093,6 +1093,15 @@ public class LLMDarwinEngine extends ADarwinEngine {
 		int finalEpochs = forceSolution ? 1 : overallWinner.config.epochs;
 		trainer.train(samples, finalEpochs);
 
+		List<Double> lossHist = trainer.getLossHistory();
+		if (lossHist != null && !lossHist.isEmpty()) {
+			org.json.JSONArray lossArr = new org.json.JSONArray();
+			for (Double l : lossHist) {
+				lossArr.put(l);
+			}
+			eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance().updateUiState(context.getSessionId(), "lossHistory", lossArr.toString());
+		}
+
 		// CREATE NATIVE EVO MODEL ARTIFACT AND PERSIST (as a *.evo packaged file)
 		context.log("[FORGE] Persisting final native EVO model artifact to *.evo package.");
 		Path evoFilePath = Paths.get(workspaceDir.getAbsolutePath(), "forge-output", dynamicModelName + ".evo");
@@ -1373,6 +1382,15 @@ public class LLMDarwinEngine extends ADarwinEngine {
 				trainer.train(trainSamples, config.epochs);
 				trainLoss = trainer.getLossHistory().isEmpty() ? 2.5
 						: trainer.getLossHistory().get(trainer.getLossHistory().size() - 1);
+
+				List<Double> candLossHist = trainer.getLossHistory();
+				if (candLossHist != null && !candLossHist.isEmpty()) {
+					org.json.JSONArray lossArr = new org.json.JSONArray();
+					for (Double l : candLossHist) {
+						lossArr.put(l);
+					}
+					eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance().updateUiState(context.getSessionId(), "lossHistory", lossArr.toString());
+				}
 			}
 
 			// Compute Validation Loss (forward pass only, no gradient backpropagation)

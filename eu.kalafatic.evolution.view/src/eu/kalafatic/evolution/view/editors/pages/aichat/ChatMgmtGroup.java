@@ -380,7 +380,21 @@ public class ChatMgmtGroup extends AEvoGroup {
 
         String currentLossThresh = (String) config.getOrDefault("lossThreshold", "Epoch 16-30: Loss 2-5 → Learning phrases");
 
-        ForgeSettingsDialog dlg = new ForgeSettingsDialog(page.getShell(), currentSize, currentEpochs, currentLossThresh);
+        double[] lossHistory = null;
+        Object lhObj = config.get("lossHistory");
+        if (lhObj instanceof String && !((String) lhObj).isEmpty()) {
+            try {
+                org.json.JSONArray arr = new org.json.JSONArray((String) lhObj);
+                lossHistory = new double[arr.length()];
+                for (int i = 0; i < arr.length(); i++) {
+                    lossHistory[i] = arr.getDouble(i);
+                }
+            } catch (Exception ex) {}
+        } else if (lhObj instanceof double[]) {
+            lossHistory = (double[]) lhObj;
+        }
+
+        ForgeSettingsDialog dlg = new ForgeSettingsDialog(page.getShell(), currentSize, currentEpochs, currentLossThresh, lossHistory);
         if (dlg.open() == Window.OK) {
             String selectedSize = dlg.getSelectedModelSize();
             int epochs = dlg.getEpochs();
@@ -401,6 +415,25 @@ public class ChatMgmtGroup extends AEvoGroup {
                 fsmClass.getMethod("updateUiState", String.class, String.class, Object.class).invoke(instance, currentSessionId, "lossThreshold", lossThreshold);
             } catch (Exception ex) {
                 // Ignore if controller not loaded
+            }
+
+            if (orchestrator != null && orchestrator.getForgeSessions() != null) {
+                for (eu.kalafatic.evolution.model.orchestration.ForgeSession fs : orchestrator.getForgeSessions()) {
+                    if (currentSessionId.equals(fs.getSessionId()) || orchestrator.getForgeSessions().size() == 1) {
+                        if (fs.getModelState() != null) {
+                            org.json.JSONObject hpJson = new org.json.JSONObject();
+                            String hpStr = fs.getModelState().getHyperparameters();
+                            if (hpStr != null && !hpStr.isEmpty() && !hpStr.equals("{}")) {
+                                try { hpJson = new org.json.JSONObject(hpStr); } catch (Exception ex) {}
+                            }
+                            hpJson.put("modelSize", selectedSize);
+                            hpJson.put("epochs", epochs);
+                            hpJson.put("lossThreshold", lossThreshold);
+                            fs.getModelState().setHyperparameters(hpJson.toString());
+                            fs.setLastModified(System.currentTimeMillis());
+                        }
+                    }
+                }
             }
         }
     }

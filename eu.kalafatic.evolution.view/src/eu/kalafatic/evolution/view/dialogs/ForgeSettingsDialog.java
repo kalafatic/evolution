@@ -33,6 +33,7 @@ public class ForgeSettingsDialog extends Dialog {
     private String selectedModelSize = "SMALL";
     private int selectedEpochs = 32;
     private String selectedLossThreshold = "Epoch 16-30: Loss 2-5 → Learning phrases";
+    private double[] lossHistory = null;
 
     private static final String[] EPOCH_OPTIONS = new String[] {
         "2", "4", "8", "16", "32", "64", "128", "256", "512", "1024"
@@ -47,6 +48,10 @@ public class ForgeSettingsDialog extends Dialog {
     };
 
     public ForgeSettingsDialog(Shell parentShell, String modelSize, int epochs, String lossThreshold) {
+        this(parentShell, modelSize, epochs, lossThreshold, null);
+    }
+
+    public ForgeSettingsDialog(Shell parentShell, String modelSize, int epochs, String lossThreshold, double[] lossHistory) {
         super(parentShell);
         setShellStyle(getShellStyle() | SWT.RESIZE | SWT.MAX);
         if (modelSize != null && !modelSize.isEmpty()) {
@@ -58,6 +63,7 @@ public class ForgeSettingsDialog extends Dialog {
         if (lossThreshold != null && !lossThreshold.isEmpty()) {
             this.selectedLossThreshold = lossThreshold;
         }
+        this.lossHistory = lossHistory;
     }
 
     @Override
@@ -274,65 +280,124 @@ public class ForgeSettingsDialog extends Dialog {
             gc.drawString(String.valueOf(ep), x - 8, paddingTop + plotHeight + 8, true);
         }
 
-        // Curve Data Points & Expected Trajectory
-        // Point 1: (Epoch 2, Loss 8.87)
-        double ep1 = 2.0;
-        double loss1 = 8.87;
-        int x1 = paddingLeft + (int) (((ep1 - 1.0) / denom) * plotWidth);
-        int y1 = paddingTop + plotHeight - (int) ((loss1 / 10.0) * plotHeight);
+        if (lossHistory != null && lossHistory.length > 0) {
+            // Plot actual loss points recorded during training
+            gc.setForeground(redColor);
+            gc.setLineWidth(2);
+            gc.setLineStyle(SWT.LINE_SOLID);
 
-        // Target Point: (Epoch maxEpochs, Loss ~1.0)
-        double ep2 = maxEpochs;
-        double loss2 = 1.0;
-        int x2 = paddingLeft + (int) (((ep2 - 1.0) / denom) * plotWidth);
-        int y2 = paddingTop + plotHeight - (int) ((loss2 / 10.0) * plotHeight);
+            int lastX = paddingLeft;
+            int lastY = paddingTop + plotHeight - (int) ((lossHistory[0] / 10.0) * plotHeight);
 
-        // Draw trajectory curve
-        gc.setForeground(blueColor);
-        gc.setLineWidth(2);
-        gc.setLineStyle(SWT.LINE_SOLID);
+            for (int i = 0; i < lossHistory.length; i++) {
+                int epNum = i + 1;
+                double lVal = lossHistory[i];
+                int px = paddingLeft + (int) (((double) (epNum - 1) / denom) * plotWidth);
+                int py = paddingTop + plotHeight - (int) ((Math.min(10.0, Math.max(0.0, lVal)) / 10.0) * plotHeight);
 
-        int prevX = x1;
-        int prevY = y1;
-        int steps = 50;
+                gc.drawLine(lastX, lastY, px, py);
+                gc.setBackground(redColor);
+                gc.fillOval(px - 3, py - 3, 6, 6);
 
-        for (int i = 1; i <= steps; i++) {
-            double t = (double) i / steps;
-            double currentEp = ep1 + t * (ep2 - ep1);
+                lastX = px;
+                lastY = py;
+            }
 
-            // Exponential decay formula matching loss trajectory: loss = 8.87 * e^(-k * t)
-            double currentLoss = loss2 + (loss1 - loss2) * Math.exp(-3.5 * t);
+            gc.setForeground(blackColor);
+            gc.drawString(String.format("● Actual Loss (Epoch %d: %.2f)", lossHistory.length, lossHistory[lossHistory.length - 1]), lastX + 6, lastY - 10, true);
 
-            int cx = paddingLeft + (int) (((currentEp - 1.0) / denom) * plotWidth);
-            int cy = paddingTop + plotHeight - (int) ((currentLoss / 10.0) * plotHeight);
+            // Draw projected trajectory for remaining epochs
+            if (lossHistory.length < maxEpochs) {
+                gc.setForeground(blueColor);
+                gc.setLineWidth(2);
+                gc.setLineStyle(SWT.LINE_DASH);
 
-            gc.drawLine(prevX, prevY, cx, cy);
-            prevX = cx;
-            prevY = cy;
+                double startEp = lossHistory.length;
+                double startLoss = lossHistory[lossHistory.length - 1];
+                double targetLoss = 1.0;
+
+                int steps = 30;
+                int prevX = lastX;
+                int prevY = lastY;
+
+                for (int i = 1; i <= steps; i++) {
+                    double t = (double) i / steps;
+                    double currentEp = startEp + t * (maxEpochs - startEp);
+                    double currentLoss = targetLoss + (startLoss - targetLoss) * Math.exp(-3.0 * t);
+
+                    int cx = paddingLeft + (int) (((currentEp - 1.0) / denom) * plotWidth);
+                    int cy = paddingTop + plotHeight - (int) ((Math.min(10.0, Math.max(0.0, currentLoss)) / 10.0) * plotHeight);
+
+                    gc.drawLine(prevX, prevY, cx, cy);
+                    prevX = cx;
+                    prevY = cy;
+                }
+
+                gc.setBackground(blueColor);
+                gc.fillOval(prevX - 4, prevY - 4, 8, 8);
+                gc.drawString("● (Expected Epoch " + maxEpochs + ", Loss ~1.0)", prevX - 180, prevY - 20, true);
+            }
+        } else {
+            // Curve Data Points & Expected Trajectory
+            // Point 1: (Epoch 2, Loss 8.87)
+            double ep1 = 2.0;
+            double loss1 = 8.87;
+            int x1 = paddingLeft + (int) (((ep1 - 1.0) / denom) * plotWidth);
+            int y1 = paddingTop + plotHeight - (int) ((loss1 / 10.0) * plotHeight);
+
+            // Target Point: (Epoch maxEpochs, Loss ~1.0)
+            double ep2 = maxEpochs;
+            double loss2 = 1.0;
+            int x2 = paddingLeft + (int) (((ep2 - 1.0) / denom) * plotWidth);
+            int y2 = paddingTop + plotHeight - (int) ((loss2 / 10.0) * plotHeight);
+
+            // Draw trajectory curve
+            gc.setForeground(blueColor);
+            gc.setLineWidth(2);
+            gc.setLineStyle(SWT.LINE_SOLID);
+
+            int prevX = x1;
+            int prevY = y1;
+            int steps = 50;
+
+            for (int i = 1; i <= steps; i++) {
+                double t = (double) i / steps;
+                double currentEp = ep1 + t * (ep2 - ep1);
+
+                // Exponential decay formula matching loss trajectory: loss = 8.87 * e^(-k * t)
+                double currentLoss = loss2 + (loss1 - loss2) * Math.exp(-3.5 * t);
+
+                int cx = paddingLeft + (int) (((currentEp - 1.0) / denom) * plotWidth);
+                int cy = paddingTop + plotHeight - (int) ((currentLoss / 10.0) * plotHeight);
+
+                gc.drawLine(prevX, prevY, cx, cy);
+                prevX = cx;
+                prevY = cy;
+            }
+
+            // Draw Data Points
+            // Point 1 Dot
+            gc.setBackground(redColor);
+            gc.fillOval(x1 - 4, y1 - 4, 8, 8);
+            gc.setForeground(blackColor);
+            gc.drawString("● (Epoch 2, Loss 8.87)", x1 + 8, y1 - 10, true);
+
+            // Point 2 Dot
+            gc.setBackground(blueColor);
+            gc.fillOval(x2 - 4, y2 - 4, 8, 8);
+            gc.drawString("● (Expected Epoch " + maxEpochs + ", Loss ~1.0)", x2 - 190, y2 - 20, true);
+
+            // Draw "(Expected)" labels along trajectory
+            gc.setFont(originalFont);
+            gc.setForeground(grayColor);
+            int expX1 = paddingLeft + (int) ((0.35) * plotWidth);
+            int expY1 = paddingTop + plotHeight - (int) ((4.5 / 10.0) * plotHeight);
+            gc.drawString("(Expected)", expX1, expY1, true);
+
+            int expX2 = paddingLeft + (int) ((0.6) * plotWidth);
+            int expY2 = paddingTop + plotHeight - (int) ((2.5 / 10.0) * plotHeight);
+            gc.drawString("(Expected)", expX2, expY2, true);
         }
-
-        // Draw Data Points
-        // Point 1 Dot
-        gc.setBackground(redColor);
-        gc.fillOval(x1 - 4, y1 - 4, 8, 8);
-        gc.setForeground(blackColor);
-        gc.drawString("● (Epoch 2, Loss 8.87)", x1 + 8, y1 - 10, true);
-
-        // Point 2 Dot
-        gc.setBackground(blueColor);
-        gc.fillOval(x2 - 4, y2 - 4, 8, 8);
-        gc.drawString("● (Expected Epoch " + maxEpochs + ", Loss ~1.0)", x2 - 190, y2 - 20, true);
-
-        // Draw "(Expected)" labels along trajectory
-        gc.setFont(originalFont);
-        gc.setForeground(grayColor);
-        int expX1 = paddingLeft + (int) ((0.35) * plotWidth);
-        int expY1 = paddingTop + plotHeight - (int) ((4.5 / 10.0) * plotHeight);
-        gc.drawString("(Expected)", expX1, expY1, true);
-
-        int expX2 = paddingLeft + (int) ((0.6) * plotWidth);
-        int expY2 = paddingTop + plotHeight - (int) ((2.5 / 10.0) * plotHeight);
-        gc.drawString("(Expected)", expX2, expY2, true);
 
         titleFont.dispose();
     }
