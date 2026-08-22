@@ -171,9 +171,21 @@ public class ForgeSessionManager {
     public ForgeSession findSession(String sessionId) {
         Orchestrator orch = getOrchestratorModel();
         if (orch == null) return null;
-        return orch.getForgeSessions().stream()
+        ForgeSession found = orch.getForgeSessions().stream()
                 .filter(s -> s.getSessionId().equals(sessionId))
                 .findFirst().orElse(null);
+        if (found != null) return found;
+
+        found = orch.getForgeSessions().stream()
+                .filter(s -> s.getName() != null && s.getName().equalsIgnoreCase(sessionId))
+                .findFirst().orElse(null);
+        if (found != null) return found;
+
+        if (!orch.getForgeSessions().isEmpty()) {
+            return orch.getForgeSessions().get(0);
+        }
+
+        return createSession("Active Forge Session", "SELF_EVO");
     }
 
     public void updateModel(String sessionId, String modelGraph) {
