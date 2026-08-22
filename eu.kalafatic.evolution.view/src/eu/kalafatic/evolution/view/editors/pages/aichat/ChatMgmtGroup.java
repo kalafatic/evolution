@@ -369,30 +369,88 @@ public class ChatMgmtGroup extends AEvoGroup {
         eu.kalafatic.evolution.view.projection.RuntimeProjection projection = eu.kalafatic.evolution.view.projection.ProjectionService.getInstance().getProjection(currentSessionId);
         Map<String, Object> config = projection.getConfiguration();
 
-        String currentSize = (String) config.getOrDefault("modelSize", "SMALL");
-        int currentEpochs = 32;
-        Object epObj = config.get("epochs");
-        if (epObj instanceof Number) {
-            currentEpochs = ((Number) epObj).intValue();
-        } else if (epObj instanceof String) {
-            try { currentEpochs = Integer.parseInt((String) epObj); } catch (Exception ex) {}
-        }
-
-        String currentLossThresh = (String) config.getOrDefault("lossThreshold", "Epoch 16-30: Loss 2-5 → Learning phrases");
-
+        String currentSize = null;
+        int currentEpochs = -1;
+        String currentLossThresh = null;
         double[] lossHistory = null;
-        Object lhObj = config.get("lossHistory");
-        if (lhObj instanceof String && !((String) lhObj).isEmpty()) {
-            try {
-                org.json.JSONArray arr = new org.json.JSONArray((String) lhObj);
-                lossHistory = new double[arr.length()];
-                for (int i = 0; i < arr.length(); i++) {
-                    lossHistory[i] = arr.getDouble(i);
-                }
-            } catch (Exception ex) {}
-        } else if (lhObj instanceof double[]) {
-            lossHistory = (double[]) lhObj;
+
+        // 1. Try RuntimeProjection config
+        if (config != null) {
+            if (config.get("modelSize") != null) currentSize = String.valueOf(config.get("modelSize"));
+            if (config.get("epochs") != null) {
+                try { currentEpochs = Integer.parseInt(String.valueOf(config.get("epochs"))); } catch (Exception e) {}
+            }
+            if (config.get("lossThreshold") != null) currentLossThresh = String.valueOf(config.get("lossThreshold"));
+
+            Object lhObj = config.get("lossHistory");
+            if (lhObj instanceof String && !((String) lhObj).isEmpty()) {
+                try {
+                    org.json.JSONArray arr = new org.json.JSONArray((String) lhObj);
+                    lossHistory = new double[arr.length()];
+                    for (int i = 0; i < arr.length(); i++) lossHistory[i] = arr.getDouble(i);
+                } catch (Exception ex) {}
+            } else if (lhObj instanceof double[]) {
+                lossHistory = (double[]) lhObj;
+            }
         }
+
+        // 2. Try ForgeSessionManager uiState
+        try {
+            Class<?> fsmClass = Class.forName("eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager");
+            Object instance = fsmClass.getMethod("getInstance").invoke(null);
+            org.json.JSONObject uiState = (org.json.JSONObject) fsmClass.getMethod("getUiState", String.class).invoke(instance, currentSessionId);
+            if (uiState != null) {
+                if ((currentSize == null || currentSize.isEmpty()) && uiState.has("modelSize")) currentSize = uiState.getString("modelSize");
+                if (currentEpochs <= 0 && uiState.has("epochs")) currentEpochs = uiState.getInt("epochs");
+                if ((currentLossThresh == null || currentLossThresh.isEmpty()) && uiState.has("lossThreshold")) currentLossThresh = uiState.getString("lossThreshold");
+                if (lossHistory == null && uiState.has("lossHistory")) {
+                    String lhStr = uiState.getString("lossHistory");
+                    if (lhStr != null && !lhStr.isEmpty()) {
+                        org.json.JSONArray arr = new org.json.JSONArray(lhStr);
+                        lossHistory = new double[arr.length()];
+                        for (int i = 0; i < arr.length(); i++) lossHistory[i] = arr.getDouble(i);
+                    }
+                }
+            }
+        } catch (Exception ex) {}
+
+        // 3. Try Orchestrator ForgeSessions
+        if (orchestrator != null && orchestrator.getForgeSessions() != null) {
+            for (eu.kalafatic.evolution.model.orchestration.ForgeSession fs : orchestrator.getForgeSessions()) {
+                if (fs.getModelState() != null && fs.getModelState().getHyperparameters() != null) {
+                    String hpStr = fs.getModelState().getHyperparameters();
+                    if (hpStr != null && !hpStr.isEmpty() && !hpStr.equals("{}")) {
+                        try {
+                            org.json.JSONObject hpJson = new org.json.JSONObject(hpStr);
+                            if ((currentSize == null || currentSize.isEmpty()) && hpJson.has("modelSize")) currentSize = hpJson.getString("modelSize");
+                            if (currentEpochs <= 0 && hpJson.has("epochs")) currentEpochs = hpJson.getInt("epochs");
+                            if ((currentLossThresh == null || currentLossThresh.isEmpty()) && hpJson.has("lossThreshold")) currentLossThresh = hpJson.getString("lossThreshold");
+                        } catch (Exception ex) {}
+                    }
+                }
+            }
+        }
+
+        // 4. Try IDialogSettings fallback
+        if (eu.kalafatic.evolution.view.application.Activator.getDefault() != null) {
+            org.eclipse.jface.dialogs.IDialogSettings settings = eu.kalafatic.evolution.view.application.Activator.getDefault().getDialogSettings();
+            if (settings != null) {
+                org.eclipse.jface.dialogs.IDialogSettings section = settings.getSection("AiChatSettings");
+                if (section != null) {
+                    if ((currentSize == null || currentSize.isEmpty()) && section.get("modelSize") != null) currentSize = section.get("modelSize");
+                    if ((currentSize == null || currentSize.isEmpty()) && section.get("ModelSize") != null) currentSize = section.get("ModelSize");
+                    if (currentEpochs <= 0 && section.get("epochs") != null) {
+                        try { currentEpochs = Integer.parseInt(section.get("epochs")); } catch (Exception e) {}
+                    }
+                    if ((currentLossThresh == null || currentLossThresh.isEmpty()) && section.get("lossThreshold") != null) currentLossThresh = section.get("lossThreshold");
+                }
+            }
+        }
+
+        // Defaults
+        if (currentSize == null || currentSize.isEmpty()) currentSize = "SMALL";
+        if (currentEpochs <= 0) currentEpochs = 32;
+        if (currentLossThresh == null || currentLossThresh.isEmpty()) currentLossThresh = "Epoch 16-30: Loss 2-5 → Learning phrases";
 
         ForgeSettingsDialog dlg = new ForgeSettingsDialog(page.getShell(), currentSize, currentEpochs, currentLossThresh, lossHistory);
         if (dlg.open() == Window.OK) {
