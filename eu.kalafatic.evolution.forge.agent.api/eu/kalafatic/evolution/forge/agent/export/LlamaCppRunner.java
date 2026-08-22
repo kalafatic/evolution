@@ -115,25 +115,32 @@ public class LlamaCppRunner {
                 searchPaths.add(codebasePath + "/eu.kalafatic.evolution.controller/lib/llama-cpp/win/" + cliName);
                 searchPaths.add(codebasePath + "/lib/llama-cpp/" + osDir + "/" + cliName);
             }
+            String userDir = System.getProperty("user.dir");
+            searchPaths.add(userDir + "/eu.kalafatic.evolution.controller/lib/llama-cpp/" + osDir + "/" + cliName);
+            searchPaths.add(userDir + "/eu.kalafatic.evolution.controller/lib/llama-cpp/linux/" + cliName);
+            searchPaths.add(userDir + "/eu.kalafatic.evolution.controller/lib/llama-cpp/win/" + cliName);
+            searchPaths.add(userDir + "/../eu.kalafatic.evolution.controller/lib/llama-cpp/" + osDir + "/" + cliName);
+            searchPaths.add(userDir + "/../eu.kalafatic.evolution.controller/lib/llama-cpp/linux/" + cliName);
+            searchPaths.add(userDir + "/../eu.kalafatic.evolution.controller/lib/llama-cpp/win/" + cliName);
+            searchPaths.add(userDir + "/eu.kalafatic.evolution.forge.agent.api/lib/llama-cpp/" + osDir + "/" + cliName);
             searchPaths.add(LLAMA_CPP_DIR + "/" + osDir + "/" + cliName);
             searchPaths.add(LLAMA_CPP_DIR + "/linux/" + cliName);
             searchPaths.add(LLAMA_CPP_DIR + "/win/" + cliName);
             searchPaths.add(LLAMA_CPP_DIR + "/" + cliName);
-            searchPaths.add(System.getProperty("user.dir") + "/eu.kalafatic.evolution.controller/lib/llama-cpp/" + osDir + "/" + cliName);
-            searchPaths.add(System.getProperty("user.dir") + "/eu.kalafatic.evolution.controller/lib/llama-cpp/linux/" + cliName);
-            searchPaths.add(System.getProperty("user.dir") + "/eu.kalafatic.evolution.controller/lib/llama-cpp/win/" + cliName);
-            searchPaths.add(System.getProperty("user.dir") + "/eu.kalafatic.evolution.forge.agent.api/lib/llama-cpp/" + osDir + "/" + cliName);
             searchPaths.add(System.getProperty("user.home") + "/llama.cpp/" + cliName);
             searchPaths.add(System.getProperty("user.home") + "/llama.cpp/build/bin/" + cliName);
             searchPaths.add("/usr/local/bin/llama-cli");
             searchPaths.add("/usr/bin/llama-cli");
 
             for (String path : searchPaths) {
-                if (Files.exists(Paths.get(path))) {
-                    cliPath = path;
-                    System.out.println("[LlamaCpp] Found llama-cli at: " + cliPath);
-                    break;
-                }
+                try {
+                    Path p = Paths.get(path);
+                    if (Files.exists(p)) {
+                        cliPath = p.toAbsolutePath().normalize().toString();
+                        System.out.println("[LlamaCpp] Found llama-cli at: " + cliPath);
+                        break;
+                    }
+                } catch (Exception ignored) {}
             }
         }
         
@@ -170,22 +177,37 @@ public class LlamaCppRunner {
     private String resolveFromOsgiBundle(String osDir, String cliName) {
         try {
             Class<?> frameworkUtilClass = Class.forName("org.osgi.framework.FrameworkUtil");
-            Object bundle = frameworkUtilClass.getMethod("getBundle", Class.class).invoke(null, LlamaCppRunner.class);
-            if (bundle != null) {
-                String subPath = "/lib/llama-cpp/" + osDir + "/" + cliName;
-                Object entryUrl = bundle.getClass().getMethod("getEntry", String.class).invoke(bundle, subPath);
-                if (entryUrl == null) {
-                    subPath = "/lib/llama-cpp/" + cliName;
-                    entryUrl = bundle.getClass().getMethod("getEntry", String.class).invoke(bundle, subPath);
-                }
-                if (entryUrl != null) {
-                    Class<?> fileLocatorClass = Class.forName("org.eclipse.core.runtime.FileLocator");
-                    java.net.URL fileUrl = (java.net.URL) fileLocatorClass.getMethod("toFileURL", java.net.URL.class).invoke(null, entryUrl);
-                    if (fileUrl != null) {
-                        File extractedFile = new File(fileUrl.toURI());
-                        if (extractedFile.exists()) {
-                            System.out.println("[LlamaCpp] Resolved OSGi bundle path: " + extractedFile.getAbsolutePath());
-                            return extractedFile.getAbsolutePath();
+
+            // Try bundles for LlamaCppRunner and LlamaService (controller bundle)
+            List<Object> bundles = new ArrayList<>();
+            Object b1 = frameworkUtilClass.getMethod("getBundle", Class.class).invoke(null, LlamaCppRunner.class);
+            if (b1 != null) bundles.add(b1);
+
+            try {
+                Class<?> llamaServiceClass = Class.forName("eu.kalafatic.evolution.controller.manager.LlamaService");
+                Object b2 = frameworkUtilClass.getMethod("getBundle", Class.class).invoke(null, llamaServiceClass);
+                if (b2 != null && !bundles.contains(b2)) bundles.add(b2);
+            } catch (Throwable ignored) {}
+
+            for (Object bundle : bundles) {
+                String[] candidateSubPaths = {
+                    "/lib/llama-cpp/" + osDir + "/" + cliName,
+                    "/lib/llama-cpp/linux/" + cliName,
+                    "/lib/llama-cpp/win/" + cliName,
+                    "/lib/llama-cpp/" + cliName
+                };
+
+                for (String subPath : candidateSubPaths) {
+                    Object entryUrl = bundle.getClass().getMethod("getEntry", String.class).invoke(bundle, subPath);
+                    if (entryUrl != null) {
+                        Class<?> fileLocatorClass = Class.forName("org.eclipse.core.runtime.FileLocator");
+                        java.net.URL fileUrl = (java.net.URL) fileLocatorClass.getMethod("toFileURL", java.net.URL.class).invoke(null, entryUrl);
+                        if (fileUrl != null) {
+                            File extractedFile = new File(fileUrl.toURI());
+                            if (extractedFile.exists()) {
+                                System.out.println("[LlamaCpp] Resolved OSGi bundle path: " + extractedFile.getAbsolutePath());
+                                return extractedFile.getAbsolutePath();
+                            }
                         }
                     }
                 }
