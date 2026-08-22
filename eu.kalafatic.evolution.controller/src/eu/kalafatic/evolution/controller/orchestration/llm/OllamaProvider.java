@@ -164,51 +164,12 @@ public class OllamaProvider implements ILlmProvider {
     }
 
     private void triggerSelfHealing(Orchestrator orchestrator, String model, OllamaService service, TaskContext context, boolean useAdapter) throws Exception {
-        java.io.File ggufFile = new java.io.File(System.getProperty("user.home"), ".ollama/models/" + model + ".gguf");
-        if (!ggufFile.exists()) {
-            ggufFile = new java.io.File(System.getProperty("user.home"), ".ollama/models/evo.gguf");
-        }
-        if (!ggufFile.exists()) {
-            // Fallback to workspace source/models folder
-            String codebasePath = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getCodebasePath();
-            if (codebasePath != null) {
-                java.io.File sourceModelsDir = new java.io.File(codebasePath, "source/models");
-                if (sourceModelsDir.exists() && sourceModelsDir.isDirectory()) {
-                    java.io.File f = new java.io.File(sourceModelsDir, model + ".gguf");
-                    if (f.exists()) {
-                        ggufFile = f;
-                    } else {
-                        f = new java.io.File(sourceModelsDir, "evo.gguf");
-                        if (f.exists()) {
-                            ggufFile = f;
-                        }
-                    }
-                }
-            }
-        }
-        if (!ggufFile.exists()) {
-            // Fallback to codebase dist folder
-            String codebasePath = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getCodebasePath();
-            if (codebasePath != null) {
-                java.io.File distDir = new java.io.File(codebasePath, "dist");
-                if (distDir.exists() && distDir.isDirectory()) {
-                    java.io.File[] subdirs = distDir.listFiles(java.io.File::isDirectory);
-                    if (subdirs != null) {
-                        for (java.io.File subdir : subdirs) {
-                            if (subdir.getName().equalsIgnoreCase(model) || subdir.getName().startsWith("evo-")) {
-                                java.io.File f = new java.io.File(subdir, "evo.gguf");
-                                if (f.exists()) {
-                                    ggufFile = f;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+        java.io.File ggufFile = LlamaService.resolveEvoModelPath(model != null ? model : "evo");
+        if (ggufFile == null || !ggufFile.exists()) {
+            ggufFile = LlamaService.resolveEvoModelPath("evo");
         }
 
-        if (ggufFile.exists()) {
+        if (ggufFile != null && ggufFile.exists()) {
             List<OllamaModel> available = service.loadModels();
             // Resolve first available base model to avoid download freezes
             String baseModel = "llama3.2:3b";

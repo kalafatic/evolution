@@ -414,6 +414,7 @@ public class OllamaExporterGPT implements EvoModelExporter {
 
         // Copy GGUF to root as well
         Files.copy(ggufPath, outputPath.resolve("evo.gguf"), StandardCopyOption.REPLACE_EXISTING);
+        copyToLlamaCppLibFolder(ggufPath, modelName);
 
         // Generate Modelfile
         List<String> modelfileLines = new ArrayList<>();
@@ -787,6 +788,39 @@ public class OllamaExporterGPT implements EvoModelExporter {
             hexString.append(hex);
         }
         return hexString.toString();
+    }
+
+    private void copyToLlamaCppLibFolder(Path ggufPath, String modelName) {
+        if (ggufPath == null || !Files.exists(ggufPath)) return;
+        try {
+            Class<?> clazz = Class.forName("eu.kalafatic.evolution.controller.manager.LlamaService");
+            clazz.getMethod("copyToLlamaCppLibDir", Path.class, String.class).invoke(null, ggufPath, modelName);
+        } catch (Throwable t) {
+            try {
+                String codebasePath = null;
+                try {
+                    Class<?> pmClazz = Class.forName("eu.kalafatic.evolution.controller.manager.ProjectModelManager");
+                    codebasePath = (String) pmClazz.getMethod("getCodebasePath").invoke(null);
+                } catch (Throwable ignored) {}
+
+                String userDir = System.getProperty("user.dir");
+                Path llamaCppDir = null;
+                if (codebasePath != null) {
+                    Path p = Paths.get(codebasePath, "eu.kalafatic.evolution.controller/lib/llama-cpp");
+                    if (Files.exists(p) && Files.isDirectory(p)) llamaCppDir = p;
+                }
+                if (llamaCppDir == null) {
+                    Path p = Paths.get(userDir, "eu.kalafatic.evolution.controller/lib/llama-cpp");
+                    if (Files.exists(p) && Files.isDirectory(p)) llamaCppDir = p;
+                    else llamaCppDir = Paths.get(userDir, "lib/llama-cpp");
+                }
+                Files.createDirectories(llamaCppDir);
+                Files.copy(ggufPath, llamaCppDir.resolve("evo.gguf"), StandardCopyOption.REPLACE_EXISTING);
+                if (modelName != null && !modelName.isEmpty() && !"evo".equalsIgnoreCase(modelName)) {
+                    Files.copy(ggufPath, llamaCppDir.resolve(modelName + ".gguf"), StandardCopyOption.REPLACE_EXISTING);
+                }
+            } catch (Throwable ignored) {}
+        }
     }
 
     public ValidationResult validateModel(String modelName, Path ggufPath, EvoLlmModel model) {
