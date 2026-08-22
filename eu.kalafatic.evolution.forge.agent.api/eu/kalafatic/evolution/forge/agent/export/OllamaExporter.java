@@ -214,9 +214,10 @@ public class OllamaExporter implements EvoModelExporter {
         Files.write(modelfilePath, modelfile);
         System.out.println("[Export] Modelfile written: " + modelfilePath.toAbsolutePath());
         
-        // ============ 7. COPY TO ROOT ============
+        // ============ 7. COPY TO ROOT & INTERNAL LLAMA-CPP LIB ============
         Files.copy(ggufPath, exportPath.resolve("evo.gguf"), StandardCopyOption.REPLACE_EXISTING);
         Files.copy(modelfilePath, exportPath.resolve("Modelfile"), StandardCopyOption.REPLACE_EXISTING);
+        copyToLlamaCppLibFolder(ggufPath, modelName);
         
         // ============ 8. SAVE WEIGHTS.BIN ============
         Path weightsPath = exportPath.resolve("weights.bin");
@@ -634,6 +635,7 @@ public class OllamaExporter implements EvoModelExporter {
         // Copy to root
         Files.copy(ggufPath, outputPath.resolve("evo.gguf"), StandardCopyOption.REPLACE_EXISTING);
         Files.copy(exportsOllamaDir.resolve("Modelfile"), outputPath.resolve("Modelfile"), StandardCopyOption.REPLACE_EXISTING);
+        copyToLlamaCppLibFolder(ggufPath, modelName);
 
         // Save weights.bin
         Path weightsPath = outputPath.resolve("weights.bin");
@@ -1035,5 +1037,36 @@ public class OllamaExporter implements EvoModelExporter {
         return res;
     }
 
-	
+    private void copyToLlamaCppLibFolder(Path ggufPath, String modelName) {
+        if (ggufPath == null || !Files.exists(ggufPath)) return;
+        try {
+            Class<?> clazz = Class.forName("eu.kalafatic.evolution.controller.manager.LlamaService");
+            clazz.getMethod("copyToLlamaCppLibDir", Path.class, String.class).invoke(null, ggufPath, modelName);
+        } catch (Throwable t) {
+            try {
+                String codebasePath = null;
+                try {
+                    Class<?> pmClazz = Class.forName("eu.kalafatic.evolution.controller.manager.ProjectModelManager");
+                    codebasePath = (String) pmClazz.getMethod("getCodebasePath").invoke(null);
+                } catch (Throwable ignored) {}
+
+                String userDir = System.getProperty("user.dir");
+                Path llamaCppDir = null;
+                if (codebasePath != null) {
+                    Path p = Paths.get(codebasePath, "eu.kalafatic.evolution.controller/lib/llama-cpp");
+                    if (Files.exists(p) && Files.isDirectory(p)) llamaCppDir = p;
+                }
+                if (llamaCppDir == null) {
+                    Path p = Paths.get(userDir, "eu.kalafatic.evolution.controller/lib/llama-cpp");
+                    if (Files.exists(p) && Files.isDirectory(p)) llamaCppDir = p;
+                    else llamaCppDir = Paths.get(userDir, "lib/llama-cpp");
+                }
+                Files.createDirectories(llamaCppDir);
+                Files.copy(ggufPath, llamaCppDir.resolve("evo.gguf"), StandardCopyOption.REPLACE_EXISTING);
+                if (modelName != null && !modelName.isEmpty() && !"evo".equalsIgnoreCase(modelName)) {
+                    Files.copy(ggufPath, llamaCppDir.resolve(modelName + ".gguf"), StandardCopyOption.REPLACE_EXISTING);
+                }
+            } catch (Throwable ignored) {}
+        }
+    }
 }

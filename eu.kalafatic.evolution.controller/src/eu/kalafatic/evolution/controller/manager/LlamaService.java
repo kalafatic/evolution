@@ -109,7 +109,80 @@ public class LlamaService {
     }
 
     /**
+     * Resolves the primary llama-cpp lib folder across codebase/workspace/user.dir locations.
+     * @return File representing the llama-cpp directory.
+     */
+    public static File resolveLlamaCppLibDir() {
+        String codebasePath = ProjectModelManager.getCodebasePath();
+        String userDir = System.getProperty("user.dir");
+        List<String> candidatePaths = new ArrayList<>();
+        if (codebasePath != null && !codebasePath.isEmpty()) {
+            candidatePaths.add(codebasePath + "/eu.kalafatic.evolution.controller/lib/llama-cpp");
+            candidatePaths.add(codebasePath + "/lib/llama-cpp");
+        }
+        if (userDir != null && !userDir.isEmpty()) {
+            candidatePaths.add(userDir + "/eu.kalafatic.evolution.controller/lib/llama-cpp");
+            candidatePaths.add(userDir + "/../eu.kalafatic.evolution.controller/lib/llama-cpp");
+            candidatePaths.add(userDir + "/lib/llama-cpp");
+            candidatePaths.add(userDir + "/eu.kalafatic.evolution.forge.agent.api/lib/llama-cpp");
+        }
+
+        for (String pathStr : candidatePaths) {
+            File dir = new File(pathStr);
+            if (dir.exists() && dir.isDirectory()) {
+                return dir;
+            }
+        }
+
+        String primaryPath = !candidatePaths.isEmpty() ? candidatePaths.get(0) : userDir + "/lib/llama-cpp";
+        File dir = new File(primaryPath);
+        dir.mkdirs();
+        return dir;
+    }
+
+    /**
+     * Copies and overwrites the specified source GGUF file to the internal llama-cpp lib folder as evo.gguf.
+     * @param sourceGguf Path to the source GGUF file.
+     * @return true if copy succeeded.
+     */
+    public static boolean copyToLlamaCppLibDir(java.nio.file.Path sourceGguf) {
+        return copyToLlamaCppLibDir(sourceGguf, null);
+    }
+
+    /**
+     * Copies and overwrites the specified source GGUF file to the internal llama-cpp lib folder as evo.gguf and modelName.gguf.
+     * @param sourceGguf Path to the source GGUF file.
+     * @param modelName Optional target model name (e.g. "evo-12345").
+     * @return true if copy succeeded.
+     */
+    public static boolean copyToLlamaCppLibDir(java.nio.file.Path sourceGguf, String modelName) {
+        if (sourceGguf == null || !java.nio.file.Files.exists(sourceGguf)) {
+            return false;
+        }
+        try {
+            File llamaCppDir = resolveLlamaCppLibDir();
+            if (!llamaCppDir.exists()) {
+                llamaCppDir.mkdirs();
+            }
+            java.nio.file.Path targetEvoGguf = llamaCppDir.toPath().resolve("evo.gguf");
+            java.nio.file.Files.copy(sourceGguf, targetEvoGguf, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            System.out.println("[LlamaService] Copied/overwrote latest forged model to llama-cpp lib folder: " + targetEvoGguf.toAbsolutePath());
+
+            if (modelName != null && !modelName.isEmpty() && !"evo".equalsIgnoreCase(modelName)) {
+                java.nio.file.Path targetNamedGguf = llamaCppDir.toPath().resolve(modelName + ".gguf");
+                java.nio.file.Files.copy(sourceGguf, targetNamedGguf, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                System.out.println("[LlamaService] Copied/overwrote model as " + modelName + ".gguf in llama-cpp lib folder.");
+            }
+            return true;
+        } catch (Exception e) {
+            System.err.println("[LlamaService] Failed to copy GGUF to llama-cpp lib folder: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
      * Resolves the physical GGUF file path for the given model name using various local paths.
+     * Default priority is given to the internal llama-cpp lib directory.
      * @param modelName The target model name (e.g., "evo" or "evo-llm-001")
      * @return File object pointing to the GGUF file, or null if not found.
      */
@@ -118,11 +191,20 @@ public class LlamaService {
             return null;
         }
 
-        // 1. Check user home ~/.ollama/models/<modelName>.gguf
+        // 1. DEFAULT: Check inside internal llama-cpp lib folder first
+        File llamaCppDir = resolveLlamaCppLibDir();
+        if (llamaCppDir != null && llamaCppDir.exists() && llamaCppDir.isDirectory()) {
+            File f = new File(llamaCppDir, modelName + ".gguf");
+            if (f.exists()) return f;
+            f = new File(llamaCppDir, "evo.gguf");
+            if (f.exists()) return f;
+        }
+
+        // 2. Check user home ~/.ollama/models/<modelName>.gguf
         File file = new File(System.getProperty("user.home"), ".ollama/models/" + modelName + ".gguf");
         if (file.exists()) return file;
 
-        // 2. Check user home ~/.ollama/models/evo.gguf
+        // 3. Check user home ~/.ollama/models/evo.gguf
         file = new File(System.getProperty("user.home"), ".ollama/models/evo.gguf");
         if (file.exists()) return file;
 

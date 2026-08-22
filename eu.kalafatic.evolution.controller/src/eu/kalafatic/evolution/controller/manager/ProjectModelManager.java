@@ -602,6 +602,15 @@ public class ProjectModelManager {
 
         // Helper to check if a model file exists on disk
         java.util.function.BiFunction<String, String, Boolean> checkGgufOnDisk = (modelName, targetName) -> {
+            // Check internal llama-cpp lib folder first as default
+            File llamaCppDir = LlamaService.resolveLlamaCppLibDir();
+            if (llamaCppDir != null && llamaCppDir.exists() && llamaCppDir.isDirectory()) {
+                File f1 = new File(llamaCppDir, modelName + ".gguf");
+                File f2 = new File(llamaCppDir, "evo.gguf");
+                if (f1.exists() || (modelName.equalsIgnoreCase("evo") && f2.exists())) {
+                    return true;
+                }
+            }
             // Check default Ollama folder
             File ollamaHomeModelsDir = new File(System.getProperty("user.home"), ".ollama/models");
             if (ollamaHomeModelsDir.exists() && ollamaHomeModelsDir.isDirectory()) {
@@ -684,6 +693,33 @@ public class ProjectModelManager {
 
         // 5. Scan local exported and default Ollama models to ensure forged evo models are ALWAYS listed
         try {
+            // Check internal llama-cpp lib folder first
+            File llamaCppDir = LlamaService.resolveLlamaCppLibDir();
+            if (llamaCppDir != null && llamaCppDir.exists() && llamaCppDir.isDirectory()) {
+                File[] files = llamaCppDir.listFiles((dir, name) -> name.toLowerCase().endsWith(".gguf") && name.toLowerCase().contains("evo"));
+                if (files != null) {
+                    for (File f : files) {
+                        String filename = f.getName();
+                        String modelName = filename.substring(0, filename.length() - 5);
+                        if (models.stream().noneMatch(i -> i.getName().equalsIgnoreCase(modelName))) {
+                            AIProvider item = factory.createAIProvider();
+                            item.setName(modelName);
+                            item.setLocal(true);
+                            item.setUrl(ollamaUrl);
+                            item.setFormat("ollama");
+                            if (ollamaOnline) {
+                                item.setState("NA");
+                                item.setStateDescription("Model in llama-cpp lib folder - GGUF exists on disk but is not registered in Ollama.");
+                            } else {
+                                item.setState("ERR");
+                                item.setStateDescription("Ollama server offline");
+                            }
+                            models.add(item);
+                        }
+                    }
+                }
+            }
+
             // Check default Ollama folder
             File ollamaHomeModelsDir = new File(System.getProperty("user.home"), ".ollama/models");
             if (ollamaHomeModelsDir.exists() && ollamaHomeModelsDir.isDirectory()) {

@@ -350,7 +350,15 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                 exporter.export(modelName, exportPath, model);
                 logToFile(logFile, "Export complete. Model output written to: " + exportPath.toAbsolutePath().toString());
 
-                // Copy generated Modelfile, weights.bin, and evo.gguf to runFolder and workspace source/models/ folder
+                // Copy generated Modelfile, weights.bin, and evo.gguf to runFolder, llama-cpp lib folder, and workspace source/models/ folder
+                try {
+                    Class<?> llamaServiceClass = Class.forName("eu.kalafatic.evolution.controller.manager.LlamaService");
+                    llamaServiceClass.getMethod("copyToLlamaCppLibDir", Path.class, String.class).invoke(null, exportPath.resolve("exports/ollama/evo.gguf"), modelName);
+                    logToFile(logFile, "[EXPORT_GGUF] Programmatically copied GGUF model to internal llama-cpp lib folder.");
+                } catch (Exception ex) {
+                    logToFile(logFile, "[EXPORT_GGUF] Warning: Copying to llama-cpp lib directory failed: " + ex.getMessage());
+                }
+
                 String targetCodebase = getCodebasePathViaReflection();
                 if (targetCodebase != null) {
                     Path sourceModelsDir = Paths.get(targetCodebase).resolve("source/models");

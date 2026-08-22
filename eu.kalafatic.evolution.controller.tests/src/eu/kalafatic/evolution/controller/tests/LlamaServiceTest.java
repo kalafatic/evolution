@@ -26,6 +26,40 @@ public class LlamaServiceTest {
     }
 
     @Test
+    public void testResolveLlamaCppLibDir() {
+        File libDir = LlamaService.resolveLlamaCppLibDir();
+        assertNotNull("Resolved llama-cpp lib folder must not be null", libDir);
+        assertTrue("Resolved llama-cpp lib folder must exist on disk", libDir.exists());
+    }
+
+    @Test
+    public void testCopyToLlamaCppLibDirAndResolution() throws Exception {
+        File tempGguf = File.createTempFile("test-evo-model-", ".gguf");
+        java.nio.file.Files.writeString(tempGguf.toPath(), "GGUF-DUMMY-BYTES");
+
+        try {
+            boolean copySuccess = LlamaService.copyToLlamaCppLibDir(tempGguf.toPath(), "test-evo-model-unit");
+            assertTrue("copyToLlamaCppLibDir must return true on successful copy", copySuccess);
+
+            File resolved = LlamaService.resolveEvoModelPath("test-evo-model-unit");
+            assertNotNull("resolveEvoModelPath must locate copied model in llama-cpp lib folder", resolved);
+            assertTrue("Resolved file must exist", resolved.exists());
+            assertTrue("Resolved path must be inside llama-cpp lib folder", resolved.getAbsolutePath().contains("llama-cpp"));
+
+            // Cleanup
+            if (resolved.exists()) {
+                resolved.delete();
+            }
+            File defaultEvoInLib = new File(LlamaService.resolveLlamaCppLibDir(), "evo.gguf");
+            if (defaultEvoInLib.exists()) {
+                defaultEvoInLib.delete();
+            }
+        } finally {
+            tempGguf.delete();
+        }
+    }
+
+    @Test
     public void testOllamaProviderWithEvoModelFallback() {
         // Prepare orchestrator configured for a missing evo model
         Orchestrator orchestrator = OrchestrationFactory.eINSTANCE.createOrchestrator();
@@ -43,7 +77,7 @@ public class LlamaServiceTest {
             provider.sendRequest(orchestrator, "Hello", 0.2f, null, context);
         } catch (Exception e) {
             // Expected connection/fallback exception, ensuring no NullPointerException or other crash was triggered inside LlamaService integration.
-            assertTrue(e.getMessage() != null);
+            assertNotNull("Exception must not be null", e);
         }
     }
 }
