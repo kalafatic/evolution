@@ -42,7 +42,19 @@ public class OllamaFallbackTest {
 
                 generateCallCount.incrementAndGet();
 
-                if (requestedModel.toLowerCase().contains("evo")) {
+                if (requestedModel.equalsIgnoreCase("evo-token-test")) {
+                    // Return raw token placeholders response
+                    JSONObject resp = new JSONObject();
+                    JSONObject msg = new JSONObject();
+                    msg.put("role", "assistant");
+                    msg.put("content", "token_6291token_6231token_6627");
+                    resp.put("message", msg);
+                    String response = resp.toString();
+                    exchange.sendResponseHeaders(200, response.length());
+                    try (OutputStream os = exchange.getResponseBody()) {
+                        os.write(response.getBytes());
+                    }
+                } else if (requestedModel.toLowerCase().contains("evo")) {
                     // Always fail for 'evo' model with unable to load model error to trigger self-healing and then fallback
                     String response = "{\"error\":\"unable to load model: C:\\\\Users\\\\petrk\\\\.ollama\\\\models\\\\blobs\\\\sha256-f3df8489485a4c2095c1a12d2e035728c1ca6dd8374d64aea25c0e7dcb752b27\"}";
                     exchange.sendResponseHeaders(500, response.length());
@@ -161,5 +173,25 @@ public class OllamaFallbackTest {
         assertEquals("Fallback success", result);
         assertNotEquals("evo", orchestrator.getOllama().getModel());
         assertNotEquals("evo", orchestrator.getLocalModel());
+    }
+
+    @Test
+    public void testEvoTokenPlaceholderFallback() throws Exception {
+        Orchestrator orchestrator = OrchestrationFactory.eINSTANCE.createOrchestrator();
+        Ollama ollama = OrchestrationFactory.eINSTANCE.createOllama();
+        ollama.setUrl("http://localhost:" + port);
+        ollama.setModel("evo-token-test");
+        orchestrator.setOllama(ollama);
+        orchestrator.setLocalModel("evo-token-test");
+
+        OllamaProvider provider = new OllamaProvider();
+        TaskContext context = new TaskContext(orchestrator, null);
+
+        // This model returns raw token_XXXX output. The provider must detect this and fallback to a working base model.
+        String result = provider.sendRequest(orchestrator, "test prompt", 0.7f, null, context);
+
+        assertEquals("Fallback success", result);
+        assertNotEquals("evo-token-test", orchestrator.getOllama().getModel());
+        assertNotEquals("evo-token-test", orchestrator.getLocalModel());
     }
 }

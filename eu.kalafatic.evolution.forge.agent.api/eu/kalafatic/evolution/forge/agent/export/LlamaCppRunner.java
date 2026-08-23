@@ -114,15 +114,25 @@ public class LlamaCppRunner {
                 searchPaths.add(codebasePath + "/eu.kalafatic.evolution.controller/lib/llama-cpp/linux/" + cliName);
                 searchPaths.add(codebasePath + "/eu.kalafatic.evolution.controller/lib/llama-cpp/win/" + cliName);
                 searchPaths.add(codebasePath + "/lib/llama-cpp/" + osDir + "/" + cliName);
+                searchPaths.add(codebasePath + "/lib/llama-cpp/linux/" + cliName);
+                searchPaths.add(codebasePath + "/lib/llama-cpp/win/" + cliName);
+                scanPluginsDirectory(codebasePath, searchPaths, osDir, cliName);
             }
             String userDir = System.getProperty("user.dir");
-            searchPaths.add(userDir + "/eu.kalafatic.evolution.controller/lib/llama-cpp/" + osDir + "/" + cliName);
-            searchPaths.add(userDir + "/eu.kalafatic.evolution.controller/lib/llama-cpp/linux/" + cliName);
-            searchPaths.add(userDir + "/eu.kalafatic.evolution.controller/lib/llama-cpp/win/" + cliName);
-            searchPaths.add(userDir + "/../eu.kalafatic.evolution.controller/lib/llama-cpp/" + osDir + "/" + cliName);
-            searchPaths.add(userDir + "/../eu.kalafatic.evolution.controller/lib/llama-cpp/linux/" + cliName);
-            searchPaths.add(userDir + "/../eu.kalafatic.evolution.controller/lib/llama-cpp/win/" + cliName);
-            searchPaths.add(userDir + "/eu.kalafatic.evolution.forge.agent.api/lib/llama-cpp/" + osDir + "/" + cliName);
+            if (userDir != null) {
+                searchPaths.add(userDir + "/eu.kalafatic.evolution.controller/lib/llama-cpp/" + osDir + "/" + cliName);
+                searchPaths.add(userDir + "/eu.kalafatic.evolution.controller/lib/llama-cpp/linux/" + cliName);
+                searchPaths.add(userDir + "/eu.kalafatic.evolution.controller/lib/llama-cpp/win/" + cliName);
+                searchPaths.add(userDir + "/lib/llama-cpp/" + osDir + "/" + cliName);
+                searchPaths.add(userDir + "/lib/llama-cpp/linux/" + cliName);
+                searchPaths.add(userDir + "/lib/llama-cpp/win/" + cliName);
+                searchPaths.add(userDir + "/../eu.kalafatic.evolution.controller/lib/llama-cpp/" + osDir + "/" + cliName);
+                searchPaths.add(userDir + "/../eu.kalafatic.evolution.controller/lib/llama-cpp/linux/" + cliName);
+                searchPaths.add(userDir + "/../eu.kalafatic.evolution.controller/lib/llama-cpp/win/" + cliName);
+                searchPaths.add(userDir + "/eu.kalafatic.evolution.forge.agent.api/lib/llama-cpp/" + osDir + "/" + cliName);
+                scanPluginsDirectory(userDir, searchPaths, osDir, cliName);
+                scanPluginsDirectory(userDir + "/..", searchPaths, osDir, cliName);
+            }
             searchPaths.add(LLAMA_CPP_DIR + "/" + osDir + "/" + cliName);
             searchPaths.add(LLAMA_CPP_DIR + "/linux/" + cliName);
             searchPaths.add(LLAMA_CPP_DIR + "/win/" + cliName);
@@ -174,6 +184,27 @@ public class LlamaCppRunner {
         }
     }
 
+    private void scanPluginsDirectory(String parentDirPath, List<String> searchPaths, String osDir, String cliName) {
+        if (parentDirPath == null) return;
+        File pluginsDir = new File(parentDirPath, "plugins");
+        if (!pluginsDir.exists() || !pluginsDir.isDirectory()) {
+            pluginsDir = new File(parentDirPath);
+        }
+        if (pluginsDir.exists() && pluginsDir.isDirectory()) {
+            File[] pluginFolders = pluginsDir.listFiles((dir, name) -> name.contains("eu.kalafatic.evolution.controller") || name.contains("eu.kalafatic.evolution.forge"));
+            if (pluginFolders != null) {
+                for (File pFolder : pluginFolders) {
+                    if (pFolder.isDirectory()) {
+                        searchPaths.add(new File(pFolder, "lib/llama-cpp/" + osDir + "/" + cliName).getAbsolutePath());
+                        searchPaths.add(new File(pFolder, "lib/llama-cpp/linux/" + cliName).getAbsolutePath());
+                        searchPaths.add(new File(pFolder, "lib/llama-cpp/win/" + cliName).getAbsolutePath());
+                        searchPaths.add(new File(pFolder, "lib/llama-cpp/" + cliName).getAbsolutePath());
+                    }
+                }
+            }
+        }
+    }
+
     private String resolveFromOsgiBundle(String osDir, String cliName) {
         try {
             Class<?> frameworkUtilClass = Class.forName("org.osgi.framework.FrameworkUtil");
@@ -190,10 +221,39 @@ public class LlamaCppRunner {
             } catch (Throwable ignored) {}
 
             for (Object bundle : bundles) {
+                // Method A: Check FileLocator.getBundleFile(bundle)
+                try {
+                    Class<?> fileLocatorClass = Class.forName("org.eclipse.core.runtime.FileLocator");
+                    Class<?> bundleClass = Class.forName("org.osgi.framework.Bundle");
+                    Object bundleFileObj = fileLocatorClass.getMethod("getBundleFile", bundleClass).invoke(null, bundle);
+                    if (bundleFileObj instanceof File) {
+                        File bundleDir = (File) bundleFileObj;
+                        if (bundleDir.isDirectory()) {
+                            File[] candidateFiles = {
+                                new File(bundleDir, "lib/llama-cpp/" + osDir + "/" + cliName),
+                                new File(bundleDir, "lib/llama-cpp/linux/" + cliName),
+                                new File(bundleDir, "lib/llama-cpp/win/" + cliName),
+                                new File(bundleDir, "lib/llama-cpp/" + cliName)
+                            };
+                            for (File f : candidateFiles) {
+                                if (f.exists()) {
+                                    System.out.println("[LlamaCpp] Resolved bundle file path: " + f.getAbsolutePath());
+                                    return f.getAbsolutePath();
+                                }
+                            }
+                        }
+                    }
+                } catch (Throwable ignored) {}
+
+                // Method B: Check bundle.getEntry(...) with FileLocator.toFileURL
                 String[] candidateSubPaths = {
+                    "lib/llama-cpp/" + osDir + "/" + cliName,
                     "/lib/llama-cpp/" + osDir + "/" + cliName,
+                    "lib/llama-cpp/linux/" + cliName,
                     "/lib/llama-cpp/linux/" + cliName,
+                    "lib/llama-cpp/win/" + cliName,
                     "/lib/llama-cpp/win/" + cliName,
+                    "lib/llama-cpp/" + cliName,
                     "/lib/llama-cpp/" + cliName
                 };
 
@@ -203,9 +263,18 @@ public class LlamaCppRunner {
                         Class<?> fileLocatorClass = Class.forName("org.eclipse.core.runtime.FileLocator");
                         java.net.URL fileUrl = (java.net.URL) fileLocatorClass.getMethod("toFileURL", java.net.URL.class).invoke(null, entryUrl);
                         if (fileUrl != null) {
-                            File extractedFile = new File(fileUrl.toURI());
-                            if (extractedFile.exists()) {
-                                System.out.println("[LlamaCpp] Resolved OSGi bundle path: " + extractedFile.getAbsolutePath());
+                            String urlStr = fileUrl.toExternalForm();
+                            File extractedFile = null;
+                            if (urlStr.startsWith("file:")) {
+                                extractedFile = new File(fileUrl.getPath());
+                                if (!extractedFile.exists()) {
+                                    try {
+                                        extractedFile = new File(fileUrl.toURI());
+                                    } catch (Exception ignored) {}
+                                }
+                            }
+                            if (extractedFile != null && extractedFile.exists()) {
+                                System.out.println("[LlamaCpp] Resolved OSGi bundle entry path: " + extractedFile.getAbsolutePath());
                                 return extractedFile.getAbsolutePath();
                             }
                         }

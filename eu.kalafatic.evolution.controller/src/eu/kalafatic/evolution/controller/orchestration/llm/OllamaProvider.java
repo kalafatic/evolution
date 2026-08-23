@@ -263,10 +263,16 @@ public class OllamaProvider implements ILlmProvider {
                     llamaService.setTemperature(temperature);
                     String sessionId = context != null ? context.getSessionId() : "Default";
                     String response = llamaService.chat(prompt, sessionId);
-                    if (context != null) {
-                        context.log("Stage: LLM\nProvider: LlamaService (llama.cpp)\nModel: " + model + "\nToken count: (estimated) " + (prompt.length() / 4) + "\nRaw response length: " + response.length());
+                    if (response != null && !response.contains("token_")) {
+                        if (context != null) {
+                            context.log("Stage: LLM\nProvider: LlamaService (llama.cpp)\nModel: " + model + "\nToken count: (estimated) " + (prompt.length() / 4) + "\nRaw response length: " + response.length());
+                        }
+                        return response;
+                    } else {
+                        if (context != null) {
+                            context.log("LlamaService: Response contained token placeholders ('token_XXXX'). Falling back to default Ollama provider.");
+                        }
                     }
-                    return response;
                 } catch (Exception ex) {
                     if (context != null) {
                         context.log("LlamaService: Execution failed (" + ex.getMessage() + "). Falling back to default Ollama provider.");
@@ -305,9 +311,19 @@ public class OllamaProvider implements ILlmProvider {
         }
 
         try {
-            String sessionId = context.getSessionId();
+            String sessionId = context != null ? context.getSessionId() : "Default";
             if (sessionId == null) sessionId = "Default";
             String response = service.chat(prompt, sessionId);
+            if (response != null && response.contains("token_") && model != null && model.toLowerCase().contains("evo")) {
+                if (context != null) {
+                    context.log("Ollama: Model '" + model + "' returned token placeholders ('token_XXXX'). Falling back to working base model.");
+                }
+                String fallbackModel = findWorkingFallbackModel(service, context);
+                if (fallbackModel != null && !fallbackModel.equalsIgnoreCase(model)) {
+                    updateOrchestratorModel(orchestrator, fallbackModel);
+                    return sendRequestWithRetry(orchestrator, prompt, temperature, proxyUrl, context, depth + 1);
+                }
+            }
             if (context != null) {
                 context.log("Stage: LLM\nProvider: Ollama\nModel: " + model + "\nToken count: (estimated) " + (prompt.length() / 4) + "\nRaw response length: " + response.length());
             }
