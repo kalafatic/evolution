@@ -69,13 +69,17 @@ public class LlamaService {
 
         history.add(new Message("user", userInput));
 
-        if (runner == null) {
-            throw new IllegalStateException("LlamaService: runner is not initialized. Model path: " + modelPath);
+        if (runner == null || !runner.isAvailable()) {
+            throw new IllegalStateException("LlamaService: runner is not initialized or llama-cli is unavailable. Model path: " + modelPath);
         }
 
         // Run inference via llama.cpp
         String answer = runner.generate(userInput);
         answer = cleanLlamaOutput(answer);
+
+        if (answer != null && answer.contains("token_")) {
+            throw new IOException("LlamaService: llama.cpp output contains placeholder tokens ('token_XXXX')");
+        }
 
         history.add(new Message("assistant", answer));
         return answer;
@@ -98,10 +102,15 @@ public class LlamaService {
      * Standard generate implementation to match OllamaService.
      */
     public String generate(String prompt) throws Exception {
-        if (runner == null) {
-            throw new IllegalStateException("LlamaService: runner is not initialized. Model path: " + modelPath);
+        if (runner == null || !runner.isAvailable()) {
+            throw new IllegalStateException("LlamaService: runner is not initialized or llama-cli is unavailable. Model path: " + modelPath);
         }
-        return runner.generate(prompt);
+        String answer = runner.generate(prompt);
+        answer = cleanLlamaOutput(answer);
+        if (answer != null && answer.contains("token_")) {
+            throw new IOException("LlamaService: llama.cpp output contains placeholder tokens ('token_XXXX')");
+        }
+        return answer;
     }
 
     public List<Message> getMessages(String sessionId) {
