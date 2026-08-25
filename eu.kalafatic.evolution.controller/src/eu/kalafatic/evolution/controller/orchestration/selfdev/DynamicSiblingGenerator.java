@@ -558,15 +558,11 @@ public class DynamicSiblingGenerator {
 
 	private String buildStepByStepPrompt(PromptStrategy strategy, int index) {
 		StringBuilder sb = new StringBuilder();
-		sb.append("Step 1: What should the class be named?\n");
-		sb.append("Step 2: What should the main method do?\n");
-		sb.append("Step 3: Write the complete Java code.\n\n");
-		sb.append("Return your answer in this format:\n");
-		sb.append("CLASS_NAME: [name]\n");
-		sb.append("METHOD: [description]\n");
-		sb.append("CODE:\n");
+		sb.append("Write a complete, valid Java class file.\n");
+		sb.append("Return ONLY the raw Java code inside a markdown block ```java ... ```.\n");
+		sb.append("Do NOT include bullet points, explanations, or text lists before the code block.\n");
 		sb.append("```java\n");
-		sb.append("[code here]\n");
+		sb.append("// Complete Java source code here\n");
 		sb.append("```\n");
 		return sb.toString();
 	}
@@ -811,8 +807,9 @@ public class DynamicSiblingGenerator {
 
 		String code = variant.optString("implementation");
 
-		// Check for class definition
-		if (!code.contains("class")) {
+		// Check for valid Java declaration (class, interface, enum, record)
+		Pattern declPattern = Pattern.compile("\\b(public\\s+|abstract\\s+|final\\s+)?(class|interface|enum|record)\\s+\\w+");
+		if (!declPattern.matcher(code).find()) {
 			return false;
 		}
 
@@ -1236,11 +1233,11 @@ public class DynamicSiblingGenerator {
 	 * Extracts class name from code.
 	 */
 	private String extractClassName(String code) {
-		Pattern pattern = Pattern.compile("(?:public\\s+)?class\\s+(\\w+)");
+		Pattern pattern = Pattern.compile("\\b(?:public\\s+|abstract\\s+|final\\s+)?(?:class|interface|enum|record)\\s+(\\w+)");
 		Matcher matcher = pattern.matcher(code);
 		if (matcher.find()) {
 			return matcher.group(1);
 		}
-		return null;
+		return "DefaultPrinter";
 	}
 }

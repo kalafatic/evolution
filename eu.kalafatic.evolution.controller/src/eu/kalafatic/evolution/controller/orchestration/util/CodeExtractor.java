@@ -60,6 +60,34 @@ public class CodeExtractor {
             }
         }
 
+        // 3.5. Handle markdown prefix labels like "* **Code:**", "**CODE:**", "* CODE:", "### Code", "CODE:", "Implementation:" etc.
+        Pattern labelPattern = Pattern.compile("(?i)(?:^|\\n)\\s*(?:\\*|#|-)?\\s*(?:\\*\\*)?(?:Implementation|CODE|Java Code|Source Code|Implementation Code)(?:\\*\\*)?:?\\s*\\n?(.*)", Pattern.DOTALL);
+        Matcher labelMatcher = labelPattern.matcher(trimmed);
+        if (labelMatcher.find()) {
+            String contentAfterLabel = labelMatcher.group(1).trim();
+            if (!contentAfterLabel.isEmpty()) {
+                String codeFromAfterLabel = extractCode(contentAfterLabel);
+                if (!codeFromAfterLabel.isEmpty() && !codeFromAfterLabel.equals(contentAfterLabel)) {
+                    return codeFromAfterLabel;
+                }
+                trimmed = contentAfterLabel;
+            }
+        }
+
+        // 3.6. Check for Java code starting anywhere in the text (e.g. after explanations, bullet points, headers)
+        Pattern javaStartPattern = Pattern.compile("(?m)^(?:package\\s+[a-zA-Z0-9_.]+|import\\s+[a-zA-Z0-9_.]+|public\\s+class\\s+\\w+|public\\s+final\\s+class\\s+\\w+|public\\s+abstract\\s+class\\s+\\w+|public\\s+interface\\s+\\w+|public\\s+enum\\s+\\w+|class\\s+\\w+|interface\\s+\\w+|enum\\s+\\w+)", Pattern.MULTILINE);
+        Matcher javaStartMatcher = javaStartPattern.matcher(trimmed);
+        if (javaStartMatcher.find()) {
+            int startIdx = javaStartMatcher.start();
+            String codeCandidate = trimmed.substring(startIdx).trim();
+            // Check if there are trailing markdown code block enders
+            int backticksIdx = codeCandidate.indexOf("```");
+            if (backticksIdx != -1) {
+                codeCandidate = codeCandidate.substring(0, backticksIdx).trim();
+            }
+            return truncateTrailingText(codeCandidate);
+        }
+
         // 1.5. If the text already starts with common Java file starters, return it with trailing text truncated
         if (trimmed.startsWith("package ") ||
             trimmed.startsWith("import ") ||
@@ -73,19 +101,6 @@ public class CodeExtractor {
             trimmed.startsWith("//") ||
             trimmed.startsWith("/*")) {
             return truncateTrailingText(trimmed);
-        }
-
-        // 4. Handle prefix labels like "CODE:", "Implementation:", "Java Code:" etc.
-        Pattern labelPattern = Pattern.compile("(?i)(?:Implementation|CODE|Java Code|Source Code|Implementation Code):\\s*\\n?(.*)", Pattern.DOTALL);
-        Matcher labelMatcher = labelPattern.matcher(trimmed);
-        if (labelMatcher.find()) {
-            String contentAfterLabel = labelMatcher.group(1).trim();
-            // Recurse on the content after label
-            String codeFromAfterLabel = extractCode(contentAfterLabel);
-            if (!codeFromAfterLabel.isEmpty() && !codeFromAfterLabel.equals(contentAfterLabel)) {
-                return codeFromAfterLabel;
-            }
-            trimmed = contentAfterLabel;
         }
 
         // 5. If we still have a JSON-like text, but not perfectly wrapped or has markdown around it
@@ -123,7 +138,7 @@ public class CodeExtractor {
                 if (backticksIdx != -1) {
                     return subset.substring(0, backticksIdx).trim();
                 }
-                return subset;
+                return truncateTrailingText(subset);
             }
         }
 

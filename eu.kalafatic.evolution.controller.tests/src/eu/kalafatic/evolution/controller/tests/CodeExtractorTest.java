@@ -162,4 +162,54 @@ public class CodeExtractorTest {
                 "    public String text = \"this is { nested brace } string\";\n" +
                 "}", extracted);
     }
+
+    @Test
+    public void testExplanationAndMarkdownListPrefix() {
+        String input = "**Explanation:**\n" +
+                "\n" +
+                "*   **CLASS_NAME:** `PrintText`\n" +
+                "*   **METHOD:** `printText(String text)`\n" +
+                "    *   This method takes a `String` argument named `text` and prints it to the console using `System.out.println()`.\n" +
+                "*   **Code:**\n" +
+                "\n" +
+                "```java\n" +
+                "package com.example;\n" +
+                "\n" +
+                "public class PrintText {\n" +
+                "    public static void printText(String text) {\n" +
+                "        System.out.println(text);\n" +
+                "    }\n" +
+                "}\n" +
+                "```";
+        String extracted = CodeExtractor.extractCode(input);
+        String expected = "package com.example;\n" +
+                "\n" +
+                "public class PrintText {\n" +
+                "    public static void printText(String text) {\n" +
+                "        System.out.println(text);\n" +
+                "    }\n" +
+                "}";
+        assertEquals(expected, extracted);
+    }
+
+    @Test
+    public void testExplanationWithoutMarkdownBackticks() {
+        String input = "**Explanation:**\n" +
+                "* **CLASS_NAME:** PrintText\n" +
+                "* **Code:**\n" +
+                "package com.example;\n" +
+                "public class PrintText {\n" +
+                "    public void printText(String text) {\n" +
+                "        System.out.println(text);\n" +
+                "    }\n" +
+                "}";
+        String extracted = CodeExtractor.extractCode(input);
+        String expected = "package com.example;\n" +
+                "public class PrintText {\n" +
+                "    public void printText(String text) {\n" +
+                "        System.out.println(text);\n" +
+                "    }\n" +
+                "}";
+        assertEquals(expected, extracted);
+    }
 }
