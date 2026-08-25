@@ -350,17 +350,34 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                 exporter.export(modelName, exportPath, model);
                 logToFile(logFile, "Export complete. Model output written to: " + exportPath.toAbsolutePath().toString());
 
-                // Copy generated Modelfile, weights.bin, and evo.gguf to runFolder, llama-cpp lib folder, and workspace source/models/ folder
+                // Copy generated Modelfile, weights.bin, and evo.gguf to runFolder, controller models folder, llama-cpp lib folder, and workspace source/models/ folder
                 try {
                     Class<?> llamaServiceClass = Class.forName("eu.kalafatic.evolution.controller.manager.LlamaService");
+                    try {
+                        llamaServiceClass.getMethod("copyToModelsDir", Path.class, String.class).invoke(null, exportPath.resolve("exports/ollama/evo.gguf"), modelName);
+                    } catch (Exception ignored) {}
                     llamaServiceClass.getMethod("copyToLlamaCppLibDir", Path.class, String.class).invoke(null, exportPath.resolve("exports/ollama/evo.gguf"), modelName);
-                    logToFile(logFile, "[EXPORT_GGUF] Programmatically copied GGUF model to internal llama-cpp lib folder.");
+                    logToFile(logFile, "[EXPORT_GGUF] Programmatically copied GGUF model to controller models and llama-cpp lib folder.");
                 } catch (Exception ex) {
-                    logToFile(logFile, "[EXPORT_GGUF] Warning: Copying to llama-cpp lib directory failed: " + ex.getMessage());
+                    logToFile(logFile, "[EXPORT_GGUF] Warning: Copying to models/llama-cpp directory failed: " + ex.getMessage());
                 }
 
                 String targetCodebase = getCodebasePathViaReflection();
                 if (targetCodebase != null) {
+                    Path controllerModelsDir = Paths.get(targetCodebase).resolve("eu.kalafatic.evolution.controller/lib/models");
+                    try {
+                        Files.createDirectories(controllerModelsDir);
+                        Files.copy(exportPath.resolve("exports/ollama/evo.gguf"), controllerModelsDir.resolve("evo.gguf"), StandardCopyOption.REPLACE_EXISTING);
+                        Files.copy(exportPath.resolve("exports/ollama/evo.gguf"), controllerModelsDir.resolve(modelName + ".gguf"), StandardCopyOption.REPLACE_EXISTING);
+                        Files.copy(exportPath.resolve("exports/ollama/Modelfile"), controllerModelsDir.resolve("Modelfile"), StandardCopyOption.REPLACE_EXISTING);
+                        if (Files.exists(exportPath.resolve("weights.bin"))) {
+                            Files.copy(exportPath.resolve("weights.bin"), controllerModelsDir.resolve("weights.bin"), StandardCopyOption.REPLACE_EXISTING);
+                        }
+                        logToFile(logFile, "[EXPORT_GGUF] Programmatically copied GGUF files to controller lib/models directory.");
+                    } catch (Exception ex) {
+                        logToFile(logFile, "[EXPORT_GGUF] Warning: Copying to controller lib/models/ directory failed: " + ex.getMessage());
+                    }
+
                     Path sourceModelsDir = Paths.get(targetCodebase).resolve("source/models");
                     try {
                         Files.createDirectories(sourceModelsDir);

@@ -26,10 +26,48 @@ public class LlamaServiceTest {
     }
 
     @Test
+    public void testResolveControllerModelsDir() {
+        File modelsDir = LlamaService.resolveControllerModelsDir();
+        assertNotNull("Resolved controller models folder must not be null", modelsDir);
+        assertTrue("Resolved controller models folder must exist on disk", modelsDir.exists());
+    }
+
+    @Test
     public void testResolveLlamaCppLibDir() {
         File libDir = LlamaService.resolveLlamaCppLibDir();
         assertNotNull("Resolved llama-cpp lib folder must not be null", libDir);
         assertTrue("Resolved llama-cpp lib folder must exist on disk", libDir.exists());
+    }
+
+    @Test
+    public void testCopyToModelsDirAndResolution() throws Exception {
+        File tempGguf = File.createTempFile("test-evo-models-dir-", ".gguf");
+        java.nio.file.Files.writeString(tempGguf.toPath(), "GGUF-DUMMY-BYTES");
+
+        try {
+            boolean copySuccess = LlamaService.copyToModelsDir(tempGguf.toPath(), "test-evo-models-unit");
+            assertTrue("copyToModelsDir must return true on successful copy", copySuccess);
+
+            File modelsDir = LlamaService.resolveControllerModelsDir();
+            File targetNamed = new File(modelsDir, "test-evo-models-unit.gguf");
+            File targetEvo = new File(modelsDir, "evo.gguf");
+            assertTrue("Named GGUF model file must exist in models folder", targetNamed.exists());
+            assertTrue("Default evo.gguf model file must exist in models folder", targetEvo.exists());
+
+            File resolved = LlamaService.resolveEvoModelPath("test-evo-models-unit");
+            assertNotNull("resolveEvoModelPath must locate copied model in models folder", resolved);
+            assertTrue("Resolved file must exist", resolved.exists());
+
+            // Cleanup
+            if (targetNamed.exists()) {
+                targetNamed.delete();
+            }
+            if (targetEvo.exists()) {
+                targetEvo.delete();
+            }
+        } finally {
+            tempGguf.delete();
+        }
     }
 
     @Test
@@ -42,13 +80,25 @@ public class LlamaServiceTest {
             assertTrue("copyToLlamaCppLibDir must return true on successful copy", copySuccess);
 
             File resolved = LlamaService.resolveEvoModelPath("test-evo-model-unit");
-            assertNotNull("resolveEvoModelPath must locate copied model in llama-cpp lib folder", resolved);
+            assertNotNull("resolveEvoModelPath must locate copied model in models or llama-cpp folder", resolved);
             assertTrue("Resolved file must exist", resolved.exists());
-            assertTrue("Resolved path must be inside llama-cpp lib folder", resolved.getAbsolutePath().contains("llama-cpp"));
+            assertTrue("Resolved path must be inside models or llama-cpp folder", resolved.getAbsolutePath().contains("models") || resolved.getAbsolutePath().contains("llama-cpp"));
 
             // Cleanup
             if (resolved.exists()) {
                 resolved.delete();
+            }
+            File namedInModels = new File(LlamaService.resolveControllerModelsDir(), "test-evo-model-unit.gguf");
+            if (namedInModels.exists()) {
+                namedInModels.delete();
+            }
+            File defaultEvoInModels = new File(LlamaService.resolveControllerModelsDir(), "evo.gguf");
+            if (defaultEvoInModels.exists()) {
+                defaultEvoInModels.delete();
+            }
+            File namedInLib = new File(LlamaService.resolveLlamaCppLibDir(), "test-evo-model-unit.gguf");
+            if (namedInLib.exists()) {
+                namedInLib.delete();
             }
             File defaultEvoInLib = new File(LlamaService.resolveLlamaCppLibDir(), "evo.gguf");
             if (defaultEvoInLib.exists()) {
