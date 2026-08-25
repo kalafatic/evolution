@@ -199,7 +199,22 @@ public class ModelsGroup extends AEvoGroup {
         String modelName = item.getName();
         if (modelName == null) return "";
 
-        // Check default internal llama-cpp lib folder first
+        // Check default internal controller models folder first
+        File modelsDir = eu.kalafatic.evolution.controller.manager.LlamaService.resolveControllerModelsDir();
+        if (modelsDir != null && modelsDir.exists() && modelsDir.isDirectory()) {
+            File f1 = new File(modelsDir, modelName + ".gguf");
+            if (f1.exists()) {
+                return f1.getAbsolutePath();
+            }
+            if (modelName.equalsIgnoreCase("evo")) {
+                File f2 = new File(modelsDir, "evo.gguf");
+                if (f2.exists()) {
+                    return f2.getAbsolutePath();
+                }
+            }
+        }
+
+        // Check default internal llama-cpp lib folder
         File llamaCppDir = eu.kalafatic.evolution.controller.manager.LlamaService.resolveLlamaCppLibDir();
         if (llamaCppDir != null && llamaCppDir.exists() && llamaCppDir.isDirectory()) {
             File f1 = new File(llamaCppDir, modelName + ".gguf");
