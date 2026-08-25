@@ -347,7 +347,7 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                 String dateVersion = new java.text.SimpleDateFormat("yyyyMMdd_HHmmss").format(new java.util.Date(timestamp));
                 String modelName = "evo-" + sessionId + "-" + dateVersion;
                 Path exportPath = projectPath.resolve("dist/" + modelName);
-                exporter.export(modelName, exportPath, model);
+                exporter.export(modelName, exportPath, model, tokenizer.getInvVocab());
                 logToFile(logFile, "Export complete. Model output written to: " + exportPath.toAbsolutePath().toString());
 
                 // Copy generated Modelfile, weights.bin, and evo.gguf to runFolder, controller models folder, llama-cpp lib folder, and workspace source/models/ folder
