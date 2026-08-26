@@ -363,6 +363,7 @@ public class AiChatPage extends AEvoPage {
 		if (chatMgmtGroup != null && chatMgmtGroup.getRemoteToken() != null) section.put("RemoteToken_" + orchestrator.getRemoteModel(), chatMgmtGroup.getRemoteToken());
 		if (chatMgmtGroup != null && chatMgmtGroup.getRemoteUrl() != null) section.put("RemoteUrl_" + orchestrator.getRemoteModel(), chatMgmtGroup.getRemoteUrl());
 		if (chatMgmtGroup != null && chatMgmtGroup.getSelectedModelSize() != null) section.put("ModelSize", chatMgmtGroup.getSelectedModelSize());
+		if (chatMgmtGroup != null && chatMgmtGroup.getInferenceEngine() != null) section.put("InferenceEngine", chatMgmtGroup.getInferenceEngine());
 
 		RuntimeProjection currentProj = ProjectionService.getInstance().getProjection(getCurrentSessionName());
 		if (currentProj != null && currentProj.getConfiguration() != null) {
@@ -422,12 +423,14 @@ public class AiChatPage extends AEvoPage {
 		String modelSize = section.get("modelSize") != null ? section.get("modelSize") : section.get("ModelSize");
 		String savedEpochs = section.get("epochs");
 		String savedLossThresh = section.get("lossThreshold");
+		String savedEngine = section.get("InferenceEngine");
 
-		if (modelSize != null || savedEpochs != null || savedLossThresh != null) {
+		if (modelSize != null || savedEpochs != null || savedLossThresh != null || savedEngine != null) {
 			java.util.Map<String, Object> sizeSettings = new java.util.HashMap<>();
 			if (modelSize != null) sizeSettings.put("modelSize", modelSize);
 			if (savedEpochs != null) sizeSettings.put("epochs", savedEpochs);
 			if (savedLossThresh != null) sizeSettings.put("lossThreshold", savedLossThresh);
+			if (savedEngine != null) sizeSettings.put("inferenceEngine", savedEngine);
 			updateConfiguration(sizeSettings);
 		}
 
