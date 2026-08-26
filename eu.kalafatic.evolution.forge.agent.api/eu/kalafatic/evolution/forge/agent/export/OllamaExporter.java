@@ -1,5 +1,7 @@
 package eu.kalafatic.evolution.forge.agent.export;
 
+import eu.kalafatic.evolution.forge.agent.gguf.GGUFValidationReport;
+import eu.kalafatic.evolution.forge.agent.gguf.GGUFValidator;
 import eu.kalafatic.evolution.forge.model.llm.EvoLlmModel;
 import eu.kalafatic.evolution.forge.model.llm.EvoModelArtifact;
 import eu.kalafatic.evolution.forge.model.llm.EvoModelExporter;
@@ -21,9 +23,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * OllamaExporter - Fixed version with proper vocabulary preservation
- * 
- * CRITICAL FIX: Now correctly passes tokenizer vocabulary to GGUF export
+ * OllamaExporter - Handles export of EVO LLM models to GGUF format for Ollama/llama.cpp
+ * with independent GGUFReader and GGUFValidator structural, semantic, and round-trip verification.
  */
 public class OllamaExporter implements EvoModelExporter {
 
@@ -64,144 +65,117 @@ public class OllamaExporter implements EvoModelExporter {
 
     // OS Detection
     private static final boolean IS_WINDOWS = System.getProperty("os.name").toLowerCase().contains("win");
-    private static final boolean IS_MAC = System.getProperty("os.name").toLowerCase().contains("mac");
-    private static final boolean IS_LINUX = System.getProperty("os.name").toLowerCase().contains("nix") || 
-                                              System.getProperty("os.name").toLowerCase().contains("nux");
 
-    private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(10))
-            .build();
-
-    // ============ MAIN EXPORT METHOD (FIXED) ============
-    
     @Override
     public void export(EvoModelArtifact artifact, Path outputPath) throws Exception {
         System.out.println("[Export] Starting EVO model export with vocabulary preservation");
         System.out.println("[Export] Artifact: " + artifact.getModelName());
         System.out.println("[Export] Vocabulary size: " + artifact.getTokenizerVocab().size());
-        
-        // ✅ CRITICAL FIX: Extract vocabulary properly from artifact
+
         Map<Integer, String> idToToken = artifact.getIdToToken();
-        Map<String, Integer> tokenToId = artifact.getTokenizerVocab();
-        
-        System.out.println("[Export] ID->Token mapping size: " + idToToken.size());
-        System.out.println("[Export] Token->ID mapping size: " + tokenToId.size());
-        
-        // Validate vocabulary
         if (idToToken.isEmpty()) {
             throw new IllegalArgumentException("Artifact has empty vocabulary! Cannot export GGUF.");
         }
-        
-        // Sample check
-        System.out.println("[Export] Sample vocab entries:");
-        int sampleCount = 0;
-        for (Map.Entry<Integer, String> entry : idToToken.entrySet()) {
-            if (sampleCount++ < 5) {
-                System.out.println("  " + entry.getKey() + " -> \"" + entry.getValue() + "\"");
-            }
-        }
-        
-        // Create model from artifact
+
         EvoLlmModel model = artifact.createModel();
-        
-        // Export with complete vocabulary
         export(artifact.getModelName(), outputPath, model, idToToken);
     }
-    
-    /**
-     * Export an EvoLlmModel to GGUF format for Ollama/llama.cpp
-     * 
-     * @param modelName  The name to register the model as
-     * @param exportPath The directory where artifacts will be written
-     * @param model      The EvoLlmModel to export
-     * @throws IOException If file operations fail
-     */
+
     public void export(String modelName, Path exportPath, EvoLlmModel model) throws IOException {
-        // ============ 1. VALIDATE MODEL ============
-        if (model == null) {
-            throw new IllegalArgumentException("Model cannot be null");
+        export(modelName, exportPath, model, null);
+    }
+
+    public void export(String modelName, Path outputPath, EvoLlmModel model, Map<Integer, String> customVocab) throws IOException {
+        if (model == null) throw new IllegalArgumentException("Model cannot be null");
+        if (outputPath == null) throw new IllegalArgumentException("Output path cannot be null");
+
+        if (customVocab == null || customVocab.isEmpty()) {
+            System.out.println("[Export] No custom vocabulary provided, building default vocabulary for size " + model.getVocabSize());
+            customVocab = buildDefaultVocabulary(model.getVocabSize());
         }
 
-        if (exportPath == null) {
-            throw new IllegalArgumentException("Export path cannot be null");
-        }
+        System.out.println("[Export] Starting genuine EVO model export to: " + outputPath.toAbsolutePath());
+        System.out.println("[Export] OS detected: " + System.getProperty("os.name"));
+        System.out.println("[Export] Vocabulary size: " + customVocab.size());
 
-        // ============ 2. CREATE OUTPUT DIRECTORIES ============
-        Files.createDirectories(exportPath);
-        Path exportsOllamaDir = exportPath.resolve("exports/ollama");
-        Files.createDirectories(exportsOllamaDir);
-
-        System.out.println("[Export] Starting EVO model export to: " + exportPath.toAbsolutePath());
-        System.out.println("[Export] Model: " + (modelName != null ? modelName : "evo"));
-        System.out.println("[Export] Architecture: Vocab=" + model.getVocabSize() +
-                          ", DModel=" + model.getDModel() +
-                          ", Layers=" + model.getNumBlocks() +
-                          ", Heads=" + model.getNumHeads());
-
-        // ============ 3. EXTRACT TENSORS ============
         List<Tensor> modelParams = model.parameters();
         if (modelParams.isEmpty()) {
-            throw new IllegalArgumentException("Model has 0 parameters - cannot export");
+            throw new IllegalArgumentException("GGUF export rejected: Model has 0 parameters.");
         }
 
-        // Build tensors in the exact order Ollama/llama.cpp expects
-        List<NamedTensor> serializedTensors = new ArrayList<>();
+        System.out.println("========== EVO EXPORT ARCHITECTURE ==========");
+        System.out.println("Vocab       : " + model.getVocabSize());
+        System.out.println("DModel      : " + model.getDModel());
+        System.out.println("DFF         : " + model.getDff());
+        System.out.println("Blocks      : " + model.getNumBlocks());
+        System.out.println("Heads       : " + model.getNumHeads());
+        System.out.println("Context     : " + model.getMaxSeqLen());
+        System.out.println("Parameters  : " + model.parameters().size());
 
-        // 3.1 Embedding layer
+        // Extract tensors in exact GGUF order
+        List<NamedTensor> serializedTensors = new ArrayList<>();
         serializedTensors.add(new NamedTensor("token_embd.weight", modelParams.get(0)));
 
-        // 3.2 Transformer blocks (each block has 9 parameters)
         int paramsPerBlock = 9;
-
         for (int i = 0; i < model.getNumBlocks(); i++) {
             int baseIdx = 1 + i * paramsPerBlock;
-
-            // Attention layer norm
             serializedTensors.add(new NamedTensor("blk." + i + ".attn_norm.weight", modelParams.get(baseIdx + 0)));
-
-            // Q, K, V, Output projections (transposed for GGUF)
             serializedTensors.add(new NamedTensor("blk." + i + ".attn_q.weight", transpose(modelParams.get(baseIdx + 1))));
             serializedTensors.add(new NamedTensor("blk." + i + ".attn_k.weight", transpose(modelParams.get(baseIdx + 2))));
             serializedTensors.add(new NamedTensor("blk." + i + ".attn_v.weight", transpose(modelParams.get(baseIdx + 3))));
             serializedTensors.add(new NamedTensor("blk." + i + ".attn_output.weight", transpose(modelParams.get(baseIdx + 4))));
-
-            // FFN layer norm
             serializedTensors.add(new NamedTensor("blk." + i + ".ffn_norm.weight", modelParams.get(baseIdx + 5)));
-
-            // FFN gate (W1), up (W3), down (W2) - all transposed
             serializedTensors.add(new NamedTensor("blk." + i + ".ffn_gate.weight", transpose(modelParams.get(baseIdx + 6))));
             serializedTensors.add(new NamedTensor("blk." + i + ".ffn_up.weight", transpose(modelParams.get(baseIdx + 7))));
             serializedTensors.add(new NamedTensor("blk." + i + ".ffn_down.weight", transpose(modelParams.get(baseIdx + 8))));
         }
 
-        // 3.3 Output norm and LM head
         int outputNormIdx = 1 + model.getNumBlocks() * paramsPerBlock;
         serializedTensors.add(new NamedTensor("output_norm.weight", modelParams.get(outputNormIdx)));
         serializedTensors.add(new NamedTensor("output.weight", transpose(modelParams.get(outputNormIdx + 1))));
 
-        System.out.println("[Export] Extracted " + serializedTensors.size() + " tensors");
+        // Create directories
+        Files.createDirectories(outputPath);
+        Path exportsOllamaDir = outputPath.resolve("exports/ollama");
+        Files.createDirectories(exportsOllamaDir);
 
-        // ============ 4. BUILD VOCABULARY ============
-        // Create a default vocabulary if none is available
-        Map<Integer, String> vocab = buildDefaultVocabulary(model.getVocabSize());
+        // 1. WRITE GGUF FILE TO DISK
+        Path ggufPath = exportsOllamaDir.resolve("evo.gguf");
+        writeGGUF(ggufPath, model, serializedTensors, customVocab);
+        long ggufSize = Files.size(ggufPath);
+        System.out.println("[Export] GGUF file written: " + ggufPath.toAbsolutePath() + " (" + ggufSize + " bytes)");
 
-        // Log vocabulary sample
-        System.out.println("[Export] Using vocabulary size: " + vocab.size());
-        int sampleCount = 0;
-        for (Map.Entry<Integer, String> entry : vocab.entrySet()) {
-            if (sampleCount++ < 10) {
-                System.out.println("[Export] Vocab[" + entry.getKey() + "] = \"" + entry.getValue() + "\"");
+        // 2. INDEPENDENT GGUF READER & VALIDATOR VERIFICATION
+        System.out.println("[Export] Running independent GGUFReader & GGUFValidator on serialized disk file...");
+        GGUFValidationReport valReport = GGUFValidator.validate(ggufPath, model, customVocab);
+        System.out.println(valReport.generateSummary());
+
+        if (!valReport.isValid()) {
+            System.err.println("[Export] ❌ CRITICAL: GGUF Validation failed! Aborting registration with Ollama/llama.cpp.");
+            for (String err : valReport.getErrors()) {
+                System.err.println("  [VALIDATION ERROR] " + err);
             }
+            throw new IOException("GGUF Export Validation Failed: File is malformed or invalid. Registration aborted.");
+        }
+        System.out.println("[Export] ✅ GGUF Structure, Metadata, Tensors, and Semantic Round-trip Validation PASSED!");
+
+        // 3. OPTIONAL EXTERNAL LLAMA-CLI CROSS-CHECK (WITH 30s TIMEOUT)
+        String llamaCppStatus = "SKIPPED";
+        try {
+            LlamaCppRunner runner = LlamaCppRunner.builder(ggufPath.toAbsolutePath().toString()).build();
+            if (runner.isAvailable()) {
+                System.out.println("[Export] Running optional secondary llama-cli validation gate...");
+                boolean llamaOk = runner.validateModel();
+                llamaCppStatus = llamaOk ? "PASS ✅" : "FAIL ❌";
+            } else {
+                System.out.println("[Export] llama-cli binary not configured, skipping external llama-cli check.");
+            }
+        } catch (Exception ex) {
+            System.err.println("[Export] Secondary llama-cli check exception: " + ex.getMessage());
+            llamaCppStatus = "FAIL ❌ (" + ex.getMessage() + ")";
         }
 
-        // ============ 5. WRITE GGUF FILE ============
-        Path ggufPath = exportsOllamaDir.resolve("evo.gguf");
-        int metadataCount = writeGGUF(ggufPath, model, serializedTensors, vocab);
-
-        long ggufSize = Files.size(ggufPath);
-        System.out.println("[Export] GGUF written: " + ggufPath.toAbsolutePath() + " (" + ggufSize + " bytes)");
-
-        // ============ 6. GENERATE MODELFILE ============
+        // 4. GENERATE MODELFILE AND SECONDARY ARTIFACTS
         List<String> modelfile = new ArrayList<>();
         modelfile.add("FROM " + ggufPath.toAbsolutePath().toString().replace("\\", "/"));
         modelfile.add("PARAMETER temperature 0.2");
@@ -212,437 +186,10 @@ public class OllamaExporter implements EvoModelExporter {
 
         Path modelfilePath = exportsOllamaDir.resolve("Modelfile");
         Files.write(modelfilePath, modelfile);
-        System.out.println("[Export] Modelfile written: " + modelfilePath.toAbsolutePath());
 
-        // ============ 7. COPY TO ROOT & INTERNAL LLAMA-CPP LIB ============
-        Files.copy(ggufPath, exportPath.resolve("evo.gguf"), StandardCopyOption.REPLACE_EXISTING);
-        Files.copy(modelfilePath, exportPath.resolve("Modelfile"), StandardCopyOption.REPLACE_EXISTING);
-        copyToLlamaCppLibFolder(ggufPath, modelName);
-
-        // ============ 8. SAVE WEIGHTS.BIN ============
-        Path weightsPath = exportPath.resolve("weights.bin");
-        try (DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(weightsPath.toFile())))) {
-            for (Tensor p : modelParams) {
-                for (float val : p.getData()) {
-                    dos.writeFloat(val);
-                }
-            }
-        }
-        System.out.println("[Export] Weights.bin written: " + weightsPath.toAbsolutePath());
-
-        // ============ 9. SAVE CONFIG.JSON ============
-        Path configPath = exportPath.resolve("config.json");
-        Map<String, Object> configMap = new LinkedHashMap<>();
-        configMap.put("model_name", modelName != null ? modelName : "evo");
-        configMap.put("vocab_size", model.getVocabSize());
-        configMap.put("d_model", model.getDModel());
-        configMap.put("num_heads", model.getNumHeads());
-        configMap.put("num_blocks", model.getNumBlocks());
-        configMap.put("dff", model.getDff());
-        configMap.put("max_seq_len", model.getMaxSeqLen());
-        configMap.put("export_date", new Date().toString());
-
-        org.json.JSONObject configJson = new org.json.JSONObject(configMap);
-        Files.writeString(configPath, configJson.toString(2));
-        System.out.println("[Export] Config written: " + configPath.toAbsolutePath());
-
-        // ============ 10. SAVE TOKENIZER.JSON ============
-        Path vocabJsonPath = exportPath.resolve("tokenizer.json");
-        Map<String, Object> vocabData = new LinkedHashMap<>();
-        vocabData.put("vocab_size", model.getVocabSize());
-        vocabData.put("tokens", new ArrayList<>(vocab.values()));
-        org.json.JSONObject vocabJson = new org.json.JSONObject(vocabData);
-        Files.writeString(vocabJsonPath, vocabJson.toString(2));
-        System.out.println("[Export] Tokenizer written: " + vocabJsonPath.toAbsolutePath());
-
-        // ============ 11. REGISTER WITH OLLAMA ============
-        boolean registrationSuccess = false;
-        String nameToRegister = (modelName != null && !modelName.isEmpty()) ? modelName : "evo";
-
-        try {
-            System.out.println("[Export] Registering model with Ollama: " + nameToRegister);
-
-            ProcessBuilder pb;
-            if (IS_WINDOWS) {
-                pb = new ProcessBuilder("ollama", "create", nameToRegister, "-f",
-                    modelfilePath.toAbsolutePath().toString());
-            } else {
-                pb = new ProcessBuilder("ollama", "create", nameToRegister, "-f",
-                    modelfilePath.toAbsolutePath().toString());
-            }
-            pb.redirectErrorStream(true);
-
-            Process p = pb.start();
-            String output = readProcessOutput(p);
-            int exitCode = p.waitFor();
-
-            System.out.println("[Ollama] " + output);
-
-            if (exitCode == 0) {
-                registrationSuccess = true;
-                System.out.println("[Export] Model registered successfully: " + nameToRegister);
-            } else {
-                System.err.println("[Export] Registration failed with exit code: " + exitCode);
-            }
-        } catch (Exception e) {
-            System.err.println("[Export] Registration error: " + e.getMessage());
-        }
-
-        // ============ 12. CREATE 'evo' ALIAS ============
-        boolean aliasUpdated = false;
-        if (registrationSuccess) {
-            try {
-                System.out.println("[Export] Creating 'evo' alias...");
-
-                ProcessBuilder pbAlias;
-                if (IS_WINDOWS) {
-                    pbAlias = new ProcessBuilder("ollama", "create", "evo", "-f",
-                        modelfilePath.toAbsolutePath().toString());
-                } else {
-                    pbAlias = new ProcessBuilder("ollama", "create", "evo", "-f",
-                        modelfilePath.toAbsolutePath().toString());
-                }
-                pbAlias.redirectErrorStream(true);
-
-                Process pAlias = pbAlias.start();
-                String output = readProcessOutput(pAlias);
-                int exitCodeAlias = pAlias.waitFor();
-
-                System.out.println("[Ollama-Alias] " + output);
-
-                if (exitCodeAlias == 0) {
-                    aliasUpdated = true;
-                    System.out.println("[Export] 'evo' alias updated successfully");
-                }
-            } catch (Exception ex) {
-                System.err.println("[Export] Alias update failed: " + ex.getMessage());
-            }
-        }
-
-        // ============ 13. RUN VALIDATION ============
-        ValidationResult valResult = validateModel(nameToRegister, ggufPath, model);
-        valResult.registration = registrationSuccess;
-
-        // ============ 14. FINAL REPORT ============
-        System.out.println("\n=======================================================");
-        System.out.println("EVO FORGE EXPORT RESULT");
-        System.out.println("=======================================================");
-        System.out.println("Model name      : " + nameToRegister);
-        System.out.println("Export path     : " + exportPath.toAbsolutePath());
-        System.out.println("Architecture    : Vocab=" + model.getVocabSize() +
-                          ", DModel=" + model.getDModel() +
-                          ", Layers=" + model.getNumBlocks() +
-                          ", Heads=" + model.getNumHeads());
-        System.out.println("Tensors exported: " + serializedTensors.size());
-        System.out.println("GGUF size       : " + ggufSize + " bytes");
-        System.out.println("Vocabulary size : " + vocab.size() + " (PRESERVED!)");
-        System.out.println("Ollama registration: " + (registrationSuccess ? "✅ PASS" : "❌ FAIL"));
-        System.out.println("'evo' alias      : " + (aliasUpdated ? "✅ PASS" : "❌ FAIL"));
-        System.out.println("Inference test  : " + (valResult.inference ? "✅ PASS" : "❌ FAIL"));
-        System.out.println("Knowledge test  : " + (valResult.knowledgeTest ? "✅ PASS" : "❌ FAIL"));
-        System.out.println("=======================================================\n");
-
-        if (valResult.fallbackRequiredReason != null) {
-            System.err.println("[Export] WARNING: " + valResult.fallbackRequiredReason);
-        }
-    }
-
-    // ============ HELPER METHODS ============
-
-    /**
-     * Build a default vocabulary for the model
-     * This is used when no custom vocabulary is provided
-     */
-    private Map<Integer, String> buildDefaultVocabulary(int vocabSize) {
-        Map<Integer, String> vocab = new LinkedHashMap<>();
-        
-        // Special tokens
-        vocab.put(0, "<unk>");
-        vocab.put(1, "<s>");
-        vocab.put(2, "</s>");
-        vocab.put(3, " ");
-        
-        // Common English tokens (simplified)
-        String[] commonTokens = {
-            "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m",
-            "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z",
-            "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
-            "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
-            "0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
-            ".", ",", "?", "!", "\"", "'", "(", ")", "[", "]", "{", "}",
-            ":", ";", "-", "_", "+", "=", "*", "/", "\\", "|", "<", ">",
-            "the", "be", "to", "of", "and", "a", "in", "that", "have", "I",
-            "it", "for", "not", "on", "with", "he", "as", "you", "do", "at"
-        };
-        
-        int idx = 4;
-        if (vocabSize >= 260) {
-            for (int b = 0; b < 256; b++) {
-                String byteToken = String.format("<0x%02X>", b);
-                vocab.put(idx++, byteToken);
-            }
-        }
-
-        for (String token : commonTokens) {
-            if (idx < vocabSize) {
-                vocab.put(idx++, token);
-            }
-        }
-        
-        // Fill remaining with token_XXXX placeholders
-        while (idx < vocabSize) {
-            vocab.put(idx, "token_" + idx);
-            idx++;
-        }
-        
-        return vocab;
-    }
-
-//    /**
-//     * Read output from a process
-//     */
-//    private String readProcessOutput(Process p) throws IOException {
-//        StringBuilder output = new StringBuilder();
-//        try (BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
-//            String line;
-//            while ((line = reader.readLine()) != null) {
-//                output.append(line).append("\n");
-//            }
-//        }
-//        return output.toString();
-//    }
-//
-//    /**
-//     * Transpose a 2D tensor (for GGUF format)
-//     */
-//    private Tensor transpose(Tensor t) {
-//        long[] shape = t.getShape();
-//        if (shape.length != 2) return t;
-//        
-//        int rows = (int) shape[0];
-//        int cols = (int) shape[1];
-//        float[] data = t.getData();
-//        float[] transposed = new float[rows * cols];
-//        
-//        for (int i = 0; i < rows; i++) {
-//            for (int j = 0; j < cols; j++) {
-//                transposed[j * rows + i] = data[i * cols + j];
-//            }
-//        }
-//        
-//        Tensor result = new SimpleTensor(cols, rows);
-//        System.arraycopy(transposed, 0, result.getData(), 0, transposed.length);
-//        return result;
-//    }
-//
-//    /**
-//     * Write a string to ByteBuffer with length prefix
-//     */
-//    private void writeString(ByteBuffer buf, String str) {
-//        byte[] bytes = str.getBytes(StandardCharsets.UTF_8);
-//        buf.putLong(bytes.length);
-//        buf.put(bytes);
-//    }
-//
-//    /**
-//     * Read a string from ByteBuffer
-//     */
-//    private String readString(ByteBuffer buf) {
-//        long len = buf.getLong();
-//        byte[] bytes = new byte[(int) len];
-//        buf.get(bytes);
-//        return new String(bytes, StandardCharsets.UTF_8);
-//    }
-//
-//    /**
-//     * Write GGUF file with proper vocabulary
-//     */
-//    private int writeGGUF(Path path, EvoLlmModel model, List<NamedTensor> tensors, Map<Integer, String> customVocab) throws IOException {
-//        // ... (use the existing writeGGUF implementation from OllamaExporter)
-//        // This is the same implementation as before
-//        return 0; // Placeholder - use the full implementation from earlier
-//    }
-
-    // ============ NESTED CLASS ============
-
-//    public static class NamedTensor {
-//        public final String name;
-//        public final Tensor tensor;
-//
-//        public NamedTensor(String name, Tensor tensor) {
-//            this.name = name;
-//            this.tensor = tensor;
-//        }
-//    }
-//
-//    public static class ValidationResult {
-//        public boolean training = true;
-//        public boolean checkpoint = true;
-//        public boolean ggufStructure = true;
-//        public boolean ggufTensors = true;
-//        public boolean registration = false;
-//        public boolean inference = false;
-//        public boolean knowledgeTest = false;
-//        public String identityStatus = "OK";
-//        public String details = "";
-//        public String fallbackRequiredReason = null;
-//    }
-
-    /**
-     * Validate the exported model
-     */
-//    public ValidationResult validateModel(String modelName, Path ggufPath, EvoLlmModel model) {
-//        System.out.println("[Export] Running validation...");
-//        ValidationResult res = new ValidationResult();
-//
-//        if (ggufPath == null || !Files.exists(ggufPath)) {
-//            res.ggufStructure = false;
-//            res.fallbackRequiredReason = "GGUF file does not exist.";
-//            return res;
-//        }
-//
-//        try {
-//            if (Files.size(ggufPath) < 1024) {
-//                res.ggufTensors = false;
-//                res.fallbackRequiredReason = "GGUF size is too small.";
-//                return res;
-//            }
-//            res.ggufStructure = true;
-//            res.ggufTensors = true;
-//        } catch (IOException e) {
-//            res.ggufStructure = false;
-//            res.fallbackRequiredReason = "Could not read GGUF: " + e.getMessage();
-//            return res;
-//        }
-//
-//        // Test inference
-//        try {
-//            System.out.println("[Export] Testing inference via Ollama API...");
-//            
-//            HttpClient client = HttpClient.newBuilder()
-//                    .connectTimeout(Duration.ofSeconds(10))
-//                    .build();
-//
-//            String jsonPayload = "{\n" +
-//                "  \"model\": \"evo\",\n" +
-//                "  \"prompt\": \"hi\",\n" +
-//                "  \"stream\": false,\n" +
-//                "  \"options\": {\n" +
-//                "    \"num_ctx\": 128\n" +
-//                "  }\n" +
-//                "}";
-//
-//            HttpRequest req = HttpRequest.newBuilder()
-//                    .uri(URI.create("http://localhost:11434/api/generate"))
-//                    .header("Content-Type", "application/json")
-//                    .timeout(Duration.ofSeconds(30))
-//                    .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
-//                    .build();
-//
-//            HttpResponse<String> resp = client.send(req, HttpResponse.BodyHandlers.ofString());
-//
-//            if (resp.statusCode() == 200) {
-//                res.inference = true;
-//                String body = resp.body();
-//                System.out.println("[Export] Inference response: " + body.substring(0, Math.min(200, body.length())));
-//                
-//                // Check for real text output (not token_XXXX)
-//                if (!body.contains("token_")) {
-//                    res.knowledgeTest = true;
-//                    System.out.println("[Export] ✅ Knowledge test PASS - real text output");
-//                } else {
-//                    res.knowledgeTest = false;
-//                    System.out.println("[Export] ❌ Knowledge test FAIL - token placeholders detected");
-//                }
-//            } else {
-//                System.err.println("[Export] HTTP error: " + resp.statusCode());
-//            }
-//        } catch (Exception e) {
-//            System.err.println("[Export] Inference test failed: " + e.getMessage());
-//            res.fallbackRequiredReason = "Inference test failed: " + e.getMessage();
-//        }
-//
-//        return res;
-//    }
-
-    // ============ OVERLOADED EXPORT WITH VOCABULARY ============
-    
-    public void export(String modelName, Path outputPath, EvoLlmModel model, Map<Integer, String> customVocab) throws IOException {
-        if (customVocab == null || customVocab.isEmpty()) {
-            System.out.println("[Export] No custom vocabulary provided, building default vocabulary for size " + model.getVocabSize());
-            customVocab = buildDefaultVocabulary(model.getVocabSize());
-        }
-        
-        System.out.println("[Export] Starting genuine EVO model export to: " + outputPath.toAbsolutePath());
-        System.out.println("[Export] OS detected: " + System.getProperty("os.name"));
-        System.out.println("[Export] Vocabulary size: " + customVocab.size());
-
-        // Validate model
-        int modelVocabSize = model.getVocabSize();
-        List<Tensor> modelParams = model.parameters();
-        if (modelParams.isEmpty()) {
-            throw new IllegalArgumentException("GGUF export rejected: Model has 0 parameters.");
-        }
-        
-        System.out.println("========== EVO EXPORT ARCHITECTURE ==========");
-        System.out.println("Vocab       : " + model.getVocabSize());
-        System.out.println("DModel      : " + model.getDModel());
-        System.out.println("DFF         : " + model.getDff());
-        System.out.println("Blocks      : " + model.getNumBlocks());
-        System.out.println("Heads       : " + model.getNumHeads());
-        System.out.println("Context     : " + model.getMaxSeqLen());
-        System.out.println("Parameters  : " + model.parameters().size());
-
-        // Build tensors in exact order Ollama expects
-        List<NamedTensor> serializedTensors = new ArrayList<>();
-        
-        // 1. Embedding
-        serializedTensors.add(new NamedTensor("token_embd.weight", modelParams.get(0)));
-        
-        int paramsPerBlock = 9;
-
-        for (int i = 0; i < model.getNumBlocks(); i++) {
-            int baseIdx = 1 + i * paramsPerBlock;
-            serializedTensors.add(new NamedTensor("blk." + i + ".attn_norm.weight", modelParams.get(baseIdx + 0)));
-            serializedTensors.add(new NamedTensor("blk." + i + ".attn_q.weight", transpose(modelParams.get(baseIdx + 1))));
-            serializedTensors.add(new NamedTensor("blk." + i + ".attn_k.weight", transpose(modelParams.get(baseIdx + 2))));
-            serializedTensors.add(new NamedTensor("blk." + i + ".attn_v.weight", transpose(modelParams.get(baseIdx + 3))));
-            serializedTensors.add(new NamedTensor("blk." + i + ".attn_output.weight", transpose(modelParams.get(baseIdx + 4))));
-            serializedTensors.add(new NamedTensor("blk." + i + ".ffn_norm.weight", modelParams.get(baseIdx + 5)));
-            serializedTensors.add(new NamedTensor("blk." + i + ".ffn_gate.weight", transpose(modelParams.get(baseIdx + 6))));
-            serializedTensors.add(new NamedTensor("blk." + i + ".ffn_up.weight", transpose(modelParams.get(baseIdx + 7))));
-            serializedTensors.add(new NamedTensor("blk." + i + ".ffn_down.weight", transpose(modelParams.get(baseIdx + 8))));
-        }
-        
-        int outputNormIdx = 1 + model.getNumBlocks() * paramsPerBlock;
-        serializedTensors.add(new NamedTensor("output_norm.weight", modelParams.get(outputNormIdx)));
-        serializedTensors.add(new NamedTensor("output.weight", transpose(modelParams.get(outputNormIdx + 1))));
-
-        // Create directories
-        Files.createDirectories(outputPath);
-        Path exportsOllamaDir = outputPath.resolve("exports/ollama");
-        Files.createDirectories(exportsOllamaDir);
-
-        // ============ WRITE GGUF WITH VOCABULARY ============
-        Path ggufPath = exportsOllamaDir.resolve("evo.gguf");
-        int metadataCount = writeGGUF(ggufPath, model, serializedTensors, customVocab);
-
-        System.out.println("[Export] GGUF file written: " + ggufPath.toAbsolutePath() + " (" + Files.size(ggufPath) + " bytes)");
-
-        // Generate Modelfile
-        List<String> modelfile = new ArrayList<>();
-        modelfile.add("FROM " + ggufPath.toAbsolutePath().toString().replace("\\", "/"));
-        modelfile.add("PARAMETER temperature 0.2");
-        modelfile.add("PARAMETER num_ctx " + model.getMaxSeqLen());
-        modelfile.add("PARAMETER stop \"</s>\"");
-        modelfile.add("PARAMETER stop \"<s>\"");
-        modelfile.add("SYSTEM \"\"\"You are EVO, a specialized language model trained on Evolution project knowledge.\"\"\"");
-
-        Files.write(exportsOllamaDir.resolve("Modelfile"), modelfile);
-
-        // Copy to root
+        // Copy to root & internal llama-cpp lib folder
         Files.copy(ggufPath, outputPath.resolve("evo.gguf"), StandardCopyOption.REPLACE_EXISTING);
-        Files.copy(exportsOllamaDir.resolve("Modelfile"), outputPath.resolve("Modelfile"), StandardCopyOption.REPLACE_EXISTING);
+        Files.copy(modelfilePath, outputPath.resolve("Modelfile"), StandardCopyOption.REPLACE_EXISTING);
         copyToLlamaCppLibFolder(ggufPath, modelName);
 
         // Save weights.bin
@@ -653,13 +200,35 @@ public class OllamaExporter implements EvoModelExporter {
             }
         }
 
-        // Register model
+        // Save config.json
+        Path configPath = outputPath.resolve("config.json");
+        Map<String, Object> configMap = new LinkedHashMap<>();
+        configMap.put("model_name", modelName != null ? modelName : "evo");
+        configMap.put("vocab_size", model.getVocabSize());
+        configMap.put("d_model", model.getDModel());
+        configMap.put("num_heads", model.getNumHeads());
+        configMap.put("num_blocks", model.getNumBlocks());
+        configMap.put("dff", model.getDff());
+        configMap.put("max_seq_len", model.getMaxSeqLen());
+        configMap.put("export_date", new Date().toString());
+        org.json.JSONObject configJson = new org.json.JSONObject(configMap);
+        Files.writeString(configPath, configJson.toString(2));
+
+        // Save tokenizer.json
+        Path vocabJsonPath = outputPath.resolve("tokenizer.json");
+        Map<String, Object> vocabData = new LinkedHashMap<>();
+        vocabData.put("vocab_size", model.getVocabSize());
+        vocabData.put("tokens", new ArrayList<>(customVocab.values()));
+        org.json.JSONObject vocabJson = new org.json.JSONObject(vocabData);
+        Files.writeString(vocabJsonPath, vocabJson.toString(2));
+
+        // 5. REGISTER WITH OLLAMA ONLY AFTER VALIDATION PASSED
         boolean registrationSuccess = false;
         String nameToRegister = (modelName != null && !modelName.isEmpty()) ? modelName : "evo";
         try {
             System.out.println("[Forge] Registering model with Ollama: " + nameToRegister);
-            ProcessBuilder pb = new ProcessBuilder("ollama", "create", nameToRegister, "-f", 
-                exportsOllamaDir.resolve("Modelfile").toAbsolutePath().toString());
+            ProcessBuilder pb = new ProcessBuilder("ollama", "create", nameToRegister, "-f",
+                modelfilePath.toAbsolutePath().toString());
             pb.redirectErrorStream(true);
             Process p = pb.start();
             String output = readProcessOutput(p);
@@ -673,37 +242,43 @@ public class OllamaExporter implements EvoModelExporter {
         }
 
         // Update 'evo' alias
+        boolean aliasUpdated = false;
         if (registrationSuccess) {
             try {
-                ProcessBuilder pbAlias = new ProcessBuilder("ollama", "create", "evo", "-f", 
-                    exportsOllamaDir.resolve("Modelfile").toAbsolutePath().toString());
+                ProcessBuilder pbAlias = new ProcessBuilder("ollama", "create", "evo", "-f",
+                    modelfilePath.toAbsolutePath().toString());
                 pbAlias.redirectErrorStream(true);
                 Process pAlias = pbAlias.start();
-                pAlias.waitFor();
-                System.out.println("[Ollama] 'evo' alias updated");
+                int exitCodeAlias = pAlias.waitFor();
+                if (exitCodeAlias == 0) {
+                    aliasUpdated = true;
+                    System.out.println("[Ollama] 'evo' alias updated");
+                }
             } catch (Exception ex) {
                 System.err.println("[Ollama] Alias update failed: " + ex.getMessage());
             }
         }
 
-        // Validate
         ValidationResult valResult = validateModel(nameToRegister, ggufPath, model);
         valResult.registration = registrationSuccess;
 
+        // Structured Final Export Report
         System.out.println("\n=======================================================");
-        System.out.println("EVO FORGE EXPORT RESULT");
-        System.out.println("Training: PASS");
-        System.out.println("GGUF tensor count: " + serializedTensors.size());
-        System.out.println("GGUF weight payload: " + Files.size(ggufPath) + " bytes");
-        System.out.println("Vocabulary size: " + customVocab.size() + " (PRESERVED!)");
-        System.out.println("Ollama registration: " + (registrationSuccess ? "PASS" : "FAIL"));
-        System.out.println("Ollama inference: " + (valResult.inference ? "PASS" : "FAIL"));
-        System.out.println("EVO knowledge benchmark: " + (valResult.knowledgeTest ? "PASS" : "FAIL"));
+        System.out.println("EVO FORGE EXPORT PIPELINE REPORT");
+        System.out.println("=======================================================");
+        System.out.println("GGUF EXPORT     : PASS ✅");
+        System.out.println("GGUF STRUCTURE  : " + (valReport.isStructureValid() ? "PASS ✅" : "FAIL ❌"));
+        System.out.println("GGUF METADATA   : " + (valReport.isMetadataValid() ? "PASS ✅" : "FAIL ❌"));
+        System.out.println("GGUF TENSORS    : " + (valReport.isTensorsValid() ? "PASS ✅" : "FAIL ❌"));
+        System.out.println("GGUF SEMANTICS  : " + (valReport.isSemanticsValid() ? "PASS ✅" : "FAIL ❌"));
+        System.out.println("GGUF ROUNDTRIP  : " + (valReport.isValid() ? "PASS ✅" : "FAIL ❌"));
+        System.out.println("LLAMA.CPP       : " + llamaCppStatus);
+        System.out.println("OLLAMA          : " + (registrationSuccess ? "PASS ✅" : "FAIL/SKIPPED ❌"));
+        System.out.println("EVO ALIAS       : " + (aliasUpdated ? "PASS ✅" : "FAIL/SKIPPED ❌"));
+        System.out.println("INFERENCE TEST  : " + (valResult.inference ? "PASS ✅" : "FAIL ❌"));
         System.out.println("=======================================================\n");
     }
 
-    // ============ GGUF WRITER (FIXED) ============
-    
     private int writeGGUF(Path path, EvoLlmModel model, List<NamedTensor> tensors, Map<Integer, String> customVocab) throws IOException {
         System.out.println("[Export] Writing GGUF with " + customVocab.size() + " vocabulary entries");
 
@@ -730,12 +305,11 @@ public class OllamaExporter implements EvoModelExporter {
         metadataList.add(new MetadataEntry("tokenizer.ggml.eos_token_id", 4, 2));
         metadataList.add(new MetadataEntry("tokenizer.ggml.unknown_token_id", 4, 0));
 
-        // ============ ✅ FIXED: Build tokens from customVocab ============
         List<String> tokens = new ArrayList<>();
         float[] scores = new float[model.getVocabSize()];
         int[] tokenTypes = new int[model.getVocabSize()];
         Set<String> seenTokens = new HashSet<>();
-        
+
         for (int i = 0; i < model.getVocabSize(); i++) {
             String token;
             if (customVocab.containsKey(i)) {
@@ -744,35 +318,27 @@ public class OllamaExporter implements EvoModelExporter {
                 token = "token_" + i;
                 System.err.println("[Warning] Missing token for ID " + i + ", using fallback");
             }
-            
-            // Deduplicate to prevent llama.cpp GGML_ASSERT token_to_id map collision
+
             if (seenTokens.contains(token)) {
                 token = token + "_" + i;
             }
             seenTokens.add(token);
-            
             tokens.add(token);
-            
-            // Set token types: 3=CONTROL (special tokens), 6=BYTE (<0x..>), 1=NORMAL
+
             if (i == 0 || i == 1 || i == 2) {
                 tokenTypes[i] = 3; // CONTROL
             } else if (token.startsWith("<0x") && token.endsWith(">") && token.length() == 6) {
-                tokenTypes[i] = 6; // BYTE (GGUFValueType.BYTE)
+                tokenTypes[i] = 6; // BYTE
             } else {
                 tokenTypes[i] = 1; // NORMAL
             }
             scores[i] = 0.0f;
         }
-        
-        System.out.println("[Export] Token list size: " + tokens.size());
-        System.out.println("[Export] Sample tokens: " + 
-            tokens.stream().limit(10).collect(Collectors.joining(", ")));
 
         metadataList.add(new MetadataEntry("tokenizer.ggml.tokens", 9, tokens));
         metadataList.add(new MetadataEntry("tokenizer.ggml.scores", 9, scores));
         metadataList.add(new MetadataEntry("tokenizer.ggml.token_type", 9, tokenTypes));
 
-        // Calculate size and write
         int bufferSize = calculateExactGgufSize(model, tensors, metadataList);
         ByteBuffer buf = ByteBuffer.allocate(bufferSize);
         buf.order(ByteOrder.LITTLE_ENDIAN);
@@ -833,7 +399,6 @@ public class OllamaExporter implements EvoModelExporter {
             }
         }
 
-        // Final alignment
         long totalDataWritten = buf.position() - tensorDataStart;
         long alignedDataEnd = (totalDataWritten + 31) & ~31;
         while ((buf.position() - tensorDataStart) < alignedDataEnd) {
@@ -849,23 +414,62 @@ public class OllamaExporter implements EvoModelExporter {
         return metadataList.size();
     }
 
-    // ============ HELPER METHODS ============
-    
+    private Map<Integer, String> buildDefaultVocabulary(int vocabSize) {
+        Map<Integer, String> vocab = new LinkedHashMap<>();
+        vocab.put(0, "<unk>");
+        vocab.put(1, "<s>");
+        vocab.put(2, "</s>");
+        vocab.put(3, " ");
+
+        String[] commonTokens = {
+            "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m",
+            "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z",
+            "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
+            "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
+            "0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
+            ".", ",", "?", "!", "\"", "'", "(", ")", "[", "]", "{", "}",
+            ":", ";", "-", "_", "+", "=", "*", "/", "\\", "|", "<", ">",
+            "the", "be", "to", "of", "and", "a", "in", "that", "have", "I",
+            "it", "for", "not", "on", "with", "he", "as", "you", "do", "at"
+        };
+
+        int idx = 4;
+        if (vocabSize >= 260) {
+            for (int b = 0; b < 256; b++) {
+                String byteToken = String.format("<0x%02X>", b);
+                vocab.put(idx++, byteToken);
+            }
+        }
+
+        for (String token : commonTokens) {
+            if (idx < vocabSize) {
+                vocab.put(idx++, token);
+            }
+        }
+
+        while (idx < vocabSize) {
+            vocab.put(idx, "token_" + idx);
+            idx++;
+        }
+
+        return vocab;
+    }
+
     private Tensor transpose(Tensor t) {
         long[] shape = t.getShape();
         if (shape.length != 2) return t;
-        
+
         int rows = (int) shape[0];
         int cols = (int) shape[1];
         float[] data = t.getData();
         float[] transposed = new float[rows * cols];
-        
+
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
                 transposed[j * rows + i] = data[i * cols + j];
             }
         }
-        
+
         Tensor result = new SimpleTensor(cols, rows);
         System.arraycopy(transposed, 0, result.getData(), 0, transposed.length);
         return result;
@@ -875,13 +479,6 @@ public class OllamaExporter implements EvoModelExporter {
         byte[] bytes = str.getBytes(StandardCharsets.UTF_8);
         buf.putLong(bytes.length);
         buf.put(bytes);
-    }
-
-    private String readString(ByteBuffer buf) {
-        long len = buf.getLong();
-        byte[] bytes = new byte[(int) len];
-        buf.get(bytes);
-        return new String(bytes, StandardCharsets.UTF_8);
     }
 
     private void serializeMetadataValue(ByteBuffer buf, MetadataEntry me) {
@@ -916,15 +513,15 @@ public class OllamaExporter implements EvoModelExporter {
 
     private int calculateExactGgufSize(EvoLlmModel model, List<NamedTensor> tensors, List<MetadataEntry> metadataList) {
         long size = 4 + 4 + 8 + 8; // GGUF + version + tensorCount + metadataCount
-        
+
         for (MetadataEntry me : metadataList) {
             size += 8 + me.key.getBytes(StandardCharsets.UTF_8).length;
             size += 4;
             size += getMetadataValueSize(me);
         }
-        
+
         size = (size + 31) & ~31;
-        
+
         for (NamedTensor nt : tensors) {
             size += 8 + nt.name.getBytes(StandardCharsets.UTF_8).length;
             size += 4;
@@ -932,14 +529,14 @@ public class OllamaExporter implements EvoModelExporter {
             size += 4;
             size += 8;
         }
-        
+
         size = (size + 31) & ~31;
-        
+
         for (NamedTensor nt : tensors) {
             size += nt.tensor.getSize() * 4L;
             size = (size + 31) & ~31;
         }
-        
+
         return (int) size;
     }
 
@@ -975,8 +572,6 @@ public class OllamaExporter implements EvoModelExporter {
         return output.toString();
     }
 
-    // ============ VALIDATION ============
-    
     public ValidationResult validateModel(String modelName, Path ggufPath, EvoLlmModel model) {
         System.out.println("[Forge] Running inference validation...");
         ValidationResult res = new ValidationResult();
@@ -998,10 +593,7 @@ public class OllamaExporter implements EvoModelExporter {
             return res;
         }
 
-        // Test inference via Ollama
         try {
-            System.out.println("[Forge] Testing inference via Ollama API");
-            
             HttpClient client = HttpClient.newBuilder()
                     .connectTimeout(Duration.ofSeconds(10))
                     .build();
@@ -1018,7 +610,7 @@ public class OllamaExporter implements EvoModelExporter {
             HttpRequest req = HttpRequest.newBuilder()
                     .uri(URI.create("http://localhost:11434/api/generate"))
                     .header("Content-Type", "application/json")
-                    .timeout(Duration.ofSeconds(30))
+                    .timeout(Duration.ofSeconds(10))
                     .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
                     .build();
 
@@ -1027,22 +619,16 @@ public class OllamaExporter implements EvoModelExporter {
             if (resp.statusCode() == 200) {
                 res.inference = true;
                 String body = resp.body();
-                System.out.println("[Ollama Inference Response]: " + body);
-                
-                // Check if response contains actual text (not token_XXXX)
                 if (body.contains("response") && !body.contains("token_")) {
                     res.knowledgeTest = true;
-                    System.out.println("[Forge] EVO knowledge test: PASS (real text output)");
                 } else if (body.contains("token_")) {
-                    System.out.println("[Forge] EVO knowledge test: FAIL (token placeholders detected)");
                     res.knowledgeTest = false;
                 } else {
                     res.knowledgeTest = true;
                 }
             }
         } catch (Exception e) {
-            System.err.println("[Forge] Inference test failed: " + e.getMessage());
-            res.fallbackRequiredReason = "Inference test failed: " + e.getMessage();
+            res.fallbackRequiredReason = "Inference test skipped/failed: " + e.getMessage();
         }
 
         return res;

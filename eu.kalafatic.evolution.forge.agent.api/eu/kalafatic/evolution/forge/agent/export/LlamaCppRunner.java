@@ -10,14 +10,14 @@ import java.util.concurrent.TimeUnit;
  * No auto-download, no external dependencies
  */
 public class LlamaCppRunner {
-    
+
     private static final String LLAMA_CPP_DIR = System.getProperty("user.dir") + "/lib/llama-cpp";
-    
+
     private static final boolean IS_WINDOWS = System.getProperty("os.name").toLowerCase().contains("win");
-    private static final boolean IS_LINUX = System.getProperty("os.name").toLowerCase().contains("nix") || 
+    private static final boolean IS_LINUX = System.getProperty("os.name").toLowerCase().contains("nix") ||
                                              System.getProperty("os.name").toLowerCase().contains("nux");
     private static final boolean IS_MAC = System.getProperty("os.name").toLowerCase().contains("mac");
-    
+
     private final String modelPath;
     private final int contextLength;
     private final int threads;
@@ -25,10 +25,10 @@ public class LlamaCppRunner {
     private final int topK;
     private final float topP;
     private final float repeatPenalty;
-    
+
     private String cliPath = null;
     private boolean initialized = false;
-    
+
     /**
      * Builder for LlamaCppRunner
      */
@@ -40,46 +40,46 @@ public class LlamaCppRunner {
         private int topK = 40;
         private float topP = 0.95f;
         private float repeatPenalty = 1.1f;
-        
+
         public Builder(String modelPath) {
             this.modelPath = modelPath;
         }
-        
+
         public Builder contextLength(int contextLength) {
             this.contextLength = contextLength;
             return this;
         }
-        
+
         public Builder threads(int threads) {
             this.threads = threads;
             return this;
         }
-        
+
         public Builder temperature(float temperature) {
             this.temperature = temperature;
             return this;
         }
-        
+
         public Builder topK(int topK) {
             this.topK = topK;
             return this;
         }
-        
+
         public Builder topP(float topP) {
             this.topP = topP;
             return this;
         }
-        
+
         public Builder repeatPenalty(float repeatPenalty) {
             this.repeatPenalty = repeatPenalty;
             return this;
         }
-        
+
         public LlamaCppRunner build() {
             return new LlamaCppRunner(this);
         }
     }
-    
+
     private LlamaCppRunner(Builder builder) {
         this.modelPath = builder.modelPath;
         this.contextLength = builder.contextLength;
@@ -88,23 +88,23 @@ public class LlamaCppRunner {
         this.topK = builder.topK;
         this.topP = builder.topP;
         this.repeatPenalty = builder.repeatPenalty;
-        
+
         init();
     }
-    
+
     public static Builder builder(String modelPath) {
         return new Builder(modelPath);
     }
-    
+
     private void init() {
         if (initialized) return;
-        
+
         String osDir = getOsDir();
         String cliName = IS_WINDOWS ? "llama-cli.exe" : "llama-cli";
-        
+
         // 1. Try OSGi Bundle / Resource Extraction via Reflection
         cliPath = resolveFromOsgiBundle(osDir, cliName);
-        
+
         // 2. Fallback: Try filesystem search paths
         if (cliPath == null) {
             String codebasePath = getCodebasePathViaReflection();
@@ -153,7 +153,7 @@ public class LlamaCppRunner {
                 } catch (Exception ignored) {}
             }
         }
-        
+
         if (cliPath != null) {
             try {
                 File file = new File(cliPath);
@@ -166,7 +166,7 @@ public class LlamaCppRunner {
         } else {
             System.err.println("[LlamaCpp] llama-cli not found. Please place llama-cli in: " + LLAMA_CPP_DIR + "/" + getOsDir() + "/");
         }
-        
+
         initialized = true;
     }
 
@@ -221,7 +221,6 @@ public class LlamaCppRunner {
             } catch (Throwable ignored) {}
 
             for (Object bundle : bundles) {
-                // Method A: Check FileLocator.getBundleFile(bundle)
                 try {
                     Class<?> fileLocatorClass = Class.forName("org.eclipse.core.runtime.FileLocator");
                     Class<?> bundleClass = Class.forName("org.osgi.framework.Bundle");
@@ -245,7 +244,6 @@ public class LlamaCppRunner {
                     }
                 } catch (Throwable ignored) {}
 
-                // Method B: Check bundle.getEntry(...) with FileLocator.toFileURL
                 String[] candidateSubPaths = {
                     "lib/llama-cpp/" + osDir + "/" + cliName,
                     "/lib/llama-cpp/" + osDir + "/" + cliName,
@@ -286,95 +284,121 @@ public class LlamaCppRunner {
         }
         return null;
     }
-    
+
     private String getOsDir() {
         if (IS_WINDOWS) return "win";
         if (IS_MAC) return "mac";
         if (IS_LINUX) return "linux";
         return "linux";
     }
-    
+
     public boolean isAvailable() {
         return cliPath != null && Files.exists(Paths.get(cliPath));
     }
-    
+
     /**
-     * Validates the GGUF model file
+     * Terminate process and entire process tree forcibly.
+     */
+    private void terminateProcessTree(Process p) {
+        if (p == null) return;
+        try {
+            p.toHandle().descendants().forEach(ProcessHandle::destroyForcibly);
+        } catch (Throwable ignored) {}
+        try {
+            p.destroyForcibly();
+        } catch (Throwable ignored) {}
+    }
+
+    /**
+     * Validates the GGUF model file with bounded timeout and process tree termination.
      */
     public boolean validateModel() {
         if (!isAvailable()) {
             System.err.println("[LlamaCpp] llama-cli not available");
             return false;
         }
-        
+
         try {
             System.out.println("[LlamaCpp] Validating model: " + modelPath);
-            
+
             List<String> command = new ArrayList<>();
             command.add(cliPath);
             command.add("-m");
             command.add(modelPath);
             command.add("-v");
-            
+
             ProcessBuilder pb = createProcessBuilder(command);
-            pb.redirectErrorStream(true);
             Process p = pb.start();
-            
-            StringBuilder output = new StringBuilder();
-            Thread readerThread = new Thread(() -> {
+
+            StringBuilder stdOut = new StringBuilder();
+            StringBuilder stdErr = new StringBuilder();
+
+            Thread stdOutThread = new Thread(() -> {
                 try (BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
                     String line;
                     while ((line = reader.readLine()) != null) {
-                        output.append(line).append("\n");
+                        stdOut.append(line).append("\n");
                         if (line.contains("llama_model_loader")) {
                             System.out.println("[LlamaCpp] " + line);
                         }
                     }
                 } catch (IOException ignored) {}
             });
-            readerThread.setDaemon(true);
-            readerThread.start();
+            stdOutThread.setDaemon(true);
+            stdOutThread.start();
 
-            boolean finished = p.waitFor(15, TimeUnit.SECONDS);
+            Thread stdErrThread = new Thread(() -> {
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(p.getErrorStream()))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        stdErr.append(line).append("\n");
+                    }
+                } catch (IOException ignored) {}
+            });
+            stdErrThread.setDaemon(true);
+            stdErrThread.start();
+
+            boolean finished = p.waitFor(30, TimeUnit.SECONDS);
             if (!finished) {
-                p.destroyForcibly();
-                System.err.println("[LlamaCpp] Validation timed out after 15s");
+                terminateProcessTree(p);
+                System.err.println("[LlamaCpp] LLAMA_CPP_TIMEOUT: Validation timed out after 30s");
                 return false;
             }
-            
+
             int exitCode = p.exitValue();
-            boolean isValid = exitCode == 0 && output.toString().contains("llama_model_loader");
-            
+            String combinedOutput = stdOut.toString() + "\n" + stdErr.toString();
+            boolean isValid = exitCode == 0 && combinedOutput.contains("llama_model_loader");
+
             if (isValid) {
                 System.out.println("[LlamaCpp] ✅ Model validation: PASSED");
             } else {
                 System.out.println("[LlamaCpp] ❌ Model validation: FAILED");
             }
-            
+
             return isValid;
         } catch (Exception e) {
             System.err.println("[LlamaCpp] Validation error: " + e.getMessage());
             return false;
         }
     }
-    
+
     /**
      * Runs inference on a single prompt
      */
     public String generate(String prompt) throws IOException, InterruptedException {
         return generate(prompt, 20);
     }
-    
+
     /**
-     * Runs inference with custom token count
+     * Runs inference with custom token count with bounded 30s timeout and full tree termination.
      */
     public String generate(String prompt, int nPredict) throws IOException, InterruptedException {
         if (!isAvailable()) {
             throw new IOException("llama-cli not available at: " + cliPath);
         }
-        
+
         System.out.println("[LlamaCpp] Running inference...");
-        
+
         List<String> command = new ArrayList<>();
         command.add(cliPath);
         command.add("-m");
@@ -397,37 +421,49 @@ public class LlamaCppRunner {
         command.add(String.valueOf(repeatPenalty));
         command.add("--no-display-prompt");
         command.add("--simple-io");
-        
+
         ProcessBuilder pb = createProcessBuilder(command);
-        pb.redirectErrorStream(true);
         Process p = pb.start();
-        
-        StringBuilder output = new StringBuilder();
-        Thread readerThread = new Thread(() -> {
+
+        StringBuilder stdOut = new StringBuilder();
+        StringBuilder stdErr = new StringBuilder();
+
+        Thread stdOutThread = new Thread(() -> {
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    output.append(line).append("\n");
+                    stdOut.append(line).append("\n");
                 }
             } catch (IOException ignored) {}
         });
-        readerThread.setDaemon(true);
-        readerThread.start();
+        stdOutThread.setDaemon(true);
+        stdOutThread.start();
+
+        Thread stdErrThread = new Thread(() -> {
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(p.getErrorStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    stdErr.append(line).append("\n");
+                }
+            } catch (IOException ignored) {}
+        });
+        stdErrThread.setDaemon(true);
+        stdErrThread.start();
 
         boolean finished = p.waitFor(30, TimeUnit.SECONDS);
         if (!finished) {
-            p.destroyForcibly();
-            throw new IOException("llama-cli execution timed out after 30s");
+            terminateProcessTree(p);
+            throw new IOException("LLAMA_CPP_TIMEOUT: llama-cli execution timed out after 30s");
         }
-        
+
         int exitCode = p.exitValue();
         if (exitCode != 0) {
-            throw new IOException("llama-cli failed with exit code: " + exitCode + "\nOutput: " + output.toString().trim());
+            throw new IOException("llama-cli failed with exit code: " + exitCode + "\nStdOut: " + stdOut + "\nStdErr: " + stdErr);
         }
-        
-        return output.toString();
+
+        return stdOut.toString();
     }
-    
+
     /**
      * Gets model info
      */
@@ -435,17 +471,16 @@ public class LlamaCppRunner {
         if (!isAvailable()) {
             throw new IOException("llama-cli not available");
         }
-        
+
         List<String> command = new ArrayList<>();
         command.add(cliPath);
         command.add("-m");
         command.add(modelPath);
         command.add("-v");
-        
+
         ProcessBuilder pb = createProcessBuilder(command);
-        pb.redirectErrorStream(true);
         Process p = pb.start();
-        
+
         StringBuilder output = new StringBuilder();
         Thread readerThread = new Thread(() -> {
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
@@ -460,10 +495,10 @@ public class LlamaCppRunner {
 
         boolean finished = p.waitFor(15, TimeUnit.SECONDS);
         if (!finished) {
-            p.destroyForcibly();
-            throw new IOException("llama-cli getModelInfo timed out after 15s");
+            terminateProcessTree(p);
+            throw new IOException("LLAMA_CPP_TIMEOUT: llama-cli getModelInfo timed out after 15s");
         }
-        
+
         return output.toString();
     }
 
