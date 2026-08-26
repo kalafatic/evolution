@@ -280,6 +280,58 @@ public class LlamaService {
      * @param modelName The target model name (e.g., "evo" or "evo-llm-001")
      * @return File object pointing to the GGUF file, or null if not found.
      */
+    /**
+     * Determines the appropriate inference engine for a model name:
+     * - Native EVO LLM model -> "evo native"
+     * - Exported EVO GGUF LLM model -> "llama-cpp"
+     * - Other LLM models -> "ollama"
+     * @param modelName Model name to check.
+     * @return "evo native", "llama-cpp", or "ollama"
+     */
+    public static String detectInferenceEngine(String modelName) {
+        if (modelName == null || modelName.isEmpty()) {
+            return "ollama";
+        }
+        String lower = modelName.toLowerCase();
+
+        if (lower.endsWith(".evo")) {
+            return "evo native";
+        }
+
+        if (lower.endsWith(".gguf")) {
+            return "llama-cpp";
+        }
+
+        File ggufFile = resolveEvoModelPath(modelName);
+        if (ggufFile != null && ggufFile.exists()) {
+            return "llama-cpp";
+        }
+
+        boolean isEvo = lower.contains("evo") || lower.contains("forging");
+
+        // Check if native EVO artifact (.evo or directory with weights.bin & config.json) exists in workspace/forge-output/
+        String workspacePath = ProjectModelManager.getWorkspacePath();
+        if (workspacePath != null && !workspacePath.isEmpty()) {
+            File modelDir = new File(workspacePath, "forge-output/" + modelName);
+            if (modelDir.exists() && modelDir.isDirectory()) {
+                File gguf = new File(modelDir, "evo.gguf");
+                File weights = new File(modelDir, "weights.bin");
+                File config = new File(modelDir, "config.json");
+                if (weights.exists() && config.exists() && !gguf.exists()) {
+                    return "evo native";
+                } else if (gguf.exists()) {
+                    return "llama-cpp";
+                }
+            }
+        }
+
+        if (isEvo) {
+            return "evo native";
+        }
+
+        return "ollama";
+    }
+
     public static File resolveEvoModelPath(String modelName) {
         if (modelName == null || modelName.isEmpty()) {
             return null;

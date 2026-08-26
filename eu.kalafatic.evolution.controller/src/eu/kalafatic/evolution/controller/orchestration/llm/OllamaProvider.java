@@ -13,6 +13,7 @@ import eu.kalafatic.evolution.controller.manager.LlamaService;
 import eu.kalafatic.evolution.controller.manager.OllamaManager;
 import eu.kalafatic.evolution.controller.manager.OllamaModel;
 import eu.kalafatic.evolution.controller.manager.OllamaService;
+import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 
@@ -236,6 +237,55 @@ public class OllamaProvider implements ILlmProvider {
         }
     }
 
+    public static java.io.File resolveEvoArtifactPath(String modelName) {
+        if (modelName == null || modelName.isEmpty()) {
+            modelName = "evo";
+        }
+
+        // 1. Check workspace forge-output/
+        String workspacePath = ProjectModelManager.getWorkspacePath();
+        if (workspacePath != null && !workspacePath.isEmpty()) {
+            java.io.File dir = new java.io.File(workspacePath, "forge-output/" + modelName);
+            if (dir.exists() && (new java.io.File(dir, "weights.bin").exists() || new java.io.File(dir, "model.json").exists() || new java.io.File(dir, "config.json").exists())) {
+                return dir;
+            }
+            java.io.File evoFile = new java.io.File(workspacePath, "forge-output/" + modelName + ".evo");
+            if (evoFile.exists()) {
+                return evoFile;
+            }
+            java.io.File defaultEvoFile = new java.io.File(workspacePath, "forge-output/evo.evo");
+            if (defaultEvoFile.exists()) {
+                return defaultEvoFile;
+            }
+        }
+
+        // 2. Check codebase path
+        String codebasePath = ProjectModelManager.getCodebasePath();
+        if (codebasePath != null && !codebasePath.isEmpty()) {
+            java.io.File dir = new java.io.File(codebasePath, "forge-output/" + modelName);
+            if (dir.exists() && (new java.io.File(dir, "weights.bin").exists() || new java.io.File(dir, "model.json").exists() || new java.io.File(dir, "config.json").exists())) {
+                return dir;
+            }
+            java.io.File evoFile = new java.io.File(codebasePath, "forge-output/" + modelName + ".evo");
+            if (evoFile.exists()) {
+                return evoFile;
+            }
+        }
+
+        // 3. Check user.dir
+        java.io.File userDir = new java.io.File(System.getProperty("user.dir"));
+        java.io.File dir = new java.io.File(userDir, "forge-output/" + modelName);
+        if (dir.exists() && (new java.io.File(dir, "weights.bin").exists() || new java.io.File(dir, "model.json").exists() || new java.io.File(dir, "config.json").exists())) {
+            return dir;
+        }
+        java.io.File userEvo = new java.io.File(userDir, "forge-output/" + modelName + ".evo");
+        if (userEvo.exists()) {
+            return userEvo;
+        }
+
+        return null;
+    }
+
     private String sendRequestWithRetry(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context, int depth) throws Exception {
         if (depth > 3) {
             throw new Exception("Maximum fallback depth reached for Ollama requests");
@@ -248,11 +298,61 @@ public class OllamaProvider implements ILlmProvider {
         String baseUrl = orchestrator.getOllama().getUrl();
         String model = orchestrator.getOllama().getModel();
 
-        boolean isEvoOrForge = (orchestrator != null && orchestrator.getAiMode() == eu.kalafatic.evolution.model.orchestration.AiMode.FORGE)
-                || (model != null && (model.toLowerCase().contains("evo") || model.toLowerCase().endsWith(".gguf")));
+        // Determine target inference engine (from context config or auto-detected)
+        String configuredEngine = null;
+        if (context != null) {
+            configuredEngine = (String) context.getMetadata().get("inferenceEngine");
+        }
+        if (configuredEngine == null || configuredEngine.isEmpty()) {
+            configuredEngine = LlamaService.detectInferenceEngine(model != null ? model : "evo");
+        }
+        String engine = configuredEngine.toLowerCase().trim();
 
-        // Route "evo" / FORGE models via LlamaService (llama.cpp runner) if a GGUF is available
-        if (isEvoOrForge) {
+        // 1. ENGINE: "evo native" -> execute native EvoLlmModel / ReferenceEvoInferenceEngine
+        if (engine.contains("evo native") || engine.contains("evo-native") || engine.contains("evo_native") || engine.equals("native")) {
+            java.io.File evoArtifactPath = resolveEvoArtifactPath(model != null ? model : "evo");
+            if (evoArtifactPath != null && evoArtifactPath.exists()) {
+                if (context != null) {
+                    context.log("EvoInferenceEngine: Intercepted model '" + model + "'. Routing request via ReferenceEvoInferenceEngine (evo native) with artifact: " + evoArtifactPath.getAbsolutePath());
+                }
+                try {
+                    eu.kalafatic.evolution.forge.model.llm.EvoModelArtifact artifact = eu.kalafatic.evolution.forge.model.llm.EvoModelArtifact.load(evoArtifactPath.toPath());
+                    eu.kalafatic.evolution.forge.model.llm.EvoLlmModel nativeModel = artifact.createModel();
+                    eu.kalafatic.evolution.forge.tokenizer.impl.SimpleBPETokenizer tokenizer = new eu.kalafatic.evolution.forge.tokenizer.impl.SimpleBPETokenizer();
+                    if (artifact.getTokenizerVocab() != null) {
+                        tokenizer.setVocabulary(artifact.getTokenizerVocab());
+                    }
+
+                    eu.kalafatic.evolution.forge.model.inference.InferenceRequest request = eu.kalafatic.evolution.forge.model.inference.InferenceRequest.builder()
+                            .prompt(prompt)
+                            .maxTokens(512)
+                            .temperature(temperature)
+                            .build();
+
+                    eu.kalafatic.evolution.forge.model.inference.ReferenceEvoInferenceEngine nativeEngine = new eu.kalafatic.evolution.forge.model.inference.ReferenceEvoInferenceEngine();
+                    eu.kalafatic.evolution.forge.model.inference.InferenceResult result = nativeEngine.generate(nativeModel, request, tokenizer);
+                    String response = result.getGeneratedText();
+                    if (response != null && !response.isEmpty() && !response.contains("token_")) {
+                        if (context != null) {
+                            context.log("Stage: LLM\nProvider: ReferenceEvoInferenceEngine (evo native)\nModel: " + model + "\nToken count: (estimated) " + (prompt.length() / 4) + "\nRaw response length: " + response.length());
+                        }
+                        return response;
+                    }
+                } catch (Exception ex) {
+                    if (context != null) {
+                        context.log("EvoInferenceEngine: Native execution failed (" + ex.getMessage() + "). Falling back to llama-cpp or ollama.");
+                    }
+                }
+            } else {
+                if (context != null) {
+                    context.log("EvoInferenceEngine: Native EVO artifact for '" + model + "' not found. Falling back to llama-cpp or ollama.");
+                }
+            }
+        }
+
+        // 2. ENGINE: "llama-cpp" -> execute LlamaService (llama-cli / GGUF runner)
+        boolean isLlamaCpp = engine.contains("llama-cpp") || engine.contains("llama_cpp") || engine.contains("llama.cpp") || engine.equals("cpp");
+        if (isLlamaCpp || engine.contains("evo native")) {
             java.io.File ggufFile = LlamaService.resolveEvoModelPath(model != null ? model : "evo");
             if (ggufFile != null && ggufFile.exists()) {
                 if (context != null) {

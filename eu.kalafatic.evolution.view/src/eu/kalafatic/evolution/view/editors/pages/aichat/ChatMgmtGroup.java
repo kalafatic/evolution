@@ -16,6 +16,7 @@ import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 
+import eu.kalafatic.evolution.controller.manager.LlamaService;
 import eu.kalafatic.evolution.controller.manager.ModelSizePreset;
 import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
 import eu.kalafatic.evolution.controller.orchestration.llm.OllamaProvider;
@@ -41,6 +42,7 @@ public class ChatMgmtGroup extends AEvoGroup {
     private Combo aiModeCombo;
     private Combo aiRemoteCombo;
     private Combo localModelCombo;
+    private Combo inferenceEngineCombo;
     private Text remoteTokenText, remoteUrlText;
     private Composite compositeLocal, compositeRemote;
     private Button forgeSettingsBtn;
@@ -138,6 +140,11 @@ public class ChatMgmtGroup extends AEvoGroup {
                 }
             }
         });
+
+        GUIFactory.INSTANCE.createLabel(compositeLocal, "Engine:", SWT.NONE, GUIFactory.BUTTON_WIDTH);
+        inferenceEngineCombo = selectEngine(compositeLocal);
+        ((GridData)inferenceEngineCombo.getLayoutData()).widthHint = 100;
+        ((GridData)inferenceEngineCombo.getLayoutData()).horizontalSpan = 3;
 
         GUIFactory.INSTANCE.createLabel(compositeRemote, "Token:");
         remoteTokenText = GUIFactory.INSTANCE.createPasswordText(compositeRemote);
@@ -279,11 +286,33 @@ public class ChatMgmtGroup extends AEvoGroup {
             int index = combo.getSelectionIndex();
             if (index >= 0) {
                 Map<String, Object> settings = new HashMap<>();
-                settings.put("localModel", combo.getText());
+                String selectedModel = combo.getText();
+                settings.put("localModel", selectedModel);
+
+                String engine = LlamaService.detectInferenceEngine(selectedModel);
+                settings.put("inferenceEngine", engine);
+                if (inferenceEngineCombo != null && !inferenceEngineCombo.isDisposed()) {
+                    selectSafe(inferenceEngineCombo, engine);
+                }
+
                 page.updateConfiguration(settings);
                 page.saveLastUsedSettings();
                 page.updateModeDisplay();
                 page.updateStatusInfo();
+            }
+        });
+        return combo;
+    }
+
+    private Combo selectEngine(Composite parent) {
+        Combo combo = GUIFactory.INSTANCE.createCombo(parent, new String[] { "ollama", "llama-cpp", "evo native" });
+        combo.addListener(SWT.Selection, e -> {
+            int index = combo.getSelectionIndex();
+            if (index >= 0) {
+                Map<String, Object> settings = new HashMap<>();
+                settings.put("inferenceEngine", combo.getText());
+                page.updateConfiguration(settings);
+                page.saveLastUsedSettings();
             }
         });
         return combo;
@@ -355,6 +384,16 @@ public class ChatMgmtGroup extends AEvoGroup {
                     if (model != null) {
                         selectSafe(localModelCombo, model);
                     }
+                }
+
+                // 3. Populate/select Inference Engine combo
+                if (inferenceEngineCombo != null) {
+                    String selectedModel = localModelCombo != null ? localModelCombo.getText() : "";
+                    String engine = (String) config.get("inferenceEngine");
+                    if (engine == null || engine.isEmpty()) {
+                        engine = LlamaService.detectInferenceEngine(selectedModel);
+                    }
+                    selectSafe(inferenceEngineCombo, engine);
                 }
                
             } finally {
@@ -580,4 +619,12 @@ public class ChatMgmtGroup extends AEvoGroup {
 	public Combo getAiModeCombo() {
 		return aiModeCombo;
 	}
+
+    public Combo getInferenceEngineCombo() {
+        return inferenceEngineCombo;
+    }
+
+    public String getInferenceEngine() {
+        return inferenceEngineCombo != null ? inferenceEngineCombo.getText() : "ollama";
+    }
 }
