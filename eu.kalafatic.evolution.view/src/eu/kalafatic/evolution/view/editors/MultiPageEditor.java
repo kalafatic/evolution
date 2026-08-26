@@ -495,6 +495,14 @@ public class MultiPageEditor extends MultiPageEditorPart {
 		if (currentContext != null) {
 			return currentContext;
 		}
+		if (aiChatPage != null && aiChatPage.getCurrentSessionName() != null) {
+			String sid = aiChatPage.getCurrentSessionName();
+			eu.kalafatic.evolution.controller.orchestration.SessionContainer session =
+				eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getSession(sid);
+			if (session instanceof eu.kalafatic.evolution.controller.orchestration.SessionContext) {
+				return ((eu.kalafatic.evolution.controller.orchestration.SessionContext) session).getTaskContext();
+			}
+		}
 		if (orchestrator != null && orchestrator.getId() != null) {
 			eu.kalafatic.evolution.controller.orchestration.SessionContainer session =
 				eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getSession(orchestrator.getId());
