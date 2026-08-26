@@ -240,11 +240,30 @@ public class SimpleTensor implements Tensor {
         float[] resultData = new float[m * p];
         float[] otherData = other.getData();
 
-        for (int i = 0; i < m; i++) {
-            for (int k = 0; k < n; k++) {
-                float a = this.data[i * n + k];
-                for (int j = 0; j < p; j++) {
-                    resultData[i * p + j] += a * otherData[k * p + j];
+        if ((long) m * p >= 4096) {
+            java.util.stream.IntStream.range(0, m).parallel().forEach(i -> {
+                int rowOffset = i * n;
+                int resOffset = i * p;
+                for (int k = 0; k < n; k++) {
+                    float a = this.data[rowOffset + k];
+                    if (a == 0.0f) continue;
+                    int kOffset = k * p;
+                    for (int j = 0; j < p; j++) {
+                        resultData[resOffset + j] += a * otherData[kOffset + j];
+                    }
+                }
+            });
+        } else {
+            for (int i = 0; i < m; i++) {
+                int rowOffset = i * n;
+                int resOffset = i * p;
+                for (int k = 0; k < n; k++) {
+                    float a = this.data[rowOffset + k];
+                    if (a == 0.0f) continue;
+                    int kOffset = k * p;
+                    for (int j = 0; j < p; j++) {
+                        resultData[resOffset + j] += a * otherData[kOffset + j];
+                    }
                 }
             }
         }

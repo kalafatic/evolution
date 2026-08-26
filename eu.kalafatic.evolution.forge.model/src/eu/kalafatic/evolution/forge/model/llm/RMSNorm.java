@@ -28,24 +28,24 @@ public class RMSNorm {
         this.lastX = x;
         float[] input = x.getData();
         long[] shape = x.getShape();
-        int size = (int) x.getSize();
-        int dim = (int) shape[shape.length - 1]; // Last dimension
+        int rows = (int) shape[0];
+        int dim = (int) shape[1];
         
-        // Calculate RMS
-        float sumSq = 0.0f;
-        for (int i = 0; i < size; i++) {
-            sumSq += input[i] * input[i];
-        }
-        float rms = (float) Math.sqrt(sumSq / size + epsilon);
-        
-        // Normalize and multiply by weight
         Tensor output = new SimpleTensor(shape);
         float[] outData = output.getData();
         float[] weightData = weight.getData();
         
-        for (int i = 0; i < size; i++) {
-            int idx = i % dim;
-            outData[i] = (input[i] / rms) * weightData[idx];
+        for (int r = 0; r < rows; r++) {
+            int offset = r * dim;
+            float sumSq = 0.0f;
+            for (int i = 0; i < dim; i++) {
+                float val = input[offset + i];
+                sumSq += val * val;
+            }
+            float rms = (float) Math.sqrt(sumSq / dim + epsilon);
+            for (int i = 0; i < dim; i++) {
+                outData[offset + i] = (input[offset + i] / rms) * weightData[i];
+            }
         }
         
         return output;
@@ -57,32 +57,36 @@ public class RMSNorm {
         float[] input = lastX.getData();
         float[] grad = dOutput.getData();
         long[] shape = lastX.getShape();
-        int size = (int) lastX.getSize();
-        int dim = (int) shape[shape.length - 1];
+        int rows = (int) shape[0];
+        int dim = (int) shape[1];
         
-        // Calculate RMS of input
-        float sumSq = 0.0f;
-        for (int i = 0; i < size; i++) {
-            sumSq += input[i] * input[i];
-        }
-        float rms = (float) Math.sqrt(sumSq / size + epsilon);
-        
-        // Gradient for weight
-        float[] weightGrad = weight.getGrad();
-        for (int i = 0; i < size; i++) {
-            int idx = i % dim;
-            weightGrad[idx] += grad[i] * (input[i] / rms);
-        }
-        
-        // Gradient for input
         Tensor dX = new SimpleTensor(shape);
         float[] dXData = dX.getData();
         float[] weightData = weight.getData();
+        float[] weightGrad = weight.getGrad();
         
-        // Simplified gradient (full derivation omitted for brevity)
-        for (int i = 0; i < size; i++) {
-            int idx = i % dim;
-            dXData[i] = grad[i] * weightData[idx] / rms;
+        for (int r = 0; r < rows; r++) {
+            int offset = r * dim;
+            float sumSq = 0.0f;
+            for (int i = 0; i < dim; i++) {
+                float val = input[offset + i];
+                sumSq += val * val;
+            }
+            float rms = (float) Math.sqrt(sumSq / dim + epsilon);
+
+            float dot = 0.0f;
+            for (int i = 0; i < dim; i++) {
+                float normX = input[offset + i] / rms;
+                float dNorm = grad[offset + i] * weightData[i];
+                dot += dNorm * normX;
+                weightGrad[i] += grad[offset + i] * normX;
+            }
+
+            for (int i = 0; i < dim; i++) {
+                float normX = input[offset + i] / rms;
+                float dNorm = grad[offset + i] * weightData[i];
+                dXData[offset + i] = (dNorm - normX * dot / dim) / rms;
+            }
         }
         
         return dX;
