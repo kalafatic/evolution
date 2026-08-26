@@ -411,6 +411,7 @@ public class ChatMgmtGroup extends AEvoGroup {
         String currentSize = null;
         int currentEpochs = -1;
         String currentLossThresh = null;
+        double currentDesiredLoss = -1.0;
         double[] lossHistory = null;
 
         // 1. Try RuntimeProjection config
@@ -420,6 +421,9 @@ public class ChatMgmtGroup extends AEvoGroup {
                 try { currentEpochs = Integer.parseInt(String.valueOf(config.get("epochs"))); } catch (Exception e) {}
             }
             if (config.get("lossThreshold") != null) currentLossThresh = String.valueOf(config.get("lossThreshold"));
+            if (config.get("desiredLossThreshold") != null) {
+                try { currentDesiredLoss = Double.parseDouble(String.valueOf(config.get("desiredLossThreshold"))); } catch (Exception e) {}
+            }
 
             Object lhObj = config.get("lossHistory");
             if (lhObj instanceof String && !((String) lhObj).isEmpty()) {
@@ -442,6 +446,7 @@ public class ChatMgmtGroup extends AEvoGroup {
                 if ((currentSize == null || currentSize.isEmpty()) && uiState.has("modelSize")) currentSize = uiState.getString("modelSize");
                 if (currentEpochs <= 0 && uiState.has("epochs")) currentEpochs = uiState.getInt("epochs");
                 if ((currentLossThresh == null || currentLossThresh.isEmpty()) && uiState.has("lossThreshold")) currentLossThresh = uiState.getString("lossThreshold");
+                if (currentDesiredLoss <= 0.0 && uiState.has("desiredLossThreshold")) currentDesiredLoss = uiState.getDouble("desiredLossThreshold");
                 if (lossHistory == null && uiState.has("lossHistory")) {
                     String lhStr = uiState.getString("lossHistory");
                     if (lhStr != null && !lhStr.isEmpty()) {
@@ -464,6 +469,7 @@ public class ChatMgmtGroup extends AEvoGroup {
                             if ((currentSize == null || currentSize.isEmpty()) && hpJson.has("modelSize")) currentSize = hpJson.getString("modelSize");
                             if (currentEpochs <= 0 && hpJson.has("epochs")) currentEpochs = hpJson.getInt("epochs");
                             if ((currentLossThresh == null || currentLossThresh.isEmpty()) && hpJson.has("lossThreshold")) currentLossThresh = hpJson.getString("lossThreshold");
+                            if (currentDesiredLoss <= 0.0 && hpJson.has("desiredLossThreshold")) currentDesiredLoss = hpJson.getDouble("desiredLossThreshold");
                         } catch (Exception ex) {}
                     }
                 }
@@ -482,6 +488,9 @@ public class ChatMgmtGroup extends AEvoGroup {
                         try { currentEpochs = Integer.parseInt(section.get("epochs")); } catch (Exception e) {}
                     }
                     if ((currentLossThresh == null || currentLossThresh.isEmpty()) && section.get("lossThreshold") != null) currentLossThresh = section.get("lossThreshold");
+                    if (currentDesiredLoss <= 0.0 && section.get("desiredLossThreshold") != null) {
+                        try { currentDesiredLoss = Double.parseDouble(section.get("desiredLossThreshold")); } catch (Exception e) {}
+                    }
                 }
             }
         }
@@ -490,17 +499,20 @@ public class ChatMgmtGroup extends AEvoGroup {
         if (currentSize == null || currentSize.isEmpty()) currentSize = "SMALL";
         if (currentEpochs <= 0) currentEpochs = 32;
         if (currentLossThresh == null || currentLossThresh.isEmpty()) currentLossThresh = "Epoch 16-30: Loss 2-5 → Learning phrases";
+        if (currentDesiredLoss <= 0.0) currentDesiredLoss = 1.0;
 
-        ForgeSettingsDialog dlg = new ForgeSettingsDialog(page.getShell(), currentSize, currentEpochs, currentLossThresh, lossHistory);
+        ForgeSettingsDialog dlg = new ForgeSettingsDialog(page.getShell(), currentSize, currentEpochs, currentLossThresh, currentDesiredLoss, lossHistory);
         if (dlg.open() == Window.OK) {
             String selectedSize = dlg.getSelectedModelSize();
             int epochs = dlg.getEpochs();
             String lossThreshold = dlg.getLossThreshold();
+            double desiredLoss = dlg.getDesiredLossThreshold();
 
             Map<String, Object> settings = new HashMap<>();
             settings.put("modelSize", selectedSize);
             settings.put("epochs", epochs);
             settings.put("lossThreshold", lossThreshold);
+            settings.put("desiredLossThreshold", desiredLoss);
             page.updateConfiguration(settings);
             page.saveLastUsedSettings();
 
@@ -510,6 +522,7 @@ public class ChatMgmtGroup extends AEvoGroup {
                 fsmClass.getMethod("updateUiState", String.class, String.class, Object.class).invoke(instance, currentSessionId, "modelSize", selectedSize);
                 fsmClass.getMethod("updateUiState", String.class, String.class, Object.class).invoke(instance, currentSessionId, "epochs", epochs);
                 fsmClass.getMethod("updateUiState", String.class, String.class, Object.class).invoke(instance, currentSessionId, "lossThreshold", lossThreshold);
+                fsmClass.getMethod("updateUiState", String.class, String.class, Object.class).invoke(instance, currentSessionId, "desiredLossThreshold", desiredLoss);
             } catch (Exception ex) {
                 // Ignore if controller not loaded
             }
@@ -526,6 +539,7 @@ public class ChatMgmtGroup extends AEvoGroup {
                             hpJson.put("modelSize", selectedSize);
                             hpJson.put("epochs", epochs);
                             hpJson.put("lossThreshold", lossThreshold);
+                            hpJson.put("desiredLossThreshold", desiredLoss);
                             fs.getModelState().setHyperparameters(hpJson.toString());
                             fs.setLastModified(System.currentTimeMillis());
                         }
