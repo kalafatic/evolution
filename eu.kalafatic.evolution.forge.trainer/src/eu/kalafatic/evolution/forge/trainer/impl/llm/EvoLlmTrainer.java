@@ -27,7 +27,7 @@ public class EvoLlmTrainer {
 
     public void train(List<DatasetBuilder.Sample> samples, int epochs) {
         System.out.println("[Training] Starting genuine EVO training with " + samples.size() + " samples.");
-        EvoAdamW optimizer = new EvoAdamW(0.01f, 0.9f, 0.999f, 1e-8f, 0.01f);
+        EvoAdamW optimizer = new EvoAdamW(1e-3f, 0.9f, 0.999f, 1e-8f, 0.01f);
 
         int totalSamples = samples.size();
 
@@ -41,7 +41,12 @@ public class EvoLlmTrainer {
                 // Zero gradients
                 model.parameters().forEach(Tensor::zeroGrad);
 
-                int[] inputIds = sample.input.stream().mapToInt(i -> i).toArray();
+                int inputLen = sample.input.size();
+                int[] inputIds = new int[inputLen];
+                for (int i = 0; i < inputLen; i++) {
+                    inputIds[i] = sample.input.get(i);
+                }
+
                 Tensor logits = model.forward(inputIds);
                 totalTokensTrained += inputIds.length;
 
@@ -55,7 +60,8 @@ public class EvoLlmTrainer {
                 // Softmax
                 float max = Float.NEGATIVE_INFINITY;
                 for (int i = 0; i < vocabSize; i++) {
-                    if (logitsData[lastOffset + i] > max) max = logitsData[lastOffset + i];
+                    float val = logitsData[lastOffset + i];
+                    if (val > max) max = val;
                 }
                 float sum = 0;
                 float[] probs = new float[vocabSize];
@@ -72,15 +78,13 @@ public class EvoLlmTrainer {
                 Tensor dLogits = new SimpleTensor(seqLen, vocabSize);
                 float[] dLogitsData = dLogits.getData();
                 probs[target] -= 1.0f; // cross entropy grad
-                for (int i = 0; i < vocabSize; i++) {
-                    dLogitsData[lastOffset + i] = probs[i];
-                }
+                System.arraycopy(probs, 0, dLogitsData, lastOffset, vocabSize);
 
                 // Real Backpropagation
                 model.backward(dLogits);
 
-                // Optimizer Step
-                optimizer.step(model.parameters());
+                // Optimizer Step with Gradient Norm Clipping
+                optimizer.step(model.parameters(), 1.0f);
 
                 sampleIndex++;
 

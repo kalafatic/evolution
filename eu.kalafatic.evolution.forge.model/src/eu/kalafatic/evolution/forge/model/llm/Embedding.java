@@ -20,8 +20,9 @@ public class Embedding {
     private void initialize() {
         float[] data = weights.getData();
         Random rand = new Random(42);
+        float std = (float) (1.0 / Math.sqrt(embeddingDim));
         for (int i = 0; i < data.length; i++) {
-            data[i] = (rand.nextFloat() * 2 - 1) * 0.1f;
+            data[i] = (float) (rand.nextGaussian() * std);
         }
     }
 

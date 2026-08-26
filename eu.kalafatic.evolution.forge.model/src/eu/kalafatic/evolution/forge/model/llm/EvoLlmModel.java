@@ -32,8 +32,9 @@ public class EvoLlmModel {
         
         float[] hData = lmHead.getData();
         java.util.Random r = new java.util.Random();
+        float std = (float) (1.0 / Math.sqrt(architecture.getDModel()));
         for (int i = 0; i < hData.length; i++) {
-            hData[i] = (r.nextFloat() * 2 - 1) * 0.1f;
+            hData[i] = (float) (r.nextGaussian() * std);
         }
     }
 

@@ -28,12 +28,37 @@ public class EvoAdamW {
     }
 
     public void step(List<Tensor> parameters) {
+        step(parameters, 1.0f);
+    }
+
+    public void step(List<Tensor> parameters, float maxGradNorm) {
         t++;
         // Initialize moments if first step
         if (mList.isEmpty()) {
             for (Tensor p : parameters) {
                 mList.add(new float[(int) p.getSize()]);
                 vList.add(new float[(int) p.getSize()]);
+            }
+        }
+
+        // Global Gradient Norm Clipping
+        if (maxGradNorm > 0.0f) {
+            double totalNormSq = 0.0;
+            for (Tensor p : parameters) {
+                float[] grad = p.getGrad();
+                for (float g : grad) {
+                    totalNormSq += (double) g * g;
+                }
+            }
+            float totalNorm = (float) Math.sqrt(totalNormSq);
+            if (totalNorm > maxGradNorm && totalNorm > 0.0f) {
+                float clipScale = maxGradNorm / totalNorm;
+                for (Tensor p : parameters) {
+                    float[] grad = p.getGrad();
+                    for (int j = 0; j < grad.length; j++) {
+                        grad[j] *= clipScale;
+                    }
+                }
             }
         }
 
