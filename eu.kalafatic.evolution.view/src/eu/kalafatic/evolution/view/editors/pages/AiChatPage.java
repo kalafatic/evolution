@@ -160,6 +160,9 @@ public class AiChatPage extends AEvoPage {
 				sid = getCurrentSessionName();
 			}
 			chatGroup.addMessageToSession(sid, msg);
+			if (msg.isIsTerminal() || "final-response".equals(msg.getAgentType()) || (msg.getAgentType() != null && msg.getAgentType().contains("approved"))) {
+				chatGroup.refreshGitStatus();
+			}
 		});
 	};
 

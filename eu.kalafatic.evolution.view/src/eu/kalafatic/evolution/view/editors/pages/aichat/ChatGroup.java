@@ -231,10 +231,23 @@ public class ChatGroup extends AEvoGroup {
                     // Not a git repo, ignore
                 }
 
-                // Merge with AI-tracked changes from the current context
-                if (editor.getCurrentContext() != null && editor.getCurrentContext().getFileChangeTracker() != null) {
+                // Merge with AI-tracked changes from the session context
+                String sessionId = page.getCurrentSessionName();
+                eu.kalafatic.evolution.controller.orchestration.TaskContext context = null;
+                if (sessionId != null) {
+                    eu.kalafatic.evolution.controller.orchestration.SessionContainer sessionContainer =
+                        eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getSession(sessionId);
+                    if (sessionContainer instanceof eu.kalafatic.evolution.controller.orchestration.SessionContext) {
+                        context = ((eu.kalafatic.evolution.controller.orchestration.SessionContext) sessionContainer).getTaskContext();
+                    }
+                }
+                if (context == null && editor != null) {
+                    context = editor.getCurrentContext();
+                }
+
+                if (context != null && context.getFileChangeTracker() != null) {
                     java.util.Map<String, eu.kalafatic.evolution.controller.orchestration.FileChangeTracker.ChangeType> aiChanges =
-                        editor.getCurrentContext().getFileChangeTracker().getChangedFiles();
+                        context.getFileChangeTracker().getChangedFiles();
 
                     for (java.util.Map.Entry<String, eu.kalafatic.evolution.controller.orchestration.FileChangeTracker.ChangeType> entry : aiChanges.entrySet()) {
                         String path = entry.getKey();
@@ -977,6 +990,7 @@ public class ChatGroup extends AEvoGroup {
 
     public void setSession(ChatSession thread) {
         this.currentSession = thread;
+        this.lastJson = "";
         refreshBrowser();
     }
 
