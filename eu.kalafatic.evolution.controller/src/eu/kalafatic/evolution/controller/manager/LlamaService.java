@@ -90,7 +90,8 @@ public class LlamaService {
         StringBuilder sb = new StringBuilder();
         for (String line : rawOutput.split("\r?\n")) {
             String trimmed = line.trim();
-            if (trimmed.startsWith("llama_perf_") || trimmed.startsWith("llama_print_timings") || trimmed.startsWith("load_tensors")) {
+            if (trimmed.startsWith("llama_perf_") || trimmed.startsWith("llama_print_timings") || trimmed.startsWith("load_tensors")
+                    || trimmed.startsWith("system_info:") || trimmed.startsWith("main:")) {
                 continue;
             }
             sb.append(line).append("\n");
