@@ -53,6 +53,8 @@ public class ModelsGroup extends AEvoGroup {
     private CheckboxTableViewer viewer;
     private List<AIProvider> modelItems = new ArrayList<>();
     private eu.kalafatic.evolution.view.editors.pages.PropertiesPage page;
+    private org.eclipse.swt.widgets.Text filterText;
+    private String filterPattern = "";
 
     public ModelsGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator, eu.kalafatic.evolution.view.editors.pages.PropertiesPage page) {
         super(editor, orchestrator);
@@ -63,11 +65,43 @@ public class ModelsGroup extends AEvoGroup {
     private void createControl(FormToolkit toolkit, Composite parent) {
         group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Models", 1, true, true);
 
+        Composite filterComp = toolkit.createComposite(group);
+        filterComp.setLayout(new GridLayout(2, false));
+        filterComp.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        GUIFactory.INSTANCE.createLabel(filterComp, "Filter Model Name:");
+        filterText = toolkit.createText(filterComp, "", SWT.BORDER | SWT.SEARCH | SWT.ICON_SEARCH | SWT.ICON_CANCEL);
+        filterText.setMessage("Filter models...");
+        filterText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        filterText.addModifyListener(e -> {
+            filterPattern = filterText.getText();
+            if (viewer != null && !viewer.getControl().isDisposed()) {
+                viewer.refresh();
+            }
+        });
+
         viewer = CheckboxTableViewer.newCheckList(group, SWT.BORDER | SWT.FULL_SELECTION | SWT.V_SCROLL);
         Table table = viewer.getTable();
         table.setHeaderVisible(true);
         table.setLinesVisible(true);
         table.setLayoutData(new GridData(GridData.FILL_BOTH));
+
+        viewer.addFilter(new org.eclipse.jface.viewers.ViewerFilter() {
+            @Override
+            public boolean select(org.eclipse.jface.viewers.Viewer viewer, Object parentElement, Object element) {
+                if (filterPattern == null || filterPattern.trim().isEmpty()) {
+                    return true;
+                }
+                if (element instanceof AIProvider provider) {
+                    String name = provider.getName();
+                    if (name != null) {
+                        return name.toLowerCase().contains(filterPattern.trim().toLowerCase());
+                    }
+                }
+                return false;
+            }
+        });
 
         createColumns();
 
