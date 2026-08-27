@@ -72,6 +72,18 @@ public class WorkflowGraphManager implements RuntimeEventListener {
 				return;
 
 			switch (event.getType()) {
+			case FLOW_STARTED:
+				handleFlowStarted(event);
+				break;
+			case FLOW_COMPLETED:
+				handleFlowCompleted(event);
+				break;
+			case FLOW_PAUSED:
+				handleFlowPaused(event);
+				break;
+			case COGNITIVE_STATE_CHANGED:
+				handleCognitiveStateChanged(event);
+				break;
 			case MODE_CHANGED:
 				handleModeChanged(event);
 				break;
@@ -107,6 +119,13 @@ public class WorkflowGraphManager implements RuntimeEventListener {
 				break;
 			case STEP_RESUMED:
 				handleStepResumed(event);
+				break;
+			case REASONING_STEP:
+			case HYPOTHESIS_GENERATED:
+			case PLAN_SELECTED:
+			case BRANCH_CREATED:
+			case DECISION_UPDATED:
+				handleReasoningEvent(event);
 				break;
 			case FORGE_SESSION_CREATED:
 			case FORGE_SESSION_SWITCHED:
@@ -286,6 +305,60 @@ public class WorkflowGraphManager implements RuntimeEventListener {
 				}
 				GraphEntity forge = entities.get("forge_engine");
 				if (forge != null) forge.setStatus("DONE");
+			}
+		}
+
+		private void handleFlowStarted(RuntimeEvent event) {
+			if (entities.size() <= 1) {
+				setupDefaultTemplate();
+			}
+			String payloadText = event.getPayload() != null ? event.getPayload().toString() : "";
+			for (GraphEntity entity : entities.values()) {
+				if (EntityType.SUPERVISOR.equals(entity.getType()) || EntityType.MEDIATED_FLOW.equals(entity.getType())) {
+					entity.setStatus("RUNNING");
+					if (!payloadText.isEmpty()) {
+						entity.setRuntimeState(payloadText.length() > 30 ? payloadText.substring(0, 27) + "..." : payloadText);
+					}
+				}
+			}
+		}
+
+		private void handleFlowCompleted(RuntimeEvent event) {
+			for (GraphEntity entity : entities.values()) {
+				if ("RUNNING".equals(entity.getStatus())) {
+					entity.setStatus("DONE");
+				}
+			}
+		}
+
+		private void handleFlowPaused(RuntimeEvent event) {
+			for (GraphEntity entity : entities.values()) {
+				if ("RUNNING".equals(entity.getStatus())) {
+					entity.setStatus("WAITING_USER");
+					entity.setRuntimeState("PAUSED");
+				}
+			}
+		}
+
+		private void handleCognitiveStateChanged(RuntimeEvent event) {
+			String stateStr = event.getPayload() != null ? event.getPayload().toString() : "";
+			GraphEntity targetNode = entities.get("orchestrator");
+			if (targetNode == null) targetNode = entities.get("darwin_engine");
+			if (targetNode == null) targetNode = entities.get("supervisor");
+			if (targetNode == null) targetNode = entities.get("mediated_flow");
+			if (targetNode != null && !stateStr.isEmpty()) {
+				targetNode.setRuntimeState(stateStr.length() > 35 ? stateStr.substring(0, 32) + "..." : stateStr);
+			}
+		}
+
+		private void handleReasoningEvent(RuntimeEvent event) {
+			String msg = event.getPayload() != null ? event.getPayload().toString() : event.getType().name();
+			GraphEntity llmNode = entities.get("local_llm");
+			if (llmNode == null) llmNode = entities.get("remote_llm");
+			if (llmNode == null) llmNode = entities.get("llm");
+			if (llmNode != null) {
+				llmNode.setStatus("RUNNING");
+				llmNode.setRuntimeState(msg.length() > 30 ? msg.substring(0, 27) + "..." : msg);
 			}
 		}
 
