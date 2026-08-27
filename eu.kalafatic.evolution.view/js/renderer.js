@@ -719,6 +719,7 @@ window.ChatApp.Renderer = {
                 const upper = name.toUpperCase();
                 if (upper === 'CODE') return 'CODING';
                 if (upper === 'INTENT_RECONSTRUCTION') return 'INTENT';
+                if (upper === 'CHAT') return 'INFERENCE';
                 return upper;
             };
             const trajectoryHtml = traj.slice(-5).map(t => {

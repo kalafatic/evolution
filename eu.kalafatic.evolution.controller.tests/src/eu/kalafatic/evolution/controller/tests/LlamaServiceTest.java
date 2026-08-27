@@ -142,4 +142,25 @@ public class LlamaServiceTest {
 
         assertEquals("Hello World", cleaned);
     }
+
+    @Test
+    public void testResolveEvoArtifactPathLatest() throws Exception {
+        File userDir = new File(System.getProperty("user.dir"));
+        File forgeOut = new File(userDir, "forge-output");
+        if (!forgeOut.exists()) forgeOut.mkdirs();
+
+        File testModelDir = new File(forgeOut, "forging-test-unit-latest");
+        if (!testModelDir.exists()) testModelDir.mkdirs();
+        File weightsFile = new File(testModelDir, "weights.bin");
+        java.nio.file.Files.writeString(weightsFile.toPath(), "DUMMY_WEIGHTS");
+
+        try {
+            File resolved = OllamaProvider.resolveEvoArtifactPath("evo:latest");
+            assertNotNull("resolveEvoArtifactPath for evo:latest must resolve to the forged model directory", resolved);
+            assertTrue("Resolved path must exist", resolved.exists());
+        } finally {
+            if (weightsFile.exists()) weightsFile.delete();
+            if (testModelDir.exists()) testModelDir.delete();
+        }
+    }
 }
