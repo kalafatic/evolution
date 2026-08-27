@@ -86,9 +86,29 @@ public class ModelsGroup extends AEvoGroup {
 
 	public void createButtons(FormToolkit toolkit) {
 		Composite buttonBar = toolkit.createComposite(group);
-        buttonBar.setLayout(new GridLayout(8, false));
+        buttonBar.setLayout(new GridLayout(10, false));
         buttonBar.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, false));
-        
+
+        Button selectAllButton = GUIFactory.INSTANCE.createButton(buttonBar, "Select All");
+        selectAllButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                if (viewer != null) {
+                    viewer.setAllChecked(true);
+                }
+            }
+        });
+
+        Button deselectAllButton = GUIFactory.INSTANCE.createButton(buttonBar, "Deselect All");
+        deselectAllButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                if (viewer != null) {
+                    viewer.setAllChecked(false);
+                }
+            }
+        });
+
         Button reloadButton = GUIFactory.INSTANCE.createButton(buttonBar, "Reload");
         reloadButton.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -565,6 +585,13 @@ public class ModelsGroup extends AEvoGroup {
     }
 
     private void fillContextMenu(IMenuManager manager) {
+        manager.add(new Action("Select All") {
+            @Override public void run() { if (viewer != null) viewer.setAllChecked(true); }
+        });
+        manager.add(new Action("Deselect All") {
+            @Override public void run() { if (viewer != null) viewer.setAllChecked(false); }
+        });
+        manager.add(new Separator());
         manager.add(new Action("Reload") {
             @Override public void run() {
                 String ollamaUrl = (orchestrator.getOllama() != null) ? orchestrator.getOllama().getUrl() : "http://localhost:11434";
