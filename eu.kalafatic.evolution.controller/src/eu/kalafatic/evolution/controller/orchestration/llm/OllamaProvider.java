@@ -242,45 +242,67 @@ public class OllamaProvider implements ILlmProvider {
             modelName = "evo";
         }
 
-        // 1. Check workspace forge-output/
+        boolean isGenericEvo = modelName.equalsIgnoreCase("evo") || modelName.equalsIgnoreCase("evo:latest");
+
+        // Helper list of base search directories
+        java.util.List<java.io.File> baseDirs = new java.util.ArrayList<>();
         String workspacePath = ProjectModelManager.getWorkspacePath();
         if (workspacePath != null && !workspacePath.isEmpty()) {
-            java.io.File dir = new java.io.File(workspacePath, "forge-output/" + modelName);
-            if (dir.exists() && (new java.io.File(dir, "weights.bin").exists() || new java.io.File(dir, "model.json").exists() || new java.io.File(dir, "config.json").exists())) {
-                return dir;
-            }
-            java.io.File evoFile = new java.io.File(workspacePath, "forge-output/" + modelName + ".evo");
-            if (evoFile.exists()) {
-                return evoFile;
-            }
-            java.io.File defaultEvoFile = new java.io.File(workspacePath, "forge-output/evo.evo");
-            if (defaultEvoFile.exists()) {
-                return defaultEvoFile;
-            }
+            baseDirs.add(new java.io.File(workspacePath, "forge-output"));
         }
-
-        // 2. Check codebase path
         String codebasePath = ProjectModelManager.getCodebasePath();
         if (codebasePath != null && !codebasePath.isEmpty()) {
-            java.io.File dir = new java.io.File(codebasePath, "forge-output/" + modelName);
-            if (dir.exists() && (new java.io.File(dir, "weights.bin").exists() || new java.io.File(dir, "model.json").exists() || new java.io.File(dir, "config.json").exists())) {
-                return dir;
+            baseDirs.add(new java.io.File(codebasePath, "forge-output"));
+        }
+        baseDirs.add(new java.io.File(System.getProperty("user.dir"), "forge-output"));
+
+        // If 'evo' or 'evo:latest', search for the newest forged EVO model artifact first
+        if (isGenericEvo) {
+            java.io.File newestArtifact = null;
+            long newestTime = -1;
+
+            for (java.io.File forgeDir : baseDirs) {
+                if (forgeDir.exists() && forgeDir.isDirectory()) {
+                    java.io.File[] files = forgeDir.listFiles();
+                    if (files != null) {
+                        for (java.io.File f : files) {
+                            if (f.isDirectory() && (new java.io.File(f, "weights.bin").exists() || new java.io.File(f, "config.json").exists() || new java.io.File(f, "model.json").exists())) {
+                                if (f.lastModified() > newestTime) {
+                                    newestTime = f.lastModified();
+                                    newestArtifact = f;
+                                }
+                            } else if (f.isFile() && f.getName().endsWith(".evo")) {
+                                if (f.lastModified() > newestTime) {
+                                    newestTime = f.lastModified();
+                                    newestArtifact = f;
+                                }
+                            }
+                        }
+                    }
+                }
             }
-            java.io.File evoFile = new java.io.File(codebasePath, "forge-output/" + modelName + ".evo");
-            if (evoFile.exists()) {
-                return evoFile;
+
+            if (newestArtifact != null) {
+                return newestArtifact;
             }
         }
 
-        // 3. Check user.dir
-        java.io.File userDir = new java.io.File(System.getProperty("user.dir"));
-        java.io.File dir = new java.io.File(userDir, "forge-output/" + modelName);
-        if (dir.exists() && (new java.io.File(dir, "weights.bin").exists() || new java.io.File(dir, "model.json").exists() || new java.io.File(dir, "config.json").exists())) {
-            return dir;
-        }
-        java.io.File userEvo = new java.io.File(userDir, "forge-output/" + modelName + ".evo");
-        if (userEvo.exists()) {
-            return userEvo;
+        // Exact match checks
+        for (java.io.File forgeDir : baseDirs) {
+            if (forgeDir.exists() && forgeDir.isDirectory()) {
+                java.io.File dir = new java.io.File(forgeDir, modelName);
+                if (dir.exists() && (new java.io.File(dir, "weights.bin").exists() || new java.io.File(dir, "model.json").exists() || new java.io.File(dir, "config.json").exists())) {
+                    return dir;
+                }
+                java.io.File evoFile = new java.io.File(forgeDir, modelName + ".evo");
+                if (evoFile.exists()) {
+                    return evoFile;
+                }
+                java.io.File defaultEvoFile = new java.io.File(forgeDir, "evo.evo");
+                if (defaultEvoFile.exists()) {
+                    return defaultEvoFile;
+                }
+            }
         }
 
         return null;
