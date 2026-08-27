@@ -277,7 +277,22 @@ public class SupervisorMain {
                     copiedCount += copyJars(sourcesDir, exportDir);
                 }
 
-                // 2. Copy supervisor jar from supervisor's bin or src/target
+                // 2. Copy produced jars from builds directory if available
+                File buildsDir = new File(baseDir, "builds");
+                if (buildsDir.exists()) {
+                    File[] buildJars = buildsDir.listFiles((dir, name) -> name.endsWith(".jar") && !name.startsWith("original-"));
+                    if (buildJars != null) {
+                        for (File jar : buildJars) {
+                            try {
+                                java.nio.file.Files.copy(jar.toPath(), new File(exportDir, jar.getName()).toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                                copiedCount++;
+                                System.out.println("[HTTP] Exported jar from builds: " + jar.getName());
+                            } catch (Exception ignored) {}
+                        }
+                    }
+                }
+
+                // 3. Copy supervisor jar from supervisor's bin or src/target
                 File binDir = new File(baseDir, "bin");
                 if (binDir.exists()) {
                     File[] binJars = binDir.listFiles((dir, name) -> name.endsWith(".jar") && !name.startsWith("original-"));
@@ -322,12 +337,27 @@ public class SupervisorMain {
                 // 1. Resolve exportDir
                 File exportDir = new File(baseDir, "export");
                 if (!exportDir.exists()) {
-                    return newFixedLengthResponse(Response.Status.OK, "application/json",
-                        "{\"status\":\"ERROR\",\"message\":\"No export folder found! Please run export first.\"}");
+                    exportDir.mkdirs();
                 }
                 
-                // 2. Find runnable jar
+                // 2. Find runnable jar in exportDir; if empty, attempt fallback from buildsDir
                 File[] jars = exportDir.listFiles((dir, name) -> name.endsWith(".jar") && !name.startsWith("original-"));
+                if (jars == null || jars.length == 0) {
+                    File buildsDir = new File(baseDir, "builds");
+                    if (buildsDir.exists()) {
+                        File[] buildJars = buildsDir.listFiles((dir, name) -> name.endsWith(".jar") && !name.startsWith("original-"));
+                        if (buildJars != null && buildJars.length > 0) {
+                            for (File jar : buildJars) {
+                                try {
+                                    java.nio.file.Files.copy(jar.toPath(), new File(exportDir, jar.getName()).toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                                    System.out.println("[HTTP] Copied jar from builds to export for start-evo: " + jar.getName());
+                                } catch (Exception ignored) {}
+                            }
+                            jars = exportDir.listFiles((dir, name) -> name.endsWith(".jar") && !name.startsWith("original-"));
+                        }
+                    }
+                }
+
                 if (jars == null || jars.length == 0) {
                     return newFixedLengthResponse(Response.Status.OK, "application/json",
                         "{\"status\":\"ERROR\",\"message\":\"No jar files found in export folder!\"}");
@@ -450,17 +480,7 @@ public class SupervisorMain {
             int count = 0;
             if (dir.isDirectory()) {
                 if (dir.getName().equals("target")) {
-                    File[] files = dir.listFiles();
-                    if (files != null) {
-                        for (File f : files) {
-                            if (f.isFile() && f.getName().endsWith(".jar")) {
-                                try {
-                                    java.nio.file.Files.copy(f.toPath(), new File(exportDir, f.getName()).toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-                                    count++;
-                                } catch (Exception ignored) {}
-                            }
-                        }
-                    }
+                    count += copyJarsFromTarget(dir, exportDir);
                     return count;
                 }
                 File[] files = dir.listFiles();
@@ -472,6 +492,24 @@ public class SupervisorMain {
                                 count += copyJars(f, exportDir);
                             }
                         }
+                    }
+                }
+            }
+            return count;
+        }
+
+        private static int copyJarsFromTarget(File targetDir, File exportDir) {
+            int count = 0;
+            File[] files = targetDir.listFiles();
+            if (files != null) {
+                for (File f : files) {
+                    if (f.isFile() && f.getName().endsWith(".jar") && !f.getName().startsWith("original-")) {
+                        try {
+                            java.nio.file.Files.copy(f.toPath(), new File(exportDir, f.getName()).toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                            count++;
+                        } catch (Exception ignored) {}
+                    } else if (f.isDirectory()) {
+                        count += copyJarsFromTarget(f, exportDir);
                     }
                 }
             }
