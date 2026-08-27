@@ -44,7 +44,7 @@ public class ProcessRunner {
             if (mvnwCmd.exists()) {
                 command.add(mvnwCmd.getAbsolutePath());
             } else {
-                command.add("mvnw.cmd");
+                command.add("mvn.cmd");
             }
             command.add("clean");
             command.add("verify");
@@ -58,8 +58,7 @@ public class ProcessRunner {
                 } catch (Exception ignored) {}
                 command.add("./mvnw");
             } else {
-                command.add("sh");
-                command.add("mvnw");
+                command.add("mvn");
             }
             command.add("clean");
             command.add("verify");
