@@ -130,4 +130,16 @@ public class LlamaServiceTest {
             assertNotNull("Exception must not be null", e);
         }
     }
+
+    @Test
+    public void testCleanLlamaOutputFiltering() throws Exception {
+        LlamaService service = new LlamaService("evo-test", null);
+        java.lang.reflect.Method method = LlamaService.class.getDeclaredMethod("cleanLlamaOutput", String.class);
+        method.setAccessible(true);
+
+        String raw = "system_info: n_threads = 4\nmain: prompt eval time\nllama_perf_context_print: timing data\nHello World\nllama_print_timings: end";
+        String cleaned = (String) method.invoke(service, raw);
+
+        assertEquals("Hello World", cleaned);
+    }
 }

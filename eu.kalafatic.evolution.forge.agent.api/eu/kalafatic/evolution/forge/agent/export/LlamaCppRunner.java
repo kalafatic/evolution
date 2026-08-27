@@ -419,7 +419,6 @@ public class LlamaCppRunner {
         command.add(String.valueOf(topP));
         command.add("--repeat-penalty");
         command.add(String.valueOf(repeatPenalty));
-        command.add("--no-display-prompt");
         command.add("--simple-io");
 
         ProcessBuilder pb = createProcessBuilder(command);
