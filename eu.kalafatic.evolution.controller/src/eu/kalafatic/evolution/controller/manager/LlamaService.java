@@ -231,15 +231,35 @@ public class LlamaService {
                 System.out.println("[LlamaService] Copied/overwrote model as " + modelName + ".gguf in models folder.");
             }
 
-            java.nio.file.Path parent = sourceGguf.getParent();
-            if (parent != null) {
-                java.nio.file.Path modelfile = parent.resolve("Modelfile");
-                if (java.nio.file.Files.exists(modelfile)) {
-                    java.nio.file.Files.copy(modelfile, modelsDir.toPath().resolve("Modelfile"), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-                }
-                java.nio.file.Path weights = parent.resolve("weights.bin");
-                if (java.nio.file.Files.exists(weights)) {
-                    java.nio.file.Files.copy(weights, modelsDir.toPath().resolve("weights.bin"), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            List<java.nio.file.Path> candidateDirs = new ArrayList<>();
+            java.nio.file.Path p = sourceGguf.getParent();
+            while (p != null && candidateDirs.size() < 4) {
+                candidateDirs.add(p);
+                p = p.getParent();
+            }
+
+            String[] companionFiles = { "Modelfile", "weights.bin", "config.json", "tokenizer.json", "model.json" };
+            for (java.nio.file.Path candidateDir : candidateDirs) {
+                if (java.nio.file.Files.exists(candidateDir) && java.nio.file.Files.isDirectory(candidateDir)) {
+                    for (String compName : companionFiles) {
+                        java.nio.file.Path compFile = candidateDir.resolve(compName);
+                        if (java.nio.file.Files.exists(compFile) && !java.nio.file.Files.isDirectory(compFile)) {
+                            java.nio.file.Files.copy(compFile, modelsDir.toPath().resolve(compName), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                        }
+                    }
+                    try (java.util.stream.Stream<java.nio.file.Path> stream = java.nio.file.Files.list(candidateDir)) {
+                        stream.filter(f -> f.getFileName().toString().endsWith(".evo"))
+                              .forEach(evoFile -> {
+                                  try {
+                                      java.nio.file.Files.copy(evoFile, modelsDir.toPath().resolve("evo.evo"), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                                      if (modelName != null && !modelName.isEmpty() && !"evo".equalsIgnoreCase(modelName)) {
+                                          java.nio.file.Files.copy(evoFile, modelsDir.toPath().resolve(modelName + ".evo"), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                                      } else {
+                                          java.nio.file.Files.copy(evoFile, modelsDir.toPath().resolve(evoFile.getFileName()), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                                      }
+                                  } catch (Exception ignored) {}
+                              });
+                    } catch (Exception ignored) {}
                 }
             }
             return true;
