@@ -341,8 +341,14 @@ public class OllamaProvider implements ILlmProvider {
                     eu.kalafatic.evolution.forge.model.llm.EvoModelArtifact artifact = eu.kalafatic.evolution.forge.model.llm.EvoModelArtifact.load(evoArtifactPath.toPath());
                     eu.kalafatic.evolution.forge.model.llm.EvoLlmModel nativeModel = artifact.createModel();
                     eu.kalafatic.evolution.forge.tokenizer.impl.SimpleBPETokenizer tokenizer = new eu.kalafatic.evolution.forge.tokenizer.impl.SimpleBPETokenizer();
-                    if (artifact.getTokenizerVocab() != null) {
+                    if (artifact.getTokenizerVocab() != null && !artifact.getTokenizerVocab().isEmpty()) {
                         tokenizer.setVocabulary(artifact.getTokenizerVocab());
+                    } else if (artifact.getIdToToken() != null && !artifact.getIdToToken().isEmpty()) {
+                        java.util.Map<String, Integer> revVocab = new java.util.LinkedHashMap<>();
+                        for (java.util.Map.Entry<Integer, String> entry : artifact.getIdToToken().entrySet()) {
+                            revVocab.put(entry.getValue(), entry.getKey());
+                        }
+                        tokenizer.setVocabulary(revVocab);
                     }
 
                     eu.kalafatic.evolution.forge.model.inference.InferenceRequest request = eu.kalafatic.evolution.forge.model.inference.InferenceRequest.builder()
@@ -359,10 +365,15 @@ public class OllamaProvider implements ILlmProvider {
                             context.log("Stage: LLM\nProvider: ReferenceEvoInferenceEngine (evo native)\nModel: " + model + "\nToken count: (estimated) " + (prompt.length() / 4) + "\nRaw response length: " + response.length());
                         }
                         return response;
+                    } else if (response != null && !response.isEmpty()) {
+                        if (context != null) {
+                            context.log("EvoInferenceEngine: Response contained placeholder tokens. Returning response directly or falling back.");
+                        }
+                        return response;
                     }
                 } catch (Exception ex) {
                     if (context != null) {
-                        context.log("EvoInferenceEngine: Native execution failed (" + ex.getMessage() + "). Falling back to llama-cpp or ollama.");
+                        context.log("EvoInferenceEngine: Native execution failed (" + ex.getClass().getName() + ": " + ex.getMessage() + "). Falling back to llama-cpp or ollama.");
                     }
                 }
             } else {

@@ -250,7 +250,147 @@ public class EvoModelArtifact {
         Path vocabJsonPath = path.getParent().resolve(path.getFileName().toString().replace(".evo", "_vocab.json"));
         saveVocabularyJson(vocabJsonPath);
     }
-    
+
+    private static EvoModelArtifact loadFromDirectory(Path dir) throws IOException {
+        Path manifestPath = dir.resolve("model.json");
+        Path configPath = dir.resolve("config.json");
+        Path weightsPath = dir.resolve("weights.bin");
+        Path tokenizerPath = dir.resolve("tokenizer.json");
+
+        if (!Files.exists(configPath) && !Files.exists(manifestPath)) {
+            throw new FileNotFoundException("Neither model.json nor config.json found in directory: " + dir);
+        }
+        if (!Files.exists(weightsPath)) {
+            throw new FileNotFoundException("weights.bin missing in directory: " + dir);
+        }
+
+        EvoModelArtifact artifact = new EvoModelArtifact();
+        artifact.modelName = dir.getFileName() != null ? dir.getFileName().toString() : "evo_model";
+
+        // 1. Read architecture & metadata from model.json or config.json
+        if (Files.exists(manifestPath)) {
+            try {
+                String jsonStr = Files.readString(manifestPath);
+                JSONObject obj = new JSONObject(jsonStr);
+                if (obj.has("modelName")) artifact.modelName = obj.optString("modelName", artifact.modelName);
+                if (obj.has("vocabSize")) artifact.vocabSize = obj.getInt("vocabSize");
+                if (obj.has("dModel")) artifact.dModel = obj.getInt("dModel");
+                if (obj.has("numHeads")) artifact.numHeads = obj.getInt("numHeads");
+                if (obj.has("numBlocks")) artifact.numBlocks = obj.getInt("numBlocks");
+                if (obj.has("dff")) artifact.dff = obj.getInt("dff");
+                if (obj.has("maxSeqLen")) artifact.maxSeqLen = obj.getInt("maxSeqLen");
+            } catch (Exception ignored) {}
+        }
+
+        if (Files.exists(configPath)) {
+            try {
+                String jsonStr = Files.readString(configPath);
+                JSONObject obj = new JSONObject(jsonStr);
+                if (artifact.vocabSize <= 0 && obj.has("vocabSize")) artifact.vocabSize = obj.getInt("vocabSize");
+                if (artifact.dModel <= 0 && obj.has("dModel")) artifact.dModel = obj.getInt("dModel");
+                if (artifact.numHeads <= 0 && obj.has("numHeads")) artifact.numHeads = obj.getInt("numHeads");
+                if (artifact.numBlocks <= 0 && obj.has("numBlocks")) artifact.numBlocks = obj.getInt("numBlocks");
+                if (artifact.dff <= 0 && obj.has("dff")) artifact.dff = obj.getInt("dff");
+                if (artifact.maxSeqLen <= 0 && obj.has("maxSeqLen")) artifact.maxSeqLen = obj.getInt("maxSeqLen");
+            } catch (Exception ignored) {}
+        }
+
+        // 2. Read tokenizer.json vocabulary if present
+        if (Files.exists(tokenizerPath)) {
+            try {
+                String jsonStr = Files.readString(tokenizerPath);
+                Map<String, Integer> vocab = parseVocabFromJson(jsonStr);
+                if (!vocab.isEmpty()) {
+                    artifact.tokenToId = new LinkedHashMap<>(vocab);
+                    artifact.idToToken = new LinkedHashMap<>();
+                    for (Map.Entry<String, Integer> entry : vocab.entrySet()) {
+                        artifact.idToToken.put(entry.getValue(), entry.getKey());
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+        artifact.ensureSpecialTokens();
+
+        // 3. Load model weights from weights.bin into dummy model to extract parameters
+        EvoLlmModel tempModel = new EvoLlmModel(artifact.vocabSize, artifact.dModel, artifact.numHeads, artifact.numBlocks, artifact.dff, artifact.maxSeqLen);
+        try (DataInputStream dis = new DataInputStream(new BufferedInputStream(new FileInputStream(weightsPath.toFile())))) {
+            List<Tensor> params = tempModel.parameters();
+            for (Tensor p : params) {
+                float[] data = p.getData();
+                for (int i = 0; i < data.length; i++) {
+                    data[i] = dis.readFloat();
+                }
+            }
+        }
+
+        artifact.weightData.clear();
+        artifact.weightShapes.clear();
+        artifact.weightNames.clear();
+
+        for (Tensor t : tempModel.parameters()) {
+            float[] data = t.getData().clone();
+            long[] shape = t.getShape().clone();
+            artifact.weightData.add(data);
+            artifact.weightShapes.add(shape);
+            artifact.weightNames.add(artifact.generateWeightName(artifact.weightData.size() - 1));
+        }
+
+        return artifact;
+    }
+
+    private static Map<String, Integer> parseVocabFromJson(String jsonStr) {
+        Map<String, Integer> vocab = new LinkedHashMap<>();
+        int vocabIdx = jsonStr.indexOf("\"vocab\"");
+        if (vocabIdx == -1) return vocab;
+        int braceStart = jsonStr.indexOf("{", vocabIdx);
+        if (braceStart == -1) return vocab;
+
+        int i = braceStart + 1;
+        int len = jsonStr.length();
+        while (i < len) {
+            char c = jsonStr.charAt(i);
+            if (c == '}') break;
+            if (c == '"') {
+                int tokenStart = i + 1;
+                StringBuilder sb = new StringBuilder();
+                int j = tokenStart;
+                boolean escaped = false;
+                while (j < len) {
+                    char ch = jsonStr.charAt(j);
+                    if (escaped) {
+                        sb.append(ch);
+                        escaped = false;
+                    } else if (ch == '\\') {
+                        escaped = true;
+                    } else if (ch == '"') {
+                        break;
+                    } else {
+                        sb.append(ch);
+                    }
+                    j++;
+                }
+                String token = sb.toString();
+                int colon = jsonStr.indexOf(":", j);
+                if (colon != -1) {
+                    int k = colon + 1;
+                    while (k < len && Character.isWhitespace(jsonStr.charAt(k))) k++;
+                    int numStart = k;
+                    while (k < len && (Character.isDigit(jsonStr.charAt(k)) || jsonStr.charAt(k) == '-')) k++;
+                    if (k > numStart) {
+                        try {
+                            int id = Integer.parseInt(jsonStr.substring(numStart, k));
+                            vocab.put(token, id);
+                        } catch (NumberFormatException ignored) {}
+                    }
+                    i = k;
+                    continue;
+                }
+            }
+            i++;
+        }
+        return vocab;
+    }
+
     private void saveVocabularyJson(Path path) throws IOException {
         Map<String, Object> vocabData = new LinkedHashMap<>();
         vocabData.put("vocab_size", vocabSize);
@@ -264,6 +404,18 @@ public class EvoModelArtifact {
     }
     
     public static EvoModelArtifact load(Path path) throws IOException {
+        if (path == null || !Files.exists(path)) {
+            if (path != null && !path.toString().endsWith(".evo") && Files.exists(Paths.get(path.toString() + ".evo"))) {
+                path = Paths.get(path.toString() + ".evo");
+            } else {
+                throw new FileNotFoundException("Model artifact path does not exist: " + path);
+            }
+        }
+
+        if (Files.isDirectory(path)) {
+            return loadFromDirectory(path);
+        }
+
         EvoModelArtifact artifact = new EvoModelArtifact();
         
         try (FileInputStream fis = new FileInputStream(path.toFile());
