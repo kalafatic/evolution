@@ -41,8 +41,19 @@ public class LlamaServiceTest {
 
     @Test
     public void testCopyToModelsDirAndResolution() throws Exception {
-        File tempGguf = File.createTempFile("test-evo-models-dir-", ".gguf");
+        File tempDir = java.nio.file.Files.createTempDirectory("test-evo-forge-dir-").toFile();
+        File tempGguf = new File(tempDir, "evo.gguf");
         java.nio.file.Files.writeString(tempGguf.toPath(), "GGUF-DUMMY-BYTES");
+        File tempModelfile = new File(tempDir, "Modelfile");
+        java.nio.file.Files.writeString(tempModelfile.toPath(), "FROM evo.gguf");
+        File tempWeights = new File(tempDir, "weights.bin");
+        java.nio.file.Files.writeString(tempWeights.toPath(), "WEIGHTS-DUMMY-BYTES");
+        File tempConfig = new File(tempDir, "config.json");
+        java.nio.file.Files.writeString(tempConfig.toPath(), "{\"model_name\":\"test\"}");
+        File tempTokenizer = new File(tempDir, "tokenizer.json");
+        java.nio.file.Files.writeString(tempTokenizer.toPath(), "{\"vocab_size\":10}");
+        File tempEvoPkg = new File(tempDir, "test-evo-models-unit.evo");
+        java.nio.file.Files.writeString(tempEvoPkg.toPath(), "EVO-PACKAGE-BYTES");
 
         try {
             boolean copySuccess = LlamaService.copyToModelsDir(tempGguf.toPath(), "test-evo-models-unit");
@@ -51,22 +62,43 @@ public class LlamaServiceTest {
             File modelsDir = LlamaService.resolveControllerModelsDir();
             File targetNamed = new File(modelsDir, "test-evo-models-unit.gguf");
             File targetEvo = new File(modelsDir, "evo.gguf");
+            File targetModelfile = new File(modelsDir, "Modelfile");
+            File targetWeights = new File(modelsDir, "weights.bin");
+            File targetConfig = new File(modelsDir, "config.json");
+            File targetTokenizer = new File(modelsDir, "tokenizer.json");
+            File targetEvoPkg = new File(modelsDir, "test-evo-models-unit.evo");
+            File targetEvoDefaultPkg = new File(modelsDir, "evo.evo");
+
             assertTrue("Named GGUF model file must exist in models folder", targetNamed.exists());
             assertTrue("Default evo.gguf model file must exist in models folder", targetEvo.exists());
+            assertTrue("Modelfile must exist in models folder", targetModelfile.exists());
+            assertTrue("weights.bin must exist in models folder", targetWeights.exists());
+            assertTrue("config.json must exist in models folder", targetConfig.exists());
+            assertTrue("tokenizer.json must exist in models folder", targetTokenizer.exists());
+            assertTrue("test-evo-models-unit.evo package must exist in models folder", targetEvoPkg.exists());
+            assertTrue("evo.evo package must exist in models folder", targetEvoDefaultPkg.exists());
 
             File resolved = LlamaService.resolveEvoModelPath("test-evo-models-unit");
             assertNotNull("resolveEvoModelPath must locate copied model in models folder", resolved);
             assertTrue("Resolved file must exist", resolved.exists());
 
             // Cleanup
-            if (targetNamed.exists()) {
-                targetNamed.delete();
-            }
-            if (targetEvo.exists()) {
-                targetEvo.delete();
-            }
+            if (targetNamed.exists()) targetNamed.delete();
+            if (targetEvo.exists()) targetEvo.delete();
+            if (targetModelfile.exists()) targetModelfile.delete();
+            if (targetWeights.exists()) targetWeights.delete();
+            if (targetConfig.exists()) targetConfig.delete();
+            if (targetTokenizer.exists()) targetTokenizer.delete();
+            if (targetEvoPkg.exists()) targetEvoPkg.delete();
+            if (targetEvoDefaultPkg.exists()) targetEvoDefaultPkg.delete();
         } finally {
-            tempGguf.delete();
+            if (tempGguf.exists()) tempGguf.delete();
+            if (tempModelfile.exists()) tempModelfile.delete();
+            if (tempWeights.exists()) tempWeights.delete();
+            if (tempConfig.exists()) tempConfig.delete();
+            if (tempTokenizer.exists()) tempTokenizer.delete();
+            if (tempEvoPkg.exists()) tempEvoPkg.delete();
+            if (tempDir.exists()) tempDir.delete();
         }
     }
 

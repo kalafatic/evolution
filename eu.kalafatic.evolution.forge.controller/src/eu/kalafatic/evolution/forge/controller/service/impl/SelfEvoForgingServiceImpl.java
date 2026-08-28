@@ -370,10 +370,22 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                         Files.copy(exportPath.resolve("exports/ollama/evo.gguf"), controllerModelsDir.resolve("evo.gguf"), StandardCopyOption.REPLACE_EXISTING);
                         Files.copy(exportPath.resolve("exports/ollama/evo.gguf"), controllerModelsDir.resolve(modelName + ".gguf"), StandardCopyOption.REPLACE_EXISTING);
                         Files.copy(exportPath.resolve("exports/ollama/Modelfile"), controllerModelsDir.resolve("Modelfile"), StandardCopyOption.REPLACE_EXISTING);
-                        if (Files.exists(exportPath.resolve("weights.bin"))) {
-                            Files.copy(exportPath.resolve("weights.bin"), controllerModelsDir.resolve("weights.bin"), StandardCopyOption.REPLACE_EXISTING);
+                        String[] compNames = { "weights.bin", "config.json", "tokenizer.json", "model.json" };
+                        for (String compName : compNames) {
+                            if (Files.exists(exportPath.resolve(compName))) {
+                                Files.copy(exportPath.resolve(compName), controllerModelsDir.resolve(compName), StandardCopyOption.REPLACE_EXISTING);
+                            }
                         }
-                        logToFile(logFile, "[EXPORT_GGUF] Programmatically copied GGUF files to controller lib/models directory.");
+                        try (Stream<Path> stream = Files.list(exportPath)) {
+                            stream.filter(f -> f.getFileName().toString().endsWith(".evo"))
+                                  .forEach(evoFile -> {
+                                      try {
+                                          Files.copy(evoFile, controllerModelsDir.resolve("evo.evo"), StandardCopyOption.REPLACE_EXISTING);
+                                          Files.copy(evoFile, controllerModelsDir.resolve(modelName + ".evo"), StandardCopyOption.REPLACE_EXISTING);
+                                      } catch (Exception ignored) {}
+                                  });
+                        } catch (Exception ignored) {}
+                        logToFile(logFile, "[EXPORT_GGUF] Programmatically copied GGUF and evo-native files to controller lib/models directory.");
                     } catch (Exception ex) {
                         logToFile(logFile, "[EXPORT_GGUF] Warning: Copying to controller lib/models/ directory failed: " + ex.getMessage());
                     }
