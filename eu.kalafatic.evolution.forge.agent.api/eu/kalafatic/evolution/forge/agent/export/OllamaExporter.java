@@ -192,6 +192,19 @@ public class OllamaExporter implements EvoModelExporter {
         Files.copy(modelfilePath, outputPath.resolve("Modelfile"), StandardCopyOption.REPLACE_EXISTING);
         copyToLlamaCppLibFolder(ggufPath, modelName);
 
+        // Copy GGUF model to OS-independent default Ollama models folder (~/.ollama/models)
+        try {
+            Path ollamaHomeModels = Paths.get(System.getProperty("user.home")).resolve(".ollama/models");
+            Files.createDirectories(ollamaHomeModels);
+            Files.copy(ggufPath, ollamaHomeModels.resolve("evo.gguf"), StandardCopyOption.REPLACE_EXISTING);
+            if (modelName != null && !modelName.isEmpty() && !"evo".equalsIgnoreCase(modelName)) {
+                Files.copy(ggufPath, ollamaHomeModels.resolve(modelName + ".gguf"), StandardCopyOption.REPLACE_EXISTING);
+            }
+            System.out.println("[Export] Programmatically copied GGUF to default Ollama models folder: " + ollamaHomeModels.toAbsolutePath());
+        } catch (Exception ex) {
+            System.err.println("[Export] Warning: Failed to copy GGUF to Ollama models folder: " + ex.getMessage());
+        }
+
         // Save weights.bin
         Path weightsPath = outputPath.resolve("weights.bin");
         try (DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(weightsPath.toFile())))) {
