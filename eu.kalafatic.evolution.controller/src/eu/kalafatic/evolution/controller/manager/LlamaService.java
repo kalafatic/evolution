@@ -231,6 +231,19 @@ public class LlamaService {
                 System.out.println("[LlamaService] Copied/overwrote model as " + modelName + ".gguf in models folder.");
             }
 
+            // Copy to user home ~/.ollama/models directory
+            try {
+                java.nio.file.Path ollamaHomeModels = java.nio.file.Paths.get(System.getProperty("user.home")).resolve(".ollama/models");
+                java.nio.file.Files.createDirectories(ollamaHomeModels);
+                java.nio.file.Files.copy(sourceGguf, ollamaHomeModels.resolve("evo.gguf"), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                if (modelName != null && !modelName.isEmpty() && !"evo".equalsIgnoreCase(modelName)) {
+                    java.nio.file.Files.copy(sourceGguf, ollamaHomeModels.resolve(modelName + ".gguf"), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                }
+                System.out.println("[LlamaService] Copied GGUF to default Ollama models folder: " + ollamaHomeModels.toAbsolutePath());
+            } catch (Exception ex) {
+                System.err.println("[LlamaService] Warning: Failed to copy GGUF to Ollama models folder: " + ex.getMessage());
+            }
+
             List<java.nio.file.Path> candidateDirs = new ArrayList<>();
             java.nio.file.Path p = sourceGguf.getParent();
             while (p != null && candidateDirs.size() < 4) {
