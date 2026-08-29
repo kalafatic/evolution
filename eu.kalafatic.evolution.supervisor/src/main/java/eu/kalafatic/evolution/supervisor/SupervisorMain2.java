@@ -164,6 +164,22 @@ public class SupervisorMain2 extends NanoHTTPD {
             File exportDir = resolveExportDir(workspace, baseDir);
 
             File executable = findExecutable(exportDir);
+            if (executable == null && exportDir.exists()) {
+                File[] archives = exportDir.listFiles((dir, name) -> name.endsWith(".zip") || name.endsWith(".tar.gz"));
+                if (archives != null && archives.length > 0) {
+                    for (File archive : archives) {
+                        try {
+                            if (archive.getName().endsWith(".zip")) {
+                                unzip(archive, exportDir);
+                            } else if (archive.getName().endsWith(".tar.gz")) {
+                                untar(archive, exportDir);
+                            }
+                        } catch (Exception ignored) {}
+                    }
+                    executable = findExecutable(exportDir);
+                }
+            }
+
             if (executable != null) {
                 try {
                     if (activeEvoProcess != null && activeEvoProcess.isAlive()) {
@@ -282,6 +298,40 @@ public class SupervisorMain2 extends NanoHTTPD {
             }
         }
         return null;
+    }
+
+    private static void unzip(File zipFile, File destDir) throws IOException {
+        try (java.util.zip.ZipInputStream zipIn = new java.util.zip.ZipInputStream(new java.io.FileInputStream(zipFile))) {
+            java.util.zip.ZipEntry entry = zipIn.getNextEntry();
+            while (entry != null) {
+                File filePath = new File(destDir, entry.getName());
+                if (!entry.isDirectory()) {
+                    if (filePath.getParentFile() != null && !filePath.getParentFile().exists()) {
+                        filePath.getParentFile().mkdirs();
+                    }
+                    try (java.io.FileOutputStream bos = new java.io.FileOutputStream(filePath)) {
+                        byte[] bytesIn = new byte[4096];
+                        int read;
+                        while ((read = zipIn.read(bytesIn)) != -1) {
+                            bos.write(bytesIn, 0, read);
+                        }
+                    }
+                } else {
+                    filePath.mkdirs();
+                }
+                zipIn.closeEntry();
+                entry = zipIn.getNextEntry();
+            }
+        }
+    }
+
+    private static void untar(File tarFile, File destDir) throws IOException, InterruptedException {
+        ProcessBuilder pb = new ProcessBuilder("tar", "-xzf", tarFile.getAbsolutePath(), "-C", destDir.getAbsolutePath());
+        Process p = pb.start();
+        int code = p.waitFor();
+        if (code != 0) {
+            throw new IOException("tar extraction failed with exit code: " + code);
+        }
     }
 
     private static int copyJars(File dir, File exportDir) {

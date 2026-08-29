@@ -452,6 +452,21 @@ public class SelfDevBootstrapController {
         System.out.println("[SelfDevBootstrapController] [START_BOOTSTRAP] Bootstrap process successfully started.");
     }
 
+    public void restartSupervisor() {
+        System.out.println("[SelfDevBootstrapController] Forcibly restarting Supervisor process...");
+        if (supervisorProcess != null) {
+            supervisorProcess.destroyForcibly();
+            try {
+                supervisorProcess.waitFor(2, TimeUnit.SECONDS);
+            } catch (InterruptedException ignored) {}
+            supervisorProcess = null;
+        }
+        try {
+            callSupervisor("/stop-evo");
+        } catch (Exception ignored) {}
+        ensureSupervisorRunning();
+    }
+
     public void stopBootstrap() {
         System.out.println("[SelfDevBootstrapController] Requesting to stop Supervisor...");
         if (supervisorProcess != null) {
@@ -819,6 +834,7 @@ public class SelfDevBootstrapController {
                         Files.copy(jar.toPath(), new File(binDir, jar.getName()).toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
                     }
                 }
+                restartSupervisor();
                 return "SUCCESS (" + duration + "ms)";
             } else {
                 return "ERROR: Maven build failed with exit code " + exitCode;

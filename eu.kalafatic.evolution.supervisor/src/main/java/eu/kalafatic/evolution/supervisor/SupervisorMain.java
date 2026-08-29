@@ -327,14 +327,26 @@ public class SupervisorMain {
 
                 int copiedCount = 0;
 
+                // Determine sourcesDir properly (e.g. if path points to export, resolve parent's sources)
+                File pFile = new File(path);
+                File sourcesDir = pFile;
+                if (pFile.getName().equalsIgnoreCase("export") && pFile.getParentFile() != null) {
+                    File parentSources = new File(pFile.getParentFile(), "sources");
+                    if (parentSources.exists()) {
+                        sourcesDir = parentSources;
+                    }
+                }
+
                 // 1. Copy EVO jars & product assets from workspace (sources) target directories recursively
-                File sourcesDir = new File(path);
                 if (sourcesDir.exists()) {
                     copiedCount += copyJars(sourcesDir, exportDir);
                 }
 
                 // 2. Copy produced jars from builds directory if available
                 File buildsDir = new File(baseDir, "builds");
+                if (!buildsDir.exists() && exportDir.getParentFile() != null) {
+                    buildsDir = new File(exportDir.getParentFile(), "builds");
+                }
                 if (buildsDir.exists()) {
                     File[] buildJars = buildsDir.listFiles((dir, name) -> !name.startsWith("original-") && (name.endsWith(".jar") || name.endsWith(".zip") || name.endsWith(".tar.gz")));
                     if (buildJars != null) {
@@ -350,6 +362,9 @@ public class SupervisorMain {
 
                 // 3. Copy supervisor jar from supervisor's bin or src/target
                 File binDir = new File(baseDir, "bin");
+                if (!binDir.exists() && exportDir.getParentFile() != null) {
+                    binDir = new File(exportDir.getParentFile(), "bin");
+                }
                 if (binDir.exists()) {
                     File[] binJars = binDir.listFiles((dir, name) -> !name.startsWith("original-") && (name.endsWith(".jar") || name.endsWith(".zip") || name.endsWith(".tar.gz")));
                     if (binJars != null) {
@@ -377,8 +392,11 @@ public class SupervisorMain {
                     }
                 }
 
+                File[] allAssets = exportDir.listFiles((dir, name) -> !name.startsWith("original-") && (name.endsWith(".jar") || name.endsWith(".zip") || name.endsWith(".tar.gz") || name.endsWith(".exe") || name.endsWith(".sh") || dir.isDirectory()));
+                int totalAssets = (allAssets != null) ? allAssets.length : copiedCount;
+
                 return newFixedLengthResponse(Response.Status.OK, "application/json", 
-                    "{\"status\":\"OK\",\"message\":\"Export completed. Exported " + copiedCount + " assets to " + exportDir.getAbsolutePath() + "\",\"path\":\"" + path + "\"}");
+                    "{\"status\":\"OK\",\"message\":\"Export completed. Exported " + totalAssets + " assets to " + exportDir.getAbsolutePath() + "\",\"path\":\"" + path + "\"}");
             } catch (Exception e) {
                 return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", 
                     "{\"status\":\"ERROR\",\"message\":\"" + e.getMessage() + "\"}");
@@ -398,6 +416,26 @@ public class SupervisorMain {
 
                 // 2. Check for native product executable (evo.exe, evo.sh, evo)
                 File executable = findExecutable(exportDir);
+                if (executable == null) {
+                    // Check if an archive (.zip / .tar.gz) exists in exportDir and auto-extract it
+                    File[] archives = exportDir.listFiles((dir, name) -> name.endsWith(".zip") || name.endsWith(".tar.gz"));
+                    if (archives != null && archives.length > 0) {
+                        for (File archive : archives) {
+                            try {
+                                System.out.println("[HTTP] Auto-extracting product archive: " + archive.getName() + " into " + exportDir.getAbsolutePath());
+                                if (archive.getName().endsWith(".zip")) {
+                                    unzip(archive, exportDir);
+                                } else if (archive.getName().endsWith(".tar.gz")) {
+                                    untar(archive, exportDir);
+                                }
+                            } catch (Exception ex) {
+                                System.err.println("[HTTP] Failed to extract archive " + archive.getName() + ": " + ex.getMessage());
+                            }
+                        }
+                        executable = findExecutable(exportDir);
+                    }
+                }
+
                 if (executable != null) {
                     System.out.println("[HTTP] Launching exported EVO Product Executable: " + executable.getAbsolutePath());
                     if (!System.getProperty("os.name").toLowerCase().contains("win")) {
@@ -591,6 +629,40 @@ public class SupervisorMain {
             } catch (IOException e) {
                 return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", 
                     "{\"status\":\"ERROR\",\"message\":\"" + e.getMessage() + "\"}");
+            }
+        }
+
+        private static void unzip(File zipFile, File destDir) throws IOException {
+            try (java.util.zip.ZipInputStream zipIn = new java.util.zip.ZipInputStream(new java.io.FileInputStream(zipFile))) {
+                java.util.zip.ZipEntry entry = zipIn.getNextEntry();
+                while (entry != null) {
+                    File filePath = new File(destDir, entry.getName());
+                    if (!entry.isDirectory()) {
+                        if (filePath.getParentFile() != null && !filePath.getParentFile().exists()) {
+                            filePath.getParentFile().mkdirs();
+                        }
+                        try (java.io.FileOutputStream bos = new java.io.FileOutputStream(filePath)) {
+                            byte[] bytesIn = new byte[4096];
+                            int read;
+                            while ((read = zipIn.read(bytesIn)) != -1) {
+                                bos.write(bytesIn, 0, read);
+                            }
+                        }
+                    } else {
+                        filePath.mkdirs();
+                    }
+                    zipIn.closeEntry();
+                    entry = zipIn.getNextEntry();
+                }
+            }
+        }
+
+        private static void untar(File tarFile, File destDir) throws IOException, InterruptedException {
+            ProcessBuilder pb = new ProcessBuilder("tar", "-xzf", tarFile.getAbsolutePath(), "-C", destDir.getAbsolutePath());
+            Process p = pb.start();
+            int code = p.waitFor();
+            if (code != 0) {
+                throw new IOException("tar extraction failed with exit code: " + code);
             }
         }
 
