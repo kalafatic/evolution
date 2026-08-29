@@ -142,7 +142,33 @@ public class CodeExtractor {
             }
         }
 
+        // Sanitize residual backticks or markdown fences from extracted code
+        trimmed = sanitizeMarkdownFences(trimmed);
+
         return trimmed;
+    }
+
+    private static String sanitizeMarkdownFences(String code) {
+        if (code == null) return "";
+        String s = code.trim();
+        while (s.startsWith("```")) {
+            int firstNewline = s.indexOf('\n');
+            if (firstNewline != -1) {
+                s = s.substring(firstNewline + 1).trim();
+            } else {
+                s = s.substring(3).trim();
+            }
+        }
+        while (s.endsWith("```")) {
+            s = s.substring(0, s.length() - 3).trim();
+        }
+        while (s.startsWith("`")) {
+            s = s.substring(1).trim();
+        }
+        while (s.endsWith("`")) {
+            s = s.substring(0, s.length() - 1).trim();
+        }
+        return s;
     }
 
     /**
