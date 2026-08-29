@@ -259,19 +259,69 @@ public class SupervisorMain {
             }
         }
         
+        private File resolveExportDir(String pathParam, File baseDir) {
+            if (pathParam != null && !pathParam.trim().isEmpty()) {
+                File pFile = new File(pathParam.trim());
+                if (pFile.getName().equalsIgnoreCase("export")) {
+                    return pFile;
+                }
+                File subExport = new File(pFile, "export");
+                if (subExport.exists() || pFile.exists()) {
+                    return subExport;
+                }
+                if (pFile.getParentFile() != null) {
+                    File parentExport = new File(pFile.getParentFile(), "export");
+                    if (parentExport.exists()) {
+                        return parentExport;
+                    }
+                }
+            }
+            File exportDir = new File(baseDir, "export");
+            if (!exportDir.exists() && baseDir.getName().equalsIgnoreCase("export")) {
+                return baseDir;
+            }
+            return exportDir;
+        }
+
+        private File findExecutable(File exportDir) {
+            boolean isWin = System.getProperty("os.name").toLowerCase().contains("win");
+            String exeName = isWin ? "evo.exe" : "evo";
+            String shName = "evo.sh";
+
+            File directExe = new File(exportDir, exeName);
+            if (directExe.exists() && directExe.isFile()) return directExe;
+            if (!isWin) {
+                File directSh = new File(exportDir, shName);
+                if (directSh.exists() && directSh.isFile()) return directSh;
+            }
+
+            File[] subDirs = exportDir.listFiles(File::isDirectory);
+            if (subDirs != null) {
+                for (File sub : subDirs) {
+                    File subExe = new File(sub, exeName);
+                    if (subExe.exists() && subExe.isFile()) return subExe;
+                    if (!isWin) {
+                        File subSh = new File(sub, shName);
+                        if (subSh.exists() && subSh.isFile()) return subSh;
+                    }
+                }
+            }
+            return null;
+        }
+
         private Response handleExport(IHTTPSession session, Map<String, String> params) {
             try {
                 String path = params.getOrDefault("path", baseDir.getAbsolutePath());
                 System.out.println("[HTTP] Export requested for path: " + path);
                 
-                File exportDir = new File(baseDir, "export");
+                File exportDir = resolveExportDir(path, baseDir);
                 if (!exportDir.exists()) {
                     exportDir.mkdirs();
                 }
 
                 int copiedCount = 0;
 
-                // 1. Copy EVO jars from workspace (sources) target directories recursively
+                // 1. Copy EVO jars & product assets from workspace (sources) target directories recursively
                 File sourcesDir = new File(path);
                 if (sourcesDir.exists()) {
                     copiedCount += copyJars(sourcesDir, exportDir);
@@ -280,13 +330,13 @@ public class SupervisorMain {
                 // 2. Copy produced jars from builds directory if available
                 File buildsDir = new File(baseDir, "builds");
                 if (buildsDir.exists()) {
-                    File[] buildJars = buildsDir.listFiles((dir, name) -> name.endsWith(".jar") && !name.startsWith("original-"));
+                    File[] buildJars = buildsDir.listFiles((dir, name) -> !name.startsWith("original-") && (name.endsWith(".jar") || name.endsWith(".zip") || name.endsWith(".tar.gz")));
                     if (buildJars != null) {
                         for (File jar : buildJars) {
                             try {
                                 java.nio.file.Files.copy(jar.toPath(), new File(exportDir, jar.getName()).toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
                                 copiedCount++;
-                                System.out.println("[HTTP] Exported jar from builds: " + jar.getName());
+                                System.out.println("[HTTP] Exported build asset: " + jar.getName());
                             } catch (Exception ignored) {}
                         }
                     }
@@ -295,26 +345,26 @@ public class SupervisorMain {
                 // 3. Copy supervisor jar from supervisor's bin or src/target
                 File binDir = new File(baseDir, "bin");
                 if (binDir.exists()) {
-                    File[] binJars = binDir.listFiles((dir, name) -> name.endsWith(".jar") && !name.startsWith("original-"));
+                    File[] binJars = binDir.listFiles((dir, name) -> !name.startsWith("original-") && (name.endsWith(".jar") || name.endsWith(".zip") || name.endsWith(".tar.gz")));
                     if (binJars != null) {
                         for (File jar : binJars) {
                             try {
                                 java.nio.file.Files.copy(jar.toPath(), new File(exportDir, jar.getName()).toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
                                 copiedCount++;
-                                System.out.println("[HTTP] Exported supervisor jar from bin: " + jar.getName());
+                                System.out.println("[HTTP] Exported asset from bin: " + jar.getName());
                             } catch (Exception ignored) {}
                         }
                     }
                 } else {
                     File srcTargetDir = new File(baseDir, "src/target");
                     if (srcTargetDir.exists()) {
-                        File[] targetJars = srcTargetDir.listFiles((dir, name) -> name.endsWith(".jar") && !name.startsWith("original-"));
+                        File[] targetJars = srcTargetDir.listFiles((dir, name) -> !name.startsWith("original-") && (name.endsWith(".jar") || name.endsWith(".zip") || name.endsWith(".tar.gz")));
                         if (targetJars != null) {
                             for (File jar : targetJars) {
                                 try {
                                     java.nio.file.Files.copy(jar.toPath(), new File(exportDir, jar.getName()).toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
                                     copiedCount++;
-                                    System.out.println("[HTTP] Exported supervisor jar from src/target: " + jar.getName());
+                                    System.out.println("[HTTP] Exported asset from src/target: " + jar.getName());
                                 } catch (Exception ignored) {}
                             }
                         }
@@ -322,7 +372,7 @@ public class SupervisorMain {
                 }
 
                 return newFixedLengthResponse(Response.Status.OK, "application/json", 
-                    "{\"status\":\"OK\",\"message\":\"Export completed. Exported " + copiedCount + " jars.\",\"path\":\"" + path + "\"}");
+                    "{\"status\":\"OK\",\"message\":\"Export completed. Exported " + copiedCount + " assets to " + exportDir.getAbsolutePath() + "\",\"path\":\"" + path + "\"}");
             } catch (Exception e) {
                 return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", 
                     "{\"status\":\"ERROR\",\"message\":\"" + e.getMessage() + "\"}");
@@ -335,12 +385,51 @@ public class SupervisorMain {
                 System.out.println("[HTTP] Start EVO requested for path: " + path);
                 
                 // 1. Resolve exportDir
-                File exportDir = new File(baseDir, "export");
+                File exportDir = resolveExportDir(path, baseDir);
                 if (!exportDir.exists()) {
                     exportDir.mkdirs();
                 }
+
+                // 2. Check for native product executable (evo.exe, evo.sh, evo)
+                File executable = findExecutable(exportDir);
+                if (executable != null) {
+                    System.out.println("[HTTP] Launching exported EVO Product Executable: " + executable.getAbsolutePath());
+                    if (!System.getProperty("os.name").toLowerCase().contains("win")) {
+                        executable.setExecutable(true);
+                    }
+                    if (activeEvoProcess != null && activeEvoProcess.isAlive()) {
+                        System.out.println("[HTTP] EVO process already running. Stopping previous instance...");
+                        activeEvoProcess.destroyForcibly();
+                        try {
+                            activeEvoProcess.waitFor(2, TimeUnit.SECONDS);
+                        } catch (InterruptedException ignored) {}
+                    }
+
+                    List<String> command = new ArrayList<>();
+                    command.add(executable.getAbsolutePath());
+                    command.add("--mode=SELF_DEV");
+                    command.add("--variant=" + baseDir.getAbsolutePath());
+
+                    ProcessBuilder pb = new ProcessBuilder(command);
+                    pb.directory(executable.getParentFile());
+                    pb.redirectErrorStream(true);
+                    activeEvoProcess = pb.start();
+
+                    new Thread(() -> {
+                        System.out.println("[HTTP] Reading EVO executable process stdout/stderr...");
+                        try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(activeEvoProcess.getInputStream()))) {
+                            String line;
+                            while ((line = reader.readLine()) != null) {
+                                System.out.println("[EVO Executable] " + line);
+                            }
+                        } catch (Exception ignored) {}
+                    }).start();
+
+                    return newFixedLengthResponse(Response.Status.OK, "application/json",
+                        "{\"status\":\"OK\",\"message\":\"SUCCESS: Started executable product " + executable.getName() + "\",\"path\":\"" + path + "\"}");
+                }
                 
-                // 2. Find runnable jar in exportDir; if empty, attempt fallback from buildsDir
+                // 3. Find runnable jar in exportDir; if empty, attempt fallback from buildsDir
                 File[] jars = exportDir.listFiles((dir, name) -> name.endsWith(".jar") && !name.startsWith("original-"));
                 if (jars == null || jars.length == 0) {
                     File buildsDir = new File(baseDir, "builds");
@@ -360,19 +449,28 @@ public class SupervisorMain {
 
                 if (jars == null || jars.length == 0) {
                     return newFixedLengthResponse(Response.Status.OK, "application/json",
-                        "{\"status\":\"ERROR\",\"message\":\"No jar files found in export folder!\"}");
+                        "{\"status\":\"ERROR\",\"message\":\"No jar files found in export folder: " + exportDir.getAbsolutePath() + "\"}");
                 }
 
                 File runnableJar = null;
                 // Prioritize shaded/controller/servers/product jar that is not supervisor
                 for (File jar : jars) {
                     String name = jar.getName().toLowerCase();
-                    if (name.contains("supervisor")) {
+                    if (name.contains("supervisor") || name.contains("test")) {
                         continue;
                     }
                     if (name.contains("-shaded")) {
                         runnableJar = jar;
                         break;
+                    }
+                }
+                if (runnableJar == null) {
+                    for (File jar : jars) {
+                        String name = jar.getName().toLowerCase();
+                        if (name.contains("controller") || name.contains("servers") || name.contains("forge.agent")) {
+                            runnableJar = jar;
+                            break;
+                        }
                     }
                 }
                 if (runnableJar == null) {
@@ -386,11 +484,10 @@ public class SupervisorMain {
                 }
 
                 if (runnableJar == null) {
-                    return newFixedLengthResponse(Response.Status.OK, "application/json",
-                        "{\"status\":\"ERROR\",\"message\":\"No runnable EVO jar found in export folder.\"}");
+                    runnableJar = jars[0];
                 }
 
-                // 3. Stop existing EVO process if running
+                // 4. Stop existing EVO process if running
                 if (activeEvoProcess != null && activeEvoProcess.isAlive()) {
                     System.out.println("[HTTP] EVO is already running. Stopping it first...");
                     activeEvoProcess.destroyForcibly();
@@ -399,12 +496,27 @@ public class SupervisorMain {
                     } catch (InterruptedException ignored) {}
                 }
 
-                // 4. Start currently exported EVO application
-                System.out.println("[HTTP] Launching exported EVO: " + runnableJar.getAbsolutePath());
+                // 5. Start currently exported EVO application
+                System.out.println("[HTTP] Launching exported EVO JAR: " + runnableJar.getAbsolutePath());
                 List<String> command = new ArrayList<>();
                 command.add("java");
-                command.add("-jar");
-                command.add(runnableJar.getAbsolutePath());
+
+                if (jars.length > 1) {
+                    // Include all exported modular JARs on the classpath
+                    StringBuilder cp = new StringBuilder();
+                    for (int i = 0; i < jars.length; i++) {
+                        if (i > 0) cp.append(File.pathSeparator);
+                        cp.append(jars[i].getAbsolutePath());
+                    }
+                    command.add("-cp");
+                    command.add(cp.toString() + File.pathSeparator + runnableJar.getAbsolutePath());
+                    command.add("-jar");
+                    command.add(runnableJar.getAbsolutePath());
+                } else {
+                    command.add("-jar");
+                    command.add(runnableJar.getAbsolutePath());
+                }
+
                 command.add("--mode=SELF_DEV");
                 command.add("--variant=" + baseDir.getAbsolutePath());
 

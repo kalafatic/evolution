@@ -142,22 +142,17 @@ public class SupervisorMain2 extends NanoHTTPD {
 
         if ("/export".equals(uri)) {
             String workspace = session.getParms().get("path");
-            if (workspace == null || workspace.trim().isEmpty()) {
-                workspace = baseDir != null ? baseDir.getAbsolutePath() : ".";
-            }
-            File srcDir = new File(workspace);
-            File parentDir = srcDir.getParentFile();
-            if (parentDir == null) parentDir = srcDir;
-            File exportDir = new File(parentDir, "export");
+            File exportDir = resolveExportDir(workspace, baseDir);
             if (!exportDir.exists()) {
                 exportDir.mkdirs();
             }
             try {
+                File srcDir = (workspace != null && !workspace.trim().isEmpty()) ? new File(workspace.trim()) : baseDir;
                 int copiedCount = copyJars(srcDir, exportDir);
                 if (copiedCount > 0) {
-                    return newFixedLengthResponse("SUCCESS: Exported " + copiedCount + " jars to " + exportDir.getAbsolutePath());
+                    return newFixedLengthResponse("SUCCESS: Exported " + copiedCount + " assets to " + exportDir.getAbsolutePath());
                 } else {
-                    return newFixedLengthResponse("ERROR: No runnable jars found in " + srcDir.getAbsolutePath() + ". Please build first.");
+                    return newFixedLengthResponse("ERROR: No runnable jars or assets found in " + srcDir.getAbsolutePath() + ". Please build first.");
                 }
             } catch (Exception e) {
                 return newFixedLengthResponse("ERROR: " + e.getMessage());
@@ -166,14 +161,27 @@ public class SupervisorMain2 extends NanoHTTPD {
 
         if ("/start-evo".equals(uri)) {
             String workspace = session.getParms().get("path");
-            if (workspace == null || workspace.trim().isEmpty()) {
-                workspace = baseDir != null ? baseDir.getAbsolutePath() : ".";
+            File exportDir = resolveExportDir(workspace, baseDir);
+
+            File executable = findExecutable(exportDir);
+            if (executable != null) {
+                try {
+                    if (activeEvoProcess != null && activeEvoProcess.isAlive()) {
+                        activeEvoProcess.destroyForcibly();
+                    }
+                    if (!System.getProperty("os.name").toLowerCase().contains("win")) {
+                        executable.setExecutable(true);
+                    }
+                    ProcessBuilder pb = new ProcessBuilder(executable.getAbsolutePath(), "--mode=SELF_DEV", "--variant=" + baseDir.getAbsolutePath());
+                    pb.directory(executable.getParentFile());
+                    activeEvoProcess = pb.start();
+                    return newFixedLengthResponse("SUCCESS: Started executable product " + executable.getName());
+                } catch (Exception e) {
+                    return newFixedLengthResponse("ERROR: " + e.getMessage());
+                }
             }
-            File srcDir = new File(workspace);
-            File parentDir = srcDir.getParentFile();
-            if (parentDir == null) parentDir = srcDir;
-            File exportDir = new File(parentDir, "export");
-            File[] jars = exportDir.exists() ? exportDir.listFiles((dir, name) -> name.endsWith(".jar")) : null;
+
+            File[] jars = exportDir.exists() ? exportDir.listFiles((dir, name) -> name.endsWith(".jar") && !name.startsWith("original-")) : null;
             if (jars == null || jars.length == 0) {
                 return newFixedLengthResponse("ERROR: No exported products found in " + exportDir.getAbsolutePath() + ". Please export first.");
             }
@@ -217,6 +225,57 @@ public class SupervisorMain2 extends NanoHTTPD {
         }
 
         return newFixedLengthResponse(Response.Status.NOT_FOUND, NanoHTTPD.MIME_PLAINTEXT, "Not Found");
+    }
+
+    private static File resolveExportDir(String pathParam, File baseDir) {
+        if (pathParam != null && !pathParam.trim().isEmpty()) {
+            File pFile = new File(pathParam.trim());
+            if (pFile.getName().equalsIgnoreCase("export")) {
+                return pFile;
+            }
+            File subExport = new File(pFile, "export");
+            if (subExport.exists() || pFile.exists()) {
+                return subExport;
+            }
+            if (pFile.getParentFile() != null) {
+                File parentExport = new File(pFile.getParentFile(), "export");
+                if (parentExport.exists()) {
+                    return parentExport;
+                }
+            }
+        }
+        File exportDir = new File(baseDir, "export");
+        if (!exportDir.exists() && baseDir.getName().equalsIgnoreCase("export")) {
+            return baseDir;
+        }
+        return exportDir;
+    }
+
+    private static File findExecutable(File exportDir) {
+        if (exportDir == null || !exportDir.exists()) return null;
+        boolean isWin = System.getProperty("os.name").toLowerCase().contains("win");
+        String exeName = isWin ? "evo.exe" : "evo";
+        String shName = "evo.sh";
+
+        File directExe = new File(exportDir, exeName);
+        if (directExe.exists() && directExe.isFile()) return directExe;
+        if (!isWin) {
+            File directSh = new File(exportDir, shName);
+            if (directSh.exists() && directSh.isFile()) return directSh;
+        }
+
+        File[] subDirs = exportDir.listFiles(File::isDirectory);
+        if (subDirs != null) {
+            for (File sub : subDirs) {
+                File subExe = new File(sub, exeName);
+                if (subExe.exists() && subExe.isFile()) return subExe;
+                if (!isWin) {
+                    File subSh = new File(sub, shName);
+                    if (subSh.exists() && subSh.isFile()) return subSh;
+                }
+            }
+        }
+        return null;
     }
 
     private static int copyJars(File dir, File exportDir) {
