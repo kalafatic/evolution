@@ -885,7 +885,9 @@ public class SelfDevBootstrapController {
             String dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("ddMMyy"));
             buildWorkspacePath = new File(new File(System.getProperty("user.home"), "projects/evo/supervisor"), dateStr + "/sources").getPath();
         }
-        String endpoint = "/export?path=" + encode(buildWorkspacePath);
+        File targetExport = new File(new File(buildWorkspacePath).getParentFile(), "export");
+        String exportPath = targetExport.exists() ? targetExport.getAbsolutePath() : buildWorkspacePath;
+        String endpoint = "/export?path=" + encode(exportPath);
         String response = callSupervisor(endpoint);
         System.out.println("[SelfDevBootstrapController] [CHECK_EXPORT_SUPERVISOR] Supervisor response: " + response);
         return response;
@@ -902,7 +904,9 @@ public class SelfDevBootstrapController {
             String dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("ddMMyy"));
             buildWorkspacePath = new File(new File(System.getProperty("user.home"), "projects/evo/supervisor"), dateStr + "/sources").getPath();
         }
-        String endpoint = "/start-evo?path=" + encode(buildWorkspacePath);
+        File targetExport = new File(new File(buildWorkspacePath).getParentFile(), "export");
+        String exportPath = targetExport.exists() ? targetExport.getAbsolutePath() : buildWorkspacePath;
+        String endpoint = "/start-evo?path=" + encode(exportPath);
         String response = callSupervisor(endpoint);
         System.out.println("[SelfDevBootstrapController] [CHECK_START_EVO_SUPERVISOR] Supervisor response: " + response);
         return response;

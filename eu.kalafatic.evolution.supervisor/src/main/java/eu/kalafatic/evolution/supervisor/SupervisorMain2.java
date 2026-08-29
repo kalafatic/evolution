@@ -234,15 +234,21 @@ public class SupervisorMain2 extends NanoHTTPD {
                 return pFile;
             }
             File subExport = new File(pFile, "export");
-            if (subExport.exists() || pFile.exists()) {
+            if (subExport.exists() && subExport.isDirectory()) {
                 return subExport;
             }
             if (pFile.getParentFile() != null) {
                 File parentExport = new File(pFile.getParentFile(), "export");
-                if (parentExport.exists()) {
+                if (parentExport.exists() && parentExport.isDirectory()) {
                     return parentExport;
                 }
             }
+            if (pFile.getParentFile() != null && (pFile.getName().equalsIgnoreCase("sources") || pFile.getName().equalsIgnoreCase("builds"))) {
+                File parentExport = new File(pFile.getParentFile(), "export");
+                if (!parentExport.exists()) parentExport.mkdirs();
+                return parentExport;
+            }
+            return subExport;
         }
         File exportDir = new File(baseDir, "export");
         if (!exportDir.exists() && baseDir.getName().equalsIgnoreCase("export")) {
