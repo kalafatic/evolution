@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EVO / Mutation - Interactive AI Software Engineer</title>
+    <style>
+        :root {
+            --bg-primary: #1e1e1e;
+            --bg-secondary: #252526;
+            --bg-tertiary: #2d2d2d;
+            --border: #3e3e42;
+            --text-primary: #cccccc;
+            --text-dim: #858585;
+            --accent: #0e639c;
+            --accent-hover: #1177bb;
+            --success: #4ec9b0;
+            --error: #f48771;
+            --user-msg-bg: #007acc;
+            --ai-msg-bg: #2d2d2d;
+            --diff-add-bg: rgba(78, 201, 176, 0.15);
+            --diff-add-text: #4ec9b0;
+            --diff-del-bg: rgba(244, 135, 113, 0.15);
+            --diff-del-text: #f48771;
+        }
+
+        * { box-sizing: border-box; }
+
+        body, html {
+            margin: 0; padding: 0; height: 100%;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            overflow: hidden;
+        }
+
+        #app-container {
+            display: flex; flex-direction: column; height: 100%;
+        }
+
+        /* TOP HEADER */
+        #top-header {
+            height: 50px;
+            background-color: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 16px; flex-shrink: 0; gap: 12px;
+        }
+
+        .brand-title {
+            display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1.05em; color: #ffffff;
+        }
+        .brand-badge {
+            background: var(--accent); color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.7em; letter-spacing: 0.5px;
+        }
+
+        .repo-controls {
+            display: flex; align-items: center; gap: 8px; flex: 1; max-width: 750px;
+        }
+        .repo-controls input, .repo-controls select {
+            background: var(--bg-tertiary); color: #ffffff; border: 1px solid var(--border);
+            padding: 6px 10px; border-radius: 3px; font-size: 0.85em; outline: none;
+        }
+        .repo-controls input[type="text"] { flex: 1; }
+
+        .btn {
+            background: var(--bg-tertiary); color: #ffffff; border: 1px solid var(--border);
+            padding: 6px 12px; border-radius: 3px; cursor: pointer; font-size: 0.82em; font-weight: 600;
+            display: inline-flex; align-items: center; gap: 5px; transition: all 0.15s ease;
+        }
+        .btn:hover { background: #3c3c3c; border-color: var(--accent); }
+        .btn-primary { background: var(--accent); border-color: var(--accent); color: white; }
+        .btn-primary:hover { background: var(--accent-hover); }
+        .btn-success { background: #2e7d32; border-color: #2e7d32; color: white; }
+        .btn-success:hover { background: #388e3c; }
+
+        .status-indicators {
+            display: flex; align-items: center; gap: 8px; font-size: 0.75em;
+        }
+        .status-pill {
+            padding: 3px 8px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-tertiary);
+        }
+        .status-pill.online { border-color: var(--success); color: var(--success); }
+
+        /* MAIN CONTENT SPLIT */
+        #main-split {
+            flex: 1; display: flex; overflow: hidden;
+        }
+
+        /* LEFT CHAT PANEL */
+        #chat-panel {
+            flex: 1; display: flex; flex-direction: column;
+            border-right: 1px solid var(--border); background: var(--bg-primary);
+        }
+
+        .panel-header {
+            height: 36px; background: var(--bg-secondary); border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between; padding: 0 12px;
+            font-size: 0.8em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-dim);
+        }
+
+        #chat-messages {
+            flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px;
+        }
+
+        .msg-bubble {
+            max-width: 88%; padding: 10px 14px; border-radius: 6px; line-height: 1.5; font-size: 0.9em;
+            word-wrap: break-word; white-space: pre-wrap; position: relative; border: 1px solid var(--border);
+        }
+        .msg-bubble.user {
+            align-self: flex-end; background: var(--user-msg-bg); color: white; border-color: transparent;
+        }
+        .msg-bubble.ai {
+            align-self: flex-start; background: var(--ai-msg-bg); color: var(--text-primary);
+        }
+        .msg-bubble.progress {
+            align-self: flex-start; background: transparent; border-style: dashed; font-style: italic; color: var(--text-dim); font-size: 0.82em;
+        }
+        .msg-meta {
+            font-size: 0.7em; color: var(--text-dim); margin-bottom: 4px; display: flex; justify-content: space-between; gap: 12px;
+        }
+
+        #chat-input-area {
+            padding: 12px; background: var(--bg-secondary); border-top: 1px solid var(--border);
+            display: flex; gap: 8px; align-items: center;
+        }
+        #chat-input-area input {
+            flex: 1; padding: 10px 12px; border: 1px solid var(--border); border-radius: 4px;
+            background: var(--bg-tertiary); color: #ffffff; outline: none; font-size: 0.9em;
+        }
+        #chat-input-area input:focus { border-color: var(--accent); }
+
+        /* RIGHT DIFF PANEL */
+        #diff-panel {
+            width: 50%; display: flex; flex-direction: column; background: var(--bg-secondary);
+        }
+
+        #changed-files-bar {
+            padding: 8px 12px; background: var(--bg-tertiary); border-bottom: 1px solid var(--border);
+            display: flex; gap: 8px; overflow-x: auto; font-size: 0.8em; align-items: center;
+        }
+        .file-chip {
+            padding: 3px 8px; border-radius: 3px; background: var(--bg-primary); border: 1px solid var(--border);
+            cursor: pointer; font-family: monospace; white-space: nowrap; display: flex; align-items: center; gap: 5px;
+        }
+        .file-chip.modified { color: #dcdcaa; }
+        .file-chip.added { color: var(--success); }
+        .file-chip.deleted { color: var(--error); }
+
+        #diff-content {
+            flex: 1; overflow: auto; padding: 12px; font-family: 'Consolas', 'Courier New', monospace; font-size: 0.82em; line-height: 1.4;
+            background: #1e1e1e; color: #d4d4d4; white-space: pre;
+        }
+
+        .diff-line-add { background: var(--diff-add-bg); color: var(--diff-add-text); }
+        .diff-line-del { background: var(--diff-del-bg); color: var(--diff-del-text); }
+        .diff-hunk-header { color: #569cd6; font-weight: bold; background: rgba(86, 156, 214, 0.1); }
+
+        .thinking-indicator {
+            display: none; align-items: center; gap: 6px; font-size: 0.8em; color: var(--accent); padding: 8px 16px;
+        }
+        .dot { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; animation: blink 1.4s infinite both; }
+        .dot:nth-child(2) { animation-delay: 0.2s; }
+        .dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes blink { 0%, 80%, 100% { opacity: 0; } 40% { opacity: 1; } }
+    </style>
+</head>
+<body>
+    <div id="app-container">
+        <!-- TOP HEADER -->
+        <div id="top-header">
+            <div class="brand-title">
+                🧬 EVO <span class="brand-badge">MUTATION</span>
+            </div>
+
+            <div class="repo-controls">
+                <input type="text" id="repo-url" placeholder="Git repository URL or local path (e.g. https://github.com/org/repo.git)" value="https://github.com/kalafatic/evolution">
+                <input type="text" id="repo-branch" placeholder="Branch" value="main" style="width: 100px;">
+                <button class="btn btn-primary" onclick="initSession()">Start Session</button>
+                <select id="session-select" onchange="switchSession()"><option value="Default">Session: Default</option></select>
+            </div>
+
+            <div class="status-indicators">
+                <div class="status-pill online">SERVER ONLINE</div>
+            </div>
+        </div>
+
+        <!-- MAIN SPLIT VIEW -->
+        <div id="main-split">
+            <!-- CHAT PANEL -->
+            <div id="chat-panel">
+                <div class="panel-header">
+                    <span>💬 Conversation & Reasoning</span>
+                    <span id="active-session-label">Session: Default</span>
+                </div>
+
+                <div id="chat-messages">
+                    <div class="msg-bubble ai">
+                        <div class="msg-meta"><span>🤖 Mutation Agent</span><span>Just now</span></div>
+                        Hello! I am your interactive AI software engineer.
+Select a repository or type a command to analyze code, propose implementations, or modify files.
+                    </div>
+                </div>
+
+                <div id="thinking" class="thinking-indicator">
+                    <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+                    <span>Agent is analyzing workspace...</span>
+                </div>
+
+                <div id="chat-input-area">
+                    <input type="text" id="user-input" placeholder="Ask a question or instruct a change (e.g. 'Why is auth broken?' or 'Implement fix and run tests')" onkeypress="if(event.key==='Enter') sendMessage()">
+                    <button class="btn btn-primary" onclick="sendMessage()">Send</button>
+                </div>
+            </div>
+
+            <!-- DIFF PANEL -->
+            <div id="diff-panel">
+                <div class="panel-header">
+                    <span>📝 Diff Panel & Changes</span>
+                    <div>
+                        <button class="btn" onclick="runBuildAndTest()">🧪 Build & Test</button>
+                        <button class="btn" onclick="commitChanges()">💾 Commit</button>
+                        <button class="btn btn-success" onclick="pushChanges()">🚀 Push</button>
+                        <button class="btn" onclick="fetchDiff()">🔄 Refresh</button>
+                    </div>
+                </div>
+
+                <div id="changed-files-bar">
+                    <span style="color: var(--text-dim); font-size: 0.85em;">Changed files:</span>
+                    <div id="files-list" style="display: flex; gap: 6px;">
+                        <span style="color: var(--text-dim); font-style: italic;">No uncommitted changes</span>
+                    </div>
+                </div>
+
+                <div id="diff-content">Select a session or run a command to view workspace diffs...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentSessionId = 'Default';
+        let lastSequenceNumber = 0;
+        let isPolling = false;
+
+        function getBaseUrl() {
+            return (window.location.protocol === 'file:') ? 'http://localhost:48080' : '';
+        }
+
+        async function initSession() {
+            const repoUrl = document.getElementById('repo-url').value.trim();
+            const branch = document.getElementById('repo-branch').value.trim() || 'main';
+            const sessionId = 'mutation-' + Math.random().toString(36).substring(2, 9);
+
+            try {
+                const res = await fetch(getBaseUrl() + '/mutation/session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ repoUrl, branch, sessionId })
+                });
+                const data = await res.json();
+                if (data.status === 'ok') {
+                    currentSessionId = data.sessionId;
+                    document.getElementById('active-session-label').innerText = 'Session: ' + currentSessionId;
+                    await refreshSessionList();
+                    fetchDiff();
+                } else {
+                    alert('Session creation error: ' + (data.error || 'Unknown error'));
+                }
+            } catch (err) {
+                console.error('Failed to init mutation session:', err);
+            }
+        }
+
+        async function refreshSessionList() {
+            try {
+                const res = await fetch(getBaseUrl() + '/mutation/sessions');
+                const sessions = await res.json();
+                const select = document.getElementById('session-select');
+                select.innerHTML = '';
+                sessions.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s.sessionId;
+                    opt.text = s.sessionId + ' (' + (s.branch || 'main') + ')';
+                    if (s.sessionId === currentSessionId) opt.selected = true;
+                    select.appendChild(opt);
+                });
+            } catch (err) {}
+        }
+
+        function switchSession() {
+            const select = document.getElementById('session-select');
+            if (select.value) {
+                currentSessionId = select.value;
+                document.getElementById('active-session-label').innerText = 'Session: ' + currentSessionId;
+                document.getElementById('chat-messages').innerHTML = '';
+                lastSequenceNumber = 0;
+                fetchDiff();
+            }
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('user-input');
+            const text = input.value.trim();
+            if (!text) return;
+            input.value = '';
+
+            try {
+                document.getElementById('thinking').style.display = 'flex';
+                await fetch(getBaseUrl() + '/task?runtime=SWT', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: text, sessionId: currentSessionId })
+                });
+            } catch (err) {
+                console.error('Error sending message:', err);
+            }
+        }
+
+        async function pollConversation() {
+            if (isPolling) return;
+            isPolling = true;
+            try {
+                const res = await fetch(getBaseUrl() + '/server/conversation/' + currentSessionId + '?runtime=SWT');
+                const messages = await res.json();
+                if (Array.isArray(messages)) {
+                    messages.forEach(appendMessage);
+                }
+            } catch (err) {
+            } finally {
+                isPolling = false;
+            }
+        }
+
+        function appendMessage(msg) {
+            if (msg.sequenceNumber <= lastSequenceNumber) return;
+            lastSequenceNumber = msg.sequenceNumber;
+
+            const chat = document.getElementById('chat-messages');
+            const div = document.createElement('div');
+
+            let agentType = msg.agentType || 'ai';
+            let isUser = agentType.includes('user') || (msg.sender && msg.sender.toLowerCase().includes('you'));
+            div.className = 'msg-bubble ' + (isUser ? 'user' : 'ai') + (msg.priority === 1 ? ' progress' : '');
+
+            const meta = document.createElement('div');
+            meta.className = 'msg-meta';
+            meta.innerHTML = `<span><b>${msg.sender || 'Agent'}</b></span><span>${msg.timestamp || ''}</span>`;
+
+            const content = document.createElement('div');
+            content.innerText = msg.text;
+
+            div.appendChild(meta);
+            div.appendChild(content);
+
+            chat.appendChild(div);
+            chat.scrollTop = chat.scrollHeight;
+
+            if (msg.isTerminal) {
+                document.getElementById('thinking').style.display = 'none';
+                fetchDiff();
+            }
+        }
+
+        async function fetchDiff() {
+            try {
+                const res = await fetch(getBaseUrl() + '/mutation/diff?sessionId=' + currentSessionId);
+                const data = await res.json();
+
+                const filesBar = document.getElementById('files-list');
+                const diffContent = document.getElementById('diff-content');
+
+                if (data.changedFiles && data.changedFiles.length > 0) {
+                    filesBar.innerHTML = '';
+                    data.changedFiles.forEach(f => {
+                        const chip = document.createElement('span');
+                        let typeClass = 'modified';
+                        if (f.startsWith('A ')) typeClass = 'added';
+                        if (f.startsWith('D ')) typeClass = 'deleted';
+                        chip.className = 'file-chip ' + typeClass;
+                        chip.innerText = f;
+                        filesBar.appendChild(chip);
+                    });
+                } else {
+                    filesBar.innerHTML = '<span style="color: var(--text-dim); font-style: italic;">No uncommitted changes</span>';
+                }
+
+                if (data.diff && data.diff.trim().length > 0) {
+                    diffContent.innerHTML = formatDiff(data.diff);
+                } else {
+                    diffContent.innerText = 'No workspace modifications present.';
+                }
+            } catch (err) {
+                console.error('Failed to fetch diff:', err);
+            }
+        }
+
+        function formatDiff(rawDiff) {
+            const lines = rawDiff.split('\n');
+            return lines.map(line => {
+                let escaped = line.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                if (line.startsWith('+') && !line.startsWith('+++')) {
+                    return `<span class="diff-line-add">${escaped}</span>`;
+                } else if (line.startsWith('-') && !line.startsWith('---')) {
+                    return `<span class="diff-line-del">${escaped}</span>`;
+                } else if (line.startsWith('@@')) {
+                    return `<span class="diff-hunk-header">${escaped}</span>`;
+                }
+                return escaped;
+            }).join('\n');
+        }
+
+        async function commitChanges() {
+            const msg = prompt('Enter commit message:', 'Mutation interactive update');
+            if (msg === null) return;
+            try {
+                const res = await fetch(getBaseUrl() + '/mutation/commit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sessionId: currentSessionId, message: msg })
+                });
+                const data = await res.json();
+                alert(data.message || data.error || 'Done');
+                fetchDiff();
+            } catch (err) {
+                alert('Commit failed: ' + err.message);
+            }
+        }
+
+        async function pushChanges() {
+            if (!confirm('Push changes to remote repository?')) return;
+            try {
+                const res = await fetch(getBaseUrl() + '/mutation/push', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sessionId: currentSessionId })
+                });
+                const data = await res.json();
+                alert(data.message || data.error || 'Done');
+            } catch (err) {
+                alert('Push failed: ' + err.message);
+            }
+        }
+
+        async function runBuildAndTest() {
+            document.getElementById('diff-content').innerText = 'Executing workspace build and tests...\n';
+            try {
+                const res = await fetch(getBaseUrl() + '/mutation/build', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sessionId: currentSessionId })
+                });
+                const data = await res.json();
+                document.getElementById('diff-content').innerText = data.output || data.error || 'No output returned.';
+            } catch (err) {
+                document.getElementById('diff-content').innerText = 'Build execution error: ' + err.message;
+            }
+        }
+
+        refreshSessionList();
+        setInterval(pollConversation, 1000);
+        setInterval(fetchDiff, 3000);
+    </script>
+</body>
+</html>

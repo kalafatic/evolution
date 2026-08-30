@@ -27,7 +27,7 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 public class TaskContext {
     public static final String PLAN_APPROVAL_MESSAGE = "Plan review required. Please verify and modify the task list in the Approval tab.";
     private final Orchestrator orchestrator;
-    private final File projectRoot;
+    private File projectRoot;
     private final SelfDevProtocol protocol;
     private final Map<String, String> state = new ConcurrentHashMap<>();
     private final List<String> logs = Collections.synchronizedList(new ArrayList<>());
@@ -91,6 +91,10 @@ public class TaskContext {
 
     public File getProjectRoot() {
         return projectRoot;
+    }
+
+    public void setProjectRoot(File projectRoot) {
+        this.projectRoot = projectRoot;
     }
 
     public String getCurrentTaskName() {

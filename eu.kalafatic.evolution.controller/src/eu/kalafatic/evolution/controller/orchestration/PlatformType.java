@@ -10,5 +10,6 @@ public enum PlatformType {
     SELF_DEV_MODE,
     HYBRID_MANUAL_EXPORT,
     INTENT_RECONSTRUCTION,
-    FORGE
+    FORGE,
+    MUTATION
 }
