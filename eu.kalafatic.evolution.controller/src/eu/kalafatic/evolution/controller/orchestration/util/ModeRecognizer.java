@@ -44,6 +44,9 @@ public class ModeRecognizer {
 	}
 
 	public static PlatformType determineType(IntentResult intentResult, TaskContext context) {
+		if (isMutationMode(context)) {
+			return PlatformType.MUTATION;
+		}
 		if (isForgeMode(context)) {
 			return PlatformType.FORGE;
 		}
@@ -73,6 +76,9 @@ public class ModeRecognizer {
 	}
 
 	public static PlatformType determineType(TaskContext context) {
+		if (isMutationMode(context)) {
+			return PlatformType.MUTATION;
+		}
 		if (isForgeMode(context)) {
 			return PlatformType.FORGE;
 		}
@@ -93,6 +99,15 @@ public class ModeRecognizer {
 		}
 		return PlatformType.SIMPLE_CHAT;
 //		return PlatformType.DARWIN_MODE;
+	}
+
+	public static boolean isMutationMode(TaskContext context) {
+		if (context == null) return false;
+		String sid = context.getSessionId();
+		if (sid != null && (sid.startsWith("mutation") || eu.kalafatic.evolution.controller.orchestration.mutation.MutationSessionManager.getInstance().getSession(sid) != null)) {
+			return true;
+		}
+		return false;
 	}
 
 	public static boolean isForgeMode(TaskContext context) {
