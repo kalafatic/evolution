@@ -126,15 +126,31 @@ public class SupervisorMain {
             try {
                 // Parse query parameters
                 Map<String, String> params = new HashMap<>();
-                if (session.getMethod() == Method.GET) {
-                    String query = session.getQueryParameterString();
-                    if (query != null && !query.isEmpty()) {
-                        for (String pair : query.split("&")) {
-                            String[] parts = pair.split("=");
-                            if (parts.length == 2) {
+                String query = session.getQueryParameterString();
+                if (query != null && !query.isEmpty()) {
+                    for (String pair : query.split("&")) {
+                        String[] parts = pair.split("=");
+                        if (parts.length == 2) {
+                            try {
+                                String key = java.net.URLDecoder.decode(parts[0], java.nio.charset.StandardCharsets.UTF_8.name());
+                                String val = java.net.URLDecoder.decode(parts[1], java.nio.charset.StandardCharsets.UTF_8.name());
+                                params.put(key, val);
+                            } catch (Exception e) {
                                 params.put(parts[0], parts[1]);
                             }
                         }
+                    }
+                }
+                Map<String, String> sessionParms = session.getParms();
+                if (sessionParms != null) {
+                    for (Map.Entry<String, String> entry : sessionParms.entrySet()) {
+                        String k = entry.getKey();
+                        String v = entry.getValue();
+                        try {
+                            k = java.net.URLDecoder.decode(k, java.nio.charset.StandardCharsets.UTF_8.name());
+                            v = java.net.URLDecoder.decode(v, java.nio.charset.StandardCharsets.UTF_8.name());
+                        } catch (Exception ignored) {}
+                        params.putIfAbsent(k, v);
                     }
                 }
                 
@@ -178,6 +194,11 @@ public class SupervisorMain {
         private Response handleGitCheck(IHTTPSession session, Map<String, String> params) {
             try {
                 String path = params.getOrDefault("path", baseDir.getAbsolutePath());
+                if (path != null) {
+                    try {
+                        path = java.net.URLDecoder.decode(path, java.nio.charset.StandardCharsets.UTF_8.name());
+                    } catch (Exception ignored) {}
+                }
                 System.out.println("[HTTP] Git check for path: " + path);
                 
                 ProcessBuilder pb = new ProcessBuilder("git", "--version");
@@ -236,6 +257,11 @@ public class SupervisorMain {
         private Response handleBuild(IHTTPSession session, Map<String, String> params) {
             try {
                 String path = params.getOrDefault("path", baseDir.getAbsolutePath());
+                if (path != null) {
+                    try {
+                        path = java.net.URLDecoder.decode(path, java.nio.charset.StandardCharsets.UTF_8.name());
+                    } catch (Exception ignored) {}
+                }
                 System.out.println("[HTTP] Build requested for path: " + path);
                 
                 // Ensure run directory exists
@@ -261,7 +287,11 @@ public class SupervisorMain {
         
         private File resolveExportDir(String pathParam, File baseDir) {
             if (pathParam != null && !pathParam.trim().isEmpty()) {
-                File pFile = new File(pathParam.trim());
+                String decodedPath = pathParam.trim();
+                try {
+                    decodedPath = java.net.URLDecoder.decode(decodedPath, java.nio.charset.StandardCharsets.UTF_8.name());
+                } catch (Exception ignored) {}
+                File pFile = new File(decodedPath);
                 if (pFile.getName().equalsIgnoreCase("export")) {
                     return pFile;
                 }
@@ -318,6 +348,11 @@ public class SupervisorMain {
         private Response handleExport(IHTTPSession session, Map<String, String> params) {
             try {
                 String path = params.getOrDefault("path", baseDir.getAbsolutePath());
+                if (path != null) {
+                    try {
+                        path = java.net.URLDecoder.decode(path, java.nio.charset.StandardCharsets.UTF_8.name());
+                    } catch (Exception ignored) {}
+                }
                 System.out.println("[HTTP] Export requested for path: " + path);
                 
                 File exportDir = resolveExportDir(path, baseDir);
@@ -406,6 +441,11 @@ public class SupervisorMain {
         private Response handleStartEvo(IHTTPSession session, Map<String, String> params) {
             try {
                 String path = params.getOrDefault("path", baseDir.getAbsolutePath());
+                if (path != null) {
+                    try {
+                        path = java.net.URLDecoder.decode(path, java.nio.charset.StandardCharsets.UTF_8.name());
+                    } catch (Exception ignored) {}
+                }
                 System.out.println("[HTTP] Start EVO requested for path: " + path);
                 
                 // 1. Resolve exportDir

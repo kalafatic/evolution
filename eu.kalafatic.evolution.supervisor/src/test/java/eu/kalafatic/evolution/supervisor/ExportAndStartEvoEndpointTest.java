@@ -100,6 +100,17 @@ public class ExportAndStartEvoEndpointTest {
         String startResponse = readResponse(connStart);
         Assert.assertTrue(startResponse.contains("OK") || startResponse.contains("SUCCESS"));
 
+        // Test start-evo endpoint with URL-encoded custom path
+        String encodedPath = java.net.URLEncoder.encode(customExport.getAbsolutePath(), "UTF-8");
+        URL startEncodedUrl = new URL("http://127.0.0.1:8089/start-evo?path=" + encodedPath);
+        HttpURLConnection connStartEncoded = (HttpURLConnection) startEncodedUrl.openConnection();
+        connStartEncoded.setRequestMethod("POST");
+        Assert.assertEquals(200, connStartEncoded.getResponseCode());
+
+        String startEncodedResponse = readResponse(connStartEncoded);
+        Assert.assertTrue("Response for URL-encoded path should not fail with missing jars error, got: " + startEncodedResponse,
+                startEncodedResponse.contains("OK") || startEncodedResponse.contains("SUCCESS"));
+
         // Stop evo process
         URL stopUrl = new URL("http://127.0.0.1:8089/stop-evo");
         HttpURLConnection connStop = (HttpURLConnection) stopUrl.openConnection();

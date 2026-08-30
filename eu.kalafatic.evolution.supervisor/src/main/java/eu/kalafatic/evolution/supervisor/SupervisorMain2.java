@@ -51,7 +51,7 @@ public class SupervisorMain2 extends NanoHTTPD {
         if ("/ping".equals(uri)) return newFixedLengthResponse("READY");
 
         if ("/git-check".equals(uri)) {
-            String workspace = session.getParms().get("path");
+            String workspace = getDecodedParam(session, "path");
             if (workspace == null || workspace.trim().isEmpty()) {
                 workspace = baseDir != null ? baseDir.getAbsolutePath() : ".";
             }
@@ -104,8 +104,8 @@ public class SupervisorMain2 extends NanoHTTPD {
         }
         
         if ("/copy".equals(uri)) {
-            String src = session.getParms().get("src");
-            String dest = session.getParms().get("dest");
+            String src = getDecodedParam(session, "src");
+            String dest = getDecodedParam(session, "dest");
             if (src == null || dest == null) return newFixedLengthResponse(Response.Status.BAD_REQUEST, NanoHTTPD.MIME_PLAINTEXT, "Missing parameters");
             
             CodebaseCopyTool tool = new CodebaseCopyTool();
@@ -125,7 +125,7 @@ public class SupervisorMain2 extends NanoHTTPD {
         }
 
         if ("/build".equals(uri)) {
-            String workspace = session.getParms().get("path");
+            String workspace = getDecodedParam(session, "path");
             if (workspace == null) return newFixedLengthResponse(Response.Status.BAD_REQUEST, NanoHTTPD.MIME_PLAINTEXT, "Missing path");
             
             RcpBuildTool tool = new RcpBuildTool();
@@ -141,7 +141,7 @@ public class SupervisorMain2 extends NanoHTTPD {
         }
 
         if ("/export".equals(uri)) {
-            String workspace = session.getParms().get("path");
+            String workspace = getDecodedParam(session, "path");
             File exportDir = resolveExportDir(workspace, baseDir);
             if (!exportDir.exists()) {
                 exportDir.mkdirs();
@@ -160,7 +160,7 @@ public class SupervisorMain2 extends NanoHTTPD {
         }
 
         if ("/start-evo".equals(uri)) {
-            String workspace = session.getParms().get("path");
+            String workspace = getDecodedParam(session, "path");
             File exportDir = resolveExportDir(workspace, baseDir);
 
             File executable = findExecutable(exportDir);
@@ -243,9 +243,23 @@ public class SupervisorMain2 extends NanoHTTPD {
         return newFixedLengthResponse(Response.Status.NOT_FOUND, NanoHTTPD.MIME_PLAINTEXT, "Not Found");
     }
 
+    private static String getDecodedParam(IHTTPSession session, String paramName) {
+        String val = session.getParms().get(paramName);
+        if (val == null) return null;
+        try {
+            return java.net.URLDecoder.decode(val, java.nio.charset.StandardCharsets.UTF_8.name());
+        } catch (Exception e) {
+            return val;
+        }
+    }
+
     private static File resolveExportDir(String pathParam, File baseDir) {
         if (pathParam != null && !pathParam.trim().isEmpty()) {
-            File pFile = new File(pathParam.trim());
+            String decodedPath = pathParam.trim();
+            try {
+                decodedPath = java.net.URLDecoder.decode(decodedPath, java.nio.charset.StandardCharsets.UTF_8.name());
+            } catch (Exception ignored) {}
+            File pFile = new File(decodedPath);
             if (pFile.getName().equalsIgnoreCase("export")) {
                 return pFile;
             }
