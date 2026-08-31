@@ -138,8 +138,16 @@ public class EvoProductValidator {
             command.add(new File(rootDir, "evo.exe").getAbsolutePath());
         } else {
             File shLauncher = new File(rootDir, "evo.sh");
-            shLauncher.setExecutable(true);
-            command.add("./evo.sh");
+            File nativeLauncher = new File(rootDir, "evo");
+            if (shLauncher.exists()) {
+                shLauncher.setExecutable(true);
+                command.add(shLauncher.getAbsolutePath());
+            } else if (nativeLauncher.exists()) {
+                nativeLauncher.setExecutable(true);
+                command.add(nativeLauncher.getAbsolutePath());
+            } else {
+                command.add("./evo.sh");
+            }
         }
         command.add("--server");
         command.add("--port");

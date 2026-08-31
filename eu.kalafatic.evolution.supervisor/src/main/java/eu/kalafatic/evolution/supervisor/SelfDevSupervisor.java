@@ -138,12 +138,12 @@ public class SelfDevSupervisor {
                 publishEvent("TASK_STARTED", "Starting task: " + task.getId() + " (attempt " + task.getAttempts() + ")");
                 publishEvent("EVO_STARTED", "Starting EVO for task: " + task.getId());
 
-                String jarName = findJar(baseDir);
-                if (jarName == null) {
-                    jarName = "mock-rcp.jar";
+                String evoTarget = findEvoTarget(baseDir);
+                if (evoTarget == null) {
+                    evoTarget = "mock-rcp.jar";
                 }
                 File rcpStateFile = new File(baseDir, "self-dev-run/state.json");
-                boolean evoSuccess = runner.runRCP(baseDir, jarName, rcpStateFile.getAbsolutePath());
+                boolean evoSuccess = runner.runRCP(baseDir, evoTarget, rcpStateFile.getAbsolutePath());
 
                 if (evoSuccess) {
                     task.setStatus(TaskStatus.EVO_COMPLETED);
@@ -485,10 +485,127 @@ public class SelfDevSupervisor {
         buildAndRun(iteration);
     }
 
+    public String findEvoTarget(File baseDir) {
+        if (baseDir == null || !baseDir.exists()) return null;
+
+        // 1. Check exportDir and releaseDir for native product executable
+        File exportDir = new File(baseDir, "export");
+        if (!exportDir.exists() && baseDir.getName().equalsIgnoreCase("export")) {
+            exportDir = baseDir;
+        }
+
+        File executable = findExecutableInDir(exportDir);
+        if (executable != null) {
+            System.out.println("[SUPERVISOR] Found native EVO product executable in export: " + executable.getAbsolutePath());
+            return executable.getAbsolutePath();
+        }
+
+        File releaseDir = new File(baseDir, "release");
+        executable = findExecutableInDir(releaseDir);
+        if (executable != null) {
+            System.out.println("[SUPERVISOR] Found native EVO product executable in release: " + executable.getAbsolutePath());
+            return executable.getAbsolutePath();
+        }
+
+        // 2. Check for archives in export/release to auto-extract
+        if (exportDir.exists()) {
+            File[] archives = exportDir.listFiles((dir, name) -> name.endsWith(".zip") || name.endsWith(".tar.gz"));
+            if (archives != null && archives.length > 0) {
+                for (File archive : archives) {
+                    try {
+                        System.out.println("[SUPERVISOR] Auto-extracting product archive for task execution: " + archive.getName());
+                        if (archive.getName().endsWith(".zip")) {
+                            unzip(archive, exportDir);
+                        } else if (archive.getName().endsWith(".tar.gz")) {
+                            untar(archive, exportDir);
+                        }
+                    } catch (Exception ex) {
+                        System.err.println("[SUPERVISOR] Error auto-extracting archive: " + ex.getMessage());
+                    }
+                }
+                executable = findExecutableInDir(exportDir);
+                if (executable != null) {
+                    return executable.getAbsolutePath();
+                }
+            }
+        }
+
+        // 3. Fallback to runnable JAR search in export, builds, or target
+        if (exportDir.exists()) {
+            File[] exportJars = exportDir.listFiles((dir, name) -> name.endsWith(".jar") && !name.startsWith("original-") && !name.contains("supervisor"));
+            if (exportJars != null && exportJars.length > 0) {
+                return exportJars[0].getAbsolutePath();
+            }
+        }
+
+        return findJar(baseDir);
+    }
+
+    private File findExecutableInDir(File dir) {
+        if (dir == null || !dir.exists()) return null;
+        boolean isWin = PlatformInfo.isWindows();
+        String exeName = isWin ? "evo.exe" : "evo";
+        String shName = "evo.sh";
+
+        try (java.util.stream.Stream<java.nio.file.Path> stream = java.nio.file.Files.walk(dir.toPath())) {
+            java.util.List<File> files = stream.filter(java.nio.file.Files::isRegularFile)
+                .map(java.nio.file.Path::toFile)
+                .toList();
+
+            for (File f : files) {
+                if (f.getName().equalsIgnoreCase(exeName)) {
+                    return f;
+                }
+            }
+            if (!isWin) {
+                for (File f : files) {
+                    if (f.getName().equalsIgnoreCase(shName)) {
+                        return f;
+                    }
+                }
+            }
+        } catch (Exception ignored) {}
+        return null;
+    }
+
+    private static void unzip(File zipFile, File destDir) throws IOException {
+        try (java.util.zip.ZipInputStream zipIn = new java.util.zip.ZipInputStream(new java.io.FileInputStream(zipFile))) {
+            java.util.zip.ZipEntry entry = zipIn.getNextEntry();
+            while (entry != null) {
+                File filePath = new File(destDir, entry.getName());
+                if (!entry.isDirectory()) {
+                    if (filePath.getParentFile() != null && !filePath.getParentFile().exists()) {
+                        filePath.getParentFile().mkdirs();
+                    }
+                    try (java.io.FileOutputStream bos = new java.io.FileOutputStream(filePath)) {
+                        byte[] bytesIn = new byte[4096];
+                        int read;
+                        while ((read = zipIn.read(bytesIn)) != -1) {
+                            bos.write(bytesIn, 0, read);
+                        }
+                    }
+                } else {
+                    filePath.mkdirs();
+                }
+                zipIn.closeEntry();
+                entry = zipIn.getNextEntry();
+            }
+        }
+    }
+
+    private static void untar(File tarFile, File destDir) throws IOException, InterruptedException {
+        ProcessBuilder pb = new ProcessBuilder("tar", "-xzf", tarFile.getAbsolutePath(), "-C", destDir.getAbsolutePath());
+        Process p = pb.start();
+        int code = p.waitFor();
+        if (code != 0) {
+            throw new IOException("tar extraction failed with exit code: " + code);
+        }
+    }
+
     private String findJar(File variantDir) {
         File targetDir = new File(variantDir, "target");
         if (targetDir.exists()) {
-            File[] files = targetDir.listFiles((dir, name) -> name.endsWith(".jar") && !name.contains("sources"));
+            File[] files = targetDir.listFiles((dir, name) -> name.endsWith(".jar") && !name.contains("sources") && !name.contains("supervisor"));
             if (files != null && files.length > 0) {
                 return files[0].getAbsolutePath();
             }

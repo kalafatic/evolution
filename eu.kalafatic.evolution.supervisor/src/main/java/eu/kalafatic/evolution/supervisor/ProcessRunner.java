@@ -107,8 +107,74 @@ public class ProcessRunner {
             System.out.println("[MOCK RUN] Returning mock result: " + mockRunResult);
             return mockRunResult;
         }
-        System.out.println("[RUN] Simulating application startup...");
+        System.out.println("[RUN] Testing application startup in " + variantDir.getAbsolutePath());
+
+        File exportDir = new File(variantDir, "export");
+        if (!exportDir.exists() && variantDir.getName().equalsIgnoreCase("export")) {
+            exportDir = variantDir;
+        }
+        File releaseDir = new File(variantDir, "release");
+
+        File executable = findExecutableInDir(exportDir);
+        if (executable == null) executable = findExecutableInDir(releaseDir);
+
+        if (executable != null && executable.exists()) {
+            if (!PlatformInfo.isWindows()) {
+                executable.setExecutable(true);
+            }
+            List<String> command = new ArrayList<>();
+            command.add(executable.getAbsolutePath());
+            command.add("--mode=SELF_DEV");
+            command.add("--variant=" + variantDir.getAbsolutePath());
+
+            ProcessBuilder pb = new ProcessBuilder(command);
+            pb.directory(executable.getParentFile());
+            try {
+                Process p = pb.start();
+                boolean finished = p.waitFor(5, TimeUnit.SECONDS);
+                if (finished) {
+                    int exitCode = p.exitValue();
+                    System.out.println("[RUN] Application process exited with code: " + exitCode);
+                    return exitCode == 0;
+                } else {
+                    System.out.println("[RUN] Application process started successfully. Terminating test run cleanly.");
+                    p.destroyForcibly();
+                    return true;
+                }
+            } catch (Exception e) {
+                System.err.println("[RUN] Failed to launch application executable: " + e.getMessage());
+                return false;
+            }
+        }
+
         return true;
+    }
+
+    private File findExecutableInDir(File dir) {
+        if (dir == null || !dir.exists()) return null;
+        boolean isWin = PlatformInfo.isWindows();
+        String exeName = isWin ? "evo.exe" : "evo";
+        String shName = "evo.sh";
+
+        try (java.util.stream.Stream<java.nio.file.Path> stream = java.nio.file.Files.walk(dir.toPath())) {
+            List<File> files = stream.filter(java.nio.file.Files::isRegularFile)
+                .map(java.nio.file.Path::toFile)
+                .toList();
+
+            for (File f : files) {
+                if (f.getName().equalsIgnoreCase(exeName)) {
+                    return f;
+                }
+            }
+            if (!isWin) {
+                for (File f : files) {
+                    if (f.getName().equalsIgnoreCase(shName)) {
+                        return f;
+                    }
+                }
+            }
+        } catch (Exception ignored) {}
+        return null;
     }
 
     public boolean verifyApplication(File variantDir) {
@@ -172,7 +238,7 @@ public class ProcessRunner {
         }
     }
 
-    public boolean runRCP(File variantDir, String jarName, String statePath) {
+    public boolean runRCP(File variantDir, String targetPath, String statePath) {
         if (mockRCPResult != null) {
             System.out.println("[MOCK RUN] Returning mock result: " + mockRCPResult);
             if (onRCPStart != null) {
@@ -181,14 +247,30 @@ public class ProcessRunner {
             return mockRCPResult;
         }
         stopRCP();
-        System.out.println("[RUN] Running RCP in " + variantDir.getAbsolutePath());
-        List<String> command = new ArrayList<>();
-        command.add("java");
-        if (statePath != null) {
-            command.add("-Dstate=" + statePath);
+        System.out.println("[RUN] Running RCP/EVO in " + variantDir.getAbsolutePath() + " with target: " + targetPath);
+
+        File targetFile = new File(targetPath);
+        if (!targetFile.isAbsolute()) {
+            targetFile = new File(variantDir, targetPath);
         }
-        command.add("-jar");
-        command.add(jarName);
+
+        List<String> command = new ArrayList<>();
+        boolean isExecutable = targetFile.getName().endsWith(".exe") || targetFile.getName().endsWith(".sh") || targetFile.getName().equalsIgnoreCase("evo");
+
+        if (isExecutable && targetFile.exists()) {
+            if (!PlatformInfo.isWindows()) {
+                targetFile.setExecutable(true);
+            }
+            command.add(targetFile.getAbsolutePath());
+        } else {
+            command.add("java");
+            if (statePath != null) {
+                command.add("-Dstate=" + statePath);
+            }
+            command.add("-jar");
+            command.add(targetFile.getAbsolutePath());
+        }
+
         command.add("--mode=SELF_DEV");
         command.add("--variant=" + variantDir.getAbsolutePath());
         if (statePath != null) {
@@ -196,7 +278,8 @@ public class ProcessRunner {
         }
 
         ProcessBuilder pb = new ProcessBuilder(command);
-        pb.directory(variantDir);
+        File workDir = targetFile.getParentFile() != null && targetFile.getParentFile().exists() ? targetFile.getParentFile() : variantDir;
+        pb.directory(workDir);
         pb.inheritIO();
         try {
             currentProcess = pb.start();
