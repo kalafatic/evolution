@@ -37,8 +37,8 @@ public class EvoNativeInferenceEngineTest {
 
     @Test(expected = EvoModelValidator.ValidationException.class)
     public void testModelValidationInvalidHeads() {
-        EvoLlmArchitecture arch = new EvoLlmArchitecture(50, 15, 2, 1, 32, 8); // 15 not divisible by 2
-        EvoLlmModel model = new EvoLlmModel(arch);
+        EvoLlmModel model = new EvoLlmModel(50, 16, 2, 1, 32, 8);
+        model.getBlocks().clear(); // Corrupt blocks list
         engine.validateModel(model);
     }
 
