@@ -187,6 +187,11 @@ public class ChatMgmtGroup extends AEvoGroup {
                 }
             }
         });
+        
+        GUIFactory.INSTANCE.createLabel(compositeLocal, "Engine:", SWT.NONE, GUIFactory.BUTTON_WIDTH);
+        inferenceEngineCombo = selectEngine(compositeLocal);
+        ((GridData)inferenceEngineCombo.getLayoutData()).widthHint = 100;
+        ((GridData)inferenceEngineCombo.getLayoutData()).horizontalSpan = 3;
 
         GUIFactory.INSTANCE.createLabel(compositeLocal, "Model:", SWT.NONE, GUIFactory.BUTTON_WIDTH);
         localModelCombo = selectModel(compositeLocal);
@@ -225,10 +230,7 @@ public class ChatMgmtGroup extends AEvoGroup {
             }
         });
 
-        GUIFactory.INSTANCE.createLabel(compositeLocal, "Engine:", SWT.NONE, GUIFactory.BUTTON_WIDTH);
-        inferenceEngineCombo = selectEngine(compositeLocal);
-        ((GridData)inferenceEngineCombo.getLayoutData()).widthHint = 100;
-        ((GridData)inferenceEngineCombo.getLayoutData()).horizontalSpan = 3;
+  
 
         aiModeCombo.addSelectionListener(new SelectionAdapter() {
             @Override
