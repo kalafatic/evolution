@@ -346,4 +346,18 @@ public class SelfDevSupervisorTest {
         String logs = new String(java.nio.file.Files.readAllBytes(eventLog.toPath()));
         Assert.assertTrue(logs.contains("EVO_SHUTDOWN"));
     }
+
+    @Test
+    public void testFindEvoTargetWithExecutableProduct() throws IOException {
+        File exportFolder = new File(baseDir, "export");
+        exportFolder.mkdirs();
+
+        boolean isWin = PlatformInfo.isWindows();
+        File dummyExe = new File(exportFolder, isWin ? "evo.exe" : "evo.sh");
+        dummyExe.createNewFile();
+
+        String target = supervisor.findEvoTarget(baseDir);
+        Assert.assertNotNull(target);
+        Assert.assertEquals(dummyExe.getAbsolutePath(), target);
+    }
 }

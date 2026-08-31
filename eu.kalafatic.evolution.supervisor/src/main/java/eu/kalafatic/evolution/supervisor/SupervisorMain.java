@@ -320,28 +320,29 @@ public class SupervisorMain {
         }
 
         private File findExecutable(File exportDir) {
+            if (exportDir == null || !exportDir.exists()) return null;
             boolean isWin = System.getProperty("os.name").toLowerCase().contains("win");
             String exeName = isWin ? "evo.exe" : "evo";
             String shName = "evo.sh";
 
-            File directExe = new File(exportDir, exeName);
-            if (directExe.exists() && directExe.isFile()) return directExe;
-            if (!isWin) {
-                File directSh = new File(exportDir, shName);
-                if (directSh.exists() && directSh.isFile()) return directSh;
-            }
+            try (java.util.stream.Stream<java.nio.file.Path> stream = java.nio.file.Files.walk(exportDir.toPath())) {
+                List<File> files = stream.filter(java.nio.file.Files::isRegularFile)
+                    .map(java.nio.file.Path::toFile)
+                    .toList();
 
-            File[] subDirs = exportDir.listFiles(File::isDirectory);
-            if (subDirs != null) {
-                for (File sub : subDirs) {
-                    File subExe = new File(sub, exeName);
-                    if (subExe.exists() && subExe.isFile()) return subExe;
-                    if (!isWin) {
-                        File subSh = new File(sub, shName);
-                        if (subSh.exists() && subSh.isFile()) return subSh;
+                for (File f : files) {
+                    if (f.getName().equalsIgnoreCase(exeName)) {
+                        return f;
                     }
                 }
-            }
+                if (!isWin) {
+                    for (File f : files) {
+                        if (f.getName().equalsIgnoreCase(shName)) {
+                            return f;
+                        }
+                    }
+                }
+            } catch (Exception ignored) {}
             return null;
         }
 
@@ -457,6 +458,22 @@ public class SupervisorMain {
 
                 // 2. Check for native product executable (evo.exe, evo.sh, evo)
                 File executable = findExecutable(exportDir);
+                if (executable == null) {
+                    // Try copying product artifacts from sources/release/repository first if available
+                    File pFile = new File(path);
+                    File sourcesDir = pFile;
+                    if (pFile.getName().equalsIgnoreCase("export") && pFile.getParentFile() != null) {
+                        File parentSources = new File(pFile.getParentFile(), "sources");
+                        if (parentSources.exists()) {
+                            sourcesDir = parentSources;
+                        }
+                    }
+                    copyProductArtifacts(sourcesDir, exportDir);
+                    copyProductArtifacts(baseDir, exportDir);
+
+                    executable = findExecutable(exportDir);
+                }
+
                 if (executable == null) {
                     // Check if an archive (.zip / .tar.gz) exists in exportDir and auto-extract it
                     File[] archives = exportDir.listFiles((dir, name) -> name.endsWith(".zip") || name.endsWith(".tar.gz"));
