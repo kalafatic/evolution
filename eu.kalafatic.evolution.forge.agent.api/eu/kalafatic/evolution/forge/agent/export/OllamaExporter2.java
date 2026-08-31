@@ -400,7 +400,13 @@ public class OllamaExporter2 implements EvoModelExporter {
             seenTokens.add(token);
             tokens.add(token);
             scores[i] = 0.0f;
-            tokenTypes[i] = (i < 3) ? 3 : 1; // Index 0, 1, 2 are control tokens (3), the rest are normal (1)
+            if (i == 0 || i == 1 || i == 2) {
+                tokenTypes[i] = 3; // CONTROL
+            } else if (token.startsWith("<0x") && token.endsWith(">") && token.length() == 6) {
+                tokenTypes[i] = 6; // BYTE
+            } else {
+                tokenTypes[i] = 1; // NORMAL
+            }
         }
 
         System.out.println("[EVO-GGUF] Key: tokenizer.ggml.tokens = [array of size " + model.getVocabSize() + "]");
