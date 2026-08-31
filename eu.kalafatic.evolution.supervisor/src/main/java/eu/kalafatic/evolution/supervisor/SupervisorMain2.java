@@ -3,6 +3,8 @@ package eu.kalafatic.evolution.supervisor;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.List;
+import java.util.ArrayList;
 import fi.iki.elonen.NanoHTTPD;
 import eu.kalafatic.evolution.supervisor.bootstrap.CodebaseCopyTool;
 import eu.kalafatic.evolution.supervisor.bootstrap.CopyConfiguration;
@@ -149,6 +151,7 @@ public class SupervisorMain2 extends NanoHTTPD {
             try {
                 File srcDir = (workspace != null && !workspace.trim().isEmpty()) ? new File(workspace.trim()) : baseDir;
                 int copiedCount = copyJars(srcDir, exportDir);
+                copiedCount += copyProductArtifacts(srcDir, exportDir);
                 if (copiedCount > 0) {
                     return newFixedLengthResponse("SUCCESS: Exported " + copiedCount + " assets to " + exportDir.getAbsolutePath());
                 } else {
@@ -346,6 +349,44 @@ public class SupervisorMain2 extends NanoHTTPD {
         if (code != 0) {
             throw new IOException("tar extraction failed with exit code: " + code);
         }
+    }
+
+    private static int copyProductArtifacts(File sourcesDir, File exportDir) {
+        int count = 0;
+        if (sourcesDir == null || !sourcesDir.exists()) return count;
+        List<File> candidateDirs = new ArrayList<>();
+        candidateDirs.add(new File(sourcesDir, "release"));
+        candidateDirs.add(new File(sourcesDir, "eu.kalafatic.evolution.repository/target/products"));
+        if (sourcesDir.getParentFile() != null) {
+            candidateDirs.add(new File(sourcesDir.getParentFile(), "release"));
+            candidateDirs.add(new File(sourcesDir.getParentFile(), "eu.kalafatic.evolution.repository/target/products"));
+        }
+
+        for (File cDir : candidateDirs) {
+            if (!cDir.exists()) continue;
+            try (java.util.stream.Stream<java.nio.file.Path> stream = java.nio.file.Files.walk(cDir.toPath())) {
+                List<java.nio.file.Path> files = stream.filter(p -> java.nio.file.Files.isRegularFile(p)).toList();
+                for (java.nio.file.Path p : files) {
+                    File f = p.toFile();
+                    String name = f.getName();
+                    if (name.endsWith(".zip") || name.endsWith(".tar.gz") || name.equalsIgnoreCase("evo.exe") || name.equalsIgnoreCase("evo") || name.equalsIgnoreCase("evo.sh")) {
+                        try {
+                            String destName = name;
+                            if (name.contains("win32") && name.endsWith(".zip")) {
+                                destName = "EVO-win-x64.zip";
+                            } else if (name.contains("linux") && name.endsWith(".tar.gz")) {
+                                destName = "EVO-linux-x64.tar.gz";
+                            }
+                            File destFile = new File(exportDir, destName);
+                            java.nio.file.Files.copy(f.toPath(), destFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                            count++;
+                            System.out.println("[HTTP] Exported product artifact: " + destFile.getName());
+                        } catch (IOException ignored) {}
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+        return count;
     }
 
     private static int copyJars(File dir, File exportDir) {

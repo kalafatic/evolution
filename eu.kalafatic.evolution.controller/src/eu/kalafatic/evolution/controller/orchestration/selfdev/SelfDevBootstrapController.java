@@ -1498,29 +1498,7 @@ public class SelfDevBootstrapController {
         File sourcesDir = new File(buildWorkspacePath);
         if (sourcesDir.exists()) {
             findAndCopyJars(sourcesDir, buildDir, exportDir);
-
-            // Try finding product archives in targets of sources directory and copy them to export
-            File productsDir = new File(sourcesDir, "eu.kalafatic.evolution.repository/target/products");
-            if (productsDir.exists()) {
-                File[] archives = productsDir.listFiles((dir, name) -> name.endsWith(".zip") || name.endsWith(".tar.gz"));
-                if (archives != null) {
-                    for (File archive : archives) {
-                        try {
-                            String destName = archive.getName();
-                            if (destName.contains("win32")) {
-                                destName = "EVO-win-x64.zip";
-                            } else if (destName.contains("linux")) {
-                                destName = "EVO-linux-x64.tar.gz";
-                            }
-                            File destFile = new File(exportDir, destName);
-                            System.out.println("[SelfDevBootstrapController] [CHECK_EXPORT] Copying product archive to export: " + destFile.getAbsolutePath());
-                            java.nio.file.Files.copy(archive.toPath(), destFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-                        } catch (IOException e) {
-                            System.err.println("[SelfDevBootstrapController] [CHECK_EXPORT] Failed to copy product archive: " + e.getMessage());
-                        }
-                    }
-                }
-            }
+            copyProductArtifactsFromSources(sourcesDir, exportDir);
         }
 
         // Check if export directory has product archives
@@ -1531,7 +1509,13 @@ public class SelfDevBootstrapController {
             return "READY: " + exportArchives[0].getName();
         }
 
-        // Check if export directory has the runnable jar
+        // Check if export directory has native executables or runnable jar
+        File[] exportExecs = exportDir.listFiles((dir, name) -> name.endsWith(".exe") || name.endsWith(".sh") || name.equalsIgnoreCase("evo"));
+        if (exportExecs != null && exportExecs.length > 0) {
+            long duration = System.currentTimeMillis() - startTime;
+            return "READY: " + exportExecs[0].getName();
+        }
+
         File[] exportJars = exportDir.listFiles((dir, name) -> name.endsWith("-shaded.jar") || name.endsWith(".jar"));
         if (exportJars != null && exportJars.length > 0) {
             File runnableJar = exportJars[0];
@@ -1546,10 +1530,14 @@ public class SelfDevBootstrapController {
             return "READY: " + runnableJar.getName();
         }
 
-        // If we still don't have any JAR, run a package build to generate it!
-        System.out.println("[SelfDevBootstrapController] [CHECK_EXPORT] No jars found. Running build to generate runnable product...");
+        // If we still don't have any product or JAR, run a package build to generate it!
+        System.out.println("[SelfDevBootstrapController] [CHECK_EXPORT] No products found. Running build to generate runnable product...");
         String buildRes = runBuildAndCopy();
         if (buildRes != null && buildRes.startsWith("SUCCESS")) {
+            exportArchives = exportDir.listFiles((dir, name) -> name.endsWith(".zip") || name.endsWith(".tar.gz"));
+            if (exportArchives != null && exportArchives.length > 0) {
+                return "READY: " + exportArchives[0].getName();
+            }
             exportJars = exportDir.listFiles((dir, name) -> name.endsWith("-shaded.jar") || name.endsWith(".jar"));
             if (exportJars != null && exportJars.length > 0) {
                 File runnableJar = exportJars[0];
@@ -1564,6 +1552,48 @@ public class SelfDevBootstrapController {
         }
 
         return "ERROR: Runnable EVO product could not be generated. Please run Build first.";
+    }
+
+    private void copyProductArtifactsFromSources(File sourcesDir, File exportDir) {
+        if (sourcesDir == null || !sourcesDir.exists()) return;
+        List<File> candidateDirs = new ArrayList<>();
+        candidateDirs.add(new File(sourcesDir, "release"));
+        candidateDirs.add(new File(sourcesDir, "eu.kalafatic.evolution.repository/target/products"));
+        if (projectRoot != null) {
+            candidateDirs.add(new File(projectRoot, "release"));
+            candidateDirs.add(new File(projectRoot, "eu.kalafatic.evolution.repository/target/products"));
+        }
+        String cbPath = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getCodebasePath();
+        if (cbPath != null) {
+            candidateDirs.add(new File(cbPath, "release"));
+            candidateDirs.add(new File(cbPath, "eu.kalafatic.evolution.repository/target/products"));
+        }
+
+        for (File cDir : candidateDirs) {
+            if (!cDir.exists()) continue;
+            try (java.util.stream.Stream<java.nio.file.Path> stream = java.nio.file.Files.walk(cDir.toPath())) {
+                List<java.nio.file.Path> files = stream.filter(p -> java.nio.file.Files.isRegularFile(p)).toList();
+                for (java.nio.file.Path p : files) {
+                    File f = p.toFile();
+                    String name = f.getName();
+                    if (name.endsWith(".zip") || name.endsWith(".tar.gz") || name.equalsIgnoreCase("evo.exe") || name.equalsIgnoreCase("evo") || name.equalsIgnoreCase("evo.sh")) {
+                        try {
+                            String destName = name;
+                            if (name.contains("win32") && name.endsWith(".zip")) {
+                                destName = "EVO-win-x64.zip";
+                            } else if (name.contains("linux") && name.endsWith(".tar.gz")) {
+                                destName = "EVO-linux-x64.tar.gz";
+                            }
+                            File destFile = new File(exportDir, destName);
+                            System.out.println("[SelfDevBootstrapController] [CHECK_EXPORT] Copying product artifact: " + f.getAbsolutePath() + " -> " + destFile.getAbsolutePath());
+                            java.nio.file.Files.copy(f.toPath(), destFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                        } catch (IOException e) {
+                            System.err.println("[SelfDevBootstrapController] [CHECK_EXPORT] Failed to copy product artifact: " + e.getMessage());
+                        }
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
     }
 
     private String copyCodebaseToSupervisorSource() {
