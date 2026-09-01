@@ -415,6 +415,71 @@ public class ProjectModelManager {
     }
 
     /**
+     * Filters a list of model names by the specified inference engine ("evo native", "llama-cpp", "ollama").
+     *
+     * @param models List of model names to filter.
+     * @param engine Inference engine ("evo native", "llama-cpp", "ollama").
+     * @return Filtered list of model names.
+     */
+    public List<String> filterModelsByEngine(List<String> models, String engine) {
+        if (models == null || models.isEmpty()) {
+            return new ArrayList<>();
+        }
+        if (engine == null || engine.trim().isEmpty()) {
+            return new ArrayList<>(models);
+        }
+
+        String eng = engine.toLowerCase().trim();
+        List<String> filtered = new ArrayList<>();
+
+        for (String model : models) {
+            if (model == null || model.trim().isEmpty()) continue;
+            String lower = model.toLowerCase().trim();
+
+            if (eng.contains("evo native") || eng.contains("evo-native") || eng.contains("evo_native") || eng.equals("native")) {
+                // Rule 1: evo native - all evo models (evo only, non-gguf)
+                boolean isEvo = lower.contains("evo") || lower.contains("forging");
+                boolean isGguf = lower.endsWith(".gguf") || lower.equals("evo") || lower.equals("evo:latest");
+                if (isEvo && !isGguf) {
+                    filtered.add(model);
+                }
+            } else if (eng.contains("llama-cpp") || eng.contains("llama_cpp") || eng.contains("llama.cpp") || eng.equals("cpp")) {
+                // Rule 2: llama-cpp - all evo gguf models (evo only)
+                boolean isEvo = lower.contains("evo") || lower.contains("forging");
+                boolean isGguf = lower.endsWith(".gguf") || lower.equals("evo") || lower.equals("evo:latest");
+                if (isEvo && isGguf) {
+                    filtered.add(model);
+                }
+            } else if (eng.contains("ollama")) {
+                // Rule 3: ollama - all ollama compatible models (standard models, demo models, gguf models, registered evo models; excluding raw native-only evo artifacts)
+                boolean isRawNativeEvo = (lower.contains("evo") || lower.contains("forging"))
+                        && !lower.endsWith(".gguf")
+                        && !lower.equals("evo")
+                        && !lower.equals("evo:latest");
+                if (!isRawNativeEvo) {
+                    filtered.add(model);
+                }
+            } else {
+                filtered.add(model);
+            }
+        }
+        return filtered;
+    }
+
+    /**
+     * Fetches available LLM models filtered by the selected AI modes and inference engine.
+     *
+     * @param orchestrator The orchestrator instance.
+     * @param engine The inference engine ("evo native", "llama-cpp", "ollama").
+     * @param modes The AI modes to filter by.
+     * @return List of model names compatible with the engine.
+     */
+    public List<String> getLlmModelsByEngine(Orchestrator orchestrator, String engine, AiMode... modes) {
+        List<String> allModels = getLlmModels(orchestrator, modes);
+        return filterModelsByEngine(allModels, engine);
+    }
+
+    /**
      * Fetches available LLM models based on the selected mode(s).
      *
      * @param orchestrator The orchestrator containing configuration (URLs, etc). Can be null.
