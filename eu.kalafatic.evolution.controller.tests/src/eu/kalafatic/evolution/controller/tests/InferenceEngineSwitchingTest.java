@@ -1,12 +1,15 @@
 package eu.kalafatic.evolution.controller.tests;
 
 import eu.kalafatic.evolution.controller.manager.LlamaService;
+import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import org.junit.Test;
 
 import java.io.File;
+import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.Assert.*;
 
@@ -62,5 +65,33 @@ public class InferenceEngineSwitchingTest {
 
         context.getMetadata().put("inferenceEngine", "ollama");
         assertEquals("ollama", context.getMetadata().get("inferenceEngine"));
+    }
+
+    @Test
+    public void testFilterModelsByInferenceEngine() {
+        List<String> inputModels = Arrays.asList(
+                "evo-generic-v128",
+                "forging-1724653200",
+                "evo",
+                "evo.gguf",
+                "evo-model.gguf",
+                "llama3.2:3b",
+                "gemma:2b",
+                "demo/custom.gguf"
+        );
+
+        ProjectModelManager pmm = ProjectModelManager.getInstance();
+
+        // 1. evo native -> all evo models (evo only, non-gguf)
+        List<String> nativeModels = pmm.filterModelsByEngine(inputModels, "evo native");
+        assertEquals(Arrays.asList("evo-generic-v128", "forging-1724653200"), nativeModels);
+
+        // 2. llama-cpp -> all evo gguf models (evo only)
+        List<String> llamaCppModels = pmm.filterModelsByEngine(inputModels, "llama-cpp");
+        assertEquals(Arrays.asList("evo", "evo.gguf", "evo-model.gguf"), llamaCppModels);
+
+        // 3. ollama -> all ollama compatible models
+        List<String> ollamaModels = pmm.filterModelsByEngine(inputModels, "ollama");
+        assertEquals(Arrays.asList("evo", "evo.gguf", "evo-model.gguf", "llama3.2:3b", "gemma:2b", "demo/custom.gguf"), ollamaModels);
     }
 }

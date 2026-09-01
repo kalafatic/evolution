@@ -311,10 +311,39 @@ public class ChatMgmtGroup extends AEvoGroup {
         combo.addListener(SWT.Selection, e -> {
             int index = combo.getSelectionIndex();
             if (index >= 0) {
+                String selectedEngine = combo.getText();
                 Map<String, Object> settings = new HashMap<>();
-                settings.put("inferenceEngine", combo.getText());
+                settings.put("inferenceEngine", selectedEngine);
+
+                if (localModelCombo != null && !localModelCombo.isDisposed()) {
+                    AiMode mode = AiMode.get(aiModeCombo.getSelectionIndex());
+                    List<String> rawModels;
+                    if (mode == AiMode.PROXY) {
+                        rawModels = ProjectModelManager.getInstance().getLlmModels(orchestrator, AiMode.PROXY);
+                    } else if (mode == AiMode.MEDIATED || mode == AiMode.INTENT) {
+                        rawModels = ProjectModelManager.getInstance().getLlmModels(orchestrator, mode);
+                    } else {
+                        rawModels = ProjectModelManager.getInstance().getLlmModels(orchestrator, AiMode.LOCAL, AiMode.HYBRID);
+                    }
+                    List<String> filtered = ProjectModelManager.getInstance().filterModelsByEngine(rawModels, selectedEngine);
+                    String currentSelected = localModelCombo.getText();
+                    String[] newItems = filtered.toArray(new String[0]);
+                    localModelCombo.setItems(newItems);
+                    if (!currentSelected.isEmpty() && filtered.contains(currentSelected)) {
+                        selectSafe(localModelCombo, currentSelected);
+                    } else if (newItems.length > 0) {
+                        localModelCombo.select(0);
+                        settings.put("localModel", localModelCombo.getText());
+                    } else {
+                        localModelCombo.setText("");
+                        settings.put("localModel", "");
+                    }
+                }
+
                 page.updateConfiguration(settings);
                 page.saveLastUsedSettings();
+                page.updateModeDisplay();
+                page.updateStatusInfo();
             }
         });
         return combo;
@@ -359,36 +388,7 @@ public class ChatMgmtGroup extends AEvoGroup {
                 setTextSafe(remoteTokenText, token);
                 setTextSafe(remoteUrlText, url);
 
-                // 2. Populate Model combo
-                if (localModelCombo != null) {
-                    String currentLocal = localModelCombo.getText();
-
-                    List<String> modelsToShow;
-                    if (mode == AiMode.PROXY) {
-                        modelsToShow = ProjectModelManager.getInstance().getLlmModels(orchestrator, AiMode.PROXY);
-                    } else if (mode == AiMode.MEDIATED || mode == AiMode.INTENT) {
-                        modelsToShow = ProjectModelManager.getInstance().getLlmModels(orchestrator, mode);
-                    } else {
-                        modelsToShow = ProjectModelManager.getInstance().getLlmModels(orchestrator, AiMode.LOCAL,
-                                AiMode.HYBRID);
-                    }
-
-                    String[] newLocalItems = modelsToShow.toArray(new String[0]);
-                    if (!Arrays.equals(localModelCombo.getItems(), newLocalItems)) {
-                        localModelCombo.setItems(newLocalItems);
-                        if (!currentLocal.isEmpty()) {
-                            int idx = localModelCombo.indexOf(currentLocal);
-                            if (idx >= 0) localModelCombo.select(idx);
-                        }
-                    }
-
-                    String model = (String) config.getOrDefault("localModel", session != null && session.getLocalModel() != null ? session.getLocalModel() : (orchestrator != null ? orchestrator.getLocalModel() : ""));
-                    if (model != null) {
-                        selectSafe(localModelCombo, model);
-                    }
-                }
-
-                // 3. Populate/select Inference Engine combo
+                // 3. Populate/select Inference Engine combo first
                 if (inferenceEngineCombo != null) {
                     String selectedModel = localModelCombo != null ? localModelCombo.getText() : "";
                     String engine = (String) config.get("inferenceEngine");
@@ -396,6 +396,39 @@ public class ChatMgmtGroup extends AEvoGroup {
                         engine = LlamaService.detectInferenceEngine(selectedModel);
                     }
                     selectSafe(inferenceEngineCombo, engine);
+                }
+
+                // 2. Populate Model combo based on active inference engine
+                if (localModelCombo != null) {
+                    String currentLocal = localModelCombo.getText();
+
+                    List<String> rawModels;
+                    if (mode == AiMode.PROXY) {
+                        rawModels = ProjectModelManager.getInstance().getLlmModels(orchestrator, AiMode.PROXY);
+                    } else if (mode == AiMode.MEDIATED || mode == AiMode.INTENT) {
+                        rawModels = ProjectModelManager.getInstance().getLlmModels(orchestrator, mode);
+                    } else {
+                        rawModels = ProjectModelManager.getInstance().getLlmModels(orchestrator, AiMode.LOCAL,
+                                AiMode.HYBRID);
+                    }
+
+                    String currentEngine = inferenceEngineCombo != null ? inferenceEngineCombo.getText() : "ollama";
+                    List<String> modelsToShow = ProjectModelManager.getInstance().filterModelsByEngine(rawModels, currentEngine);
+
+                    String[] newLocalItems = modelsToShow.toArray(new String[0]);
+                    if (!Arrays.equals(localModelCombo.getItems(), newLocalItems)) {
+                        localModelCombo.setItems(newLocalItems);
+                        if (!currentLocal.isEmpty() && modelsToShow.contains(currentLocal)) {
+                            selectSafe(localModelCombo, currentLocal);
+                        } else if (newLocalItems.length > 0) {
+                            localModelCombo.select(0);
+                        }
+                    }
+
+                    String model = (String) config.getOrDefault("localModel", session != null && session.getLocalModel() != null ? session.getLocalModel() : (orchestrator != null ? orchestrator.getLocalModel() : ""));
+                    if (model != null && modelsToShow.contains(model)) {
+                        selectSafe(localModelCombo, model);
+                    }
                 }
                
             } finally {
