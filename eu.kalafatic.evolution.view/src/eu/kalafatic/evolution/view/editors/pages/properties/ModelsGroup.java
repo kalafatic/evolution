@@ -927,6 +927,23 @@ public class ModelsGroup extends AEvoGroup {
         file.delete();
     }
 
+    private void deleteFileWithLockRelease(File file) {
+        if (file == null || !file.exists()) return;
+        if (file.isDirectory()) {
+            deleteDirectoryRecursive(file);
+            return;
+        }
+        if (!file.delete()) {
+            System.gc();
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ignored) {}
+            if (!file.delete()) {
+                file.deleteOnExit();
+            }
+        }
+    }
+
     private void handleRemoveModel() {
         Object[] checked = viewer.getCheckedElements();
         if (checked.length == 0) {
@@ -942,26 +959,59 @@ public class ModelsGroup extends AEvoGroup {
             return;
         }
 
+        String ollamaUrl = getModelUrl(checked[0] instanceof AIProvider p ? p : null);
+        if (ollamaUrl.isEmpty()) {
+            ollamaUrl = (orchestrator != null && orchestrator.getOllama() != null) ? orchestrator.getOllama().getUrl() : "http://localhost:11434";
+        }
+        OllamaService service = OllamaManager.getInstance().getService(ollamaUrl);
+
         boolean ranTerminal = false;
         for (Object obj : checked) {
             AIProvider item = (AIProvider) obj;
+            String modelName = item.getName();
+            if (modelName == null) continue;
+
             if (item.isLocal()) {
-                // Delete GGUF files in default Ollama directory
+                // 1. Unload model from Ollama RAM/VRAM to release file locks
+                if (service != null) {
+                    try {
+                        service.unloadModel(modelName);
+                    } catch (Exception ignored) {}
+                }
+
+                // 2. Delete main path resolved via getModelPath
+                String mainPath = getModelPath(item);
+                if (mainPath != null && !mainPath.isEmpty()) {
+                    File mainFile = new File(mainPath);
+                    deleteFileWithLockRelease(mainFile);
+                }
+
+                // 3. Delete GGUF files in default Ollama directory
                 File ollamaHomeModelsDir = new File(System.getProperty("user.home"), ".ollama/models");
                 if (ollamaHomeModelsDir.exists() && ollamaHomeModelsDir.isDirectory()) {
-                    File f1 = new File(ollamaHomeModelsDir, item.getName() + ".gguf");
-                    if (f1.exists()) {
-                        f1.delete();
-                    }
-                    if ("evo".equalsIgnoreCase(item.getName())) {
-                        File f2 = new File(ollamaHomeModelsDir, "evo.gguf");
-                        if (f2.exists()) {
-                            f2.delete();
-                        }
+                    deleteFileWithLockRelease(new File(ollamaHomeModelsDir, modelName + ".gguf"));
+                    if ("evo".equalsIgnoreCase(modelName)) {
+                        deleteFileWithLockRelease(new File(ollamaHomeModelsDir, "evo.gguf"));
                     }
                 }
 
-                // Delete GGUF files / forging folders in codebase dist folder
+                // 4. Delete GGUF files in controller models folder and llama-cpp lib folder
+                File controllerModelsDir = eu.kalafatic.evolution.controller.manager.LlamaService.resolveControllerModelsDir();
+                if (controllerModelsDir != null && controllerModelsDir.exists()) {
+                    deleteFileWithLockRelease(new File(controllerModelsDir, modelName + ".gguf"));
+                    if ("evo".equalsIgnoreCase(modelName)) {
+                        deleteFileWithLockRelease(new File(controllerModelsDir, "evo.gguf"));
+                    }
+                }
+                File llamaCppDir = eu.kalafatic.evolution.controller.manager.LlamaService.resolveLlamaCppLibDir();
+                if (llamaCppDir != null && llamaCppDir.exists()) {
+                    deleteFileWithLockRelease(new File(llamaCppDir, modelName + ".gguf"));
+                    if ("evo".equalsIgnoreCase(modelName)) {
+                        deleteFileWithLockRelease(new File(llamaCppDir, "evo.gguf"));
+                    }
+                }
+
+                // 5. Delete GGUF files / forging folders in codebase dist folder
                 String codebasePath = ProjectModelManager.getCodebasePath();
                 if (codebasePath != null) {
                     File distDir = new File(codebasePath, "dist");
@@ -969,10 +1019,9 @@ public class ModelsGroup extends AEvoGroup {
                         File[] subdirs = distDir.listFiles(File::isDirectory);
                         if (subdirs != null) {
                             for (File subdir : subdirs) {
-                                String name = item.getName();
-                                boolean matches = subdir.getName().equalsIgnoreCase(name);
-                                if (!matches && name.startsWith("evo-")) {
-                                    String suffix = name.substring(4);
+                                boolean matches = subdir.getName().equalsIgnoreCase(modelName);
+                                if (!matches && modelName.startsWith("evo-")) {
+                                    String suffix = modelName.substring(4);
                                     matches = subdir.getName().equalsIgnoreCase("forging-" + suffix);
                                 }
                                 if (matches) {
@@ -983,21 +1032,25 @@ public class ModelsGroup extends AEvoGroup {
                     }
                 }
 
-                // Delete from demo folder if applicable
-                if (item.getName().startsWith("demo/")) {
-                    String cleanName = item.getName().substring(5); // remove "demo/"
+                // 6. Delete from demo folder if applicable
+                if (modelName.startsWith("demo/")) {
+                    String cleanName = modelName.substring(5); // remove "demo/"
                     File demoDir = new File("./forge-lab/forge-model/src/main/resources/model/demo/");
                     if (demoDir.exists() && demoDir.isDirectory()) {
-                        File f = new File(demoDir, cleanName + ".gguf");
-                        if (f.exists()) {
-                            f.delete();
-                        }
+                        deleteFileWithLockRelease(new File(demoDir, cleanName + ".gguf"));
                     }
+                }
+
+                // 7. Unregister from Ollama via HTTP API & terminal command
+                if (service != null) {
+                    try {
+                        service.deleteModel(modelName);
+                    } catch (Exception ignored) {}
                 }
 
                 if (orchestrator != null) {
                     AIProvider realProvider = orchestrator.getAiProviders().stream()
-                            .filter(p -> p.getName().equalsIgnoreCase(item.getName()))
+                            .filter(p -> p.getName().equalsIgnoreCase(modelName))
                             .findFirst().orElse(null);
 
                     if (realProvider != null) {
@@ -1006,21 +1059,21 @@ public class ModelsGroup extends AEvoGroup {
                     }
                 }
 
-                // Run ollama rm only if it is actually registered in Ollama (state is OK)
+                // Run ollama rm CLI command as fallback
                 if ("OK".equals(item.getState())) {
                     ranTerminal = true;
-                    runTerminalCommand("ollama rm " + item.getName());
+                    runTerminalCommand("ollama rm " + modelName);
                 }
             } else {
                 if (orchestrator != null) {
                     AIProvider realProvider = orchestrator.getAiProviders().stream()
-                            .filter(p -> p.getName().equalsIgnoreCase(item.getName()))
+                            .filter(p -> p.getName().equalsIgnoreCase(modelName))
                             .findFirst().orElse(null);
 
                     if (realProvider != null) {
                         orchestrator.getAiProviders().remove(realProvider);
                         editor.setDirty(true);
-                    } else if (item.getName().equalsIgnoreCase(orchestrator.getRemoteModel())) {
+                    } else if (modelName.equalsIgnoreCase(orchestrator.getRemoteModel())) {
                         ProjectModelManager.getInstance().updateRemoteModel(orchestrator, "");
                         editor.setDirty(true);
                     }
@@ -1028,6 +1081,9 @@ public class ModelsGroup extends AEvoGroup {
             }
         }
         if (!ranTerminal) {
+            if (service != null) {
+                service.refreshModels();
+            }
             load();
         }
     }
