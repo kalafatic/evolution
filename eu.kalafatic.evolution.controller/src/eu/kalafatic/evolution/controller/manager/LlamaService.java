@@ -207,7 +207,10 @@ public class LlamaService {
     }
 
     /**
-     * Copies and overwrites the specified source GGUF file to the controller models folder as evo.gguf and modelName.gguf.
+     * Copies and overwrites the specified source GGUF file and ALL companion EVO LLM files
+     * to all Git target model directories (eu.kalafatic.evolution.controller/lib/models, source/models, lib/models)
+     * and user home Ollama directory. Also stages the changes in Git.
+     *
      * @param sourceGguf Path to the source GGUF file.
      * @param modelName Optional target model name (e.g. "evo-12345").
      * @return true if copy succeeded.
@@ -217,18 +220,64 @@ public class LlamaService {
             return false;
         }
         try {
-            File modelsDir = resolveControllerModelsDir();
-            if (!modelsDir.exists()) {
-                modelsDir.mkdirs();
-            }
-            java.nio.file.Path targetEvoGguf = modelsDir.toPath().resolve("evo.gguf");
-            java.nio.file.Files.copy(sourceGguf, targetEvoGguf, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-            System.out.println("[LlamaService] Copied/overwrote latest forged model to models folder: " + targetEvoGguf.toAbsolutePath());
+            // Collect all target model directories in the codebase/workspace
+            List<File> targetModelDirs = resolveAllTargetModelDirs();
 
-            if (modelName != null && !modelName.isEmpty() && !"evo".equalsIgnoreCase(modelName)) {
-                java.nio.file.Path targetNamedGguf = modelsDir.toPath().resolve(modelName + ".gguf");
-                java.nio.file.Files.copy(sourceGguf, targetNamedGguf, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-                System.out.println("[LlamaService] Copied/overwrote model as " + modelName + ".gguf in models folder.");
+            // Collect candidate source directories containing companion files
+            List<java.nio.file.Path> candidateDirs = new ArrayList<>();
+            java.nio.file.Path p = sourceGguf.getParent();
+            while (p != null && candidateDirs.size() < 5) {
+                candidateDirs.add(p);
+                p = p.getParent();
+            }
+
+            String[] companionFiles = { "Modelfile", "weights.bin", "config.json", "tokenizer.json", "model.json", "training-report.json" };
+
+            for (File modelsDir : targetModelDirs) {
+                if (!modelsDir.exists()) {
+                    modelsDir.mkdirs();
+                }
+                java.nio.file.Path targetDir = modelsDir.toPath();
+
+                // 1. Copy GGUF file
+                java.nio.file.Path targetEvoGguf = targetDir.resolve("evo.gguf");
+                java.nio.file.Files.copy(sourceGguf, targetEvoGguf, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                System.out.println("[LlamaService] Copied/overwrote latest forged model GGUF to: " + targetEvoGguf.toAbsolutePath());
+
+                if (modelName != null && !modelName.isEmpty() && !"evo".equalsIgnoreCase(modelName)) {
+                    java.nio.file.Path targetNamedGguf = targetDir.resolve(modelName + ".gguf");
+                    java.nio.file.Files.copy(sourceGguf, targetNamedGguf, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                    System.out.println("[LlamaService] Copied/overwrote model as " + modelName + ".gguf to: " + targetNamedGguf.toAbsolutePath());
+                }
+
+                // 2. Copy companion files
+                for (java.nio.file.Path candidateDir : candidateDirs) {
+                    if (java.nio.file.Files.exists(candidateDir) && java.nio.file.Files.isDirectory(candidateDir)) {
+                        for (String compName : companionFiles) {
+                            java.nio.file.Path compFile = candidateDir.resolve(compName);
+                            if (java.nio.file.Files.exists(compFile) && !java.nio.file.Files.isDirectory(compFile)) {
+                                java.nio.file.Files.copy(compFile, targetDir.resolve(compName), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                            }
+                        }
+
+                        // Copy .evo native model artifacts
+                        try (java.util.stream.Stream<java.nio.file.Path> stream = java.nio.file.Files.list(candidateDir)) {
+                            stream.filter(f -> f.getFileName().toString().endsWith(".evo"))
+                                  .forEach(evoFile -> {
+                                      try {
+                                          java.nio.file.Files.copy(evoFile, targetDir.resolve("evo.evo"), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                                          if (modelName != null && !modelName.isEmpty() && !"evo".equalsIgnoreCase(modelName)) {
+                                              java.nio.file.Files.copy(evoFile, targetDir.resolve(modelName + ".evo"), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                                          }
+                                          java.nio.file.Files.copy(evoFile, targetDir.resolve(evoFile.getFileName()), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                                      } catch (Exception ignored) {}
+                                  });
+                        } catch (Exception ignored) {}
+                    }
+                }
+
+                // 3. Stage changes in Git if repository exists
+                stageInGit(modelsDir);
             }
 
             // Copy to user home ~/.ollama/models directory
@@ -244,41 +293,69 @@ public class LlamaService {
                 System.err.println("[LlamaService] Warning: Failed to copy GGUF to Ollama models folder: " + ex.getMessage());
             }
 
-            List<java.nio.file.Path> candidateDirs = new ArrayList<>();
-            java.nio.file.Path p = sourceGguf.getParent();
-            while (p != null && candidateDirs.size() < 4) {
-                candidateDirs.add(p);
-                p = p.getParent();
-            }
-
-            String[] companionFiles = { "Modelfile", "weights.bin", "config.json", "tokenizer.json", "model.json" };
-            for (java.nio.file.Path candidateDir : candidateDirs) {
-                if (java.nio.file.Files.exists(candidateDir) && java.nio.file.Files.isDirectory(candidateDir)) {
-                    for (String compName : companionFiles) {
-                        java.nio.file.Path compFile = candidateDir.resolve(compName);
-                        if (java.nio.file.Files.exists(compFile) && !java.nio.file.Files.isDirectory(compFile)) {
-                            java.nio.file.Files.copy(compFile, modelsDir.toPath().resolve(compName), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-                        }
-                    }
-                    try (java.util.stream.Stream<java.nio.file.Path> stream = java.nio.file.Files.list(candidateDir)) {
-                        stream.filter(f -> f.getFileName().toString().endsWith(".evo"))
-                              .forEach(evoFile -> {
-                                  try {
-                                      java.nio.file.Files.copy(evoFile, modelsDir.toPath().resolve("evo.evo"), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-                                      if (modelName != null && !modelName.isEmpty() && !"evo".equalsIgnoreCase(modelName)) {
-                                          java.nio.file.Files.copy(evoFile, modelsDir.toPath().resolve(modelName + ".evo"), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-                                      } else {
-                                          java.nio.file.Files.copy(evoFile, modelsDir.toPath().resolve(evoFile.getFileName()), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-                                      }
-                                  } catch (Exception ignored) {}
-                              });
-                    } catch (Exception ignored) {}
-                }
-            }
             return true;
         } catch (Exception e) {
-            System.err.println("[LlamaService] Failed to copy model to models folder: " + e.getMessage());
+            System.err.println("[LlamaService] Failed to copy model to models folders: " + e.getMessage());
             return false;
+        }
+    }
+
+    /**
+     * Resolves all target model directories across codebase, workspace, and user.dir.
+     * @return List of target model directories.
+     */
+    public static List<File> resolveAllTargetModelDirs() {
+        List<File> targetDirs = new ArrayList<>();
+        String codebasePath = ProjectModelManager.getCodebasePath();
+        String userDir = System.getProperty("user.dir");
+
+        List<String> candidatePaths = new ArrayList<>();
+        if (codebasePath != null && !codebasePath.isEmpty()) {
+            candidatePaths.add(codebasePath + "/eu.kalafatic.evolution.controller/lib/models");
+            candidatePaths.add(codebasePath + "/source/models");
+            candidatePaths.add(codebasePath + "/lib/models");
+        }
+        if (userDir != null && !userDir.isEmpty()) {
+            candidatePaths.add(userDir + "/eu.kalafatic.evolution.controller/lib/models");
+            candidatePaths.add(userDir + "/../eu.kalafatic.evolution.controller/lib/models");
+            candidatePaths.add(userDir + "/source/models");
+            candidatePaths.add(userDir + "/lib/models");
+            candidatePaths.add(userDir + "/eu.kalafatic.evolution.forge.agent.api/lib/models");
+        }
+
+        for (String pathStr : candidatePaths) {
+            File dir = new File(pathStr);
+            if (!targetDirs.contains(dir)) {
+                targetDirs.add(dir);
+            }
+        }
+
+        if (targetDirs.isEmpty()) {
+            targetDirs.add(resolveControllerModelsDir());
+        }
+        return targetDirs;
+    }
+
+    /**
+     * Helper to stage files in Git repository.
+     */
+    private static void stageInGit(File targetDir) {
+        if (targetDir == null || !targetDir.exists()) return;
+        try {
+            File gitRoot = targetDir;
+            while (gitRoot != null && !new File(gitRoot, ".git").exists()) {
+                gitRoot = gitRoot.getParentFile();
+            }
+            if (gitRoot != null && new File(gitRoot, ".git").exists()) {
+                ProcessBuilder pb = new ProcessBuilder("git", "add", targetDir.getAbsolutePath());
+                pb.directory(gitRoot);
+                pb.redirectErrorStream(true);
+                Process p = pb.start();
+                p.waitFor();
+                System.out.println("[LlamaService] Staged model files in Git repository: " + targetDir.getAbsolutePath());
+            }
+        } catch (Exception ex) {
+            System.err.println("[LlamaService] Warning: Git staging failed for " + targetDir + ": " + ex.getMessage());
         }
     }
 

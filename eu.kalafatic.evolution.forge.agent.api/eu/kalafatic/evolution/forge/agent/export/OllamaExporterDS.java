@@ -837,36 +837,56 @@ public class OllamaExporterDS implements EvoModelExporter {
                 } catch (Throwable ignored) {}
 
                 String userDir = System.getProperty("user.dir");
-                Path modelsDir = null;
+                List<Path> targetDirs = new ArrayList<>();
                 if (codebasePath != null) {
-                    Path p = Paths.get(codebasePath, "eu.kalafatic.evolution.controller/lib/models");
-                    if (Files.exists(p) && Files.isDirectory(p)) modelsDir = p;
+                    targetDirs.add(Paths.get(codebasePath, "eu.kalafatic.evolution.controller/lib/models"));
+                    targetDirs.add(Paths.get(codebasePath, "source/models"));
+                    targetDirs.add(Paths.get(codebasePath, "lib/models"));
                 }
-                if (modelsDir == null) {
-                    Path p = Paths.get(userDir, "eu.kalafatic.evolution.controller/lib/models");
-                    if (Files.exists(p) && Files.isDirectory(p)) modelsDir = p;
-                    else modelsDir = Paths.get(userDir, "lib/models");
-                }
-                Files.createDirectories(modelsDir);
-                Files.copy(ggufPath, modelsDir.resolve("evo.gguf"), StandardCopyOption.REPLACE_EXISTING);
-                if (modelName != null && !modelName.isEmpty() && !"evo".equalsIgnoreCase(modelName)) {
-                    Files.copy(ggufPath, modelsDir.resolve(modelName + ".gguf"), StandardCopyOption.REPLACE_EXISTING);
+                if (userDir != null) {
+                    targetDirs.add(Paths.get(userDir, "eu.kalafatic.evolution.controller/lib/models"));
+                    targetDirs.add(Paths.get(userDir, "source/models"));
+                    targetDirs.add(Paths.get(userDir, "lib/models"));
                 }
 
-                Path llamaCppDir = null;
-                if (codebasePath != null) {
-                    Path p = Paths.get(codebasePath, "eu.kalafatic.evolution.controller/lib/llama-cpp");
-                    if (Files.exists(p) && Files.isDirectory(p)) llamaCppDir = p;
+                List<Path> candidateDirs = new ArrayList<>();
+                Path p = ggufPath.getParent();
+                while (p != null && candidateDirs.size() < 5) {
+                    candidateDirs.add(p);
+                    p = p.getParent();
                 }
-                if (llamaCppDir == null) {
-                    Path p = Paths.get(userDir, "eu.kalafatic.evolution.controller/lib/llama-cpp");
-                    if (Files.exists(p) && Files.isDirectory(p)) llamaCppDir = p;
-                    else llamaCppDir = Paths.get(userDir, "lib/llama-cpp");
-                }
-                Files.createDirectories(llamaCppDir);
-                Files.copy(ggufPath, llamaCppDir.resolve("evo.gguf"), StandardCopyOption.REPLACE_EXISTING);
-                if (modelName != null && !modelName.isEmpty() && !"evo".equalsIgnoreCase(modelName)) {
-                    Files.copy(ggufPath, llamaCppDir.resolve(modelName + ".gguf"), StandardCopyOption.REPLACE_EXISTING);
+                String[] compNames = { "Modelfile", "weights.bin", "config.json", "tokenizer.json", "model.json", "training-report.json" };
+
+                for (Path modelsDir : targetDirs) {
+                    try {
+                        Files.createDirectories(modelsDir);
+                        Files.copy(ggufPath, modelsDir.resolve("evo.gguf"), StandardCopyOption.REPLACE_EXISTING);
+                        if (modelName != null && !modelName.isEmpty() && !"evo".equalsIgnoreCase(modelName)) {
+                            Files.copy(ggufPath, modelsDir.resolve(modelName + ".gguf"), StandardCopyOption.REPLACE_EXISTING);
+                        }
+                        for (Path candidateDir : candidateDirs) {
+                            if (Files.exists(candidateDir) && Files.isDirectory(candidateDir)) {
+                                for (String compName : compNames) {
+                                    Path compFile = candidateDir.resolve(compName);
+                                    if (Files.exists(compFile) && !Files.isDirectory(compFile)) {
+                                        Files.copy(compFile, modelsDir.resolve(compName), StandardCopyOption.REPLACE_EXISTING);
+                                    }
+                                }
+                                try (java.util.stream.Stream<Path> stream = Files.list(candidateDir)) {
+                                    stream.filter(f -> f.getFileName().toString().endsWith(".evo"))
+                                          .forEach(evoFile -> {
+                                              try {
+                                                  Files.copy(evoFile, modelsDir.resolve("evo.evo"), StandardCopyOption.REPLACE_EXISTING);
+                                                  if (modelName != null && !modelName.isEmpty() && !"evo".equalsIgnoreCase(modelName)) {
+                                                      Files.copy(evoFile, modelsDir.resolve(modelName + ".evo"), StandardCopyOption.REPLACE_EXISTING);
+                                                  }
+                                                  Files.copy(evoFile, modelsDir.resolve(evoFile.getFileName()), StandardCopyOption.REPLACE_EXISTING);
+                                              } catch (Exception ignored) {}
+                                          });
+                                } catch (Exception ignored) {}
+                            }
+                        }
+                    } catch (Throwable ignored) {}
                 }
             } catch (Throwable ignored) {}
         }

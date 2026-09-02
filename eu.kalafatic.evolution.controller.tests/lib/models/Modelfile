@@ -1,0 +1,6 @@
+FROM /tmp/junit5930065686215833473/out-TINY/exports/ollama/evo.gguf
+PARAMETER temperature 0.2
+PARAMETER num_ctx 512
+PARAMETER stop "</s>"
+PARAMETER stop "<s>"
+SYSTEM """You are EVO, a specialized language model trained on Evolution project knowledge."""
