@@ -342,11 +342,26 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                 Files.writeString(runFolder.resolve("stage_3_trainer_result.json"), stage3.toString(4));
                 
                 updateStats(sessionId, new ForgingStats("EXPORTING", 80, scannedPaths.size(), knowledgeUnits.size(), samples.size(), 0.0, "1/1", runFolder.toAbsolutePath().toString()));
-                logToFile(logFile, "Stage: EXPORTING. Exporting model canonical GGUF artifact...");
+                logToFile(logFile, "Stage: EXPORTING. Exporting model canonical GGUF and EVO native artifacts...");
                 OllamaExporter exporter = new OllamaExporter();
                 String dateVersion = new java.text.SimpleDateFormat("yyyyMMdd_HHmmss").format(new java.util.Date(timestamp));
                 String modelName = "evo-" + sessionId + "-" + dateVersion;
                 Path exportPath = projectPath.resolve("dist/" + modelName);
+
+                // Save native EVO model artifact package (.evo)
+                try {
+                    eu.kalafatic.evolution.forge.model.llm.EvoModelArtifact artifact = new eu.kalafatic.evolution.forge.model.llm.EvoModelArtifact();
+                    artifact.initializeFromModel(modelName, model, tokenizer.getVocab());
+                    artifact.save(runFolder.resolve(modelName + ".evo"));
+                    artifact.save(runFolder.resolve("evo.evo"));
+                    Files.createDirectories(exportPath);
+                    artifact.save(exportPath.resolve(modelName + ".evo"));
+                    artifact.save(exportPath.resolve("evo.evo"));
+                    logToFile(logFile, "[EXPORT_EVO] Successfully created native EVO model artifact package: " + modelName + ".evo");
+                } catch (Exception evoEx) {
+                    logToFile(logFile, "[EXPORT_EVO] Warning: Creating native EVO artifact failed: " + evoEx.getMessage());
+                }
+
                 exporter.export(modelName, exportPath, model, tokenizer.getInvVocab());
                 logToFile(logFile, "Export complete. Model output written to: " + exportPath.toAbsolutePath().toString());
 
@@ -399,7 +414,11 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                         if (Files.exists(exportPath.resolve("weights.bin"))) {
                             Files.copy(exportPath.resolve("weights.bin"), sourceModelsDir.resolve("weights.bin"), StandardCopyOption.REPLACE_EXISTING);
                         }
-                        logToFile(logFile, "[EXPORT_GGUF] Programmatically copied GGUF files to workspace source models directory.");
+                        if (Files.exists(exportPath.resolve(modelName + ".evo"))) {
+                            Files.copy(exportPath.resolve(modelName + ".evo"), sourceModelsDir.resolve("evo.evo"), StandardCopyOption.REPLACE_EXISTING);
+                            Files.copy(exportPath.resolve(modelName + ".evo"), sourceModelsDir.resolve(modelName + ".evo"), StandardCopyOption.REPLACE_EXISTING);
+                        }
+                        logToFile(logFile, "[EXPORT_GGUF] Programmatically copied GGUF and EVO files to workspace source models directory.");
                     } catch (Exception ex) {
                         logToFile(logFile, "[EXPORT_GGUF] Warning: Copying to source/models/ directory failed: " + ex.getMessage());
                     }

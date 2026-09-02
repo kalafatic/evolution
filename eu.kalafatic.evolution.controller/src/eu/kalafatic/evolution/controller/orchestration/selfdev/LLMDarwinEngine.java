@@ -1341,7 +1341,6 @@ public class LLMDarwinEngine extends ADarwinEngine {
 			// ✅ FIX: Use the new tokenizer method
 			tokenizer = trainTokenizerWithFullVocab(cleanCorpus, config.vocabSize);
 			allTokens = tokenizer.encode(cleanCorpus);
-			tokenizer.train(cleanCorpus, config.vocabSize);
 
 			if (allTokens.size() > MAX_TOKENS_LIMIT) {
 				List<Integer> truncated = new ArrayList<>(allTokens.subList(0, MAX_TOKENS_LIMIT));
