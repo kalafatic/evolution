@@ -12,6 +12,8 @@ public class InferenceRequest {
     private final float topP;
     private final int topK;
     private final float repeatPenalty;
+    private final float frequencyPenalty;
+    private final float presencePenalty;
     private final Set<Integer> stopTokenIds;
 
     private InferenceRequest(Builder builder) {
@@ -22,6 +24,8 @@ public class InferenceRequest {
         this.topP = builder.topP;
         this.topK = builder.topK;
         this.repeatPenalty = builder.repeatPenalty;
+        this.frequencyPenalty = builder.frequencyPenalty;
+        this.presencePenalty = builder.presencePenalty;
         this.stopTokenIds = Collections.unmodifiableSet(new HashSet<>(builder.stopTokenIds));
     }
 
@@ -53,6 +57,14 @@ public class InferenceRequest {
         return repeatPenalty;
     }
 
+    public float getFrequencyPenalty() {
+        return frequencyPenalty;
+    }
+
+    public float getPresencePenalty() {
+        return presencePenalty;
+    }
+
     public Set<Integer> getStopTokenIds() {
         return stopTokenIds;
     }
@@ -69,6 +81,8 @@ public class InferenceRequest {
         private float topP = 1.0f;
         private int topK = 0;
         private float repeatPenalty = 1.0f;
+        private float frequencyPenalty = 0.0f;
+        private float presencePenalty = 0.0f;
         private Set<Integer> stopTokenIds = new HashSet<>();
 
         public Builder prompt(String prompt) {
@@ -103,6 +117,16 @@ public class InferenceRequest {
 
         public Builder repeatPenalty(float repeatPenalty) {
             this.repeatPenalty = repeatPenalty;
+            return this;
+        }
+
+        public Builder frequencyPenalty(float frequencyPenalty) {
+            this.frequencyPenalty = frequencyPenalty;
+            return this;
+        }
+
+        public Builder presencePenalty(float presencePenalty) {
+            this.presencePenalty = presencePenalty;
             return this;
         }
 
