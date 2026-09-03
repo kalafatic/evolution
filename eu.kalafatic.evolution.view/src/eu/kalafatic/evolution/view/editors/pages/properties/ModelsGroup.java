@@ -945,31 +945,43 @@ public class ModelsGroup extends AEvoGroup {
     }
 
     private void handleRemoveModel() {
+        java.util.Set<AIProvider> selectedModels = new java.util.LinkedHashSet<>();
         Object[] checked = viewer.getCheckedElements();
-        if (checked.length == 0) {
-            IStructuredSelection selection = (IStructuredSelection) viewer.getSelection();
-            if (!selection.isEmpty()) {
-                checked = selection.toArray();
+        if (checked != null) {
+            for (Object obj : checked) {
+                if (obj instanceof AIProvider p) {
+                    selectedModels.add(p);
+                }
             }
         }
-        if (checked.length == 0) return;
+        IStructuredSelection selection = (IStructuredSelection) viewer.getSelection();
+        if (selection != null && !selection.isEmpty()) {
+            for (Object obj : selection.toArray()) {
+                if (obj instanceof AIProvider p) {
+                    selectedModels.add(p);
+                }
+            }
+        }
+
+        if (selectedModels.isEmpty()) return;
 
         if (!MessageDialog.openConfirm(group.getShell(), "Remove Models",
-                "Are you sure you want to remove " + checked.length + " selected model(s)?")) {
+                "Are you sure you want to remove " + selectedModels.size() + " selected model(s)?")) {
             return;
         }
 
-        String ollamaUrl = getModelUrl(checked[0] instanceof AIProvider p ? p : null);
+        AIProvider firstProvider = selectedModels.iterator().next();
+        String ollamaUrl = getModelUrl(firstProvider);
         if (ollamaUrl.isEmpty()) {
             ollamaUrl = (orchestrator != null && orchestrator.getOllama() != null) ? orchestrator.getOllama().getUrl() : "http://localhost:11434";
         }
         OllamaService service = OllamaManager.getInstance().getService(ollamaUrl);
 
-        boolean ranTerminal = false;
-        for (Object obj : checked) {
-            AIProvider item = (AIProvider) obj;
+        List<String> terminalCommands = new ArrayList<>();
+
+        for (AIProvider item : selectedModels) {
             String modelName = item.getName();
-            if (modelName == null) continue;
+            if (modelName == null || modelName.isEmpty()) continue;
 
             if (item.isLocal()) {
                 // 1. Unload model from Ollama RAM/VRAM to release file locks
@@ -1011,9 +1023,17 @@ public class ModelsGroup extends AEvoGroup {
                     }
                 }
 
-                // 5. Delete GGUF files / forging folders in codebase dist folder
+                // 5. Delete GGUF files / source models
                 String codebasePath = ProjectModelManager.getCodebasePath();
                 if (codebasePath != null) {
+                    File sourceModelsDir = new File(codebasePath, "source/models");
+                    if (sourceModelsDir.exists() && sourceModelsDir.isDirectory()) {
+                        deleteFileWithLockRelease(new File(sourceModelsDir, modelName + ".gguf"));
+                        if ("evo".equalsIgnoreCase(modelName)) {
+                            deleteFileWithLockRelease(new File(sourceModelsDir, "evo.gguf"));
+                        }
+                    }
+
                     File distDir = new File(codebasePath, "dist");
                     if (distDir.exists() && distDir.isDirectory()) {
                         File[] subdirs = distDir.listFiles(File::isDirectory);
@@ -1032,7 +1052,27 @@ public class ModelsGroup extends AEvoGroup {
                     }
                 }
 
-                // 6. Delete from demo folder if applicable
+                // 6. Delete from forge-output folders across workspace and codebase
+                List<String> pathsToCheck = new ArrayList<>();
+                String workspacePath = ProjectModelManager.getWorkspacePath();
+                if (workspacePath != null) pathsToCheck.add(workspacePath);
+                if (codebasePath != null && !codebasePath.equals(workspacePath)) pathsToCheck.add(codebasePath);
+                String userDir = System.getProperty("user.dir");
+                if (userDir != null && !userDir.equals(workspacePath) && !userDir.equals(codebasePath)) pathsToCheck.add(userDir);
+
+                for (String basePath : pathsToCheck) {
+                    File forgeOutputDir = new File(basePath, "forge-output");
+                    if (forgeOutputDir.exists() && forgeOutputDir.isDirectory()) {
+                        deleteFileWithLockRelease(new File(forgeOutputDir, modelName + ".evo"));
+                        deleteFileWithLockRelease(new File(forgeOutputDir, modelName + ".gguf"));
+                        File modelFolder = new File(forgeOutputDir, modelName);
+                        if (modelFolder.exists()) {
+                            deleteDirectoryRecursive(modelFolder);
+                        }
+                    }
+                }
+
+                // 7. Delete from demo folder if applicable
                 if (modelName.startsWith("demo/")) {
                     String cleanName = modelName.substring(5); // remove "demo/"
                     File demoDir = new File("./forge-lab/forge-model/src/main/resources/model/demo/");
@@ -1041,7 +1081,7 @@ public class ModelsGroup extends AEvoGroup {
                     }
                 }
 
-                // 7. Unregister from Ollama via HTTP API & terminal command
+                // 8. Unregister from Ollama via HTTP API
                 if (service != null) {
                     try {
                         service.deleteModel(modelName);
@@ -1059,10 +1099,9 @@ public class ModelsGroup extends AEvoGroup {
                     }
                 }
 
-                // Run ollama rm CLI command as fallback
+                // Queue ollama rm CLI command as fallback if local model is registered
                 if ("OK".equals(item.getState())) {
-                    ranTerminal = true;
-                    runTerminalCommand("ollama rm " + modelName);
+                    terminalCommands.add("ollama rm " + modelName);
                 }
             } else {
                 if (orchestrator != null) {
@@ -1080,49 +1119,60 @@ public class ModelsGroup extends AEvoGroup {
                 }
             }
         }
-        if (!ranTerminal) {
-            if (service != null) {
-                service.refreshModels();
-            }
+
+        if (service != null) {
+            service.clearCache();
+            service.refreshModels();
+        }
+
+        if (!terminalCommands.isEmpty()) {
+            runTerminalCommands(terminalCommands, () -> {
+                if (service != null) {
+                    service.clearCache();
+                    service.refreshModels();
+                }
+                load();
+            });
+        } else {
             load();
         }
     }
 
-    private void runTerminalCommand(String command) {
+    private void runTerminalCommands(List<String> commands, Runnable onComplete) {
         new Thread(() -> {
-            try {
-                ShellTool shell = new ShellTool();
-                File workingDir = null;
-                if (editor.getEditorInput() instanceof org.eclipse.ui.IFileEditorInput) {
-                    workingDir = ((org.eclipse.ui.IFileEditorInput) editor.getEditorInput()).getFile().getProject()
-                            .getLocation().toFile();
-                }
-                String output = shell.execute(command, workingDir, null);
-                Display.getDefault().asyncExec(() -> {
-                    boolean isSuccess = false;
-                    if (command.startsWith("ollama rm")) {
-                        String lowerOutput = output != null ? output.toLowerCase() : "";
-                        if (!lowerOutput.contains("error:") && !lowerOutput.contains("failed")) {
-                            isSuccess = true;
+            ShellTool shell = new ShellTool();
+            File workingDir = null;
+            if (editor.getEditorInput() instanceof org.eclipse.ui.IFileEditorInput) {
+                workingDir = ((org.eclipse.ui.IFileEditorInput) editor.getEditorInput()).getFile().getProject()
+                        .getLocation().toFile();
+            }
+            StringBuilder combinedOutput = new StringBuilder();
+            boolean errorOccurred = false;
+            for (String cmd : commands) {
+                try {
+                    String output = shell.execute(cmd, workingDir, null);
+                    if (output != null) {
+                        combinedOutput.append(output).append("\n");
+                        String lower = output.toLowerCase();
+                        if (lower.contains("error:") || lower.contains("failed")) {
+                            errorOccurred = true;
                         }
                     }
-                    if (!isSuccess) {
-                        MessageDialog.openInformation(group.getShell(), "Terminal Output", output);
-                    }
-                    load();
-                });
-            } catch (Exception e) {
-                Display.getDefault().asyncExec(() -> {
-                    // Even if terminal command fails, we still load to ensure UI reflects other changes
-                    String msg = e.getMessage();
-                    if (msg != null && (msg.contains("not found") || msg.contains("exit code 1"))) {
-                        // Silent or just reload
-                    } else {
-                        MessageDialog.openError(group.getShell(), "Command Error", e.getMessage());
-                    }
-                    load();
-                });
+                } catch (Exception e) {
+                    errorOccurred = true;
+                    combinedOutput.append("Error executing ").append(cmd).append(": ").append(e.getMessage()).append("\n");
+                }
             }
+            final boolean finalError = errorOccurred;
+            final String finalOutput = combinedOutput.toString().trim();
+            Display.getDefault().asyncExec(() -> {
+                if (finalError && !finalOutput.isEmpty()) {
+                    MessageDialog.openInformation(group.getShell(), "Terminal Output", finalOutput);
+                }
+                if (onComplete != null) {
+                    onComplete.run();
+                }
+            });
         }).start();
     }
 
