@@ -539,9 +539,18 @@ public class OllamaService {
     }
 
     /**
+     * Clears the in-memory cached models list.
+     */
+    public void clearCache() {
+        this.cachedModels = null;
+        this.lastModelRefresh = 0;
+    }
+
+    /**
      * Forces a refresh of the models list.
      */
     public List<OllamaModel> refreshModels() {
+        clearCache();
         List<OllamaModel> result = new ArrayList<>();
         try {
             String tagsUrl = this.baseUrl + (this.baseUrl.endsWith("/") ? "" : "/") + "api/tags";
