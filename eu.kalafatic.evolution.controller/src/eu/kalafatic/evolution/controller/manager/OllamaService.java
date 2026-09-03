@@ -420,6 +420,56 @@ public class OllamaService {
     }
 
     /**
+     * Unloads a model from memory/VRAM by sending keep_alive: 0.
+     */
+    public boolean unloadModel(String modelName) {
+        if (modelName == null || modelName.isEmpty()) return false;
+        try {
+            String genUrl = this.baseUrl + (this.baseUrl.endsWith("/") ? "" : "/") + "api/generate";
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("model", modelName);
+            jsonObject.put("keep_alive", 0);
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(genUrl))
+                    .header("Content-Type", "application/json")
+                    .timeout(Duration.ofSeconds(10))
+                    .POST(HttpRequest.BodyPublishers.ofString(jsonObject.toString()))
+                    .build();
+
+            HttpResponse<String> response = createClient().send(request, HttpResponse.BodyHandlers.ofString());
+            return response.statusCode() == 200;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * Deletes a model from Ollama registry via HTTP DELETE /api/delete.
+     */
+    public boolean deleteModel(String modelName) {
+        if (modelName == null || modelName.isEmpty()) return false;
+        try {
+            String deleteUrl = this.baseUrl + (this.baseUrl.endsWith("/") ? "" : "/") + "api/delete";
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("name", modelName);
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(deleteUrl))
+                    .header("Content-Type", "application/json")
+                    .timeout(Duration.ofSeconds(15))
+                    .method("DELETE", HttpRequest.BodyPublishers.ofString(jsonObject.toString()))
+                    .build();
+
+            HttpResponse<String> response = createClient().send(request, HttpResponse.BodyHandlers.ofString());
+            refreshModels();
+            return response.statusCode() == 200;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
      * Pulls a model from Ollama.
      */
     public void pullModel(String modelName, Consumer<ProgressUpdate> progressCallback) throws Exception {
