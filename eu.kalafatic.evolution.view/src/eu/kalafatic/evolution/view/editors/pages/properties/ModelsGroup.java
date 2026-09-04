@@ -663,10 +663,51 @@ public class ModelsGroup extends AEvoGroup {
         });
     }
 
-    private void handleExportToZip() {
+    private AIProvider getSelectedOrCheckedModel() {
+        if (viewer == null) return null;
         IStructuredSelection selection = (IStructuredSelection) viewer.getSelection();
-        if (selection.isEmpty()) return;
-        AIProvider item = (AIProvider) selection.getFirstElement();
+        if (selection != null && !selection.isEmpty()) {
+            Object first = selection.getFirstElement();
+            if (first instanceof AIProvider p) {
+                return p;
+            }
+        }
+        Object[] checked = viewer.getCheckedElements();
+        if (checked != null && checked.length > 0) {
+            for (Object obj : checked) {
+                if (obj instanceof AIProvider p) {
+                    return p;
+                }
+            }
+        }
+        return null;
+    }
+
+    private List<AIProvider> getSelectedOrCheckedModels() {
+        if (viewer == null) return new ArrayList<>();
+        java.util.Set<AIProvider> set = new java.util.LinkedHashSet<>();
+        IStructuredSelection selection = (IStructuredSelection) viewer.getSelection();
+        if (selection != null && !selection.isEmpty()) {
+            for (Object obj : selection.toArray()) {
+                if (obj instanceof AIProvider p) {
+                    set.add(p);
+                }
+            }
+        }
+        Object[] checked = viewer.getCheckedElements();
+        if (checked != null) {
+            for (Object obj : checked) {
+                if (obj instanceof AIProvider p) {
+                    set.add(p);
+                }
+            }
+        }
+        return new ArrayList<>(set);
+    }
+
+    private void handleExportToZip() {
+        AIProvider item = getSelectedOrCheckedModel();
+        if (item == null) return;
 
         String path = getModelPath(item);
         if (path == null || path.isEmpty()) {
@@ -791,13 +832,8 @@ public class ModelsGroup extends AEvoGroup {
     }
 
     private void handleEditModel() {
-        Object[] checked = viewer.getCheckedElements();
-        if (checked.length == 0) {
-            IStructuredSelection selection = (IStructuredSelection) viewer.getSelection();
-            if (selection.isEmpty()) return;
-            checked = new Object[] { selection.getFirstElement() };
-        }
-        AIProvider item = (AIProvider) checked[0];
+        AIProvider item = getSelectedOrCheckedModel();
+        if (item == null) return;
         if (item.isLocal()) {
             MessageDialog.openInformation(group.getShell(), "Edit", "Local Ollama models cannot be edited here.");
             return;
@@ -833,17 +869,10 @@ public class ModelsGroup extends AEvoGroup {
     }
 
     private void handleTestModel() {
-        Object[] checked = viewer.getCheckedElements();
-        if (checked.length == 0) {
-            IStructuredSelection selection = (IStructuredSelection) viewer.getSelection();
-            if (!selection.isEmpty()) {
-                checked = selection.toArray();
-            }
-        }
-        if (checked.length == 0) return;
+        List<AIProvider> models = getSelectedOrCheckedModels();
+        if (models.isEmpty()) return;
 
-        for (Object obj : checked) {
-            AIProvider item = (AIProvider) obj;
+        for (AIProvider item : models) {
             testModel(item);
         }
     }
@@ -890,13 +919,8 @@ public class ModelsGroup extends AEvoGroup {
     }
 
     private void handleUseModel() {
-        Object[] checked = viewer.getCheckedElements();
-        if (checked.length == 0) {
-            IStructuredSelection selection = (IStructuredSelection) viewer.getSelection();
-            if (selection.isEmpty()) return;
-            checked = new Object[] { selection.getFirstElement() };
-        }
-        AIProvider item = (AIProvider) checked[0];
+        AIProvider item = getSelectedOrCheckedModel();
+        if (item == null) return;
 
         if (orchestrator != null) {
             ProjectModelManager modelManager = ProjectModelManager.getInstance();
@@ -945,24 +969,7 @@ public class ModelsGroup extends AEvoGroup {
     }
 
     private void handleRemoveModel() {
-        java.util.Set<AIProvider> selectedModels = new java.util.LinkedHashSet<>();
-        Object[] checked = viewer.getCheckedElements();
-        if (checked != null) {
-            for (Object obj : checked) {
-                if (obj instanceof AIProvider p) {
-                    selectedModels.add(p);
-                }
-            }
-        }
-        IStructuredSelection selection = (IStructuredSelection) viewer.getSelection();
-        if (selection != null && !selection.isEmpty()) {
-            for (Object obj : selection.toArray()) {
-                if (obj instanceof AIProvider p) {
-                    selectedModels.add(p);
-                }
-            }
-        }
-
+        List<AIProvider> selectedModels = getSelectedOrCheckedModels();
         if (selectedModels.isEmpty()) return;
 
         if (!MessageDialog.openConfirm(group.getShell(), "Remove Models",
