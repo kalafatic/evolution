@@ -408,6 +408,12 @@ public class ModelDownloadDialog extends Dialog {
                             }
                             statusLabel.setText("Execution completed successfully.");
                             appendLog("Execution finished successfully with exit code 0.");
+
+                            String parsedModel = parseCommandToModelName(cmd);
+                            if (parsedModel != null && !parsedModel.isEmpty()) {
+                                downloadedModelName = parsedModel;
+                            }
+
                             MessageDialog.openInformation(getShell(), "Command Executed", "Command completed successfully:\n" + cmd + "\n\nOutput:\n" + output.toString().trim());
                         } else {
                             if (progressBar != null && !progressBar.isDisposed()) {
@@ -458,7 +464,7 @@ public class ModelDownloadDialog extends Dialog {
         }
 
         if (updateCustomCmd && customCmdText != null && !customCmdText.isDisposed()) {
-            customCmdText.setText("ollama run " + name);
+            customCmdText.setText("ollama pull " + name);
         }
         if (ollamaRunCmdText != null && !ollamaRunCmdText.isDisposed()) {
             ollamaRunCmdText.setText("ollama run " + name);
