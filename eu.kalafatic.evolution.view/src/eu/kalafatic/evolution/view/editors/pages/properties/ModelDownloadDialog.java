@@ -47,6 +47,7 @@ public class ModelDownloadDialog extends Dialog {
     private String downloadedModelName;
 
     // Direct CLI Instruction Text Widgets
+    private Text customCmdText;
     private Text ollamaRunCmdText;
     private Text ollamaPullCmdText;
     private Text llamaCppDownloadCmdText;
@@ -106,6 +107,26 @@ public class ModelDownloadDialog extends Dialog {
         gd = new GridData(GridData.FILL_HORIZONTAL);
         gd.horizontalSpan = 2;
         progressBar.setLayoutData(gd);
+
+        // Group 0: Direct Command Input (Paste HF / CLI Command)
+        Group directGroup = new Group(container, SWT.NONE);
+        directGroup.setText("Direct Command Input (Paste HF / CLI Command)");
+        directGroup.setLayout(new GridLayout(4, false));
+        directGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        Label directDesc = new Label(directGroup, SWT.WRAP);
+        directDesc.setText("Paste any full CLI command (e.g., ollama run hf.co/z-lab/Qwen3.8-27B-DFlash2-GGUF:Q4_K_M) to copy or execute directly:");
+        gd = new GridData(GridData.FILL_HORIZONTAL);
+        gd.horizontalSpan = 4;
+        directDesc.setLayoutData(gd);
+
+        Label lblDirectCmd = new Label(directGroup, SWT.NONE);
+        lblDirectCmd.setText("Command:");
+        customCmdText = new Text(directGroup, SWT.BORDER);
+        customCmdText.setMessage("e.g. ollama run hf.co/z-lab/Qwen3.8-27B-DFlash2-GGUF:Q4_K_M");
+        customCmdText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        createExecuteButton(directGroup, customCmdText);
+        createCopyButton(directGroup, customCmdText);
 
         // Group 1: Direct Download & Execution using Ollama
         Group ollamaGroup = new Group(container, SWT.NONE);
@@ -260,12 +281,21 @@ public class ModelDownloadDialog extends Dialog {
 
     private void updateInstructionPreviews() {
         String input = modelNameText.getText().trim();
+        if (input.toLowerCase().startsWith("ollama run ")) {
+            input = input.substring("ollama run ".length()).trim();
+        } else if (input.toLowerCase().startsWith("ollama pull ")) {
+            input = input.substring("ollama pull ".length()).trim();
+        }
+
         String name = input.isEmpty() ? "llama3.2:3b" : input;
         String fileName = name.contains("/") ? name.substring(name.lastIndexOf('/') + 1) : name;
         if (!fileName.toLowerCase().endsWith(".gguf")) {
             fileName = fileName.replace(':', '_') + ".gguf";
         }
 
+        if (customCmdText != null && !customCmdText.isDisposed() && (customCmdText.getText().isEmpty() || customCmdText.getText().startsWith("ollama run "))) {
+            customCmdText.setText("ollama run " + name);
+        }
         if (ollamaRunCmdText != null && !ollamaRunCmdText.isDisposed()) {
             ollamaRunCmdText.setText("ollama run " + name);
         }
