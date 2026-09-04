@@ -116,28 +116,17 @@ public class EvoModelArtifact {
     }
     
     private void ensureSpecialTokens() {
-        // Ensure BOS token
-        if (!tokenToId.containsKey("<s>")) {
-            tokenToId.put("<s>", bosTokenId);
-            idToToken.put(bosTokenId, "<s>");
-        } else {
+        if (tokenToId.containsKey("<s>")) {
             bosTokenId = tokenToId.get("<s>");
         }
-        
-        // Ensure EOS token
-        if (!tokenToId.containsKey("</s>")) {
-            tokenToId.put("</s>", eosTokenId);
-            idToToken.put(eosTokenId, "</s>");
-        } else {
+        if (tokenToId.containsKey("</s>")) {
             eosTokenId = tokenToId.get("</s>");
         }
-        
-        // Ensure UNK token
-        if (!tokenToId.containsKey("<unk>")) {
-            tokenToId.put("<unk>", unkTokenId);
-            idToToken.put(unkTokenId, "<unk>");
-        } else {
+        if (tokenToId.containsKey("<unk>")) {
             unkTokenId = tokenToId.get("<unk>");
+        }
+        if (tokenToId.containsKey("<pad>")) {
+            padTokenId = tokenToId.get("<pad>");
         }
     }
     
@@ -170,67 +159,144 @@ public class EvoModelArtifact {
     
     // ============ SAVE / LOAD ============
     public void save(Path path) throws IOException {
-        // Ensure parent directory exists
+        if (path == null) {
+            throw new IllegalArgumentException("Save path cannot be null");
+        }
+
+        if (Files.isDirectory(path) || (!path.toString().endsWith(".evo") && !path.getFileName().toString().contains("."))) {
+            saveToDirectory(path);
+            return;
+        }
+
+        saveToFile(path);
+    }
+
+    public void saveToDirectory(Path dir) throws IOException {
+        Files.createDirectories(dir);
+
+        // 1. model.json
+        JSONObject modelJson = new JSONObject();
+        modelJson.put("modelName", modelName != null ? modelName : "evo_model");
+        modelJson.put("vocabSize", vocabSize);
+        modelJson.put("dModel", dModel);
+        modelJson.put("numHeads", numHeads);
+        modelJson.put("numBlocks", numBlocks);
+        modelJson.put("dff", dff);
+        modelJson.put("maxSeqLen", maxSeqLen);
+        Files.writeString(dir.resolve("model.json"), modelJson.toString(2));
+
+        // 2. config.json
+        JSONObject configJson = new JSONObject();
+        configJson.put("model_name", modelName != null ? modelName : "evo_model");
+        configJson.put("vocab_size", vocabSize);
+        configJson.put("vocabSize", vocabSize);
+        configJson.put("d_model", dModel);
+        configJson.put("dModel", dModel);
+        configJson.put("num_heads", numHeads);
+        configJson.put("numHeads", numHeads);
+        configJson.put("num_blocks", numBlocks);
+        configJson.put("numBlocks", numBlocks);
+        configJson.put("dff", dff);
+        configJson.put("max_seq_len", maxSeqLen);
+        configJson.put("maxSeqLen", maxSeqLen);
+        configJson.put("temperature", temperature);
+        configJson.put("top_p", topP);
+        configJson.put("topK", topK);
+        configJson.put("top_k", topK);
+        configJson.put("repeat_penalty", repeatPenalty);
+        Files.writeString(dir.resolve("config.json"), configJson.toString(2));
+
+        // 3. tokenizer.json
+        JSONObject tokenizerJson = new JSONObject();
+        tokenizerJson.put("vocab_size", vocabSize);
+        tokenizerJson.put("bos_token", "<s>");
+        tokenizerJson.put("eos_token", "</s>");
+        tokenizerJson.put("unk_token", "<unk>");
+        JSONObject vocabObj = new JSONObject();
+        if (tokenToId != null) {
+            for (Map.Entry<String, Integer> entry : tokenToId.entrySet()) {
+                vocabObj.put(entry.getKey(), entry.getValue());
+            }
+        }
+        tokenizerJson.put("vocab", vocabObj);
+        if (idToToken != null) {
+            JSONArray tokensArr = new JSONArray();
+            for (Map.Entry<Integer, String> entry : idToToken.entrySet()) {
+                tokensArr.put(entry.getValue());
+            }
+            tokenizerJson.put("tokens", tokensArr);
+        }
+        Files.writeString(dir.resolve("tokenizer.json"), tokenizerJson.toString(2));
+
+        // 4. weights.bin
+        Path weightsPath = dir.resolve("weights.bin");
+        try (DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(weightsPath.toFile())))) {
+            EvoLlmModel tempModel = createModel();
+            for (Tensor p : tempModel.parameters()) {
+                for (float val : p.getData()) {
+                    dos.writeFloat(val);
+                }
+            }
+        }
+
+        // 5. Also save binary .evo file into directory
+        String evoName = (modelName != null && !modelName.isEmpty()) ? modelName + ".evo" : "model.evo";
+        saveToFile(dir.resolve(evoName));
+    }
+
+    public void saveToFile(Path path) throws IOException {
         Path parent = path.getParent();
         if (parent != null) {
             Files.createDirectories(parent);
         }
-        
-        // 1. Save main artifact (.evo file - compressed)
+
         Path tempFile = path.getParent().resolve(path.getFileName().toString() + ".tmp");
         try (FileOutputStream fos = new FileOutputStream(tempFile.toFile());
              GZIPOutputStream gzos = new GZIPOutputStream(fos);
              DataOutputStream dos = new DataOutputStream(gzos)) {
-            
-            // Write header
+
             dos.writeUTF("EVO_ARTIFACT_V1");
             dos.writeUTF(modelName != null ? modelName : "evo_model");
             dos.writeUTF(modelVersion);
             dos.writeLong(createdAt);
-            
-            // Write architecture
+
             dos.writeInt(vocabSize);
             dos.writeInt(dModel);
             dos.writeInt(numHeads);
             dos.writeInt(numBlocks);
             dos.writeInt(dff);
             dos.writeInt(maxSeqLen);
-            
-            // Write inference params
+
             dos.writeFloat(temperature);
             dos.writeFloat(topP);
             dos.writeInt(topK);
             dos.writeFloat(repeatPenalty);
             dos.writeFloat(frequencyPenalty);
             dos.writeFloat(presencePenalty);
-            
-            // Write special tokens
+
             dos.writeInt(bosTokenId);
             dos.writeInt(eosTokenId);
             dos.writeInt(unkTokenId);
             dos.writeInt(padTokenId);
-            
-            // ============ WRITE VOCABULARY (CRITICAL) ============
+
             dos.writeInt(idToToken.size());
             for (Map.Entry<Integer, String> entry : idToToken.entrySet()) {
                 dos.writeInt(entry.getKey());
                 dos.writeUTF(entry.getValue());
             }
-            
-            // Write metadata
+
             dos.writeInt(metadata.size());
             for (Map.Entry<String, String> entry : metadata.entrySet()) {
                 dos.writeUTF(entry.getKey());
                 dos.writeUTF(entry.getValue());
             }
-            
-            // ============ WRITE WEIGHTS ============
+
             dos.writeInt(weightData.size());
             for (int i = 0; i < weightData.size(); i++) {
                 float[] data = weightData.get(i);
                 long[] shape = weightShapes.get(i);
                 String name = weightNames.get(i);
-                
+
                 dos.writeUTF(name);
                 dos.writeInt(shape.length);
                 for (long dim : shape) {
@@ -242,11 +308,9 @@ public class EvoModelArtifact {
                 }
             }
         }
-        
-        // Atomic rename
+
         Files.move(tempFile, path, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-        
-        // 2. Save companion vocabulary JSON for easy inspection
+
         Path vocabJsonPath = path.getParent().resolve(path.getFileName().toString().replace(".evo", "_vocab.json"));
         saveVocabularyJson(vocabJsonPath);
     }
@@ -274,11 +338,24 @@ public class EvoModelArtifact {
                 JSONObject obj = new JSONObject(jsonStr);
                 if (obj.has("modelName")) artifact.modelName = obj.optString("modelName", artifact.modelName);
                 if (obj.has("vocabSize")) artifact.vocabSize = obj.getInt("vocabSize");
+                else if (obj.has("vocab_size")) artifact.vocabSize = obj.getInt("vocab_size");
+
                 if (obj.has("dModel")) artifact.dModel = obj.getInt("dModel");
+                else if (obj.has("d_model")) artifact.dModel = obj.getInt("d_model");
+                else if (obj.has("hidden_size")) artifact.dModel = obj.getInt("hidden_size");
+
                 if (obj.has("numHeads")) artifact.numHeads = obj.getInt("numHeads");
+                else if (obj.has("num_heads")) artifact.numHeads = obj.getInt("num_heads");
+
                 if (obj.has("numBlocks")) artifact.numBlocks = obj.getInt("numBlocks");
+                else if (obj.has("num_blocks")) artifact.numBlocks = obj.getInt("num_blocks");
+                else if (obj.has("num_hidden_layers")) artifact.numBlocks = obj.getInt("num_hidden_layers");
+
                 if (obj.has("dff")) artifact.dff = obj.getInt("dff");
+                else if (obj.has("intermediate_size")) artifact.dff = obj.getInt("intermediate_size");
+
                 if (obj.has("maxSeqLen")) artifact.maxSeqLen = obj.getInt("maxSeqLen");
+                else if (obj.has("max_seq_len")) artifact.maxSeqLen = obj.getInt("max_seq_len");
             } catch (Exception ignored) {}
         }
 
@@ -286,12 +363,39 @@ public class EvoModelArtifact {
             try {
                 String jsonStr = Files.readString(configPath);
                 JSONObject obj = new JSONObject(jsonStr);
-                if (artifact.vocabSize <= 0 && obj.has("vocabSize")) artifact.vocabSize = obj.getInt("vocabSize");
-                if (artifact.dModel <= 0 && obj.has("dModel")) artifact.dModel = obj.getInt("dModel");
-                if (artifact.numHeads <= 0 && obj.has("numHeads")) artifact.numHeads = obj.getInt("numHeads");
-                if (artifact.numBlocks <= 0 && obj.has("numBlocks")) artifact.numBlocks = obj.getInt("numBlocks");
-                if (artifact.dff <= 0 && obj.has("dff")) artifact.dff = obj.getInt("dff");
-                if (artifact.maxSeqLen <= 0 && obj.has("maxSeqLen")) artifact.maxSeqLen = obj.getInt("maxSeqLen");
+                if (artifact.vocabSize <= 0) {
+                    if (obj.has("vocabSize")) artifact.vocabSize = obj.getInt("vocabSize");
+                    else if (obj.has("vocab_size")) artifact.vocabSize = obj.getInt("vocab_size");
+                }
+                if (artifact.dModel <= 0) {
+                    if (obj.has("dModel")) artifact.dModel = obj.getInt("dModel");
+                    else if (obj.has("d_model")) artifact.dModel = obj.getInt("d_model");
+                    else if (obj.has("hidden_size")) artifact.dModel = obj.getInt("hidden_size");
+                }
+                if (artifact.numHeads <= 0) {
+                    if (obj.has("numHeads")) artifact.numHeads = obj.getInt("numHeads");
+                    else if (obj.has("num_heads")) artifact.numHeads = obj.getInt("num_heads");
+                }
+                if (artifact.numBlocks <= 0) {
+                    if (obj.has("numBlocks")) artifact.numBlocks = obj.getInt("numBlocks");
+                    else if (obj.has("num_blocks")) artifact.numBlocks = obj.getInt("num_blocks");
+                    else if (obj.has("num_hidden_layers")) artifact.numBlocks = obj.getInt("num_hidden_layers");
+                }
+                if (artifact.dff <= 0) {
+                    if (obj.has("dff")) artifact.dff = obj.getInt("dff");
+                    else if (obj.has("intermediate_size")) artifact.dff = obj.getInt("intermediate_size");
+                }
+                if (artifact.maxSeqLen <= 0) {
+                    if (obj.has("maxSeqLen")) artifact.maxSeqLen = obj.getInt("maxSeqLen");
+                    else if (obj.has("max_seq_len")) artifact.maxSeqLen = obj.getInt("max_seq_len");
+                }
+                if (obj.has("temperature")) artifact.temperature = (float) obj.getDouble("temperature");
+                if (obj.has("topP")) artifact.topP = (float) obj.getDouble("topP");
+                else if (obj.has("top_p")) artifact.topP = (float) obj.getDouble("top_p");
+                if (obj.has("topK")) artifact.topK = obj.getInt("topK");
+                else if (obj.has("top_k")) artifact.topK = obj.getInt("top_k");
+                if (obj.has("repeatPenalty")) artifact.repeatPenalty = (float) obj.getDouble("repeatPenalty");
+                else if (obj.has("repeat_penalty")) artifact.repeatPenalty = (float) obj.getDouble("repeat_penalty");
             } catch (Exception ignored) {}
         }
 
@@ -311,6 +415,10 @@ public class EvoModelArtifact {
         }
         artifact.ensureSpecialTokens();
 
+        if (artifact.vocabSize <= 0 && !artifact.idToToken.isEmpty()) {
+            artifact.vocabSize = artifact.idToToken.size();
+        }
+
         // 3. Load model weights from weights.bin into dummy model to extract parameters
         EvoLlmModel tempModel = new EvoLlmModel(artifact.vocabSize, artifact.dModel, artifact.numHeads, artifact.numBlocks, artifact.dff, artifact.maxSeqLen);
         try (DataInputStream dis = new DataInputStream(new BufferedInputStream(new FileInputStream(weightsPath.toFile())))) {
@@ -321,6 +429,8 @@ public class EvoModelArtifact {
                     data[i] = dis.readFloat();
                 }
             }
+        } catch (EOFException e) {
+            throw new IOException("weights.bin is truncated or corrupt", e);
         }
 
         artifact.weightData.clear();
@@ -340,6 +450,29 @@ public class EvoModelArtifact {
 
     private static Map<String, Integer> parseVocabFromJson(String jsonStr) {
         Map<String, Integer> vocab = new LinkedHashMap<>();
+        if (jsonStr == null || jsonStr.trim().isEmpty()) {
+            return vocab;
+        }
+
+        try {
+            JSONObject obj = new JSONObject(jsonStr);
+            if (obj.has("vocab")) {
+                JSONObject vObj = obj.getJSONObject("vocab");
+                for (Iterator<String> it = vObj.keys(); it.hasNext(); ) {
+                    String key = it.next();
+                    vocab.put(key, vObj.getInt(key));
+                }
+                if (!vocab.isEmpty()) return vocab;
+            }
+            if (obj.has("tokens")) {
+                JSONArray tArr = obj.getJSONArray("tokens");
+                for (int i = 0; i < tArr.length(); i++) {
+                    vocab.put(tArr.getString(i), i);
+                }
+                if (!vocab.isEmpty()) return vocab;
+            }
+        } catch (Exception ignored) {}
+
         int vocabIdx = jsonStr.indexOf("\"vocab\"");
         if (vocabIdx == -1) return vocab;
         int braceStart = jsonStr.indexOf("{", vocabIdx);

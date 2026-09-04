@@ -70,14 +70,16 @@ public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
                 if (text == null || text.trim().isEmpty()) return new ArrayList<>();
                 List<Integer> ids = new ArrayList<>();
                 Map<String, Integer> vocab = artifact.getTokenizerVocab();
-                String[] words = text.split("\\s+");
-                for (String w : words) {
-                    if (vocab.containsKey(w)) {
-                        ids.add(vocab.get(w));
-                    } else if (vocab.containsKey(w.toLowerCase())) {
-                        ids.add(vocab.get(w.toLowerCase()));
-                    } else {
-                        ids.add(artifact.getUnkTokenId());
+                if (vocab != null && !vocab.isEmpty()) {
+                    String[] words = text.split("\\s+");
+                    for (String w : words) {
+                        if (vocab.containsKey(w)) {
+                            ids.add(vocab.get(w));
+                        } else if (vocab.containsKey(w.toLowerCase())) {
+                            ids.add(vocab.get(w.toLowerCase()));
+                        } else {
+                            ids.add(artifact.getUnkTokenId());
+                        }
                     }
                 }
                 return ids.isEmpty() ? List.of(artifact.getBosTokenId()) : ids;
@@ -87,6 +89,7 @@ public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
             public String decode(List<Integer> tokenIds) {
                 if (tokenIds == null || tokenIds.isEmpty()) return "";
                 Map<Integer, String> idToTok = artifact.getIdToToken();
+                if (idToTok == null || idToTok.isEmpty()) return tokenIds.toString();
                 StringBuilder sb = new StringBuilder();
                 for (int id : tokenIds) {
                     String tok = idToTok.getOrDefault(id, "");
