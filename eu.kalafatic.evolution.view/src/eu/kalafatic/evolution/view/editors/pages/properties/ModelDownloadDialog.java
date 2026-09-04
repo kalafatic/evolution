@@ -45,6 +45,8 @@ public class ModelDownloadDialog extends Dialog {
     private Label statusLabel;
     private Button downloadButton;
     private String downloadedModelName;
+    private Text logText;
+    private boolean isUpdatingPreviews = false;
 
     // Direct CLI Instruction Text Widgets
     private Text customCmdText;
@@ -125,6 +127,20 @@ public class ModelDownloadDialog extends Dialog {
         customCmdText = new Text(directGroup, SWT.BORDER);
         customCmdText.setMessage("e.g. ollama run hf.co/z-lab/Qwen3.8-27B-DFlash2-GGUF:Q4_K_M");
         customCmdText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        customCmdText.addModifyListener(new ModifyListener() {
+            @Override
+            public void modifyText(ModifyEvent e) {
+                if (isUpdatingPreviews) return;
+                String text = customCmdText.getText().trim();
+                String parsed = parseCommandToModelName(text);
+                if (parsed != null && !parsed.isEmpty()) {
+                    isUpdatingPreviews = true;
+                    modelNameText.setText(parsed);
+                    isUpdatingPreviews = false;
+                    updateInstructionPreviewsInternal(parsed, false);
+                }
+            }
+        });
         createExecuteButton(directGroup, customCmdText);
         createCopyButton(directGroup, customCmdText);
 
@@ -180,9 +196,65 @@ public class ModelDownloadDialog extends Dialog {
         createExecuteButton(llamaGroup, llamaCppRunCmdText);
         createCopyButton(llamaGroup, llamaCppRunCmdText);
 
+        // Execution Log Group
+        Group logGroup = new Group(container, SWT.NONE);
+        logGroup.setText("Execution Log");
+        logGroup.setLayout(new GridLayout(1, false));
+        logGroup.setLayoutData(new GridData(GridData.FILL_BOTH));
+
+        logText = new Text(logGroup, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL);
+        logText.setEditable(false);
+        GridData logGd = new GridData(GridData.FILL_BOTH);
+        logGd.heightHint = 100;
+        logText.setLayoutData(logGd);
+
         updateInstructionPreviews();
 
         return container;
+    }
+
+    private void appendLog(String message) {
+        System.out.println("[ModelDownloadDialog] " + message);
+        Display.getDefault().asyncExec(() -> {
+            if (logText != null && !logText.isDisposed()) {
+                logText.append("[" + new java.text.SimpleDateFormat("HH:mm:ss").format(new java.util.Date()) + "] " + message + "\n");
+            }
+        });
+    }
+
+    private String parseCommandToModelName(String raw) {
+        if (raw == null) return null;
+        String cmd = raw.trim();
+        if (cmd.isEmpty()) return null;
+
+        String lower = cmd.toLowerCase();
+        if (lower.startsWith("ollama run ")) {
+            return cmd.substring("ollama run ".length()).trim();
+        }
+        if (lower.startsWith("ollama pull ")) {
+            return cmd.substring("ollama pull ".length()).trim();
+        }
+        if (lower.startsWith("huggingface-cli download ")) {
+            String rest = cmd.substring("huggingface-cli download ".length()).trim();
+            if (rest.contains(" ")) {
+                rest = rest.substring(0, rest.indexOf(' ')).trim();
+            }
+            return rest;
+        }
+        if (lower.startsWith("llama-cli -m ")) {
+            String rest = cmd.substring("llama-cli -m ".length()).trim();
+            if (rest.contains(" ")) {
+                rest = rest.substring(0, rest.indexOf(' ')).trim();
+            }
+            return rest;
+        }
+        if (lower.startsWith("curl ")) {
+            int lastSpace = cmd.lastIndexOf(' ');
+            if (lastSpace > 0) {
+                return cmd.substring(lastSpace + 1).trim();
+            }
+        }
+        return cmd;
     }
 
     private Text createReadOnlyCmdText(Composite parent) {
@@ -223,6 +295,7 @@ public class ModelDownloadDialog extends Dialog {
             return;
         }
         String cmd = command.trim();
+        appendLog("Starting execution: " + cmd);
         statusLabel.setText("Executing: " + cmd + "...");
         if (progressBar != null && !progressBar.isDisposed()) {
             progressBar.setSelection(0);
@@ -251,43 +324,64 @@ public class ModelDownloadDialog extends Dialog {
                     }
 
                     Process process = pb.start();
+                    try {
+                        process.getOutputStream().close();
+                    } catch (Exception ignored) {}
+
                     java.util.regex.Pattern pctPattern = java.util.regex.Pattern.compile("(\\d{1,3})%");
                     java.util.regex.Pattern bytePattern = java.util.regex.Pattern.compile("(\\d+(?:\\.\\d+)?)\\s*([KMGT]?B)\\s*/\\s*(\\d+(?:\\.\\d+)?)\\s*([KMGT]?B)", java.util.regex.Pattern.CASE_INSENSITIVE);
 
-                    try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-                        String line;
-                        while ((line = reader.readLine()) != null) {
-                            String currentLine = line.trim();
+                    try (InputStreamReader isr = new InputStreamReader(process.getInputStream())) {
+                        StringBuilder lineBuf = new StringBuilder();
+                        int c;
+                        while ((c = isr.read()) != -1) {
+                            if (c == '\r' || c == '\n') {
+                                if (lineBuf.length() > 0) {
+                                    String currentLine = lineBuf.toString().trim();
+                                    lineBuf.setLength(0);
+                                    if (!currentLine.isEmpty()) {
+                                        output.append(currentLine).append("\n");
+                                        appendLog(currentLine);
+
+                                        Display.getDefault().asyncExec(() -> {
+                                            if (statusLabel.isDisposed()) return;
+                                            statusLabel.setText(currentLine);
+
+                                            if (progressBar != null && !progressBar.isDisposed()) {
+                                                java.util.regex.Matcher pctMatcher = pctPattern.matcher(currentLine);
+                                                if (pctMatcher.find()) {
+                                                    try {
+                                                        int pct = Integer.parseInt(pctMatcher.group(1));
+                                                        if (pct >= 0 && pct <= 100) {
+                                                            progressBar.setSelection(pct);
+                                                        }
+                                                    } catch (Exception ignored) {}
+                                                } else {
+                                                    java.util.regex.Matcher byteMatcher = bytePattern.matcher(currentLine);
+                                                    if (byteMatcher.find()) {
+                                                        try {
+                                                            double currentVal = Double.parseDouble(byteMatcher.group(1));
+                                                            double totalVal = Double.parseDouble(byteMatcher.group(3));
+                                                            if (totalVal > 0) {
+                                                                int pct = (int) Math.min(100, (currentVal / totalVal) * 100);
+                                                                progressBar.setSelection(pct);
+                                                            }
+                                                        } catch (Exception ignored) {}
+                                                    }
+                                                }
+                                            }
+                                        });
+                                    }
+                                }
+                            } else {
+                                lineBuf.append((char) c);
+                            }
+                        }
+                        if (lineBuf.length() > 0) {
+                            String currentLine = lineBuf.toString().trim();
                             if (!currentLine.isEmpty()) {
                                 output.append(currentLine).append("\n");
-                                Display.getDefault().asyncExec(() -> {
-                                    if (statusLabel.isDisposed()) return;
-                                    statusLabel.setText(currentLine);
-
-                                    if (progressBar != null && !progressBar.isDisposed()) {
-                                        java.util.regex.Matcher pctMatcher = pctPattern.matcher(currentLine);
-                                        if (pctMatcher.find()) {
-                                            try {
-                                                int pct = Integer.parseInt(pctMatcher.group(1));
-                                                if (pct >= 0 && pct <= 100) {
-                                                    progressBar.setSelection(pct);
-                                                }
-                                            } catch (Exception ignored) {}
-                                        } else {
-                                            java.util.regex.Matcher byteMatcher = bytePattern.matcher(currentLine);
-                                            if (byteMatcher.find()) {
-                                                try {
-                                                    double currentVal = Double.parseDouble(byteMatcher.group(1));
-                                                    double totalVal = Double.parseDouble(byteMatcher.group(3));
-                                                    if (totalVal > 0) {
-                                                        int pct = (int) Math.min(100, (currentVal / totalVal) * 100);
-                                                        progressBar.setSelection(pct);
-                                                    }
-                                                } catch (Exception ignored) {}
-                                            }
-                                        }
-                                    }
-                                });
+                                appendLog(currentLine);
                             }
                         }
                     }
@@ -300,16 +394,19 @@ public class ModelDownloadDialog extends Dialog {
                                 progressBar.setSelection(100);
                             }
                             statusLabel.setText("Execution completed successfully.");
+                            appendLog("Execution finished successfully with exit code 0.");
                             MessageDialog.openInformation(getShell(), "Command Executed", "Command completed successfully:\n" + cmd + "\n\nOutput:\n" + output.toString().trim());
                         } else {
                             if (progressBar != null && !progressBar.isDisposed()) {
                                 progressBar.setSelection(0);
                             }
                             statusLabel.setText("Execution failed with exit code " + exitCode);
+                            appendLog("Execution failed with exit code " + exitCode + ".");
                             MessageDialog.openError(getShell(), "Execution Failed", "Command failed with exit code " + exitCode + ":\n" + cmd + "\n\nOutput:\n" + output.toString().trim());
                         }
                     });
                 } catch (Exception ex) {
+                    appendLog("Error executing command: " + ex.getMessage());
                     Display.getDefault().asyncExec(() -> {
                         if (statusLabel.isDisposed()) return;
                         if (progressBar != null && !progressBar.isDisposed()) {
@@ -326,20 +423,28 @@ public class ModelDownloadDialog extends Dialog {
     }
 
     private void updateInstructionPreviews() {
-        String input = modelNameText.getText().trim();
-        if (input.toLowerCase().startsWith("ollama run ")) {
-            input = input.substring("ollama run ".length()).trim();
-        } else if (input.toLowerCase().startsWith("ollama pull ")) {
-            input = input.substring("ollama pull ".length()).trim();
+        if (isUpdatingPreviews) return;
+        String rawInput = modelNameText.getText().trim();
+        String parsedName = parseCommandToModelName(rawInput);
+        if (parsedName == null) parsedName = "";
+
+        if (!parsedName.equals(rawInput)) {
+            isUpdatingPreviews = true;
+            modelNameText.setText(parsedName);
+            isUpdatingPreviews = false;
         }
 
-        String name = input.isEmpty() ? "llama3.2:3b" : input;
+        updateInstructionPreviewsInternal(parsedName, true);
+    }
+
+    private void updateInstructionPreviewsInternal(String modelName, boolean updateCustomCmd) {
+        String name = modelName.isEmpty() ? "llama3.2:3b" : modelName;
         String fileName = name.contains("/") ? name.substring(name.lastIndexOf('/') + 1) : name;
         if (!fileName.toLowerCase().endsWith(".gguf")) {
             fileName = fileName.replace(':', '_') + ".gguf";
         }
 
-        if (customCmdText != null && !customCmdText.isDisposed() && (customCmdText.getText().isEmpty() || customCmdText.getText().startsWith("ollama run "))) {
+        if (updateCustomCmd && customCmdText != null && !customCmdText.isDisposed()) {
             customCmdText.setText("ollama run " + name);
         }
         if (ollamaRunCmdText != null && !ollamaRunCmdText.isDisposed()) {
