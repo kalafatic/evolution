@@ -23,8 +23,19 @@ import org.eclipse.swt.widgets.ProgressBar;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.InputStreamReader;
+import java.util.concurrent.TimeUnit;
+
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Status;
+import org.eclipse.core.runtime.jobs.Job;
+
 import eu.kalafatic.evolution.controller.manager.OllamaManager;
 import eu.kalafatic.evolution.controller.manager.OllamaService;
+import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
 
 public class ModelDownloadDialog extends Dialog {
 
@@ -99,49 +110,53 @@ public class ModelDownloadDialog extends Dialog {
         // Group 1: Direct Download & Execution using Ollama
         Group ollamaGroup = new Group(container, SWT.NONE);
         ollamaGroup.setText("Direct Download & Run Instructions (Ollama CLI)");
-        ollamaGroup.setLayout(new GridLayout(3, false));
+        ollamaGroup.setLayout(new GridLayout(4, false));
         ollamaGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
         Label ollamaDesc = new Label(ollamaGroup, SWT.WRAP);
         ollamaDesc.setText("Download and run standard or Hugging Face GGUF models directly via Ollama CLI:");
         gd = new GridData(GridData.FILL_HORIZONTAL);
-        gd.horizontalSpan = 3;
+        gd.horizontalSpan = 4;
         ollamaDesc.setLayoutData(gd);
 
         // Ollama Run Command
         Label lblOllamaRun = new Label(ollamaGroup, SWT.NONE);
         lblOllamaRun.setText("Run / Pull & Chat:");
         ollamaRunCmdText = createReadOnlyCmdText(ollamaGroup);
+        createExecuteButton(ollamaGroup, ollamaRunCmdText);
         createCopyButton(ollamaGroup, ollamaRunCmdText);
 
         // Ollama Pull Command
         Label lblOllamaPull = new Label(ollamaGroup, SWT.NONE);
         lblOllamaPull.setText("Pull Only:");
         ollamaPullCmdText = createReadOnlyCmdText(ollamaGroup);
+        createExecuteButton(ollamaGroup, ollamaPullCmdText);
         createCopyButton(ollamaGroup, ollamaPullCmdText);
 
         // Group 2: Direct Download & Execution using llama-cpp
         Group llamaGroup = new Group(container, SWT.NONE);
         llamaGroup.setText("Direct Download & Run Instructions (llama-cpp / GGUF)");
-        llamaGroup.setLayout(new GridLayout(3, false));
+        llamaGroup.setLayout(new GridLayout(4, false));
         llamaGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
         Label llamaDesc = new Label(llamaGroup, SWT.WRAP);
         llamaDesc.setText("Download GGUF files directly to local models folder and run via llama-cli:");
         gd = new GridData(GridData.FILL_HORIZONTAL);
-        gd.horizontalSpan = 3;
+        gd.horizontalSpan = 4;
         llamaDesc.setLayoutData(gd);
 
         // llama-cpp Direct Download Command
         Label lblLlamaDownload = new Label(llamaGroup, SWT.NONE);
         lblLlamaDownload.setText("Download GGUF:");
         llamaCppDownloadCmdText = createReadOnlyCmdText(llamaGroup);
+        createExecuteButton(llamaGroup, llamaCppDownloadCmdText);
         createCopyButton(llamaGroup, llamaCppDownloadCmdText);
 
         // llama-cpp Run Command
         Label lblLlamaRun = new Label(llamaGroup, SWT.NONE);
         lblLlamaRun.setText("Run GGUF:");
         llamaCppRunCmdText = createReadOnlyCmdText(llamaGroup);
+        createExecuteButton(llamaGroup, llamaCppRunCmdText);
         createCopyButton(llamaGroup, llamaCppRunCmdText);
 
         updateInstructionPreviews();
@@ -153,6 +168,17 @@ public class ModelDownloadDialog extends Dialog {
         Text txt = new Text(parent, SWT.BORDER | SWT.READ_ONLY);
         txt.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         return txt;
+    }
+
+    private void createExecuteButton(Composite parent, Text targetText) {
+        Button btn = new Button(parent, SWT.PUSH);
+        btn.setText("Execute");
+        btn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                executeCommand(targetText.getText());
+            }
+        });
     }
 
     private void createCopyButton(Composite parent, Text targetText) {
@@ -169,6 +195,67 @@ public class ModelDownloadDialog extends Dialog {
                 }
             }
         });
+    }
+
+    private void executeCommand(String command) {
+        if (command == null || command.trim().isEmpty()) {
+            return;
+        }
+        String cmd = command.trim();
+        statusLabel.setText("Executing: " + cmd + "...");
+
+        Job job = new Job("Execute Command: " + cmd) {
+            @Override
+            protected IStatus run(IProgressMonitor monitor) {
+                StringBuilder output = new StringBuilder();
+                try {
+                    String os = System.getProperty("os.name").toLowerCase();
+                    ProcessBuilder pb;
+                    if (os.contains("win")) {
+                        pb = new ProcessBuilder("cmd.exe", "/c", cmd);
+                    } else {
+                        pb = new ProcessBuilder("sh", "-c", cmd);
+                    }
+                    pb.redirectErrorStream(true);
+
+                    String codebasePath = ProjectModelManager.getCodebasePath();
+                    if (codebasePath != null) {
+                        File dir = new File(codebasePath);
+                        if (dir.exists()) {
+                            pb.directory(dir);
+                        }
+                    }
+
+                    Process process = pb.start();
+                    try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                        String line;
+                        while ((line = reader.readLine()) != null) {
+                            output.append(line).append("\n");
+                        }
+                    }
+                    int exitCode = process.waitFor();
+
+                    Display.getDefault().asyncExec(() -> {
+                        if (statusLabel.isDisposed()) return;
+                        if (exitCode == 0) {
+                            statusLabel.setText("Execution completed successfully.");
+                            MessageDialog.openInformation(getShell(), "Command Executed", "Command completed successfully:\n" + cmd + "\n\nOutput:\n" + output.toString().trim());
+                        } else {
+                            statusLabel.setText("Execution failed with exit code " + exitCode);
+                            MessageDialog.openError(getShell(), "Execution Failed", "Command failed with exit code " + exitCode + ":\n" + cmd + "\n\nOutput:\n" + output.toString().trim());
+                        }
+                    });
+                } catch (Exception ex) {
+                    Display.getDefault().asyncExec(() -> {
+                        if (statusLabel.isDisposed()) return;
+                        statusLabel.setText("Error: " + ex.getMessage());
+                        MessageDialog.openError(getShell(), "Execution Error", "Error executing command:\n" + ex.getMessage());
+                    });
+                }
+                return Status.OK_STATUS;
+            }
+        };
+        job.schedule();
     }
 
     private void updateInstructionPreviews() {
