@@ -224,6 +224,9 @@ public class ModelDownloadDialog extends Dialog {
         }
         String cmd = command.trim();
         statusLabel.setText("Executing: " + cmd + "...");
+        if (progressBar != null && !progressBar.isDisposed()) {
+            progressBar.setSelection(0);
+        }
 
         Job job = new Job("Execute Command: " + cmd) {
             @Override
@@ -248,10 +251,44 @@ public class ModelDownloadDialog extends Dialog {
                     }
 
                     Process process = pb.start();
+                    java.util.regex.Pattern pctPattern = java.util.regex.Pattern.compile("(\\d{1,3})%");
+                    java.util.regex.Pattern bytePattern = java.util.regex.Pattern.compile("(\\d+(?:\\.\\d+)?)\\s*([KMGT]?B)\\s*/\\s*(\\d+(?:\\.\\d+)?)\\s*([KMGT]?B)", java.util.regex.Pattern.CASE_INSENSITIVE);
+
                     try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
                         String line;
                         while ((line = reader.readLine()) != null) {
-                            output.append(line).append("\n");
+                            String currentLine = line.trim();
+                            if (!currentLine.isEmpty()) {
+                                output.append(currentLine).append("\n");
+                                Display.getDefault().asyncExec(() -> {
+                                    if (statusLabel.isDisposed()) return;
+                                    statusLabel.setText(currentLine);
+
+                                    if (progressBar != null && !progressBar.isDisposed()) {
+                                        java.util.regex.Matcher pctMatcher = pctPattern.matcher(currentLine);
+                                        if (pctMatcher.find()) {
+                                            try {
+                                                int pct = Integer.parseInt(pctMatcher.group(1));
+                                                if (pct >= 0 && pct <= 100) {
+                                                    progressBar.setSelection(pct);
+                                                }
+                                            } catch (Exception ignored) {}
+                                        } else {
+                                            java.util.regex.Matcher byteMatcher = bytePattern.matcher(currentLine);
+                                            if (byteMatcher.find()) {
+                                                try {
+                                                    double currentVal = Double.parseDouble(byteMatcher.group(1));
+                                                    double totalVal = Double.parseDouble(byteMatcher.group(3));
+                                                    if (totalVal > 0) {
+                                                        int pct = (int) Math.min(100, (currentVal / totalVal) * 100);
+                                                        progressBar.setSelection(pct);
+                                                    }
+                                                } catch (Exception ignored) {}
+                                            }
+                                        }
+                                    }
+                                });
+                            }
                         }
                     }
                     int exitCode = process.waitFor();
@@ -259,9 +296,15 @@ public class ModelDownloadDialog extends Dialog {
                     Display.getDefault().asyncExec(() -> {
                         if (statusLabel.isDisposed()) return;
                         if (exitCode == 0) {
+                            if (progressBar != null && !progressBar.isDisposed()) {
+                                progressBar.setSelection(100);
+                            }
                             statusLabel.setText("Execution completed successfully.");
                             MessageDialog.openInformation(getShell(), "Command Executed", "Command completed successfully:\n" + cmd + "\n\nOutput:\n" + output.toString().trim());
                         } else {
+                            if (progressBar != null && !progressBar.isDisposed()) {
+                                progressBar.setSelection(0);
+                            }
                             statusLabel.setText("Execution failed with exit code " + exitCode);
                             MessageDialog.openError(getShell(), "Execution Failed", "Command failed with exit code " + exitCode + ":\n" + cmd + "\n\nOutput:\n" + output.toString().trim());
                         }
@@ -269,6 +312,9 @@ public class ModelDownloadDialog extends Dialog {
                 } catch (Exception ex) {
                     Display.getDefault().asyncExec(() -> {
                         if (statusLabel.isDisposed()) return;
+                        if (progressBar != null && !progressBar.isDisposed()) {
+                            progressBar.setSelection(0);
+                        }
                         statusLabel.setText("Error: " + ex.getMessage());
                         MessageDialog.openError(getShell(), "Execution Error", "Error executing command:\n" + ex.getMessage());
                     });
