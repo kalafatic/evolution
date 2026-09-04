@@ -213,11 +213,23 @@ public class ModelDownloadDialog extends Dialog {
         return container;
     }
 
+    private static final java.util.regex.Pattern ANSI_PATTERN = java.util.regex.Pattern.compile("\\u001B\\[[;\\d]*[A-Za-z]|\\u001B\\].*?\\u0007|\\u001B[()-][A-Z0-9]");
+
+    private String stripAnsi(String input) {
+        if (input == null) return "";
+        String clean = ANSI_PATTERN.matcher(input).replaceAll("");
+        // Remove residual control/escape characters except standard whitespace
+        return clean.replaceAll("[\\r\\n\\u0000-\\u0008\\u000B-\\u001F\\u007F]", " ").replaceAll("\\s+", " ").trim();
+    }
+
     private void appendLog(String message) {
-        System.out.println("[ModelDownloadDialog] " + message);
+        String cleanMessage = stripAnsi(message);
+        if (cleanMessage.isEmpty()) return;
+        System.out.println("[ModelDownloadDialog] " + cleanMessage);
         Display.getDefault().asyncExec(() -> {
             if (logText != null && !logText.isDisposed()) {
-                logText.append("[" + new java.text.SimpleDateFormat("HH:mm:ss").format(new java.util.Date()) + "] " + message + "\n");
+                logText.append("[" + new java.text.SimpleDateFormat("HH:mm:ss").format(new java.util.Date()) + "] " + cleanMessage + "\n");
+                logText.setSelection(logText.getText().length());
             }
         });
     }
@@ -337,8 +349,9 @@ public class ModelDownloadDialog extends Dialog {
                         while ((c = isr.read()) != -1) {
                             if (c == '\r' || c == '\n') {
                                 if (lineBuf.length() > 0) {
-                                    String currentLine = lineBuf.toString().trim();
+                                    String rawLine = lineBuf.toString();
                                     lineBuf.setLength(0);
+                                    String currentLine = stripAnsi(rawLine);
                                     if (!currentLine.isEmpty()) {
                                         output.append(currentLine).append("\n");
                                         appendLog(currentLine);
@@ -378,7 +391,7 @@ public class ModelDownloadDialog extends Dialog {
                             }
                         }
                         if (lineBuf.length() > 0) {
-                            String currentLine = lineBuf.toString().trim();
+                            String currentLine = stripAnsi(lineBuf.toString());
                             if (!currentLine.isEmpty()) {
                                 output.append(currentLine).append("\n");
                                 appendLog(currentLine);
