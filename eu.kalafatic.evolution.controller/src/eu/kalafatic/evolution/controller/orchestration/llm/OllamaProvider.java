@@ -451,7 +451,7 @@ public class OllamaProvider implements ILlmProvider {
                 if (context != null) {
                     context.log("Ollama: Model '" + model + "' returned token placeholders ('token_XXXX'). Falling back to working base model.");
                 }
-                String fallbackModel = findWorkingFallbackModel(service, context);
+                String fallbackModel = findWorkingFallbackModel(service, model, context);
                 if (fallbackModel != null && !fallbackModel.equalsIgnoreCase(model)) {
                     updateOrchestratorModel(orchestrator, fallbackModel);
                     return sendRequestWithRetry(orchestrator, prompt, temperature, proxyUrl, context, depth + 1);
@@ -477,7 +477,7 @@ public class OllamaProvider implements ILlmProvider {
                     }
                 }
 
-                final String fallbackModel = findWorkingFallbackModel(service, context);
+                final String fallbackModel = findWorkingFallbackModel(service, model, context);
                 if (fallbackModel != null && !fallbackModel.equalsIgnoreCase(model)) {
                     boolean approved = false;
                     if (org.eclipse.ui.PlatformUI.isWorkbenchRunning()) {
@@ -591,15 +591,27 @@ public class OllamaProvider implements ILlmProvider {
     }
 
     private String findWorkingFallbackModel(OllamaService service, TaskContext context) {
+        return findWorkingFallbackModel(service, null, context);
+    }
+
+    private String findWorkingFallbackModel(OllamaService service, String currentFailingModel, TaskContext context) {
         try {
             List<OllamaModel> available = service.loadModels();
             if (available != null && !available.isEmpty()) {
                 for (OllamaModel m : available) {
-                    if (m.getName() != null && !m.getName().toLowerCase().contains("evo")) {
-                        return m.getName();
+                    String mName = m.getName();
+                    if (mName != null && !mName.toLowerCase().contains("evo")) {
+                        if (currentFailingModel == null || !mName.equalsIgnoreCase(currentFailingModel)) {
+                            return mName;
+                        }
                     }
                 }
-                return available.get(0).getName();
+                for (OllamaModel m : available) {
+                    String mName = m.getName();
+                    if (mName != null && (currentFailingModel == null || !mName.equalsIgnoreCase(currentFailingModel))) {
+                        return mName;
+                    }
+                }
             }
         } catch (Exception e) {
             if (context != null) context.log("Ollama: Failed to find working fallback model: " + e.getMessage());
