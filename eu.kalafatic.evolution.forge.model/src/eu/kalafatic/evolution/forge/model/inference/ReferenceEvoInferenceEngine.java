@@ -4,6 +4,8 @@ import eu.kalafatic.evolution.forge.math.api.Tensor;
 import eu.kalafatic.evolution.forge.math.core.SimpleTensor;
 import eu.kalafatic.evolution.forge.model.llm.EvoLlmModel;
 import eu.kalafatic.evolution.forge.model.llm.EvoModelArtifact;
+import eu.kalafatic.evolution.forge.model.llm.ModelParameters;
+import eu.kalafatic.evolution.forge.model.llm.ModelSnapshot;
 import eu.kalafatic.evolution.forge.tokenizer.api.Tokenizer;
 
 import java.io.IOException;
@@ -14,17 +16,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
-import java.util.function.Consumer;
 
 /**
  * Single-class complete Native Inference Engine for EVO LLMs.
- * Direct, zero-dependency native JVM runtime for EvoLlmModel, EvoModelArtifact, and *.evo file paths.
- * Feature-complete:
- * - Direct execution on model instance, EvoModelArtifact, or *.evo file path
- * - KV-Cache acceleration for fast auto-regressive generation
- * - Professional sampling algorithms: Greedy, Temperature scaling, Top-K, Top-P (nucleus), Repeat penalty, Frequency & Presence penalty
- * - Token-level streaming listener support
- * - Model validation and robust token decoding
+ * Direct, zero-dependency native JVM runtime operating directly on canonical EvoLlmModel, ModelSnapshot, or *.evo file paths.
  */
 public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
 
@@ -46,24 +41,43 @@ public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
         return model.forward(inputIds);
     }
 
-    /**
-     * Executes native generation directly on an *.evo file path.
-     */
+    @Override
+    public Tensor forwardSnapshot(ModelSnapshot snapshot, int[] inputIds) {
+        EvoModelValidator.validateSnapshot(snapshot);
+        if (inputIds == null || inputIds.length == 0) {
+            throw new IllegalArgumentException("Input token IDs cannot be null or empty");
+        }
+
+        ModelParameters params = snapshot.getParameters();
+        Tensor embed = params.get("token_embd.weight");
+        int seqLen = inputIds.length;
+        int dModel = snapshot.getArchitecture().getDModel();
+
+        Tensor x = new SimpleTensor(seqLen, dModel);
+        float[] resData = x.getData();
+        float[] wData = embed.getData();
+
+        for (int i = 0; i < seqLen; i++) {
+            int tokenId = inputIds[i];
+            if (tokenId < 0 || tokenId >= snapshot.getArchitecture().getVocabSize()) tokenId = 0;
+            System.arraycopy(wData, tokenId * dModel, resData, i * dModel, dModel);
+        }
+
+        Tensor lmHead = params.contains("output.weight") ? params.get("output.weight") : embed;
+        return x.matmul(lmHead);
+    }
+
     public InferenceResult generateFromEvoFile(Path evoPath, InferenceRequest request) throws IOException {
         EvoModelArtifact artifact = EvoModelArtifact.load(evoPath);
         return generateFromArtifact(artifact, request, null);
     }
 
-    /**
-     * Executes native generation directly on an EvoModelArtifact instance.
-     */
     public InferenceResult generateFromArtifact(EvoModelArtifact artifact, InferenceRequest request, TokenStreamListener streamListener) {
         if (artifact == null) {
             throw new IllegalArgumentException("EvoModelArtifact cannot be null");
         }
         EvoLlmModel model = artifact.createModel();
 
-        // Construct Tokenizer wrapper from artifact bidirectional vocabulary mapping
         Tokenizer artifactTokenizer = new Tokenizer() {
             @Override
             public List<Integer> encode(String text) {
@@ -115,18 +129,15 @@ public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
         return generateWithListener(model, request, tokenizer, null);
     }
 
-    /**
-     * Core generation method with streaming token callback support and KV-Cache handling.
-     */
-    public InferenceResult generateWithListener(EvoLlmModel model, InferenceRequest request, Tokenizer tokenizer, TokenStreamListener streamListener) {
-        validateModel(model);
+    @Override
+    public InferenceResult generateFromSnapshot(ModelSnapshot snapshot, InferenceRequest request, Tokenizer tokenizer) {
+        EvoModelValidator.validateSnapshot(snapshot);
         if (request == null) {
             throw new IllegalArgumentException("InferenceRequest cannot be null");
         }
 
         long startTime = System.currentTimeMillis();
 
-        // 1. Resolve initial prompt token sequence
         List<Integer> currentTokens = new ArrayList<>();
         int[] initialIds = request.getInputIds();
 
@@ -144,10 +155,10 @@ public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
         }
 
         if (currentTokens.isEmpty()) {
-            currentTokens.add(1); // Default to BOS
+            currentTokens.add(1);
         }
 
-        int maxSeqLen = model.getMaxSeqLen();
+        int maxSeqLen = snapshot.getArchitecture().getMaxSeqLen();
         int maxTokensToGenerate = request.getMaxTokens();
         Set<Integer> stopTokens = request.getStopTokenIds();
         Random rng = new Random();
@@ -156,10 +167,6 @@ public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
         InferenceResult.TerminationReason terminationReason = InferenceResult.TerminationReason.MAX_TOKENS_REACHED;
         Tensor lastLogits = null;
 
-        // Internal KV-Cache instance for acceleration
-        EmbeddedKVCache kvCache = new EmbeddedKVCache();
-
-        // Decoupled token generation loop
         for (int step = 0; step < maxTokensToGenerate; step++) {
             int totalCount = currentTokens.size();
             int windowStart = Math.max(0, totalCount - maxSeqLen);
@@ -169,25 +176,12 @@ public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
                 inputIds[i] = currentTokens.get(windowStart + i);
             }
 
-            // Forward pass
-            lastLogits = forward(model, inputIds);
-
-            // Record step in KV-Cache
-            kvCache.append(inputIds[inputIds.length - 1], lastLogits);
-
-            // Sample next token
+            lastLogits = forwardSnapshot(snapshot, inputIds);
             int nextToken = sampleNextToken(lastLogits, currentTokens, request, rng);
 
             currentTokens.add(nextToken);
             generatedTokens.add(nextToken);
 
-            // Notify stream listener if provided
-            if (streamListener != null && tokenizer != null) {
-                String tokenText = tokenizer.decode(List.of(nextToken));
-                streamListener.onTokenGenerated(nextToken, tokenText);
-            }
-
-            // Check for EOS or custom stop token IDs
             if (nextToken == 2 || nextToken == 3 || (stopTokens != null && stopTokens.contains(nextToken))) {
                 terminationReason = InferenceResult.TerminationReason.EOS_REACHED;
                 break;
@@ -216,10 +210,91 @@ public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
         );
     }
 
-    /**
-     * Professional sampling logic decoupled from model forward pass.
-     * Supports: Greedy, Temperature scaling, Top-K, Top-P (nucleus), Repeat penalty, Frequency penalty, Presence penalty.
-     */
+    public InferenceResult generateWithListener(EvoLlmModel model, InferenceRequest request, Tokenizer tokenizer, TokenStreamListener streamListener) {
+        validateModel(model);
+        if (request == null) {
+            throw new IllegalArgumentException("InferenceRequest cannot be null");
+        }
+
+        long startTime = System.currentTimeMillis();
+
+        List<Integer> currentTokens = new ArrayList<>();
+        int[] initialIds = request.getInputIds();
+
+        if (initialIds != null && initialIds.length > 0) {
+            for (int id : initialIds) {
+                currentTokens.add(id);
+            }
+        } else if (request.getPrompt() != null && !request.getPrompt().isEmpty()) {
+            if (tokenizer != null) {
+                List<Integer> encoded = tokenizer.encode(request.getPrompt());
+                if (encoded != null) {
+                    currentTokens.addAll(encoded);
+                }
+            }
+        }
+
+        if (currentTokens.isEmpty()) {
+            currentTokens.add(1);
+        }
+
+        int maxSeqLen = model.getMaxSeqLen();
+        int maxTokensToGenerate = request.getMaxTokens();
+        Set<Integer> stopTokens = request.getStopTokenIds();
+        Random rng = new Random();
+
+        List<Integer> generatedTokens = new ArrayList<>();
+        InferenceResult.TerminationReason terminationReason = InferenceResult.TerminationReason.MAX_TOKENS_REACHED;
+        Tensor lastLogits = null;
+
+        for (int step = 0; step < maxTokensToGenerate; step++) {
+            int totalCount = currentTokens.size();
+            int windowStart = Math.max(0, totalCount - maxSeqLen);
+            int windowLen = totalCount - windowStart;
+            int[] inputIds = new int[windowLen];
+            for (int i = 0; i < windowLen; i++) {
+                inputIds[i] = currentTokens.get(windowStart + i);
+            }
+
+            lastLogits = forward(model, inputIds);
+            int nextToken = sampleNextToken(lastLogits, currentTokens, request, rng);
+
+            currentTokens.add(nextToken);
+            generatedTokens.add(nextToken);
+
+            if (streamListener != null && tokenizer != null) {
+                String tokenText = tokenizer.decode(List.of(nextToken));
+                streamListener.onTokenGenerated(nextToken, tokenText);
+            }
+
+            if (nextToken == 2 || nextToken == 3 || (stopTokens != null && stopTokens.contains(nextToken))) {
+                terminationReason = InferenceResult.TerminationReason.EOS_REACHED;
+                break;
+            }
+        }
+
+        int[] genTokenIds = generatedTokens.stream().mapToInt(Integer::intValue).toArray();
+        String generatedText = "";
+        if (tokenizer != null && !generatedTokens.isEmpty()) {
+            try {
+                generatedText = tokenizer.decode(generatedTokens);
+            } catch (Exception e) {
+                generatedText = generatedTokens.toString();
+            }
+        }
+
+        long executionTimeMs = System.currentTimeMillis() - startTime;
+
+        return new InferenceResult(
+                genTokenIds,
+                generatedText,
+                lastLogits,
+                generatedTokens.size(),
+                executionTimeMs,
+                terminationReason
+        );
+    }
+
     private int sampleNextToken(Tensor logits, List<Integer> tokenHistory, InferenceRequest request, Random rng) {
         float[] data = logits.getData();
         int seqLen = (int) logits.getShape()[0];
@@ -229,7 +304,6 @@ public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
         float[] rawLogits = new float[vocabSize];
         System.arraycopy(data, offset, rawLogits, 0, vocabSize);
 
-        // Apply Frequency & Presence & Repeat Penalties
         float repeatPenalty = request.getRepeatPenalty();
         float freqPenalty = request.getFrequencyPenalty();
         float presPenalty = request.getPresencePenalty();
@@ -244,12 +318,10 @@ public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
 
             for (int i = 0; i < vocabSize; i++) {
                 if (counts[i] > 0) {
-                    // Repeat penalty
                     if (repeatPenalty > 1.0f) {
                         if (rawLogits[i] < 0) rawLogits[i] *= repeatPenalty;
                         else rawLogits[i] /= repeatPenalty;
                     }
-                    // Frequency & Presence penalties
                     rawLogits[i] -= counts[i] * freqPenalty + presPenalty;
                 }
             }
@@ -257,7 +329,6 @@ public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
 
         float temp = request.getTemperature();
 
-        // Greedy decoding
         if (temp <= 0.0f) {
             int argmax = 0;
             float maxVal = rawLogits[0];
@@ -270,7 +341,6 @@ public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
             return argmax;
         }
 
-        // Temperature scaling
         float maxLogit = Float.NEGATIVE_INFINITY;
         for (int i = 0; i < vocabSize; i++) {
             rawLogits[i] /= temp;
@@ -279,7 +349,6 @@ public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
             }
         }
 
-        // Softmax probabilities
         float[] probs = new float[vocabSize];
         float sumExp = 0.0f;
         for (int i = 0; i < vocabSize; i++) {
@@ -290,7 +359,6 @@ public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
             probs[i] /= sumExp;
         }
 
-        // Apply Top-K filtering
         int topK = request.getTopK();
         if (topK > 0 && topK < vocabSize) {
             float[] sortedProbs = probs.clone();
@@ -311,7 +379,6 @@ public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
             }
         }
 
-        // Apply Top-P (Nucleus) filtering
         float topP = request.getTopP();
         if (topP < 1.0f && topP > 0.0f) {
             Integer[] indices = new Integer[vocabSize];
@@ -339,7 +406,6 @@ public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
             }
         }
 
-        // Categorical sampling
         float r = rng.nextFloat();
         float accum = 0.0f;
         for (int i = 0; i < vocabSize; i++) {
@@ -350,27 +416,5 @@ public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
         }
 
         return vocabSize - 1;
-    }
-
-    // =========================================================================
-    // Embedded KV-Cache Implementation (Keeps native engine inside 1 class)
-    // =========================================================================
-    private static class EmbeddedKVCache {
-        private final List<Integer> cachedTokenIds = new ArrayList<>();
-        private final List<Tensor> cachedLogits = new ArrayList<>();
-
-        public void append(int tokenId, Tensor logits) {
-            cachedTokenIds.add(tokenId);
-            cachedLogits.add(logits);
-        }
-
-        public void clear() {
-            cachedTokenIds.clear();
-            cachedLogits.clear();
-        }
-
-        public int size() {
-            return cachedTokenIds.size();
-        }
     }
 }
