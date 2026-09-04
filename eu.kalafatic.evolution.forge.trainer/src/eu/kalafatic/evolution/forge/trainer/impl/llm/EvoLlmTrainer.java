@@ -1,324 +1,342 @@
 package eu.kalafatic.evolution.forge.trainer.impl.llm;
 
-import eu.kalafatic.evolution.forge.data.impl.DatasetBuilder;
+import eu.kalafatic.evolution.forge.data.api.TrainingBatch;
+import eu.kalafatic.evolution.forge.data.api.TrainingSample;
 import eu.kalafatic.evolution.forge.math.api.Tensor;
 import eu.kalafatic.evolution.forge.math.core.SimpleTensor;
 import eu.kalafatic.evolution.forge.model.llm.EvoLlmModel;
-import eu.kalafatic.evolution.forge.model.llm.EvoModelArtifact;
+import eu.kalafatic.evolution.forge.trainer.api.LossReduction;
 
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-/**
- * Single-class complete EVO LLM Forging and Training Engine.
- * Implements professional-grade LLM training routines:
- * - Embedded AdamW optimizer with decoupled weight decay
- * - Learning rate scheduler with linear warmup and cosine decay
- * - Global gradient norm clipping
- * - Numerically stable cross-entropy with log-sum-exp trick
- * - Validation tracking & loss metrics
- * - Direct *.evo artifact persistence
- */
 public class EvoLlmTrainer {
 
-    public interface ProgressListener {
-        void onProgress(int epoch, int totalEpochs, int sampleIndex, int totalSamples, double currentLoss);
+    public enum TrainingProfile {
+        EVO_FAST(2e-4f, 1e-5f, 0.01f),
+        EVO_CODER(1e-4f, 1e-5f, 0.1f),
+        EVO_FINETUNE(2e-5f, 1e-6f, 0.01f);
+
+        public final float initialLr;
+        public final float minLr;
+        public final float weightDecay;
+
+        TrainingProfile(float initialLr, float minLr, float weightDecay) {
+            this.initialLr = initialLr;
+            this.minLr = minLr;
+            this.weightDecay = weightDecay;
+        }
     }
 
     private final EvoLlmModel model;
-    private final List<Double> lossHistory = new ArrayList<>();
-    private final List<Double> valLossHistory = new ArrayList<>();
-    private ProgressListener progressListener;
-
-    // Hyperparameters
-    private float initialLr = 1e-3f;
-    private float minLr = 1e-5f;
+    private float initialLr;
+    private float minLr;
+    private float weightDecay;
     private float beta1 = 0.9f;
-    private float beta2 = 0.999f;
+    private float beta2 = 0.95f;
     private float eps = 1e-8f;
-    private float weightDecay = 0.01f;
     private float maxGradNorm = 1.0f;
-    private float labelSmoothing = 0.0f;
     private float validationSplitRatio = 0.1f;
+    private int microBatchSize = 4;
+    private int accumulationSteps = 2;
+    private long baseSeed = 42L;
 
-    public EvoLlmTrainer(EvoLlmModel model) {
-        if (model == null) {
-            throw new IllegalArgumentException("EvoLlmModel cannot be null");
-        }
+    private LossReduction lossReduction = LossReduction.MEAN_PER_TOKEN;
+
+    public EvoLlmTrainer(EvoLlmModel model, TrainingProfile profile) {
+        if (model == null) throw new IllegalArgumentException("EvoLlmModel cannot be null");
         this.model = model;
+        applyProfile(profile);
     }
 
-    public void setProgressListener(ProgressListener progressListener) {
-        this.progressListener = progressListener;
+    public void applyProfile(TrainingProfile profile) {
+        this.initialLr = profile.initialLr;
+        this.minLr = profile.minLr;
+        this.weightDecay = profile.weightDecay;
     }
 
-    public void setInitialLr(float lr) { this.initialLr = lr; }
-    public void setMinLr(float minLr) { this.minLr = minLr; }
-    public void setWeightDecay(float weightDecay) { this.weightDecay = weightDecay; }
-    public void setMaxGradNorm(float maxGradNorm) { this.maxGradNorm = maxGradNorm; }
-    public void setLabelSmoothing(float labelSmoothing) { this.labelSmoothing = labelSmoothing; }
-    public void setValidationSplitRatio(float validationSplitRatio) { this.validationSplitRatio = validationSplitRatio; }
+    public void setLossReduction(LossReduction lossReduction) { this.lossReduction = lossReduction; }
+    public void setMicroBatchSize(int microBatchSize) { this.microBatchSize = microBatchSize; }
+    public void setAccumulationSteps(int steps) { this.accumulationSteps = Math.max(1, steps); }
+    public void setBaseSeed(long seed) { this.baseSeed = seed; }
 
-    /**
-     * Executes complete training loop over dataset samples for specified epochs.
-     */
-    public void train(List<DatasetBuilder.Sample> samples, int epochs) {
-        if (samples == null || samples.isEmpty()) {
-            System.out.println("[EVO Forging Engine] Warning: No training samples provided.");
-            return;
-        }
+    public void train(List<TrainingSample> samples, int epochs) {
+        if (samples == null || samples.isEmpty()) return;
 
-        // 1. Split dataset into train / validation sets
-        int valCount = (int) (samples.size() * validationSplitRatio);
-        List<DatasetBuilder.Sample> trainSamples = samples;
-        List<DatasetBuilder.Sample> valSamples = null;
+        // 1. Initial Split (Fixed Validation Set)
+        List<TrainingSample> dataset = new ArrayList<>(samples);
+        Collections.shuffle(dataset, new Random(baseSeed));
 
-        if (valCount > 0 && valCount < samples.size()) {
-            trainSamples = samples.subList(0, samples.size() - valCount);
-            valSamples = samples.subList(samples.size() - valCount, samples.size());
-        }
+        int valCount = (int) (dataset.size() * validationSplitRatio);
+        List<TrainingSample> trainSamples = new ArrayList<>(dataset.subList(0, dataset.size() - valCount));
+        List<TrainingSample> valSamples = valCount > 0 ? new ArrayList<>(dataset.subList(dataset.size() - valCount, dataset.size())) : Collections.emptyList();
 
-        System.out.println(String.format("[EVO Forging Engine] Starting training: %d train samples, %d val samples, %d epochs.",
-                trainSamples.size(), valSamples != null ? valSamples.size() : 0, epochs));
-
-        // 2. Initialize embedded AdamW optimizer and scheduler
+        // Separate Parameter Groups (Decay vs No-Decay)
+        ModelParameterGroups paramGroups = ModelParameterGroups.fromModel(model);
         EmbeddedAdamW optimizer = new EmbeddedAdamW(initialLr, beta1, beta2, eps, weightDecay);
-        int totalSteps = epochs * trainSamples.size();
-        int warmupSteps = Math.max(1, (int) (totalSteps * 0.05f));
-        int currentStep = 0;
 
         for (int epoch = 0; epoch < epochs; epoch++) {
-            double epochLoss = 0.0;
+            // Re-shuffle train samples per epoch
+            Collections.shuffle(trainSamples, new Random(baseSeed + epoch + 1));
+            List<TrainingBatch> batches = buildBatches(trainSamples, microBatchSize);
+
+            // Ceil-based calculation for optimization steps
+            int stepsPerEpoch = (batches.size() + accumulationSteps - 1) / accumulationSteps;
+            int totalOptimizationSteps = epochs * stepsPerEpoch;
+            int warmupSteps = Math.max(1, (int) (totalOptimizationSteps * 0.03f));
+
+            double epochTotalLoss = 0.0;
+            long epochValidTokens = 0;
             long startTime = System.currentTimeMillis();
-            int totalTokensTrained = 0;
-            int sampleIndex = 0;
 
-            for (DatasetBuilder.Sample sample : trainSamples) {
-                currentStep++;
+            int optStep = epoch * stepsPerEpoch;
 
-                // Learning rate warmup + cosine decay schedule
-                float currentLr = computeScheduledLr(currentStep, totalSteps, warmupSteps);
+            for (int bIdx = 0; bIdx < batches.size(); bIdx += accumulationSteps) {
+                optStep++;
+                float currentLr = computeScheduledLr(optStep, totalOptimizationSteps, warmupSteps);
                 optimizer.setLr(currentLr);
 
-                // Zero gradients
-                model.parameters().forEach(Tensor::zeroGrad);
+                // Zero gradients BEFORE accumulation window starts
+                paramGroups.zeroGradAll();
 
-                int inputLen = sample.input.size();
-                int[] inputIds = new int[inputLen];
-                for (int i = 0; i < inputLen; i++) {
-                    inputIds[i] = sample.input.get(i);
+                int windowEnd = Math.min(bIdx + accumulationSteps, batches.size());
+                List<TrainingBatch> accumulationWindow = batches.subList(bIdx, windowEnd);
+
+                // 1. First Pass: Compute total valid tokens in the entire accumulation window
+                long windowValidTokens = 0;
+                for (TrainingBatch batch : accumulationWindow) {
+                    for (float[] maskRow : batch.lossMask) {
+                        for (float m : maskRow) {
+                            if (m > 0.0f) windowValidTokens++;
+                        }
+                    }
                 }
 
-                // Forward pass
-                Tensor logits = model.forward(inputIds);
-                totalTokensTrained += inputIds.length;
+                if (windowValidTokens == 0) continue; // Skip window if no valid tokens
 
-                // Loss & Cross-Entropy computation with Log-Sum-Exp stability
-                float[] logitsData = logits.getData();
-                int seqLen = (int) logits.getShape()[0];
-                int vocabSize = (int) logits.getShape()[1];
-                int lastOffset = (seqLen - 1) * vocabSize;
-                int target = sample.target;
+                // 2. Second Pass: Forward & Backward pass with accurate normalization
+                double windowLoss = 0.0;
+                for (TrainingBatch batch : accumulationWindow) {
+                    windowLoss += processMicroBatch(batch, windowValidTokens);
+                }
 
-                // Log-Sum-Exp & Softmax probabilities
+                epochTotalLoss += windowLoss;
+                epochValidTokens += windowValidTokens;
+
+                // 3. Optimizer Step
+                optimizer.step(paramGroups, maxGradNorm);
+            }
+
+            double avgTrainLoss = epochValidTokens > 0 ? epochTotalLoss / epochValidTokens : 0.0;
+            double avgValLoss = evaluateValidation(valSamples);
+            long duration = System.currentTimeMillis() - startTime;
+
+            System.out.printf("[EVO Epoch %d/%d] Train Loss (NLL/token): %.4f | Val Loss (NLL/token): %.4f | Time: %d ms%n",
+                    epoch + 1, epochs, avgTrainLoss, avgValLoss, duration);
+        }
+    }
+
+    private double processMicroBatch(TrainingBatch batch, long accumulationWindowTokens) {
+        double microBatchRawLoss = 0.0;
+
+        for (int i = 0; i < batch.batchSize; i++) {
+            int[] inputIds = batch.inputIds[i];
+            int[] labels = batch.labels[i];
+            float[] mask = batch.lossMask[i];
+            float[] attMask = batch.attentionMask[i]; // Attention mask passed down
+            int seqLen = inputIds.length;
+
+            // Model forward pass: Expected to handle attentionMask internally
+            Tensor logits = model.forward(inputIds, attMask);
+            float[] logitsData = logits.getData();
+            int vocabSize = (int) logits.getShape()[1];
+
+            Tensor dLogits = new SimpleTensor(seqLen, vocabSize);
+            float[] dLogitsData = dLogits.getData();
+
+            for (int t = 0; t < seqLen; t++) {
+                if (mask[t] == 0.0f) continue; // Loss masked
+
+                int offset = t * vocabSize;
+                int target = labels[t];
+
                 float maxLogit = Float.NEGATIVE_INFINITY;
-                for (int i = 0; i < vocabSize; i++) {
-                    float val = logitsData[lastOffset + i];
-                    if (val > maxLogit) maxLogit = val;
-                }
+                for (int v = 0; v < vocabSize; v++) maxLogit = Math.max(maxLogit, logitsData[offset + v]);
 
                 float sumExp = 0.0f;
-                float[] probs = new float[vocabSize];
-                for (int i = 0; i < vocabSize; i++) {
-                    probs[i] = (float) Math.exp(logitsData[lastOffset + i] - maxLogit);
-                    sumExp += probs[i];
-                }
-                for (int i = 0; i < vocabSize; i++) probs[i] /= sumExp;
-
-                double sampleLoss = -Math.log(Math.max(probs[target], 1e-10));
-                epochLoss += sampleLoss;
-
-                // Gradient computation with optional label smoothing
-                Tensor dLogits = new SimpleTensor(seqLen, vocabSize);
-                float[] dLogitsData = dLogits.getData();
-
-                if (labelSmoothing > 0.0f) {
-                    float smoothTarget = 1.0f - labelSmoothing;
-                    float smoothUnused = labelSmoothing / (vocabSize - 1);
-                    for (int i = 0; i < vocabSize; i++) {
-                        float targetVal = (i == target) ? smoothTarget : smoothUnused;
-                        dLogitsData[lastOffset + i] = probs[i] - targetVal;
-                    }
-                } else {
-                    probs[target] -= 1.0f;
-                    System.arraycopy(probs, 0, dLogitsData, lastOffset, vocabSize);
+                for (int v = 0; v < vocabSize; v++) {
+                    sumExp += (float) Math.exp(logitsData[offset + v] - maxLogit);
                 }
 
-                // Backpropagation pass
-                model.backward(dLogits);
+                float logSumExp = maxLogit + (float) Math.log(sumExp);
+                microBatchRawLoss += (logSumExp - logitsData[offset + target]);
 
-                // AdamW step with global gradient norm clipping
-                optimizer.step(model.parameters(), maxGradNorm);
+                // Gradient normalized by strict total window tokens
+                float normFactor = (lossReduction == LossReduction.MEAN_PER_TOKEN)
+                        ? accumulationWindowTokens
+                        : (accumulationWindowTokens / (float) batch.batchSize);
 
-                sampleIndex++;
-
-                if (progressListener != null) {
-                    progressListener.onProgress(epoch, epochs, sampleIndex, trainSamples.size(), sampleLoss);
-                }
-
-                int logInterval = Math.max(1, trainSamples.size() / 10);
-                if (sampleIndex % logInterval == 0 || sampleIndex == trainSamples.size()) {
-                    double pct = (double) sampleIndex / trainSamples.size() * 100.0;
-                    System.out.println(String.format("[EVO Training Progress] Epoch %d/%d | %d/%d samples (%.1f%%) | Loss: %.4f | LR: %.6f",
-                            epoch + 1, epochs, sampleIndex, trainSamples.size(), pct, sampleLoss, currentLr));
+                for (int v = 0; v < vocabSize; v++) {
+                    float prob = (float) Math.exp(logitsData[offset + v] - logSumExp);
+                    float targetDist = (v == target) ? 1.0f : 0.0f;
+                    dLogitsData[offset + v] = ((prob - targetDist) * mask[t]) / normFactor;
                 }
             }
 
-            double avgTrainLoss = epochLoss / trainSamples.size();
-            lossHistory.add(avgTrainLoss);
-
-            // Validation evaluation pass
-            double avgValLoss = 0.0;
-            if (valSamples != null && !valSamples.isEmpty()) {
-                avgValLoss = evaluateValidationLoss(valSamples);
-                valLossHistory.add(avgValLoss);
-            }
-
-            long duration = System.currentTimeMillis() - startTime;
-            double tokensPerSec = duration > 0 ? (totalTokensTrained * 1000.0 / duration) : 0;
-
-            System.out.println(String.format("[EVO Forging Epoch %d/%d Complete]\n  Train Loss: %.4f\n  Val Loss: %.4f\n  Tokens/sec: %.2f\n  Duration: %d ms",
-                    epoch + 1, epochs, avgTrainLoss, avgValLoss, tokensPerSec, duration));
+            // BACKWARD: Must ACCUMULATE (grad += dLogits) internally in model!
+            model.backward(dLogits);
         }
+        return microBatchRawLoss;
     }
 
-    /**
-     * Evaluates loss on validation set without parameter updates.
-     */
-    private double evaluateValidationLoss(List<DatasetBuilder.Sample> valSamples) {
+    private double evaluateValidation(List<TrainingSample> valSamples) {
+        if (valSamples.isEmpty()) return 0.0;
         double totalLoss = 0.0;
-        for (DatasetBuilder.Sample sample : valSamples) {
-            int inputLen = sample.input.size();
-            int[] inputIds = new int[inputLen];
-            for (int i = 0; i < inputLen; i++) {
-                inputIds[i] = sample.input.get(i);
-            }
+        long totalValidTokens = 0;
 
-            Tensor logits = model.forward(inputIds);
+        for (TrainingSample sample : valSamples) {
+            Tensor logits = model.forward(sample.inputIds, sample.getAttentionMaskAsFloat());
             float[] logitsData = logits.getData();
-            int seqLen = (int) logits.getShape()[0];
+            int seqLen = sample.inputIds.length;
             int vocabSize = (int) logits.getShape()[1];
-            int lastOffset = (seqLen - 1) * vocabSize;
-            int target = sample.target;
 
-            float maxLogit = Float.NEGATIVE_INFINITY;
-            for (int i = 0; i < vocabSize; i++) {
-                float val = logitsData[lastOffset + i];
-                if (val > maxLogit) maxLogit = val;
-            }
+            for (int t = 0; t < seqLen; t++) {
+                if (!sample.lossMask[t]) continue;
+                totalValidTokens++;
 
-            float sumExp = 0.0f;
-            float[] probs = new float[vocabSize];
-            for (int i = 0; i < vocabSize; i++) {
-                probs[i] = (float) Math.exp(logitsData[lastOffset + i] - maxLogit);
-                sumExp += probs[i];
+                int offset = t * vocabSize;
+                int target = sample.labels[t];
+
+                float maxLogit = Float.NEGATIVE_INFINITY;
+                for (int v = 0; v < vocabSize; v++) maxLogit = Math.max(maxLogit, logitsData[offset + v]);
+
+                float sumExp = 0.0f;
+                for (int v = 0; v < vocabSize; v++) sumExp += (float) Math.exp(logitsData[offset + v] - maxLogit);
+
+                float logSumExp = maxLogit + (float) Math.log(sumExp);
+                totalLoss += (logSumExp - logitsData[offset + target]);
             }
-            float targetProb = probs[target] / sumExp;
-            totalLoss += -Math.log(Math.max(targetProb, 1e-10));
         }
-        return totalLoss / valSamples.size();
+        return totalValidTokens > 0 ? (totalLoss / totalValidTokens) : 0.0;
     }
 
-    /**
-     * Computes linear warmup and cosine decay learning rate.
-     */
-    private float computeScheduledLr(int step, int totalSteps, int warmupSteps) {
-        if (step <= warmupSteps) {
-            return initialLr * ((float) step / warmupSteps);
+    private List<TrainingBatch> buildBatches(List<TrainingSample> samples, int batchSize) {
+        List<TrainingBatch> batches = new ArrayList<>();
+        for (int i = 0; i < samples.size(); i += batchSize) {
+            int end = Math.min(i + batchSize, samples.size());
+            List<TrainingSample> sub = samples.subList(i, end);
+            int curBatchSize = sub.size();
+            int maxLen = 0;
+            for (TrainingSample s : sub) maxLen = Math.max(maxLen, s.inputIds.length);
+
+            int[][] bInputs = new int[curBatchSize][maxLen];
+            int[][] bLabels = new int[curBatchSize][maxLen];
+            float[][] bMasks = new float[curBatchSize][maxLen];
+            float[][] bAttMasks = new float[curBatchSize][maxLen];
+
+            for (int r = 0; r < curBatchSize; r++) {
+                TrainingSample s = sub.get(r);
+                for (int c = 0; c < maxLen; c++) {
+                    if (c < s.inputIds.length) {
+                        bInputs[r][c] = s.inputIds[c];
+                        bLabels[r][c] = s.labels[c];
+                        bMasks[r][c] = s.lossMask[c] ? 1.0f : 0.0f;
+                        bAttMasks[r][c] = 1.0f; // Token exists
+                    } else {
+                        bInputs[r][c] = 0; // Padding token ID
+                        bLabels[r][c] = 0;
+                        bMasks[r][c] = 0.0f; // Loss masked
+                        bAttMasks[r][c] = 0.0f; // Attention masked
+                    }
+                }
+            }
+            batches.add(new TrainingBatch(bInputs, bLabels, bMasks, bAttMasks));
         }
+        return batches;
+    }
+
+    private float computeScheduledLr(int step, int totalSteps, int warmupSteps) {
+        if (step <= warmupSteps) return initialLr * ((float) step / warmupSteps);
         float progress = (float) (step - warmupSteps) / Math.max(1, totalSteps - warmupSteps);
+        progress = Math.max(0.0f, Math.min(1.0f, progress)); // Safe clamping
         float cosineDecay = 0.5f * (1.0f + (float) Math.cos(Math.PI * progress));
         return minLr + (initialLr - minLr) * cosineDecay;
     }
 
-    /**
-     * Trains the model and persists the model directly into a single *.evo file.
-     */
-    public void trainAndPersist(List<DatasetBuilder.Sample> samples, int epochs, Path evoOutputPath, String modelName, Map<String, Integer> tokenizerVocab) throws IOException {
-        train(samples, epochs);
-        saveToEvoFile(evoOutputPath, modelName, tokenizerVocab);
-    }
+    // =========================================================================
+    // Parameter Group Management (Decay vs No-Decay)
+    // =========================================================================
+    public static class ModelParameterGroups {
+        public final List<Tensor> decayParameters = new ArrayList<>();
+        public final List<Tensor> noDecayParameters = new ArrayList<>();
 
-    /**
-     * Persists current model state into a *.evo artifact file.
-     */
-    public void saveToEvoFile(Path evoOutputPath, String modelName, Map<String, Integer> tokenizerVocab) throws IOException {
-        EvoModelArtifact artifact = new EvoModelArtifact();
-        artifact.initializeFromModel(modelName != null ? modelName : "evo_model", model, tokenizerVocab != null ? tokenizerVocab : new HashMap<>());
-        artifact.save(evoOutputPath);
-        System.out.println("[EVO Forging Engine] Model persisted successfully to *.evo file: " + evoOutputPath.toAbsolutePath());
-    }
+        public static ModelParameterGroups fromModel(EvoLlmModel model) {
+            ModelParameterGroups groups = new ModelParameterGroups();
+            for (Tensor p : model.parameters()) {
+                // Heuristic: RMSNorm/LayerNorm weights, biases, and embeddings usually skip weight decay
+                if (p.getName() != null && (p.getName().contains("norm") || p.getName().contains("bias") || p.getName().contains("embed"))) {
+                    groups.noDecayParameters.add(p);
+                } else {
+                    groups.decayParameters.add(p);
+                }
+            }
+            return groups;
+        }
 
-    public List<Double> getLossHistory() { return lossHistory; }
-    public List<Double> getValLossHistory() { return valLossHistory; }
-    public EvoLlmModel getModel() { return model; }
+        public void zeroGradAll() {
+            decayParameters.forEach(Tensor::zeroGrad);
+            noDecayParameters.forEach(Tensor::zeroGrad);
+        }
+    }
 
     // =========================================================================
-    // Embedded Professional AdamW Optimizer Class (Keeps engine code inside 1 class)
+    // Parameter-Group-Aware AdamW
     // =========================================================================
     private static class EmbeddedAdamW {
         private float lr;
-        private final float beta1;
-        private final float beta2;
-        private final float eps;
-        private final float weightDecay;
+        private final float beta1, beta2, eps, weightDecay;
         private int stepCounter = 0;
-
-        private final Map<Tensor, float[]> m = new HashMap<>();
-        private final Map<Tensor, float[]> v = new HashMap<>();
+        private final Map<Tensor, float[]> m = new IdentityHashMap<>();
+        private final Map<Tensor, float[]> v = new IdentityHashMap<>();
 
         public EmbeddedAdamW(float lr, float beta1, float beta2, float eps, float weightDecay) {
-            this.lr = lr;
-            this.beta1 = beta1;
-            this.beta2 = beta2;
-            this.eps = eps;
-            this.weightDecay = weightDecay;
+            this.lr = lr; this.beta1 = beta1; this.beta2 = beta2; this.eps = eps; this.weightDecay = weightDecay;
         }
 
         public void setLr(float lr) { this.lr = lr; }
-        public float getLr() { return lr; }
 
-        public void step(List<Tensor> parameters, float maxGradNorm) {
+        public void step(ModelParameterGroups groups, float maxGradNorm) {
             stepCounter++;
 
-            // 1. Calculate global gradient norm
+            // 1. Calculate Global Gradient Norm across ALL parameters
             double sumSquareGrads = 0.0;
-            for (Tensor p : parameters) {
-                float[] grad = p.getGrad();
-                if (grad != null) {
-                    for (float g : grad) {
-                        sumSquareGrads += g * g;
-                    }
-                }
-            }
+            sumSquareGrads += calculateGroupGradNorm(groups.decayParameters);
+            sumSquareGrads += calculateGroupGradNorm(groups.noDecayParameters);
+
             float globalNorm = (float) Math.sqrt(sumSquareGrads);
+            float clipScale = (maxGradNorm > 0.0f && globalNorm > maxGradNorm) ? (maxGradNorm / globalNorm) : 1.0f;
 
-            // Compute gradient clipping scale
-            float clipScale = 1.0f;
-            if (maxGradNorm > 0.0f && globalNorm > maxGradNorm) {
-                clipScale = maxGradNorm / globalNorm;
-            }
-
-            // Bias correction factors
             float biasCorrection1 = 1.0f - (float) Math.pow(beta1, stepCounter);
             float biasCorrection2 = 1.0f - (float) Math.pow(beta2, stepCounter);
 
-            // 2. Update parameters
-            for (Tensor p : parameters) {
+            // Step with Decay
+            updateGroup(groups.decayParameters, clipScale, biasCorrection1, biasCorrection2, true);
+            // Step WITHOUT Decay
+            updateGroup(groups.noDecayParameters, clipScale, biasCorrection1, biasCorrection2, false);
+        }
+
+        private double calculateGroupGradNorm(List<Tensor> params) {
+            double sum = 0.0;
+            for (Tensor p : params) {
+                float[] grad = p.getGrad();
+                if (grad != null) {
+                    for (float g : grad) sum += g * g;
+                }
+            }
+            return sum;
+        }
+
+        private void updateGroup(List<Tensor> params, float clipScale, float bc1, float bc2, boolean applyDecay) {
+            for (Tensor p : params) {
                 float[] data = p.getData();
                 float[] grad = p.getGrad();
                 if (data == null || grad == null) continue;
@@ -330,17 +348,15 @@ public class EvoLlmTrainer {
                 for (int i = 0; i < length; i++) {
                     float g = grad[i] * clipScale;
 
-                    // Decoupled Weight Decay
-                    if (weightDecay > 0.0f) {
+                    if (applyDecay && weightDecay > 0.0f) {
                         data[i] -= lr * weightDecay * data[i];
                     }
 
-                    // Moment estimates
                     mArr[i] = beta1 * mArr[i] + (1.0f - beta1) * g;
                     vArr[i] = beta2 * vArr[i] + (1.0f - beta2) * g * g;
 
-                    float mHat = mArr[i] / biasCorrection1;
-                    float vHat = vArr[i] / biasCorrection2;
+                    float mHat = mArr[i] / bc1;
+                    float vHat = vArr[i] / bc2;
 
                     data[i] -= lr * mHat / ((float) Math.sqrt(vHat) + eps);
                 }
