@@ -256,6 +256,12 @@ public class OllamaProvider implements ILlmProvider {
         }
         baseDirs.add(new java.io.File(System.getProperty("user.dir"), "forge-output"));
 
+        for (java.io.File targetDir : LlamaService.resolveAllTargetModelDirs()) {
+            if (!baseDirs.contains(targetDir)) {
+                baseDirs.add(targetDir);
+            }
+        }
+
         // If 'evo' or 'evo:latest', search for the newest forged EVO model artifact first
         if (isGenericEvo) {
             java.io.File newestArtifact = null;
