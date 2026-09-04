@@ -2,6 +2,7 @@ package eu.kalafatic.evolution.controller.services;
 
 import org.json.JSONObject;
 
+import eu.kalafatic.evolution.controller.manager.LlamaService;
 import eu.kalafatic.evolution.controller.orchestration.AiService;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
@@ -30,8 +31,29 @@ public class ModelEvaluationService {
     public void evaluateModel(Orchestrator orchestrator, AIProvider provider, TaskContext context) throws Exception {
         context.log("Starting evaluation for model: " + provider.getName());
 
-        // Save original remote model to restore it later if we are changing it for testing
+        // Save original settings to restore them later after testing
         String originalRemoteModel = orchestrator.getRemoteModel();
+        String originalLocalModel = orchestrator.getLocalModel();
+        String originalOllamaModel = (orchestrator.getOllama() != null) ? orchestrator.getOllama().getModel() : null;
+
+        boolean isEvoModel = provider.getName() != null && (
+                provider.getName().toLowerCase().contains("evo") ||
+                provider.getName().toLowerCase().contains("forging") ||
+                provider.isLocal() ||
+                "evo native".equalsIgnoreCase(LlamaService.detectInferenceEngine(provider.getName())) ||
+                "llama-cpp".equalsIgnoreCase(LlamaService.detectInferenceEngine(provider.getName()))
+        );
+
+        if (isEvoModel) {
+            orchestrator.setLocalModel(provider.getName());
+            if (orchestrator.getOllama() != null) {
+                orchestrator.getOllama().setModel(provider.getName());
+            }
+            // Force EVO Native Inference Engine first when testing selected EVO LLM
+            if (context != null && context.getMetadata() != null) {
+                context.getMetadata().put("inferenceEngine", "evo native");
+            }
+        }
         orchestrator.setRemoteModel(provider.getName());
 
         try {
@@ -61,6 +83,12 @@ public class ModelEvaluationService {
 
         } finally {
             orchestrator.setRemoteModel(originalRemoteModel);
+            if (originalLocalModel != null) {
+                orchestrator.setLocalModel(originalLocalModel);
+            }
+            if (orchestrator.getOllama() != null && originalOllamaModel != null) {
+                orchestrator.getOllama().setModel(originalOllamaModel);
+            }
         }
     }
 
