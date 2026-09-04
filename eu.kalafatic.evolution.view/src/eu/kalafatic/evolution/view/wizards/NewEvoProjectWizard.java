@@ -154,11 +154,25 @@ public class NewEvoProjectWizard extends Wizard implements INewWizard {
             project.setDescription(desc, monitor);
 
             // Create default structure
+            createFolder(project, "src", monitor);
             createFolder(project, "resources/download", monitor);
             createFolder(project, "resources/lib", monitor);
             createFolder(project, "resources/models", monitor);
             createFolder(project, "git", monitor);
             createFolder(project, "mvn", monitor);
+
+            // Create default .classpath with JRE container to avoid JDT AST missing system library exception
+            IFile classpathFile = project.getFile(".classpath");
+            if (!classpathFile.exists()) {
+                String classpathContent = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<classpath>\n" +
+                        "\t<classpathentry kind=\"src\" path=\"src\"/>\n" +
+                        "\t<classpathentry kind=\"con\" path=\"org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-21\"/>\n" +
+                        "\t<classpathentry kind=\"output\" path=\"bin\"/>\n" +
+                        "</classpath>\n";
+                InputStream source = new ByteArrayInputStream(classpathContent.getBytes());
+                classpathFile.create(source, true, monitor);
+            }
 
             // Initialize local Git repository if no remote is provided
             if (gitPage.isSkipped() || gitPage.getRepoUrl() == null || gitPage.getRepoUrl().isEmpty()) {

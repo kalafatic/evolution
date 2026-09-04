@@ -49,6 +49,7 @@ public class FileTool implements ITool {
             try {
                 IFile iFile = getIFile(workingDir, pathPart);
                 if (iFile != null) {
+                    ensureProjectClasspath(iFile.getProject());
                     prepareContainer(iFile.getParent());
                     ByteArrayInputStream source = new ByteArrayInputStream(contentPart.getBytes());
                     if (iFile.exists()) {
@@ -60,6 +61,7 @@ public class FileTool implements ITool {
                     }
                     context.log("Tool [FileTool]: Successfully wrote " + contentPart.length() + " bytes to " + pathPart + " via IFile API");
                 } else {
+                    ensureDirectoryClasspath(workingDir);
                     // Fallback to java.io.File if not in workspace (should rarely happen in Evo)
                     File file = new File(workingDir, pathPart);
                     file.getParentFile().mkdirs();
@@ -181,6 +183,43 @@ public class FileTool implements ITool {
         if (resource instanceof IFolder && !resource.exists()) {
             prepareContainer(resource.getParent());
             ((IFolder) resource).create(true, true, null);
+        }
+    }
+
+    private void ensureProjectClasspath(org.eclipse.core.resources.IProject project) {
+        if (project == null || !project.exists()) return;
+        try {
+            IFile classpathFile = project.getFile(".classpath");
+            if (!classpathFile.exists()) {
+                String classpathContent = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<classpath>\n" +
+                        "\t<classpathentry kind=\"src\" path=\"src\"/>\n" +
+                        "\t<classpathentry kind=\"con\" path=\"org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-21\"/>\n" +
+                        "\t<classpathentry kind=\"output\" path=\"bin\"/>\n" +
+                        "</classpath>\n";
+                ByteArrayInputStream source = new ByteArrayInputStream(classpathContent.getBytes());
+                classpathFile.create(source, true, null);
+            }
+        } catch (Exception e) {
+            // Ignore classpath creation errors
+        }
+    }
+
+    private void ensureDirectoryClasspath(File workingDir) {
+        if (workingDir == null || !workingDir.exists()) return;
+        try {
+            File classpathFile = new File(workingDir, ".classpath");
+            if (!classpathFile.exists() && new File(workingDir, ".project").exists()) {
+                String classpathContent = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<classpath>\n" +
+                        "\t<classpathentry kind=\"src\" path=\"src\"/>\n" +
+                        "\t<classpathentry kind=\"con\" path=\"org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-21\"/>\n" +
+                        "\t<classpathentry kind=\"output\" path=\"bin\"/>\n" +
+                        "</classpath>\n";
+                java.nio.file.Files.write(classpathFile.toPath(), classpathContent.getBytes());
+            }
+        } catch (Exception e) {
+            // Ignore classpath creation errors
         }
     }
 
