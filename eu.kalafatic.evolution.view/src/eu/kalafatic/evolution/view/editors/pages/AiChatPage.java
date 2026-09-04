@@ -1777,8 +1777,9 @@ public class AiChatPage extends AEvoPage {
             else if (agentSource.contains("orchestrator")) agentType = "orchestrator";
             else if (agentSource.contains("darwinengine")) agentType = "darwin";
 
-            if (agentSource.contains("thinking")) agentType = "thinking";
-            else if (agentSource.contains("response") && !agentType.equals("darwin")) {
+            if (agentSource.contains("thinking") || (content != null && content.contains("<think>"))) {
+                agentType = "thinking";
+            } else if (agentSource.contains("response") && !agentType.equals("darwin")) {
 		agentType = "response";
 		priority = MessagePriority.NORMAL;
             }

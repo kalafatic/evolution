@@ -131,11 +131,14 @@ window.ChatApp.Renderer = {
         if (!text) return "";
         let clean = window.ChatApp.Utils.stripTechnicalMarkers(text);
 
-        // Handle think blocks BEFORE escaping
+        // Handle think blocks BEFORE escaping (supporting closed and unclosed <think> tags)
         let thinkBlocks = [];
-        clean = clean.replace(/<think>([\s\S]*?)<\/think>/gi, (match, content) => {
-            thinkBlocks.push(content);
-            return '___THINK_BLOCK_' + (thinkBlocks.length - 1) + '___';
+        clean = clean.replace(/<think>([\s\S]*?)(?:<\/think>|$)/gi, (match, content) => {
+            if (content && content.trim()) {
+                thinkBlocks.push(content.trim());
+                return '___THINK_BLOCK_' + (thinkBlocks.length - 1) + '___';
+            }
+            return '';
         });
 
         // Try JSON rendering first
@@ -217,9 +220,11 @@ window.ChatApp.Renderer = {
             return `<pre><code>${window.ChatApp.Utils.escapeHtml(code.trim())}</code><button class="copy-btn" style="position:absolute;top:8px;right:8px;" onclick="event.stopPropagation(); window.ChatApp.Actions.callJava('copy', '-1', '${window.ChatApp.Utils.escapeJs(code)}')">Copy</button></pre>`;
         });
 
-        // Restore think blocks
+        // Restore think blocks with dedicated header styling
         html = html.replace(/___THINK_BLOCK_(\d+)___/g, (match, index) => {
-            return `<div class="think-block">${this.formatText(thinkBlocks[parseInt(index)], role)}</div>`;
+            const rawContent = thinkBlocks[parseInt(index)] || '';
+            const formattedContent = this.formatText(rawContent, role);
+            return `<div class="think-block"><div style="font-weight: 700; font-size: 10px; color: #64748b; margin-bottom: 2px;">💭 Thinking Process</div>${formattedContent}</div>`;
         });
 
         if (html.includes("PROJECT ROOT:") || html.includes("INSTRUCTIONS:")) {
