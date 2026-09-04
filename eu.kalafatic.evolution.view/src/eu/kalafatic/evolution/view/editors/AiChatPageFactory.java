@@ -8,7 +8,7 @@ public class AiChatPageFactory {
     public static AiChatPage createAiChatPage(MultiPageEditor editor, Orchestrator orchestrator) throws PartInitException {
         AiChatPage page = new AiChatPage(editor.getContainer(), editor, orchestrator);
         int index = editor.addPage(page);
-        editor.setPageText(index, "AI Chat");
+        editor.setPageText(index, "AI Commander");
         return page;
     }
 }

@@ -307,7 +307,7 @@ public class ChatMgmtGroup extends AEvoGroup {
     }
 
     private Combo selectEngine(Composite parent) {
-        Combo combo = GUIFactory.INSTANCE.createCombo(parent, new String[] { "ollama", "llama-cpp", "evo native" });
+        Combo combo = GUIFactory.INSTANCE.createCombo(parent, new String[] { "Ollama", "LLAMA-CPP", "EVO Native" });
         combo.addListener(SWT.Selection, e -> {
             int index = combo.getSelectionIndex();
             if (index >= 0) {
