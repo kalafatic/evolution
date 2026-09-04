@@ -127,8 +127,12 @@ mark.search-match {
 /* Feedback Level Visibility Rules */
 
 /* Reset: Hide AI-generated content by default, opt-in via levels */
-.message.ai, .think-block, .non-essential, .section-plan, .section-debug, .section-timeline {
+.message.ai, .non-essential, .section-plan, .section-debug, .section-timeline {
     display: none;
+}
+
+.think-block {
+    display: block;
 }
 
 /* Base visibility: User messages, terminal AI responses, and errors must always be visible */
