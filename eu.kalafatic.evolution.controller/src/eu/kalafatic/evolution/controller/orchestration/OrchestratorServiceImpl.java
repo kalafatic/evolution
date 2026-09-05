@@ -615,11 +615,18 @@ public class OrchestratorServiceImpl implements OrchestratorService {
             priority = MessagePriority.FINAL;
         }
 
+        boolean autoApproveActive = isAutoApproveActive(sessionId);
+
         if (content.contains("[DARWIN_BRANCHES]") || (matcher.find(0) && "DARWIN_BRANCHES".equals(matcher.group(2)))) {
-            agentType = "darwin-branches waiting";
+            if (autoApproveActive) {
+                agentType = "darwin-branches thinking";
+                priority = MessagePriority.PROGRESS;
+            } else {
+                agentType = "darwin-branches waiting";
+                priority = MessagePriority.USER_ACTION_REQUIRED;
+            }
             // NOTE: We no longer strip [DARWIN_BRANCHES] here because renderer.js needs it to accurately
             // separate descriptive text from the JSON data payload.
-            priority = MessagePriority.USER_ACTION_REQUIRED;
         }
 
         java.util.regex.Pattern approvedPattern = java.util.regex.Pattern.compile("\\[(APPROVED|REJECTED|KEPT):([^]]+)\\]");
@@ -650,7 +657,7 @@ public class OrchestratorServiceImpl implements OrchestratorService {
             priority = MessagePriority.NORMAL;
         }
 
-        boolean needsApproval = (content.toLowerCase().contains("waiting for user") ||
+        boolean needsApproval = !autoApproveActive && (content.toLowerCase().contains("waiting for user") ||
                 content.toLowerCase().contains("guidance?") ||
                 content.toLowerCase().contains("clarify") ||
                 content.toLowerCase().contains("clarification") ||
@@ -682,6 +689,17 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                         .trim();
 
         ConversationOutputController.getInstance().submitMessage(sessionId, turnId, sender, content, agentType, priority, priority == MessagePriority.FINAL);
+    }
+
+    private boolean isAutoApproveActive(String sessionId) {
+        try {
+            SessionContainer session = SessionManager.getInstance().getSession(sessionId);
+            TaskContext context = (session instanceof SessionContext) ? ((SessionContext)session).getTaskContext() : null;
+            if (context != null) {
+                return context.isAutoApprove();
+            }
+        } catch (Exception e) {}
+        return false;
     }
 
     private Orchestrator orchestrator;

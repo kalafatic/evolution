@@ -27,20 +27,21 @@ public class DarwinVariantValidator {
             return null;
         }
 
-        // 1. Prohibit reasoning tags in output (Fatal)
-        if (rawResponse.contains("<think>") || rawResponse.contains("</think>")) {
-            if (context != null) context.log("[VALIDATOR] Fatal Error: Response contains hidden reasoning tags.");
+        // 1. Strip reasoning tags (<think>...</think>) before JSON parsing to support reasoning models
+        String cleanResponse = rawResponse.replaceAll("(?is)<think>.*?</think>", "").trim();
+        if (cleanResponse.isEmpty()) {
+            if (context != null) context.log("[VALIDATOR] Fatal Error: Response is empty after stripping reasoning tags.");
             return null;
         }
 
         // 2. Prohibit Arrays (Fatal)
-        if (rawResponse.trim().startsWith("[")) {
+        if (cleanResponse.startsWith("[")) {
             if (context != null) context.log("[VALIDATOR] Fatal Error: LLM returned an array instead of a single object.");
             return null;
         }
 
         // 3. Parse JSON (Fatal)
-        JSONObject json = JsonUtils.extractJsonObject(rawResponse);
+        JSONObject json = JsonUtils.extractJsonObject(cleanResponse);
         if (json == null) {
             if (context != null) {
                 context.log("Stage: Parser\nJSON parsed: false\nFailure reason: Failed to parse JSON from response.");
