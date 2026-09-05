@@ -8,14 +8,31 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
  */
 public interface ILlmProvider {
     /**
-     * Sends a request to the LLM.
+     * Sends a request to the LLM and returns normalized LlmResponse containing separated content and internal reasoning.
      *
      * @param orchestrator The orchestrator model
      * @param prompt The prompt string
      * @param temperature The temperature setting
      * @param proxyUrl Optional proxy URL
      * @param context The task context
-     * @return The LLM response
+     * @return The normalized LlmResponse
+     * @throws Exception If an error occurs
+     */
+    default LlmResponse sendLlmRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
+        String raw = sendRequest(orchestrator, prompt, temperature, proxyUrl, context);
+        ReasoningProtocol protocol = ReasoningProtocolRegistry.resolve(orchestrator, context);
+        return protocol.parse(raw);
+    }
+
+    /**
+     * Sends a request to the LLM and returns the normalized final answer content.
+     *
+     * @param orchestrator The orchestrator model
+     * @param prompt The prompt string
+     * @param temperature The temperature setting
+     * @param proxyUrl Optional proxy URL
+     * @param context The task context
+     * @return The final user-facing content string
      * @throws Exception If an error occurs
      */
     String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception;

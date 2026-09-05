@@ -26,14 +26,34 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 public class OllamaProvider implements ILlmProvider {
 
     @Override
-    public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
+    public LlmResponse sendLlmRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
+        String rawResponse;
         try {
-            return sendRequestWithRetry(orchestrator, prompt, temperature, proxyUrl, context, 0);
+            rawResponse = sendRequestWithRetry(orchestrator, prompt, temperature, proxyUrl, context, 0);
         } catch (Exception e) {
             String model = (orchestrator != null && orchestrator.getOllama() != null) ? orchestrator.getOllama().getModel() : "evo";
             showDetailedOllamaError(orchestrator, model, e, context);
             throw e;
         }
+
+        ReasoningProtocol protocol = ReasoningProtocolRegistry.resolve(orchestrator, context);
+        LlmResponse normalized = protocol.parse(rawResponse);
+
+        if (context != null) {
+            context.log("LLM response:");
+            context.log("  kind=" + normalized.getKind());
+            context.log("  reasoningLength=" + normalized.getReasoning().length());
+            context.log("  contentLength=" + normalized.getContent().length());
+            context.log("  complete=" + normalized.isComplete());
+        }
+
+        return normalized;
+    }
+
+    @Override
+    public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
+        LlmResponse response = sendLlmRequest(orchestrator, prompt, temperature, proxyUrl, context);
+        return response.getContent();
     }
 
     private void showDetailedOllamaError(Orchestrator orchestrator, String model, Throwable error, TaskContext context) {
