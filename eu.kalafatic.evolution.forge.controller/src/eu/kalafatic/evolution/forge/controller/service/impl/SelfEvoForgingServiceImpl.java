@@ -25,6 +25,7 @@ import org.json.JSONObject;
 import eu.kalafatic.evolution.forge.agent.export.OllamaExporter;
 import eu.kalafatic.evolution.forge.controller.service.OllamaService;
 import eu.kalafatic.evolution.forge.controller.service.SelfEvoForgingService;
+import eu.kalafatic.evolution.forge.data.api.TrainingSample;
 import eu.kalafatic.evolution.forge.data.impl.DatasetBuilder;
 import eu.kalafatic.evolution.forge.data.impl.MarkdownCleaner;
 import eu.kalafatic.evolution.forge.data.impl.MarkdownLoader;
@@ -304,29 +305,26 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
 
                 // Initialize model with dynamically varied hiddenSize, layers, heads, dff, maxSeqLen
                 EvoLlmModel model = new EvoLlmModel(tokenizer.getVocabSize(), hiddenSize, heads, layers, dff, maxSeqLen);
-                EvoLlmTrainer trainer = new EvoLlmTrainer(model);
+                EvoLlmTrainer trainer = new EvoLlmTrainer(model, EvoLlmTrainer.TrainingProfile.EVO_FAST);
 
-                final int totalScanned = scannedPaths.size();
-                final int totalKUnits = knowledgeUnits.size();
-                final int totalSamples = samples.size();
-                final Path rf = runFolder;
+                List<TrainingSample> trainingSamples = samples.stream()
+                        .map(s -> {
+                            int len = s.input.size();
+                            int[] inputIds = new int[len];
+                            int[] labels = new int[len];
+                            boolean[] lossMask = new boolean[len];
+                            float[] attMask = new float[len];
+                            for (int i = 0; i < len; i++) {
+                                inputIds[i] = s.input.get(i);
+                                labels[i] = (i + 1 < len) ? s.input.get(i + 1) : (s.target != null ? s.target : s.input.get(i));
+                                lossMask[i] = true;
+                                attMask[i] = 1.0f;
+                            }
+                            return new TrainingSample(inputIds, labels, lossMask, attMask);
+                        })
+                        .collect(Collectors.toList());
 
-                trainer.setProgressListener((epoch, totalEpochs, sampleIndex, totalSamplesCount, currentLoss) -> {
-                    double pct = (double) sampleIndex / totalSamplesCount * 100.0;
-                    String epochStr = (epoch + 1) + "/" + totalEpochs;
-                    updateStats(sessionId, new ForgingStats(
-                        "TRAINING",
-                        60 + (int)(pct * 0.2),
-                        totalScanned,
-                        totalKUnits,
-                        totalSamples,
-                        currentLoss,
-                        epochStr,
-                        rf.toAbsolutePath().toString()
-                    ));
-                });
-
-                trainer.train(samples, epochs);
+                trainer.train(trainingSamples, epochs);
                 logToFile(logFile, "Training complete.");
 
                 JSONObject stage3 = new JSONObject();

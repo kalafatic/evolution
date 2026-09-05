@@ -2,6 +2,8 @@ package eu.kalafatic.evolution.forge.model.inference;
 
 import eu.kalafatic.evolution.forge.model.llm.EvoLlmArchitecture;
 import eu.kalafatic.evolution.forge.model.llm.EvoLlmModel;
+import eu.kalafatic.evolution.forge.model.llm.ModelParameters;
+import eu.kalafatic.evolution.forge.model.llm.ModelSnapshot;
 import eu.kalafatic.evolution.forge.math.api.Tensor;
 
 public class EvoModelValidator {
@@ -71,6 +73,33 @@ public class EvoModelValidator {
         for (int i = 0; i < model.getBlocks().size(); i++) {
             if (model.getBlocks().get(i) == null) {
                 throw new ValidationException("Transformer block at index " + i + " is null");
+            }
+        }
+    }
+
+    public static void validateSnapshot(ModelSnapshot snapshot) {
+        if (snapshot == null) {
+            throw new ValidationException("ModelSnapshot cannot be null");
+        }
+
+        EvoLlmArchitecture arch = snapshot.getArchitecture();
+        if (arch == null) {
+            throw new ValidationException("ModelSnapshot architecture cannot be null");
+        }
+
+        ModelParameters params = snapshot.getParameters();
+        if (params == null || params.count() == 0) {
+            throw new ValidationException("ModelSnapshot parameters registry cannot be empty");
+        }
+
+        if (!params.contains("token_embd.weight")) {
+            throw new ValidationException("ModelSnapshot missing canonical token_embd.weight tensor");
+        }
+
+        for (int i = 0; i < arch.getNumBlocks(); i++) {
+            String qName = "blk." + i + ".attn_q.weight";
+            if (!params.contains(qName)) {
+                throw new ValidationException("ModelSnapshot missing canonical tensor: " + qName);
             }
         }
     }
