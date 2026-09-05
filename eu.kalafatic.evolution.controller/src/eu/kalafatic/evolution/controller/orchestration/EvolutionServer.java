@@ -752,11 +752,12 @@ public class EvolutionServer extends NanoHTTPD {
         String repoUrl = json.optString("repoUrl", "");
         String branch = json.optString("branch", "main");
         String requestedSessionId = json.optString("sessionId", null);
+        String model = json.optString("model", null);
 
         try {
             eu.kalafatic.evolution.controller.orchestration.mutation.MutationSession mutSession =
                 eu.kalafatic.evolution.controller.orchestration.mutation.MutationSessionManager.getInstance()
-                    .createSession(repoUrl, branch, requestedSessionId);
+                    .createSession(repoUrl, branch, requestedSessionId, model);
 
             JSONObject res = new JSONObject();
             res.put("status", "ok");

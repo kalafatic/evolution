@@ -176,6 +176,7 @@
             <div class="repo-controls">
                 <input type="text" id="repo-url" placeholder="Git repository URL or local path (e.g. https://github.com/org/repo.git)" value="https://github.com/kalafatic/evolution">
                 <input type="text" id="repo-branch" placeholder="Branch" value="main" style="width: 100px;">
+                <select id="model-select" style="max-width: 140px;" title="Select LLM Model"><option value="">Model: Loading...</option></select>
                 <button class="btn btn-primary" onclick="initSession()">Start Session</button>
                 <select id="session-select" onchange="switchSession()"><option value="Default">Session: Default</option></select>
             </div>
@@ -246,16 +247,55 @@ Select a repository or type a command to analyze code, propose implementations, 
             return (window.location.protocol === 'file:') ? 'http://localhost:48080' : '';
         }
 
+        async function fetchModels() {
+            try {
+                const statusRes = await fetch(getBaseUrl() + '/server/status?runtime=SWT');
+                const statusData = await statusRes.json();
+
+                const settingsRes = await fetch(getBaseUrl() + '/server/orchestrator/settings?runtime=SWT');
+                const settingsData = await settingsRes.json();
+
+                const select = document.getElementById('model-select');
+                const currentVal = select.value;
+                select.innerHTML = '';
+
+                const activeDefault = settingsData.localModel || settingsData.remoteModel || 'evo';
+
+                if (statusData.ollama && statusData.ollama.models && statusData.ollama.models.length > 0) {
+                    statusData.ollama.models.forEach(m => {
+                        const opt = document.createElement('option');
+                        opt.value = m.name;
+                        opt.text = m.name;
+                        if (m.name === currentVal || (!currentVal && m.name === activeDefault)) {
+                            opt.selected = true;
+                        }
+                        select.appendChild(opt);
+                    });
+                }
+
+                if (select.options.length === 0) {
+                    const opt = document.createElement('option');
+                    opt.value = activeDefault;
+                    opt.text = activeDefault;
+                    opt.selected = true;
+                    select.appendChild(opt);
+                }
+            } catch (err) {
+                console.error('Failed to fetch LLM models:', err);
+            }
+        }
+
         async function initSession() {
             const repoUrl = document.getElementById('repo-url').value.trim();
             const branch = document.getElementById('repo-branch').value.trim() || 'main';
+            const model = document.getElementById('model-select').value;
             const sessionId = 'mutation-' + Math.random().toString(36).substring(2, 9);
 
             try {
                 const res = await fetch(getBaseUrl() + '/mutation/session', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ repoUrl, branch, sessionId })
+                    body: JSON.stringify({ repoUrl, branch, sessionId, model })
                 });
                 const data = await res.json();
                 if (data.status === 'ok') {
@@ -303,13 +343,14 @@ Select a repository or type a command to analyze code, propose implementations, 
             const text = input.value.trim();
             if (!text) return;
             input.value = '';
+            const model = document.getElementById('model-select').value;
 
             try {
                 document.getElementById('thinking').style.display = 'flex';
                 await fetch(getBaseUrl() + '/task?runtime=SWT', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ prompt: text, sessionId: currentSessionId })
+                    body: JSON.stringify({ prompt: text, sessionId: currentSessionId, model: model })
                 });
             } catch (err) {
                 console.error('Error sending message:', err);
@@ -457,6 +498,7 @@ Select a repository or type a command to analyze code, propose implementations, 
         }
 
         refreshSessionList();
+        fetchModels();
         setInterval(pollConversation, 1000);
         setInterval(fetchDiff, 3000);
     </script>

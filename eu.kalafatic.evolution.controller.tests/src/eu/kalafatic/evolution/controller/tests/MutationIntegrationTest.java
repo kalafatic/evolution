@@ -12,6 +12,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import eu.kalafatic.evolution.controller.orchestration.OrchestratorServiceImpl;
 import eu.kalafatic.evolution.controller.orchestration.PlatformType;
 import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
 import eu.kalafatic.evolution.controller.orchestration.SessionManager;
@@ -23,6 +24,8 @@ import eu.kalafatic.evolution.controller.orchestration.selfdev.DarwinEngineFacto
 import eu.kalafatic.evolution.controller.orchestration.selfdev.GitManager;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.MutationEngine;
 import eu.kalafatic.evolution.controller.orchestration.util.ModeRecognizer;
+import eu.kalafatic.evolution.model.orchestration.ChatSession;
+import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 
 public class MutationIntegrationTest {
 
@@ -124,5 +127,29 @@ public class MutationIntegrationTest {
 
         String buildOutput = session.executeBuildAndTest();
         assertNotNull(buildOutput);
+    }
+
+    @Test
+    public void testMutationSessionWithModelAndRemoteClientRegistration() throws Exception {
+        String sessionId = "mutation-remote-test-1";
+        String testModel = "llama3.2:3b";
+        MutationSession session = sessionManager.createSession(tempRepo.getAbsolutePath(), "main", sessionId, testModel);
+
+        assertNotNull(session);
+        assertEquals(sessionId, session.getSessionId());
+
+        Orchestrator orch = OrchestratorServiceImpl.getInstance().getOrchestrator();
+        assertNotNull(orch);
+        assertNotNull(orch.getAiChat());
+
+        ChatSession chatSession = orch.getAiChat().getSessions().stream()
+                .filter(s -> sessionId.equals(s.getId()))
+                .findFirst()
+                .orElse(null);
+
+        assertNotNull(chatSession);
+        assertEquals("REMOTE_CLIENT", chatSession.getTargetType());
+        assertEquals(testModel, chatSession.getLocalModel());
+        assertEquals(session.getWorkspaceDir().getAbsolutePath(), chatSession.getTargetPath());
     }
 }
