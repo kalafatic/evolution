@@ -244,7 +244,7 @@ public class AiChatPage extends AEvoPage {
 
 		mainSash.setWeights(new int[] { 50, 20, 30 });
 
-		horizontalSash.setWeights(new int[] { 65, 35 });
+		//horizontalSash.setWeights(new int[] { 65, 35 });
 
 		initializeSessions();
 
