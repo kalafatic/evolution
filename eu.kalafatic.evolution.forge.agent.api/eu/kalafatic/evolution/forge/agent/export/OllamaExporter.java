@@ -107,10 +107,23 @@ public class OllamaExporter implements EvoModelExporter {
         writeGGUF(ggufPath, arch, serializedTensors, vocab);
 
         EvoLlmModel tempModel = new EvoLlmModel(arch);
+        ModelParameters targetParams = tempModel.getModelParameters();
+        if (params != null) {
+            for (String name : params.names()) {
+                if (targetParams.contains(name)) {
+                    Tensor src = params.get(name);
+                    Tensor dst = targetParams.get(name);
+                    if (src != null && dst != null && src.getData() != null && dst.getData() != null) {
+                        int copyLen = Math.min(src.getData().length, dst.getData().length);
+                        System.arraycopy(src.getData(), 0, dst.getData(), 0, copyLen);
+                    }
+                }
+            }
+        }
         GGUFValidationReport valReport = GGUFValidator.validate(ggufPath, tempModel, vocab);
 
         if (!valReport.isValid()) {
-            throw new IOException("GGUF Export Validation Failed: File is malformed or invalid.");
+            throw new IOException("GGUF Export Validation Failed: File is malformed or invalid.\n" + valReport.generateSummary());
         }
 
         List<String> modelfile = new ArrayList<>();

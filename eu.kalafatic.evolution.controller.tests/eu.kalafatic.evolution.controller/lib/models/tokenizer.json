@@ -1,4 +1,1 @@
-{
-  "type": "BPE",
-  "vocabSize": 100
-}
+{"vocab_size":10}
