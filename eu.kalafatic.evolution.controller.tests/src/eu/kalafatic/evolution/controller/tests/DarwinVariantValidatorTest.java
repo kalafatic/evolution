@@ -90,4 +90,35 @@ public class DarwinVariantValidatorTest {
         assertNotNull("Validation should pass when 'semantic_anchor' is used instead of 'semantic_justification'", result);
         assertEquals("Divergent philosophy anchor", result.getString("semantic_anchor"));
     }
+
+    @Test
+    public void testValidateWithThinkingTagsPasses() {
+        DarwinVariantValidator validator = new DarwinVariantValidator();
+        String rawResponse = "<think>\n" +
+                "The user is asking for a direct execution path. I should analyze the options and produce a structured proposal.\n" +
+                "</think>\n" +
+                "{\n" +
+                "  \"id\": \"thinking_model_test\",\n" +
+                "  \"strategy_type\": \"PROBABLE_SURVIVOR\",\n" +
+                "  \"strategy\": \"Implement a simple direct execution path.\",\n" +
+                "  \"reasoning_focus\": \"Direct execution\",\n" +
+                "  \"survival_argument\": \"Most practical path\",\n" +
+                "  \"semantic_justification\": \"Minimalist philosophy\",\n" +
+                "  \"tradeoffs\": \"Lacks extensibility\",\n" +
+                "  \"failure_risks\": \"Monolithic\",\n" +
+                "  \"actions\": [\n" +
+                "    {\n" +
+                "      \"domain\": \"file\",\n" +
+                "      \"operation\": \"WRITE\",\n" +
+                "      \"target\": \"src/Main.java\",\n" +
+                "      \"description\": \"Write main class\",\n" +
+                "      \"implementation\": \"public class Main {}\"\n" +
+                "    }\n" +
+                "  ]\n" +
+                "}";
+
+        JSONObject result = validator.validate(rawResponse, DarwinStrategyType.PROBABLE_SURVIVOR, null);
+        assertNotNull("Validation should pass when response contains reasoning model <think> tags", result);
+        assertEquals("thinking_model_test", result.getString("id"));
+    }
 }

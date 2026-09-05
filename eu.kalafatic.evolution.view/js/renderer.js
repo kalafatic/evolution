@@ -760,6 +760,96 @@ window.ChatApp.Renderer = {
                 return `<span class="trait-tag active" style="font-size: 9px; padding: 2px 4px;">${label}</span>`;
             }).join(' <span style="color:#94a3b8">→</span> ');
 
+            // Extract latest Darwin Tree data from message history
+            let darwinData = null;
+            for (let i = (messages || []).length - 1; i >= 0; i--) {
+                const m = messages[i];
+                const role = (m.agentType || '').toLowerCase();
+                if (role.includes('evolution-progress')) {
+                    try {
+                        const progressData = JSON.parse(m.text);
+                        if (progressData.iterationCount !== undefined || progressData.branches) {
+                            darwinData = {
+                                iteration: progressData.iterationCount || 1,
+                                generation: progressData.generation || 1,
+                                dimension: progressData.currentDimension || '',
+                                dimensionDesc: progressData.currentDimensionDescription || '',
+                                winnerId: progressData.winnerId || null,
+                                branches: progressData.branches || []
+                            };
+                            break;
+                        }
+                    } catch(e) {}
+                } else if ((role.includes('darwin') || role.includes('branch')) && m.text.includes('{')) {
+                    try {
+                        let cleanText = window.ChatApp.Utils.stripTechnicalMarkers(m.text);
+                        cleanText = cleanText.replace(/^(\s*\[[^\{\"\[\]\n]+\]|\s*\([^\{\"\[\)\n]+\)|\s*(INFO|WARNING|SEVERE|ERROR|DEBUG):)+/gi, '').trim();
+                        const jsonMatch = cleanText.match(/[\{\[][\s\S]*[\}\]]/);
+                        if (jsonMatch) {
+                            const dData = JSON.parse(jsonMatch[0]);
+                            const variants = Array.isArray(dData) ? dData : (dData.variants || dData.proposals || []);
+                            if (variants && variants.length > 0) {
+                                darwinData = {
+                                    iteration: dData.iteration || 1,
+                                    generation: 1,
+                                    dimension: dData.activeDimension || '',
+                                    dimensionDesc: '',
+                                    winnerId: dData.recommended || null,
+                                    branches: variants.map((v, idx) => ({
+                                        id: v.id || ('b' + (idx + 1)),
+                                        strategy: v.strategy || v.description || 'Proposal ' + (idx + 1),
+                                        score: v.score !== undefined ? v.score : 0.8,
+                                        status: v.status || (v.isBest ? 'active' : 'waiting')
+                                    }))
+                                };
+                                break;
+                            }
+                        }
+                    } catch(e) {}
+                }
+            }
+
+            let darwinTreeHtml = '';
+            if (darwinData && darwinData.branches && darwinData.branches.length > 0) {
+                const gen = darwinData.generation || 1;
+                const iter = darwinData.iteration || 1;
+                const dim = darwinData.dimension;
+
+                let dimHtml = dim ? `<div style="font-size: 9px; color: #475569; margin-bottom: 4px;"><b>Dimension:</b> ${window.ChatApp.Utils.escapeHtml(dim)}</div>` : '';
+
+                let branchRows = darwinData.branches.map((b, idx) => {
+                    const isLast = idx === darwinData.branches.length - 1;
+                    const isWinner = b.id === darwinData.winnerId || b.isBest || b.status === 'active' || b.status === 'APPROVED';
+                    const scorePct = b.score !== undefined ? Math.round(b.score > 1 ? b.score : b.score * 100) : 80;
+                    const strategy = window.ChatApp.Utils.escapeHtml(b.strategy || 'Branch ' + (idx + 1));
+                    const label = isWinner ? '🏆 B' + (idx + 1) : 'B' + (idx + 1);
+
+                    return `
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 3px 6px; border-radius: 4px; background: ${isWinner ? '#f0fdf4' : '#f8fafc'}; margin-bottom: 2px;">
+                            <div style="display: flex; align-items: center; gap: 4px; overflow: hidden; flex: 1;">
+                                <span style="font-size: 9px; color: #94a3b8; font-family: monospace;">${isLast ? '└─' : '├─'}</span>
+                                <span style="font-weight: bold; font-size: 10px; color: ${isWinner ? '#16a34a' : '#334155'}; flex-shrink: 0;">${label}</span>
+                                <span style="font-size: 9px; color: #64748b; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" title="${strategy}">${strategy}</span>
+                            </div>
+                            <span class="badge" style="font-size: 9px; padding: 1px 4px; background: ${isWinner ? '#16a34a' : '#64748b'}; color: white; margin-left: 4px;">${scorePct}%</span>
+                        </div>
+                    `;
+                }).join('');
+
+                darwinTreeHtml = `
+                    <div style="margin-top: 10px; border-top: 1px solid #cbd5e1; padding-top: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                            <span style="font-size: 10px; font-weight: 800; color: #475569; letter-spacing: 0.5px;">🧬 DARWIN BRANCHING TREE</span>
+                            <span style="font-size: 9px; color: #3b82f6; font-weight: bold;">Gen ${gen} • Iter #${iter}</span>
+                        </div>
+                        ${dimHtml}
+                        <div class="cognitive-darwin-tree" style="display: flex; flex-direction: column; gap: 2px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px; font-size: 10px;">
+                            ${branchRows}
+                        </div>
+                    </div>
+                `;
+            }
+
             content.innerHTML = `
                 <div style="display: flex; flex-direction: column; gap: 8px; font-family: sans-serif;">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -807,6 +897,8 @@ window.ChatApp.Renderer = {
                             ${trajectoryHtml || '<span style="color:#cbd5e1; font-style:italic;">Stable</span>'}
                         </div>
                     </div>
+
+                    ${darwinTreeHtml}
                 </div>
             `;
         } catch(e) {
