@@ -1,5 +1,6 @@
 package eu.kalafatic.evolution.controller.orchestration;
 
+import eu.kalafatic.evolution.controller.orchestration.llm.LlmResponse;
 import eu.kalafatic.evolution.controller.orchestration.llm.LlmRouter;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 
@@ -29,6 +30,13 @@ public class AiService {
 
     public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
         return sendRequest(orchestrator, prompt, temperature, proxyUrl, context, null);
+    }
+
+    public LlmResponse sendLlmRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context, String forcedModel) throws Exception {
+        if (forcedModel != null) {
+            orchestrator.setLocalModel(forcedModel);
+        }
+        return llmRouter.sendLlmRequest(orchestrator, prompt, temperature, proxyUrl, context);
     }
 
     public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context, String forcedModel) throws Exception {

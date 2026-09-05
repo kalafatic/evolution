@@ -36,8 +36,16 @@ public class DarwinVariantSpawner {
         String bpPrompt = buildBlueprintPrompt(bp, basePrompt, lineageContext, rejectedSiblings, mutationContext, isMediated, context, activeDimension, genome);
 
         try {
-            String response = aiService.sendRequest(orchestrator, bpPrompt, context);
-            return validator.validate(response, bp.getStrategyType(), context);
+            eu.kalafatic.evolution.controller.orchestration.llm.LlmResponse llmResponse = aiService.sendLlmRequest(orchestrator, bpPrompt, 0.7f, null, context, null);
+            if (llmResponse.getKind() == eu.kalafatic.evolution.controller.orchestration.llm.ResponseKind.REASONING_ONLY) {
+                context.log("[SPAWNER] Materialization produced REASONING_ONLY response for " + bp.getId() + ". Discarding incomplete branch.");
+                return null;
+            }
+            JSONObject json = validator.validate(llmResponse.getContent(), bp.getStrategyType(), context);
+            if (json != null && llmResponse.getReasoning() != null && !llmResponse.getReasoning().isEmpty()) {
+                json.put("internal_reasoning", llmResponse.getReasoning());
+            }
+            return json;
         } catch (Exception e) {
             context.log("[SPAWNER] Error during blueprint materialization for " + bp.getId() + ": " + e.getMessage());
             return null;

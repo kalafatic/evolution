@@ -29,9 +29,70 @@ public class LlmRouter {
     private final ILlmProvider geminiProvider = new GeminiProvider();
 
     /**
-     * Routes the request to the appropriate LLM provider.
+     * Routes the request to the appropriate LLM provider and returns normalized LlmResponse.
+     */
+    public LlmResponse sendLlmRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
+        String activeModel = "unknown";
+        if (orchestrator != null) {
+            AiMode mode = orchestrator.getAiMode();
+            if (mode == AiMode.REMOTE) {
+                activeModel = orchestrator.getRemoteModel();
+            } else if (mode == AiMode.HYBRID) {
+                activeModel = orchestrator.getHybridModel();
+                if (activeModel == null || activeModel.isEmpty()) {
+                    activeModel = orchestrator.getLocalModel();
+                }
+                if (activeModel == null || activeModel.isEmpty()) {
+                    activeModel = (orchestrator.getOllama() != null) ? orchestrator.getOllama().getModel() : "Hybrid";
+                }
+            } else {
+                activeModel = orchestrator.getLocalModel();
+                if (activeModel == null || activeModel.isEmpty()) {
+                    activeModel = (orchestrator.getOllama() != null) ? orchestrator.getOllama().getModel() : "local";
+                }
+            }
+        }
+
+        if (context != null) {
+            context.log("Stage: LLM\nProvider: dynamic\nModel: " + (activeModel != null ? activeModel : "unknown"));
+            context.log("LlmRouter: Routing request via dynamic policies.");
+        }
+
+        String rawResponse = null;
+        for (IRoutingPolicy policy : RoutingPolicyRegistry.getPolicies()) {
+            if (policy.applies(orchestrator, context)) {
+                rawResponse = policy.handle(this, orchestrator, prompt, temperature, proxyUrl, context);
+                break;
+            }
+        }
+
+        if (rawResponse == null) {
+            // Default fallback to local
+            return ollamaProvider.sendLlmRequest(orchestrator, prompt, temperature, proxyUrl, context);
+        }
+
+        // Record successful usage to improve rating
+        if (rawResponse != null && !rawResponse.isEmpty() && orchestrator != null && activeModel != null && !"unknown".equals(activeModel)) {
+            try {
+                eu.kalafatic.evolution.controller.services.FeedbackService.getInstance().recordUsage(orchestrator, activeModel);
+            } catch (Exception e) {
+                // Ignore silent failure
+            }
+        }
+
+        ReasoningProtocol protocol = ReasoningProtocolRegistry.resolve(orchestrator, context);
+        return protocol.parse(rawResponse);
+    }
+
+    /**
+     * Routes the request to the appropriate LLM provider and returns final user-facing content.
      */
     public String sendRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
+        LlmResponse response = sendLlmRequest(orchestrator, prompt, temperature, proxyUrl, context);
+        return response.getContent();
+    }
+
+    private String sendRequestLegacy(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
         String activeModel = "unknown";
         if (orchestrator != null) {
             AiMode mode = orchestrator.getAiMode();

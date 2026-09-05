@@ -37,6 +37,8 @@ public class BranchVariant {
     private boolean implementationEnabled = true;
     private List<String> selectedFiles = new ArrayList<>();
     private String reasoningFocus;
+    private String reasoning;
+    private eu.kalafatic.evolution.controller.orchestration.llm.LlmResponse llmResponse;
     private List<Action> actions = new ArrayList<>();
     private ExpectedEffect expectedEffect;
     private Hypothesis hypothesis;
@@ -111,6 +113,17 @@ public class BranchVariant {
 
     public String getReasoningFocus() { return reasoningFocus; }
     public void setReasoningFocus(String reasoningFocus) { this.reasoningFocus = reasoningFocus; }
+
+    public String getReasoning() { return reasoning; }
+    public void setReasoning(String reasoning) { this.reasoning = reasoning; }
+
+    public eu.kalafatic.evolution.controller.orchestration.llm.LlmResponse getLlmResponse() { return llmResponse; }
+    public void setLlmResponse(eu.kalafatic.evolution.controller.orchestration.llm.LlmResponse llmResponse) {
+        this.llmResponse = llmResponse;
+        if (llmResponse != null && (this.reasoning == null || this.reasoning.isEmpty())) {
+            this.reasoning = llmResponse.getReasoning();
+        }
+    }
 
     public ExpectedEffect getExpectedEffect() { return expectedEffect; }
     public void setExpectedEffect(ExpectedEffect expectedEffect) { this.expectedEffect = expectedEffect; }
