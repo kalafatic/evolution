@@ -1,6 +1,1 @@
-FROM /tmp/junit12698092301362535293/gguf-export-output-2/exports/ollama/evo.gguf
-PARAMETER temperature 0.2
-PARAMETER num_ctx 8
-PARAMETER stop "</s>"
-PARAMETER stop "<s>"
-SYSTEM """You are EVO, a specialized language model trained on Evolution project knowledge."""
+FROM evo.gguf
