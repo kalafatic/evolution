@@ -28,7 +28,22 @@ window.ChatApp.Renderer = {
         content.className = 'message-content';
 
         let isDarwin = !isUser && (role.includes('darwin') || role.includes('branch')) && (m.text.includes('{') || m.text.includes('['));
-        if (!isDarwin && !isUser) {
+        if (isDarwin) {
+            try {
+                let cleanText = window.ChatApp.Utils.stripTechnicalMarkers(m.text);
+                cleanText = cleanText.replace(/^(\s*\[[^\{\"\[\]\n]+\]|\s*\([^\{\"\[\)\n]+\)|\s*(INFO|WARNING|SEVERE|ERROR|DEBUG):)+/gi, '').trim();
+                const jsonMatch = cleanText.match(/[\{\[][\s\S]*[\}\]]/);
+                if (jsonMatch) {
+                    const data = JSON.parse(jsonMatch[0]);
+                    const variants = Array.isArray(data) ? data : (data.variants || data.proposals || data.hypotheses || []);
+                    if (!Array.isArray(variants) || variants.length === 0) {
+                        if (!m.text.includes('[DARWIN_BRANCHES]') && !m.text.includes('<BEGIN_DARWIN_JSON>')) {
+                            isDarwin = false;
+                        }
+                    }
+                }
+            } catch(e) {}
+        } else if (!isUser) {
              try {
                 const data = JSON.parse(m.text);
                 if (data.variants || data.proposals || (Array.isArray(data) && data.length > 0 && (data[0].strategy || data[0].id || data[0].description))) isDarwin = true;
@@ -151,7 +166,12 @@ window.ChatApp.Renderer = {
                 const match = jsonText.match(/[\{\[][\s\S]*[\}\]]/);
                 if (match) {
                     const data = JSON.parse(match[0]);
-                    return this.renderJson(data);
+                    const prefixText = jsonText.substring(0, match.index).trim();
+                    const renderedJson = this.renderJson(data);
+                    if (prefixText && prefixText.toLowerCase() !== 'summary') {
+                        return this.formatText(prefixText, role) + '<br>' + renderedJson;
+                    }
+                    return renderedJson;
                 }
             } catch(e) {}
         }
@@ -253,14 +273,14 @@ window.ChatApp.Renderer = {
             return window.ChatApp.Utils.escapeHtml(str);
         };
 
-        const humanKeys = ['explanation', 'strategy', 'thought', 'objective', 'refinedPrompt', 'rootCause', 'plan', 'workDone', 'summary', 'description', 'hypothesis', 'expected_effects', 'expected_effect', 'clarificationQuestion'];
-        const technicalKeys = ['id', 'suffix', 'score', 'risk', 'reversibility', 'confidence', 'intent', 'category', 'isAmbiguous', 'missingInformation'];
+        const humanKeys = ['explanation', 'strategy', 'thought', 'objective', 'refinedPrompt', 'rootCause', 'plan', 'workDone', 'summary', 'description', 'hypothesis', 'expected_effects', 'expected_effect', 'clarificationQuestion', 'category', 'confidence', 'reasoning', 'subIntent', 'targetArtifact'];
+        const technicalKeys = ['id', 'suffix', 'score', 'risk', 'reversibility', 'intent', 'isAmbiguous', 'missingInformation'];
 
         // If data is a simple object with just one or two human keys, render it as plain text
         if (typeof data === 'object' && !Array.isArray(data)) {
             const keys = Object.keys(data);
             const humanPresent = keys.filter(k => humanKeys.includes(k));
-            if (humanPresent.length === 1 && keys.length <= 3) {
+            if (humanPresent.length === 1 && keys.length <= 3 && !data.category && !data.confidence) {
                  const key = humanPresent[0];
                  if (typeof data[key] === 'string') return this.formatText(data[key]);
             }
@@ -274,9 +294,19 @@ window.ChatApp.Renderer = {
         } else {
             // First render prioritized human keys
             humanKeys.forEach(f => {
-                if (data[f]) {
+                if (data[f] !== undefined && data[f] !== null) {
                     if (f === 'refinedPrompt') {
                         html += `<div><div style="font-size: 10px; font-weight: 800; color: #64748b;">REFINED PROMPT</div><a class="link-go" onclick="event.stopPropagation(); window.ChatApp.Actions.callJava('executeProposal', '-1', '${window.ChatApp.Utils.escapeJs(data[f])}')"><b>${window.ChatApp.Utils.escapeHtml(data[f])}</b></a></div>`;
+                    } else if (f === 'category') {
+                        html += `<div><span class="badge active" style="background: #3b82f6; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold;">${window.ChatApp.Utils.escapeHtml(data[f])}</span></div>`;
+                    } else if (f === 'confidence') {
+                        const val = parseFloat(data[f]);
+                        const pct = isNaN(val) ? data[f] : Math.round(val > 1 ? val : val * 100) + '%';
+                        html += `<div><div style="font-size: 10px; font-weight: 800; color: #64748b;">CONFIDENCE</div>${pct}</div>`;
+                    } else if (f === 'subIntent' && data[f]) {
+                        html += `<div><div style="font-size: 10px; font-weight: 800; color: #64748b;">SUB INTENT</div>${renderValue(data[f], f)}</div>`;
+                    } else if (f === 'targetArtifact' && data[f]) {
+                        html += `<div><div style="font-size: 10px; font-weight: 800; color: #64748b;">TARGET ARTIFACT</div>${renderValue(data[f], f)}</div>`;
                     } else if (f === 'hypothesis' && typeof data[f] === 'object') {
                          html += `<div><div style="font-size: 10px; font-weight: 800; color: #64748b;">HYPOTHESIS</div>${renderValue(data[f].description)}</div>`;
                          if (data[f].expected_effects) html += `<div><div style="font-size: 10px; font-weight: 800; color: #64748b;">EXPECTED EFFECTS</div>${renderValue(data[f].expected_effects)}</div>`;
@@ -286,7 +316,7 @@ window.ChatApp.Renderer = {
                          html += `<div style="font-size: 1.1em; color: var(--ai-text); border-left: 3px solid var(--primary); padding-left: 8px;">${renderValue(data[f], f)}</div>`;
                     } else {
                         // Less technical header for common narrative fields
-                        const usePlainLabel = ['explanation', 'thought', 'summary', 'description'].includes(f);
+                        const usePlainLabel = ['explanation', 'thought', 'summary', 'description', 'reasoning'].includes(f);
                         if (usePlainLabel) {
                             html += `<div style="line-height: 1.4;">${renderValue(data[f], f)}</div>`;
                         } else {

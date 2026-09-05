@@ -28,8 +28,8 @@ public class CognitiveStateEngine {
                 signal = new CapabilitySignal(CapabilityType.FORGE, 10.0, 1.0, SessionIntent.EVOLVING, null, "EXPLICIT_UI_FORGE");
             } else if (uiMode == AiMode.INTENT) {
                 signal = new CapabilitySignal(CapabilityType.INTENT_RECONSTRUCTION, 10.0, 1.0, signal.getIntent(), null, "EXPLICIT_UI_INTENT");
-            } else if (context.getOrchestrator().isDarwinMode() && signal.getCapability() == CapabilityType.CHAT) {
-                // If Darwin is on but prompt looks like chat, escalate to EVOLUTION
+            } else if (context.getOrchestrator().isDarwinMode() && signal.getCapability() == CapabilityType.CHAT && !isSimpleGreeting(prompt)) {
+                // If Darwin is on but prompt looks like chat, escalate to EVOLUTION unless it is a simple greeting
                 signal = new CapabilitySignal(CapabilityType.EVOLUTION, 5.0, 0.8, signal.getIntent(), null, "EXPLICIT_UI_DARWIN");
             }
         }
@@ -143,6 +143,13 @@ public class CognitiveStateEngine {
         }
 
         return depth;
+    }
+
+    private boolean isSimpleGreeting(String prompt) {
+        if (prompt == null) return false;
+        String p = prompt.trim().toLowerCase();
+        if (p.length() > 20) return false;
+        return p.matches("^(hi|hello|hey|greetings|morning|afternoon|evening|hola|yo|sup|hi there|hello there)(\\s*|!|\\.|\\?)*$");
     }
 
     private CapabilityType mapToCapability(eu.kalafatic.evolution.controller.orchestration.PlatformType type) {
