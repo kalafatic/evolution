@@ -339,8 +339,9 @@ public class AiChatPage extends AEvoPage {
 
 		File projectRoot = getProjectRoot();
 		String targetPath = projectRoot != null ? projectRoot.getAbsolutePath() : "UNKNOWN";
+		String clientTag = (currentSession != null && "REMOTE_CLIENT".equals(currentSession.getTargetType())) ? "[REMOTE CLIENT] " : "";
 
-		setTextSafe(modeIndicatorLabel, mode.getName().toUpperCase() + " - " + modelName.toUpperCase() + " - " + targetPath);
+		setTextSafe(modeIndicatorLabel, clientTag + mode.getName().toUpperCase() + " - " + modelName.toUpperCase() + " - " + targetPath);
 		setForegroundSafe(modeIndicatorLabel, Display.getDefault().getSystemColor(SWT.COLOR_BLACK));
 
 		Color targetBg = lightGreen;
@@ -652,10 +653,12 @@ public class AiChatPage extends AEvoPage {
 		updateSessionCombo();
 	}
 
-	private void updateSessionCombo() {
+	public void updateSessionCombo() {
+		if (orchestrator == null || orchestrator.getAiChat() == null || chatMgmtGroup == null) return;
 		String[] ids = orchestrator.getAiChat().getSessions().stream()
 				.map(ChatSession::getId).toArray(String[]::new);
-		chatMgmtGroup.updateSessionCombo(ids, currentSession.getId());
+		String currentId = currentSession != null ? currentSession.getId() : (ids.length > 0 ? ids[0] : "Default");
+		chatMgmtGroup.updateSessionCombo(ids, currentId);
 	}
 
 	public void createNewSession() {
@@ -1004,7 +1007,7 @@ public class AiChatPage extends AEvoPage {
 	}
 
 	public File getProjectRoot() {
-		if (orchestrator != null && (orchestrator.getAiMode() == AiMode.MEDIATED || orchestrator.getAiMode() == AiMode.FORGE) && currentSession != null) {
+		if (currentSession != null) {
 			String targetPath = currentSession.getTargetPath();
 			if (targetPath != null && !targetPath.isEmpty()) {
 				File targetFile = new File(targetPath);

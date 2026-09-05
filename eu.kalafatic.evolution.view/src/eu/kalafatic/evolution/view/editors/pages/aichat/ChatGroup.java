@@ -787,10 +787,25 @@ public class ChatGroup extends AEvoGroup {
 
     public void addMessageToSession(String sessionId, ChatMessage msg) {
         if (orchestrator != null && orchestrator.getAiChat() != null && msg != null) {
-            orchestrator.getAiChat().getSessions().stream()
+            ChatSession targetSession = orchestrator.getAiChat().getSessions().stream()
                 .filter(s -> sessionId.equals(s.getId()))
                 .findFirst()
-                .ifPresent(s -> {
+                .orElse(null);
+
+            if (targetSession == null) {
+                targetSession = OrchestrationFactory.eINSTANCE.createChatSession();
+                targetSession.setId(sessionId);
+                targetSession.setTargetType("REMOTE_CLIENT");
+                targetSession.setIterativeMode(true);
+                targetSession.setDarwinMode(true);
+                targetSession.setAutoApprove(true);
+                orchestrator.getAiChat().getSessions().add(targetSession);
+                if (page != null) {
+                    Display.getDefault().asyncExec(() -> page.updateSessionCombo());
+                }
+            }
+
+            final ChatSession s = targetSession;
                     // Downgrade previous waiting messages when a new message arrives
                     // especially if the new one is also waiting or from the user (completing a turn)
                     String newAgentType = msg.getAgentType();
@@ -839,7 +854,6 @@ public class ChatGroup extends AEvoGroup {
                     if (s == currentSession) {
                         scheduleRefresh();
                     }
-                });
         }
     }
 

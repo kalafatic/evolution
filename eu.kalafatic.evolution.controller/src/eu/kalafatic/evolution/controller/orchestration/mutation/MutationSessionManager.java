@@ -9,6 +9,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import eu.kalafatic.evolution.controller.orchestration.ConversationOutputController;
+import eu.kalafatic.evolution.controller.orchestration.MessagePriority;
 import eu.kalafatic.evolution.controller.orchestration.OrchestratorServiceImpl;
 import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
 import eu.kalafatic.evolution.controller.orchestration.SessionContext;
@@ -16,6 +18,8 @@ import eu.kalafatic.evolution.controller.orchestration.SessionManager;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.GitManager;
 import eu.kalafatic.evolution.controller.tools.ShellTool;
+import eu.kalafatic.evolution.model.orchestration.ChatSession;
+import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 
 /**
@@ -44,6 +48,10 @@ public class MutationSessionManager {
     }
 
     public MutationSession createSession(String repoUrl, String branch, String requestedSessionId) throws Exception {
+        return createSession(repoUrl, branch, requestedSessionId, null);
+    }
+
+    public MutationSession createSession(String repoUrl, String branch, String requestedSessionId, String requestedModel) throws Exception {
         String sessionId = (requestedSessionId != null && !requestedSessionId.trim().isEmpty())
                 ? requestedSessionId.trim()
                 : "mutation-" + UUID.randomUUID().toString().substring(0, 8);
@@ -92,18 +100,72 @@ public class MutationSessionManager {
 
         // Register / sync with EVO core SessionManager and TaskContext
         SessionContainer container = SessionManager.getInstance().getOrCreateSession(sessionId);
+        Orchestrator orch = OrchestratorServiceImpl.getInstance().getOrchestrator();
+
         if (container instanceof SessionContext) {
             SessionContext sc = (SessionContext) container;
             TaskContext tc = sc.getTaskContext();
             if (tc == null) {
-                Orchestrator orch = OrchestratorServiceImpl.getInstance().getOrchestrator();
                 tc = new TaskContext(orch, workspaceDir);
                 tc.setSessionId(sessionId);
                 sc.setTaskContext(tc);
             } else {
                 tc.setProjectRoot(workspaceDir);
             }
+
+            if (requestedModel != null && !requestedModel.trim().isEmpty()) {
+                if (tc.getOrchestrator() != null) {
+                    tc.getOrchestrator().setLocalModel(requestedModel.trim());
+                    if (tc.getOrchestrator().getOllama() != null) {
+                        tc.getOrchestrator().getOllama().setModel(requestedModel.trim());
+                    }
+                }
+            }
         }
+
+        // Auto-create / configure ChatSession in Orchestrator model marked as REMOTE_CLIENT
+        if (orch != null) {
+            if (orch.getAiChat() == null) {
+                orch.setAiChat(OrchestrationFactory.eINSTANCE.createAiChat());
+            }
+
+            ChatSession chatSession = orch.getAiChat().getSessions().stream()
+                    .filter(s -> sessionId.equals(s.getId()))
+                    .findFirst()
+                    .orElse(null);
+
+            if (chatSession == null) {
+                chatSession = OrchestrationFactory.eINSTANCE.createChatSession();
+                chatSession.setId(sessionId);
+                chatSession.setTargetType("REMOTE_CLIENT");
+                chatSession.setTargetPath(workspaceDir.getAbsolutePath());
+                if (requestedModel != null && !requestedModel.trim().isEmpty()) {
+                    chatSession.setLocalModel(requestedModel.trim());
+                }
+                chatSession.setIterativeMode(true);
+                chatSession.setDarwinMode(true);
+                chatSession.setAutoApprove(true);
+                orch.getAiChat().getSessions().add(chatSession);
+            } else {
+                chatSession.setTargetType("REMOTE_CLIENT");
+                chatSession.setTargetPath(workspaceDir.getAbsolutePath());
+                if (requestedModel != null && !requestedModel.trim().isEmpty()) {
+                    chatSession.setLocalModel(requestedModel.trim());
+                }
+            }
+        }
+
+        // Submit initial log message for logging and UI synchronization
+        String turnId = sessionId + "__" + System.currentTimeMillis();
+        ConversationOutputController.getInstance().submitMessage(
+            sessionId,
+            turnId,
+            "Mutation Agent",
+            "Remote client session initialized for " + (repoUrl != null && !repoUrl.isEmpty() ? repoUrl : workspaceDir.getName()) + " (Branch: " + activeBranch + ")",
+            "ai",
+            MessagePriority.NORMAL,
+            false
+        );
 
         return mutationSession;
     }
