@@ -194,4 +194,23 @@ public class OllamaFallbackTest {
         assertNotEquals("evo-token-test", orchestrator.getOllama().getModel());
         assertNotEquals("evo-token-test", orchestrator.getLocalModel());
     }
+
+    @Test
+    public void testEvoNativeTokenPlaceholderFallback() throws Exception {
+        Orchestrator orchestrator = OrchestrationFactory.eINSTANCE.createOrchestrator();
+        Ollama ollama = OrchestrationFactory.eINSTANCE.createOllama();
+        ollama.setUrl("http://localhost:" + port);
+        ollama.setModel("evo-data-v15000-e512-l8-h8-050926_153844");
+        orchestrator.setOllama(ollama);
+        orchestrator.setLocalModel("evo-data-v15000-e512-l8-h8-050926_153844");
+
+        OllamaProvider provider = new OllamaProvider();
+        TaskContext context = new TaskContext(orchestrator, null);
+        context.getMetadata().put("inferenceEngine", "evo native");
+
+        String result = provider.sendRequest(orchestrator, "hi", 0.7f, null, context);
+
+        assertEquals("Fallback success", result);
+        assertNotEquals("evo-data-v15000-e512-l8-h8-050926_153844", orchestrator.getOllama().getModel());
+    }
 }

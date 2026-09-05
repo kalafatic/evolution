@@ -393,9 +393,8 @@ public class OllamaProvider implements ILlmProvider {
                         return response;
                     } else if (response != null && !response.isEmpty()) {
                         if (context != null) {
-                            context.log("EvoInferenceEngine: Response contained placeholder tokens. Returning response directly or falling back.");
+                            context.log("EvoInferenceEngine: Response contained token placeholders ('token_XXXX'). Falling back to llama-cpp or default Ollama provider.");
                         }
-                        return response;
                     }
                 } catch (Exception ex) {
                     if (context != null) {
