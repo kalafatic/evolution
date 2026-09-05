@@ -34,6 +34,10 @@ window.ChatApp.Utils = {
                    .replace(/\[THINKING\]/g, '')
                    .replace(/\[ORCHESTRATOR\]/g, '')
                    .replace(/\[AUDIT\]/g, '')
+                   .replace(/<BEGIN_JSON>/gi, '')
+                   .replace(/<END_JSON>/gi, '')
+                   .replace(/<BEGIN_DARWIN_JSON>/gi, '')
+                   .replace(/<END_DARWIN_JSON>/gi, '')
                    .trim();
     }
 };

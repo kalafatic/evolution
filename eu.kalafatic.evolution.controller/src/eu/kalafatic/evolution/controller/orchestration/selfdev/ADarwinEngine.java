@@ -41,6 +41,7 @@ import eu.kalafatic.evolution.controller.orchestration.OrchestratorResponse;
 import eu.kalafatic.evolution.controller.orchestration.PlatformMode;
 import eu.kalafatic.evolution.controller.orchestration.PlatformType;
 import eu.kalafatic.evolution.controller.orchestration.ResultType;
+import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
 import eu.kalafatic.evolution.controller.orchestration.SessionManager;
 import eu.kalafatic.evolution.controller.orchestration.SystemState;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
@@ -64,6 +65,8 @@ import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityHeal
 import eu.kalafatic.evolution.controller.orchestration.capability.CapabilityStatus;
 import eu.kalafatic.evolution.controller.orchestration.capability.contracts.IMutationContract;
 import eu.kalafatic.evolution.controller.orchestration.cognitive.CapabilityType;
+import eu.kalafatic.evolution.controller.orchestration.cognitive.CognitiveStatePublisher;
+import eu.kalafatic.evolution.controller.orchestration.cognitive.SessionCognitiveState;
 import eu.kalafatic.evolution.controller.orchestration.diagnostics.CausalNode;
 import eu.kalafatic.evolution.controller.orchestration.engines.DimensionDiscoveryAgent;
 import eu.kalafatic.evolution.controller.orchestration.engines.DimensionEngine;
@@ -3293,6 +3296,14 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 			EvolutionProfile chatProfile = EvolutionProfile.create(CapabilityType.CHAT, 1);
 			context.getOrchestrationState().setExecutionProfile(chatProfile);
 
+			// Explicitly update session cognitive capability to CHAT and publish to UI
+			SessionContainer session = (context != null && context.getSessionId() != null) ? SessionManager.getInstance().getSession(context.getSessionId()) : null;
+			SessionCognitiveState cogState = session != null ? session.getCognitiveState() : null;
+			if (cogState != null) {
+				cogState.setCurrentCapability(CapabilityType.CHAT);
+				new CognitiveStatePublisher().publish(context, cogState);
+			}
+
 			// Skip discovery and go directly to chat handling
 			OrchestratorResponse chatResponse = new OrchestratorResponse();
 			chatResponse.setResultType(ResultType.CHAT);
@@ -3303,6 +3314,11 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 
 			// Store the response
 			state.getMetadata().put("chatResponse", chatResponseText);
+
+			// Reset kernel if coming from a terminal state like FAILED or DONE
+			if (context.getStateHolder().getState() == SystemState.FAILED || context.getStateHolder().getState() == SystemState.DONE) {
+				iterationManager.transition(SystemState.INIT, context);
+			}
 
 			// Transition to DONE
 			iterationManager.transition(SystemState.DONE, context);
