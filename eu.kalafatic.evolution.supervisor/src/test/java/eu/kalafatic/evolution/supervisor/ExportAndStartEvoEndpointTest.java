@@ -48,6 +48,23 @@ public class ExportAndStartEvoEndpointTest {
     }
 
     @Test
+    public void testIsValidExecutableValidation() throws Exception {
+        File folder = tempFolder.newFolder("executable-validation-test");
+        File solitaryExe = new File(folder, "evo.exe");
+        solitaryExe.createNewFile();
+
+        // Solitary exe without plugins directory must be invalid
+        Assert.assertFalse("Executable without plugins directory must be invalid", PlatformInfo.isValidExecutable(solitaryExe));
+
+        // Create plugins directory
+        File pluginsDir = new File(folder, "plugins");
+        pluginsDir.mkdirs();
+
+        // Executable with plugins directory must be valid
+        Assert.assertTrue("Executable with plugins directory must be valid", PlatformInfo.isValidExecutable(solitaryExe));
+    }
+
+    @Test
     public void testHttpServerExportAndStartEvoEndpoints() throws Exception {
         File serverBase = tempFolder.newFolder("server-test-base");
         File customExport = new File(serverBase, "export");

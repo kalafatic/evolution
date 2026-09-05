@@ -39,4 +39,12 @@ public class PlatformInfo {
     public static boolean isLinux() {
         return getOperatingSystem() == OperatingSystem.LINUX;
     }
+
+    public static boolean isValidExecutable(java.io.File executable) {
+        if (executable == null || !executable.exists()) return false;
+        java.io.File parentDir = executable.getParentFile();
+        if (parentDir == null) return false;
+        java.io.File pluginsDir = new java.io.File(parentDir, "plugins");
+        return pluginsDir.exists() && pluginsDir.isDirectory();
+    }
 }

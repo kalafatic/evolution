@@ -162,13 +162,13 @@ public class ProcessRunner {
                 .toList();
 
             for (File f : files) {
-                if (f.getName().equalsIgnoreCase(exeName)) {
+                if (f.getName().equalsIgnoreCase(exeName) && PlatformInfo.isValidExecutable(f)) {
                     return f;
                 }
             }
             if (!isWin) {
                 for (File f : files) {
-                    if (f.getName().equalsIgnoreCase(shName)) {
+                    if (f.getName().equalsIgnoreCase(shName) && PlatformInfo.isValidExecutable(f)) {
                         return f;
                     }
                 }
@@ -257,11 +257,29 @@ public class ProcessRunner {
         List<String> command = new ArrayList<>();
         boolean isExecutable = targetFile.getName().endsWith(".exe") || targetFile.getName().endsWith(".sh") || targetFile.getName().equalsIgnoreCase("evo");
 
-        if (isExecutable && targetFile.exists()) {
+        File parentDir = targetFile.getParentFile();
+        File pluginsDir = parentDir != null ? new File(parentDir, "plugins") : null;
+        File launcherJar = null;
+        if (pluginsDir != null && pluginsDir.exists()) {
+            File[] jars = pluginsDir.listFiles((dir, name) -> name.startsWith("org.eclipse.equinox.launcher_") && name.endsWith(".jar"));
+            if (jars != null && jars.length > 0) {
+                launcherJar = jars[0];
+            }
+        }
+
+        if (isExecutable && targetFile.exists() && PlatformInfo.isValidExecutable(targetFile)) {
             if (!PlatformInfo.isWindows()) {
                 targetFile.setExecutable(true);
             }
             command.add(targetFile.getAbsolutePath());
+        } else if (launcherJar != null && launcherJar.exists()) {
+            System.out.println("[RUN] Executable invalid or missing companion shared library. Using Equinox Launcher JAR: " + launcherJar.getAbsolutePath());
+            command.add("java");
+            if (statePath != null) {
+                command.add("-Dstate=" + statePath);
+            }
+            command.add("-jar");
+            command.add(launcherJar.getAbsolutePath());
         } else {
             command.add("java");
             if (statePath != null) {

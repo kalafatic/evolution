@@ -331,13 +331,13 @@ public class SupervisorMain {
                     .toList();
 
                 for (File f : files) {
-                    if (f.getName().equalsIgnoreCase(exeName)) {
+                    if (f.getName().equalsIgnoreCase(exeName) && PlatformInfo.isValidExecutable(f)) {
                         return f;
                     }
                 }
                 if (!isWin) {
                     for (File f : files) {
-                        if (f.getName().equalsIgnoreCase(shName)) {
+                        if (f.getName().equalsIgnoreCase(shName) && PlatformInfo.isValidExecutable(f)) {
                             return f;
                         }
                     }
@@ -517,18 +517,65 @@ public class SupervisorMain {
                     pb.redirectErrorStream(true);
                     activeEvoProcess = pb.start();
 
-                    new Thread(() -> {
-                        System.out.println("[HTTP] Reading EVO executable process stdout/stderr...");
-                        try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(activeEvoProcess.getInputStream()))) {
-                            String line;
-                            while ((line = reader.readLine()) != null) {
-                                System.out.println("[EVO Executable] " + line);
-                            }
-                        } catch (Exception ignored) {}
-                    }).start();
+                    boolean startupFailed = false;
+                    try {
+                        if (activeEvoProcess.waitFor(1, TimeUnit.SECONDS) && activeEvoProcess.exitValue() != 0) {
+                            System.err.println("[HTTP] Native executable failed on launch with exit code: " + activeEvoProcess.exitValue());
+                            startupFailed = true;
+                        }
+                    } catch (InterruptedException ignored) {}
 
-                    return newFixedLengthResponse(Response.Status.OK, "application/json",
-                        "{\"status\":\"OK\",\"message\":\"SUCCESS: Started executable product " + executable.getName() + "\",\"path\":\"" + path + "\"}");
+                    if (!startupFailed) {
+                        new Thread(() -> {
+                            System.out.println("[HTTP] Reading EVO executable process stdout/stderr...");
+                            try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(activeEvoProcess.getInputStream()))) {
+                                String line;
+                                while ((line = reader.readLine()) != null) {
+                                    System.out.println("[EVO Executable] " + line);
+                                }
+                            } catch (Exception ignored) {}
+                        }).start();
+
+                        return newFixedLengthResponse(Response.Status.OK, "application/json",
+                            "{\"status\":\"OK\",\"message\":\"SUCCESS: Started executable product " + executable.getName() + "\",\"path\":\"" + path + "\"}");
+                    } else {
+                        System.out.println("[HTTP] Native executable startup failed. Checking Equinox Starter / Jar fallbacks...");
+                        activeEvoProcess = null;
+                    }
+                }
+
+                // 2.5 Check Equinox Starter JAR in plugins/ directory as fallback
+                File pluginsDir = new File(exportDir, "plugins");
+                if (pluginsDir.exists() && pluginsDir.isDirectory()) {
+                    File[] launcherJars = pluginsDir.listFiles((dir, name) -> name.startsWith("org.eclipse.equinox.launcher_") && name.endsWith(".jar"));
+                    if (launcherJars != null && launcherJars.length > 0) {
+                        File launcherJar = launcherJars[0];
+                        System.out.println("[HTTP] Launching via Equinox Starter JAR: " + launcherJar.getAbsolutePath());
+                        List<String> command = new ArrayList<>();
+                        command.add("java");
+                        command.add("-jar");
+                        command.add(launcherJar.getAbsolutePath());
+                        command.add("--mode=SELF_DEV");
+                        command.add("--variant=" + baseDir.getAbsolutePath());
+
+                        ProcessBuilder pb = new ProcessBuilder(command);
+                        pb.directory(exportDir);
+                        pb.redirectErrorStream(true);
+                        activeEvoProcess = pb.start();
+
+                        new Thread(() -> {
+                            System.out.println("[HTTP] Reading Equinox Starter process stdout/stderr...");
+                            try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(activeEvoProcess.getInputStream()))) {
+                                String line;
+                                while ((line = reader.readLine()) != null) {
+                                    System.out.println("[Equinox Starter] " + line);
+                                }
+                            } catch (Exception ignored) {}
+                        }).start();
+
+                        return newFixedLengthResponse(Response.Status.OK, "application/json",
+                            "{\"status\":\"OK\",\"message\":\"SUCCESS: Started product via Equinox Starter " + launcherJar.getName() + "\",\"path\":\"" + path + "\"}");
+                    }
                 }
                 
                 // 3. Find runnable jar in exportDir; if empty, attempt fallback from buildsDir
@@ -724,6 +771,26 @@ public class SupervisorMain {
             }
         }
 
+        private static void copyFolder(java.nio.file.Path source, java.nio.file.Path target) throws IOException {
+            java.nio.file.Files.walkFileTree(source, new java.nio.file.SimpleFileVisitor<java.nio.file.Path>() {
+                @Override
+                public java.nio.file.FileVisitResult preVisitDirectory(java.nio.file.Path dir, java.nio.file.attribute.BasicFileAttributes attrs) throws IOException {
+                    java.nio.file.Path targetDir = target.resolve(source.relativize(dir));
+                    if (!java.nio.file.Files.exists(targetDir)) {
+                        java.nio.file.Files.createDirectories(targetDir);
+                    }
+                    return java.nio.file.FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public java.nio.file.FileVisitResult visitFile(java.nio.file.Path file, java.nio.file.attribute.BasicFileAttributes attrs) throws IOException {
+                    java.nio.file.Path targetFile = target.resolve(source.relativize(file));
+                    java.nio.file.Files.copy(file, targetFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                    return java.nio.file.FileVisitResult.CONTINUE;
+                }
+            });
+        }
+
         private static int copyProductArtifacts(File sourcesDir, File exportDir) {
             int count = 0;
             if (sourcesDir == null || !sourcesDir.exists()) return count;
@@ -742,7 +809,7 @@ public class SupervisorMain {
                     for (java.nio.file.Path p : files) {
                         File f = p.toFile();
                         String name = f.getName();
-                        if (name.endsWith(".zip") || name.endsWith(".tar.gz") || name.equalsIgnoreCase("evo.exe") || name.equalsIgnoreCase("evo") || name.equalsIgnoreCase("evo.sh")) {
+                        if (name.endsWith(".zip") || name.endsWith(".tar.gz")) {
                             try {
                                 String destName = name;
                                 if (name.contains("win32") && name.endsWith(".zip")) {
@@ -755,6 +822,15 @@ public class SupervisorMain {
                                 count++;
                                 System.out.println("[HTTP] Exported product artifact: " + destFile.getName());
                             } catch (IOException ignored) {}
+                        } else if (name.equalsIgnoreCase("evo.exe") || name.equalsIgnoreCase("evo") || name.equalsIgnoreCase("evo.sh")) {
+                            File parentDir = f.getParentFile();
+                            if (parentDir != null && PlatformInfo.isValidExecutable(f)) {
+                                try {
+                                    copyFolder(parentDir.toPath(), exportDir.toPath());
+                                    count++;
+                                    System.out.println("[HTTP] Exported full product layout from: " + parentDir.getAbsolutePath());
+                                } catch (IOException ignored) {}
+                            }
                         }
                     }
                 } catch (Exception ignored) {}

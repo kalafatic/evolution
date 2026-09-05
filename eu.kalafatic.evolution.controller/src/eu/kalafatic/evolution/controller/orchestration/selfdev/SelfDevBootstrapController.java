@@ -1554,6 +1554,14 @@ public class SelfDevBootstrapController {
         return "ERROR: Runnable EVO product could not be generated. Please run Build first.";
     }
 
+    private static boolean isValidExecutable(File executable) {
+        if (executable == null || !executable.exists()) return false;
+        File parentDir = executable.getParentFile();
+        if (parentDir == null) return false;
+        File pluginsDir = new File(parentDir, "plugins");
+        return pluginsDir.exists() && pluginsDir.isDirectory();
+    }
+
     private void copyProductArtifactsFromSources(File sourcesDir, File exportDir) {
         if (sourcesDir == null || !sourcesDir.exists()) return;
         List<File> candidateDirs = new ArrayList<>();
@@ -1576,7 +1584,7 @@ public class SelfDevBootstrapController {
                 for (java.nio.file.Path p : files) {
                     File f = p.toFile();
                     String name = f.getName();
-                    if (name.endsWith(".zip") || name.endsWith(".tar.gz") || name.equalsIgnoreCase("evo.exe") || name.equalsIgnoreCase("evo") || name.equalsIgnoreCase("evo.sh")) {
+                    if (name.endsWith(".zip") || name.endsWith(".tar.gz")) {
                         try {
                             String destName = name;
                             if (name.contains("win32") && name.endsWith(".zip")) {
@@ -1589,6 +1597,16 @@ public class SelfDevBootstrapController {
                             java.nio.file.Files.copy(f.toPath(), destFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
                         } catch (IOException e) {
                             System.err.println("[SelfDevBootstrapController] [CHECK_EXPORT] Failed to copy product artifact: " + e.getMessage());
+                        }
+                    } else if (name.equalsIgnoreCase("evo.exe") || name.equalsIgnoreCase("evo") || name.equalsIgnoreCase("evo.sh")) {
+                        File parentDir = f.getParentFile();
+                        if (parentDir != null && isValidExecutable(f)) {
+                            try {
+                                copyFolder(parentDir.toPath(), exportDir.toPath());
+                                System.out.println("[SelfDevBootstrapController] [CHECK_EXPORT] Copying full product layout from: " + parentDir.getAbsolutePath() + " -> " + exportDir.getAbsolutePath());
+                            } catch (IOException e) {
+                                System.err.println("[SelfDevBootstrapController] [CHECK_EXPORT] Failed to copy full product layout: " + e.getMessage());
+                            }
                         }
                     }
                 }
