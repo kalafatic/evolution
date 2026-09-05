@@ -553,13 +553,13 @@ public class SelfDevSupervisor {
                 .toList();
 
             for (File f : files) {
-                if (f.getName().equalsIgnoreCase(exeName)) {
+                if (f.getName().equalsIgnoreCase(exeName) && PlatformInfo.isValidExecutable(f)) {
                     return f;
                 }
             }
             if (!isWin) {
                 for (File f : files) {
-                    if (f.getName().equalsIgnoreCase(shName)) {
+                    if (f.getName().equalsIgnoreCase(shName) && PlatformInfo.isValidExecutable(f)) {
                         return f;
                     }
                 }

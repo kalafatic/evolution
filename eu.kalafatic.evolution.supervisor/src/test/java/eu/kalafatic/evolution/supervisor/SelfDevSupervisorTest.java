@@ -351,6 +351,7 @@ public class SelfDevSupervisorTest {
     public void testFindEvoTargetWithExecutableProduct() throws IOException {
         File exportFolder = new File(baseDir, "export");
         exportFolder.mkdirs();
+        new File(exportFolder, "plugins").mkdirs();
 
         boolean isWin = PlatformInfo.isWindows();
         File dummyExe = new File(exportFolder, isWin ? "evo.exe" : "evo.sh");
