@@ -1,5 +1,6 @@
 package eu.kalafatic.evolution.view.application;
 
+import java.awt.GraphicsEnvironment;
 import java.io.File;
 
 import org.eclipse.core.runtime.Platform;
@@ -55,7 +56,7 @@ public class Application implements IApplication {
 
 		Display display = PlatformUI.createDisplay();
 		try {
-			if (!checkWorkspace(display)) {
+			if (!checkWorkspace(display, args)) {
 				return IApplication.EXIT_OK;
 			}
 
@@ -76,12 +77,49 @@ public class Application implements IApplication {
 	 * @param display the display
 	 * @return true if a workspace is selected, false otherwise
 	 */
-	private boolean checkWorkspace(Display display) {
+	private boolean checkWorkspace(Display display, String[] args) {
 		Location instanceLoc = Platform.getInstanceLocation();
 
 		// if workspace is already set (e.g. via -data), we're good
 		if (instanceLoc.isSet()) {
 			return true;
+		}
+
+		// Check for self-dev / automated flags or custom variant directory
+		boolean isSelfDev = false;
+		String variantPath = null;
+		if (args != null) {
+			for (int i = 0; i < args.length; i++) {
+				if ("--mode=SELF_DEV".equals(args[i])) {
+					isSelfDev = true;
+				} else if (args[i].startsWith("--variant=")) {
+					variantPath = args[i].substring("--variant=".length());
+				} else if ("--variant".equals(args[i]) && i + 1 < args.length) {
+					variantPath = args[++i];
+				}
+			}
+		}
+
+		if (isSelfDev || variantPath != null || GraphicsEnvironment.isHeadless()) {
+			File wsDir;
+			if (variantPath != null && !variantPath.isEmpty()) {
+				File variantDir = new File(variantPath);
+				wsDir = new File(variantDir, "workspace");
+			} else {
+				wsDir = new File(System.getProperty("user.dir"), "workspace");
+			}
+			if (!wsDir.exists()) {
+				wsDir.mkdirs();
+			}
+			try {
+				System.out.println("[Application] Auto-selecting workspace for automated run: " + wsDir.getAbsolutePath());
+				instanceLoc.setURL(wsDir.toURI().toURL(), true);
+				return true;
+			} catch (Exception e) {
+				System.err.println("[Application] Failed to auto-set workspace location: " + e.getMessage());
+				e.printStackTrace();
+				return false;
+			}
 		}
 
 		// Show workspace selection dialog
