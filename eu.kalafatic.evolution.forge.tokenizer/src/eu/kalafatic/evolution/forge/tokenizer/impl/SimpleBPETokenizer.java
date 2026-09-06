@@ -113,7 +113,10 @@ public class SimpleBPETokenizer implements Tokenizer {
     public String decode(List<Integer> tokens) {
         StringBuilder sb = new StringBuilder();
         for (Integer token : tokens) {
-            sb.append(invVocab.getOrDefault(token, ""));
+            String tokStr = invVocab.getOrDefault(token, "");
+            if (tokStr != null && !tokStr.isEmpty() && !tokStr.startsWith("token_")) {
+                sb.append(tokStr);
+            }
         }
         return sb.toString();
     }

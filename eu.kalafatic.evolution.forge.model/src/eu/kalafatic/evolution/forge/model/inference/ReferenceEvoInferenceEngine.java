@@ -107,7 +107,7 @@ public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
                 StringBuilder sb = new StringBuilder();
                 for (int id : tokenIds) {
                     String tok = idToTok.getOrDefault(id, "");
-                    if (!tok.isEmpty() && !tok.equals("<s>") && !tok.equals("</s>") && !tok.equals("<unk>")) {
+                    if (!tok.isEmpty() && !tok.equals("<s>") && !tok.equals("</s>") && !tok.equals("<unk>") && !tok.startsWith("token_")) {
                         if (sb.length() > 0 && !tok.startsWith(" ") && !tok.startsWith(",")) sb.append(" ");
                         sb.append(tok);
                     }
@@ -127,6 +127,31 @@ public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
     @Override
     public InferenceResult generate(EvoLlmModel model, InferenceRequest request, Tokenizer tokenizer) {
         return generateWithListener(model, request, tokenizer, null);
+    }
+
+    private int sampleNextTokenWithVocabulary(Tensor logits, List<Integer> tokenHistory, InferenceRequest request, Random rng, Map<Integer, String> idToToken) {
+        float[] data = logits.getData();
+        int seqLen = (int) logits.getShape()[0];
+        int vocabSize = (int) logits.getShape()[1];
+        int offset = (seqLen - 1) * vocabSize;
+
+        float[] rawLogits = new float[vocabSize];
+        System.arraycopy(data, offset, rawLogits, 0, vocabSize);
+
+        if (idToToken != null && !idToToken.isEmpty()) {
+            for (int i = 0; i < vocabSize; i++) {
+                String tokStr = idToToken.get(i);
+                if (tokStr == null || tokStr.startsWith("token_")) {
+                    rawLogits[i] = -1e9f;
+                }
+            }
+        } else {
+            for (int i = 4; i < vocabSize; i++) {
+                rawLogits[i] = -1e9f;
+            }
+        }
+
+        return sampleNextTokenFromLogits(rawLogits, vocabSize, tokenHistory, request, rng);
     }
 
     @Override
@@ -177,7 +202,7 @@ public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
             }
 
             lastLogits = forwardSnapshot(snapshot, inputIds);
-            int nextToken = sampleNextToken(lastLogits, currentTokens, request, rng);
+            int nextToken = sampleNextTokenWithVocabulary(lastLogits, currentTokens, request, rng, snapshot.getVocabulary());
 
             currentTokens.add(nextToken);
             generatedTokens.add(nextToken);
@@ -257,7 +282,7 @@ public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
             }
 
             lastLogits = forward(model, inputIds);
-            int nextToken = sampleNextToken(lastLogits, currentTokens, request, rng);
+            int nextToken = sampleNextTokenWithVocabulary(lastLogits, currentTokens, request, rng, model.getIdToToken());
 
             currentTokens.add(nextToken);
             generatedTokens.add(nextToken);
@@ -304,6 +329,10 @@ public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
         float[] rawLogits = new float[vocabSize];
         System.arraycopy(data, offset, rawLogits, 0, vocabSize);
 
+        return sampleNextTokenFromLogits(rawLogits, vocabSize, tokenHistory, request, rng);
+    }
+
+    private int sampleNextTokenFromLogits(float[] rawLogits, int vocabSize, List<Integer> tokenHistory, InferenceRequest request, Random rng) {
         float repeatPenalty = request.getRepeatPenalty();
         float freqPenalty = request.getFrequencyPenalty();
         float presPenalty = request.getPresencePenalty();
