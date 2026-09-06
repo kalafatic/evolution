@@ -15,9 +15,17 @@ public class HeadlessApplication implements IApplication {
         String[] args = (String[]) context.getArguments().get(IApplicationContext.APPLICATION_ARGS);
         int port = 48080;
 
-        for (int i = 0; i < args.length; i++) {
-            if ("--port".equals(args[i]) && i + 1 < args.length) {
-                port = Integer.parseInt(args[++i]);
+        if (args != null) {
+            for (int i = 0; i < args.length; i++) {
+                if ("--port".equals(args[i]) && i + 1 < args.length) {
+                    try {
+                        port = Integer.parseInt(args[++i]);
+                    } catch (NumberFormatException ignored) {}
+                } else if (args[i] != null && args[i].startsWith("--port=")) {
+                    try {
+                        port = Integer.parseInt(args[i].substring("--port=".length()));
+                    } catch (NumberFormatException ignored) {}
+                }
             }
         }
 

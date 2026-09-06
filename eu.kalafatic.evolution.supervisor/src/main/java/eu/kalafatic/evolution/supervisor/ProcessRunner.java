@@ -102,6 +102,16 @@ public class ProcessRunner {
         }
     }
 
+    private static int findAvailablePort(int startPort) {
+        for (int p = startPort; p < startPort + 50; p++) {
+            try (java.net.ServerSocket ss = new java.net.ServerSocket(p)) {
+                ss.setReuseAddress(true);
+                return p;
+            } catch (Exception ignored) {}
+        }
+        return startPort;
+    }
+
     public boolean runApplication(File variantDir) {
         if (mockRunResult != null) {
             System.out.println("[MOCK RUN] Returning mock result: " + mockRunResult);
@@ -122,10 +132,12 @@ public class ProcessRunner {
             if (!PlatformInfo.isWindows()) {
                 executable.setExecutable(true);
             }
+            int portToUse = findAvailablePort(48080);
             List<String> command = new ArrayList<>();
             command.add(executable.getAbsolutePath());
             command.add("--mode=SELF_DEV");
             command.add("--variant=" + variantDir.getAbsolutePath());
+            command.add("--port=" + portToUse);
 
             ProcessBuilder pb = new ProcessBuilder(command);
             pb.directory(executable.getParentFile());
@@ -293,9 +305,11 @@ public class ProcessRunner {
             command.add(targetFile.getAbsolutePath());
         }
 
+        int portToUse = findAvailablePort(48080);
         command.add("-consoleLog");
         command.add("--mode=SELF_DEV");
         command.add("--variant=" + variantDir.getAbsolutePath());
+        command.add("--port=" + portToUse);
         if (statePath != null) {
             command.add("--state=" + statePath);
         }
