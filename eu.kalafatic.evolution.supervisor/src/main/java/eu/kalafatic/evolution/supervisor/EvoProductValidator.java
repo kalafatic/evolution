@@ -92,39 +92,88 @@ public class EvoProductValidator {
     }
 
     boolean validateLayout(File rootDir) {
+        List<String> missingItems = new ArrayList<>();
+
+        if (rootDir == null || !rootDir.exists()) {
+            missingItems.add("Product Root Directory (" + (rootDir != null ? rootDir.getAbsolutePath() : "null") + ")");
+            printValidationFailure(rootDir, missingItems, "Root directory does not exist.");
+            return false;
+        }
+
+        // Executable verification
         if (PlatformInfo.isWindows()) {
             File exeFile = new File(rootDir, "evo.exe");
             if (!exeFile.exists()) {
-                System.err.println("[LAYOUT] Missing evo.exe in product root.");
-                return false;
+                missingItems.add("evo.exe");
             }
         } else {
             File nativeLauncher = new File(rootDir, "evo");
             File shLauncher = new File(rootDir, "evo.sh");
-            if (!nativeLauncher.exists()) {
-                System.err.println("[LAYOUT] Missing native 'evo' launcher in product root.");
-                return false;
-            }
-            if (!shLauncher.exists()) {
-                System.err.println("[LAYOUT] Missing 'evo.sh' launcher script in product root.");
-                return false;
+            if (!nativeLauncher.exists() && !shLauncher.exists()) {
+                missingItems.add("evo (or evo.sh)");
             }
         }
 
+        // evo.ini verification
+        File evoIni = new File(rootDir, "evo.ini");
+        if (!evoIni.exists()) {
+            missingItems.add("evo.ini");
+        }
+
+        // plugins/ directory & EVO view bundle check
         File pluginsDir = new File(rootDir, "plugins");
-        File configDir = new File(rootDir, "configuration");
-
         if (!pluginsDir.exists() || !pluginsDir.isDirectory()) {
-            System.err.println("[LAYOUT] Missing or invalid plugins/ directory.");
-            return false;
+            missingItems.add("plugins/ directory");
+        } else {
+            File[] viewBundle = pluginsDir.listFiles((dir, name) ->
+                name.startsWith("eu.kalafatic.evolution.view_") && name.endsWith(".jar")
+            );
+            if (viewBundle == null || viewBundle.length == 0) {
+                missingItems.add("EVO application bundle (eu.kalafatic.evolution.view_*.jar)");
+            }
         }
+
+        // configuration/ directory & config.ini check
+        File configDir = new File(rootDir, "configuration");
         if (!configDir.exists() || !configDir.isDirectory()) {
-            System.err.println("[LAYOUT] Missing or invalid configuration/ directory.");
+            missingItems.add("configuration/ directory");
+        } else {
+            File configIni = new File(configDir, "config.ini");
+            if (!configIni.exists()) {
+                missingItems.add("configuration/config.ini");
+            } else {
+                // Verify eclipse.application or eclipse.product
+                try {
+                    String configContent = Files.readString(configIni.toPath());
+                    if (!configContent.contains("eclipse.application") && !configContent.contains("eclipse.product")) {
+                        missingItems.add("eclipse.application / eclipse.product property in configuration/config.ini");
+                    }
+                } catch (IOException e) {
+                    missingItems.add("Readable configuration/config.ini (" + e.getMessage() + ")");
+                }
+            }
+        }
+
+        if (!missingItems.isEmpty()) {
+            printValidationFailure(rootDir, missingItems, "Missing critical product artifacts or configuration entries.");
             return false;
         }
 
         System.out.println("[LAYOUT] File layout verification successful.");
         return true;
+    }
+
+    private void printValidationFailure(File rootDir, List<String> missingItems, String reason) {
+        System.err.println("==========================================================");
+        System.err.println("EVO PRODUCT VALIDATION FAILED");
+        System.err.println("Product root: " + (rootDir != null ? rootDir.getAbsolutePath() : "null"));
+        System.err.println("Application: eu.kalafatic.evolution.view.application.Application");
+        System.err.println("Reason: " + reason);
+        System.err.println("Missing items:");
+        for (String item : missingItems) {
+            System.err.println("  - " + item);
+        }
+        System.err.println("==========================================================");
     }
 
     private boolean verifyStartup(File rootDir) {
