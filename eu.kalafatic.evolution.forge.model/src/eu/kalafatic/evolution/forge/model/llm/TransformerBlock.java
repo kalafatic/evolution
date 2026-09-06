@@ -39,21 +39,19 @@ public class TransformerBlock {
     }
     
     public Tensor backward(Tensor dOutput) {
-        // 1. FFN backward
-        Tensor dAfterAttn = dOutput;
+        // 1. FFN backward: f = ffn(ffnNorm(afterAttn))
+        Tensor dX2 = ffn.backward(dOutput);
+        Tensor dAfterAttn_ffn = ffnNorm.backward(dX2);
         
-        // Gradient through residual connection
-        Tensor dFFN = dAfterAttn; // Since output = afterAttn + ffnOut
-        Tensor dNorm2 = ffnNorm.backward(dFFN);
-        Tensor dFFNInput = ffn.backward(dNorm2);
+        // Total gradient w.r.t. afterAttn (direct residual path + FFN path)
+        Tensor dAfterAttn = dOutput.add(dAfterAttn_ffn);
         
-        // Gradient through second residual
-        Tensor dAttnOut = dAfterAttn; // Since afterAttn = x + attnOut
-        Tensor dNorm1 = attnNorm.backward(dAttnOut);
-        Tensor dAttnInput = attention.backward(dNorm1);
+        // 2. Attention backward: a = attention(attnNorm(x))
+        Tensor dX1 = attention.backward(dAfterAttn);
+        Tensor dX_attn = attnNorm.backward(dX1);
         
-        // Combine gradients through both residual paths
-        return dFFNInput.add(dAttnInput);
+        // Total gradient w.r.t. x (direct residual path + Attention path)
+        return dAfterAttn.add(dX_attn);
     }
     
     public MultiHeadAttention getAttention() { return attention; }

@@ -88,8 +88,16 @@ public class EvoLlmTrainer {
                 float[] attMask = new float[len];
                 for (int i = 0; i < len; i++) {
                     inputIds[i] = s.input.get(i);
-                    labels[i] = (i + 1 < len) ? s.input.get(i + 1) : (s.target != null ? s.target : s.input.get(i));
-                    lossMask[i] = true;
+                    if (i + 1 < len) {
+                        labels[i] = s.input.get(i + 1);
+                        lossMask[i] = true;
+                    } else if (s.target != null) {
+                        labels[i] = s.target;
+                        lossMask[i] = true;
+                    } else {
+                        labels[i] = s.input.get(i);
+                        lossMask[i] = false;
+                    }
                     attMask[i] = 1.0f;
                 }
                 samples.add(new TrainingSample(inputIds, labels, lossMask, attMask));
@@ -100,8 +108,13 @@ public class EvoLlmTrainer {
                 boolean[] lossMask = new boolean[len];
                 float[] attMask = new float[len];
                 for (int i = 0; i < len; i++) {
-                    labels[i] = (i + 1 < len) ? inputIds[i + 1] : inputIds[i];
-                    lossMask[i] = true;
+                    if (i + 1 < len) {
+                        labels[i] = inputIds[i + 1];
+                        lossMask[i] = true;
+                    } else {
+                        labels[i] = inputIds[i];
+                        lossMask[i] = false;
+                    }
                     attMask[i] = 1.0f;
                 }
                 samples.add(new TrainingSample(inputIds, labels, lossMask, attMask));
@@ -318,7 +331,11 @@ public class EvoLlmTrainer {
         public static ModelParameterGroups fromModel(EvoLlmModel model) {
             ModelParameterGroups groups = new ModelParameterGroups();
             for (Tensor p : model.parameters()) {
-                groups.decayParameters.add(p);
+                if (p.getRank() == 1 || p.getShape().length == 1) {
+                    groups.noDecayParameters.add(p);
+                } else {
+                    groups.decayParameters.add(p);
+                }
             }
             return groups;
         }

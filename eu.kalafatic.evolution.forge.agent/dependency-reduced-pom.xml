@@ -39,10 +39,10 @@
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
       <artifactId>com.sun.jna</artifactId>
-      <version>5.18.1.v20251001-0800</version>
+      <version>5.19.1.v20260612-1000</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/com.sun.jna/5.18.1.v20251001-0800/com.sun.jna-5.18.1.v20251001-0800.jar</systemPath>
+      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/com.sun.jna/5.19.1.v20260612-1000/com.sun.jna-5.19.1.v20260612-1000.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -107,6 +107,15 @@
       <type>eclipse-plugin</type>
       <scope>system</scope>
       <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.eclipse.egit.core/7.5.0.202512021534-r/org.eclipse.egit.core-7.5.0.202512021534-r.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>eu.kalafatic.evolution</groupId>
+      <artifactId>eu.kalafatic.evolution.forge.agent.api</artifactId>
+      <version>2.6.5.qualifier</version>
+      <type>eclipse-plugin</type>
+      <classifier>lib/json-20140107.jar</classifier>
+      <scope>system</scope>
+      <systemPath>/app/eu.kalafatic.evolution.forge.agent.api/lib/json-20140107.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -323,6 +332,78 @@
       <classifier>lib/sqlite-jdbc-3.45.2.0.jar</classifier>
       <scope>system</scope>
       <systemPath>/app/eu.kalafatic.evolution.servers/lib/sqlite-jdbc-3.45.2.0.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>eu.kalafatic.evolution</groupId>
+      <artifactId>eu.kalafatic.evolution.forge.model</artifactId>
+      <version>2.6.5.qualifier</version>
+      <type>eclipse-plugin</type>
+      <classifier>lib/json-20140107.jar</classifier>
+      <scope>system</scope>
+      <systemPath>/app/eu.kalafatic.evolution.forge.model/lib/json-20140107.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>eu.kalafatic.evolution</groupId>
+      <artifactId>eu.kalafatic.evolution.forge.model</artifactId>
+      <version>2.6.5.qualifier</version>
+      <type>eclipse-plugin</type>
+      <classifier>lib/jackson-annotations-2.17.0.jar</classifier>
+      <scope>system</scope>
+      <systemPath>/app/eu.kalafatic.evolution.forge.model/lib/jackson-annotations-2.17.0.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>eu.kalafatic.evolution</groupId>
+      <artifactId>eu.kalafatic.evolution.forge.model</artifactId>
+      <version>2.6.5.qualifier</version>
+      <type>eclipse-plugin</type>
+      <classifier>lib/jackson-core-2.17.0.jar</classifier>
+      <scope>system</scope>
+      <systemPath>/app/eu.kalafatic.evolution.forge.model/lib/jackson-core-2.17.0.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>eu.kalafatic.evolution</groupId>
+      <artifactId>eu.kalafatic.evolution.forge.model</artifactId>
+      <version>2.6.5.qualifier</version>
+      <type>eclipse-plugin</type>
+      <classifier>lib/jackson-databind-2.17.0.jar</classifier>
+      <scope>system</scope>
+      <systemPath>/app/eu.kalafatic.evolution.forge.model/lib/jackson-databind-2.17.0.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>eu.kalafatic.evolution</groupId>
+      <artifactId>eu.kalafatic.evolution.forge.model</artifactId>
+      <version>2.6.5.qualifier</version>
+      <type>eclipse-plugin</type>
+      <classifier>lib/jbcrypt-0.4.jar</classifier>
+      <scope>system</scope>
+      <systemPath>/app/eu.kalafatic.evolution.forge.model/lib/jbcrypt-0.4.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>eu.kalafatic.evolution</groupId>
+      <artifactId>eu.kalafatic.evolution.forge.model</artifactId>
+      <version>2.6.5.qualifier</version>
+      <type>eclipse-plugin</type>
+      <classifier>lib/nanohttpd-2.3.1.jar</classifier>
+      <scope>system</scope>
+      <systemPath>/app/eu.kalafatic.evolution.forge.model/lib/nanohttpd-2.3.1.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>eu.kalafatic.evolution</groupId>
+      <artifactId>eu.kalafatic.evolution.forge.model</artifactId>
+      <version>2.6.5.qualifier</version>
+      <type>eclipse-plugin</type>
+      <classifier>lib/slf4j-api-1.7.36.jar</classifier>
+      <scope>system</scope>
+      <systemPath>/app/eu.kalafatic.evolution.forge.model/lib/slf4j-api-1.7.36.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>eu.kalafatic.evolution</groupId>
+      <artifactId>eu.kalafatic.evolution.forge.model</artifactId>
+      <version>2.6.5.qualifier</version>
+      <type>eclipse-plugin</type>
+      <classifier>lib/sqlite-jdbc-3.45.2.0.jar</classifier>
+      <scope>system</scope>
+      <systemPath>/app/eu.kalafatic.evolution.forge.model/lib/sqlite-jdbc-3.45.2.0.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
@@ -783,26 +864,26 @@
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
       <artifactId>org.apache.lucene.core</artifactId>
-      <version>10.4.0.v20260226-1000</version>
+      <version>10.5.1.v20260812-1000</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.apache.lucene.core/10.4.0.v20260226-1000/org.apache.lucene.core-10.4.0.v20260226-1000.jar</systemPath>
+      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.apache.lucene.core/10.5.1.v20260812-1000/org.apache.lucene.core-10.5.1.v20260812-1000.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
       <artifactId>org.apache.lucene.analysis-common</artifactId>
-      <version>10.4.0.v20260226-1000</version>
+      <version>10.5.1.v20260812-1000</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.apache.lucene.analysis-common/10.4.0.v20260226-1000/org.apache.lucene.analysis-common-10.4.0.v20260226-1000.jar</systemPath>
+      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.apache.lucene.analysis-common/10.5.1.v20260812-1000/org.apache.lucene.analysis-common-10.5.1.v20260812-1000.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
       <artifactId>org.apache.lucene.analysis-smartcn</artifactId>
-      <version>10.4.0.v20260226-1000</version>
+      <version>10.5.1.v20260812-1000</version>
       <type>eclipse-plugin</type>
       <scope>system</scope>
-      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.apache.lucene.analysis-smartcn/10.4.0.v20260226-1000/org.apache.lucene.analysis-smartcn-10.4.0.v20260226-1000.jar</systemPath>
+      <systemPath>/home/jules/.m2/repository/p2/osgi/bundle/org.apache.lucene.analysis-smartcn/10.5.1.v20260812-1000/org.apache.lucene.analysis-smartcn-10.5.1.v20260812-1000.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>p2.eclipse.plugin</groupId>
