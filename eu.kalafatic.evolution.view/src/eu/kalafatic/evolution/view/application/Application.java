@@ -24,11 +24,19 @@ public class Application implements IApplication {
 		String[] args = (String[]) context.getArguments().get(IApplicationContext.APPLICATION_ARGS);
 		boolean serverOnly = false;
 		int port = 48080;
-		for (int i = 0; i < args.length; i++) {
-			if ("--server".equals(args[i])) {
-				serverOnly = true;
-			} else if ("--port".equals(args[i]) && i + 1 < args.length) {
-				port = Integer.parseInt(args[++i]);
+		if (args != null) {
+			for (int i = 0; i < args.length; i++) {
+				if ("--server".equals(args[i])) {
+					serverOnly = true;
+				} else if ("--port".equals(args[i]) && i + 1 < args.length) {
+					try {
+						port = Integer.parseInt(args[++i]);
+					} catch (NumberFormatException ignored) {}
+				} else if (args[i] != null && args[i].startsWith("--port=")) {
+					try {
+						port = Integer.parseInt(args[i].substring("--port=".length()));
+					} catch (NumberFormatException ignored) {}
+				}
 			}
 		}
 

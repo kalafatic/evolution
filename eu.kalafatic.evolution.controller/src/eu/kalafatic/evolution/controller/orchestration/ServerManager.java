@@ -53,31 +53,77 @@ public class ServerManager {
         } else if (isSupervisor) {
             System.out.println("Starting Supervisor on port " + port + " is handled by the self-dev bootstrap process.");
         } else if (isSecondary) {
-            if (activeSecondaryServers.containsKey(port)) {
-                stopSecondary(port);
+            int targetPort = port;
+            eu.kalafatic.evolution.servers.server.EvolutionServer secondaryServer = null;
+            IOException lastEx = null;
+            for (int offset = 0; offset <= 10; offset++) {
+                int testPort = port + offset;
+                try {
+                    if (activeSecondaryServers.containsKey(testPort)) {
+                        stopSecondary(testPort);
+                    }
+                    secondaryServer = new eu.kalafatic.evolution.servers.server.EvolutionServer(testPort);
+                    secondaryServer.startServer();
+                    targetPort = testPort;
+                    lastEx = null;
+                    if (offset > 0) {
+                        System.out.println("[ServerManager] Secondary port " + port + " in use. Fallback secondary server started on port " + targetPort);
+                    }
+                    break;
+                } catch (IOException e) {
+                    lastEx = e;
+                    if (secondaryServer != null) {
+                        try { secondaryServer.stopServer(); } catch (Exception ignored) {}
+                    }
+                }
             }
-            eu.kalafatic.evolution.servers.server.EvolutionServer secondaryServer = new eu.kalafatic.evolution.servers.server.EvolutionServer(port);
-            secondaryServer.startServer();
-            activeSecondaryServers.put(port, secondaryServer);
-            System.out.println("Started secondary Evolution server (AI Chat) on port " + port);
+            if (lastEx != null) {
+                throw lastEx;
+            }
+            activeSecondaryServers.put(targetPort, secondaryServer);
+            System.out.println("Started secondary Evolution server (AI Chat) on port " + targetPort);
         } else {
-            if (activeServers.containsKey(port)) {
-                stop(port);
+            int targetPort = port;
+            EvolutionServer server = null;
+            IOException lastEx = null;
+
+            for (int offset = 0; offset <= 10; offset++) {
+                int testPort = port + offset;
+                try {
+                    if (activeServers.containsKey(testPort)) {
+                        stop(testPort);
+                    }
+                    server = new EvolutionServer(testPort);
+
+                    // Wire Controllers
+                    SessionController sc = new SessionControllerImpl(null);
+                    ModelController mc = new ModelControllerImpl(null);
+                    DatasetController dc = new DatasetControllerImpl(null);
+                    TrainingController tc = new TrainingControllerImpl(null);
+                    SnapshotController snc = new SnapshotControllerImpl(null);
+                    server.setForgeControllers(sc, mc, dc, tc, snc);
+
+                    server.startServer();
+                    targetPort = testPort;
+                    lastEx = null;
+                    if (offset > 0) {
+                        System.out.println("[ServerManager] Port " + port + " in use. Fallback primary server started on port " + targetPort);
+                    }
+                    break;
+                } catch (IOException e) {
+                    lastEx = e;
+                    if (server != null) {
+                        try { server.stop(); } catch (Exception ignored) {}
+                    }
+                }
             }
 
-            EvolutionServer server = new EvolutionServer(port);
+            if (lastEx != null) {
+                throw lastEx;
+            }
 
-            // Wire Controllers
-            SessionController sc = new SessionControllerImpl(null);
-            ModelController mc = new ModelControllerImpl(null);
-            DatasetController dc = new DatasetControllerImpl(null);
-            TrainingController tc = new TrainingControllerImpl(null);
-            SnapshotController snc = new SnapshotControllerImpl(null);
-            server.setForgeControllers(sc, mc, dc, tc, snc);
-
-            server.startServer();
-            activeServers.put(port, server);
-            this.primaryPort = port;
+            activeServers.put(targetPort, server);
+            this.primaryPort = targetPort;
 
             // Write readiness marker file
             java.io.File runDir = new java.io.File("self-dev-run");

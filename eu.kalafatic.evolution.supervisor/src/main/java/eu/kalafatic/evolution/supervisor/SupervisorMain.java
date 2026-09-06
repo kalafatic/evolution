@@ -507,10 +507,12 @@ public class SupervisorMain {
                         } catch (InterruptedException ignored) {}
                     }
 
+                    int portToUse = findAvailablePort(48080);
                     List<String> command = new ArrayList<>();
                     command.add(executable.getAbsolutePath());
                     command.add("--mode=SELF_DEV");
                     command.add("--variant=" + baseDir.getAbsolutePath());
+                    command.add("--port=" + portToUse);
 
                     ProcessBuilder pb = new ProcessBuilder(command);
                     pb.directory(executable.getParentFile());
@@ -551,12 +553,14 @@ public class SupervisorMain {
                     if (launcherJars != null && launcherJars.length > 0) {
                         File launcherJar = launcherJars[0];
                         System.out.println("[HTTP] Launching via Equinox Starter JAR: " + launcherJar.getAbsolutePath());
+                        int portToUse = findAvailablePort(48080);
                         List<String> command = new ArrayList<>();
                         command.add("java");
                         command.add("-jar");
                         command.add(launcherJar.getAbsolutePath());
                         command.add("--mode=SELF_DEV");
                         command.add("--variant=" + baseDir.getAbsolutePath());
+                        command.add("--port=" + portToUse);
 
                         ProcessBuilder pb = new ProcessBuilder(command);
                         pb.directory(exportDir);
@@ -666,8 +670,10 @@ public class SupervisorMain {
                     command.add(runnableJar.getAbsolutePath());
                 }
 
+                int portToUse = findAvailablePort(48080);
                 command.add("--mode=SELF_DEV");
                 command.add("--variant=" + baseDir.getAbsolutePath());
+                command.add("--port=" + portToUse);
 
                 ProcessBuilder pb = new ProcessBuilder(command);
                 pb.directory(exportDir);
@@ -735,6 +741,16 @@ public class SupervisorMain {
                 return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", 
                     "{\"status\":\"ERROR\",\"message\":\"" + e.getMessage() + "\"}");
             }
+        }
+
+        private static int findAvailablePort(int startPort) {
+            for (int p = startPort; p < startPort + 50; p++) {
+                try (java.net.ServerSocket ss = new java.net.ServerSocket(p)) {
+                    ss.setReuseAddress(true);
+                    return p;
+                } catch (Exception ignored) {}
+            }
+            return startPort;
         }
 
         private static void unzip(File zipFile, File destDir) throws IOException {
