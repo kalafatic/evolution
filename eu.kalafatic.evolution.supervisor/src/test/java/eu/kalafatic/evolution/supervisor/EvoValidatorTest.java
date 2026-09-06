@@ -33,6 +33,15 @@ public class EvoValidatorTest {
         pluginsDir.mkdirs();
         configDir.mkdirs();
 
+        File evoIni = new File(tempDir, "evo.ini");
+        evoIni.createNewFile();
+
+        File viewBundle = new File(pluginsDir, "eu.kalafatic.evolution.view_2.6.5.20260906.jar");
+        viewBundle.createNewFile();
+
+        File configIni = new File(configDir, "config.ini");
+        Files.writeString(configIni.toPath(), "eclipse.application=eu.kalafatic.evolution.view.application.Application\neclipse.product=eu.kalafatic.evolution.view.product\n");
+
         if (PlatformInfo.isWindows()) {
             File exeFile = new File(tempDir, "evo.exe");
             exeFile.createNewFile();
@@ -45,6 +54,34 @@ public class EvoValidatorTest {
 
         EvoProductValidator validator = new EvoProductValidator();
         assertTrue(validator.validateLayout(tempDir));
+    }
+
+    @Test
+    public void testProductLayoutValidationMissingEvoBundle() throws IOException {
+        File tempDir = createTempDir("test-layout-missing-bundle");
+        File pluginsDir = new File(tempDir, "plugins");
+        File configDir = new File(tempDir, "configuration");
+        pluginsDir.mkdirs();
+        configDir.mkdirs();
+
+        File evoIni = new File(tempDir, "evo.ini");
+        evoIni.createNewFile();
+
+        File configIni = new File(configDir, "config.ini");
+        Files.writeString(configIni.toPath(), "eclipse.application=eu.kalafatic.evolution.view.application.Application\n");
+
+        if (PlatformInfo.isWindows()) {
+            File exeFile = new File(tempDir, "evo.exe");
+            exeFile.createNewFile();
+        } else {
+            File nativeFile = new File(tempDir, "evo");
+            File shFile = new File(tempDir, "evo.sh");
+            nativeFile.createNewFile();
+            shFile.createNewFile();
+        }
+
+        EvoProductValidator validator = new EvoProductValidator();
+        assertFalse(validator.validateLayout(tempDir));
     }
 
     @Test

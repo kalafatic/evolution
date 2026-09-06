@@ -299,19 +299,27 @@ public class ProcessRunner {
         File workDir = targetFile.getParentFile() != null && targetFile.getParentFile().exists() ? targetFile.getParentFile() : variantDir;
         pb.directory(workDir);
         pb.inheritIO();
+
+        System.out.println("[RUN] Launching product command: " + command);
+        System.out.println("[RUN] Working directory: " + workDir.getAbsolutePath());
+
         try {
             currentProcess = pb.start();
             Process process = currentProcess;
+            System.out.println("[RUN] Process started successfully. PID: " + process.pid());
+
             boolean finished = process.waitFor(10, TimeUnit.MINUTES);
             if (!finished) {
-                System.err.println("[RUN] Timeout reached. Killing process.");
+                System.err.println("[RUN] Timeout reached. Killing process PID: " + process.pid());
                 process.destroyForcibly();
                 return false;
             }
             int exitCode = process.exitValue();
+            System.out.println("[RUN] Process PID " + process.pid() + " exited with code: " + exitCode);
             return exitCode == 0;
         } catch (IOException | InterruptedException e) {
-            System.err.println("[RUN] Failed: " + e.getMessage());
+            System.err.println("[RUN] Failed to launch process: " + e.getMessage());
+            e.printStackTrace();
             return false;
         }
     }

@@ -43,17 +43,46 @@ public class EvoProductBuildService {
                 artifactPath = expectedArtifact;
                 System.out.println("[EvoProductBuildService] Located build artifact: " + artifactPath.toAbsolutePath());
             } else {
-                // Wildcard fallback
-                System.out.println("[EvoProductBuildService] Standard artifact " + expectedName + " not found. Checking alternate locations...");
+                System.out.println("[EvoProductBuildService] Standard artifact " + expectedName + " not found. Checking repository build and alternate locations...");
                 try {
                     Path productsDir = baseDir.toPath().resolve("eu.kalafatic.evolution.repository/target/products");
                     if (Files.exists(productsDir)) {
+                        // Prioritize evolution product archives (e.g., evolution-linux.gtk.x86_64.tar.gz or evolution-win32.win32.x86_64.zip)
                         artifactPath = Files.walk(productsDir)
-                            .filter(p -> p.toString().endsWith(".zip") || p.toString().endsWith(".tar.gz"))
+                            .filter(Files::isRegularFile)
+                            .filter(p -> {
+                                String name = p.getFileName().toString().toLowerCase();
+                                return (name.endsWith(".zip") || name.endsWith(".tar.gz")) && name.contains("evolution");
+                            })
                             .findFirst()
                             .orElse(null);
+
+                        if (artifactPath == null) {
+                            // Any zip or tar.gz in target/products
+                            artifactPath = Files.walk(productsDir)
+                                .filter(Files::isRegularFile)
+                                .filter(p -> {
+                                    String name = p.getFileName().toString().toLowerCase();
+                                    return name.endsWith(".zip") || name.endsWith(".tar.gz");
+                                })
+                                .findFirst()
+                                .orElse(null);
+                        }
                     }
                 } catch (IOException ignored) {}
+
+                if (artifactPath == null && Files.exists(releaseDir)) {
+                    try {
+                        artifactPath = Files.walk(releaseDir)
+                            .filter(Files::isRegularFile)
+                            .filter(p -> {
+                                String name = p.getFileName().toString().toLowerCase();
+                                return name.endsWith(".zip") || name.endsWith(".tar.gz");
+                            })
+                            .findFirst()
+                            .orElse(null);
+                    } catch (IOException ignored) {}
+                }
             }
         }
 
