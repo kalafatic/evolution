@@ -143,7 +143,7 @@ public class SelfDevSupervisor {
                     evoTarget = "mock-rcp.jar";
                 }
                 File rcpStateFile = new File(baseDir, "self-dev-run/state.json");
-                boolean evoSuccess = runner.runRCP(baseDir, evoTarget, rcpStateFile.getAbsolutePath());
+                boolean evoSuccess = runner.runRCP(baseDir, evoTarget, rcpStateFile.getAbsolutePath(), task.getId());
 
                 if (evoSuccess) {
                     task.setStatus(TaskStatus.EVO_COMPLETED);

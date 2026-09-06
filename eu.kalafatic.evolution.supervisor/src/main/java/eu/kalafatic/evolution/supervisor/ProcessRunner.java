@@ -239,6 +239,10 @@ public class ProcessRunner {
     }
 
     public boolean runRCP(File variantDir, String targetPath, String statePath) {
+        return runRCP(variantDir, targetPath, statePath, null);
+    }
+
+    public boolean runRCP(File variantDir, String targetPath, String statePath, String taskId) {
         if (mockRCPResult != null) {
             System.out.println("[MOCK RUN] Returning mock result: " + mockRCPResult);
             if (onRCPStart != null) {
@@ -289,6 +293,7 @@ public class ProcessRunner {
             command.add(targetFile.getAbsolutePath());
         }
 
+        command.add("-consoleLog");
         command.add("--mode=SELF_DEV");
         command.add("--variant=" + variantDir.getAbsolutePath());
         if (statePath != null) {
@@ -298,12 +303,22 @@ public class ProcessRunner {
         ProcessBuilder pb = new ProcessBuilder(command);
         File workDir = targetFile.getParentFile() != null && targetFile.getParentFile().exists() ? targetFile.getParentFile() : variantDir;
         pb.directory(workDir);
-        pb.inheritIO();
+
+        File logDir = new File(variantDir, "self-dev-run");
+        if (!logDir.exists()) {
+            logDir.mkdirs();
+        }
+        String logFileName = (taskId != null) ? "task_execution_" + taskId + ".log" : "evo_execution.log";
+        File taskLogFile = new File(logDir, logFileName);
 
         System.out.println("[RUN] Launching product command: " + command);
         System.out.println("[RUN] Working directory: " + workDir.getAbsolutePath());
+        System.out.println("[RUN] Redirecting output to log file: " + taskLogFile.getAbsolutePath());
 
         try {
+            pb.redirectErrorStream(true);
+            pb.redirectOutput(ProcessBuilder.Redirect.appendTo(taskLogFile));
+
             currentProcess = pb.start();
             Process process = currentProcess;
             System.out.println("[RUN] Process started successfully. PID: " + process.pid());
