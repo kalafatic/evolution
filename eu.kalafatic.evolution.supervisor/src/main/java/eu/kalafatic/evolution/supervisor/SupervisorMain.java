@@ -510,6 +510,7 @@ public class SupervisorMain {
                     int portToUse = findAvailablePort(48080);
                     List<String> command = new ArrayList<>();
                     command.add(executable.getAbsolutePath());
+                    command.add("-consoleLog");
                     command.add("--mode=SELF_DEV");
                     command.add("--variant=" + baseDir.getAbsolutePath());
                     command.add("--port=" + portToUse);
@@ -519,51 +520,69 @@ public class SupervisorMain {
                     pb.redirectErrorStream(true);
                     activeEvoProcess = pb.start();
 
+                    new Thread(() -> {
+                        System.out.println("[HTTP] Reading EVO executable process stdout/stderr...");
+                        try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(activeEvoProcess.getInputStream()))) {
+                            String line;
+                            while ((line = reader.readLine()) != null) {
+                                System.out.println("[EVO Executable] " + line);
+                            }
+                        } catch (Exception ignored) {}
+                    }).start();
+
                     boolean startupFailed = false;
                     try {
-                        if (activeEvoProcess.waitFor(1, TimeUnit.SECONDS) && activeEvoProcess.exitValue() != 0) {
-                            System.err.println("[HTTP] Native executable failed on launch with exit code: " + activeEvoProcess.exitValue());
+                        boolean exited = activeEvoProcess.waitFor(3, TimeUnit.SECONDS);
+                        if (exited || !activeEvoProcess.isAlive()) {
+                            int exitVal = exited ? activeEvoProcess.exitValue() : -1;
+                            System.err.println("[HTTP] Native executable failed on launch with exit code: " + exitVal);
                             startupFailed = true;
                         }
                     } catch (InterruptedException ignored) {}
 
-                    if (!startupFailed) {
-                        new Thread(() -> {
-                            System.out.println("[HTTP] Reading EVO executable process stdout/stderr...");
-                            try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(activeEvoProcess.getInputStream()))) {
-                                String line;
-                                while ((line = reader.readLine()) != null) {
-                                    System.out.println("[EVO Executable] " + line);
-                                }
-                            } catch (Exception ignored) {}
-                        }).start();
-
+                    if (!startupFailed && activeEvoProcess.isAlive()) {
                         return newFixedLengthResponse(Response.Status.OK, "application/json",
                             "{\"status\":\"OK\",\"message\":\"SUCCESS: Started executable product " + executable.getName() + "\",\"path\":\"" + path + "\"}");
                     } else {
                         System.out.println("[HTTP] Native executable startup failed. Checking Equinox Starter / Jar fallbacks...");
+                        if (activeEvoProcess != null && activeEvoProcess.isAlive()) {
+                            activeEvoProcess.destroyForcibly();
+                        }
                         activeEvoProcess = null;
                     }
                 }
 
                 // 2.5 Check Equinox Starter JAR in plugins/ directory as fallback
                 File pluginsDir = new File(exportDir, "plugins");
+                if (!pluginsDir.exists() && executable != null && executable.getParentFile() != null) {
+                    File subPlugins = new File(executable.getParentFile(), "plugins");
+                    if (subPlugins.exists()) {
+                        pluginsDir = subPlugins;
+                    }
+                }
                 if (pluginsDir.exists() && pluginsDir.isDirectory()) {
                     File[] launcherJars = pluginsDir.listFiles((dir, name) -> name.startsWith("org.eclipse.equinox.launcher_") && name.endsWith(".jar"));
                     if (launcherJars != null && launcherJars.length > 0) {
                         File launcherJar = launcherJars[0];
                         System.out.println("[HTTP] Launching via Equinox Starter JAR: " + launcherJar.getAbsolutePath());
+                        if (activeEvoProcess != null && activeEvoProcess.isAlive()) {
+                            activeEvoProcess.destroyForcibly();
+                            try { activeEvoProcess.waitFor(2, TimeUnit.SECONDS); } catch (InterruptedException ignored) {}
+                        }
+
                         int portToUse = findAvailablePort(48080);
                         List<String> command = new ArrayList<>();
                         command.add("java");
                         command.add("-jar");
                         command.add(launcherJar.getAbsolutePath());
+                        command.add("-consoleLog");
                         command.add("--mode=SELF_DEV");
                         command.add("--variant=" + baseDir.getAbsolutePath());
                         command.add("--port=" + portToUse);
 
                         ProcessBuilder pb = new ProcessBuilder(command);
-                        pb.directory(exportDir);
+                        File workDir = launcherJar.getParentFile() != null && launcherJar.getParentFile().getParentFile() != null ? launcherJar.getParentFile().getParentFile() : exportDir;
+                        pb.directory(workDir);
                         pb.redirectErrorStream(true);
                         activeEvoProcess = pb.start();
 
@@ -577,8 +596,26 @@ public class SupervisorMain {
                             } catch (Exception ignored) {}
                         }).start();
 
-                        return newFixedLengthResponse(Response.Status.OK, "application/json",
-                            "{\"status\":\"OK\",\"message\":\"SUCCESS: Started product via Equinox Starter " + launcherJar.getName() + "\",\"path\":\"" + path + "\"}");
+                        boolean startupFailed = false;
+                        try {
+                            boolean exited = activeEvoProcess.waitFor(3, TimeUnit.SECONDS);
+                            if (exited || !activeEvoProcess.isAlive()) {
+                                int exitVal = exited ? activeEvoProcess.exitValue() : -1;
+                                System.err.println("[HTTP] Equinox Starter JAR failed on launch with exit code: " + exitVal);
+                                startupFailed = true;
+                            }
+                        } catch (InterruptedException ignored) {}
+
+                        if (!startupFailed && activeEvoProcess.isAlive()) {
+                            return newFixedLengthResponse(Response.Status.OK, "application/json",
+                                "{\"status\":\"OK\",\"message\":\"SUCCESS: Started product via Equinox Starter " + launcherJar.getName() + "\",\"path\":\"" + path + "\"}");
+                        } else {
+                            System.out.println("[HTTP] Equinox Starter startup failed. Checking Jar fallbacks...");
+                            if (activeEvoProcess != null && activeEvoProcess.isAlive()) {
+                                activeEvoProcess.destroyForcibly();
+                            }
+                            activeEvoProcess = null;
+                        }
                     }
                 }
                 

@@ -270,6 +270,17 @@ public class ProcessRunner {
             targetFile = new File(variantDir, targetPath);
         }
 
+        if (!targetFile.exists()) {
+            File exportDir = new File(variantDir, "export");
+            File foundExec = findExecutableInDir(exportDir);
+            if (foundExec == null) {
+                foundExec = findExecutableInDir(variantDir);
+            }
+            if (foundExec != null) {
+                targetFile = foundExec;
+            }
+        }
+
         List<String> command = new ArrayList<>();
         boolean isExecutable = targetFile.getName().endsWith(".exe") || targetFile.getName().endsWith(".sh") || targetFile.getName().equalsIgnoreCase("evo");
 
