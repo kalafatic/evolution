@@ -1,106 +1,138 @@
 package eu.kalafatic.evolution.forge.model.inference;
 
-import eu.kalafatic.evolution.forge.model.llm.EvoLlmArchitecture;
-import eu.kalafatic.evolution.forge.model.llm.EvoLlmModel;
-import eu.kalafatic.evolution.forge.model.llm.ModelParameters;
-import eu.kalafatic.evolution.forge.model.llm.ModelSnapshot;
 import eu.kalafatic.evolution.forge.math.api.Tensor;
+import eu.kalafatic.evolution.forge.model.llm.EvoLlmModel;
+import eu.kalafatic.evolution.forge.model.llm.ModelSnapshot;
+import eu.kalafatic.evolution.forge.model.protocol.*;
 
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.List;
+
+/**
+ * Enhanced diagnostic model validator for in-memory and binary `.evo` model artifacts.
+ */
 public class EvoModelValidator {
-
-    public static class ValidationException extends RuntimeException {
-        public ValidationException(String message) {
-            super(message);
-        }
-    }
 
     public static void validate(EvoLlmModel model) {
         if (model == null) {
-            throw new ValidationException("EvoLlmModel cannot be null");
+            throw new IllegalArgumentException("Model cannot be null");
+        }
+        if (model.getVocabSize() <= 0) {
+            throw new IllegalStateException("Invalid vocabSize: " + model.getVocabSize());
+        }
+        if (model.getDModel() <= 0) {
+            throw new IllegalStateException("Invalid dModel: " + model.getDModel());
+        }
+        if (model.getNumHeads() <= 0) {
+            throw new IllegalStateException("Invalid numHeads: " + model.getNumHeads());
+        }
+        if (model.getNumBlocks() <= 0) {
+            throw new IllegalStateException("Invalid numBlocks: " + model.getNumBlocks());
         }
 
-        EvoLlmArchitecture arch = model.getArchitecture();
-        if (arch == null) {
-            throw new ValidationException("EvoLlmModel architecture cannot be null");
+        List<Tensor> params = model.parameters();
+        if (params == null || params.isEmpty()) {
+            throw new IllegalStateException("Model has no parameters");
         }
 
-        if (arch.getVocabSize() <= 0) {
-            throw new ValidationException("Invalid vocabulary size: " + arch.getVocabSize());
-        }
-
-        if (arch.getDModel() <= 0) {
-            throw new ValidationException("Invalid model dimension (dModel): " + arch.getDModel());
-        }
-
-        if (arch.getNumHeads() <= 0) {
-            throw new ValidationException("Invalid number of heads: " + arch.getNumHeads());
-        }
-
-        if (arch.getDModel() % arch.getNumHeads() != 0) {
-            throw new ValidationException(String.format("dModel (%d) must be divisible by numHeads (%d)",
-                    arch.getDModel(), arch.getNumHeads()));
-        }
-
-        if (arch.getNumBlocks() <= 0) {
-            throw new ValidationException("Invalid block count: " + arch.getNumBlocks());
-        }
-
-        if (arch.getDff() <= 0) {
-            throw new ValidationException("Invalid FFN dimension (dff): " + arch.getDff());
-        }
-
-        if (arch.getMaxSeqLen() <= 0) {
-            throw new ValidationException("Invalid max sequence length: " + arch.getMaxSeqLen());
-        }
-
-        if (model.getLmHead() == null || model.getLmHead().getData() == null) {
-            throw new ValidationException("LM head tensor or weights cannot be null");
-        }
-
-        long[] lmHeadShape = model.getLmHead().getShape();
-        if (lmHeadShape == null || lmHeadShape.length != 2
-                || lmHeadShape[0] != arch.getDModel() || lmHeadShape[1] != arch.getVocabSize()) {
-            throw new ValidationException(String.format("LM head shape mismatch: expected [%d, %d], got %s",
-                    arch.getDModel(), arch.getVocabSize(),
-                    lmHeadShape != null ? java.util.Arrays.toString(lmHeadShape) : "null"));
-        }
-
-        if (model.getBlocks() == null || model.getBlocks().size() != arch.getNumBlocks()) {
-            throw new ValidationException(String.format("Transformer blocks count mismatch: expected %d, got %d",
-                    arch.getNumBlocks(), model.getBlocks() != null ? model.getBlocks().size() : 0));
-        }
-
-        for (int i = 0; i < model.getBlocks().size(); i++) {
-            if (model.getBlocks().get(i) == null) {
-                throw new ValidationException("Transformer block at index " + i + " is null");
+        for (int i = 0; i < params.size(); i++) {
+            Tensor p = params.get(i);
+            if (p == null || p.getData() == null) {
+                throw new IllegalStateException("Parameter tensor at index " + i + " is null");
+            }
+            float[] data = p.getData();
+            for (int j = 0; j < data.length; j++) {
+                if (Float.isNaN(data[j]) || Float.isInfinite(data[j])) {
+                    throw new IllegalStateException("Parameter tensor at index " + i + " contains NaN/Infinity at position " + j);
+                }
             }
         }
     }
 
     public static void validateSnapshot(ModelSnapshot snapshot) {
         if (snapshot == null) {
-            throw new ValidationException("ModelSnapshot cannot be null");
+            throw new IllegalArgumentException("ModelSnapshot cannot be null");
+        }
+        if (snapshot.getArchitecture() == null) {
+            throw new IllegalStateException("ModelSnapshot architecture cannot be null");
+        }
+        if (snapshot.getParameters() == null) {
+            throw new IllegalStateException("ModelSnapshot parameters cannot be null");
+        }
+    }
+
+    public static EvoModelIntegrity validateEvoFile(Path path) {
+        EvoModelIntegrity integrity = new EvoModelIntegrity();
+        if (path == null) {
+            integrity.addError("FILE", "path", "File path is null");
+            return integrity;
         }
 
-        EvoLlmArchitecture arch = snapshot.getArchitecture();
-        if (arch == null) {
-            throw new ValidationException("ModelSnapshot architecture cannot be null");
-        }
+        try {
+            EvoModelReader reader = new EvoModelReader();
+            reader.read(path);
+            integrity.addPass("Header magic and section decoding PASS");
 
-        ModelParameters params = snapshot.getParameters();
-        if (params == null || params.count() == 0) {
-            throw new ValidationException("ModelSnapshot parameters registry cannot be empty");
-        }
-
-        if (!params.contains("token_embd.weight")) {
-            throw new ValidationException("ModelSnapshot missing canonical token_embd.weight tensor");
-        }
-
-        for (int i = 0; i < arch.getNumBlocks(); i++) {
-            String qName = "blk." + i + ".attn_q.weight";
-            if (!params.contains(qName)) {
-                throw new ValidationException("ModelSnapshot missing canonical tensor: " + qName);
+            EvoArchitectureDescriptor arch = reader.getArchitecture();
+            if (arch == null || arch.getVocabSize() <= 0 || arch.getDModel() <= 0) {
+                integrity.addError("ARCHITECTURE", "EvoArchitectureDescriptor", "Invalid architecture parameters");
+            } else {
+                integrity.addPass("Architecture descriptor parameters PASS");
             }
+
+            EvoTokenizerDescriptor tok = reader.getTokenizer();
+            if (tok == null || tok.getVocabSize() <= 0) {
+                integrity.addError("TOKENIZER", "EvoTokenizerDescriptor", "Invalid tokenizer descriptor");
+            } else {
+                integrity.addPass("Tokenizer descriptor parameters PASS");
+            }
+
+            List<EvoTensorDescriptor> manifest = reader.getManifest();
+            List<float[]> payloads = reader.getTensorDataPayloads();
+
+            if (manifest == null || payloads == null || manifest.size() != payloads.size()) {
+                integrity.addError("MANIFEST", "tensor_count", "Manifest size mismatch with payload size");
+                return integrity;
+            }
+            integrity.addPass("Tensor manifest count PASS (" + manifest.size() + " tensors)");
+
+            for (int i = 0; i < manifest.size(); i++) {
+                EvoTensorDescriptor desc = manifest.get(i);
+                float[] data = payloads.get(i);
+
+                if (desc.getElementCount() != data.length) {
+                    integrity.addError("TENSOR_SHAPE", desc.getCanonicalName(),
+                            "Shape " + java.util.Arrays.toString(desc.getShape()) +
+                                    " element count " + desc.getElementCount() +
+                                    " != stored floats " + data.length);
+                }
+
+                String computedChecksum = EvoModelContentHash.calculateFloatArrayChecksum(data);
+                if (desc.getChecksum() != null && !desc.getChecksum().isEmpty() && !desc.getChecksum().equals(computedChecksum)) {
+                    integrity.addError("TENSOR_CHECKSUM", desc.getCanonicalName(),
+                            "Checksum failed. Expected: " + desc.getChecksum() + ", Computed: " + computedChecksum);
+                }
+
+                for (int j = 0; j < data.length; j++) {
+                    if (Float.isNaN(data[j]) || Float.isInfinite(data[j])) {
+                        integrity.addError("TENSOR_PAYLOAD", desc.getCanonicalName(),
+                                "NaN/Infinity detected at index " + j);
+                        break;
+                    }
+                }
+            }
+
+            if (integrity.isValid()) {
+                integrity.addPass("All tensor payload shapes, checksums, and float scans PASS");
+            }
+
+        } catch (IOException e) {
+            integrity.addError("EVO_PROTOCOL_ERROR", path.toString(), "IO / Protocol decoding failed: " + e.getMessage());
+        } catch (Exception e) {
+            integrity.addError("EVO_PROTOCOL_ERROR", path.toString(), "Validation crash: " + e.getMessage());
         }
+
+        return integrity;
     }
 }
