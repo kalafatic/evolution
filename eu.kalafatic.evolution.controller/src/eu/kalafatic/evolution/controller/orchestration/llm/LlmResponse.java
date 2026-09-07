@@ -26,6 +26,10 @@ public final class LlmResponse {
         return content;
     }
 
+    public String getFinalContent() {
+        return content;
+    }
+
     public String getReasoning() {
         return reasoning;
     }

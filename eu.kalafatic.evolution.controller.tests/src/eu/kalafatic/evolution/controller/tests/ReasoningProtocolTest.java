@@ -102,6 +102,37 @@ public class ReasoningProtocolTest {
         assertEquals(ResponseKind.REASONING_AND_FINAL, r2.getKind());
         assertEquals("complex logic", r2.getReasoning().trim());
         assertEquals("final output", r2.getContent().trim());
+
+        LlmResponse r3 = protocol.parse("<|think|>pipe format reasoning<|/think|>Hello!");
+        assertEquals(ResponseKind.REASONING_AND_FINAL, r3.getKind());
+        assertEquals("pipe format reasoning", r3.getReasoning().trim());
+        assertEquals("Hello!", r3.getContent().trim());
+        assertEquals("Hello!", r3.getFinalContent().trim());
+    }
+
+    @Test
+    public void testEmptyReasoningTags() {
+        ReasoningProtocol protocol = new TagBasedReasoningProtocol();
+        LlmResponse response = protocol.parse("<think></think>Hello");
+        assertEquals("Hello", response.getContent().trim());
+        assertEquals("Hello", response.getFinalContent().trim());
+    }
+
+    @Test
+    public void testReasoningNonLeakageInvariant() {
+        ReasoningProtocol protocol = new TagBasedReasoningProtocol();
+        String reasoningText = "INTERNAL_REASONING: deep thinking step 1, step 2";
+        String finalAnswerText = "FINAL_RESPONSE: 42";
+        String raw = "<think>" + reasoningText + "</think>" + finalAnswerText;
+
+        LlmResponse response = protocol.parse(raw);
+
+        assertEquals(ResponseKind.REASONING_AND_FINAL, response.getKind());
+        assertEquals(reasoningText, response.getReasoning().trim());
+        assertEquals(finalAnswerText, response.getContent().trim());
+        assertEquals(finalAnswerText, response.getFinalContent().trim());
+        assertFalse("getContent() must never contain reasoning text", response.getContent().contains(reasoningText));
+        assertFalse("getFinalContent() must never contain reasoning text", response.getFinalContent().contains(reasoningText));
     }
 
     @Test

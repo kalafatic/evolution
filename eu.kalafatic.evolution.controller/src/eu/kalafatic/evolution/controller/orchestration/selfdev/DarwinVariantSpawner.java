@@ -41,7 +41,7 @@ public class DarwinVariantSpawner {
                 context.log("[SPAWNER] Materialization produced REASONING_ONLY response for " + bp.getId() + ". Discarding incomplete branch.");
                 return null;
             }
-            JSONObject json = validator.validate(llmResponse.getContent(), bp.getStrategyType(), context);
+            JSONObject json = validator.validate(llmResponse.getFinalContent(), bp.getStrategyType(), context);
             if (json != null && llmResponse.getReasoning() != null && !llmResponse.getReasoning().isEmpty()) {
                 json.put("internal_reasoning", llmResponse.getReasoning());
             }

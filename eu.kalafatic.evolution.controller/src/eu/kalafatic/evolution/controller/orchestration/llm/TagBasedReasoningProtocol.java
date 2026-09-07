@@ -9,8 +9,8 @@ import java.util.List;
  */
 public class TagBasedReasoningProtocol implements ReasoningProtocol {
 
-    private static final String[] OPEN_TAGS = { "<think>", "<thinking>", "<reasoning>" };
-    private static final String[] CLOSE_TAGS = { "</think>", "</thinking>", "</reasoning>" };
+    private static final String[] OPEN_TAGS = { "<think>", "<thinking>", "<reasoning>", "<|think|>" };
+    private static final String[] CLOSE_TAGS = { "</think>", "</thinking>", "</reasoning>", "<|/think|>" };
 
     private final boolean defaultToThinkingIfFirstTagIsClosing;
 
