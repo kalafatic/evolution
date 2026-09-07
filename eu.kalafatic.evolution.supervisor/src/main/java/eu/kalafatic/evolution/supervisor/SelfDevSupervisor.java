@@ -175,7 +175,7 @@ public class SelfDevSupervisor {
                 publishEvent("BUILD_STARTED", "Starting external build verification for: " + task.getId());
 
                 EvoProductBuildService buildService = new EvoProductBuildService(baseDir, runner);
-                ProductBuildResult buildResult = buildService.buildProduct();
+                ProductBuildResult buildResult = buildService.buildProduct(task.getId());
                 if (buildResult.isSuccessful()) {
                     publishEvent("BUILD_COMPLETED", "Build successful for: " + task.getId());
                     if (buildResult.getArtifactPath() != null) {
@@ -184,6 +184,7 @@ public class SelfDevSupervisor {
                     saveState();
                 } else {
                     publishEvent("BUILD_COMPLETED", "Build failed for: " + task.getId() + " - " + buildResult.getFailureSummary());
+                    task.getMetadata().put("buildFailureSummary", buildResult.getFailureSummary());
                     handleTaskFailure(task, "BUILD_FAILED", "Project or product build failed: " + buildResult.getFailureSummary());
                     return;
                 }
@@ -195,12 +196,12 @@ public class SelfDevSupervisor {
                 saveState();
                 publishEvent("TEST_STARTED", "Starting external test verification for: " + task.getId());
 
-                boolean testsOk = runner.runTests(baseDir);
+                boolean testsOk = runner.runTests(baseDir, task.getId());
                 if (testsOk) {
                     publishEvent("TEST_COMPLETED", "Tests completed successfully for: " + task.getId());
                 } else {
                     publishEvent("TEST_COMPLETED", "Tests failed for: " + task.getId());
-                    handleTaskFailure(task, "TEST_FAILED", "One or more tests failed post-compilation.");
+                    handleTaskFailure(task, "TEST_FAILED", "One or more tests failed post-compilation. Check task execution log for details.");
                     return;
                 }
             }
