@@ -495,6 +495,8 @@
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="sequenceNumber" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//ELong"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="turnId" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="isTerminal" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="reasoning" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="responseKind" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="NetworkEntry">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="host" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>

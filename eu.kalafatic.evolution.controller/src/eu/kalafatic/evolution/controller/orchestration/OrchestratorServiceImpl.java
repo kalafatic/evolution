@@ -544,6 +544,8 @@ public class OrchestratorServiceImpl implements OrchestratorService {
         String content = trimmedText;
         String agentType = "ai";
         MessagePriority priority = MessagePriority.PROGRESS;
+        String reasoning = null;
+        String responseKind = null;
 
         java.util.regex.Pattern logPattern = java.util.regex.Pattern.compile("^([A-Z][A-Z0-9-]*)(?:\\s+\\[(.*?)\\])?(?:\\s+\\(\\d{2}:\\d{2}:\\d{2}\\))?:\\s*([\\s\\S]*)$", java.util.regex.Pattern.CASE_INSENSITIVE);
         java.util.regex.Matcher matcher = logPattern.matcher(trimmedText);
@@ -588,8 +590,18 @@ public class OrchestratorServiceImpl implements OrchestratorService {
             try {
                 SessionContainer session = SessionManager.getInstance().getSession(sessionId);
                 TaskContext context = (session instanceof SessionContext) ? ((SessionContext)session).getTaskContext() : null;
-                if (context != null && context.getOrchestrator() != null && context.getOrchestrator().getOllama() != null) {
-                    modelName = context.getOrchestrator().getOllama().getModel();
+                if (context != null) {
+                    if (context.getOrchestrator() != null && context.getOrchestrator().getOllama() != null) {
+                        modelName = context.getOrchestrator().getOllama().getModel();
+                    }
+                    Object rObj = context.getOrchestrationState().getMetadata().get("chatResponseReasoning");
+                    if (rObj instanceof String) {
+                        reasoning = (String) rObj;
+                    }
+                    Object kObj = context.getOrchestrationState().getMetadata().get("chatResponseKind");
+                    if (kObj instanceof String) {
+                        responseKind = (String) kObj;
+                    }
                 }
             } catch (Exception e) {}
             if (modelName == null && this.orchestrator != null && this.orchestrator.getOllama() != null) {
@@ -688,7 +700,7 @@ public class OrchestratorServiceImpl implements OrchestratorService {
                         .replaceAll("\\[(APPROVED|REJECTED|KEPT):[^]]+\\]", "")
                         .trim();
 
-        ConversationOutputController.getInstance().submitMessage(sessionId, turnId, sender, content, agentType, priority, priority == MessagePriority.FINAL);
+        ConversationOutputController.getInstance().submitMessage(sessionId, turnId, sender, content, agentType, priority, priority == MessagePriority.FINAL, reasoning, responseKind);
     }
 
     private boolean isAutoApproveActive(String sessionId) {

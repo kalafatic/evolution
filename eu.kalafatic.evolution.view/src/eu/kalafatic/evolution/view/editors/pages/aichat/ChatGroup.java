@@ -983,6 +983,8 @@ public class ChatGroup extends AEvoGroup {
         obj.put("sequenceNumber", m.getSequenceNumber());
         obj.put("turnId", m.getTurnId());
         obj.put("isTerminal", m.isIsTerminal());
+        obj.put("reasoning", m.getReasoning() != null ? m.getReasoning() : "");
+        obj.put("responseKind", m.getResponseKind() != null ? m.getResponseKind() : "");
         return obj;
     }
 

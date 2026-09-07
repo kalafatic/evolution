@@ -510,7 +510,12 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 			String prompt = String.format("%s\n\nUser said: \"%s\"\n\nRespond naturally. Be friendly and helpful.",
 					systemInstruction, request);
 
-			return aiService.sendRequest(context.getOrchestrator(), prompt, context);
+			eu.kalafatic.evolution.controller.orchestration.llm.LlmResponse response = aiService.sendLlmRequest(context.getOrchestrator(), prompt, 0.7f, null, context, null);
+			if (response != null && response.getReasoning() != null && !response.getReasoning().isEmpty()) {
+				context.getOrchestrationState().getMetadata().put("chatResponseReasoning", response.getReasoning());
+				context.getOrchestrationState().getMetadata().put("chatResponseKind", response.getKind().name());
+			}
+			return response != null ? response.getFinalContent() : "";
 		} catch (Exception e) {
 			context.log("[DARWIN] Chat response generation failed: " + e.getMessage());
 			return "Hello! How can I help you today?";
@@ -2631,9 +2636,9 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 
 			String chatPrompt = String.format("%s\n\nUser said: \"%s\"\n\n%s", systemInstruction, prompt, instruction);
 
-			String response = aiService.sendRequest(context.getOrchestrator(), chatPrompt, context);
+			eu.kalafatic.evolution.controller.orchestration.llm.LlmResponse response = aiService.sendLlmRequest(context.getOrchestrator(), chatPrompt, 0.7f, null, context, null);
 
-			BranchVariant variant = createChatVariant(response, context);
+			BranchVariant variant = createChatVariant(response != null ? response.getFinalContent() : "", context);
 			variant.setId("chat-variant-" + (i + 1) + "-" + System.currentTimeMillis());
 			variant.setStrategy(strategy);
 			variant.setScore(0.95 - (i * 0.05));

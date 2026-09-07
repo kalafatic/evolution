@@ -3439,6 +3439,9 @@ public interface OrchestrationPackage extends EPackage {
 	 */
 	int CHAT_MESSAGE__IS_TERMINAL = 11;
 
+	int CHAT_MESSAGE__REASONING = 12;
+	int CHAT_MESSAGE__RESPONSE_KIND = 13;
+
 	/**
 	 * The number of structural features of the '<em>Chat Message</em>' class.
 	 * <!-- begin-user-doc -->
@@ -3446,7 +3449,7 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int CHAT_MESSAGE_FEATURE_COUNT = 12;
+	int CHAT_MESSAGE_FEATURE_COUNT = 14;
 
 	/**
 	 * The number of operations of the '<em>Chat Message</em>' class.
@@ -7134,6 +7137,9 @@ public interface OrchestrationPackage extends EPackage {
 	 */
 	EAttribute getChatMessage_IsTerminal();
 
+	EAttribute getChatMessage_Reasoning();
+	EAttribute getChatMessage_ResponseKind();
+
 	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.NetworkEntry <em>Network Entry</em>}'.
 	 * <!-- begin-user-doc -->
@@ -10028,6 +10034,8 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute CHAT_MESSAGE__IS_TERMINAL = eINSTANCE.getChatMessage_IsTerminal();
+		EAttribute CHAT_MESSAGE__REASONING = eINSTANCE.getChatMessage_Reasoning();
+		EAttribute CHAT_MESSAGE__RESPONSE_KIND = eINSTANCE.getChatMessage_ResponseKind();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.NetworkEntryImpl <em>Network Entry</em>}' class.

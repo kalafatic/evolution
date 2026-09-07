@@ -103,6 +103,63 @@
     font-size: 10px;
     opacity: 0.7;
 }
+
+/* Dedicated Thinking Panel/Bubble for Reasoning LLMs */
+.thinking-bubble {
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    font-size: 11px;
+    color: #475569;
+    max-width: 100%;
+    box-sizing: border-box;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.thinking-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 700;
+    font-size: 11px;
+    color: #64748b;
+    cursor: pointer;
+    user-select: none;
+    margin-bottom: 4px;
+}
+
+.thinking-icon {
+    font-size: 13px;
+}
+
+.thinking-toggle-icon {
+    font-size: 10px;
+    color: #94a3b8;
+    margin-left: auto;
+    transition: transform 0.2s ease;
+}
+
+.thinking-bubble.collapsed .thinking-body {
+    display: none;
+}
+
+.thinking-bubble.collapsed .thinking-toggle-icon {
+    transform: rotate(-90deg);
+}
+
+.thinking-body {
+    font-family: inherit;
+    font-size: 11px;
+    line-height: 1.45;
+    color: #475569;
+    white-space: pre-wrap;
+    word-break: break-word;
+    border-top: 1px solid #e2e8f0;
+    padding-top: 6px;
+    margin-top: 4px;
+}
 .message.response .bubble {
     background: var(--response-bg);
     border-color: var(--response-border);

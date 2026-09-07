@@ -54,6 +54,15 @@ public class ConversationOutputController {
      */
     public void submitMessage(String sessionId, String turnId, String sender, String text,
                               String agentType, MessagePriority priority, boolean isTerminal) {
+        submitMessage(sessionId, turnId, sender, text, agentType, priority, isTerminal, null, null);
+    }
+
+    /**
+     * Submit a message to the controller with explicit reasoning and responseKind attributes.
+     */
+    public void submitMessage(String sessionId, String turnId, String sender, String text,
+                              String agentType, MessagePriority priority, boolean isTerminal,
+                              String reasoning, String responseKind) {
 
         SessionBuffer buffer = sessionBuffers.computeIfAbsent(sessionId, k -> new SessionBuffer());
 
@@ -70,6 +79,8 @@ public class ConversationOutputController {
         msg.setSequenceNumber(seq);
         msg.setTurnId(turnId);
         msg.setIsTerminal(isTerminal || priority == MessagePriority.FINAL);
+        msg.setReasoning(reasoning);
+        msg.setResponseKind(responseKind);
 
         synchronized (buffer) {
             // Drop late noise if turn is already finalized

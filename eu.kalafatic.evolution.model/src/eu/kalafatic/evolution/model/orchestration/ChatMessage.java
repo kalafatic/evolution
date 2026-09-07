@@ -296,4 +296,32 @@ public interface ChatMessage extends EObject {
 	 */
 	void setIsTerminal(boolean value);
 
+	/**
+	 * Returns the value of the '<em><b>Reasoning</b></em>' attribute.
+	 * @return the value of the '<em>Reasoning</em>' attribute.
+	 * @see #setReasoning(String)
+	 */
+	String getReasoning();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.ChatMessage#getReasoning <em>Reasoning</em>}' attribute.
+	 * @param value the new value of the '<em>Reasoning</em>' attribute.
+	 * @see #getReasoning()
+	 */
+	void setReasoning(String value);
+
+	/**
+	 * Returns the value of the '<em><b>Response Kind</b></em>' attribute.
+	 * @return the value of the '<em>Response Kind</em>' attribute.
+	 * @see #setResponseKind(String)
+	 */
+	String getResponseKind();
+
+	/**
+	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.ChatMessage#getResponseKind <em>Response Kind</em>}' attribute.
+	 * @param value the new value of the '<em>Response Kind</em>' attribute.
+	 * @see #getResponseKind()
+	 */
+	void setResponseKind(String value);
+
 } // ChatMessage
