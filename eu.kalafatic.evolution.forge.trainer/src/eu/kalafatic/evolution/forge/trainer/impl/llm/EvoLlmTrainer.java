@@ -184,6 +184,11 @@ public class EvoLlmTrainer {
                     double currentLoss = windowValidTokens > 0 ? windowLoss / windowValidTokens : 0.0;
                     int sampleIndex = Math.min(bIdx * microBatchSize, trainSamples.size());
                     progressListener.onProgress(epoch, epochs, sampleIndex, trainSamples.size(), currentLoss);
+                } else if ((bIdx / accumulationSteps) % 5 == 0 || bIdx + accumulationSteps >= batches.size()) {
+                    double currentLoss = windowValidTokens > 0 ? windowLoss / windowValidTokens : 0.0;
+                    int sampleIndex = Math.min(bIdx * microBatchSize, trainSamples.size());
+                    System.out.printf("[EVO Trainer] Epoch %d/%d | Samples %d/%d | Batch Loss: %.4f%n",
+                            epoch + 1, epochs, sampleIndex, trainSamples.size(), currentLoss);
                 }
             }
 

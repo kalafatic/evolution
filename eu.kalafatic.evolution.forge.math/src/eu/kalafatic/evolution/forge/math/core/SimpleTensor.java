@@ -240,7 +240,7 @@ public class SimpleTensor implements Tensor {
         float[] resultData = new float[m * p];
         float[] otherData = other.getData();
 
-        if ((long) m * p >= 4096) {
+        if (m >= 4 && (long) m * p >= 4096) {
             java.util.stream.IntStream.range(0, m).parallel().forEach(i -> {
                 int rowOffset = i * n;
                 int resOffset = i * p;

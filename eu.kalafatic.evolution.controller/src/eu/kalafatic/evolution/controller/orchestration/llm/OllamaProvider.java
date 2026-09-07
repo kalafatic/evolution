@@ -384,11 +384,27 @@ public class OllamaProvider implements ILlmProvider {
                             .build();
 
                     eu.kalafatic.evolution.forge.model.inference.ReferenceEvoInferenceEngine nativeEngine = new eu.kalafatic.evolution.forge.model.inference.ReferenceEvoInferenceEngine();
-                    eu.kalafatic.evolution.forge.model.inference.InferenceResult result = nativeEngine.generate(nativeModel, request, tokenizer);
+                    final TaskContext currentContext = context;
+                    final long startTime = System.currentTimeMillis();
+                    final int[] tokenCountHolder = new int[1];
+
+                    eu.kalafatic.evolution.forge.model.inference.ReferenceEvoInferenceEngine.TokenStreamListener listener = (tokenId, tokenText) -> {
+                        tokenCountHolder[0]++;
+                        int count = tokenCountHolder[0];
+                        if (count % 10 == 0 || count == 1) {
+                            long elapsed = System.currentTimeMillis() - startTime;
+                            double tokPerSec = count * 1000.0 / Math.max(1, elapsed);
+                            if (currentContext != null) {
+                                currentContext.log(String.format("[EvoInferenceEngine] Progress: %d tokens generated (%.2f tok/s, elapsed %d ms)", count, tokPerSec, elapsed));
+                            }
+                        }
+                    };
+
+                    eu.kalafatic.evolution.forge.model.inference.InferenceResult result = nativeEngine.generateWithListener(nativeModel, request, tokenizer, listener);
                     String response = result.getGeneratedText();
                     if (response != null && !response.isEmpty() && !response.contains("token_")) {
                         if (context != null) {
-                            context.log("Stage: LLM\nProvider: ReferenceEvoInferenceEngine (evo native)\nModel: " + model + "\nToken count: (estimated) " + (prompt.length() / 4) + "\nRaw response length: " + response.length());
+                            context.log("Stage: LLM\nProvider: ReferenceEvoInferenceEngine (evo native)\nModel: " + model + "\nToken count: " + result.getGeneratedTokenCount() + "\nExecution time: " + result.getExecutionTimeMs() + " ms\nRaw response length: " + response.length());
                         }
                         return response;
                     } else if (response != null && !response.isEmpty()) {
