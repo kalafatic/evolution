@@ -44,6 +44,9 @@ public class OllamaProvider implements ILlmProvider {
             context.log("  kind=" + normalized.getKind());
             context.log("  reasoningLength=" + normalized.getReasoning().length());
             context.log("  contentLength=" + normalized.getContent().length());
+            context.log("  finalContentLength=" + normalized.getFinalContent().length());
+            context.log("  reasoningPresent=" + (!normalized.getReasoning().isEmpty()));
+            context.log("  reasoningExposed=false");
             context.log("  complete=" + normalized.isComplete());
         }
 

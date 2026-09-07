@@ -38,6 +38,10 @@ window.ChatApp.Utils = {
                    .replace(/<END_JSON>/gi, '')
                    .replace(/<BEGIN_DARWIN_JSON>/gi, '')
                    .replace(/<END_DARWIN_JSON>/gi, '')
+                   .replace(/<think>[\s\S]*?<\/think>/gi, '')
+                   .replace(/<thinking>[\s\S]*?<\/thinking>/gi, '')
+                   .replace(/<reasoning>[\s\S]*?<\/reasoning>/gi, '')
+                   .replace(/<\|think\|>[\s\S]*?<\|/think\|>/gi, '')
                    .trim();
     }
 };
