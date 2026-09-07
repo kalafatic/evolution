@@ -79,9 +79,9 @@ public class EvoModelPersistentArtifactTest {
         // Verify architectural dimensions & metadata integrity
         assertEquals("evo-test-artifact", loadedArtifact.getModelName());
         assertEquals(originalArtifact.getVocabSize(), loadedArtifact.getVocabSize());
-        assertEquals(originalArtifact.getEmbeddingSize(), loadedArtifact.getEmbeddingSize());
-        assertEquals(originalArtifact.getLayers(), loadedArtifact.getLayers());
-        assertEquals(originalArtifact.getHeads(), loadedArtifact.getHeads());
+        assertEquals(originalArtifact.getDModel(), loadedArtifact.getDModel());
+        assertEquals(originalArtifact.getNumBlocks(), loadedArtifact.getNumBlocks());
+        assertEquals(originalArtifact.getNumHeads(), loadedArtifact.getNumHeads());
         assertEquals(originalArtifact.getDff(), loadedArtifact.getDff());
         assertEquals(originalArtifact.getMaxSeqLen(), loadedArtifact.getMaxSeqLen());
         assertEquals(originalArtifact.getParameterCount(), loadedArtifact.getParameterCount());
