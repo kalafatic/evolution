@@ -46,6 +46,7 @@ public class EvoLlmModel {
     private final TrainingState trainingState;
     private final ModelMetadata metadata;
     private final Map<Integer, String> idToToken;
+    private Tensor lastFinalNormed;
 
     public EvoLlmModel(EvoLlmArchitecture architecture, boolean tieEmbeddings) {
         this.architecture = Objects.requireNonNull(architecture, "architecture cannot be null");
@@ -87,7 +88,7 @@ public class EvoLlmModel {
     private static void initXavier(Tensor tensor, int fanIn, int fanOut) {
         float[] data = tensor.getData();
         if (data == null) return;
-        Random rand = new Random(42);
+        Random rand = new Random();
         float std = (float) Math.sqrt(2.0 / (fanIn + fanOut));
         for (int i = 0; i < data.length; i++) {
             data[i] = (float) (rand.nextGaussian() * std);
@@ -105,8 +106,8 @@ public class EvoLlmModel {
         for (TransformerBlock block : blocks) {
             x = block.forward(x);
         }
-        Tensor normed = outputNorm.forward(x);
-        return normed.matmul(lmHead);
+        this.lastFinalNormed = outputNorm.forward(x);
+        return lastFinalNormed.matmul(lmHead);
     }
 
     /**
@@ -140,6 +141,17 @@ public class EvoLlmModel {
      */
     public void backward(Tensor dLogits) {
         if (dLogits == null) return;
+
+        if (lastFinalNormed != null) {
+            Tensor dLmHead = lastFinalNormed.transpose().matmul(dLogits);
+            float[] lmGrad = lmHead.getGrad();
+            float[] dLmHeadData = dLmHead.getData();
+            if (lmGrad != null && dLmHeadData != null) {
+                for (int i = 0; i < lmGrad.length; i++) {
+                    lmGrad[i] += dLmHeadData[i];
+                }
+            }
+        }
 
         Tensor dFinalNormed = dLogits.matmul(lmHead.transpose());
         Tensor dx = outputNorm.backward(dFinalNormed);

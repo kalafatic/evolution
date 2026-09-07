@@ -57,17 +57,26 @@ public class MultiHeadAttention {
             float maxVal = Float.NEGATIVE_INFINITY;
             for (int c = 0; c < seqLen; c++) {
                 scoresData[offset + c] *= scale;
+                if (c > r) {
+                    scoresData[offset + c] = -1e9f;
+                }
                 if (scoresData[offset + c] > maxVal) {
                     maxVal = scoresData[offset + c];
                 }
             }
             float sum = 0.0f;
             for (int c = 0; c < seqLen; c++) {
-                softData[offset + c] = (float) Math.exp(scoresData[offset + c] - maxVal);
-                sum += softData[offset + c];
+                if (c > r) {
+                    softData[offset + c] = 0.0f;
+                } else {
+                    softData[offset + c] = (float) Math.exp(scoresData[offset + c] - maxVal);
+                    sum += softData[offset + c];
+                }
             }
-            for (int c = 0; c < seqLen; c++) {
-                softData[offset + c] /= sum;
+            if (sum > 0.0f) {
+                for (int c = 0; c <= r; c++) {
+                    softData[offset + c] /= sum;
+                }
             }
         }
         this.lastSoftmax = softmaxProbs;
@@ -90,8 +99,9 @@ public class MultiHeadAttention {
         // 2. dAttention = dOutput * WO^T
         Tensor dAttn = dOutput.matmul(WO.transpose());
 
-        // 3. dWV = lastSoftmax^T * dAttn
-        Tensor dWV = lastSoftmax.transpose().matmul(dAttn);
+        // 3. dV = lastSoftmax^T * dAttn, dWV = lastX^T * dV
+        Tensor dV = lastSoftmax.transpose().matmul(dAttn);
+        Tensor dWV = lastX.transpose().matmul(dV);
         float[] wvGrad = WV.getGrad();
         float[] dWVData = dWV.getData();
         for (int i = 0; i < wvGrad.length; i++) {
@@ -111,13 +121,17 @@ public class MultiHeadAttention {
         for (int r = 0; r < seqLen; r++) {
             int offset = r * seqLen;
             float dot = 0.0f;
-            for (int c = 0; c < seqLen; c++) {
+            for (int c = 0; c <= r; c++) {
                 dot += dSoftData[offset + c] * softData[offset + c];
             }
             for (int c = 0; c < seqLen; c++) {
-                float s = softData[offset + c];
-                float dS = dSoftData[offset + c];
-                dScoresData[offset + c] = s * (dS - dot) * scale;
+                if (c > r) {
+                    dScoresData[offset + c] = 0.0f;
+                } else {
+                    float s = softData[offset + c];
+                    float dS = dSoftData[offset + c];
+                    dScoresData[offset + c] = s * (dS - dot) * scale;
+                }
             }
         }
 
@@ -140,10 +154,10 @@ public class MultiHeadAttention {
             wkGrad[i] += dWKData[i];
         }
 
-        // 7. dX = dQ * WQ^T + dK * WK^T + dAttn * WV^T
+        // 7. dX = dQ * WQ^T + dK * WK^T + dV * WV^T
         Tensor dXQ = dQ.matmul(WQ.transpose());
         Tensor dXK = dK.matmul(WK.transpose());
-        Tensor dXV = dAttn.matmul(WV.transpose());
+        Tensor dXV = dV.matmul(WV.transpose());
         return dXQ.add(dXK).add(dXV);
     }
     

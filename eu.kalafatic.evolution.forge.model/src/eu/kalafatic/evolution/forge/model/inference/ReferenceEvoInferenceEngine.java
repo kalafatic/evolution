@@ -48,23 +48,20 @@ public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
             throw new IllegalArgumentException("Input token IDs cannot be null or empty");
         }
 
-        ModelParameters params = snapshot.getParameters();
-        Tensor embed = params.get("token_embd.weight");
-        int seqLen = inputIds.length;
-        int dModel = snapshot.getArchitecture().getDModel();
-
-        Tensor x = new SimpleTensor(seqLen, dModel);
-        float[] resData = x.getData();
-        float[] wData = embed.getData();
-
-        for (int i = 0; i < seqLen; i++) {
-            int tokenId = inputIds[i];
-            if (tokenId < 0 || tokenId >= snapshot.getArchitecture().getVocabSize()) tokenId = 0;
-            System.arraycopy(wData, tokenId * dModel, resData, i * dModel, dModel);
+        EvoLlmModel model = new EvoLlmModel(snapshot.getArchitecture());
+        ModelParameters snapParams = snapshot.getParameters();
+        ModelParameters modelParams = model.getModelParameters();
+        for (String name : snapParams.names()) {
+            Tensor src = snapParams.get(name);
+            Tensor dst = modelParams.get(name);
+            if (src != null && dst != null) {
+                System.arraycopy(src.getData(), 0, dst.getData(), 0, src.getData().length);
+            }
         }
-
-        Tensor lmHead = params.contains("output.weight") ? params.get("output.weight") : embed;
-        return x.matmul(lmHead);
+        if (snapshot.getVocabulary() != null) {
+            model.getIdToToken().putAll(snapshot.getVocabulary());
+        }
+        return model.forward(inputIds);
     }
 
     public InferenceResult generateFromEvoFile(Path evoPath, InferenceRequest request) throws IOException {
@@ -137,19 +134,6 @@ public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
 
         float[] rawLogits = new float[vocabSize];
         System.arraycopy(data, offset, rawLogits, 0, vocabSize);
-
-        if (idToToken != null && !idToToken.isEmpty()) {
-            for (int i = 0; i < vocabSize; i++) {
-                String tokStr = idToToken.get(i);
-                if (tokStr == null || tokStr.startsWith("token_")) {
-                    rawLogits[i] = -1e9f;
-                }
-            }
-        } else {
-            for (int i = 4; i < vocabSize; i++) {
-                rawLogits[i] = -1e9f;
-            }
-        }
 
         return sampleNextTokenFromLogits(rawLogits, vocabSize, tokenHistory, request, rng);
     }
