@@ -856,19 +856,62 @@ public class AiChatPage extends AEvoPage {
 				}
 				String nodeVersion = runCommand("node", "--version");
 
+				// EVO Native Model Protocol Validation
+				eu.kalafatic.evolution.forge.model.protocol.EvoModelIntegrity protocolIntegrity = null;
+				java.io.File evoArtifactFile = null;
+				String currentEngineStr = chatMgmtGroup != null ? chatMgmtGroup.getInferenceEngine() : "ollama";
+				try {
+					evoArtifactFile = eu.kalafatic.evolution.controller.orchestration.llm.OllamaProvider.resolveEvoArtifactPath(localModel);
+					if (evoArtifactFile == null || !evoArtifactFile.exists()) {
+						evoArtifactFile = eu.kalafatic.evolution.controller.manager.LlamaService.resolveEvoModelPath(localModel);
+					}
+					if (evoArtifactFile != null && evoArtifactFile.exists()) {
+						protocolIntegrity = eu.kalafatic.evolution.forge.model.inference.EvoModelValidator.validateEvoFile(evoArtifactFile.toPath());
+					}
+				} catch (Throwable t) {}
+
 				// Build Markdown report
 				StringBuilder sb = new StringBuilder();
 				sb.append("### 🕵️ Agent Environmental & LLM Diagnostic Report\n\n");
 
 				sb.append("**1. Active AI Configuration**\n");
 				sb.append("- **Active AI Mode:** `").append(activeMode != null ? activeMode.getName() : "Not Set").append("`\n");
+				sb.append("- **Inference Engine:** `").append(currentEngineStr).append("`\n");
 				sb.append("- **Selected Local Model:** `").append(localModel).append("`\n");
 				sb.append("- **Selected Remote Model:** `").append(remoteModel).append("`\n");
 				sb.append("- **Ollama Service URL:** `").append(ollamaUrl).append("`\n");
 				sb.append("- **Ollama Connection:** ").append(isOllamaOnline ? "🟢 **Online** (Version: `" + ollamaVer + "`)" : "🔴 **Offline/Unreachable**").append("\n");
 				sb.append("- **Ollama Process Running:** ").append(isOllamaProcessRunning ? "🟢 **Yes**" : "⚪ **No/Undetected in local VM**").append("\n\n");
 
-				sb.append("**2. Detailed Model Information (Local Model)**\n");
+				if (protocolIntegrity != null || "EVO Native".equalsIgnoreCase(currentEngineStr) || localModel.toLowerCase().contains("evo")) {
+					sb.append("**2. EVO Native Model Protocol Validation Result**\n");
+					if (evoArtifactFile != null && evoArtifactFile.exists()) {
+						sb.append("- **Artifact Location:** `").append(evoArtifactFile.getAbsolutePath()).append("`\n");
+					}
+					if (protocolIntegrity != null) {
+						boolean isPass = protocolIntegrity.isValid();
+						sb.append("- **Protocol Validation Status:** ").append(isPass ? "🟢 **PASS**" : "🔴 **FAIL**").append("\n");
+
+						if (!protocolIntegrity.getChecksPassed().isEmpty()) {
+							sb.append("- **Passed Checks (").append(protocolIntegrity.getChecksPassed().size()).append("):**\n");
+							for (String passCheck : protocolIntegrity.getChecksPassed()) {
+								sb.append("  - `[PASS]` ").append(passCheck).append("\n");
+							}
+						}
+
+						if (!protocolIntegrity.getErrors().isEmpty()) {
+							sb.append("- **Failed Checks / Validation Errors (").append(protocolIntegrity.getErrors().size()).append("):**\n");
+							for (eu.kalafatic.evolution.forge.model.protocol.EvoModelIntegrity.ValidationError err : protocolIntegrity.getErrors()) {
+								sb.append("  - 🔴 `[FAIL]` [").append(err.getSection()).append("] Target: `").append(err.getTarget()).append("` - ").append(err.getMessage()).append("\n");
+							}
+						}
+					} else {
+						sb.append("- **Protocol Validation Status:** ⚠️ *No native .evo protocol file resolved for validation.*\n");
+					}
+					sb.append("\n");
+				}
+
+				sb.append("**3. Detailed Model Information (Local Model)**\n");
 				if (modelInfo != null && modelInfo.success) {
 					sb.append("- **Model Name:** `").append(modelInfo.modelName).append("`\n");
 					sb.append("- **Family:** `").append(modelInfo.modelFamily).append("`\n");
@@ -895,7 +938,7 @@ public class AiChatPage extends AEvoPage {
 				}
 				sb.append("\n");
 
-				sb.append("**3. System Environment & Processes**\n");
+				sb.append("**4. System Environment & Processes**\n");
 				sb.append("- **Operating System:** `").append(osName).append("` (Version: `").append(osVersion).append("`, Arch: `").append(osArch).append("`)\n");
 				sb.append("- **Java Runtime:** `").append(javaVersion).append("` (Vendor: `").append(javaVendor).append("`, VM: `").append(javaVm).append("`)\n");
 				sb.append("- **JVM Memory:** Allocated `").append(totalMem).append(" MB` / Free `").append(freeMem).append(" MB` (Max allowed: `").append(maxMem).append(" MB`)\n");
