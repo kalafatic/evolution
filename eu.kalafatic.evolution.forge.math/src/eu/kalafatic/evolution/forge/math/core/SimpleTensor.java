@@ -240,7 +240,20 @@ public class SimpleTensor implements Tensor {
         float[] resultData = new float[m * p];
         float[] otherData = other.getData();
 
-        if (m >= 4 && (long) m * p >= 4096) {
+        if (m == 1 && p >= 256) {
+            float[] aData = this.data;
+            java.util.stream.IntStream.range(0, p).parallel().forEach(j -> {
+                float sum = 0.0f;
+                for (int k = 0; k < n; k++) {
+                    float a = aData[k];
+                    if (a != 0.0f) {
+                        sum += a * otherData[k * p + j];
+                    }
+                }
+                resultData[j] = sum;
+            });
+            return new SimpleTensor(new long[]{1, p}, resultData);
+        } else if (m >= 4 && (long) m * p >= 4096) {
             java.util.stream.IntStream.range(0, m).parallel().forEach(i -> {
                 int rowOffset = i * n;
                 int resOffset = i * p;
@@ -284,6 +297,30 @@ public class SimpleTensor implements Tensor {
             }
         }
         return new SimpleTensor(new long[]{n, m}, resultData);
+    }
+
+    public static Tensor concatRowWise(Tensor t1, Tensor t2) {
+        if (t1 == null) return t2;
+        if (t2 == null) return t1;
+
+        long[] shape1 = t1.getShape();
+        long[] shape2 = t2.getShape();
+
+        int rows1 = (int) shape1[0];
+        int cols1 = (int) shape1[1];
+        int rows2 = (int) shape2[0];
+        int cols2 = (int) shape2[1];
+
+        if (cols1 != cols2) {
+            throw new IllegalArgumentException("Column dimensions must match for row-wise concatenation: " + cols1 + " vs " + cols2);
+        }
+
+        int newRows = rows1 + rows2;
+        float[] newProps = new float[newRows * cols1];
+        System.arraycopy(t1.getData(), 0, newProps, 0, rows1 * cols1);
+        System.arraycopy(t2.getData(), 0, newProps, rows1 * cols1, rows2 * cols1);
+
+        return new SimpleTensor(new long[]{newRows, cols1}, newProps);
     }
 
     @Override

@@ -2,6 +2,7 @@ package eu.kalafatic.evolution.forge.model.llm;
 
 import eu.kalafatic.evolution.forge.math.api.Tensor;
 import eu.kalafatic.evolution.forge.math.core.SimpleTensor;
+import eu.kalafatic.evolution.forge.model.inference.KVCache;
 
 public class TransformerBlock {
     private final MultiHeadAttention attention;
@@ -35,6 +36,20 @@ public class TransformerBlock {
         this.ffnOutput = ffnOut;
         
         // Add & Norm
+        return afterAttn.add(ffnOut);
+    }
+
+    public Tensor forwardWithCache(Tensor x, KVCache.LayerKVCache cache) {
+        Tensor norm1 = attnNorm.forward(x);
+        Tensor attnOut = attention.forwardWithCache(norm1, cache);
+        this.attnOutput = attnOut;
+
+        Tensor afterAttn = x.add(attnOut);
+
+        Tensor norm2 = ffnNorm.forward(afterAttn);
+        Tensor ffnOut = ffn.forward(norm2);
+        this.ffnOutput = ffnOut;
+
         return afterAttn.add(ffnOut);
     }
     
