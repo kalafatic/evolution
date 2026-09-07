@@ -275,6 +275,12 @@ public class ChatMessageImpl extends MinimalEObjectImpl.Container implements Cha
 	 */
 	protected boolean isTerminal = IS_TERMINAL_EDEFAULT;
 
+	protected static final String REASONING_EDEFAULT = null;
+	protected String reasoning = REASONING_EDEFAULT;
+
+	protected static final String RESPONSE_KIND_EDEFAULT = null;
+	protected String responseKind = RESPONSE_KIND_EDEFAULT;
+
 	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -568,6 +574,28 @@ public class ChatMessageImpl extends MinimalEObjectImpl.Container implements Cha
 		isTerminal = newIsTerminal;
 		if (eNotificationRequired())
 			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_MESSAGE__IS_TERMINAL, oldIsTerminal, isTerminal));
+	}
+
+	public String getReasoning() {
+		return reasoning;
+	}
+
+	public void setReasoning(String newReasoning) {
+		String oldReasoning = reasoning;
+		reasoning = newReasoning;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_MESSAGE__REASONING, oldReasoning, reasoning));
+	}
+
+	public String getResponseKind() {
+		return responseKind;
+	}
+
+	public void setResponseKind(String newResponseKind) {
+		String oldResponseKind = responseKind;
+		responseKind = newResponseKind;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_MESSAGE__RESPONSE_KIND, oldResponseKind, responseKind));
 	}
 
 	/**

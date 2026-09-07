@@ -3453,6 +3453,14 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		return (EAttribute)chatMessageEClass.getEStructuralFeatures().get(11);
 	}
 
+	public EAttribute getChatMessage_Reasoning() {
+		return (EAttribute)chatMessageEClass.getEStructuralFeatures().get(12);
+	}
+
+	public EAttribute getChatMessage_ResponseKind() {
+		return (EAttribute)chatMessageEClass.getEStructuralFeatures().get(13);
+	}
+
 	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -4415,6 +4423,8 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEAttribute(chatMessageEClass, CHAT_MESSAGE__SEQUENCE_NUMBER);
 		createEAttribute(chatMessageEClass, CHAT_MESSAGE__TURN_ID);
 		createEAttribute(chatMessageEClass, CHAT_MESSAGE__IS_TERMINAL);
+		createEAttribute(chatMessageEClass, CHAT_MESSAGE__REASONING);
+		createEAttribute(chatMessageEClass, CHAT_MESSAGE__RESPONSE_KIND);
 
 		networkEntryEClass = createEClass(NETWORK_ENTRY);
 		createEAttribute(networkEntryEClass, NETWORK_ENTRY__HOST);

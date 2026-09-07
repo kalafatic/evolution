@@ -28,6 +28,28 @@ window.ChatApp.Renderer = {
         const content = document.createElement('div');
         content.className = 'message-content';
 
+        // Render dedicated Thinking bubble if reasoning is present
+        if (!isUser && m.reasoning && m.reasoning.trim().length > 0) {
+            const thinkDiv = document.createElement('div');
+            thinkDiv.className = 'thinking-bubble';
+
+            const thinkHeader = document.createElement('div');
+            thinkHeader.className = 'thinking-header';
+            thinkHeader.innerHTML = `<span class="thinking-icon">💭</span><span>Thinking...</span><span class="thinking-toggle-icon">▼</span>`;
+            thinkHeader.onclick = function() {
+                thinkDiv.classList.toggle('collapsed');
+            };
+
+            const thinkBody = document.createElement('div');
+            thinkBody.className = 'thinking-body';
+            thinkBody.innerHTML = this.formatText(m.reasoning, 'thinking');
+
+            thinkDiv.appendChild(thinkHeader);
+            thinkDiv.appendChild(thinkBody);
+            content.appendChild(thinkDiv);
+            content.style.flexDirection = 'column';
+        }
+
         let isDarwin = !isUser && (role.includes('darwin') || role.includes('branch')) && (m.text.includes('{') || m.text.includes('['));
         if (isDarwin) {
             try {

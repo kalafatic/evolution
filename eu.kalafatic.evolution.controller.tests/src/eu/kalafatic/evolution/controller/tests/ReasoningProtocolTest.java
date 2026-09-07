@@ -176,4 +176,26 @@ public class ReasoningProtocolTest {
         ReasoningProtocol r2 = ReasoningProtocolRegistry.resolve("qwen2.5-coder:7b");
         assertNotNull(r2);
     }
+
+    @Test
+    public void testEmptyFinalContentWithReasoning() {
+        ReasoningProtocol protocol = new TagBasedReasoningProtocol();
+        String raw = "<think>Deep thinking process without final answer yet</think>";
+        LlmResponse response = protocol.parse(raw);
+        assertEquals(ResponseKind.REASONING_ONLY, response.getKind());
+        assertEquals("Deep thinking process without final answer yet", response.getReasoning().trim());
+        assertEquals("", response.getFinalContent());
+        assertFalse(response.isComplete());
+    }
+
+    @Test
+    public void testNoReasoningInFinalOnlyResponse() {
+        ReasoningProtocol protocol = new TagBasedReasoningProtocol();
+        String raw = "Standard LLM response without any reasoning tags";
+        LlmResponse response = protocol.parse(raw);
+        assertEquals(ResponseKind.FINAL_ONLY, response.getKind());
+        assertEquals("", response.getReasoning());
+        assertEquals("Standard LLM response without any reasoning tags", response.getFinalContent());
+        assertTrue(response.isComplete());
+    }
 }
