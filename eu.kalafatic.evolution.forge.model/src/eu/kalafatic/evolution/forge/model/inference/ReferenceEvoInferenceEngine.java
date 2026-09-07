@@ -41,6 +41,28 @@ public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
         return model.forward(inputIds);
     }
 
+    public Tensor forwardSnapshotLast(ModelSnapshot snapshot, int[] inputIds) {
+        EvoModelValidator.validateSnapshot(snapshot);
+        if (inputIds == null || inputIds.length == 0) {
+            throw new IllegalArgumentException("Input token IDs cannot be null or empty");
+        }
+
+        EvoLlmModel model = new EvoLlmModel(snapshot.getArchitecture());
+        ModelParameters snapParams = snapshot.getParameters();
+        ModelParameters modelParams = model.getModelParameters();
+        for (String name : snapParams.names()) {
+            Tensor src = snapParams.get(name);
+            Tensor dst = modelParams.get(name);
+            if (src != null && dst != null) {
+                System.arraycopy(src.getData(), 0, dst.getData(), 0, src.getData().length);
+            }
+        }
+        if (snapshot.getVocabulary() != null) {
+            model.getIdToToken().putAll(snapshot.getVocabulary());
+        }
+        return model.forwardLast(inputIds);
+    }
+
     @Override
     public Tensor forwardSnapshot(ModelSnapshot snapshot, int[] inputIds) {
         EvoModelValidator.validateSnapshot(snapshot);
@@ -185,13 +207,13 @@ public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
                 inputIds[i] = currentTokens.get(windowStart + i);
             }
 
-            lastLogits = forwardSnapshot(snapshot, inputIds);
+            lastLogits = forwardSnapshotLast(snapshot, inputIds);
             int nextToken = sampleNextTokenWithVocabulary(lastLogits, currentTokens, request, rng, snapshot.getVocabulary());
 
             currentTokens.add(nextToken);
             generatedTokens.add(nextToken);
 
-            if (nextToken == 2 || nextToken == 3 || (stopTokens != null && stopTokens.contains(nextToken))) {
+            if (nextToken == 2 || (stopTokens != null && stopTokens.contains(nextToken))) {
                 terminationReason = InferenceResult.TerminationReason.EOS_REACHED;
                 break;
             }
@@ -256,6 +278,9 @@ public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
         InferenceResult.TerminationReason terminationReason = InferenceResult.TerminationReason.MAX_TOKENS_REACHED;
         Tensor lastLogits = null;
 
+        System.out.printf("[EvoInferenceEngine] Starting native generation (promptTokens=%d, maxTokens=%d)%n",
+                currentTokens.size(), maxTokensToGenerate);
+
         for (int step = 0; step < maxTokensToGenerate; step++) {
             int totalCount = currentTokens.size();
             int windowStart = Math.max(0, totalCount - maxSeqLen);
@@ -265,18 +290,31 @@ public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
                 inputIds[i] = currentTokens.get(windowStart + i);
             }
 
-            lastLogits = forward(model, inputIds);
+            lastLogits = model.forwardLast(inputIds);
             int nextToken = sampleNextTokenWithVocabulary(lastLogits, currentTokens, request, rng, model.getIdToToken());
 
             currentTokens.add(nextToken);
             generatedTokens.add(nextToken);
 
-            if (streamListener != null && tokenizer != null) {
-                String tokenText = tokenizer.decode(List.of(nextToken));
+            String tokenText = "";
+            if (tokenizer != null) {
+                try {
+                    tokenText = tokenizer.decode(List.of(nextToken));
+                } catch (Exception ignored) {}
+            }
+
+            if (streamListener != null) {
                 streamListener.onTokenGenerated(nextToken, tokenText);
             }
 
-            if (nextToken == 2 || nextToken == 3 || (stopTokens != null && stopTokens.contains(nextToken))) {
+            if ((step + 1) % 10 == 0 || step == 0 || step == maxTokensToGenerate - 1) {
+                long elapsed = System.currentTimeMillis() - startTime;
+                double tokPerSec = (step + 1) * 1000.0 / Math.max(1, elapsed);
+                System.out.printf("[EvoInferenceEngine] Step %d/%d: token=%d ('%s') | Elapsed: %d ms (%.2f tok/s)%n",
+                        step + 1, maxTokensToGenerate, nextToken, tokenText.replace("\n", "\\n"), elapsed, tokPerSec);
+            }
+
+            if (nextToken == 2 || (stopTokens != null && stopTokens.contains(nextToken))) {
                 terminationReason = InferenceResult.TerminationReason.EOS_REACHED;
                 break;
             }

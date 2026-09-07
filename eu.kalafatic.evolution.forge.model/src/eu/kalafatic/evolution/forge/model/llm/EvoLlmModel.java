@@ -111,6 +111,30 @@ public class EvoLlmModel {
     }
 
     /**
+     * Single sequence forward pass optimized for auto-regressive next-token generation:
+     * Computes embeddings, block representations, and final norm, but multiplies lmHead
+     * ONLY for the last token position (seqLen - 1). Returns [1, vocabSize] logits tensor.
+     */
+    public Tensor forwardLast(int[] inputIds) {
+        if (inputIds == null || inputIds.length == 0) {
+            throw new IllegalArgumentException("Input token IDs cannot be null or empty");
+        }
+        Tensor x = embedding.forward(inputIds);
+        for (TransformerBlock block : blocks) {
+            x = block.forward(x);
+        }
+        this.lastFinalNormed = outputNorm.forward(x);
+        int seqLen = inputIds.length;
+        int dModel = architecture.getDModel();
+
+        float[] lastRowData = new float[dModel];
+        System.arraycopy(lastFinalNormed.getData(), (seqLen - 1) * dModel, lastRowData, 0, dModel);
+        Tensor lastRowTensor = new SimpleTensor(new long[]{1, dModel}, lastRowData);
+
+        return lastRowTensor.matmul(lmHead);
+    }
+
+    /**
      * Overload for forward pass accepting attention mask (single array or matrix).
      */
     public Tensor forward(int[] inputIds, float[] attentionMask) {
