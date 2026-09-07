@@ -14,37 +14,43 @@ import java.util.List;
  */
 public class EvoModelValidator {
 
+    public static class ValidationException extends RuntimeException {
+        public ValidationException(String message) {
+            super(message);
+        }
+    }
+
     public static void validate(EvoLlmModel model) {
         if (model == null) {
-            throw new IllegalArgumentException("Model cannot be null");
+            throw new ValidationException("Model cannot be null");
         }
         if (model.getVocabSize() <= 0) {
-            throw new IllegalStateException("Invalid vocabSize: " + model.getVocabSize());
+            throw new ValidationException("Invalid vocabSize: " + model.getVocabSize());
         }
         if (model.getDModel() <= 0) {
-            throw new IllegalStateException("Invalid dModel: " + model.getDModel());
+            throw new ValidationException("Invalid dModel: " + model.getDModel());
         }
         if (model.getNumHeads() <= 0) {
-            throw new IllegalStateException("Invalid numHeads: " + model.getNumHeads());
+            throw new ValidationException("Invalid numHeads: " + model.getNumHeads());
         }
-        if (model.getNumBlocks() <= 0) {
-            throw new IllegalStateException("Invalid numBlocks: " + model.getNumBlocks());
+        if (model.getNumBlocks() <= 0 || model.getBlocks().isEmpty()) {
+            throw new ValidationException("Invalid numBlocks or empty blocks");
         }
 
         List<Tensor> params = model.parameters();
         if (params == null || params.isEmpty()) {
-            throw new IllegalStateException("Model has no parameters");
+            throw new ValidationException("Model has no parameters");
         }
 
         for (int i = 0; i < params.size(); i++) {
             Tensor p = params.get(i);
             if (p == null || p.getData() == null) {
-                throw new IllegalStateException("Parameter tensor at index " + i + " is null");
+                throw new ValidationException("Parameter tensor at index " + i + " is null");
             }
             float[] data = p.getData();
             for (int j = 0; j < data.length; j++) {
                 if (Float.isNaN(data[j]) || Float.isInfinite(data[j])) {
-                    throw new IllegalStateException("Parameter tensor at index " + i + " contains NaN/Infinity at position " + j);
+                    throw new ValidationException("Parameter tensor at index " + i + " contains NaN/Infinity at position " + j);
                 }
             }
         }
