@@ -44,8 +44,25 @@ public class RcpBuildTool {
             long duration = System.currentTimeMillis() - startTime;
 
             boolean success = (exitCode == 0);
-            BuildResult result = new BuildResult(success, success ? "Build successful" : "Build failed",
-                    exitCode, stdout, stderr, duration);
+            String summary;
+            if (success) {
+                summary = "Build successful";
+            } else {
+                StringBuilder errSb = new StringBuilder("Build failed with exit code ").append(exitCode);
+                if (stderr != null && !stderr.trim().isEmpty()) {
+                    errSb.append(": ").append(stderr.trim().replaceAll("\\r?\\n", " "));
+                } else if (stdout != null && stdout.contains("ERROR")) {
+                    String[] lines = stdout.split("\\r?\\n");
+                    for (String l : lines) {
+                        if (l.contains("[ERROR]")) {
+                            errSb.append(" | ").append(l.trim());
+                        }
+                    }
+                }
+                summary = errSb.toString();
+            }
+
+            BuildResult result = new BuildResult(success, summary, exitCode, stdout, stderr, duration);
 
             if (success) {
                 result.setProducedArtifact(findArtifact(config.getWorkspacePath()));
@@ -54,8 +71,10 @@ public class RcpBuildTool {
             return result;
 
         } catch (Exception e) {
+            System.err.println("[RcpBuildTool] Build execution error: " + e.getMessage());
+            e.printStackTrace();
             return new BuildResult(false, "Build process failed: " + e.getMessage(),
-                    -1, "", "", System.currentTimeMillis() - startTime);
+                    -1, "", e.getMessage(), System.currentTimeMillis() - startTime);
         }
     }
 

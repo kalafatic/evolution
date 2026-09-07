@@ -21,6 +21,10 @@ public class EvoProductBuildService {
     }
 
     public ProductBuildResult buildProduct() {
+        return buildProduct(null);
+    }
+
+    public ProductBuildResult buildProduct(String taskId) {
         if (runner != null && runner.getMockBuildResult() != null) {
             System.out.println("[EvoProductBuildService] [MOCK] Bypassing actual product build, returning mock build result: " + runner.getMockBuildResult());
             boolean success = runner.getMockBuildResult();
@@ -30,7 +34,7 @@ public class EvoProductBuildService {
         Instant startedAt = Instant.now();
         System.out.println("[EvoProductBuildService] Triggering headless product build...");
 
-        boolean success = runner.runBuild(baseDir);
+        boolean success = runner.runBuild(baseDir, taskId);
         Instant finishedAt = Instant.now();
 
         Path releaseDir = baseDir.toPath().resolve("release");

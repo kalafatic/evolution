@@ -176,6 +176,10 @@ public class SupervisorMain {
                     
                     case "/stop-evo":
                         return handleStopEvo(session, params);
+
+                    case "/task-log":
+                    case "/logs":
+                        return handleGetTaskLogs(session, params);
                     
                     default:
                         return newFixedLengthResponse(Response.Status.NOT_FOUND, "application/json", 
@@ -222,6 +226,43 @@ public class SupervisorMain {
             } catch (Exception e) {
                 return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", 
                     "{\"status\":\"ERROR\",\"message\":\"" + e.getMessage() + "\"}");
+            }
+        }
+
+        private Response handleGetTaskLogs(IHTTPSession session, Map<String, String> params) {
+            try {
+                String taskId = params.get("taskId");
+                File logFile;
+                if (taskId != null && !taskId.trim().isEmpty()) {
+                    logFile = new File(runDir, "task_execution_" + taskId + ".log");
+                } else {
+                    logFile = new File(runDir, "events.log");
+                }
+
+                if (!logFile.exists()) {
+                    return newFixedLengthResponse(Response.Status.OK, "application/json",
+                        "{\"status\":\"OK\",\"logs\":\"[SYSTEM] No log file found at: " + logFile.getName() + "\"}");
+                }
+
+                List<String> lines = java.nio.file.Files.readAllLines(logFile.toPath(), java.nio.charset.StandardCharsets.UTF_8);
+                int total = lines.size();
+                int start = Math.max(0, total - 200);
+                StringBuilder sb = new StringBuilder();
+                for (int i = start; i < total; i++) {
+                    sb.append(lines.get(i)).append("\n");
+                }
+
+                String cleanLogs = sb.toString()
+                    .replace("\\", "\\\\")
+                    .replace("\"", "\\\"")
+                    .replace("\n", "\\n")
+                    .replace("\r", "");
+
+                return newFixedLengthResponse(Response.Status.OK, "application/json",
+                    "{\"status\":\"OK\",\"logFile\":\"" + logFile.getName() + "\",\"logs\":\"" + cleanLogs + "\"}");
+            } catch (Exception e) {
+                return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json",
+                    "{\"status\":\"ERROR\",\"message\":\"Failed to retrieve logs: " + e.getMessage() + "\"}");
             }
         }
 
@@ -873,20 +914,27 @@ public class SupervisorMain {
                                 File destFile = new File(exportDir, destName);
                                 java.nio.file.Files.copy(f.toPath(), destFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
                                 count++;
-                                System.out.println("[HTTP] Exported product artifact: " + destFile.getName());
-                            } catch (IOException ignored) {}
+                                System.out.println("[HTTP] Exported product artifact archive: " + destFile.getName());
+                            } catch (IOException e) {
+                                System.err.println("[HTTP] Failed copying product archive " + name + ": " + e.getMessage());
+                            }
                         } else if (name.equalsIgnoreCase("evo.exe") || name.equalsIgnoreCase("evo") || name.equalsIgnoreCase("evo.sh")) {
                             File parentDir = f.getParentFile();
                             if (parentDir != null && PlatformInfo.isValidExecutable(f)) {
                                 try {
+                                    System.out.println("[HTTP] Copying complete executable product layout (plugins, launcher, binaries) from " + parentDir.getAbsolutePath() + " to " + exportDir.getAbsolutePath());
                                     copyFolder(parentDir.toPath(), exportDir.toPath());
                                     count++;
-                                    System.out.println("[HTTP] Exported full product layout from: " + parentDir.getAbsolutePath());
-                                } catch (IOException ignored) {}
+                                    System.out.println("[HTTP] Successfully exported full product layout with all libraries from: " + parentDir.getAbsolutePath());
+                                } catch (IOException e) {
+                                    System.err.println("[HTTP] Error copying product layout directory " + parentDir.getAbsolutePath() + ": " + e.getMessage());
+                                }
                             }
                         }
                     }
-                } catch (Exception ignored) {}
+                } catch (Exception e) {
+                    System.err.println("[HTTP] Error scanning candidate directory " + cDir.getAbsolutePath() + ": " + e.getMessage());
+                }
             }
             return count;
         }

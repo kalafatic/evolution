@@ -32,12 +32,40 @@ public class ProcessRunner {
     public Boolean getMockRunResult() { return mockRunResult; }
     public Boolean getMockVerifyResult() { return mockVerifyResult; }
 
+    private File getLogFile(File baseDir, String taskId, String defaultLogName) {
+        File logDir = new File(baseDir, "self-dev-run");
+        if (!logDir.exists()) {
+            logDir.mkdirs();
+        }
+        String logFileName = (taskId != null) ? "task_execution_" + taskId + ".log" : defaultLogName;
+        return new File(logDir, logFileName);
+    }
+
+    private void appendToLog(File logFile, String message) {
+        try {
+            java.nio.file.Files.writeString(
+                logFile.toPath(),
+                "[" + java.time.LocalDateTime.now() + "] " + message + "\n",
+                java.nio.charset.StandardCharsets.UTF_8,
+                java.nio.file.StandardOpenOption.CREATE,
+                java.nio.file.StandardOpenOption.APPEND
+            );
+        } catch (IOException e) {
+            System.err.println("[LOG] Failed writing to log " + logFile.getAbsolutePath() + ": " + e.getMessage());
+        }
+    }
+
     public boolean runBuild(File variantDir) {
+        return runBuild(variantDir, null);
+    }
+
+    public boolean runBuild(File variantDir, String taskId) {
         if (mockBuildResult != null) {
             System.out.println("[MOCK BUILD] Returning mock result: " + mockBuildResult);
             return mockBuildResult;
         }
 
+        File logFile = getLogFile(variantDir, taskId, "build.log");
         List<String> command = new ArrayList<>();
         if (PlatformInfo.isWindows()) {
             File mvnwCmd = new File(variantDir, "mvnw.cmd");
@@ -55,7 +83,9 @@ public class ProcessRunner {
             if (mvnw.exists()) {
                 try {
                     mvnw.setExecutable(true);
-                } catch (Exception ignored) {}
+                } catch (Exception e) {
+                    System.err.println("[BUILD] Could not set executable on mvnw: " + e.getMessage());
+                }
                 command.add("./mvnw");
             } else {
                 command.add("mvn");
@@ -66,38 +96,62 @@ public class ProcessRunner {
             command.add("-Plinux");
         }
 
-        System.out.println("[BUILD] Executing build command: " + command + " in " + variantDir.getAbsolutePath());
+        String msg = "[BUILD] Executing build command: " + command + " in " + variantDir.getAbsolutePath();
+        System.out.println(msg);
+        appendToLog(logFile, msg);
+
         ProcessBuilder pb = new ProcessBuilder(command);
         pb.directory(variantDir);
-        pb.inheritIO();
+        pb.redirectErrorStream(true);
+        pb.redirectOutput(ProcessBuilder.Redirect.appendTo(logFile));
+
         try {
             Process process = pb.start();
             int exitCode = process.waitFor();
-            System.out.println("[BUILD] Build exited with: " + exitCode);
+            String exitMsg = "[BUILD] Build exited with code: " + exitCode;
+            System.out.println(exitMsg);
+            appendToLog(logFile, exitMsg);
             return exitCode == 0;
         } catch (IOException | InterruptedException e) {
-            System.err.println("[BUILD] Failed: " + e.getMessage());
+            String errStr = "[BUILD] Execution failed with exception: " + e.getMessage();
+            System.err.println(errStr);
+            appendToLog(logFile, errStr);
             return false;
         }
     }
 
     public boolean runTests(File variantDir) {
+        return runTests(variantDir, null);
+    }
+
+    public boolean runTests(File variantDir, String taskId) {
         if (mockTestResult != null) {
             System.out.println("[MOCK TEST] Returning mock result: " + mockTestResult);
             return mockTestResult;
         }
+        File logFile = getLogFile(variantDir, taskId, "test.log");
         String os = System.getProperty("os.name").toLowerCase();
         String mvnCmd = os.contains("win") ? "mvn.cmd" : "mvn";
-        System.out.println("[TEST] Running " + mvnCmd + " test in " + variantDir.getAbsolutePath());
+        String msg = "[TEST] Running " + mvnCmd + " test in " + variantDir.getAbsolutePath();
+        System.out.println(msg);
+        appendToLog(logFile, msg);
+
         ProcessBuilder pb = new ProcessBuilder(mvnCmd, "test");
         pb.directory(variantDir);
-        pb.inheritIO();
+        pb.redirectErrorStream(true);
+        pb.redirectOutput(ProcessBuilder.Redirect.appendTo(logFile));
+
         try {
             Process process = pb.start();
             int exitCode = process.waitFor();
+            String exitMsg = "[TEST] Tests exited with code: " + exitCode;
+            System.out.println(exitMsg);
+            appendToLog(logFile, exitMsg);
             return exitCode == 0;
         } catch (IOException | InterruptedException e) {
-            System.err.println("[TEST] Failed: " + e.getMessage());
+            String errStr = "[TEST] Execution failed: " + e.getMessage();
+            System.err.println(errStr);
+            appendToLog(logFile, errStr);
             return false;
         }
     }
