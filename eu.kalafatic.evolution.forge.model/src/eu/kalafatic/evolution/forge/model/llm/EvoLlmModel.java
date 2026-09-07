@@ -2,6 +2,7 @@ package eu.kalafatic.evolution.forge.model.llm;
 
 import eu.kalafatic.evolution.forge.math.api.Tensor;
 import eu.kalafatic.evolution.forge.math.core.SimpleTensor;
+import eu.kalafatic.evolution.forge.model.inference.KVCache;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -132,6 +133,31 @@ public class EvoLlmModel {
         Tensor lastRowTensor = new SimpleTensor(new long[]{1, dModel}, lastRowData);
 
         return lastRowTensor.matmul(lmHead);
+    }
+
+    /**
+     * KV-Cached forward pass for high-performance auto-regressive generation.
+     */
+    public Tensor forwardWithCache(int[] inputIds, KVCache kvCache) {
+        if (inputIds == null || inputIds.length == 0) {
+            throw new IllegalArgumentException("Input token IDs cannot be null or empty");
+        }
+        Tensor x = embedding.forward(inputIds);
+        for (int i = 0; i < blocks.size(); i++) {
+            KVCache.LayerKVCache layerCache = (kvCache != null) ? kvCache.getLayerCache(i) : null;
+            x = blocks.get(i).forwardWithCache(x, layerCache);
+        }
+        this.lastFinalNormed = outputNorm.forward(x);
+        int seqLen = inputIds.length;
+        if (seqLen == 1) {
+            return lastFinalNormed.matmul(lmHead);
+        } else {
+            int dModel = architecture.getDModel();
+            float[] lastRowData = new float[dModel];
+            System.arraycopy(lastFinalNormed.getData(), (seqLen - 1) * dModel, lastRowData, 0, dModel);
+            Tensor lastRowTensor = new SimpleTensor(new long[]{1, dModel}, lastRowData);
+            return lastRowTensor.matmul(lmHead);
+        }
     }
 
     /**

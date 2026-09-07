@@ -167,78 +167,21 @@ public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
             throw new IllegalArgumentException("InferenceRequest cannot be null");
         }
 
-        long startTime = System.currentTimeMillis();
-
-        List<Integer> currentTokens = new ArrayList<>();
-        int[] initialIds = request.getInputIds();
-
-        if (initialIds != null && initialIds.length > 0) {
-            for (int id : initialIds) {
-                currentTokens.add(id);
-            }
-        } else if (request.getPrompt() != null && !request.getPrompt().isEmpty()) {
-            if (tokenizer != null) {
-                List<Integer> encoded = tokenizer.encode(request.getPrompt());
-                if (encoded != null) {
-                    currentTokens.addAll(encoded);
-                }
+        EvoLlmModel model = new EvoLlmModel(snapshot.getArchitecture());
+        ModelParameters snapParams = snapshot.getParameters();
+        ModelParameters modelParams = model.getModelParameters();
+        for (String name : snapParams.names()) {
+            Tensor src = snapParams.get(name);
+            Tensor dst = modelParams.get(name);
+            if (src != null && dst != null) {
+                System.arraycopy(src.getData(), 0, dst.getData(), 0, src.getData().length);
             }
         }
-
-        if (currentTokens.isEmpty()) {
-            currentTokens.add(1);
+        if (snapshot.getVocabulary() != null) {
+            model.getIdToToken().putAll(snapshot.getVocabulary());
         }
 
-        int maxSeqLen = snapshot.getArchitecture().getMaxSeqLen();
-        int maxTokensToGenerate = request.getMaxTokens();
-        Set<Integer> stopTokens = request.getStopTokenIds();
-        Random rng = new Random();
-
-        List<Integer> generatedTokens = new ArrayList<>();
-        InferenceResult.TerminationReason terminationReason = InferenceResult.TerminationReason.MAX_TOKENS_REACHED;
-        Tensor lastLogits = null;
-
-        for (int step = 0; step < maxTokensToGenerate; step++) {
-            int totalCount = currentTokens.size();
-            int windowStart = Math.max(0, totalCount - maxSeqLen);
-            int windowLen = totalCount - windowStart;
-            int[] inputIds = new int[windowLen];
-            for (int i = 0; i < windowLen; i++) {
-                inputIds[i] = currentTokens.get(windowStart + i);
-            }
-
-            lastLogits = forwardSnapshotLast(snapshot, inputIds);
-            int nextToken = sampleNextTokenWithVocabulary(lastLogits, currentTokens, request, rng, snapshot.getVocabulary());
-
-            currentTokens.add(nextToken);
-            generatedTokens.add(nextToken);
-
-            if (nextToken == 2 || (stopTokens != null && stopTokens.contains(nextToken))) {
-                terminationReason = InferenceResult.TerminationReason.EOS_REACHED;
-                break;
-            }
-        }
-
-        int[] genTokenIds = generatedTokens.stream().mapToInt(Integer::intValue).toArray();
-        String generatedText = "";
-        if (tokenizer != null && !generatedTokens.isEmpty()) {
-            try {
-                generatedText = tokenizer.decode(generatedTokens);
-            } catch (Exception e) {
-                generatedText = generatedTokens.toString();
-            }
-        }
-
-        long executionTimeMs = System.currentTimeMillis() - startTime;
-
-        return new InferenceResult(
-                genTokenIds,
-                generatedText,
-                lastLogits,
-                generatedTokens.size(),
-                executionTimeMs,
-                terminationReason
-        );
+        return generateWithListener(model, request, tokenizer, null);
     }
 
     public InferenceResult generateWithListener(EvoLlmModel model, InferenceRequest request, Tokenizer tokenizer, TokenStreamListener streamListener) {
@@ -281,16 +224,18 @@ public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
         System.out.printf("[EvoInferenceEngine] Starting native generation (promptTokens=%d, maxTokens=%d)%n",
                 currentTokens.size(), maxTokensToGenerate);
 
+        KVCache kvCache = new KVCache(model.getNumBlocks());
+
+        // Prefill Phase
+        int[] promptIds = currentTokens.stream().mapToInt(Integer::intValue).toArray();
+        lastLogits = model.forwardWithCache(promptIds, kvCache);
+
         for (int step = 0; step < maxTokensToGenerate; step++) {
-            int totalCount = currentTokens.size();
-            int windowStart = Math.max(0, totalCount - maxSeqLen);
-            int windowLen = totalCount - windowStart;
-            int[] inputIds = new int[windowLen];
-            for (int i = 0; i < windowLen; i++) {
-                inputIds[i] = currentTokens.get(windowStart + i);
+            if (step > 0) {
+                int lastToken = currentTokens.get(currentTokens.size() - 1);
+                lastLogits = model.forwardWithCache(new int[]{lastToken}, kvCache);
             }
 
-            lastLogits = model.forwardLast(inputIds);
             int nextToken = sampleNextTokenWithVocabulary(lastLogits, currentTokens, request, rng, model.getIdToToken());
 
             currentTokens.add(nextToken);
@@ -316,6 +261,10 @@ public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
 
             if (nextToken == 2 || (stopTokens != null && stopTokens.contains(nextToken))) {
                 terminationReason = InferenceResult.TerminationReason.EOS_REACHED;
+                break;
+            }
+
+            if (currentTokens.size() >= maxSeqLen) {
                 break;
             }
         }

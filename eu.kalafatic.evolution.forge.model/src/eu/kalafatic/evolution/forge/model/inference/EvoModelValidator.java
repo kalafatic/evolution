@@ -33,8 +33,11 @@ public class EvoModelValidator {
         if (model.getNumHeads() <= 0) {
             throw new ValidationException("Invalid numHeads: " + model.getNumHeads());
         }
-        if (model.getNumBlocks() <= 0 || model.getBlocks().isEmpty()) {
-            throw new ValidationException("Invalid numBlocks or empty blocks");
+        if (model.getNumBlocks() <= 0) {
+            throw new ValidationException("Invalid numBlocks: " + model.getNumBlocks());
+        }
+        if (model.getBlocks() == null || model.getBlocks().size() != model.getNumBlocks()) {
+            throw new ValidationException("Model blocks size mismatch");
         }
 
         List<Tensor> params = model.parameters();
@@ -58,13 +61,13 @@ public class EvoModelValidator {
 
     public static void validateSnapshot(ModelSnapshot snapshot) {
         if (snapshot == null) {
-            throw new IllegalArgumentException("ModelSnapshot cannot be null");
+            throw new ValidationException("ModelSnapshot cannot be null");
         }
         if (snapshot.getArchitecture() == null) {
-            throw new IllegalStateException("ModelSnapshot architecture cannot be null");
+            throw new ValidationException("ModelSnapshot architecture cannot be null");
         }
         if (snapshot.getParameters() == null) {
-            throw new IllegalStateException("ModelSnapshot parameters cannot be null");
+            throw new ValidationException("ModelSnapshot parameters cannot be null");
         }
     }
 

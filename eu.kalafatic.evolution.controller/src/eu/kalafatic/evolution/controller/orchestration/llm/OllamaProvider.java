@@ -25,6 +25,20 @@ import eu.kalafatic.evolution.model.orchestration.Orchestrator;
  */
 public class OllamaProvider implements ILlmProvider {
 
+    private static class CachedEvoArtifact {
+        final long lastModified;
+        final eu.kalafatic.evolution.forge.model.llm.EvoModelArtifact artifact;
+        final eu.kalafatic.evolution.forge.model.llm.EvoLlmModel model;
+
+        CachedEvoArtifact(long lastModified, eu.kalafatic.evolution.forge.model.llm.EvoModelArtifact artifact, eu.kalafatic.evolution.forge.model.llm.EvoLlmModel model) {
+            this.lastModified = lastModified;
+            this.artifact = artifact;
+            this.model = model;
+        }
+    }
+
+    private static final java.util.Map<String, CachedEvoArtifact> artifactCache = new java.util.concurrent.ConcurrentHashMap<>();
+
     @Override
     public LlmResponse sendLlmRequest(Orchestrator orchestrator, String prompt, float temperature, String proxyUrl, TaskContext context) throws Exception {
         String rawResponse;
@@ -367,8 +381,21 @@ public class OllamaProvider implements ILlmProvider {
                     context.log("EvoInferenceEngine: Intercepted model '" + model + "'. Routing request via ReferenceEvoInferenceEngine (evo native) with artifact: " + evoArtifactPath.getAbsolutePath());
                 }
                 try {
-                    eu.kalafatic.evolution.forge.model.llm.EvoModelArtifact artifact = eu.kalafatic.evolution.forge.model.llm.EvoModelArtifact.load(evoArtifactPath.toPath());
-                    eu.kalafatic.evolution.forge.model.llm.EvoLlmModel nativeModel = artifact.createModel();
+                    long currentLastModified = evoArtifactPath.lastModified();
+                    String cacheKey = evoArtifactPath.getAbsolutePath();
+                    CachedEvoArtifact cached = artifactCache.get(cacheKey);
+                    eu.kalafatic.evolution.forge.model.llm.EvoModelArtifact artifact;
+                    eu.kalafatic.evolution.forge.model.llm.EvoLlmModel nativeModel;
+
+                    if (cached != null && cached.lastModified == currentLastModified) {
+                        artifact = cached.artifact;
+                        nativeModel = cached.model;
+                    } else {
+                        artifact = eu.kalafatic.evolution.forge.model.llm.EvoModelArtifact.load(evoArtifactPath.toPath());
+                        nativeModel = artifact.createModel();
+                        artifactCache.put(cacheKey, new CachedEvoArtifact(currentLastModified, artifact, nativeModel));
+                    }
+
                     eu.kalafatic.evolution.forge.tokenizer.impl.SimpleBPETokenizer tokenizer = new eu.kalafatic.evolution.forge.tokenizer.impl.SimpleBPETokenizer();
                     if (artifact.getTokenizerVocab() != null && !artifact.getTokenizerVocab().isEmpty()) {
                         tokenizer.setVocabulary(artifact.getTokenizerVocab());

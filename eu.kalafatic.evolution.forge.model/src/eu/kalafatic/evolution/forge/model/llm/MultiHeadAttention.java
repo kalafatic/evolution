@@ -2,6 +2,7 @@ package eu.kalafatic.evolution.forge.model.llm;
 
 import eu.kalafatic.evolution.forge.math.api.Tensor;
 import eu.kalafatic.evolution.forge.math.core.SimpleTensor;
+import eu.kalafatic.evolution.forge.model.inference.KVCache;
 
 public class MultiHeadAttention {
     private final Tensor WQ, WK, WV, WO;
@@ -83,6 +84,73 @@ public class MultiHeadAttention {
         
         this.lastAttention = softmaxProbs.matmul(lastV);
         return lastAttention.matmul(WO);
+    }
+
+    public Tensor forwardWithCache(Tensor x, KVCache.LayerKVCache cache) {
+        if (cache == null) {
+            return forward(x);
+        }
+
+        Tensor q = x.matmul(WQ);
+        Tensor k = x.matmul(WK);
+        Tensor v = x.matmul(WV);
+
+        Tensor K, V;
+        if (cache.getKeyCache() == null) {
+            cache.setKeyCache(k);
+            cache.setValueCache(v);
+            K = k;
+            V = v;
+        } else {
+            K = SimpleTensor.concatRowWise(cache.getKeyCache(), k);
+            V = SimpleTensor.concatRowWise(cache.getValueCache(), v);
+            cache.setKeyCache(K);
+            cache.setValueCache(V);
+        }
+
+        int qSeqLen = (int) q.getShape()[0];
+        int kSeqLen = (int) K.getShape()[0];
+
+        Tensor scores = q.matmul(K.transpose());
+        float scale = 1.0f / (float) Math.sqrt(headDim);
+
+        float[] scoresData = scores.getData();
+        Tensor softmaxProbs = new SimpleTensor(qSeqLen, kSeqLen);
+        float[] softData = softmaxProbs.getData();
+
+        int startPos = kSeqLen - qSeqLen;
+
+        for (int r = 0; r < qSeqLen; r++) {
+            int absolutePos = startPos + r;
+            int offset = r * kSeqLen;
+            float maxVal = Float.NEGATIVE_INFINITY;
+            for (int c = 0; c < kSeqLen; c++) {
+                scoresData[offset + c] *= scale;
+                if (c > absolutePos) {
+                    scoresData[offset + c] = -1e9f;
+                }
+                if (scoresData[offset + c] > maxVal) {
+                    maxVal = scoresData[offset + c];
+                }
+            }
+            float sum = 0.0f;
+            for (int c = 0; c < kSeqLen; c++) {
+                if (c > absolutePos) {
+                    softData[offset + c] = 0.0f;
+                } else {
+                    softData[offset + c] = (float) Math.exp(scoresData[offset + c] - maxVal);
+                    sum += softData[offset + c];
+                }
+            }
+            if (sum > 0.0f) {
+                for (int c = 0; c <= absolutePos && c < kSeqLen; c++) {
+                    softData[offset + c] /= sum;
+                }
+            }
+        }
+
+        Tensor attn = softmaxProbs.matmul(V);
+        return attn.matmul(WO);
     }
     
     public Tensor backward(Tensor dOutput) {

@@ -491,8 +491,11 @@ public class EvoModelArtifact {
 
     public int getVocabSize() { return architectureDescriptor != null ? architectureDescriptor.getVocabSize() : 0; }
     public int getDModel() { return architectureDescriptor != null ? architectureDescriptor.getDModel() : 0; }
+    public int getEmbeddingSize() { return getDModel(); }
     public int getNumHeads() { return architectureDescriptor != null ? architectureDescriptor.getNumHeads() : 0; }
+    public int getHeads() { return getNumHeads(); }
     public int getNumBlocks() { return architectureDescriptor != null ? architectureDescriptor.getNumBlocks() : 0; }
+    public int getLayers() { return getNumBlocks(); }
     public int getDff() { return architectureDescriptor != null ? architectureDescriptor.getDff() : 0; }
     public int getMaxSeqLen() { return architectureDescriptor != null ? architectureDescriptor.getMaxSeqLen() : 0; }
 
