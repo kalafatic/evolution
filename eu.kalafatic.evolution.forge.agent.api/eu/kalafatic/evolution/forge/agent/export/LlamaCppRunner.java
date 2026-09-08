@@ -105,7 +105,35 @@ public class LlamaCppRunner {
         // 1. Try OSGi Bundle / Resource Extraction via Reflection
         cliPath = resolveFromOsgiBundle(osDir, cliName);
 
-        // 2. Fallback: Try filesystem search paths
+        // 2. Try CodeSource protection domain resolution
+        if (cliPath == null) {
+            try {
+                java.net.URL location = LlamaCppRunner.class.getProtectionDomain().getCodeSource().getLocation();
+                if (location != null) {
+                    File classFile = new File(location.toURI());
+                    File bundleDir = classFile.isDirectory() ? classFile : classFile.getParentFile();
+                    if (bundleDir != null && bundleDir.exists()) {
+                        File[] candidates = {
+                            new File(bundleDir, "lib/llama-cpp/" + osDir + "/" + cliName),
+                            new File(bundleDir, "lib/llama-cpp/linux/" + cliName),
+                            new File(bundleDir, "lib/llama-cpp/win/" + cliName),
+                            new File(bundleDir, "lib/llama-cpp/" + cliName),
+                            new File(bundleDir, "../eu.kalafatic.evolution.controller/lib/llama-cpp/" + osDir + "/" + cliName),
+                            new File(bundleDir, "../eu.kalafatic.evolution.controller/lib/llama-cpp/linux/" + cliName)
+                        };
+                        for (File f : candidates) {
+                            if (f.exists()) {
+                                cliPath = f.getAbsolutePath();
+                                System.out.println("[LlamaCpp] Resolved via CodeSource location: " + cliPath);
+                                break;
+                            }
+                        }
+                    }
+                }
+            } catch (Throwable ignored) {}
+        }
+
+        // 3. Fallback: Try filesystem search paths
         if (cliPath == null) {
             String codebasePath = getCodebasePathViaReflection();
             List<String> searchPaths = new ArrayList<>();

@@ -192,7 +192,9 @@ public class OllamaExporter implements EvoModelExporter {
         metadataList.add(new MetadataEntry("llama.block_count", 4, arch.getNumBlocks()));
         metadataList.add(new MetadataEntry("llama.attention.head_count", 4, arch.getNumHeads()));
         metadataList.add(new MetadataEntry("llama.attention.head_count_kv", 4, arch.getNumHeads()));
-        metadataList.add(new MetadataEntry("llama.vocab_size", 4, arch.getVocabSize()));
+        int effectiveVocabSize = Math.max(arch.getVocabSize(), customVocab != null ? customVocab.size() : 0);
+
+        metadataList.add(new MetadataEntry("llama.vocab_size", 4, effectiveVocabSize));
         metadataList.add(new MetadataEntry("llama.attention.layer_norm_rms_epsilon", 6, 1e-5f));
         metadataList.add(new MetadataEntry("llama.attention.key_length", 4, arch.getDModel() / arch.getNumHeads()));
         metadataList.add(new MetadataEntry("llama.attention.value_length", 4, arch.getDModel() / arch.getNumHeads()));
@@ -205,12 +207,12 @@ public class OllamaExporter implements EvoModelExporter {
         metadataList.add(new MetadataEntry("tokenizer.ggml.unknown_token_id", 4, 0));
 
         List<String> tokens = new ArrayList<>();
-        float[] scores = new float[arch.getVocabSize()];
-        int[] tokenTypes = new int[arch.getVocabSize()];
+        float[] scores = new float[effectiveVocabSize];
+        int[] tokenTypes = new int[effectiveVocabSize];
         Set<String> seenTokens = new HashSet<>();
 
-        for (int i = 0; i < arch.getVocabSize(); i++) {
-            String token = customVocab.getOrDefault(i, "token_" + i);
+        for (int i = 0; i < effectiveVocabSize; i++) {
+            String token = (customVocab != null) ? customVocab.getOrDefault(i, "token_" + i) : "token_" + i;
             if (seenTokens.contains(token)) token = token + "_" + i;
             seenTokens.add(token);
             tokens.add(token);

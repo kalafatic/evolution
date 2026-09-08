@@ -1077,7 +1077,9 @@ public class LLMDarwinEngine extends ADarwinEngine {
 
 		// Build final model and save configuration & tokenizer
 		int dff = overallWinner.config.dff;
-		EvoLlmModel winningModel = new EvoLlmModel(overallWinner.config.vocabSize, overallWinner.config.embeddingSize,
+		int actualVocabSize = finalTokenizer.getVocabSize();
+		overallWinner.config.vocabSize = actualVocabSize;
+		EvoLlmModel winningModel = new EvoLlmModel(actualVocabSize, overallWinner.config.embeddingSize,
 				overallWinner.config.heads, overallWinner.config.layers, dff, finalSeqLen);
 
 		EvoLlmTrainer trainer = new EvoLlmTrainer(winningModel);
@@ -1370,7 +1372,9 @@ public class LLMDarwinEngine extends ADarwinEngine {
 			valSamples = new ArrayList<>(samples.subList(trainCount, totalCount));
 
 			int dff = config.dff;
-			model = new EvoLlmModel(config.vocabSize, config.embeddingSize, config.heads, config.layers, dff, seqLen);
+			int actualVocabSize = tokenizer.getVocabSize();
+			config.vocabSize = actualVocabSize;
+			model = new EvoLlmModel(actualVocabSize, config.embeddingSize, config.heads, config.layers, dff, seqLen);
 
 			long paramCount = 0;
 			for (Tensor p : model.parameters()) {
