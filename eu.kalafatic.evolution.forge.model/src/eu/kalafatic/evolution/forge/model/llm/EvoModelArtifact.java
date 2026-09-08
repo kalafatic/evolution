@@ -474,6 +474,9 @@ public class EvoModelArtifact {
                     System.arraycopy(data, 0, t.getData(), 0, copyLen);
                 }
             }
+        } else {
+            throw new IllegalStateException("[EVO-NATIVE] Weight tensor count mismatch: expected " +
+                modelParams.size() + " tensors for architecture, but artifact has " + weightData.size() + " weight tensors.");
         }
 
         if (getIdToToken() != null && !getIdToToken().isEmpty()) {

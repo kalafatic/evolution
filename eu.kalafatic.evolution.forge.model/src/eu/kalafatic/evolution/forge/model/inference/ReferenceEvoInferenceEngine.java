@@ -97,48 +97,17 @@ public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
         }
         EvoLlmModel model = artifact.createModel();
 
-        Tokenizer artifactTokenizer = new Tokenizer() {
-            @Override
-            public List<Integer> encode(String text) {
-                if (text == null || text.trim().isEmpty()) return new ArrayList<>();
-                List<Integer> ids = new ArrayList<>();
-                Map<String, Integer> vocab = artifact.getTokenizerVocab();
-                if (vocab != null && !vocab.isEmpty()) {
-                    String[] words = text.split("\\s+");
-                    for (String w : words) {
-                        if (vocab.containsKey(w)) {
-                            ids.add(vocab.get(w));
-                        } else if (vocab.containsKey(w.toLowerCase())) {
-                            ids.add(vocab.get(w.toLowerCase()));
-                        } else {
-                            ids.add(artifact.getUnkTokenId());
-                        }
-                    }
-                }
-                return ids.isEmpty() ? List.of(artifact.getBosTokenId()) : ids;
+        eu.kalafatic.evolution.forge.tokenizer.impl.SimpleBPETokenizer artifactTokenizer = new eu.kalafatic.evolution.forge.tokenizer.impl.SimpleBPETokenizer();
+        Map<String, Integer> vocab = artifact.getTokenizerVocab();
+        if (vocab != null && !vocab.isEmpty()) {
+            artifactTokenizer.setVocabulary(vocab);
+        } else if (artifact.getIdToToken() != null && !artifact.getIdToToken().isEmpty()) {
+            Map<String, Integer> revVocab = new java.util.LinkedHashMap<>();
+            for (Map.Entry<Integer, String> entry : artifact.getIdToToken().entrySet()) {
+                revVocab.put(entry.getValue(), entry.getKey());
             }
-
-            @Override
-            public String decode(List<Integer> tokenIds) {
-                if (tokenIds == null || tokenIds.isEmpty()) return "";
-                Map<Integer, String> idToTok = artifact.getIdToToken();
-                if (idToTok == null || idToTok.isEmpty()) return tokenIds.toString();
-                StringBuilder sb = new StringBuilder();
-                for (int id : tokenIds) {
-                    String tok = idToTok.getOrDefault(id, "");
-                    if (!tok.isEmpty() && !tok.equals("<s>") && !tok.equals("</s>") && !tok.equals("<unk>") && !tok.startsWith("token_")) {
-                        if (sb.length() > 0 && !tok.startsWith(" ") && !tok.startsWith(",")) sb.append(" ");
-                        sb.append(tok);
-                    }
-                }
-                return sb.toString();
-            }
-
-            @Override
-            public int getVocabSize() {
-                return artifact.getVocabSize();
-            }
-        };
+            artifactTokenizer.setVocabulary(revVocab);
+        }
 
         return generateWithListener(model, request, artifactTokenizer, streamListener);
     }
