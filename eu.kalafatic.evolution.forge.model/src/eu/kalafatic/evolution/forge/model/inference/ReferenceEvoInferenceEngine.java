@@ -97,48 +97,14 @@ public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
         }
         EvoLlmModel model = artifact.createModel();
 
-        Tokenizer artifactTokenizer = new Tokenizer() {
-            @Override
-            public List<Integer> encode(String text) {
-                if (text == null || text.trim().isEmpty()) return new ArrayList<>();
-                List<Integer> ids = new ArrayList<>();
-                Map<String, Integer> vocab = artifact.getTokenizerVocab();
-                if (vocab != null && !vocab.isEmpty()) {
-                    String[] words = text.split("\\s+");
-                    for (String w : words) {
-                        if (vocab.containsKey(w)) {
-                            ids.add(vocab.get(w));
-                        } else if (vocab.containsKey(w.toLowerCase())) {
-                            ids.add(vocab.get(w.toLowerCase()));
-                        } else {
-                            ids.add(artifact.getUnkTokenId());
-                        }
-                    }
-                }
-                return ids.isEmpty() ? List.of(artifact.getBosTokenId()) : ids;
-            }
-
-            @Override
-            public String decode(List<Integer> tokenIds) {
-                if (tokenIds == null || tokenIds.isEmpty()) return "";
-                Map<Integer, String> idToTok = artifact.getIdToToken();
-                if (idToTok == null || idToTok.isEmpty()) return tokenIds.toString();
-                StringBuilder sb = new StringBuilder();
-                for (int id : tokenIds) {
-                    String tok = idToTok.getOrDefault(id, "");
-                    if (!tok.isEmpty() && !tok.equals("<s>") && !tok.equals("</s>") && !tok.equals("<unk>") && !tok.startsWith("token_")) {
-                        if (sb.length() > 0 && !tok.startsWith(" ") && !tok.startsWith(",")) sb.append(" ");
-                        sb.append(tok);
-                    }
-                }
-                return sb.toString();
-            }
-
-            @Override
-            public int getVocabSize() {
-                return artifact.getVocabSize();
-            }
-        };
+        eu.kalafatic.evolution.forge.tokenizer.impl.SimpleBPETokenizer artifactTokenizer = new eu.kalafatic.evolution.forge.tokenizer.impl.SimpleBPETokenizer();
+        if (artifact.getTokenizerVocab() != null && !artifact.getTokenizerVocab().isEmpty()) {
+            artifactTokenizer.setVocabulary(artifact.getTokenizerVocab());
+        } else if (artifact.getIdToToken() != null && !artifact.getIdToToken().isEmpty()) {
+            Map<String, Integer> rev = new java.util.LinkedHashMap<>();
+            artifact.getIdToToken().forEach((id, tok) -> rev.put(tok, id));
+            artifactTokenizer.setVocabulary(rev);
+        }
 
         return generateWithListener(model, request, artifactTokenizer, streamListener);
     }
@@ -236,7 +202,8 @@ public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
                 lastLogits = model.forwardWithCache(new int[]{lastToken}, kvCache);
             }
 
-            int nextToken = sampleNextTokenWithVocabulary(lastLogits, currentTokens, request, rng, model.getIdToToken());
+            // Only generated tokens should be penalized to prevent prompt tokens from being suppressed
+            int nextToken = sampleNextTokenWithVocabulary(lastLogits, generatedTokens, request, rng, model.getIdToToken());
 
             currentTokens.add(nextToken);
             generatedTokens.add(nextToken);
@@ -259,7 +226,9 @@ public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
                         step + 1, maxTokensToGenerate, nextToken, tokenText.replace("\n", "\\n"), elapsed, tokPerSec);
             }
 
-            if (nextToken == 2 || (stopTokens != null && stopTokens.contains(nextToken))) {
+            String tokStr = model.getIdToToken() != null ? model.getIdToToken().get(nextToken) : null;
+            boolean isEos = nextToken == 2 || "</s>".equals(tokStr) || "<|endoftext|>".equals(tokStr) || "<eos>".equals(tokStr);
+            if (isEos || (stopTokens != null && stopTokens.contains(nextToken))) {
                 terminationReason = InferenceResult.TerminationReason.EOS_REACHED;
                 break;
             }
