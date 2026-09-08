@@ -120,8 +120,16 @@ public class SimpleBPETokenizer implements Tokenizer {
         // Group vocabulary keys by their starting character for O(1) starting prefix lookup.
         // Also keep them sorted by length descending so the first match we find is the longest match.
         Map<Character, List<String>> prefixMap = new HashMap<>();
-        for (String key : vocab.keySet()) {
+        boolean hasByteTokens = false;
+        for (Map.Entry<String, Integer> entry : vocab.entrySet()) {
+            String key = entry.getKey();
             if (key == null || key.isEmpty()) continue;
+            if (isByteToken(key)) {
+                hasByteTokens = true;
+                continue;
+            }
+            if (isSpecialToken(key)) continue;
+
             char firstChar = key.charAt(0);
             prefixMap.computeIfAbsent(firstChar, k -> new ArrayList<>()).add(key);
         }
@@ -153,11 +161,118 @@ public class SimpleBPETokenizer implements Tokenizer {
                 tokens.add(vocab.get(match));
                 i += matchLen;
             } else {
-                tokens.add(vocab.get("<unk>"));
-                i++;
+                // Character/subword not found in vocabulary.
+                int codePoint = text.codePointAt(i);
+                int charCount = Character.charCount(codePoint);
+
+                if (hasByteTokens) {
+                    String cpStr = text.substring(i, i + charCount);
+                    byte[] cpBytes = cpStr.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                    for (byte b : cpBytes) {
+                        String byteTok = String.format("<0x%02X>", b & 0xFF);
+                        Integer byteId = vocab.get(byteTok);
+                        if (byteId != null) {
+                            tokens.add(byteId);
+                        } else {
+                            tokens.add(getUnkTokenId());
+                        }
+                    }
+                } else {
+                    tokens.add(getUnkTokenId());
+                }
+                i += charCount;
             }
         }
         return tokens;
+    }
+
+    public static class IncrementalDecoder {
+        private final Map<Integer, String> invVocab;
+        private final StringBuilder cumulativeText = new StringBuilder();
+        private final java.io.ByteArrayOutputStream byteBuffer = new java.io.ByteArrayOutputStream();
+        private final java.nio.charset.CharsetDecoder utf8Decoder = java.nio.charset.StandardCharsets.UTF_8.newDecoder()
+                .onMalformedInput(java.nio.charset.CodingErrorAction.REPLACE)
+                .onUnmappableCharacter(java.nio.charset.CodingErrorAction.REPLACE);
+
+        public IncrementalDecoder(Map<Integer, String> invVocab) {
+            this.invVocab = invVocab != null ? invVocab : Collections.emptyMap();
+        }
+
+        /**
+         * Accepts a single token ID and returns any newly decoded text snippet.
+         */
+        public String accept(int tokenId) {
+            String tokStr = invVocab.getOrDefault(tokenId, "");
+            if (tokStr == null || tokStr.isEmpty()) {
+                return "";
+            }
+
+            if (isSpecialToken(tokStr)) {
+                return "";
+            }
+
+            if (isByteToken(tokStr)) {
+                byteBuffer.write(parseByteToken(tokStr));
+                String newlyDecoded = decodePendingBytes(false);
+                cumulativeText.append(newlyDecoded);
+                return newlyDecoded;
+            } else {
+                // Non-byte subword token encountered.
+                // Flush any pending accumulated bytes first.
+                String flushedBytes = decodePendingBytes(true);
+                cumulativeText.append(flushedBytes);
+                cumulativeText.append(tokStr);
+                return flushedBytes + tokStr;
+            }
+        }
+
+        /**
+         * Flushes remaining pending bytes at the end of generation.
+         */
+        public String flush() {
+            String remaining = decodePendingBytes(true);
+            cumulativeText.append(remaining);
+            return remaining;
+        }
+
+        public String getCumulativeText() {
+            return cumulativeText.toString();
+        }
+
+        private String decodePendingBytes(boolean endOfInput) {
+            if (byteBuffer.size() == 0) {
+                return "";
+            }
+
+            byte[] rawBytes = byteBuffer.toByteArray();
+            java.nio.ByteBuffer in = java.nio.ByteBuffer.wrap(rawBytes);
+            java.nio.CharBuffer out = java.nio.CharBuffer.allocate(rawBytes.length * 2 + 10);
+
+            utf8Decoder.reset();
+            java.nio.charset.CoderResult result = utf8Decoder.decode(in, out, endOfInput);
+            if (endOfInput) {
+                utf8Decoder.flush(out);
+            }
+
+            out.flip();
+            String decodedChunk = out.toString();
+
+            int unconsumed = in.remaining();
+            if (unconsumed > 0 && !endOfInput) {
+                byte[] remainingBytes = new byte[unconsumed];
+                System.arraycopy(rawBytes, in.position(), remainingBytes, 0, unconsumed);
+                byteBuffer.reset();
+                byteBuffer.write(remainingBytes, 0, unconsumed);
+            } else {
+                byteBuffer.reset();
+            }
+
+            return decodedChunk;
+        }
+    }
+
+    public IncrementalDecoder createIncrementalDecoder() {
+        return new IncrementalDecoder(invVocab);
     }
 
     @Override
@@ -165,41 +280,21 @@ public class SimpleBPETokenizer implements Tokenizer {
         if (tokens == null || tokens.isEmpty()) {
             return "";
         }
-        StringBuilder sb = new StringBuilder();
-        java.io.ByteArrayOutputStream byteBuffer = new java.io.ByteArrayOutputStream();
-
+        IncrementalDecoder decoder = createIncrementalDecoder();
         for (Integer token : tokens) {
-            if (token == null) continue;
-            String tokStr = invVocab.getOrDefault(token, "");
-            if (tokStr == null || tokStr.isEmpty()) continue;
-
-            if (isSpecialToken(tokStr)) {
-                continue;
-            }
-
-            if (isByteToken(tokStr)) {
-                byteBuffer.write(parseByteToken(tokStr));
-            } else {
-                if (byteBuffer.size() > 0) {
-                    sb.append(new String(byteBuffer.toByteArray(), java.nio.charset.StandardCharsets.UTF_8));
-                    byteBuffer.reset();
-                }
-                sb.append(tokStr);
+            if (token != null) {
+                decoder.accept(token);
             }
         }
-
-        if (byteBuffer.size() > 0) {
-            sb.append(new String(byteBuffer.toByteArray(), java.nio.charset.StandardCharsets.UTF_8));
-        }
-
-        return sb.toString();
+        decoder.flush();
+        return decoder.getCumulativeText();
     }
 
     public static boolean isByteToken(String tok) {
-        if (tok != null && tok.length() == 6 && tok.startsWith("<0x") && tok.endsWith(">")) {
+        if (tok != null && tok.length() == 6 && (tok.startsWith("<0x") || tok.startsWith("<0X")) && tok.endsWith(">")) {
             try {
-                Integer.parseInt(tok.substring(3, 5), 16);
-                return true;
+                int val = Integer.parseInt(tok.substring(3, 5), 16);
+                return val >= 0 && val <= 255;
             } catch (NumberFormatException e) {
                 return false;
             }
@@ -212,23 +307,89 @@ public class SimpleBPETokenizer implements Tokenizer {
     }
 
     public static boolean isSpecialToken(String tokStr) {
-        return tokStr.equals("<s>") || tokStr.equals("</s>") || tokStr.equals("<unk>") || tokStr.equals("<pad>");
+        if (tokStr == null || tokStr.isEmpty()) return false;
+        return tokStr.equals("<s>") || tokStr.equals("</s>") || tokStr.equals("<unk>")
+                || tokStr.equals("<pad>") || tokStr.equals("<eos>") || tokStr.equals("<bos>");
     }
 
     public int getBosTokenId() {
-        return vocab.getOrDefault("<s>", 1);
+        if (vocab.containsKey("<s>")) return vocab.get("<s>");
+        if (vocab.containsKey("<bos>")) return vocab.get("<bos>");
+        return -1;
     }
 
     public int getEosTokenId() {
-        return vocab.getOrDefault("</s>", 2);
+        if (vocab.containsKey("</s>")) return vocab.get("</s>");
+        if (vocab.containsKey("<eos>")) return vocab.get("<eos>");
+        return -1;
     }
 
     public int getUnkTokenId() {
-        return vocab.getOrDefault("<unk>", 0);
+        if (vocab.containsKey("<unk>")) return vocab.get("<unk>");
+        return -1;
     }
 
     public int getPadTokenId() {
-        return vocab.getOrDefault("<pad>", 0);
+        if (vocab.containsKey("<pad>")) return vocab.get("<pad>");
+        if (vocab.containsKey("<unk>")) return vocab.get("<unk>");
+        return -1;
+    }
+
+    public String validateVocabulary() {
+        StringBuilder sb = new StringBuilder();
+        int size = vocab.size();
+        sb.append(String.format("Vocabulary size: %d%n", size));
+
+        int minId = Integer.MAX_VALUE;
+        int maxId = Integer.MIN_VALUE;
+        Set<Integer> uniqueIds = new HashSet<>();
+        List<Integer> duplicateIds = new ArrayList<>();
+
+        for (Map.Entry<String, Integer> entry : vocab.entrySet()) {
+            int id = entry.getValue();
+            if (id < minId) minId = id;
+            if (id > maxId) maxId = id;
+            if (!uniqueIds.add(id)) {
+                duplicateIds.add(id);
+            }
+        }
+
+        sb.append(String.format("ID range: %d - %d%n", minId == Integer.MAX_VALUE ? 0 : minId, maxId == Integer.MIN_VALUE ? 0 : maxId));
+        sb.append(String.format("Duplicate IDs: %d%n", duplicateIds.size()));
+
+        int missingCount = 0;
+        if (minId != Integer.MAX_VALUE && maxId != Integer.MIN_VALUE) {
+            for (int i = minId; i <= maxId; i++) {
+                if (!uniqueIds.contains(i)) {
+                    missingCount++;
+                }
+            }
+        }
+        sb.append(String.format("Missing IDs in range: %d%n", missingCount));
+
+        int byteTokenCount = 0;
+        int malformedByteTokens = 0;
+        int specialTokenCount = 0;
+
+        for (Map.Entry<String, Integer> entry : vocab.entrySet()) {
+            String token = entry.getKey();
+            if (isByteToken(token)) {
+                byteTokenCount++;
+            } else if (token.startsWith("<0x") || token.startsWith("<0X")) {
+                malformedByteTokens++;
+            }
+            if (isSpecialToken(token)) {
+                specialTokenCount++;
+            }
+        }
+
+        sb.append(String.format("Byte tokens: %d%n", byteTokenCount));
+        sb.append(String.format("Malformed byte tokens: %d%n", malformedByteTokens));
+        sb.append(String.format("Special tokens: %d%n", specialTokenCount));
+        sb.append(String.format("BOS ID: %d, EOS ID: %d, PAD ID: %d, UNK ID: %d%n",
+                getBosTokenId(), getEosTokenId(), getPadTokenId(), getUnkTokenId()));
+
+        return sb.toString();
     }
 
     @Override

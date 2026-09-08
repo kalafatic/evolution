@@ -220,6 +220,11 @@ public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
         int[] promptIds = currentTokens.stream().mapToInt(Integer::intValue).toArray();
         lastLogits = model.forwardWithCache(promptIds, kvCache);
 
+        eu.kalafatic.evolution.forge.tokenizer.impl.SimpleBPETokenizer.IncrementalDecoder incrementalDecoder = null;
+        if (tokenizer instanceof eu.kalafatic.evolution.forge.tokenizer.impl.SimpleBPETokenizer) {
+            incrementalDecoder = ((eu.kalafatic.evolution.forge.tokenizer.impl.SimpleBPETokenizer) tokenizer).createIncrementalDecoder();
+        }
+
         for (int step = 0; step < maxTokensToGenerate; step++) {
             if (step > 0) {
                 int lastToken = currentTokens.get(currentTokens.size() - 1);
@@ -232,38 +237,41 @@ public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
             generatedTokens.add(nextToken);
 
             String piece = model.getIdToToken().getOrDefault(nextToken, "");
-            String cumulativeDecoded = tokenizer != null ? tokenizer.decode(generatedTokens) : "";
+            String decodedChunk = incrementalDecoder != null ? incrementalDecoder.accept(nextToken) : piece;
+            String cumulativeDecoded = incrementalDecoder != null ? incrementalDecoder.getCumulativeText() : (tokenizer != null ? tokenizer.decode(generatedTokens) : "");
 
             if (streamListener != null) {
-                streamListener.onTokenGenerated(nextToken, piece);
+                streamListener.onTokenGenerated(nextToken, decodedChunk);
             }
 
             if (step < 30 || (step + 1) % 10 == 0 || step == maxTokensToGenerate - 1) {
                 long elapsed = System.currentTimeMillis() - startTime;
                 double tokPerSec = (step + 1) * 1000.0 / Math.max(1, elapsed);
-                System.out.printf("[EvoInferenceEngine] tokenId=%d piece='%s' decoded='%s' | Step %d/%d (%.2f tok/s)%n",
-                        nextToken, piece.replace("\n", "\\n"), cumulativeDecoded.replace("\n", "\\n"), step + 1, maxTokensToGenerate, tokPerSec);
+                System.out.printf("[EvoInferenceEngine] tokenId=%d piece='%s' decodedChunk='%s' cumulative='%s' | Step %d/%d (%.2f tok/s)%n",
+                        nextToken, piece.replace("\n", "\\n"), decodedChunk.replace("\n", "\\n"), cumulativeDecoded.replace("\n", "\\n"), step + 1, maxTokensToGenerate, tokPerSec);
             }
 
-            if (nextToken == eosTokenId || (stopTokens != null && stopTokens.contains(nextToken))) {
+            if ((eosTokenId != -1 && nextToken == eosTokenId) || (stopTokens != null && stopTokens.contains(nextToken))) {
                 terminationReason = InferenceResult.TerminationReason.EOS_REACHED;
+                System.out.printf("[EvoInferenceEngine] Generation stopped. Reason: EOS_REACHED (tokenId=%d, eosTokenId=%d, step=%d)%n",
+                        nextToken, eosTokenId, step + 1);
                 break;
             }
 
             if (currentTokens.size() >= maxSeqLen) {
+                terminationReason = InferenceResult.TerminationReason.MAX_TOKENS_REACHED;
+                System.out.printf("[EvoInferenceEngine] Generation stopped. Reason: MAX_SEQ_LEN_REACHED (seqLen=%d, maxSeqLen=%d)%n",
+                        currentTokens.size(), maxSeqLen);
                 break;
             }
         }
 
-        int[] genTokenIds = generatedTokens.stream().mapToInt(Integer::intValue).toArray();
-        String generatedText = "";
-        if (tokenizer != null && !generatedTokens.isEmpty()) {
-            try {
-                generatedText = tokenizer.decode(generatedTokens);
-            } catch (Exception e) {
-                generatedText = generatedTokens.toString();
-            }
+        if (incrementalDecoder != null) {
+            incrementalDecoder.flush();
         }
+
+        int[] genTokenIds = generatedTokens.stream().mapToInt(Integer::intValue).toArray();
+        String generatedText = incrementalDecoder != null ? incrementalDecoder.getCumulativeText() : (tokenizer != null ? tokenizer.decode(generatedTokens) : "");
 
         long executionTimeMs = System.currentTimeMillis() - startTime;
 
