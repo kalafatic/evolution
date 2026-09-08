@@ -123,4 +123,60 @@ public class SimpleBPETokenizerDecoderTest {
         assertEquals(0, tokenizer.getUnkTokenId());
         assertEquals(3, tokenizer.getPadTokenId());
     }
+
+    @Test
+    public void testCorpusAndUnicodeRoundTrips() {
+        String corpusText = "THE RECURSIVE LOOP: BIOLOGICAL EVOLUTION, NATURAL SELECTION, AND THE EMERGENT ARCHITECTURE OF LARGE LANGUAGE MODELS";
+        tokenizer.train(corpusText, 300);
+
+        String[] testPhrases = {
+            "hello",
+            "THE RECURSIVE LOOP",
+            "evolution",
+            "natural selection",
+            "large language models",
+            "Cyber-Darwinism",
+            "Hello, world!",
+            "Ahoj světe",
+            "ěščřžýáíé",
+            "Evolution → natural selection → LLM"
+        };
+
+        for (String phrase : testPhrases) {
+            List<Integer> encoded = tokenizer.encode(phrase);
+            assertNotNull("Encoded tokens should not be null for: " + phrase, encoded);
+            assertFalse("Encoded tokens should not be empty for: " + phrase, encoded.isEmpty());
+
+            String decoded = tokenizer.decode(encoded);
+            assertEquals("Round-trip failed for phrase: " + phrase, phrase, decoded);
+            assertFalse("Decoded text should not contain replacement character  for phrase: " + phrase, decoded.contains(""));
+        }
+    }
+
+    @Test
+    public void testIncrementalVsBatchDecodingEquivalence() {
+        String testText = "Ahoj světe! Cyber-Darwinism → Evolution";
+        tokenizer.train(testText, 300);
+
+        List<Integer> tokenIds = tokenizer.encode(testText);
+        String batchDecoded = tokenizer.decode(tokenIds);
+
+        SimpleBPETokenizer.IncrementalDecoder streamDecoder = tokenizer.createIncrementalDecoder();
+        StringBuilder streamSb = new StringBuilder();
+        for (Integer id : tokenIds) {
+            streamSb.append(streamDecoder.accept(id));
+        }
+        streamSb.append(streamDecoder.flush());
+
+        assertEquals("Incremental decoded text should match batch decoded text", batchDecoded, streamSb.toString());
+        assertEquals(testText, streamSb.toString());
+    }
+
+    @Test
+    public void testVocabularyValidationReport() {
+        String report = tokenizer.validateVocabulary();
+        assertNotNull(report);
+        assertTrue(report.contains("Vocabulary size:"));
+        assertTrue(report.contains("Duplicate IDs: 0"));
+    }
 }
