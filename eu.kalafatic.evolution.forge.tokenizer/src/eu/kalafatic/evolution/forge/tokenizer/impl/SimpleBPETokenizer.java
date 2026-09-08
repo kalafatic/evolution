@@ -162,17 +162,73 @@ public class SimpleBPETokenizer implements Tokenizer {
 
     @Override
     public String decode(List<Integer> tokens) {
+        if (tokens == null || tokens.isEmpty()) {
+            return "";
+        }
         StringBuilder sb = new StringBuilder();
+        java.io.ByteArrayOutputStream byteBuffer = new java.io.ByteArrayOutputStream();
+
         for (Integer token : tokens) {
+            if (token == null) continue;
             String tokStr = invVocab.getOrDefault(token, "");
-            if (tokStr != null && !tokStr.isEmpty()) {
-                if (tokStr.equals("<s>") || tokStr.equals("</s>") || tokStr.equals("<unk>")) {
-                    continue;
+            if (tokStr == null || tokStr.isEmpty()) continue;
+
+            if (isSpecialToken(tokStr)) {
+                continue;
+            }
+
+            if (isByteToken(tokStr)) {
+                byteBuffer.write(parseByteToken(tokStr));
+            } else {
+                if (byteBuffer.size() > 0) {
+                    sb.append(new String(byteBuffer.toByteArray(), java.nio.charset.StandardCharsets.UTF_8));
+                    byteBuffer.reset();
                 }
                 sb.append(tokStr);
             }
         }
+
+        if (byteBuffer.size() > 0) {
+            sb.append(new String(byteBuffer.toByteArray(), java.nio.charset.StandardCharsets.UTF_8));
+        }
+
         return sb.toString();
+    }
+
+    public static boolean isByteToken(String tok) {
+        if (tok != null && tok.length() == 6 && tok.startsWith("<0x") && tok.endsWith(">")) {
+            try {
+                Integer.parseInt(tok.substring(3, 5), 16);
+                return true;
+            } catch (NumberFormatException e) {
+                return false;
+            }
+        }
+        return false;
+    }
+
+    public static byte parseByteToken(String tok) {
+        return (byte) Integer.parseInt(tok.substring(3, 5), 16);
+    }
+
+    public static boolean isSpecialToken(String tokStr) {
+        return tokStr.equals("<s>") || tokStr.equals("</s>") || tokStr.equals("<unk>") || tokStr.equals("<pad>");
+    }
+
+    public int getBosTokenId() {
+        return vocab.getOrDefault("<s>", 1);
+    }
+
+    public int getEosTokenId() {
+        return vocab.getOrDefault("</s>", 2);
+    }
+
+    public int getUnkTokenId() {
+        return vocab.getOrDefault("<unk>", 0);
+    }
+
+    public int getPadTokenId() {
+        return vocab.getOrDefault("<pad>", 0);
     }
 
     @Override
