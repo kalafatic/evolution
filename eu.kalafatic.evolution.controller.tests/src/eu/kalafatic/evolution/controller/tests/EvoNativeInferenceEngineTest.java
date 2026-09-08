@@ -169,4 +169,41 @@ public class EvoNativeInferenceEngineTest {
                     b1Data[i], b2Data[i], 1e-6f);
         }
     }
+
+    @Test
+    public void testTokenizerRoundTripAndNoPlaceholderTokens() {
+        SimpleBPETokenizer bpe = new SimpleBPETokenizer();
+        bpe.train("hi hello world evolution native inference engine test", 100);
+
+        List<Integer> encoded = bpe.encode("hi");
+        assertFalse(encoded.isEmpty());
+        String decoded = bpe.decode(encoded);
+        assertEquals("hi", decoded);
+
+        for (String tokenStr : bpe.getVocab().keySet()) {
+            assertFalse("Vocabulary must not contain synthetic placeholder token_ string",
+                    tokenStr.startsWith("token_"));
+        }
+    }
+
+    @Test
+    public void testNativeInferenceNoPlaceholderOutput() {
+        SimpleBPETokenizer bpe = new SimpleBPETokenizer();
+        bpe.train("hi hello world evolution native inference engine test", 60);
+
+        EvoLlmModel model = new EvoLlmModel(bpe.getVocabSize(), 16, 2, 1, 32, 8);
+        model.getIdToToken().putAll(bpe.getInvVocab());
+
+        InferenceRequest req = InferenceRequest.builder()
+                .prompt("hi")
+                .maxTokens(10)
+                .temperature(0.0f)
+                .build();
+
+        InferenceResult result = engine.generate(model, req, bpe);
+        assertNotNull(result);
+        assertNotNull(result.getGeneratedText());
+        assertFalse("Generated text must not contain placeholder token_ strings",
+                result.getGeneratedText().contains("token_"));
+    }
 }

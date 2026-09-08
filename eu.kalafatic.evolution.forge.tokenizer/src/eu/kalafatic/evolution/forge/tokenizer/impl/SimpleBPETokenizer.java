@@ -26,31 +26,82 @@ public class SimpleBPETokenizer implements Tokenizer {
             }
         }
 
-        // Initial characters
-        if (corpus != null) {
+        if (corpus != null && !corpus.isEmpty()) {
+            // 1. Initial characters from corpus
             for (char c : corpus.toCharArray()) {
                 String s = String.valueOf(c);
                 if (!vocab.containsKey(s) && vocab.size() < targetVocabSize) {
                     vocab.put(s, id++);
                 }
             }
+
+            // 2. Extract words from corpus and perform iterative BPE merges
+            String[] rawWords = corpus.split("\\s+");
+            List<List<String>> wordSymbols = new ArrayList<>();
+            for (String w : rawWords) {
+                if (w.isEmpty()) continue;
+                List<String> syms = new ArrayList<>();
+                for (char c : w.toCharArray()) {
+                    syms.add(String.valueOf(c));
+                }
+                wordSymbols.add(syms);
+            }
+
+            // Perform iterative BPE pair merges
+            while (vocab.size() < targetVocabSize) {
+                Map<String, Integer> pairFreqs = new HashMap<>();
+                for (List<String> syms : wordSymbols) {
+                    for (int i = 0; i < syms.size() - 1; i++) {
+                        String pair = syms.get(i) + syms.get(i + 1);
+                        pairFreqs.put(pair, pairFreqs.getOrDefault(pair, 0) + 1);
+                    }
+                }
+
+                if (pairFreqs.isEmpty()) break;
+
+                String bestPair = null;
+                int maxFreq = 0;
+                for (Map.Entry<String, Integer> entry : pairFreqs.entrySet()) {
+                    if (entry.getValue() > maxFreq && !vocab.containsKey(entry.getKey())) {
+                        maxFreq = entry.getValue();
+                        bestPair = entry.getKey();
+                    }
+                }
+
+                if (bestPair == null || maxFreq < 1) break;
+
+                vocab.put(bestPair, id++);
+
+                for (List<String> syms : wordSymbols) {
+                    int i = 0;
+                    while (i < syms.size() - 1) {
+                        if ((syms.get(i) + syms.get(i + 1)).equals(bestPair)) {
+                            syms.set(i, bestPair);
+                            syms.remove(i + 1);
+                        } else {
+                            i++;
+                        }
+                    }
+                }
+            }
+
+            // 3. Add whole words if target vocabulary capacity remains
+            for (String w : rawWords) {
+                if (vocab.size() >= targetVocabSize) break;
+                if (!w.isEmpty() && !vocab.containsKey(w)) {
+                    vocab.put(w, id++);
+                }
+            }
         }
 
-        // Simulating BPE merges
-        // In a real implementation, we would count pairs and merge them.
-        // For this demo, we'll just use the initial character-level vocab plus some common words.
-        String[] commonWords = {"the", "and", "in", "is", "of", "to", "evolution", "ai"};
+        // Common fallback words
+        String[] commonWords = {"the", "and", "in", "is", "of", "to", "evolution", "ai", "model", "java", "code", "hi", "hello"};
         for (String word : commonWords) {
-            if (vocab.size() < targetVocabSize) {
+            if (vocab.size() < targetVocabSize && !vocab.containsKey(word)) {
                 vocab.put(word, id++);
             }
         }
 
-        while (vocab.size() < targetVocabSize) {
-            vocab.put("token_" + id, id);
-            id++;
-        }
-        
         updateInvVocab();
     }
 
@@ -114,7 +165,10 @@ public class SimpleBPETokenizer implements Tokenizer {
         StringBuilder sb = new StringBuilder();
         for (Integer token : tokens) {
             String tokStr = invVocab.getOrDefault(token, "");
-            if (tokStr != null && !tokStr.isEmpty() && !tokStr.startsWith("token_")) {
+            if (tokStr != null && !tokStr.isEmpty()) {
+                if (tokStr.equals("<s>") || tokStr.equals("</s>") || tokStr.equals("<unk>")) {
+                    continue;
+                }
                 sb.append(tokStr);
             }
         }
