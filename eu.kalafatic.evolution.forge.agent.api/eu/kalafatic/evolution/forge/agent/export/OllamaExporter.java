@@ -290,7 +290,15 @@ public class OllamaExporter implements EvoModelExporter {
         vocab.put(1, "<s>");
         vocab.put(2, "</s>");
         vocab.put(3, " ");
-        for (int i = 4; i < vocabSize; i++) vocab.put(i, "token_" + i);
+        int id = 4;
+        if (vocabSize >= 260) {
+            for (int b = 0; b < 256; b++) {
+                vocab.put(id++, String.format("<0x%02X>", b));
+            }
+        }
+        for (int i = id; i < vocabSize; i++) {
+            vocab.put(i, "token_" + i);
+        }
         return vocab;
     }
 
