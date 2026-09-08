@@ -794,6 +794,7 @@ public class AiChatPage extends AEvoPage {
 			tempOllamaUrl = orchestrator.getOllama().getUrl();
 		}
 		final String ollamaUrl = tempOllamaUrl;
+		final String currentEngineStr = chatMgmtGroup != null ? chatMgmtGroup.getInferenceEngine() : "ollama";
 
 		// Run the detection in a separate thread to keep SWT UI completely responsive
 		new Thread(() -> {
@@ -859,7 +860,6 @@ public class AiChatPage extends AEvoPage {
 				// EVO Native Model Protocol Validation
 				eu.kalafatic.evolution.forge.model.protocol.EvoModelIntegrity protocolIntegrity = null;
 				java.io.File evoArtifactFile = null;
-				String currentEngineStr = chatMgmtGroup != null ? chatMgmtGroup.getInferenceEngine() : "ollama";
 				try {
 					evoArtifactFile = eu.kalafatic.evolution.controller.orchestration.llm.OllamaProvider.resolveEvoArtifactPath(localModel);
 					if (evoArtifactFile == null || !evoArtifactFile.exists()) {
