@@ -402,44 +402,107 @@ public class LLMDarwinEngine extends ADarwinEngine {
 		boolean assistanceQa = uiState.optBoolean("assistance_qa", true);
 		boolean assistanceQuality = uiState.optBoolean("assistance_quality", true);
 
-		File targetFolder = new File(targetPath);
 		List<Path> scannedPaths = new ArrayList<>();
 
-		if (targetFolder.exists() && targetFolder.isDirectory()) {
-			try (Stream<Path> walk = Files.walk(targetFolder.toPath())) {
-				List<Path> files = walk.filter(Files::isRegularFile)
-						.filter(p -> !p.toString().contains("/.git/") && !p.toString().contains("\\.git\\")
-								&& !p.toString().contains("/target/") && !p.toString().contains("\\target\\")
-								&& !p.toString().contains("/node_modules/")
-								&& !p.toString().contains("\\node_modules\\"))
-						.sorted() // Deterministic file ordering
-						.limit(MAX_CORPUS_FILES).collect(Collectors.toList());
-				for (Path file : files) {
-					String name = file.getFileName().toString().toLowerCase();
-					boolean accept = false;
-					if (name.endsWith(".md") && sourceMarkdown)
-						accept = true;
-					else if (name.endsWith(".java") && sourceJava)
-						accept = true;
-					else if (name.endsWith(".xml") && sourceXml)
-						accept = true;
-					else if (name.endsWith(".json") && sourceJson)
-						accept = true;
-					else if ((name.endsWith(".properties") || name.equals("pom.xml") || name.equals("manifest.mf"))
-							&& sourceConfiguration)
-						accept = true;
-					else if (sourceExternal && (name.endsWith(".html") || name.endsWith(".htm")))
-						accept = true;
+		// Check for ordered checked datasets in uiState first
+		JSONArray datasetsArr = null;
+		if (uiState.has("datasets")) {
+			Object dsObj = uiState.get("datasets");
+			if (dsObj instanceof JSONArray) {
+				datasetsArr = (JSONArray) dsObj;
+			} else if (dsObj instanceof String && !((String) dsObj).trim().isEmpty()) {
+				try {
+					datasetsArr = new JSONArray((String) dsObj);
+				} catch (Exception ex) {}
+			}
+		}
 
-					// Default to markdown if no training sources configured
-					if (!sourceMarkdown && !sourceJava && !sourceXml && !sourceJson && !sourceConfiguration
-							&& !sourceExternal) {
-						if (name.endsWith(".md"))
-							accept = true;
+		if (datasetsArr != null && datasetsArr.length() > 0) {
+			context.log("[FORGE] Processing " + datasetsArr.length() + " configured dataset target entries in order...");
+			for (int i = 0; i < datasetsArr.length(); i++) {
+				JSONObject dsItem = datasetsArr.optJSONObject(i);
+				if (dsItem != null && dsItem.optBoolean("checked", true)) {
+					String pathStr = dsItem.optString("path", "").trim();
+					if (!pathStr.isEmpty()) {
+						Path path = Paths.get(pathStr);
+						if (Files.exists(path)) {
+							if (Files.isRegularFile(path)) {
+								if (!scannedPaths.contains(path)) {
+									scannedPaths.add(path);
+								}
+							} else if (Files.isDirectory(path)) {
+								try (Stream<Path> walk = Files.walk(path)) {
+									List<Path> files = walk.filter(Files::isRegularFile)
+											.filter(p -> !p.toString().contains("/.git/") && !p.toString().contains("\\.git\\")
+													&& !p.toString().contains("/target/") && !p.toString().contains("\\target\\")
+													&& !p.toString().contains("/node_modules/")
+													&& !p.toString().contains("\\node_modules\\"))
+											.sorted()
+											.limit(MAX_CORPUS_FILES).collect(Collectors.toList());
+									for (Path file : files) {
+										String name = file.getFileName().toString().toLowerCase();
+										boolean accept = false;
+										if (name.endsWith(".md") && sourceMarkdown) accept = true;
+										else if (name.endsWith(".java") && sourceJava) accept = true;
+										else if (name.endsWith(".xml") && sourceXml) accept = true;
+										else if (name.endsWith(".json") && sourceJson) accept = true;
+										else if ((name.endsWith(".properties") || name.equals("pom.xml") || name.equals("manifest.mf")) && sourceConfiguration) accept = true;
+										else if (sourceExternal && (name.endsWith(".html") || name.endsWith(".htm"))) accept = true;
+
+										if (!sourceMarkdown && !sourceJava && !sourceXml && !sourceJson && !sourceConfiguration && !sourceExternal) {
+											if (name.endsWith(".md")) accept = true;
+										}
+
+										if (accept && !scannedPaths.contains(file)) {
+											scannedPaths.add(file);
+										}
+									}
+								}
+							}
+						}
 					}
+				}
+			}
+		}
 
-					if (accept) {
-						scannedPaths.add(file);
+		if (scannedPaths.isEmpty()) {
+			File targetFolder = new File(targetPath);
+			if (targetFolder.exists() && targetFolder.isDirectory()) {
+				try (Stream<Path> walk = Files.walk(targetFolder.toPath())) {
+					List<Path> files = walk.filter(Files::isRegularFile)
+							.filter(p -> !p.toString().contains("/.git/") && !p.toString().contains("\\.git\\")
+									&& !p.toString().contains("/target/") && !p.toString().contains("\\target\\")
+									&& !p.toString().contains("/node_modules/")
+									&& !p.toString().contains("\\node_modules\\"))
+							.sorted() // Deterministic file ordering
+							.limit(MAX_CORPUS_FILES).collect(Collectors.toList());
+					for (Path file : files) {
+						String name = file.getFileName().toString().toLowerCase();
+						boolean accept = false;
+						if (name.endsWith(".md") && sourceMarkdown)
+							accept = true;
+						else if (name.endsWith(".java") && sourceJava)
+							accept = true;
+						else if (name.endsWith(".xml") && sourceXml)
+							accept = true;
+						else if (name.endsWith(".json") && sourceJson)
+							accept = true;
+						else if ((name.endsWith(".properties") || name.equals("pom.xml") || name.equals("manifest.mf"))
+								&& sourceConfiguration)
+							accept = true;
+						else if (sourceExternal && (name.endsWith(".html") || name.endsWith(".htm")))
+							accept = true;
+
+						// Default to markdown if no training sources configured
+						if (!sourceMarkdown && !sourceJava && !sourceXml && !sourceJson && !sourceConfiguration
+								&& !sourceExternal) {
+							if (name.endsWith(".md"))
+								accept = true;
+						}
+
+						if (accept) {
+							scannedPaths.add(file);
+						}
 					}
 				}
 			}

@@ -1,8 +1,14 @@
 package eu.kalafatic.evolution.view.dialogs;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.SashForm;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.FontData;
@@ -11,30 +17,92 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.DirectoryDialog;
+import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.Table;
+import org.eclipse.swt.widgets.TableColumn;
+import org.eclipse.swt.widgets.TableItem;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import eu.kalafatic.evolution.controller.manager.ModelSizePreset;
 import eu.kalafatic.utils.factories.GUIFactory;
 
 public class ForgeSettingsDialog extends Dialog {
 
+    public static class DatasetItem {
+        private boolean checked;
+        private String path;
+        private String type; // "FILE" or "FOLDER"
+
+        public DatasetItem(boolean checked, String path, String type) {
+            this.checked = checked;
+            this.path = path != null ? path : "";
+            this.type = type != null ? type : "FOLDER";
+        }
+
+        public boolean isChecked() {
+            return checked;
+        }
+
+        public void setChecked(boolean checked) {
+            this.checked = checked;
+        }
+
+        public String getPath() {
+            return path;
+        }
+
+        public void setPath(String path) {
+            this.path = path;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public void setType(String type) {
+            this.type = type;
+        }
+
+        public JSONObject toJsonObject() {
+            JSONObject obj = new JSONObject();
+            obj.put("checked", checked);
+            obj.put("path", path);
+            obj.put("type", type);
+            return obj;
+        }
+
+        public static DatasetItem fromJsonObject(JSONObject obj) {
+            boolean checked = obj.optBoolean("checked", true);
+            String path = obj.optString("path", "");
+            String type = obj.optString("type", "FOLDER");
+            return new DatasetItem(checked, path, type);
+        }
+    }
+
     private Combo modelSizeCombo;
     private Combo epochCombo;
     private Combo lossThresholdCombo;
     private Combo desiredLossCombo;
     private Canvas graphCanvas;
+    private Table datasetsTable;
 
     private String selectedModelSize = "SMALL";
     private int selectedEpochs = 32;
     private String selectedLossThreshold = "Epoch 16-30: Loss 2-5 → Learning phrases";
     private double selectedDesiredLoss = 1.0;
     private double[] lossHistory = null;
+    private List<DatasetItem> datasetItems = new ArrayList<>();
 
     private static final String[] EPOCH_OPTIONS = new String[] {
         "2", "4", "8", "16", "32", "64", "128", "256", "512", "1024"
@@ -53,18 +121,22 @@ public class ForgeSettingsDialog extends Dialog {
     };
 
     public ForgeSettingsDialog(Shell parentShell, String modelSize, int epochs, String lossThreshold) {
-        this(parentShell, modelSize, epochs, lossThreshold, 1.0, null);
+        this(parentShell, modelSize, epochs, lossThreshold, 1.0, null, null);
     }
 
     public ForgeSettingsDialog(Shell parentShell, String modelSize, int epochs, String lossThreshold, double desiredLossThreshold) {
-        this(parentShell, modelSize, epochs, lossThreshold, desiredLossThreshold, null);
+        this(parentShell, modelSize, epochs, lossThreshold, desiredLossThreshold, null, null);
     }
 
     public ForgeSettingsDialog(Shell parentShell, String modelSize, int epochs, String lossThreshold, double[] lossHistory) {
-        this(parentShell, modelSize, epochs, lossThreshold, 1.0, lossHistory);
+        this(parentShell, modelSize, epochs, lossThreshold, 1.0, lossHistory, null);
     }
 
     public ForgeSettingsDialog(Shell parentShell, String modelSize, int epochs, String lossThreshold, double desiredLossThreshold, double[] lossHistory) {
+        this(parentShell, modelSize, epochs, lossThreshold, desiredLossThreshold, lossHistory, null);
+    }
+
+    public ForgeSettingsDialog(Shell parentShell, String modelSize, int epochs, String lossThreshold, double desiredLossThreshold, double[] lossHistory, List<DatasetItem> datasets) {
         super(parentShell);
         setShellStyle(getShellStyle() | SWT.RESIZE | SWT.MAX);
         if (modelSize != null && !modelSize.isEmpty()) {
@@ -80,6 +152,23 @@ public class ForgeSettingsDialog extends Dialog {
             this.selectedDesiredLoss = desiredLossThreshold;
         }
         this.lossHistory = lossHistory;
+        if (datasets != null) {
+            this.datasetItems = new ArrayList<>(datasets);
+        }
+    }
+
+    public void setDatasetsFromJson(String jsonStr) {
+        if (jsonStr == null || jsonStr.trim().isEmpty()) return;
+        try {
+            JSONArray arr = new JSONArray(jsonStr);
+            this.datasetItems.clear();
+            for (int i = 0; i < arr.length(); i++) {
+                this.datasetItems.add(DatasetItem.fromJsonObject(arr.getJSONObject(i)));
+            }
+            if (datasetsTable != null && !datasetsTable.isDisposed()) {
+                refreshDatasetsTable();
+            }
+        } catch (Exception ex) {}
     }
 
     @Override
@@ -90,7 +179,7 @@ public class ForgeSettingsDialog extends Dialog {
 
     @Override
     protected Point getInitialSize() {
-        return new Point(880, 560);
+        return new Point(960, 680);
     }
 
     @Override
@@ -194,7 +283,7 @@ public class ForgeSettingsDialog extends Dialog {
 
         // Help / Info label
         Label helpLabel = new Label(settingsGroup, SWT.WRAP);
-        helpLabel.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1));
+        helpLabel.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 2, 1));
         helpLabel.setText(
             "Loss / Stage Guidelines:\n" +
             "• Epoch 1-5: Loss 8-10 → Learning letters (g, u, a)\n" +
@@ -204,6 +293,169 @@ public class ForgeSettingsDialog extends Dialog {
             "• Epoch 51-64: Loss < 1 → Understanding concepts\n" +
             "• Desired Finish Loss: When actual loss drops below this target, forging stops early."
         );
+
+        // Group 2: Training Datasets (Ordered Target Data)
+        Group datasetsGroup = new Group(settingsPanel, SWT.NONE);
+        datasetsGroup.setText("Training Datasets (Ordered Target Data)");
+        datasetsGroup.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1));
+        datasetsGroup.setLayout(new GridLayout(2, false));
+
+        datasetsTable = new Table(datasetsGroup, SWT.CHECK | SWT.BORDER | SWT.FULL_SELECTION | SWT.MULTI);
+        datasetsTable.setHeaderVisible(true);
+        datasetsTable.setLinesVisible(true);
+        GridData tableData = new GridData(SWT.FILL, SWT.FILL, true, true);
+        tableData.heightHint = 150;
+        datasetsTable.setLayoutData(tableData);
+
+        TableColumn colUse = new TableColumn(datasetsTable, SWT.LEFT);
+        colUse.setText("Use");
+        colUse.setWidth(45);
+
+        TableColumn colPath = new TableColumn(datasetsTable, SWT.LEFT);
+        colPath.setText("Path / Target Source");
+        colPath.setWidth(240);
+
+        TableColumn colType = new TableColumn(datasetsTable, SWT.LEFT);
+        colType.setText("Type");
+        colType.setWidth(65);
+
+        datasetsTable.addListener(SWT.Selection, event -> {
+            if (event.detail == SWT.CHECK && event.item instanceof TableItem) {
+                TableItem item = (TableItem) event.item;
+                Object data = item.getData();
+                if (data instanceof DatasetItem) {
+                    ((DatasetItem) data).setChecked(item.getChecked());
+                }
+            }
+        });
+
+        Composite btnComp = new Composite(datasetsGroup, SWT.NONE);
+        btnComp.setLayoutData(new GridData(SWT.FILL, SWT.TOP, false, false));
+        btnComp.setLayout(new GridLayout(1, true));
+
+        Button addFileBtn = GUIFactory.INSTANCE.createButton(btnComp, "Add File...");
+        Button addFolderBtn = GUIFactory.INSTANCE.createButton(btnComp, "Add Folder...");
+        Button selectTargetBtn = GUIFactory.INSTANCE.createButton(btnComp, "Select Target...");
+        Button removeBtn = GUIFactory.INSTANCE.createButton(btnComp, "Remove");
+        Button moveUpBtn = GUIFactory.INSTANCE.createButton(btnComp, "Move Up");
+        Button moveDownBtn = GUIFactory.INSTANCE.createButton(btnComp, "Move Down");
+        Button selectAllBtn = GUIFactory.INSTANCE.createButton(btnComp, "Select All");
+
+        addFileBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                FileDialog dlg = new FileDialog(getShell(), SWT.OPEN | SWT.MULTI);
+                dlg.setText("Select Training Data Files");
+                if (dlg.open() != null) {
+                    String filterPath = dlg.getFilterPath();
+                    String[] fileNames = dlg.getFileNames();
+                    for (String fileName : fileNames) {
+                        java.nio.file.Path fullPath = java.nio.file.Paths.get(filterPath, fileName);
+                        DatasetItem ds = new DatasetItem(true, fullPath.toString(), "FILE");
+                        datasetItems.add(ds);
+                    }
+                    refreshDatasetsTable();
+                }
+            }
+        });
+
+        addFolderBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                DirectoryDialog dlg = new DirectoryDialog(getShell());
+                dlg.setText("Select Training Data Directory");
+                String selectedDir = dlg.open();
+                if (selectedDir != null && !selectedDir.trim().isEmpty()) {
+                    DatasetItem ds = new DatasetItem(true, selectedDir, "FOLDER");
+                    datasetItems.add(ds);
+                    refreshDatasetsTable();
+                }
+            }
+        });
+
+        selectTargetBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                DirectoryDialog dlg = new DirectoryDialog(getShell());
+                dlg.setText("Select Forging Target Data Path");
+                String selectedDir = dlg.open();
+                if (selectedDir != null && !selectedDir.trim().isEmpty()) {
+                    boolean found = false;
+                    for (DatasetItem item : datasetItems) {
+                        if (item.getPath().equalsIgnoreCase(selectedDir)) {
+                            item.setChecked(true);
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        datasetItems.add(new DatasetItem(true, selectedDir, "FOLDER"));
+                    }
+                    refreshDatasetsTable();
+                }
+            }
+        });
+
+        removeBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                int[] indices = datasetsTable.getSelectionIndices();
+                if (indices != null && indices.length > 0) {
+                    Arrays.sort(indices);
+                    for (int i = indices.length - 1; i >= 0; i--) {
+                        if (indices[i] >= 0 && indices[i] < datasetItems.size()) {
+                            datasetItems.remove(indices[i]);
+                        }
+                    }
+                    refreshDatasetsTable();
+                }
+            }
+        });
+
+        moveUpBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                int idx = datasetsTable.getSelectionIndex();
+                if (idx > 0 && idx < datasetItems.size()) {
+                    DatasetItem item = datasetItems.remove(idx);
+                    datasetItems.add(idx - 1, item);
+                    refreshDatasetsTable();
+                    datasetsTable.setSelection(idx - 1);
+                }
+            }
+        });
+
+        moveDownBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                int idx = datasetsTable.getSelectionIndex();
+                if (idx >= 0 && idx < datasetItems.size() - 1) {
+                    DatasetItem item = datasetItems.remove(idx);
+                    datasetItems.add(idx + 1, item);
+                    refreshDatasetsTable();
+                    datasetsTable.setSelection(idx + 1);
+                }
+            }
+        });
+
+        selectAllBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                boolean anyUnchecked = false;
+                for (DatasetItem item : datasetItems) {
+                    if (!item.isChecked()) {
+                        anyUnchecked = true;
+                        break;
+                    }
+                }
+                for (DatasetItem item : datasetItems) {
+                    item.setChecked(anyUnchecked);
+                }
+                refreshDatasetsTable();
+            }
+        });
+
+        refreshDatasetsTable();
 
         // Panel 2: Progress Graph Panel
         Composite graphPanel = new Composite(sashForm, SWT.NONE);
@@ -503,6 +755,19 @@ public class ForgeSettingsDialog extends Dialog {
         currentFont.dispose();
     }
 
+    private void refreshDatasetsTable() {
+        if (datasetsTable == null || datasetsTable.isDisposed()) return;
+        datasetsTable.removeAll();
+        for (DatasetItem item : datasetItems) {
+            TableItem tableItem = new TableItem(datasetsTable, SWT.NONE);
+            tableItem.setChecked(item.isChecked());
+            tableItem.setText(0, "");
+            tableItem.setText(1, item.getPath());
+            tableItem.setText(2, item.getType());
+            tableItem.setData(item);
+        }
+    }
+
     @Override
     protected void okPressed() {
         if (modelSizeCombo != null && !modelSizeCombo.isDisposed()) {
@@ -534,6 +799,15 @@ public class ForgeSettingsDialog extends Dialog {
             }
         }
 
+        if (datasetsTable != null && !datasetsTable.isDisposed()) {
+            for (int i = 0; i < datasetsTable.getItemCount(); i++) {
+                TableItem tableItem = datasetsTable.getItem(i);
+                if (i < datasetItems.size()) {
+                    datasetItems.get(i).setChecked(tableItem.getChecked());
+                }
+            }
+        }
+
         super.okPressed();
     }
 
@@ -551,5 +825,17 @@ public class ForgeSettingsDialog extends Dialog {
 
     public double getDesiredLossThreshold() {
         return selectedDesiredLoss;
+    }
+
+    public List<DatasetItem> getDatasets() {
+        return datasetItems;
+    }
+
+    public String getDatasetsJson() {
+        JSONArray arr = new JSONArray();
+        for (DatasetItem item : datasetItems) {
+            arr.put(item.toJsonObject());
+        }
+        return arr.toString();
     }
 }

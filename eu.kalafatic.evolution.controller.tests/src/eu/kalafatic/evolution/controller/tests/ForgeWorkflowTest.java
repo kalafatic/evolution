@@ -94,4 +94,40 @@ public class ForgeWorkflowTest {
         assertEquals(ForgeStatus.TRAINING, session.getStatus());
         assertEquals("TRAINING_ACTIVE", manager.getUiState(session.getSessionId()).getString("forge.workflow.status"));
     }
+
+    @Test
+    public void testDatasetsPersistenceInUiState() throws Exception {
+        ForgeSession session = manager.createSession("Dataset Test", "SELF_EVO");
+        assertNotNull(session);
+
+        org.json.JSONArray datasetsArray = new org.json.JSONArray();
+        org.json.JSONObject ds1 = new org.json.JSONObject();
+        ds1.put("checked", true);
+        ds1.put("path", "/path/to/folder1");
+        ds1.put("type", "FOLDER");
+        datasetsArray.put(ds1);
+
+        org.json.JSONObject ds2 = new org.json.JSONObject();
+        ds2.put("checked", false);
+        ds2.put("path", "/path/to/file2.txt");
+        ds2.put("type", "FILE");
+        datasetsArray.put(ds2);
+
+        manager.updateUiState(session.getSessionId(), "datasets", datasetsArray.toString());
+
+        JSONObject uiState = manager.getUiState(session.getSessionId());
+        assertTrue(uiState.has("datasets"));
+        org.json.JSONArray restoredArr = new org.json.JSONArray(uiState.getString("datasets"));
+        assertEquals(2, restoredArr.length());
+
+        org.json.JSONObject restored1 = restoredArr.getJSONObject(0);
+        assertTrue(restored1.getBoolean("checked"));
+        assertEquals("/path/to/folder1", restored1.getString("path"));
+        assertEquals("FOLDER", restored1.getString("type"));
+
+        org.json.JSONObject restored2 = restoredArr.getJSONObject(1);
+        assertFalse(restored2.getBoolean("checked"));
+        assertEquals("/path/to/file2.txt", restored2.getString("path"));
+        assertEquals("FILE", restored2.getString("type"));
+    }
 }
