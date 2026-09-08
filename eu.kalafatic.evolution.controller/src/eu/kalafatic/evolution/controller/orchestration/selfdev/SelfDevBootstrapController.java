@@ -276,19 +276,42 @@ public class SelfDevBootstrapController {
         return supervisorDir;
     }
 
+    private String getMavenExecutable(File workingDir) {
+        boolean isWin = System.getProperty("os.name").toLowerCase().contains("win");
+        if (workingDir != null && workingDir.exists()) {
+            File mvnw = new File(workingDir, isWin ? "mvnw.cmd" : "mvnw");
+            if (mvnw.exists()) {
+                if (!isWin) {
+                    try { mvnw.setExecutable(true); } catch (Exception ignored) {}
+                }
+                return mvnw.getAbsolutePath();
+            }
+            if (workingDir.getParentFile() != null) {
+                File parentMvnw = new File(workingDir.getParentFile(), isWin ? "mvnw.cmd" : "mvnw");
+                if (parentMvnw.exists()) {
+                    if (!isWin) {
+                        try { parentMvnw.setExecutable(true); } catch (Exception ignored) {}
+                    }
+                    return parentMvnw.getAbsolutePath();
+                }
+            }
+        }
+        return isWin ? "mvn.cmd" : "mvn";
+    }
+
     private String compileSupervisorModule(File supervisorDir) {
         try {
             System.out.println("[SelfDevBootstrapController] Compiling and packaging supervisor module: " + supervisorDir.getAbsolutePath());
-            String mvnCmd = System.getProperty("os.name").toLowerCase().contains("win") ? "mvn.cmd" : "mvn";
             File parentDir = supervisorDir.getParentFile();
+            String mvnParentCmd = getMavenExecutable(parentDir);
             System.out.println("[SelfDevBootstrapController] Executing build in parent directory: " + parentDir.getAbsolutePath() + " to package supervisor.");
 
-            ProcessBuilder pbCompile = new ProcessBuilder(mvnCmd, "package", "-pl", "eu.kalafatic.evolution.supervisor", "-am", "-DskipTests");
+            ProcessBuilder pbCompile = new ProcessBuilder(mvnParentCmd, "package", "-pl", "eu.kalafatic.evolution.supervisor", "-am", "-DskipTests");
             pbCompile.directory(parentDir);
             pbCompile.redirectErrorStream(true);
             Process pCompile = pbCompile.start();
 
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(pCompile.getInputStream()))) {
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(pCompile.getInputStream(), StandardCharsets.UTF_8))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     System.out.println("[Supervisor Compile] " + line);
@@ -301,11 +324,12 @@ public class SelfDevBootstrapController {
                 return "SUCCESS";
             } else {
                 System.out.println("[SelfDevBootstrapController] Reactor build failed. Falling back to standalone build directly inside: " + supervisorDir.getAbsolutePath());
-                ProcessBuilder pbFallback = new ProcessBuilder(mvnCmd, "clean", "package", "-DskipTests");
+                String mvnModuleCmd = getMavenExecutable(supervisorDir);
+                ProcessBuilder pbFallback = new ProcessBuilder(mvnModuleCmd, "clean", "package", "-DskipTests");
                 pbFallback.directory(supervisorDir);
                 pbFallback.redirectErrorStream(true);
                 Process pFallback = pbFallback.start();
-                try (BufferedReader reader = new BufferedReader(new InputStreamReader(pFallback.getInputStream()))) {
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(pFallback.getInputStream(), StandardCharsets.UTF_8))) {
                     String line;
                     while ((line = reader.readLine()) != null) {
                         System.out.println("[Supervisor Standalone Compile] " + line);
@@ -643,10 +667,11 @@ public class SelfDevBootstrapController {
         long startTime = System.currentTimeMillis();
         String response = "ERROR";
         try {
-            String mvnCmd = System.getProperty("os.name").toLowerCase().contains("win") ? "mvn.cmd" : "mvn";
+            File sourcesFolder = new File(buildWorkspacePath);
+            String mvnCmd = getMavenExecutable(sourcesFolder);
             // हेडलेस RCP उत्पाद का सही ढंग से निर्माण करने के लिए "verify" का उपयोग करें
             ProcessBuilder pb = new ProcessBuilder(mvnCmd, "clean", "verify", "-DskipTests");
-            pb.directory(new File(buildWorkspacePath));
+            pb.directory(sourcesFolder);
             pb.redirectErrorStream(true);
             Process p = pb.start();
 
@@ -812,7 +837,7 @@ public class SelfDevBootstrapController {
 
         try {
             System.out.println("[SelfDevBootstrapController] [BUILD_SUPERVISOR_LOCAL] Executing build in: " + srcDir.getAbsolutePath());
-            String mvnCmd = System.getProperty("os.name").toLowerCase().contains("win") ? "mvn.cmd" : "mvn";
+            String mvnCmd = getMavenExecutable(srcDir);
             ProcessBuilder pb = new ProcessBuilder(mvnCmd, "clean", "package", "-DskipTests");
             pb.directory(srcDir);
             pb.redirectErrorStream(true);
@@ -1134,7 +1159,7 @@ public class SelfDevBootstrapController {
         System.out.println("[SelfDevBootstrapController] [CHECK_MAVEN] Starting Maven check...");
         System.out.println("[SelfDevBootstrapController] [CHECK_MAVEN] Project Root: " + (projectRoot != null ? projectRoot.getAbsolutePath() : "null"));
         try {
-            String mvnCmd = System.getProperty("os.name").toLowerCase().contains("win") ? "mvn.cmd" : "mvn";
+            String mvnCmd = getMavenExecutable(projectRoot);
             System.out.println("[SelfDevBootstrapController] [CHECK_MAVEN] OS: " + System.getProperty("os.name") + ", Maven Executable: " + mvnCmd);
             System.out.println("[SelfDevBootstrapController] [CHECK_MAVEN] Executing '" + mvnCmd + " -version' in directory: " + projectRoot.getAbsolutePath());
             ProcessBuilder pb = new ProcessBuilder(mvnCmd, "-version");
@@ -1205,45 +1230,68 @@ public class SelfDevBootstrapController {
     private String compileGenomeModule(File genomeModuleDir) {
         try {
             System.out.println("[SelfDevBootstrapController] Compiling and packaging genome module: " + genomeModuleDir.getAbsolutePath());
-            String mvnCmd = System.getProperty("os.name").toLowerCase().contains("win") ? "mvn.cmd" : "mvn";
             File parentDir = genomeModuleDir.getParentFile();
-            System.out.println("[SelfDevBootstrapController] Executing build in parent directory: " + parentDir.getAbsolutePath() + " to resolve reactor siblings.");
+            String mvnParentCmd = getMavenExecutable(parentDir);
+            System.out.println("[SelfDevBootstrapController] Executing build in parent directory: " + (parentDir != null ? parentDir.getAbsolutePath() : "null") + " to resolve reactor siblings.");
 
-            // Step 1: Clean ONLY the genome module
-            System.out.println("[SelfDevBootstrapController] Step 1: Running clean on eu.kalafatic.evolution.selfdev.genome only");
-            ProcessBuilder pbClean = new ProcessBuilder(mvnCmd, "clean", "-pl", "eu.kalafatic.evolution.selfdev.genome");
-            pbClean.directory(parentDir);
-            pbClean.redirectErrorStream(true);
-            Process pClean = pbClean.start();
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(pClean.getInputStream()))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    System.out.println("[Genome Clean] " + line);
+            int cleanExitCode = -1;
+            int compileExitCode = -1;
+
+            if (parentDir != null && new File(parentDir, "pom.xml").exists()) {
+                // Step 1: Clean ONLY the genome module via reactor
+                System.out.println("[SelfDevBootstrapController] Step 1: Running clean on eu.kalafatic.evolution.selfdev.genome only");
+                ProcessBuilder pbClean = new ProcessBuilder(mvnParentCmd, "clean", "-pl", "eu.kalafatic.evolution.selfdev.genome");
+                pbClean.directory(parentDir);
+                pbClean.redirectErrorStream(true);
+                Process pClean = pbClean.start();
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(pClean.getInputStream(), StandardCharsets.UTF_8))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        System.out.println("[Genome Clean] " + line);
+                    }
                 }
-            }
-            int cleanExitCode = pClean.waitFor();
-            System.out.println("[SelfDevBootstrapController] Genome clean finished with exit code: " + cleanExitCode);
+                cleanExitCode = pClean.waitFor();
+                System.out.println("[SelfDevBootstrapController] Genome clean finished with exit code: " + cleanExitCode);
 
-            // Step 2: Compile and install the genome module and dependencies to local .m2 repository
-            System.out.println("[SelfDevBootstrapController] Step 2: Running install on eu.kalafatic.evolution.selfdev.genome with dependencies");
-            ProcessBuilder pbCompile = new ProcessBuilder(mvnCmd, "install", "-pl", "eu.kalafatic.evolution.selfdev.genome", "-am", "-DskipTests");
-            pbCompile.directory(parentDir);
-            pbCompile.redirectErrorStream(true);
-            Process pCompile = pbCompile.start();
+                // Step 2: Compile and install the genome module and dependencies to local .m2 repository
+                System.out.println("[SelfDevBootstrapController] Step 2: Running install on eu.kalafatic.evolution.selfdev.genome with dependencies");
+                ProcessBuilder pbCompile = new ProcessBuilder(mvnParentCmd, "install", "-pl", "eu.kalafatic.evolution.selfdev.genome", "-am", "-DskipTests");
+                pbCompile.directory(parentDir);
+                pbCompile.redirectErrorStream(true);
+                Process pCompile = pbCompile.start();
 
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(pCompile.getInputStream()))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    System.out.println("[Genome Install] " + line);
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(pCompile.getInputStream(), StandardCharsets.UTF_8))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        System.out.println("[Genome Install] " + line);
+                    }
                 }
+                compileExitCode = pCompile.waitFor();
+                System.out.println("[SelfDevBootstrapController] Genome install finished with exit code: " + compileExitCode);
             }
-            int compileExitCode = pCompile.waitFor();
-            System.out.println("[SelfDevBootstrapController] Genome install finished with exit code: " + compileExitCode);
 
             if (cleanExitCode == 0 && compileExitCode == 0) {
                 return "SUCCESS";
             } else {
-                return "ERROR: Build failed (clean exit code " + cleanExitCode + ", install exit code " + compileExitCode + ")";
+                System.out.println("[SelfDevBootstrapController] Reactor genome build bypassed or failed (clean=" + cleanExitCode + ", install=" + compileExitCode + "). Falling back to standalone build directly inside: " + genomeModuleDir.getAbsolutePath());
+                String mvnModuleCmd = getMavenExecutable(genomeModuleDir);
+                ProcessBuilder pbFallback = new ProcessBuilder(mvnModuleCmd, "clean", "install", "-DskipTests");
+                pbFallback.directory(genomeModuleDir);
+                pbFallback.redirectErrorStream(true);
+                Process pFallback = pbFallback.start();
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(pFallback.getInputStream(), StandardCharsets.UTF_8))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        System.out.println("[Genome Standalone Compile] " + line);
+                    }
+                }
+                int fallbackExitCode = pFallback.waitFor();
+                System.out.println("[SelfDevBootstrapController] Genome standalone compile finished with exit code: " + fallbackExitCode);
+                if (fallbackExitCode == 0) {
+                    return "SUCCESS";
+                } else {
+                    return "ERROR: Genome module build failed both in reactor and standalone (exit code " + fallbackExitCode + ")";
+                }
             }
         } catch (Exception e) {
             System.err.println("[SelfDevBootstrapController] Failed to compile genome module: " + e.getMessage());
