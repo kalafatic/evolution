@@ -190,6 +190,27 @@ public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
         InferenceResult.TerminationReason terminationReason = InferenceResult.TerminationReason.MAX_TOKENS_REACHED;
         Tensor lastLogits = null;
 
+        int eosTokenId = 2;
+        int bosTokenId = 1;
+        int unkTokenId = 0;
+        int padTokenId = 0;
+
+        if (tokenizer instanceof eu.kalafatic.evolution.forge.tokenizer.impl.SimpleBPETokenizer) {
+            eu.kalafatic.evolution.forge.tokenizer.impl.SimpleBPETokenizer sbt = (eu.kalafatic.evolution.forge.tokenizer.impl.SimpleBPETokenizer) tokenizer;
+            eosTokenId = sbt.getEosTokenId();
+            bosTokenId = sbt.getBosTokenId();
+            unkTokenId = sbt.getUnkTokenId();
+            padTokenId = sbt.getPadTokenId();
+        }
+
+        System.out.printf("[EVO-NATIVE] Vocabulary size: %d%n", tokenizer != null ? tokenizer.getVocabSize() : model.getVocabSize());
+        System.out.println("[EVO-NATIVE] Tokenizer type/version: SimpleBPETokenizer 2.0");
+        System.out.printf("[EVO-NATIVE] BOS token ID: %d%n", bosTokenId);
+        System.out.printf("[EVO-NATIVE] EOS token ID: %d%n", eosTokenId);
+        System.out.printf("[EVO-NATIVE] PAD token ID: %d%n", padTokenId);
+        System.out.printf("[EVO-NATIVE] UNK token ID: %d%n", unkTokenId);
+        System.out.println("[EVO-NATIVE] Byte fallback enabled: true");
+
         System.out.printf("[EvoInferenceEngine] Starting native generation (promptTokens=%d, maxTokens=%d)%n",
                 currentTokens.size(), maxTokensToGenerate);
 
@@ -210,25 +231,21 @@ public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
             currentTokens.add(nextToken);
             generatedTokens.add(nextToken);
 
-            String tokenText = "";
-            if (tokenizer != null) {
-                try {
-                    tokenText = tokenizer.decode(List.of(nextToken));
-                } catch (Exception ignored) {}
-            }
+            String piece = model.getIdToToken().getOrDefault(nextToken, "");
+            String cumulativeDecoded = tokenizer != null ? tokenizer.decode(generatedTokens) : "";
 
             if (streamListener != null) {
-                streamListener.onTokenGenerated(nextToken, tokenText);
+                streamListener.onTokenGenerated(nextToken, piece);
             }
 
-            if ((step + 1) % 10 == 0 || step == 0 || step == maxTokensToGenerate - 1) {
+            if (step < 30 || (step + 1) % 10 == 0 || step == maxTokensToGenerate - 1) {
                 long elapsed = System.currentTimeMillis() - startTime;
                 double tokPerSec = (step + 1) * 1000.0 / Math.max(1, elapsed);
-                System.out.printf("[EvoInferenceEngine] Step %d/%d: token=%d ('%s') | Elapsed: %d ms (%.2f tok/s)%n",
-                        step + 1, maxTokensToGenerate, nextToken, tokenText.replace("\n", "\\n"), elapsed, tokPerSec);
+                System.out.printf("[EvoInferenceEngine] tokenId=%d piece='%s' decoded='%s' | Step %d/%d (%.2f tok/s)%n",
+                        nextToken, piece.replace("\n", "\\n"), cumulativeDecoded.replace("\n", "\\n"), step + 1, maxTokensToGenerate, tokPerSec);
             }
 
-            if (nextToken == 2 || (stopTokens != null && stopTokens.contains(nextToken))) {
+            if (nextToken == eosTokenId || (stopTokens != null && stopTokens.contains(nextToken))) {
                 terminationReason = InferenceResult.TerminationReason.EOS_REACHED;
                 break;
             }
