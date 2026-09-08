@@ -205,8 +205,7 @@ public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
                 lastLogits = model.forwardWithCache(new int[]{lastToken}, kvCache);
             }
 
-            // Only generated tokens should be penalized to prevent prompt tokens from being suppressed
-            int nextToken = sampleNextTokenWithVocabulary(lastLogits, generatedTokens, request, rng, model.getIdToToken());
+            int nextToken = sampleNextTokenWithVocabulary(lastLogits, currentTokens, request, rng, model.getIdToToken());
 
             currentTokens.add(nextToken);
             generatedTokens.add(nextToken);
@@ -229,9 +228,7 @@ public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
                         step + 1, maxTokensToGenerate, nextToken, tokenText.replace("\n", "\\n"), elapsed, tokPerSec);
             }
 
-            String tokStr = model.getIdToToken() != null ? model.getIdToToken().get(nextToken) : null;
-            boolean isEos = nextToken == 2 || "</s>".equals(tokStr) || "<|endoftext|>".equals(tokStr) || "<eos>".equals(tokStr);
-            if (isEos || (stopTokens != null && stopTokens.contains(nextToken))) {
+            if (nextToken == 2 || (stopTokens != null && stopTokens.contains(nextToken))) {
                 terminationReason = InferenceResult.TerminationReason.EOS_REACHED;
                 break;
             }
