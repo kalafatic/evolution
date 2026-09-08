@@ -98,12 +98,15 @@ public class ReferenceEvoInferenceEngine implements EvoInferenceEngine {
         EvoLlmModel model = artifact.createModel();
 
         eu.kalafatic.evolution.forge.tokenizer.impl.SimpleBPETokenizer artifactTokenizer = new eu.kalafatic.evolution.forge.tokenizer.impl.SimpleBPETokenizer();
-        if (artifact.getTokenizerVocab() != null && !artifact.getTokenizerVocab().isEmpty()) {
-            artifactTokenizer.setVocabulary(artifact.getTokenizerVocab());
+        Map<String, Integer> vocab = artifact.getTokenizerVocab();
+        if (vocab != null && !vocab.isEmpty()) {
+            artifactTokenizer.setVocabulary(vocab);
         } else if (artifact.getIdToToken() != null && !artifact.getIdToToken().isEmpty()) {
-            Map<String, Integer> rev = new java.util.LinkedHashMap<>();
-            artifact.getIdToToken().forEach((id, tok) -> rev.put(tok, id));
-            artifactTokenizer.setVocabulary(rev);
+            Map<String, Integer> revVocab = new java.util.LinkedHashMap<>();
+            for (Map.Entry<Integer, String> entry : artifact.getIdToToken().entrySet()) {
+                revVocab.put(entry.getValue(), entry.getKey());
+            }
+            artifactTokenizer.setVocabulary(revVocab);
         }
 
         return generateWithListener(model, request, artifactTokenizer, streamListener);

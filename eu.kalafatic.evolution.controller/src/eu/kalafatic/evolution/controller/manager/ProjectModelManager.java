@@ -17,6 +17,7 @@ import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import eu.kalafatic.evolution.controller.discovery.SourceDiscoveryRequest;
 import eu.kalafatic.evolution.controller.discovery.SourceDiscoveryResult;
 import eu.kalafatic.evolution.controller.discovery.WorkspaceSourceResolver;
+import eu.kalafatic.evolution.controller.orchestration.llm.OllamaProvider;
 import eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool;
 import eu.kalafatic.evolution.controller.providers.AiProviders;
 import eu.kalafatic.evolution.controller.providers.ProviderConfig;
@@ -437,11 +438,28 @@ public class ProjectModelManager {
             String lower = model.toLowerCase().trim();
 
             if (eng.contains("evo native") || eng.contains("evo-native") || eng.contains("evo_native") || eng.equals("native")) {
-                // Rule 1: evo native - all evo models (evo only, non-gguf)
-                boolean isEvo = lower.contains("evo") || lower.contains("forging");
-                boolean isGguf = lower.endsWith(".gguf") || lower.equals("evo") || lower.equals("evo:latest");
-                if (isEvo && !isGguf) {
-                    filtered.add(model);
+                // Rule 1: evo native - canonical .evo file artifacts only
+                boolean isEvoFile = lower.endsWith(".evo");
+                if (isEvoFile) {
+                    if (!filtered.contains(model)) {
+                        filtered.add(model);
+                    }
+                } else if ((lower.contains("evo") || lower.contains("forging")) && !lower.endsWith(".gguf")) {
+                    File resolved = OllamaProvider.resolveEvoArtifactPath(model);
+                    if (resolved != null && resolved.isFile() && resolved.getName().toLowerCase().endsWith(".evo")) {
+                        String evoName = resolved.getName();
+                        if (!filtered.contains(evoName)) {
+                            filtered.add(evoName);
+                        }
+                    } else if (resolved != null && resolved.isDirectory()) {
+                        File[] subEvos = resolved.listFiles((d, n) -> n.toLowerCase().endsWith(".evo"));
+                        if (subEvos != null && subEvos.length == 1) {
+                            String evoName = subEvos[0].getName();
+                            if (!filtered.contains(evoName)) {
+                                filtered.add(evoName);
+                            }
+                        }
+                    }
                 }
             } else if (eng.contains("llama-cpp") || eng.contains("llama_cpp") || eng.contains("llama.cpp") || eng.equals("cpp")) {
                 // Rule 2: llama-cpp - all evo gguf models (evo only)
@@ -912,39 +930,79 @@ public class ProjectModelManager {
                 }
             }
 
-            // Check forge-output folder
+            // Check forge-output folder and scan for both directories and .evo files
+            List<File> forgeDirsToScan = new ArrayList<>();
             String workspacePathStr = getWorkspacePath();
             if (workspacePathStr != null && !workspacePathStr.isEmpty()) {
-                File forgeOutputDir = new File(workspacePathStr, "forge-output");
+                forgeDirsToScan.add(new File(workspacePathStr, "forge-output"));
+            }
+            String codebasePathStr = getCodebasePath();
+            if (codebasePathStr != null && !codebasePathStr.isEmpty()) {
+                forgeDirsToScan.add(new File(codebasePathStr, "forge-output"));
+            }
+            forgeDirsToScan.add(new File(System.getProperty("user.dir"), "forge-output"));
+
+            for (File forgeOutputDir : forgeDirsToScan) {
                 if (forgeOutputDir.exists() && forgeOutputDir.isDirectory()) {
-                    File[] subdirs = forgeOutputDir.listFiles(File::isDirectory);
-                    if (subdirs != null) {
-                        for (File subdir : subdirs) {
-                            if (subdir.getName().startsWith("evo-")) {
-                                File ggufFile = new File(subdir, "evo.gguf");
-                                File weightsFile = new File(subdir, "weights.bin");
-                                File configJsonFile = new File(subdir, "config.json");
-                                if (ggufFile.exists() || (weightsFile.exists() && configJsonFile.exists())) {
-                                    String modelName = subdir.getName();
-                                    if (models.stream().noneMatch(i -> i.getName().equalsIgnoreCase(modelName))) {
-                                        AIProvider item = factory.createAIProvider();
-                                        item.setName(modelName);
-                                        item.setLocal(true);
-                                        item.setUrl(ollamaUrl);
-                                        item.setFormat("ollama");
-                                        if (ollamaOnline) {
-                                            if (ggufFile.exists()) {
-                                                item.setState("NA");
-                                                item.setStateDescription("Exported forged model in forge-output folder - GGUF exists on disk but is not registered in Ollama.");
-                                            } else {
-                                                item.setState("NA");
-                                                item.setStateDescription("Forged model artifact in forge-output folder - weights and config exist, but GGUF is not exported yet.");
-                                            }
-                                        } else {
-                                            item.setState("ERR");
-                                            item.setStateDescription("Ollama server offline");
+                    File[] allFiles = forgeOutputDir.listFiles();
+                    if (allFiles != null) {
+                        for (File f : allFiles) {
+                            if (f.isFile() && f.getName().toLowerCase().endsWith(".evo")) {
+                                String modelName = f.getName();
+                                if (models.stream().noneMatch(i -> i.getName().equalsIgnoreCase(modelName))) {
+                                    AIProvider item = factory.createAIProvider();
+                                    item.setName(modelName);
+                                    item.setLocal(true);
+                                    item.setUrl(f.getAbsolutePath());
+                                    item.setFormat("evo_native");
+                                    item.setState("OK");
+                                    item.setStateDescription("Canonical EVO Native Model Artifact (.evo)");
+                                    models.add(item);
+                                }
+                            } else if (f.isDirectory()) {
+                                File[] subEvos = f.listFiles((d, n) -> n.toLowerCase().endsWith(".evo"));
+                                if (subEvos != null) {
+                                    for (File subEvo : subEvos) {
+                                        String modelName = subEvo.getName();
+                                        if (models.stream().noneMatch(i -> i.getName().equalsIgnoreCase(modelName))) {
+                                            AIProvider item = factory.createAIProvider();
+                                            item.setName(modelName);
+                                            item.setLocal(true);
+                                            item.setUrl(subEvo.getAbsolutePath());
+                                            item.setFormat("evo_native");
+                                            item.setState("OK");
+                                            item.setStateDescription("Canonical EVO Native Model Artifact (.evo)");
+                                            models.add(item);
                                         }
-                                        models.add(item);
+                                    }
+                                }
+
+                                if (f.getName().startsWith("evo-")) {
+                                    File ggufFile = new File(f, "evo.gguf");
+                                    File weightsFile = new File(f, "weights.bin");
+                                    File configJsonFile = new File(f, "config.json");
+                                    if (ggufFile.exists() || (weightsFile.exists() && configJsonFile.exists())) {
+                                        String modelName = f.getName();
+                                        if (models.stream().noneMatch(i -> i.getName().equalsIgnoreCase(modelName))) {
+                                            AIProvider item = factory.createAIProvider();
+                                            item.setName(modelName);
+                                            item.setLocal(true);
+                                            item.setUrl(ollamaUrl);
+                                            item.setFormat("ollama");
+                                            if (ollamaOnline) {
+                                                if (ggufFile.exists()) {
+                                                    item.setState("NA");
+                                                    item.setStateDescription("Exported forged model in forge-output folder - GGUF exists on disk but is not registered in Ollama.");
+                                                } else {
+                                                    item.setState("NA");
+                                                    item.setStateDescription("Forged model artifact in forge-output folder - weights and config exist, but GGUF is not exported yet.");
+                                                }
+                                            } else {
+                                                item.setState("ERR");
+                                                item.setStateDescription("Ollama server offline");
+                                            }
+                                            models.add(item);
+                                        }
                                     }
                                 }
                             }

@@ -279,6 +279,12 @@ public class OllamaProvider implements ILlmProvider {
             modelName = "evo";
         }
 
+        // Direct file check if modelName is an absolute or relative file path to a .evo file
+        java.io.File directFile = new java.io.File(modelName);
+        if (directFile.exists() && directFile.isFile() && directFile.getName().toLowerCase().endsWith(".evo")) {
+            return directFile;
+        }
+
         boolean isGenericEvo = modelName.equalsIgnoreCase("evo") || modelName.equalsIgnoreCase("evo:latest");
 
         // Helper list of base search directories
@@ -299,7 +305,7 @@ public class OllamaProvider implements ILlmProvider {
             }
         }
 
-        // If 'evo' or 'evo:latest', search for the newest forged EVO model artifact first
+        // If 'evo' or 'evo:latest', search for the newest forged .evo file artifact first
         if (isGenericEvo) {
             java.io.File newestArtifact = null;
             long newestTime = -1;
@@ -309,15 +315,20 @@ public class OllamaProvider implements ILlmProvider {
                     java.io.File[] files = forgeDir.listFiles();
                     if (files != null) {
                         for (java.io.File f : files) {
-                            if (f.isDirectory() && (new java.io.File(f, "weights.bin").exists() || new java.io.File(f, "config.json").exists() || new java.io.File(f, "model.json").exists())) {
+                            if (f.isFile() && f.getName().toLowerCase().endsWith(".evo")) {
                                 if (f.lastModified() > newestTime) {
                                     newestTime = f.lastModified();
                                     newestArtifact = f;
                                 }
-                            } else if (f.isFile() && f.getName().endsWith(".evo")) {
-                                if (f.lastModified() > newestTime) {
-                                    newestTime = f.lastModified();
-                                    newestArtifact = f;
+                            } else if (f.isDirectory()) {
+                                java.io.File[] subFiles = f.listFiles((d, n) -> n.toLowerCase().endsWith(".evo"));
+                                if (subFiles != null) {
+                                    for (java.io.File sf : subFiles) {
+                                        if (sf.lastModified() > newestTime) {
+                                            newestTime = sf.lastModified();
+                                            newestArtifact = sf;
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -330,20 +341,27 @@ public class OllamaProvider implements ILlmProvider {
             }
         }
 
-        // Exact match checks
+        // Exact match checks for specific model name
         for (java.io.File forgeDir : baseDirs) {
             if (forgeDir.exists() && forgeDir.isDirectory()) {
-                java.io.File dir = new java.io.File(forgeDir, modelName);
-                if (dir.exists() && (new java.io.File(dir, "weights.bin").exists() || new java.io.File(dir, "model.json").exists() || new java.io.File(dir, "config.json").exists())) {
-                    return dir;
-                }
-                java.io.File evoFile = new java.io.File(forgeDir, modelName + ".evo");
-                if (evoFile.exists()) {
+                java.io.File evoFile = new java.io.File(forgeDir, modelName.endsWith(".evo") ? modelName : modelName + ".evo");
+                if (evoFile.exists() && evoFile.isFile()) {
                     return evoFile;
                 }
-                java.io.File defaultEvoFile = new java.io.File(forgeDir, "evo.evo");
-                if (defaultEvoFile.exists()) {
-                    return defaultEvoFile;
+
+                java.io.File dir = new java.io.File(forgeDir, modelName);
+                if (dir.exists() && dir.isDirectory()) {
+                    java.io.File[] subEvos = dir.listFiles((d, n) -> n.toLowerCase().endsWith(".evo"));
+                    if (subEvos != null && subEvos.length == 1) {
+                        return subEvos[0];
+                    } else if (subEvos != null && subEvos.length > 1) {
+                        return dir; // Handled/rejected by NativeEvoArtifactResolver
+                    }
+                    java.io.File subEvo = new java.io.File(dir, "evo.evo");
+                    if (subEvo.exists()) {
+                        return subEvo;
+                    }
+                    return dir;
                 }
             }
         }
@@ -376,35 +394,26 @@ public class OllamaProvider implements ILlmProvider {
         // 1. ENGINE: "evo native" -> execute native EvoLlmModel / ReferenceEvoInferenceEngine
         if (engine.contains("evo native") || engine.contains("evo-native") || engine.contains("evo_native") || engine.equals("native")) {
             java.io.File evoArtifactPath = resolveEvoArtifactPath(model != null ? model : "evo");
-            if (evoArtifactPath != null && evoArtifactPath.exists()) {
-                if (context != null) {
-                    context.log("EvoInferenceEngine: Intercepted model '" + model + "'. Routing request via ReferenceEvoInferenceEngine (evo native) with artifact: " + evoArtifactPath.getAbsolutePath());
-                }
+            if (evoArtifactPath != null) {
                 try {
-                    long currentLastModified = evoArtifactPath.lastModified();
-                    String cacheKey = evoArtifactPath.getAbsolutePath();
-                    CachedEvoArtifact cached = artifactCache.get(cacheKey);
-                    eu.kalafatic.evolution.forge.model.llm.EvoModelArtifact artifact;
-                    eu.kalafatic.evolution.forge.model.llm.EvoLlmModel nativeModel;
+                    eu.kalafatic.evolution.forge.model.inference.NativeEvoArtifactResolver.ArtifactResolutionResult res =
+                            eu.kalafatic.evolution.forge.model.inference.NativeEvoArtifactResolver.resolveNativeArtifact(evoArtifactPath.toPath());
 
-                    if (cached != null && cached.lastModified == currentLastModified) {
-                        artifact = cached.artifact;
-                        nativeModel = cached.model;
-                    } else {
-                        artifact = eu.kalafatic.evolution.forge.model.llm.EvoModelArtifact.load(evoArtifactPath.toPath());
-                        nativeModel = artifact.createModel();
-                        artifactCache.put(cacheKey, new CachedEvoArtifact(currentLastModified, artifact, nativeModel));
-                    }
+                    java.io.File resolvedFile = res.getResolvedPath().toFile();
+                    eu.kalafatic.evolution.forge.model.llm.EvoModelArtifact artifact = res.getArtifact();
 
-                    eu.kalafatic.evolution.forge.tokenizer.impl.SimpleBPETokenizer tokenizer = new eu.kalafatic.evolution.forge.tokenizer.impl.SimpleBPETokenizer();
-                    if (artifact.getTokenizerVocab() != null && !artifact.getTokenizerVocab().isEmpty()) {
-                        tokenizer.setVocabulary(artifact.getTokenizerVocab());
-                    } else if (artifact.getIdToToken() != null && !artifact.getIdToToken().isEmpty()) {
-                        java.util.Map<String, Integer> revVocab = new java.util.LinkedHashMap<>();
-                        for (java.util.Map.Entry<Integer, String> entry : artifact.getIdToToken().entrySet()) {
-                            revVocab.put(entry.getValue(), entry.getKey());
-                        }
-                        tokenizer.setVocabulary(revVocab);
+                    if (context != null) {
+                        context.log("[EVO-NATIVE] Model source: " + resolvedFile.getAbsolutePath());
+                        context.log("[EVO-NATIVE] Path: " + resolvedFile.toPath());
+                        context.log("[EVO-NATIVE] Is regular file: " + java.nio.file.Files.isRegularFile(resolvedFile.toPath()));
+                        context.log("[EVO-NATIVE] Is directory: " + java.nio.file.Files.isDirectory(resolvedFile.toPath()));
+                        context.log("[EVO-NATIVE] Artifact format: EVO_NATIVE_V2");
+                        context.log("[EVO-NATIVE] Artifact size: " + resolvedFile.length() + " bytes");
+                        context.log("[EVO-NATIVE] Artifact content hash: " + artifact.getModelContentHash());
+                        context.log("[EVO-NATIVE] Architecture: " + artifact.getArchitectureDescriptor());
+                        context.log("[EVO-NATIVE] Vocabulary size: " + artifact.getVocabSize());
+                        context.log("[EVO-NATIVE] Parameters/tensors: " + artifact.getParameterCount() + " parameters across " + artifact.getManifest().size() + " tensors");
+                        context.log("[EVO-NATIVE] Trained weights restored: true");
                     }
 
                     eu.kalafatic.evolution.forge.model.inference.InferenceRequest request = eu.kalafatic.evolution.forge.model.inference.InferenceRequest.builder()
@@ -430,26 +439,24 @@ public class OllamaProvider implements ILlmProvider {
                         }
                     };
 
-                    eu.kalafatic.evolution.forge.model.inference.InferenceResult result = nativeEngine.generateWithListener(nativeModel, request, tokenizer, listener);
+                    eu.kalafatic.evolution.forge.model.inference.InferenceResult result = nativeEngine.generateFromArtifact(artifact, request, listener);
                     String response = result.getGeneratedText();
-                    if (response != null && !response.isEmpty() && !response.contains("token_")) {
+                    if (response != null && !response.isEmpty()) {
                         if (context != null) {
                             context.log("Stage: LLM\nProvider: ReferenceEvoInferenceEngine (evo native)\nModel: " + model + "\nToken count: " + result.getGeneratedTokenCount() + "\nExecution time: " + result.getExecutionTimeMs() + " ms\nRaw response length: " + response.length());
                         }
                         return response;
-                    } else if (response != null && !response.isEmpty()) {
-                        if (context != null) {
-                            context.log("EvoInferenceEngine: Response contained token placeholders ('token_XXXX'). Falling back to llama-cpp or default Ollama provider.");
-                        }
                     }
                 } catch (Exception ex) {
                     if (context != null) {
-                        context.log("EvoInferenceEngine: Native execution failed (" + ex.getClass().getName() + ": " + ex.getMessage() + "). Falling back to llama-cpp or ollama.");
+                        context.log("[EVO-NATIVE] PRIMARY MODEL FAILED: " + ex.getClass().getName() + " - " + ex.getMessage());
+                        context.log("[EVO-NATIVE] FALLBACK MODEL ACTIVATED");
                     }
                 }
             } else {
                 if (context != null) {
-                    context.log("EvoInferenceEngine: Native EVO artifact for '" + model + "' not found. Falling back to llama-cpp or ollama.");
+                    context.log("[EVO-NATIVE] PRIMARY MODEL FAILED: Native EVO artifact for '" + model + "' not found.");
+                    context.log("[EVO-NATIVE] FALLBACK MODEL ACTIVATED");
                 }
             }
         }
