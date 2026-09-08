@@ -206,4 +206,54 @@ public class EvoNativeInferenceEngineTest {
         assertFalse("Generated text must not contain placeholder token_ strings",
                 result.getGeneratedText().contains("token_"));
     }
+
+    @Test
+    public void testByteFallbackEncodingAndDecoding() {
+        SimpleBPETokenizer bpe = new SimpleBPETokenizer();
+        // Train tokenizer with 260 capacity so byte tokens <0x00>..<0xFF> are registered
+        bpe.train("", 260);
+
+        String testText = "Analyze: { prompt: 'hi' }";
+        List<Integer> encoded = bpe.encode(testText);
+        assertFalse("Encoded token list must not be empty", encoded.isEmpty());
+
+        String decoded = bpe.decode(encoded);
+        assertEquals("Byte fallback encoding/decoding must reconstruct original text exactly", testText, decoded);
+    }
+
+    @Test
+    public void testDecodeDoesNotInjectSpaces() {
+        SimpleBPETokenizer bpe = new SimpleBPETokenizer();
+        java.util.Map<String, Integer> vocab = new java.util.LinkedHashMap<>();
+        vocab.put("<unk>", 0);
+        vocab.put("<s>", 1);
+        vocab.put("</s>", 2);
+        vocab.put(" ", 3);
+        vocab.put("class", 4);
+        vocab.put("Name", 5);
+        vocab.put("{", 6);
+        vocab.put("}", 7);
+        bpe.setVocabulary(vocab);
+
+        List<Integer> tokens = Arrays.asList(4, 5, 6, 7);
+        String decoded = bpe.decode(tokens);
+        assertEquals("Subword decoding must concatenate subwords cleanly without spurious space injection",
+                "className{}", decoded);
+    }
+
+    @Test
+    public void testPromptTokensNotPenalized() {
+        EvoLlmModel model = new EvoLlmModel(20, 16, 2, 1, 32, 8);
+        InferenceRequest reqWithPenalty = InferenceRequest.builder()
+                .prompt("hello world")
+                .maxTokens(5)
+                .repeatPenalty(1.5f)
+                .frequencyPenalty(0.5f)
+                .temperature(0.0f)
+                .build();
+
+        InferenceResult result = engine.generate(model, reqWithPenalty, tokenizer);
+        assertNotNull(result);
+        assertTrue("Inference must succeed without crashing on repeat penalties", result.getGeneratedTokenCount() > 0);
+    }
 }
