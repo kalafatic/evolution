@@ -73,6 +73,9 @@ public class StructuredResponsePipeline {
         }
 
         context.consoleLog("[PIPELINE] Retrying with repair prompt (attempt " + (attempt + 1) + ")...");
+        if (context != null && context.getOrchestrationState() != null) {
+            context.getOrchestrationState().getMetadata().put("isInternalRepair", true);
+        }
 
         String repairPrompt = "Your previous JSON response had the following errors:\n" +
                              String.join("\n", errors) +
@@ -84,6 +87,10 @@ public class StructuredResponsePipeline {
         } catch (Exception e) {
             context.consoleLog("[PIPELINE] Retry failed: " + e.getMessage());
             return null;
+        } finally {
+            if (context != null && context.getOrchestrationState() != null) {
+                context.getOrchestrationState().getMetadata().remove("isInternalRepair");
+            }
         }
     }
 }

@@ -63,16 +63,16 @@ public class ModeRecognizer {
 		    intentResult.getReasoning().toLowerCase().contains("analyze architecture")) {
 			return PlatformType.INTENT_RECONSTRUCTION;
 		}
-		if (intentResult.isChat()) {
+		if (intentResult == null || intentResult.isChat()) {
 			return PlatformType.SIMPLE_CHAT;
 		}
-		if (intentResult.isTask()) {
+		if (intentResult.isTask() && intentResult.getConfidence() >= 0.6) {
 			return PlatformType.ASSISTED_CODING;
 		}
 		if (intentResult.isControl()) {
 			return PlatformType.HYBRID_MANUAL_EXPORT;
 		}
-		return PlatformType.DARWIN_MODE;
+		return PlatformType.SIMPLE_CHAT;
 	}
 
 	public static PlatformType determineType(TaskContext context) {
@@ -142,24 +142,36 @@ public class ModeRecognizer {
 				return (Boolean) isChat;
 			}
 
+			// 2. FAST-PATH: Internal repair requests treat as CHAT/non-task
+			Object isRepair = context.getOrchestrationState().getMetadata().get("isInternalRepair");
+			if (isRepair instanceof Boolean && (Boolean) isRepair) {
+				return true;
+			}
+
 			String rawInput = context.getOrchestrationState().getRawInput();
 			if (rawInput == null || rawInput.trim().isEmpty()) {
-				return false;
+				return true;
+			}
+
+			if (PromptIntentAnalyzer.isSimpleGreeting(rawInput)) {
+				return true;
 			}
 
 			PromptIntentAnalyzer analyzer = getOrCreateAnalyzer(context);
 			if (analyzer == null) {
-				return false;
+				return true;
 			}
 
 			PromptIntentAnalyzer.IntentResult result = analyzer.analyze(rawInput, context);
-			return result.isChat();
+			return result.isChat() || result.getConfidence() < 0.6;
 		} catch (Exception e) {
 			context.log("[ModeRecognizer] [CRITICAL] LLM analysis failed for chat mode detection: " + e.getMessage());
-			// DEFAULT FALLBACK: If LLM fails, we MUST be conservative and assume TASK
-			// unless the input is exceptionally short and non-technical.
+			// SAFE FALLBACK: Default to CHAT mode unless raw input is explicitly a complex technical request
 			String rawInput = context.getOrchestrationState().getRawInput();
-			return (rawInput != null && rawInput.trim().length() < 15 && !rawInput.toLowerCase().contains("code"));
+			if (rawInput == null) return true;
+			String lower = rawInput.toLowerCase();
+			boolean isExplicitCoding = lower.contains("create class") || lower.contains("refactor") || lower.contains("implement") || lower.contains("fix bug");
+			return !isExplicitCoding;
 		}
 	}
 

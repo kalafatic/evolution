@@ -118,25 +118,21 @@ public class SimpleBPETokenizer implements Tokenizer {
         }
 
         // Group vocabulary keys by their starting character for O(1) starting prefix lookup.
-        // Keep them sorted by length descending so the first match we find is the longest match.
-        // Exclude special tokens like <s>, </s>, <unk>, <pad>, and byte tokens <0xXX> from text candidate lookup.
+        // Also keep them sorted by length descending so the first match we find is the longest match.
         Map<Character, List<String>> prefixMap = new HashMap<>();
         for (String key : vocab.keySet()) {
             if (key == null || key.isEmpty()) continue;
-            if (key.equals("<s>") || key.equals("</s>") || key.equals("<unk>") || key.equals("<pad>")) continue;
-            if (key.length() == 6 && key.startsWith("<0x") && key.endsWith(">")) continue;
             char firstChar = key.charAt(0);
             prefixMap.computeIfAbsent(firstChar, k -> new ArrayList<>()).add(key);
         }
 
+        // Sort each list by length descending to ensure longest match is checked first
         for (List<String> list : prefixMap.values()) {
             list.sort((s1, s2) -> Integer.compare(s2.length(), s1.length()));
         }
 
         int i = 0;
         int len = text.length();
-        int unkId = vocab.getOrDefault("<unk>", 0);
-
         while (i < len) {
             char currentChar = text.charAt(i);
             List<String> candidates = prefixMap.get(currentChar);
@@ -148,7 +144,7 @@ public class SimpleBPETokenizer implements Tokenizer {
                     if (text.startsWith(v, i)) {
                         match = v;
                         matchLen = v.length();
-                        break; // Sorted by length descending, so first match is longest!
+                        break; // Sorted by length descending, so first match is the longest!
                     }
                 }
             }
@@ -157,31 +153,7 @@ public class SimpleBPETokenizer implements Tokenizer {
                 tokens.add(vocab.get(match));
                 i += matchLen;
             } else {
-                // Byte fallback handling: convert character to UTF-8 byte(s)
-                byte[] bytes = String.valueOf(currentChar).getBytes(java.nio.charset.StandardCharsets.UTF_8);
-                boolean allBytesAvailable = true;
-                List<Integer> byteTokenIds = new ArrayList<>();
-                for (byte b : bytes) {
-                    String byteToken = String.format("<0x%02X>", b & 0xFF);
-                    Integer byteId = vocab.get(byteToken);
-                    if (byteId != null) {
-                        byteTokenIds.add(byteId);
-                    } else {
-                        allBytesAvailable = false;
-                        break;
-                    }
-                }
-
-                if (allBytesAvailable && !byteTokenIds.isEmpty()) {
-                    tokens.addAll(byteTokenIds);
-                } else {
-                    String charStr = String.valueOf(currentChar);
-                    if (vocab.containsKey(charStr)) {
-                        tokens.add(vocab.get(charStr));
-                    } else {
-                        tokens.add(unkId);
-                    }
-                }
+                tokens.add(vocab.get("<unk>"));
                 i++;
             }
         }
@@ -190,47 +162,17 @@ public class SimpleBPETokenizer implements Tokenizer {
 
     @Override
     public String decode(List<Integer> tokens) {
-        if (tokens == null || tokens.isEmpty()) {
-            return "";
-        }
         StringBuilder sb = new StringBuilder();
-        java.io.ByteArrayOutputStream byteBuffer = new java.io.ByteArrayOutputStream();
-
         for (Integer token : tokens) {
             String tokStr = invVocab.getOrDefault(token, "");
-            if (tokStr == null || tokStr.isEmpty()) {
-                continue;
-            }
-
-            if (tokStr.equals("<s>") || tokStr.equals("</s>") || tokStr.equals("<unk>") || tokStr.equals("<pad>")) {
-                flushByteBuffer(byteBuffer, sb);
-                continue;
-            }
-
-            // Check if token is byte fallback token <0xXX>
-            if (tokStr.length() == 6 && tokStr.startsWith("<0x") && tokStr.endsWith(">")) {
-                try {
-                    int b = Integer.parseInt(tokStr.substring(4, 6), 16);
-                    byteBuffer.write(b);
-                } catch (NumberFormatException e) {
-                    flushByteBuffer(byteBuffer, sb);
-                    sb.append(tokStr);
+            if (tokStr != null && !tokStr.isEmpty()) {
+                if (tokStr.equals("<s>") || tokStr.equals("</s>") || tokStr.equals("<unk>")) {
+                    continue;
                 }
-            } else {
-                flushByteBuffer(byteBuffer, sb);
                 sb.append(tokStr);
             }
         }
-
-        flushByteBuffer(byteBuffer, sb);
         return sb.toString();
-    }
-
-    private void flushByteBuffer(java.io.ByteArrayOutputStream byteBuffer, StringBuilder sb) {
-        if (byteBuffer != null && byteBuffer.size() > 0) {
-            sb.append(byteBuffer.toString(java.nio.charset.StandardCharsets.UTF_8));
-            byteBuffer.reset();
-        }
     }
 
     @Override

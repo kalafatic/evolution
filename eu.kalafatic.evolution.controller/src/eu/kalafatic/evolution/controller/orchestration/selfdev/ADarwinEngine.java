@@ -3291,9 +3291,9 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 		context.log("[DARWIN] Intent Analysis: " + intent.toString());
 
 		boolean isForcedTechnicalMode = ModeRecognizer.isForcedTechnicalMode(context);
-		boolean isSimpleGreeting = isSimpleGreeting(request);
+		boolean isSimpleGreeting = isSimpleGreeting(request) || PromptIntentAnalyzer.isSimpleGreeting(request);
 
-		if (intent.isChat() && (!isForcedTechnicalMode || isSimpleGreeting)) {
+		if ((intent.isChat() || intent.getConfidence() < 0.6) && (!isForcedTechnicalMode || isSimpleGreeting)) {
 			context.log("[DARWIN] CHAT detected. Using minimal evolution.");
 			state.getMetadata().put("isChatRequest", true);
 

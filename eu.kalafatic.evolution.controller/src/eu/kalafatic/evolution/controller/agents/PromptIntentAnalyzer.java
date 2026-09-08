@@ -65,12 +65,27 @@ public class PromptIntentAnalyzer extends BaseAiAgent {
                "MANDATORY: Provide reasoning for your classification.";
     }
 
+    public static boolean isSimpleGreeting(String prompt) {
+        if (prompt == null || prompt.trim().isEmpty()) return true;
+        String p = prompt.trim().toLowerCase().replaceAll("[^a-z0-9\\s]", "");
+        java.util.Set<String> greetings = java.util.Set.of(
+            "hi", "hello", "hey", "good morning", "good afternoon", "good evening",
+            "thanks", "thank you", "thx", "ping", "test", "ok", "okay", "bye", "goodbye"
+        );
+        return greetings.contains(p);
+    }
+
     /**
      * Analyzes the intent of a user prompt using LLM.
      */
     public IntentResult analyze(String prompt, TaskContext context) throws Exception {
         if (prompt == null || prompt.trim().isEmpty()) {
             return new IntentResult(IntentCategory.CHAT, 1.0, "Empty input", null, null);
+        }
+
+        if (isSimpleGreeting(prompt)) {
+            context.log("[INTENT] Conversational greeting detected ('" + prompt + "'). Direct CHAT classification.");
+            return new IntentResult(IntentCategory.CHAT, 1.0, "Conversational greeting", null, null);
         }
 
         // 1. Check cache
@@ -81,6 +96,7 @@ public class PromptIntentAnalyzer extends BaseAiAgent {
         }
 
         context.log("[INTENT] LLM analyzing: " + prompt);
+        boolean isFallback = false;
 
         // 2. Build prompt with context awareness
         String contextHint = buildContextHint(context);
@@ -101,12 +117,13 @@ public class PromptIntentAnalyzer extends BaseAiAgent {
         JSONObject json = pipeline.process(response, new java.util.HashMap<>(), context);
 
         // 5. Extract results
-        String categoryStr = json.optString("category", "TASK").toUpperCase();
+        String categoryStr = json.optString("category", "CHAT").toUpperCase();
         IntentCategory category;
         try {
             category = IntentCategory.valueOf(categoryStr);
         } catch (IllegalArgumentException e) {
-            category = IntentCategory.TASK;
+            category = IntentCategory.CHAT;
+            isFallback = true;
         }
 
         double confidence = json.optDouble("confidence", 0.5);
@@ -116,16 +133,19 @@ public class PromptIntentAnalyzer extends BaseAiAgent {
 
         // 6. Validate confidence
         if (confidence < 0.3) {
-            context.log("[INTENT] Low confidence (" + confidence + "). Defaulting to TASK.");
+            context.log("[INTENT] Low confidence (" + confidence + "). Defaulting to CHAT.");
             confidence = 0.3;
-            reasoning = "Low confidence, conservative fallback to TASK: " + reasoning;
-            category = IntentCategory.TASK;
+            reasoning = "Low confidence, safe fallback to CHAT: " + reasoning;
+            category = IntentCategory.CHAT;
+            isFallback = true;
         }
 
         IntentResult result = new IntentResult(category, confidence, reasoning, subIntent, targetArtifact);
 
-        // 8. Cache result
-        cache.put(prompt, result);
+        // 8. Cache result only if validated and not a fallback
+        if (!isFallback && confidence >= 0.5) {
+            cache.put(prompt, result);
+        }
 
         context.log("[INTENT] Result: " + category + " (confidence: " + confidence + ") - " + reasoning);
         return result;
