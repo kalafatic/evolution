@@ -448,6 +448,7 @@ public class ChatMgmtGroup extends AEvoGroup {
         String currentLossThresh = null;
         double currentDesiredLoss = -1.0;
         double[] lossHistory = null;
+        String datasetsJson = null;
 
         // 1. Try RuntimeProjection config
         if (config != null) {
@@ -458,6 +459,9 @@ public class ChatMgmtGroup extends AEvoGroup {
             if (config.get("lossThreshold") != null) currentLossThresh = String.valueOf(config.get("lossThreshold"));
             if (config.get("desiredLossThreshold") != null) {
                 try { currentDesiredLoss = Double.parseDouble(String.valueOf(config.get("desiredLossThreshold"))); } catch (Exception e) {}
+            }
+            if (config.get("datasets") != null) {
+                datasetsJson = String.valueOf(config.get("datasets"));
             }
 
             Object lhObj = config.get("lossHistory");
@@ -482,6 +486,7 @@ public class ChatMgmtGroup extends AEvoGroup {
                 if (currentEpochs <= 0 && uiState.has("epochs")) currentEpochs = uiState.getInt("epochs");
                 if ((currentLossThresh == null || currentLossThresh.isEmpty()) && uiState.has("lossThreshold")) currentLossThresh = uiState.getString("lossThreshold");
                 if (currentDesiredLoss <= 0.0 && uiState.has("desiredLossThreshold")) currentDesiredLoss = uiState.getDouble("desiredLossThreshold");
+                if ((datasetsJson == null || datasetsJson.isEmpty()) && uiState.has("datasets")) datasetsJson = uiState.get("datasets").toString();
                 if (lossHistory == null && uiState.has("lossHistory")) {
                     String lhStr = uiState.getString("lossHistory");
                     if (lhStr != null && !lhStr.isEmpty()) {
@@ -505,6 +510,7 @@ public class ChatMgmtGroup extends AEvoGroup {
                             if (currentEpochs <= 0 && hpJson.has("epochs")) currentEpochs = hpJson.getInt("epochs");
                             if ((currentLossThresh == null || currentLossThresh.isEmpty()) && hpJson.has("lossThreshold")) currentLossThresh = hpJson.getString("lossThreshold");
                             if (currentDesiredLoss <= 0.0 && hpJson.has("desiredLossThreshold")) currentDesiredLoss = hpJson.getDouble("desiredLossThreshold");
+                            if ((datasetsJson == null || datasetsJson.isEmpty()) && hpJson.has("datasets")) datasetsJson = hpJson.get("datasets").toString();
                         } catch (Exception ex) {}
                     }
                 }
@@ -526,6 +532,7 @@ public class ChatMgmtGroup extends AEvoGroup {
                     if (currentDesiredLoss <= 0.0 && section.get("desiredLossThreshold") != null) {
                         try { currentDesiredLoss = Double.parseDouble(section.get("desiredLossThreshold")); } catch (Exception e) {}
                     }
+                    if ((datasetsJson == null || datasetsJson.isEmpty()) && section.get("datasets") != null) datasetsJson = section.get("datasets");
                 }
             }
         }
@@ -537,17 +544,23 @@ public class ChatMgmtGroup extends AEvoGroup {
         if (currentDesiredLoss <= 0.0) currentDesiredLoss = 1.0;
 
         ForgeSettingsDialog dlg = new ForgeSettingsDialog(page.getShell(), currentSize, currentEpochs, currentLossThresh, currentDesiredLoss, lossHistory);
+        if (datasetsJson != null && !datasetsJson.isEmpty()) {
+            dlg.setDatasetsFromJson(datasetsJson);
+        }
+
         if (dlg.open() == Window.OK) {
             String selectedSize = dlg.getSelectedModelSize();
             int epochs = dlg.getEpochs();
             String lossThreshold = dlg.getLossThreshold();
             double desiredLoss = dlg.getDesiredLossThreshold();
+            String updatedDatasetsJson = dlg.getDatasetsJson();
 
             Map<String, Object> settings = new HashMap<>();
             settings.put("modelSize", selectedSize);
             settings.put("epochs", epochs);
             settings.put("lossThreshold", lossThreshold);
             settings.put("desiredLossThreshold", desiredLoss);
+            settings.put("datasets", updatedDatasetsJson);
             page.updateConfiguration(settings);
             page.saveLastUsedSettings();
 
@@ -558,6 +571,7 @@ public class ChatMgmtGroup extends AEvoGroup {
                 fsmClass.getMethod("updateUiState", String.class, String.class, Object.class).invoke(instance, currentSessionId, "epochs", epochs);
                 fsmClass.getMethod("updateUiState", String.class, String.class, Object.class).invoke(instance, currentSessionId, "lossThreshold", lossThreshold);
                 fsmClass.getMethod("updateUiState", String.class, String.class, Object.class).invoke(instance, currentSessionId, "desiredLossThreshold", desiredLoss);
+                fsmClass.getMethod("updateUiState", String.class, String.class, Object.class).invoke(instance, currentSessionId, "datasets", updatedDatasetsJson);
             } catch (Exception ex) {
                 // Ignore if controller not loaded
             }
@@ -575,6 +589,7 @@ public class ChatMgmtGroup extends AEvoGroup {
                             hpJson.put("epochs", epochs);
                             hpJson.put("lossThreshold", lossThreshold);
                             hpJson.put("desiredLossThreshold", desiredLoss);
+                            hpJson.put("datasets", updatedDatasetsJson);
                             fs.getModelState().setHyperparameters(hpJson.toString());
                             fs.setLastModified(System.currentTimeMillis());
                         }

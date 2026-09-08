@@ -121,9 +121,36 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                 updateStats(sessionId, new ForgingStats("SCANNING", 10, 0, 0, 0, 0.0, "0", runFolder.toAbsolutePath().toString()));
                 logToFile(logFile, "Stage: SCANNING");
                 
-                List<String> activeSources = dataSources;
-                if (activeSources == null || activeSources.isEmpty()) {
-                    activeSources = new ArrayList<>();
+                List<String> activeSources = new ArrayList<>();
+                JSONArray datasetsArr = null;
+                if (uiState.has("datasets")) {
+                    Object dsObj = uiState.get("datasets");
+                    if (dsObj instanceof JSONArray) {
+                        datasetsArr = (JSONArray) dsObj;
+                    } else if (dsObj instanceof String && !((String) dsObj).trim().isEmpty()) {
+                        try {
+                            datasetsArr = new JSONArray((String) dsObj);
+                        } catch (Exception ex) {}
+                    }
+                }
+
+                if (datasetsArr != null && datasetsArr.length() > 0) {
+                    for (int i = 0; i < datasetsArr.length(); i++) {
+                        JSONObject dsItem = datasetsArr.optJSONObject(i);
+                        if (dsItem != null && dsItem.optBoolean("checked", true)) {
+                            String pStr = dsItem.optString("path", "").trim();
+                            if (!pStr.isEmpty()) {
+                                activeSources.add(pStr);
+                            }
+                        }
+                    }
+                }
+
+                if (activeSources.isEmpty() && dataSources != null && !dataSources.isEmpty()) {
+                    activeSources.addAll(dataSources);
+                }
+
+                if (activeSources.isEmpty()) {
                     String codebase = getCodebasePathViaReflection();
                     if (codebase != null) {
                         activeSources.add(codebase);
