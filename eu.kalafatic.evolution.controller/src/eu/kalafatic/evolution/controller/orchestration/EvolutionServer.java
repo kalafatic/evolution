@@ -1630,21 +1630,22 @@ public class EvolutionServer extends NanoHTTPD {
         String outputName = body.optString("artifactName", cleanRepoName + "-" + timestamp + ".evodata");
         if (!outputName.endsWith(".evodata")) outputName += ".evodata";
 
-        long maxSamples = body.optLong("maxSamples", 1000);
+        long maxSamples = body.optLong("maxSamples", 0);
         long maxBytes = body.optLong("maxBytes", 0);
-        long maxTokens = body.optLong("maxTokens", 0);
+        long targetUsableBytes = body.optLong("targetUsableBytes", maxBytes > 0 ? maxBytes : 52_428_800L); // Default 50 MB usable target if not specified
         double minQuality = body.optDouble("minQuality", 0.5);
+        double valSplitRatio = body.optDouble("valSplit", 0.02);
 
         DatasetSourceConfig config = new DatasetSourceConfig(sourceType, repo);
         config.setSplit(split);
         config.setMaxSamples(maxSamples);
-        config.setMaxBytes(maxBytes);
-        config.setMaxTokens(maxTokens);
+        config.setMaxBytes(targetUsableBytes);
 
-        int reservoirCap = (int) (maxSamples > 0 ? Math.min(maxSamples, 50000) : 10000);
-        List<NormalizedSample> reservoir = new ArrayList<>();
-        long acceptedCount = 0;
-        java.util.Random rnd = new java.util.Random(42L);
+        List<NormalizedSample> acceptedSamples = new ArrayList<>();
+        long totalAcceptedBytes = 0;
+        long totalRejectedBytes = 0;
+        long totalDuplicateBytes = 0;
+        long totalRawBytes = 0;
 
         DataCleaner cleaner = new DataCleaner();
         DatasetDeduplicator deduplicator = new DatasetDeduplicator(true);
@@ -1653,7 +1654,9 @@ public class EvolutionServer extends NanoHTTPD {
         StringBuilder logBuf = new StringBuilder();
         logBuf.append("[DATASET PREPARATION] Starting run at ").append(new java.util.Date()).append("\n");
         logBuf.append("[CONFIG] SourceType: ").append(sourceType).append(", Repo: ").append(repo).append(", Split: ").append(split).append("\n");
-        logBuf.append("[CONFIG] Limits: MaxSamples=").append(maxSamples).append(", MaxBytes=").append(maxBytes).append(" (").append(maxBytes / (1024 * 1024)).append(" MB)\n");
+        logBuf.append("[TARGET] Target Usable Training Bytes: ").append(targetUsableBytes).append(" (").append(targetUsableBytes / (1024 * 1024)).append(" MB)\n");
+
+        boolean sourceExhausted = false;
 
         try {
             eu.kalafatic.evolution.forge.data.api.source.DatasetSource source =
@@ -1664,28 +1667,58 @@ public class EvolutionServer extends NanoHTTPD {
                 if (source instanceof HuggingFaceDatasetSource hfSource) {
                     logBuf.append("[SCHEMA] Detected Hugging Face Schema: ").append(hfSource.getDetectedSchemaInfo()).append("\n");
                 }
-                while (source.hasNext()) {
-                    NormalizedSample s = source.next();
-                    NormalizedSample clean = cleaner.clean(s);
-                    if (clean != null && scorer.isAcceptable(clean) && !deduplicator.isDuplicate(clean)) {
-                        deduplicator.register(clean);
-                        acceptedCount++;
 
-                        if (reservoir.size() < reservoirCap) {
-                            reservoir.add(clean);
-                        } else {
-                            long j = (long) (rnd.nextDouble() * acceptedCount);
-                            if (j < reservoirCap) {
-                                reservoir.set((int) j, clean);
-                            }
-                        }
+                while (totalAcceptedBytes < targetUsableBytes && source.hasNext()) {
+                    NormalizedSample s = source.next();
+                    byte[] rawBytes = s.toFullText().getBytes(StandardCharsets.UTF_8);
+                    long sRawLen = rawBytes.length;
+                    totalRawBytes += sRawLen;
+
+                    NormalizedSample clean = cleaner.clean(s);
+                    if (clean == null || !scorer.isAcceptable(clean)) {
+                        totalRejectedBytes += sRawLen;
+                        source.getStats().incrementRejected();
+                        source.getStats().addRejectedBytes(sRawLen);
+                        continue;
+                    }
+
+                    if (deduplicator.isDuplicate(clean)) {
+                        totalDuplicateBytes += sRawLen;
+                        source.getStats().incrementExactDuplicates();
+                        source.getStats().addDuplicateBytes(sRawLen);
+                        continue;
+                    }
+
+                    deduplicator.register(clean);
+                    byte[] cleanBytes = clean.toFullText().getBytes(StandardCharsets.UTF_8);
+                    long sampleLen = cleanBytes.length;
+
+                    acceptedSamples.add(clean);
+                    totalAcceptedBytes += sampleLen;
+                    source.getStats().incrementAccepted();
+                    source.getStats().addAcceptedBytes(sampleLen);
+
+                    // Overshoot control: accept boundary-crossing record cleanly and log
+                    if (totalAcceptedBytes >= targetUsableBytes) {
+                        long overshoot = totalAcceptedBytes - targetUsableBytes;
+                        logBuf.append("[TARGET REACHED] Target usable bytes reached. Total accepted: ").append(totalAcceptedBytes)
+                              .append(" bytes (Overshoot: ").append(overshoot).append(" bytes).\n");
+                        break;
                     }
                 }
-                logBuf.append("[STREAM] Read ").append(source.getStats().getTotalSamplesRead()).append(" items, ").append(source.getStats().getTotalBytesRead()).append(" bytes.\n");
-                logBuf.append("[STREAM] Accepted ").append(acceptedCount).append(" clean items after deduplication & quality scoring.\n");
+
+                if (totalAcceptedBytes < targetUsableBytes) {
+                    sourceExhausted = true;
+                    double coverage = (totalAcceptedBytes * 100.0) / Math.max(1, targetUsableBytes);
+                    logBuf.append(String.format("[WARNING] Source exhausted before target reached. Collected: %d bytes / Target: %d bytes (Coverage: %.2f%%).\n",
+                            totalAcceptedBytes, targetUsableBytes, coverage));
+                }
+
+                logBuf.append("[STREAM] Read ").append(source.getStats().getTotalSamplesRead()).append(" items, ").append(totalRawBytes).append(" raw bytes.\n");
+                logBuf.append("[STREAM] Accepted ").append(acceptedSamples.size()).append(" clean items (").append(totalAcceptedBytes).append(" bytes) after deduplication & quality scoring.\n");
             }
 
-            List<NormalizedSample> sampled = reservoir;
+            List<NormalizedSample> sampled = acceptedSamples;
 
             // Resolve target output directory matching forged model directories
             String baseWorkspacePath = ProjectModelManager.getWorkspacePath();
@@ -1720,12 +1753,26 @@ public class EvolutionServer extends NanoHTTPD {
             }
             logBuf.append("[DOWNLOAD] Saved raw downloaded dataset file: ").append(rawOutputFile.getAbsolutePath()).append("\n");
 
+            eu.kalafatic.evolution.forge.data.api.source.DatasetSourceStats preparationStats = new eu.kalafatic.evolution.forge.data.api.source.DatasetSourceStats();
+            preparationStats.setRequestedUsableBytes(targetUsableBytes);
+            preparationStats.setAcceptedBytes(totalAcceptedBytes);
+            preparationStats.setDownloadedBytes(totalRawBytes);
+            preparationStats.setRawContentBytes(totalRawBytes);
+            preparationStats.setRejectedBytes(totalRejectedBytes);
+            preparationStats.setDuplicateBytes(totalDuplicateBytes);
+            preparationStats.setAcceptedSamples(sampled.size());
+
+            long valBytes = (long) (totalAcceptedBytes * valSplitRatio);
+            long trainBytes = totalAcceptedBytes - valBytes;
+            preparationStats.setTrainingBytes(trainBytes);
+            preparationStats.setValidationBytes(valBytes);
+
             // Copy to controller models directory if available
             File controllerModelsDir = eu.kalafatic.evolution.controller.manager.LlamaService.resolveControllerModelsDir();
             if (controllerModelsDir != null && controllerModelsDir.exists() && !controllerModelsDir.getAbsolutePath().equals(primaryDir.getAbsolutePath())) {
                 File controllerTarget = new File(controllerModelsDir, outputName);
                 EvoDatasetArtifact ctrlArtifact = new EvoDatasetArtifact(controllerTarget);
-                ctrlArtifact.save(sampled, config, new eu.kalafatic.evolution.forge.data.api.source.DatasetSourceStats(), 0.02);
+                ctrlArtifact.save(sampled, config, preparationStats, valSplitRatio);
                 logBuf.append("[OUTPUT] Copied dataset artifact to Controller Models Directory: ").append(controllerTarget.getAbsolutePath()).append("\n");
             }
 
@@ -1734,12 +1781,12 @@ public class EvolutionServer extends NanoHTTPD {
             if (distDir.exists() && distDir.isDirectory() && !distDir.getAbsolutePath().equals(primaryDir.getAbsolutePath())) {
                 File distTargetFile = new File(distDir, outputName);
                 EvoDatasetArtifact distArtifact = new EvoDatasetArtifact(distTargetFile);
-                distArtifact.save(sampled, config, new eu.kalafatic.evolution.forge.data.api.source.DatasetSourceStats(), 0.02);
+                distArtifact.save(sampled, config, preparationStats, valSplitRatio);
                 logBuf.append("[OUTPUT] Secondary Dataset Copy Saved: ").append(distTargetFile.getAbsolutePath()).append("\n");
             }
 
             EvoDatasetArtifact artifact = new EvoDatasetArtifact(targetArtifactFile);
-            artifact.save(sampled, config, new eu.kalafatic.evolution.forge.data.api.source.DatasetSourceStats(), 0.02);
+            artifact.save(sampled, config, preparationStats, valSplitRatio);
 
             if (sampled.isEmpty()) {
                 return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json",
@@ -1750,6 +1797,15 @@ public class EvolutionServer extends NanoHTTPD {
             result.put("status", artifact.getStatus().name());
             result.put("artifactPath", targetArtifactFile.getAbsolutePath());
             result.put("totalAccepted", sampled.size());
+            result.put("requestedUsableBytes", targetUsableBytes);
+            result.put("actualUsableBytes", totalAcceptedBytes);
+            result.put("trainingBytes", trainBytes);
+            result.put("validationBytes", valBytes);
+            result.put("sourceExhausted", sourceExhausted);
+            if (sourceExhausted) {
+                double coverage = (totalAcceptedBytes * 100.0) / Math.max(1, targetUsableBytes);
+                result.put("coveragePercent", String.format("%.2f", coverage));
+            }
             result.put("report", artifact.buildReportText());
 
             return newFixedLengthResponse(Response.Status.OK, "application/json", result.toString());

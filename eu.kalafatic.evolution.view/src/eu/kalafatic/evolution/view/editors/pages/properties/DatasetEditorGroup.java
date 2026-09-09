@@ -87,12 +87,12 @@ public class DatasetEditorGroup extends AEvoGroup {
         splitText = toolkit.createText(group, "train", SWT.BORDER);
         splitText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
-        GUIFactory.INSTANCE.createLabel(group, "Max Samples Limit:");
-        maxSamplesText = toolkit.createText(group, "1000", SWT.BORDER);
+        GUIFactory.INSTANCE.createLabel(group, "Max Samples Limit (0 = Unlimited):");
+        maxSamplesText = toolkit.createText(group, "0", SWT.BORDER);
         maxSamplesText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
-        GUIFactory.INSTANCE.createLabel(group, "Max Download Size (MB):");
-        maxSizeMbText = toolkit.createText(group, "50", SWT.BORDER);
+        GUIFactory.INSTANCE.createLabel(group, "Target Usable Data Size (MB):");
+        maxSizeMbText = toolkit.createText(group, "500", SWT.BORDER);
         maxSizeMbText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
         GUIFactory.INSTANCE.createLabel(group, "Destination Output Directory:");
