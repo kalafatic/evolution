@@ -88,17 +88,23 @@ public class HuggingFaceDatasetSource implements DatasetSource {
             return;
         }
 
-        String repo = config.getRepository();
+        String rawRepo = config.getRepository();
         String configName = config.getConfiguration();
         String split = config.getSplit() != null ? config.getSplit() : "train";
+
+        // Resolve HF dataset aliases for standard repos
+        String repo = rawRepo;
         String cfg = (configName != null && !configName.trim().isEmpty()) ? configName : "default";
+        if ("wikitext".equalsIgnoreCase(rawRepo)) {
+            repo = "Salesforce/wikitext";
+            if ("default".equals(cfg) || "train".equals(cfg)) {
+                cfg = "wikitext-2-v1";
+            }
+        }
 
         String targetUrl;
         if (repo.startsWith("http://") || repo.startsWith("https://")) {
             targetUrl = repo;
-        } else if ("wikitext".equalsIgnoreCase(repo) && ("default".equals(cfg) || "wikitext-2-v1".equals(cfg))) {
-            // Direct raw dataset stream fallback for wikitext if server API requires parquet tokens
-            targetUrl = "https://raw.githubusercontent.com/pytorch/text/master/torchtext/experimental/datasets/raw/wikitext-2/wiki.train.raw";
         } else {
             targetUrl = "https://datasets-server.huggingface.co/rows?dataset=" + repo + "&config=" + cfg + "&split=" + split + "&offset=" + currentOffset + "&length=100";
         }
@@ -111,12 +117,25 @@ public class HuggingFaceDatasetSource implements DatasetSource {
         conn.setRequestProperty("User-Agent", "EVO-Forge-Client/2.6");
 
         int status = conn.getResponseCode();
-        if (status < 200 || status >= 300) {
+
+        InputStream stream = (status >= 200 && status < 300) ? conn.getInputStream() : conn.getErrorStream();
+        if (stream == null) {
             throw new IOException("Failed to fetch Hugging Face dataset from " + targetUrl + ". HTTP Status: " + status + " (" + conn.getResponseMessage() + ")");
         }
 
-        try (InputStream in = conn.getInputStream();
+        try (InputStream in = stream;
              BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
+            if (status < 200 || status >= 300) {
+                StringBuilder errSb = new StringBuilder();
+                String errLine;
+                while ((errLine = reader.readLine()) != null) errSb.append(errLine);
+                String errMsg = errSb.toString();
+                try {
+                    JSONObject errJson = new JSONObject(errMsg);
+                    if (errJson.has("error")) errMsg = errJson.getString("error");
+                } catch (Exception ignored) {}
+                throw new IOException("Hugging Face API Error (HTTP " + status + "): " + errMsg);
+            }
 
             if (targetUrl.contains("raw.githubusercontent.com") || targetUrl.endsWith(".txt") || targetUrl.endsWith(".raw")) {
                 // Direct raw text line reader with offset skipping
@@ -148,6 +167,9 @@ public class HuggingFaceDatasetSource implements DatasetSource {
                 }
 
                 JSONObject root = new JSONObject(sb.toString());
+                if (root.has("error")) {
+                    throw new IOException("Hugging Face API returned error: " + root.getString("error"));
+                }
                 if (root.has("rows")) {
                     JSONArray rows = root.getJSONArray("rows");
                     for (int i = 0; i < rows.length(); i++) {
