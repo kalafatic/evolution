@@ -735,8 +735,9 @@
                     </div>
                 </div>
                 <div style="display: flex; gap: 5px; margin-top: 6px;">
+                    <button class="btn btn-sm btn-primary" style="flex: 1;" onclick="downloadDataset()">Download Dataset</button>
                     <button class="btn btn-sm" style="flex: 1;" onclick="previewDatasetSamples()">Preview</button>
-                    <button class="btn btn-sm btn-primary" style="flex: 1;" onclick="buildEvoDatasetArtifact()">Build .evodata</button>
+                    <button class="btn btn-sm" style="flex: 1;" onclick="buildEvoDatasetArtifact()">Build .evodata</button>
                 </div>
                 <div class="control-group" style="margin-top: 10px;">
                     <label>Active Dataset Artifact</label>
@@ -2094,6 +2095,30 @@
                 if (path) {
                     document.getElementById('dataset-output-dir').value = path;
                 }
+            }
+        }
+
+        async function downloadDataset() {
+            const sourceType = document.getElementById('dataset-source-type').value;
+            const repo = document.getElementById('dataset-repo').value.trim();
+            const split = document.getElementById('dataset-split').value.trim();
+            const maxSamples = parseInt(document.getElementById('dataset-max-samples').value) || 1000;
+            const maxSizeMb = parseInt(document.getElementById('dataset-max-size-mb').value) || 50;
+            const maxBytes = maxSizeMb * 1024 * 1024;
+            const outputDir = document.getElementById('dataset-output-dir').value.trim();
+
+            log(`Downloading dataset from ${sourceType}: ${repo} into ${outputDir}...`);
+            try {
+                const res = await fetch(getBaseUrl() + `/forge/dataset/prepare?runtime=SWT`, {
+                    method: 'POST',
+                    body: JSON.stringify({ sourceType, repository: repo, split, maxSamples, maxBytes, outputDir, downloadOnly: true })
+                });
+                const result = await res.json();
+                log(`Dataset Downloaded: ${result.artifactPath}`);
+                alert(`Dataset Downloaded Successfully!\nDestination: ${result.artifactPath}\nSamples: ${result.totalAccepted}`);
+                await loadDatasetArtifactsList();
+            } catch (e) {
+                log(`Download error: ${e.message}`);
             }
         }
 
