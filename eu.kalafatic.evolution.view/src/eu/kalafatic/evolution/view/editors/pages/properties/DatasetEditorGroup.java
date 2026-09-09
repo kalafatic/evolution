@@ -73,7 +73,14 @@ public class DatasetEditorGroup extends AEvoGroup {
         dirComp.setLayout(new GridLayout(2, false));
         dirComp.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
-        String defaultDir = new File(System.getProperty("user.dir"), "forge-output").getAbsolutePath();
+        String baseWorkspace = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getWorkspacePath();
+        if (baseWorkspace == null || baseWorkspace.trim().isEmpty()) {
+            baseWorkspace = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getCodebasePath();
+        }
+        if (baseWorkspace == null || baseWorkspace.trim().isEmpty()) {
+            baseWorkspace = System.getProperty("user.dir");
+        }
+        String defaultDir = new File(baseWorkspace, "forge-output").getAbsolutePath();
         outputDirText = toolkit.createText(dirComp, defaultDir, SWT.BORDER);
         outputDirText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 

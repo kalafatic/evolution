@@ -1687,26 +1687,35 @@ public class EvolutionServer extends NanoHTTPD {
 
             List<NormalizedSample> sampled = reservoir;
 
-            // Resolve target output directory
-            File userDir = new File(System.getProperty("user.dir"));
+            // Resolve target output directory matching forged model directories
+            String baseWorkspacePath = ProjectModelManager.getWorkspacePath();
+            if (baseWorkspacePath == null || baseWorkspacePath.trim().isEmpty()) {
+                baseWorkspacePath = ProjectModelManager.getCodebasePath();
+            }
+            if (baseWorkspacePath == null || baseWorkspacePath.trim().isEmpty()) {
+                baseWorkspacePath = System.getProperty("user.dir");
+            }
+
+            File baseFolder = new File(baseWorkspacePath);
             File primaryDir;
             if (!customOutputDir.isEmpty()) {
-                primaryDir = new File(customOutputDir);
+                File customFile = new File(customOutputDir);
+                primaryDir = customFile.isAbsolute() ? customFile : new File(baseFolder, customOutputDir);
             } else {
-                primaryDir = new File(userDir, "forge-output");
+                primaryDir = new File(baseFolder, "forge-output");
             }
             if (!primaryDir.exists()) primaryDir.mkdirs();
 
             File targetArtifactFile = new File(primaryDir, outputName);
-            logBuf.append("[OUTPUT] Primary Artifact Destination: ").append(targetArtifactFile.getAbsolutePath()).append("\n");
+            logBuf.append("[OUTPUT] Primary Dataset Artifact Destination: ").append(targetArtifactFile.getAbsolutePath()).append("\n");
 
-            // Also copy to secondary model directories if present
-            File distDir = new File(userDir, "dist");
+            // Also save copy to dist directory under workspace/product folder if present
+            File distDir = new File(baseFolder, "dist");
             if (distDir.exists() && distDir.isDirectory() && !distDir.getAbsolutePath().equals(primaryDir.getAbsolutePath())) {
                 File distTargetFile = new File(distDir, outputName);
                 EvoDatasetArtifact distArtifact = new EvoDatasetArtifact(distTargetFile);
                 distArtifact.save(sampled, config, new eu.kalafatic.evolution.forge.data.api.source.DatasetSourceStats(), 0.02);
-                logBuf.append("[OUTPUT] Secondary Copy Saved: ").append(distTargetFile.getAbsolutePath()).append("\n");
+                logBuf.append("[OUTPUT] Secondary Dataset Copy Saved: ").append(distTargetFile.getAbsolutePath()).append("\n");
             }
 
             EvoDatasetArtifact artifact = new EvoDatasetArtifact(targetArtifactFile);
