@@ -31,6 +31,8 @@ import eu.kalafatic.evolution.forge.data.impl.MarkdownCleaner;
 import eu.kalafatic.evolution.forge.data.impl.MarkdownLoader;
 import eu.kalafatic.evolution.forge.data.impl.VocabularyBuilder;
 import eu.kalafatic.evolution.forge.model.llm.EvoLlmModel;
+import eu.kalafatic.evolution.forge.model.source.ForgeModelSource;
+import eu.kalafatic.evolution.forge.model.source.ForgeModelSourceFactory;
 import eu.kalafatic.evolution.forge.tokenizer.impl.SimpleBPETokenizer;
 import eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer;
 
@@ -206,6 +208,26 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                     }
                 }
 
+                String primaryTargetStr = activeSources.get(0);
+                ForgeModelSource modelSource = ForgeModelSourceFactory.createSource(primaryTargetStr);
+                logToFile(logFile, "Target Detected - Type: " + modelSource.getType() + ", Mode: " + modelSource.getForgeMode() +
+                        (modelSource.getParentIdentifier() != null ? ", Parent: " + modelSource.getParentIdentifier() : ""));
+
+                if (modelSource.isPretrained() && modelSource.getForgeTarget().getArtifact() != null) {
+                    var parentArtifact = modelSource.getForgeTarget().getArtifact();
+                    hiddenSize = parentArtifact.getEmbeddingSize();
+                    layers = parentArtifact.getLayers();
+                    heads = parentArtifact.getHeads();
+                    dff = parentArtifact.getDff();
+                    maxSeqLen = parentArtifact.getMaxSeqLen();
+                    logToFile(logFile, "Overriding model parameters with parent artifact architecture: hiddenSize=" + hiddenSize + ", layers=" + layers + ", heads=" + heads);
+                }
+
+                infoJson.put("forgeMode", modelSource.getForgeMode());
+                if (modelSource.getParentIdentifier() != null) {
+                    infoJson.put("parentModel", modelSource.getParentIdentifier());
+                }
+
                 // 1. SourceAnalysisAgent (Sub-agent)
                 SourceAnalysisAgent sourceAnalysisAgent = new SourceAnalysisAgent();
                 List<KnowledgeUnit> knowledgeUnits = sourceAnalysisAgent.analyze(scannedPaths, projectPath);
@@ -303,8 +325,7 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                 
                 updateStats(sessionId, new ForgingStats("ENHANCING", 30, scannedPaths.size(), knowledgeUnits.size(), acceptedRecords.size(), 0.0, "0", runFolder.toAbsolutePath().toString()));
                 logToFile(logFile, "Stage: ENHANCING");
-                SimpleBPETokenizer tokenizer = new SimpleBPETokenizer();
-                tokenizer.train(cleanCorpus, 4096);
+                SimpleBPETokenizer tokenizer = modelSource.getTokenizer(cleanCorpus, 4096);
                 List<Integer> allTokens = tokenizer.encode(cleanCorpus);
                 logToFile(logFile, "Tokenization complete. Vocabulary size: " + tokenizer.getVocabSize() + ", Total tokens: " + allTokens.size());
                 
@@ -331,7 +352,7 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                 logToFile(logFile, "Stage: TRAINING. Training EvoLlmModel with sliding window samples...");
 
                 // Initialize model with dynamically varied hiddenSize, layers, heads, dff, maxSeqLen
-                EvoLlmModel model = new EvoLlmModel(tokenizer.getVocabSize(), hiddenSize, heads, layers, dff, maxSeqLen);
+                EvoLlmModel model = modelSource.createOrRestoreModel(tokenizer.getVocabSize(), hiddenSize, heads, layers, dff, maxSeqLen);
                 EvoLlmTrainer trainer = new EvoLlmTrainer(model, EvoLlmTrainer.TrainingProfile.EVO_FAST);
 
                 List<TrainingSample> trainingSamples = samples.stream()
@@ -377,6 +398,10 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                 try {
                     eu.kalafatic.evolution.forge.model.llm.EvoModelArtifact artifact = new eu.kalafatic.evolution.forge.model.llm.EvoModelArtifact();
                     artifact.initializeFromModel(modelName, model, tokenizer.getVocab());
+                    artifact.getMetadata().put("forge_mode", modelSource.getForgeMode());
+                    if (modelSource.getParentIdentifier() != null) {
+                        artifact.getMetadata().put("parent_model", modelSource.getParentIdentifier());
+                    }
                     artifact.save(runFolder.resolve(modelName + ".evo"));
                     artifact.save(runFolder.resolve("evo.evo"));
                     Files.createDirectories(exportPath);

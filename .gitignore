@@ -1,4 +1,6 @@
-target/
+/target/
+**/target/
+!**/src/**/target/
 bin/
 *.class
 .DS_Store

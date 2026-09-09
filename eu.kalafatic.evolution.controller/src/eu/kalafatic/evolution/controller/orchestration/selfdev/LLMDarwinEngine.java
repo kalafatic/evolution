@@ -51,6 +51,9 @@ import eu.kalafatic.evolution.forge.data.impl.DatasetBuilder;
 import eu.kalafatic.evolution.forge.data.impl.MarkdownCleaner;
 import eu.kalafatic.evolution.forge.model.llm.EvoLlmModel;
 import eu.kalafatic.evolution.forge.model.llm.EvoModelArtifact;
+import eu.kalafatic.evolution.forge.model.source.ForgeModelSource;
+import eu.kalafatic.evolution.forge.model.source.ForgeModelSourceFactory;
+import eu.kalafatic.evolution.forge.model.target.ForgeTarget;
 import eu.kalafatic.evolution.forge.tokenizer.impl.SimpleBPETokenizer;
 import eu.kalafatic.evolution.forge.trainer.impl.llm.EvoLlmTrainer;
 import eu.kalafatic.evolution.forge.math.api.Tensor;
@@ -345,6 +348,10 @@ public class LLMDarwinEngine extends ADarwinEngine {
 		// Load target path files or fallback to docs/
 		String targetPath = getTargetPath();
 		context.log("[FORGE] Selected Training Target Folder: " + targetPath);
+
+		ForgeModelSource modelSource = ForgeModelSourceFactory.createSource(targetPath);
+		context.log("[FORGE] Target Detected - Type: " + modelSource.getType() + ", Mode: " + modelSource.getForgeMode() +
+				(modelSource.getParentIdentifier() != null ? ", Parent: " + modelSource.getParentIdentifier() : ""));
 
 		// Resolve Ollama baseUrl and baseModel using the managed service
 		String ollamaUrl = "http://localhost:11434";
@@ -676,6 +683,18 @@ public class LLMDarwinEngine extends ADarwinEngine {
 		int pMaxSeqLen = selectedPreset.getMaxSeqLen() > 0 ? selectedPreset.getMaxSeqLen() : 128;
 		int pEpochs = uiState.optInt("epochs", 64);
 
+		if (modelSource.isPretrained() && modelSource.getForgeTarget().getArtifact() != null) {
+			EvoModelArtifact parentArtifact = modelSource.getForgeTarget().getArtifact();
+			pVocabSize = parentArtifact.getVocabSize();
+			pEmbedSize = parentArtifact.getEmbeddingSize();
+			pLayers = parentArtifact.getLayers();
+			pHeads = parentArtifact.getHeads();
+			pDff = parentArtifact.getDff();
+			pMaxSeqLen = parentArtifact.getMaxSeqLen();
+			context.log(String.format("[FORGE] Using pretrained parent model architecture: Vocab: %d, Embed: %d, Layers: %d, Heads: %d, DFF: %d, MaxSeqLen: %d",
+					pVocabSize, pEmbedSize, pLayers, pHeads, pDff, pMaxSeqLen));
+		}
+
 		context.log(String.format(
 				"[FORGE] Model size preset selected: %s (%s) -> Vocab: %d, Embed: %d, Layers: %d, Heads: %d, DFF: %d, MaxSeqLen: %d",
 				selectedPreset.name(), selectedPreset.getDisplayName(), pVocabSize, pEmbedSize, pLayers, pHeads, pDff,
@@ -816,7 +835,7 @@ public class LLMDarwinEngine extends ADarwinEngine {
 					// EvoLlmModel.
 					boolean nativeSuccess = false;
 					try {
-						CandidateTrainingResult trainingResult = runOfflineTraining(cleanCorpus, config);
+						CandidateTrainingResult trainingResult = runOfflineTraining(cleanCorpus, config, modelSource);
 						nativeLoss = trainingResult.loss;
 						paramCount = trainingResult.paramCount;
 						nativeFitness = trainingResult.fitness;
@@ -1119,8 +1138,7 @@ public class LLMDarwinEngine extends ADarwinEngine {
 
 		// Reconstruct/retrain the winning candidate for final export
 		context.log("[FORGE] Reconstructing selected global winner for final export.");
-		SimpleBPETokenizer finalTokenizer = new SimpleBPETokenizer();
-		finalTokenizer.train(cleanCorpus, overallWinner.config.vocabSize);
+		SimpleBPETokenizer finalTokenizer = modelSource.getTokenizer(cleanCorpus, overallWinner.config.vocabSize);
 		List<Integer> allTokens = finalTokenizer.encode(cleanCorpus);
 		if (allTokens.size() > MAX_TOKENS_LIMIT) {
 			List<Integer> truncated = new ArrayList<>(allTokens.subList(0, MAX_TOKENS_LIMIT));
@@ -1142,7 +1160,7 @@ public class LLMDarwinEngine extends ADarwinEngine {
 		int dff = overallWinner.config.dff;
 		int actualVocabSize = finalTokenizer.getVocabSize();
 		overallWinner.config.vocabSize = actualVocabSize;
-		EvoLlmModel winningModel = new EvoLlmModel(actualVocabSize, overallWinner.config.embeddingSize,
+		EvoLlmModel winningModel = modelSource.createOrRestoreModel(actualVocabSize, overallWinner.config.embeddingSize,
 				overallWinner.config.heads, overallWinner.config.layers, dff, finalSeqLen);
 
 		EvoLlmTrainer trainer = new EvoLlmTrainer(winningModel);
@@ -1185,6 +1203,10 @@ public class LLMDarwinEngine extends ADarwinEngine {
 		artifact.setTopP(overallWinner.config.topP);
 		artifact.setTopK(overallWinner.config.topK);
 		artifact.setRepeatPenalty(overallWinner.config.repeatPenalty);
+		artifact.getMetadata().put("forge_mode", modelSource.getForgeMode());
+		if (modelSource.getParentIdentifier() != null) {
+			artifact.getMetadata().put("parent_model", modelSource.getParentIdentifier());
+		}
 
 		// artifact.initializeFromModel(dynamicModelName, winningModel,
 		// finalTokenizer.getVocab());
@@ -1265,6 +1287,10 @@ public class LLMDarwinEngine extends ADarwinEngine {
 		// Save training-report.json
 		JSONObject reportJson = new JSONObject();
 		reportJson.put("modelName", dynamicModelName);
+		reportJson.put("forgeMode", modelSource.getForgeMode());
+		if (modelSource.getParentIdentifier() != null) {
+			reportJson.put("parentModel", modelSource.getParentIdentifier());
+		}
 		reportJson.put("generationsTrained", generations);
 		reportJson.put("cleanCorpusChars", cleanCorpus.length());
 		reportJson.put("finalLoss", overallWinner.loss);
@@ -1394,7 +1420,7 @@ public class LLMDarwinEngine extends ADarwinEngine {
 	/**
 	 * Helper method to train custom tokenizer and model in Java cleanly.
 	 */
-	private CandidateTrainingResult runOfflineTraining(String cleanCorpus, LlmConfig config) {
+	private CandidateTrainingResult runOfflineTraining(String cleanCorpus, LlmConfig config, ForgeModelSource modelSource) {
 		SimpleBPETokenizer tokenizer = null;
 		List<Integer> allTokens = null;
 		List<DatasetBuilder.Sample> samples = null;
@@ -1403,8 +1429,7 @@ public class LLMDarwinEngine extends ADarwinEngine {
 		EvoLlmModel model = null;
 		EvoLlmTrainer trainer = null;
 		try {
-			// ✅ FIX: Use the new tokenizer method
-			tokenizer = trainTokenizerWithFullVocab(cleanCorpus, config.vocabSize);
+			tokenizer = modelSource != null ? modelSource.getTokenizer(cleanCorpus, config.vocabSize) : trainTokenizerWithFullVocab(cleanCorpus, config.vocabSize);
 			allTokens = tokenizer.encode(cleanCorpus);
 
 			if (allTokens.size() > MAX_TOKENS_LIMIT) {
@@ -1437,7 +1462,8 @@ public class LLMDarwinEngine extends ADarwinEngine {
 			int dff = config.dff;
 			int actualVocabSize = tokenizer.getVocabSize();
 			config.vocabSize = actualVocabSize;
-			model = new EvoLlmModel(actualVocabSize, config.embeddingSize, config.heads, config.layers, dff, seqLen);
+			model = modelSource != null ? modelSource.createOrRestoreModel(actualVocabSize, config.embeddingSize, config.heads, config.layers, dff, seqLen)
+					: new EvoLlmModel(actualVocabSize, config.embeddingSize, config.heads, config.layers, dff, seqLen);
 
 			long paramCount = 0;
 			for (Tensor p : model.parameters()) {

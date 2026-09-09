@@ -376,20 +376,21 @@ public class ForgeSettingsDialog extends Dialog {
         selectTargetBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                DirectoryDialog dlg = new DirectoryDialog(getShell());
-                dlg.setText("Select Forging Target Data Path");
-                String selectedDir = dlg.open();
-                if (selectedDir != null && !selectedDir.trim().isEmpty()) {
+                FileDialog dlg = new FileDialog(getShell(), SWT.OPEN);
+                dlg.setText("Select Forging Target Path (.evo model, workspace, or dataset file)");
+                dlg.setFilterExtensions(new String[] { "*.evo;*.txt;*.pdf;*.html;*.json;*.md;*.csv", "*.*" });
+                String selectedFile = dlg.open();
+                if (selectedFile != null && !selectedFile.trim().isEmpty()) {
                     boolean found = false;
                     for (DatasetItem item : datasetItems) {
-                        if (item.getPath().equalsIgnoreCase(selectedDir)) {
+                        if (item.getPath().equalsIgnoreCase(selectedFile)) {
                             item.setChecked(true);
                             found = true;
                             break;
                         }
                     }
                     if (!found) {
-                        datasetItems.add(new DatasetItem(true, selectedDir, "FOLDER"));
+                        datasetItems.add(new DatasetItem(true, selectedFile, selectedFile.endsWith(".evo") ? "EVO_MODEL" : "FILE"));
                     }
                     refreshDatasetsTable();
                 }
