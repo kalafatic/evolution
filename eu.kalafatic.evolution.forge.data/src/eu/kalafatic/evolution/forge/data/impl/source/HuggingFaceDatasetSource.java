@@ -63,20 +63,67 @@ public class HuggingFaceDatasetSource implements DatasetSource {
     public void initialize() throws Exception {
         if (initialized) return;
         initialized = true;
+
+        String rawRepo = config.getRepository();
+        String repo = rawRepo;
+        if ("wikitext".equalsIgnoreCase(rawRepo)) {
+            repo = "Salesforce/wikitext";
+        }
+        discoverSplits(repo);
         fetchNextChunk();
     }
+
+    private List<String[]> availableSplits = new ArrayList<>(); // Pairs of [configName, splitName]
+    private int currentSplitIndex = 0;
 
     private boolean isBoundsExceeded() {
         if (config.getMaxSamples() > 0 && stats.getTotalSamplesRead() >= config.getMaxSamples()) {
             return true;
         }
-        if (config.getMaxBytes() > 0 && stats.getTotalBytesRead() >= config.getMaxBytes()) {
-            return true;
-        }
         if (config.getMaxTokens() > 0 && stats.getEstimatedTokens() >= config.getMaxTokens()) {
             return true;
         }
+        // Do not stop based on raw bytes read before filtering/deduplication;
+        // stop when accepted usable bytes exceed maxBytes or 4x safety threshold on raw read bytes.
+        if (config.getMaxBytes() > 0 && stats.getAcceptedBytes() >= config.getMaxBytes()) {
+            return true;
+        }
+        if (config.getMaxBytes() > 0 && stats.getTotalBytesRead() >= config.getMaxBytes() * 4) {
+            return true;
+        }
         return false;
+    }
+
+    private void discoverSplits(String repo) {
+        if (repo.startsWith("http://") || repo.startsWith("https://")) return;
+        try {
+            String targetUrl = "https://datasets-server.huggingface.co/splits?dataset=" + repo;
+            URL url = URI.create(targetUrl).toURL();
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.setConnectTimeout(5000);
+            conn.setReadTimeout(10000);
+            conn.setRequestProperty("User-Agent", "EVO-Forge-Client/2.6");
+
+            if (conn.getResponseCode() == 200) {
+                try (InputStream in = conn.getInputStream();
+                     BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
+                    StringBuilder sb = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) sb.append(line);
+                    JSONObject root = new JSONObject(sb.toString());
+                    if (root.has("splits")) {
+                        JSONArray splits = root.getJSONArray("splits");
+                        for (int i = 0; i < splits.length(); i++) {
+                            JSONObject sObj = splits.getJSONObject(i);
+                            String cfg = sObj.optString("config", "default");
+                            String sp = sObj.optString("split", "train");
+                            availableSplits.add(new String[] { cfg, sp });
+                        }
+                    }
+                }
+            }
+        } catch (Exception ignored) {}
     }
 
     private void fetchNextChunk() throws IOException {
@@ -183,10 +230,31 @@ public class HuggingFaceDatasetSource implements DatasetSource {
                     }
                     currentOffset += rows.length();
                     if (rows.length() == 0) {
-                        endOfStream = true;
+                        // Check if another split is available to advance
+                        if (!availableSplits.isEmpty() && currentSplitIndex < availableSplits.size() - 1) {
+                            currentSplitIndex++;
+                            currentOffset = 0;
+                            String[] nextSplit = availableSplits.get(currentSplitIndex);
+                            config.setConfiguration(nextSplit[0]);
+                            config.setSplit(nextSplit[1]);
+                            fetchNextChunk();
+                            return;
+                        } else {
+                            endOfStream = true;
+                        }
                     }
                 } else {
-                    endOfStream = true;
+                    if (!availableSplits.isEmpty() && currentSplitIndex < availableSplits.size() - 1) {
+                        currentSplitIndex++;
+                        currentOffset = 0;
+                        String[] nextSplit = availableSplits.get(currentSplitIndex);
+                        config.setConfiguration(nextSplit[0]);
+                        config.setSplit(nextSplit[1]);
+                        fetchNextChunk();
+                        return;
+                    } else {
+                        endOfStream = true;
+                    }
                 }
             }
         } catch (Exception e) {
@@ -200,41 +268,133 @@ public class HuggingFaceDatasetSource implements DatasetSource {
     }
 
     private NormalizedSample extractSampleFromRow(JSONObject row) {
-        String text = null;
+        if (row == null) return null;
 
-        if (row.has("text")) {
-            detectedSchemaInfo = "text: string";
-            text = row.optString("text", null);
-        } else if (row.has("content")) {
-            detectedSchemaInfo = "content: string";
-            text = row.optString("content", null);
-        } else if (row.has("instruction") || row.has("response")) {
-            detectedSchemaInfo = "instruction: string, response: string";
-            String inst = row.optString("instruction", "");
-            String resp = row.optString("response", "");
-            return NormalizedSample.createInstructionSample(inst, resp, getSourceName());
-        } else if (row.has("question") && row.has("answer")) {
-            detectedSchemaInfo = "question: string, answer: string";
-            String q = row.optString("question", "");
-            String a = row.optString("answer", "");
-            return NormalizedSample.createInstructionSample("Q: " + q, a, getSourceName());
-        } else {
-            List<String> keys = new ArrayList<>(row.keySet());
-            detectedSchemaInfo = "keys: " + keys.toString();
-            for (String key : keys) {
-                Object val = row.get(key);
-                if (val instanceof String s && s.trim().length() > 5) {
-                    text = s;
-                    break;
+        // 1. Check for messages array (e.g., UltraChat, OpenAssistant, ShareGPT, Llama-3-Instruct)
+        if (row.has("messages")) {
+            detectedSchemaInfo = "messages: JSONArray[{role, content}]";
+            JSONArray msgsArray = row.optJSONArray("messages");
+            if (msgsArray != null && msgsArray.length() > 0) {
+                List<NormalizedSample.Message> msgList = parseMessagesArray(msgsArray, "role", "content");
+                if (!msgList.isEmpty()) {
+                    return NormalizedSample.createChatSample(msgList, getSourceName());
                 }
             }
         }
 
-        if (text == null || text.trim().isEmpty()) {
-            return null;
+        // 2. Check for conversations array (e.g., ShareGPT)
+        if (row.has("conversations")) {
+            detectedSchemaInfo = "conversations: JSONArray[{from/role, value/content}]";
+            JSONArray convArray = row.optJSONArray("conversations");
+            if (convArray != null && convArray.length() > 0) {
+                List<NormalizedSample.Message> msgList = parseMessagesArray(convArray, "from", "value");
+                if (msgList.isEmpty()) {
+                    msgList = parseMessagesArray(convArray, "role", "content");
+                }
+                if (!msgList.isEmpty()) {
+                    return NormalizedSample.createChatSample(msgList, getSourceName());
+                }
+            }
         }
 
-        return NormalizedSample.createTextSample(text.trim(), getSourceName());
+        // 3. Instruction / Input / Output or Response
+        if (row.has("instruction") || row.has("response") || row.has("output")) {
+            detectedSchemaInfo = "instruction / input / output";
+            String inst = row.optString("instruction", "");
+            String input = row.optString("input", "");
+            String resp = row.optString("response", row.optString("output", ""));
+            if (!input.trim().isEmpty()) {
+                inst = inst + "\n\nContext:\n" + input.trim();
+            }
+            if (!inst.trim().isEmpty() || !resp.trim().isEmpty()) {
+                return NormalizedSample.createInstructionSample(inst.trim(), resp.trim(), getSourceName());
+            }
+        }
+
+        // 4. Prompt / Response or Prompt / Completion
+        if (row.has("prompt") && (row.has("response") || row.has("completion") || row.has("chosen"))) {
+            detectedSchemaInfo = "prompt / response";
+            String p = row.optString("prompt", "");
+            String r = row.optString("response", row.optString("completion", row.optString("chosen", "")));
+            if (!p.trim().isEmpty() || !r.trim().isEmpty()) {
+                return NormalizedSample.createInstructionSample(p.trim(), r.trim(), getSourceName());
+            }
+        }
+
+        // 5. Question / Answer
+        if (row.has("question") && row.has("answer")) {
+            detectedSchemaInfo = "question / answer";
+            String q = row.optString("question", "");
+            String a = row.optString("answer", "");
+            return NormalizedSample.createInstructionSample("Q: " + q.trim(), a.trim(), getSourceName());
+        }
+
+        // 6. Direct text or content
+        if (row.has("text")) {
+            detectedSchemaInfo = "text: string";
+            String text = row.optString("text", null);
+            if (text != null && !text.trim().isEmpty()) {
+                return NormalizedSample.createTextSample(text.trim(), getSourceName());
+            }
+        }
+        if (row.has("content")) {
+            detectedSchemaInfo = "content: string";
+            String content = row.optString("content", null);
+            if (content != null && !content.trim().isEmpty()) {
+                return NormalizedSample.createTextSample(content.trim(), getSourceName());
+            }
+        }
+
+        // 7. Chosen (for DPO / preference datasets)
+        if (row.has("chosen")) {
+            detectedSchemaInfo = "chosen: string/object";
+            Object chosenObj = row.get("chosen");
+            if (chosenObj instanceof String s && !s.trim().isEmpty()) {
+                return NormalizedSample.createTextSample(s.trim(), getSourceName());
+            } else if (chosenObj instanceof JSONArray arr) {
+                List<NormalizedSample.Message> msgList = parseMessagesArray(arr, "role", "content");
+                if (!msgList.isEmpty()) {
+                    return NormalizedSample.createChatSample(msgList, getSourceName());
+                }
+            }
+        }
+
+        // 8. Fallback key inspection
+        List<String> keys = new ArrayList<>(row.keySet());
+        detectedSchemaInfo = "keys: " + keys;
+        for (String key : keys) {
+            Object val = row.get(key);
+            if (val instanceof String s && s.trim().length() > 5) {
+                return NormalizedSample.createTextSample(s.trim(), getSourceName());
+            } else if (val instanceof JSONArray arr && arr.length() > 0) {
+                List<NormalizedSample.Message> msgList = parseMessagesArray(arr, "role", "content");
+                if (!msgList.isEmpty()) {
+                    return NormalizedSample.createChatSample(msgList, getSourceName());
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private List<NormalizedSample.Message> parseMessagesArray(JSONArray arr, String roleKey, String contentKey) {
+        List<NormalizedSample.Message> msgList = new ArrayList<>();
+        if (arr == null) return msgList;
+        for (int i = 0; i < arr.length(); i++) {
+            JSONObject msgObj = arr.optJSONObject(i);
+            if (msgObj != null) {
+                String role = msgObj.optString(roleKey, msgObj.optString("role", msgObj.optString("from", "user")));
+                String content = msgObj.optString(contentKey, msgObj.optString("content", msgObj.optString("value", "")));
+                if (!content.trim().isEmpty()) {
+                    if ("human".equalsIgnoreCase(role) || "user".equalsIgnoreCase(role)) role = "user";
+                    else if ("gpt".equalsIgnoreCase(role) || "assistant".equalsIgnoreCase(role)) role = "assistant";
+                    else if ("system".equalsIgnoreCase(role)) role = "system";
+
+                    msgList.add(new NormalizedSample.Message(role, content.trim()));
+                }
+            }
+        }
+        return msgList;
     }
 
     @Override

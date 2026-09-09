@@ -1,5 +1,6 @@
 package eu.kalafatic.evolution.forge.controller.service.impl;
 
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -257,18 +258,23 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
                 try {
                     logToFile(logFile, "Fetching Hugging Face source: " + sourceStr);
                     DatasetSourceConfig config = new DatasetSourceConfig("HUGGING_FACE", sourceStr);
-                    config.setMaxSamples(200);
+                    config.setMaxSamples(0); // Unlimited samples, bounded by target content budget
                     HuggingFaceDatasetSource hfSource = new HuggingFaceDatasetSource(config);
                     hfSource.initialize();
 
                     double weight = sourceWeights.getOrDefault(sourceStr, 1.0);
+                    long targetBytesForSource = (long) (10_000_000 * weight); // Up to ~10MB per source weight
+                    long currentBytes = 0;
                     int sampleCount = 0;
-                    while (hfSource.hasNext() && sampleCount < (int)(100 * weight)) {
+
+                    while (hfSource.hasNext() && currentBytes < targetBytesForSource) {
                         NormalizedSample sample = hfSource.next();
-                        corpusBuilder.append(sample.toFullText()).append("\n\n");
+                        String text = sample.toFullText();
+                        corpusBuilder.append(text).append("\n\n");
+                        currentBytes += text.getBytes(StandardCharsets.UTF_8).length;
                         sampleCount++;
                     }
-                    logToFile(logFile, "Fetched " + sampleCount + " samples from Hugging Face source: " + sourceStr);
+                    logToFile(logFile, "Fetched " + sampleCount + " samples (" + (currentBytes / 1024) + " KB) from Hugging Face source: " + sourceStr);
                 } catch (Exception e) {
                     logToFile(logFile, "[WARN] Failed to fetch Hugging Face source: " + sourceStr + " - " + e.getMessage());
                 }

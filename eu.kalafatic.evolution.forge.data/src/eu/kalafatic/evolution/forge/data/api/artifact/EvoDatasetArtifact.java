@@ -207,6 +207,22 @@ public class EvoDatasetArtifact {
         sb.append("  \"status\": \"").append(status.name()).append("\",\n");
         sb.append("  \"source\": \"").append(sourceConfig != null ? sourceConfig.getSourceType() : "UNKNOWN").append("\",\n");
         sb.append("  \"repository\": \"").append(sourceConfig != null ? sourceConfig.getRepository() : "").append("\",\n");
+        if (stats != null) {
+            sb.append("  \"requestedUsableBytes\": ").append(stats.getRequestedUsableBytes()).append(",\n");
+            sb.append("  \"actualUsableBytes\": ").append(stats.getAcceptedBytes()).append(",\n");
+            sb.append("  \"downloadedBytes\": ").append(stats.getDownloadedBytes()).append(",\n");
+            sb.append("  \"extractedBytes\": ").append(stats.getExtractedBytes()).append(",\n");
+            sb.append("  \"rawContentBytes\": ").append(stats.getRawContentBytes()).append(",\n");
+            sb.append("  \"acceptedBytes\": ").append(stats.getAcceptedBytes()).append(",\n");
+            sb.append("  \"rejectedBytes\": ").append(stats.getRejectedBytes()).append(",\n");
+            sb.append("  \"duplicateBytes\": ").append(stats.getDuplicateBytes()).append(",\n");
+            sb.append("  \"trainingBytes\": ").append(stats.getTrainingBytes()).append(",\n");
+            sb.append("  \"validationBytes\": ").append(stats.getValidationBytes()).append(",\n");
+            sb.append("  \"acceptedRecords\": ").append(stats.getAcceptedRecords()).append(",\n");
+            sb.append("  \"rejectedRecords\": ").append(stats.getRejectedRecords()).append(",\n");
+            sb.append("  \"duplicateRecords\": ").append(stats.getDuplicateRecords()).append(",\n");
+            sb.append("  \"estimatedTokens\": ").append(stats.getEstimatedTokens()).append(",\n");
+        }
         sb.append("  \"trainSamples\": ").append(trainSamples.size()).append(",\n");
         sb.append("  \"valSamples\": ").append(valSamples.size()).append(",\n");
         sb.append("  \"trainTokens\": ").append(totalTrainTokens).append(",\n");
@@ -222,8 +238,29 @@ public class EvoDatasetArtifact {
         sb.append("------------------------------------------\n");
         sb.append("Artifact: ").append(name).append("\n");
         sb.append("Source: ").append(sourceConfig != null ? sourceConfig.getSourceType() + " (" + sourceConfig.getRepository() + ")" : "N/A").append("\n");
-        sb.append("Total Processed Samples: ").append(stats != null ? stats.getTotalSamplesRead() : trainSamples.size() + valSamples.size()).append("\n");
-        sb.append("Accepted Samples: ").append(trainSamples.size() + valSamples.size()).append("\n");
+        if (stats != null && stats.getRequestedUsableBytes() > 0) {
+            sb.append("Requested Usable Data: ").append(stats.getRequestedUsableBytes() / (1024 * 1024)).append(" MB (").append(stats.getRequestedUsableBytes()).append(" bytes)\n");
+        }
+        if (stats != null) {
+            sb.append("Downloaded Bytes: ").append(stats.getDownloadedBytes()).append("\n");
+            sb.append("Actual Usable Bytes: ").append(stats.getAcceptedBytes()).append(" (").append(String.format("%.2f", stats.getAcceptedBytes() / (1024.0 * 1024.0))).append(" MB)\n");
+            sb.append("Training Bytes: ").append(stats.getTrainingBytes()).append(" (").append(String.format("%.2f", stats.getTrainingBytes() / (1024.0 * 1024.0))).append(" MB)\n");
+            sb.append("Validation Bytes: ").append(stats.getValidationBytes()).append(" (").append(String.format("%.2f", stats.getValidationBytes() / (1024.0 * 1024.0))).append(" MB)\n");
+            sb.append("Estimated Tokens: ").append(String.format("%.1fM", (totalTrainTokens + totalValTokens) / 1000000.0)).append(" (").append(totalTrainTokens + totalValTokens).append(" tokens)\n");
+            sb.append("Accepted Records: ").append(stats.getAcceptedRecords()).append("\n");
+            sb.append("Rejected Records: ").append(stats.getRejectedRecords()).append(" (").append(stats.getRejectedBytes()).append(" bytes)\n");
+            sb.append("Duplicate Records: ").append(stats.getDuplicateRecords()).append(" (").append(stats.getDuplicateBytes()).append(" bytes)\n");
+            if (stats.getRequestedUsableBytes() > 0) {
+                double coverage = (stats.getAcceptedBytes() * 100.0) / Math.max(1, stats.getRequestedUsableBytes());
+                sb.append("Source Coverage: ").append(String.format("%.1f%%", Math.min(100.0, coverage))).append("\n");
+                if (coverage < 100.0) {
+                    sb.append("Note: Source dataset exhausted before target size was reached.\n");
+                }
+            }
+        } else {
+            sb.append("Total Processed Samples: ").append(trainSamples.size() + valSamples.size()).append("\n");
+            sb.append("Accepted Samples: ").append(trainSamples.size() + valSamples.size()).append("\n");
+        }
         sb.append("Train Samples: ").append(trainSamples.size()).append(" (").append(totalTrainTokens).append(" estimated tokens)\n");
         sb.append("Validation Samples: ").append(valSamples.size()).append(" (").append(totalValTokens).append(" estimated tokens)\n");
         sb.append("Status: ").append(status.name()).append("\n");
