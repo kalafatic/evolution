@@ -73,7 +73,14 @@ public class DatasetEditorGroup extends AEvoGroup {
         dirComp.setLayout(new GridLayout(2, false));
         dirComp.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
-        String defaultDir = new File(System.getProperty("user.dir"), "forge-output").getAbsolutePath();
+        String baseWorkspace = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getWorkspacePath();
+        if (baseWorkspace == null || baseWorkspace.trim().isEmpty()) {
+            baseWorkspace = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getCodebasePath();
+        }
+        if (baseWorkspace == null || baseWorkspace.trim().isEmpty()) {
+            baseWorkspace = System.getProperty("user.dir");
+        }
+        String defaultDir = new File(baseWorkspace, "forge-output").getAbsolutePath();
         outputDirText = toolkit.createText(dirComp, defaultDir, SWT.BORDER);
         outputDirText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
@@ -106,10 +113,18 @@ public class DatasetEditorGroup extends AEvoGroup {
         deduplicateCheck.setSelection(true);
 
         Composite btnBar = toolkit.createComposite(group);
-        btnBar.setLayout(new GridLayout(3, false));
+        btnBar.setLayout(new GridLayout(4, false));
         GridData gdBtn = new GridData(SWT.FILL, SWT.CENTER, true, false);
         gdBtn.horizontalSpan = 2;
         btnBar.setLayoutData(gdBtn);
+
+        Button downloadBtn = GUIFactory.INSTANCE.createButton(btnBar, "Download Dataset");
+        downloadBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                handleDownloadDataset();
+            }
+        });
 
         Button previewBtn = GUIFactory.INSTANCE.createButton(btnBar, "Preview Samples");
         previewBtn.addSelectionListener(new SelectionAdapter() {
@@ -157,6 +172,51 @@ public class DatasetEditorGroup extends AEvoGroup {
             return orchestrator.getServerSettings().getPort();
         }
         return 48080;
+    }
+
+    private void handleDownloadDataset() {
+        String repo = repoText.getText().trim();
+        String split = splitText.getText().trim();
+        String samples = maxSamplesText.getText().trim();
+        String sizeMbStr = maxSizeMbText.getText().trim();
+        long maxBytes = 0;
+        try {
+            maxBytes = Long.parseLong(sizeMbStr) * 1024L * 1024L;
+        } catch (Exception ignored) {}
+
+        String sourceType = sourceTypeCombo.getSelectionIndex() == 0 ? "HUGGING_FACE" : "LOCAL";
+        String customOutputDir = outputDirText.getText().trim();
+
+        reportArea.setText("Downloading dataset " + repo + " (" + split + ") into " + customOutputDir + "...\n");
+
+        int port = getServerPort();
+        final long finalMaxBytes = maxBytes;
+        new Thread(() -> {
+            try {
+                org.json.JSONObject req = new org.json.JSONObject();
+                req.put("sourceType", sourceType);
+                req.put("repository", repo);
+                req.put("split", split);
+                req.put("maxSamples", Long.parseLong(samples));
+                req.put("maxBytes", finalMaxBytes);
+                req.put("outputDir", customOutputDir);
+                req.put("downloadOnly", true);
+
+                String res = postHttp("http://localhost:" + port + "/forge/dataset/prepare", req.toString());
+                Display.getDefault().asyncExec(() -> {
+                    if (!reportArea.isDisposed()) {
+                        reportArea.setText("DATASET DOWNLOAD COMPLETE:\n" + res);
+                        MessageDialog.openInformation(group.getShell(), "Dataset Downloaded", "Dataset downloaded successfully to destination folder!");
+                    }
+                });
+            } catch (Exception ex) {
+                Display.getDefault().asyncExec(() -> {
+                    if (!reportArea.isDisposed()) {
+                        reportArea.setText("Download Error: " + ex.getMessage());
+                    }
+                });
+            }
+        }).start();
     }
 
     private void handlePreview() {

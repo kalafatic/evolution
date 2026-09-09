@@ -1687,26 +1687,53 @@ public class EvolutionServer extends NanoHTTPD {
 
             List<NormalizedSample> sampled = reservoir;
 
-            // Resolve target output directory
-            File userDir = new File(System.getProperty("user.dir"));
+            // Resolve target output directory matching forged model directories
+            String baseWorkspacePath = ProjectModelManager.getWorkspacePath();
+            if (baseWorkspacePath == null || baseWorkspacePath.trim().isEmpty()) {
+                baseWorkspacePath = ProjectModelManager.getCodebasePath();
+            }
+            if (baseWorkspacePath == null || baseWorkspacePath.trim().isEmpty()) {
+                baseWorkspacePath = System.getProperty("user.dir");
+            }
+
+            File baseFolder = new File(baseWorkspacePath);
             File primaryDir;
             if (!customOutputDir.isEmpty()) {
-                primaryDir = new File(customOutputDir);
+                File customFile = new File(customOutputDir);
+                primaryDir = customFile.isAbsolute() ? customFile : new File(baseFolder, customOutputDir);
             } else {
-                primaryDir = new File(userDir, "forge-output");
+                primaryDir = new File(baseFolder, "forge-output");
             }
             if (!primaryDir.exists()) primaryDir.mkdirs();
 
             File targetArtifactFile = new File(primaryDir, outputName);
-            logBuf.append("[OUTPUT] Primary Artifact Destination: ").append(targetArtifactFile.getAbsolutePath()).append("\n");
+            logBuf.append("[OUTPUT] Primary Dataset Artifact Destination: ").append(targetArtifactFile.getAbsolutePath()).append("\n");
 
-            // Also copy to secondary model directories if present
-            File distDir = new File(userDir, "dist");
+            // Save raw downloaded dataset file alongside .evodata artifact
+            File rawOutputFile = new File(primaryDir, cleanRepoName + "-" + timestamp + ".raw.jsonl");
+            try (java.io.PrintWriter pw = new java.io.PrintWriter(new java.io.FileWriter(rawOutputFile, StandardCharsets.UTF_8))) {
+                for (NormalizedSample s : sampled) {
+                    pw.println(s.toJsonLine());
+                }
+            }
+            logBuf.append("[DOWNLOAD] Saved raw downloaded dataset file: ").append(rawOutputFile.getAbsolutePath()).append("\n");
+
+            // Copy to controller models directory if available
+            File controllerModelsDir = eu.kalafatic.evolution.controller.manager.LlamaService.resolveControllerModelsDir();
+            if (controllerModelsDir != null && controllerModelsDir.exists() && !controllerModelsDir.getAbsolutePath().equals(primaryDir.getAbsolutePath())) {
+                File controllerTarget = new File(controllerModelsDir, outputName);
+                EvoDatasetArtifact ctrlArtifact = new EvoDatasetArtifact(controllerTarget);
+                ctrlArtifact.save(sampled, config, new eu.kalafatic.evolution.forge.data.api.source.DatasetSourceStats(), 0.02);
+                logBuf.append("[OUTPUT] Copied dataset artifact to Controller Models Directory: ").append(controllerTarget.getAbsolutePath()).append("\n");
+            }
+
+            // Also save copy to dist directory under workspace/product folder if present
+            File distDir = new File(baseFolder, "dist");
             if (distDir.exists() && distDir.isDirectory() && !distDir.getAbsolutePath().equals(primaryDir.getAbsolutePath())) {
                 File distTargetFile = new File(distDir, outputName);
                 EvoDatasetArtifact distArtifact = new EvoDatasetArtifact(distTargetFile);
                 distArtifact.save(sampled, config, new eu.kalafatic.evolution.forge.data.api.source.DatasetSourceStats(), 0.02);
-                logBuf.append("[OUTPUT] Secondary Copy Saved: ").append(distTargetFile.getAbsolutePath()).append("\n");
+                logBuf.append("[OUTPUT] Secondary Dataset Copy Saved: ").append(distTargetFile.getAbsolutePath()).append("\n");
             }
 
             EvoDatasetArtifact artifact = new EvoDatasetArtifact(targetArtifactFile);
