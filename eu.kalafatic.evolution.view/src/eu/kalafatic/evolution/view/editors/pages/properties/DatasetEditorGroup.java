@@ -46,15 +46,42 @@ public class DatasetEditorGroup extends AEvoGroup {
     private void createControl(FormToolkit toolkit, Composite parent) {
         group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Dataset Preparation & Hugging Face Acquisition", 2, true, true);
 
-        GUIFactory.INSTANCE.createLabel(group, "Data Source:");
+        GUIFactory.INSTANCE.createLabel(group, "FROM (Data Source Provider):");
         sourceTypeCombo = new Combo(group, SWT.DROP_DOWN | SWT.READ_ONLY);
-        sourceTypeCombo.setItems(new String[] { "Hugging Face", "Local Files / Directory" });
+        sourceTypeCombo.setItems(new String[] { "Hugging Face Hub", "Local Directory / Filesystem", "Project Source Code", "Synthetic Generator" });
         sourceTypeCombo.select(0);
         sourceTypeCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
-        GUIFactory.INSTANCE.createLabel(group, "Repository / Dataset ID:");
+        GUIFactory.INSTANCE.createLabel(group, "WHAT (Schema / Domain):");
+        Combo domainCombo = new Combo(group, SWT.DROP_DOWN | SWT.READ_ONLY);
+        domainCombo.setItems(new String[] { "General Text Corpus (Unstructured)", "Instruction Tuning & QA Pairs", "Source Code & Repositories", "Reasoning & Step-by-Step Proofs" });
+        domainCombo.select(0);
+        domainCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        GUIFactory.INSTANCE.createLabel(group, "WHERE (Predefined Target Preset):");
+        Combo presetCombo = new Combo(group, SWT.DROP_DOWN | SWT.READ_ONLY);
+        presetCombo.setItems(new String[] { "Salesforce/wikitext (Wikitext-2)", "huggingFaceFW/fineWeb (FineWeb-10B)", "HuggingFaceH4/ultrachat_200k (UltraChat)", "bigcode/the-stack (Code Stack)", "gsm8k (GSM8K Math Proofs)", "Custom / Manual Entry..." });
+        presetCombo.select(0);
+        presetCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        GUIFactory.INSTANCE.createLabel(group, "Repository / Dataset Target ID (Editable):");
         repoText = toolkit.createText(group, "wikitext", SWT.BORDER);
         repoText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        presetCombo.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                int idx = presetCombo.getSelectionIndex();
+                switch (idx) {
+                    case 0: repoText.setText("wikitext"); break;
+                    case 1: repoText.setText("huggingFaceFW/fineWeb"); break;
+                    case 2: repoText.setText("HuggingFaceH4/ultrachat_200k"); break;
+                    case 3: repoText.setText("bigcode/the-stack"); break;
+                    case 4: repoText.setText("gsm8k"); break;
+                    default: break;
+                }
+            }
+        });
 
         GUIFactory.INSTANCE.createLabel(group, "Split / Configuration:");
         splitText = toolkit.createText(group, "train", SWT.BORDER);
@@ -155,10 +182,28 @@ public class DatasetEditorGroup extends AEvoGroup {
         gdInfo.horizontalSpan = 2;
         infoDescLabel.setLayoutData(gdInfo);
 
-        Label reportLabel = toolkit.createLabel(group, "Preparation Report & Preview Log:");
-        GridData gdLbl = new GridData(GridData.FILL_HORIZONTAL);
-        gdLbl.horizontalSpan = 2;
-        reportLabel.setLayoutData(gdLbl);
+        Composite reportHeaderComp = toolkit.createComposite(group);
+        reportHeaderComp.setLayout(new GridLayout(2, false));
+        GridData gdRepHeader = new GridData(GridData.FILL_HORIZONTAL);
+        gdRepHeader.horizontalSpan = 2;
+        reportHeaderComp.setLayoutData(gdRepHeader);
+
+        Label reportLabel = toolkit.createLabel(reportHeaderComp, "Preparation Report & Preview Log:");
+        reportLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        Button copyReportBtn = GUIFactory.INSTANCE.createButton(reportHeaderComp, "Copy Log");
+        copyReportBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                String text = reportArea.getText();
+                if (text != null && !text.isEmpty()) {
+                    org.eclipse.swt.dnd.Clipboard cb = new org.eclipse.swt.dnd.Clipboard(Display.getDefault());
+                    cb.setContents(new Object[] { text }, new org.eclipse.swt.dnd.Transfer[] { org.eclipse.swt.dnd.TextTransfer.getInstance() });
+                    cb.dispose();
+                    MessageDialog.openInformation(group.getShell(), "Copied", "Report log copied to clipboard.");
+                }
+            }
+        });
 
         reportArea = toolkit.createText(group, "", SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL | SWT.BORDER | SWT.READ_ONLY);
         GridData gdArea = new GridData(GridData.FILL_BOTH);
@@ -230,12 +275,13 @@ public class DatasetEditorGroup extends AEvoGroup {
                 org.json.JSONObject req = new org.json.JSONObject();
                 req.put("repository", repo);
                 req.put("split", split);
-                req.put("count", 3);
+                req.put("count", 5);
 
                 String res = postHttp("http://localhost:" + port + "/forge/dataset/hf/preview", req.toString());
+                String tableText = formatAsTable(res);
                 Display.getDefault().asyncExec(() -> {
                     if (!reportArea.isDisposed()) {
-                        reportArea.setText("HF PREVIEW RESULT:\n" + res);
+                        reportArea.setText("DATASET SAMPLE PREVIEW:\n" + tableText);
                     }
                 });
             } catch (Exception ex) {
@@ -246,6 +292,27 @@ public class DatasetEditorGroup extends AEvoGroup {
                 });
             }
         }).start();
+    }
+
+    private String formatAsTable(String jsonStr) {
+        try {
+            org.json.JSONArray array = new org.json.JSONArray(jsonStr);
+            StringBuilder sb = new StringBuilder();
+            sb.append(String.format("%-5s | %-12s | %-50s | %-10s\n", "#", "TYPE", "PROMPT / CONTENT", "QUALITY"));
+            sb.append("----------------------------------------------------------------------------------\n");
+            for (int i = 0; i < array.length(); i++) {
+                org.json.JSONObject obj = array.getJSONObject(i);
+                String type = obj.optString("sampleType", obj.optString("type", "TEXT"));
+                String content = obj.optString("content", obj.optString("text", obj.optString("prompt", "")));
+                content = content.replaceAll("\r?\n", " ");
+                if (content.length() > 47) content = content.substring(0, 44) + "...";
+                double quality = obj.optDouble("qualityScore", 1.0);
+                sb.append(String.format("%-5d | %-12s | %-50s | %-10.1f%%\n", (i + 1), type, content, quality * 100.0));
+            }
+            return sb.toString();
+        } catch (Exception e) {
+            return jsonStr;
+        }
     }
 
     private void handlePrepareDataset() {

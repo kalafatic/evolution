@@ -447,6 +447,171 @@
             to { transform: translateX(500px); }
         }
 
+        /* Panel Maximize & Resize Controls */
+        .panel {
+            position: relative;
+            resize: vertical;
+            overflow: auto;
+            min-height: 80px;
+            transition: box-shadow 0.2s;
+        }
+        .panel.maximized {
+            position: fixed !important;
+            top: 10px !important;
+            left: 10px !important;
+            right: 10px !important;
+            bottom: 10px !important;
+            z-index: 10000 !important;
+            background: var(--bg-primary) !important;
+            border: 2px solid var(--accent) !important;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5) !important;
+            overflow: auto !important;
+            padding: 20px !important;
+            border-radius: 6px !important;
+            width: auto !important;
+            max-width: none !important;
+            height: auto !important;
+        }
+        .panel h3 {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .panel-actions {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+        .panel-action-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 3px;
+            cursor: pointer;
+            padding: 1px 5px;
+            font-size: 0.85em;
+            color: var(--text-dim);
+            line-height: 1;
+        }
+        .panel-action-btn:hover {
+            background: var(--bg-secondary);
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        /* Custom Modal Popups */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 20000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(2px);
+        }
+        .modal-container {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            width: 85%;
+            max-width: 950px;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            animation: modalSlideDown 0.2s ease-out;
+        }
+        @keyframes modalSlideDown {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .modal-header {
+            padding: 10px 16px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header h3 {
+            margin: 0;
+            font-size: 0.95em;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .modal-body {
+            padding: 16px;
+            overflow-y: auto;
+            flex-grow: 1;
+            font-size: 0.88em;
+            user-select: text;
+        }
+        .modal-footer {
+            padding: 8px 16px;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Data Tables for Structured Data */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85em;
+            margin-top: 5px;
+            background: #ffffff;
+        }
+        .data-table th, .data-table td {
+            border: 1px solid var(--border);
+            padding: 6px 10px;
+            text-align: left;
+            vertical-align: top;
+            max-width: 300px;
+            word-wrap: break-word;
+            overflow-wrap: anywhere;
+        }
+        .data-table th {
+            background: var(--bg-secondary);
+            color: var(--accent);
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        .data-table tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+        .data-table tr:hover {
+            background: #e8f0fe;
+        }
+        .table-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        /* Process Logs Console & Progress Bar */
+        .process-log-box {
+            height: 220px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 10px;
+            overflow-y: auto;
+            font-family: Consolas, 'Courier New', monospace;
+            font-size: 0.8em;
+            border-radius: 4px;
+            margin-top: 8px;
+            user-select: text;
+            white-space: pre-wrap;
+            border: 1px solid #333;
+        }
+
     </style>
     <script src="/auth-integration.js"></script>
     <script src="forge-viz/viz-self-evo.js"></script>
@@ -703,16 +868,38 @@
 
             <!-- DATASET PANEL -->
             <div class="panel" id="dataset-editor-panel">
-                <h3>Dataset Preparation & Acquisition</h3>
+                <h3>Dataset Preparation & Acquisition <div class="panel-actions"><button class="panel-action-btn" onclick="toggleMaximizePanel(this)" title="Maximize Panel">🗖</button></div></h3>
                 <div class="control-group">
-                    <label>Source Type</label>
-                    <select id="dataset-source-type">
-                        <option value="HUGGING_FACE">Hugging Face</option>
-                        <option value="LOCAL">Local Directory / Artifact</option>
+                    <label>FROM (Data Source Provider)</label>
+                    <select id="dataset-from-combo" onchange="onDatasetFromChange()">
+                        <option value="HUGGING_FACE">Hugging Face Hub</option>
+                        <option value="LOCAL">Local Directory / Filesystem</option>
+                        <option value="PROJECT">Project Source Code</option>
+                        <option value="SYNTHETIC">Synthetic Generator</option>
                     </select>
                 </div>
                 <div class="control-group">
-                    <label>Repository / Dataset ID</label>
+                    <label>WHAT (Dataset Schema / Domain)</label>
+                    <select id="dataset-what-combo" onchange="onDatasetWhatChange()">
+                        <option value="TEXT">General Text Corpus (Unstructured)</option>
+                        <option value="INSTRUCTION">Instruction Tuning & QA Pairs</option>
+                        <option value="CODE">Source Code & Repositories</option>
+                        <option value="REASONING">Reasoning & Step-by-Step Proofs</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>WHERE (Predefined Preset / Target)</label>
+                    <select id="dataset-where-combo" onchange="onDatasetWhereChange()">
+                        <option value="wikitext">Salesforce/wikitext (Wikitext-2)</option>
+                        <option value="huggingFaceFW/fineWeb">huggingFaceFW/fineWeb (FineWeb-10B)</option>
+                        <option value="HuggingFaceH4/ultrachat_200k">HuggingFaceH4/ultrachat_200k (UltraChat)</option>
+                        <option value="bigcode/the-stack">bigcode/the-stack (Code Stack)</option>
+                        <option value="gsm8k">gsm8k (GSM8K Math Proofs)</option>
+                        <option value="CUSTOM">Custom / Manual Entry...</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>Repository / Target Path (Editable Field)</label>
                     <input type="text" id="dataset-repo" value="wikitext" placeholder="e.g. wikitext or path">
                 </div>
                 <div class="control-group">
@@ -1468,7 +1655,7 @@
                 const data = await res.json();
                 if (data.status === 'ok') {
                     log("All Forge sessions persisted to disk.");
-                    alert("All sessions saved successfully!");
+                    showModalDialog({ title: "Sessions Saved", content: "All open Forge sessions saved successfully to disk." });
                 } else {
                     log("Save error: " + data.error);
                 }
@@ -1497,7 +1684,7 @@
                     model = JSON.parse(editor.value);
                     initGraph();
                     editor.style.display = 'none';
-                } catch (e) { alert("Invalid JSON!"); }
+                } catch (e) { showModalDialog({ title: "Invalid JSON", content: "Invalid JSON structure. Please check syntax." }); }
             } else {
                 editor.value = JSON.stringify(model, null, 2);
                 editor.style.display = 'block';
@@ -1853,7 +2040,10 @@
             if (window.forgeAction) {
                 const path = await forgeAction("exportModel", activeSessionId, activeSessionId, snapshotId);
                 log(`Export complete: ${path}`);
-                alert(`Model exported to: ${path}\nYou can now deploy it to Ollama.`);
+                showModalDialog({
+                    title: "Model Export Complete",
+                    content: `Model exported successfully!\n\nDestination: ${path}\n\nYou can now deploy this model to Ollama or llama-cpp.`
+                });
 
                 await fetch(getBaseUrl() + `/forge/session/${activeSessionId}/uistate/forge.workflow.status?runtime=SWT`, {
                     method: 'POST',
@@ -1881,14 +2071,14 @@
                     <button class="btn btn-sm" style="width:100%; margin-top:10px;" onclick="refreshViz()">Back to Timeline</button>
                 `;
             } catch (e) {
-                alert("Error fetching comparison: " + e.message);
+                showModalDialog({ title: "Comparison Error", content: e.message });
             }
         }
 
         // E2E Demo Logic
         window.startE2EDemo = async function() {
             if (!activeSessionId) {
-                alert("Please select or create a session first.");
+                showModalDialog({ title: "Session Required", content: "Please select or create a session before running the E2E demo." });
                 return;
             }
 
@@ -2072,20 +2262,257 @@
             } catch (e) { log(`Error: ${e.message}`); }
         }
 
+        // --- Panel Maximize & Resize Actions ---
+        function toggleMaximizePanel(btn) {
+            const panel = btn.closest('.panel');
+            if (!panel) return;
+            panel.classList.toggle('maximized');
+            const isMax = panel.classList.contains('maximized');
+            btn.innerHTML = isMax ? '🗗' : '🗖';
+            btn.title = isMax ? 'Restore Panel' : 'Maximize Panel';
+        }
+
+        function initPanelActions() {
+            document.querySelectorAll('.panel').forEach(p => {
+                const h3 = p.querySelector('h3');
+                if (h3 && !h3.querySelector('.panel-actions')) {
+                    const actions = document.createElement('div');
+                    actions.className = 'panel-actions';
+                    actions.innerHTML = '<button class="panel-action-btn" onclick="toggleMaximizePanel(this)" title="Maximize Panel">🗖</button>';
+                    h3.appendChild(actions);
+                }
+            });
+        }
+
+        // --- Custom Copyable Modal Dialogs ---
+        let currentModalCopyText = "";
+
+        function showModalDialog({ title, content, isTable = false, rawCopyText = "" }) {
+            document.getElementById('modal-title').textContent = title || "Notification";
+            const bodyEl = document.getElementById('modal-body');
+
+            if (isTable || (typeof content === 'string' && content.trim().startsWith('<table'))) {
+                bodyEl.innerHTML = content;
+            } else {
+                bodyEl.innerText = typeof content === 'object' ? JSON.stringify(content, null, 2) : content;
+            }
+
+            currentModalCopyText = rawCopyText || (isTable ? bodyEl.innerText : (typeof content === 'string' ? content : JSON.stringify(content, null, 2)));
+
+            const feedback = document.getElementById('modal-copy-feedback');
+            if (feedback) feedback.style.display = 'none';
+
+            document.getElementById('custom-modal').style.display = 'flex';
+        }
+
+        function closeCustomModal() {
+            document.getElementById('custom-modal').style.display = 'none';
+        }
+
+        async function copyModalContent() {
+            try {
+                const textToCopy = currentModalCopyText || document.getElementById('modal-body').innerText;
+                await navigator.clipboard.writeText(textToCopy);
+                const feedback = document.getElementById('modal-copy-feedback');
+                if (feedback) {
+                    feedback.style.display = 'inline';
+                    setTimeout(() => { feedback.style.display = 'none'; }, 2500);
+                }
+            } catch (e) {
+                console.error("Failed to copy modal content:", e);
+            }
+        }
+
+        // --- Process Progress Bar & Real-Time Log View ---
+        let processLogBuffer = "";
+
+        function startProcess(title, initialStatus) {
+            document.getElementById('process-title').textContent = title || "Process Running";
+            document.getElementById('process-status-label').textContent = initialStatus || "Initializing...";
+            document.getElementById('process-progress-bar').style.width = "5%";
+            document.getElementById('process-progress-bar').textContent = "5%";
+            document.getElementById('process-footer-status').textContent = "Processing...";
+            processLogBuffer = `[${new Date().toLocaleTimeString()}] Starting process: ${title}\n`;
+            document.getElementById('process-log-output').textContent = processLogBuffer;
+            document.getElementById('process-copy-feedback').style.display = 'none';
+            document.getElementById('process-modal').style.display = 'flex';
+        }
+
+        function updateProcessProgress(percent, statusText) {
+            const bar = document.getElementById('process-progress-bar');
+            const p = Math.min(100, Math.max(0, Math.round(percent)));
+            bar.style.width = `${p}%`;
+            bar.textContent = `${p}%`;
+            if (statusText) {
+                document.getElementById('process-status-label').textContent = statusText;
+            }
+        }
+
+        function appendProcessLog(line) {
+            const time = new Date().toLocaleTimeString();
+            processLogBuffer += `[${time}] ${line}\n`;
+            const consoleEl = document.getElementById('process-log-output');
+            consoleEl.textContent = processLogBuffer;
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+        }
+
+        function finishProcess(statusText, isSuccess = true) {
+            updateProcessProgress(100, statusText);
+            document.getElementById('process-footer-status').textContent = isSuccess ? "Finished Successfully" : "Failed";
+            appendProcessLog(isSuccess ? "Process completed successfully." : "Process terminated with errors.");
+        }
+
+        function closeProcessModal() {
+            document.getElementById('process-modal').style.display = 'none';
+        }
+
+        async function copyProcessLogs() {
+            try {
+                await navigator.clipboard.writeText(processLogBuffer);
+                const feedback = document.getElementById('process-copy-feedback');
+                if (feedback) {
+                    feedback.style.display = 'inline';
+                    setTimeout(() => { feedback.style.display = 'none'; }, 2500);
+                }
+            } catch (e) {
+                console.error("Failed to copy process logs:", e);
+            }
+        }
+
+        // --- Dataset Combos Handler (FROM / WHAT / WHERE) ---
+        const DATASET_PRESETS = {
+            HUGGING_FACE: [
+                { id: "wikitext", name: "Salesforce/wikitext (Wikitext-2)", split: "train", type: "TEXT" },
+                { id: "huggingFaceFW/fineWeb", name: "huggingFaceFW/fineWeb (FineWeb-10B)", split: "train", type: "TEXT" },
+                { id: "HuggingFaceH4/ultrachat_200k", name: "HuggingFaceH4/ultrachat_200k (UltraChat)", split: "train_sft", type: "INSTRUCTION" },
+                { id: "bigcode/the-stack", name: "bigcode/the-stack (Code Stack)", split: "train", type: "CODE" },
+                { id: "gsm8k", name: "gsm8k (GSM8K Math Proofs)", split: "main", type: "REASONING" }
+            ],
+            LOCAL: [
+                { id: "forge-input/workspace", name: "forge-input/workspace (Local Workspace Source)", split: "main", type: "CODE" },
+                { id: "forge-input/documents", name: "forge-input/documents (PDF / Markdown Docs)", split: "main", type: "TEXT" }
+            ],
+            PROJECT: [
+                { id: "eu.kalafatic.evolution", name: "Project Source Code Tree (Java / XML / JSON)", split: "src", type: "CODE" }
+            ],
+            SYNTHETIC: [
+                { id: "synthetic-qa", name: "Synthetic Reasoning & QA Generator", split: "train", type: "REASONING" },
+                { id: "synthetic-code", name: "Synthetic Code Completion Generator", split: "train", type: "CODE" }
+            ]
+        };
+
+        function onDatasetFromChange() {
+            const fromVal = document.getElementById('dataset-from-combo').value;
+            const whereSelect = document.getElementById('dataset-where-combo');
+            whereSelect.innerHTML = "";
+
+            const presets = DATASET_PRESETS[fromVal] || DATASET_PRESETS.HUGGING_FACE;
+            presets.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.textContent = p.name;
+                whereSelect.appendChild(opt);
+            });
+
+            const customOpt = document.createElement('option');
+            customOpt.value = "CUSTOM";
+            customOpt.textContent = "Custom / Manual Entry...";
+            whereSelect.appendChild(customOpt);
+
+            onDatasetWhereChange();
+        }
+
+        function onDatasetWhatChange() {
+            const whatVal = document.getElementById('dataset-what-combo').value;
+            log(`Selected dataset schema / domain: ${whatVal}`);
+        }
+
+        function onDatasetWhereChange() {
+            const whereVal = document.getElementById('dataset-where-combo').value;
+            const repoInput = document.getElementById('dataset-repo');
+            if (whereVal !== "CUSTOM") {
+                repoInput.value = whereVal;
+            }
+        }
+
+        // --- Structured Table Rendering Utilities ---
+        function renderTable(headers, rows, rawCopyText = "") {
+            let html = `<div class="table-toolbar">
+                <span style="font-size:0.8em; color:var(--text-dim);">${rows.length} record(s) loaded</span>
+                <button class="btn btn-sm btn-primary" onclick="copyModalContent()">📋 Copy Table (CSV/TSV)</button>
+            </div>`;
+            html += `<table class="data-table"><thead><tr>`;
+            headers.forEach(h => { html += `<th>${h}</th>`; });
+            html += `</tr></thead><tbody>`;
+
+            let tsvText = headers.join('\t') + '\n';
+            rows.forEach((row, idx) => {
+                html += `<tr>`;
+                const rowValues = [];
+                row.forEach(cell => {
+                    const strVal = String(cell !== undefined && cell !== null ? cell : "");
+                    rowValues.push(strVal.replace(/\t/g, ' '));
+                    html += `<td>${strVal}</td>`;
+                });
+                tsvText += rowValues.join('\t') + '\n';
+                html += `</tr>`;
+            });
+            html += `</tbody></table>`;
+
+            currentModalCopyText = rawCopyText || tsvText;
+            return html;
+        }
+
+        function renderDatasetPreviewTable(samples) {
+            if (!samples || !Array.isArray(samples) || samples.length === 0) {
+                return `<div style="padding:20px; text-align:center; color:var(--text-dim);">No preview samples available.</div>`;
+            }
+
+            const headers = ["#", "Sample Type", "Prompt / Content", "Response / Target", "Tokens", "Quality Score"];
+            const rows = samples.map((s, idx) => [
+                idx + 1,
+                s.sampleType || s.type || "TEXT",
+                s.content || s.text || s.prompt || JSON.stringify(s),
+                s.response || s.target || s.answer || "-",
+                s.tokenCount || s.tokens || "-",
+                s.qualityScore ? (s.qualityScore * 100).toFixed(1) + "%" : "100.0%"
+            ]);
+
+            return renderTable(headers, rows);
+        }
+
         async function previewDatasetSamples() {
             const repo = document.getElementById('dataset-repo').value.trim();
             const split = document.getElementById('dataset-split').value.trim();
-            log(`Previewing HF dataset ${repo} (${split})...`);
+            log(`Previewing dataset ${repo} (${split})...`);
+
+            startProcess(`Dataset Preview`, `Fetching samples for ${repo}...`);
+            appendProcessLog(`Connecting to dataset preview endpoint...`);
+            updateProcessProgress(30, `Querying dataset ${repo}...`);
+
             try {
                 const res = await fetch(getBaseUrl() + `/forge/dataset/hf/preview?runtime=SWT`, {
                     method: 'POST',
-                    body: JSON.stringify({ repository: repo, split: split, count: 3 })
+                    body: JSON.stringify({ repository: repo, split: split, count: 5 })
                 });
+                updateProcessProgress(70, `Parsing preview samples...`);
                 const samples = await res.json();
-                log(`Fetched ${samples.length} preview samples.`);
-                alert(`Dataset Preview (${samples.length} items loaded):\n` + JSON.stringify(samples, null, 2));
+                appendProcessLog(`Successfully fetched ${samples.length} sample items.`);
+                finishProcess(`Loaded ${samples.length} sample(s).`, true);
+
+                const tableHtml = renderDatasetPreviewTable(samples);
+                showModalDialog({
+                    title: `Dataset Preview: ${repo} (${split})`,
+                    content: tableHtml,
+                    isTable: true
+                });
             } catch (e) {
-                log(`Preview error: ${e.message}`);
+                appendProcessLog(`Error fetching dataset preview: ${e.message}`);
+                finishProcess(`Preview failed`, false);
+                showModalDialog({
+                    title: `Preview Error`,
+                    content: `Failed to fetch dataset preview:\n${e.message}`
+                });
             }
         }
 
@@ -2099,7 +2526,7 @@
         }
 
         async function downloadDataset() {
-            const sourceType = document.getElementById('dataset-source-type').value;
+            const sourceType = document.getElementById('dataset-from-combo') ? document.getElementById('dataset-from-combo').value : "HUGGING_FACE";
             const repo = document.getElementById('dataset-repo').value.trim();
             const split = document.getElementById('dataset-split').value.trim();
             const maxSamples = parseInt(document.getElementById('dataset-max-samples').value) || 1000;
@@ -2107,30 +2534,46 @@
             const maxBytes = maxSizeMb * 1024 * 1024;
             const outputDir = document.getElementById('dataset-output-dir').value.trim();
 
-            log(`Downloading dataset from ${sourceType}: ${repo} into ${outputDir}...`);
+            startProcess(`Dataset Download: ${repo}`, `Initializing connection...`);
+            appendProcessLog(`Source: ${sourceType} | Repository: ${repo} | Split: ${split}`);
+            appendProcessLog(`Max Limit: ${maxSamples} samples | ${maxSizeMb} MB | Target Dir: ${outputDir}`);
+            updateProcessProgress(20, `Downloading ${repo}...`);
+
             try {
                 const res = await fetch(getBaseUrl() + `/forge/dataset/prepare?runtime=SWT`, {
                     method: 'POST',
                     body: JSON.stringify({ sourceType, repository: repo, split, maxSamples, maxBytes, outputDir, downloadOnly: true })
                 });
+                updateProcessProgress(70, `Processing response...`);
                 const result = await res.json();
+
                 if (!res.ok || result.error) {
                     const err = result.error || `HTTP ${res.status}`;
-                    log(`Download Failed: ${err}`);
-                    alert(`Dataset Download Failed!\nError: ${err}`);
+                    appendProcessLog(`Download Error: ${err}`);
+                    finishProcess(`Download Failed`, false);
+                    showModalDialog({ title: "Dataset Download Failed", content: `Error downloading dataset:\n${err}` });
                     return;
                 }
-                log(`Dataset Downloaded: ${result.artifactPath}`);
-                alert(`Dataset Downloaded Successfully!\nDestination: ${result.artifactPath}\nSamples: ${result.totalAccepted}`);
+
+                updateProcessProgress(100, `Download Complete!`);
+                appendProcessLog(`Saved artifact: ${result.artifactPath}`);
+                appendProcessLog(`Total accepted samples: ${result.totalAccepted}`);
+                finishProcess(`Downloaded ${result.totalAccepted} samples.`, true);
+
+                showModalDialog({
+                    title: "Dataset Download Completed",
+                    content: `Dataset downloaded successfully!\n\nDestination: ${result.artifactPath}\nSamples Accepted: ${result.totalAccepted}\nMax Limit (MB): ${maxSizeMb}`
+                });
                 await loadDatasetArtifactsList();
             } catch (e) {
-                log(`Download error: ${e.message}`);
-                alert(`Download error: ${e.message}`);
+                appendProcessLog(`Download exception: ${e.message}`);
+                finishProcess(`Download Error`, false);
+                showModalDialog({ title: "Download Error", content: e.message });
             }
         }
 
         async function buildEvoDatasetArtifact() {
-            const sourceType = document.getElementById('dataset-source-type').value;
+            const sourceType = document.getElementById('dataset-from-combo') ? document.getElementById('dataset-from-combo').value : "HUGGING_FACE";
             const repo = document.getElementById('dataset-repo').value.trim();
             const split = document.getElementById('dataset-split').value.trim();
             const maxSamples = parseInt(document.getElementById('dataset-max-samples').value) || 1000;
@@ -2138,25 +2581,41 @@
             const maxBytes = maxSizeMb * 1024 * 1024;
             const outputDir = document.getElementById('dataset-output-dir').value.trim();
 
-            log(`Building .evodata dataset artifact from ${sourceType}: ${repo} (max ${maxSizeMb} MB) to ${outputDir}...`);
+            startProcess(`Building .evodata Artifact`, `Cleaning, deduplicating and tokenizing...`);
+            appendProcessLog(`Source: ${sourceType} | Repo: ${repo} | Split: ${split}`);
+            appendProcessLog(`Building compressed .evodata artifact in ${outputDir}...`);
+            updateProcessProgress(25, `Extracting and processing training samples...`);
+
             try {
                 const res = await fetch(getBaseUrl() + `/forge/dataset/prepare?runtime=SWT`, {
                     method: 'POST',
                     body: JSON.stringify({ sourceType, repository: repo, split, maxSamples, maxBytes, outputDir })
                 });
+                updateProcessProgress(75, `Finalizing .evodata artifact binary...`);
                 const result = await res.json();
+
                 if (!res.ok || result.error) {
                     const err = result.error || `HTTP ${res.status}`;
-                    log(`Build Failed: ${err}`);
-                    alert(`Dataset Build Failed!\nError: ${err}`);
+                    appendProcessLog(`Build Error: ${err}`);
+                    finishProcess(`Build Failed`, false);
+                    showModalDialog({ title: "Dataset Build Failed", content: `Error building .evodata:\n${err}` });
                     return;
                 }
-                log(`Dataset Artifact READY: ${result.artifactPath}`);
-                alert(`Dataset Built Successfully!\nArtifact: ${result.artifactPath}\nSamples: ${result.totalAccepted}`);
+
+                updateProcessProgress(100, `Build Complete!`);
+                appendProcessLog(`Artifact created: ${result.artifactPath}`);
+                appendProcessLog(`Total processed samples: ${result.totalAccepted}`);
+                finishProcess(`.evodata Ready: ${result.artifactPath}`, true);
+
+                showModalDialog({
+                    title: "EVO Dataset Built Successfully",
+                    content: `EVO Dataset (.evodata) built and validated!\n\nArtifact Path: ${result.artifactPath}\nAccepted Samples: ${result.totalAccepted}`
+                });
                 await loadDatasetArtifactsList();
             } catch (e) {
-                log(`Build error: ${e.message}`);
-                alert(`Build error: ${e.message}`);
+                appendProcessLog(`Build error: ${e.message}`);
+                finishProcess(`Build Error`, false);
+                showModalDialog({ title: "Build Error", content: e.message });
             }
         }
 
@@ -2177,8 +2636,61 @@
             } catch (e) {}
         }
 
+        // Initialize panel action buttons on DOM ready and load
+        initPanelActions();
+        document.addEventListener('DOMContentLoaded', initPanelActions);
+        window.addEventListener('load', initPanelActions);
+
         // Notify SWT ready
         if (window.logFunction) logFunction("ready");
     </script>
+
+    <!-- CUSTOM COPYABLE MODAL DIALOG -->
+    <div id="custom-modal" class="modal-overlay" style="display:none;">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3 id="modal-title">Dialog</h3>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <button class="btn btn-sm btn-primary" onclick="copyModalContent()">📋 Copy Content</button>
+                    <button class="btn btn-sm" onclick="closeCustomModal()">✕</button>
+                </div>
+            </div>
+            <div class="modal-body" id="modal-body">
+                <!-- Content or Table goes here -->
+            </div>
+            <div class="modal-footer">
+                <span id="modal-copy-feedback" style="color: var(--success); font-weight: bold; display: none;">Copied to clipboard!</span>
+                <button class="btn btn-sm" onclick="closeCustomModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PROCESS PROGRESS & LIVE LOG MODAL -->
+    <div id="process-modal" class="modal-overlay" style="display:none;">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3 id="process-title">Process Execution</h3>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <button class="btn btn-sm btn-primary" onclick="copyProcessLogs()">📋 Copy Logs</button>
+                    <button class="btn btn-sm" onclick="closeProcessModal()">✕</button>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div id="process-status-label" style="font-weight: bold; color: var(--accent); margin-bottom: 6px;">Initializing...</div>
+                <div style="background: #e0e0e0; border-radius: 4px; height: 22px; overflow: hidden; margin-bottom: 10px; border: 1px solid var(--border);">
+                    <div id="process-progress-bar" style="width: 0%; height: 100%; background: var(--accent); transition: width 0.3s; text-align: center; color: white; font-size: 0.8em; line-height: 22px; font-weight: bold;">0%</div>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label style="font-weight: bold; font-size: 0.8em; color: var(--text-dim);">Live Execution Output Log:</label>
+                    <span id="process-copy-feedback" style="color: var(--success); font-weight: bold; font-size: 0.8em; display: none;">Logs copied!</span>
+                </div>
+                <pre id="process-log-output" class="process-log-box"></pre>
+            </div>
+            <div class="modal-footer">
+                <span id="process-footer-status" style="font-size: 0.85em; color: var(--text-dim);">Running...</span>
+                <button id="process-close-btn" class="btn btn-sm btn-primary" onclick="closeProcessModal()">Close</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
