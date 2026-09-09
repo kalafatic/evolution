@@ -88,9 +88,28 @@ public class NormalizedSample {
     public void recalculateCountsAndHash() {
         String fullContent = toFullText();
         this.charCount = fullContent != null ? fullContent.length() : 0;
-        if (this.hash == null || this.hash.isEmpty()) {
-            this.hash = computeHash(fullContent);
+        if (fullContent != null && !fullContent.isEmpty()) {
+            String[] words = fullContent.split("\\s+");
+            this.tokenCount = Math.max(1, (int) Math.ceil(words.length * 1.3));
+        } else {
+            this.tokenCount = 0;
         }
+        this.hash = computeHash(fullContent);
+    }
+
+    public void setText(String text) {
+        this.text = text;
+        this.hash = null;
+    }
+
+    public void setInstruction(String instruction) {
+        this.instruction = instruction;
+        this.hash = null;
+    }
+
+    public void setResponse(String response) {
+        this.response = response;
+        this.hash = null;
     }
 
     public String toFullText() {
@@ -174,13 +193,10 @@ public class NormalizedSample {
     public void setType(TrainingSampleType type) { this.type = type; }
 
     public String getText() { return text; }
-    public void setText(String text) { this.text = text; }
 
     public String getInstruction() { return instruction; }
-    public void setInstruction(String instruction) { this.instruction = instruction; }
 
     public String getResponse() { return response; }
-    public void setResponse(String response) { this.response = response; }
 
     public List<Message> getMessages() { return messages; }
     public void setMessages(List<Message> messages) { this.messages = messages; }

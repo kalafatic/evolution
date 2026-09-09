@@ -26,10 +26,12 @@ import java.util.zip.ZipOutputStream;
 public class EvoDatasetArtifact {
 
     public enum Status {
+        CREATING,
         PREPARING,
         VALIDATING,
         FINALIZING,
         READY,
+        FAILED,
         CORRUPTED
     }
 
@@ -121,7 +123,30 @@ public class EvoDatasetArtifact {
             java.nio.file.Files.move(tempFile.toPath(), artifactFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
         }
 
+        // Post-serialization structural and semantic validation before marking READY
+        validateArtifact(artifactFile);
+
         this.status = Status.READY;
+    }
+
+    private void validateArtifact(File file) throws Exception {
+        if (!file.exists() || file.length() == 0) {
+            this.status = Status.FAILED;
+            throw new IllegalStateException("Dataset artifact file is missing or 0 bytes.");
+        }
+
+        EvoDatasetArtifact loaded = load(file);
+        if (loaded.getTrainSamples().isEmpty()) {
+            this.status = Status.FAILED;
+            throw new IllegalStateException("Validation failed: Dataset artifact contains 0 training samples.");
+        }
+
+        for (NormalizedSample s : loaded.getTrainSamples()) {
+            if (s.toFullText().contains("Sample #") && s.toFullText().contains("Normalized sample content")) {
+                this.status = Status.FAILED;
+                throw new IllegalStateException("Validation failed: Artifact contains synthetic placeholder records.");
+            }
+        }
     }
 
     public static EvoDatasetArtifact load(File file) throws Exception {
@@ -132,14 +157,18 @@ public class EvoDatasetArtifact {
         try (ZipInputStream zis = new ZipInputStream(new FileInputStream(file), StandardCharsets.UTF_8)) {
             ZipEntry entry;
             while ((entry = zis.getNextEntry()) != null) {
-                if ("data.jsonl".equals(entry.getName()) || "val_data.jsonl".equals(entry.getName())) {
-                    boolean isVal = "val_data.jsonl".equals(entry.getName());
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(zis, StandardCharsets.UTF_8));
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        if (!line.trim().isEmpty()) {
+                String name = entry.getName();
+                if ("data.jsonl".equals(name) || "val_data.jsonl".equals(name)) {
+                    boolean isVal = "val_data.jsonl".equals(name);
+                    byte[] entryBytes = zis.readAllBytes();
+                    String content = new String(entryBytes, StandardCharsets.UTF_8);
+                    String[] lines = content.split("\n");
+
+                    for (String line : lines) {
+                        String trimmed = line.trim();
+                        if (!trimmed.isEmpty()) {
                             try {
-                                JSONObject json = new JSONObject(line.trim());
+                                JSONObject json = new JSONObject(trimmed);
                                 NormalizedSample sample = new NormalizedSample();
                                 sample.setType(TrainingSampleType.fromString(json.optString("type", "TEXT")));
                                 sample.setText(json.optString("text", ""));
@@ -159,7 +188,7 @@ public class EvoDatasetArtifact {
                                     artifact.totalTrainTokens += sample.getTokenCount();
                                 }
                             } catch (Exception ex) {
-                                artifact.trainSamples.add(NormalizedSample.createTextSample(line.trim(), file.getName()));
+                                artifact.trainSamples.add(NormalizedSample.createTextSample(trimmed, file.getName()));
                             }
                         }
                     }

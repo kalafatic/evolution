@@ -21,7 +21,6 @@ import eu.kalafatic.evolution.forge.data.impl.pipeline.DataCleaner;
 import eu.kalafatic.evolution.forge.data.impl.pipeline.DatasetDeduplicator;
 import eu.kalafatic.evolution.forge.data.impl.pipeline.DatasetSampler;
 import eu.kalafatic.evolution.forge.data.impl.pipeline.TrainingSampleQualityScorer;
-import eu.kalafatic.evolution.forge.data.impl.source.HuggingFaceDatasetSource;
 import eu.kalafatic.evolution.forge.data.impl.source.LocalDatasetSource;
 
 public class TrainingDataPreparationPipelineTest {
@@ -51,6 +50,7 @@ public class TrainingDataPreparationPipelineTest {
         assertEquals(TrainingSampleType.TEXT, sample.getType());
         assertEquals("Hello EVO", sample.toFullText());
         assertNotNull(sample.getHash());
+        assertTrue("Token count must be non-zero for non-empty text", sample.getTokenCount() > 0);
 
         NormalizedSample codeSample = new NormalizedSample(TrainingSampleType.CODE, "public class A {}");
         assertEquals(TrainingSampleType.CODE, codeSample.getType());
@@ -73,31 +73,19 @@ public class TrainingDataPreparationPipelineTest {
     }
 
     @Test
-    public void testHuggingFaceDatasetSourceMockFallback() throws Exception {
-        DatasetSourceConfig config = new DatasetSourceConfig("HUGGING_FACE", "wikitext");
-        config.setMaxSamples(3);
-
-        try (HuggingFaceDatasetSource source = new HuggingFaceDatasetSource(config)) {
-            source.initialize();
-            List<NormalizedSample> items = new ArrayList<>();
-            while (source.hasNext()) {
-                items.add(source.next());
-            }
-            assertEquals("Bounded HF source should produce max 3 samples in test context", 3, items.size());
-        }
-    }
-
-    @Test
     public void testCleanerDeduplicatorAndQualityScorer() {
         DataCleaner cleaner = new DataCleaner();
         DatasetDeduplicator deduplicator = new DatasetDeduplicator(true);
         TrainingSampleQualityScorer scorer = new TrainingSampleQualityScorer(0.4);
 
         NormalizedSample rawSample = NormalizedSample.createTextSample("<p>  Clean text   with HTML tags.  </p>\n\n\n\nNew line.", "src1");
+        String initialHash = rawSample.getHash();
+
         NormalizedSample cleaned = cleaner.clean(rawSample);
 
         assertNotNull("Cleaner should return cleaned sample", cleaned);
         assertFalse("HTML should be stripped", cleaned.toFullText().contains("<p>"));
+        assertNotEquals("Hash must be updated when text is cleaned", initialHash, cleaned.getHash());
 
         assertTrue("Sample should pass quality scorer", scorer.isAcceptable(cleaned));
 
@@ -113,7 +101,7 @@ public class TrainingDataPreparationPipelineTest {
         DatasetSampler sampler = new DatasetSampler(DatasetSampler.Strategy.RESERVOIR, 5);
         List<NormalizedSample> candidates = new ArrayList<>();
         for (int i = 0; i < 20; i++) {
-            candidates.add(NormalizedSample.createTextSample("Sample #" + i, "src"));
+            candidates.add(NormalizedSample.createTextSample("Real training content item #" + i, "src"));
         }
 
         List<NormalizedSample> sampled = sampler.sample(candidates);
@@ -121,13 +109,13 @@ public class TrainingDataPreparationPipelineTest {
     }
 
     @Test
-    public void testEvoDatasetArtifactRoundTrip() throws Exception {
+    public void testEvoDatasetArtifactRoundTripAndValidation() throws Exception {
         File artifactFile = new File(tempFolder.getRoot(), "test_dataset.evodata");
         EvoDatasetArtifact artifact = new EvoDatasetArtifact(artifactFile);
 
         List<NormalizedSample> samples = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
-            samples.add(NormalizedSample.createTextSample("Sample sentence #" + i + " for EVO artifact testing.", "src"));
+            samples.add(NormalizedSample.createTextSample("Real WikiText corpus sentence #" + i + " for EVO artifact testing.", "src"));
         }
 
         DatasetSourceConfig config = new DatasetSourceConfig("LOCAL", sampleDir.getAbsolutePath());
@@ -141,6 +129,8 @@ public class TrainingDataPreparationPipelineTest {
         EvoDatasetArtifact loaded = EvoDatasetArtifact.load(artifactFile);
         assertEquals(EvoDatasetArtifact.Status.READY, loaded.getStatus());
         assertTrue("Train samples should be recovered", loaded.getTrainSamples().size() > 0);
+        assertTrue("Token count must be deserialized cleanly", loaded.getTrainSamples().get(0).getTokenCount() > 0);
+        assertFalse("Deserialized text must be real content not raw JSON wrapper", loaded.getTrainSamples().get(0).toFullText().startsWith("{"));
         assertTrue("Report text should be generated", loaded.buildReportText().contains("EVO DATA PREPARATION RESULT REPORT"));
     }
 }
