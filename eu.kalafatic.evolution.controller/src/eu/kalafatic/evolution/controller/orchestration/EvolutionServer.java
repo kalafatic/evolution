@@ -1694,8 +1694,13 @@ public class EvolutionServer extends NanoHTTPD {
             EvoDatasetArtifact artifact = new EvoDatasetArtifact(targetArtifactFile);
             artifact.save(sampled, config, new eu.kalafatic.evolution.forge.data.api.source.DatasetSourceStats(), 0.02);
 
+            if (sampled.isEmpty()) {
+                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json",
+                    new JSONObject().put("error", "Dataset preparation failed: 0 valid samples were accepted from source " + repo).toString());
+            }
+
             JSONObject result = new JSONObject();
-            result.put("status", "READY");
+            result.put("status", artifact.getStatus().name());
             result.put("artifactPath", targetArtifactFile.getAbsolutePath());
             result.put("totalAccepted", sampled.size());
             result.put("report", artifact.buildReportText());
@@ -1703,7 +1708,7 @@ public class EvolutionServer extends NanoHTTPD {
             return newFixedLengthResponse(Response.Status.OK, "application/json", result.toString());
         } catch (Exception e) {
             return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json",
-                new JSONObject().put("error", e.getMessage()).toString());
+                new JSONObject().put("error", "Dataset preparation error: " + e.getMessage()).toString());
         }
     }
 
