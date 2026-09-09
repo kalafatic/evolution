@@ -80,7 +80,7 @@ public class DatasetEditorGroup extends AEvoGroup {
         if (baseWorkspace == null || baseWorkspace.trim().isEmpty()) {
             baseWorkspace = System.getProperty("user.dir");
         }
-        String defaultDir = new File(baseWorkspace, "forge-output").getAbsolutePath();
+        String defaultDir = new File(baseWorkspace, "forge-input").getAbsolutePath();
         outputDirText = toolkit.createText(dirComp, defaultDir, SWT.BORDER);
         outputDirText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
