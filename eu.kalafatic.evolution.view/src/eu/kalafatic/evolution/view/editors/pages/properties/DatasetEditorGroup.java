@@ -325,11 +325,25 @@ public class DatasetEditorGroup extends AEvoGroup {
             os.write(jsonBody.getBytes(java.nio.charset.StandardCharsets.UTF_8));
         }
 
-        try (java.io.BufferedReader br = new java.io.BufferedReader(new java.io.InputStreamReader(conn.getInputStream(), java.nio.charset.StandardCharsets.UTF_8))) {
+        int code = conn.getResponseCode();
+        java.io.InputStream stream = (code >= 200 && code < 300) ? conn.getInputStream() : conn.getErrorStream();
+        if (stream == null) {
+            throw new Exception("HTTP error code " + code);
+        }
+
+        try (java.io.BufferedReader br = new java.io.BufferedReader(new java.io.InputStreamReader(stream, java.nio.charset.StandardCharsets.UTF_8))) {
             StringBuilder sb = new StringBuilder();
             String line;
             while ((line = br.readLine()) != null) sb.append(line).append("\n");
-            return sb.toString();
+            String result = sb.toString();
+            if (code >= 300) {
+                try {
+                    org.json.JSONObject errJson = new org.json.JSONObject(result);
+                    if (errJson.has("error")) throw new Exception(errJson.getString("error"));
+                } catch (org.json.JSONException ignored) {}
+                throw new Exception("HTTP " + code + ": " + result);
+            }
+            return result;
         }
     }
 

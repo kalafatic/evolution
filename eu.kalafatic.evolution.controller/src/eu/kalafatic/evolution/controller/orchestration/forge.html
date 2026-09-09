@@ -2114,11 +2114,18 @@
                     body: JSON.stringify({ sourceType, repository: repo, split, maxSamples, maxBytes, outputDir, downloadOnly: true })
                 });
                 const result = await res.json();
+                if (!res.ok || result.error) {
+                    const err = result.error || `HTTP ${res.status}`;
+                    log(`Download Failed: ${err}`);
+                    alert(`Dataset Download Failed!\nError: ${err}`);
+                    return;
+                }
                 log(`Dataset Downloaded: ${result.artifactPath}`);
                 alert(`Dataset Downloaded Successfully!\nDestination: ${result.artifactPath}\nSamples: ${result.totalAccepted}`);
                 await loadDatasetArtifactsList();
             } catch (e) {
                 log(`Download error: ${e.message}`);
+                alert(`Download error: ${e.message}`);
             }
         }
 
@@ -2138,11 +2145,18 @@
                     body: JSON.stringify({ sourceType, repository: repo, split, maxSamples, maxBytes, outputDir })
                 });
                 const result = await res.json();
+                if (!res.ok || result.error) {
+                    const err = result.error || `HTTP ${res.status}`;
+                    log(`Build Failed: ${err}`);
+                    alert(`Dataset Build Failed!\nError: ${err}`);
+                    return;
+                }
                 log(`Dataset Artifact READY: ${result.artifactPath}`);
                 alert(`Dataset Built Successfully!\nArtifact: ${result.artifactPath}\nSamples: ${result.totalAccepted}`);
                 await loadDatasetArtifactsList();
             } catch (e) {
                 log(`Build error: ${e.message}`);
+                alert(`Build error: ${e.message}`);
             }
         }
 
