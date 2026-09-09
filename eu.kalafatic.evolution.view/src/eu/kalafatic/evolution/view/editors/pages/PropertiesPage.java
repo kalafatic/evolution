@@ -30,6 +30,7 @@ public class PropertiesPage extends AEvoPage {
 	private McpOpenAiGroup mcpOpenAiGroup;
 	private AiChatModelsGroup aiChatModelsGroup;
 	private ModelsGroup modelsGroup;
+	private DatasetEditorGroup datasetEditorGroup;
 
 	public PropertiesPage(Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
 		super(parent, editor, orchestrator);
@@ -95,6 +96,7 @@ public class PropertiesPage extends AEvoPage {
 			}
 		});
 		modelsGroup = new ModelsGroup(toolkit, comp, editor, orchestrator, this);
+		datasetEditorGroup = new DatasetEditorGroup(toolkit, comp, editor, orchestrator);
 		orchestratorGroup = new OrchestratorGroup(toolkit, comp, editor, orchestrator);
 		llmSettingsGroup = new LlmSettingsGroup(toolkit, comp, editor, orchestrator);
 		ollamaSettingsGroup = new OllamaSettingsGroup(toolkit, comp, editor, orchestrator, this);

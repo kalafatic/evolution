@@ -172,6 +172,9 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
                         }
                         if (Files.isRegularFile(sourcePath)) {
                             scannedPaths.add(sourcePath);
+                            if (sourcePath.getFileName().toString().endsWith(".evodata")) {
+                                logToFile(logFile, "Found EVO Dataset Artifact: " + sourcePath.getFileName());
+                            }
                         } else if (Files.isDirectory(sourcePath)) {
                             try (Stream<Path> walk = Files.walk(sourcePath)) {
                                 List<Path> files = walk
