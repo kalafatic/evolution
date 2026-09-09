@@ -1,8 +1,11 @@
 package eu.kalafatic.evolution.forge.data.api.artifact;
 
 import eu.kalafatic.evolution.forge.data.api.NormalizedSample;
+import eu.kalafatic.evolution.forge.data.api.TrainingSampleType;
 import eu.kalafatic.evolution.forge.data.api.source.DatasetSourceConfig;
 import eu.kalafatic.evolution.forge.data.api.source.DatasetSourceStats;
+
+import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -129,12 +132,35 @@ public class EvoDatasetArtifact {
         try (ZipInputStream zis = new ZipInputStream(new FileInputStream(file), StandardCharsets.UTF_8)) {
             ZipEntry entry;
             while ((entry = zis.getNextEntry()) != null) {
-                if ("data.jsonl".equals(entry.getName())) {
+                if ("data.jsonl".equals(entry.getName()) || "val_data.jsonl".equals(entry.getName())) {
+                    boolean isVal = "val_data.jsonl".equals(entry.getName());
                     BufferedReader reader = new BufferedReader(new InputStreamReader(zis, StandardCharsets.UTF_8));
                     String line;
                     while ((line = reader.readLine()) != null) {
                         if (!line.trim().isEmpty()) {
-                            artifact.trainSamples.add(NormalizedSample.createTextSample(line.trim(), file.getName()));
+                            try {
+                                JSONObject json = new JSONObject(line.trim());
+                                NormalizedSample sample = new NormalizedSample();
+                                sample.setType(TrainingSampleType.fromString(json.optString("type", "TEXT")));
+                                sample.setText(json.optString("text", ""));
+                                sample.setInstruction(json.optString("instruction", null));
+                                sample.setResponse(json.optString("response", null));
+                                sample.setSource(json.optString("source", file.getName()));
+                                sample.setQualityScore(json.optDouble("qualityScore", 1.0));
+                                sample.setTokenCount(json.optInt("tokenCount", 0));
+                                sample.setHash(json.optString("hash", null));
+                                sample.recalculateCountsAndHash();
+
+                                if (isVal) {
+                                    artifact.valSamples.add(sample);
+                                    artifact.totalValTokens += sample.getTokenCount();
+                                } else {
+                                    artifact.trainSamples.add(sample);
+                                    artifact.totalTrainTokens += sample.getTokenCount();
+                                }
+                            } catch (Exception ex) {
+                                artifact.trainSamples.add(NormalizedSample.createTextSample(line.trim(), file.getName()));
+                            }
                         }
                     }
                 }

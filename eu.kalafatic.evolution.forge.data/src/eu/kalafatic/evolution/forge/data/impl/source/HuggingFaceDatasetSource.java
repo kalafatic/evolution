@@ -6,6 +6,9 @@ import eu.kalafatic.evolution.forge.data.api.source.DatasetSource;
 import eu.kalafatic.evolution.forge.data.api.source.DatasetSourceConfig;
 import eu.kalafatic.evolution.forge.data.api.source.DatasetSourceStats;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -13,17 +16,21 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.NoSuchElementException;
 
 /**
- * Hugging Face Dataset Source supporting public dataset streams with bounded sample/byte limits.
+ * Hugging Face Dataset Source supporting public dataset streams via Hugging Face rows API with offset pagination and JSON parsing.
  */
 public class HuggingFaceDatasetSource implements DatasetSource {
 
     private final DatasetSourceConfig config;
     private final DatasetSourceStats stats = new DatasetSourceStats();
-    private BufferedReader reader;
-    private NormalizedSample nextBufferedSample;
+    private List<NormalizedSample> currentChunk = new ArrayList<>();
+    private int currentChunkIndex = 0;
+    private long currentOffset = 0;
+    private boolean endOfStream = false;
     private boolean initialized = false;
 
     public HuggingFaceDatasetSource(DatasetSourceConfig config) {
@@ -48,92 +55,143 @@ public class HuggingFaceDatasetSource implements DatasetSource {
     @Override
     public void initialize() throws Exception {
         if (initialized) return;
+        initialized = true;
+        fetchNextChunk();
+    }
+
+    private boolean isBoundsExceeded() {
+        if (config.getMaxSamples() > 0 && stats.getTotalSamplesRead() >= config.getMaxSamples()) {
+            return true;
+        }
+        if (config.getMaxBytes() > 0 && stats.getTotalBytesRead() >= config.getMaxBytes()) {
+            return true;
+        }
+        if (config.getMaxTokens() > 0 && stats.getEstimatedTokens() >= config.getMaxTokens()) {
+            return true;
+        }
+        return false;
+    }
+
+    private void fetchNextChunk() {
+        currentChunk.clear();
+        currentChunkIndex = 0;
+
+        if (isBoundsExceeded()) {
+            endOfStream = true;
+            return;
+        }
 
         String repo = config.getRepository();
         String configName = config.getConfiguration();
         String split = config.getSplit() != null ? config.getSplit() : "train";
+        String cfg = (configName != null && !configName.trim().isEmpty()) ? configName : "default";
 
-        // Construct standard Hugging Face datasets server / raw parquets or JSONL endpoint URL
-        // Fallback or preview stream URL using HF API or parquet/json streams
         String targetUrl;
         if (repo.startsWith("http://") || repo.startsWith("https://")) {
             targetUrl = repo;
         } else {
-            // Standard datasets server endpoint
-            String cfg = (configName != null && !configName.trim().isEmpty()) ? configName : "default";
-            targetUrl = "https://datasets-server.huggingface.co/rows?dataset=" + repo + "&config=" + cfg + "&split=" + split + "&offset=0&length=100";
+            targetUrl = "https://datasets-server.huggingface.co/rows?dataset=" + repo + "&config=" + cfg + "&split=" + split + "&offset=" + currentOffset + "&length=100";
         }
 
         try {
             URL url = URI.create(targetUrl).toURL();
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
-            conn.setConnectTimeout(5000);
-            conn.setReadTimeout(10000);
+            conn.setConnectTimeout(3000);
+            conn.setReadTimeout(5000);
             conn.setRequestProperty("User-Agent", "EVO-Forge-Client/2.6");
 
             int status = conn.getResponseCode();
             if (status >= 200 && status < 300) {
                 InputStream in = conn.getInputStream();
-                reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
+                BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
+                StringBuilder sb = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    sb.append(line);
+                }
+                reader.close();
+
+                JSONObject root = new JSONObject(sb.toString());
+                if (root.has("rows")) {
+                    JSONArray rows = root.getJSONArray("rows");
+                    for (int i = 0; i < rows.length(); i++) {
+                        JSONObject rowObj = rows.getJSONObject(i).optJSONObject("row");
+                        if (rowObj != null) {
+                            NormalizedSample sample = extractSampleFromRow(rowObj);
+                            if (sample != null) {
+                                currentChunk.add(sample);
+                            }
+                        }
+                    }
+                    currentOffset += rows.length();
+                    if (rows.length() == 0) {
+                        endOfStream = true;
+                    }
+                } else {
+                    endOfStream = true;
+                }
             } else {
-                // If remote endpoint is not directly available or in offline environment, fallback to simulated stream
-                reader = null;
+                endOfStream = true;
             }
         } catch (Exception e) {
-            reader = null;
+            endOfStream = true;
         }
 
-        initialized = true;
-        advanceNextSample();
+        // Mock fallback if offline or no network response in unit/test context
+        if (currentChunk.isEmpty() && !isBoundsExceeded()) {
+            long limit = config.getMaxSamples() > 0 ? config.getMaxSamples() : 5;
+            while (stats.getTotalSamplesRead() + currentChunk.size() < limit) {
+                long idx = stats.getTotalSamplesRead() + currentChunk.size() + 1;
+                String text = "Sample #" + idx + " from Hugging Face dataset " + config.getRepository() + " (" + config.getSplit() + "). Normalized sample content.";
+                NormalizedSample sample = NormalizedSample.createTextSample(text, getSourceName());
+                sample.setCategory("huggingface");
+                currentChunk.add(sample);
+            }
+            endOfStream = true;
+        }
     }
 
-    private void advanceNextSample() {
-        nextBufferedSample = null;
-
-        // Check bounds
-        if (config.getMaxSamples() > 0 && stats.getTotalSamplesRead() >= config.getMaxSamples()) {
-            return;
-        }
-        if (config.getMaxBytes() > 0 && stats.getTotalBytesRead() >= config.getMaxBytes()) {
-            return;
-        }
-
-        if (reader != null) {
-            try {
-                String line = reader.readLine();
-                if (line != null) {
-                    if (!line.trim().isEmpty()) {
-                        NormalizedSample sample = NormalizedSample.createTextSample(line, getSourceName());
-                        stats.incrementSamplesRead();
-                        stats.addBytesRead(line.getBytes(StandardCharsets.UTF_8).length);
-                        nextBufferedSample = sample;
-                        return;
-                    } else {
-                        advanceNextSample();
-                        return;
-                    }
+    private NormalizedSample extractSampleFromRow(JSONObject row) {
+        String text = null;
+        if (row.has("text")) {
+            text = row.optString("text", null);
+        } else if (row.has("content")) {
+            text = row.optString("content", null);
+        } else if (row.has("instruction") || row.has("response")) {
+            String inst = row.optString("instruction", "");
+            String resp = row.optString("response", "");
+            return NormalizedSample.createInstructionSample(inst, resp, getSourceName());
+        } else {
+            for (String key : row.keySet()) {
+                Object val = row.get(key);
+                if (val instanceof String s && !s.trim().isEmpty()) {
+                    text = s;
+                    break;
                 }
-            } catch (Exception e) {
-                close();
             }
         }
 
-        // Mock/Fallback sample generation if live connection unavailable in unit/offline test environment
-        if (stats.getTotalSamplesRead() < (config.getMaxSamples() > 0 ? config.getMaxSamples() : 5)) {
-            long idx = stats.getTotalSamplesRead() + 1;
-            String text = "Sample #" + idx + " from Hugging Face dataset " + config.getRepository() + " (" + config.getSplit() + "). Normalized sample content.";
-            NormalizedSample sample = NormalizedSample.createTextSample(text, getSourceName());
-            sample.setCategory("huggingface");
-            stats.incrementSamplesRead();
-            stats.addBytesRead(text.getBytes(StandardCharsets.UTF_8).length);
-            nextBufferedSample = sample;
+        if (text == null || text.trim().isEmpty()) {
+            return null;
         }
+
+        return NormalizedSample.createTextSample(text.trim(), getSourceName());
     }
 
     @Override
     public boolean hasNext() {
-        return nextBufferedSample != null;
+        if (isBoundsExceeded()) {
+            return false;
+        }
+        if (currentChunkIndex < currentChunk.size()) {
+            return true;
+        }
+        if (!endOfStream) {
+            fetchNextChunk();
+            return currentChunkIndex < currentChunk.size();
+        }
+        return false;
     }
 
     @Override
@@ -141,18 +199,23 @@ public class HuggingFaceDatasetSource implements DatasetSource {
         if (!hasNext()) {
             throw new NoSuchElementException();
         }
-        NormalizedSample current = nextBufferedSample;
-        advanceNextSample();
-        return current;
+
+        NormalizedSample sample = currentChunk.get(currentChunkIndex++);
+        byte[] bytes = sample.toFullText().getBytes(StandardCharsets.UTF_8);
+        long sampleBytes = bytes.length;
+        long sampleTokens = sampleBytes / 4;
+
+        sample.setTokenCount((int) sampleTokens);
+        stats.incrementSamplesRead();
+        stats.addBytesRead(sampleBytes);
+        stats.addEstimatedTokens(sampleTokens);
+
+        return sample;
     }
 
     @Override
     public void close() {
-        if (reader != null) {
-            try {
-                reader.close();
-            } catch (Exception ignored) {}
-            reader = null;
-        }
+        endOfStream = true;
+        currentChunk.clear();
     }
 }

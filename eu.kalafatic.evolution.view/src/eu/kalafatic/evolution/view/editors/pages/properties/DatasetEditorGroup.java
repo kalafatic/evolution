@@ -31,6 +31,7 @@ public class DatasetEditorGroup extends AEvoGroup {
     private Text repoText;
     private Text splitText;
     private Text maxSamplesText;
+    private Text maxSizeMbText;
     private Combo samplingStrategyCombo;
     private Button cleanCheck;
     private Button deduplicateCheck;
@@ -61,6 +62,10 @@ public class DatasetEditorGroup extends AEvoGroup {
         GUIFactory.INSTANCE.createLabel(group, "Max Samples Limit:");
         maxSamplesText = toolkit.createText(group, "1000", SWT.BORDER);
         maxSamplesText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        GUIFactory.INSTANCE.createLabel(group, "Max Download Size (MB):");
+        maxSizeMbText = toolkit.createText(group, "50", SWT.BORDER);
+        maxSizeMbText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
         GUIFactory.INSTANCE.createLabel(group, "Sampling Strategy:");
         samplingStrategyCombo = new Combo(group, SWT.DROP_DOWN | SWT.READ_ONLY);
@@ -106,6 +111,11 @@ public class DatasetEditorGroup extends AEvoGroup {
             }
         });
 
+        Label infoDescLabel = toolkit.createLabel(group, "Usage Info: .evodata files (e.g., wikitext.evodata) package cleaned, deduplicated, and tokenized training/validation splits with metadata. The Forge Trainer ingests .evodata artifacts directly for offline or fine-tuning forging runs.");
+        GridData gdInfo = new GridData(GridData.FILL_HORIZONTAL);
+        gdInfo.horizontalSpan = 2;
+        infoDescLabel.setLayoutData(gdInfo);
+
         Label reportLabel = toolkit.createLabel(group, "Preparation Report & Preview Log:");
         GridData gdLbl = new GridData(GridData.FILL_HORIZONTAL);
         gdLbl.horizontalSpan = 2;
@@ -118,11 +128,19 @@ public class DatasetEditorGroup extends AEvoGroup {
         reportArea.setLayoutData(gdArea);
     }
 
+    private int getServerPort() {
+        if (orchestrator != null && orchestrator.getServerSettings() != null) {
+            return orchestrator.getServerSettings().getPort();
+        }
+        return 48080;
+    }
+
     private void handlePreview() {
         String repo = repoText.getText().trim();
         String split = splitText.getText().trim();
         reportArea.setText("Fetching sample preview for " + repo + " (" + split + ")...\n");
 
+        int port = getServerPort();
         new Thread(() -> {
             try {
                 org.json.JSONObject req = new org.json.JSONObject();
@@ -130,7 +148,7 @@ public class DatasetEditorGroup extends AEvoGroup {
                 req.put("split", split);
                 req.put("count", 3);
 
-                String res = postHttp("http://localhost:48080/forge/dataset/hf/preview", req.toString());
+                String res = postHttp("http://localhost:" + port + "/forge/dataset/hf/preview", req.toString());
                 Display.getDefault().asyncExec(() -> {
                     if (!reportArea.isDisposed()) {
                         reportArea.setText("HF PREVIEW RESULT:\n" + res);
@@ -150,10 +168,18 @@ public class DatasetEditorGroup extends AEvoGroup {
         String repo = repoText.getText().trim();
         String split = splitText.getText().trim();
         String samples = maxSamplesText.getText().trim();
+        String sizeMbStr = maxSizeMbText.getText().trim();
+        long maxBytes = 0;
+        try {
+            maxBytes = Long.parseLong(sizeMbStr) * 1024L * 1024L;
+        } catch (Exception ignored) {}
+
         String sourceType = sourceTypeCombo.getSelectionIndex() == 0 ? "HUGGING_FACE" : "LOCAL";
 
-        reportArea.setText("Starting dataset preparation pipeline for " + repo + "...\n");
+        reportArea.setText("Starting dataset preparation pipeline for " + repo + " (max " + sizeMbStr + " MB)...\n");
 
+        int port = getServerPort();
+        final long finalMaxBytes = maxBytes;
         new Thread(() -> {
             try {
                 org.json.JSONObject req = new org.json.JSONObject();
@@ -161,9 +187,10 @@ public class DatasetEditorGroup extends AEvoGroup {
                 req.put("repository", repo);
                 req.put("split", split);
                 req.put("maxSamples", Long.parseLong(samples));
+                req.put("maxBytes", finalMaxBytes);
                 req.put("minQuality", 0.5);
 
-                String res = postHttp("http://localhost:48080/forge/dataset/prepare", req.toString());
+                String res = postHttp("http://localhost:" + port + "/forge/dataset/prepare", req.toString());
                 Display.getDefault().asyncExec(() -> {
                     if (!reportArea.isDisposed()) {
                         reportArea.setText("DATASET PREPARATION COMPLETE:\n" + res);
@@ -181,9 +208,10 @@ public class DatasetEditorGroup extends AEvoGroup {
     }
 
     private void handleListDatasets() {
+        int port = getServerPort();
         new Thread(() -> {
             try {
-                String res = getHttp("http://localhost:48080/forge/dataset/artifacts");
+                String res = getHttp("http://localhost:" + port + "/forge/dataset/artifacts");
                 Display.getDefault().asyncExec(() -> {
                     if (!reportArea.isDisposed()) {
                         reportArea.setText("AVAILABLE EVO DATASET ARTIFACTS:\n" + res);

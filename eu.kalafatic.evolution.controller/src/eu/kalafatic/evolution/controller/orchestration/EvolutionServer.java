@@ -1623,55 +1623,73 @@ public class EvolutionServer extends NanoHTTPD {
         String sourceType = body.optString("sourceType", "HUGGING_FACE");
         String repo = body.optString("repository", "wikitext");
         String split = body.optString("split", "train");
-        String outputName = body.optString("artifactName", repo.replace("/", "_") + ".evodata");
+        String timestamp = new java.text.SimpleDateFormat("yyyyMMdd_HHmmss").format(new java.util.Date());
+        String cleanRepoName = repo.replace("/", "_").replace("\\", "_");
+        String outputName = body.optString("artifactName", cleanRepoName + "-" + timestamp + ".evodata");
         if (!outputName.endsWith(".evodata")) outputName += ".evodata";
 
         long maxSamples = body.optLong("maxSamples", 1000);
         long maxBytes = body.optLong("maxBytes", 0);
+        long maxTokens = body.optLong("maxTokens", 0);
         double minQuality = body.optDouble("minQuality", 0.5);
 
         DatasetSourceConfig config = new DatasetSourceConfig(sourceType, repo);
         config.setSplit(split);
         config.setMaxSamples(maxSamples);
         config.setMaxBytes(maxBytes);
+        config.setMaxTokens(maxTokens);
 
-        List<NormalizedSample> collected = new ArrayList<>();
+        int reservoirCap = (int) (maxSamples > 0 ? Math.min(maxSamples, 50000) : 10000);
+        List<NormalizedSample> reservoir = new ArrayList<>();
+        long acceptedCount = 0;
+        java.util.Random rnd = new java.util.Random(42L);
+
         DataCleaner cleaner = new DataCleaner();
         DatasetDeduplicator deduplicator = new DatasetDeduplicator(true);
         TrainingSampleQualityScorer scorer = new TrainingSampleQualityScorer(minQuality);
 
         try {
-            if ("HUGGING_FACE".equalsIgnoreCase(sourceType)) {
-                try (HuggingFaceDatasetSource source = new HuggingFaceDatasetSource(config)) {
-                    source.initialize();
-                    while (source.hasNext()) {
-                        NormalizedSample s = source.next();
-                        NormalizedSample clean = cleaner.clean(s);
-                        if (clean != null && scorer.isAcceptable(clean) && !deduplicator.isDuplicate(clean)) {
-                            deduplicator.register(clean);
-                            collected.add(clean);
-                        }
-                    }
-                }
-            } else {
-                try (LocalDatasetSource source = new LocalDatasetSource(config)) {
-                    source.initialize();
-                    while (source.hasNext()) {
-                        NormalizedSample s = source.next();
-                        NormalizedSample clean = cleaner.clean(s);
-                        if (clean != null && scorer.isAcceptable(clean) && !deduplicator.isDuplicate(clean)) {
-                            deduplicator.register(clean);
-                            collected.add(clean);
+            eu.kalafatic.evolution.forge.data.api.source.DatasetSource source =
+                "HUGGING_FACE".equalsIgnoreCase(sourceType) ? new HuggingFaceDatasetSource(config) : new LocalDatasetSource(config);
+
+            try (source) {
+                source.initialize();
+                while (source.hasNext()) {
+                    NormalizedSample s = source.next();
+                    NormalizedSample clean = cleaner.clean(s);
+                    if (clean != null && scorer.isAcceptable(clean) && !deduplicator.isDuplicate(clean)) {
+                        deduplicator.register(clean);
+                        acceptedCount++;
+
+                        // Online Reservoir Sampling (Algorithm R)
+                        if (reservoir.size() < reservoirCap) {
+                            reservoir.add(clean);
+                        } else {
+                            long j = (long) (rnd.nextDouble() * acceptedCount);
+                            if (j < reservoirCap) {
+                                reservoir.set((int) j, clean);
+                            }
                         }
                     }
                 }
             }
 
-            DatasetSampler sampler = new DatasetSampler(DatasetSampler.Strategy.RESERVOIR, (int) Math.min(collected.size(), maxSamples > 0 ? maxSamples : 10000));
-            List<NormalizedSample> sampled = sampler.sample(collected);
+            List<NormalizedSample> sampled = reservoir;
 
-            File outputDir = new File(System.getProperty("user.dir"), "data/datasets");
+            // Save to model directories (forge-output and dist)
+            File userDir = new File(System.getProperty("user.dir"));
+            File outputDir = new File(userDir, "forge-output");
+            if (!outputDir.exists()) outputDir.mkdirs();
+
             File targetArtifactFile = new File(outputDir, outputName);
+
+            // Also copy to dist directory if present
+            File distDir = new File(userDir, "dist");
+            if (distDir.exists() && distDir.isDirectory()) {
+                File distTargetFile = new File(distDir, outputName);
+                EvoDatasetArtifact distArtifact = new EvoDatasetArtifact(distTargetFile);
+                distArtifact.save(sampled, config, new eu.kalafatic.evolution.forge.data.api.source.DatasetSourceStats(), 0.02);
+            }
 
             EvoDatasetArtifact artifact = new EvoDatasetArtifact(targetArtifactFile);
             artifact.save(sampled, config, new eu.kalafatic.evolution.forge.data.api.source.DatasetSourceStats(), 0.02);
@@ -1690,18 +1708,30 @@ public class EvolutionServer extends NanoHTTPD {
     }
 
     private Response handleGetDatasetArtifacts() {
-        File outputDir = new File(System.getProperty("user.dir"), "data/datasets");
+        File userDir = new File(System.getProperty("user.dir"));
+        List<File> searchDirs = List.of(
+            new File(userDir, "forge-output"),
+            new File(userDir, "dist"),
+            new File(userDir, "data/datasets")
+        );
+
         JSONArray array = new JSONArray();
-        if (outputDir.exists() && outputDir.isDirectory()) {
-            File[] files = outputDir.listFiles((dir, name) -> name.endsWith(".evodata") || name.endsWith(".jsonl"));
-            if (files != null) {
-                for (File f : files) {
-                    JSONObject obj = new JSONObject();
-                    obj.put("name", f.getName());
-                    obj.put("path", f.getAbsolutePath());
-                    obj.put("size", f.length());
-                    obj.put("lastModified", f.lastModified());
-                    array.put(obj);
+        java.util.Set<String> seenNames = new java.util.HashSet<>();
+
+        for (File dir : searchDirs) {
+            if (dir.exists() && dir.isDirectory()) {
+                File[] files = dir.listFiles((d, name) -> name.endsWith(".evodata") || name.endsWith(".jsonl"));
+                if (files != null) {
+                    for (File f : files) {
+                        if (seenNames.add(f.getName())) {
+                            JSONObject obj = new JSONObject();
+                            obj.put("name", f.getName());
+                            obj.put("path", f.getAbsolutePath());
+                            obj.put("size", f.length());
+                            obj.put("lastModified", f.lastModified());
+                            array.put(obj);
+                        }
+                    }
                 }
             }
         }
@@ -1714,10 +1744,23 @@ public class EvolutionServer extends NanoHTTPD {
             return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", "{\"error\": \"Missing artifact name\"}");
         }
 
-        File outputDir = new File(System.getProperty("user.dir"), "data/datasets");
-        File artifactFile = new File(outputDir, artifactName);
+        File userDir = new File(System.getProperty("user.dir"));
+        List<File> searchDirs = List.of(
+            new File(userDir, "forge-output"),
+            new File(userDir, "dist"),
+            new File(userDir, "data/datasets")
+        );
 
-        if (!artifactFile.exists()) {
+        File artifactFile = null;
+        for (File dir : searchDirs) {
+            File test = new File(dir, artifactName);
+            if (test.exists()) {
+                artifactFile = test;
+                break;
+            }
+        }
+
+        if (artifactFile == null || !artifactFile.exists()) {
             return newFixedLengthResponse(Response.Status.NOT_FOUND, "application/json", "{\"error\": \"Artifact not found\"}");
         }
 
