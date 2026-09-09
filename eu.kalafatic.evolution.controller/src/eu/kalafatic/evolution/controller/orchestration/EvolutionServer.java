@@ -1697,12 +1697,14 @@ public class EvolutionServer extends NanoHTTPD {
             }
 
             File baseFolder = new File(baseWorkspacePath);
+            String formattedRepoPath = repo.replace("\\", "/");
             File primaryDir;
             if (!customOutputDir.isEmpty()) {
                 File customFile = new File(customOutputDir);
-                primaryDir = customFile.isAbsolute() ? customFile : new File(baseFolder, customOutputDir);
+                File baseTargetDir = customFile.isAbsolute() ? customFile : new File(baseFolder, customOutputDir);
+                primaryDir = new File(baseTargetDir, formattedRepoPath);
             } else {
-                primaryDir = new File(baseFolder, "forge-output");
+                primaryDir = new File(new File(baseFolder, "forge-input"), formattedRepoPath);
             }
             if (!primaryDir.exists()) primaryDir.mkdirs();
 
@@ -1760,6 +1762,7 @@ public class EvolutionServer extends NanoHTTPD {
     private Response handleGetDatasetArtifacts() {
         File userDir = new File(System.getProperty("user.dir"));
         List<File> searchDirs = List.of(
+            new File(userDir, "forge-input"),
             new File(userDir, "forge-output"),
             new File(userDir, "dist"),
             new File(userDir, "data/datasets")
@@ -1769,23 +1772,29 @@ public class EvolutionServer extends NanoHTTPD {
         java.util.Set<String> seenNames = new java.util.HashSet<>();
 
         for (File dir : searchDirs) {
-            if (dir.exists() && dir.isDirectory()) {
-                File[] files = dir.listFiles((d, name) -> name.endsWith(".evodata") || name.endsWith(".jsonl"));
-                if (files != null) {
-                    for (File f : files) {
-                        if (seenNames.add(f.getName())) {
-                            JSONObject obj = new JSONObject();
-                            obj.put("name", f.getName());
-                            obj.put("path", f.getAbsolutePath());
-                            obj.put("size", f.length());
-                            obj.put("lastModified", f.lastModified());
-                            array.put(obj);
-                        }
-                    }
+            scanDirectoryForArtifacts(dir, seenNames, array);
+        }
+        return newFixedLengthResponse(Response.Status.OK, "application/json", array.toString());
+    }
+
+    private void scanDirectoryForArtifacts(File dir, java.util.Set<String> seenNames, JSONArray array) {
+        if (!dir.exists() || !dir.isDirectory()) return;
+        File[] files = dir.listFiles();
+        if (files == null) return;
+        for (File f : files) {
+            if (f.isDirectory()) {
+                scanDirectoryForArtifacts(f, seenNames, array);
+            } else if (f.getName().endsWith(".evodata") || f.getName().endsWith(".jsonl")) {
+                if (seenNames.add(f.getName())) {
+                    JSONObject obj = new JSONObject();
+                    obj.put("name", f.getName());
+                    obj.put("path", f.getAbsolutePath());
+                    obj.put("size", f.length());
+                    obj.put("lastModified", f.lastModified());
+                    array.put(obj);
                 }
             }
         }
-        return newFixedLengthResponse(Response.Status.OK, "application/json", array.toString());
     }
 
     private Response handleGetDatasetReport(IHTTPSession session) {
@@ -1796,6 +1805,7 @@ public class EvolutionServer extends NanoHTTPD {
 
         File userDir = new File(System.getProperty("user.dir"));
         List<File> searchDirs = List.of(
+            new File(userDir, "forge-input"),
             new File(userDir, "forge-output"),
             new File(userDir, "dist"),
             new File(userDir, "data/datasets")
@@ -1803,9 +1813,8 @@ public class EvolutionServer extends NanoHTTPD {
 
         File artifactFile = null;
         for (File dir : searchDirs) {
-            File test = new File(dir, artifactName);
-            if (test.exists()) {
-                artifactFile = test;
+            artifactFile = findFileInDirectory(dir, artifactName);
+            if (artifactFile != null) {
                 break;
             }
         }
@@ -1826,6 +1835,23 @@ public class EvolutionServer extends NanoHTTPD {
         } catch (Exception e) {
             return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", new JSONObject().put("error", e.getMessage()).toString());
         }
+    }
+
+    private File findFileInDirectory(File dir, String filename) {
+        if (!dir.exists() || !dir.isDirectory()) return null;
+        File direct = new File(dir, filename);
+        if (direct.exists()) return direct;
+
+        File[] children = dir.listFiles();
+        if (children != null) {
+            for (File child : children) {
+                if (child.isDirectory()) {
+                    File found = findFileInDirectory(child, filename);
+                    if (found != null) return found;
+                }
+            }
+        }
+        return null;
     }
 
     private Response handleCloneForgeSession(String id, IHTTPSession session) throws IOException, ResponseException {
