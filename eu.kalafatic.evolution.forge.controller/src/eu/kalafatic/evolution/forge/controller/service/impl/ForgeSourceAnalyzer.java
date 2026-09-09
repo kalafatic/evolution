@@ -69,8 +69,14 @@ public class ForgeSourceAnalyzer {
                     inspectTextFile(path, profile);
                 }
             } else if (Files.isDirectory(path)) {
-                profile.setSourceType("LOCAL_DIR");
-                inspectDirectory(path, profile);
+                boolean isGitRepo = Files.exists(path.resolve(".git")) || Files.exists(path.resolve("pom.xml"));
+                if (isGitRepo || "EVO_CODEBASE".equalsIgnoreCase(sourceStr)) {
+                    profile.setSourceType("EVO_CODEBASE");
+                    inspectEvoCodebase(path, profile);
+                } else {
+                    profile.setSourceType("LOCAL_DIR");
+                    inspectDirectory(path, profile);
+                }
             }
         } catch (Exception e) {
             profile.setSourceType("ERROR");
@@ -132,6 +138,55 @@ public class ForgeSourceAnalyzer {
             profile.setQualityScore(0.88);
         } catch (Exception e) {
             profile.setQualityScore(0.6);
+        }
+    }
+
+    private void inspectEvoCodebase(Path dirPath, SourceProfile profile) {
+        try (Stream<Path> walk = Files.walk(dirPath)) {
+            List<Path> files = walk.filter(Files::isRegularFile)
+                    .filter(p -> !p.toString().contains("/.git/") && !p.toString().contains("\\.git\\")
+                            && !p.toString().contains("/target/") && !p.toString().contains("\\target\\")
+                            && !p.toString().contains("/dist/") && !p.toString().contains("\\dist\\")
+                            && !p.toString().contains("/forge-input/") && !p.toString().contains("\\forge-input\\")
+                            && !p.toString().contains("/forge-output/") && !p.toString().contains("\\forge-output\\"))
+                    .collect(Collectors.toList());
+
+            long totalBytes = 0;
+            long javaFiles = 0;
+            long docFiles = 0;
+            long archFiles = 0;
+
+            for (Path f : files) {
+                totalBytes += Files.size(f);
+                String name = f.getFileName().toString().toLowerCase();
+                if (name.endsWith(".java")) {
+                    javaFiles++;
+                } else if (name.endsWith(".md") || name.endsWith(".pdf") || name.startsWith("readme")) {
+                    docFiles++;
+                } else if (name.endsWith("manifest.mf") || name.endsWith("plugin.xml") || name.endsWith(".product") || name.endsWith("pom.xml") || name.endsWith("feature.xml")) {
+                    archFiles++;
+                }
+            }
+
+            long estSamples = Math.max(1, files.size() * 15);
+            long estTokens = Math.max(500, totalBytes / 4);
+
+            profile.setSampleCount(estSamples);
+            profile.setEstimatedTokens(estTokens);
+
+            double total = Math.max(1, files.size());
+            double codeRatio = (double) javaFiles / total;
+            double docRatio = (double) docFiles / total;
+            double archRatio = (double) archFiles / total;
+            double otherRatio = Math.max(0.0, 1.0 - codeRatio - docRatio - archRatio);
+
+            profile.setCodeRatio(codeRatio);
+            profile.setKnowledgeRatio(docRatio + otherRatio);
+            profile.setInstructionRatio(0.15);
+            profile.setChatRatio(0.05);
+            profile.setQualityScore(0.96);
+        } catch (Exception e) {
+            profile.setQualityScore(0.5);
         }
     }
 

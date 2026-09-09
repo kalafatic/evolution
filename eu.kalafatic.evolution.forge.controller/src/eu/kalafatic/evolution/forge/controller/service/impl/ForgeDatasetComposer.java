@@ -18,8 +18,25 @@ public class ForgeDatasetComposer {
             strategy.setTokenBudget(500_000_000L);
         }
 
+        // Check if any source profile is an EVO_CODEBASE
+        boolean hasEvoCodebase = false;
+        if (profiles != null) {
+            for (SourceProfile p : profiles) {
+                if ("EVO_CODEBASE".equalsIgnoreCase(p.getSourceType()) || p.getSourcePath().toLowerCase().contains("evo")) {
+                    hasEvoCodebase = true;
+                    break;
+                }
+            }
+        }
+
         // Adjust domain percentages based on target objective
-        if (objective == ModelObjective.CODING) {
+        if (objective == ModelObjective.EVO_DEVELOPER_ASSISTANT || (objective == ModelObjective.AUTO && hasEvoCodebase)) {
+            // Balanced mix: 40% General Conversation/Instruction (prevent catastrophic forgetting) + 60% EVO Codebase & Architecture
+            strategy.setKnowledgePercent(0.30);
+            strategy.setCodePercent(0.35);
+            strategy.setInstructionPercent(0.20);
+            strategy.setChatPercent(0.15);
+        } else if (objective == ModelObjective.CODING) {
             strategy.setKnowledgePercent(0.20);
             strategy.setCodePercent(0.55);
             strategy.setInstructionPercent(0.15);

@@ -52,9 +52,37 @@ public class ForgePreflightValidator {
             }
         }
 
-        // 4. Validate Runtime Memory & Disk Space
+        // 4. Hardware-Aware Resource Estimation & Optimization
         long freeMemMb = Runtime.getRuntime().freeMemory() / (1024 * 1024);
         long maxMemMb = Runtime.getRuntime().maxMemory() / (1024 * 1024);
+
+        if (modelConfig != null && trainingConfig != null) {
+            int h = modelConfig.getHiddenSize();
+            int l = modelConfig.getLayers();
+            int heads = modelConfig.getHeads();
+            int dff = modelConfig.getDff();
+            int vocab = modelConfig.getVocabSize();
+            int seqLen = modelConfig.getMaxSeqLen();
+            int batchSize = Math.max(1, trainingConfig.getBatchSize());
+
+            // Parameter Count Estimation
+            long approxParams = (long) vocab * h + (long) l * (4L * h * h + 2L * h * dff) + (long) h * vocab;
+            long weightMemBytes = approxParams * 4L;
+            long optMemBytes = approxParams * 8L; // AdamW momentum & variance
+            long actMemBytes = (long) batchSize * seqLen * h * l * 8L;
+            long totalReqBytes = weightMemBytes + optMemBytes + actMemBytes;
+            long totalReqMb = totalReqBytes / (1024 * 1024);
+
+            result.addCheck("Hardware Estimation: Params=" + (approxParams / 1_000_000) + "M, Required Memory=" + totalReqMb + "MB (Weights: " + (weightMemBytes / (1024 * 1024)) + "MB, Optimizer: " + (optMemBytes / (1024 * 1024)) + "MB)");
+
+            // If required memory exceeds 80% of max JVM heap, automatically recommend downscaling hyperparameters
+            if (totalReqMb > (maxMemMb * 0.85)) {
+                result.addCheck("WARNING: Estimated training memory (" + totalReqMb + "MB) exceeds 85% of available JVM heap (" + maxMemMb + "MB). Auto-adjusting batch size and sequence length for safety.");
+                trainingConfig.setBatchSize(Math.max(1, batchSize / 2));
+                modelConfig.setMaxSeqLen(Math.max(128, seqLen / 2));
+            }
+        }
+
         result.addCheck("Runtime memory check: Free=" + freeMemMb + "MB, Max=" + maxMemMb + "MB");
 
         Path runDir = job.getRunDirectory();

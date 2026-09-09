@@ -1660,7 +1660,8 @@ public class EvolutionServer extends NanoHTTPD {
 
         try {
             eu.kalafatic.evolution.forge.data.api.source.DatasetSource source =
-                "HUGGING_FACE".equalsIgnoreCase(sourceType) ? new HuggingFaceDatasetSource(config) : new LocalDatasetSource(config);
+                "HUGGING_FACE".equalsIgnoreCase(sourceType) ? new HuggingFaceDatasetSource(config) :
+                ("EVO_CODEBASE".equalsIgnoreCase(sourceType) ? new eu.kalafatic.evolution.forge.data.impl.source.EvoCodebaseDatasetSource(config) : new LocalDatasetSource(config));
 
             try (source) {
                 source.initialize();
