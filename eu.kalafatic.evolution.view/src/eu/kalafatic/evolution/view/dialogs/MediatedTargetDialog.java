@@ -10,7 +10,9 @@ import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.MessageBox;
@@ -21,6 +23,9 @@ import eu.kalafatic.evolution.controller.agents.MetadataAgent;
 import eu.kalafatic.evolution.controller.agents.MetadataResult;
 import eu.kalafatic.evolution.controller.discovery.SourceDiscoveryResult;
 import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
+import eu.kalafatic.evolution.forge.model.target.ForgeTarget;
+import eu.kalafatic.evolution.forge.model.target.ForgeTargetDetector;
+import eu.kalafatic.evolution.forge.model.target.ForgeTargetType;
 import eu.kalafatic.evolution.model.orchestration.ChatSession;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.utils.dialogs.DynamicField;
@@ -37,6 +42,8 @@ public class MediatedTargetDialog extends DynamicMapDialog {
 
     private ProgressBar progressBar;
     private Label progressLabel;
+    private Label typeLabel;
+    private Label statusLabel;
 
     private static final String TARGET_PATH = "targetPath";
     private static final String TARGET_TYPE = "targetType";
@@ -86,7 +93,7 @@ public class MediatedTargetDialog extends DynamicMapDialog {
         fields.put(TARGET_PATH, new DynamicField("Target Path:", DynamicField.TYPE_COMBO | DynamicField.DIRECTORY, initialPath, comboItems));
 
         String initialType = session != null ? session.getTargetType() : "Project";
-        fields.put(TARGET_TYPE, new DynamicField("Target Type:", DynamicField.TYPE_COMBO, initialType, "Project", "Folder", "PDF", "HTML", "Markdown"));
+        fields.put(TARGET_TYPE, new DynamicField("Target Type:", DynamicField.TYPE_COMBO, initialType, "Project", "Folder", "PDF", "HTML", "Markdown", "EVO Model", "EVO Workspace"));
 
         String initialOutput = session != null ? session.getOutputPath() : "";
         if (initialOutput == null || initialOutput.isEmpty()) {
@@ -104,6 +111,63 @@ public class MediatedTargetDialog extends DynamicMapDialog {
     @Override
     protected void createFieldEditor(Composite parent, String key, DynamicField field) {
         super.createFieldEditor(parent, key, field);
+
+        if (TARGET_PATH.equals(key)) {
+            // Add File Browse button alongside directory browse button
+            Control ctrl = controls.get(TARGET_PATH);
+            if (ctrl instanceof Composite) {
+                Composite comp = (Composite) ctrl;
+                Button browseFileBtn = new Button(comp, SWT.PUSH);
+                browseFileBtn.setText("Browse File...");
+                browseFileBtn.addListener(SWT.Selection, e -> {
+                    org.eclipse.swt.widgets.FileDialog dlg = new org.eclipse.swt.widgets.FileDialog(getShell(), SWT.OPEN);
+                    dlg.setFilterExtensions(new String[] { "*.evo;*.txt;*.pdf;*.html;*.json;*.md;*.csv", "*.*" });
+                    dlg.setFilterNames(new String[] { "EVO Model & Data Files (*.evo, *.txt, *.pdf, etc.)", "All Files (*.*)" });
+                    String sel = dlg.open();
+                    if (sel != null && !sel.isEmpty()) {
+                        for (Control child : comp.getChildren()) {
+                            if (child instanceof Combo) {
+                                ((Combo) child).setText(sel);
+                            } else if (child instanceof org.eclipse.swt.widgets.Text) {
+                                ((org.eclipse.swt.widgets.Text) child).setText(sel);
+                            }
+                        }
+                    }
+                });
+                comp.layout(true);
+            }
+
+            // Target Inspection status panel
+            new Label(parent, SWT.NONE); // Filler
+            Composite statusComp = new Composite(parent, SWT.NONE);
+            statusComp.setLayout(new org.eclipse.swt.layout.GridLayout(2, false));
+            statusComp.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+            Label typeHeader = new Label(statusComp, SWT.NONE);
+            typeHeader.setText("Detected Target Type:");
+            typeLabel = new Label(statusComp, SWT.NONE);
+            typeLabel.setText("Training Data");
+            typeLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+            Label statusHeader = new Label(statusComp, SWT.NONE);
+            statusHeader.setText("Target Status:");
+            statusLabel = new Label(statusComp, SWT.NONE);
+            statusLabel.setText("Ready");
+            statusLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+            if (ctrl instanceof Composite) {
+                for (Control child : ((Composite) ctrl).getChildren()) {
+                    if (child instanceof Combo) {
+                        Combo combo = (Combo) child;
+                        combo.addModifyListener(e -> updateTargetStatus(combo.getText()));
+                    } else if (child instanceof org.eclipse.swt.widgets.Text) {
+                        org.eclipse.swt.widgets.Text text = (org.eclipse.swt.widgets.Text) child;
+                        text.addModifyListener(e -> updateTargetStatus(text.getText()));
+                    }
+                }
+            }
+            updateTargetStatus(getString(TARGET_PATH));
+        }
 
         // Add "Generate AI Metadata" button after the last field
         if (OUTPUT_PATH.equals(key)) {
@@ -230,6 +294,24 @@ public class MediatedTargetDialog extends DynamicMapDialog {
             current = current.getParentFile();
         }
         return root.getAbsolutePath();
+    }
+
+    private void updateTargetStatus(String pathStr) {
+        if (typeLabel == null || statusLabel == null || typeLabel.isDisposed() || statusLabel.isDisposed()) return;
+        ForgeTarget target = ForgeTargetDetector.detect(pathStr);
+        String typeName = target.getType().name().replace("_", " ");
+        typeLabel.setText(typeName);
+        statusLabel.setText(target.getStatusMessage());
+
+        Control typeControl = controls.get(TARGET_TYPE);
+        if (typeControl instanceof Combo) {
+            Combo combo = (Combo) typeControl;
+            if (target.getType() == ForgeTargetType.EVO_MODEL) {
+                combo.setText("EVO Model");
+            } else if (target.getType() == ForgeTargetType.EVO_WORKSPACE) {
+                combo.setText("EVO Workspace");
+            }
+        }
     }
 
     private static String getDefaultOutputPath() {

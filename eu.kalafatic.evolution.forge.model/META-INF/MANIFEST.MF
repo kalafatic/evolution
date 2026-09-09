@@ -11,7 +11,9 @@ Export-Package: eu.kalafatic.evolution.forge.model,
  eu.kalafatic.evolution.forge.model.api,
  eu.kalafatic.evolution.forge.model.inference,
  eu.kalafatic.evolution.forge.model.llm,
- eu.kalafatic.evolution.forge.model.protocol
+ eu.kalafatic.evolution.forge.model.protocol,
+ eu.kalafatic.evolution.forge.model.source,
+ eu.kalafatic.evolution.forge.model.target
 Bundle-ClassPath: .,
  lib/json-20140107.jar,
  lib/jackson-annotations-2.17.0.jar,
