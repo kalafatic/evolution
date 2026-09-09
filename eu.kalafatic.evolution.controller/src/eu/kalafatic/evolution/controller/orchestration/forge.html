@@ -727,6 +727,13 @@
                     <label>Max Download Size (MB)</label>
                     <input type="number" id="dataset-max-size-mb" value="50" placeholder="e.g. 50">
                 </div>
+                <div class="control-group">
+                    <label>Destination Output Directory</label>
+                    <div style="display: flex; gap: 5px;">
+                        <input type="text" id="dataset-output-dir" value="forge-output" style="flex:1;">
+                        <button class="btn btn-sm" onclick="browseDatasetOutputDir()">Browse</button>
+                    </div>
+                </div>
                 <div style="display: flex; gap: 5px; margin-top: 6px;">
                     <button class="btn btn-sm" style="flex: 1;" onclick="previewDatasetSamples()">Preview</button>
                     <button class="btn btn-sm btn-primary" style="flex: 1;" onclick="buildEvoDatasetArtifact()">Build .evodata</button>
@@ -2081,6 +2088,15 @@
             }
         }
 
+        async function browseDatasetOutputDir() {
+            if (window.browseDirectory) {
+                const path = await window.browseDirectory();
+                if (path) {
+                    document.getElementById('dataset-output-dir').value = path;
+                }
+            }
+        }
+
         async function buildEvoDatasetArtifact() {
             const sourceType = document.getElementById('dataset-source-type').value;
             const repo = document.getElementById('dataset-repo').value.trim();
@@ -2088,12 +2104,13 @@
             const maxSamples = parseInt(document.getElementById('dataset-max-samples').value) || 1000;
             const maxSizeMb = parseInt(document.getElementById('dataset-max-size-mb').value) || 50;
             const maxBytes = maxSizeMb * 1024 * 1024;
+            const outputDir = document.getElementById('dataset-output-dir').value.trim();
 
-            log(`Building .evodata dataset artifact from ${sourceType}: ${repo} (max ${maxSizeMb} MB)...`);
+            log(`Building .evodata dataset artifact from ${sourceType}: ${repo} (max ${maxSizeMb} MB) to ${outputDir}...`);
             try {
                 const res = await fetch(getBaseUrl() + `/forge/dataset/prepare?runtime=SWT`, {
                     method: 'POST',
-                    body: JSON.stringify({ sourceType, repository: repo, split, maxSamples, maxBytes })
+                    body: JSON.stringify({ sourceType, repository: repo, split, maxSamples, maxBytes, outputDir })
                 });
                 const result = await res.json();
                 log(`Dataset Artifact READY: ${result.artifactPath}`);
