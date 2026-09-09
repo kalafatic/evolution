@@ -702,10 +702,33 @@
             </div>
 
             <!-- DATASET PANEL -->
-            <div class="panel">
-                <h3>Dataset</h3>
+            <div class="panel" id="dataset-editor-panel">
+                <h3>Dataset Preparation & Acquisition</h3>
                 <div class="control-group">
-                    <label>Active Dataset</label>
+                    <label>Source Type</label>
+                    <select id="dataset-source-type">
+                        <option value="HUGGING_FACE">Hugging Face</option>
+                        <option value="LOCAL">Local Directory / Artifact</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>Repository / Dataset ID</label>
+                    <input type="text" id="dataset-repo" value="wikitext" placeholder="e.g. wikitext or path">
+                </div>
+                <div class="control-group">
+                    <label>Split / Config</label>
+                    <input type="text" id="dataset-split" value="train">
+                </div>
+                <div class="control-group">
+                    <label>Max Samples Limit</label>
+                    <input type="number" id="dataset-max-samples" value="1000">
+                </div>
+                <div style="display: flex; gap: 5px; margin-top: 6px;">
+                    <button class="btn btn-sm" style="flex: 1;" onclick="previewDatasetSamples()">Preview</button>
+                    <button class="btn btn-sm btn-primary" style="flex: 1;" onclick="buildEvoDatasetArtifact()">Build .evodata</button>
+                </div>
+                <div class="control-group" style="margin-top: 10px;">
+                    <label>Active Dataset Artifact</label>
                     <select id="dataset-selector" onchange="onDatasetSelect(this.value)">
                         <option value="">Select...</option>
                         <option value="mnist">MNIST (Digits)</option>
@@ -714,7 +737,6 @@
                         <option value="synthetic">Synthetic Generator</option>
                     </select>
                 </div>
-                <button class="btn btn-sm" style="width: 100%;">Upload Custom Data</button>
             </div>
 
             <!-- TRAINING PANEL -->
@@ -2036,6 +2058,61 @@
                 await loadSessions();
                 selectSession(data.id);
             } catch (e) { log(`Error: ${e.message}`); }
+        }
+
+        async function previewDatasetSamples() {
+            const repo = document.getElementById('dataset-repo').value.trim();
+            const split = document.getElementById('dataset-split').value.trim();
+            log(`Previewing HF dataset ${repo} (${split})...`);
+            try {
+                const res = await fetch(getBaseUrl() + `/forge/dataset/hf/preview?runtime=SWT`, {
+                    method: 'POST',
+                    body: JSON.stringify({ repository: repo, split: split, count: 3 })
+                });
+                const samples = await res.json();
+                log(`Fetched ${samples.length} preview samples.`);
+                alert(`Dataset Preview (${samples.length} items loaded):\n` + JSON.stringify(samples, null, 2));
+            } catch (e) {
+                log(`Preview error: ${e.message}`);
+            }
+        }
+
+        async function buildEvoDatasetArtifact() {
+            const sourceType = document.getElementById('dataset-source-type').value;
+            const repo = document.getElementById('dataset-repo').value.trim();
+            const split = document.getElementById('dataset-split').value.trim();
+            const maxSamples = parseInt(document.getElementById('dataset-max-samples').value) || 1000;
+
+            log(`Building .evodata dataset artifact from ${sourceType}: ${repo}...`);
+            try {
+                const res = await fetch(getBaseUrl() + `/forge/dataset/prepare?runtime=SWT`, {
+                    method: 'POST',
+                    body: JSON.stringify({ sourceType, repository: repo, split, maxSamples })
+                });
+                const result = await res.json();
+                log(`Dataset Artifact READY: ${result.artifactPath}`);
+                alert(`Dataset Built Successfully!\nArtifact: ${result.artifactPath}\nSamples: ${result.totalAccepted}`);
+                await loadDatasetArtifactsList();
+            } catch (e) {
+                log(`Build error: ${e.message}`);
+            }
+        }
+
+        async function loadDatasetArtifactsList() {
+            try {
+                const res = await fetch(getBaseUrl() + `/forge/dataset/artifacts?runtime=SWT`);
+                const artifacts = await res.json();
+                const selector = document.getElementById('dataset-selector');
+                if (artifacts && artifacts.length > 0) {
+                    selector.innerHTML = '<option value="">Select...</option>';
+                    artifacts.forEach(a => {
+                        const opt = document.createElement('option');
+                        opt.value = a.path;
+                        opt.textContent = a.name + ` (${(a.size/1024).toFixed(1)} KB)`;
+                        selector.appendChild(opt);
+                    });
+                }
+            } catch (e) {}
         }
 
         // Notify SWT ready

@@ -37,6 +37,15 @@ import eu.kalafatic.evolution.forge.controller.api.SnapshotController;
 import eu.kalafatic.evolution.forge.controller.api.TrainingController;
 import eu.kalafatic.evolution.forge.controller.service.SelfEvoForgingService;
 import eu.kalafatic.evolution.forge.controller.service.impl.SelfEvoForgingServiceImpl;
+import eu.kalafatic.evolution.forge.data.api.NormalizedSample;
+import eu.kalafatic.evolution.forge.data.api.artifact.EvoDatasetArtifact;
+import eu.kalafatic.evolution.forge.data.api.source.DatasetSourceConfig;
+import eu.kalafatic.evolution.forge.data.impl.pipeline.DataCleaner;
+import eu.kalafatic.evolution.forge.data.impl.pipeline.DatasetDeduplicator;
+import eu.kalafatic.evolution.forge.data.impl.pipeline.DatasetSampler;
+import eu.kalafatic.evolution.forge.data.impl.pipeline.TrainingSampleQualityScorer;
+import eu.kalafatic.evolution.forge.data.impl.source.HuggingFaceDatasetSource;
+import eu.kalafatic.evolution.forge.data.impl.source.LocalDatasetSource;
 import eu.kalafatic.evolution.model.orchestration.ChatMessage;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
@@ -317,6 +326,14 @@ public class EvolutionServer extends NanoHTTPD {
                 return handleCreaticAnalyze(session);
             } else if (Method.POST.equals(method) && uri.startsWith("/forge/dataset/generate")) {
                 return handleGenerateSyntheticDataset(session);
+            } else if (Method.POST.equals(method) && "/forge/dataset/hf/preview".equals(uri)) {
+                return handleDatasetHfPreview(session);
+            } else if (Method.POST.equals(method) && "/forge/dataset/prepare".equals(uri)) {
+                return handleDatasetPrepare(session);
+            } else if (Method.GET.equals(method) && "/forge/dataset/artifacts".equals(uri)) {
+                return handleGetDatasetArtifacts();
+            } else if (Method.GET.equals(method) && uri.startsWith("/forge/dataset/report")) {
+                return handleGetDatasetReport(session);
             }
         } catch (Exception e) {
             return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json",
@@ -1549,6 +1566,173 @@ public class EvolutionServer extends NanoHTTPD {
 
         String result = ForgeSessionManager.getInstance().generateSyntheticDataset(type);
         return newFixedLengthResponse(Response.Status.OK, "application/json", result);
+    }
+
+    private Response handleDatasetHfPreview(IHTTPSession session) throws IOException, ResponseException {
+        Map<String, String> files = new HashMap<>();
+        session.parseBody(files);
+        String postData = files.get("postData");
+        JSONObject body = new JSONObject(postData != null ? postData : "{}");
+
+        String repo = body.optString("repository", "wikitext");
+        String split = body.optString("split", "train");
+        String configName = body.optString("configuration", "default");
+        int count = body.optInt("count", 3);
+
+        DatasetSourceConfig config = new DatasetSourceConfig("HUGGING_FACE", repo);
+        config.setSplit(split);
+        config.setConfiguration(configName);
+        config.setMaxSamples(count);
+
+        JSONArray previewArray = new JSONArray();
+        DataCleaner cleaner = new DataCleaner();
+        TrainingSampleQualityScorer scorer = new TrainingSampleQualityScorer();
+
+        try (HuggingFaceDatasetSource source = new HuggingFaceDatasetSource(config)) {
+            source.initialize();
+            int i = 0;
+            while (source.hasNext() && i < count) {
+                NormalizedSample sample = source.next();
+                NormalizedSample cleaned = cleaner.clean(sample);
+                double score = scorer.calculateQualityScore(sample);
+
+                JSONObject item = new JSONObject();
+                item.put("index", i + 1);
+                item.put("raw", sample.toFullText());
+                item.put("cleaned", cleaned != null ? cleaned.toFullText() : "");
+                item.put("qualityScore", score);
+                item.put("accepted", score >= 0.5 && cleaned != null);
+                item.put("tokenCount", sample.toFullText().length() / 4);
+                previewArray.put(item);
+                i++;
+            }
+        } catch (Exception e) {
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json",
+                new JSONObject().put("error", e.getMessage()).toString());
+        }
+
+        return newFixedLengthResponse(Response.Status.OK, "application/json", previewArray.toString());
+    }
+
+    private Response handleDatasetPrepare(IHTTPSession session) throws IOException, ResponseException {
+        Map<String, String> files = new HashMap<>();
+        session.parseBody(files);
+        String postData = files.get("postData");
+        JSONObject body = new JSONObject(postData != null ? postData : "{}");
+
+        String sourceType = body.optString("sourceType", "HUGGING_FACE");
+        String repo = body.optString("repository", "wikitext");
+        String split = body.optString("split", "train");
+        String outputName = body.optString("artifactName", repo.replace("/", "_") + ".evodata");
+        if (!outputName.endsWith(".evodata")) outputName += ".evodata";
+
+        long maxSamples = body.optLong("maxSamples", 1000);
+        long maxBytes = body.optLong("maxBytes", 0);
+        double minQuality = body.optDouble("minQuality", 0.5);
+
+        DatasetSourceConfig config = new DatasetSourceConfig(sourceType, repo);
+        config.setSplit(split);
+        config.setMaxSamples(maxSamples);
+        config.setMaxBytes(maxBytes);
+
+        List<NormalizedSample> collected = new ArrayList<>();
+        DataCleaner cleaner = new DataCleaner();
+        DatasetDeduplicator deduplicator = new DatasetDeduplicator(true);
+        TrainingSampleQualityScorer scorer = new TrainingSampleQualityScorer(minQuality);
+
+        try {
+            if ("HUGGING_FACE".equalsIgnoreCase(sourceType)) {
+                try (HuggingFaceDatasetSource source = new HuggingFaceDatasetSource(config)) {
+                    source.initialize();
+                    while (source.hasNext()) {
+                        NormalizedSample s = source.next();
+                        NormalizedSample clean = cleaner.clean(s);
+                        if (clean != null && scorer.isAcceptable(clean) && !deduplicator.isDuplicate(clean)) {
+                            deduplicator.register(clean);
+                            collected.add(clean);
+                        }
+                    }
+                }
+            } else {
+                try (LocalDatasetSource source = new LocalDatasetSource(config)) {
+                    source.initialize();
+                    while (source.hasNext()) {
+                        NormalizedSample s = source.next();
+                        NormalizedSample clean = cleaner.clean(s);
+                        if (clean != null && scorer.isAcceptable(clean) && !deduplicator.isDuplicate(clean)) {
+                            deduplicator.register(clean);
+                            collected.add(clean);
+                        }
+                    }
+                }
+            }
+
+            DatasetSampler sampler = new DatasetSampler(DatasetSampler.Strategy.RESERVOIR, (int) Math.min(collected.size(), maxSamples > 0 ? maxSamples : 10000));
+            List<NormalizedSample> sampled = sampler.sample(collected);
+
+            File outputDir = new File(System.getProperty("user.dir"), "data/datasets");
+            File targetArtifactFile = new File(outputDir, outputName);
+
+            EvoDatasetArtifact artifact = new EvoDatasetArtifact(targetArtifactFile);
+            artifact.save(sampled, config, new eu.kalafatic.evolution.forge.data.api.source.DatasetSourceStats(), 0.02);
+
+            JSONObject result = new JSONObject();
+            result.put("status", "READY");
+            result.put("artifactPath", targetArtifactFile.getAbsolutePath());
+            result.put("totalAccepted", sampled.size());
+            result.put("report", artifact.buildReportText());
+
+            return newFixedLengthResponse(Response.Status.OK, "application/json", result.toString());
+        } catch (Exception e) {
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json",
+                new JSONObject().put("error", e.getMessage()).toString());
+        }
+    }
+
+    private Response handleGetDatasetArtifacts() {
+        File outputDir = new File(System.getProperty("user.dir"), "data/datasets");
+        JSONArray array = new JSONArray();
+        if (outputDir.exists() && outputDir.isDirectory()) {
+            File[] files = outputDir.listFiles((dir, name) -> name.endsWith(".evodata") || name.endsWith(".jsonl"));
+            if (files != null) {
+                for (File f : files) {
+                    JSONObject obj = new JSONObject();
+                    obj.put("name", f.getName());
+                    obj.put("path", f.getAbsolutePath());
+                    obj.put("size", f.length());
+                    obj.put("lastModified", f.lastModified());
+                    array.put(obj);
+                }
+            }
+        }
+        return newFixedLengthResponse(Response.Status.OK, "application/json", array.toString());
+    }
+
+    private Response handleGetDatasetReport(IHTTPSession session) {
+        String artifactName = session.getParms().get("name");
+        if (artifactName == null || artifactName.isEmpty()) {
+            return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", "{\"error\": \"Missing artifact name\"}");
+        }
+
+        File outputDir = new File(System.getProperty("user.dir"), "data/datasets");
+        File artifactFile = new File(outputDir, artifactName);
+
+        if (!artifactFile.exists()) {
+            return newFixedLengthResponse(Response.Status.NOT_FOUND, "application/json", "{\"error\": \"Artifact not found\"}");
+        }
+
+        try {
+            EvoDatasetArtifact artifact = EvoDatasetArtifact.load(artifactFile);
+            JSONObject res = new JSONObject();
+            res.put("name", artifact.getName());
+            res.put("status", artifact.getStatus().name());
+            res.put("report", artifact.buildReportText());
+            res.put("trainSamples", artifact.getTrainSamples().size());
+            res.put("trainTokens", artifact.getTotalTrainTokens());
+            return newFixedLengthResponse(Response.Status.OK, "application/json", res.toString());
+        } catch (Exception e) {
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", new JSONObject().put("error", e.getMessage()).toString());
+        }
     }
 
     private Response handleCloneForgeSession(String id, IHTTPSession session) throws IOException, ResponseException {
