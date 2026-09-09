@@ -549,23 +549,24 @@ public class AiChatPage extends AEvoPage {
 					return;
 				}
 			} else if (selectedMode == AiMode.FORGE) {
+				String modelSizeStr = chatMgmtGroup != null ? chatMgmtGroup.getSelectedModelSize() : "SMALL";
+				eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance().updateUiState(currentSessionId, "modelSize", modelSizeStr);
+
 				String targetPathStr = currentSession != null ? currentSession.getTargetPath() : null;
-				if (targetPathStr == null || targetPathStr.isEmpty()) {
-					File pRoot = getProjectRoot();
-					targetPathStr = pRoot != null ? pRoot.getAbsolutePath() : System.getProperty("user.dir");
-				}
-				ForgeTarget detectedTarget = ForgeTargetDetector.detect(targetPathStr);
-				if (detectedTarget.isValid()) {
-					String modelSizeStr = chatMgmtGroup != null ? chatMgmtGroup.getSelectedModelSize() : "SMALL";
-					eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance().updateUiState(currentSessionId, "modelSize", modelSizeStr);
-					if (detectedTarget.getType() == ForgeTargetType.EVO_MODEL || detectedTarget.getType() == ForgeTargetType.EVO_WORKSPACE) {
-						request = "Forge local EVO LLM model (" + modelSizeStr + ") from parent " + detectedTarget.getType().name() + ": " + targetPathStr;
+				if (targetPathStr != null && !targetPathStr.trim().isEmpty()) {
+					ForgeTarget detectedTarget = ForgeTargetDetector.detect(targetPathStr.trim());
+					if (detectedTarget.isValid()) {
+						if (detectedTarget.getType() == ForgeTargetType.EVO_MODEL || detectedTarget.getType() == ForgeTargetType.EVO_WORKSPACE) {
+							request = "Forge local EVO LLM model (" + modelSizeStr + ") from parent " + detectedTarget.getType().name() + ": " + targetPathStr;
+						} else {
+							request = "Train local EVO LLM model (" + modelSizeStr + ") on target data: " + targetPathStr;
+						}
 					} else {
-						request = "Train local EVO LLM model (" + modelSizeStr + ") on target data: " + targetPathStr;
+						processLogEntry("Evo: Selected target path is not valid. Forge mode requires a valid target file, directory, or pretrained .evo model.");
+						return;
 					}
 				} else {
-					processLogEntry("Evo: Target is not valid. Forge mode requires a valid target file, directory, or pretrained .evo model.");
-					return;
+					request = "Train local EVO LLM model (" + modelSizeStr + ") on configured dataset training sources.";
 				}
 			} else if (selectedMode == AiMode.INTENT) {
 				request = loadPromptFile("intent.md");
