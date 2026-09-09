@@ -668,28 +668,52 @@ public class SelfDevBootstrapController {
         String response = "ERROR";
         try {
             File sourcesFolder = new File(buildWorkspacePath);
+
+            // Ensure sibling genome dependency is compiled/installed first if present in sourcesFolder
+            File genomeDir = new File(sourcesFolder, "eu.kalafatic.evolution.selfdev.genome");
+            if (genomeDir.exists() && new File(genomeDir, "pom.xml").exists()) {
+                System.out.println("[SelfDevBootstrapController] [CHECK_BUILD] Pre-compiling genome module inside sources directory...");
+                compileGenomeModule(genomeDir);
+            }
+
             String mvnCmd = getMavenExecutable(sourcesFolder);
-            // हेडलेस RCP उत्पाद का सही ढंग से निर्माण करने के लिए "verify" का उपयोग करें
             ProcessBuilder pb = new ProcessBuilder(mvnCmd, "clean", "verify", "-DskipTests");
             pb.directory(sourcesFolder);
             pb.redirectErrorStream(true);
             Process p = pb.start();
 
             StringBuilder buildOutput = new StringBuilder();
+            List<String> errorLines = new ArrayList<>();
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream(), StandardCharsets.UTF_8))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     buildOutput.append(line).append("\n");
                     System.out.println("[Local Build] " + line);
+                    if (line.contains("[ERROR]") || line.contains("BUILD FAILURE")) {
+                        errorLines.add(line.trim());
+                    }
                 }
             }
             int exitCode = p.waitFor();
             long duration = System.currentTimeMillis() - startTime;
+
+            // Save build output to self-dev-run/build.log for persistence and diagnostic inspection
+            try {
+                File logDir = new File(runDir.exists() ? runDir : sourcesFolder, "self-dev-run");
+                if (!logDir.exists()) logDir.mkdirs();
+                File buildLogFile = new File(logDir, "build.log");
+                Files.writeString(buildLogFile.toPath(), buildOutput.toString(), StandardCharsets.UTF_8);
+                System.out.println("[SelfDevBootstrapController] [CHECK_BUILD] Build log saved to: " + buildLogFile.getAbsolutePath());
+            } catch (Exception logEx) {
+                System.err.println("[SelfDevBootstrapController] Failed writing build log: " + logEx.getMessage());
+            }
+
             System.out.println("[SelfDevBootstrapController] [CHECK_BUILD] Local build finished with exit code: " + exitCode + " (took " + duration + "ms)");
             if (exitCode == 0) {
                 response = "SUCCESS (" + duration + "ms)";
             } else {
-                response = "ERROR: Build failed with exit code " + exitCode;
+                String errorSummary = errorLines.isEmpty() ? "Check self-dev-run/build.log for details" : errorLines.get(errorLines.size() - 1);
+                response = "ERROR: Build failed with exit code " + exitCode + " - " + errorSummary;
             }
         } catch (Exception e) {
             System.err.println("[SelfDevBootstrapController] [CHECK_BUILD] Failed to run local build: " + e.getMessage());
@@ -771,7 +795,7 @@ public class SelfDevBootstrapController {
                 }
                 String name = dir.getFileName().toString();
                 if (name.equals(".git") || name.equals("target") || name.equals("self-dev-run") ||
-                    name.equals(".settings") || name.equals(".mvn") || name.equals(".metadata") ||
+                    name.equals(".settings") || name.equals(".metadata") ||
                     name.equals("bin") || name.equals("iterations") || name.equals("orchestrator")) {
                     return java.nio.file.FileVisitResult.SKIP_SUBTREE;
                 }
@@ -786,7 +810,7 @@ public class SelfDevBootstrapController {
             public java.nio.file.FileVisitResult visitFile(java.nio.file.Path file, java.nio.file.attribute.BasicFileAttributes attrs) throws IOException {
                 String name = file.getFileName().toString();
                 if (name.equals(".git") || name.equals("target") || name.equals("self-dev-run") ||
-                    name.equals(".settings") || name.equals(".mvn") || name.equals(".metadata") ||
+                    name.equals(".settings") || name.equals(".metadata") ||
                     name.equals("bin") || name.equals("iterations") || name.equals("orchestrator") ||
                     name.equals("dependency-reduced-pom.xml")) {
                     return java.nio.file.FileVisitResult.CONTINUE;
@@ -1725,7 +1749,7 @@ public class SelfDevBootstrapController {
                     }
                     String name = dir.getFileName().toString();
                     if (name.equals(".git") || name.equals("target") || name.equals("self-dev-run") ||
-                        name.equals(".settings") || name.equals(".mvn") || name.equals(".metadata") ||
+                        name.equals(".settings") || name.equals(".metadata") ||
                         name.equals("bin") || name.equals("iterations") || name.equals("orchestrator")) {
                         System.out.println("[SelfDevBootstrapController] [COPY] Skipping excluded directory: " + dir);
                         return java.nio.file.FileVisitResult.SKIP_SUBTREE;
@@ -1741,7 +1765,7 @@ public class SelfDevBootstrapController {
                 public java.nio.file.FileVisitResult visitFile(java.nio.file.Path file, java.nio.file.attribute.BasicFileAttributes attrs) throws IOException {
                     String name = file.getFileName().toString();
                     if (name.equals(".git") || name.equals("target") || name.equals("self-dev-run") ||
-                        name.equals(".settings") || name.equals(".mvn") || name.equals(".metadata") ||
+                        name.equals(".settings") || name.equals(".metadata") ||
                         name.equals("bin") || name.equals("iterations") || name.equals("orchestrator") ||
                         name.equals("dependency-reduced-pom.xml")) {
                         return java.nio.file.FileVisitResult.CONTINUE;
