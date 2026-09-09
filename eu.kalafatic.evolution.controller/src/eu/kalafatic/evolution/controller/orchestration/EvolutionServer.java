@@ -1709,6 +1709,24 @@ public class EvolutionServer extends NanoHTTPD {
             File targetArtifactFile = new File(primaryDir, outputName);
             logBuf.append("[OUTPUT] Primary Dataset Artifact Destination: ").append(targetArtifactFile.getAbsolutePath()).append("\n");
 
+            // Save raw downloaded dataset file alongside .evodata artifact
+            File rawOutputFile = new File(primaryDir, cleanRepoName + "-" + timestamp + ".raw.jsonl");
+            try (java.io.PrintWriter pw = new java.io.PrintWriter(new java.io.FileWriter(rawOutputFile, StandardCharsets.UTF_8))) {
+                for (NormalizedSample s : sampled) {
+                    pw.println(s.toJsonLine());
+                }
+            }
+            logBuf.append("[DOWNLOAD] Saved raw downloaded dataset file: ").append(rawOutputFile.getAbsolutePath()).append("\n");
+
+            // Copy to controller models directory if available
+            File controllerModelsDir = eu.kalafatic.evolution.controller.manager.LlamaService.resolveControllerModelsDir();
+            if (controllerModelsDir != null && controllerModelsDir.exists() && !controllerModelsDir.getAbsolutePath().equals(primaryDir.getAbsolutePath())) {
+                File controllerTarget = new File(controllerModelsDir, outputName);
+                EvoDatasetArtifact ctrlArtifact = new EvoDatasetArtifact(controllerTarget);
+                ctrlArtifact.save(sampled, config, new eu.kalafatic.evolution.forge.data.api.source.DatasetSourceStats(), 0.02);
+                logBuf.append("[OUTPUT] Copied dataset artifact to Controller Models Directory: ").append(controllerTarget.getAbsolutePath()).append("\n");
+            }
+
             // Also save copy to dist directory under workspace/product folder if present
             File distDir = new File(baseFolder, "dist");
             if (distDir.exists() && distDir.isDirectory() && !distDir.getAbsolutePath().equals(primaryDir.getAbsolutePath())) {
