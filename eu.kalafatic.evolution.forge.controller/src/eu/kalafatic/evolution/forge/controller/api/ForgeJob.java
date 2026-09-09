@@ -30,7 +30,8 @@ public class ForgeJob {
         REASONING,
         CHAT,
         KNOWLEDGE,
-        DOMAIN_SPECIALIST
+        DOMAIN_SPECIALIST,
+        EVO_DEVELOPER_ASSISTANT
     }
 
     public static class SourceProfile {

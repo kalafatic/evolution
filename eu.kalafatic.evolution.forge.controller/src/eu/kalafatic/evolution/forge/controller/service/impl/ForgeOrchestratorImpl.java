@@ -208,6 +208,23 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
             EvoModelArtifact artifact = new EvoModelArtifact();
             artifact.initializeFromModel(modelName, model, tokenizer.getVocab());
             artifact.getMetadata().put("forge_mode", job.getTrainingConfig().getForgeMode());
+            artifact.getMetadata().put("objective", job.getObjective().name());
+
+            // Record Git EVO Model Lineage & Reproducibility Chain
+            String gitCommit = resolveGitCommit(projectPath.toFile());
+            String gitBranch = resolveGitBranch(projectPath.toFile());
+            String gitWorkingTree = resolveGitWorkingTree(projectPath.toFile());
+
+            artifact.getMetadata().put("source_repository", projectPath.getFileName().toString());
+            artifact.getMetadata().put("source_commit", gitCommit);
+            artifact.getMetadata().put("branch", gitBranch);
+            artifact.getMetadata().put("working_tree_state", gitWorkingTree);
+            artifact.getMetadata().put("dataset_composition", job.getCompositionStrategy().getSourceWeights().toString());
+            artifact.getMetadata().put("hardware_profile", "MaxMemory: " + (Runtime.getRuntime().maxMemory() / (1024 * 1024)) + "MB, Cores: " + Runtime.getRuntime().availableProcessors());
+
+            artifact.recalculateManifestAndHash();
+            artifact.getMetadata().put("resulting_model_hash", artifact.getModelContentHash() != null ? artifact.getModelContentHash() : "");
+
             artifact.save(runFolder.resolve(modelName + ".evo"));
             artifact.save(runFolder.resolve("evo.evo"));
             Files.createDirectories(exportPath);
@@ -369,6 +386,42 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
             }
         } catch (Exception e) {
             logToFile(logFile, "Warning: Artifact mirroring to controller lib/models failed: " + e.getMessage());
+        }
+    }
+
+    private String resolveGitCommit(java.io.File dir) {
+        try {
+            Process p = Runtime.getRuntime().exec("git rev-parse HEAD", null, dir);
+            try (java.io.BufferedReader r = new java.io.BufferedReader(new java.io.InputStreamReader(p.getInputStream(), StandardCharsets.UTF_8))) {
+                String line = r.readLine();
+                return line != null ? line.trim() : "head-local";
+            }
+        } catch (Exception e) {
+            return "head-local";
+        }
+    }
+
+    private String resolveGitBranch(java.io.File dir) {
+        try {
+            Process p = Runtime.getRuntime().exec("git rev-parse --abbrev-ref HEAD", null, dir);
+            try (java.io.BufferedReader r = new java.io.BufferedReader(new java.io.InputStreamReader(p.getInputStream(), StandardCharsets.UTF_8))) {
+                String line = r.readLine();
+                return line != null ? line.trim() : "main";
+            }
+        } catch (Exception e) {
+            return "main";
+        }
+    }
+
+    private String resolveGitWorkingTree(java.io.File dir) {
+        try {
+            Process p = Runtime.getRuntime().exec("git status --porcelain", null, dir);
+            try (java.io.BufferedReader r = new java.io.BufferedReader(new java.io.InputStreamReader(p.getInputStream(), StandardCharsets.UTF_8))) {
+                String line = r.readLine();
+                return line != null && !line.trim().isEmpty() ? "dirty" : "clean";
+            }
+        } catch (Exception e) {
+            return "clean";
         }
     }
 

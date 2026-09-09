@@ -48,9 +48,20 @@ public class DatasetEditorGroup extends AEvoGroup {
 
         GUIFactory.INSTANCE.createLabel(group, "FROM (Data Source Provider):");
         sourceTypeCombo = new Combo(group, SWT.DROP_DOWN | SWT.READ_ONLY);
-        sourceTypeCombo.setItems(new String[] { "Hugging Face Hub", "Local Directory / Filesystem", "Project Source Code", "Synthetic Generator" });
+        sourceTypeCombo.setItems(new String[] { "Hugging Face Hub", "Local Directory / Filesystem", "EVO Codebase Git Repository", "Project Source Code", "Synthetic Generator" });
         sourceTypeCombo.select(0);
         sourceTypeCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        sourceTypeCombo.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                if (sourceTypeCombo.getSelectionIndex() == 2) { // EVO Codebase Git Repository
+                    String codebase = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getCodebasePath();
+                    repoText.setText(codebase != null ? codebase : ".");
+                    splitText.setText("main");
+                }
+            }
+        });
 
         GUIFactory.INSTANCE.createLabel(group, "WHAT (Schema / Domain):");
         Combo domainCombo = new Combo(group, SWT.DROP_DOWN | SWT.READ_ONLY);
@@ -229,7 +240,11 @@ public class DatasetEditorGroup extends AEvoGroup {
             maxBytes = Long.parseLong(sizeMbStr) * 1024L * 1024L;
         } catch (Exception ignored) {}
 
-        String sourceType = sourceTypeCombo.getSelectionIndex() == 0 ? "HUGGING_FACE" : "LOCAL";
+        String sourceType = switch (sourceTypeCombo.getSelectionIndex()) {
+            case 0 -> "HUGGING_FACE";
+            case 2 -> "EVO_CODEBASE";
+            default -> "LOCAL";
+        };
         String customOutputDir = outputDirText.getText().trim();
 
         reportArea.setText("Downloading dataset " + repo + " (" + split + ") into " + customOutputDir + "...\n");
@@ -325,7 +340,11 @@ public class DatasetEditorGroup extends AEvoGroup {
             maxBytes = Long.parseLong(sizeMbStr) * 1024L * 1024L;
         } catch (Exception ignored) {}
 
-        String sourceType = sourceTypeCombo.getSelectionIndex() == 0 ? "HUGGING_FACE" : "LOCAL";
+        String sourceType = switch (sourceTypeCombo.getSelectionIndex()) {
+            case 0 -> "HUGGING_FACE";
+            case 2 -> "EVO_CODEBASE";
+            default -> "LOCAL";
+        };
 
         reportArea.setText("Starting dataset preparation pipeline for " + repo + " (max " + sizeMbStr + " MB)...\n");
 

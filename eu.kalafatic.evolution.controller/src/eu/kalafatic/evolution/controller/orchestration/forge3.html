@@ -874,6 +874,7 @@
                     <select id="dataset-from-combo" onchange="onDatasetFromChange()">
                         <option value="HUGGING_FACE">Hugging Face Hub</option>
                         <option value="LOCAL">Local Directory / Filesystem</option>
+                        <option value="EVO_CODEBASE">EVO Codebase Git Repository</option>
                         <option value="PROJECT">Project Source Code</option>
                         <option value="SYNTHETIC">Synthetic Generator</option>
                     </select>
@@ -2387,6 +2388,9 @@
                 { id: "HuggingFaceH4/ultrachat_200k", name: "HuggingFaceH4/ultrachat_200k (UltraChat)", split: "train_sft", type: "INSTRUCTION" },
                 { id: "bigcode/the-stack", name: "bigcode/the-stack (Code Stack)", split: "train", type: "CODE" },
                 { id: "gsm8k", name: "gsm8k (GSM8K Math Proofs)", split: "main", type: "REASONING" }
+            ],
+            EVO_CODEBASE: [
+                { id: ".", name: "Current EVO Git Repository (Code + Docs + RCP)", split: "main", type: "CODE" }
             ],
             LOCAL: [
                 { id: "forge-input/workspace", name: "forge-input/workspace (Local Workspace Source)", split: "main", type: "CODE" },
