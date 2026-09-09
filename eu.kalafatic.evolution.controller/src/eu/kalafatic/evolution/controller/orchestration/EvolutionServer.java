@@ -1623,6 +1623,8 @@ public class EvolutionServer extends NanoHTTPD {
         String sourceType = body.optString("sourceType", "HUGGING_FACE");
         String repo = body.optString("repository", "wikitext");
         String split = body.optString("split", "train");
+        String customOutputDir = body.optString("outputDir", "").trim();
+
         String timestamp = new java.text.SimpleDateFormat("yyyyMMdd_HHmmss").format(new java.util.Date());
         String cleanRepoName = repo.replace("/", "_").replace("\\", "_");
         String outputName = body.optString("artifactName", cleanRepoName + "-" + timestamp + ".evodata");
@@ -1648,12 +1650,20 @@ public class EvolutionServer extends NanoHTTPD {
         DatasetDeduplicator deduplicator = new DatasetDeduplicator(true);
         TrainingSampleQualityScorer scorer = new TrainingSampleQualityScorer(minQuality);
 
+        StringBuilder logBuf = new StringBuilder();
+        logBuf.append("[DATASET PREPARATION] Starting run at ").append(new java.util.Date()).append("\n");
+        logBuf.append("[CONFIG] SourceType: ").append(sourceType).append(", Repo: ").append(repo).append(", Split: ").append(split).append("\n");
+        logBuf.append("[CONFIG] Limits: MaxSamples=").append(maxSamples).append(", MaxBytes=").append(maxBytes).append(" (").append(maxBytes / (1024 * 1024)).append(" MB)\n");
+
         try {
             eu.kalafatic.evolution.forge.data.api.source.DatasetSource source =
                 "HUGGING_FACE".equalsIgnoreCase(sourceType) ? new HuggingFaceDatasetSource(config) : new LocalDatasetSource(config);
 
             try (source) {
                 source.initialize();
+                if (source instanceof HuggingFaceDatasetSource hfSource) {
+                    logBuf.append("[SCHEMA] Detected Hugging Face Schema: ").append(hfSource.getDetectedSchemaInfo()).append("\n");
+                }
                 while (source.hasNext()) {
                     NormalizedSample s = source.next();
                     NormalizedSample clean = cleaner.clean(s);
@@ -1661,7 +1671,6 @@ public class EvolutionServer extends NanoHTTPD {
                         deduplicator.register(clean);
                         acceptedCount++;
 
-                        // Online Reservoir Sampling (Algorithm R)
                         if (reservoir.size() < reservoirCap) {
                             reservoir.add(clean);
                         } else {
@@ -1672,30 +1681,44 @@ public class EvolutionServer extends NanoHTTPD {
                         }
                     }
                 }
+                logBuf.append("[STREAM] Read ").append(source.getStats().getTotalSamplesRead()).append(" items, ").append(source.getStats().getTotalBytesRead()).append(" bytes.\n");
+                logBuf.append("[STREAM] Accepted ").append(acceptedCount).append(" clean items after deduplication & quality scoring.\n");
             }
 
             List<NormalizedSample> sampled = reservoir;
 
-            // Save to model directories (forge-output and dist)
+            // Resolve target output directory
             File userDir = new File(System.getProperty("user.dir"));
-            File outputDir = new File(userDir, "forge-output");
-            if (!outputDir.exists()) outputDir.mkdirs();
+            File primaryDir;
+            if (!customOutputDir.isEmpty()) {
+                primaryDir = new File(customOutputDir);
+            } else {
+                primaryDir = new File(userDir, "forge-output");
+            }
+            if (!primaryDir.exists()) primaryDir.mkdirs();
 
-            File targetArtifactFile = new File(outputDir, outputName);
+            File targetArtifactFile = new File(primaryDir, outputName);
+            logBuf.append("[OUTPUT] Primary Artifact Destination: ").append(targetArtifactFile.getAbsolutePath()).append("\n");
 
-            // Also copy to dist directory if present
+            // Also copy to secondary model directories if present
             File distDir = new File(userDir, "dist");
-            if (distDir.exists() && distDir.isDirectory()) {
+            if (distDir.exists() && distDir.isDirectory() && !distDir.getAbsolutePath().equals(primaryDir.getAbsolutePath())) {
                 File distTargetFile = new File(distDir, outputName);
                 EvoDatasetArtifact distArtifact = new EvoDatasetArtifact(distTargetFile);
                 distArtifact.save(sampled, config, new eu.kalafatic.evolution.forge.data.api.source.DatasetSourceStats(), 0.02);
+                logBuf.append("[OUTPUT] Secondary Copy Saved: ").append(distTargetFile.getAbsolutePath()).append("\n");
             }
 
             EvoDatasetArtifact artifact = new EvoDatasetArtifact(targetArtifactFile);
             artifact.save(sampled, config, new eu.kalafatic.evolution.forge.data.api.source.DatasetSourceStats(), 0.02);
 
+            if (sampled.isEmpty()) {
+                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json",
+                    new JSONObject().put("error", "Dataset preparation failed: 0 valid samples were accepted from source " + repo).toString());
+            }
+
             JSONObject result = new JSONObject();
-            result.put("status", "READY");
+            result.put("status", artifact.getStatus().name());
             result.put("artifactPath", targetArtifactFile.getAbsolutePath());
             result.put("totalAccepted", sampled.size());
             result.put("report", artifact.buildReportText());
@@ -1703,7 +1726,7 @@ public class EvolutionServer extends NanoHTTPD {
             return newFixedLengthResponse(Response.Status.OK, "application/json", result.toString());
         } catch (Exception e) {
             return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json",
-                new JSONObject().put("error", e.getMessage()).toString());
+                new JSONObject().put("error", "Dataset preparation error: " + e.getMessage()).toString());
         }
     }
 

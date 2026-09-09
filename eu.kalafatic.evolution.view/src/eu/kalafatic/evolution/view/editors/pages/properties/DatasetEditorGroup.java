@@ -32,6 +32,7 @@ public class DatasetEditorGroup extends AEvoGroup {
     private Text splitText;
     private Text maxSamplesText;
     private Text maxSizeMbText;
+    private Text outputDirText;
     private Combo samplingStrategyCombo;
     private Button cleanCheck;
     private Button deduplicateCheck;
@@ -66,6 +67,29 @@ public class DatasetEditorGroup extends AEvoGroup {
         GUIFactory.INSTANCE.createLabel(group, "Max Download Size (MB):");
         maxSizeMbText = toolkit.createText(group, "50", SWT.BORDER);
         maxSizeMbText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        GUIFactory.INSTANCE.createLabel(group, "Destination Output Directory:");
+        Composite dirComp = toolkit.createComposite(group);
+        dirComp.setLayout(new GridLayout(2, false));
+        dirComp.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        String defaultDir = new File(System.getProperty("user.dir"), "forge-output").getAbsolutePath();
+        outputDirText = toolkit.createText(dirComp, defaultDir, SWT.BORDER);
+        outputDirText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        Button browseBtn = GUIFactory.INSTANCE.createButton(dirComp, "Browse...");
+        browseBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                org.eclipse.swt.widgets.DirectoryDialog dialog = new org.eclipse.swt.widgets.DirectoryDialog(group.getShell());
+                dialog.setText("Select Destination Dataset Output Directory");
+                dialog.setFilterPath(outputDirText.getText());
+                String selected = dialog.open();
+                if (selected != null && !selected.trim().isEmpty()) {
+                    outputDirText.setText(selected.trim());
+                }
+            }
+        });
 
         GUIFactory.INSTANCE.createLabel(group, "Sampling Strategy:");
         samplingStrategyCombo = new Combo(group, SWT.DROP_DOWN | SWT.READ_ONLY);
@@ -178,6 +202,7 @@ public class DatasetEditorGroup extends AEvoGroup {
 
         reportArea.setText("Starting dataset preparation pipeline for " + repo + " (max " + sizeMbStr + " MB)...\n");
 
+        String customOutputDir = outputDirText.getText().trim();
         int port = getServerPort();
         final long finalMaxBytes = maxBytes;
         new Thread(() -> {
@@ -188,6 +213,7 @@ public class DatasetEditorGroup extends AEvoGroup {
                 req.put("split", split);
                 req.put("maxSamples", Long.parseLong(samples));
                 req.put("maxBytes", finalMaxBytes);
+                req.put("outputDir", customOutputDir);
                 req.put("minQuality", 0.5);
 
                 String res = postHttp("http://localhost:" + port + "/forge/dataset/prepare", req.toString());
