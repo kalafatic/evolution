@@ -433,8 +433,37 @@ public class SelfDevBootstrapController {
         System.out.println("[SelfDevBootstrapController] [START_BOOTSTRAP] State File: " + stateFile.getAbsolutePath());
         System.out.println("[SelfDevBootstrapController] [START_BOOTSTRAP] Context File: " + contextFile.getAbsolutePath());
 
+        // Generate isolated runId and manifest
+        String runId = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss")) + "-" + Integer.toHexString((int)(Math.random() * 0xffff));
+        File runSubDir = new File(runDir, runId);
+        runSubDir.mkdirs();
+        new File(runSubDir, "source").mkdirs();
+        new File(runSubDir, "builds").mkdirs();
+        new File(runSubDir, "export").mkdirs();
+        new File(runSubDir, "runtime").mkdirs();
+        new File(runSubDir, "logs").mkdirs();
+
+        String commitSha = getGitCommitSha(projectRoot);
+
+        JSONObject manifest = new JSONObject();
+        manifest.put("runId", runId);
+        manifest.put("timestamp", System.currentTimeMillis());
+        manifest.put("sourcePath", projectRoot.getAbsolutePath());
+        manifest.put("sourceRevision", commitSha);
+        manifest.put("branch", getGitBranch(projectRoot));
+        manifest.put("buildPath", new File(runSubDir, "builds").getAbsolutePath());
+        manifest.put("exportPath", new File(runSubDir, "export").getAbsolutePath());
+        manifest.put("platform", System.getProperty("os.name"));
+        manifest.put("javaVersion", System.getProperty("java.version"));
+        manifest.put("mavenVersion", "3.x");
+
+        File manifestFile = new File(runSubDir, "manifest.json");
+        Files.write(manifestFile.toPath(), manifest.toString(4).getBytes(StandardCharsets.UTF_8));
+        System.out.println("[SelfDevBootstrapController] [MANIFEST] Run manifest written to: " + manifestFile.getAbsolutePath() + " with SHA: " + commitSha);
+
         JSONObject state = new JSONObject();
         state.put("active", true);
+        state.put("runId", runId);
         state.put("iteration", 0);
         state.put("goal", "self-development");
         if (debugMode) {
@@ -1784,6 +1813,38 @@ public class SelfDevBootstrapController {
             e.printStackTrace();
             return "ERROR: " + e.getMessage();
         }
+    }
+
+    private String getGitCommitSha(File dir) {
+        if (dir == null || !dir.exists()) return "unknown";
+        try {
+            ProcessBuilder pb = new ProcessBuilder("git", "rev-parse", "HEAD");
+            pb.directory(dir);
+            Process p = pb.start();
+            try (BufferedReader r = new BufferedReader(new InputStreamReader(p.getInputStream(), StandardCharsets.UTF_8))) {
+                String line = r.readLine();
+                if (line != null && !line.trim().isEmpty()) {
+                    return line.trim();
+                }
+            }
+        } catch (Exception ignored) {}
+        return "HEAD-" + System.currentTimeMillis();
+    }
+
+    private String getGitBranch(File dir) {
+        if (dir == null || !dir.exists()) return "master";
+        try {
+            ProcessBuilder pb = new ProcessBuilder("git", "rev-parse", "--abbrev-ref", "HEAD");
+            pb.directory(dir);
+            Process p = pb.start();
+            try (BufferedReader r = new BufferedReader(new InputStreamReader(p.getInputStream(), StandardCharsets.UTF_8))) {
+                String line = r.readLine();
+                if (line != null && !line.trim().isEmpty()) {
+                    return line.trim();
+                }
+            }
+        } catch (Exception ignored) {}
+        return "master";
     }
 
     private void deleteRecursively(File file) {
