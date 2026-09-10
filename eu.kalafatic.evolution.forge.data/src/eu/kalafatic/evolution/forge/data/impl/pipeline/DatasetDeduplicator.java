@@ -1,6 +1,7 @@
 package eu.kalafatic.evolution.forge.data.impl.pipeline;
 
 import eu.kalafatic.evolution.forge.data.api.NormalizedSample;
+import eu.kalafatic.evolution.forge.data.api.processor.DataDeduplicator;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -8,7 +9,7 @@ import java.util.Set;
 /**
  * Deduplication stage supporting exact SHA-256 hash matching and MinHash/shingle near-duplicate filtering.
  */
-public class DatasetDeduplicator {
+public class DatasetDeduplicator implements DataDeduplicator {
 
     private final Set<String> exactHashes = new HashSet<>();
     private final Set<Long> shingleFingerprints = new HashSet<>();
@@ -20,6 +21,7 @@ public class DatasetDeduplicator {
         this.nearDuplicateEnabled = nearDuplicateEnabled;
     }
 
+    @Override
     public boolean isDuplicate(NormalizedSample sample) {
         if (sample == null) return true;
 
@@ -43,6 +45,7 @@ public class DatasetDeduplicator {
         return false;
     }
 
+    @Override
     public void register(NormalizedSample sample) {
         if (sample == null) return;
         if (sample.getHash() != null) {
@@ -68,6 +71,7 @@ public class DatasetDeduplicator {
         return hash;
     }
 
+    @Override
     public void clear() {
         exactHashes.clear();
         shingleFingerprints.clear();
