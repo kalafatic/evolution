@@ -15,8 +15,7 @@ public class DatasetBuilder {
     }
 
     public List<Sample> buildSlidingWindow(List<Integer> tokens, int windowSize, int stride) {
-        // Enforce a default maximum cap of 10000 samples to prevent OutOfMemoryError and keep training fast.
-        return buildSlidingWindow(tokens, windowSize, stride, 10000);
+        return buildSlidingWindow(tokens, windowSize, stride, Integer.MAX_VALUE);
     }
 
     public List<Sample> buildSlidingWindow(List<Integer> tokens, int windowSize, int stride, int maxSamples) {

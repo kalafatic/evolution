@@ -13,5 +13,6 @@ public enum CollectorType {
     DATABASE,
     SLACK,
     JIRA,
-    GITHUB
+    GITHUB,
+    EVO_CODEBASE
 }

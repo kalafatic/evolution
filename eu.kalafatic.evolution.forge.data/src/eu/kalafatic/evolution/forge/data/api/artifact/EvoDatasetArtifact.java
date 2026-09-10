@@ -31,6 +31,8 @@ public class EvoDatasetArtifact {
         VALIDATING,
         FINALIZING,
         READY,
+        INSUFFICIENT_SOURCE_DATA,
+        CANCELLED,
         FAILED,
         CORRUPTED
     }
@@ -81,7 +83,14 @@ public class EvoDatasetArtifact {
             }
         }
 
-        this.status = Status.VALIDATING;
+        // Determine final status before serializing metadata and report
+        if (this.status != Status.CANCELLED && this.status != Status.FAILED) {
+            if (stats != null && stats.getRequestedUsableBytes() > 0 && stats.getAcceptedBytes() < stats.getRequestedUsableBytes()) {
+                this.status = Status.INSUFFICIENT_SOURCE_DATA;
+            } else {
+                this.status = Status.READY;
+            }
+        }
 
         // Write to temporary archive first (transactional semantics)
         File tempFile = new File(artifactFile.getAbsolutePath() + ".tmp");
@@ -114,8 +123,6 @@ public class EvoDatasetArtifact {
             zos.closeEntry();
         }
 
-        this.status = Status.FINALIZING;
-
         if (artifactFile.exists()) {
             artifactFile.delete();
         }
@@ -123,10 +130,8 @@ public class EvoDatasetArtifact {
             java.nio.file.Files.move(tempFile.toPath(), artifactFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
         }
 
-        // Post-serialization structural and semantic validation before marking READY
+        // Post-serialization structural and semantic validation
         validateArtifact(artifactFile);
-
-        this.status = Status.READY;
     }
 
     private void validateArtifact(File file) throws Exception {
@@ -153,12 +158,35 @@ public class EvoDatasetArtifact {
         EvoDatasetArtifact artifact = new EvoDatasetArtifact(file);
         artifact.trainSamples.clear();
         artifact.valSamples.clear();
+        Status loadedStatus = null;
 
         try (ZipInputStream zis = new ZipInputStream(new FileInputStream(file), StandardCharsets.UTF_8)) {
             ZipEntry entry;
             while ((entry = zis.getNextEntry()) != null) {
                 String name = entry.getName();
-                if ("data.jsonl".equals(name) || "val_data.jsonl".equals(name)) {
+                if ("metadata.json".equals(name)) {
+                    byte[] entryBytes = zis.readAllBytes();
+                    String metaStr = new String(entryBytes, StandardCharsets.UTF_8);
+                    try {
+                        JSONObject metaJson = new JSONObject(metaStr);
+                        String statusStr = metaJson.optString("status", null);
+                        if (statusStr != null) {
+                            try {
+                                loadedStatus = Status.valueOf(statusStr);
+                            } catch (Exception ignored) {}
+                        }
+                        artifact.stats = new DatasetSourceStats();
+                        artifact.stats.setRequestedUsableBytes(metaJson.optLong("requestedUsableBytes", 0));
+                        artifact.stats.setAcceptedBytes(metaJson.optLong("actualUsableBytes", metaJson.optLong("acceptedBytes", 0)));
+                        artifact.stats.setDownloadedBytes(metaJson.optLong("downloadedBytes", 0));
+                        artifact.stats.setExtractedBytes(metaJson.optLong("extractedBytes", 0));
+                        artifact.stats.setRawContentBytes(metaJson.optLong("rawContentBytes", 0));
+                        artifact.stats.setRejectedBytes(metaJson.optLong("rejectedBytes", 0));
+                        artifact.stats.setDuplicateBytes(metaJson.optLong("duplicateBytes", 0));
+                        artifact.stats.setTrainingBytes(metaJson.optLong("trainingBytes", 0));
+                        artifact.stats.setValidationBytes(metaJson.optLong("validationBytes", 0));
+                    } catch (Exception ignored) {}
+                } else if ("data.jsonl".equals(name) || "val_data.jsonl".equals(name)) {
                     boolean isVal = "val_data.jsonl".equals(name);
                     byte[] entryBytes = zis.readAllBytes();
                     String content = new String(entryBytes, StandardCharsets.UTF_8);
@@ -196,7 +224,12 @@ public class EvoDatasetArtifact {
                 zis.closeEntry();
             }
         }
-        artifact.status = Status.READY;
+
+        if (loadedStatus != null) {
+            artifact.status = loadedStatus;
+        } else {
+            artifact.status = Status.READY;
+        }
         return artifact;
     }
 
@@ -207,6 +240,22 @@ public class EvoDatasetArtifact {
         sb.append("  \"status\": \"").append(status.name()).append("\",\n");
         sb.append("  \"source\": \"").append(sourceConfig != null ? sourceConfig.getSourceType() : "UNKNOWN").append("\",\n");
         sb.append("  \"repository\": \"").append(sourceConfig != null ? sourceConfig.getRepository() : "").append("\",\n");
+        if (stats != null) {
+            sb.append("  \"requestedUsableBytes\": ").append(stats.getRequestedUsableBytes()).append(",\n");
+            sb.append("  \"actualUsableBytes\": ").append(stats.getAcceptedBytes()).append(",\n");
+            sb.append("  \"downloadedBytes\": ").append(stats.getDownloadedBytes()).append(",\n");
+            sb.append("  \"extractedBytes\": ").append(stats.getExtractedBytes()).append(",\n");
+            sb.append("  \"rawContentBytes\": ").append(stats.getRawContentBytes()).append(",\n");
+            sb.append("  \"acceptedBytes\": ").append(stats.getAcceptedBytes()).append(",\n");
+            sb.append("  \"rejectedBytes\": ").append(stats.getRejectedBytes()).append(",\n");
+            sb.append("  \"duplicateBytes\": ").append(stats.getDuplicateBytes()).append(",\n");
+            sb.append("  \"trainingBytes\": ").append(stats.getTrainingBytes()).append(",\n");
+            sb.append("  \"validationBytes\": ").append(stats.getValidationBytes()).append(",\n");
+            sb.append("  \"acceptedRecords\": ").append(stats.getAcceptedRecords()).append(",\n");
+            sb.append("  \"rejectedRecords\": ").append(stats.getRejectedRecords()).append(",\n");
+            sb.append("  \"duplicateRecords\": ").append(stats.getDuplicateRecords()).append(",\n");
+            sb.append("  \"estimatedTokens\": ").append(stats.getEstimatedTokens()).append(",\n");
+        }
         sb.append("  \"trainSamples\": ").append(trainSamples.size()).append(",\n");
         sb.append("  \"valSamples\": ").append(valSamples.size()).append(",\n");
         sb.append("  \"trainTokens\": ").append(totalTrainTokens).append(",\n");
@@ -222,8 +271,29 @@ public class EvoDatasetArtifact {
         sb.append("------------------------------------------\n");
         sb.append("Artifact: ").append(name).append("\n");
         sb.append("Source: ").append(sourceConfig != null ? sourceConfig.getSourceType() + " (" + sourceConfig.getRepository() + ")" : "N/A").append("\n");
-        sb.append("Total Processed Samples: ").append(stats != null ? stats.getTotalSamplesRead() : trainSamples.size() + valSamples.size()).append("\n");
-        sb.append("Accepted Samples: ").append(trainSamples.size() + valSamples.size()).append("\n");
+        if (stats != null && stats.getRequestedUsableBytes() > 0) {
+            sb.append("Requested Usable Data: ").append(stats.getRequestedUsableBytes() / (1024 * 1024)).append(" MB (").append(stats.getRequestedUsableBytes()).append(" bytes)\n");
+        }
+        if (stats != null) {
+            sb.append("Downloaded Bytes: ").append(stats.getDownloadedBytes()).append("\n");
+            sb.append("Actual Usable Bytes: ").append(stats.getAcceptedBytes()).append(" (").append(String.format("%.2f", stats.getAcceptedBytes() / (1024.0 * 1024.0))).append(" MB)\n");
+            sb.append("Training Bytes: ").append(stats.getTrainingBytes()).append(" (").append(String.format("%.2f", stats.getTrainingBytes() / (1024.0 * 1024.0))).append(" MB)\n");
+            sb.append("Validation Bytes: ").append(stats.getValidationBytes()).append(" (").append(String.format("%.2f", stats.getValidationBytes() / (1024.0 * 1024.0))).append(" MB)\n");
+            sb.append("Estimated Tokens: ").append(String.format("%.1fM", (totalTrainTokens + totalValTokens) / 1000000.0)).append(" (").append(totalTrainTokens + totalValTokens).append(" tokens)\n");
+            sb.append("Accepted Records: ").append(stats.getAcceptedRecords()).append("\n");
+            sb.append("Rejected Records: ").append(stats.getRejectedRecords()).append(" (").append(stats.getRejectedBytes()).append(" bytes)\n");
+            sb.append("Duplicate Records: ").append(stats.getDuplicateRecords()).append(" (").append(stats.getDuplicateBytes()).append(" bytes)\n");
+            if (stats.getRequestedUsableBytes() > 0) {
+                double coverage = (stats.getAcceptedBytes() * 100.0) / Math.max(1, stats.getRequestedUsableBytes());
+                sb.append("Source Coverage: ").append(String.format("%.1f%%", Math.min(100.0, coverage))).append("\n");
+                if (coverage < 100.0) {
+                    sb.append("Note: Source dataset exhausted before target size was reached.\n");
+                }
+            }
+        } else {
+            sb.append("Total Processed Samples: ").append(trainSamples.size() + valSamples.size()).append("\n");
+            sb.append("Accepted Samples: ").append(trainSamples.size() + valSamples.size()).append("\n");
+        }
         sb.append("Train Samples: ").append(trainSamples.size()).append(" (").append(totalTrainTokens).append(" estimated tokens)\n");
         sb.append("Validation Samples: ").append(valSamples.size()).append(" (").append(totalValTokens).append(" estimated tokens)\n");
         sb.append("Status: ").append(status.name()).append("\n");
@@ -234,6 +304,7 @@ public class EvoDatasetArtifact {
     public File getArtifactFile() { return artifactFile; }
     public String getName() { return name; }
     public Status getStatus() { return status; }
+    public void setStatus(Status status) { this.status = status; }
     public List<NormalizedSample> getTrainSamples() { return trainSamples; }
     public List<NormalizedSample> getValSamples() { return valSamples; }
     public long getTotalTrainTokens() { return totalTrainTokens; }

@@ -58,4 +58,31 @@ public class CodebaseCopyToolTest {
         assertTrue(new File(target, "file1.txt").exists());
         assertFalse(new File(target, "target").exists());
     }
+
+    @Test
+    public void testTargetPackageInSourceNotExcluded() throws IOException {
+        File source = folder.newFolder("source3");
+        File srcTargetPackageDir = new File(source, "module/src/main/java/pkg/target");
+        srcTargetPackageDir.mkdirs();
+        Files.write(new File(source, "file1.txt").toPath(), "content1".getBytes());
+        Files.write(new File(srcTargetPackageDir, "ForgeTarget.java").toPath(), "package pkg.target;".getBytes());
+
+        File buildTargetDir = new File(source, "module/target");
+        buildTargetDir.mkdirs();
+        Files.write(new File(buildTargetDir, "built.class").toPath(), "class".getBytes());
+
+        File target = new File(folder.getRoot(), "target3");
+
+        CodebaseCopyTool tool = new CodebaseCopyTool();
+        CopyConfiguration config = new CopyConfiguration(source, target);
+        config.addExclusion("target");
+
+        CopyResult result = tool.copy(config);
+
+        assertTrue(result.isSuccess());
+        assertEquals(2, result.getFilesCopied());
+        assertTrue(new File(target, "file1.txt").exists());
+        assertTrue(new File(target, "module/src/main/java/pkg/target/ForgeTarget.java").exists());
+        assertFalse(new File(target, "module/target").exists());
+    }
 }

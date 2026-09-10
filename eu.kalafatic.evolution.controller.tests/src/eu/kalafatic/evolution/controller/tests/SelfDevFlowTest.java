@@ -46,4 +46,27 @@ public class SelfDevFlowTest {
         assertNotNull(result);
         assertEquals("SUCCESS", result);
     }
+
+    @Test
+    public void testCheckSourceSnapshotIntegrity() throws Exception {
+        File projectRoot = new File(".").getAbsoluteFile();
+        Orchestrator orchestrator = OrchestrationFactory.eINSTANCE.createOrchestrator();
+        SelfDevBootstrapController controller = new SelfDevBootstrapController(projectRoot, orchestrator);
+
+        // Test with current repository path - should pass integrity check
+        String result = controller.checkSourceSnapshotIntegrity(projectRoot);
+        assertNull("Snapshot integrity check should pass for root repo", result);
+
+        // Test with incomplete folder - should fail with clear error message
+        File tempDir = new File(System.getProperty("java.io.tmpdir"), "incomplete_snapshot_test_" + System.currentTimeMillis());
+        tempDir.mkdirs();
+        try {
+            String incompleteResult = controller.checkSourceSnapshotIntegrity(tempDir);
+            assertNotNull(incompleteResult);
+            assertTrue(incompleteResult.contains("SelfDev source snapshot is incomplete"));
+            assertTrue(incompleteResult.contains("expected Forge target package"));
+        } finally {
+            tempDir.delete();
+        }
+    }
 }

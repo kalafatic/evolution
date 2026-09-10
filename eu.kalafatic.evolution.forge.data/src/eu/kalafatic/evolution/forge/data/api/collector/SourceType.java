@@ -9,5 +9,6 @@ public enum SourceType {
     PDF,
     MCP,
     INTERNET,
-    CUSTOM
+    CUSTOM,
+    EVO_CODEBASE
 }

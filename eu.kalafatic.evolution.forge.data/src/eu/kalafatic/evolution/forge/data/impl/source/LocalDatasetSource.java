@@ -88,7 +88,7 @@ public class LocalDatasetSource implements DatasetSource {
         if (config.getMaxSamples() > 0 && stats.getTotalSamplesRead() >= config.getMaxSamples()) {
             return;
         }
-        if (config.getMaxBytes() > 0 && stats.getTotalBytesRead() >= config.getMaxBytes()) {
+        if (config.getMaxBytes() > 0 && stats.getAcceptedBytes() >= config.getMaxBytes()) {
             return;
         }
 

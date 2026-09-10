@@ -46,26 +46,64 @@ public class DatasetEditorGroup extends AEvoGroup {
     private void createControl(FormToolkit toolkit, Composite parent) {
         group = GUIFactory.INSTANCE.createExpandableGroup(toolkit, parent, "Dataset Preparation & Hugging Face Acquisition", 2, true, true);
 
-        GUIFactory.INSTANCE.createLabel(group, "Data Source:");
+        GUIFactory.INSTANCE.createLabel(group, "FROM (Data Source Provider):");
         sourceTypeCombo = new Combo(group, SWT.DROP_DOWN | SWT.READ_ONLY);
-        sourceTypeCombo.setItems(new String[] { "Hugging Face", "Local Files / Directory" });
+        sourceTypeCombo.setItems(new String[] { "Hugging Face Hub", "Local Directory / Filesystem", "EVO Codebase Git Repository", "Project Source Code", "Synthetic Generator" });
         sourceTypeCombo.select(0);
         sourceTypeCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
-        GUIFactory.INSTANCE.createLabel(group, "Repository / Dataset ID:");
+        sourceTypeCombo.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                if (sourceTypeCombo.getSelectionIndex() == 2) { // EVO Codebase Git Repository
+                    String codebase = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getCodebasePath();
+                    repoText.setText(codebase != null ? codebase : ".");
+                    splitText.setText("main");
+                }
+            }
+        });
+
+        GUIFactory.INSTANCE.createLabel(group, "WHAT (Schema / Domain):");
+        Combo domainCombo = new Combo(group, SWT.DROP_DOWN | SWT.READ_ONLY);
+        domainCombo.setItems(new String[] { "General Text Corpus (Unstructured)", "Instruction Tuning & QA Pairs", "Source Code & Repositories", "Reasoning & Step-by-Step Proofs" });
+        domainCombo.select(0);
+        domainCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        GUIFactory.INSTANCE.createLabel(group, "WHERE (Predefined Target Preset):");
+        Combo presetCombo = new Combo(group, SWT.DROP_DOWN | SWT.READ_ONLY);
+        presetCombo.setItems(new String[] { "Salesforce/wikitext (Wikitext-2)", "huggingFaceFW/fineWeb (FineWeb-10B)", "HuggingFaceH4/ultrachat_200k (UltraChat)", "bigcode/the-stack (Code Stack)", "gsm8k (GSM8K Math Proofs)", "Custom / Manual Entry..." });
+        presetCombo.select(0);
+        presetCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        GUIFactory.INSTANCE.createLabel(group, "Repository / Dataset Target ID (Editable):");
         repoText = toolkit.createText(group, "wikitext", SWT.BORDER);
         repoText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        presetCombo.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                int idx = presetCombo.getSelectionIndex();
+                switch (idx) {
+                    case 0: repoText.setText("wikitext"); break;
+                    case 1: repoText.setText("huggingFaceFW/fineWeb"); break;
+                    case 2: repoText.setText("HuggingFaceH4/ultrachat_200k"); break;
+                    case 3: repoText.setText("bigcode/the-stack"); break;
+                    case 4: repoText.setText("gsm8k"); break;
+                    default: break;
+                }
+            }
+        });
 
         GUIFactory.INSTANCE.createLabel(group, "Split / Configuration:");
         splitText = toolkit.createText(group, "train", SWT.BORDER);
         splitText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
-        GUIFactory.INSTANCE.createLabel(group, "Max Samples Limit:");
-        maxSamplesText = toolkit.createText(group, "1000", SWT.BORDER);
+        GUIFactory.INSTANCE.createLabel(group, "Max Samples Limit (0 = Unlimited):");
+        maxSamplesText = toolkit.createText(group, "0", SWT.BORDER);
         maxSamplesText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
-        GUIFactory.INSTANCE.createLabel(group, "Max Download Size (MB):");
-        maxSizeMbText = toolkit.createText(group, "50", SWT.BORDER);
+        GUIFactory.INSTANCE.createLabel(group, "Target Usable Data Size (MB):");
+        maxSizeMbText = toolkit.createText(group, "500", SWT.BORDER);
         maxSizeMbText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
         GUIFactory.INSTANCE.createLabel(group, "Destination Output Directory:");
@@ -80,7 +118,7 @@ public class DatasetEditorGroup extends AEvoGroup {
         if (baseWorkspace == null || baseWorkspace.trim().isEmpty()) {
             baseWorkspace = System.getProperty("user.dir");
         }
-        String defaultDir = new File(baseWorkspace, "forge-output").getAbsolutePath();
+        String defaultDir = new File(baseWorkspace, "forge-input").getAbsolutePath();
         outputDirText = toolkit.createText(dirComp, defaultDir, SWT.BORDER);
         outputDirText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
@@ -155,10 +193,28 @@ public class DatasetEditorGroup extends AEvoGroup {
         gdInfo.horizontalSpan = 2;
         infoDescLabel.setLayoutData(gdInfo);
 
-        Label reportLabel = toolkit.createLabel(group, "Preparation Report & Preview Log:");
-        GridData gdLbl = new GridData(GridData.FILL_HORIZONTAL);
-        gdLbl.horizontalSpan = 2;
-        reportLabel.setLayoutData(gdLbl);
+        Composite reportHeaderComp = toolkit.createComposite(group);
+        reportHeaderComp.setLayout(new GridLayout(2, false));
+        GridData gdRepHeader = new GridData(GridData.FILL_HORIZONTAL);
+        gdRepHeader.horizontalSpan = 2;
+        reportHeaderComp.setLayoutData(gdRepHeader);
+
+        Label reportLabel = toolkit.createLabel(reportHeaderComp, "Preparation Report & Preview Log:");
+        reportLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+        Button copyReportBtn = GUIFactory.INSTANCE.createButton(reportHeaderComp, "Copy Log");
+        copyReportBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                String text = reportArea.getText();
+                if (text != null && !text.isEmpty()) {
+                    org.eclipse.swt.dnd.Clipboard cb = new org.eclipse.swt.dnd.Clipboard(Display.getDefault());
+                    cb.setContents(new Object[] { text }, new org.eclipse.swt.dnd.Transfer[] { org.eclipse.swt.dnd.TextTransfer.getInstance() });
+                    cb.dispose();
+                    MessageDialog.openInformation(group.getShell(), "Copied", "Report log copied to clipboard.");
+                }
+            }
+        });
 
         reportArea = toolkit.createText(group, "", SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL | SWT.BORDER | SWT.READ_ONLY);
         GridData gdArea = new GridData(GridData.FILL_BOTH);
@@ -184,7 +240,11 @@ public class DatasetEditorGroup extends AEvoGroup {
             maxBytes = Long.parseLong(sizeMbStr) * 1024L * 1024L;
         } catch (Exception ignored) {}
 
-        String sourceType = sourceTypeCombo.getSelectionIndex() == 0 ? "HUGGING_FACE" : "LOCAL";
+        String sourceType = switch (sourceTypeCombo.getSelectionIndex()) {
+            case 0 -> "HUGGING_FACE";
+            case 2 -> "EVO_CODEBASE";
+            default -> "LOCAL";
+        };
         String customOutputDir = outputDirText.getText().trim();
 
         reportArea.setText("Downloading dataset " + repo + " (" + split + ") into " + customOutputDir + "...\n");
@@ -230,12 +290,13 @@ public class DatasetEditorGroup extends AEvoGroup {
                 org.json.JSONObject req = new org.json.JSONObject();
                 req.put("repository", repo);
                 req.put("split", split);
-                req.put("count", 3);
+                req.put("count", 5);
 
                 String res = postHttp("http://localhost:" + port + "/forge/dataset/hf/preview", req.toString());
+                String tableText = formatAsTable(res);
                 Display.getDefault().asyncExec(() -> {
                     if (!reportArea.isDisposed()) {
-                        reportArea.setText("HF PREVIEW RESULT:\n" + res);
+                        reportArea.setText("DATASET SAMPLE PREVIEW:\n" + tableText);
                     }
                 });
             } catch (Exception ex) {
@@ -248,6 +309,27 @@ public class DatasetEditorGroup extends AEvoGroup {
         }).start();
     }
 
+    private String formatAsTable(String jsonStr) {
+        try {
+            org.json.JSONArray array = new org.json.JSONArray(jsonStr);
+            StringBuilder sb = new StringBuilder();
+            sb.append(String.format("%-5s | %-12s | %-50s | %-10s\n", "#", "TYPE", "PROMPT / CONTENT", "QUALITY"));
+            sb.append("----------------------------------------------------------------------------------\n");
+            for (int i = 0; i < array.length(); i++) {
+                org.json.JSONObject obj = array.getJSONObject(i);
+                String type = obj.optString("sampleType", obj.optString("type", "TEXT"));
+                String content = obj.optString("content", obj.optString("text", obj.optString("prompt", "")));
+                content = content.replaceAll("\r?\n", " ");
+                if (content.length() > 47) content = content.substring(0, 44) + "...";
+                double quality = obj.optDouble("qualityScore", 1.0);
+                sb.append(String.format("%-5d | %-12s | %-50s | %-10.1f%%\n", (i + 1), type, content, quality * 100.0));
+            }
+            return sb.toString();
+        } catch (Exception e) {
+            return jsonStr;
+        }
+    }
+
     private void handlePrepareDataset() {
         String repo = repoText.getText().trim();
         String split = splitText.getText().trim();
@@ -258,7 +340,11 @@ public class DatasetEditorGroup extends AEvoGroup {
             maxBytes = Long.parseLong(sizeMbStr) * 1024L * 1024L;
         } catch (Exception ignored) {}
 
-        String sourceType = sourceTypeCombo.getSelectionIndex() == 0 ? "HUGGING_FACE" : "LOCAL";
+        String sourceType = switch (sourceTypeCombo.getSelectionIndex()) {
+            case 0 -> "HUGGING_FACE";
+            case 2 -> "EVO_CODEBASE";
+            default -> "LOCAL";
+        };
 
         reportArea.setText("Starting dataset preparation pipeline for " + repo + " (max " + sizeMbStr + " MB)...\n");
 
@@ -279,8 +365,26 @@ public class DatasetEditorGroup extends AEvoGroup {
                 String res = postHttp("http://localhost:" + port + "/forge/dataset/prepare", req.toString());
                 Display.getDefault().asyncExec(() -> {
                     if (!reportArea.isDisposed()) {
-                        reportArea.setText("DATASET PREPARATION COMPLETE:\n" + res);
-                        MessageDialog.openInformation(group.getShell(), "Dataset Prepared", "EVO Training Dataset artifact built successfully!");
+                        reportArea.setText("DATASET PREPARATION RESULT:\n" + res);
+                        try {
+                            org.json.JSONObject resJson = new org.json.JSONObject(res);
+                            String status = resJson.optString("status", "READY");
+                            boolean sourceExhausted = resJson.optBoolean("sourceExhausted", false);
+                            long requestedBytes = resJson.optLong("requestedUsableBytes", 0);
+                            long actualBytes = resJson.optLong("actualUsableBytes", 0);
+
+                            if ("INSUFFICIENT_SOURCE_DATA".equalsIgnoreCase(status) || (sourceExhausted && actualBytes < requestedBytes)) {
+                                double reqMb = requestedBytes / (1024.0 * 1024.0);
+                                double actMb = actualBytes / (1024.0 * 1024.0);
+                                MessageDialog.openWarning(group.getShell(), "Source Data Shortfall Warning",
+                                    String.format("Dataset source was exhausted before target size was reached.\n\nRequested Target: %.2f MB\nUsable Content Collected: %.2f MB\nShortfall: %.2f MB\nStatus: %s",
+                                        reqMb, actMb, Math.max(0, reqMb - actMb), status));
+                            } else {
+                                MessageDialog.openInformation(group.getShell(), "Dataset Prepared", "EVO Training Dataset artifact built successfully!");
+                            }
+                        } catch (Exception ex) {
+                            MessageDialog.openInformation(group.getShell(), "Dataset Prepared", "EVO Training Dataset artifact built successfully!");
+                        }
                     }
                 });
             } catch (Exception ex) {
@@ -325,11 +429,25 @@ public class DatasetEditorGroup extends AEvoGroup {
             os.write(jsonBody.getBytes(java.nio.charset.StandardCharsets.UTF_8));
         }
 
-        try (java.io.BufferedReader br = new java.io.BufferedReader(new java.io.InputStreamReader(conn.getInputStream(), java.nio.charset.StandardCharsets.UTF_8))) {
+        int code = conn.getResponseCode();
+        java.io.InputStream stream = (code >= 200 && code < 300) ? conn.getInputStream() : conn.getErrorStream();
+        if (stream == null) {
+            throw new Exception("HTTP error code " + code);
+        }
+
+        try (java.io.BufferedReader br = new java.io.BufferedReader(new java.io.InputStreamReader(stream, java.nio.charset.StandardCharsets.UTF_8))) {
             StringBuilder sb = new StringBuilder();
             String line;
             while ((line = br.readLine()) != null) sb.append(line).append("\n");
-            return sb.toString();
+            String result = sb.toString();
+            if (code >= 300) {
+                try {
+                    org.json.JSONObject errJson = new org.json.JSONObject(result);
+                    if (errJson.has("error")) throw new Exception(errJson.getString("error"));
+                } catch (org.json.JSONException ignored) {}
+                throw new Exception("HTTP " + code + ": " + result);
+            }
+            return result;
         }
     }
 

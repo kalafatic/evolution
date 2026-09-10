@@ -28,6 +28,7 @@ public class TrainingDataCollectorManager {
         registerCollector(new PdfDataCollector());
         registerCollector(new MCPDataCollector());
         registerCollector(new InternetDataCollector());
+        registerCollector(new EvoCodebaseDataCollector());
     }
 
     public void registerCollector(TrainingDataCollector collector) {
