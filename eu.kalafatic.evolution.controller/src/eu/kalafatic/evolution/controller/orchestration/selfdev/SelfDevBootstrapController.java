@@ -682,6 +682,83 @@ public class SelfDevBootstrapController {
         }
     }
 
+    public String checkSourceSnapshotIntegrity(File sourcesFolder) {
+        if (sourcesFolder == null || !sourcesFolder.exists()) {
+            return "SelfDev source snapshot is incomplete: sources folder does not exist: " + (sourcesFolder != null ? sourcesFolder.getAbsolutePath() : "null");
+        }
+
+        // Critical package check
+        File forgeTargetPkg = new File(sourcesFolder, "eu.kalafatic.evolution.forge.model/src/eu/kalafatic/evolution/forge/model/target");
+        if (!forgeTargetPkg.exists() || !new File(forgeTargetPkg, "ForgeTarget.java").exists()) {
+            return "SelfDev source snapshot is incomplete: expected Forge target package .../forge/model/target but it is missing.";
+        }
+
+        // General comparative check against canonical codebase if available
+        File repoRoot = projectRoot;
+        if (repoRoot == null || !repoRoot.exists()) {
+            String gitPath = null;
+            if (orchestrator != null && orchestrator.getGit() != null) {
+                gitPath = orchestrator.getGit().getLocalPath();
+            }
+            if (gitPath == null || gitPath.isEmpty()) {
+                gitPath = eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.getRepositoryPath(eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.REPO_EVOLUTION);
+            }
+            if (gitPath != null && !gitPath.isEmpty()) {
+                repoRoot = new File(gitPath);
+            }
+        }
+
+        if (repoRoot != null && repoRoot.exists() && !repoRoot.getAbsoluteFile().equals(sourcesFolder.getAbsoluteFile())) {
+            final File canonicalRepo = repoRoot;
+            final List<String> missingFiles = new ArrayList<>();
+            try {
+                java.nio.file.Files.walkFileTree(canonicalRepo.toPath(), new java.nio.file.SimpleFileVisitor<java.nio.file.Path>() {
+                    @Override
+                    public java.nio.file.FileVisitResult preVisitDirectory(java.nio.file.Path dir, java.nio.file.attribute.BasicFileAttributes attrs) throws IOException {
+                        String name = dir.getFileName().toString();
+                        if (name.equals(".git") || name.equals("self-dev-run") || name.equals(".settings") || name.equals(".metadata") || name.equals("iterations") || name.equals("orchestrator")) {
+                            return java.nio.file.FileVisitResult.SKIP_SUBTREE;
+                        }
+                        if (name.equals("target") || name.equals("bin")) {
+                            java.nio.file.Path relPath = canonicalRepo.toPath().relativize(dir);
+                            boolean inSrc = false;
+                            for (java.nio.file.Path comp : relPath) {
+                                if ("src".equals(comp.toString())) {
+                                    inSrc = true;
+                                    break;
+                                }
+                            }
+                            if (!inSrc) {
+                                return java.nio.file.FileVisitResult.SKIP_SUBTREE;
+                            }
+                        }
+                        return java.nio.file.FileVisitResult.CONTINUE;
+                    }
+
+                    @Override
+                    public java.nio.file.FileVisitResult visitFile(java.nio.file.Path file, java.nio.file.attribute.BasicFileAttributes attrs) throws IOException {
+                        if (file.getFileName().toString().endsWith(".java")) {
+                            java.nio.file.Path relPath = canonicalRepo.toPath().relativize(file);
+                            File expectedInSnapshot = new File(sourcesFolder, relPath.toString());
+                            if (!expectedInSnapshot.exists()) {
+                                missingFiles.add(relPath.toString());
+                            }
+                        }
+                        return java.nio.file.FileVisitResult.CONTINUE;
+                    }
+                });
+            } catch (Exception e) {
+                System.err.println("[SelfDevBootstrapController] [PREFLIGHT_WARN] Error during comparative snapshot integrity check: " + e.getMessage());
+            }
+
+            if (!missingFiles.isEmpty()) {
+                return "SelfDev source snapshot is incomplete: missing " + missingFiles.size() + " Java source file(s) from repository, e.g. " + missingFiles.get(0);
+            }
+        }
+
+        return null;
+    }
+
     private String runBuildAndCopy() {
         String buildWorkspacePath = null;
         if (orchestrator != null && orchestrator.getSupervisorSettings() != null) {
@@ -697,6 +774,13 @@ public class SelfDevBootstrapController {
         String response = "ERROR";
         try {
             File sourcesFolder = new File(buildWorkspacePath);
+
+            // Pre-flight snapshot integrity check
+            String integrityError = checkSourceSnapshotIntegrity(sourcesFolder);
+            if (integrityError != null) {
+                System.err.println("[SelfDevBootstrapController] [CHECK_BUILD_PREFLIGHT_FAIL] " + integrityError);
+                return "ERROR: " + integrityError;
+            }
 
             // Ensure sibling genome dependency is compiled/installed first if present in sourcesFolder
             File genomeDir = new File(sourcesFolder, "eu.kalafatic.evolution.selfdev.genome");
@@ -811,6 +895,33 @@ public class SelfDevBootstrapController {
         }
     }
 
+    private boolean isExcludedDirectoryOrFile(java.nio.file.Path root, java.nio.file.Path path) {
+        String name = path.getFileName().toString();
+        if (name.equals(".git") || name.equals("self-dev-run") ||
+            name.equals(".settings") || name.equals(".metadata") ||
+            name.equals("iterations") || name.equals("orchestrator") ||
+            name.equals("dependency-reduced-pom.xml")) {
+            return true;
+        }
+
+        if (name.equals("target") || name.equals("bin")) {
+            java.nio.file.Path relPath;
+            try {
+                relPath = root.relativize(path);
+            } catch (Exception e) {
+                relPath = path;
+            }
+            for (java.nio.file.Path component : relPath) {
+                if ("src".equals(component.toString())) {
+                    return false; // Inside source directory hierarchy (e.g. Java package named target/bin)
+                }
+            }
+            return true; // Build output directory
+        }
+
+        return false;
+    }
+
     private void copyFolder(java.nio.file.Path source, java.nio.file.Path target) throws IOException {
         java.nio.file.Files.walkFileTree(source, new java.nio.file.SimpleFileVisitor<java.nio.file.Path>() {
             @Override
@@ -822,10 +933,7 @@ public class SelfDevBootstrapController {
                     }
                     return java.nio.file.FileVisitResult.CONTINUE;
                 }
-                String name = dir.getFileName().toString();
-                if (name.equals(".git") || name.equals("target") || name.equals("self-dev-run") ||
-                    name.equals(".settings") || name.equals(".metadata") ||
-                    name.equals("bin") || name.equals("iterations") || name.equals("orchestrator")) {
+                if (isExcludedDirectoryOrFile(source, dir)) {
                     return java.nio.file.FileVisitResult.SKIP_SUBTREE;
                 }
                 java.nio.file.Path targetDir = target.resolve(source.relativize(dir));
@@ -837,11 +945,7 @@ public class SelfDevBootstrapController {
 
             @Override
             public java.nio.file.FileVisitResult visitFile(java.nio.file.Path file, java.nio.file.attribute.BasicFileAttributes attrs) throws IOException {
-                String name = file.getFileName().toString();
-                if (name.equals(".git") || name.equals("target") || name.equals("self-dev-run") ||
-                    name.equals(".settings") || name.equals(".metadata") ||
-                    name.equals("bin") || name.equals("iterations") || name.equals("orchestrator") ||
-                    name.equals("dependency-reduced-pom.xml")) {
+                if (isExcludedDirectoryOrFile(source, file)) {
                     return java.nio.file.FileVisitResult.CONTINUE;
                 }
                 java.nio.file.Path targetFile = target.resolve(source.relativize(file));
@@ -1776,10 +1880,7 @@ public class SelfDevBootstrapController {
                         }
                         return java.nio.file.FileVisitResult.CONTINUE;
                     }
-                    String name = dir.getFileName().toString();
-                    if (name.equals(".git") || name.equals("target") || name.equals("self-dev-run") ||
-                        name.equals(".settings") || name.equals(".metadata") ||
-                        name.equals("bin") || name.equals("iterations") || name.equals("orchestrator")) {
+                    if (isExcludedDirectoryOrFile(sourcePath, dir)) {
                         System.out.println("[SelfDevBootstrapController] [COPY] Skipping excluded directory: " + dir);
                         return java.nio.file.FileVisitResult.SKIP_SUBTREE;
                     }
@@ -1792,11 +1893,7 @@ public class SelfDevBootstrapController {
 
                 @Override
                 public java.nio.file.FileVisitResult visitFile(java.nio.file.Path file, java.nio.file.attribute.BasicFileAttributes attrs) throws IOException {
-                    String name = file.getFileName().toString();
-                    if (name.equals(".git") || name.equals("target") || name.equals("self-dev-run") ||
-                        name.equals(".settings") || name.equals(".metadata") ||
-                        name.equals("bin") || name.equals("iterations") || name.equals("orchestrator") ||
-                        name.equals("dependency-reduced-pom.xml")) {
+                    if (isExcludedDirectoryOrFile(sourcePath, file)) {
                         return java.nio.file.FileVisitResult.CONTINUE;
                     }
                     java.nio.file.Path targetFile = targetPath.resolve(sourcePath.relativize(file));

@@ -81,6 +81,26 @@ public class CodebaseCopyTool {
         String fileName = file.getName();
         for (String exclusion : config.getExclusions()) {
             if (fileName.equals(exclusion) || file.getAbsolutePath().contains(File.separator + exclusion + File.separator)) {
+                if ("target".equals(exclusion) || "bin".equals(exclusion)) {
+                    if (isInsideSourceDirectory(file, config.getSourcePath())) {
+                        continue;
+                    }
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isInsideSourceDirectory(File file, File rootSource) {
+        Path relPath;
+        try {
+            relPath = rootSource.toPath().relativize(file.toPath());
+        } catch (Exception e) {
+            relPath = file.toPath();
+        }
+        for (Path component : relPath) {
+            if ("src".equals(component.toString())) {
                 return true;
             }
         }
