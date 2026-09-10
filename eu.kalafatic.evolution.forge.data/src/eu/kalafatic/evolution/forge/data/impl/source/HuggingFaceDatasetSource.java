@@ -83,12 +83,8 @@ public class HuggingFaceDatasetSource implements DatasetSource {
         if (config.getMaxTokens() > 0 && stats.getEstimatedTokens() >= config.getMaxTokens()) {
             return true;
         }
-        // Do not stop based on raw bytes read before filtering/deduplication;
-        // stop when accepted usable bytes exceed maxBytes or 4x safety threshold on raw read bytes.
+        // Stop only when accepted usable content bytes meet or exceed maxBytes requirement.
         if (config.getMaxBytes() > 0 && stats.getAcceptedBytes() >= config.getMaxBytes()) {
-            return true;
-        }
-        if (config.getMaxBytes() > 0 && stats.getTotalBytesRead() >= config.getMaxBytes() * 4) {
             return true;
         }
         return false;
@@ -118,12 +114,31 @@ public class HuggingFaceDatasetSource implements DatasetSource {
                             JSONObject sObj = splits.getJSONObject(i);
                             String cfg = sObj.optString("config", "default");
                             String sp = sObj.optString("split", "train");
-                            availableSplits.add(new String[] { cfg, sp });
+                            addSplitIfAbsent(cfg, sp);
                         }
                     }
                 }
             }
         } catch (Exception ignored) {}
+
+        if (availableSplits.isEmpty()) {
+            String cfg = config.getConfiguration() != null ? config.getConfiguration() : "default";
+            String sp = config.getSplit() != null ? config.getSplit() : "train";
+            addSplitIfAbsent(cfg, sp);
+            if ("train".equalsIgnoreCase(sp)) {
+                addSplitIfAbsent(cfg, "validation");
+                addSplitIfAbsent(cfg, "test");
+            }
+        }
+    }
+
+    private void addSplitIfAbsent(String cfg, String sp) {
+        for (String[] pair : availableSplits) {
+            if (pair[0].equals(cfg) && pair[1].equals(sp)) {
+                return;
+            }
+        }
+        availableSplits.add(new String[] { cfg, sp });
     }
 
     private void fetchNextChunk() throws IOException {

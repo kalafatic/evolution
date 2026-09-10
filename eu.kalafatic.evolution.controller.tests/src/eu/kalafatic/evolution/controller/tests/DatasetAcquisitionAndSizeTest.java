@@ -265,4 +265,221 @@ public class DatasetAcquisitionAndSizeTest {
         List<DatasetBuilder.Sample> trainingSamples = builder.buildSlidingWindow(mockTokens, 16, 8);
         assertTrue("Training samples should be generated for Forge trainer from .evodata", trainingSamples.size() > 0);
     }
+
+    @Test
+    public void testTinyFirstShardContinuesToNextShards() throws Exception {
+        // Shard 1 has ~200 bytes, Shard 2 has ~1000 bytes, Shard 3 has ~1500 bytes. Target = 2000 bytes.
+        List<NormalizedSample> shard1 = createSampleBatch(2, "Shard 1 small sample content turn ");
+        List<NormalizedSample> shard2 = createSampleBatch(8, "Shard 2 substantial conversational turn ");
+        List<NormalizedSample> shard3 = createSampleBatch(12, "Shard 3 additional content turn ");
+
+        ShardedTestSource source = new ShardedTestSource(List.of(shard1, shard2, shard3));
+        DatasetAcquisitionEngine engine = new DatasetAcquisitionEngine();
+
+        long requestedMinimum = 2000;
+        AcquisitionResult result = engine.acquireDataset(List.of(source), requestedMinimum, 0.02);
+
+        assertTrue("All required shards must be processed until usable >= target", result.isTargetReached());
+        assertTrue("Usable bytes must meet requested minimum", result.getUsableContentBytes() >= requestedMinimum);
+        assertEquals(AcquisitionResult.Status.READY, result.getStatus());
+    }
+
+    @Test
+    public void testDownloadSizeMisleadingDoesNotStopAcquisitionEarly() throws Exception {
+        // Source where 70% of lines are noisy HTML (rejected), so 1000 raw bytes yield only 300 usable bytes.
+        List<NormalizedSample> noisyBatch = new ArrayList<>();
+        for (int i = 0; i < 20; i++) {
+            noisyBatch.add(NormalizedSample.createTextSample("<html><p>HTML noise line " + i + "</p></html>", "noisy"));
+            noisyBatch.add(NormalizedSample.createTextSample("a", "noisy"));
+            noisyBatch.add(NormalizedSample.createTextSample("User: Valid conversational turn #" + i + " with good text.\nAssistant: Clear detailed answer for EVO training.", "noisy"));
+        }
+
+        ShardedTestSource source = new ShardedTestSource(List.of(noisyBatch));
+        DatasetAcquisitionEngine engine = new DatasetAcquisitionEngine();
+
+        long targetUsable = 1500;
+        AcquisitionResult result = engine.acquireDataset(List.of(source), targetUsable, 0.05);
+
+        assertTrue("Downloaded bytes should be substantially higher than usable bytes",
+                result.getGlobalStats().getDownloadedBytes() > result.getUsableContentBytes());
+        assertTrue("Target usable bytes must be satisfied despite misleading download size",
+                result.getUsableContentBytes() >= targetUsable);
+    }
+
+    @Test
+    public void testCompressedSourceExtractionYieldsMinimumSatisfied() throws Exception {
+        // High density samples
+        List<NormalizedSample> denseBatch = createSampleBatch(15, "Dense compressed extracted text record for size accounting ");
+        ShardedTestSource source = new ShardedTestSource(List.of(denseBatch));
+
+        DatasetAcquisitionEngine engine = new DatasetAcquisitionEngine();
+        long targetUsable = 1000;
+        AcquisitionResult result = engine.acquireDataset(List.of(source), targetUsable, 0.05);
+
+        assertTrue("Minimum usable requirement satisfied", result.getUsableContentBytes() >= targetUsable);
+        assertEquals(AcquisitionResult.Status.READY, result.getStatus());
+    }
+
+    @Test
+    public void testSourceExhaustionReturnsInsufficientSourceData() throws Exception {
+        List<NormalizedSample> smallBatch = createSampleBatch(3, "Limited sample turn ");
+        ShardedTestSource source = new ShardedTestSource(List.of(smallBatch));
+
+        DatasetAcquisitionEngine engine = new DatasetAcquisitionEngine();
+        long targetUsable = 50000; // 50 KB target (source only has ~300 bytes)
+        AcquisitionResult result = engine.acquireDataset(List.of(source), targetUsable, 0.02);
+
+        assertTrue("Source should report exhausted", result.isSourceExhausted());
+        assertFalse("Target should not be reached", result.isTargetReached());
+        assertEquals("Status must be INSUFFICIENT_SOURCE_DATA", AcquisitionResult.Status.INSUFFICIENT_SOURCE_DATA, result.getStatus());
+        assertTrue("Shortfall bytes must be recorded", result.getShortfallBytes() > 0);
+        assertTrue("Coverage percent must be < 100%", result.getCoveragePercent() < 100.0);
+
+        File artifactFile = new File(tempFolder.getRoot(), "insufficient.evodata");
+        EvoDatasetArtifact artifact = new EvoDatasetArtifact(artifactFile);
+        artifact.save(result.getAcceptedSamples(), source.getConfig(), result.getGlobalStats(), 0.02);
+
+        EvoDatasetArtifact loaded = EvoDatasetArtifact.load(artifactFile);
+        assertEquals("Loaded artifact status must preserve INSUFFICIENT_SOURCE_DATA", EvoDatasetArtifact.Status.INSUFFICIENT_SOURCE_DATA, loaded.getStatus());
+    }
+
+    @Test
+    public void testDeduplicationAccountingContinuesAcquisition() throws Exception {
+        List<NormalizedSample> dups = new ArrayList<>();
+        String sampleText = "User: Duplicate query sentence.\nAssistant: Duplicate response sentence for testing.";
+        for (int i = 0; i < 15; i++) {
+            dups.add(NormalizedSample.createTextSample(sampleText, "dup_src"));
+        }
+        // Add distinct unique samples at the end
+        dups.addAll(createSampleBatch(10, "Unique non-duplicate sample record turn "));
+
+        ShardedTestSource source = new ShardedTestSource(List.of(dups));
+        DatasetAcquisitionEngine engine = new DatasetAcquisitionEngine();
+
+        AcquisitionResult result = engine.acquireDataset(List.of(source), 1000, 0.05);
+
+        assertTrue("Duplicate bytes must be recorded", result.getGlobalStats().getDuplicateBytes() > 0);
+        assertTrue("Usable bytes must meet or exceed target after deduplication", result.getUsableContentBytes() >= 1000);
+    }
+
+    @Test
+    public void testExactThresholdSatisfiesRequirement() throws Exception {
+        String exactText = "User: Standard turn for exact threshold test.\nAssistant: Detailed answer ensuring exact byte calculation.";
+        byte[] bytes = exactText.getBytes(StandardCharsets.UTF_8);
+        long exactLen = bytes.length;
+
+        List<NormalizedSample> exactBatch = new ArrayList<>();
+        exactBatch.add(NormalizedSample.createTextSample(exactText, "exact"));
+
+        ShardedTestSource source = new ShardedTestSource(List.of(exactBatch));
+        DatasetAcquisitionEngine engine = new DatasetAcquisitionEngine();
+
+        AcquisitionResult result = engine.acquireDataset(List.of(source), exactLen, 0.0);
+
+        assertEquals("Usable bytes must equal exact threshold", exactLen, result.getUsableContentBytes());
+        assertTrue("Target reached", result.isTargetReached());
+        assertEquals(AcquisitionResult.Status.READY, result.getStatus());
+    }
+
+    @Test
+    public void testOvershootAcceptedCleanly() throws Exception {
+        List<NormalizedSample> batch = createSampleBatch(5, "Substantial text sample for overshoot testing ");
+        ShardedTestSource source = new ShardedTestSource(List.of(batch));
+
+        DatasetAcquisitionEngine engine = new DatasetAcquisitionEngine();
+        long targetUsable = 200; // Low target so last sample overshoots
+        AcquisitionResult result = engine.acquireDataset(List.of(source), targetUsable, 0.05);
+
+        assertTrue("Accepted usable bytes should exceed target (overshoot)", result.getUsableContentBytes() >= targetUsable);
+        assertTrue("Target reached", result.isTargetReached());
+        assertEquals(AcquisitionResult.Status.READY, result.getStatus());
+    }
+
+    @Test
+    public void testCancellationStatusHandling() throws Exception {
+        AcquisitionResult result = new AcquisitionResult();
+        result.setStatus(AcquisitionResult.Status.CANCELLED);
+
+        assertEquals("Status must be CANCELLED", AcquisitionResult.Status.CANCELLED, result.getStatus());
+        assertFalse("Cancelled job is not target reached", result.isTargetReached());
+
+        File cancelFile = new File(tempFolder.getRoot(), "cancelled.evodata");
+        EvoDatasetArtifact artifact = new EvoDatasetArtifact(cancelFile);
+        artifact.setStatus(EvoDatasetArtifact.Status.CANCELLED);
+
+        DatasetSourceConfig config = new DatasetSourceConfig("LOCAL", "cancel");
+        DatasetSourceStats stats = new DatasetSourceStats();
+        stats.setRequestedUsableBytes(10000);
+        stats.setAcceptedBytes(500);
+
+        List<NormalizedSample> partial = createSampleBatch(2, "Partial cancelled text ");
+        artifact.save(partial, config, stats, 0.02);
+
+        assertEquals("Cancelled status must be retained", EvoDatasetArtifact.Status.CANCELLED, artifact.getStatus());
+        EvoDatasetArtifact loaded = EvoDatasetArtifact.load(cancelFile);
+        assertEquals("Loaded artifact status must preserve CANCELLED", EvoDatasetArtifact.Status.CANCELLED, loaded.getStatus());
+    }
+
+    @Test
+    public void testProgressBasedOnUsableContentMinimum() throws Exception {
+        List<NormalizedSample> batch = createSampleBatch(10, "Progress accounting sample ");
+        ShardedTestSource source = new ShardedTestSource(List.of(batch));
+
+        DatasetAcquisitionEngine engine = new DatasetAcquisitionEngine();
+        long target = 50000; // Larger target so source is exhausted
+        AcquisitionResult result = engine.acquireDataset(List.of(source), target, 0.05);
+
+        double expectedCoverage = (result.getUsableContentBytes() * 100.0) / target;
+        assertEquals("Coverage percent must be based on usable content vs target minimum", expectedCoverage, result.getCoveragePercent(), 0.01);
+    }
+
+    private List<NormalizedSample> createSampleBatch(int count, String prefix) {
+        List<NormalizedSample> list = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            list.add(NormalizedSample.createTextSample(prefix + "#" + i + " with sufficient English text for training.", "batch"));
+        }
+        return list;
+    }
+
+    static class ShardedTestSource implements DatasetSource {
+        private final List<List<NormalizedSample>> shards;
+        private int currentShard = 0;
+        private int currentIndex = 0;
+        private final DatasetSourceStats stats = new DatasetSourceStats();
+        private final DatasetSourceConfig config = new DatasetSourceConfig("MOCK", "sharded");
+
+        ShardedTestSource(List<List<NormalizedSample>> shards) {
+            this.shards = shards;
+        }
+
+        @Override public String getSourceName() { return "ShardedTestSource"; }
+        @Override public DatasetSourceConfig getConfig() { return config; }
+        @Override public DatasetSourceStats getStats() { return stats; }
+        @Override public void initialize() {}
+
+        @Override
+        public boolean hasNext() {
+            while (currentShard < shards.size()) {
+                if (currentIndex < shards.get(currentShard).size()) {
+                    return true;
+                }
+                currentShard++;
+                currentIndex = 0;
+            }
+            return false;
+        }
+
+        @Override
+        public NormalizedSample next() {
+            if (!hasNext()) throw new java.util.NoSuchElementException();
+            NormalizedSample s = shards.get(currentShard).get(currentIndex++);
+            long len = s.toFullText().getBytes(StandardCharsets.UTF_8).length;
+            stats.addBytesRead(len);
+            stats.addDownloadedBytes(len);
+            stats.incrementSamplesRead();
+            return s;
+        }
+
+        @Override public void close() {}
+    }
 }
