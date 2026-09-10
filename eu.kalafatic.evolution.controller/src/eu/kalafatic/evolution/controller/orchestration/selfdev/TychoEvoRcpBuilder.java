@@ -1,13 +1,10 @@
 package eu.kalafatic.evolution.controller.orchestration.selfdev;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -30,6 +27,36 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
 
     public void setSkipTests(boolean skipTests) {
         this.skipTests = skipTests;
+    }
+
+    public static class TargetPlatform {
+        private final String os;
+        private final String ws;
+        private final String arch;
+        private final String packaging;
+        private final String profile;
+
+        public TargetPlatform(String os, String ws, String arch, String packaging, String profile) {
+            this.os = os != null ? os : "win32";
+            this.ws = ws != null ? ws : (this.os.equals("win32") ? "win32" : "gtk");
+            this.arch = arch != null ? arch : "x86_64";
+            this.packaging = packaging != null ? packaging : "zip";
+            this.profile = profile != null ? profile : (this.os.equals("win32") ? "-Pwindows" : "-Plinux");
+        }
+
+        public String getOs() { return os; }
+        public String getWs() { return ws; }
+        public String getArch() { return arch; }
+        public String getPackaging() { return packaging; }
+        public String getProfile() { return profile; }
+
+        public boolean isWindows() { return "win32".equalsIgnoreCase(os) || os.toLowerCase().contains("win"); }
+        public boolean isLinux() { return "linux".equalsIgnoreCase(os) || os.toLowerCase().contains("linux"); }
+
+        @Override
+        public String toString() {
+            return os + "." + ws + "." + arch + " (" + packaging + ")";
+        }
     }
 
     public static class ProductDefinition {
@@ -60,7 +87,6 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
                     ", launcherName='" + launcherName + '\'' +
                     ", rootFolder='" + rootFolder + '\'' +
                     ", repositoryModule='" + repositoryModule + '\'' +
-                    ", productFile=" + (productFile != null ? productFile.getName() : "null") +
                     '}';
         }
     }
@@ -81,49 +107,45 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
     public File discoverReactorRoot(File sourceDir) {
         if (sourceDir == null) return null;
         File pom = new File(sourceDir, "pom.xml");
-        if (pom.exists()) {
+        if (pom.exists() && isEvoAggregatorPom(pom)) {
             return sourceDir;
         }
         File parent = sourceDir.getParentFile();
-        if (parent != null && new File(parent, "pom.xml").exists()) {
+        if (parent != null && new File(parent, "pom.xml").exists() && isEvoAggregatorPom(new File(parent, "pom.xml"))) {
             return parent;
         }
-        return null;
+        return pom.exists() ? sourceDir : null;
     }
 
-    public ProductDefinition discoverProductDefinition(File reactorRoot) {
+    private boolean isEvoAggregatorPom(File pomFile) {
+        try {
+            String content = Files.readString(pomFile.toPath());
+            return content.contains("eu.kalafatic.evolution.aggregator") || content.contains("eu.kalafatic.evolution");
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public ProductDefinition discoverTychoProduct(File reactorRoot) {
         if (reactorRoot == null || !reactorRoot.exists()) {
             return new ProductDefinition("evolution", "evo", "evolution", "eu.kalafatic.evolution.repository", null);
         }
 
         File repoModuleDir = new File(reactorRoot, "eu.kalafatic.evolution.repository");
-        File productFile = null;
-
-        if (repoModuleDir.exists() && repoModuleDir.isDirectory()) {
+        File productFile = new File(repoModuleDir, "evolution.product");
+        if (!productFile.exists()) {
             File[] productFiles = repoModuleDir.listFiles((dir, name) -> name.endsWith(".product"));
             if (productFiles != null && productFiles.length > 0) {
-                for (File p : productFiles) {
-                    if (p.getName().equalsIgnoreCase("evolution.product")) {
-                        productFile = p;
-                        break;
-                    }
-                }
-                if (productFile == null) {
-                    productFile = productFiles[0];
-                }
+                productFile = productFiles[0];
             }
-        }
-
-        if (productFile == null) {
-            productFile = findProductFileRecursively(reactorRoot);
         }
 
         String productId = "evolution";
         String launcherName = "evo";
         String rootFolder = "evolution";
-        String repoModuleName = repoModuleDir.exists() ? "eu.kalafatic.evolution.repository" : "eu.kalafatic.evolution.repository";
+        String repoModuleName = "eu.kalafatic.evolution.repository";
 
-        if (productFile != null && productFile.exists()) {
+        if (productFile.exists()) {
             try {
                 String content = Files.readString(productFile.toPath());
                 String parsedUid = extractAttribute(content, "uid");
@@ -139,7 +161,7 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
                     launcherName = parsedLauncher;
                 }
             } catch (Exception e) {
-                System.err.println("[TychoEvoRcpBuilder] Error reading product file " + productFile + ": " + e.getMessage());
+                System.err.println("[TychoEvoRcpBuilder] Error reading product definition " + productFile + ": " + e.getMessage());
             }
         }
 
@@ -156,22 +178,32 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
             }
         }
 
-        return new ProductDefinition(productId, launcherName, rootFolder, repoModuleName, productFile);
+        return new ProductDefinition(productId, launcherName, rootFolder, repoModuleName, productFile.exists() ? productFile : null);
     }
 
-    private File findProductFileRecursively(File dir) {
-        if (dir == null || !dir.exists() || !dir.isDirectory()) return null;
-        File[] files = dir.listFiles();
-        if (files == null) return null;
-        for (File f : files) {
-            if (f.isFile() && f.getName().endsWith(".product")) {
-                return f;
-            } else if (f.isDirectory() && !f.getName().startsWith(".") && !f.getName().equals("target")) {
-                File found = findProductFileRecursively(f);
-                if (found != null) return found;
+    public TargetPlatform resolveTargetPlatform(SelfDevContext context) {
+        if (context != null) {
+            for (TaskResult tr : context.getTaskResults().values()) {
+                if (tr != null && tr.getDiagnostics() != null) {
+                    Object targetOsObj = tr.getDiagnostics().get("targetOS");
+                    if (targetOsObj != null) {
+                        String osStr = targetOsObj.toString().toLowerCase();
+                        if (osStr.contains("win")) {
+                            return new TargetPlatform("win32", "win32", "x86_64", "zip", "-Pwindows");
+                        } else if (osStr.contains("linux")) {
+                            return new TargetPlatform("linux", "gtk", "x86_64", "tar.gz", "-Plinux");
+                        }
+                    }
+                }
             }
         }
-        return null;
+
+        String sysOs = System.getProperty("evo.target.os", System.getProperty("os.name")).toLowerCase();
+        if (sysOs.contains("win")) {
+            return new TargetPlatform("win32", "win32", "x86_64", "zip", "-Pwindows");
+        } else {
+            return new TargetPlatform("linux", "gtk", "x86_64", "tar.gz", "-Plinux");
+        }
     }
 
     private String extractAttribute(String xmlContent, String attrName) {
@@ -216,17 +248,6 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
         return null;
     }
 
-    public String resolvePlatformProfile(String targetOs) {
-        String os = targetOs != null ? targetOs.toLowerCase() : System.getProperty("os.name").toLowerCase();
-        if (os.contains("win")) {
-            return "-Pwindows";
-        } else if (os.contains("linux")) {
-            return "-Plinux";
-        } else {
-            return "-Pall-platforms";
-        }
-    }
-
     @Override
     public TaskResult build(SelfDevContext context) {
         long startTime = System.currentTimeMillis();
@@ -240,29 +261,37 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
             return TaskResult.failure("build_evo_rcp", "Tycho reactor root containing pom.xml not found at " + srcDir.getAbsolutePath(), null);
         }
 
-        ProductDefinition prodDef = discoverProductDefinition(reactorRoot);
-        System.out.println("[TychoEvoRcpBuilder] Discovered reactor root: " + reactorRoot.getAbsolutePath() + ", Product: " + prodDef);
-
+        ProductDefinition prodDef = discoverTychoProduct(reactorRoot);
+        TargetPlatform platform = resolveTargetPlatform(context);
         File logFile = getLogFile(context, "evo_build.log");
+
         List<String> goals = Arrays.asList("clean", "verify");
         List<String> args = new ArrayList<>();
-
-        String platformProfile = resolvePlatformProfile(null);
-        args.add(platformProfile);
+        args.add(platform.getProfile());
 
         if (isSkipTests()) {
             args.add("-DskipTests");
         }
 
+        System.out.println("[TychoEvoRcpBuilder] Building Tycho reactor at " + reactorRoot.getAbsolutePath() + " for platform " + platform);
         TaskResult buildResult = mavenExecutor.executeBuild(reactorRoot, goals, args, logFile, 45);
         if (!buildResult.isSuccess()) {
-            return buildResult;
+            return new TaskResult.Builder("build_evo_rcp")
+                    .status(TaskStatus.FAILED)
+                    .message("Tycho reactor build failed for " + prodDef.getProductId() + ": " + buildResult.getMessage())
+                    .error(buildResult.getError())
+                    .logFile(logFile)
+                    .diagnostic("reactorRoot", reactorRoot.getAbsolutePath())
+                    .diagnostic("productDefinition", prodDef.toString())
+                    .diagnostic("targetPlatform", platform.toString())
+                    .diagnostic("mavenCommand", buildResult.getCommand())
+                    .build();
         }
 
         long duration = System.currentTimeMillis() - startTime;
         return new TaskResult.Builder("build_evo_rcp")
                 .status(TaskStatus.SUCCESS)
-                .message("EVO RCP Tycho reactor build completed successfully.")
+                .message("EVO RCP Tycho reactor build completed successfully for " + prodDef.getProductId() + " (" + platform + ").")
                 .duration(duration)
                 .logFile(logFile)
                 .build();
@@ -281,42 +310,51 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
             return TaskResult.failure("export_evo_rcp", "Tycho reactor root containing pom.xml not found at " + srcDir.getAbsolutePath(), null);
         }
 
-        ProductDefinition prodDef = discoverProductDefinition(reactorRoot);
-
-        BuildArtifact existingArtifact = getArtifact(context);
-        if (existingArtifact != null && existingArtifact.getPath().exists()) {
-            TaskResult valRes = validateProductDeployment(existingArtifact.getPath(), prodDef, existingArtifact.getPlatform());
-            if (valRes.isSuccess()) {
-                return new TaskResult.Builder("export_evo_rcp")
-                        .status(TaskStatus.SUCCESS)
-                        .message("Validated existing EVO RCP product artifact: " + existingArtifact.getPath().getAbsolutePath())
-                        .artifact(existingArtifact)
-                        .duration(System.currentTimeMillis() - startTime)
-                        .build();
-            }
-        }
-
+        ProductDefinition prodDef = discoverTychoProduct(reactorRoot);
+        TargetPlatform platform = resolveTargetPlatform(context);
         File logFile = getLogFile(context, "evo_build.log");
+
+        // Note on EVO Tycho Product Export:
+        // In eu.kalafatic.evolution.repository/pom.xml, tycho-p2-director-plugin goals 'materialize-products'
+        // and 'archive-products' are bound to the 'package'/'verify' lifecycle phase.
+        // Executing clean verify or clean package triggers the materialize and archive goals.
+
         List<String> goals = Arrays.asList("clean", "verify");
         List<String> args = new ArrayList<>();
-        args.add(resolvePlatformProfile(null));
+        args.add(platform.getProfile());
         if (isSkipTests()) {
             args.add("-DskipTests");
         }
 
+        System.out.println("[TychoEvoRcpBuilder] Executing Tycho product export for " + prodDef.getProductId() + " (" + platform + ")...");
         TaskResult exportExecResult = mavenExecutor.executeBuild(reactorRoot, goals, args, logFile, 45);
         if (!exportExecResult.isSuccess()) {
-            return TaskResult.failure("export_evo_rcp", "Tycho product export execution failed: " + exportExecResult.getMessage(), exportExecResult.getError());
+            return new TaskResult.Builder("export_evo_rcp")
+                    .status(TaskStatus.FAILED)
+                    .message("Tycho product export build failed: " + exportExecResult.getMessage())
+                    .error(exportExecResult.getError())
+                    .logFile(logFile)
+                    .diagnostic("reactorRoot", reactorRoot.getAbsolutePath())
+                    .diagnostic("productDefinition", prodDef.toString())
+                    .diagnostic("targetPlatform", platform.toString())
+                    .diagnostic("mavenCommand", exportExecResult.getCommand())
+                    .build();
         }
 
-        File exportedLocation = locateExportedProduct(reactorRoot, prodDef, null, "x86_64", context);
+        File exportedLocation;
+        try {
+            exportedLocation = findExactExportedProduct(reactorRoot, prodDef, platform, context);
+        } catch (Exception e) {
+            return TaskResult.failure("export_evo_rcp", "Product discovery ambiguity error: " + e.getMessage(), e);
+        }
+
         if (exportedLocation == null || !exportedLocation.exists()) {
-            return TaskResult.failure("export_evo_rcp", "Could not locate exact exported EVO RCP product artifact for " + prodDef.getProductId() + " post-export build.", null);
+            return TaskResult.failure("export_evo_rcp", "Could not locate exact exported product for " + prodDef.getProductId() + " (" + platform + ") under " + reactorRoot.getAbsolutePath(), null);
         }
 
-        TaskResult valRes = validateProductDeployment(exportedLocation, prodDef, System.getProperty("os.name"));
+        TaskResult valRes = validateProductDeployment(exportedLocation, prodDef, platform);
         if (!valRes.isSuccess()) {
-            return TaskResult.failure("export_evo_rcp", "Exported EVO RCP product deployment validation failed: " + valRes.getMessage(), null);
+            return TaskResult.failure("export_evo_rcp", "Exported EVO RCP product validation failed for " + exportedLocation.getAbsolutePath() + ": " + valRes.getMessage(), null);
         }
 
         Map<String, String> metadata = new HashMap<>();
@@ -324,8 +362,9 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
         metadata.put("launcherName", prodDef.getLauncherName());
         metadata.put("rootFolder", prodDef.getRootFolder());
         metadata.put("repositoryModule", prodDef.getRepositoryModule());
+        metadata.put("platform", platform.toString());
 
-        BuildArtifact artifact = new BuildArtifact(ArtifactType.EVO_RCP, exportedLocation, context.getSourceRevision(), System.getProperty("os.name"), metadata);
+        BuildArtifact artifact = new BuildArtifact(ArtifactType.EVO_RCP, exportedLocation, context.getSourceRevision(), platform.getOs(), metadata);
         context.recordArtifact(artifact);
 
         long duration = System.currentTimeMillis() - startTime;
@@ -346,13 +385,21 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
         File reactorRoot = discoverReactorRoot(srcDir);
         if (reactorRoot == null) return null;
 
-        ProductDefinition prodDef = discoverProductDefinition(reactorRoot);
-        File exportedLocation = locateExportedProduct(reactorRoot, prodDef, null, "x86_64", context);
+        ProductDefinition prodDef = discoverTychoProduct(reactorRoot);
+        TargetPlatform platform = resolveTargetPlatform(context);
+
+        File exportedLocation;
+        try {
+            exportedLocation = findExactExportedProduct(reactorRoot, prodDef, platform, context);
+        } catch (Exception e) {
+            return null;
+        }
+
         if (exportedLocation == null || !exportedLocation.exists()) {
             return null;
         }
 
-        TaskResult valRes = validateProductDeployment(exportedLocation, prodDef, System.getProperty("os.name"));
+        TaskResult valRes = validateProductDeployment(exportedLocation, prodDef, platform);
         if (!valRes.isSuccess()) {
             return null;
         }
@@ -362,64 +409,88 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
         metadata.put("launcherName", prodDef.getLauncherName());
         metadata.put("rootFolder", prodDef.getRootFolder());
         metadata.put("repositoryModule", prodDef.getRepositoryModule());
+        metadata.put("platform", platform.toString());
 
-        return new BuildArtifact(ArtifactType.EVO_RCP, exportedLocation, context.getSourceRevision(), System.getProperty("os.name"), metadata);
+        return new BuildArtifact(ArtifactType.EVO_RCP, exportedLocation, context.getSourceRevision(), platform.getOs(), metadata);
     }
 
-    public File locateExportedProduct(File reactorRoot, ProductDefinition prodDef, String os, String arch, SelfDevContext context) {
-        if (reactorRoot == null || prodDef == null) return null;
+    public File findExactExportedProduct(File reactorRoot, ProductDefinition prodDef, TargetPlatform platform, SelfDevContext context) throws IOException {
+        if (reactorRoot == null || prodDef == null || platform == null) return null;
 
-        String targetOs = os != null ? os.toLowerCase() : System.getProperty("os.name").toLowerCase();
-        boolean isWin = targetOs.contains("win");
+        File targetProductsDir = new File(reactorRoot, prodDef.getRepositoryModule() + "/target/products");
+        List<File> candidates = new ArrayList<>();
 
-        List<File> searchDirs = new ArrayList<>();
-        searchDirs.add(new File(reactorRoot, prodDef.getRepositoryModule() + "/target/products"));
-        searchDirs.add(new File(reactorRoot, "eu.kalafatic.evolution.repository/target/products"));
-        searchDirs.add(new File(reactorRoot, "eu.kalafatic.evolution.view/target/products"));
-        if (context != null && context.getExportDirectory() != null && context.getExportDirectory().exists()) {
-            searchDirs.add(context.getExportDirectory());
+        if (targetProductsDir.exists() && targetProductsDir.isDirectory()) {
+            File[] files = targetProductsDir.listFiles();
+            if (files != null) {
+                for (File f : files) {
+                    if (isExactMatchingArtifact(f, prodDef, platform)) {
+                        candidates.add(f);
+                    }
+                }
+            }
         }
 
-        for (File prodDir : searchDirs) {
-            if (prodDir == null || !prodDir.exists() || !prodDir.isDirectory()) continue;
-
-            File[] matchingArchives = prodDir.listFiles((dir, name) -> {
-                String lowerName = name.toLowerCase();
-                boolean isZipOrTar = lowerName.endsWith(".zip") || lowerName.endsWith(".tar.gz") || lowerName.endsWith(".tgz");
-                if (!isZipOrTar) return false;
-
-                boolean matchesProduct = lowerName.contains(prodDef.getProductId().toLowerCase()) || lowerName.contains("evo");
-                if (!matchesProduct) return false;
-
-                if (isWin) {
-                    return lowerName.contains("win") || lowerName.contains("win32");
-                } else {
-                    return lowerName.contains("linux") || lowerName.contains("gtk") || lowerName.contains("tar.gz");
+        if (context != null && context.getExportDirectory() != null && context.getExportDirectory().exists()) {
+            File[] expFiles = context.getExportDirectory().listFiles();
+            if (expFiles != null) {
+                for (File f : expFiles) {
+                    if (isExactMatchingArtifact(f, prodDef, platform) && !candidates.contains(f)) {
+                        candidates.add(f);
+                    }
                 }
-            });
-
-            if (matchingArchives != null && matchingArchives.length > 0) {
-                return matchingArchives[0];
             }
+        }
 
-            File exactDir = isWin ?
-                    new File(prodDir, prodDef.getProductId() + "/win32/win32/x86_64/" + prodDef.getRootFolder()) :
-                    new File(prodDir, prodDef.getProductId() + "/linux/gtk/x86_64/" + prodDef.getRootFolder());
+        if (candidates.isEmpty()) {
+            // Check exact nested materialized directory
+            File nestedDir = platform.isWindows() ?
+                    new File(targetProductsDir, prodDef.getProductId() + "/win32/win32/x86_64/" + prodDef.getRootFolder()) :
+                    new File(targetProductsDir, prodDef.getProductId() + "/linux/gtk/x86_64/" + prodDef.getRootFolder());
 
-            if (exactDir.exists() && exactDir.isDirectory()) {
-                return exactDir;
+            if (nestedDir.exists() && nestedDir.isDirectory()) {
+                candidates.add(nestedDir);
+            } else {
+                File rootFolderDir = new File(targetProductsDir, prodDef.getRootFolder());
+                if (rootFolderDir.exists() && rootFolderDir.isDirectory()) {
+                    candidates.add(rootFolderDir);
+                }
             }
+        }
 
-            File rootFolderDir = new File(prodDir, prodDef.getRootFolder());
-            if (rootFolderDir.exists() && rootFolderDir.isDirectory()) {
-                return rootFolderDir;
-            }
+        if (candidates.size() == 1) {
+            return candidates.get(0);
+        } else if (candidates.size() > 1) {
+            throw new IOException("Multiple candidate exported products found matching " + prodDef.getProductId() + " (" + platform + "): " + candidates + ". Rejecting ambiguous selection.");
         }
 
         return null;
     }
 
-    public TaskResult validateProductDeployment(File location, ProductDefinition prodDef, String targetOs) {
+    private boolean isExactMatchingArtifact(File file, ProductDefinition prodDef, TargetPlatform platform) {
+        if (file == null || !file.exists()) return false;
+        String name = file.getName().toLowerCase();
+
+        boolean nameMatchesProduct = name.startsWith(prodDef.getProductId().toLowerCase());
+        if (!nameMatchesProduct) return false;
+
+        if (file.isFile()) {
+            boolean isZipOrTar = name.endsWith(".zip") || name.endsWith(".tar.gz") || name.endsWith(".tgz");
+            if (!isZipOrTar) return false;
+
+            if (platform.isWindows()) {
+                return name.contains("win32") || name.contains("win");
+            } else {
+                return name.contains("linux") || name.contains("gtk") || name.endsWith(".tar.gz");
+            }
+        } else if (file.isDirectory()) {
+            return name.equals(prodDef.getRootFolder().toLowerCase()) || name.equals(prodDef.getProductId().toLowerCase());
+        }
+
+        return false;
+    }
+
+    public TaskResult validateProductDeployment(File location, ProductDefinition prodDef, TargetPlatform platform) {
         if (location == null || !location.exists()) {
             return TaskResult.failure("validate_product", "Product location is null or non-existent.", null);
         }
@@ -433,22 +504,22 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
                 if (name.endsWith(".zip")) {
                     tempExtractDir = new File(location.getParentFile(), "temp_val_" + System.currentTimeMillis());
                     tempExtractDir.mkdirs();
-                    unzip(location, tempExtractDir);
-                    rootDir = findProductRootDir(tempExtractDir, prodDef);
+                    unzipSafely(location, tempExtractDir);
+                    rootDir = locateExtractedProductRoot(tempExtractDir, prodDef);
                 } else if (name.endsWith(".tar.gz") || name.endsWith(".tgz")) {
                     tempExtractDir = new File(location.getParentFile(), "temp_val_" + System.currentTimeMillis());
                     tempExtractDir.mkdirs();
-                    untar(location, tempExtractDir);
-                    rootDir = findProductRootDir(tempExtractDir, prodDef);
+                    untarSafely(location, tempExtractDir);
+                    rootDir = locateExtractedProductRoot(tempExtractDir, prodDef);
                 } else {
-                    return TaskResult.failure("validate_product", "Unsupported archive extension: " + location.getName(), null);
+                    return TaskResult.failure("validate_product", "Unsupported archive format: " + location.getName(), null);
                 }
             }
 
-            return validateDirectoryLayout(rootDir, prodDef, targetOs);
+            return validateDirectoryLayout(rootDir, prodDef, platform);
 
         } catch (Exception e) {
-            return TaskResult.failure("validate_product", "Product validation exception: " + e.getMessage(), e);
+            return TaskResult.failure("validate_product", "Product deployment validation exception: " + e.getMessage(), e);
         } finally {
             if (tempExtractDir != null && tempExtractDir.exists()) {
                 deleteRecursively(tempExtractDir);
@@ -456,40 +527,49 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
         }
     }
 
-    private File findProductRootDir(File tempDir, ProductDefinition prodDef) {
+    private File locateExtractedProductRoot(File tempDir, ProductDefinition prodDef) {
         if (tempDir == null || !tempDir.exists()) return tempDir;
 
         String launcher = prodDef != null ? prodDef.getLauncherName() : "evo";
-        File directLauncherWin = new File(tempDir, launcher + ".exe");
-        File directLauncherLinux = new File(tempDir, launcher);
-        if (directLauncherWin.exists() || directLauncherLinux.exists()) {
+        if (isProductRoot(tempDir, launcher)) {
             return tempDir;
+        }
+
+        File rootFolderSubdir = new File(tempDir, prodDef != null ? prodDef.getRootFolder() : "evolution");
+        if (rootFolderSubdir.exists() && isProductRoot(rootFolderSubdir, launcher)) {
+            return rootFolderSubdir;
         }
 
         File[] subdirs = tempDir.listFiles(File::isDirectory);
         if (subdirs != null) {
             for (File sub : subdirs) {
-                File subLauncherWin = new File(sub, launcher + ".exe");
-                File subLauncherLinux = new File(sub, launcher);
-                if (subLauncherWin.exists() || subLauncherLinux.exists()) {
+                if (isProductRoot(sub, launcher)) {
                     return sub;
                 }
             }
-            if (subdirs.length == 1) {
-                return subdirs[0];
-            }
         }
+
         return tempDir;
     }
 
-    private TaskResult validateDirectoryLayout(File rootDir, ProductDefinition prodDef, String targetOs) {
+    private boolean isProductRoot(File dir, String launcherName) {
+        if (dir == null || !dir.exists() || !dir.isDirectory()) return false;
+        boolean hasLauncher = new File(dir, launcherName + ".exe").exists() ||
+                new File(dir, launcherName).exists() ||
+                new File(dir, "eclipse.exe").exists() ||
+                new File(dir, "eclipse").exists();
+        boolean hasPlugins = new File(dir, "plugins").exists();
+        boolean hasConfig = new File(dir, "configuration").exists();
+        return hasLauncher && (hasPlugins || hasConfig);
+    }
+
+    private TaskResult validateDirectoryLayout(File rootDir, ProductDefinition prodDef, TargetPlatform platform) {
         if (rootDir == null || !rootDir.exists() || !rootDir.isDirectory()) {
             return TaskResult.failure("validate_product", "Product root directory does not exist or is not a directory: " + (rootDir != null ? rootDir.getAbsolutePath() : "null"), null);
         }
 
         List<String> missingItems = new ArrayList<>();
-        String os = targetOs != null ? targetOs.toLowerCase() : System.getProperty("os.name").toLowerCase();
-        boolean isWin = os.contains("win");
+        boolean isWin = platform != null ? platform.isWindows() : System.getProperty("os.name").toLowerCase().contains("win");
         String launcherName = prodDef != null ? prodDef.getLauncherName() : "evo";
 
         if (isWin) {
@@ -513,7 +593,7 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
         File iniFile = new File(rootDir, launcherName + ".ini");
         File altIniFile = new File(rootDir, "eclipse.ini");
         if (!iniFile.exists() && !altIniFile.exists()) {
-            missingItems.add("Launcher config file (" + launcherName + ".ini or eclipse.ini)");
+            missingItems.add("Launcher configuration (" + launcherName + ".ini or eclipse.ini)");
         }
 
         File pluginsDir = new File(rootDir, "plugins");
@@ -524,15 +604,15 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
             if (pluginJars == null || pluginJars.length == 0) {
                 missingItems.add("plugins/ directory contains no bundle JARs");
             } else {
-                boolean hasViewBundle = false;
+                boolean hasEvoBundle = false;
                 for (File jar : pluginJars) {
                     if (jar.getName().startsWith("eu.kalafatic.evolution.") || jar.getName().startsWith("org.eclipse.")) {
-                        hasViewBundle = true;
+                        hasEvoBundle = true;
                         break;
                     }
                 }
-                if (!hasViewBundle) {
-                    missingItems.add("plugins/ missing required application bundle (eu.kalafatic.evolution.*.jar)");
+                if (!hasEvoBundle) {
+                    missingItems.add("plugins/ missing required EVO application bundle (eu.kalafatic.evolution.*.jar)");
                 }
             }
         }
@@ -567,11 +647,22 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
                 .build();
     }
 
-    private void unzip(File zipFile, File destDir) throws IOException {
+    private void unzipSafely(File zipFile, File destDir) throws IOException {
+        String destCanonicalPath = destDir.getCanonicalPath();
         try (ZipInputStream zipIn = new ZipInputStream(new FileInputStream(zipFile))) {
             ZipEntry entry = zipIn.getNextEntry();
             while (entry != null) {
-                File filePath = new File(destDir, entry.getName());
+                String entryName = entry.getName();
+                if (entryName.contains("..") || entryName.startsWith("/") || entryName.startsWith("\\")) {
+                    throw new IOException("ZIP path traversal attempt detected in entry: " + entryName);
+                }
+
+                File filePath = new File(destDir, entryName);
+                String entryCanonicalPath = filePath.getCanonicalPath();
+                if (!entryCanonicalPath.startsWith(destCanonicalPath + File.separator) && !entryCanonicalPath.equals(destCanonicalPath)) {
+                    throw new IOException("ZIP path traversal attempt detected outside target directory for entry: " + entryName);
+                }
+
                 if (!entry.isDirectory()) {
                     if (filePath.getParentFile() != null && !filePath.getParentFile().exists()) {
                         filePath.getParentFile().mkdirs();
@@ -592,7 +683,7 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
         }
     }
 
-    private void untar(File tarFile, File destDir) throws IOException, InterruptedException {
+    private void untarSafely(File tarFile, File destDir) throws IOException, InterruptedException {
         ProcessBuilder pb = new ProcessBuilder("tar", "-xzf", tarFile.getAbsolutePath(), "-C", destDir.getAbsolutePath());
         Process p = pb.start();
         int code = p.waitFor();

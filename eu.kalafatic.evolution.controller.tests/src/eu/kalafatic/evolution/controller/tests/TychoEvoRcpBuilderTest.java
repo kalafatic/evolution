@@ -6,6 +6,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -15,9 +17,9 @@ import org.junit.rules.TemporaryFolder;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.BuildArtifact;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.SelfDevContext;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.TaskResult;
-import eu.kalafatic.evolution.controller.orchestration.selfdev.TaskStatus;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.TychoEvoRcpBuilder;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.TychoEvoRcpBuilder.ProductDefinition;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.TychoEvoRcpBuilder.TargetPlatform;
 
 public class TychoEvoRcpBuilderTest {
 
@@ -32,10 +34,10 @@ public class TychoEvoRcpBuilderTest {
         builder = new TychoEvoRcpBuilder();
         mockRepoRoot = tempFolder.newFolder("mockRepo");
 
-        // Create root pom.xml
+        // Create root pom.xml for eu.kalafatic.evolution.aggregator
         File rootPom = new File(mockRepoRoot, "pom.xml");
         try (FileWriter fw = new FileWriter(rootPom)) {
-            fw.write("<project><modelVersion>4.0.0</modelVersion><groupId>eu.kalafatic.evolution</groupId><artifactId>aggregator</artifactId><version>1.0.0</version><packaging>pom</packaging></project>");
+            fw.write("<project><modelVersion>4.0.0</modelVersion><groupId>eu.kalafatic.evolution</groupId><artifactId>eu.kalafatic.evolution.aggregator</artifactId><version>2.6.5-SNAPSHOT</version><packaging>pom</packaging></project>");
         }
 
         // Create eu.kalafatic.evolution.repository module and evolution.product
@@ -64,8 +66,8 @@ public class TychoEvoRcpBuilderTest {
     }
 
     @Test
-    public void testProductDiscovery() {
-        ProductDefinition prodDef = builder.discoverProductDefinition(mockRepoRoot);
+    public void testProductDefinitionDiscovery() {
+        ProductDefinition prodDef = builder.discoverTychoProduct(mockRepoRoot);
         assertNotNull(prodDef);
         assertEquals("evolution", prodDef.getProductId());
         assertEquals("evo", prodDef.getLauncherName());
@@ -76,116 +78,174 @@ public class TychoEvoRcpBuilderTest {
     }
 
     @Test
-    public void testExactArtifactSelection() throws Exception {
+    public void testTargetPlatformResolution() {
+        SelfDevContext context = new SelfDevContext(mockRepoRoot, null);
+
+        TargetPlatform platform = builder.resolveTargetPlatform(context);
+        assertNotNull(platform);
+        assertNotNull(platform.getOs());
+        assertNotNull(platform.getWs());
+        assertNotNull(platform.getArch());
+        assertNotNull(platform.getProfile());
+    }
+
+    @Test
+    public void testDeterministicArtifactSelection() throws Exception {
         File productsDir = new File(mockRepoRoot, "eu.kalafatic.evolution.repository/target/products");
         productsDir.mkdirs();
 
         File winZip = new File(productsDir, "evolution-win32.win32.x86_64.zip");
         try (FileOutputStream fos = new FileOutputStream(winZip)) {
-            fos.write("dummy zip content".getBytes());
+            fos.write("dummy win zip content".getBytes());
         }
 
-        File linuxTar = new File(productsDir, "evolution-linux.gtk.x86_64.tar.gz");
-        try (FileOutputStream fos = new FileOutputStream(linuxTar)) {
-            fos.write("dummy tar content".getBytes());
-        }
+        ProductDefinition prodDef = builder.discoverTychoProduct(mockRepoRoot);
+        TargetPlatform winPlatform = new TargetPlatform("win32", "win32", "x86_64", "zip", "-Pwindows");
 
-        File unrelatedZip = new File(productsDir, "unrelated-app-1.0.0.zip");
-        try (FileOutputStream fos = new FileOutputStream(unrelatedZip)) {
-            fos.write("unrelated content".getBytes());
-        }
-
-        ProductDefinition prodDef = builder.discoverProductDefinition(mockRepoRoot);
-
-        File foundWin = builder.locateExportedProduct(mockRepoRoot, prodDef, "windows", "x86_64", null);
-        assertNotNull(foundWin);
-        assertEquals(winZip.getAbsoluteFile(), foundWin.getAbsoluteFile());
-
-        File foundLinux = builder.locateExportedProduct(mockRepoRoot, prodDef, "linux", "x86_64", null);
-        assertNotNull(foundLinux);
-        assertEquals(linuxTar.getAbsoluteFile(), foundLinux.getAbsoluteFile());
+        File found = builder.findExactExportedProduct(mockRepoRoot, prodDef, winPlatform, null);
+        assertNotNull(found);
+        assertEquals(winZip.getAbsoluteFile(), found.getAbsoluteFile());
     }
 
     @Test
-    public void testInvalidDeploymentRejection() throws Exception {
-        File incompleteDir = tempFolder.newFolder("incompleteProduct");
+    public void testMultipleCandidateArtifactRejection() throws Exception {
+        File productsDir = new File(mockRepoRoot, "eu.kalafatic.evolution.repository/target/products");
+        productsDir.mkdirs();
+
+        File zip1 = new File(productsDir, "evolution-win32.win32.x86_64.zip");
+        try (FileOutputStream fos = new FileOutputStream(zip1)) { fos.write("zip1".getBytes()); }
+
+        File zip2 = new File(productsDir, "evolution-win32.win32.x86_64-v2.zip");
+        try (FileOutputStream fos = new FileOutputStream(zip2)) { fos.write("zip2".getBytes()); }
+
+        ProductDefinition prodDef = builder.discoverTychoProduct(mockRepoRoot);
+        TargetPlatform winPlatform = new TargetPlatform("win32", "win32", "x86_64", "zip", "-Pwindows");
+
+        try {
+            builder.findExactExportedProduct(mockRepoRoot, prodDef, winPlatform, null);
+            fail("Expected IOException on ambiguous multiple candidate artifacts");
+        } catch (IOException e) {
+            assertTrue(e.getMessage().contains("Multiple candidate exported products found"));
+        }
+    }
+
+    @Test
+    public void testMissingLauncherRejection() throws Exception {
+        File dir = tempFolder.newFolder("noLauncher");
         ProductDefinition prodDef = new ProductDefinition("evolution", "evo", "evolution", "eu.kalafatic.evolution.repository", null);
+        TargetPlatform platform = new TargetPlatform("linux", "gtk", "x86_64", "tar.gz", "-Plinux");
 
-        // Missing launcher & plugins & config
-        TaskResult resIncomplete = builder.validateProductDeployment(incompleteDir, prodDef, "linux");
-        assertNotNull(resIncomplete);
-        assertFalse(resIncomplete.isSuccess());
-        assertTrue(resIncomplete.getMessage().contains("missing items"));
-
-        // Add launcher and ini, but missing plugins/
-        File launcher = new File(incompleteDir, "evo");
-        launcher.createNewFile();
-        File ini = new File(incompleteDir, "evo.ini");
-        ini.createNewFile();
-
-        TaskResult resNoPlugins = builder.validateProductDeployment(incompleteDir, prodDef, "linux");
-        assertNotNull(resNoPlugins);
-        assertFalse(resNoPlugins.isSuccess());
-
-        // Add plugins/ with no jars
-        File pluginsDir = new File(incompleteDir, "plugins");
-        pluginsDir.mkdirs();
-        TaskResult resEmptyPlugins = builder.validateProductDeployment(incompleteDir, prodDef, "linux");
-        assertNotNull(resEmptyPlugins);
-        assertFalse(resEmptyPlugins.isSuccess());
+        TaskResult res = builder.validateProductDeployment(dir, prodDef, platform);
+        assertNotNull(res);
+        assertFalse(res.isSuccess());
+        assertTrue(res.getMessage().contains("Launcher executable"));
     }
 
     @Test
-    public void testWindowsAndLinuxLauncherValidation() throws Exception {
-        File validWinProduct = tempFolder.newFolder("validWinProduct");
-        File exe = new File(validWinProduct, "evo.exe");
-        exe.createNewFile();
-        File iniWin = new File(validWinProduct, "evo.ini");
-        iniWin.createNewFile();
+    public void testMissingPluginsRejection() throws Exception {
+        File dir = tempFolder.newFolder("noPlugins");
+        new File(dir, "evo").createNewFile();
+        new File(dir, "evo.ini").createNewFile();
 
-        File pluginsWin = new File(validWinProduct, "plugins");
-        pluginsWin.mkdirs();
-        File bundleWin = new File(pluginsWin, "eu.kalafatic.evolution.view_2.6.5.jar");
-        bundleWin.createNewFile();
+        ProductDefinition prodDef = new ProductDefinition("evolution", "evo", "evolution", "eu.kalafatic.evolution.repository", null);
+        TargetPlatform platform = new TargetPlatform("linux", "gtk", "x86_64", "tar.gz", "-Plinux");
 
-        File configWin = new File(validWinProduct, "configuration");
-        configWin.mkdirs();
-        File configIniWin = new File(configWin, "config.ini");
-        try (FileWriter fw = new FileWriter(configIniWin)) {
+        TaskResult res = builder.validateProductDeployment(dir, prodDef, platform);
+        assertNotNull(res);
+        assertFalse(res.isSuccess());
+        assertTrue(res.getMessage().contains("plugins/"));
+    }
+
+    @Test
+    public void testMissingConfigurationRejection() throws Exception {
+        File dir = tempFolder.newFolder("noConfig");
+        new File(dir, "evo").createNewFile();
+        new File(dir, "evo.ini").createNewFile();
+
+        File plugins = new File(dir, "plugins");
+        plugins.mkdirs();
+        new File(plugins, "eu.kalafatic.evolution.view_1.0.jar").createNewFile();
+
+        ProductDefinition prodDef = new ProductDefinition("evolution", "evo", "evolution", "eu.kalafatic.evolution.repository", null);
+        TargetPlatform platform = new TargetPlatform("linux", "gtk", "x86_64", "tar.gz", "-Plinux");
+
+        TaskResult res = builder.validateProductDeployment(dir, prodDef, platform);
+        assertNotNull(res);
+        assertFalse(res.isSuccess());
+        assertTrue(res.getMessage().contains("configuration/"));
+    }
+
+    @Test
+    public void testValidWindowsDeployment() throws Exception {
+        File dir = tempFolder.newFolder("validWinDir");
+        new File(dir, "evo.exe").createNewFile();
+        new File(dir, "evo.ini").createNewFile();
+
+        File plugins = new File(dir, "plugins");
+        plugins.mkdirs();
+        new File(plugins, "eu.kalafatic.evolution.view_2.6.5.jar").createNewFile();
+
+        File config = new File(dir, "configuration");
+        config.mkdirs();
+        File configIni = new File(config, "config.ini");
+        try (FileWriter fw = new FileWriter(configIni)) {
             fw.write("eclipse.application=eu.kalafatic.evolution.view.application.Application\n");
         }
 
         ProductDefinition prodDef = new ProductDefinition("evolution", "evo", "evolution", "eu.kalafatic.evolution.repository", null);
+        TargetPlatform platform = new TargetPlatform("win32", "win32", "x86_64", "zip", "-Pwindows");
 
-        TaskResult winRes = builder.validateProductDeployment(validWinProduct, prodDef, "windows");
-        assertNotNull(winRes);
-        assertTrue(winRes.isSuccess());
-
-        File validLinuxProduct = tempFolder.newFolder("validLinuxProduct");
-        File sh = new File(validLinuxProduct, "evo");
-        sh.createNewFile();
-        File iniLinux = new File(validLinuxProduct, "evo.ini");
-        iniLinux.createNewFile();
-
-        File pluginsLinux = new File(validLinuxProduct, "plugins");
-        pluginsLinux.mkdirs();
-        File bundleLinux = new File(pluginsLinux, "eu.kalafatic.evolution.view_2.6.5.jar");
-        bundleLinux.createNewFile();
-
-        File configLinux = new File(validLinuxProduct, "configuration");
-        configLinux.mkdirs();
-        File configIniLinux = new File(configLinux, "config.ini");
-        try (FileWriter fw = new FileWriter(configIniLinux)) {
-            fw.write("eclipse.product=eu.kalafatic.evolution.view.product\n");
-        }
-
-        TaskResult linuxRes = builder.validateProductDeployment(validLinuxProduct, prodDef, "linux");
-        assertNotNull(linuxRes);
-        assertTrue(linuxRes.isSuccess());
+        TaskResult res = builder.validateProductDeployment(dir, prodDef, platform);
+        assertNotNull(res);
+        assertTrue(res.isSuccess());
     }
 
     @Test
-    public void testBuildAndExportFailurePropagation() throws Exception {
+    public void testValidLinuxDeployment() throws Exception {
+        File dir = tempFolder.newFolder("validLinuxDir");
+        new File(dir, "evo").createNewFile();
+        new File(dir, "evo.ini").createNewFile();
+
+        File plugins = new File(dir, "plugins");
+        plugins.mkdirs();
+        new File(plugins, "eu.kalafatic.evolution.view_2.6.5.jar").createNewFile();
+
+        File config = new File(dir, "configuration");
+        config.mkdirs();
+        File configIni = new File(config, "config.ini");
+        try (FileWriter fw = new FileWriter(configIni)) {
+            fw.write("eclipse.product=eu.kalafatic.evolution.view.product\n");
+        }
+
+        ProductDefinition prodDef = new ProductDefinition("evolution", "evo", "evolution", "eu.kalafatic.evolution.repository", null);
+        TargetPlatform platform = new TargetPlatform("linux", "gtk", "x86_64", "tar.gz", "-Plinux");
+
+        TaskResult res = builder.validateProductDeployment(dir, prodDef, platform);
+        assertNotNull(res);
+        assertTrue(res.isSuccess());
+    }
+
+    @Test
+    public void testZipPathTraversalRejection() throws Exception {
+        File zipFile = new File(tempFolder.getRoot(), "malicious.zip");
+        try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(zipFile))) {
+            ZipEntry entry = new ZipEntry("../outside.txt");
+            zos.putNextEntry(entry);
+            zos.write("malicious payload".getBytes());
+            zos.closeEntry();
+        }
+
+        ProductDefinition prodDef = new ProductDefinition("evolution", "evo", "evolution", "eu.kalafatic.evolution.repository", null);
+        TargetPlatform platform = new TargetPlatform("win32", "win32", "x86_64", "zip", "-Pwindows");
+
+        TaskResult res = builder.validateProductDeployment(zipFile, prodDef, platform);
+        assertNotNull(res);
+        assertFalse(res.isSuccess());
+        assertTrue(res.getMessage().contains("ZIP path traversal"));
+    }
+
+    @Test
+    public void testMavenTychoFailurePropagation() throws Exception {
         File emptyDir = tempFolder.newFolder("emptyRoot");
         SelfDevContext context = new SelfDevContext(emptyDir, null);
 
