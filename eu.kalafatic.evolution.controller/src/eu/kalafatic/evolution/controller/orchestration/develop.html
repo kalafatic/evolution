@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EVO Develop - Autonomous Coding Agent</title>
+    <style>
+        :root {
+            --bg-primary: #18181b;
+            --bg-secondary: #202024;
+            --bg-tertiary: #27272a;
+            --border: #3f3f46;
+            --text-primary: #f4f4f5;
+            --text-dim: #a1a1aa;
+            --accent: #2563eb;
+            --accent-hover: #1d4ed8;
+            --success: #10b981;
+            --error: #ef4444;
+            --warning: #f59e0b;
+            --user-msg-bg: #2563eb;
+            --ai-msg-bg: #27272a;
+            --diff-add-bg: rgba(16, 185, 129, 0.15);
+            --diff-add-text: #34d399;
+            --diff-del-bg: rgba(239, 68, 68, 0.15);
+            --diff-del-text: #f87171;
+        }
+
+        * { box-sizing: border-box; }
+
+        body, html {
+            margin: 0; padding: 0; height: 100%;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            overflow: hidden;
+        }
+
+        #app-container {
+            display: flex; flex-direction: column; height: 100%;
+        }
+
+        /* HEADER */
+        #top-header {
+            height: 56px;
+            background-color: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 20px; flex-shrink: 0; gap: 16px;
+        }
+
+        .brand-title {
+            display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.1em; color: #ffffff;
+        }
+        .brand-badge {
+            background: var(--accent); color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.72em; letter-spacing: 0.5px;
+        }
+
+        .repo-controls {
+            display: flex; align-items: center; gap: 10px; flex: 1; max-width: 850px;
+        }
+        .repo-controls input, .repo-controls select {
+            background: var(--bg-tertiary); color: #ffffff; border: 1px solid var(--border);
+            padding: 8px 12px; border-radius: 6px; font-size: 0.88em; outline: none;
+        }
+        .repo-controls input[type="text"] { flex: 1; }
+
+        .btn {
+            background: var(--bg-tertiary); color: #ffffff; border: 1px solid var(--border);
+            padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 0.85em; font-weight: 600;
+            display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s ease;
+        }
+        .btn:hover { background: #3f3f46; border-color: var(--accent); }
+        .btn-primary { background: var(--accent); border-color: var(--accent); color: white; }
+        .btn-primary:hover { background: var(--accent-hover); }
+        .btn-danger { background: var(--error); border-color: var(--error); color: white; }
+        .btn-danger:hover { background: #dc2626; }
+        .btn-success { background: #059669; border-color: #059669; color: white; }
+        .btn-success:hover { background: #047857; }
+
+        .permissions-bar {
+            display: flex; align-items: center; gap: 12px; padding: 6px 20px; background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border); font-size: 0.8em; color: var(--text-dim);
+        }
+        .permissions-bar label { display: flex; align-items: center; gap: 5px; cursor: pointer; color: var(--text-primary); }
+
+        /* MAIN CONTENT SPLIT */
+        #main-split {
+            flex: 1; display: flex; overflow: hidden;
+        }
+
+        /* LEFT PANEL - AGENT & TASK */
+        #agent-panel {
+            flex: 1; display: flex; flex-direction: column;
+            border-right: 1px solid var(--border); background: var(--bg-primary);
+        }
+
+        .panel-header {
+            height: 42px; background: var(--bg-secondary); border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between; padding: 0 16px;
+            font-size: 0.82em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-dim);
+        }
+
+        #task-input-section {
+            padding: 16px; background: var(--bg-secondary); border-bottom: 1px solid var(--border);
+            display: flex; flex-direction: column; gap: 10px;
+        }
+        #task-title {
+            padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px;
+            background: var(--bg-tertiary); color: #ffffff; font-size: 0.9em; outline: none;
+        }
+        #task-desc {
+            padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px;
+            background: var(--bg-tertiary); color: #ffffff; font-size: 0.9em; outline: none; resize: vertical; min-height: 60px;
+        }
+
+        #activity-log {
+            flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 8px;
+            font-family: 'Consolas', 'Courier New', monospace; font-size: 0.85em;
+        }
+        .log-entry {
+            padding: 6px 10px; border-radius: 4px; background: var(--bg-secondary); border: 1px solid var(--border); color: var(--text-primary);
+        }
+
+        /* RIGHT PANEL - DIFF & OUTPUT */
+        #output-panel {
+            width: 50%; display: flex; flex-direction: column; background: var(--bg-secondary);
+        }
+
+        #changed-files-bar {
+            padding: 10px 14px; background: var(--bg-tertiary); border-bottom: 1px solid var(--border);
+            display: flex; gap: 8px; overflow-x: auto; font-size: 0.82em; align-items: center;
+        }
+        .file-chip {
+            padding: 4px 10px; border-radius: 4px; background: var(--bg-primary); border: 1px solid var(--border);
+            cursor: pointer; font-family: monospace; white-space: nowrap; display: flex; align-items: center; gap: 6px;
+        }
+        .file-chip.modified { color: #f2c94c; }
+        .file-chip.added { color: var(--success); }
+        .file-chip.deleted { color: var(--error); }
+
+        #diff-content {
+            flex: 1; overflow: auto; padding: 16px; font-family: 'Consolas', 'Courier New', monospace; font-size: 0.84em; line-height: 1.45;
+            background: #121214; color: #e4e4e7; white-space: pre;
+        }
+
+        .diff-line-add { background: var(--diff-add-bg); color: var(--diff-add-text); }
+        .diff-line-del { background: var(--diff-del-bg); color: var(--diff-del-text); }
+        .diff-hunk-header { color: #60a5fa; font-weight: bold; background: rgba(96, 165, 250, 0.1); }
+    </style>
+</head>
+<body>
+    <div id="app-container">
+        <!-- HEADER -->
+        <div id="top-header">
+            <div class="brand-title">
+                🤖 EVO <span class="brand-badge">DEVELOP AGENT</span>
+            </div>
+
+            <div class="repo-controls">
+                <input type="text" id="repo-url" placeholder="Git repository URL or local path (e.g. https://github.com/user/project.git)" value="https://github.com/kalafatic/evolution">
+                <input type="text" id="repo-branch" placeholder="Branch" value="main" style="max-width: 110px;">
+                <select id="model-select" style="max-width: 140px;" title="Select LLM Model"><option value="">Model: Loading...</option></select>
+                <button class="btn btn-primary" onclick="startTask()">Start Task</button>
+                <select id="task-select" onchange="switchTask()"><option value="">Tasks...</option></select>
+            </div>
+        </div>
+
+        <!-- PERMISSIONS BAR -->
+        <div class="permissions-bar">
+            <span>Permissions:</span>
+            <label><input type="checkbox" id="perm-read" checked> Read Repo</label>
+            <label><input type="checkbox" id="perm-write" checked> Modify Files</label>
+            <label><input type="checkbox" id="perm-execute" checked> Build & Test</label>
+            <label><input type="checkbox" id="perm-push"> Push Remote</label>
+        </div>
+
+        <!-- MAIN SPLIT VIEW -->
+        <div id="main-split">
+            <!-- AGENT & TASK PANEL -->
+            <div id="agent-panel">
+                <div class="panel-header">
+                    <span>Task Input & Development Agent</span>
+                    <span id="task-status-badge">Status: CREATED</span>
+                </div>
+
+                <div id="task-input-section">
+                    <input type="text" id="task-title" placeholder="Task Title (e.g. Fix GGUF export validation)">
+                    <textarea id="task-desc" placeholder="Describe the autonomous development task in detail..."></textarea>
+                </div>
+
+                <div class="panel-header">
+                    <span>Agent Activity & Live Logs</span>
+                    <button class="btn btn-danger" onclick="cancelTask()">Cancel Task</button>
+                </div>
+
+                <div id="activity-log">
+                    <div class="log-entry">Waiting for autonomous task initiation...</div>
+                </div>
+            </div>
+
+            <!-- DIFF & OUTPUT PANEL -->
+            <div id="output-panel">
+                <div class="panel-header">
+                    <span>Change Set & Diffs</span>
+                    <div>
+                        <button class="btn" onclick="commitChanges()">Commit</button>
+                        <button class="btn btn-success" onclick="pushChanges()">Push</button>
+                        <button class="btn" onclick="fetchDiff()">Refresh Diff</button>
+                    </div>
+                </div>
+
+                <div id="changed-files-bar">
+                    <span style="color: var(--text-dim);">Changed files:</span>
+                    <div id="files-list" style="display: flex; gap: 6px;">
+                        <span style="color: var(--text-dim); font-style: italic;">No uncommitted changes</span>
+                    </div>
+                </div>
+
+                <div id="diff-content">Select or start a task to view changes...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentTaskId = '';
+        let currentSessionId = '';
+
+        function getBaseUrl() {
+            return (window.location.protocol === 'file:') ? 'http://localhost:48080' : '';
+        }
+
+        async function fetchModels() {
+            try {
+                const statusRes = await fetch(getBaseUrl() + '/server/status?runtime=SWT');
+                const statusData = await statusRes.json();
+                const settingsRes = await fetch(getBaseUrl() + '/server/orchestrator/settings?runtime=SWT');
+                const settingsData = await settingsRes.json();
+
+                const select = document.getElementById('model-select');
+                select.innerHTML = '';
+                const activeDefault = settingsData.localModel || settingsData.remoteModel || 'evo';
+
+                if (statusData.ollama && statusData.ollama.models && statusData.ollama.models.length > 0) {
+                    statusData.ollama.models.forEach(m => {
+                        const opt = document.createElement('option');
+                        opt.value = m.name; opt.text = m.name;
+                        if (m.name === activeDefault) opt.selected = true;
+                        select.appendChild(opt);
+                    });
+                }
+                if (select.options.length === 0) {
+                    const opt = document.createElement('option');
+                    opt.value = activeDefault; opt.text = activeDefault; opt.selected = true;
+                    select.appendChild(opt);
+                }
+            } catch (err) { console.error('Failed to fetch LLM models:', err); }
+        }
+
+        async function startTask() {
+            const title = document.getElementById('task-title').value.trim() || 'Autonomous Coding Task';
+            const description = document.getElementById('task-desc').value.trim() || title;
+            const repository = document.getElementById('repo-url').value.trim();
+            const branch = document.getElementById('repo-branch').value.trim() || 'main';
+
+            const permissions = {
+                read: document.getElementById('perm-read').checked,
+                write: document.getElementById('perm-write').checked,
+                execute: document.getElementById('perm-execute').checked,
+                push: document.getElementById('perm-push').checked
+            };
+
+            try {
+                const res = await fetch(getBaseUrl() + '/develop/task', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, description, repository, branch, permissions })
+                });
+                const task = await res.json();
+                currentTaskId = task.id;
+                currentSessionId = task.sessionId;
+
+                await startTaskExecution(currentTaskId);
+                await refreshTaskList();
+                pollTaskStatus();
+            } catch (err) {
+                alert('Task start failed: ' + err.message);
+            }
+        }
+
+        async function startTaskExecution(taskId) {
+            try {
+                await fetch(getBaseUrl() + '/develop/tasks/' + taskId + '/start', { method: 'POST' });
+            } catch (err) {}
+        }
+
+        async function refreshTaskList() {
+            try {
+                const res = await fetch(getBaseUrl() + '/develop/tasks');
+                const tasks = await res.json();
+                const select = document.getElementById('task-select');
+                select.innerHTML = '<option value="">Tasks...</option>';
+                tasks.forEach(t => {
+                    const opt = document.createElement('option');
+                    opt.value = t.id;
+                    opt.text = t.title + ' [' + t.status + ']';
+                    if (t.id === currentTaskId) opt.selected = true;
+                    select.appendChild(opt);
+                });
+            } catch (err) {}
+        }
+
+        async function switchTask() {
+            const select = document.getElementById('task-select');
+            if (select.value) {
+                currentTaskId = select.value;
+                pollTaskStatus();
+            }
+        }
+
+        async function pollTaskStatus() {
+            if (!currentTaskId) return;
+            try {
+                const statusRes = await fetch(getBaseUrl() + '/develop/tasks/' + currentTaskId + '/status');
+                const taskData = await statusRes.json();
+
+                document.getElementById('task-status-badge').innerText = 'Status: ' + taskData.status;
+
+                const logRes = await fetch(getBaseUrl() + '/develop/tasks/' + currentTaskId + '/logs');
+                const logs = await logRes.json();
+
+                const logContainer = document.getElementById('activity-log');
+                logContainer.innerHTML = '';
+                logs.forEach(l => {
+                    const entry = document.createElement('div');
+                    entry.className = 'log-entry';
+                    entry.innerText = l;
+                    logContainer.appendChild(entry);
+                });
+                logContainer.scrollTop = logContainer.scrollHeight;
+
+                fetchDiff();
+            } catch (err) {}
+        }
+
+        async function fetchDiff() {
+            if (!currentTaskId) return;
+            try {
+                const res = await fetch(getBaseUrl() + '/develop/tasks/' + currentTaskId + '/diff');
+                const data = await res.json();
+
+                const filesBar = document.getElementById('files-list');
+                const diffContent = document.getElementById('diff-content');
+
+                if (data.changedFiles && data.changedFiles.length > 0) {
+                    filesBar.innerHTML = '';
+                    data.changedFiles.forEach(f => {
+                        const chip = document.createElement('span');
+                        let typeClass = 'modified';
+                        if (f.startsWith('A ')) typeClass = 'added';
+                        if (f.startsWith('D ')) typeClass = 'deleted';
+                        chip.className = 'file-chip ' + typeClass;
+                        chip.innerText = f;
+                        filesBar.appendChild(chip);
+                    });
+                } else {
+                    filesBar.innerHTML = '<span style="color: var(--text-dim); font-style: italic;">No uncommitted changes</span>';
+                }
+
+                if (data.diff && data.diff.trim().length > 0) {
+                    diffContent.innerHTML = formatDiff(data.diff);
+                } else {
+                    diffContent.innerText = 'No workspace modifications present.';
+                }
+            } catch (err) {}
+        }
+
+        function formatDiff(rawDiff) {
+            const lines = rawDiff.split('\n');
+            return lines.map(line => {
+                let escaped = line.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                if (line.startsWith('+') && !line.startsWith('+++')) {
+                    return `<span class="diff-line-add">${escaped}</span>`;
+                } else if (line.startsWith('-') && !line.startsWith('---')) {
+                    return `<span class="diff-line-del">${escaped}</span>`;
+                } else if (line.startsWith('@@')) {
+                    return `<span class="diff-hunk-header">${escaped}</span>`;
+                }
+                return escaped;
+            }).join('\n');
+        }
+
+        async function cancelTask() {
+            if (!currentTaskId) return;
+            try {
+                await fetch(getBaseUrl() + '/develop/tasks/' + currentTaskId + '/cancel', { method: 'POST' });
+                pollTaskStatus();
+            } catch (err) {}
+        }
+
+        async function commitChanges() {
+            if (!currentTaskId) return;
+            const msg = prompt('Enter commit message:', 'develop: update');
+            if (!msg) return;
+            try {
+                const res = await fetch(getBaseUrl() + '/develop/tasks/' + currentTaskId + '/commit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: msg })
+                });
+                const data = await res.json();
+                alert(data.message || data.error || 'Done');
+                fetchDiff();
+            } catch (err) { alert('Commit failed: ' + err.message); }
+        }
+
+        async function pushChanges() {
+            if (!currentTaskId) return;
+            if (!confirm('Push changes to remote repository?')) return;
+            try {
+                const res = await fetch(getBaseUrl() + '/develop/tasks/' + currentTaskId + '/push', { method: 'POST' });
+                const data = await res.json();
+                alert(data.message || data.error || 'Done');
+            } catch (err) { alert('Push failed: ' + err.message); }
+        }
+
+        fetchModels();
+        refreshTaskList();
+        setInterval(pollTaskStatus, 2000);
+    </script>
+</body>
+</html>

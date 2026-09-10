@@ -1,18 +1,20 @@
 package eu.kalafatic.evolution.forge.data.impl.pipeline;
 
 import eu.kalafatic.evolution.forge.data.api.NormalizedSample;
+import eu.kalafatic.evolution.forge.data.api.service.TrainingDataAcquisitionRequest;
+import eu.kalafatic.evolution.forge.data.api.service.TrainingDataAcquisitionResult;
+import eu.kalafatic.evolution.forge.data.api.service.TrainingDataAcquisitionService;
 import eu.kalafatic.evolution.forge.data.api.source.DatasetSource;
 import eu.kalafatic.evolution.forge.data.api.source.DatasetSourceStats;
+import eu.kalafatic.evolution.forge.data.impl.service.TrainingDataAcquisitionServiceImpl;
 
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Size-aware multi-source dataset composition engine.
- * Sequentially streams records from multiple sources (HF, Local, Evodata)
- * through normalization, quality filtering, and global deduplication until
- * target usable bytes/tokens are satisfied or all sources are exhausted.
+ * Delegates dataset acquisition to TrainingDataAcquisitionService while preserving
+ * legacy API compatibility for DatasetAcquisitionEngine callers.
  */
 public class DatasetAcquisitionEngine {
 
@@ -25,7 +27,7 @@ public class DatasetAcquisitionEngine {
         }
 
         private final List<NormalizedSample> acceptedSamples = new ArrayList<>();
-        private final DatasetSourceStats globalStats = new DatasetSourceStats();
+        private DatasetSourceStats globalStats = new DatasetSourceStats();
         private boolean targetReached = false;
         private boolean sourceExhausted = false;
         private double coveragePercent = 100.0;
@@ -46,103 +48,37 @@ public class DatasetAcquisitionEngine {
         public void setStatus(Status status) { this.status = status; }
     }
 
-    private final DataCleaner cleaner;
-    private final TrainingSampleQualityScorer scorer;
-    private final DatasetDeduplicator globalDeduplicator;
+    private final TrainingDataAcquisitionService acquisitionService;
 
     public DatasetAcquisitionEngine() {
         this(new DataCleaner(), new TrainingSampleQualityScorer(0.5), new DatasetDeduplicator(true));
     }
 
     public DatasetAcquisitionEngine(DataCleaner cleaner, TrainingSampleQualityScorer scorer, DatasetDeduplicator deduplicator) {
-        this.cleaner = cleaner != null ? cleaner : new DataCleaner();
-        this.scorer = scorer != null ? scorer : new TrainingSampleQualityScorer(0.5);
-        this.globalDeduplicator = deduplicator != null ? deduplicator : new DatasetDeduplicator(true);
+        this.acquisitionService = new TrainingDataAcquisitionServiceImpl(cleaner, scorer, deduplicator);
     }
 
     public AcquisitionResult acquireDataset(List<DatasetSource> sources, long targetUsableBytes, double valSplitRatio) throws Exception {
-        AcquisitionResult result = new AcquisitionResult();
-        DatasetSourceStats stats = result.globalStats;
-        stats.setRequestedUsableBytes(targetUsableBytes);
+        TrainingDataAcquisitionRequest request = new TrainingDataAcquisitionRequest(sources, targetUsableBytes, valSplitRatio);
+        TrainingDataAcquisitionResult serviceResult = acquisitionService.acquireDataset(request);
 
-        long accumulatedUsableBytes = 0;
+        AcquisitionResult legacyResult = new AcquisitionResult();
+        legacyResult.acceptedSamples.addAll(serviceResult.getAcceptedSamples());
+        legacyResult.globalStats = serviceResult.getGlobalStats();
+        legacyResult.targetReached = serviceResult.isTargetReached();
+        legacyResult.sourceExhausted = serviceResult.isSourceExhausted();
+        legacyResult.coveragePercent = serviceResult.getCoveragePercent();
+        legacyResult.requestedMinimumUsableBytes = serviceResult.getRequestedMinimumUsableBytes();
+        legacyResult.usableContentBytes = serviceResult.getUsableContentBytes();
+        legacyResult.shortfallBytes = serviceResult.getShortfallBytes();
 
-        for (DatasetSource source : sources) {
-            if (accumulatedUsableBytes >= targetUsableBytes) {
-                break;
-            }
-
-            try {
-                source.initialize();
-            } catch (Exception initEx) {
-                System.err.println("[ACQUISITION ENGINE] Failed to initialize source " + source.getSourceName() + ": " + initEx.getMessage());
-                continue;
-            }
-
-            try (source) {
-                while (accumulatedUsableBytes < targetUsableBytes && source.hasNext()) {
-                    NormalizedSample s = source.next();
-                    byte[] rawBytes = s.toFullText().getBytes(StandardCharsets.UTF_8);
-                    long rawLen = rawBytes.length;
-
-                    stats.addRawContentBytes(rawLen);
-                    stats.addDownloadedBytes(rawLen);
-                    stats.incrementSamplesRead();
-
-                    NormalizedSample clean = cleaner.clean(s);
-                    if (clean == null || !scorer.isAcceptable(clean)) {
-                        stats.addRejectedBytes(rawLen);
-                        stats.incrementRejected();
-                        continue;
-                    }
-
-                    if (globalDeduplicator.isDuplicate(clean)) {
-                        stats.addDuplicateBytes(rawLen);
-                        stats.incrementExactDuplicates();
-                        continue;
-                    }
-
-                    globalDeduplicator.register(clean);
-                    byte[] cleanBytes = clean.toFullText().getBytes(StandardCharsets.UTF_8);
-                    long cleanLen = cleanBytes.length;
-
-                    result.acceptedSamples.add(clean);
-                    accumulatedUsableBytes += cleanLen;
-
-                    stats.addAcceptedBytes(cleanLen);
-                    stats.incrementAccepted();
-                    stats.addEstimatedTokens(clean.getTokenCount() > 0 ? clean.getTokenCount() : cleanLen / 4);
-
-                    if (accumulatedUsableBytes >= targetUsableBytes) {
-                        result.targetReached = true;
-                        break;
-                    }
-                }
-            }
+        switch (serviceResult.getStatus()) {
+            case READY -> legacyResult.setStatus(AcquisitionResult.Status.READY);
+            case INSUFFICIENT_SOURCE_DATA -> legacyResult.setStatus(AcquisitionResult.Status.INSUFFICIENT_SOURCE_DATA);
+            case CANCELLED -> legacyResult.setStatus(AcquisitionResult.Status.CANCELLED);
+            case FAILED -> legacyResult.setStatus(AcquisitionResult.Status.FAILED);
         }
 
-        result.requestedMinimumUsableBytes = targetUsableBytes;
-        result.usableContentBytes = accumulatedUsableBytes;
-
-        if (accumulatedUsableBytes < targetUsableBytes) {
-            result.sourceExhausted = true;
-            result.targetReached = false;
-            result.status = AcquisitionResult.Status.INSUFFICIENT_SOURCE_DATA;
-            result.shortfallBytes = targetUsableBytes - accumulatedUsableBytes;
-            result.coveragePercent = (accumulatedUsableBytes * 100.0) / Math.max(1, targetUsableBytes);
-        } else {
-            result.targetReached = true;
-            result.status = AcquisitionResult.Status.READY;
-            result.shortfallBytes = 0;
-            result.coveragePercent = 100.0;
-        }
-
-        long valBytes = (long) (accumulatedUsableBytes * valSplitRatio);
-        long trainBytes = accumulatedUsableBytes - valBytes;
-        stats.setAcceptedBytes(accumulatedUsableBytes);
-        stats.setTrainingBytes(trainBytes);
-        stats.setValidationBytes(valBytes);
-
-        return result;
+        return legacyResult;
     }
 }

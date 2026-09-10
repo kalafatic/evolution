@@ -1,21 +1,20 @@
 package eu.kalafatic.evolution.forge.data.impl.source;
 
 import eu.kalafatic.evolution.forge.data.api.NormalizedSample;
-import eu.kalafatic.evolution.forge.data.api.TrainingSampleType;
+import eu.kalafatic.evolution.forge.data.api.downloader.DataDownloader;
+import eu.kalafatic.evolution.forge.data.api.downloader.DownloadRequest;
+import eu.kalafatic.evolution.forge.data.api.downloader.DownloadResult;
 import eu.kalafatic.evolution.forge.data.api.source.DatasetSource;
 import eu.kalafatic.evolution.forge.data.api.source.DatasetSourceConfig;
 import eu.kalafatic.evolution.forge.data.api.source.DatasetSourceStats;
+import eu.kalafatic.evolution.forge.data.impl.downloader.HuggingFaceDownloader;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URI;
-import java.net.URL;
+import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,21 +22,30 @@ import java.util.NoSuchElementException;
 
 /**
  * Hugging Face Dataset Source supporting real public dataset streams via Hugging Face rows API or raw URL endpoints with pagination,
- * dynamic schema detection, and strict error reporting. Never produces synthetic placeholder data.
+ * dynamic schema detection, and strict error reporting. Delegating transport to DataDownloader.
  */
 public class HuggingFaceDatasetSource implements DatasetSource {
 
     private final DatasetSourceConfig config;
+    private final DataDownloader downloader;
     private final DatasetSourceStats stats = new DatasetSourceStats();
-    private List<NormalizedSample> currentChunk = new ArrayList<>();
+    private final List<NormalizedSample> currentChunk = new ArrayList<>();
     private int currentChunkIndex = 0;
     private long currentOffset = 0;
     private boolean endOfStream = false;
     private boolean initialized = false;
     private String detectedSchemaInfo = "UNKNOWN";
 
+    private final List<String[]> availableSplits = new ArrayList<>(); // Pairs of [configName, splitName]
+    private int currentSplitIndex = 0;
+
     public HuggingFaceDatasetSource(DatasetSourceConfig config) {
+        this(config, new HuggingFaceDownloader());
+    }
+
+    public HuggingFaceDatasetSource(DatasetSourceConfig config, DataDownloader downloader) {
         this.config = config != null ? config : new DatasetSourceConfig("HUGGING_FACE", "wikitext");
+        this.downloader = downloader != null ? downloader : new HuggingFaceDownloader();
     }
 
     @Override
@@ -73,9 +81,6 @@ public class HuggingFaceDatasetSource implements DatasetSource {
         fetchNextChunk();
     }
 
-    private List<String[]> availableSplits = new ArrayList<>(); // Pairs of [configName, splitName]
-    private int currentSplitIndex = 0;
-
     private boolean isBoundsExceeded() {
         if (config.getMaxSamples() > 0 && stats.getTotalSamplesRead() >= config.getMaxSamples()) {
             return true;
@@ -83,7 +88,6 @@ public class HuggingFaceDatasetSource implements DatasetSource {
         if (config.getMaxTokens() > 0 && stats.getEstimatedTokens() >= config.getMaxTokens()) {
             return true;
         }
-        // Stop only when accepted usable content bytes meet or exceed maxBytes requirement.
         if (config.getMaxBytes() > 0 && stats.getAcceptedBytes() >= config.getMaxBytes()) {
             return true;
         }
@@ -94,28 +98,18 @@ public class HuggingFaceDatasetSource implements DatasetSource {
         if (repo.startsWith("http://") || repo.startsWith("https://")) return;
         try {
             String targetUrl = "https://datasets-server.huggingface.co/splits?dataset=" + repo;
-            URL url = URI.create(targetUrl).toURL();
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("GET");
-            conn.setConnectTimeout(5000);
-            conn.setReadTimeout(10000);
-            conn.setRequestProperty("User-Agent", "EVO-Forge-Client/2.6");
+            DownloadRequest req = new DownloadRequest(targetUrl);
+            DownloadResult res = downloader.download(req);
 
-            if (conn.getResponseCode() == 200) {
-                try (InputStream in = conn.getInputStream();
-                     BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
-                    StringBuilder sb = new StringBuilder();
-                    String line;
-                    while ((line = reader.readLine()) != null) sb.append(line);
-                    JSONObject root = new JSONObject(sb.toString());
-                    if (root.has("splits")) {
-                        JSONArray splits = root.getJSONArray("splits");
-                        for (int i = 0; i < splits.length(); i++) {
-                            JSONObject sObj = splits.getJSONObject(i);
-                            String cfg = sObj.optString("config", "default");
-                            String sp = sObj.optString("split", "train");
-                            addSplitIfAbsent(cfg, sp);
-                        }
+            if (res.isSuccess()) {
+                JSONObject root = new JSONObject(res.getContentText());
+                if (root.has("splits")) {
+                    JSONArray splits = root.getJSONArray("splits");
+                    for (int i = 0; i < splits.length(); i++) {
+                        JSONObject sObj = splits.getJSONObject(i);
+                        String cfg = sObj.optString("config", "default");
+                        String sp = sObj.optString("split", "train");
+                        addSplitIfAbsent(cfg, sp);
                     }
                 }
             }
@@ -177,7 +171,6 @@ public class HuggingFaceDatasetSource implements DatasetSource {
         String configName = config.getConfiguration();
         String split = config.getSplit() != null ? config.getSplit() : "train";
 
-        // Resolve HF dataset aliases for standard repos
         String repo = rawRepo;
         String cfg = (configName != null && !configName.trim().isEmpty()) ? configName : "default";
         if ("wikitext".equalsIgnoreCase(rawRepo)) {
@@ -194,37 +187,19 @@ public class HuggingFaceDatasetSource implements DatasetSource {
             targetUrl = "https://datasets-server.huggingface.co/rows?dataset=" + repo + "&config=" + cfg + "&split=" + split + "&offset=" + currentOffset + "&length=100";
         }
 
-        URL url = URI.create(targetUrl).toURL();
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setRequestMethod("GET");
-        conn.setConnectTimeout(5000);
-        conn.setReadTimeout(10000);
-        conn.setRequestProperty("User-Agent", "EVO-Forge-Client/2.6");
-
-        int status = conn.getResponseCode();
-
-        InputStream stream = (status >= 200 && status < 300) ? conn.getInputStream() : conn.getErrorStream();
-        if (stream == null) {
-            throw new IOException("Failed to fetch Hugging Face dataset from " + targetUrl + ". HTTP Status: " + status + " (" + conn.getResponseMessage() + ")");
+        DownloadRequest req = new DownloadRequest(targetUrl);
+        DownloadResult result;
+        try {
+            result = downloader.download(req);
+        } catch (IOException e) {
+            throw new IOException("Failed to fetch Hugging Face dataset from " + targetUrl + ": " + e.getMessage(), e);
         }
 
-        try (InputStream in = stream;
-             BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
-            if (status < 200 || status >= 300) {
-                StringBuilder errSb = new StringBuilder();
-                String errLine;
-                while ((errLine = reader.readLine()) != null) errSb.append(errLine);
-                String errMsg = errSb.toString();
-                try {
-                    JSONObject errJson = new JSONObject(errMsg);
-                    if (errJson.has("error")) errMsg = errJson.getString("error");
-                } catch (Exception ignored) {}
-                throw new IOException("Hugging Face API Error (HTTP " + status + "): " + errMsg);
-            }
+        String body = result.getContentText();
 
-            if (targetUrl.contains("raw.githubusercontent.com") || targetUrl.endsWith(".txt") || targetUrl.endsWith(".raw")) {
-                // Direct raw text line reader with offset skipping
-                detectedSchemaInfo = "text: string (raw lines)";
+        if (targetUrl.contains("raw.githubusercontent.com") || targetUrl.endsWith(".txt") || targetUrl.endsWith(".raw")) {
+            detectedSchemaInfo = "text: string (raw lines)";
+            try (BufferedReader reader = new BufferedReader(new StringReader(body))) {
                 String line;
                 long skipped = 0;
                 while (skipped < currentOffset && (reader.readLine()) != null) {
@@ -244,14 +219,10 @@ public class HuggingFaceDatasetSource implements DatasetSource {
                 if (count == 0) {
                     endOfStream = true;
                 }
-            } else {
-                StringBuilder sb = new StringBuilder();
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    sb.append(line);
-                }
-
-                JSONObject root = new JSONObject(sb.toString());
+            }
+        } else {
+            try {
+                JSONObject root = new JSONObject(body);
                 if (root.has("error")) {
                     throw new IOException("Hugging Face API returned error: " + root.getString("error"));
                 }
@@ -268,7 +239,6 @@ public class HuggingFaceDatasetSource implements DatasetSource {
                     }
                     currentOffset += rows.length();
                     if (rows.length() == 0) {
-                        // Check if another split is available to advance
                         if (!availableSplits.isEmpty() && currentSplitIndex < availableSplits.size() - 1) {
                             currentSplitIndex++;
                             currentOffset = 0;
@@ -294,10 +264,10 @@ public class HuggingFaceDatasetSource implements DatasetSource {
                         endOfStream = true;
                     }
                 }
+            } catch (Exception e) {
+                if (e instanceof IOException ioEx) throw ioEx;
+                throw new IOException("Error parsing Hugging Face dataset payload: " + e.getMessage(), e);
             }
-        } catch (Exception e) {
-            if (e instanceof IOException ioEx) throw ioEx;
-            throw new IOException("Error parsing Hugging Face dataset payload: " + e.getMessage(), e);
         }
 
         if (currentChunk.isEmpty() && !endOfStream) {
@@ -308,7 +278,7 @@ public class HuggingFaceDatasetSource implements DatasetSource {
     private NormalizedSample extractSampleFromRow(JSONObject row) {
         if (row == null) return null;
 
-        // 1. Check for messages array (e.g., UltraChat, OpenAssistant, ShareGPT, Llama-3-Instruct)
+        // 1. Check for messages array
         if (row.has("messages")) {
             detectedSchemaInfo = "messages: JSONArray[{role, content}]";
             JSONArray msgsArray = row.optJSONArray("messages");
@@ -320,7 +290,7 @@ public class HuggingFaceDatasetSource implements DatasetSource {
             }
         }
 
-        // 2. Check for conversations array (e.g., ShareGPT)
+        // 2. Check for conversations array
         if (row.has("conversations")) {
             detectedSchemaInfo = "conversations: JSONArray[{from/role, value/content}]";
             JSONArray convArray = row.optJSONArray("conversations");
@@ -383,7 +353,7 @@ public class HuggingFaceDatasetSource implements DatasetSource {
             }
         }
 
-        // 7. Chosen (for DPO / preference datasets)
+        // 7. Chosen
         if (row.has("chosen")) {
             detectedSchemaInfo = "chosen: string/object";
             Object chosenObj = row.get("chosen");

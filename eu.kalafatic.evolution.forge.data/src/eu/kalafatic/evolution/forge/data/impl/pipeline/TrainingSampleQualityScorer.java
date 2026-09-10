@@ -1,13 +1,14 @@
 package eu.kalafatic.evolution.forge.data.impl.pipeline;
 
 import eu.kalafatic.evolution.forge.data.api.NormalizedSample;
+import eu.kalafatic.evolution.forge.data.api.processor.DataFilter;
 
 import java.util.Set;
 
 /**
  * Extensible quality scoring stage evaluating text signals (diversity, repetition, language confidence).
  */
-public class TrainingSampleQualityScorer {
+public class TrainingSampleQualityScorer implements DataFilter {
 
     private double minQualityScore = 0.5;
     private Set<String> allowedLanguages = Set.of("en", "cz", "de", "fr", "es");
@@ -19,6 +20,12 @@ public class TrainingSampleQualityScorer {
         this.minQualityScore = minQualityScore;
     }
 
+    @Override
+    public boolean accept(NormalizedSample sample) {
+        return isAcceptable(sample);
+    }
+
+    @Override
     public double calculateQualityScore(NormalizedSample sample) {
         if (sample == null) return 0.0;
 

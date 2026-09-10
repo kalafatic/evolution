@@ -1,11 +1,12 @@
 package eu.kalafatic.evolution.forge.data.impl.pipeline;
 
 import eu.kalafatic.evolution.forge.data.api.NormalizedSample;
+import eu.kalafatic.evolution.forge.data.api.processor.DataNormalizer;
 
 /**
  * Preprocessing and cleaning stage for NormalizedSample records.
  */
-public class DataCleaner {
+public class DataCleaner implements DataNormalizer {
 
     private boolean normalizeWhitespace = true;
     private boolean stripHtml = true;
@@ -19,6 +20,11 @@ public class DataCleaner {
         this.stripHtml = stripHtml;
         this.minCharLength = minCharLength;
         this.maxCharLength = maxCharLength;
+    }
+
+    @Override
+    public NormalizedSample normalize(NormalizedSample sample) {
+        return clean(sample);
     }
 
     public NormalizedSample clean(NormalizedSample sample) {
