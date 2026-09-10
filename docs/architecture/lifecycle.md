@@ -7,7 +7,7 @@
 
 ## 1. Unified Operational State Machine
 
-All long-running execution runs across EVO (Inference, Darwin, Forge, Self-Dev) conform to a standardized lifecycle state machine:
+All long-running execution runs across EVO conform to a standardized lifecycle state machine:
 
 ```text
        ┌──────────┐
@@ -63,12 +63,27 @@ All long-running execution runs across EVO (Inference, Darwin, Forge, Self-Dev) 
 
 ---
 
-## 2. Transition Rules and Authority
+## 2. Subsystem Lifecycle Authority Map
+
+To satisfy **Invariant I1 (Single State Authority)**, every operation has exactly one authoritative lifecycle owner:
+
+| Subsystem / Capability | State Transition Authority | Owned State Objects | Execution / Worker Engine |
+| :--- | :--- | :--- | :--- |
+| **Chat / Inference** | `OrchestratorServiceImpl` | `Session`, `TaskContext` | `OllamaProvider` / `ReferenceEvoInferenceEngine` |
+| **Darwin Evolution** | `IterationManager` | `IterationState`, `Trajectory` | `ADarwinEngine` |
+| **Forge Orchestration** | `ForgeJob` (`eu.kalafatic.evolution.forge.controller.api.ForgeJob`) | `ForgeJob` state machine | `ForgeOrchestratorImpl` |
+| **Dataset Preparation** | `DatasetAcquisitionEngine` | `DatasetSourceStats`, `.evodata` | `DatasetAcquisitionEngine` / `DataCleaner` |
+| **Model Training** | `EvoLlmTrainer` | `TrainingState`, `AdamW` weights | `EvoLlmTrainer` / `EvoLlmModel` |
+| **Model Export** | `OllamaExporter` / `SnapshotControllerImpl` | Export Snapshot metadata | `OllamaExporter` / `GGUFValidator` |
+| **Self-Dev Execution** | `SelfDevSupervisor` | `state.json`, Task state | `ProcessRunner` / `EVOSupervisorControlServer` |
+| **Model Versioning** | `GitVersionControlProvider` | `.evo/` refs, commit lineage | `GitManager` |
+
+---
+
+## 3. Transition Rules and Authority Rules
 
 1. **Single Transition Authority**:
-   - For Forge workflows: `ForgeJob` state machine (`eu.kalafatic.evolution.forge.controller.api.ForgeJob`).
-   - For Darwin iterations: `IterationManager`.
-   - For Self-Dev execution: `SelfDevSupervisor`.
+   - UI components, background threads, and trainers register as observers; they MUST NOT trigger out-of-band state transitions directly.
 2. **Cancellation Propagation**:
    - User cancellation requests propagate down: UI ──► Session ──► Orchestrator ──► Execution Thread/Process.
    - Cancelled runs terminate with state `CANCELLED` (never misreported as `FAILED`).

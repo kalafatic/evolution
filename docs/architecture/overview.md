@@ -14,7 +14,7 @@ EVO is **one unified evolutionary platform**, not a loose collection of disparat
 EVO REQUEST ──► ANALYZE ──► PLAN ──► EXECUTE ──► EVALUATE ──► EVOLVE ──► ARTIFACT
 ```
 
-Specialized workflows realize this sequence:
+Specialized capabilities realize this sequence:
 - **Chat / Inference**: Understand request ──► Infer ──► Evaluate response ──► Return result
 - **Darwin Evolution**: Understand task ──► Generate trajectories ──► Execute variants ──► Evaluate fitness ──► Select winner
 - **Forge / Training**: Analyze sources ──► Prepare `.evodata` ──► Train ──► Evaluate loss & metrics ──► Export `.evo`
@@ -54,7 +54,7 @@ USER / COMMANDER (Eclipse RCP / Web UI)
 
 ## 3. Core Architectural Invariants
 
-1. **I1 — Single State Authority**: Every run has exactly one state transition authority (`IterationManager`, `ForgeJob`, or `SelfDevRun`).
+1. **I1 — Single State Authority**: Every run has exactly one state transition authority (`IterationManager`, `ForgeJob`, or `SelfDevSupervisor`).
 2. **I2 — Decoupled UI Layer**: The UI starts, observes, and displays state but never contains domain orchestration logic.
 3. **I3 — Canonical Artifact Protocols**: `.evodata` represents training data; `.evo` represents trained neural model state.
 4. **I4 — Explicit BaseModel Distinction**: Existing `.evo` artifacts serve as model bases for continued training, never as training data.
