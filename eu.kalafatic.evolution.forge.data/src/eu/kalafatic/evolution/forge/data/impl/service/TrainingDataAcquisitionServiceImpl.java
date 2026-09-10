@@ -1,6 +1,8 @@
 package eu.kalafatic.evolution.forge.data.impl.service;
 
 import eu.kalafatic.evolution.forge.data.api.NormalizedSample;
+import eu.kalafatic.evolution.forge.data.api.discovery.DataSourceCandidate;
+import eu.kalafatic.evolution.forge.data.api.discovery.TrainingDataSourceDiscovery;
 import eu.kalafatic.evolution.forge.data.api.evaluation.TrainingDataPreferenceEvaluation;
 import eu.kalafatic.evolution.forge.data.api.evaluation.TrainingDataPreferenceEvaluator;
 import eu.kalafatic.evolution.forge.data.api.preference.TrainingDataPreferences;
@@ -13,6 +15,7 @@ import eu.kalafatic.evolution.forge.data.api.service.TrainingDataAcquisitionResu
 import eu.kalafatic.evolution.forge.data.api.service.TrainingDataAcquisitionService;
 import eu.kalafatic.evolution.forge.data.api.source.DatasetSource;
 import eu.kalafatic.evolution.forge.data.api.source.DatasetSourceStats;
+import eu.kalafatic.evolution.forge.data.impl.discovery.HuggingFaceSourceDiscovery;
 import eu.kalafatic.evolution.forge.data.impl.evaluation.DefaultPreferenceEvaluator;
 import eu.kalafatic.evolution.forge.data.impl.pipeline.DataCleaner;
 import eu.kalafatic.evolution.forge.data.impl.pipeline.DatasetDeduplicator;
@@ -21,11 +24,14 @@ import eu.kalafatic.evolution.forge.data.impl.processor.DefaultDataSizeAccountin
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Concrete TrainingDataAcquisitionService implementation orchestrating pipeline stages,
  * preference satisfaction evaluation, and adaptive multi-source streaming.
+ * Features smart automatic discovery expansion when initial sources exhaust early before reaching target usable content bytes.
  */
 public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisitionService {
 
@@ -33,20 +39,26 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
     private final DataFilter filter;
     private final DataDeduplicator deduplicator;
     private final TrainingDataPreferenceEvaluator preferenceEvaluator;
+    private final TrainingDataSourceDiscovery discovery;
 
     public TrainingDataAcquisitionServiceImpl() {
-        this(new DataCleaner(), new TrainingSampleQualityScorer(0.5), new DatasetDeduplicator(true), new DefaultPreferenceEvaluator());
+        this(new DataCleaner(), new TrainingSampleQualityScorer(0.5), new DatasetDeduplicator(true), new DefaultPreferenceEvaluator(), new HuggingFaceSourceDiscovery());
     }
 
     public TrainingDataAcquisitionServiceImpl(DataNormalizer normalizer, DataFilter filter, DataDeduplicator deduplicator) {
-        this(normalizer, filter, deduplicator, new DefaultPreferenceEvaluator());
+        this(normalizer, filter, deduplicator, new DefaultPreferenceEvaluator(), new HuggingFaceSourceDiscovery());
     }
 
     public TrainingDataAcquisitionServiceImpl(DataNormalizer normalizer, DataFilter filter, DataDeduplicator deduplicator, TrainingDataPreferenceEvaluator preferenceEvaluator) {
+        this(normalizer, filter, deduplicator, preferenceEvaluator, new HuggingFaceSourceDiscovery());
+    }
+
+    public TrainingDataAcquisitionServiceImpl(DataNormalizer normalizer, DataFilter filter, DataDeduplicator deduplicator, TrainingDataPreferenceEvaluator preferenceEvaluator, TrainingDataSourceDiscovery discovery) {
         this.normalizer = normalizer != null ? normalizer : new DataCleaner();
         this.filter = filter != null ? filter : new TrainingSampleQualityScorer(0.5);
         this.deduplicator = deduplicator != null ? deduplicator : new DatasetDeduplicator(true);
         this.preferenceEvaluator = preferenceEvaluator != null ? preferenceEvaluator : new DefaultPreferenceEvaluator();
+        this.discovery = discovery != null ? discovery : new HuggingFaceSourceDiscovery();
     }
 
     @Override
@@ -69,12 +81,26 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
             });
         }
 
+        long targetUsableBytes = request.getMinimumUsableBytes();
+        double valSplitRatio = request.getValidationSplitRatio();
+
+        // If no sources provided explicitly, use smart discovery to find sources
+        if (sources.isEmpty()) {
+            TrainingDataPreferences prefs = request.getPreferences();
+            if (prefs == null) {
+                prefs = TrainingDataPreferences.builder().minimumUsableBytes(targetUsableBytes).build();
+            }
+            List<DataSourceCandidate> discovered = discovery.discover(prefs);
+            for (DataSourceCandidate cand : discovered) {
+                if (cand.getSource() != null) {
+                    sources.add(cand.getSource());
+                }
+            }
+        }
+
         if (sources.isEmpty()) {
             throw new IllegalArgumentException("Acquisition request must contain at least one training data source.");
         }
-
-        long targetUsableBytes = request.getMinimumUsableBytes();
-        double valSplitRatio = request.getValidationSplitRatio();
 
         DataSizeAccounting accounting = new DefaultDataSizeAccounting();
         DatasetSourceStats stats = accounting.getSnapshot();
@@ -82,10 +108,13 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
 
         List<NormalizedSample> acceptedSamples = new ArrayList<>();
         long accumulatedUsableBytes = 0;
+        Set<String> processedSourceNames = new HashSet<>();
 
-        for (DatasetSource source : sources) {
-            if (targetUsableBytes > 0 && accumulatedUsableBytes >= targetUsableBytes) {
-                break;
+        int sourceIndex = 0;
+        while ((targetUsableBytes <= 0 || accumulatedUsableBytes < targetUsableBytes) && sourceIndex < sources.size()) {
+            DatasetSource source = sources.get(sourceIndex++);
+            if (source == null || !processedSourceNames.add(source.getSourceName())) {
+                continue;
             }
 
             try {
@@ -126,6 +155,22 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
 
                     if (targetUsableBytes > 0 && accumulatedUsableBytes >= targetUsableBytes) {
                         break;
+                    }
+                }
+            }
+
+            // SMART ADAPTIVE FALLBACK EXPANSION:
+            // If current sources exhaust before minimum usable bytes are satisfied, dynamically discover similar datasets!
+            if (targetUsableBytes > 0 && accumulatedUsableBytes < targetUsableBytes && sourceIndex >= sources.size()) {
+                System.out.println("[ACQUISITION SERVICE] Initial sources yielded " + accumulatedUsableBytes + " bytes / " + targetUsableBytes + " bytes. Triggering smart discovery fallback expansion...");
+                TrainingDataPreferences prefs = request.getPreferences();
+                if (prefs == null) {
+                    prefs = TrainingDataPreferences.builder().minimumUsableBytes(targetUsableBytes - accumulatedUsableBytes).build();
+                }
+                List<DataSourceCandidate> expandedCandidates = discovery.discover(prefs);
+                for (DataSourceCandidate cand : expandedCandidates) {
+                    if (cand.getSource() != null && !processedSourceNames.contains(cand.getSource().getSourceName())) {
+                        sources.add(cand.getSource());
                     }
                 }
             }
