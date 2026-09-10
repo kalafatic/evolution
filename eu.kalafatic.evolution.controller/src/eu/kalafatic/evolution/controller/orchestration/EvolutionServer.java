@@ -180,7 +180,7 @@ public class EvolutionServer extends NanoHTTPD {
         try {
             if (!isAuthorized(session)) {
                 // For API calls, return 401.
-                if (uri.startsWith("/server/") || uri.startsWith("/task") || uri.startsWith("/forge/") || uri.startsWith("/mutation") || uri.startsWith("/api/")) {
+                if (uri.startsWith("/server/") || uri.startsWith("/task") || uri.startsWith("/forge/") || uri.startsWith("/develop") || uri.startsWith("/mutation") || uri.startsWith("/api/")) {
                     return newFixedLengthResponse(Response.Status.UNAUTHORIZED, "application/json",
                         new JSONObject().put("error", "Unauthorized").toString());
                 }
@@ -188,7 +188,7 @@ public class EvolutionServer extends NanoHTTPD {
         } catch (Exception e) {
             System.err.println("Auth validation failure: " + e.getMessage());
             // If it's an HTML page request, return a 500 error page instead of redirecting to login
-            if (Method.GET.equals(method) && (uri.endsWith(".html") || uri.startsWith("/experimental/") || "/mutation".equals(uri))) {
+            if (Method.GET.equals(method) && (uri.endsWith(".html") || uri.startsWith("/experimental/") || "/develop".equals(uri) || "/mutation".equals(uri))) {
                 return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, NanoHTTPD.MIME_HTML,
                     "<html><body style='font-family:Tahoma;background:#ECE9D8;padding:50px;'><h1>Security Subsystem Busy</h1><p>The authentication database is currently locked. Please refresh the page in a few seconds.</p></body></html>");
             }
@@ -206,9 +206,15 @@ public class EvolutionServer extends NanoHTTPD {
         try {
             if (Method.GET.equals(method) && ("/".equals(uri) || "/index.html".equals(uri))) {
                 return handleGetIndex();
-            } else if (Method.GET.equals(method) && ("/mutation".equals(uri) || "/experimental/mutation".equals(uri))) {
-                updateSessionWorkflow(session, "MUTATION");
-                return handleGetMutation();
+            } else if (Method.GET.equals(method) && ("/develop".equals(uri) || "/experimental/develop".equals(uri) || "/mutation".equals(uri) || "/experimental/mutation".equals(uri))) {
+                updateSessionWorkflow(session, "DEVELOP");
+                return handleGetDevelopPage();
+            } else if (Method.POST.equals(method) && ("/develop/task".equals(uri) || "/develop/tasks".equals(uri))) {
+                return handleCreateDevelopTask(session);
+            } else if (Method.GET.equals(method) && "/develop/tasks".equals(uri)) {
+                return handleGetDevelopTasks();
+            } else if (uri.startsWith("/develop/tasks/")) {
+                return handleDevelopTaskSubRoute(uri.substring("/develop/tasks/".length()), method, session);
             } else if (Method.POST.equals(method) && "/mutation/session".equals(uri)) {
                 return handleCreateMutationSession(session);
             } else if (Method.GET.equals(method) && "/mutation/sessions".equals(uri)) {
@@ -746,18 +752,167 @@ public class EvolutionServer extends NanoHTTPD {
         }
     }
 
-    private Response handleGetMutation() {
-        try (InputStream is = getClass().getResourceAsStream("mutation.html")) {
-            if (is == null) {
-                return newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "mutation.html not found");
-            }
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
-                String content = reader.lines().collect(Collectors.joining("\n"));
-                return newFixedLengthResponse(Response.Status.OK, "text/html", content);
-            }
+    private Response handleGetDevelopPage() {
+        InputStream is = getClass().getResourceAsStream("develop.html");
+        if (is == null) {
+            is = getClass().getResourceAsStream("mutation.html");
+        }
+        if (is == null) {
+            return newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "develop.html not found");
+        }
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+            String content = reader.lines().collect(Collectors.joining("\n"));
+            return newFixedLengthResponse(Response.Status.OK, "text/html", content);
         } catch (IOException e) {
             return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", e.getMessage());
         }
+    }
+
+    private Response handleCreateDevelopTask(IHTTPSession session) throws IOException, ResponseException {
+        Map<String, String> files = new HashMap<>();
+        session.parseBody(files);
+        String postData = files.get("postData");
+        JSONObject json = (postData != null && !postData.isEmpty()) ? new JSONObject(postData) : new JSONObject();
+
+        String title = json.optString("title", "Autonomous Development Task");
+        String description = json.optString("description", title);
+        String repository = json.optString("repository", json.optString("repoUrl", ""));
+        String branch = json.optString("branch", "main");
+
+        JSONObject permJson = json.optJSONObject("permissions");
+        eu.kalafatic.evolution.controller.orchestration.develop.DevelopPermissions perms =
+            new eu.kalafatic.evolution.controller.orchestration.develop.DevelopPermissions();
+        if (permJson != null) {
+            perms.setRead(permJson.optBoolean("read", true));
+            perms.setWrite(permJson.optBoolean("write", true));
+            perms.setExecute(permJson.optBoolean("execute", true));
+            perms.setPush(permJson.optBoolean("push", false));
+        }
+
+        try {
+            eu.kalafatic.evolution.controller.orchestration.develop.DevelopTask task =
+                eu.kalafatic.evolution.controller.orchestration.develop.DevelopTaskManager.getInstance()
+                    .createTask(title, description, repository, branch, perms);
+
+            eu.kalafatic.evolution.controller.orchestration.develop.DevelopSession devSession =
+                eu.kalafatic.evolution.controller.orchestration.develop.DevelopSessionManager.getInstance()
+                    .createSession(task, json.optString("model", null));
+
+            eu.kalafatic.evolution.controller.orchestration.develop.DevelopTaskManager.getInstance()
+                .registerSessionForTask(task.getId(), devSession);
+
+            JSONObject res = new JSONObject();
+            res.put("id", task.getId());
+            res.put("title", task.getTitle());
+            res.put("status", task.getStatus().name());
+            res.put("sessionId", devSession.getSessionId());
+            res.put("workspaceDir", devSession.getWorkspaceDir().getAbsolutePath());
+
+            return newFixedLengthResponse(Response.Status.OK, "application/json", res.toString());
+        } catch (Exception e) {
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json",
+                new JSONObject().put("error", e.getMessage()).toString());
+        }
+    }
+
+    private Response handleGetDevelopTasks() {
+        Collection<eu.kalafatic.evolution.controller.orchestration.develop.DevelopTask> tasks =
+            eu.kalafatic.evolution.controller.orchestration.develop.DevelopTaskManager.getInstance().getAllTasks();
+
+        JSONArray arr = new JSONArray();
+        for (eu.kalafatic.evolution.controller.orchestration.develop.DevelopTask t : tasks) {
+            JSONObject obj = new JSONObject();
+            obj.put("id", t.getId());
+            obj.put("title", t.getTitle());
+            obj.put("status", t.getStatus().name());
+            obj.put("repository", t.getRepository());
+            obj.put("branch", t.getBranch());
+            obj.put("createdAt", t.getCreatedAt());
+            obj.put("sessionId", t.getSessionId());
+            arr.put(obj);
+        }
+        return newFixedLengthResponse(Response.Status.OK, "application/json", arr.toString());
+    }
+
+    private Response handleDevelopTaskSubRoute(String subPath, Method method, IHTTPSession session) throws IOException, ResponseException {
+        String[] parts = subPath.split("/");
+        String taskId = parts[0];
+        String action = (parts.length > 1) ? parts[1] : "";
+
+        eu.kalafatic.evolution.controller.orchestration.develop.DevelopTask task =
+            eu.kalafatic.evolution.controller.orchestration.develop.DevelopTaskManager.getInstance().getTask(taskId);
+        eu.kalafatic.evolution.controller.orchestration.develop.DevelopSession devSession =
+            eu.kalafatic.evolution.controller.orchestration.develop.DevelopTaskManager.getInstance().getSessionForTask(taskId);
+
+        if (task == null && devSession == null) {
+            return newFixedLengthResponse(Response.Status.NOT_FOUND, "application/json", new JSONObject().put("error", "Task not found").toString());
+        }
+
+        if (action.isEmpty() || "status".equals(action)) {
+            JSONObject res = new JSONObject();
+            res.put("id", task.getId());
+            res.put("status", task.getStatus().name());
+            res.put("title", task.getTitle());
+            res.put("repository", task.getRepository());
+            res.put("branch", task.getBranch());
+            return newFixedLengthResponse(Response.Status.OK, "application/json", res.toString());
+        }
+
+        if ("start".equals(action) && Method.POST.equals(method)) {
+            if (devSession != null) {
+                eu.kalafatic.evolution.controller.orchestration.develop.DevelopTaskManager.getInstance().getExecutor().submit(() -> {
+                    new eu.kalafatic.evolution.controller.orchestration.develop.agent.DevelopAgent().executeTask(devSession);
+                });
+            }
+            return newFixedLengthResponse(Response.Status.OK, "application/json", new JSONObject().put("status", "started").toString());
+        }
+
+        if ("cancel".equals(action) && Method.POST.equals(method)) {
+            eu.kalafatic.evolution.controller.orchestration.develop.DevelopTaskManager.getInstance().cancelTask(taskId);
+            return newFixedLengthResponse(Response.Status.OK, "application/json", new JSONObject().put("status", "cancelled").toString());
+        }
+
+        if ("logs".equals(action)) {
+            List<String> logs = (devSession != null) ? devSession.getLogs() : new ArrayList<>();
+            return newFixedLengthResponse(Response.Status.OK, "application/json", new JSONArray(logs).toString());
+        }
+
+        if ("diff".equals(action)) {
+            try {
+                String diff = (devSession != null) ? devSession.getDiff() : "";
+                List<String> files = (devSession != null) ? devSession.getChangedFiles() : new ArrayList<>();
+                JSONObject res = new JSONObject();
+                res.put("diff", diff);
+                res.put("changedFiles", new JSONArray(files));
+                return newFixedLengthResponse(Response.Status.OK, "application/json", res.toString());
+            } catch (Exception e) {
+                return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", new JSONObject().put("error", e.getMessage()).toString());
+            }
+        }
+
+        if ("commit".equals(action) && Method.POST.equals(method)) {
+            Map<String, String> body = new HashMap<>();
+            session.parseBody(body);
+            JSONObject json = new JSONObject(body.getOrDefault("postData", "{}"));
+            String msg = json.optString("message", "develop: update");
+            try {
+                if (devSession != null) devSession.commit(msg);
+                return newFixedLengthResponse(Response.Status.OK, "application/json", new JSONObject().put("status", "ok").put("message", "Committed").toString());
+            } catch (Exception e) {
+                return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", new JSONObject().put("error", e.getMessage()).toString());
+            }
+        }
+
+        if ("push".equals(action) && Method.POST.equals(method)) {
+            try {
+                if (devSession != null) devSession.push();
+                return newFixedLengthResponse(Response.Status.OK, "application/json", new JSONObject().put("status", "ok").put("message", "Pushed").toString());
+            } catch (Exception e) {
+                return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json", new JSONObject().put("error", e.getMessage()).toString());
+            }
+        }
+
+        return newFixedLengthResponse(Response.Status.NOT_FOUND, "application/json", new JSONObject().put("error", "Unknown subroute").toString());
     }
 
     private Response handleCreateMutationSession(IHTTPSession session) throws IOException, ResponseException {
