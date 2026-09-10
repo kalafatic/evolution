@@ -1659,49 +1659,43 @@ public class EvolutionServer extends NanoHTTPD {
         boolean sourceExhausted = false;
 
         try {
-            eu.kalafatic.evolution.forge.data.api.source.DatasetSource source =
+            List<eu.kalafatic.evolution.forge.data.api.source.DatasetSource> sources = new ArrayList<>();
+            eu.kalafatic.evolution.forge.data.api.source.DatasetSource primarySource =
                 "HUGGING_FACE".equalsIgnoreCase(sourceType) ? new HuggingFaceDatasetSource(config) :
                 ("EVO_CODEBASE".equalsIgnoreCase(sourceType) ? new eu.kalafatic.evolution.forge.data.impl.source.EvoCodebaseDatasetSource(config) : new LocalDatasetSource(config));
 
+            sources.add(primarySource);
+
             eu.kalafatic.evolution.forge.data.api.source.DatasetSourceStats preparationStats;
 
-            try (source) {
-                if (source instanceof HuggingFaceDatasetSource hfSource) {
-                    try {
-                        hfSource.initialize();
-                        logBuf.append("[SCHEMA] Detected Hugging Face Schema: ").append(hfSource.getDetectedSchemaInfo()).append("\n");
-                    } catch (Exception ignored) {}
-                }
+            eu.kalafatic.evolution.forge.data.impl.pipeline.DatasetAcquisitionEngine acquisitionEngine =
+                new eu.kalafatic.evolution.forge.data.impl.pipeline.DatasetAcquisitionEngine(cleaner, scorer, deduplicator);
 
-                eu.kalafatic.evolution.forge.data.impl.pipeline.DatasetAcquisitionEngine acquisitionEngine =
-                    new eu.kalafatic.evolution.forge.data.impl.pipeline.DatasetAcquisitionEngine(cleaner, scorer, deduplicator);
+            eu.kalafatic.evolution.forge.data.impl.pipeline.DatasetAcquisitionEngine.AcquisitionResult acqResult =
+                acquisitionEngine.acquireDataset(sources, targetUsableBytes, valSplitRatio);
 
-                eu.kalafatic.evolution.forge.data.impl.pipeline.DatasetAcquisitionEngine.AcquisitionResult acqResult =
-                    acquisitionEngine.acquireDataset(List.of(source), targetUsableBytes, valSplitRatio);
+            acceptedSamples = acqResult.getAcceptedSamples();
+            totalAcceptedBytes = acqResult.getUsableContentBytes();
+            sourceExhausted = acqResult.isSourceExhausted();
 
-                acceptedSamples = acqResult.getAcceptedSamples();
-                totalAcceptedBytes = acqResult.getUsableContentBytes();
-                sourceExhausted = acqResult.isSourceExhausted();
+            preparationStats = acqResult.getGlobalStats();
+            totalRawBytes = preparationStats.getDownloadedBytes();
+            totalRejectedBytes = preparationStats.getRejectedBytes();
+            totalDuplicateBytes = preparationStats.getDuplicateBytes();
 
-                preparationStats = acqResult.getGlobalStats();
-                totalRawBytes = preparationStats.getDownloadedBytes();
-                totalRejectedBytes = preparationStats.getRejectedBytes();
-                totalDuplicateBytes = preparationStats.getDuplicateBytes();
-
-                if (sourceExhausted) {
-                    logBuf.append(String.format("[WARNING] Source exhausted before target reached. Requested minimum: %d bytes (%.2f MB), Usable content: %d bytes (%.2f MB), Shortfall: %d bytes (%.2f MB), Coverage: %.2f%%\n",
-                            targetUsableBytes, targetUsableBytes / (1024.0 * 1024.0),
-                            totalAcceptedBytes, totalAcceptedBytes / (1024.0 * 1024.0),
-                            acqResult.getShortfallBytes(), acqResult.getShortfallBytes() / (1024.0 * 1024.0),
-                            acqResult.getCoveragePercent()));
-                } else {
-                    logBuf.append("[TARGET REACHED] Target usable minimum bytes reached cleanly. Total accepted: ")
-                          .append(totalAcceptedBytes).append(" bytes.\n");
-                }
-
-                logBuf.append("[STREAM] Read ").append(preparationStats.getTotalSamplesRead()).append(" items, ").append(totalRawBytes).append(" raw bytes.\n");
-                logBuf.append("[STREAM] Accepted ").append(acceptedSamples.size()).append(" clean items (").append(totalAcceptedBytes).append(" bytes) after deduplication & quality scoring.\n");
+            if (sourceExhausted) {
+                logBuf.append(String.format("[WARNING] Source exhausted before target reached. Requested minimum: %d bytes (%.2f MB), Usable content: %d bytes (%.2f MB), Shortfall: %d bytes (%.2f MB), Coverage: %.2f%%\n",
+                        targetUsableBytes, targetUsableBytes / (1024.0 * 1024.0),
+                        totalAcceptedBytes, totalAcceptedBytes / (1024.0 * 1024.0),
+                        acqResult.getShortfallBytes(), acqResult.getShortfallBytes() / (1024.0 * 1024.0),
+                        acqResult.getCoveragePercent()));
+            } else {
+                logBuf.append("[TARGET REACHED] Target usable minimum bytes reached cleanly. Total accepted: ")
+                      .append(totalAcceptedBytes).append(" bytes.\n");
             }
+
+            logBuf.append("[STREAM] Read ").append(preparationStats.getTotalSamplesRead()).append(" items, ").append(totalRawBytes).append(" raw bytes.\n");
+            logBuf.append("[STREAM] Accepted ").append(acceptedSamples.size()).append(" clean items (").append(totalAcceptedBytes).append(" bytes) after deduplication & quality scoring.\n");
 
             List<NormalizedSample> sampled = acceptedSamples;
 

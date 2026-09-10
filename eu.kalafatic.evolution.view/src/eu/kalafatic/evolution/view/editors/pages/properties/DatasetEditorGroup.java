@@ -365,8 +365,26 @@ public class DatasetEditorGroup extends AEvoGroup {
                 String res = postHttp("http://localhost:" + port + "/forge/dataset/prepare", req.toString());
                 Display.getDefault().asyncExec(() -> {
                     if (!reportArea.isDisposed()) {
-                        reportArea.setText("DATASET PREPARATION COMPLETE:\n" + res);
-                        MessageDialog.openInformation(group.getShell(), "Dataset Prepared", "EVO Training Dataset artifact built successfully!");
+                        reportArea.setText("DATASET PREPARATION RESULT:\n" + res);
+                        try {
+                            org.json.JSONObject resJson = new org.json.JSONObject(res);
+                            String status = resJson.optString("status", "READY");
+                            boolean sourceExhausted = resJson.optBoolean("sourceExhausted", false);
+                            long requestedBytes = resJson.optLong("requestedUsableBytes", 0);
+                            long actualBytes = resJson.optLong("actualUsableBytes", 0);
+
+                            if ("INSUFFICIENT_SOURCE_DATA".equalsIgnoreCase(status) || (sourceExhausted && actualBytes < requestedBytes)) {
+                                double reqMb = requestedBytes / (1024.0 * 1024.0);
+                                double actMb = actualBytes / (1024.0 * 1024.0);
+                                MessageDialog.openWarning(group.getShell(), "Source Data Shortfall Warning",
+                                    String.format("Dataset source was exhausted before target size was reached.\n\nRequested Target: %.2f MB\nUsable Content Collected: %.2f MB\nShortfall: %.2f MB\nStatus: %s",
+                                        reqMb, actMb, Math.max(0, reqMb - actMb), status));
+                            } else {
+                                MessageDialog.openInformation(group.getShell(), "Dataset Prepared", "EVO Training Dataset artifact built successfully!");
+                            }
+                        } catch (Exception ex) {
+                            MessageDialog.openInformation(group.getShell(), "Dataset Prepared", "EVO Training Dataset artifact built successfully!");
+                        }
                     }
                 });
             } catch (Exception ex) {

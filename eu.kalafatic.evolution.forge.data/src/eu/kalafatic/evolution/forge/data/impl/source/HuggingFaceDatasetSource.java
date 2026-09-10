@@ -130,6 +130,29 @@ public class HuggingFaceDatasetSource implements DatasetSource {
                 addSplitIfAbsent(cfg, "test");
             }
         }
+
+        // Prioritize train splits over validation/test and larger configs (e.g., 103 over 2)
+        availableSplits.sort((a, b) -> {
+            String cfgA = a[0];
+            String spA = a[1];
+            String cfgB = b[0];
+            String spB = b[1];
+
+            boolean isTrainA = "train".equalsIgnoreCase(spA);
+            boolean isTrainB = "train".equalsIgnoreCase(spB);
+
+            if (isTrainA != isTrainB) {
+                return isTrainA ? -1 : 1;
+            }
+
+            boolean is103A = cfgA.contains("103");
+            boolean is103B = cfgB.contains("103");
+            if (is103A != is103B) {
+                return is103A ? -1 : 1;
+            }
+
+            return 0;
+        });
     }
 
     private void addSplitIfAbsent(String cfg, String sp) {
@@ -159,8 +182,8 @@ public class HuggingFaceDatasetSource implements DatasetSource {
         String cfg = (configName != null && !configName.trim().isEmpty()) ? configName : "default";
         if ("wikitext".equalsIgnoreCase(rawRepo)) {
             repo = "Salesforce/wikitext";
-            if ("default".equals(cfg) || "train".equals(cfg)) {
-                cfg = "wikitext-2-v1";
+            if ("default".equalsIgnoreCase(cfg) || "train".equalsIgnoreCase(cfg) || "wikitext".equalsIgnoreCase(cfg)) {
+                cfg = "wikitext-103-v1";
             }
         }
 
