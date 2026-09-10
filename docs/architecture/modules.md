@@ -22,7 +22,7 @@ evo
 │   └── eu.kalafatic.evolution.forge.agent.api
 │
 ├── evolution            # Darwin trajectory evaluation, variant search, fitness scoring
-│   ├── eu.kalafatic.evolution.controller (DarwinEngine, IterationManager)
+│   ├── eu.kalafatic.evolution.controller (ADarwinEngine, IterationManager)
 │   └── eu.kalafatic.evolution.forge.observability
 │
 ├── forge                # Source analysis, dataset preparation, neural model training
