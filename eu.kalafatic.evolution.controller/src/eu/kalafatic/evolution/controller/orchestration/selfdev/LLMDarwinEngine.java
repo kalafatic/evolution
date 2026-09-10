@@ -561,15 +561,15 @@ public class LLMDarwinEngine extends ADarwinEngine {
 		StringBuilder corpusBuilder = new StringBuilder();
 		if (acceptedRecords.isEmpty() || !assistanceQa) {
 			context.log(
-					"[FORGE] No accepted QA training records or assistance disabled. Falling back to default raw Markdown scan...");
-			int mdFilesFound = 0;
+					"[FORGE] No accepted QA training records or assistance disabled. Falling back to default raw content scan...");
+			int filesFound = 0;
 			for (KnowledgeUnit unit : knowledgeUnits) {
-				if ("MARKDOWN".equals(unit.getFileType())) {
+				if (unit.getContent() != null && !unit.getContent().trim().isEmpty()) {
 					appendBounded(corpusBuilder, unit.getContent(), MAX_CORPUS_CHARS);
-					mdFilesFound++;
+					filesFound++;
 				}
 			}
-			if (corpusBuilder.length() == 0 || mdFilesFound == 0) {
+			if (corpusBuilder.length() == 0 || filesFound == 0) {
 				// Fallback to Repo Docs/
 				File fallbackDocs = new File(context.getProjectRoot(), "docs");
 				if (fallbackDocs.exists() && fallbackDocs.isDirectory()) {
@@ -578,7 +578,7 @@ public class LLMDarwinEngine extends ADarwinEngine {
 								.sorted().limit(MAX_CORPUS_FILES).collect(Collectors.toList());
 						for (Path f : files) {
 							appendBounded(corpusBuilder, Files.readString(f), MAX_CORPUS_CHARS);
-							mdFilesFound++;
+							filesFound++;
 						}
 					}
 				}
