@@ -11,6 +11,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import eu.kalafatic.evolution.forge.data.api.NormalizedSample;
+import eu.kalafatic.evolution.forge.data.api.artifact.EvoDatasetArtifact;
+
 public class SourceAnalysisAgent {
     private final Set<String> processedHashes = new HashSet<>();
 
@@ -21,8 +24,15 @@ public class SourceAnalysisAgent {
                 if (!Files.exists(file) || Files.isDirectory(file)) {
                     continue;
                 }
-                String content = Files.readString(file, StandardCharsets.UTF_8);
-                if (content.trim().isEmpty()) {
+                String fileType = identifyFileType(file);
+                String content;
+                if ("EVODATA".equals(fileType)) {
+                    content = readEvodataContent(file);
+                } else {
+                    content = Files.readString(file, StandardCharsets.UTF_8);
+                }
+
+                if (content == null || content.trim().isEmpty()) {
                     continue;
                 }
 
@@ -34,8 +44,14 @@ public class SourceAnalysisAgent {
                 }
                 processedHashes.add(hash);
 
-                String relativePath = rootPath.relativize(file).toString().replace("\\", "/");
-                String fileType = identifyFileType(file);
+                String relativePath;
+                try {
+                    relativePath = (rootPath != null && file.startsWith(rootPath))
+                            ? rootPath.relativize(file).toString().replace("\\", "/")
+                            : file.getFileName().toString();
+                } catch (Exception e) {
+                    relativePath = file.getFileName().toString();
+                }
 
                 KnowledgeUnit unit = new KnowledgeUnit(relativePath, fileType, content, hash);
                 unit.getMetadata().put("fileName", file.getFileName().toString());
@@ -45,14 +61,45 @@ public class SourceAnalysisAgent {
                 results.add(unit);
             } catch (IOException e) {
                 System.err.println("[SourceAnalysisAgent] Error reading file: " + file + " - " + e.getMessage());
+            } catch (Exception e) {
+                System.err.println("[SourceAnalysisAgent] Error processing file: " + file + " - " + e.getMessage());
             }
         }
         return results;
     }
 
+    private String readEvodataContent(Path file) {
+        try {
+            EvoDatasetArtifact artifact = EvoDatasetArtifact.load(file.toFile());
+            StringBuilder sb = new StringBuilder();
+            if (artifact.getTrainSamples() != null) {
+                for (NormalizedSample sample : artifact.getTrainSamples()) {
+                    String fullText = sample.toFullText();
+                    if (fullText != null && !fullText.trim().isEmpty()) {
+                        sb.append(fullText).append("\n\n");
+                    }
+                }
+            }
+            if (artifact.getValSamples() != null) {
+                for (NormalizedSample sample : artifact.getValSamples()) {
+                    String fullText = sample.toFullText();
+                    if (fullText != null && !fullText.trim().isEmpty()) {
+                        sb.append(fullText).append("\n\n");
+                    }
+                }
+            }
+            return sb.toString();
+        } catch (Exception e) {
+            System.err.println("[SourceAnalysisAgent] Error loading .evodata artifact from " + file + ": " + e.getMessage());
+            return "";
+        }
+    }
+
     public String identifyFileType(Path path) {
         String name = path.getFileName().toString().toLowerCase();
-        if (name.endsWith(".md")) {
+        if (name.endsWith(".evodata")) {
+            return "EVODATA";
+        } else if (name.endsWith(".md")) {
             return "MARKDOWN";
         } else if (name.endsWith(".java")) {
             return "JAVA";

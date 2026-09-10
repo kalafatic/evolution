@@ -10,6 +10,10 @@ import org.junit.Before;
 import org.junit.Test;
 
 import eu.kalafatic.evolution.forge.controller.service.impl.agents.*;
+import eu.kalafatic.evolution.forge.data.api.NormalizedSample;
+import eu.kalafatic.evolution.forge.data.api.artifact.EvoDatasetArtifact;
+import eu.kalafatic.evolution.forge.data.api.source.DatasetSourceConfig;
+import eu.kalafatic.evolution.forge.data.api.source.DatasetSourceStats;
 
 public class DarwinDataPrepTest {
 
@@ -183,5 +187,31 @@ public class DarwinDataPrepTest {
             assertFalse(valUnits.contains(u));
             assertFalse(evalUnits.contains(u));
         }
+    }
+
+    @Test
+    public void testEvodataSourceAnalysis() throws Exception {
+        Path evodataPath = tempDir.resolve("wikitext-20260910.evodata");
+        EvoDatasetArtifact artifact = new EvoDatasetArtifact(evodataPath.toFile());
+
+        List<NormalizedSample> samples = new ArrayList<>();
+        samples.add(NormalizedSample.createTextSample("Wikitext training content sample 1 for EVO dataset.", "wikitext.evodata"));
+        samples.add(NormalizedSample.createTextSample("Wikitext training content sample 2 for EVO dataset.", "wikitext.evodata"));
+
+        DatasetSourceConfig config = new DatasetSourceConfig("LOCAL", "wikitext");
+        DatasetSourceStats stats = new DatasetSourceStats();
+        stats.setAcceptedBytes(500);
+
+        artifact.save(samples, config, stats, 0.1);
+        assertTrue("Saved .evodata file must exist on disk", Files.exists(evodataPath));
+
+        SourceAnalysisAgent agent = new SourceAnalysisAgent();
+        List<KnowledgeUnit> units = agent.analyze(List.of(evodataPath), tempDir);
+
+        assertEquals("Should extract 1 knowledge unit for .evodata file", 1, units.size());
+        KnowledgeUnit unit = units.get(0);
+        assertEquals("EVODATA", unit.getFileType());
+        assertTrue("Knowledge unit content must contain sample text from .evodata",
+                unit.getContent().contains("Wikitext training content sample 1"));
     }
 }
