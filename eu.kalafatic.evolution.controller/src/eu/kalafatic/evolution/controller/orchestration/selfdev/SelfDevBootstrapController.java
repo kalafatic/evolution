@@ -2,6 +2,8 @@ package eu.kalafatic.evolution.controller.orchestration.selfdev;
 
 import java.io.File;
 
+import org.json.JSONObject;
+
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 
 /**
@@ -38,6 +40,13 @@ public class SelfDevBootstrapController {
 
     public boolean isRunning() {
         return orchestrator.isRunning();
+    }
+
+    public JSONObject getStatus() {
+        JSONObject json = new JSONObject();
+        json.put("running", isRunning());
+        json.put("phase", isRunning() ? "RUNNING" : "STOPPED");
+        return json;
     }
 
     public String check(String checkType) {
