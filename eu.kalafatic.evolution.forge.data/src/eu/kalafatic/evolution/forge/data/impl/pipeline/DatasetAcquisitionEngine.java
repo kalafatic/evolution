@@ -72,7 +72,13 @@ public class DatasetAcquisitionEngine {
                 break;
             }
 
-            source.initialize();
+            try {
+                source.initialize();
+            } catch (Exception initEx) {
+                System.err.println("[ACQUISITION ENGINE] Failed to initialize source " + source.getSourceName() + ": " + initEx.getMessage());
+                continue;
+            }
+
             try (source) {
                 while (accumulatedUsableBytes < targetUsableBytes && source.hasNext()) {
                     NormalizedSample s = source.next();
