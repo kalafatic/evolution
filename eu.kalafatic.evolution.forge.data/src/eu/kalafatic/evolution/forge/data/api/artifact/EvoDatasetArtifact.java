@@ -31,6 +31,8 @@ public class EvoDatasetArtifact {
         VALIDATING,
         FINALIZING,
         READY,
+        INSUFFICIENT_SOURCE_DATA,
+        CANCELLED,
         FAILED,
         CORRUPTED
     }
@@ -81,7 +83,14 @@ public class EvoDatasetArtifact {
             }
         }
 
-        this.status = Status.VALIDATING;
+        // Determine final status before serializing metadata and report
+        if (this.status != Status.CANCELLED && this.status != Status.FAILED) {
+            if (stats != null && stats.getRequestedUsableBytes() > 0 && stats.getAcceptedBytes() < stats.getRequestedUsableBytes()) {
+                this.status = Status.INSUFFICIENT_SOURCE_DATA;
+            } else {
+                this.status = Status.READY;
+            }
+        }
 
         // Write to temporary archive first (transactional semantics)
         File tempFile = new File(artifactFile.getAbsolutePath() + ".tmp");
@@ -114,8 +123,6 @@ public class EvoDatasetArtifact {
             zos.closeEntry();
         }
 
-        this.status = Status.FINALIZING;
-
         if (artifactFile.exists()) {
             artifactFile.delete();
         }
@@ -123,10 +130,8 @@ public class EvoDatasetArtifact {
             java.nio.file.Files.move(tempFile.toPath(), artifactFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
         }
 
-        // Post-serialization structural and semantic validation before marking READY
+        // Post-serialization structural and semantic validation
         validateArtifact(artifactFile);
-
-        this.status = Status.READY;
     }
 
     private void validateArtifact(File file) throws Exception {
@@ -153,12 +158,35 @@ public class EvoDatasetArtifact {
         EvoDatasetArtifact artifact = new EvoDatasetArtifact(file);
         artifact.trainSamples.clear();
         artifact.valSamples.clear();
+        Status loadedStatus = null;
 
         try (ZipInputStream zis = new ZipInputStream(new FileInputStream(file), StandardCharsets.UTF_8)) {
             ZipEntry entry;
             while ((entry = zis.getNextEntry()) != null) {
                 String name = entry.getName();
-                if ("data.jsonl".equals(name) || "val_data.jsonl".equals(name)) {
+                if ("metadata.json".equals(name)) {
+                    byte[] entryBytes = zis.readAllBytes();
+                    String metaStr = new String(entryBytes, StandardCharsets.UTF_8);
+                    try {
+                        JSONObject metaJson = new JSONObject(metaStr);
+                        String statusStr = metaJson.optString("status", null);
+                        if (statusStr != null) {
+                            try {
+                                loadedStatus = Status.valueOf(statusStr);
+                            } catch (Exception ignored) {}
+                        }
+                        artifact.stats = new DatasetSourceStats();
+                        artifact.stats.setRequestedUsableBytes(metaJson.optLong("requestedUsableBytes", 0));
+                        artifact.stats.setAcceptedBytes(metaJson.optLong("actualUsableBytes", metaJson.optLong("acceptedBytes", 0)));
+                        artifact.stats.setDownloadedBytes(metaJson.optLong("downloadedBytes", 0));
+                        artifact.stats.setExtractedBytes(metaJson.optLong("extractedBytes", 0));
+                        artifact.stats.setRawContentBytes(metaJson.optLong("rawContentBytes", 0));
+                        artifact.stats.setRejectedBytes(metaJson.optLong("rejectedBytes", 0));
+                        artifact.stats.setDuplicateBytes(metaJson.optLong("duplicateBytes", 0));
+                        artifact.stats.setTrainingBytes(metaJson.optLong("trainingBytes", 0));
+                        artifact.stats.setValidationBytes(metaJson.optLong("validationBytes", 0));
+                    } catch (Exception ignored) {}
+                } else if ("data.jsonl".equals(name) || "val_data.jsonl".equals(name)) {
                     boolean isVal = "val_data.jsonl".equals(name);
                     byte[] entryBytes = zis.readAllBytes();
                     String content = new String(entryBytes, StandardCharsets.UTF_8);
@@ -196,7 +224,12 @@ public class EvoDatasetArtifact {
                 zis.closeEntry();
             }
         }
-        artifact.status = Status.READY;
+
+        if (loadedStatus != null) {
+            artifact.status = loadedStatus;
+        } else {
+            artifact.status = Status.READY;
+        }
         return artifact;
     }
 
@@ -271,6 +304,7 @@ public class EvoDatasetArtifact {
     public File getArtifactFile() { return artifactFile; }
     public String getName() { return name; }
     public Status getStatus() { return status; }
+    public void setStatus(Status status) { this.status = status; }
     public List<NormalizedSample> getTrainSamples() { return trainSamples; }
     public List<NormalizedSample> getValSamples() { return valSamples; }
     public long getTotalTrainTokens() { return totalTrainTokens; }

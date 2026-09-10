@@ -17,17 +17,33 @@ import java.util.List;
 public class DatasetAcquisitionEngine {
 
     public static class AcquisitionResult {
+        public enum Status {
+            READY,
+            INSUFFICIENT_SOURCE_DATA,
+            CANCELLED,
+            FAILED
+        }
+
         private final List<NormalizedSample> acceptedSamples = new ArrayList<>();
         private final DatasetSourceStats globalStats = new DatasetSourceStats();
         private boolean targetReached = false;
         private boolean sourceExhausted = false;
         private double coveragePercent = 100.0;
+        private long requestedMinimumUsableBytes = 0;
+        private long usableContentBytes = 0;
+        private long shortfallBytes = 0;
+        private Status status = Status.READY;
 
         public List<NormalizedSample> getAcceptedSamples() { return acceptedSamples; }
         public DatasetSourceStats getGlobalStats() { return globalStats; }
         public boolean isTargetReached() { return targetReached; }
         public boolean isSourceExhausted() { return sourceExhausted; }
         public double getCoveragePercent() { return coveragePercent; }
+        public long getRequestedMinimumUsableBytes() { return requestedMinimumUsableBytes; }
+        public long getUsableContentBytes() { return usableContentBytes; }
+        public long getShortfallBytes() { return shortfallBytes; }
+        public Status getStatus() { return status; }
+        public void setStatus(Status status) { this.status = status; }
     }
 
     private final DataCleaner cleaner;
@@ -99,17 +115,25 @@ public class DatasetAcquisitionEngine {
             }
         }
 
+        result.requestedMinimumUsableBytes = targetUsableBytes;
+        result.usableContentBytes = accumulatedUsableBytes;
+
         if (accumulatedUsableBytes < targetUsableBytes) {
             result.sourceExhausted = true;
             result.targetReached = false;
+            result.status = AcquisitionResult.Status.INSUFFICIENT_SOURCE_DATA;
+            result.shortfallBytes = targetUsableBytes - accumulatedUsableBytes;
             result.coveragePercent = (accumulatedUsableBytes * 100.0) / Math.max(1, targetUsableBytes);
         } else {
             result.targetReached = true;
+            result.status = AcquisitionResult.Status.READY;
+            result.shortfallBytes = 0;
             result.coveragePercent = 100.0;
         }
 
         long valBytes = (long) (accumulatedUsableBytes * valSplitRatio);
         long trainBytes = accumulatedUsableBytes - valBytes;
+        stats.setAcceptedBytes(accumulatedUsableBytes);
         stats.setTrainingBytes(trainBytes);
         stats.setValidationBytes(valBytes);
 

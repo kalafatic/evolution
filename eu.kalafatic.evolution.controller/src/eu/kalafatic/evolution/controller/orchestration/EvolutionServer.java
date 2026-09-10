@@ -1663,59 +1663,43 @@ public class EvolutionServer extends NanoHTTPD {
                 "HUGGING_FACE".equalsIgnoreCase(sourceType) ? new HuggingFaceDatasetSource(config) :
                 ("EVO_CODEBASE".equalsIgnoreCase(sourceType) ? new eu.kalafatic.evolution.forge.data.impl.source.EvoCodebaseDatasetSource(config) : new LocalDatasetSource(config));
 
+            eu.kalafatic.evolution.forge.data.api.source.DatasetSourceStats preparationStats;
+
             try (source) {
-                source.initialize();
                 if (source instanceof HuggingFaceDatasetSource hfSource) {
-                    logBuf.append("[SCHEMA] Detected Hugging Face Schema: ").append(hfSource.getDetectedSchemaInfo()).append("\n");
+                    try {
+                        hfSource.initialize();
+                        logBuf.append("[SCHEMA] Detected Hugging Face Schema: ").append(hfSource.getDetectedSchemaInfo()).append("\n");
+                    } catch (Exception ignored) {}
                 }
 
-                while (totalAcceptedBytes < targetUsableBytes && source.hasNext()) {
-                    NormalizedSample s = source.next();
-                    byte[] rawBytes = s.toFullText().getBytes(StandardCharsets.UTF_8);
-                    long sRawLen = rawBytes.length;
-                    totalRawBytes += sRawLen;
+                eu.kalafatic.evolution.forge.data.impl.pipeline.DatasetAcquisitionEngine acquisitionEngine =
+                    new eu.kalafatic.evolution.forge.data.impl.pipeline.DatasetAcquisitionEngine(cleaner, scorer, deduplicator);
 
-                    NormalizedSample clean = cleaner.clean(s);
-                    if (clean == null || !scorer.isAcceptable(clean)) {
-                        totalRejectedBytes += sRawLen;
-                        source.getStats().incrementRejected();
-                        source.getStats().addRejectedBytes(sRawLen);
-                        continue;
-                    }
+                eu.kalafatic.evolution.forge.data.impl.pipeline.DatasetAcquisitionEngine.AcquisitionResult acqResult =
+                    acquisitionEngine.acquireDataset(List.of(source), targetUsableBytes, valSplitRatio);
 
-                    if (deduplicator.isDuplicate(clean)) {
-                        totalDuplicateBytes += sRawLen;
-                        source.getStats().incrementExactDuplicates();
-                        source.getStats().addDuplicateBytes(sRawLen);
-                        continue;
-                    }
+                acceptedSamples = acqResult.getAcceptedSamples();
+                totalAcceptedBytes = acqResult.getUsableContentBytes();
+                sourceExhausted = acqResult.isSourceExhausted();
 
-                    deduplicator.register(clean);
-                    byte[] cleanBytes = clean.toFullText().getBytes(StandardCharsets.UTF_8);
-                    long sampleLen = cleanBytes.length;
+                preparationStats = acqResult.getGlobalStats();
+                totalRawBytes = preparationStats.getDownloadedBytes();
+                totalRejectedBytes = preparationStats.getRejectedBytes();
+                totalDuplicateBytes = preparationStats.getDuplicateBytes();
 
-                    acceptedSamples.add(clean);
-                    totalAcceptedBytes += sampleLen;
-                    source.getStats().incrementAccepted();
-                    source.getStats().addAcceptedBytes(sampleLen);
-
-                    // Overshoot control: accept boundary-crossing record cleanly and log
-                    if (totalAcceptedBytes >= targetUsableBytes) {
-                        long overshoot = totalAcceptedBytes - targetUsableBytes;
-                        logBuf.append("[TARGET REACHED] Target usable bytes reached. Total accepted: ").append(totalAcceptedBytes)
-                              .append(" bytes (Overshoot: ").append(overshoot).append(" bytes).\n");
-                        break;
-                    }
+                if (sourceExhausted) {
+                    logBuf.append(String.format("[WARNING] Source exhausted before target reached. Requested minimum: %d bytes (%.2f MB), Usable content: %d bytes (%.2f MB), Shortfall: %d bytes (%.2f MB), Coverage: %.2f%%\n",
+                            targetUsableBytes, targetUsableBytes / (1024.0 * 1024.0),
+                            totalAcceptedBytes, totalAcceptedBytes / (1024.0 * 1024.0),
+                            acqResult.getShortfallBytes(), acqResult.getShortfallBytes() / (1024.0 * 1024.0),
+                            acqResult.getCoveragePercent()));
+                } else {
+                    logBuf.append("[TARGET REACHED] Target usable minimum bytes reached cleanly. Total accepted: ")
+                          .append(totalAcceptedBytes).append(" bytes.\n");
                 }
 
-                if (totalAcceptedBytes < targetUsableBytes) {
-                    sourceExhausted = true;
-                    double coverage = (totalAcceptedBytes * 100.0) / Math.max(1, targetUsableBytes);
-                    logBuf.append(String.format("[WARNING] Source exhausted before target reached. Collected: %d bytes / Target: %d bytes (Coverage: %.2f%%).\n",
-                            totalAcceptedBytes, targetUsableBytes, coverage));
-                }
-
-                logBuf.append("[STREAM] Read ").append(source.getStats().getTotalSamplesRead()).append(" items, ").append(totalRawBytes).append(" raw bytes.\n");
+                logBuf.append("[STREAM] Read ").append(preparationStats.getTotalSamplesRead()).append(" items, ").append(totalRawBytes).append(" raw bytes.\n");
                 logBuf.append("[STREAM] Accepted ").append(acceptedSamples.size()).append(" clean items (").append(totalAcceptedBytes).append(" bytes) after deduplication & quality scoring.\n");
             }
 
@@ -1754,7 +1738,6 @@ public class EvolutionServer extends NanoHTTPD {
             }
             logBuf.append("[DOWNLOAD] Saved raw downloaded dataset file: ").append(rawOutputFile.getAbsolutePath()).append("\n");
 
-            eu.kalafatic.evolution.forge.data.api.source.DatasetSourceStats preparationStats = new eu.kalafatic.evolution.forge.data.api.source.DatasetSourceStats();
             preparationStats.setRequestedUsableBytes(targetUsableBytes);
             preparationStats.setAcceptedBytes(totalAcceptedBytes);
             preparationStats.setDownloadedBytes(totalRawBytes);
