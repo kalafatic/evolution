@@ -53,6 +53,9 @@ public class SelfEvoForgingServiceImpl implements SelfEvoForgingService {
 
                 ForgeJob job = new ForgeJob(sessionId);
 
+                long minBytes = uiState.optLong("targetUsableBytes", uiState.optLong("minimumUsableBytes", 524_288_000L));
+                job.setRequestedMinimumUsableBytes(minBytes);
+
                 // Populate objective
                 String objStr = uiState.optString("objective", "AUTO").toUpperCase();
                 try {

@@ -233,6 +233,7 @@ public class ForgeJob {
     private final String jobId;
     private JobState state = JobState.CREATED;
     private ModelObjective objective = ModelObjective.AUTO;
+    private long requestedMinimumUsableBytes = 524_288_000L; // Default 500 MB
     private List<String> sourcePaths = new ArrayList<>();
     private final List<SourceProfile> sourceProfiles = new ArrayList<>();
     private CompositionStrategy compositionStrategy = new CompositionStrategy();
@@ -258,6 +259,9 @@ public class ForgeJob {
 
     public ModelObjective getObjective() { return objective; }
     public void setObjective(ModelObjective objective) { this.objective = objective; }
+
+    public long getRequestedMinimumUsableBytes() { return requestedMinimumUsableBytes; }
+    public void setRequestedMinimumUsableBytes(long requestedMinimumUsableBytes) { this.requestedMinimumUsableBytes = requestedMinimumUsableBytes; }
 
     public List<String> getSourcePaths() { return sourcePaths; }
     public void setSourcePaths(List<String> sourcePaths) { this.sourcePaths = sourcePaths; }
