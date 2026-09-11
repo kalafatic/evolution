@@ -471,12 +471,12 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
         if (file == null || !file.exists()) return false;
         String name = file.getName().toLowerCase();
 
-        boolean nameMatchesProduct = name.startsWith(prodDef.getProductId().toLowerCase());
-        if (!nameMatchesProduct) return false;
-
         if (file.isFile()) {
             boolean isZipOrTar = name.endsWith(".zip") || name.endsWith(".tar.gz") || name.endsWith(".tgz");
             if (!isZipOrTar) return false;
+
+            boolean nameMatchesProduct = name.startsWith(prodDef.getProductId().toLowerCase()) || name.contains(prodDef.getProductId().toLowerCase()) || name.contains("evo");
+            if (!nameMatchesProduct) return false;
 
             if (platform.isWindows()) {
                 return name.contains("win32") || name.contains("win");
@@ -484,7 +484,8 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
                 return name.contains("linux") || name.contains("gtk") || name.endsWith(".tar.gz");
             }
         } else if (file.isDirectory()) {
-            return name.equals(prodDef.getRootFolder().toLowerCase()) || name.equals(prodDef.getProductId().toLowerCase());
+            boolean nameMatchesProduct = name.startsWith(prodDef.getProductId().toLowerCase()) || name.contains(prodDef.getProductId().toLowerCase());
+            return nameMatchesProduct || name.equals(prodDef.getRootFolder().toLowerCase()) || name.equals(prodDef.getProductId().toLowerCase());
         }
 
         return false;

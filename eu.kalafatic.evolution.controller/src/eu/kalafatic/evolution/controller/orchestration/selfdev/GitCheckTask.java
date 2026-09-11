@@ -15,7 +15,7 @@ public class GitCheckTask extends AbstractSelfDevTask {
         File repoRoot = context.getProjectRoot();
         if ("GIT_SUPERVISOR".equalsIgnoreCase(id)) {
             File supervisorSource = context.getSourceDirectory();
-            if (supervisorSource != null && supervisorSource.exists()) {
+            if (supervisorSource != null && supervisorSource.exists() && sourceProvider.validateRepository(supervisorSource).isSuccess()) {
                 repoRoot = supervisorSource;
             }
         }

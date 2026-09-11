@@ -67,7 +67,16 @@ public class GitSourceProvider implements SourceProvider {
 
     private void copyDirectory(File sourceLocation, File targetLocation) throws Exception {
         if (sourceLocation.isDirectory()) {
-            if (sourceLocation.getName().equals(".git") || sourceLocation.getName().equals("target")) {
+            String dirName = sourceLocation.getName();
+            if (dirName.equalsIgnoreCase(".git") ||
+                dirName.equalsIgnoreCase("target") ||
+                dirName.equalsIgnoreCase("projects") ||
+                dirName.equalsIgnoreCase("self-dev-run") ||
+                dirName.equalsIgnoreCase("iterations") ||
+                dirName.equalsIgnoreCase("bin") ||
+                dirName.equalsIgnoreCase(".settings") ||
+                dirName.equalsIgnoreCase("forge-output") ||
+                dirName.equalsIgnoreCase("dist")) {
                 return;
             }
             if (!targetLocation.exists()) {
