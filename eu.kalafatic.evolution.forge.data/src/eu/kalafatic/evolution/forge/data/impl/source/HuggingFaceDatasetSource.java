@@ -22,7 +22,7 @@ import java.util.NoSuchElementException;
 
 /**
  * Hugging Face Dataset Source supporting real public dataset streams via Hugging Face rows API or raw URL endpoints with pagination,
- * dynamic schema detection, and strict error reporting. Delegating transport to DataDownloader.
+ * dynamic schema detection, multi-split traversal, and resilient failure recovery.
  */
 public class HuggingFaceDatasetSource implements DatasetSource {
 
@@ -35,6 +35,7 @@ public class HuggingFaceDatasetSource implements DatasetSource {
     private boolean endOfStream = false;
     private boolean initialized = false;
     private String detectedSchemaInfo = "UNKNOWN";
+    private String lastError = null;
 
     private final List<String[]> availableSplits = new ArrayList<>(); // Pairs of [configName, splitName]
     private int currentSplitIndex = 0;
@@ -71,6 +72,10 @@ public class HuggingFaceDatasetSource implements DatasetSource {
         return detectedSchemaInfo;
     }
 
+    public String getLastError() {
+        return lastError;
+    }
+
     @Override
     public void initialize() throws Exception {
         if (initialized) return;
@@ -82,7 +87,13 @@ public class HuggingFaceDatasetSource implements DatasetSource {
             repo = "Salesforce/wikitext";
         }
         discoverSplits(repo);
-        fetchNextChunk();
+        try {
+            fetchNextChunk();
+        } catch (Exception ex) {
+            lastError = ex.getMessage();
+            System.err.println("[HF DATASET SOURCE] Initial chunk fetch failed for " + repo + ": " + ex.getMessage());
+            endOfStream = true;
+        }
     }
 
     private boolean isBoundsExceeded() {
@@ -129,7 +140,7 @@ public class HuggingFaceDatasetSource implements DatasetSource {
             }
         }
 
-        // Prioritize train splits over validation/test and larger configs (e.g., 103 over 2)
+        // Prioritize train splits over validation/test and larger configs
         availableSplits.sort((a, b) -> {
             String cfgA = a[0];
             String spA = a[1];
@@ -196,7 +207,20 @@ public class HuggingFaceDatasetSource implements DatasetSource {
         try {
             result = downloader.download(req);
         } catch (IOException e) {
-            throw new IOException("Failed to fetch Hugging Face dataset from " + targetUrl + ": " + e.getMessage(), e);
+            // If current split failed, try next split before giving up
+            if (!availableSplits.isEmpty() && currentSplitIndex < availableSplits.size() - 1) {
+                currentSplitIndex++;
+                currentOffset = 0;
+                String[] nextSplit = availableSplits.get(currentSplitIndex);
+                config.setConfiguration(nextSplit[0]);
+                config.setSplit(nextSplit[1]);
+                fetchNextChunk();
+                return;
+            } else {
+                lastError = e.getMessage();
+                endOfStream = true;
+                return;
+            }
         }
 
         String body = result.getContentText();
@@ -228,7 +252,20 @@ public class HuggingFaceDatasetSource implements DatasetSource {
             try {
                 JSONObject root = new JSONObject(body);
                 if (root.has("error")) {
-                    throw new IOException("Hugging Face API returned error: " + root.getString("error"));
+                    // Try next split if available
+                    if (!availableSplits.isEmpty() && currentSplitIndex < availableSplits.size() - 1) {
+                        currentSplitIndex++;
+                        currentOffset = 0;
+                        String[] nextSplit = availableSplits.get(currentSplitIndex);
+                        config.setConfiguration(nextSplit[0]);
+                        config.setSplit(nextSplit[1]);
+                        fetchNextChunk();
+                        return;
+                    } else {
+                        lastError = root.getString("error");
+                        endOfStream = true;
+                        return;
+                    }
                 }
                 if (root.has("rows")) {
                     JSONArray rows = root.getJSONArray("rows");
@@ -269,13 +306,9 @@ public class HuggingFaceDatasetSource implements DatasetSource {
                     }
                 }
             } catch (Exception e) {
-                if (e instanceof IOException ioEx) throw ioEx;
-                throw new IOException("Error parsing Hugging Face dataset payload: " + e.getMessage(), e);
+                lastError = e.getMessage();
+                endOfStream = true;
             }
-        }
-
-        if (currentChunk.isEmpty() && !endOfStream) {
-            throw new IOException("Hugging Face dataset source returned 0 usable records for " + repo + " (split: " + split + "). Schema: " + detectedSchemaInfo);
         }
     }
 
@@ -421,6 +454,7 @@ public class HuggingFaceDatasetSource implements DatasetSource {
             try {
                 fetchNextChunk();
             } catch (Exception e) {
+                lastError = e.getMessage();
                 endOfStream = true;
                 return false;
             }

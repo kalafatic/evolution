@@ -29,9 +29,10 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Concrete TrainingDataAcquisitionService implementation orchestrating pipeline stages,
- * preference satisfaction evaluation, and adaptive multi-source streaming.
- * Features smart automatic discovery expansion when initial sources exhaust early before reaching target usable content bytes.
+ * Concrete TrainingDataAcquisitionService implementation orchestrating target-driven pipeline stages,
+ * preference satisfaction evaluation, and multi-source streaming with progressive Hugging Face search expansion.
+ *
+ * Invariant: Status READY is granted IF AND ONLY IF validatedUsableBytes >= minimumTargetBytes.
  */
 public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisitionService {
 
@@ -84,12 +85,13 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
         long targetUsableBytes = request.getMinimumUsableBytes();
         double valSplitRatio = request.getValidationSplitRatio();
 
-        // If no sources provided explicitly, use smart discovery to find sources
+        TrainingDataPreferences prefs = request.getPreferences();
+        if (prefs == null) {
+            prefs = TrainingDataPreferences.builder().minimumUsableBytes(targetUsableBytes).build();
+        }
+
+        // If no explicit sources provided, perform initial smart discovery
         if (sources.isEmpty()) {
-            TrainingDataPreferences prefs = request.getPreferences();
-            if (prefs == null) {
-                prefs = TrainingDataPreferences.builder().minimumUsableBytes(targetUsableBytes).build();
-            }
             List<DataSourceCandidate> discovered = discovery.discover(prefs);
             for (DataSourceCandidate cand : discovered) {
                 if (cand.getSource() != null) {
@@ -99,7 +101,7 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
         }
 
         if (sources.isEmpty()) {
-            throw new IllegalArgumentException("Acquisition request must contain at least one training data source.");
+            throw new IllegalArgumentException("Acquisition request must contain at least one training data source or matching preferences.");
         }
 
         DataSizeAccounting accounting = new DefaultDataSizeAccounting();
@@ -111,74 +113,112 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
         Set<String> processedSourceNames = new HashSet<>();
 
         int sourceIndex = 0;
-        while ((targetUsableBytes <= 0 || accumulatedUsableBytes < targetUsableBytes) && sourceIndex < sources.size()) {
-            DatasetSource source = sources.get(sourceIndex++);
-            if (source == null || !processedSourceNames.add(source.getSourceName())) {
-                continue;
-            }
+        int searchRound = 1;
+        int maxSearchRounds = 10;
+        int consecutiveEmptyExpansions = 0;
 
-            try {
-                source.initialize();
-            } catch (Exception initEx) {
-                System.err.println("[ACQUISITION SERVICE] Failed to initialize source " + source.getSourceName() + ": " + initEx.getMessage());
-                continue;
-            }
+        System.out.printf("[ACQUISITION LOG] Starting Acquisition Loop. Hard Target Usable Bytes: %d (%.2f MB)\n",
+                targetUsableBytes, targetUsableBytes / (1024.0 * 1024.0));
 
-            try (source) {
-                while ((targetUsableBytes <= 0 || accumulatedUsableBytes < targetUsableBytes) && source.hasNext()) {
-                    NormalizedSample s = source.next();
-                    byte[] rawBytes = s.toFullText().getBytes(StandardCharsets.UTF_8);
-                    long rawLen = rawBytes.length;
+        while ((targetUsableBytes <= 0 || accumulatedUsableBytes < targetUsableBytes)) {
 
-                    accounting.recordRaw(rawLen);
-
-                    NormalizedSample clean = normalizer.normalize(s);
-                    if (clean == null || !filter.accept(clean)) {
-                        accounting.recordRejected(rawLen);
-                        continue;
-                    }
-
-                    if (deduplicator.isDuplicate(clean)) {
-                        accounting.recordDuplicate(rawLen);
-                        continue;
-                    }
-
-                    deduplicator.register(clean);
-                    byte[] cleanBytes = clean.toFullText().getBytes(StandardCharsets.UTF_8);
-                    long cleanLen = cleanBytes.length;
-
-                    acceptedSamples.add(clean);
-                    accumulatedUsableBytes += cleanLen;
-
-                    long tokens = clean.getTokenCount() > 0 ? clean.getTokenCount() : cleanLen / 4;
-                    accounting.recordAccepted(cleanLen, tokens);
-
-                    if (targetUsableBytes > 0 && accumulatedUsableBytes >= targetUsableBytes) {
-                        break;
-                    }
+            // Process all available sources in the sources list
+            while (sourceIndex < sources.size() && (targetUsableBytes <= 0 || accumulatedUsableBytes < targetUsableBytes)) {
+                DatasetSource source = sources.get(sourceIndex++);
+                if (source == null || !processedSourceNames.add(source.getSourceName())) {
+                    continue;
                 }
+
+                try {
+                    source.initialize();
+                } catch (Exception initEx) {
+                    System.err.println("[ACQUISITION LOG] Failed to initialize source " + source.getSourceName() + ": " + initEx.getMessage());
+                    continue;
+                }
+
+                long sourceStartUsable = accumulatedUsableBytes;
+                try (source) {
+                    while ((targetUsableBytes <= 0 || accumulatedUsableBytes < targetUsableBytes) && source.hasNext()) {
+                        NormalizedSample s = source.next();
+                        byte[] rawBytes = s.toFullText().getBytes(StandardCharsets.UTF_8);
+                        long rawLen = rawBytes.length;
+
+                        accounting.recordRaw(rawLen);
+
+                        NormalizedSample clean = normalizer.normalize(s);
+                        if (clean == null || !filter.accept(clean)) {
+                            accounting.recordRejected(rawLen);
+                            continue;
+                        }
+
+                        if (deduplicator.isDuplicate(clean)) {
+                            accounting.recordDuplicate(rawLen);
+                            continue;
+                        }
+
+                        deduplicator.register(clean);
+                        byte[] cleanBytes = clean.toFullText().getBytes(StandardCharsets.UTF_8);
+                        long cleanLen = cleanBytes.length;
+
+                        acceptedSamples.add(clean);
+                        accumulatedUsableBytes += cleanLen;
+
+                        long tokens = clean.getTokenCount() > 0 ? clean.getTokenCount() : cleanLen / 4;
+                        accounting.recordAccepted(cleanLen, tokens);
+
+                        if (targetUsableBytes > 0 && accumulatedUsableBytes >= targetUsableBytes) {
+                            break;
+                        }
+                    }
+                } catch (Exception ex) {
+                    System.err.println("[ACQUISITION LOG] Error reading source " + source.getSourceName() + ": " + ex.getMessage());
+                }
+
+                long sourceYield = accumulatedUsableBytes - sourceStartUsable;
+                long remaining = targetUsableBytes > 0 ? Math.max(0, targetUsableBytes - accumulatedUsableBytes) : 0;
+                System.out.printf("[ACQUISITION PROGRESS] Target: %.2f MB | Downloaded: %.2f MB | Usable: %.2f MB / %.2f MB | Remaining: %.2f MB | Source: %s (Yield: %.2f MB)\n",
+                        targetUsableBytes / (1024.0 * 1024.0),
+                        stats.getDownloadedBytes() / (1024.0 * 1024.0),
+                        accumulatedUsableBytes / (1024.0 * 1024.0),
+                        targetUsableBytes / (1024.0 * 1024.0),
+                        remaining / (1024.0 * 1024.0),
+                        source.getSourceName(),
+                        sourceYield / (1024.0 * 1024.0));
             }
 
-            // SMART ADAPTIVE FALLBACK EXPANSION:
-            // If current sources exhaust before minimum usable bytes are satisfied, dynamically discover similar datasets!
-            if (targetUsableBytes > 0 && accumulatedUsableBytes < targetUsableBytes && sourceIndex >= sources.size()) {
-                System.out.println("[ACQUISITION SERVICE] Initial sources yielded " + accumulatedUsableBytes + " bytes / " + targetUsableBytes + " bytes. Triggering smart discovery fallback expansion...");
-                TrainingDataPreferences prefs = request.getPreferences();
-                if (prefs == null) {
-                    prefs = TrainingDataPreferences.builder().minimumUsableBytes(targetUsableBytes - accumulatedUsableBytes).build();
+            // TARGET-DRIVEN SEARCH EXPANSION LOOP:
+            // If accumulatedUsableBytes < targetUsableBytes and current sources list is exhausted,
+            // trigger progressive discovery expansion to find additional datasets/files!
+            if (targetUsableBytes > 0 && accumulatedUsableBytes < targetUsableBytes) {
+                if (searchRound >= maxSearchRounds || consecutiveEmptyExpansions >= 3) {
+                    System.out.println("[ACQUISITION LOG] Search strategy exhausted after " + searchRound + " rounds. No more candidates available.");
+                    break;
                 }
+
+                System.out.printf("[ACQUISITION SEARCH EXPANSION] Search Round %d: Usable bytes: %d / %d (Shortfall: %d bytes). Triggering progressive query expansion...\n",
+                        searchRound, accumulatedUsableBytes, targetUsableBytes, targetUsableBytes - accumulatedUsableBytes);
+
                 List<DataSourceCandidate> expandedCandidates = discovery.discover(prefs);
+                int newlyAddedCount = 0;
                 for (DataSourceCandidate cand : expandedCandidates) {
                     if (cand.getSource() != null && !processedSourceNames.contains(cand.getSource().getSourceName())) {
                         sources.add(cand.getSource());
+                        newlyAddedCount++;
                     }
                 }
+
+                if (newlyAddedCount == 0) {
+                    consecutiveEmptyExpansions++;
+                } else {
+                    consecutiveEmptyExpansions = 0;
+                }
+
+                searchRound++;
             }
         }
 
         accounting.setTrainValidationRatio(valSplitRatio);
 
-        TrainingDataPreferences prefs = request.getPreferences();
         TrainingDataPreferenceEvaluation eval = preferenceEvaluator.evaluate(prefs, stats);
 
         boolean targetReached = targetUsableBytes <= 0 || accumulatedUsableBytes >= targetUsableBytes;
@@ -192,13 +232,19 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
 
         String failureReason = null;
         if (!targetReached) {
-            failureReason = "INSUFFICIENT_SOURCE_DATA: Source universe exhausted before satisfying minimum usable bytes. Requested: "
-                    + targetUsableBytes + " bytes, Acquired: " + accumulatedUsableBytes + " bytes, Shortfall: " + shortfall + " bytes.";
+            failureReason = "INSUFFICIENT_SOURCE_DATA: Source universe exhausted before satisfying minimum usable bytes requirement. Requested: "
+                    + targetUsableBytes + " bytes (" + (targetUsableBytes / (1024 * 1024)) + " MB), Acquired Usable: "
+                    + accumulatedUsableBytes + " bytes (" + (accumulatedUsableBytes / (1024 * 1024)) + " MB), Shortfall: "
+                    + shortfall + " bytes (" + (shortfall / (1024 * 1024)) + " MB), Coverage: " + String.format("%.2f", coveragePercent) + "%.";
+            System.err.println("[ACQUISITION FAILED INVARIANT] " + failureReason);
+        } else {
+            System.out.printf("[ACQUISITION SUCCESS] Hard Target Satisfied! Requested: %d bytes, Acquired Usable: %d bytes (%.2f%% coverage).\n",
+                    targetUsableBytes, accumulatedUsableBytes, coveragePercent);
         }
 
         List<String> sourcesUsedNames = new ArrayList<>(processedSourceNames);
         List<String> sourcesExhaustedNames = sourceExhausted ? new ArrayList<>(processedSourceNames) : List.of();
-        List<String> hardFailures = eval.isAllHardRequirementsSatisfied() ? List.of() : List.of("MinimumUsableBytesNotSatisfied");
+        List<String> hardFailures = (targetReached && eval.isAllHardRequirementsSatisfied()) ? List.of() : List.of("MinimumUsableBytesNotSatisfied");
 
         return new TrainingDataAcquisitionResult(
                 acceptedSamples,
@@ -226,7 +272,7 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
                 hardFailures,
                 List.of(),
                 failureReason != null ? List.of(failureReason) : List.of(),
-                "EVO_MULTI_PROVIDER_PIPELINE"
+                "EVO_TARGET_DRIVEN_MULTI_SOURCE_PIPELINE"
         );
     }
 }
