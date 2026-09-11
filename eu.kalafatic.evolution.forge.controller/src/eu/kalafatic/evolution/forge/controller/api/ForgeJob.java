@@ -263,6 +263,45 @@ public class ForgeJob {
     public long getRequestedMinimumUsableBytes() { return requestedMinimumUsableBytes; }
     public void setRequestedMinimumUsableBytes(long requestedMinimumUsableBytes) { this.requestedMinimumUsableBytes = requestedMinimumUsableBytes; }
 
+    public static long toBytes(Object value, long defaultValue) {
+        if (value == null) return defaultValue;
+        if (value instanceof Number n) {
+            long val = n.longValue();
+            if (val <= 0) return defaultValue;
+            if (val < 100_000) { // Small numbers treated as MB (e.g., 500 -> 500 MB)
+                return val * 1024 * 1024;
+            }
+            return val;
+        }
+        String str = value.toString().trim().toUpperCase();
+        if (str.isEmpty()) return defaultValue;
+
+        try {
+            if (str.endsWith("GB") || str.endsWith("G")) {
+                String numStr = str.replaceAll("[^0-9.]", "").trim();
+                return (long) (Double.parseDouble(numStr) * 1024 * 1024 * 1024);
+            } else if (str.endsWith("MB") || str.endsWith("M")) {
+                String numStr = str.replaceAll("[^0-9.]", "").trim();
+                return (long) (Double.parseDouble(numStr) * 1024 * 1024);
+            } else if (str.endsWith("KB") || str.endsWith("K")) {
+                String numStr = str.replaceAll("[^0-9.]", "").trim();
+                return (long) (Double.parseDouble(numStr) * 1024);
+            } else if (str.endsWith("B")) {
+                String numStr = str.replaceAll("[^0-9.]", "").trim();
+                return (long) Double.parseDouble(numStr);
+            } else {
+                long val = (long) Double.parseDouble(str);
+                if (val <= 0) return defaultValue;
+                if (val < 100_000) {
+                    return val * 1024 * 1024;
+                }
+                return val;
+            }
+        } catch (Exception e) {
+            return defaultValue;
+        }
+    }
+
     public List<String> getSourcePaths() { return sourcePaths; }
     public void setSourcePaths(List<String> sourcePaths) { this.sourcePaths = sourcePaths; }
 

@@ -84,13 +84,14 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
             var composition = datasetComposer.computeComposition(profiles, job.getObjective(), job.getCompositionStrategy().getTokenBudget());
             job.setCompositionStrategy(composition);
 
-            long requestedTargetBytes = job.getRequestedMinimumUsableBytes();
-            logToFile(logFile, "[DATA ACQUISITION] Requested usable data: " + (requestedTargetBytes / (1024 * 1024)) + " MB (" + requestedTargetBytes + " bytes)");
+            long requestedTargetBytes = ForgeJob.toBytes(job.getRequestedMinimumUsableBytes(), 524_288_000L);
+            long maxDownloadBytes = Math.max(requestedTargetBytes * 2, 1_073_741_824L);
+            logToFile(logFile, "[DATA ACQUISITION] Requested usable data: " + (requestedTargetBytes / (1024 * 1024)) + " MB (" + requestedTargetBytes + " bytes), maxDownloadBytes: " + (maxDownloadBytes / (1024 * 1024)) + " MB");
 
             TrainingDataPreferences.Builder prefsBuilder = TrainingDataPreferences.builder()
                     .minimumUsableBytes(requestedTargetBytes)
                     .targetUsableBytes(requestedTargetBytes)
-                    .maximumDownloadBytes(Math.max(requestedTargetBytes * 2, 100_000_000L))
+                    .maximumDownloadBytes(maxDownloadBytes)
                     .capabilityObjective(job.getObjective() != null ? job.getObjective().name() : "AUTO");
 
             if (job.getSourcePaths() != null) {
@@ -112,6 +113,7 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
                     Path sourcePath = Paths.get(sourceStr);
                     if (Files.exists(sourcePath)) {
                         DatasetSourceConfig cfg = new DatasetSourceConfig("LOCAL", sourceStr);
+                        cfg.setMaxBytes(requestedTargetBytes);
                         if (Files.isDirectory(sourcePath)) {
                             acqRequest.addSource(new EvoCodebaseDatasetSource(cfg));
                         } else {
@@ -119,6 +121,7 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
                         }
                     } else if (sourceStr.contains("/") || sourceStr.equalsIgnoreCase("wikitext")) {
                         DatasetSourceConfig cfg = new DatasetSourceConfig("HUGGING_FACE", sourceStr);
+                        cfg.setMaxBytes(requestedTargetBytes);
                         acqRequest.addSource(new HuggingFaceDatasetSource(cfg));
                     }
                 }

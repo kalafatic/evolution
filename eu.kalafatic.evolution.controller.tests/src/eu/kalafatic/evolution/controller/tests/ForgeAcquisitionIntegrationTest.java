@@ -53,6 +53,62 @@ public class ForgeAcquisitionIntegrationTest {
     }
 
     @Test
+    public void testToBytesUnitNormalization() {
+        assertEquals(524_288_000L, ForgeJob.toBytes(500, 524_288_000L));
+        assertEquals(524_288_000L, ForgeJob.toBytes("500", 524_288_000L));
+        assertEquals(524_288_000L, ForgeJob.toBytes("500MB", 524_288_000L));
+        assertEquals(524_288_000L, ForgeJob.toBytes("500 MB", 524_288_000L));
+        assertEquals(524_288_000L, ForgeJob.toBytes(524_288_000L, 524_288_000L));
+        assertEquals(1_073_741_824L, ForgeJob.toBytes("1GB", 524_288_000L));
+        assertEquals(524_288_000L, ForgeJob.toBytes(null, 524_288_000L));
+    }
+
+    @Test
+    public void testLocalDirectorySourceRegression() throws Exception {
+        Path file1 = localDataDir.resolve("doc1.txt");
+        Path file2 = localDataDir.resolve("doc2.py");
+        Files.writeString(file1, "Local documentation content chunk for regression testing.");
+        Files.writeString(file2, "def test_func():\n    return 'Local python code content chunk'\n");
+
+        DatasetSourceConfig config = new DatasetSourceConfig("LOCAL", localDataDir.toAbsolutePath().toString());
+        config.setMaxBytes(10_000);
+
+        try (eu.kalafatic.evolution.forge.data.impl.source.LocalDatasetSource localSource =
+                     new eu.kalafatic.evolution.forge.data.impl.source.LocalDatasetSource(config)) {
+            localSource.initialize();
+            int sampleCount = 0;
+            while (localSource.hasNext()) {
+                NormalizedSample s = localSource.next();
+                assertNotNull(s);
+                assertTrue(s.toFullText().length() > 0);
+                sampleCount++;
+            }
+            assertTrue("Local dataset source must read directory files without regression", sampleCount >= 2);
+        }
+    }
+
+    @Test
+    public void testEvoCodebaseSourceRegression() throws Exception {
+        Path srcFile = localDataDir.resolve("Main.java");
+        Files.writeString(srcFile, "package test;\npublic class Main { public static void main(String[] args) {} }\n");
+
+        DatasetSourceConfig config = new DatasetSourceConfig("LOCAL", localDataDir.toAbsolutePath().toString());
+        config.setMaxBytes(10_000);
+
+        try (eu.kalafatic.evolution.forge.data.impl.source.EvoCodebaseDatasetSource codebaseSource =
+                     new eu.kalafatic.evolution.forge.data.impl.source.EvoCodebaseDatasetSource(config)) {
+            codebaseSource.initialize();
+            int count = 0;
+            while (codebaseSource.hasNext()) {
+                NormalizedSample sample = codebaseSource.next();
+                assertNotNull(sample);
+                count++;
+            }
+            assertTrue("EvoCodebase dataset source must stream codebase samples without regression", count > 0);
+        }
+    }
+
+    @Test
     public void testMultiRoundAcquisitionReaches500MBTargetScenario() throws Exception {
         long targetBytes = 500_000_000L; // 500 MB
 
