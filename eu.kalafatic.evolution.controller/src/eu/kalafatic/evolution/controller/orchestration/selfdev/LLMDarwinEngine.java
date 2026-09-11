@@ -1208,21 +1208,13 @@ public class LLMDarwinEngine extends ADarwinEngine {
 			artifact.getMetadata().put("parent_model", modelSource.getParentIdentifier());
 		}
 
-		// artifact.initializeFromModel(dynamicModelName, winningModel,
-		// finalTokenizer.getVocab());
-		// artifact.setTemperature(overallWinner.config.temperature);
-		// artifact.setTopP(overallWinner.config.topP);
-		// artifact.setTopK(overallWinner.config.topK);
-		// artifact.setRepeatPenalty(overallWinner.config.repeatPenalty);
 		artifact.save(evoFilePath);
-		// ============ VERIFICATION STEP ============
 
-// After saving, verify the artifact loaded correctly
+		// Verify saved artifact loading and vocabulary
 		EvoModelArtifact loadedArtifact = EvoModelArtifact.load(evoFilePath);
 		context.log("[FORGE] Verified artifact contains " + loadedArtifact.getTokenizerVocab().size()
 				+ " vocabulary entries");
 
-// Sample check
 		Map<Integer, String> sampleVocab = loadedArtifact.getIdToToken();
 		int sampleCount = 0;
 		for (Map.Entry<Integer, String> entry : sampleVocab.entrySet()) {
@@ -1231,9 +1223,7 @@ public class LLMDarwinEngine extends ADarwinEngine {
 			}
 		}
 
-		// LOAD FROM THE *.EVO MODEL FILE TO CONFIRM PORTABILITY
 		context.log("[FORGE] Loading native EVO model artifact from *.evo file for subsequent target export.");
-		// EvoModelArtifact loadedArtifact = EvoModelArtifact.load(evoFilePath);
 
 		// EXPORT TO OLLAMA/GGUF WITHOUT RETRAINING (Consumes the loaded artifact)
 		OllamaExporter exporter = new OllamaExporter();
