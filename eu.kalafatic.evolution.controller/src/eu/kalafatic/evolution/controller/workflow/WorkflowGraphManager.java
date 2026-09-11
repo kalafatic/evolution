@@ -223,7 +223,7 @@ public class WorkflowGraphManager implements RuntimeEventListener {
 			GraphEntity trainer = entities.get("trainer");
 			if (trainer != null) {
 				trainer.setStatus("FAILED");
-				trainer.setRuntimeState("Failed: " + event.getPayload().toString());
+				trainer.setRuntimeState("Failed: " + (event.getPayload() != null ? event.getPayload().toString() : "unknown"));
 			}
 		}
 
@@ -369,6 +369,7 @@ public class WorkflowGraphManager implements RuntimeEventListener {
 		}
 
 		private void handleStepWaiting(RuntimeEvent event) {
+			if (event.getPayload() == null) return;
 			String stepId = event.getPayload().toString();
 			SessionContainer session = SessionManager.getInstance().getSession(sessionId);
 			if (session == null) return;
@@ -400,6 +401,7 @@ public class WorkflowGraphManager implements RuntimeEventListener {
 		}
 
 		private void handleStepResumed(RuntimeEvent event) {
+			if (event.getPayload() == null) return;
 			String stepId = event.getPayload().toString();
 			SessionContainer session = SessionManager.getInstance().getSession(sessionId);
 			if (session == null) return;
@@ -426,6 +428,7 @@ public class WorkflowGraphManager implements RuntimeEventListener {
 		}
 
 		private void handleTaskFailed(RuntimeEvent event) {
+			if (event.getPayload() == null) return;
 			String taskId = event.getPayload().toString();
 			GraphEntity entity = entities.get(taskId);
 			if (entity != null)
@@ -433,6 +436,7 @@ public class WorkflowGraphManager implements RuntimeEventListener {
 		}
 
 		private void handleSupervisorStatusChanged(RuntimeEvent event) {
+			if (event.getPayload() == null) return;
 			GraphEntity supervisor = entities.get("supervisor");
 			if (supervisor == null) {
 				addEntity("supervisor", EntityType.SUPERVISOR);
@@ -449,6 +453,7 @@ public class WorkflowGraphManager implements RuntimeEventListener {
 		}
 
 		private void handleIterationStarted(RuntimeEvent event) {
+			if (event.getPayload() == null) return;
 			String iterId = event.getPayload().toString();
 			addEntity(iterId, EntityType.EVOLUTION_LOOP);
 			entities.get(iterId).setStatus("RUNNING");
@@ -456,6 +461,7 @@ public class WorkflowGraphManager implements RuntimeEventListener {
 		}
 
 		private void handleExportReady(RuntimeEvent event) {
+			if (event.getPayload() == null) return;
 			addEntity("export", EntityType.ZIP_EXPORT);
 			GraphEntity export = entities.get("export");
 			export.setStatus("READY");
@@ -464,12 +470,14 @@ public class WorkflowGraphManager implements RuntimeEventListener {
 		}
 
 		private void handleDeploymentStatusChanged(RuntimeEvent event) {
+			if (event.getPayload() == null) return;
 			String target = event.getMetadata().getOrDefault("target", "target").toString();
 			addEntity(target, EntityType.DEPLOYMENT_TARGET);
 			entities.get(target).setStatus(event.getPayload().toString());
 		}
 
 		private void handleModeChanged(RuntimeEvent event) {
+			if (event.getPayload() == null) return;
 			String mode = event.getPayload().toString();
 			if ("SELF_DEV".equals(mode) || "SELF_DEV_MODE".equals(mode)) {
 				setupSelfDevTemplate();
@@ -487,6 +495,7 @@ public class WorkflowGraphManager implements RuntimeEventListener {
 		}
 
 		private void handleTaskStarted(RuntimeEvent event) {
+			if (event.getPayload() == null) return;
 			String taskId = event.getPayload().toString();
 			GraphEntity entity = entities.get(taskId);
 			if (entity == null) {
@@ -512,6 +521,7 @@ public class WorkflowGraphManager implements RuntimeEventListener {
 		}
 
 		private void handleTaskCompleted(RuntimeEvent event) {
+			if (event.getPayload() == null) return;
 			String taskId = event.getPayload().toString();
 			GraphEntity entity = entities.get(taskId);
 			if (entity != null)
