@@ -28,6 +28,10 @@ public class EvoCodebaseDatasetSource implements DatasetSource {
     private final List<NormalizedSample> samples = new ArrayList<>();
     private int currentIndex = 0;
 
+    public EvoCodebaseDatasetSource(String repositoryPath) {
+        this(new DatasetSourceConfig("EVO_CODEBASE", repositoryPath != null ? repositoryPath : "."), CodebaseMode.MIXED_AUTO);
+    }
+
     public EvoCodebaseDatasetSource(DatasetSourceConfig config) {
         this(config, CodebaseMode.MIXED_AUTO);
     }

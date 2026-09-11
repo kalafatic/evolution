@@ -307,6 +307,11 @@ public class EvoDatasetArtifact {
     public void setStatus(Status status) { this.status = status; }
     public List<NormalizedSample> getTrainSamples() { return trainSamples; }
     public List<NormalizedSample> getValSamples() { return valSamples; }
+    public List<NormalizedSample> getSamples() {
+        List<NormalizedSample> all = new ArrayList<>(trainSamples);
+        all.addAll(valSamples);
+        return all;
+    }
     public long getTotalTrainTokens() { return totalTrainTokens; }
     public long getTotalValTokens() { return totalValTokens; }
 }

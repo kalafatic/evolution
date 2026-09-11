@@ -190,6 +190,16 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
                 ? TrainingDataAcquisitionResult.Status.READY
                 : TrainingDataAcquisitionResult.Status.INSUFFICIENT_SOURCE_DATA;
 
+        String failureReason = null;
+        if (!targetReached) {
+            failureReason = "INSUFFICIENT_SOURCE_DATA: Source universe exhausted before satisfying minimum usable bytes. Requested: "
+                    + targetUsableBytes + " bytes, Acquired: " + accumulatedUsableBytes + " bytes, Shortfall: " + shortfall + " bytes.";
+        }
+
+        List<String> sourcesUsedNames = new ArrayList<>(processedSourceNames);
+        List<String> sourcesExhaustedNames = sourceExhausted ? new ArrayList<>(processedSourceNames) : List.of();
+        List<String> hardFailures = eval.isAllHardRequirementsSatisfied() ? List.of() : List.of("MinimumUsableBytesNotSatisfied");
+
         return new TrainingDataAcquisitionResult(
                 acceptedSamples,
                 stats,
@@ -200,8 +210,23 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
                 accumulatedUsableBytes,
                 shortfall,
                 status,
-                null,
-                eval
+                failureReason,
+                eval,
+                stats.getDownloadedBytes(),
+                stats.getExtractedBytes(),
+                stats.getRawContentBytes(),
+                accumulatedUsableBytes,
+                stats.getRejectedBytes(),
+                stats.getDuplicateBytes(),
+                stats.getTrainingBytes(),
+                stats.getValidationBytes(),
+                stats.getEstimatedTokens(),
+                sourcesUsedNames,
+                sourcesExhaustedNames,
+                hardFailures,
+                List.of(),
+                failureReason != null ? List.of(failureReason) : List.of(),
+                "EVO_MULTI_PROVIDER_PIPELINE"
         );
     }
 }
