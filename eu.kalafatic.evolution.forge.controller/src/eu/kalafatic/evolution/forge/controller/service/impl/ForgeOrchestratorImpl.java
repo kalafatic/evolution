@@ -23,11 +23,18 @@ import eu.kalafatic.evolution.forge.controller.service.impl.agents.KnowledgeUnit
 import eu.kalafatic.evolution.forge.controller.service.impl.agents.SourceAnalysisAgent;
 import eu.kalafatic.evolution.forge.data.api.NormalizedSample;
 import eu.kalafatic.evolution.forge.data.api.TrainingSample;
+import eu.kalafatic.evolution.forge.data.api.preference.TrainingDataPreferences;
+import eu.kalafatic.evolution.forge.data.api.service.TrainingDataAcquisitionRequest;
+import eu.kalafatic.evolution.forge.data.api.service.TrainingDataAcquisitionResult;
+import eu.kalafatic.evolution.forge.data.api.service.TrainingDataAcquisitionService;
 import eu.kalafatic.evolution.forge.data.api.source.DatasetSourceConfig;
 import eu.kalafatic.evolution.forge.data.impl.DatasetBuilder;
 import eu.kalafatic.evolution.forge.data.impl.MarkdownCleaner;
 import eu.kalafatic.evolution.forge.data.impl.MarkdownLoader;
+import eu.kalafatic.evolution.forge.data.impl.service.TrainingDataAcquisitionServiceImpl;
+import eu.kalafatic.evolution.forge.data.impl.source.EvoCodebaseDatasetSource;
 import eu.kalafatic.evolution.forge.data.impl.source.HuggingFaceDatasetSource;
+import eu.kalafatic.evolution.forge.data.impl.source.LocalDatasetSource;
 import eu.kalafatic.evolution.forge.model.inference.InferenceRequest;
 import eu.kalafatic.evolution.forge.model.inference.InferenceResult;
 import eu.kalafatic.evolution.forge.model.inference.ReferenceEvoInferenceEngine;
@@ -77,24 +84,84 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
             var composition = datasetComposer.computeComposition(profiles, job.getObjective(), job.getCompositionStrategy().getTokenBudget());
             job.setCompositionStrategy(composition);
 
-            // Fetch HuggingFace and local sources using job token budget
+            long requestedTargetBytes = job.getRequestedMinimumUsableBytes();
+            logToFile(logFile, "[DATA ACQUISITION] Requested usable data: " + (requestedTargetBytes / (1024 * 1024)) + " MB (" + requestedTargetBytes + " bytes)");
+
+            TrainingDataPreferences.Builder prefsBuilder = TrainingDataPreferences.builder()
+                    .minimumUsableBytes(requestedTargetBytes)
+                    .targetUsableBytes(requestedTargetBytes)
+                    .maximumDownloadBytes(Math.max(requestedTargetBytes * 2, 100_000_000L))
+                    .capabilityObjective(job.getObjective() != null ? job.getObjective().name() : "AUTO");
+
+            if (job.getSourcePaths() != null) {
+                for (String pathStr : job.getSourcePaths()) {
+                    if (pathStr != null && !pathStr.trim().isEmpty()) {
+                        prefsBuilder.addTopic(pathStr.trim());
+                    }
+                }
+            }
+            TrainingDataPreferences preferences = prefsBuilder.build();
+
+            TrainingDataAcquisitionRequest acqRequest = new TrainingDataAcquisitionRequest();
+            acqRequest.setMinimumUsableBytes(requestedTargetBytes);
+            acqRequest.setPreferences(preferences);
+
+            if (job.getSourcePaths() != null) {
+                for (String sourceStr : job.getSourcePaths()) {
+                    if (sourceStr == null || sourceStr.trim().isEmpty()) continue;
+                    Path sourcePath = Paths.get(sourceStr);
+                    if (Files.exists(sourcePath)) {
+                        DatasetSourceConfig cfg = new DatasetSourceConfig("LOCAL", sourceStr);
+                        if (Files.isDirectory(sourcePath)) {
+                            acqRequest.addSource(new EvoCodebaseDatasetSource(cfg));
+                        } else {
+                            acqRequest.addSource(new LocalDatasetSource(cfg));
+                        }
+                    } else if (sourceStr.contains("/") || sourceStr.equalsIgnoreCase("wikitext")) {
+                        DatasetSourceConfig cfg = new DatasetSourceConfig("HUGGING_FACE", sourceStr);
+                        acqRequest.addSource(new HuggingFaceDatasetSource(cfg));
+                    }
+                }
+            }
+
+            TrainingDataAcquisitionService acquisitionService = new TrainingDataAcquisitionServiceImpl();
+            TrainingDataAcquisitionResult acqResult = acquisitionService.acquireDataset(acqRequest);
+
+            logToFile(logFile, "[DATA ACQUISITION] Acquired: " + (acqResult.getUsableContentBytes() / (1024 * 1024)) + " MB / "
+                    + (requestedTargetBytes / (1024 * 1024)) + " MB. Status: " + acqResult.getStatus() + ", Target Reached: " + acqResult.isTargetReached());
+
+            // HARD PRE-TRAINING GUARD (Invariant 10 & 20)
+            if (!acqResult.isTargetReached()) {
+                String failReason = "Training data acquisition incomplete: Acquired "
+                        + (acqResult.getUsableContentBytes() / (1024 * 1024)) + " MB (" + acqResult.getUsableContentBytes() + " bytes) / "
+                        + (requestedTargetBytes / (1024 * 1024)) + " MB (" + requestedTargetBytes + " bytes). "
+                        + (acqResult.getFailureReason() != null ? acqResult.getFailureReason() : "");
+                logToFile(logFile, "[ERROR] [ACQUISITION FAILED] " + failReason);
+                job.setState(JobState.FAILED);
+                job.setFailureReason(failReason);
+                throw new IllegalStateException(failReason);
+            }
+
+            logToFile(logFile, "[DATA ACQUISITION] HARD TARGET SATISFIED (" + (acqResult.getUsableContentBytes() / (1024 * 1024)) + " MB / " + (requestedTargetBytes / (1024 * 1024)) + " MB)");
+
             StringBuilder corpusBuilder = new StringBuilder();
-            long tokenBudget = composition.getTokenBudget();
-            long targetBytesBudget = tokenBudget > 0 ? tokenBudget * 4 : 500_000_000L; // Match requested budget or default 500MB
-            fetchHuggingFaceSources(job.getSourcePaths(), composition.getSourceWeights(), targetBytesBudget, corpusBuilder, logFile);
+            for (NormalizedSample sample : acqResult.getAcceptedSamples()) {
+                corpusBuilder.append(sample.toFullText()).append("\n\n");
+            }
 
-            // Scan local files using SourceAnalysisAgent
             List<Path> scannedPaths = resolveScannedPaths(job.getSourcePaths(), projectPath, logFile);
-            SourceAnalysisAgent sourceAnalysisAgent = new SourceAnalysisAgent();
-            List<KnowledgeUnit> knowledgeUnits = sourceAnalysisAgent.analyze(scannedPaths, projectPath);
+            if (!scannedPaths.isEmpty()) {
+                SourceAnalysisAgent sourceAnalysisAgent = new SourceAnalysisAgent();
+                List<KnowledgeUnit> knowledgeUnits = sourceAnalysisAgent.analyze(scannedPaths, projectPath);
 
-            ConsistencyAgent consistencyAgent = new ConsistencyAgent();
-            List<ConsistencyAgent.ConsistencyViolation> consistencyViolations = consistencyAgent.checkConsistency(knowledgeUnits);
-            logToFile(logFile, "Knowledge units analyzed: " + knowledgeUnits.size() + ", consistency conflicts: " + consistencyViolations.size());
+                ConsistencyAgent consistencyAgent = new ConsistencyAgent();
+                List<ConsistencyAgent.ConsistencyViolation> consistencyViolations = consistencyAgent.checkConsistency(knowledgeUnits);
+                logToFile(logFile, "Knowledge units analyzed: " + knowledgeUnits.size() + ", consistency conflicts: " + consistencyViolations.size());
 
-            for (KnowledgeUnit unit : knowledgeUnits) {
-                if (unit.getContent() != null && !unit.getContent().trim().isEmpty()) {
-                    corpusBuilder.append(unit.getContent()).append("\n\n");
+                for (KnowledgeUnit unit : knowledgeUnits) {
+                    if (unit.getContent() != null && !unit.getContent().trim().isEmpty()) {
+                        corpusBuilder.append(unit.getContent()).append("\n\n");
+                    }
                 }
             }
 
@@ -267,37 +334,6 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
             job.setState(JobState.FAILED);
             job.setFailureReason(e.getMessage());
             throw e;
-        }
-    }
-
-    private void fetchHuggingFaceSources(List<String> sourcePaths, Map<String, Double> sourceWeights, long targetBytesBudget, StringBuilder corpusBuilder, Path logFile) {
-        if (sourcePaths == null || sourcePaths.isEmpty()) return;
-        for (String sourceStr : sourcePaths) {
-            if (sourceStr != null && (sourceStr.contains("/") || sourceStr.equalsIgnoreCase("wikitext")) && !Files.exists(Paths.get(sourceStr))) {
-                try {
-                    logToFile(logFile, "Fetching Hugging Face source: " + sourceStr);
-                    DatasetSourceConfig config = new DatasetSourceConfig("HUGGING_FACE", sourceStr);
-                    config.setMaxSamples(0); // Unlimited samples, bounded by target content budget
-                    HuggingFaceDatasetSource hfSource = new HuggingFaceDatasetSource(config);
-                    hfSource.initialize();
-
-                    double weight = sourceWeights.getOrDefault(sourceStr, 1.0);
-                    long sourceByteLimit = targetBytesBudget > 0 ? (long) (targetBytesBudget * weight) : Long.MAX_VALUE;
-                    long currentBytes = 0;
-                    int sampleCount = 0;
-
-                    while (hfSource.hasNext() && (sourceByteLimit <= 0 || currentBytes < sourceByteLimit)) {
-                        NormalizedSample sample = hfSource.next();
-                        String text = sample.toFullText();
-                        corpusBuilder.append(text).append("\n\n");
-                        currentBytes += text.getBytes(StandardCharsets.UTF_8).length;
-                        sampleCount++;
-                    }
-                    logToFile(logFile, "Fetched " + sampleCount + " samples (" + (currentBytes / 1024) + " KB) from Hugging Face source: " + sourceStr);
-                } catch (Exception e) {
-                    logToFile(logFile, "[WARN] Failed to fetch Hugging Face source: " + sourceStr + " - " + e.getMessage());
-                }
-            }
         }
     }
 
