@@ -39,6 +39,10 @@ public class HuggingFaceDatasetSource implements DatasetSource {
     private final List<String[]> availableSplits = new ArrayList<>(); // Pairs of [configName, splitName]
     private int currentSplitIndex = 0;
 
+    public HuggingFaceDatasetSource(String repo) {
+        this(new DatasetSourceConfig("HUGGING_FACE", repo != null ? repo : "wikitext"), new HuggingFaceDownloader());
+    }
+
     public HuggingFaceDatasetSource(DatasetSourceConfig config) {
         this(config, new HuggingFaceDownloader());
     }

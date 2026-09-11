@@ -30,6 +30,10 @@ public class LocalDatasetSource implements DatasetSource {
     private BufferedReader currentReader = null;
     private NormalizedSample nextBufferedSample = null;
 
+    public LocalDatasetSource(String path) {
+        this(new DatasetSourceConfig("LOCAL", path != null ? path : "."));
+    }
+
     public LocalDatasetSource(DatasetSourceConfig config) {
         this.config = config != null ? config : new DatasetSourceConfig("LOCAL", ".");
     }

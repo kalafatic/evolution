@@ -30,20 +30,48 @@ public class DefaultSourceRanker implements TrainingDataSourceRanker {
         double score = candidate.getRelevanceScore();
 
         // Language match check
-        if (preferences.getRequiredLanguage().equalsIgnoreCase(candidate.getLanguage())) {
-            score += 0.2;
+        if (preferences.getRequiredLanguage().equalsIgnoreCase(candidate.getLanguage()) ||
+            preferences.getAllowedLanguages().contains(candidate.getLanguage().toLowerCase())) {
+            score += 0.25;
         }
 
         // Domain coverage match
         for (String domain : preferences.getPrimaryDomains()) {
             for (String tag : candidate.getDomainTags()) {
-                if (domain.equalsIgnoreCase(tag)) {
+                if (domain.equalsIgnoreCase(tag) || tag.toLowerCase().contains(domain.toLowerCase())) {
                     score += 0.3;
                     break;
                 }
             }
         }
 
-        return score;
+        // Topic match
+        for (String topic : preferences.getTopics()) {
+            for (String candidateTopic : candidate.getTopics()) {
+                if (topic.equalsIgnoreCase(candidateTopic)) {
+                    score += 0.15;
+                    break;
+                }
+            }
+        }
+
+        // Quality and reliability factor
+        score += candidate.getQualityIndicator() * 0.2;
+        score += candidate.getSourceReliability() * 0.1;
+
+        // Duplication risk penalty
+        score -= candidate.getDuplicationRisk() * 0.2;
+
+        // Preferred provider boost
+        if (preferences.getPreferredProviders().contains(candidate.getProvider())) {
+            score += 0.2;
+        }
+
+        // Excluded source type penalty
+        if (preferences.getExcludedSourceTypes().contains(candidate.getSourceType())) {
+            score -= 1.0;
+        }
+
+        return Math.max(0.0, score);
     }
 }

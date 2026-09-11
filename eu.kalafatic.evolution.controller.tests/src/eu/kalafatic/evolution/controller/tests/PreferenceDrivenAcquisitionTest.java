@@ -29,6 +29,9 @@ import eu.kalafatic.evolution.forge.data.impl.discovery.DefaultSourceRanker;
 import eu.kalafatic.evolution.forge.data.impl.discovery.HuggingFaceSourceDiscovery;
 import eu.kalafatic.evolution.forge.data.impl.evaluation.DefaultPreferenceEvaluator;
 import eu.kalafatic.evolution.forge.data.impl.planner.DefaultAcquisitionPlanner;
+import eu.kalafatic.evolution.forge.data.impl.pipeline.DataCleaner;
+import eu.kalafatic.evolution.forge.data.impl.pipeline.DatasetDeduplicator;
+import eu.kalafatic.evolution.forge.data.impl.pipeline.TrainingSampleQualityScorer;
 import eu.kalafatic.evolution.forge.data.impl.service.TrainingDataAcquisitionServiceImpl;
 
 public class PreferenceDrivenAcquisitionTest {
@@ -138,6 +141,43 @@ public class PreferenceDrivenAcquisitionTest {
         assertEquals(TrainingDataAcquisitionResult.Status.READY, result.getStatus());
         assertNotNull(result.getPreferenceEvaluation());
         assertTrue(result.getPreferenceEvaluation().isAllHardRequirementsSatisfied());
+    }
+
+    @Test
+    public void testSmartDiscoveryFallbackExpansionWhenInitialSourceExhausted() throws Exception {
+        // Initial source has only 200 bytes (e.g. 3MB vs 500MB scenario)
+        DatasetSource smallSrc = createMockSource("small_src", 200);
+
+        // Target requirement is 1000 bytes
+        TrainingDataPreferences prefs = TrainingDataPreferences.builder()
+                .minimumUsableBytes(1000)
+                .addDomain("chat")
+                .build();
+
+        DatasetSource fallbackSrc = createMockSource("fallback_expanded_src", 1200);
+
+        TrainingDataSourceDiscovery mockDiscovery = p -> List.of(
+                new DataSourceCandidate("fallback_expanded_src", "MOCK", fallbackSrc, "en", List.of("chat"), 1200, 0.9)
+        );
+
+        TrainingDataAcquisitionServiceImpl service = new TrainingDataAcquisitionServiceImpl(
+                new DataCleaner(),
+                new TrainingSampleQualityScorer(0.5),
+                new DatasetDeduplicator(true),
+                new DefaultPreferenceEvaluator(),
+                mockDiscovery
+        );
+
+        TrainingDataAcquisitionRequest req = new TrainingDataAcquisitionRequest()
+                .setPreferences(prefs)
+                .addSource(smallSrc);
+
+        TrainingDataAcquisitionResult result = service.acquireDataset(req);
+
+        assertTrue("Smart discovery fallback expansion should acquire additional similar datasets to satisfy 1000 byte target",
+                result.getUsableContentBytes() >= 1000);
+        assertTrue("Target reached must be true after fallback expansion", result.isTargetReached());
+        assertEquals(TrainingDataAcquisitionResult.Status.READY, result.getStatus());
     }
 
     private DatasetSource createMockSource(String name, long targetBytes) {
