@@ -117,8 +117,9 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
         int maxSearchRounds = 10;
         int consecutiveEmptyExpansions = 0;
 
-        System.out.printf("[ACQUISITION LOG] Starting Acquisition Loop. Hard Target Usable Bytes: %d (%.2f MB)\n",
-                targetUsableBytes, targetUsableBytes / (1024.0 * 1024.0));
+        System.out.printf("[ACQ-TRACE] ENTER TrainingDataAcquisitionServiceImpl | requestedTargetBytes=%d (%.2f MB) | pref.minBytes=%d | pref.targetBytes=%d | pref.maxDownloadBytes=%d\n",
+                targetUsableBytes, targetUsableBytes / (1024.0 * 1024.0),
+                prefs.getMinimumUsableBytes(), prefs.getTargetUsableBytes(), prefs.getMaximumDownloadBytes());
 
         while ((targetUsableBytes <= 0 || accumulatedUsableBytes < targetUsableBytes)) {
 
@@ -176,14 +177,12 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
 
                 long sourceYield = accumulatedUsableBytes - sourceStartUsable;
                 long remaining = targetUsableBytes > 0 ? Math.max(0, targetUsableBytes - accumulatedUsableBytes) : 0;
-                System.out.printf("[ACQUISITION PROGRESS] Target: %.2f MB | Downloaded: %.2f MB | Usable: %.2f MB / %.2f MB | Remaining: %.2f MB | Source: %s (Yield: %.2f MB)\n",
-                        targetUsableBytes / (1024.0 * 1024.0),
-                        stats.getDownloadedBytes() / (1024.0 * 1024.0),
+                System.out.printf("[ACQ-TRACE] source=%s exhausted | yield=%.2f MB | totalUsable=%.2f MB / %.2f MB | remaining=%.2f MB\n",
+                        source.getSourceName(),
+                        sourceYield / (1024.0 * 1024.0),
                         accumulatedUsableBytes / (1024.0 * 1024.0),
                         targetUsableBytes / (1024.0 * 1024.0),
-                        remaining / (1024.0 * 1024.0),
-                        source.getSourceName(),
-                        sourceYield / (1024.0 * 1024.0));
+                        remaining / (1024.0 * 1024.0));
             }
 
             // TARGET-DRIVEN SEARCH EXPANSION LOOP:
@@ -230,20 +229,22 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
                 ? TrainingDataAcquisitionResult.Status.READY
                 : TrainingDataAcquisitionResult.Status.INSUFFICIENT_SOURCE_DATA;
 
+        List<String> sourcesUsedNames = new ArrayList<>(processedSourceNames);
+        List<String> sourcesExhaustedNames = sourceExhausted ? new ArrayList<>(processedSourceNames) : List.of();
+
         String failureReason = null;
         if (!targetReached) {
             failureReason = "INSUFFICIENT_SOURCE_DATA: Source universe exhausted before satisfying minimum usable bytes requirement. Requested: "
                     + targetUsableBytes + " bytes (" + (targetUsableBytes / (1024 * 1024)) + " MB), Acquired Usable: "
-                    + accumulatedUsableBytes + " bytes (" + (accumulatedUsableBytes / (1024 * 1024)) + " MB), Shortfall: "
-                    + shortfall + " bytes (" + (shortfall / (1024 * 1024)) + " MB), Coverage: " + String.format("%.2f", coveragePercent) + "%.";
-            System.err.println("[ACQUISITION FAILED INVARIANT] " + failureReason);
+                    + accumulatedUsableBytes + " bytes (" + (accumulatedUsableBytes / (1024 * 1024)) + " MB), Max Download: "
+                    + prefs.getMaximumDownloadBytes() + " bytes (" + (prefs.getMaximumDownloadBytes() / (1024 * 1024)) + " MB), Shortfall: "
+                    + shortfall + " bytes (" + (shortfall / (1024 * 1024)) + " MB), Coverage: " + String.format("%.2f", coveragePercent) + "%, Sources used: " + sourcesUsedNames + ".";
+            System.err.println("[ACQ-TRACE] TARGET NOT REACHED! " + failureReason);
         } else {
-            System.out.printf("[ACQUISITION SUCCESS] Hard Target Satisfied! Requested: %d bytes, Acquired Usable: %d bytes (%.2f%% coverage).\n",
+            System.out.printf("[ACQ-TRACE] TARGET REACHED! Requested: %d bytes, Acquired Usable: %d bytes (%.2f%% coverage).\n",
                     targetUsableBytes, accumulatedUsableBytes, coveragePercent);
         }
 
-        List<String> sourcesUsedNames = new ArrayList<>(processedSourceNames);
-        List<String> sourcesExhaustedNames = sourceExhausted ? new ArrayList<>(processedSourceNames) : List.of();
         List<String> hardFailures = (targetReached && eval.isAllHardRequirementsSatisfied()) ? List.of() : List.of("MinimumUsableBytesNotSatisfied");
 
         return new TrainingDataAcquisitionResult(
