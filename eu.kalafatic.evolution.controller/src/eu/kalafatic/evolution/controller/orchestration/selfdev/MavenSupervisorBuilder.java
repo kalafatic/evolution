@@ -20,6 +20,10 @@ public class MavenSupervisorBuilder extends AbstractProjectBuilder implements Su
                 context.getSourceDirectory() : context.getProjectRoot();
 
         File supervisorModuleDir = new File(srcDir, "eu.kalafatic.evolution.supervisor");
+        if (!supervisorModuleDir.exists() && context.getProjectRoot() != null) {
+            supervisorModuleDir = new File(context.getProjectRoot(), "eu.kalafatic.evolution.supervisor");
+        }
+
         if (!supervisorModuleDir.exists()) {
             return TaskResult.failure("build_supervisor", "Supervisor module directory does not exist: " + supervisorModuleDir.getAbsolutePath(), null);
         }
@@ -51,6 +55,9 @@ public class MavenSupervisorBuilder extends AbstractProjectBuilder implements Su
                 context.getSourceDirectory() : context.getProjectRoot();
 
         File targetDir = new File(srcDir, "eu.kalafatic.evolution.supervisor/target");
+        if (!targetDir.exists() && context.getProjectRoot() != null) {
+            targetDir = new File(context.getProjectRoot(), "eu.kalafatic.evolution.supervisor/target");
+        }
         if (targetDir.exists()) {
             File[] jars = targetDir.listFiles((dir, name) -> name.endsWith(".jar") && !name.endsWith("-sources.jar"));
             if (jars != null && jars.length > 0) {
