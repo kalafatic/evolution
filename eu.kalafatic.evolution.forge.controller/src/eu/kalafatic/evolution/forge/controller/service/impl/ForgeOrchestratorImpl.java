@@ -77,9 +77,11 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
             var composition = datasetComposer.computeComposition(profiles, job.getObjective(), job.getCompositionStrategy().getTokenBudget());
             job.setCompositionStrategy(composition);
 
-            // Fetch HuggingFace and local sources
+            // Fetch HuggingFace and local sources using job token budget
             StringBuilder corpusBuilder = new StringBuilder();
-            fetchHuggingFaceSources(job.getSourcePaths(), composition.getSourceWeights(), corpusBuilder, logFile);
+            long tokenBudget = composition.getTokenBudget();
+            long targetBytesBudget = tokenBudget > 0 ? tokenBudget * 4 : 500_000_000L; // Match requested budget or default 500MB
+            fetchHuggingFaceSources(job.getSourcePaths(), composition.getSourceWeights(), targetBytesBudget, corpusBuilder, logFile);
 
             // Scan local files using SourceAnalysisAgent
             List<Path> scannedPaths = resolveScannedPaths(job.getSourcePaths(), projectPath, logFile);
@@ -268,8 +270,8 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
         }
     }
 
-    private void fetchHuggingFaceSources(List<String> sourcePaths, Map<String, Double> sourceWeights, StringBuilder corpusBuilder, Path logFile) {
-        if (sourcePaths == null) return;
+    private void fetchHuggingFaceSources(List<String> sourcePaths, Map<String, Double> sourceWeights, long targetBytesBudget, StringBuilder corpusBuilder, Path logFile) {
+        if (sourcePaths == null || sourcePaths.isEmpty()) return;
         for (String sourceStr : sourcePaths) {
             if (sourceStr != null && (sourceStr.contains("/") || sourceStr.equalsIgnoreCase("wikitext")) && !Files.exists(Paths.get(sourceStr))) {
                 try {
@@ -280,11 +282,11 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
                     hfSource.initialize();
 
                     double weight = sourceWeights.getOrDefault(sourceStr, 1.0);
-                    long targetBytesForSource = (long) (10_000_000 * weight); // Up to ~10MB per source weight
+                    long sourceByteLimit = targetBytesBudget > 0 ? (long) (targetBytesBudget * weight) : Long.MAX_VALUE;
                     long currentBytes = 0;
                     int sampleCount = 0;
 
-                    while (hfSource.hasNext() && currentBytes < targetBytesForSource) {
+                    while (hfSource.hasNext() && (sourceByteLimit <= 0 || currentBytes < sourceByteLimit)) {
                         NormalizedSample sample = hfSource.next();
                         String text = sample.toFullText();
                         corpusBuilder.append(text).append("\n\n");
