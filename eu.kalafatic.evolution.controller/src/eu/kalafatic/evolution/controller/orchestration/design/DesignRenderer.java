@@ -53,6 +53,21 @@ public class DesignRenderer {
             navigatorJs = "log('ERROR: /js/navigator.js not found in bundle resources!');";
         }
 
+        String sharedCss = eu.kalafatic.evolution.controller.tools.FileTool.readResource("/shared.css");
+        if (sharedCss == null) sharedCss = "";
+
+        String architectureCss = eu.kalafatic.evolution.controller.tools.FileTool.readResource("/architecture.css");
+        if (architectureCss == null) architectureCss = "";
+
+        String creaticCss = eu.kalafatic.evolution.controller.tools.FileTool.readResource("/creatic.css");
+        if (creaticCss == null) creaticCss = "";
+
+        String creaticJs = eu.kalafatic.evolution.controller.tools.FileTool.readResource("/creatic.js");
+        if (creaticJs == null) creaticJs = "";
+
+        String authJs = eu.kalafatic.evolution.controller.tools.FileTool.readResource("/auth-integration.js");
+        if (authJs == null) authJs = "";
+
         // Use JSON quoting to safely escape strings (especially paths with backslashes) for JS insertion
         String viewModeJson = org.json.JSONObject.quote(viewMode != null ? viewMode : "COMPONENTS");
         String targetPathJson = org.json.JSONObject.quote(targetPath != null ? targetPath : "");
@@ -70,6 +85,11 @@ public class DesignRenderer {
 
         return template
             .replace("{{BASE_URL}}", baseUrl)
+            .replace("{{SHARED_CSS}}", sharedCss)
+            .replace("{{ARCHITECTURE_CSS}}", architectureCss)
+            .replace("{{CREATIC_CSS}}", creaticCss)
+            .replace("{{CREATIC_JS}}", creaticJs)
+            .replace("{{AUTH_JS}}", authJs)
             .replace("{{MODEL_JSON}}", serializeModel(model))
             .replace("{{VIEW_MODE_JSON}}", viewModeJson)
             .replace("{{TARGET_PATH_JSON}}", targetPathJson)

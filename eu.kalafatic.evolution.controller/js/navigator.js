@@ -358,21 +358,21 @@
 
     function getRoleIcon(type) {
         const icons = {
-            'USE_CASE': '🎯',
-            'SUBSYSTEM': '⚙️',
-            'DOMAIN': '🌐',
-            'BUNDLE': '📦',
-            'MAVEN_MODULE': '🧱',
-            'MODULE': '🧩',
-            'ORCHESTRATION': '🧬',
-            'MEDIATION': '🔀',
-            'SUPERVISION': '🛡️',
-            'HOTSPOT': '🔥',
-            'OBJECTIVE': '📌',
-            'DOCS': '📚',
-            'COMPONENT': '⚙️'
+            'USE_CASE': '\u25C6',
+            'SUBSYSTEM': '\u2699',
+            'DOMAIN': '\u25CF',
+            'BUNDLE': '\u25A0',
+            'MAVEN_MODULE': '\u25A1',
+            'MODULE': '\u25A2',
+            'ORCHESTRATION': '\u269B',
+            'MEDIATION': '\u21C4',
+            'SUPERVISION': '\u26E8',
+            'HOTSPOT': '\u25B2',
+            'OBJECTIVE': '\u25B6',
+            'DOCS': '\u25A4',
+            'COMPONENT': '\u25A0'
         };
-        return icons[type] || '📄';
+        return icons[type] || '\u25A0';
     }
 
     function getRoleColor(type) {
