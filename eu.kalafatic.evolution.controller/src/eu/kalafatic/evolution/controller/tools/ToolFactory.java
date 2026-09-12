@@ -27,6 +27,7 @@ public class ToolFactory {
         registerTool(EvolutionConstants.TOOL_ECLIPSE, new EclipseTool());
         registerTool(EvolutionConstants.TOOL_CPP, new CppTool());
         registerTool(EvolutionConstants.TOOL_DATABASE, new DatabaseTool());
+        registerTool(DatasetAcquisitionTool.NAME, new DatasetAcquisitionTool());
     }
 
     /**
