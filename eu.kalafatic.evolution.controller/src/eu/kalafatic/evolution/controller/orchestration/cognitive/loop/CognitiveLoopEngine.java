@@ -84,11 +84,10 @@ public class CognitiveLoopEngine implements ICognitiveLoop {
             iteration++;
             logTrace(taskContext, eventBus, sessionId, "[COGNITIVE] Iteration #" + iteration + " strategy: " + worldState.getActiveStrategy().getIdentifier());
 
-            // Check for generic stagnation
+            // Check for generic stagnation and record as evidence in WorldState
             if (worldState.detectStagnation(2)) {
-                logTrace(taskContext, eventBus, sessionId, "[COGNITIVE] Generic stagnation detected (repeated failure signature). Forcing strategy adaptation.");
-                CognitiveStrategy adapted = new CognitiveStrategy("ADAPTED_AFTER_STAGNATION_" + iteration, "Recover from stagnation", Collections.emptyList(), Collections.emptyMap(), "Stagnation recovery", 0.85);
-                worldState.setActiveStrategy(adapted);
+                logTrace(taskContext, eventBus, sessionId, "[COGNITIVE] Generic stagnation detected (repeated failure signature). Recording STAGNATION_DETECTED in WorldState.");
+                worldState.setFact("STAGNATION_DETECTED", Boolean.TRUE);
             }
 
             // 1. UNDERSTAND & PLAN
@@ -108,18 +107,18 @@ public class CognitiveLoopEngine implements ICognitiveLoop {
                 return new CognitiveResult(sessionId, goal, currentState, observations, decisions, iteration, darwinInvocations, decision.getReasoning(), System.currentTimeMillis() - startTime);
             }
 
-            // 2. ADAPT & STRATEGY SHIFT (Correct semantics: update strategy and proceed to next planning iteration)
+            // 2. ADAPT & STRATEGY SHIFT (Correct semantics: update strategy and proceed directly to next planning iteration)
             if (decision.getType() == CognitiveDecisionType.ADAPT) {
                 currentState = CognitiveState.ADAPTING;
                 String newStratId = decision.getCommandOrStrategy() != null ? decision.getCommandOrStrategy() : "ADAPTED_STRATEGY_" + iteration;
                 CognitiveStrategy newStrat = new CognitiveStrategy(newStratId, decision.getReasoning(), Collections.emptyList(), decision.getParameters(), decision.getReasoning(), decision.getConfidence());
                 worldState.setActiveStrategy(newStrat);
                 logTrace(taskContext, eventBus, sessionId, "[COGNITIVE] Strategy adapted -> " + newStratId + ". Reason: " + decision.getReasoning());
-                continue; // Proceed to next planning phase under new strategy without executing an invented action
+                continue; // Return directly to planning loop under the new strategy
             }
 
             // 3. REAL DARWIN ESCALATION
-            if (decision.getType() == CognitiveDecisionType.START_DARWIN || consecutiveNoProgress >= 2) {
+            if (decision.getType() == CognitiveDecisionType.START_DARWIN) {
                 currentState = CognitiveState.DARWINING;
                 logTrace(taskContext, eventBus, sessionId, "[COGNITIVE] State transition -> " + currentState + " (Executing real Darwin evolutionary search)");
                 darwinInvocations++;
@@ -171,7 +170,8 @@ public class CognitiveLoopEngine implements ICognitiveLoop {
             worldState.setCurrentProgress(eval.getProgress());
 
             double progressDelta = eval.getProgress() - previousProgress;
-            if (progressDelta <= 0.001 && (actionObs == null || !actionObs.isSuccess())) {
+            // Decoupled action success from goal progress delta: 0 progress delta increments consecutiveNoProgress
+            if (progressDelta <= 0.001) {
                 consecutiveNoProgress++;
             } else {
                 consecutiveNoProgress = 0;
@@ -204,7 +204,7 @@ public class CognitiveLoopEngine implements ICognitiveLoop {
                     LlmResponse response = aiService.sendLlmRequest(taskContext.getOrchestrator(), prompt, 0.7f, null, taskContext, null);
                     if (response != null && response.getFinalContent() != null) {
                         CognitiveDecision parsed = parseLlmDecision(response.getFinalContent());
-                        if (parsed != null) {
+                        if (parsed != null && validateCapabilityExists(session, parsed.getTargetCapability())) {
                             return parsed;
                         }
                     }
@@ -214,29 +214,83 @@ public class CognitiveLoopEngine implements ICognitiveLoop {
             }
         }
 
-        // Generic domain-independent capability selection without "shell" fallback
+        // Generic capability selection based on goal/strategy relevance rather than arbitrary list indices
         var availableCaps = capabilityDiscovery.discoverCapabilities(session);
         if (availableCaps.isEmpty()) {
-            return CognitiveDecision.of(CognitiveDecisionType.ABORT, "NO_CAPABILITY_AVAILABLE: No tools or session capabilities registered.");
+            return CognitiveDecision.of(CognitiveDecisionType.FAILURE, "NO_ACTIONABLE_CAPABILITY: No capabilities or tools registered.");
+        }
+
+        // Match goal requirements or strategy to available capability descriptors
+        CapabilityDiscovery.CapabilityDescriptor matchedCap = selectRelevantCapability(goal, worldState, availableCaps, observations);
+        if (matchedCap == null) {
+            return CognitiveDecision.of(CognitiveDecisionType.FAILURE, "NO_ACTIONABLE_CAPABILITY: No relevant capability matches goal requirements or strategy.");
         }
 
         if (observations.isEmpty()) {
-            String selectedCap = availableCaps.get(0).getName();
-            return CognitiveDecision.capability(selectedCap, "execute", "Generic initial capability selection from registry");
+            return CognitiveDecision.capability(matchedCap.getName(), "execute", "Selected relevant capability matching goal: " + matchedCap.getName());
         }
 
         CognitiveObservation lastObs = observations.get(observations.size() - 1);
         if (lastObs.isSuccess()) {
-            return CognitiveDecision.capability(lastObs.getActionName(), "continue", "Last step succeeded. Continuing capability execution.");
+            return CognitiveDecision.capability(matchedCap.getName(), "continue", "Continuing capability execution matching goal: " + matchedCap.getName());
         } else {
             String errorType = lastObs.getStructuredError() != null ? lastObs.getStructuredError() : "ACTION_FAILED";
-            // If we adapted in the previous step, select an alternative capability
+
+            // If stagnation is flagged in WorldState, propose Darwin search
+            if (Boolean.TRUE.equals(worldState.getFact("STAGNATION_DETECTED"))) {
+                return CognitiveDecision.darwin("EVOLUTIONARY_SEARCH", "Stagnation detected; proposing Darwin evolutionary search.");
+            }
+
+            // If we adapted in the previous step, find another relevant capability
             if (!decisions.isEmpty() && decisions.get(decisions.size() - 1).getType() == CognitiveDecisionType.ADAPT) {
-                String altCap = availableCaps.size() > 1 ? availableCaps.get(1).getName() : availableCaps.get(0).getName();
-                return CognitiveDecision.capability(altCap, "execute_alternative", "Executing alternative capability following strategy adaptation");
+                CapabilityDiscovery.CapabilityDescriptor altCap = selectAlternativeCapability(matchedCap.getName(), availableCaps);
+                if (altCap != null) {
+                    return CognitiveDecision.capability(altCap.getName(), "execute_alternative", "Selected alternative capability following strategy adaptation: " + altCap.getName());
+                }
             }
             return CognitiveDecision.adapt("ADAPTED_STRATEGY_FOR_" + errorType, "Observed action failure (" + errorType + "), proposing adapted strategy.");
         }
+    }
+
+    private CapabilityDiscovery.CapabilityDescriptor selectRelevantCapability(CognitiveGoal goal, WorldState worldState, List<CapabilityDiscovery.CapabilityDescriptor> caps, List<CognitiveObservation> obs) {
+        String goalText = (goal.getDescription() + " " + goal.getTargetDomain()).toLowerCase();
+
+        // Match against preferred capabilities in active strategy
+        List<String> preferred = worldState.getActiveStrategy().getPreferredCapabilities();
+        for (String pref : preferred) {
+            for (var cap : caps) {
+                if (cap.getName().equalsIgnoreCase(pref)) {
+                    return cap;
+                }
+            }
+        }
+
+        // Match based on goal text relevance
+        for (var cap : caps) {
+            String name = cap.getName().toLowerCase();
+            if (goalText.contains(name) || (name.contains("dataset") && goalText.contains("acquire")) || (name.contains("maven") && goalText.contains("build"))) {
+                return cap;
+            }
+        }
+
+        // Return first registered capability only if it exists
+        return !caps.isEmpty() ? caps.get(0) : null;
+    }
+
+    private CapabilityDiscovery.CapabilityDescriptor selectAlternativeCapability(String primaryCapName, List<CapabilityDiscovery.CapabilityDescriptor> caps) {
+        for (var cap : caps) {
+            if (!cap.getName().equalsIgnoreCase(primaryCapName)) {
+                return cap;
+            }
+        }
+        return !caps.isEmpty() ? caps.get(0) : null;
+    }
+
+    private boolean validateCapabilityExists(SessionContainer session, String capName) {
+        if (capName == null || capName.isEmpty()) return false;
+        if (ToolFactory.getTool(capName) != null) return true;
+        if (session != null && session.getCapabilityRegistry() != null && session.getCapabilityRegistry().getCapability(capName) != null) return true;
+        return false;
     }
 
     private String buildPrompt(CognitiveGoal goal, WorldState worldState, List<CognitiveObservation> observations, List<CognitiveDecision> decisions, List<CapabilityDiscovery.CapabilityDescriptor> capabilities) {
