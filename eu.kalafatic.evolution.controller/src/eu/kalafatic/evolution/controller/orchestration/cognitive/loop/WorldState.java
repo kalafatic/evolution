@@ -9,7 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Session-scoped representation of the system's understanding of world state,
- * known facts, artifacts, goal progress, and capability availability.
+ * known facts, artifacts, goal progress, information gain, and capability availability.
  */
 public class WorldState {
 
@@ -19,10 +19,12 @@ public class WorldState {
     private final List<CognitiveObservation> observations = Collections.synchronizedList(new ArrayList<>());
     private final List<CognitiveDecision> decisionHistory = Collections.synchronizedList(new ArrayList<>());
     private double currentProgress = 0.0;
-    private String activeStrategy = "DEFAULT";
+    private double informationGain = 0.0;
+    private CognitiveStrategy activeStrategy;
 
     public WorldState(String sessionId) {
         this.sessionId = sessionId;
+        this.activeStrategy = CognitiveStrategy.ofDefault("INITIAL_DEFAULT_STRATEGY");
     }
 
     public String getSessionId() {
@@ -56,6 +58,9 @@ public class WorldState {
     public void addObservation(CognitiveObservation obs) {
         if (obs != null) {
             observations.add(obs);
+            if (obs.getStdout() != null && !obs.getStdout().isEmpty()) {
+                informationGain += 0.1;
+            }
         }
     }
 
@@ -81,12 +86,33 @@ public class WorldState {
         this.currentProgress = Math.max(0.0, Math.min(1.0, currentProgress));
     }
 
-    public String getActiveStrategy() {
+    public double getInformationGain() {
+        return informationGain;
+    }
+
+    public CognitiveStrategy getActiveStrategy() {
         return activeStrategy;
     }
 
-    public void setActiveStrategy(String activeStrategy) {
-        this.activeStrategy = activeStrategy != null ? activeStrategy : "DEFAULT";
+    public void setActiveStrategy(CognitiveStrategy activeStrategy) {
+        this.activeStrategy = activeStrategy != null ? activeStrategy : CognitiveStrategy.ofDefault("DEFAULT_STRATEGY");
+    }
+
+    public boolean detectStagnation(int windowSize) {
+        if (observations.size() < windowSize) {
+            return false;
+        }
+        int count = observations.size();
+        CognitiveObservation last = observations.get(count - 1);
+        for (int i = count - 2; i >= count - windowSize; i--) {
+            CognitiveObservation prev = observations.get(i);
+            if (last.getActionName().equalsIgnoreCase(prev.getActionName()) &&
+                !last.isSuccess() && !prev.isSuccess() &&
+                last.getStructuredError() != null && last.getStructuredError().equals(prev.getStructuredError())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -94,8 +120,8 @@ public class WorldState {
         return "WorldState{" +
                 "sessionId='" + sessionId + '\'' +
                 ", progress=" + String.format("%.2f", currentProgress) +
-                ", activeStrategy='" + activeStrategy + '\'' +
-                ", factsCount=" + facts.size() +
+                ", infoGain=" + String.format("%.2f", informationGain) +
+                ", activeStrategy='" + activeStrategy.getIdentifier() + '\'' +
                 ", observationsCount=" + observations.size() +
                 '}';
     }
