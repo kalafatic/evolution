@@ -53,6 +53,21 @@ public class DesignRenderer {
             navigatorJs = "log('ERROR: /js/navigator.js not found in bundle resources!');";
         }
 
+        String sharedCss = eu.kalafatic.evolution.controller.tools.FileTool.readResource("/shared.css");
+        if (sharedCss == null) sharedCss = "";
+
+        String architectureCss = eu.kalafatic.evolution.controller.tools.FileTool.readResource("/architecture.css");
+        if (architectureCss == null) architectureCss = "";
+
+        String creaticCss = eu.kalafatic.evolution.controller.tools.FileTool.readResource("/creatic.css");
+        if (creaticCss == null) creaticCss = "";
+
+        String creaticJs = eu.kalafatic.evolution.controller.tools.FileTool.readResource("/creatic.js");
+        if (creaticJs == null) creaticJs = "";
+
+        String authJs = eu.kalafatic.evolution.controller.tools.FileTool.readResource("/auth-integration.js");
+        if (authJs == null) authJs = "";
+
         // Use JSON quoting to safely escape strings (especially paths with backslashes) for JS insertion
         String viewModeJson = org.json.JSONObject.quote(viewMode != null ? viewMode : "COMPONENTS");
         String targetPathJson = org.json.JSONObject.quote(targetPath != null ? targetPath : "");
@@ -70,6 +85,11 @@ public class DesignRenderer {
 
         return template
             .replace("{{BASE_URL}}", baseUrl)
+            .replace("{{SHARED_CSS}}", sharedCss)
+            .replace("{{ARCHITECTURE_CSS}}", architectureCss)
+            .replace("{{CREATIC_CSS}}", creaticCss)
+            .replace("{{CREATIC_JS}}", creaticJs)
+            .replace("{{AUTH_JS}}", authJs)
             .replace("{{MODEL_JSON}}", serializeModel(model))
             .replace("{{VIEW_MODE_JSON}}", viewModeJson)
             .replace("{{TARGET_PATH_JSON}}", targetPathJson)
@@ -94,6 +114,16 @@ public class DesignRenderer {
             c.put("description", cr.getDescription());
             c.put("path", cr.getPath());
             c.put("importanceScore", cr.getImportanceScore());
+            c.put("parentId", cr.getParentId() != null ? cr.getParentId() : "");
+            c.put("level", cr.getLevel());
+            c.put("qualifiedName", cr.getQualifiedName() != null ? cr.getQualifiedName() : cr.getName());
+            c.put("superClass", cr.getSuperClass() != null ? cr.getSuperClass() : "");
+            c.put("expanded", cr.isExpanded());
+            c.put("incomingCount", cr.getIncomingCount());
+            c.put("outgoingCount", cr.getOutgoingCount());
+            c.put("interfaces", new org.json.JSONArray(cr.getInterfaces()));
+            c.put("fields", new org.json.JSONArray(cr.getFields()));
+            c.put("methods", new org.json.JSONArray(cr.getMethods()));
             c.put("useCases", new org.json.JSONArray(cr.getUseCases()));
             c.put("keyClasses", new org.json.JSONArray(cr.getKeyClasses()));
             comps.put(c);
@@ -106,6 +136,8 @@ public class DesignRenderer {
             r.put("from", rr.getFrom());
             r.put("to", rr.getTo());
             r.put("type", rr.getType());
+            r.put("count", rr.getCount());
+            r.put("details", new org.json.JSONArray(rr.getDetails()));
             rels.put(r);
         }
         json.put("relationships", rels);

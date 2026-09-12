@@ -12,6 +12,15 @@ public class ComponentRecord {
     private double importanceScore;
     private int x;
     private int y;
+    private String parentId;
+    private int level = 2;
+    private String qualifiedName;
+    private String superClass;
+    private boolean expanded = false;
+    private int incomingCount = 0;
+    private int outgoingCount = 0;
+    private java.util.List<String> interfaces = new java.util.ArrayList<>();
+    private java.util.List<String> fields = new java.util.ArrayList<>();
     private java.util.List<String> properties = new java.util.ArrayList<>();
     private java.util.List<String> methods = new java.util.ArrayList<>();
     private java.util.List<String> keyClasses = new java.util.ArrayList<>();
@@ -60,4 +69,31 @@ public class ComponentRecord {
 
     public java.util.List<ComponentRecord> getChildNodes() { return childNodes; }
     public void setChildNodes(java.util.List<ComponentRecord> childNodes) { this.childNodes = childNodes; }
+
+    public String getParentId() { return parentId; }
+    public void setParentId(String parentId) { this.parentId = parentId; }
+
+    public int getLevel() { return level; }
+    public void setLevel(int level) { this.level = level; }
+
+    public String getQualifiedName() { return qualifiedName; }
+    public void setQualifiedName(String qualifiedName) { this.qualifiedName = qualifiedName; }
+
+    public String getSuperClass() { return superClass; }
+    public void setSuperClass(String superClass) { this.superClass = superClass; }
+
+    public boolean isExpanded() { return expanded; }
+    public void setExpanded(boolean expanded) { this.expanded = expanded; }
+
+    public int getIncomingCount() { return incomingCount; }
+    public void setIncomingCount(int incomingCount) { this.incomingCount = incomingCount; }
+
+    public int getOutgoingCount() { return outgoingCount; }
+    public void setOutgoingCount(int outgoingCount) { this.outgoingCount = outgoingCount; }
+
+    public java.util.List<String> getInterfaces() { return interfaces; }
+    public void setInterfaces(java.util.List<String> interfaces) { this.interfaces = interfaces; }
+
+    public java.util.List<String> getFields() { return fields; }
+    public void setFields(java.util.List<String> fields) { this.fields = fields; }
 }

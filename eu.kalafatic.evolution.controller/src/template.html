@@ -4,10 +4,18 @@
     <meta charset="UTF-8">
     <title>Evolution Architecture Map</title>
     <base href="{{BASE_URL}}">
-    <link rel="stylesheet" href="/shared.css">
-    <link rel="stylesheet" href="/architecture.css">
-    <link rel="stylesheet" href="/creatic.css">
-    <script src="/auth-integration.js"></script>
+    <style>
+{{SHARED_CSS}}
+    </style>
+    <style>
+{{ARCHITECTURE_CSS}}
+    </style>
+    <style>
+{{CREATIC_CSS}}
+    </style>
+    <script>
+{{AUTH_JS}}
+    </script>
 	<script>
 	       // Diagnostic JavaLog Bridge
 	       window.onerror = function(msg, url, line, col, error) {
@@ -97,7 +105,12 @@
         <div id="main-container">
             <div id="header">
                 <div style="font-weight: 700; font-size: 14px; color: var(--text);" id="project-title">Loading Architecture...</div>
+                <div id="header-search-container">
+                    <input id="graph-search" type="text" placeholder="🔍 Search plugin, package, class, method..." oninput="onGraphSearch(this.value)" autocomplete="off">
+                    <div id="search-dropdown"></div>
+                </div>
                 <div style="font-size: 11px; color: var(--text-dim); display: flex; align-items: center; gap: 6px;">
+                    <button id="clear-focus-btn" class="btn btn-sm" style="display:none;" onclick="clearFocus()">⊙ Clear Focus</button>
                     <span style="width: 8px; height: 8px; background-color: var(--success); border-radius: 50%; display: inline-block;"></span>
                     <span>Forge Graph Engine</span>
                 </div>
@@ -140,7 +153,9 @@
         <div id="popup-content"></div>
     </div>
 
-    <script src="creatic.js"></script>
+    <script>
+{{CREATIC_JS}}
+    </script>
     <script>
         function log(msg) { if (window.logFunction) window.logFunction(msg); else console.log(msg); }
 
@@ -224,7 +239,9 @@
         };
 
     </script>
-    <script src="js/navigator.js"></script>
+    <script>
+{{NAVIGATOR_JS}}
+    </script>
     <script>
         window.onload = function(event) {
             log('ready');

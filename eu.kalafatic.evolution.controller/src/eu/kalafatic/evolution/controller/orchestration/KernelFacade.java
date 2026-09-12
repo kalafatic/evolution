@@ -36,6 +36,34 @@ public class KernelFacade implements IOrchestrator {
 				createEngine(context, session, kernel, platformType);
 			}
 		}
+
+		String promptLower = taskRequest.getPrompt() != null ? taskRequest.getPrompt().toLowerCase() : "";
+		if (promptLower.contains("acquire") && (promptLower.contains("data") || promptLower.contains("dataset"))) {
+			java.util.Map<String, Object> goalParams = new java.util.HashMap<>();
+			goalParams.put("targetUsableBytes", 1024L * 1024L * 10L);
+			goalParams.put("targetMetric", 1024L * 1024L * 10L);
+			goalParams.put("currentMetricKey", "quantity");
+
+			eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveGoal goal =
+				new eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveGoal(
+					taskRequest.getPrompt(),
+					"DATASET_ACQUISITION",
+					goalParams
+				);
+
+			eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveLoopEngine cognitiveEngine =
+				new eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveLoopEngine(10, null);
+
+			eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveResult result =
+				cognitiveEngine.solve(session, context, goal);
+
+			OrchestratorResponse response = new OrchestratorResponse();
+			response.setSummary(result.getSummary());
+			response.setContent("Cognitive Execution Result: " + result.getSummary());
+			response.setResultType(result.getFinalState() == eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveState.SUCCESS ? ResultType.CHAT : ResultType.ERROR);
+			return response;
+		}
+
 		return kernel.handle(taskRequest);
 	}	
 

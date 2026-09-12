@@ -203,19 +203,20 @@ public class ArchitectureController {
     }
 
     private DesignModel discoverArchitectureNodes(File root) {
-        DesignModel model = new DesignModel();
+        eu.kalafatic.evolution.controller.orchestration.design.RepoArchitectureScanner scanner = new eu.kalafatic.evolution.controller.orchestration.design.RepoArchitectureScanner();
+        DesignModel model = scanner.scanRepository(root);
+
         eu.kalafatic.utils.semantic.AIContextTool tool = new eu.kalafatic.utils.semantic.AIContextTool();
         Map<String, ComponentRecord> nodes = new HashMap<>();
+        for (ComponentRecord c : model.getComponents()) {
+            nodes.put(c.getId(), c);
+        }
 
         scanForMetadata(root, root, tool, nodes, model);
 
         File archCtx = new File(root, "ARCHITECTURE_CONTEXT.md");
         if (archCtx.exists()) {
             parseArchitectureContext(archCtx, nodes, model);
-        }
-
-        if (model.getComponents().isEmpty()) {
-            discoverLocalStructure(root, root, model);
         }
 
         return model;

@@ -1780,171 +1780,57 @@ public class EvolutionServer extends NanoHTTPD {
         String split = body.optString("split", "train");
         String customOutputDir = body.optString("outputDir", "").trim();
 
-        String timestamp = new java.text.SimpleDateFormat("yyyyMMdd_HHmmss").format(new java.util.Date());
-        String cleanRepoName = repo.replace("/", "_").replace("\\", "_");
-        String outputName = body.optString("artifactName", cleanRepoName + "-" + timestamp + ".evodata");
-        if (!outputName.endsWith(".evodata")) outputName += ".evodata";
-
         long maxSamples = body.optLong("maxSamples", 0);
         long maxBytes = body.optLong("maxBytes", 0);
         long targetUsableBytes = body.optLong("targetUsableBytes", maxBytes > 0 ? maxBytes : 52_428_800L); // Default 50 MB usable target if not specified
-        double minQuality = body.optDouble("minQuality", 0.5);
-        double valSplitRatio = body.optDouble("valSplit", 0.02);
 
-        DatasetSourceConfig config = new DatasetSourceConfig(sourceType, repo);
-        config.setSplit(split);
-        config.setMaxSamples(maxSamples);
-        config.setMaxBytes(targetUsableBytes);
+        String sessionId = body.optString("sessionId", "dataset_acq_" + UUID.randomUUID().toString());
+        SessionContainer sessionCont = SessionManager.getInstance().getOrCreateSession(sessionId);
 
-        List<NormalizedSample> acceptedSamples = new ArrayList<>();
-        long totalAcceptedBytes = 0;
-        long totalRejectedBytes = 0;
-        long totalDuplicateBytes = 0;
-        long totalRawBytes = 0;
+        TaskContext taskContext = new TaskContext(OrchestratorServiceImpl.getInstance().getOrchestrator(), new File("."));
+        taskContext.setSessionId(sessionId);
+        taskContext.getMetadata().put("sourceType", sourceType);
+        taskContext.getMetadata().put("repository", repo);
+        taskContext.getMetadata().put("split", split);
+        taskContext.getMetadata().put("targetUsableBytes", targetUsableBytes);
+        taskContext.getMetadata().put("customOutputDir", customOutputDir);
 
-        DataCleaner cleaner = new DataCleaner();
-        DatasetDeduplicator deduplicator = new DatasetDeduplicator(true);
-        TrainingSampleQualityScorer scorer = new TrainingSampleQualityScorer(minQuality);
+        Map<String, Object> goalParams = new HashMap<>();
+        goalParams.put("targetUsableBytes", targetUsableBytes);
+        goalParams.put("targetMetric", (double) targetUsableBytes);
+        goalParams.put("currentMetricKey", "quantity");
+        goalParams.put("sourceType", sourceType);
+        goalParams.put("repository", repo);
 
-        StringBuilder logBuf = new StringBuilder();
-        logBuf.append("[DATASET PREPARATION] Starting run at ").append(new java.util.Date()).append("\n");
-        logBuf.append("[CONFIG] SourceType: ").append(sourceType).append(", Repo: ").append(repo).append(", Split: ").append(split).append("\n");
-        logBuf.append("[TARGET] Target Usable Training Bytes: ").append(targetUsableBytes).append(" (").append(targetUsableBytes / (1024 * 1024)).append(" MB)\n");
+        eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveGoal goal =
+            new eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveGoal(
+                "Acquire and prepare " + targetUsableBytes + " bytes of " + repo + " training dataset",
+                "DATASET_ACQUISITION",
+                goalParams
+            );
 
-        boolean sourceExhausted = false;
+        eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveLoopEngine cognitiveEngine =
+            new eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveLoopEngine(10, null);
 
-        try {
-            List<eu.kalafatic.evolution.forge.data.api.source.DatasetSource> sources = new ArrayList<>();
-            eu.kalafatic.evolution.forge.data.api.source.DatasetSource primarySource =
-                "HUGGING_FACE".equalsIgnoreCase(sourceType) ? new HuggingFaceDatasetSource(config) :
-                ("EVO_CODEBASE".equalsIgnoreCase(sourceType) ? new eu.kalafatic.evolution.forge.data.impl.source.EvoCodebaseDatasetSource(config) : new LocalDatasetSource(config));
+        eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveResult cognitiveResult =
+            cognitiveEngine.solve(sessionCont, taskContext, goal);
 
-            sources.add(primarySource);
+        long usableBytes = ((Number) taskContext.getMetadata().getOrDefault("usableContentBytes", 0L)).longValue();
+        String acqStatus = (String) taskContext.getMetadata().getOrDefault("acquisitionStatus", cognitiveResult.getFinalState().name());
 
-            eu.kalafatic.evolution.forge.data.api.source.DatasetSourceStats preparationStats;
+        JSONObject result = new JSONObject();
+        result.put("sessionId", sessionId);
+        result.put("status", acqStatus);
+        result.put("cognitiveState", cognitiveResult.getFinalState().name());
+        result.put("requestedUsableBytes", targetUsableBytes);
+        result.put("actualUsableBytes", usableBytes);
+        result.put("attempts", cognitiveResult.getAttempts());
+        result.put("summary", cognitiveResult.getSummary());
 
-            eu.kalafatic.evolution.forge.data.impl.pipeline.DatasetAcquisitionEngine acquisitionEngine =
-                new eu.kalafatic.evolution.forge.data.impl.pipeline.DatasetAcquisitionEngine(cleaner, scorer, deduplicator);
-
-            eu.kalafatic.evolution.forge.data.impl.pipeline.DatasetAcquisitionEngine.AcquisitionResult acqResult =
-                acquisitionEngine.acquireDataset(sources, targetUsableBytes, valSplitRatio);
-
-            acceptedSamples = acqResult.getAcceptedSamples();
-            totalAcceptedBytes = acqResult.getUsableContentBytes();
-            sourceExhausted = acqResult.isSourceExhausted();
-
-            preparationStats = acqResult.getGlobalStats();
-            totalRawBytes = preparationStats.getDownloadedBytes();
-            totalRejectedBytes = preparationStats.getRejectedBytes();
-            totalDuplicateBytes = preparationStats.getDuplicateBytes();
-
-            if (sourceExhausted) {
-                logBuf.append(String.format("[WARNING] Source exhausted before target reached. Requested minimum: %d bytes (%.2f MB), Usable content: %d bytes (%.2f MB), Shortfall: %d bytes (%.2f MB), Coverage: %.2f%%\n",
-                        targetUsableBytes, targetUsableBytes / (1024.0 * 1024.0),
-                        totalAcceptedBytes, totalAcceptedBytes / (1024.0 * 1024.0),
-                        acqResult.getShortfallBytes(), acqResult.getShortfallBytes() / (1024.0 * 1024.0),
-                        acqResult.getCoveragePercent()));
-            } else {
-                logBuf.append("[TARGET REACHED] Target usable minimum bytes reached cleanly. Total accepted: ")
-                      .append(totalAcceptedBytes).append(" bytes.\n");
-            }
-
-            logBuf.append("[STREAM] Read ").append(preparationStats.getTotalSamplesRead()).append(" items, ").append(totalRawBytes).append(" raw bytes.\n");
-            logBuf.append("[STREAM] Accepted ").append(acceptedSamples.size()).append(" clean items (").append(totalAcceptedBytes).append(" bytes) after deduplication & quality scoring.\n");
-
-            List<NormalizedSample> sampled = acceptedSamples;
-
-            // Resolve target output directory matching forged model directories
-            String baseWorkspacePath = ProjectModelManager.getWorkspacePath();
-            if (baseWorkspacePath == null || baseWorkspacePath.trim().isEmpty()) {
-                baseWorkspacePath = ProjectModelManager.getCodebasePath();
-            }
-            if (baseWorkspacePath == null || baseWorkspacePath.trim().isEmpty()) {
-                baseWorkspacePath = System.getProperty("user.dir");
-            }
-
-            File baseFolder = new File(baseWorkspacePath);
-            String formattedRepoPath = repo.replace("\\", "/");
-            File primaryDir;
-            if (!customOutputDir.isEmpty()) {
-                File customFile = new File(customOutputDir);
-                File baseTargetDir = customFile.isAbsolute() ? customFile : new File(baseFolder, customOutputDir);
-                primaryDir = new File(baseTargetDir, formattedRepoPath);
-            } else {
-                primaryDir = new File(new File(baseFolder, "forge-input"), formattedRepoPath);
-            }
-            if (!primaryDir.exists()) primaryDir.mkdirs();
-
-            File targetArtifactFile = new File(primaryDir, outputName);
-            logBuf.append("[OUTPUT] Primary Dataset Artifact Destination: ").append(targetArtifactFile.getAbsolutePath()).append("\n");
-
-            // Save raw downloaded dataset file alongside .evodata artifact
-            File rawOutputFile = new File(primaryDir, cleanRepoName + "-" + timestamp + ".raw.jsonl");
-            try (java.io.PrintWriter pw = new java.io.PrintWriter(new java.io.FileWriter(rawOutputFile, StandardCharsets.UTF_8))) {
-                for (NormalizedSample s : sampled) {
-                    pw.println(s.toJsonLine());
-                }
-            }
-            logBuf.append("[DOWNLOAD] Saved raw downloaded dataset file: ").append(rawOutputFile.getAbsolutePath()).append("\n");
-
-            preparationStats.setRequestedUsableBytes(targetUsableBytes);
-            preparationStats.setAcceptedBytes(totalAcceptedBytes);
-            preparationStats.setDownloadedBytes(totalRawBytes);
-            preparationStats.setRawContentBytes(totalRawBytes);
-            preparationStats.setRejectedBytes(totalRejectedBytes);
-            preparationStats.setDuplicateBytes(totalDuplicateBytes);
-            preparationStats.setAcceptedSamples(sampled.size());
-
-            long valBytes = (long) (totalAcceptedBytes * valSplitRatio);
-            long trainBytes = totalAcceptedBytes - valBytes;
-            preparationStats.setTrainingBytes(trainBytes);
-            preparationStats.setValidationBytes(valBytes);
-
-            // Copy to controller models directory if available
-            File controllerModelsDir = eu.kalafatic.evolution.controller.manager.LlamaService.resolveControllerModelsDir();
-            if (controllerModelsDir != null && controllerModelsDir.exists() && !controllerModelsDir.getAbsolutePath().equals(primaryDir.getAbsolutePath())) {
-                File controllerTarget = new File(controllerModelsDir, outputName);
-                EvoDatasetArtifact ctrlArtifact = new EvoDatasetArtifact(controllerTarget);
-                ctrlArtifact.save(sampled, config, preparationStats, valSplitRatio);
-                logBuf.append("[OUTPUT] Copied dataset artifact to Controller Models Directory: ").append(controllerTarget.getAbsolutePath()).append("\n");
-            }
-
-            // Also save copy to dist directory under workspace/product folder if present
-            File distDir = new File(baseFolder, "dist");
-            if (distDir.exists() && distDir.isDirectory() && !distDir.getAbsolutePath().equals(primaryDir.getAbsolutePath())) {
-                File distTargetFile = new File(distDir, outputName);
-                EvoDatasetArtifact distArtifact = new EvoDatasetArtifact(distTargetFile);
-                distArtifact.save(sampled, config, preparationStats, valSplitRatio);
-                logBuf.append("[OUTPUT] Secondary Dataset Copy Saved: ").append(distTargetFile.getAbsolutePath()).append("\n");
-            }
-
-            EvoDatasetArtifact artifact = new EvoDatasetArtifact(targetArtifactFile);
-            artifact.save(sampled, config, preparationStats, valSplitRatio);
-
-            if (sampled.isEmpty()) {
-                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json",
-                    new JSONObject().put("error", "Dataset preparation failed: 0 valid samples were accepted from source " + repo).toString());
-            }
-
-            JSONObject result = new JSONObject();
-            result.put("status", artifact.getStatus().name());
-            result.put("artifactPath", targetArtifactFile.getAbsolutePath());
-            result.put("totalAccepted", sampled.size());
-            result.put("requestedUsableBytes", targetUsableBytes);
-            result.put("actualUsableBytes", totalAcceptedBytes);
-            result.put("trainingBytes", trainBytes);
-            result.put("validationBytes", valBytes);
-            result.put("sourceExhausted", sourceExhausted);
-            if (sourceExhausted) {
-                double coverage = (totalAcceptedBytes * 100.0) / Math.max(1, targetUsableBytes);
-                result.put("coveragePercent", String.format("%.2f", coverage));
-            }
-            result.put("report", artifact.buildReportText());
-
+        if (cognitiveResult.getFinalState() == eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveState.SUCCESS) {
             return newFixedLengthResponse(Response.Status.OK, "application/json", result.toString());
-        } catch (Exception e) {
-            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "application/json",
-                new JSONObject().put("error", "Dataset preparation error: " + e.getMessage()).toString());
+        } else {
+            return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", result.toString());
         }
     }
 
