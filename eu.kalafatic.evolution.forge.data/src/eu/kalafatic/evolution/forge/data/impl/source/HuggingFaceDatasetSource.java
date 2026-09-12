@@ -278,6 +278,8 @@ public class HuggingFaceDatasetSource implements DatasetSource {
                             }
                         }
                     }
+                    System.out.printf("[HF-TRACE] Repo: %s | Config: %s | Split: %s | Offset: %d | Fetched rows: %d | Chunk samples: %d | Total samples read: %d\n",
+                            repo, cfg, split, currentOffset, rows.length(), currentChunk.size(), stats.getTotalSamplesRead());
                     currentOffset += rows.length();
                     if (rows.length() == 0) {
                         if (!availableSplits.isEmpty() && currentSplitIndex < availableSplits.size() - 1) {
@@ -477,6 +479,8 @@ public class HuggingFaceDatasetSource implements DatasetSource {
         sample.setTokenCount((int) sampleTokens);
         stats.incrementSamplesRead();
         stats.addBytesRead(sampleBytes);
+        stats.addAcceptedBytes(sampleBytes);
+        stats.addDownloadedBytes(sampleBytes);
         stats.addEstimatedTokens(sampleTokens);
 
         return sample;

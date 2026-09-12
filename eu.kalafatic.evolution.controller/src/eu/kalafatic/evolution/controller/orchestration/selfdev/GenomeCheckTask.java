@@ -14,6 +14,9 @@ public class GenomeCheckTask extends AbstractSelfDevTask {
     protected TaskResult run(SelfDevContext context) throws Exception {
         File repoRoot = context.getProjectRoot();
         File genomeModuleDir = new File(repoRoot, "eu.kalafatic.evolution.selfdev.genome");
+        if ((!genomeModuleDir.exists() || !genomeModuleDir.isDirectory()) && context.getSourceDirectory() != null) {
+            genomeModuleDir = new File(context.getSourceDirectory(), "eu.kalafatic.evolution.selfdev.genome");
+        }
 
         if (!genomeModuleDir.exists() || !genomeModuleDir.isDirectory()) {
             return TaskResult.failure(id, "Genome module directory does not exist: " + genomeModuleDir.getAbsolutePath(), null);
