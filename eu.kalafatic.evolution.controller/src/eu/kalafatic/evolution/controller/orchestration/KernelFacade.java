@@ -39,10 +39,14 @@ public class KernelFacade implements IOrchestrator {
 
 		String promptLower = taskRequest.getPrompt() != null ? taskRequest.getPrompt().toLowerCase() : "";
 		if (promptLower.contains("acquire") && (promptLower.contains("data") || promptLower.contains("dataset"))) {
+			long targetBytes = parseTargetBytesFromPrompt(taskRequest.getPrompt(), context);
+
 			java.util.Map<String, Object> goalParams = new java.util.HashMap<>();
-			goalParams.put("targetUsableBytes", 1024L * 1024L * 10L);
-			goalParams.put("targetMetric", 1024L * 1024L * 10L);
+			goalParams.put("targetUsableBytes", targetBytes);
+			goalParams.put("targetMetric", (double) targetBytes);
 			goalParams.put("currentMetricKey", "quantity");
+
+			context.getMetadata().put("targetUsableBytes", targetBytes);
 
 			eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveGoal goal =
 				new eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveGoal(
@@ -65,7 +69,26 @@ public class KernelFacade implements IOrchestrator {
 		}
 
 		return kernel.handle(taskRequest);
-	}	
+	}
+
+	private long parseTargetBytesFromPrompt(String prompt, TaskContext context) {
+		if (context != null && context.getMetadata().containsKey("targetUsableBytes")) {
+			return ((Number) context.getMetadata().get("targetUsableBytes")).longValue();
+		}
+		if (prompt != null) {
+			java.util.regex.Matcher gbMatcher = java.util.regex.Pattern.compile("(\\d+(?:\\.\\d+)?)\\s*gb", java.util.regex.Pattern.CASE_INSENSITIVE).matcher(prompt);
+			if (gbMatcher.find()) {
+				double gb = Double.parseDouble(gbMatcher.group(1));
+				return (long) (gb * 1024L * 1024L * 1024L);
+			}
+			java.util.regex.Matcher mbMatcher = java.util.regex.Pattern.compile("(\\d+(?:\\.\\d+)?)\\s*mb", java.util.regex.Pattern.CASE_INSENSITIVE).matcher(prompt);
+			if (mbMatcher.find()) {
+				double mb = Double.parseDouble(mbMatcher.group(1));
+				return (long) (mb * 1024L * 1024L);
+			}
+		}
+		return 52_428_800L; // 50 MB default if unspecified
+	}
 
 	@Override
 	public String execute(String request, TaskContext context) throws Exception {

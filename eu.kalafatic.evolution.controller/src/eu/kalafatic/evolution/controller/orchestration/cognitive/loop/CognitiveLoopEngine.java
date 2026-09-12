@@ -371,30 +371,36 @@ public class CognitiveLoopEngine implements ICognitiveLoop {
         File workingDir = taskContext != null && taskContext.getProjectRoot() != null ? taskContext.getProjectRoot() : new File(".");
 
         try {
-            // 1. ToolFactory
             ITool tool = ToolFactory.getTool(capName);
-            if (tool != null) {
-                String out = tool.execute(cmd, workingDir, taskContext);
-                long duration = System.currentTimeMillis() - start;
-                return CognitiveObservation.ofSuccess(capName, out, duration);
-            }
-
-            // 2. Session Capability Registry
-            if (session != null && session.getCapabilityRegistry() != null) {
+            if (tool == null && session != null && session.getCapabilityRegistry() != null) {
                 var cap = session.getCapabilityRegistry().getCapability(capName);
-                if (cap != null) {
-                    if (cap instanceof ITool) {
-                        String out = ((ITool) cap).execute(cmd, workingDir, taskContext);
-                        long duration = System.currentTimeMillis() - start;
-                        return CognitiveObservation.ofSuccess(capName, out, duration);
-                    } else {
-                        long duration = System.currentTimeMillis() - start;
-                        return CognitiveObservation.ofFailure(capName, 400, "", "Capability " + capName + " is not an executable ITool interface", "CAPABILITY_NOT_EXECUTABLE", duration);
-                    }
+                if (cap instanceof ITool) {
+                    tool = (ITool) cap;
                 }
             }
 
-            // 3. Return capability unavailable if tool or session capability is absent
+            if (tool != null) {
+                String out = tool.execute(cmd, workingDir, taskContext);
+                long duration = System.currentTimeMillis() - start;
+
+                Map<String, Object> meta = new HashMap<>();
+                if (out != null && out.trim().startsWith("{")) {
+                    try {
+                        JSONObject jsonOut = new JSONObject(out);
+                        for (Object keyObj : jsonOut.keySet()) {
+                            String key = String.valueOf(keyObj);
+                            meta.put(key, jsonOut.get(key));
+                        }
+                    } catch (Exception ignored) {}
+                }
+
+                if (taskContext != null) {
+                    meta.putAll(taskContext.getMetadata());
+                }
+
+                return new CognitiveObservation(capName, true, 0, out, "", null, duration, meta);
+            }
+
             long duration = System.currentTimeMillis() - start;
             return CognitiveObservation.ofFailure(capName, 404, "", "Capability or tool unavailable: " + capName, "CAPABILITY_UNAVAILABLE", duration);
         } catch (Exception e) {

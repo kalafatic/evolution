@@ -45,21 +45,49 @@ public class DatasetAcquisitionTool implements ITool {
             } catch (Exception ignored) {}
         }
 
-        // Context metadata override or JSON parameters
         Map<String, Object> metadata = context != null ? context.getMetadata() : Map.of();
 
-        String sourceType = params.optString("sourceType", (String) metadata.getOrDefault("sourceType", "HUGGING_FACE"));
-        String repo = params.optString("repository", (String) metadata.getOrDefault("repository", "wikitext"));
-        String split = params.optString("split", (String) metadata.getOrDefault("split", "train"));
-        long targetUsableBytes = params.optLong("targetUsableBytes",
-                ((Number) metadata.getOrDefault("targetUsableBytes", 52_428_800L)).longValue());
+        String sourceType = params.optString("sourceType", (String) metadata.get("sourceType"));
+        String repo = params.optString("repository", (String) metadata.get("repository"));
+        if (repo == null || repo.trim().isEmpty()) {
+            repo = params.optString("domain", (String) metadata.get("domain"));
+        }
+        String split = params.optString("split", (String) metadata.get("split"));
+
+        long targetUsableBytes = 0;
+        if (params.has("targetUsableBytes")) {
+            targetUsableBytes = params.getLong("targetUsableBytes");
+        } else if (params.has("targetMetric")) {
+            targetUsableBytes = params.getLong("targetMetric");
+        } else if (metadata.containsKey("targetUsableBytes")) {
+            targetUsableBytes = ((Number) metadata.get("targetUsableBytes")).longValue();
+        } else if (metadata.containsKey("targetMetric")) {
+            targetUsableBytes = ((Number) metadata.get("targetMetric")).longValue();
+        }
+
+        long minUsableBytes = 0;
+        if (params.has("minimumUsableBytes")) {
+            minUsableBytes = params.getLong("minimumUsableBytes");
+        } else if (metadata.containsKey("minimumUsableBytes")) {
+            minUsableBytes = ((Number) metadata.get("minimumUsableBytes")).longValue();
+        } else {
+            minUsableBytes = targetUsableBytes;
+        }
 
         TrainingDataPreferences.Builder builder = TrainingDataPreferences.builder()
-                .minimumUsableBytes(targetUsableBytes / 2)
+                .minimumUsableBytes(minUsableBytes)
                 .targetUsableBytes(targetUsableBytes);
 
-        if ("HUGGING_FACE".equalsIgnoreCase(sourceType) || repo.contains("/")) {
-            builder.addDomain(repo);
+        if (sourceType != null && !sourceType.trim().isEmpty()) {
+            builder.addProvider(sourceType.trim());
+        }
+
+        if (repo != null && !repo.trim().isEmpty()) {
+            builder.addDomain(repo.trim());
+        }
+
+        if (split != null && !split.trim().isEmpty()) {
+            builder.contentType(split.trim());
         }
 
         TrainingDataAcquisitionRequest request = new TrainingDataAcquisitionRequest()
@@ -69,9 +97,11 @@ public class DatasetAcquisitionTool implements ITool {
 
         JSONObject resObj = new JSONObject();
         resObj.put("status", result.getStatus().name());
+        resObj.put("requestedMinimumUsableBytes", result.getRequestedMinimumUsableBytes());
         resObj.put("downloadedBytes", result.getDownloadedBytes());
         resObj.put("extractedBytes", result.getExtractedBytes());
         resObj.put("usableContentBytes", result.getAcceptedContentBytes());
+        resObj.put("quantity", result.getAcceptedContentBytes());
         resObj.put("rejectedBytes", result.getRejectedBytes());
         resObj.put("duplicateBytes", result.getDuplicateBytes());
         resObj.put("trainingBytes", result.getTrainingBytes());
@@ -83,6 +113,7 @@ public class DatasetAcquisitionTool implements ITool {
             context.getMetadata().put("usableContentBytes", result.getAcceptedContentBytes());
             context.getMetadata().put("quantity", result.getAcceptedContentBytes());
             context.getMetadata().put("acquisitionStatus", result.getStatus().name());
+            context.getMetadata().put("isSourceExhausted", result.isSourceExhausted());
             context.getMetadata().put("acquisitionResult", result);
         }
 
