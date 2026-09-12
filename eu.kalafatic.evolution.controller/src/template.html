@@ -4,10 +4,18 @@
     <meta charset="UTF-8">
     <title>Evolution Architecture Map</title>
     <base href="{{BASE_URL}}">
-    <link rel="stylesheet" href="/shared.css">
-    <link rel="stylesheet" href="/architecture.css">
-    <link rel="stylesheet" href="/creatic.css">
-    <script src="/auth-integration.js"></script>
+    <style>
+{{SHARED_CSS}}
+    </style>
+    <style>
+{{ARCHITECTURE_CSS}}
+    </style>
+    <style>
+{{CREATIC_CSS}}
+    </style>
+    <script>
+{{AUTH_JS}}
+    </script>
 	<script>
 	       // Diagnostic JavaLog Bridge
 	       window.onerror = function(msg, url, line, col, error) {
@@ -140,7 +148,9 @@
         <div id="popup-content"></div>
     </div>
 
-    <script src="creatic.js"></script>
+    <script>
+{{CREATIC_JS}}
+    </script>
     <script>
         function log(msg) { if (window.logFunction) window.logFunction(msg); else console.log(msg); }
 
@@ -224,7 +234,9 @@
         };
 
     </script>
-    <script src="js/navigator.js"></script>
+    <script>
+{{NAVIGATOR_JS}}
+    </script>
     <script>
         window.onload = function(event) {
             log('ready');
