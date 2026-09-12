@@ -105,7 +105,12 @@
         <div id="main-container">
             <div id="header">
                 <div style="font-weight: 700; font-size: 14px; color: var(--text);" id="project-title">Loading Architecture...</div>
+                <div id="header-search-container">
+                    <input id="graph-search" type="text" placeholder="🔍 Search plugin, package, class, method..." oninput="onGraphSearch(this.value)" autocomplete="off">
+                    <div id="search-dropdown"></div>
+                </div>
                 <div style="font-size: 11px; color: var(--text-dim); display: flex; align-items: center; gap: 6px;">
+                    <button id="clear-focus-btn" class="btn btn-sm" style="display:none;" onclick="clearFocus()">⊙ Clear Focus</button>
                     <span style="width: 8px; height: 8px; background-color: var(--success); border-radius: 50%; display: inline-block;"></span>
                     <span>Forge Graph Engine</span>
                 </div>

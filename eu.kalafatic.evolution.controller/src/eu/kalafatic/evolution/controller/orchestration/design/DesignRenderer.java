@@ -114,6 +114,16 @@ public class DesignRenderer {
             c.put("description", cr.getDescription());
             c.put("path", cr.getPath());
             c.put("importanceScore", cr.getImportanceScore());
+            c.put("parentId", cr.getParentId() != null ? cr.getParentId() : "");
+            c.put("level", cr.getLevel());
+            c.put("qualifiedName", cr.getQualifiedName() != null ? cr.getQualifiedName() : cr.getName());
+            c.put("superClass", cr.getSuperClass() != null ? cr.getSuperClass() : "");
+            c.put("expanded", cr.isExpanded());
+            c.put("incomingCount", cr.getIncomingCount());
+            c.put("outgoingCount", cr.getOutgoingCount());
+            c.put("interfaces", new org.json.JSONArray(cr.getInterfaces()));
+            c.put("fields", new org.json.JSONArray(cr.getFields()));
+            c.put("methods", new org.json.JSONArray(cr.getMethods()));
             c.put("useCases", new org.json.JSONArray(cr.getUseCases()));
             c.put("keyClasses", new org.json.JSONArray(cr.getKeyClasses()));
             comps.put(c);
@@ -126,6 +136,8 @@ public class DesignRenderer {
             r.put("from", rr.getFrom());
             r.put("to", rr.getTo());
             r.put("type", rr.getType());
+            r.put("count", rr.getCount());
+            r.put("details", new org.json.JSONArray(rr.getDetails()));
             rels.put(r);
         }
         json.put("relationships", rels);

@@ -452,3 +452,137 @@ select:focus, input[type="text"]:focus {
     color: var(--accent);
     transform: scale(1.05);
 }
+
+/* Search & Filter Styling */
+#header-search-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    max-width: 450px;
+    margin: 0 20px;
+}
+
+#graph-search {
+    width: 100%;
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.85em;
+}
+
+#search-dropdown {
+    position: absolute;
+    top: 38px;
+    left: 0;
+    right: 0;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+    max-height: 280px;
+    overflow-y: auto;
+    z-index: 2000;
+    display: none;
+}
+
+#search-dropdown.active {
+    display: block;
+}
+
+.search-item {
+    padding: 8px 12px;
+    font-size: 0.82em;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.search-item:hover {
+    background: rgba(56, 189, 248, 0.15);
+    color: var(--accent);
+}
+
+.search-item-title {
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.search-item-sub {
+    font-size: 0.75em;
+    color: var(--text-dim);
+}
+
+.filter-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    font-size: 0.78em;
+    color: var(--text-dim);
+}
+
+.filter-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.filter-checkbox input[type="checkbox"] {
+    accent-color: var(--accent);
+    cursor: pointer;
+}
+
+/* Dimmed & Focused States */
+.node.dimmed, .link.dimmed {
+    opacity: 0.12 !important;
+    filter: grayscale(80%);
+}
+
+.node.focused .node-card {
+    stroke: #38bdf8 !important;
+    stroke-width: 3px !important;
+    filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.8)) !important;
+}
+
+.link.incoming-link {
+    stroke: #38bdf8 !important;
+    stroke-width: 3px !important;
+    filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.8));
+}
+
+.link.outgoing-link {
+    stroke: #10b981 !important;
+    stroke-width: 3px !important;
+    filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.8));
+}
+
+/* Aggregated Edge Label Badge */
+.edge-badge {
+    font-size: 9px;
+    font-weight: 700;
+    fill: #f8fafc;
+    background: #0f172a;
+    border: 1px solid #38bdf8;
+    padding: 2px 5px;
+    border-radius: 4px;
+    pointer-events: none;
+}
+
+/* Expand / Collapse Button Badge on Nodes */
+.expand-badge {
+    cursor: pointer;
+    transition: transform 0.15s ease;
+}
+
+.expand-badge:hover {
+    transform: scale(1.2);
+}
