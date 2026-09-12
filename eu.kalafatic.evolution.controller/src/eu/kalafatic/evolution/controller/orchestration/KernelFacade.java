@@ -51,6 +51,12 @@ public class KernelFacade implements IOrchestrator {
 					goalParams
 				);
 
+			if (context != null && context.getExecutionProfile() == null) {
+				context.getOrchestrationState().setExecutionProfile(
+					eu.kalafatic.evolution.controller.kernel.EvolutionIntensityCalculator.calculate(context, null, null)
+				);
+			}
+
 			eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveLoopEngine cognitiveEngine =
 				new eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveLoopEngine(10, null);
 
