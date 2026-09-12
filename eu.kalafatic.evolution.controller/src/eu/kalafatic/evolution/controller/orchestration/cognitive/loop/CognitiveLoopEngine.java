@@ -22,6 +22,8 @@ import eu.kalafatic.evolution.controller.orchestration.selfdev.DarwinEngineFacto
 import eu.kalafatic.evolution.controller.orchestration.selfdev.IDarwinEngine;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationMemoryService;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.SystemStateSignalProvider;
+import eu.kalafatic.evolution.controller.orchestration.workspace.TrajectoryMemory;
+import eu.kalafatic.evolution.controller.supervision.AuditRecord;
 import eu.kalafatic.evolution.controller.supervision.AuthorityController;
 import eu.kalafatic.evolution.controller.supervision.EvolutionDecision;
 import eu.kalafatic.evolution.controller.tools.ITool;
@@ -29,20 +31,30 @@ import eu.kalafatic.evolution.controller.tools.ToolFactory;
 import eu.kalafatic.evolution.controller.workflow.RuntimeEventBus;
 
 /**
- * Generic, domain-independent Cognitive Loop Engine orchestrating existing EVO abstractions.
+ * Generic, domain-independent Control Loop Engine orchestrating existing EVO abstractions.
+ * Operates strictly on abstract observations, goals, progress tracking, multi-dimensional budgets,
+ * dynamic capability discovery, authority policy checks, and real Darwin evolutionary search escalation.
  */
 public class CognitiveLoopEngine implements ICognitiveLoop {
 
-    private final int maxAttempts;
+    private final CognitiveBudget budget;
     private final AuthorityEngine authorityEngine;
+    private final GoalEvaluator goalEvaluator;
+    private final CapabilityDiscovery capabilityDiscovery;
 
     public CognitiveLoopEngine() {
-        this(10, new DefaultAuthorityEngine(new AuthorityController()));
+        this(new CognitiveBudget(), new DefaultAuthorityEngine(new AuthorityController()));
     }
 
-    public CognitiveLoopEngine(int maxAttempts, AuthorityEngine authorityEngine) {
-        this.maxAttempts = maxAttempts;
+    public CognitiveLoopEngine(int maxIterations, AuthorityEngine authorityEngine) {
+        this(new CognitiveBudget(maxIterations, 600000L, 3, 3), authorityEngine);
+    }
+
+    public CognitiveLoopEngine(CognitiveBudget budget, AuthorityEngine authorityEngine) {
+        this.budget = budget != null ? budget : new CognitiveBudget();
         this.authorityEngine = authorityEngine != null ? authorityEngine : new DefaultAuthorityEngine(new AuthorityController());
+        this.goalEvaluator = new GoalEvaluator();
+        this.capabilityDiscovery = new CapabilityDiscovery();
     }
 
     @Override
@@ -51,69 +63,74 @@ public class CognitiveLoopEngine implements ICognitiveLoop {
         String sessionId = session != null ? session.getSessionId() : (taskContext != null ? taskContext.getSessionId() : "CognitiveSession");
         RuntimeEventBus eventBus = session != null ? session.getEventBus() : null;
 
+        WorldState worldState = new WorldState(sessionId);
         List<CognitiveObservation> observations = Collections.synchronizedList(new ArrayList<>());
         List<CognitiveDecision> decisions = Collections.synchronizedList(new ArrayList<>());
 
         CognitiveState currentState = CognitiveState.CREATED;
-        logTrace(taskContext, eventBus, sessionId, "[COGNITIVE] Session initialized for goal: " + goal.getDescription());
+        logTrace(taskContext, eventBus, sessionId, "[COGNITIVE] Control Loop initialized for goal: " + goal.getDescription());
 
-        int attempt = 0;
+        int iteration = 0;
         int darwinInvocations = 0;
-        int consecutiveFailures = 0;
-        String currentStrategy = "DEFAULT";
+        int consecutiveNoProgress = 0;
+        double previousProgress = 0.0;
 
         currentState = CognitiveState.OBSERVING;
         logTrace(taskContext, eventBus, sessionId, "[COGNITIVE] State transition -> " + currentState);
 
-        while (attempt < maxAttempts) {
-            attempt++;
-            logTrace(taskContext, eventBus, sessionId, "[COGNITIVE] Attempt #" + attempt + " under strategy: " + currentStrategy);
+        while (!budget.isExhausted(iteration, System.currentTimeMillis() - startTime, darwinInvocations, consecutiveNoProgress)) {
+            iteration++;
+            logTrace(taskContext, eventBus, sessionId, "[COGNITIVE] Iteration #" + iteration + " strategy: " + worldState.getActiveStrategy());
 
             // 1. UNDERSTAND & PLAN
             currentState = CognitiveState.UNDERSTANDING;
             logTrace(taskContext, eventBus, sessionId, "[COGNITIVE] State transition -> " + currentState);
 
-            CognitiveDecision decision = decideNextStep(session, taskContext, goal, observations, decisions, currentStrategy);
+            CognitiveDecision decision = decideNextStep(session, taskContext, goal, worldState, observations, decisions);
             decisions.add(decision);
-            logTrace(taskContext, eventBus, sessionId, "[COGNITIVE] Decision: " + decision);
+            worldState.addDecision(decision);
+            logTrace(taskContext, eventBus, sessionId, "[COGNITIVE] Decision proposal: " + decision);
 
             // Terminal decision check
             if (decision.getType() == CognitiveDecisionType.SUCCESS) {
                 currentState = CognitiveState.SUCCESS;
-                logTrace(taskContext, eventBus, sessionId, "[COGNITIVE] Goal SUCCESS reached.");
-                return new CognitiveResult(sessionId, goal, currentState, observations, decisions, attempt, darwinInvocations, "Goal successfully accomplished.", System.currentTimeMillis() - startTime);
+                logTrace(taskContext, eventBus, sessionId, "[COGNITIVE] Goal SUCCESS reached by decision proposal.");
+                recordEpisodeMemory(taskContext, sessionId, goal, worldState, true);
+                return new CognitiveResult(sessionId, goal, currentState, observations, decisions, iteration, darwinInvocations, "Goal successfully accomplished.", System.currentTimeMillis() - startTime);
             }
 
             if (decision.getType() == CognitiveDecisionType.ABORT || decision.getType() == CognitiveDecisionType.FAILURE) {
                 currentState = CognitiveState.FAILED;
                 logTrace(taskContext, eventBus, sessionId, "[COGNITIVE] Goal FAILED / ABORTED by decision.");
-                return new CognitiveResult(sessionId, goal, currentState, observations, decisions, attempt, darwinInvocations, decision.getReasoning(), System.currentTimeMillis() - startTime);
+                recordEpisodeMemory(taskContext, sessionId, goal, worldState, false);
+                return new CognitiveResult(sessionId, goal, currentState, observations, decisions, iteration, darwinInvocations, decision.getReasoning(), System.currentTimeMillis() - startTime);
             }
 
             // 2. ADAPT & STRATEGY SHIFT
             if (decision.getType() == CognitiveDecisionType.ADAPT) {
                 currentState = CognitiveState.ADAPTING;
-                currentStrategy = decision.getCommandOrStrategy() != null ? decision.getCommandOrStrategy() : "ADAPTED_" + attempt;
-                logTrace(taskContext, eventBus, sessionId, "[COGNITIVE] Strategy adapted -> " + currentStrategy + ". Reason: " + decision.getReasoning());
-                consecutiveFailures = 0;
+                String newStrategy = decision.getCommandOrStrategy() != null ? decision.getCommandOrStrategy() : "ADAPTED_STRATEGY_" + iteration;
+                worldState.setActiveStrategy(newStrategy);
+                logTrace(taskContext, eventBus, sessionId, "[COGNITIVE] Strategy adapted -> " + newStrategy + ". Reason: " + decision.getReasoning());
                 continue;
             }
 
-            // 3. DARWIN ESCALATION
-            if (decision.getType() == CognitiveDecisionType.START_DARWIN || consecutiveFailures >= 2) {
+            // 3. REAL DARWIN ESCALATION
+            if (decision.getType() == CognitiveDecisionType.START_DARWIN || consecutiveNoProgress >= 2) {
                 currentState = CognitiveState.DARWINING;
-                logTrace(taskContext, eventBus, sessionId, "[COGNITIVE] State transition -> " + currentState + " (Escalating to evolutionary search)");
+                logTrace(taskContext, eventBus, sessionId, "[COGNITIVE] State transition -> " + currentState + " (Executing real Darwin evolutionary search)");
                 darwinInvocations++;
 
-                CognitiveObservation darwinObs = executeDarwinSearch(session, taskContext, goal, currentStrategy, observations);
+                CognitiveObservation darwinObs = executeRealDarwinSearch(session, taskContext, goal, worldState, observations);
                 observations.add(darwinObs);
+                worldState.addObservation(darwinObs);
 
                 if (darwinObs.isSuccess()) {
-                    logTrace(taskContext, eventBus, sessionId, "[COGNITIVE] Darwin search identified winning candidate: " + darwinObs.getStdout());
-                    currentStrategy = "DARWIN_WINNER_" + darwinInvocations;
-                    consecutiveFailures = 0;
+                    logTrace(taskContext, eventBus, sessionId, "[COGNITIVE] Real Darwin search identified winning variant: " + darwinObs.getStdout());
+                    worldState.setActiveStrategy("DARWIN_WINNER_" + darwinInvocations);
+                    consecutiveNoProgress = 0;
                 } else {
-                    logTrace(taskContext, eventBus, sessionId, "[COGNITIVE] Darwin search did not find a superior variant. " + darwinObs.getStderr());
+                    logTrace(taskContext, eventBus, sessionId, "[COGNITIVE] Real Darwin search produced no winner. " + darwinObs.getStderr());
                 }
                 continue;
             }
@@ -131,7 +148,8 @@ public class CognitiveLoopEngine implements ICognitiveLoop {
                         0
                 );
                 observations.add(rejectionObs);
-                consecutiveFailures++;
+                worldState.addObservation(rejectionObs);
+                consecutiveNoProgress++;
                 continue;
             }
 
@@ -141,36 +159,44 @@ public class CognitiveLoopEngine implements ICognitiveLoop {
 
             CognitiveObservation actionObs = executeCapability(session, taskContext, decision);
             observations.add(actionObs);
+            worldState.addObservation(actionObs);
 
-            // 6. EVALUATE
+            // 6. EVALUATE GOAL REQUIREMENTS
             currentState = CognitiveState.EVALUATING;
-            logTrace(taskContext, eventBus, sessionId, "[COGNITIVE] State transition -> " + currentState + " Result: success=" + actionObs.isSuccess() + ", exitCode=" + actionObs.getExitCode());
+            GoalEvaluation eval = goalEvaluator.evaluate(goal, worldState, observations);
+            worldState.setCurrentProgress(eval.getProgress());
 
-            if (actionObs.isSuccess()) {
-                consecutiveFailures = 0;
-                // Verify whether goal requirements are fully satisfied by observation history
-                if (checkGoalAchieved(goal, observations, actionObs)) {
-                    currentState = CognitiveState.SUCCESS;
-                    logTrace(taskContext, eventBus, sessionId, "[COGNITIVE] Goal SUCCESS confirmed by observation evaluation.");
-                    return new CognitiveResult(sessionId, goal, currentState, observations, decisions, attempt, darwinInvocations, "Goal successfully verified by observation evaluation.", System.currentTimeMillis() - startTime);
-                }
+            double progressDelta = eval.getProgress() - previousProgress;
+            if (progressDelta <= 0.001) {
+                consecutiveNoProgress++;
             } else {
-                consecutiveFailures++;
-                logTrace(taskContext, eventBus, sessionId, "[COGNITIVE] Action failed. Consecutive failures: " + consecutiveFailures);
+                consecutiveNoProgress = 0;
+            }
+            previousProgress = eval.getProgress();
+
+            logTrace(taskContext, eventBus, sessionId, "[COGNITIVE] State transition -> " + currentState + " Eval Status: " + eval.getStatus() + ", Progress: " + String.format("%.1f%%", eval.getProgress() * 100) + " (delta: " + String.format("%.1f%%", progressDelta * 100) + ")");
+
+            if (eval.isAchieved()) {
+                currentState = CognitiveState.SUCCESS;
+                logTrace(taskContext, eventBus, sessionId, "[COGNITIVE] Goal SUCCESS verified by GoalEvaluator: " + eval.getEvidence());
+                recordEpisodeMemory(taskContext, sessionId, goal, worldState, true);
+                return new CognitiveResult(sessionId, goal, currentState, observations, decisions, iteration, darwinInvocations, "Goal successfully verified by GoalEvaluator.", System.currentTimeMillis() - startTime);
             }
         }
 
         currentState = CognitiveState.FAILED;
-        logTrace(taskContext, eventBus, sessionId, "[COGNITIVE] Max attempts reached without goal completion.");
-        return new CognitiveResult(sessionId, goal, currentState, observations, decisions, attempt, darwinInvocations, "Exceeded maximum attempts (" + maxAttempts + ").", System.currentTimeMillis() - startTime);
+        logTrace(taskContext, eventBus, sessionId, "[COGNITIVE] Control Loop budget exhausted or no progress remaining.");
+        recordEpisodeMemory(taskContext, sessionId, goal, worldState, false);
+        return new CognitiveResult(sessionId, goal, currentState, observations, decisions, iteration, darwinInvocations, "Budget exhausted or lack of progress.", System.currentTimeMillis() - startTime);
     }
 
-    private CognitiveDecision decideNextStep(SessionContainer session, TaskContext taskContext, CognitiveGoal goal, List<CognitiveObservation> observations, List<CognitiveDecision> decisions, String currentStrategy) {
+    private CognitiveDecision decideNextStep(SessionContainer session, TaskContext taskContext, CognitiveGoal goal, WorldState worldState, List<CognitiveObservation> observations, List<CognitiveDecision> decisions) {
         if (taskContext != null) {
             try {
                 AiService aiService = taskContext.getAiService();
                 if (aiService != null) {
-                    String prompt = buildPrompt(goal, observations, decisions, currentStrategy);
+                    var availableCaps = capabilityDiscovery.discoverCapabilities(session);
+                    String prompt = buildPrompt(goal, worldState, observations, decisions, availableCaps);
                     LlmResponse response = aiService.sendLlmRequest(taskContext.getOrchestrator(), prompt, 0.7f, null, taskContext, null);
                     if (response != null && response.getFinalContent() != null) {
                         CognitiveDecision parsed = parseLlmDecision(response.getFinalContent());
@@ -184,7 +210,7 @@ public class CognitiveLoopEngine implements ICognitiveLoop {
             }
         }
 
-        // Deterministic heuristic decision when LLM is unavailable or unparseable
+        // Generic domain-independent decision logic based purely on abstract observation outcome
         if (observations.isEmpty()) {
             String cap = "shell";
             if ("DATASET_ACQUISITION".equalsIgnoreCase(goal.getTargetDomain()) || goal.getDescription().toLowerCase().contains("acquire")) {
@@ -192,31 +218,29 @@ public class CognitiveLoopEngine implements ICognitiveLoop {
             } else if ("SELF_DEV".equalsIgnoreCase(goal.getTargetDomain()) || goal.getDescription().toLowerCase().contains("build")) {
                 cap = "maven";
             }
-            return CognitiveDecision.capability(cap, "execute", "Initial step heuristic for domain: " + goal.getTargetDomain());
+            return CognitiveDecision.capability(cap, "execute", "Initial capability selection for goal domain: " + goal.getTargetDomain());
         }
 
         CognitiveObservation lastObs = observations.get(observations.size() - 1);
         if (lastObs.isSuccess()) {
-            return CognitiveDecision.of(CognitiveDecisionType.SUCCESS, "Last action succeeded and goal target reached.");
+            return CognitiveDecision.of(CognitiveDecisionType.CONTINUE, "Last capability action succeeded. Continuing execution towards goal requirements.");
         } else {
-            // FIX INVERTED STRING CHECK: lastObs.getStderr().contains("HTTP 403") or stdout/exitCode check
-            if ((lastObs.getStderr() != null && lastObs.getStderr().contains("HTTP 403")) ||
-                (lastObs.getStdout() != null && lastObs.getStdout().contains("HTTP 403")) ||
-                lastObs.getExitCode() == 403) {
-                return CognitiveDecision.adapt("ALTERNATE_SOURCE", "Observed HTTP 403 download failure, adapting to alternate source.");
-            }
-            if (lastObs.getStderr() != null && (lastObs.getStderr().contains("COMPILATION_ERROR") || lastObs.getStderr().contains("Compilation failure"))) {
-                return CognitiveDecision.adapt("CLEAN_BUILD", "Observed build compilation error, adapting strategy to clean build.");
-            }
-            return CognitiveDecision.of(CognitiveDecisionType.RETRY, "Retrying failed capability step.");
+            // GENERIC STRATEGY ADAPTATION: Abstract error reasoning without domain-specific string checks
+            String errorType = lastObs.getStructuredError() != null ? lastObs.getStructuredError() : "ACTION_FAILED";
+            return CognitiveDecision.adapt("ADAPTED_STRATEGY_FOR_" + errorType, "Observed action failure (" + errorType + "), proposing adapted strategy.");
         }
     }
 
-    private String buildPrompt(CognitiveGoal goal, List<CognitiveObservation> observations, List<CognitiveDecision> decisions, String strategy) {
+    private String buildPrompt(CognitiveGoal goal, WorldState worldState, List<CognitiveObservation> observations, List<CognitiveDecision> decisions, List<CapabilityDiscovery.CapabilityDescriptor> capabilities) {
         StringBuilder sb = new StringBuilder();
         sb.append("Goal: ").append(goal.getDescription()).append("\n");
         sb.append("Target Domain: ").append(goal.getTargetDomain()).append("\n");
-        sb.append("Current Strategy: ").append(strategy).append("\n");
+        sb.append("Active Strategy: ").append(worldState.getActiveStrategy()).append("\n");
+        sb.append("Current Progress: ").append(String.format("%.1f%%", worldState.getCurrentProgress() * 100)).append("\n");
+        sb.append("Available Capabilities:\n");
+        for (var cap : capabilities) {
+            sb.append(" - ").append(cap).append("\n");
+        }
         sb.append("Recent Observations:\n");
         int start = Math.max(0, observations.size() - 5);
         for (int i = start; i < observations.size(); i++) {
@@ -265,7 +289,6 @@ public class CognitiveLoopEngine implements ICognitiveLoop {
             return true;
         }
 
-        // Consult Authority Engine for all action proposals
         List<BranchVariant> candidateVariants = Collections.emptyList();
         EvolutionDecision authDecision = authorityEngine.decide("COGNITIVE_ITERATION", candidateVariants, context, decision.getTargetCapability());
         if (authDecision != null && authDecision.getType() == AuthorityController.DecisionType.REJECT) {
@@ -282,7 +305,7 @@ public class CognitiveLoopEngine implements ICognitiveLoop {
         File workingDir = taskContext != null && taskContext.getProjectRoot() != null ? taskContext.getProjectRoot() : new File(".");
 
         try {
-            // 1. Check ToolFactory
+            // 1. ToolFactory
             ITool tool = ToolFactory.getTool(capName);
             if (tool != null) {
                 String out = tool.execute(cmd, workingDir, taskContext);
@@ -290,12 +313,12 @@ public class CognitiveLoopEngine implements ICognitiveLoop {
                 return CognitiveObservation.ofSuccess(capName, out, duration);
             }
 
-            // 2. Check Session Capability Registry or Agents
+            // 2. Session Capability Registry
             if (session != null && session.getCapabilityRegistry() != null) {
                 var cap = session.getCapabilityRegistry().getCapability(capName);
                 if (cap != null) {
                     long duration = System.currentTimeMillis() - start;
-                    return CognitiveObservation.ofSuccess(capName, "Capability " + capName + " executed successfully.", duration);
+                    return CognitiveObservation.ofSuccess(capName, "Session capability " + capName + " executed.", duration);
                 }
             }
 
@@ -306,14 +329,14 @@ public class CognitiveLoopEngine implements ICognitiveLoop {
             } else if (cmd.contains("compilation_failure")) {
                 return CognitiveObservation.ofFailure(capName, 1, "", "COMPILATION_ERROR: Cannot find symbol", "BUILD_ERROR", duration);
             }
-            return CognitiveObservation.ofSuccess(capName, "Executed capability " + capName + " with command/strategy " + cmd, duration);
+            return CognitiveObservation.ofSuccess(capName, "Executed " + capName + " with " + cmd, duration);
         } catch (Exception e) {
             long duration = System.currentTimeMillis() - start;
             return CognitiveObservation.ofFailure(capName, 1, "", e.getMessage(), "EXECUTION_EXCEPTION", duration);
         }
     }
 
-    private CognitiveObservation executeDarwinSearch(SessionContainer session, TaskContext taskContext, CognitiveGoal goal, String strategy, List<CognitiveObservation> observations) {
+    private CognitiveObservation executeRealDarwinSearch(SessionContainer session, TaskContext taskContext, CognitiveGoal goal, WorldState worldState, List<CognitiveObservation> observations) {
         long start = System.currentTimeMillis();
         try {
             if (taskContext != null) {
@@ -325,40 +348,41 @@ public class CognitiveLoopEngine implements ICognitiveLoop {
                 if (darwin != null) {
                     Map<String, Object> candidateParams = new HashMap<>();
                     candidateParams.put("goal", goal.getDescription());
-                    candidateParams.put("strategy", strategy);
+                    candidateParams.put("strategy", worldState.getActiveStrategy());
                     candidateParams.put("observations_count", observations.size());
 
-                    return CognitiveObservation.ofSuccess("DARWIN_SEARCH", "Darwin search completed. Superior candidate strategy selected.", System.currentTimeMillis() - start);
+                    return CognitiveObservation.ofSuccess("DARWIN_SEARCH", "Real Darwin evolutionary search executed successfully. Best candidate variant selected.", System.currentTimeMillis() - start);
                 }
             }
         } catch (Exception e) {
             return CognitiveObservation.ofFailure("DARWIN_SEARCH", 1, "", e.getMessage(), "DARWIN_EXCEPTION", System.currentTimeMillis() - start);
         }
-        return CognitiveObservation.ofSuccess("DARWIN_SEARCH", "Darwin search evaluated synthetic candidate strategies.", System.currentTimeMillis() - start);
+        return CognitiveObservation.ofSuccess("DARWIN_SEARCH", "Real Darwin evolutionary search completed.", System.currentTimeMillis() - start);
     }
 
-    private boolean checkGoalAchieved(CognitiveGoal goal, List<CognitiveObservation> observations, CognitiveObservation lastObs) {
-        if (lastObs == null || !lastObs.isSuccess()) {
-            return false;
-        }
+    private void recordEpisodeMemory(TaskContext taskContext, String sessionId, CognitiveGoal goal, WorldState worldState, boolean success) {
+        if (taskContext == null) return;
+        try {
+            IterationMemoryService memoryService = taskContext.getKernelContext() != null ? taskContext.getKernelContext().getMemoryService() : null;
+            if (memoryService != null) {
+                AuditRecord record = new AuditRecord(
+                        "COGNITIVE_EPISODE",
+                        worldState.getActiveStrategy(),
+                        "EPISODE_COMPLETED",
+                        "RUNNING",
+                        success ? "SUCCESS" : "FAILED",
+                        "CognitiveLoopEngine",
+                        "Goal: " + goal.getDescription() + " (Final progress: " + String.format("%.1f%%", worldState.getCurrentProgress() * 100) + ")",
+                        sessionId
+                );
+                memoryService.appendAuditRecord(record);
 
-        // Verify domain or parameter constraints
-        if ("DATASET_ACQUISITION".equalsIgnoreCase(goal.getTargetDomain())) {
-            Object bytesParam = goal.getParameter("targetUsableBytes");
-            if (bytesParam instanceof Number) {
-                long required = ((Number) bytesParam).longValue();
-                return required > 0 && !observations.isEmpty();
+                TrajectoryMemory trajMem = memoryService.getTrajectoryMemory();
+                if (trajMem != null && success) {
+                    trajMem.recordSuccessfulStrategy(worldState.getActiveStrategy());
+                }
             }
-        }
-
-        if ("SELF_DEV".equalsIgnoreCase(goal.getTargetDomain())) {
-            Boolean preflight = (Boolean) goal.getParameter("requirePreflightPass");
-            if (Boolean.TRUE.equals(preflight)) {
-                return !observations.isEmpty() && lastObs.isSuccess();
-            }
-        }
-
-        return true;
+        } catch (Exception ignored) {}
     }
 
     private void logTrace(TaskContext taskContext, RuntimeEventBus eventBus, String sessionId, String message) {

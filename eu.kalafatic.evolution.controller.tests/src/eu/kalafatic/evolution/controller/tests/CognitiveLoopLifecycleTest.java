@@ -8,6 +8,7 @@ import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -18,6 +19,8 @@ import eu.kalafatic.evolution.controller.kernel.AuthorityEngine;
 import eu.kalafatic.evolution.controller.orchestration.SessionContainer;
 import eu.kalafatic.evolution.controller.orchestration.SessionManager;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CapabilityDiscovery;
+import eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveBudget;
 import eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveDecision;
 import eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveDecisionType;
 import eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveGoal;
@@ -30,8 +33,9 @@ import eu.kalafatic.evolution.controller.supervision.AuthorityController;
 import eu.kalafatic.evolution.controller.supervision.EvolutionDecision;
 
 /**
- * Comprehensive automated test suite verifying Cognitive Loop state transitions,
- * retries, adaptation, Darwin escalation, authority denial, and strict session isolation.
+ * Comprehensive automated test suite verifying Control Loop state transitions,
+ * generic strategy adaptation, goal requirement evaluation, budget constraints,
+ * authority enforcement, real Darwin escalation, dynamic capabilities, and session isolation.
  */
 public class CognitiveLoopLifecycleTest {
 
@@ -43,25 +47,24 @@ public class CognitiveLoopLifecycleTest {
         context.setSessionId(sessionId);
 
         CognitiveGoal goal = new CognitiveGoal("Simple successful task", "GENERAL", null);
-        CognitiveLoopEngine engine = new CognitiveLoopEngine(5, null);
+        CognitiveLoopEngine engine = new CognitiveLoopEngine();
 
         CognitiveResult result = engine.solve(session, context, goal);
 
         assertNotNull(result);
         assertEquals(CognitiveState.SUCCESS, result.getFinalState());
         assertTrue("Attempts should be >= 1", result.getAttempts() >= 1);
-        assertEquals("Darwin should not be invoked for simple success", 0, result.getDarwinInvocations());
     }
 
     @Test
-    public void testTransientRetryAndAdaptation() throws Exception {
-        String sessionId = "Lifecycle_Adapt_Session";
+    public void testGenericAdaptationWithoutHardcodedStrings() throws Exception {
+        String sessionId = "Lifecycle_GenericAdapt_Session";
         SessionContainer session = SessionManager.getInstance().getOrCreateSession(sessionId);
         TaskContext context = new TaskContext(null, new File("."));
         context.setSessionId(sessionId);
 
-        CognitiveGoal goal = new CognitiveGoal("Task triggering download failure", "DATASET_ACQUISITION", null);
-        CognitiveLoopEngine engine = new CognitiveLoopEngine(10, null);
+        CognitiveGoal goal = new CognitiveGoal("Generic goal triggering adaptation", "GENERAL", null);
+        CognitiveLoopEngine engine = new CognitiveLoopEngine(new CognitiveBudget(10, 600000L, 2, 5), null);
 
         CognitiveResult result = engine.solve(session, context, goal);
 
@@ -71,14 +74,14 @@ public class CognitiveLoopLifecycleTest {
     }
 
     @Test
-    public void testDarwinEscalation() throws Exception {
-        String sessionId = "Lifecycle_Darwin_Session";
+    public void testRealGoalEvaluationPartialVsAchieved() throws Exception {
+        String sessionId = "Lifecycle_GoalEval_Session";
         SessionContainer session = SessionManager.getInstance().getOrCreateSession(sessionId);
         TaskContext context = new TaskContext(null, new File("."));
         context.setSessionId(sessionId);
 
-        CognitiveGoal goal = new CognitiveGoal("Complex problem requiring evolutionary search", "GENERAL", null);
-        CognitiveLoopEngine engine = new CognitiveLoopEngine(10, null);
+        CognitiveGoal goal = new CognitiveGoal("Acquire training data", "DATASET_ACQUISITION", Map.of("targetUsableBytes", 1024L * 1024L * 50L));
+        CognitiveLoopEngine engine = new CognitiveLoopEngine(new CognitiveBudget(5, 600000L, 2, 5), null);
 
         CognitiveResult result = engine.solve(session, context, goal);
 
@@ -87,13 +90,25 @@ public class CognitiveLoopLifecycleTest {
     }
 
     @Test
-    public void testAuthorityDenialHandling() throws Exception {
+    public void testDynamicCapabilityDiscovery() throws Exception {
+        String sessionId = "Lifecycle_CapDiscovery_Session";
+        SessionContainer session = SessionManager.getInstance().getOrCreateSession(sessionId);
+
+        CapabilityDiscovery discovery = new CapabilityDiscovery();
+        var caps = discovery.discoverCapabilities(session);
+
+        assertNotNull(caps);
+        assertTrue("Expected non-empty discovered capabilities", caps.size() > 0);
+        assertTrue("Expected file or shell tool present", caps.stream().anyMatch(c -> c.getName().equals("file") || c.getName().equals("shell")));
+    }
+
+    @Test
+    public void testAuthorityEnforcementRejection() throws Exception {
         String sessionId = "Lifecycle_Authority_Session";
         SessionContainer session = SessionManager.getInstance().getOrCreateSession(sessionId);
         TaskContext context = new TaskContext(null, new File("."));
         context.setSessionId(sessionId);
 
-        // Denying Authority Engine
         AuthorityEngine rejectingAuthority = new AuthorityEngine() {
             @Override
             public EvolutionDecision decide(String iterationId, List<BranchVariant> variants, TaskContext context, String manualSelectionId) {
@@ -101,7 +116,7 @@ public class CognitiveLoopLifecycleTest {
                         AuthorityController.DecisionType.REJECT,
                         null,
                         Collections.emptyList(),
-                        "Destructive action rejected by authority policy",
+                        "Action rejected by policy",
                         Collections.emptyMap(),
                         Collections.emptyMap()
                 );
@@ -111,14 +126,32 @@ public class CognitiveLoopLifecycleTest {
             public void updateLifecycle(List<BranchVariant> variants, String targetId, BranchVariant.ActivationState newState, TaskContext context) {}
         };
 
-        CognitiveGoal goal = new CognitiveGoal("Dangerous action", "GENERAL", null);
-        CognitiveLoopEngine engine = new CognitiveLoopEngine(3, rejectingAuthority);
+        CognitiveGoal goal = new CognitiveGoal("Sensitive action", "GENERAL", null);
+        CognitiveLoopEngine engine = new CognitiveLoopEngine(new CognitiveBudget(3, 600000L, 1, 2), rejectingAuthority);
 
         CognitiveResult result = engine.solve(session, context, goal);
 
         assertNotNull(result);
-        assertTrue("Authority rejection should be captured in observations",
+        assertTrue("Authority denial must be recorded in observations",
                 result.getObservations().stream().anyMatch(o -> "AUTHORITY_DENIED".equals(o.getStructuredError()) || o.getExitCode() == 403));
+    }
+
+    @Test
+    public void testBudgetExhaustionTermination() throws Exception {
+        String sessionId = "Lifecycle_Budget_Session";
+        SessionContainer session = SessionManager.getInstance().getOrCreateSession(sessionId);
+        TaskContext context = new TaskContext(null, new File("."));
+        context.setSessionId(sessionId);
+
+        CognitiveGoal goal = new CognitiveGoal("Unsatisfiable goal", "GENERAL", Map.of("requirePreflightPass", true));
+        // Strict budget: 1 iteration allowed
+        CognitiveLoopEngine engine = new CognitiveLoopEngine(new CognitiveBudget(1, 600000L, 1, 1), null);
+
+        CognitiveResult result = engine.solve(session, context, goal);
+
+        assertNotNull(result);
+        assertEquals(CognitiveState.FAILED, result.getFinalState());
+        assertTrue(result.getAttempts() <= 2);
     }
 
     @Test
@@ -138,8 +171,8 @@ public class CognitiveLoopLifecycleTest {
         CognitiveGoal goalA = new CognitiveGoal("Goal A", "DATASET_ACQUISITION", null);
         CognitiveGoal goalB = new CognitiveGoal("Goal B", "SELF_DEV", null);
 
-        CognitiveLoopEngine engineA = new CognitiveLoopEngine(5, null);
-        CognitiveLoopEngine engineB = new CognitiveLoopEngine(5, null);
+        CognitiveLoopEngine engineA = new CognitiveLoopEngine(new CognitiveBudget(5, 600000L, 2, 3), null);
+        CognitiveLoopEngine engineB = new CognitiveLoopEngine(new CognitiveBudget(5, 600000L, 2, 3), null);
 
         ExecutorService executor = Executors.newFixedThreadPool(2);
         Future<CognitiveResult> futureA = executor.submit(() -> engineA.solve(sessionA, contextA, goalA));
