@@ -465,5 +465,13 @@ public class CognitiveLoopEngine implements ICognitiveLoop {
         if (taskContext != null) {
             taskContext.log(message);
         }
+        if (eventBus != null) {
+            eventBus.publish(new eu.kalafatic.evolution.controller.workflow.RuntimeEvent(
+                eu.kalafatic.evolution.controller.workflow.RuntimeEventType.VIEW_UPDATED,
+                sessionId,
+                "CognitiveLoopEngine",
+                message
+            ));
+        }
     }
 }
