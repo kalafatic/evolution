@@ -108,23 +108,14 @@ public class CognitiveLoopEngine implements ICognitiveLoop {
                 return new CognitiveResult(sessionId, goal, currentState, observations, decisions, iteration, darwinInvocations, decision.getReasoning(), System.currentTimeMillis() - startTime);
             }
 
-            // 2. ADAPT & STRATEGY SHIFT
+            // 2. ADAPT & STRATEGY SHIFT (Correct semantics: update strategy and proceed to next planning iteration)
             if (decision.getType() == CognitiveDecisionType.ADAPT) {
                 currentState = CognitiveState.ADAPTING;
                 String newStratId = decision.getCommandOrStrategy() != null ? decision.getCommandOrStrategy() : "ADAPTED_STRATEGY_" + iteration;
                 CognitiveStrategy newStrat = new CognitiveStrategy(newStratId, decision.getReasoning(), Collections.emptyList(), decision.getParameters(), decision.getReasoning(), decision.getConfidence());
                 worldState.setActiveStrategy(newStrat);
                 logTrace(taskContext, eventBus, sessionId, "[COGNITIVE] Strategy adapted -> " + newStratId + ". Reason: " + decision.getReasoning());
-
-                // Immediately select next concrete capability action under the new strategy
-                CognitiveDecision nextActionDecision = CognitiveDecision.capability(
-                        decision.getTargetCapability() != null ? decision.getTargetCapability() : "shell",
-                        decision.getCommandOrStrategy() != null ? decision.getCommandOrStrategy() : "execute",
-                        "Executing action under adapted strategy: " + newStratId
-                );
-                decision = nextActionDecision;
-                decisions.add(decision);
-                worldState.addDecision(decision);
+                continue; // Proceed to next planning phase under new strategy without executing an invented action
             }
 
             // 3. REAL DARWIN ESCALATION
@@ -223,10 +214,14 @@ public class CognitiveLoopEngine implements ICognitiveLoop {
             }
         }
 
-        // Generic domain-independent capability selection
+        // Generic domain-independent capability selection without "shell" fallback
+        var availableCaps = capabilityDiscovery.discoverCapabilities(session);
+        if (availableCaps.isEmpty()) {
+            return CognitiveDecision.of(CognitiveDecisionType.ABORT, "NO_CAPABILITY_AVAILABLE: No tools or session capabilities registered.");
+        }
+
         if (observations.isEmpty()) {
-            var availableCaps = capabilityDiscovery.discoverCapabilities(session);
-            String selectedCap = availableCaps.isEmpty() ? "shell" : availableCaps.get(0).getName();
+            String selectedCap = availableCaps.get(0).getName();
             return CognitiveDecision.capability(selectedCap, "execute", "Generic initial capability selection from registry");
         }
 
@@ -235,15 +230,10 @@ public class CognitiveLoopEngine implements ICognitiveLoop {
             return CognitiveDecision.capability(lastObs.getActionName(), "continue", "Last step succeeded. Continuing capability execution.");
         } else {
             String errorType = lastObs.getStructuredError() != null ? lastObs.getStructuredError() : "ACTION_FAILED";
-            // Check if we already adapted for this error type in the immediately preceding decision
-            if (!decisions.isEmpty()) {
-                CognitiveDecision lastDec = decisions.get(decisions.size() - 1);
-                if (lastDec.getType() == CognitiveDecisionType.ADAPT) {
-                    // Already adapted; select next alternative capability rather than looping ADAPT
-                    var caps = capabilityDiscovery.discoverCapabilities(session);
-                    String altCap = caps.size() > 1 ? caps.get(1).getName() : "shell";
-                    return CognitiveDecision.capability(altCap, "execute_alternative", "Executing alternative capability after adaptation");
-                }
+            // If we adapted in the previous step, select an alternative capability
+            if (!decisions.isEmpty() && decisions.get(decisions.size() - 1).getType() == CognitiveDecisionType.ADAPT) {
+                String altCap = availableCaps.size() > 1 ? availableCaps.get(1).getName() : availableCaps.get(0).getName();
+                return CognitiveDecision.capability(altCap, "execute_alternative", "Executing alternative capability following strategy adaptation");
             }
             return CognitiveDecision.adapt("ADAPTED_STRATEGY_FOR_" + errorType, "Observed action failure (" + errorType + "), proposing adapted strategy.");
         }
@@ -317,9 +307,13 @@ public class CognitiveLoopEngine implements ICognitiveLoop {
 
     private CognitiveObservation executeCapability(SessionContainer session, TaskContext taskContext, CognitiveDecision decision) {
         long start = System.currentTimeMillis();
-        String capName = decision.getTargetCapability() != null ? decision.getTargetCapability() : "shell";
-        String cmd = decision.getCommandOrStrategy() != null ? decision.getCommandOrStrategy() : "";
+        String capName = decision.getTargetCapability();
+        if (capName == null || capName.isEmpty()) {
+            long duration = System.currentTimeMillis() - start;
+            return CognitiveObservation.ofFailure("NONE", 400, "", "No target capability specified in decision", "CAPABILITY_UNSPECIFIED", duration);
+        }
 
+        String cmd = decision.getCommandOrStrategy() != null ? decision.getCommandOrStrategy() : "";
         File workingDir = taskContext != null && taskContext.getProjectRoot() != null ? taskContext.getProjectRoot() : new File(".");
 
         try {
@@ -335,8 +329,14 @@ public class CognitiveLoopEngine implements ICognitiveLoop {
             if (session != null && session.getCapabilityRegistry() != null) {
                 var cap = session.getCapabilityRegistry().getCapability(capName);
                 if (cap != null) {
-                    long duration = System.currentTimeMillis() - start;
-                    return CognitiveObservation.ofSuccess(capName, "Session capability " + capName + " executed.", duration);
+                    if (cap instanceof ITool) {
+                        String out = ((ITool) cap).execute(cmd, workingDir, taskContext);
+                        long duration = System.currentTimeMillis() - start;
+                        return CognitiveObservation.ofSuccess(capName, out, duration);
+                    } else {
+                        long duration = System.currentTimeMillis() - start;
+                        return CognitiveObservation.ofFailure(capName, 400, "", "Capability " + capName + " is not an executable ITool interface", "CAPABILITY_NOT_EXECUTABLE", duration);
+                    }
                 }
             }
 
@@ -371,7 +371,7 @@ public class CognitiveLoopEngine implements ICognitiveLoop {
                         }
                     } else {
                         long duration = System.currentTimeMillis() - start;
-                        return CognitiveObservation.ofSuccess("DARWIN_SEARCH", "DARWIN_WINNER_FOUND: Evaluated candidate strategies for " + goal.getDescription(), duration);
+                        return CognitiveObservation.ofFailure("DARWIN_SEARCH", 500, "", "DARWIN_UNAVAILABLE: IterationManager unavailable in session context.", "DARWIN_UNAVAILABLE", duration);
                     }
                 }
             }
