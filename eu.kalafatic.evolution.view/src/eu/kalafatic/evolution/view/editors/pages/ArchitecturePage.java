@@ -101,7 +101,20 @@ public class ArchitecturePage extends AEvoPage {
 	}
 
 	private void initTargetPath() {
-        if (orchestrator != null && orchestrator.getDefaultTarget() != null && !orchestrator.getDefaultTarget().isEmpty()) {
+        // First check if Evolution repository path can be resolved dynamically
+        String evoRepoPath = ProjectModelManager.getCodebasePath();
+        if (evoRepoPath == null || evoRepoPath.isEmpty()) {
+            evoRepoPath = findEvoRepository();
+        }
+
+        if (evoRepoPath != null && !evoRepoPath.isEmpty() && new java.io.File(evoRepoPath).exists()) {
+            defaultTargetPath = evoRepoPath;
+            currentTargetPath = defaultTargetPath;
+            if (orchestrator != null) {
+                orchestrator.setDefaultTarget(defaultTargetPath);
+            }
+            eu.kalafatic.evolution.controller.log.Log.log("[ARCH] Default target set to Evolution Git Repository: " + currentTargetPath);
+        } else if (orchestrator != null && orchestrator.getDefaultTarget() != null && !orchestrator.getDefaultTarget().isEmpty()) {
             defaultTargetPath = orchestrator.getDefaultTarget();
             currentTargetPath = defaultTargetPath;
             eu.kalafatic.evolution.controller.log.Log.log("[ARCH] Default target from model: " + currentTargetPath);
@@ -134,14 +147,25 @@ public class ArchitecturePage extends AEvoPage {
             currentTargetPath = System.getProperty("user.home");
         }
 
-        if (currentTargetPath != null && !targetHistory.contains(currentTargetPath)) {
+        if (defaultTargetPath != null && !targetHistory.contains(defaultTargetPath)) {
+            targetHistory.add(0, defaultTargetPath);
+        } else if (currentTargetPath != null && !targetHistory.contains(currentTargetPath)) {
             targetHistory.add(0, currentTargetPath);
+        }
+
+        if (defaultTargetPath != null && targetHistory.contains(defaultTargetPath)) {
+            targetHistory.remove(defaultTargetPath);
+            targetHistory.add(0, defaultTargetPath);
         }
 
         synchronizeSnapshotsWithDisk();
     }
 
     private String findEvoRepository() {
+        String codebase = ProjectModelManager.getCodebasePath();
+        if (codebase != null && !codebase.isEmpty() && isEvoRepo(new java.io.File(codebase))) {
+            return codebase;
+        }
         if (editor != null) {
             org.eclipse.ui.IEditorInput input = editor.getEditorInput();
             if (input instanceof org.eclipse.ui.IFileEditorInput) {
@@ -152,6 +176,10 @@ public class ArchitecturePage extends AEvoPage {
                 if (parent != null && isEvoRepo(parent)) return parent.getAbsolutePath();
             }
         }
+        java.io.File userDir = new java.io.File(System.getProperty("user.dir"));
+        if (isEvoRepo(userDir)) return userDir.getAbsolutePath();
+        if (userDir.getParentFile() != null && isEvoRepo(userDir.getParentFile())) return userDir.getParentFile().getAbsolutePath();
+
         return null;
     }
 
@@ -748,14 +776,18 @@ public class ArchitecturePage extends AEvoPage {
         eu.kalafatic.evolution.controller.log.Log.log("[ARCH] Mode: " + currentMode.name());
         eu.kalafatic.evolution.controller.log.Log.log("[ARCH] Starting scan...");
 
-        org.eclipse.core.runtime.jobs.Job job = new org.eclipse.core.runtime.jobs.Job("Discovering Architecture") {
+        org.eclipse.core.runtime.jobs.Job job = new org.eclipse.core.runtime.jobs.Job("Discovering Architecture: " + root.getName()) {
             @Override
             protected org.eclipse.core.runtime.IStatus run(org.eclipse.core.runtime.IProgressMonitor monitor) {
                 try {
+                    monitor.beginTask("Discovering Architecture in " + root.getName(), 100);
+
                     // 1. Physical Scan
+                    monitor.subTask("Scanning filesystem structure & metadata...");
                     eu.kalafatic.evolution.controller.mediation.scanner.TargetScanner scanner = new eu.kalafatic.evolution.controller.mediation.scanner.TargetScanner();
                     eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot snapshot = scanner.scanToSnapshot(root, eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot.TargetType.PROJECT);
                     eu.kalafatic.evolution.controller.log.Log.log("[ARCH_PAGE] Physical Scan complete. Found " + snapshot.getNodes().size() + " nodes.");
+                    monitor.worked(30);
 
                     // 2. AI Understanding (Mediated Mode Style)
                     if (orchestrator != null) {
@@ -780,6 +812,7 @@ public class ArchitecturePage extends AEvoPage {
 
                         eu.kalafatic.evolution.controller.mediation.analysis.SemanticExtractor extractor = new eu.kalafatic.evolution.controller.mediation.analysis.SemanticExtractor();
                         extractor.extractToSnapshot(snapshot, candidates);
+                        monitor.worked(20);
 
                         monitor.subTask("Synthesizing Reality Model");
                         eu.kalafatic.evolution.controller.agents.RealityDiscoveryAgent agent = new eu.kalafatic.evolution.controller.agents.RealityDiscoveryAgent(session);
@@ -787,11 +820,12 @@ public class ArchitecturePage extends AEvoPage {
                         // FIX: Avoid using Orchestrator.getAiService() which is undefined. Use TaskContext.getAiService().
                         agent.setAiService(ctx.getAiService());
 
-                            eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel reality = agent.discover("Analyze repository architecture and key hotspots", ctx, currentTargetPath);
+                        eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel reality = agent.discover("Analyze repository architecture and key hotspots", ctx, currentTargetPath);
                         eu.kalafatic.evolution.controller.log.Log.log("[ARCH_PAGE] Reality Model synthesized: " + reality.getDomain());
 
                         // Save to metadata for extractModel to find it
                         ctx.getOrchestrationState().getMetadata().put("targetRealityModel", reality);
+                        monitor.worked(20);
 
                         // Also trigger MetadataAgent for persistent sidecars
                         monitor.subTask("Generating AI Metadata Sidecars");
@@ -800,12 +834,24 @@ public class ArchitecturePage extends AEvoPage {
 
                         // Persistent Cache in Shared Memory
                         saveModelToCache(ctx, extractModel());
+                        monitor.worked(30);
                     }
 
-                    scheduleRefresh();
+                    Display.getDefault().asyncExec(() -> {
+                        invalidateInMemoryCache();
+                        scheduleRefresh();
+                        if (browser != null && !browser.isDisposed()) {
+                            String msg = "Discovered architecture for repository: " + root.getName();
+                            browser.execute("if(window.showPopup) { window.showPopup('Discovery Complete', ['" + msg.replace("'", "\\'") + "']); }");
+                        }
+                    });
+
                     return org.eclipse.core.runtime.Status.OK_STATUS;
                 } catch (Exception e) {
+                    eu.kalafatic.evolution.controller.log.Log.log("[ARCH] Discovery failed: " + e.getMessage());
                     return new org.eclipse.core.runtime.Status(org.eclipse.core.runtime.IStatus.ERROR, "eu.kalafatic.evolution.view", "Discovery failed", e);
+                } finally {
+                    monitor.done();
                 }
             }
         };
@@ -1160,18 +1206,19 @@ public class ArchitecturePage extends AEvoPage {
         Map<String, ComponentRecord> nodes = new HashMap<>();
 
         eu.kalafatic.evolution.controller.log.Log.log("[ARCH_PAGE] Scanning for metadata at: " + root.getAbsolutePath());
-        // 1. Scan for .ai.json files
+        // 1. Structural Local Discovery
+        discoverLocalStructure(root, root, model);
+        for (ComponentRecord c : model.getComponents()) {
+            nodes.put(c.getId(), c);
+        }
+
+        // 2. Scan for .ai.json files
         scanForMetadata(root, root, tool, nodes, model);
 
-        // 2. Parse ARCHITECTURE_CONTEXT.md if it exists
+        // 3. Parse ARCHITECTURE_CONTEXT.md if it exists
         java.io.File archCtx = new java.io.File(root, "ARCHITECTURE_CONTEXT.md");
         if (archCtx.exists()) {
             parseArchitectureContext(archCtx, nodes, model);
-        }
-
-        // 3. Fallback: Local Structure Discovery
-        if (model.getComponents().isEmpty()) {
-            discoverLocalStructure(root, root, model);
         }
 
         return model;
@@ -1189,14 +1236,50 @@ public class ArchitecturePage extends AEvoPage {
                 String name = f.getName();
                 if (!name.startsWith(".") && !name.equals("target") && !name.equals("bin") && !name.equals("node_modules")) {
                     ComponentRecord rec = new ComponentRecord();
-                    rec.setId(root.toURI().relativize(f.toURI()).getPath());
+                    String relPath = root.toURI().relativize(f.toURI()).getPath();
+                    if (relPath.endsWith("/")) relPath = relPath.substring(0, relPath.length() - 1);
+                    rec.setId(relPath.isEmpty() ? name : relPath);
                     rec.setName(name);
-                    rec.setType("MODULE");
-                    rec.setDescription("Discovered module directory");
+
+                    // Check module markers
+                    boolean hasPom = new java.io.File(f, "pom.xml").exists();
+                    boolean hasManifest = new java.io.File(f, "META-INF/MANIFEST.MF").exists() || new java.io.File(f, "plugin.xml").exists();
+                    boolean isDocs = name.equalsIgnoreCase("docs") || name.contains("documentation");
+
+                    if (hasManifest) {
+                        rec.setType("BUNDLE");
+                        rec.setDescription("OSGi Plug-in Bundle: " + name);
+                        rec.setImportanceScore(0.85);
+                    } else if (hasPom) {
+                        rec.setType("MAVEN_MODULE");
+                        rec.setDescription("Maven Project Module: " + name);
+                        rec.setImportanceScore(0.75);
+                    } else if (isDocs) {
+                        rec.setType("DOCS");
+                        rec.setDescription("Architecture and documentation specifications");
+                        rec.setImportanceScore(0.60);
+                    } else {
+                        rec.setType("MODULE");
+                        rec.setDescription("Discovered workspace module directory");
+                        rec.setImportanceScore(0.50);
+                    }
+
+                    rec.setPath(relPath);
                     model.getComponents().add(rec);
 
-                    // Only scan one level deep for fallback to keep it clean
-                    if (current.equals(root)) {
+                    if (!current.equals(root)) {
+                        String parentRel = root.toURI().relativize(current.toURI()).getPath();
+                        if (parentRel.endsWith("/")) parentRel = parentRel.substring(0, parentRel.length() - 1);
+                        if (!parentRel.isEmpty()) {
+                            RelationshipRecord rel = new RelationshipRecord();
+                            rel.setFrom(parentRel);
+                            rel.setTo(rec.getId());
+                            rel.setType("CONTAINS");
+                            model.getRelationships().add(rel);
+                        }
+                    }
+
+                    if (current.equals(root) || hasPom) {
                         discoverLocalStructure(f, root, model);
                     }
                 }
