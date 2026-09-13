@@ -2,114 +2,1051 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <title>Evolution Mirrored Chat</title>
+    <base href="/">
+    <link rel="stylesheet" href="/evo-style.css">
     <style>
-        html, body {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            width: 100%;
-            overflow: hidden;
-            background-color: var(--evo-bg, #f2f3f5);
-            color: var(--evo-text, #202428);
-            font-family: var(--evo-font-family, 'Segoe UI', sans-serif);
+        :root {
+            --bg-primary: var(--evo-surface);
+            --bg-secondary: var(--evo-surface-alt);
+            --border: var(--evo-border);
+            --text: var(--evo-text);
+            --text-dim: var(--evo-text-secondary);
+            --accent: var(--evo-primary);
+            --accent-hover: var(--evo-primary-hover);
+            --error: var(--evo-danger);
+            --success: var(--evo-success);
+
+            --user-msg-bg: var(--evo-primary);
+            --ai-msg-bg: var(--evo-surface-alt);
         }
 
-        .progress-tabs {
+        body, html {
+            margin: 0; padding: 0; height: 100%;
+            font-family: var(--evo-font-family);
+            background-color: var(--evo-bg);
+            color: var(--evo-text);
+            overflow: hidden;
+        }
+
+        #layout { display: flex; height: 100%; }
+
+        /* Sidebar */
+        #sidebar {
+            width: 280px; min-width: 280px;
+            background-color: var(--bg-secondary);
+            border-right: 1px solid var(--border);
             display: flex;
-            border-bottom: 1px solid var(--evo-border, #c8ccd1);
-            background: var(--evo-surface-alt, #f8f9fa);
-            padding: 4px 10px 0 10px;
-            gap: 4px;
+            flex-direction: column;
+            flex-shrink: 0;
+            z-index: 100;
         }
-        .progress-tab {
-            background: none;
-            border: none;
-            padding: 6px 12px;
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--evo-text-secondary, #555b62);
-            cursor: pointer;
-            border-top-left-radius: var(--evo-radius, 3px);
-            border-top-right-radius: var(--evo-radius, 3px);
-            border: 1px solid transparent;
-            border-bottom: none;
-            margin-bottom: -1px;
-        }
-        .progress-tab:hover {
-            color: var(--evo-text, #202428);
-        }
-        .progress-tab.active {
-            background: var(--evo-surface, #ffffff);
-            color: var(--evo-primary, #2864a5);
-            border-color: var(--evo-border, #c8ccd1);
-            border-bottom: 1px solid var(--evo-surface, #ffffff);
-        }
-        .tab-panel {
-            font-family: var(--evo-font-family, sans-serif);
-            font-size: 11px;
-            color: var(--evo-text, #202428);
-        }
-        .training-info-row {
+
+        .sidebar-header {
+            padding: 12px;
+            background-color: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
             display: flex;
             justify-content: space-between;
-            margin-bottom: 6px;
-            font-size: 11px;
-        }
-        .training-label {
+            align-items: center;
             font-weight: bold;
-            color: var(--evo-text-secondary, #555b62);
+            font-size: 0.85em;
+            letter-spacing: 1px;
+            color: var(--accent);
         }
-        .log-container {
-            font-family: var(--evo-font-mono, monospace);
-            font-size: 10px;
-            background: var(--evo-surface-alt, #f8f9fa);
-            border: 1px solid var(--evo-border, #c8ccd1);
-            border-radius: var(--evo-radius, 3px);
-            padding: 6px;
-            max-height: 180px;
-            overflow-y: auto;
-            line-height: 1.4;
+
+        #sidebar-scroll { flex-grow: 1; overflow-y: auto; padding: 10px; }
+
+        .sidebar-section { margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 15px; }
+        .sidebar-section h2 { font-size: 0.7em; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 10px; }
+
+        .control-group { display: flex; flex-direction: column; gap: 8px; }
+        .control-item { display: flex; flex-direction: column; gap: 4px; }
+        .control-item label { font-size: 0.75em; color: var(--text-dim); }
+
+        /* Buttons */
+        .btn {
+            background-color: #ffffff;
+            color: #333333;
+            border: 1px solid var(--border);
+            padding: 6px 12px;
+            cursor: pointer;
+            border-radius: 2px;
+            font-size: 0.8em;
+            text-align: center;
         }
-        .log-entry {
-            margin-bottom: 4px;
-            word-break: break-all;
+        .btn:hover { background-color: #f0f0f0; }
+        .btn-primary { background-color: var(--accent); color: white; font-weight: bold; border-color: var(--accent); }
+        .btn-primary:hover { background-color: var(--accent-hover); }
+        .btn-sm { padding: 3px 6px; font-size: 0.75em; }
+
+        select, input[type="text"], input[type="number"] {
+            width: 100%; padding: 5px; border-radius: 2px; border: 1px solid var(--border); background: #ffffff; color: #333333; font-size: 0.85em; box-sizing: border-box;
         }
-        .log-entry.info { color: var(--evo-text, #202428); }
-        .log-entry.success { color: var(--evo-success, #287a45); font-weight: bold; }
-        .log-entry.warning { color: var(--evo-warning, #9a6a00); }
-        .log-entry.error { color: var(--evo-danger, #a52a2a); font-weight: bold; }
+
+        .checkbox-group { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.8em; color: var(--text); }
+
+        #main-content {
+            flex: 1; display: flex; flex-direction: column; overflow: hidden;
+            background-color: var(--bg-primary);
+        }
+
+        #header {
+            height: 45px; background-color: var(--bg-secondary); border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between; padding: 0 15px;
+        }
+
+        .status-badge {
+            padding: 2px 8px; border-radius: 10px; font-size: 0.65em; font-weight: bold; border: 1px solid;
+        }
+        .status-online { border-color: var(--success); color: var(--success); }
+        .status-offline { border-color: var(--error); color: var(--error); }
+
+        #chat-area {
+            flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px;
+            background-image: radial-gradient(circle, #e0e0e0 0.5px, transparent 0.5px);
+            background-size: 20px 20px;
+        }
+
+        .message { max-width: 90%; padding: 10px 12px; border-radius: 4px; line-height: 1.5; font-size: 0.9em; position: relative; border: 1px solid var(--border); display: none; }
+        .message.user { align-self: flex-end; background: var(--user-msg-bg); color: white; border-color: transparent; display: flex; }
+        .message.ai { align-self: flex-start; background: var(--ai-msg-bg); color: var(--text); }
+        .message.progress { align-self: flex-start; background: transparent; border-style: dashed; font-style: italic; color: var(--text-dim); }
+        .message.waiting { align-self: flex-start; border-color: #dcdcaa; background: rgba(220, 220, 170, 0.1); display: flex; }
+        .message.error { align-self: center; border-color: var(--error); color: var(--error); background: rgba(244, 135, 113, 0.1); display: flex; }
+        .message.final-response { align-self: flex-start; border-width: 2px; border-color: var(--success); display: flex; }
+
+        /* Feedback Level Visibility Rules (Mirrored from Eclipse View) */
+        .message.ai, .think-block { display: none; }
+        .message.user, .message.final-response, .message.error, .message.waiting { display: flex !important; }
+
+        body.interactive .message.darwin,
+        body.interactive .message.branch,
+        body.interactive .message.darwin-branches { display: flex; }
+
+        body.advanced .message.darwin,
+        body.advanced .message.branch,
+        body.advanced .message.darwin-branches,
+        body.advanced .think-block { display: flex; }
+
+        body.full .message.ai,
+        body.full .think-block { display: flex; }
+
+        body.debug .message.ai,
+        body.debug .think-block,
+        body.debug .message.progress { display: flex !important; }
+
+        .message-meta { font-size: 0.7em; color: var(--text-dim); margin-bottom: 4px; display: flex; justify-content: space-between; gap: 10px; }
+
+        #input-area {
+            padding: 12px 15px; background: var(--bg-secondary); border-top: 1px solid var(--border);
+            display: flex; gap: 10px; align-items: center;
+        }
+
+        #input-area input {
+            flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 2px; outline: none; background: var(--bg-primary); color: var(--text);
+        }
+        #input-area button {
+            padding: 8px 15px; background: var(--accent); color: white; border: none; border-radius: 2px; cursor: pointer; font-weight: bold; font-size: 0.85em;
+        }
+
+        /* Darwin Branch Styles */
+        .branch-container {
+            display: flex; gap: 10px; overflow-x: auto; padding: 5px 0 10px 0; margin-top: 5px; width: 100%;
+        }
+        .branch-column {
+            flex: 0 0 280px; background: #ffffff; border: 1px solid var(--border); border-radius: 4px;
+            display: flex; flex-direction: column; transition: all 0.2s; position: relative;
+        }
+        .branch-column.best { border-color: var(--accent); box-shadow: 0 0 8px rgba(0, 122, 204, 0.3); }
+        .branch-column.approved { border-color: var(--success); background: rgba(137, 209, 133, 0.05); }
+        .branch-column.rejected { opacity: 0.5; filter: grayscale(0.8); }
+        .branch-column.kept { border-color: #dcdcaa; background: rgba(220, 220, 170, 0.05); }
+
+        .branch-header {
+            padding: 8px; background: var(--bg-secondary); border-bottom: 1px solid var(--border);
+            font-weight: bold; font-size: 10px; color: var(--text-dim); border-radius: 4px 4px 0 0;
+            text-transform: uppercase;
+        }
+        .branch-strategy { padding: 10px; font-weight: 600; font-size: 12px; line-height: 1.4; border-bottom: 1px solid var(--border); color: var(--accent); }
+        .branch-body { padding: 10px; flex: 1; font-size: 11px; line-height: 1.4; color: var(--text); overflow-y: auto; max-height: 150px; }
+        .branch-footer { padding: 8px; border-top: 1px solid var(--border); display: flex; gap: 5px; flex-wrap: wrap; }
+
+        .decision-stamp {
+            position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%) rotate(-15deg);
+            font-size: 20px; font-weight: 900; padding: 4px 8px; border-radius: 4px;
+            pointer-events: none; z-index: 10; user-select: none; opacity: 0.7; background: rgba(255,255,255,0.8);
+        }
+        .decision-stamp.approved { color: var(--success); border: 3px solid var(--success); }
+        .decision-stamp.rejected { color: var(--error); border: 3px solid var(--error); }
+        .decision-stamp.kept { color: #dcdcaa; border: 3px solid #dcdcaa; }
+
+        .branch-btn {
+            padding: 3px 6px; border-radius: 2px; font-size: 10px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: #3a3d41; color: white;
+        }
+        .branch-btn.select { background: var(--success); border: none; }
+        .branch-btn.reject { background: var(--error); border: none; }
+
+        /* Visualization Area */
+        #visual-area {
+            width: 320px; background: var(--bg-secondary); border-left: 1px solid var(--border);
+            display: flex; flex-direction: column; overflow-y: auto; flex-shrink: 0;
+        }
+        .viz-panel-header { padding: 10px 15px; border-bottom: 1px solid var(--border); font-size: 0.8em; font-weight: bold; color: var(--text-dim); text-transform: uppercase; background: var(--bg-secondary); }
+
+        #system-tree { padding: 15px; font-size: 12px; color: #333333; border-bottom: 1px solid var(--border); }
+        #graph-container { height: 220px; padding: 10px; position: relative; }
+        #visual-svg { width: 100%; height: 100%; }
+
+        /* Evolution Tree Styles */
+        #tree-container {
+            flex: 1; overflow: auto; background: #fafafa;
+            display: flex; flex-direction: column; align-items: center; padding: 20px;
+            min-height: 200px; border-top: 1px solid var(--border);
+        }
+
+        .tree-node {
+            width: 32px; height: 32px; border: 1.5px solid #7aa6ff; border-radius: 4px;
+            background: white; text-align: center; overflow: hidden; margin: 2px 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,.05); flex-shrink: 0;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+        }
+        .tree-node .node-title { font-weight: bold; font-size: 8px; margin: 0; line-height: 1; }
+        .tree-node.branch { border-color: #86c68a; }
+        .tree-node.branch .node-title { background: #edf8ee; color: #166a27; }
+        .tree-node.failed { border-color: #fca5a5; opacity: 0.8; }
+        .tree-node.failed .node-title { background: #fef2f2; color: #991b1b; }
+        .tree-node.winner { background: #fffbeb; border-color: #f59e0b; }
+
+        .tree-vline { width: 1.5px; height: 12px; background: #cbd5e1; flex-shrink: 0; }
+        .tree-children { display: flex; justify-content: center; position: relative; padding-top: 12px; }
+        .tree-children::before { content: ""; position: absolute; top: 0; left: 50%; width: 1.5px; height: 12px; background: #cbd5e1; }
+        .tree-child { display: flex; flex-direction: column; align-items: center; padding: 0 3px; position: relative; }
+        .tree-child::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 1.5px; background: #cbd5e1; }
+        .tree-child:first-child::before { left: 50%; }
+        .tree-child:last-child::before { right: 50%; }
+        .tree-child:only-child::before { display: none; }
+
+        .thinking-indicator {
+            display: none; align-items: center; gap: 8px; font-size: 12px; color: var(--accent); margin-bottom: 10px;
+        }
+        .dot { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; animation: blink 1.4s infinite both; }
+        .dot:nth-child(2) { animation-delay: 0.2s; }
+        .dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes blink { 0%, 80%, 100% { opacity: 0; } 40% { opacity: 1; } }
+
+        #popup-panel {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 400px; max-width: 90vw; background: white; border: 1px solid var(--border);
+            border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); z-index: 1000;
+            display: none; flex-direction: column;
+        }
+        #popup-header {
+            padding: 10px 15px; background: var(--bg-secondary); border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center; border-radius: 8px 8px 0 0;
+        }
+        #popup-content { padding: 15px; overflow-y: auto; max-height: 70vh; }
     </style>
-
-    <title>AI Evolution Chat</title>
-
-    <link rel="stylesheet" href="shared.css">
-
-    <script>
-        window.onerror = function(msg, url, line, col, error) {
-            if (window.JavaLog) window.JavaLog('[JS Error] ' + msg + ' at ' + line + ':' + col);
-            return false;
-        };
-
-        window.hideLoading = function() {
-            var overlay = document.getElementById('loading-overlay');
-            if (overlay) overlay.style.display = 'none';
-        };
-        setTimeout(window.hideLoading, 5000);
-    </script>
+    <script src="/auth-integration.js"></script>
 </head>
-<body class="full">
-    <div id="loading-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--evo-surface, white); z-index: 9999; display: flex; align-items: center; justify-content: center; font-family: var(--evo-font-family, sans-serif); color: var(--evo-text-secondary, #555b62);">
-        <div style="text-align: center;">
-            <div>Initializing AI Intelligence...</div>
-        </div>
-    </div>
+<body>
+    <div id="layout">
+        <!-- SIDEBAR -->
+        <div id="sidebar">
+            <div class="sidebar-header">
+                🧬 EVO MIRROR
+            </div>
 
-    <div id="chat-layout" style="display: flex; height: 100vh; width: 100vw; overflow: hidden;">
-        <div id="main-content" style="flex: 1; position: relative; display: flex; flex-direction: column; overflow: hidden;">
-            <div class='chat-container' id='chat' style="flex: 1; overflow-y: auto; padding: 8px;">
-                <div id="messages-wrapper" style="display: flex; flex-direction: column; gap: 4px;"></div>
+            <div id="sidebar-scroll">
+                <div class="sidebar-section">
+                    <h2>✨ Recommended Actions</h2>
+                    <div id="guidance-content" style="font-size: 0.85em; color: var(--text-dim); line-height: 1.4;">
+                        Analyzing context...
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h2>Chat Management</h2>
+                    <div class="control-group">
+                        <button class="btn btn-primary" onclick="newSession()" data-guidance="Starts a new independent chat session. All previous context is cleared.">New Session</button>
+                        <button class="btn" onclick="cleanChat()" style="margin-top:5px;" data-guidance="Clears the chat history from the current view. Local state is preserved.">Clean Chat</button>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h2>AI Mode & Models</h2>
+                    <div class="control-group">
+                        <div class="control-item">
+                            <label>Mode:</label>
+                            <select id="mode-select" onchange="updateSettings()" data-guidance="Switch between local, hybrid, and remote execution. 'Mediated' mode provides high-integrity architectural reasoning.">
+                                <option value="LOCAL">Local</option>
+                                <option value="HYBRID">Hybrid</option>
+                                <option value="REMOTE">Remote</option>
+                                <option value="PROXY">Proxy</option>
+                                <option value="MEDIATED">Mediated</option>
+                            </select>
+                        </div>
+                        <div class="control-item">
+                            <label>Local:</label>
+                            <select id="local-model-select" onchange="updateSettings()" data-guidance="Choose a model from your local Ollama instance.">
+                                <option value="">Loading...</option>
+                            </select>
+                        </div>
+                        <div class="control-item">
+                            <label>Remote:</label>
+                            <select id="remote-model-select" onchange="updateSettings()">
+                                <option value="GPT-4o">GPT-4o</option>
+                                <option value="Claude-3.5-Sonnet">Claude-3.5-Sonnet</option>
+                                <option value="Llama-3-70b">Llama-3-70b</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h2>Feedback Depth</h2>
+                    <div class="control-group">
+                        <select id="feedback-level-select" onchange="updateFeedbackLevel()">
+                            <option value="simple">Simple</option>
+                            <option value="interactive">Interactive</option>
+                            <option value="advanced">Advanced</option>
+                            <option value="full" selected>Full</option>
+                            <option value="debug">Debug</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h2>Instructions</h2>
+                    <div class="control-group">
+                        <label class="checkbox-group"><input type="checkbox" id="iterative-check" onchange="updateSettings()"> Iterative Mode</label>
+                        <label class="checkbox-group"><input type="checkbox" id="self-iterative-check" onchange="updateSettings()"> Self-Development</label>
+                        <label class="checkbox-group" data-guidance="Darwin evolutionary branching. AI will propose multiple competing strategies for every task."><input type="checkbox" id="darwin-check" onchange="updateSettings()"> Darwin Mode</label>
+                        <label class="checkbox-group"><input type="checkbox" id="step-check" onchange="updateSettings()"> Step Mode</label>
+                        <label class="checkbox-group"><input type="checkbox" id="git-check" onchange="updateSettings()"> Git Automation</label>
+                        <label class="checkbox-group"><input type="checkbox" id="auto-approve-check" onchange="updateSettings()"> Auto-Approve</label>
+                        <div class="control-item" style="margin-top:5px;">
+                            <label>Max Iterations:</label>
+                            <input type="number" id="max-iter-input" value="5" min="1" max="20" onchange="updateSettings()">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h2>Cognitive State</h2>
+                    <div class="control-group" style="font-size: 0.75em; line-height: 1.6;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>Intent:</span> <span id="cog-intent" style="color: var(--accent);">LEARNING</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>Capability:</span> <span id="cog-capability" style="color: var(--success);">CHAT</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>Direction:</span> <span id="cog-direction" style="color: #dcdcaa;">STABLE</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>Confidence:</span> <span id="cog-confidence">100%</span>
+                        </div>
+                        <div style="margin-top: 5px;">
+                            <span>Trajectory:</span>
+                            <div id="cog-trajectory" style="display: flex; gap: 3px; overflow-x: auto; padding-top: 3px;">
+                                <!-- Trajectory pills -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sidebar-section" style="border-bottom:none;">
+                    <h2>Workspace</h2>
+                    <div class="control-group">
+                        <div class="control-item">
+                            <label>Active Branch:</label>
+                            <select id="branch-select"><option value="">Auto-create</option></select>
+                        </div>
+                        <button class="btn btn-sm" onclick="refreshBranches()" style="margin-top:5px;">Refresh Branches</button>
+                    </div>
+                </div>
+            </div>
+
+            <div style="padding: 10px; border-top: 1px solid var(--border); font-size: 10px; opacity: 0.5; display: flex; justify-content: space-between;">
+                <span>v2.7.0</span>
+                <span id="session-display">Session: Default</span>
             </div>
         </div>
+
+        <!-- MAIN CHAT -->
+        <div id="main-content">
+            <div id="header">
+                <div style="font-weight: 600; font-size: 14px;">Mirroring: <span id="current-task-name" style="color: var(--accent);">Idle</span></div>
+                <div style="display: flex; gap: 10px;">
+                    <div id="ollama-status" class="status-badge status-offline">OLLAMA OFFLINE</div>
+                    <div class="status-badge status-online">SERVER ONLINE</div>
+                </div>
+            </div>
+
+            <div id="chat-area">
+                <!-- Messages appear here -->
+            </div>
+
+            <div id="thinking" class="thinking-indicator" style="padding-left: 20px;">
+                <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+                <span>Evo is thinking...</span>
+            </div>
+
+            <div id="input-area">
+                    <input type="text" id="user-input" placeholder="Type a message or response..." onkeypress="if(event.key==='Enter') sendMessage()" data-guidance="Enter your instructions for the evolutionary engine. You can ask to implement features, fix bugs, or evolve the architecture.">
+                    <button onclick="sendMessage()" data-guidance="Send your command to the Evolution Orchestrator.">Send</button>
+            </div>
+        </div>
+
+        <!-- VISUALIZATION -->
+        <div id="visual-area">
+            <div class="viz-panel-header">System Hierarchy</div>
+            <div id="system-tree">
+                <!-- Dynamic Tree Content -->
+            </div>
+            <div class="viz-panel-header">Runtime Graph</div>
+            <div id="graph-container">
+                 <svg id="visual-svg" width="100%" height="100%" viewBox="0 0 400 220"></svg>
+            </div>
+            <div class="viz-panel-header">
+                Evolution Lineage
+            </div>
+            <div id="tree-container">
+                 <div id="tree-content" style="display: flex; flex-direction: column; align-items: center;"></div>
+            </div>
+            <div style="flex-grow:1; background: var(--bg-primary);"></div>
+        </div>
     </div>
+
+    <div id="context-menu"></div>
+
+    <div id="popup-panel" style="display: none;">
+        <div id="popup-header">
+            <h3 id="popup-title" style="margin:0; font-size: 1em;">Branch Details</h3>
+            <button onclick="document.getElementById('popup-panel').style.display='none'" class="btn btn-sm" style="background:none;">&times;</button>
+        </div>
+        <div id="popup-content"></div>
+    </div>
+
+    <link rel="stylesheet" href="/creatic.css">
+    <script src="/creatic.js"></script>
+    <script>
+        const chatArea = document.getElementById('chat-area');
+        const userInput = document.getElementById('user-input');
+        const thinkingIndicator = document.getElementById('thinking');
+
+        let currentSessionId = 'Default';
+        let lastSequenceNumber = 0;
+        let isPolling = false;
+
+        // Bridge to Java logs
+        function log(msg) {
+            if (window.logFunction) logFunction(msg);
+            else console.log(msg);
+        }
+
+        function getBaseUrl() {
+            if (window.location.protocol === 'file:') {
+                return `http://localhost:48080`;
+            }
+            return '';
+        }
+
+        async function fetchSettings() {
+            try {
+                const response = await fetch(getBaseUrl() + '/server/orchestrator/settings?runtime=SWT');
+                const data = await response.json();
+
+                const updateElement = (id, property, value) => {
+                    const el = document.getElementById(id);
+                    if (el && document.activeElement !== el) {
+                        el[property] = value;
+                    }
+                };
+
+                updateElement('mode-select', 'value', data.aiMode || 'LOCAL');
+                updateElement('local-model-select', 'value', data.localModel || '');
+                updateElement('remote-model-select', 'value', data.remoteModel || 'GPT-4o');
+
+                updateElement('iterative-check', 'checked', !!data.iterativeMode);
+                updateElement('self-iterative-check', 'checked', !!data.selfIterativeMode);
+                updateElement('darwin-check', 'checked', !!data.darwinMode);
+                updateElement('step-check', 'checked', !!data.stepMode);
+                updateElement('git-check', 'checked', !!data.gitAutomation);
+                updateElement('auto-approve-check', 'checked', !!data.autoApprove);
+                updateElement('max-iter-input', 'value', data.maxIterations || 5);
+            } catch (err) {
+                console.error('Failed to fetch settings:', err);
+            }
+        }
+
+        async function updateSettings() {
+            const settings = {
+                sessionId: currentSessionId,
+                aiMode: document.getElementById('mode-select').value,
+                localModel: document.getElementById('local-model-select').value,
+                remoteModel: document.getElementById('remote-model-select').value,
+                darwinMode: document.getElementById('darwin-check').checked,
+                iterativeMode: document.getElementById('iterative-check').checked,
+                selfIterativeMode: document.getElementById('self-iterative-check').checked,
+                stepMode: document.getElementById('step-check').checked,
+                autoApprove: document.getElementById('auto-approve-check').checked,
+                gitAutomation: document.getElementById('git-check').checked,
+                maxIterations: parseInt(document.getElementById('max-iter-input').value)
+            };
+
+            try {
+                await fetch(getBaseUrl() + '/server/orchestrator/settings?runtime=SWT', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(settings)
+                });
+            } catch (err) {
+                console.error('Failed to update settings:', err);
+            }
+        }
+
+        function appendMessage(msg) {
+            if (msg.sequenceNumber <= lastSequenceNumber) return;
+            lastSequenceNumber = msg.sequenceNumber;
+
+            const div = document.createElement('div');
+            let agentType = msg.agentType || 'ai';
+            let isUser = agentType.includes('user') || (msg.sender && msg.sender.toLowerCase().includes('you'));
+            let className = 'message ' + (isUser ? 'user' : 'ai') + ' ' + agentType;
+            if (msg.priority === 3) className += ' waiting';
+            if (msg.priority === 1) className += ' progress';
+            if (agentType === 'error') className += ' error';
+            if (msg.isTerminal) className += ' final-response';
+
+            div.className = className;
+
+            const meta = document.createElement('div');
+            meta.className = 'message-meta';
+            meta.innerHTML = `<span>${getIconForAgentType(agentType.split(' ')[0])} <b>${msg.sender}</b></span><span>${msg.timestamp}</span>`;
+
+            const content = document.createElement('div');
+
+            if (agentType.includes('darwin-branches')) {
+                div.style.maxWidth = '100%';
+                content.appendChild(renderDarwin(msg));
+            } else {
+                content.innerText = msg.text;
+            }
+
+            div.appendChild(meta);
+            div.appendChild(content);
+
+            if (msg.priority === 3 && !agentType.includes('darwin-branches')) {
+                const actions = document.createElement('div');
+                actions.style.marginTop = "10px";
+                actions.style.display = "flex";
+                actions.style.gap = "5px";
+
+                if (msg.text.toLowerCase().includes('approve') || msg.text.toLowerCase().includes('proceed')) {
+                    const appBtn = document.createElement('button');
+                    appBtn.className = "btn btn-sm btn-primary";
+                    appBtn.textContent = "Approve";
+                    appBtn.onclick = () => provideApproval(msg.turnId, true);
+
+                    const rejBtn = document.createElement('button');
+                    rejBtn.className = "btn btn-sm";
+                    rejBtn.textContent = "Reject";
+                    rejBtn.onclick = () => provideApproval(msg.turnId, false);
+
+                    actions.appendChild(appBtn);
+                    actions.appendChild(rejBtn);
+                }
+                div.appendChild(actions);
+            }
+
+            chatArea.appendChild(div);
+            chatArea.scrollTop = chatArea.scrollHeight;
+
+            if (msg.isTerminal) {
+                thinkingIndicator.style.display = 'none';
+            } else if (msg.priority === 1 || msg.priority === 0) {
+                thinkingIndicator.style.display = 'flex';
+            }
+        }
+
+        async function pollConversation() {
+            if (isPolling) return;
+            isPolling = true;
+            try {
+                const response = await fetch(getBaseUrl() + '/server/conversation/' + currentSessionId + '?runtime=SWT');
+                const messages = await response.json();
+                window.messages = messages;
+                messages.forEach(appendMessage);
+                updateTreePanel(messages);
+            } catch (err) {
+                console.error('Polling error:', err);
+            } finally {
+                isPolling = false;
+            }
+        }
+
+        function updateTreePanel(messages) {
+            const content = document.getElementById('tree-content');
+            const iterStats = document.getElementById('iter-stats');
+            const branchStats = document.getElementById('branch-stats');
+            if (!content) return;
+
+            const progressMessages = (messages || []).filter(m => {
+                const role = (m.agentType || '').toLowerCase();
+                return role.includes('evolution-progress');
+            });
+
+            if (progressMessages.length === 0) return;
+
+            const iterations = {};
+            let latestData = null;
+            progressMessages.forEach(m => {
+                try {
+                    const data = JSON.parse(m.text);
+                    if (data.iterationCount !== undefined) {
+                        if (!iterations[data.iterationCount] || data.timestamp > iterations[data.iterationCount].timestamp) {
+                            iterations[data.iterationCount] = data;
+                        }
+                        if (!latestData || data.timestamp > latestData.timestamp) {
+                            latestData = data;
+                        }
+                    }
+                } catch(e) {}
+            });
+
+            const sortedIters = Object.keys(iterations).sort((a, b) => parseInt(a) - parseInt(b));
+
+            if (sortedIters.length === 0) return;
+
+            const childrenByParent = {};
+            sortedIters.forEach(key => {
+                const data = iterations[key];
+                const pid = data.parentId || "ROOT";
+                if (!childrenByParent[pid]) childrenByParent[pid] = [];
+                childrenByParent[pid].push(data);
+            });
+
+            const renderIteration = (data, isRoot = false) => {
+                const dimInfo = data.currentDimension ? `\nDimension: ${data.currentDimension}${data.currentDimensionDescription ? ' (' + data.currentDimensionDescription + ')' : ''}` : "";
+                let nodeHtml = `
+                    <div class="tree-node" title="Iteration ${data.iterationCount}: ${data.currentTask || ''}${dimInfo}">
+                        <div class="node-title">I${data.iterationCount}</div>
+                        ${data.currentDimension ? `<div style="font-size: 6px; color: #64748b; margin-top: -2px;">${data.currentDimension.substring(0, 8)}</div>` : ''}
+                    </div>
+                `;
+
+                if (isRoot && latestData) {
+                    const iText = `Iters: ${sortedIters.length}/${latestData.minIterations || 1}/${latestData.maxIterations || 10}`;
+                    const bText = `Branches: ${latestData.branches ? latestData.branches.length : 0}/${latestData.branchingLimit || 4}`;
+                    nodeHtml = `
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="font-size: 9px; color: var(--text-dim); min-width: 60px; text-align: right; font-weight: normal;">${iText}</div>
+                            ${nodeHtml}
+                            <div style="font-size: 9px; color: var(--text-dim); min-width: 60px; font-weight: normal;">${bText}</div>
+                        </div>
+                    `;
+                }
+
+                let html = nodeHtml;
+
+                const branches = data.branches || [];
+                const winnerId = data.winnerId;
+
+                if (branches.length > 0) {
+                    html += `<div class="tree-vline"></div>`;
+                    html += `<div class="tree-children">`;
+
+                    branches.forEach(b => {
+                        const isWinner = winnerId === b.id;
+                        const isFailed = b.status === 'failed' || b.status === 'rejected';
+                        const subIterations = childrenByParent[b.id] || [];
+
+                        html += `<div class="tree-child">`;
+                        html += `<div class="tree-vline"></div>`;
+                        html += `
+                            <div class="tree-node branch ${isFailed ? 'failed' : ''} ${isWinner ? 'winner' : ''}"
+                                 title="Branch ${b.id}${b.strategy ? ': ' + b.strategy : ''}${b.score !== undefined ? ' - Score: ' + Math.round(b.score*100) : ''}"
+                                 ondblclick="showBranchDetails('${b.id}')"
+                                 oncontextmenu="event.preventDefault(); showBranchDetails('${b.id}')">
+                                <div class="node-title">${isWinner ? '🏆' : 'B' + String(b.id).split('-').pop().substring(0, 3)}</div>
+                            </div>
+                        `;
+
+                        if (subIterations.length > 0) {
+                            html += `<div class="tree-vline"></div>`;
+                            subIterations.forEach(si => { html += renderIteration(si); });
+                        }
+                        html += `</div>`;
+                    });
+                    html += `</div>`;
+                } else {
+                    const pid = data.winnerId || "iter-" + data.iterationCount;
+                    const subIterations = childrenByParent[pid] || [];
+                    if (subIterations.length > 0) {
+                        html += `<div class="tree-vline"></div>`;
+                        subIterations.forEach(si => { html += renderIteration(si); });
+                    }
+                }
+                return html;
+            };
+
+            const roots = childrenByParent["ROOT"] || [];
+            let fullHtml = "";
+            roots.forEach((r, idx) => { fullHtml += renderIteration(r, idx === 0); });
+            content.innerHTML = fullHtml || '<div style="text-align: center; color: #94a3b8; margin-top: 20px;">No lineage.</div>';
+        }
+
+        async function sendMessage() {
+            const text = userInput.value.trim();
+            if (!text) return;
+
+            const branch = document.getElementById('branch-select').value;
+            userInput.value = '';
+
+            try {
+                const payload = { prompt: text, sessionId: currentSessionId };
+                if (branch) payload.branch = branch;
+
+                await fetch(getBaseUrl() + '/task?runtime=SWT', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                thinkingIndicator.style.display = 'flex';
+            } catch (err) {
+                console.error('Failed to send message:', err);
+            }
+        }
+
+        async function provideApproval(turnId, approved) {
+            try {
+                let response = await fetch(getBaseUrl() + '/task/' + turnId + '/approve?runtime=SWT', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ approved })
+                });
+
+                if (response.status === 404) {
+                    await fetch(getBaseUrl() + '/conversation/' + currentSessionId + '/approve?runtime=SWT', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ approved })
+                    });
+                }
+            } catch (err) {
+                console.error('Failed to provide approval:', err);
+            }
+        }
+
+        async function pollStatus() {
+            try {
+                const response = await fetch(getBaseUrl() + '/server/status?runtime=SWT');
+                const data = await response.json();
+
+                const ollamaBadge = document.getElementById('ollama-status');
+                if (data.ollama && data.ollama.online) {
+                    ollamaBadge.innerText = 'OLLAMA ONLINE';
+                    ollamaBadge.className = 'status-badge status-online';
+
+                    const localSelect = document.getElementById('local-model-select');
+                    if (localSelect.options[0] && localSelect.options[0].text === 'Loading...') {
+                        localSelect.innerHTML = '';
+                        data.ollama.models.forEach(m => {
+                            const opt = document.createElement('option');
+                            opt.value = m.name;
+                            opt.text = m.name;
+                            localSelect.appendChild(opt);
+                        });
+                    }
+                } else {
+                    ollamaBadge.innerText = 'OLLAMA OFFLINE';
+                    ollamaBadge.className = 'status-badge status-offline';
+                }
+            } catch (err) { }
+        }
+
+        async function refreshBranches() {
+            try {
+                const response = await fetch(getBaseUrl() + '/git/branches?runtime=SWT');
+                const branches = await response.json();
+                const select = document.getElementById('branch-select');
+                select.innerHTML = '<option value="">Auto-create</option>';
+                branches.forEach(b => {
+                    const opt = document.createElement('option');
+                    opt.value = b; opt.text = b; select.appendChild(opt);
+                });
+            } catch (err) {}
+        }
+
+        async function newSession() {
+            const name = prompt("Enter session name:", "task");
+            if (name) {
+                currentSessionId = name;
+                chatArea.innerHTML = '';
+                lastSequenceNumber = 0;
+                document.getElementById('session-display').innerText = 'Session: ' + name;
+            }
+        }
+
+        function cleanChat() {
+            chatArea.innerHTML = '';
+            lastSequenceNumber = 0;
+        }
+
+        function updateFeedbackLevel() {
+            const level = document.getElementById('feedback-level-select').value;
+            const levels = ['simple', 'interactive', 'advanced', 'full', 'debug'];
+            levels.forEach(l => document.body.classList.remove(l));
+            document.body.classList.add(level);
+            // Local state persistence if desired, for now just UI switch
+        }
+
+        async function fetchInitialSettings() {
+             await fetchSettings();
+             // Set initial feedback level
+             const select = document.getElementById('feedback-level-select');
+             const level = select ? select.value : 'full';
+             const levels = ['simple', 'interactive', 'advanced', 'full', 'debug'];
+             levels.forEach(l => document.body.classList.remove(l));
+             document.body.classList.add(level);
+        }
+
+
+        function getIconForAgentType(type) {
+            const icons = {
+                'user': '👤', 'ai': '🤖', 'planner': '📋', 'architect': '📐', 'javadev': '💻',
+                'tester': '🧪', 'reviewer': '⚖️', 'tool': '⚙️', 'analytic': '🔍', 'general': '🧠',
+                'terminal': '📟', 'file': '📂', 'maven': '📦', 'git': '🌿', 'structure': '🌳',
+                'websearch': '🌐', 'quality': '✨', 'observability': '📊', 'orchestrator': '🎼',
+                'darwin': '🧬', 'darwin-branches': '🧬', 'final-response': '✅', 'error': '❌', 'thinking': '💭'
+            };
+            return icons[type] || '🤖';
+        }
+
+        function renderDarwin(m) {
+            const container = document.createElement('div');
+            container.className = 'branch-container';
+            try {
+                let text = (m.text || '').trim();
+                text = text.replace(/^(\[[^\{\"\[]+\]\s*)+/g, '');
+
+                const data = JSON.parse(text);
+                const variants = Array.isArray(data) ? data : (data.variants || []);
+                const iteration = data.iteration !== undefined ? data.iteration : null;
+
+                const role = (m.agentType || '').toLowerCase();
+                const isApproved = role.includes('approved');
+                const approvedId = isApproved && role.includes(':') ? role.split(':').pop().trim() : null;
+                const isRejected = role.includes('rejected');
+                const rejectedId = isRejected && role.includes(':') ? role.split(':').pop().trim() : null;
+                const isWaiting = role.includes('waiting');
+
+                const isManualDecision = role.includes('decision:manual');
+                const isAutoDecision = role.includes('decision:auto');
+
+                variants.forEach((v, index) => {
+                    const vId = String(v.id || index);
+                    const isThisApproved = isApproved && (approvedId === null || approvedId === vId);
+                    const isThisRejected = (isApproved && approvedId !== null && approvedId !== vId) || (isRejected && rejectedId === vId);
+                    const isThisKept = v.status === 'KEPT';
+
+                    const col = document.createElement('div');
+                    col.className = 'branch-column' + (v.isBest ? ' best' : '') + (isThisApproved ? ' approved' : '') + (isThisRejected ? ' rejected' : '') + (isThisKept ? ' kept' : '');
+
+                    if (isThisApproved || isThisRejected || isThisKept) {
+                        const stamp = document.createElement('div');
+                        stamp.className = 'decision-stamp';
+                        if (isThisApproved) {
+                            stamp.innerText = isAutoDecision ? 'AUTO-APPROVED' : 'APPROVED';
+                            stamp.classList.add('approved');
+                        } else if (isThisRejected) {
+                            stamp.innerText = 'REJECTED';
+                            stamp.classList.add('rejected');
+                        } else if (isThisKept) {
+                            stamp.innerText = 'KEPT';
+                            stamp.classList.add('kept');
+                        }
+                        col.appendChild(stamp);
+                    }
+
+                    let headerLabel = iteration !== null ? `ITERATION ${iteration} - PROPOSAL ${index + 1}` : `PROPOSAL ${index + 1}`;
+                    let headerHtml = `<div class="branch-header">${headerLabel}${isThisKept ? ' [KEPT]' : ''}</div>`;
+                    let strategy = v.strategy || v.description || 'No strategy description';
+
+                    let footerContent = "";
+                    if (isThisApproved) footerContent = '<div style="color: var(--success); font-weight: bold; font-size: 10px;">APPROVED</div>';
+                    else if (isThisRejected) footerContent = '<div style="color: var(--error); font-weight: bold; font-size: 10px;">REJECTED</div>';
+                    else if (isThisKept && !isWaiting) footerContent = '<div style="color: #dcdcaa; font-weight: bold; font-size: 10px;">KEPT</div>';
+                    else if (isWaiting) {
+                        footerContent = `
+                            <button class="branch-btn select" onclick="sendBypass('Approve variant ${vId}')">Select</button>
+                            <button class="branch-btn" onclick="sendBypass('Keep variant ${vId}')">Keep</button>
+                            <button class="branch-btn reject" onclick="sendBypass('Reject variant ${vId}')">Reject</button>`;
+                    }
+
+                    col.innerHTML = `
+                        ${headerHtml}
+                        <div class="branch-strategy">${strategy}</div>
+                        <div class="branch-body">
+                            ${v.survival_argument ? `<b>Survival:</b> ${v.survival_argument}<br><br>` : ''}
+                            ${v.tradeoffs ? `<b>Tradeoffs:</b> ${v.tradeoffs}` : ''}
+                        </div>
+                        <div class="branch-footer">${footerContent}</div>
+                    `;
+                    container.appendChild(col);
+                });
+            } catch(e) {
+                container.innerText = "Failed to parse Darwin: " + e.message;
+            }
+            return container;
+        }
+
+        async function sendBypass(text) {
+            userInput.value = text;
+            await sendMessage();
+        }
+
+        fetchInitialSettings();
+        pollStatus();
+        refreshBranches();
+
+        async function pollSystemState() {
+            try {
+                const response = await fetch(getBaseUrl() + '/server/system/state?runtime=SWT');
+                const state = await response.json();
+                renderSystemState(state);
+            } catch (err) {}
+        }
+
+        function renderSystemState(state) {
+            const tree = document.getElementById('system-tree');
+            let html = `<div><b>Orchestrator:</b> ${state.name || 'Unnamed'}</div>`;
+
+            if (state.session) {
+                html += `<div style="margin-top:5px; color: var(--accent);"><b>Session:</b> ${state.session.status}</div>`;
+
+                if (state.session.cognitiveState) {
+                    const cs = state.session.cognitiveState;
+                    document.getElementById('cog-intent').innerText = cs.intent || 'LEARNING';
+                    document.getElementById('cog-capability').innerText = cs.capability || 'CHAT';
+                    document.getElementById('cog-direction').innerText = cs.direction || 'STABLE';
+                    document.getElementById('cog-confidence').innerText = Math.round((cs.confidence || 0) * 100) + '%';
+
+                    const traj = document.getElementById('cog-trajectory');
+                    traj.innerHTML = '';
+                    if (cs.trajectory) {
+                        cs.trajectory.slice(-5).forEach(t => {
+                            const pill = document.createElement('span');
+                            pill.style.fontSize = '8px';
+                            pill.style.padding = '1px 4px';
+                            pill.style.borderRadius = '2px';
+                            pill.style.background = 'var(--bg-primary)';
+                            pill.style.border = '1px solid var(--border)';
+                            pill.innerText = t;
+                            traj.appendChild(pill);
+                        });
+                    }
+                }
+            }
+
+            tree.innerHTML = html;
+            updateVisualGraph(state);
+        }
+
+        function updateVisualGraph(state) {
+            const svg = document.getElementById('visual-svg');
+            svg.innerHTML = '';
+            const nodes = [];
+            const links = [];
+
+            if (state.agents) {
+                state.agents.forEach((a, i) => {
+                    nodes.push({ id: a.id, label: a.type, x: 50, y: 50 + i * 60, color: 'rgba(0, 122, 204, 0.1)', stroke: '#007acc' });
+                });
+            }
+
+            if (state.tasks) {
+                state.tasks.forEach((t, i) => {
+                    nodes.push({ id: t.id, label: t.name, x: 200, y: 50 + i * 70, color: 'rgba(137, 209, 133, 0.1)', stroke: '#89d185' });
+                    if (t.next) {
+                        t.next.forEach(nid => links.push({ source: t.id, target: nid }));
+                    }
+                });
+            }
+
+            const nodeMap = {};
+            nodes.forEach(n => {
+                nodeMap[n.id] = n;
+                const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', n.x); circle.setAttribute('cy', n.y); circle.setAttribute('r', 25);
+                circle.setAttribute('fill', n.color); circle.setAttribute('stroke', n.stroke);
+                circle.setAttribute('stroke-width', '1.5');
+                g.appendChild(circle);
+
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', n.x); text.setAttribute('y', n.y + 5);
+                text.setAttribute('text-anchor', 'middle');
+                text.setAttribute('font-size', '8');
+                text.setAttribute('fill', 'var(--text)');
+                text.textContent = n.label.substring(0, 10);
+                g.appendChild(text);
+                svg.appendChild(g);
+            });
+
+            links.forEach(l => {
+                const s = nodeMap[l.source], t = nodeMap[l.target];
+                if (s && t) {
+                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    line.setAttribute('x1', s.x + 25); line.setAttribute('y1', s.y);
+                    line.setAttribute('x2', t.x - 25); line.setAttribute('y2', t.y);
+                    line.setAttribute('stroke', 'var(--border)');
+                    svg.appendChild(line);
+                }
+            });
+        }
+
+        function showBranchDetails(branchId) {
+            const messages = window.messages || [];
+            let branchData = null;
+            for (let i = messages.length - 1; i >= 0; i--) {
+                const m = messages[i];
+                if ((m.agentType || '').toLowerCase().includes('evolution-progress')) {
+                    try {
+                        const data = JSON.parse(m.text);
+                        if (data.branches) {
+                            const b = data.branches.find(br => br.id === branchId);
+                            if (b) { branchData = b; break; }
+                        }
+                    } catch(e) {}
+                }
+            }
+
+            const popup = document.getElementById('popup-panel');
+            const title = document.getElementById('popup-title');
+            const content = document.getElementById('popup-content');
+
+            if (branchData) {
+                title.innerText = "Branch: " + branchId;
+                content.innerHTML = `
+                    <div style="font-size: 12px; line-height: 1.4;">
+                        <b>Strategy:</b> ${branchData.strategy}<br>
+                        <b>Status:</b> ${branchData.status}<br>
+                        <b>Score:</b> ${branchData.score !== undefined ? Math.round(branchData.score * 100) + '%' : 'N/A'}<br>
+                    </div>
+                `;
+                popup.style.display = 'block';
+            } else {
+                alert("Branch info not found.");
+            }
+        }
+
+        setInterval(pollConversation, 1000);
+        setInterval(pollSystemState, 2000);
+        setInterval(pollStatus, 10000);
+        setInterval(fetchSettings, 30000);
+    </script>
 </body>
 </html>
