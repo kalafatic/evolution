@@ -128,25 +128,82 @@ public class SelfDevOrchestrator {
         return supervisorLifecycle;
     }
 
+    public synchronized TaskResult executeTaskWithDependencies(String taskId) {
+        if (taskId == null || taskId.trim().isEmpty()) {
+            return TaskResult.failure("unknown", "Task ID is null or empty", null);
+        }
+        return executeTaskWithDependenciesInternal(taskId.trim().toUpperCase(), new java.util.HashSet<>());
+    }
+
+    private TaskResult executeTaskWithDependenciesInternal(String taskId, java.util.Set<String> visitingStack) {
+        SelfDevTask task = taskRegistry.get(taskId);
+        if (task == null) {
+            if ("LLM".equalsIgnoreCase(taskId)) {
+                return TaskResult.success("LLM", "LLM check OK.");
+            }
+            return TaskResult.failure(taskId, "Unknown task ID: " + taskId, null);
+        }
+
+        // Check if task was already executed successfully in context
+        TaskResult existingResult = context.getTaskResult(taskId);
+        if (existingResult != null && existingResult.isSuccess()) {
+            System.out.println("[SelfDevOrchestrator] Task [" + taskId + "] already executed successfully. Reusing result.");
+            return existingResult;
+        }
+
+        if (visitingStack.contains(taskId)) {
+            String msg = "Circular dependency detected involving task: " + taskId;
+            System.err.println("[SelfDevOrchestrator] " + msg);
+            return TaskResult.failure(taskId, msg, null);
+        }
+
+        visitingStack.add(taskId);
+
+        try {
+            // Process all explicit dependencies first
+            for (String depId : task.getDependencies()) {
+                System.out.println("[SelfDevOrchestrator] Task [" + taskId + "] requires dependency [" + depId + "]. Evaluating...");
+                TaskResult depRes = context.getTaskResult(depId);
+                if (depRes == null || !depRes.isSuccess()) {
+                    System.out.println("[SelfDevOrchestrator] Dependency [" + depId + "] for task [" + taskId + "] not satisfied. Executing dependency...");
+                    depRes = executeTaskWithDependenciesInternal(depId, visitingStack);
+                }
+
+                if (depRes == null || !depRes.isSuccess()) {
+                    String depStatusStr = depRes != null ? depRes.getStatus().name() : "NOT_EXECUTED";
+                    String msg = "BLOCKED: required dependency " + depId + " failed or could not be executed (status: " + depStatusStr + ", message: " + (depRes != null ? depRes.getMessage() : "none") + ").";
+                    System.err.println("[SelfDevOrchestrator] Task [" + taskId + "] " + msg);
+                    TaskResult blockedResult = TaskResult.blocked(taskId, msg);
+                    context.recordTaskResult(blockedResult);
+                    return blockedResult;
+                }
+            }
+
+            // Dependencies satisfied, now execute the task itself
+            System.out.println("[SelfDevOrchestrator] All dependencies satisfied for task [" + taskId + "]. Executing...");
+            return task.execute(context);
+
+        } finally {
+            visitingStack.remove(taskId);
+        }
+    }
+
     public String executeCheck(String checkType) {
         if (checkType == null) return "FAIL";
 
-        SelfDevTask task = taskRegistry.get(checkType.toUpperCase());
-        if (task != null) {
-            TaskResult res = task.execute(context);
-            return res.isSuccess() ? "SUCCESS" : "FAIL: " + res.getMessage();
-        }
-
-        if ("LLM".equalsIgnoreCase(checkType)) {
+        TaskResult res = executeTaskWithDependencies(checkType);
+        if (res.isSuccess()) {
             return "SUCCESS";
+        } else if (res.getStatus() == TaskStatus.BLOCKED) {
+            return "BLOCKED: " + res.getMessage();
+        } else {
+            return "FAIL: " + res.getMessage();
         }
-
-        return "UNKNOWN";
     }
 
     public TaskResult runTask(SelfDevTask task) {
         if (task == null) return TaskResult.failure("unknown", "Task is null", null);
-        return task.execute(context);
+        return executeTaskWithDependencies(task.getId());
     }
 
     public void startBootstrap() {

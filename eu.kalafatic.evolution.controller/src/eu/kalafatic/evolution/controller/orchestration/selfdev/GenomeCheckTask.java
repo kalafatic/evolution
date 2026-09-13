@@ -10,23 +10,38 @@ public class GenomeCheckTask extends AbstractSelfDevTask {
         super(id, "Genome Module Check (" + id + ")");
     }
 
-    @Override
-    protected TaskResult run(SelfDevContext context) throws Exception {
-        File repoRoot = context.getProjectRoot();
-        File genomeModuleDir = context.getGenomeDirectory();
-        if (genomeModuleDir == null || !genomeModuleDir.exists()) {
-            context.discoverAndRepairModulePaths();
-            genomeModuleDir = context.getGenomeDirectory();
-        }
+    private File genomeModuleDir;
 
-        if (!genomeModuleDir.exists() || !genomeModuleDir.isDirectory()) {
-            return TaskResult.failure(id, "Genome module directory does not exist: " + genomeModuleDir.getAbsolutePath(), null);
+    @Override
+    protected void resolveResources(SelfDevContext context) throws Exception {
+        this.genomeModuleDir = context.getGenomeDirectory();
+        if (this.genomeModuleDir == null || !this.genomeModuleDir.exists()) {
+            context.discoverAndRepairModulePaths();
+            this.genomeModuleDir = context.getGenomeDirectory();
+        }
+    }
+
+    @Override
+    protected TaskResult preValidate(SelfDevContext context) throws Exception {
+        if (genomeModuleDir == null || !genomeModuleDir.exists() || !genomeModuleDir.isDirectory()) {
+            return TaskResult.failure(id, "GenomeCheckTask pre-validation failed: genome module directory does not exist at " + (genomeModuleDir != null ? genomeModuleDir.getAbsolutePath() : "null"), null);
         }
 
         File pomFile = new File(genomeModuleDir, "pom.xml");
         if (!pomFile.exists()) {
-            return TaskResult.failure(id, "Genome module pom.xml missing: " + pomFile.getAbsolutePath(), null);
+            return TaskResult.failure(id, "GenomeCheckTask pre-validation failed: genome module pom.xml missing at " + pomFile.getAbsolutePath(), null);
         }
+
+        return new TaskResult.Builder(id)
+                .status(TaskStatus.READY)
+                .message("Genome module directory verified at " + genomeModuleDir.getAbsolutePath())
+                .workingDirectory(genomeModuleDir)
+                .build();
+    }
+
+    @Override
+    protected TaskResult run(SelfDevContext context) throws Exception {
+        File repoRoot = context.getProjectRoot();
 
         // Build genome module
         MavenBuildExecutor executor = new MavenBuildExecutor(id);
@@ -53,6 +68,7 @@ public class GenomeCheckTask extends AbstractSelfDevTask {
                 .status(TaskStatus.SUCCESS)
                 .message("Genome module compiled and verified successfully.")
                 .workingDirectory(genomeModuleDir)
+                .logFile(logFile)
                 .build();
     }
 }
