@@ -4,6 +4,8 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+import eu.kalafatic.evolution.controller.resource.ResourceManager;
+
 public abstract class AbstractSelfDevTask implements SelfDevTask {
     protected final String id;
     protected final String name;
@@ -55,14 +57,24 @@ public abstract class AbstractSelfDevTask implements SelfDevTask {
     @Override
     public TaskResult execute(SelfDevContext context) {
         long startTime = System.currentTimeMillis();
-        logTaskStep(">>> START", "Task [" + id + ": " + name + "]");
+        ResourceManager rm = context != null ? context.getResourceManager() : ResourceManager.getInstance();
+
+        logTaskStep("==================================================", null);
+        logTaskStep("START", "Task [" + id + ": " + name + "]");
+        logTaskStep("ResourceManager:", null);
+        logTaskStep("  source", String.valueOf(rm.getEvoSource()));
+        logTaskStep("  reactor", String.valueOf(rm.getEvoReactor()));
+        logTaskStep("  buildOutput", String.valueOf(rm.getEvoBuildOutput()));
+        logTaskStep("  export", String.valueOf(rm.getEvoExport()));
+        logTaskStep("  targetOS", String.valueOf(rm.getTargetPlatform()));
+        logTaskStep("--------------------------------------------------", null);
 
         if (cancelled) {
             status = TaskStatus.SKIPPED;
             TaskResult res = TaskResult.skipped(id, "Task was cancelled before execution.");
             logTaskStep("STATE", status.name());
             logTaskStep("RESULT", res.getMessage());
-            logTaskStep("<<< END", "SKIPPED");
+            logTaskStep("END SKIPPED", res.getMessage());
             if (context != null) context.recordTaskResult(res);
             return res;
         }
@@ -77,8 +89,7 @@ public abstract class AbstractSelfDevTask implements SelfDevTask {
                 status = depValidation.getStatus();
                 logTaskStep("PRE_VALIDATION", "FAILED: " + depValidation.getMessage());
                 logTaskStep("STATE", status.name());
-                logTaskStep("RESULT", depValidation.getMessage());
-                logTaskStep("<<< END", status.name());
+                logTaskStep("END BLOCKED", depValidation.getMessage());
                 if (context != null) context.recordTaskResult(depValidation);
                 return depValidation;
             }
@@ -93,8 +104,7 @@ public abstract class AbstractSelfDevTask implements SelfDevTask {
                 status = preVal.getStatus();
                 logTaskStep("PRE_VALIDATION", "FAILED: " + preVal.getMessage());
                 logTaskStep("STATE", status.name());
-                logTaskStep("RESULT", preVal.getMessage());
-                logTaskStep("<<< END", status.name());
+                logTaskStep("END FAILED", preVal.getMessage());
                 if (context != null) context.recordTaskResult(preVal);
                 return preVal;
             }
@@ -133,10 +143,22 @@ public abstract class AbstractSelfDevTask implements SelfDevTask {
             if (recordedResult.getWorkingDirectory() != null) {
                 logTaskStep("WORKING_DIRECTORY", recordedResult.getWorkingDirectory().getAbsolutePath());
             }
-            logTaskStep("EXIT_CODE", String.valueOf(recordedResult.getExitCode()));
-            logTaskStep("STATE", status.name());
-            logTaskStep("RESULT", recordedResult.getMessage());
-            logTaskStep("<<< END", status.name() + " (" + duration + "ms)");
+
+            if (recordedResult.isSuccess()) {
+                if (recordedResult.getArtifact() != null) {
+                    logTaskStep("artifact", recordedResult.getArtifact().getPath().getAbsolutePath());
+                }
+                logTaskStep("duration", duration + "ms");
+                logTaskStep("END SUCCESS", recordedResult.getMessage());
+            } else {
+                logTaskStep("END FAILED", recordedResult.getMessage());
+                if (recordedResult.getCommand() != null) {
+                    logTaskStep("command", recordedResult.getCommand());
+                }
+                if (recordedResult.getLogFile() != null) {
+                    logTaskStep("logFile", recordedResult.getLogFile().getAbsolutePath());
+                }
+            }
 
             if (context != null) {
                 context.recordTaskResult(recordedResult);
@@ -156,8 +178,7 @@ public abstract class AbstractSelfDevTask implements SelfDevTask {
                     .build();
 
             logTaskStep("STATE", status.name());
-            logTaskStep("RESULT", errResult.getMessage());
-            logTaskStep("<<< END", status.name() + " (" + duration + "ms)");
+            logTaskStep("END FAILED", errResult.getMessage());
 
             if (context != null) {
                 context.recordTaskResult(errResult);

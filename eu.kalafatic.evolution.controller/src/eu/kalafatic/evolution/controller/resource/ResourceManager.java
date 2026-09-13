@@ -8,10 +8,10 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.Optional;
+import java.util.OptionalInt;
 
 import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
 import eu.kalafatic.evolution.controller.log.Log;
@@ -92,8 +92,36 @@ public class ResourceManager {
     }
 
     // =========================================================================
-    // 1. CENTRALIZED PATH RESOLUTION
+    // 1. CENTRALIZED PATH RESOLUTION & ACCESSORS
     // =========================================================================
+
+    public Path getEvoSource() {
+        return getPath(EvoPath.EVO_ROOT);
+    }
+
+    public Path getEvoReactor() {
+        return getPath(EvoPath.EVO_ROOT);
+    }
+
+    public Path getEvoBuildOutput() {
+        return getPath(EvoPath.BUILD_ROOT);
+    }
+
+    public Path getEvoExport() {
+        return getPath(EvoPath.EXPORT_ROOT);
+    }
+
+    public Path getSupervisorSource() {
+        return getPath(EvoPath.SUPERVISOR_SOURCE);
+    }
+
+    public Path getSupervisorRuntime() {
+        return getPath(EvoPath.SUPERVISOR_RUNTIME);
+    }
+
+    public Path getGenome() {
+        return getPath(EvoPath.GENOME);
+    }
 
     /**
      * Resolves the canonical root path for the specified semantic EvoPath type.
@@ -200,6 +228,27 @@ public class ResourceManager {
     }
 
     /**
+     * Resolves a configured Path against a semantic base path.
+     *
+     * @param semanticBase The base directory.
+     * @param configuredPath The Path object to resolve.
+     * @return The resolved, normalized absolute Path.
+     */
+    public Path resolvePath(Path semanticBase, Path configuredPath) {
+        if (configuredPath == null) {
+            return semanticBase != null ? semanticBase.toAbsolutePath().normalize() : getPath(EvoPath.EVO_ROOT);
+        }
+        if (configuredPath.isAbsolute()) {
+            Path norm = configuredPath.toAbsolutePath().normalize();
+            if (!norm.toFile().exists()) {
+                return recoverStalePath(norm);
+            }
+            return norm;
+        }
+        return resolvePath(semanticBase, configuredPath.toString());
+    }
+
+    /**
      * Resolves a configured path against a semantic base path.
      *
      * @param semanticBase The base directory.
@@ -214,7 +263,7 @@ public class ResourceManager {
         String expanded = expandVariables(configuredPath.trim());
         Path p = Paths.get(expanded);
 
-        // HARD REQUIREMENT 7 & 8: Absolute paths MUST NOT have roots prepended to them!
+        // Absolute paths MUST NOT have roots prepended to them
         if (p.isAbsolute()) {
             Path norm = p.toAbsolutePath().normalize();
             if (!norm.toFile().exists()) {
@@ -261,8 +310,7 @@ public class ResourceManager {
         String name = file.getName();
         if (name == null || name.isEmpty()) return missingPath;
 
-        Path recovered = recoverStalePathForModule(name, missingPath);
-        return recovered;
+        return recoverStalePathForModule(name, missingPath);
     }
 
     private Path recoverStalePathForModule(String moduleName, Path fallback) {
@@ -301,7 +349,74 @@ public class ResourceManager {
     }
 
     // =========================================================================
-    // 2. URL / IP / PORT CENTRALIZATION & SERVICE ENUMERATION
+    // 2. TARGET PLATFORM & PRODUCT DEFINITION
+    // =========================================================================
+
+    public TargetPlatform getTargetPlatform() {
+        Orchestrator orch = getOrchestrator();
+        String sysOs = System.getProperty("evo.target.os");
+        if (sysOs == null || sysOs.trim().isEmpty()) {
+            if (orch != null && orch.getSupervisorSettings() != null && orch.getSupervisorSettings().getSettings() != null) {
+                String settings = orch.getSupervisorSettings().getSettings();
+                if (settings.contains("os=")) {
+                    try {
+                        String osStr = settings.substring(settings.indexOf("os=") + 3).trim();
+                        if (osStr.contains(" ")) osStr = osStr.substring(0, osStr.indexOf(" "));
+                        sysOs = osStr;
+                    } catch (Exception e) {}
+                }
+            }
+            if (sysOs == null || sysOs.trim().isEmpty()) {
+                sysOs = System.getProperty("os.name");
+            }
+        }
+        sysOs = sysOs.toLowerCase();
+        if (sysOs.contains("win")) {
+            return new TargetPlatform("win32", "win32", "x86_64", "zip", "-Pwindows");
+        } else {
+            return new TargetPlatform("linux", "gtk", "x86_64", "tar.gz", "-Plinux");
+        }
+    }
+
+    public ProductDefinition getProductDefinition() {
+        Path reactorRoot = getEvoReactor();
+        Path repoModuleDir = reactorRoot.resolve("eu.kalafatic.evolution.repository");
+        Path productFile = repoModuleDir.resolve("evolution.product");
+        File pFile = productFile.toFile().exists() ? productFile.toFile() : null;
+
+        String productId = "evolution";
+        TargetPlatform tp = getTargetPlatform();
+        String launcherName = tp.isWindows() ? "evo.exe" : "evo";
+        String rootFolder = "evolution";
+        String repoModuleName = "eu.kalafatic.evolution.repository";
+
+        if (pFile != null) {
+            try {
+                String content = java.nio.file.Files.readString(productFile);
+                int uidIdx = content.indexOf("uid=\"");
+                if (uidIdx != -1) {
+                    int start = uidIdx + 5;
+                    int end = content.indexOf("\"", start);
+                    if (end != -1) productId = content.substring(start, end);
+                }
+                int launcherIdx = content.indexOf("<launcher");
+                if (launcherIdx != -1) {
+                    int nameIdx = content.indexOf("name=\"", launcherIdx);
+                    if (nameIdx != -1) {
+                        int start = nameIdx + 6;
+                        int end = content.indexOf("\"", start);
+                        if (end != -1) launcherName = content.substring(start, end);
+                    }
+                }
+            } catch (Exception e) {
+            }
+        }
+
+        return new ProductDefinition(productId, launcherName, rootFolder, repoModuleName, pFile);
+    }
+
+    // =========================================================================
+    // 3. URL / IP / PORT CENTRALIZATION & SERVICE ENUMERATION
     // =========================================================================
 
     /**
@@ -392,6 +507,31 @@ public class ResourceManager {
         return null;
     }
 
+    public Optional<EvoService> findService(String id) {
+        return Optional.ofNullable(getService(id));
+    }
+
+    public Optional<String> getIp(String serviceId) {
+        EvoService svc = getService(serviceId);
+        return svc != null ? Optional.ofNullable(svc.getHost()) : Optional.empty();
+    }
+
+    public OptionalInt getPort(String serviceId) {
+        EvoService svc = getService(serviceId);
+        return svc != null && svc.getPort() > 0 ? OptionalInt.of(svc.getPort()) : OptionalInt.empty();
+    }
+
+    public Optional<URI> getUrl(String serviceId) {
+        EvoService svc = getService(serviceId);
+        if (svc != null && svc.getUrl() != null) {
+            try {
+                return Optional.of(new URI(svc.getUrl()));
+            } catch (Exception e) {
+            }
+        }
+        return Optional.empty();
+    }
+
     /**
      * Validates configured service ports for collisions, invalid ranges, or malformed URLs.
      *
@@ -418,7 +558,7 @@ public class ResourceManager {
     }
 
     // =========================================================================
-    // 3. REPOSITORY ENUMERATION & ACCESS
+    // 4. REPOSITORY ENUMERATION & ACCESS
     // =========================================================================
 
     /**
@@ -477,7 +617,7 @@ public class ResourceManager {
     }
 
     // =========================================================================
-    // 4. MODELS & DATASETS ENUMERATION
+    // 5. MODELS & DATASETS ENUMERATION
     // =========================================================================
 
     /**

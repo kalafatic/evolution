@@ -1,7 +1,6 @@
 package eu.kalafatic.evolution.controller.orchestration.selfdev;
 
 import java.io.File;
-import eu.kalafatic.evolution.controller.resource.EvoPath;
 import eu.kalafatic.evolution.controller.resource.ResourceManager;
 
 public class CopySourceTask extends AbstractSelfDevTask {
@@ -17,11 +16,12 @@ public class CopySourceTask extends AbstractSelfDevTask {
 
     @Override
     protected void resolveResources(SelfDevContext context) throws Exception {
+        ResourceManager rm = context.getResourceManager();
         if ("COPY_SUPERVISOR".equalsIgnoreCase(id)) {
-            this.sourceRoot = ResourceManager.getInstance().getPath(EvoPath.SUPERVISOR_SOURCE).toFile();
+            this.sourceRoot = rm.getSupervisorSource().toFile();
             this.targetDir = new File(context.getSourceDirectory(), "eu.kalafatic.evolution.supervisor");
         } else {
-            this.sourceRoot = ResourceManager.getInstance().getPath(EvoPath.EVO_ROOT).toFile();
+            this.sourceRoot = rm.getEvoSource().toFile();
             this.targetDir = context.getSourceDirectory();
         }
     }

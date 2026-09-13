@@ -321,11 +321,8 @@ public class DevelopmentPage extends AEvoPage {
 			exportPath = targetPath + "/export";
 		}
 
-		String dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("ddMMyy"));
-		String customSuperSrc = new File(new File(System.getProperty("user.home"), "projects/evo/supervisor"),
-				dateStr + "/src").getPath();
-		String customSuperBin = new File(new File(System.getProperty("user.home"), "projects/evo/supervisor"),
-				dateStr + "/bin").getPath();
+		String customSuperSrc = getSupervisorSourcePath();
+		String customSuperBin = getTargetPath();
 
 		sdData.add(new SelfDevRow(1, SelfDevRow.LLM_CHECK, llmModel, "ready", "evo"));
 		sdData.add(new SelfDevRow(2, SelfDevRow.MAVEN_CHECK_EVO, mvnPath, "ready", "evo"));
@@ -980,15 +977,9 @@ public class DevelopmentPage extends AEvoPage {
 							&& orchestrator.getLlm() != null) {
 						row.path = orchestrator.getLlm().getModel();
 					} else if (SelfDevRow.COPY_SUPERVISOR_SRC.equals(row.name)) {
-						String dateStr = java.time.LocalDate.now()
-								.format(java.time.format.DateTimeFormatter.ofPattern("ddMMyy"));
-						row.path = new File(new File(System.getProperty("user.home"), "projects/evo/supervisor"),
-								dateStr + "/src").getPath();
+						row.path = getSupervisorSourcePath();
 					} else if (SelfDevRow.BUILD_SUPERVISOR_LOCAL.equals(row.name)) {
-						String dateStr = java.time.LocalDate.now()
-								.format(java.time.format.DateTimeFormatter.ofPattern("ddMMyy"));
-						row.path = new File(new File(System.getProperty("user.home"), "projects/evo/supervisor"),
-								dateStr + "/bin").getPath();
+						row.path = getTargetPath();
 					} else if (SelfDevRow.COPY_SOURCE.equals(row.name)) {
 						row.path = getSupervisorSourcePath();
 					} else if (SelfDevRow.BUILD_PROJECT_EVO.equals(row.name)

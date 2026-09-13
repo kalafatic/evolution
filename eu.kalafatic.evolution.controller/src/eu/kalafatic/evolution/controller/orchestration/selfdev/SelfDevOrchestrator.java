@@ -151,6 +151,11 @@ public class SelfDevOrchestrator {
             return existingResult;
         }
 
+        if (existingResult != null && (existingResult.getStatus() == TaskStatus.FAILED || existingResult.getStatus() == TaskStatus.BLOCKED)) {
+            System.out.println("[SelfDevOrchestrator] Task [" + taskId + "] previously evaluated as " + existingResult.getStatus() + ". Returning existing result.");
+            return existingResult;
+        }
+
         if (visitingStack.contains(taskId)) {
             String msg = "Circular dependency detected involving task: " + taskId;
             System.err.println("[SelfDevOrchestrator] " + msg);
@@ -160,12 +165,12 @@ public class SelfDevOrchestrator {
         visitingStack.add(taskId);
 
         try {
-            // Process all explicit dependencies first
+            // Process all explicit dependencies first in topological order
             for (String depId : task.getDependencies()) {
                 System.out.println("[SelfDevOrchestrator] Task [" + taskId + "] requires dependency [" + depId + "]. Evaluating...");
                 TaskResult depRes = context.getTaskResult(depId);
-                if (depRes == null || !depRes.isSuccess()) {
-                    System.out.println("[SelfDevOrchestrator] Dependency [" + depId + "] for task [" + taskId + "] not satisfied. Executing dependency...");
+                if (depRes == null) {
+                    System.out.println("[SelfDevOrchestrator] Dependency [" + depId + "] for task [" + taskId + "] not yet executed. Executing dependency...");
                     depRes = executeTaskWithDependenciesInternal(depId, visitingStack);
                 }
 

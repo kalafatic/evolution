@@ -7,15 +7,26 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
+import eu.kalafatic.evolution.controller.resource.EvoService;
+import eu.kalafatic.evolution.controller.resource.ResourceManager;
+
 public class SupervisorClient {
     private final String baseUrl;
 
     public SupervisorClient() {
-        this("http://127.0.0.1:8089");
+        this(resolveSupervisorUrl());
     }
 
     public SupervisorClient(String baseUrl) {
-        this.baseUrl = baseUrl;
+        this.baseUrl = baseUrl != null && !baseUrl.isEmpty() ? baseUrl : resolveSupervisorUrl();
+    }
+
+    private static String resolveSupervisorUrl() {
+        EvoService service = ResourceManager.getInstance().getService("SUPERVISOR");
+        if (service != null && service.getUrl() != null) {
+            return service.getUrl();
+        }
+        return "http://127.0.0.1:48080";
     }
 
     public boolean ping() {
