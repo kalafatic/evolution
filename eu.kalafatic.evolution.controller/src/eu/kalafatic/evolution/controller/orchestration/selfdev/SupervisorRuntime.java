@@ -33,8 +33,8 @@ public class SupervisorRuntime implements ProcessLifecycle {
         }
 
         File jarFile = findSupervisorJar(context);
-        if (jarFile == null || !jarFile.exists()) {
-            return TaskResult.failure("start_supervisor", "Supervisor JAR file not found.", null);
+        if (jarFile == null || !jarFile.exists() || jarFile.length() == 0) {
+            return TaskResult.failure("start_supervisor", "Supervisor JAR artifact pre-condition check failed: file missing or empty at " + (jarFile != null ? jarFile.getAbsolutePath() : "null"), null);
         }
 
         List<String> cmd = new ArrayList<>();
@@ -73,7 +73,11 @@ public class SupervisorRuntime implements ProcessLifecycle {
                         .logFile(logFile)
                         .build();
             } else {
-                return TaskResult.failure("start_supervisor", "Supervisor started but failed ping check: " + readyRes.getMessage(), null);
+                if (supervisorProcess != null) {
+                    supervisorProcess.destroyForcibly();
+                    supervisorProcess = null;
+                }
+                return TaskResult.failure("start_supervisor", "Supervisor process started but failed ping check: " + readyRes.getMessage(), null);
             }
 
         } catch (Exception e) {

@@ -40,6 +40,10 @@ public class TaskResult {
         return new Builder(taskId).status(TaskStatus.FAILED).message(message).error(error).build();
     }
 
+    public static TaskResult blocked(String taskId, String message) {
+        return new Builder(taskId).status(TaskStatus.BLOCKED).message(message).build();
+    }
+
     public static TaskResult skipped(String taskId, String message) {
         return new Builder(taskId).status(TaskStatus.SKIPPED).message(message).build();
     }

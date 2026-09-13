@@ -288,10 +288,25 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
                     .build();
         }
 
+        BuildArtifact artifact = getArtifact(context);
+        if (artifact == null || artifact.getPath() == null || !artifact.getPath().exists()) {
+            return new TaskResult.Builder("build_evo_rcp")
+                    .status(TaskStatus.FAILED)
+                    .message("Tycho reactor returned exit code 0 but expected product artifact was missing or unverified for " + prodDef.getProductId() + " (" + platform + ") under " + reactorRoot.getAbsolutePath())
+                    .logFile(logFile)
+                    .diagnostic("reactorRoot", reactorRoot.getAbsolutePath())
+                    .diagnostic("productDefinition", prodDef.toString())
+                    .diagnostic("targetPlatform", platform.toString())
+                    .build();
+        }
+
+        context.recordArtifact(artifact);
+
         long duration = System.currentTimeMillis() - startTime;
         return new TaskResult.Builder("build_evo_rcp")
                 .status(TaskStatus.SUCCESS)
-                .message("EVO RCP Tycho reactor build completed successfully for " + prodDef.getProductId() + " (" + platform + ").")
+                .message("EVO RCP Tycho reactor build completed successfully and artifact verified: " + artifact.getPath().getAbsolutePath())
+                .artifact(artifact)
                 .duration(duration)
                 .logFile(logFile)
                 .build();

@@ -464,6 +464,9 @@ public class DevelopmentPage extends AEvoPage {
 		public Color getBackground(Object element) {
 			SelfDevRow row = (SelfDevRow) element;
 			String status = row.status.toLowerCase();
+			if (status.contains("blocked")) {
+				return FUIConstants.LIGHT_BLUE;
+			}
 			if (status.contains("error") || status.contains("fail")) {
 				return FUIConstants.LIGHT_RED;
 			}
