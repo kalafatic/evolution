@@ -204,7 +204,7 @@ public abstract class AbstractSelfDevTask implements SelfDevTask {
                 return TaskResult.blocked(id, msg);
             }
         }
-        return new TaskResult.Builder(id).status(TaskStatus.READY).message("Dependencies valid").build();
+        return TaskResult.success(id, "Dependencies valid");
     }
 
     protected void resolveResources(SelfDevContext context) throws Exception {
