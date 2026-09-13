@@ -39,6 +39,7 @@ Import-Package: java.sql
 Automatic-Module-Name: eu.kalafatic.evolution.controller
 Bundle-RequiredExecutionEnvironment: JavaSE-21
 Export-Package: eu.kalafatic.evolution.controller,
+ eu.kalafatic.evolution.controller.resource,
  eu.kalafatic.evolution.controller.agents,
  eu.kalafatic.evolution.controller.engine,
  eu.kalafatic.evolution.controller.execution,

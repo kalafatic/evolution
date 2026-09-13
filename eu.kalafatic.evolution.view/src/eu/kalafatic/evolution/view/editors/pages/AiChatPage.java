@@ -803,7 +803,7 @@ public class AiChatPage extends AEvoPage {
 		}
 		final AiMode activeMode = tempActiveMode;
 
-		String tempOllamaUrl = "http://localhost:11434";
+		String tempOllamaUrl = eu.kalafatic.evolution.controller.resource.ResourceManager.getInstance().getService("INFERENCE").getUrl();
 		if (orchestrator != null && orchestrator.getOllama() != null && orchestrator.getOllama().getUrl() != null) {
 			tempOllamaUrl = orchestrator.getOllama().getUrl();
 		}
@@ -1099,7 +1099,7 @@ public class AiChatPage extends AEvoPage {
 	public void updateStatusInfo() {
 		RuntimeProjection projection = ProjectionService.getInstance().getProjection(getCurrentSessionName());
 		String model = (String) projection.getConfiguration().getOrDefault("localModel", orchestrator != null ? orchestrator.getLocalModel() : "Not Configured");
-		String url = (orchestrator != null && orchestrator.getOllama() != null) ? orchestrator.getOllama().getUrl() : "http://localhost:11434";
+		String url = (orchestrator != null && orchestrator.getOllama() != null && orchestrator.getOllama().getUrl() != null) ? orchestrator.getOllama().getUrl() : eu.kalafatic.evolution.controller.resource.ResourceManager.getInstance().getService("INFERENCE").getUrl();
 
 		ollamaService = OllamaManager.getInstance().getService(url);
 		systemStatusGroup.updateModelStatus(model != null ? model : "Not Configured");

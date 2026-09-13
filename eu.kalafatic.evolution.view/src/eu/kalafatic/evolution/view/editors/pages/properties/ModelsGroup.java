@@ -147,7 +147,7 @@ public class ModelsGroup extends AEvoGroup {
         reloadButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                String ollamaUrl = (orchestrator.getOllama() != null) ? orchestrator.getOllama().getUrl() : "http://localhost:11434";
+                String ollamaUrl = (orchestrator != null && orchestrator.getOllama() != null && orchestrator.getOllama().getUrl() != null) ? orchestrator.getOllama().getUrl() : eu.kalafatic.evolution.controller.resource.ResourceManager.getInstance().getService("INFERENCE").getUrl();
                 OllamaManager.getInstance().getService(ollamaUrl).refreshModels();
                 load();
             }
