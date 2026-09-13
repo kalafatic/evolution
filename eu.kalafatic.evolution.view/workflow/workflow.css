@@ -1,9 +1,28 @@
+/* Workflow Visualization Styles - Workstation Theme */
+:root {
+    --evo-bg: #f2f3f5;
+    --evo-surface: #ffffff;
+    --evo-surface-alt: #f8f9fa;
+    --evo-border: #c8ccd1;
+    --evo-border-dark: #aeb4bb;
+    --evo-text: #202428;
+    --evo-text-secondary: #555b62;
+    --evo-primary: #2864a5;
+    --evo-success: #287a45;
+    --evo-warning: #9a6a00;
+    --evo-danger: #a52a2a;
+    --evo-radius: 3px;
+    --evo-shadow-md: 0 2px 6px rgba(0,0,0,0.12);
+}
+
 body {
     margin: 0;
     padding: 0;
     overflow: hidden;
-    background-color: #f8f9fa;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--evo-bg);
+    color: var(--evo-text);
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+    font-size: 12px;
 }
 
 #workflow-container {
@@ -17,46 +36,44 @@ body {
     display: block;
 }
 
-/* Chat Bubble Styling for Nodes */
+/* Chat Bubble / Node Styling */
 .node {
     cursor: pointer;
 }
 
 .node rect {
-    fill: #ffffff;
-    stroke: #e0e0e0;
-    stroke-width: 1px;
-    rx: 18; /* More rounded for bubble look */
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.05));
-    transition: all 0.3s ease;
+    fill: var(--evo-surface);
+    stroke: var(--evo-border-dark);
+    stroke-width: 1.5px;
+    rx: var(--evo-radius);
+    transition: stroke 0.15s ease;
 }
 
 .node:hover rect {
-    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
-    stroke: #3b82f6;
+    stroke: var(--evo-primary) !important;
+    stroke-width: 2px !important;
 }
 
 .node.active rect {
-    stroke: #3b82f6;
+    stroke: var(--evo-primary);
     stroke-width: 2px;
-    box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
 }
 
 .node.waiting rect {
-    stroke: #f59e0b;
+    stroke: var(--evo-warning);
     stroke-width: 2px;
-    fill: #fffbeb;
+    fill: #fef7e0;
 }
 
 .node.failed rect {
-    stroke: #ef4444;
-    fill: #fef2f2;
+    stroke: var(--evo-danger);
+    fill: #fce8e8;
 }
 
 /* Text and Icons */
 .node text {
-    font-size: 13px;
-    fill: #374151;
+    font-size: 11px;
+    fill: var(--evo-text);
     pointer-events: none;
 }
 
@@ -65,92 +82,88 @@ body {
 }
 
 .node .node-type-icon {
-    font-size: 18px;
+    font-size: 14px;
 }
 
 .runtime-state {
-    font-size: 11px !important;
-    fill: #6b7280 !important;
+    font-size: 10px !important;
+    fill: var(--evo-text-secondary) !important;
     font-style: italic;
 }
 
 /* Links */
 .link {
     fill: none;
-    stroke: #cbd5e1;
-    stroke-width: 2px;
-    transition: stroke 0.3s ease;
+    stroke: var(--evo-border-dark);
+    stroke-width: 1.5px;
+    transition: stroke 0.15s ease;
 }
 
 .link.active {
-    stroke: #3b82f6;
-    stroke-width: 3px;
-    stroke-dasharray: 5,5;
+    stroke: var(--evo-primary);
+    stroke-width: 2px;
+    stroke-dasharray: 4,4;
     animation: dash 1s linear infinite;
 }
 
 @keyframes dash {
-    to { stroke-dashoffset: -10; }
+    to { stroke-dashoffset: -8; }
 }
 
 /* Actions */
 .action-btn {
     cursor: pointer;
-    stroke: #ffffff;
+    stroke: var(--evo-surface);
     stroke-width: 1px;
-    transition: transform 0.2s;
 }
 
-.action-btn:hover {
-    transform: scale(1.2);
-}
-
-.action-btn.continue { fill: #10b981; }
-.action-btn.retry { fill: #3b82f6; }
-.action-btn.skip { fill: #6b7280; }
-.action-btn.inspect { fill: #8b5cf6; }
+.action-btn.continue { fill: var(--evo-success); }
+.action-btn.retry { fill: var(--evo-primary); }
+.action-btn.skip { fill: var(--evo-text-secondary); }
+.action-btn.inspect { fill: var(--evo-primary); }
 
 #controls {
     position: absolute;
     bottom: 20px;
     right: 20px;
     display: flex;
-    gap: 10px;
+    gap: 6px;
 }
 
 #controls button {
-    background: #ffffff;
-    border: 1px solid #e0e0e0;
-    padding: 8px 16px;
-    border-radius: 8px;
+    background: var(--evo-surface);
+    border: 1px solid var(--evo-border);
+    padding: 5px 10px;
+    border-radius: var(--evo-radius);
     cursor: pointer;
-    font-size: 12px;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--evo-text);
 }
 
 #controls button:hover {
-    background: #f3f4f6;
+    background: var(--evo-surface-alt);
+    border-color: var(--evo-border-dark);
 }
 
 /* Sidebar / Details Card */
 .details-card {
     position: absolute;
-    top: 50px;
+    top: 20px;
     left: 20px;
     width: 280px;
-    background: rgba(255, 255, 255, 0.95);
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    background: var(--evo-surface);
+    border: 1px solid var(--evo-border);
+    border-radius: var(--evo-radius);
+    box-shadow: var(--evo-shadow-md);
     z-index: 100;
-    font-size: 13px;
-    color: #1e293b;
+    font-size: 11px;
+    color: var(--evo-text);
     display: flex;
     flex-direction: column;
-    max-height: calc(100% - 100px);
+    max-height: calc(100% - 40px);
     overflow-y: auto;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    backdrop-filter: blur(8px);
+    transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
 .details-card.hidden {
@@ -162,88 +175,85 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 16px;
-    border-bottom: 1px solid #f1f5f9;
-    background: #f8fafc;
-    border-top-left-radius: 12px;
-    border-top-right-radius: 12px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--evo-border);
+    background: var(--evo-surface-alt);
 }
 
 #details-title {
     font-weight: 700;
-    font-size: 14px;
-    color: #0f172a;
+    font-size: 12px;
+    color: var(--evo-text);
 }
 
 .close-details {
     background: none;
     border: none;
-    font-size: 18px;
+    font-size: 14px;
     cursor: pointer;
-    color: #64748b;
+    color: var(--evo-text-secondary);
     padding: 0 4px;
 }
 
 .close-details:hover {
-    color: #0f172a;
+    color: var(--evo-text);
 }
 
 #details-content {
-    padding: 16px;
+    padding: 12px;
     overflow-y: auto;
 }
 
 .placeholder-text {
-    color: #64748b;
+    color: var(--evo-text-secondary);
     font-style: italic;
-    line-height: 1.5;
 }
 
 .metric-row {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 8px;
-    padding-bottom: 6px;
-    border-bottom: 1px dashed #e2e8f0;
+    margin-bottom: 6px;
+    padding-bottom: 4px;
+    border-bottom: 1px dashed var(--evo-border);
     align-items: center;
 }
 
 .metric-label {
     font-weight: 500;
-    color: #475569;
+    color: var(--evo-text-secondary);
 }
 
 .metric-value {
     font-weight: 600;
-    color: #0f172a;
+    color: var(--evo-text);
     word-break: break-all;
 }
 
 .node-status-badge {
     display: inline-block;
-    padding: 3px 8px;
-    border-radius: 12px;
-    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: var(--evo-radius);
+    font-size: 10px;
     font-weight: 700;
     text-transform: uppercase;
 }
 
-.status-idle { background: #e2e8f0; color: #475569; }
-.status-running { background: #dbeafe; color: #1d4ed8; }
-.status-waiting { background: #fef3c7; color: #d97706; }
-.status-done { background: #d1fae5; color: #065f46; }
-.status-ready { background: #d1fae5; color: #065f46; }
-.status-failed { background: #fee2e2; color: #b91c1c; }
+.status-idle { background: var(--evo-surface-alt); color: var(--evo-text-secondary); }
+.status-running { background: #e8f2fc; color: var(--evo-primary); }
+.status-waiting { background: #fef7e0; color: var(--evo-warning); }
+.status-done { background: #e6f4ea; color: var(--evo-success); }
+.status-ready { background: #e6f4ea; color: var(--evo-success); }
+.status-failed { background: #fce8e8; color: var(--evo-danger); }
 
 .node-notes {
-    margin-top: 14px;
-    padding: 10px;
-    background: #f8fafc;
-    border-left: 3px solid #3b82f6;
-    border-radius: 4px;
-    font-size: 12px;
-    line-height: 1.5;
-    color: #334155;
+    margin-top: 10px;
+    padding: 8px;
+    background: var(--evo-surface-alt);
+    border-left: 3px solid var(--evo-primary);
+    border-radius: var(--evo-radius);
+    font-size: 11px;
+    line-height: 1.4;
+    color: var(--evo-text);
 }
 
 /* Tooltip Styles */
@@ -254,13 +264,13 @@ body {
 }
 
 .flow-tooltip h4 {
-    margin: 0 0 6px 0;
-    font-size: 13px;
+    margin: 0 0 4px 0;
+    font-size: 11px;
     font-weight: 700;
-    border-bottom: 1px solid #475569;
-    padding-bottom: 4px;
+    border-bottom: 1px solid var(--evo-border);
+    padding-bottom: 2px;
 }
 
 .flow-tooltip p {
-    margin: 4px 0;
+    margin: 2px 0;
 }

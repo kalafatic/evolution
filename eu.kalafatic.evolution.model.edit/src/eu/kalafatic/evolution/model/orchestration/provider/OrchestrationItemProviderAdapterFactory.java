@@ -141,6 +141,121 @@ public class OrchestrationItemProviderAdapterFactory extends OrchestrationAdapte
 	}
 
 	/**
+	 * This keeps track of the one adapter used for all {@link eu.kalafatic.evolution.model.orchestration.GenomeSnapshot} instances.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected GenomeSnapshotItemProvider genomeSnapshotItemProvider;
+
+	/**
+	 * This creates an adapter for a {@link eu.kalafatic.evolution.model.orchestration.GenomeSnapshot}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Adapter createGenomeSnapshotAdapter() {
+		if (genomeSnapshotItemProvider == null) {
+			genomeSnapshotItemProvider = new GenomeSnapshotItemProvider(this);
+		}
+
+		return genomeSnapshotItemProvider;
+	}
+
+	/**
+	 * This keeps track of the one adapter used for all {@link eu.kalafatic.evolution.model.orchestration.ServerSettings} instances.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected ServerSettingsItemProvider serverSettingsItemProvider;
+
+	/**
+	 * This creates an adapter for a {@link eu.kalafatic.evolution.model.orchestration.ServerSettings}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Adapter createServerSettingsAdapter() {
+		if (serverSettingsItemProvider == null) {
+			serverSettingsItemProvider = new ServerSettingsItemProvider(this);
+		}
+
+		return serverSettingsItemProvider;
+	}
+
+	/**
+	 * This keeps track of the one adapter used for all {@link eu.kalafatic.evolution.model.orchestration.ServerSession} instances.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected ServerSessionItemProvider serverSessionItemProvider;
+
+	/**
+	 * This creates an adapter for a {@link eu.kalafatic.evolution.model.orchestration.ServerSession}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Adapter createServerSessionAdapter() {
+		if (serverSessionItemProvider == null) {
+			serverSessionItemProvider = new ServerSessionItemProvider(this);
+		}
+
+		return serverSessionItemProvider;
+	}
+
+	/**
+	 * This keeps track of the one adapter used for all {@link eu.kalafatic.evolution.model.orchestration.MonitoringData} instances.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected MonitoringDataItemProvider monitoringDataItemProvider;
+
+	/**
+	 * This creates an adapter for a {@link eu.kalafatic.evolution.model.orchestration.MonitoringData}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Adapter createMonitoringDataAdapter() {
+		if (monitoringDataItemProvider == null) {
+			monitoringDataItemProvider = new MonitoringDataItemProvider(this);
+		}
+
+		return monitoringDataItemProvider;
+	}
+
+	/**
+	 * This keeps track of the one adapter used for all {@link eu.kalafatic.evolution.model.orchestration.AIProvider} instances.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected AIProviderItemProvider aiProviderItemProvider;
+
+	/**
+	 * This creates an adapter for a {@link eu.kalafatic.evolution.model.orchestration.AIProvider}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Adapter createAIProviderAdapter() {
+		if (aiProviderItemProvider == null) {
+			aiProviderItemProvider = new AIProviderItemProvider(this);
+		}
+
+		return aiProviderItemProvider;
+	}
+
+	/**
 	 * This keeps track of the one adapter used for all {@link eu.kalafatic.evolution.model.orchestration.Git} instances.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -678,6 +793,351 @@ public class OrchestrationItemProviderAdapterFactory extends OrchestrationAdapte
 		}
 
 		return evaluationResultItemProvider;
+	}
+
+	/**
+	 * This keeps track of the one adapter used for all {@link eu.kalafatic.evolution.model.orchestration.Test} instances.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected TestItemProvider testItemProvider;
+
+	/**
+	 * This creates an adapter for a {@link eu.kalafatic.evolution.model.orchestration.Test}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Adapter createTestAdapter() {
+		if (testItemProvider == null) {
+			testItemProvider = new TestItemProvider(this);
+		}
+
+		return testItemProvider;
+	}
+
+	/**
+	 * This keeps track of the one adapter used for all {@link eu.kalafatic.evolution.model.orchestration.Comment} instances.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected CommentItemProvider commentItemProvider;
+
+	/**
+	 * This creates an adapter for a {@link eu.kalafatic.evolution.model.orchestration.Comment}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Adapter createCommentAdapter() {
+		if (commentItemProvider == null) {
+			commentItemProvider = new CommentItemProvider(this);
+		}
+
+		return commentItemProvider;
+	}
+
+	/**
+	 * This keeps track of the one adapter used for all {@link eu.kalafatic.evolution.model.orchestration.DiffHunk} instances.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected DiffHunkItemProvider diffHunkItemProvider;
+
+	/**
+	 * This creates an adapter for a {@link eu.kalafatic.evolution.model.orchestration.DiffHunk}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Adapter createDiffHunkAdapter() {
+		if (diffHunkItemProvider == null) {
+			diffHunkItemProvider = new DiffHunkItemProvider(this);
+		}
+
+		return diffHunkItemProvider;
+	}
+
+	/**
+	 * This keeps track of the one adapter used for all {@link eu.kalafatic.evolution.model.orchestration.FileChange} instances.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected FileChangeItemProvider fileChangeItemProvider;
+
+	/**
+	 * This creates an adapter for a {@link eu.kalafatic.evolution.model.orchestration.FileChange}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Adapter createFileChangeAdapter() {
+		if (fileChangeItemProvider == null) {
+			fileChangeItemProvider = new FileChangeItemProvider(this);
+		}
+
+		return fileChangeItemProvider;
+	}
+
+	/**
+	 * This keeps track of the one adapter used for all {@link eu.kalafatic.evolution.model.orchestration.ChangeSet} instances.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected ChangeSetItemProvider changeSetItemProvider;
+
+	/**
+	 * This creates an adapter for a {@link eu.kalafatic.evolution.model.orchestration.ChangeSet}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Adapter createChangeSetAdapter() {
+		if (changeSetItemProvider == null) {
+			changeSetItemProvider = new ChangeSetItemProvider(this);
+		}
+
+		return changeSetItemProvider;
+	}
+
+	/**
+	 * This keeps track of the one adapter used for all {@link eu.kalafatic.evolution.model.orchestration.SupervisorSettings} instances.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected SupervisorSettingsItemProvider supervisorSettingsItemProvider;
+
+	/**
+	 * This creates an adapter for a {@link eu.kalafatic.evolution.model.orchestration.SupervisorSettings}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Adapter createSupervisorSettingsAdapter() {
+		if (supervisorSettingsItemProvider == null) {
+			supervisorSettingsItemProvider = new SupervisorSettingsItemProvider(this);
+		}
+
+		return supervisorSettingsItemProvider;
+	}
+
+	/**
+	 * This keeps track of the one adapter used for all {@link eu.kalafatic.evolution.model.orchestration.ReviewSession} instances.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected ReviewSessionItemProvider reviewSessionItemProvider;
+
+	/**
+	 * This creates an adapter for a {@link eu.kalafatic.evolution.model.orchestration.ReviewSession}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Adapter createReviewSessionAdapter() {
+		if (reviewSessionItemProvider == null) {
+			reviewSessionItemProvider = new ReviewSessionItemProvider(this);
+		}
+
+		return reviewSessionItemProvider;
+	}
+
+	/**
+	 * This keeps track of the one adapter used for all {@link eu.kalafatic.evolution.model.orchestration.ChatSession} instances.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected ChatSessionItemProvider chatSessionItemProvider;
+
+	/**
+	 * This creates an adapter for a {@link eu.kalafatic.evolution.model.orchestration.ChatSession}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Adapter createChatSessionAdapter() {
+		if (chatSessionItemProvider == null) {
+			chatSessionItemProvider = new ChatSessionItemProvider(this);
+		}
+
+		return chatSessionItemProvider;
+	}
+
+	/**
+	 * This keeps track of the one adapter used for all {@link eu.kalafatic.evolution.model.orchestration.ChatMessage} instances.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected ChatMessageItemProvider chatMessageItemProvider;
+
+	/**
+	 * This creates an adapter for a {@link eu.kalafatic.evolution.model.orchestration.ChatMessage}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Adapter createChatMessageAdapter() {
+		if (chatMessageItemProvider == null) {
+			chatMessageItemProvider = new ChatMessageItemProvider(this);
+		}
+
+		return chatMessageItemProvider;
+	}
+
+	/**
+	 * This keeps track of the one adapter used for all {@link eu.kalafatic.evolution.model.orchestration.NetworkEntry} instances.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected NetworkEntryItemProvider networkEntryItemProvider;
+
+	/**
+	 * This creates an adapter for a {@link eu.kalafatic.evolution.model.orchestration.NetworkEntry}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Adapter createNetworkEntryAdapter() {
+		if (networkEntryItemProvider == null) {
+			networkEntryItemProvider = new NetworkEntryItemProvider(this);
+		}
+
+		return networkEntryItemProvider;
+	}
+
+	/**
+	 * This keeps track of the one adapter used for all {@link eu.kalafatic.evolution.model.orchestration.PromptInstructions} instances.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected PromptInstructionsItemProvider promptInstructionsItemProvider;
+
+	/**
+	 * This creates an adapter for a {@link eu.kalafatic.evolution.model.orchestration.PromptInstructions}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Adapter createPromptInstructionsAdapter() {
+		if (promptInstructionsItemProvider == null) {
+			promptInstructionsItemProvider = new PromptInstructionsItemProvider(this);
+		}
+
+		return promptInstructionsItemProvider;
+	}
+
+	/**
+	 * This keeps track of the one adapter used for all {@link eu.kalafatic.evolution.model.orchestration.ForgeSession} instances.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected ForgeSessionItemProvider forgeSessionItemProvider;
+
+	/**
+	 * This creates an adapter for a {@link eu.kalafatic.evolution.model.orchestration.ForgeSession}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Adapter createForgeSessionAdapter() {
+		if (forgeSessionItemProvider == null) {
+			forgeSessionItemProvider = new ForgeSessionItemProvider(this);
+		}
+
+		return forgeSessionItemProvider;
+	}
+
+	/**
+	 * This keeps track of the one adapter used for all {@link eu.kalafatic.evolution.model.orchestration.SessionModelState} instances.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected SessionModelStateItemProvider sessionModelStateItemProvider;
+
+	/**
+	 * This creates an adapter for a {@link eu.kalafatic.evolution.model.orchestration.SessionModelState}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Adapter createSessionModelStateAdapter() {
+		if (sessionModelStateItemProvider == null) {
+			sessionModelStateItemProvider = new SessionModelStateItemProvider(this);
+		}
+
+		return sessionModelStateItemProvider;
+	}
+
+	/**
+	 * This keeps track of the one adapter used for all {@link eu.kalafatic.evolution.model.orchestration.SessionExperiment} instances.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected SessionExperimentItemProvider sessionExperimentItemProvider;
+
+	/**
+	 * This creates an adapter for a {@link eu.kalafatic.evolution.model.orchestration.SessionExperiment}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Adapter createSessionExperimentAdapter() {
+		if (sessionExperimentItemProvider == null) {
+			sessionExperimentItemProvider = new SessionExperimentItemProvider(this);
+		}
+
+		return sessionExperimentItemProvider;
+	}
+
+	/**
+	 * This keeps track of the one adapter used for all {@link eu.kalafatic.evolution.model.orchestration.SessionSnapshot} instances.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected SessionSnapshotItemProvider sessionSnapshotItemProvider;
+
+	/**
+	 * This creates an adapter for a {@link eu.kalafatic.evolution.model.orchestration.SessionSnapshot}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public Adapter createSessionSnapshotAdapter() {
+		if (sessionSnapshotItemProvider == null) {
+			sessionSnapshotItemProvider = new SessionSnapshotItemProvider(this);
+		}
+
+		return sessionSnapshotItemProvider;
 	}
 
 	@Override

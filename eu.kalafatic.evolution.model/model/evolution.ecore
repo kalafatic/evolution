@@ -316,6 +316,7 @@
     <eLiterals name="PROXY" value="3" literal="Proxy"/>
     <eLiterals name="MEDIATED" value="4" literal="Mediated"/>
     <eLiterals name="INTENT" value="5" literal="Intent"/>
+    <eLiterals name="FORGE" value="6" literal="Forge"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EEnum" name="SelfDevStatus">
     <eLiterals name="RUNNING"/>

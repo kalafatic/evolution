@@ -2,13 +2,6 @@
  */
 package eu.kalafatic.evolution.model.orchestration.impl;
 
-import org.eclipse.emf.ecore.EAttribute;
-import org.eclipse.emf.ecore.EClass;
-import org.eclipse.emf.ecore.EEnum;
-import org.eclipse.emf.ecore.EPackage;
-import org.eclipse.emf.ecore.EReference;
-import org.eclipse.emf.ecore.impl.EPackageImpl;
-
 import eu.kalafatic.evolution.model.orchestration.AIProvider;
 import eu.kalafatic.evolution.model.orchestration.AccessRule;
 import eu.kalafatic.evolution.model.orchestration.Agent;
@@ -67,6 +60,14 @@ import eu.kalafatic.evolution.model.orchestration.TaskStatus;
 import eu.kalafatic.evolution.model.orchestration.Test;
 import eu.kalafatic.evolution.model.orchestration.TestStatus;
 
+import org.eclipse.emf.ecore.EAttribute;
+import org.eclipse.emf.ecore.EClass;
+import org.eclipse.emf.ecore.EEnum;
+import org.eclipse.emf.ecore.EPackage;
+import org.eclipse.emf.ecore.EReference;
+
+import org.eclipse.emf.ecore.impl.EPackageImpl;
+
 /**
  * <!-- begin-user-doc -->
  * An implementation of the model <b>Package</b>.
@@ -86,154 +87,6 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	private EClass forgeSessionEClass = null;
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	private EClass sessionModelStateEClass = null;
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	private EClass sessionExperimentEClass = null;
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	private EClass sessionSnapshotEClass = null;
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getOrchestrator_DefaultTarget() {
-		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(32);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getServerSettings_Authenticate() {
-		return (EAttribute)serverSettingsEClass.getEStructuralFeatures().get(5);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EReference getSupervisorSettings_Git() {
-		return (EReference)supervisorSettingsEClass.getEStructuralFeatures().get(5);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EReference getOrchestrator_ForgeSessions() {
-		return (EReference)orchestratorEClass.getEStructuralFeatures().get(34);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EReference getOrchestrator_GenomeSnapshots() {
-		return (EReference)orchestratorEClass.getEStructuralFeatures().get(33);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EClass getGenomeSnapshot() {
-		return genomeSnapshotEClass;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getGenomeSnapshot_Timestamp() {
-		return (EAttribute)genomeSnapshotEClass.getEStructuralFeatures().get(0);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getGenomeSnapshot_ArchitectureArtifact() {
-		return (EAttribute)genomeSnapshotEClass.getEStructuralFeatures().get(1);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getGenomeSnapshot_UseCaseArtifact() {
-		return (EAttribute)genomeSnapshotEClass.getEStructuralFeatures().get(2);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getGenomeSnapshot_MilestoneArtifact() {
-		return (EAttribute)genomeSnapshotEClass.getEStructuralFeatures().get(3);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getGenomeSnapshot_GenomeArtifact() {
-		return (EAttribute)genomeSnapshotEClass.getEStructuralFeatures().get(4);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EAttribute getGenomeSnapshot_DashboardArtifact() {
-		return (EAttribute)genomeSnapshotEClass.getEStructuralFeatures().get(5);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
 	private EClass agentEClass = null;
 
 	/**
@@ -241,14 +94,14 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	private EClass genomeSnapshotEClass = null;
+	private EClass orchestratorEClass = null;
 
 	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	private EClass orchestratorEClass = null;
+	private EClass genomeSnapshotEClass = null;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -500,6 +353,34 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	private EClass forgeSessionEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass sessionModelStateEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass sessionExperimentEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EClass sessionSnapshotEClass = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	private EEnum taskStatusEEnum = null;
 
 	/**
@@ -570,13 +451,6 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	private EEnum forgeStatusEEnum = null;
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
 	private EEnum selfDevDecisionEEnum = null;
 
 	/**
@@ -592,6 +466,13 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	private EEnum reviewDecisionEEnum = null;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private EEnum forgeStatusEEnum = null;
 
 	/**
 	 * Creates an instance of the model <b>Package</b>, registered with
@@ -1399,6 +1280,106 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
+	public EAttribute getOrchestrator_DefaultTarget() {
+		return (EAttribute)orchestratorEClass.getEStructuralFeatures().get(32);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getOrchestrator_GenomeSnapshots() {
+		return (EReference)orchestratorEClass.getEStructuralFeatures().get(33);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EReference getOrchestrator_ForgeSessions() {
+		return (EReference)orchestratorEClass.getEStructuralFeatures().get(34);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EClass getGenomeSnapshot() {
+		return genomeSnapshotEClass;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getGenomeSnapshot_Timestamp() {
+		return (EAttribute)genomeSnapshotEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getGenomeSnapshot_ArchitectureArtifact() {
+		return (EAttribute)genomeSnapshotEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getGenomeSnapshot_UseCaseArtifact() {
+		return (EAttribute)genomeSnapshotEClass.getEStructuralFeatures().get(2);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getGenomeSnapshot_MilestoneArtifact() {
+		return (EAttribute)genomeSnapshotEClass.getEStructuralFeatures().get(3);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getGenomeSnapshot_GenomeArtifact() {
+		return (EAttribute)genomeSnapshotEClass.getEStructuralFeatures().get(4);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getGenomeSnapshot_DashboardArtifact() {
+		return (EAttribute)genomeSnapshotEClass.getEStructuralFeatures().get(5);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public EClass getServerSettings() {
 		return serverSettingsEClass;
 	}
@@ -1451,6 +1432,36 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	@Override
 	public EAttribute getServerSettings_McpPort() {
 		return (EAttribute)serverSettingsEClass.getEStructuralFeatures().get(4);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getServerSettings_Authenticate() {
+		return (EAttribute)serverSettingsEClass.getEStructuralFeatures().get(5);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getServerSettings_PortalPort() {
+		return (EAttribute)serverSettingsEClass.getEStructuralFeatures().get(6);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EAttribute getServerSettings_PortalUrl() {
+		return (EAttribute)serverSettingsEClass.getEStructuralFeatures().get(7);
 	}
 
 	/**
@@ -3099,6 +3110,16 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
+	public EReference getSupervisorSettings_Git() {
+		return (EReference)supervisorSettingsEClass.getEStructuralFeatures().get(5);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public EClass getReviewSession() {
 		return reviewSessionEClass;
 	}
@@ -3453,10 +3474,22 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		return (EAttribute)chatMessageEClass.getEStructuralFeatures().get(11);
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public EAttribute getChatMessage_Reasoning() {
 		return (EAttribute)chatMessageEClass.getEStructuralFeatures().get(12);
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public EAttribute getChatMessage_ResponseKind() {
 		return (EAttribute)chatMessageEClass.getEStructuralFeatures().get(13);
 	}
@@ -3627,146 +3660,6 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * @generated
 	 */
 	@Override
-	public EEnum getTaskStatus() {
-		return taskStatusEEnum;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EEnum getLogLevel() {
-		return logLevelEEnum;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EEnum getFeedbackLevel() {
-		return feedbackLevelEEnum;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EEnum getSessionType() {
-		return sessionTypeEEnum;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EEnum getCommandStatus() {
-		return commandStatusEEnum;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EEnum getExecutionMode() {
-		return executionModeEEnum;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EEnum getNeuronType() {
-		return neuronTypeEEnum;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EEnum getAiMode() {
-		return aiModeEEnum;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EEnum getSelfDevStatus() {
-		return selfDevStatusEEnum;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EEnum getIterationStatus() {
-		return iterationStatusEEnum;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EEnum getSelfDevDecision() {
-		return selfDevDecisionEEnum;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EEnum getTestStatus() {
-		return testStatusEEnum;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public EEnum getReviewDecision() {
-		return reviewDecisionEEnum;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public OrchestrationFactory getOrchestrationFactory() {
-		return (OrchestrationFactory)getEFactoryInstance();
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
 	public EClass getForgeSession() {
 		return forgeSessionEClass;
 	}
@@ -3851,6 +3744,11 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		return (EReference)forgeSessionEClass.getEStructuralFeatures().get(7);
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@Override
 	public EReference getForgeSession_ModelState() {
 		return (EReference)forgeSessionEClass.getEStructuralFeatures().get(8);
@@ -4071,7 +3969,130 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	private boolean isCreated = false;
+	@Override
+	public EEnum getTaskStatus() {
+		return taskStatusEEnum;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EEnum getLogLevel() {
+		return logLevelEEnum;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EEnum getFeedbackLevel() {
+		return feedbackLevelEEnum;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EEnum getSessionType() {
+		return sessionTypeEEnum;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EEnum getCommandStatus() {
+		return commandStatusEEnum;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EEnum getExecutionMode() {
+		return executionModeEEnum;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EEnum getNeuronType() {
+		return neuronTypeEEnum;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EEnum getAiMode() {
+		return aiModeEEnum;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EEnum getSelfDevStatus() {
+		return selfDevStatusEEnum;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EEnum getIterationStatus() {
+		return iterationStatusEEnum;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EEnum getSelfDevDecision() {
+		return selfDevDecisionEEnum;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EEnum getTestStatus() {
+		return testStatusEEnum;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public EEnum getReviewDecision() {
+		return reviewDecisionEEnum;
+	}
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -4082,6 +4103,23 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 	public EEnum getForgeStatus() {
 		return forgeStatusEEnum;
 	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public OrchestrationFactory getOrchestrationFactory() {
+		return (OrchestrationFactory)getEFactoryInstance();
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	private boolean isCreated = false;
 
 	/**
 	 * Creates the meta-model objects for the package.  This method is
@@ -4190,6 +4228,8 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		createEAttribute(serverSettingsEClass, SERVER_SETTINGS__MCP_ENABLED);
 		createEAttribute(serverSettingsEClass, SERVER_SETTINGS__MCP_PORT);
 		createEAttribute(serverSettingsEClass, SERVER_SETTINGS__AUTHENTICATE);
+		createEAttribute(serverSettingsEClass, SERVER_SETTINGS__PORTAL_PORT);
+		createEAttribute(serverSettingsEClass, SERVER_SETTINGS__PORTAL_URL);
 
 		serverSessionEClass = createEClass(SERVER_SESSION);
 		createEAttribute(serverSessionEClass, SERVER_SESSION__ID);
@@ -4625,6 +4665,8 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEAttribute(getServerSettings_McpEnabled(), ecorePackage.getEBoolean(), "mcpEnabled", "true", 0, 1, ServerSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getServerSettings_McpPort(), ecorePackage.getEInt(), "mcpPort", "38080", 0, 1, ServerSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getServerSettings_Authenticate(), ecorePackage.getEBoolean(), "authenticate", "false", 0, 1, ServerSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getServerSettings_PortalPort(), ecorePackage.getEInt(), "portalPort", "58080", 0, 1, ServerSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getServerSettings_PortalUrl(), ecorePackage.getEString(), "portalUrl", "http://localhost:58080/dashboard.html", 0, 1, ServerSettings.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(serverSessionEClass, ServerSession.class, "ServerSession", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getServerSession_Id(), ecorePackage.getEString(), "id", null, 0, 1, ServerSession.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
@@ -4858,6 +4900,8 @@ public class OrchestrationPackageImpl extends EPackageImpl implements Orchestrat
 		initEAttribute(getChatMessage_SequenceNumber(), ecorePackage.getELong(), "sequenceNumber", null, 0, 1, ChatMessage.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getChatMessage_TurnId(), ecorePackage.getEString(), "turnId", null, 0, 1, ChatMessage.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getChatMessage_IsTerminal(), ecorePackage.getEBoolean(), "isTerminal", null, 0, 1, ChatMessage.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getChatMessage_Reasoning(), ecorePackage.getEString(), "reasoning", null, 0, 1, ChatMessage.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getChatMessage_ResponseKind(), ecorePackage.getEString(), "responseKind", null, 0, 1, ChatMessage.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(networkEntryEClass, NetworkEntry.class, "NetworkEntry", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getNetworkEntry_Host(), ecorePackage.getEString(), "host", null, 0, 1, NetworkEntry.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);

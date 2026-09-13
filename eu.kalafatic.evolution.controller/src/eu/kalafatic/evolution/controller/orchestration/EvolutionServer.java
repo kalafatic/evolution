@@ -160,6 +160,10 @@ public class EvolutionServer extends NanoHTTPD {
         if (uri.endsWith("/creatic.js")) {
             return handleGetResource("/creatic.js", "application/javascript");
         }
+        if (uri.endsWith("/evo-style.css")) {
+            String css = eu.kalafatic.evolution.controller.ui.EvoStyleManager.getInstance().getEvoStyleCss();
+            return newFixedLengthResponse(Response.Status.OK, "text/css", css);
+        }
         if (uri.endsWith("/creatic.css")) {
             return handleGetResource("/creatic.css", "text/css");
         }
@@ -1789,6 +1793,9 @@ public class EvolutionServer extends NanoHTTPD {
 
         TaskContext taskContext = new TaskContext(OrchestratorServiceImpl.getInstance().getOrchestrator(), new File("."));
         taskContext.setSessionId(sessionId);
+        taskContext.getOrchestrationState().setExecutionProfile(
+            eu.kalafatic.evolution.controller.kernel.EvolutionIntensityCalculator.calculate(taskContext, null, null)
+        );
         taskContext.getMetadata().put("sourceType", sourceType);
         taskContext.getMetadata().put("repository", repo);
         taskContext.getMetadata().put("split", split);

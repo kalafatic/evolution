@@ -2,14 +2,16 @@
  */
 package eu.kalafatic.evolution.model.orchestration.impl;
 
-import org.eclipse.emf.common.notify.Notification;
-import org.eclipse.emf.ecore.EClass;
-import org.eclipse.emf.ecore.impl.ENotificationImpl;
-import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
-
 import eu.kalafatic.evolution.model.orchestration.Command;
 import eu.kalafatic.evolution.model.orchestration.CommandStatus;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
+
+import org.eclipse.emf.common.notify.Notification;
+
+import org.eclipse.emf.ecore.EClass;
+
+import org.eclipse.emf.ecore.impl.ENotificationImpl;
+import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
 
 /**
  * <!-- begin-user-doc -->

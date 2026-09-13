@@ -76,6 +76,26 @@ public class TaskItemProvider
 			addResultSummaryPropertyDescriptor(object);
 			addDescriptionPropertyDescriptor(object);
 			addRatingPropertyDescriptor(object);
+			addLikesPropertyDescriptor(object);
+			addRationalePropertyDescriptor(object);
+			addScheduledTimePropertyDescriptor(object);
+			addSelectedPropertyDescriptor(object);
+			addGoalPropertyDescriptor(object);
+			addPlanPropertyDescriptor(object);
+			addArtifactsPropertyDescriptor(object);
+			addPromptPropertyDescriptor(object);
+			addAttachmentsPropertyDescriptor(object);
+			addLogLevelPropertyDescriptor(object);
+			addFeedbackLevelPropertyDescriptor(object);
+			addAutoEscalatePropertyDescriptor(object);
+			addIterativeModePropertyDescriptor(object);
+			addSelfIterativeModePropertyDescriptor(object);
+			addDarwinModePropertyDescriptor(object);
+			addGitAutomationPropertyDescriptor(object);
+			addMaxIterationsPropertyDescriptor(object);
+			addStepModePropertyDescriptor(object);
+			addBitStatePropertyDescriptor(object);
+			addJustificationPropertyDescriptor(object);
 		}
 		return itemPropertyDescriptors;
 	}
@@ -113,6 +133,402 @@ public class TaskItemProvider
 				 "Rationale",
 				 "AI rationale for this task",
 				 OrchestrationPackage.Literals.TASK__RATIONALE,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.GENERIC_VALUE_IMAGE,
+				 null,
+				 null));
+	}
+
+	/**
+	 * This adds a property descriptor for the Scheduled Time feature.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void addScheduledTimePropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 getString("_UI_Task_scheduledTime_feature"),
+				 getString("_UI_PropertyDescriptor_description", "_UI_Task_scheduledTime_feature", "_UI_Task_type"),
+				 OrchestrationPackage.Literals.TASK__SCHEDULED_TIME,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.GENERIC_VALUE_IMAGE,
+				 null,
+				 null));
+	}
+
+	/**
+	 * This adds a property descriptor for the Selected feature.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void addSelectedPropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 getString("_UI_Task_selected_feature"),
+				 getString("_UI_PropertyDescriptor_description", "_UI_Task_selected_feature", "_UI_Task_type"),
+				 OrchestrationPackage.Literals.TASK__SELECTED,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.BOOLEAN_VALUE_IMAGE,
+				 null,
+				 null));
+	}
+
+	/**
+	 * This adds a property descriptor for the Goal feature.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void addGoalPropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 getString("_UI_Task_goal_feature"),
+				 getString("_UI_PropertyDescriptor_description", "_UI_Task_goal_feature", "_UI_Task_type"),
+				 OrchestrationPackage.Literals.TASK__GOAL,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.GENERIC_VALUE_IMAGE,
+				 null,
+				 null));
+	}
+
+	/**
+	 * This adds a property descriptor for the Plan feature.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void addPlanPropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 getString("_UI_Task_plan_feature"),
+				 getString("_UI_PropertyDescriptor_description", "_UI_Task_plan_feature", "_UI_Task_type"),
+				 OrchestrationPackage.Literals.TASK__PLAN,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.GENERIC_VALUE_IMAGE,
+				 null,
+				 null));
+	}
+
+	/**
+	 * This adds a property descriptor for the Artifacts feature.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void addArtifactsPropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 getString("_UI_Task_artifacts_feature"),
+				 getString("_UI_PropertyDescriptor_description", "_UI_Task_artifacts_feature", "_UI_Task_type"),
+				 OrchestrationPackage.Literals.TASK__ARTIFACTS,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.GENERIC_VALUE_IMAGE,
+				 null,
+				 null));
+	}
+
+	/**
+	 * This adds a property descriptor for the Prompt feature.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void addPromptPropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 getString("_UI_Task_prompt_feature"),
+				 getString("_UI_PropertyDescriptor_description", "_UI_Task_prompt_feature", "_UI_Task_type"),
+				 OrchestrationPackage.Literals.TASK__PROMPT,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.GENERIC_VALUE_IMAGE,
+				 null,
+				 null));
+	}
+
+	/**
+	 * This adds a property descriptor for the Attachments feature.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void addAttachmentsPropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 getString("_UI_Task_attachments_feature"),
+				 getString("_UI_PropertyDescriptor_description", "_UI_Task_attachments_feature", "_UI_Task_type"),
+				 OrchestrationPackage.Literals.TASK__ATTACHMENTS,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.GENERIC_VALUE_IMAGE,
+				 null,
+				 null));
+	}
+
+	/**
+	 * This adds a property descriptor for the Log Level feature.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void addLogLevelPropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 getString("_UI_Task_logLevel_feature"),
+				 getString("_UI_PropertyDescriptor_description", "_UI_Task_logLevel_feature", "_UI_Task_type"),
+				 OrchestrationPackage.Literals.TASK__LOG_LEVEL,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.GENERIC_VALUE_IMAGE,
+				 null,
+				 null));
+	}
+
+	/**
+	 * This adds a property descriptor for the Feedback Level feature.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void addFeedbackLevelPropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 getString("_UI_Task_feedbackLevel_feature"),
+				 getString("_UI_PropertyDescriptor_description", "_UI_Task_feedbackLevel_feature", "_UI_Task_type"),
+				 OrchestrationPackage.Literals.TASK__FEEDBACK_LEVEL,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.GENERIC_VALUE_IMAGE,
+				 null,
+				 null));
+	}
+
+	/**
+	 * This adds a property descriptor for the Auto Escalate feature.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void addAutoEscalatePropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 getString("_UI_Task_autoEscalate_feature"),
+				 getString("_UI_PropertyDescriptor_description", "_UI_Task_autoEscalate_feature", "_UI_Task_type"),
+				 OrchestrationPackage.Literals.TASK__AUTO_ESCALATE,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.BOOLEAN_VALUE_IMAGE,
+				 null,
+				 null));
+	}
+
+	/**
+	 * This adds a property descriptor for the Iterative Mode feature.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void addIterativeModePropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 getString("_UI_Task_iterativeMode_feature"),
+				 getString("_UI_PropertyDescriptor_description", "_UI_Task_iterativeMode_feature", "_UI_Task_type"),
+				 OrchestrationPackage.Literals.TASK__ITERATIVE_MODE,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.BOOLEAN_VALUE_IMAGE,
+				 null,
+				 null));
+	}
+
+	/**
+	 * This adds a property descriptor for the Self Iterative Mode feature.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void addSelfIterativeModePropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 getString("_UI_Task_selfIterativeMode_feature"),
+				 getString("_UI_PropertyDescriptor_description", "_UI_Task_selfIterativeMode_feature", "_UI_Task_type"),
+				 OrchestrationPackage.Literals.TASK__SELF_ITERATIVE_MODE,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.BOOLEAN_VALUE_IMAGE,
+				 null,
+				 null));
+	}
+
+	/**
+	 * This adds a property descriptor for the Darwin Mode feature.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void addDarwinModePropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 getString("_UI_Task_darwinMode_feature"),
+				 getString("_UI_PropertyDescriptor_description", "_UI_Task_darwinMode_feature", "_UI_Task_type"),
+				 OrchestrationPackage.Literals.TASK__DARWIN_MODE,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.BOOLEAN_VALUE_IMAGE,
+				 null,
+				 null));
+	}
+
+	/**
+	 * This adds a property descriptor for the Git Automation feature.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void addGitAutomationPropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 getString("_UI_Task_gitAutomation_feature"),
+				 getString("_UI_PropertyDescriptor_description", "_UI_Task_gitAutomation_feature", "_UI_Task_type"),
+				 OrchestrationPackage.Literals.TASK__GIT_AUTOMATION,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.BOOLEAN_VALUE_IMAGE,
+				 null,
+				 null));
+	}
+
+	/**
+	 * This adds a property descriptor for the Max Iterations feature.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void addMaxIterationsPropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 getString("_UI_Task_maxIterations_feature"),
+				 getString("_UI_PropertyDescriptor_description", "_UI_Task_maxIterations_feature", "_UI_Task_type"),
+				 OrchestrationPackage.Literals.TASK__MAX_ITERATIONS,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.INTEGRAL_VALUE_IMAGE,
+				 null,
+				 null));
+	}
+
+	/**
+	 * This adds a property descriptor for the Step Mode feature.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void addStepModePropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 getString("_UI_Task_stepMode_feature"),
+				 getString("_UI_PropertyDescriptor_description", "_UI_Task_stepMode_feature", "_UI_Task_type"),
+				 OrchestrationPackage.Literals.TASK__STEP_MODE,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.BOOLEAN_VALUE_IMAGE,
+				 null,
+				 null));
+	}
+
+	/**
+	 * This adds a property descriptor for the Bit State feature.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void addBitStatePropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 getString("_UI_Task_bitState_feature"),
+				 getString("_UI_PropertyDescriptor_description", "_UI_Task_bitState_feature", "_UI_Task_type"),
+				 OrchestrationPackage.Literals.TASK__BIT_STATE,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.INTEGRAL_VALUE_IMAGE,
+				 null,
+				 null));
+	}
+
+	/**
+	 * This adds a property descriptor for the Justification feature.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void addJustificationPropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 getString("_UI_Task_justification_feature"),
+				 getString("_UI_PropertyDescriptor_description", "_UI_Task_justification_feature", "_UI_Task_type"),
+				 OrchestrationPackage.Literals.TASK__JUSTIFICATION,
 				 true,
 				 false,
 				 false,
@@ -466,6 +882,26 @@ public class TaskItemProvider
 			case OrchestrationPackage.TASK__RESULT_SUMMARY:
 			case OrchestrationPackage.TASK__DESCRIPTION:
 			case OrchestrationPackage.TASK__RATING:
+			case OrchestrationPackage.TASK__LIKES:
+			case OrchestrationPackage.TASK__RATIONALE:
+			case OrchestrationPackage.TASK__SCHEDULED_TIME:
+			case OrchestrationPackage.TASK__SELECTED:
+			case OrchestrationPackage.TASK__GOAL:
+			case OrchestrationPackage.TASK__PLAN:
+			case OrchestrationPackage.TASK__ARTIFACTS:
+			case OrchestrationPackage.TASK__PROMPT:
+			case OrchestrationPackage.TASK__ATTACHMENTS:
+			case OrchestrationPackage.TASK__LOG_LEVEL:
+			case OrchestrationPackage.TASK__FEEDBACK_LEVEL:
+			case OrchestrationPackage.TASK__AUTO_ESCALATE:
+			case OrchestrationPackage.TASK__ITERATIVE_MODE:
+			case OrchestrationPackage.TASK__SELF_ITERATIVE_MODE:
+			case OrchestrationPackage.TASK__DARWIN_MODE:
+			case OrchestrationPackage.TASK__GIT_AUTOMATION:
+			case OrchestrationPackage.TASK__MAX_ITERATIONS:
+			case OrchestrationPackage.TASK__STEP_MODE:
+			case OrchestrationPackage.TASK__BIT_STATE:
+			case OrchestrationPackage.TASK__JUSTIFICATION:
 				fireNotifyChanged(new ViewerNotification(notification, notification.getNotifier(), false, true));
 				return;
 			case OrchestrationPackage.TASK__SUB_TASKS:

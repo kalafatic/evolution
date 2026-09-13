@@ -3,6 +3,7 @@
 package eu.kalafatic.evolution.model.orchestration;
 
 import org.eclipse.emf.common.util.EList;
+
 import org.eclipse.emf.ecore.EObject;
 
 /**
@@ -278,13 +279,13 @@ public interface ChatSession extends EObject {
 
 	/**
 	 * Returns the value of the '<em><b>Auto Approve</b></em>' attribute.
-	 * The default value is <code>"false"</code>.
+	 * The default value is <code>"true"</code>.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @return the value of the '<em>Auto Approve</em>' attribute.
 	 * @see #setAutoApprove(boolean)
 	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getChatSession_AutoApprove()
-	 * @model default="false"
+	 * @model default="true"
 	 * @generated
 	 */
 	boolean isAutoApprove();

@@ -2,13 +2,15 @@
  */
 package eu.kalafatic.evolution.model.orchestration.impl;
 
-import org.eclipse.emf.common.notify.Notification;
-import org.eclipse.emf.ecore.EClass;
-import org.eclipse.emf.ecore.impl.ENotificationImpl;
-import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
-
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 import eu.kalafatic.evolution.model.orchestration.ServerSettings;
+
+import org.eclipse.emf.common.notify.Notification;
+
+import org.eclipse.emf.ecore.EClass;
+
+import org.eclipse.emf.ecore.impl.ENotificationImpl;
+import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
 
 /**
  * <!-- begin-user-doc -->
@@ -24,6 +26,8 @@ import eu.kalafatic.evolution.model.orchestration.ServerSettings;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ServerSettingsImpl#isMcpEnabled <em>Mcp Enabled</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ServerSettingsImpl#getMcpPort <em>Mcp Port</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ServerSettingsImpl#isAuthenticate <em>Authenticate</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ServerSettingsImpl#getPortalPort <em>Portal Port</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ServerSettingsImpl#getPortalUrl <em>Portal Url</em>}</li>
  * </ul>
  *
  * @generated
@@ -149,105 +153,45 @@ public class ServerSettingsImpl extends MinimalEObjectImpl.Container implements 
 	 */
 	protected boolean authenticate = AUTHENTICATE_EDEFAULT;
 
+	/**
+	 * The default value of the '{@link #getPortalPort() <em>Portal Port</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getPortalPort()
+	 * @generated
+	 * @ordered
+	 */
 	protected static final int PORTAL_PORT_EDEFAULT = 58080;
+
+	/**
+	 * The cached value of the '{@link #getPortalPort() <em>Portal Port</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getPortalPort()
+	 * @generated
+	 * @ordered
+	 */
 	protected int portalPort = PORTAL_PORT_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getPortalUrl() <em>Portal Url</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getPortalUrl()
+	 * @generated
+	 * @ordered
+	 */
 	protected static final String PORTAL_URL_EDEFAULT = "http://localhost:58080/dashboard.html";
+
+	/**
+	 * The cached value of the '{@link #getPortalUrl() <em>Portal Url</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getPortalUrl()
+	 * @generated
+	 * @ordered
+	 */
 	protected String portalUrl = PORTAL_URL_EDEFAULT;
-
-	@Override
-	public int getPortalPort() {
-		return portalPort;
-	}
-
-	@Override
-	public void setPortalPort(int newPortalPort) {
-		int oldPortalPort = portalPort;
-		portalPort = newPortalPort;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, -1, oldPortalPort, portalPort));
-	}
-
-	@Override
-	public String getPortalUrl() {
-		return portalUrl;
-	}
-
-	@Override
-	public void setPortalUrl(String newPortalUrl) {
-		String oldPortalUrl = portalUrl;
-		portalUrl = newPortalUrl;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, -1, oldPortalUrl, portalUrl));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public boolean isMcpEnabled() {
-		return mcpEnabled;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setMcpEnabled(boolean newMcpEnabled) {
-		boolean oldMcpEnabled = mcpEnabled;
-		mcpEnabled = newMcpEnabled;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.SERVER_SETTINGS__MCP_ENABLED, oldMcpEnabled, mcpEnabled));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public int getMcpPort() {
-		return mcpPort;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setMcpPort(int newMcpPort) {
-		int oldMcpPort = mcpPort;
-		mcpPort = newMcpPort;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.SERVER_SETTINGS__MCP_PORT, oldMcpPort, mcpPort));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public boolean isAuthenticate() {
-		return authenticate;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setAuthenticate(boolean newAuthenticate) {
-		boolean oldAuthenticate = authenticate;
-		authenticate = newAuthenticate;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.SERVER_SETTINGS__AUTHENTICATE, oldAuthenticate, authenticate));
-	}
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -343,6 +287,121 @@ public class ServerSettingsImpl extends MinimalEObjectImpl.Container implements 
 	 * @generated
 	 */
 	@Override
+	public boolean isMcpEnabled() {
+		return mcpEnabled;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setMcpEnabled(boolean newMcpEnabled) {
+		boolean oldMcpEnabled = mcpEnabled;
+		mcpEnabled = newMcpEnabled;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.SERVER_SETTINGS__MCP_ENABLED, oldMcpEnabled, mcpEnabled));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public int getMcpPort() {
+		return mcpPort;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setMcpPort(int newMcpPort) {
+		int oldMcpPort = mcpPort;
+		mcpPort = newMcpPort;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.SERVER_SETTINGS__MCP_PORT, oldMcpPort, mcpPort));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public boolean isAuthenticate() {
+		return authenticate;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setAuthenticate(boolean newAuthenticate) {
+		boolean oldAuthenticate = authenticate;
+		authenticate = newAuthenticate;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.SERVER_SETTINGS__AUTHENTICATE, oldAuthenticate, authenticate));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public int getPortalPort() {
+		return portalPort;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setPortalPort(int newPortalPort) {
+		int oldPortalPort = portalPort;
+		portalPort = newPortalPort;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.SERVER_SETTINGS__PORTAL_PORT, oldPortalPort, portalPort));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String getPortalUrl() {
+		return portalUrl;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setPortalUrl(String newPortalUrl) {
+		String oldPortalUrl = portalUrl;
+		portalUrl = newPortalUrl;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.SERVER_SETTINGS__PORTAL_URL, oldPortalUrl, portalUrl));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public Object eGet(int featureID, boolean resolve, boolean coreType) {
 		switch (featureID) {
 			case OrchestrationPackage.SERVER_SETTINGS__PORT:
@@ -357,6 +416,10 @@ public class ServerSettingsImpl extends MinimalEObjectImpl.Container implements 
 				return getMcpPort();
 			case OrchestrationPackage.SERVER_SETTINGS__AUTHENTICATE:
 				return isAuthenticate();
+			case OrchestrationPackage.SERVER_SETTINGS__PORTAL_PORT:
+				return getPortalPort();
+			case OrchestrationPackage.SERVER_SETTINGS__PORTAL_URL:
+				return getPortalUrl();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -386,6 +449,12 @@ public class ServerSettingsImpl extends MinimalEObjectImpl.Container implements 
 				return;
 			case OrchestrationPackage.SERVER_SETTINGS__AUTHENTICATE:
 				setAuthenticate((Boolean)newValue);
+				return;
+			case OrchestrationPackage.SERVER_SETTINGS__PORTAL_PORT:
+				setPortalPort((Integer)newValue);
+				return;
+			case OrchestrationPackage.SERVER_SETTINGS__PORTAL_URL:
+				setPortalUrl((String)newValue);
 				return;
 		}
 		super.eSet(featureID, newValue);
@@ -417,6 +486,12 @@ public class ServerSettingsImpl extends MinimalEObjectImpl.Container implements 
 			case OrchestrationPackage.SERVER_SETTINGS__AUTHENTICATE:
 				setAuthenticate(AUTHENTICATE_EDEFAULT);
 				return;
+			case OrchestrationPackage.SERVER_SETTINGS__PORTAL_PORT:
+				setPortalPort(PORTAL_PORT_EDEFAULT);
+				return;
+			case OrchestrationPackage.SERVER_SETTINGS__PORTAL_URL:
+				setPortalUrl(PORTAL_URL_EDEFAULT);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -441,6 +516,10 @@ public class ServerSettingsImpl extends MinimalEObjectImpl.Container implements 
 				return mcpPort != MCP_PORT_EDEFAULT;
 			case OrchestrationPackage.SERVER_SETTINGS__AUTHENTICATE:
 				return authenticate != AUTHENTICATE_EDEFAULT;
+			case OrchestrationPackage.SERVER_SETTINGS__PORTAL_PORT:
+				return portalPort != PORTAL_PORT_EDEFAULT;
+			case OrchestrationPackage.SERVER_SETTINGS__PORTAL_URL:
+				return PORTAL_URL_EDEFAULT == null ? portalUrl != null : !PORTAL_URL_EDEFAULT.equals(portalUrl);
 		}
 		return super.eIsSet(featureID);
 	}

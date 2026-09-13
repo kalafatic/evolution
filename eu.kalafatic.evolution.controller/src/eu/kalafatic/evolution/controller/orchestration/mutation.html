@@ -4,33 +4,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EVO / Mutation - Interactive AI Software Engineer</title>
+    <link rel="stylesheet" href="evo-style.css">
     <style>
         :root {
-            --bg-primary: #1e1e1e;
-            --bg-secondary: #252526;
-            --bg-tertiary: #2d2d2d;
-            --border: #3e3e42;
-            --text-primary: #cccccc;
-            --text-dim: #858585;
-            --accent: #0e639c;
-            --accent-hover: #1177bb;
-            --success: #4ec9b0;
-            --error: #f48771;
-            --user-msg-bg: #007acc;
-            --ai-msg-bg: #2d2d2d;
-            --diff-add-bg: rgba(78, 201, 176, 0.15);
-            --diff-add-text: #4ec9b0;
-            --diff-del-bg: rgba(244, 135, 113, 0.15);
-            --diff-del-text: #f48771;
+            --bg-primary: var(--evo-surface);
+            --bg-secondary: var(--evo-surface-alt);
+            --bg-tertiary: var(--evo-surface-hover);
+            --border: var(--evo-border);
+            --text-primary: var(--evo-text);
+            --text-dim: var(--evo-text-secondary);
+            --accent: var(--evo-primary);
+            --accent-hover: var(--evo-primary-hover);
+            --success: var(--evo-success);
+            --error: var(--evo-danger);
+            --user-msg-bg: var(--evo-primary);
+            --ai-msg-bg: var(--evo-surface-alt);
+            --diff-add-bg: var(--evo-success-light);
+            --diff-add-text: var(--evo-success);
+            --diff-del-bg: var(--evo-danger-light);
+            --diff-del-text: var(--evo-danger);
         }
 
         * { box-sizing: border-box; }
 
         body, html {
             margin: 0; padding: 0; height: 100%;
-            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
-            background-color: var(--bg-primary);
-            color: var(--text-primary);
+            font-family: var(--evo-font-family);
+            background-color: var(--evo-bg);
+            color: var(--evo-text);
             overflow: hidden;
         }
 

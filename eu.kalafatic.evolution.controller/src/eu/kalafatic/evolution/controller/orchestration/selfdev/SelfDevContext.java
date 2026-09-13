@@ -1,16 +1,20 @@
 package eu.kalafatic.evolution.controller.orchestration.selfdev;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import eu.kalafatic.evolution.controller.resource.EvoPath;
+import eu.kalafatic.evolution.controller.resource.ResourceManager;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 
 public class SelfDevContext {
     private final String runId;
+    private final File repositoryRoot;
     private final File projectRoot;
     private final File sourceDirectory;
     private final File buildDirectory;
@@ -19,6 +23,15 @@ public class SelfDevContext {
     private final File logDirectory;
     private final Orchestrator orchestrator;
 
+    private File supervisorDirectory;
+    private File genomeDirectory;
+
+    private String os;
+    private String ws;
+    private String arch;
+    private String productId = "evolution";
+    private String launcher = "evo";
+
     private String sourceRevision;
     private boolean debugMode;
 
@@ -26,37 +39,132 @@ public class SelfDevContext {
     private final Map<ArtifactType, BuildArtifact> artifacts = new ConcurrentHashMap<>();
 
     public SelfDevContext(File projectRoot, Orchestrator orchestrator) {
-        this.projectRoot = projectRoot != null ? projectRoot.getAbsoluteFile() : new File(".").getAbsoluteFile();
-        this.orchestrator = orchestrator;
-
-        String timestamp = new SimpleDateFormat("ddMMyy_HHmmss").format(new Date());
-        this.runId = "run_" + timestamp;
-
-        File runDir = new File(this.projectRoot, "projects/evo/supervisor/" + new SimpleDateFormat("ddMMyy").format(new Date()));
-        this.sourceDirectory = new File(runDir, "source");
-        this.buildDirectory = new File(runDir, "build");
-        this.exportDirectory = new File(runDir, "export");
-        this.runtimeDirectory = new File(runDir, "runtime");
-        this.logDirectory = new File(this.projectRoot, "self-dev-run/logs");
-
-        ensureDirectories();
+        this(projectRoot, null, orchestrator);
     }
 
     public SelfDevContext(File projectRoot, File baseRunDir, Orchestrator orchestrator) {
-        this.projectRoot = projectRoot != null ? projectRoot.getAbsoluteFile() : new File(".").getAbsoluteFile();
-        this.orchestrator = orchestrator;
+        ResourceManager rm = ResourceManager.getInstance();
+        if (orchestrator != null) {
+            rm.setOrchestrator(orchestrator);
+        }
+        this.orchestrator = rm.getOrchestrator();
+
+        this.repositoryRoot = rm.getPath(EvoPath.EVO_ROOT).toFile();
+        this.projectRoot = projectRoot != null ? rm.resolvePath(rm.getPath(EvoPath.EVO_ROOT), projectRoot.getPath()).toFile() : rm.getPath(EvoPath.PROJECT_ROOT).toFile();
 
         String timestamp = new SimpleDateFormat("ddMMyy_HHmmss").format(new Date());
         this.runId = "run_" + timestamp;
 
-        File runDir = baseRunDir != null ? baseRunDir : new File(this.projectRoot, "self-dev-run");
-        this.sourceDirectory = new File(runDir, "source");
-        this.buildDirectory = new File(runDir, "build");
-        this.exportDirectory = new File(runDir, "export");
-        this.runtimeDirectory = new File(runDir, "runtime");
-        this.logDirectory = new File(runDir, "logs");
+        File runDir;
+        if (baseRunDir != null) {
+            runDir = resolvePath(this.projectRoot, baseRunDir);
+        } else {
+            runDir = new File(this.projectRoot, "projects/evo/supervisor/" + new SimpleDateFormat("ddMMyy").format(new Date())).getAbsoluteFile();
+        }
 
+        this.sourceDirectory = resolvePath(runDir, "source");
+        this.buildDirectory = resolvePath(runDir, "build");
+        this.exportDirectory = resolvePath(runDir, "export");
+        this.runtimeDirectory = resolvePath(runDir, "runtime");
+        this.logDirectory = rm.resolvePath(rm.getPath(EvoPath.EVO_ROOT), "self-dev-run/logs").toFile();
+
+        initTargetPlatform();
+        discoverAndRepairModulePaths();
         ensureDirectories();
+        printPreflightReport();
+    }
+
+    private void initTargetPlatform() {
+        String sysOs = System.getProperty("evo.target.os", System.getProperty("os.name")).toLowerCase();
+        if (sysOs.contains("win")) {
+            this.os = "win32";
+            this.ws = "win32";
+            this.arch = "x86_64";
+            this.launcher = "evo.exe";
+        } else {
+            this.os = "linux";
+            this.ws = "gtk";
+            this.arch = "x86_64";
+            this.launcher = "evo";
+        }
+    }
+
+    public static File resolvePath(File semanticBase, File configured) {
+        if (configured == null) {
+            return semanticBase != null ? semanticBase.getAbsoluteFile().toPath().normalize().toFile() : null;
+        }
+        if (configured.isAbsolute()) {
+            return configured.getAbsoluteFile().toPath().normalize().toFile();
+        }
+        Path base = semanticBase != null ? semanticBase.toPath() : ResourceManager.getInstance().getPath(EvoPath.EVO_ROOT);
+        return ResourceManager.getInstance().resolvePath(base, configured.getPath()).toFile();
+    }
+
+    public static File resolvePath(File semanticBase, String configuredPath) {
+        if (configuredPath == null || configuredPath.trim().isEmpty()) {
+            return semanticBase != null ? semanticBase.getAbsoluteFile().toPath().normalize().toFile() : null;
+        }
+        File configured = new File(configuredPath);
+        return resolvePath(semanticBase, configured);
+    }
+
+    public void discoverAndRepairModulePaths() {
+        ResourceManager rm = ResourceManager.getInstance();
+        this.supervisorDirectory = rm.getPath(EvoPath.SUPERVISOR_SOURCE).toFile();
+        this.genomeDirectory = rm.getPath(EvoPath.GENOME).toFile();
+    }
+
+    public File discoverModuleDirectory(String moduleName, File primaryLocation, File... searchRoots) {
+        if (primaryLocation != null && primaryLocation.exists() && isModuleDirectory(primaryLocation)) {
+            return primaryLocation.getAbsoluteFile().toPath().normalize().toFile();
+        }
+
+        for (File root : searchRoots) {
+            if (root == null || !root.exists()) continue;
+
+            File directCandidate = new File(root, moduleName);
+            if (directCandidate.exists() && isModuleDirectory(directCandidate)) {
+                return directCandidate.getAbsoluteFile().toPath().normalize().toFile();
+            }
+
+            File[] children = root.listFiles(File::isDirectory);
+            if (children != null) {
+                for (File child : children) {
+                    File candidate = new File(child, moduleName);
+                    if (candidate.exists() && isModuleDirectory(candidate)) {
+                        return candidate.getAbsoluteFile().toPath().normalize().toFile();
+                    }
+                }
+            }
+        }
+
+        File fallback = primaryLocation != null ? primaryLocation.getAbsoluteFile().toPath().normalize().toFile() : new File(projectRoot, moduleName).getAbsoluteFile().toPath().normalize().toFile();
+        return fallback;
+    }
+
+    private boolean isModuleDirectory(File dir) {
+        if (dir == null || !dir.exists() || !dir.isDirectory()) return false;
+        return new File(dir, "pom.xml").exists() || new File(dir, "META-INF/MANIFEST.MF").exists();
+    }
+
+    public void printPreflightReport() {
+        System.out.println("================================================================================");
+        System.out.println("SELF-DEV PREFLIGHT CONTEXT REPORT");
+        System.out.println("--------------------------------------------------------------------------------");
+        System.out.println("Run ID          : " + runId);
+        System.out.println("Repository Root : " + repositoryRoot.getAbsolutePath() + " (exists: " + repositoryRoot.exists() + ")");
+        System.out.println("Project Root    : " + projectRoot.getAbsolutePath() + " (exists: " + projectRoot.exists() + ")");
+        System.out.println("Source Directory: " + sourceDirectory.getAbsolutePath() + " (exists: " + sourceDirectory.exists() + ")");
+        System.out.println("Build Directory : " + buildDirectory.getAbsolutePath() + " (exists: " + buildDirectory.exists() + ")");
+        System.out.println("Export Directory: " + exportDirectory.getAbsolutePath() + " (exists: " + exportDirectory.exists() + ")");
+        System.out.println("Runtime Dir     : " + runtimeDirectory.getAbsolutePath() + " (exists: " + runtimeDirectory.exists() + ")");
+        System.out.println("Log Directory   : " + logDirectory.getAbsolutePath() + " (exists: " + logDirectory.exists() + ")");
+        System.out.println("Supervisor Dir  : " + (supervisorDirectory != null ? supervisorDirectory.getAbsolutePath() : "null") + " (exists: " + (supervisorDirectory != null && supervisorDirectory.exists()) + ")");
+        System.out.println("Genome Dir      : " + (genomeDirectory != null ? genomeDirectory.getAbsolutePath() : "null") + " (exists: " + (genomeDirectory != null && genomeDirectory.exists()) + ")");
+        System.out.println("Platform        : " + os + "." + ws + "." + arch);
+        System.out.println("Product ID      : " + productId);
+        System.out.println("Launcher Name   : " + launcher);
+        System.out.println("================================================================================");
     }
 
     private void ensureDirectories() {
@@ -77,8 +185,56 @@ public class SelfDevContext {
         return runId;
     }
 
+    public File getRepositoryRoot() {
+        return repositoryRoot;
+    }
+
     public File getProjectRoot() {
         return projectRoot;
+    }
+
+    public File getSupervisorDirectory() {
+        return supervisorDirectory;
+    }
+
+    public void setSupervisorDirectory(File supervisorDirectory) {
+        this.supervisorDirectory = supervisorDirectory;
+    }
+
+    public File getGenomeDirectory() {
+        return genomeDirectory;
+    }
+
+    public void setGenomeDirectory(File genomeDirectory) {
+        this.genomeDirectory = genomeDirectory;
+    }
+
+    public String getOs() {
+        return os;
+    }
+
+    public String getWs() {
+        return ws;
+    }
+
+    public String getArch() {
+        return arch;
+    }
+
+    public String getProductId() {
+        return productId;
+    }
+
+    public void setProductId(String productId) {
+        this.productId = productId;
+    }
+
+    public String getLauncher() {
+        return launcher;
+    }
+
+    public void setLauncher(String launcher) {
+        this.launcher = launcher;
     }
 
     public File getSourceDirectory() {
