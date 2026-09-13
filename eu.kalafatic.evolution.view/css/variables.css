@@ -1,101 +1,147 @@
+/* EVO Unified Theme Tokens & Legacy Map - AI Chat */
 :root {
-    --bg-canvas: #f1f5f9;
-    --user-bg: #dcfce7; /* Light Green for user prompts to differentiate from default AI */
-    --user-border: #86efac;
-    --user-text: #14532d;
-    --ai-bg: #ffffff;
-    --ai-text: #1e293b;
-    --border: #e2e8f0;
+    /* Working Surface & Canvas */
+    --evo-bg: #f2f3f5;
+    --evo-surface: #ffffff;
+    --evo-surface-alt: #f8f9fa;
+    --evo-surface-hover: #e9ecef;
+    --evo-surface-selected: #e7eef7;
 
-    --planner-bg: #ecfeff;
-    --planner-border: #a5f3fc;
-    --planner-text: #155e75;
+    /* Borders & Separators */
+    --evo-border: #c8ccd1;
+    --evo-border-dark: #aeb4bb;
+    --evo-border-focus: #2864a5;
 
-    --architect-bg: #f0fdf4;
-    --architect-border: #bbf7d0;
-    --architect-text: #166534;
+    /* Typography & Text */
+    --evo-text: #202428;
+    --evo-text-secondary: #555b62;
+    --evo-text-muted: #747b83;
+    --evo-text-inverse: #ffffff;
+    --evo-font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+    --evo-font-mono: 'Consolas', 'Fira Code', 'JetBrains Mono', 'Courier New', monospace;
+
+    /* Accent & Branding */
+    --evo-primary: #2864a5;
+    --evo-primary-hover: #1f5289;
+    --evo-primary-light: #e7eef7;
+    --evo-primary-border: #1f5289;
+
+    /* Status & Semantic Colors */
+    --evo-success: #287a45;
+    --evo-success-hover: #1e5e34;
+    --evo-success-light: #e6f4ea;
+    --evo-warning: #9a6a00;
+    --evo-warning-hover: #785200;
+    --evo-warning-light: #fef7e0;
+    --evo-danger: #a52a2a;
+    --evo-danger-hover: #802020;
+    --evo-danger-light: #fce8e8;
+    --evo-info: #0066cc;
+    --evo-info-light: #e8f2fc;
+
+    /* Geometry & Components */
+    --evo-radius: 3px;
+    --evo-shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+    --evo-shadow-md: 0 2px 6px rgba(0,0,0,0.12);
+
+    /* Legacy Variables Mapping for AI Chat Compatibility */
+    --bg-canvas: var(--evo-bg);
+    --border: var(--evo-border);
+    --user-bg: var(--evo-success-light);
+    --user-border: var(--evo-success);
+    --user-text: var(--evo-success);
+    --ai-bg: var(--evo-surface);
+    --ai-text: var(--evo-text);
+
+    --planner-bg: var(--evo-info-light);
+    --planner-border: var(--evo-info);
+    --planner-text: var(--evo-info);
+
+    --architect-bg: var(--evo-success-light);
+    --architect-border: var(--evo-success);
+    --architect-text: var(--evo-success);
 
     --javadev-bg: #f5f3ff;
     --javadev-border: #ddd6fe;
     --javadev-text: #5b21b6;
 
-    --tester-bg: #fffbeb;
-    --tester-border: #fef3c7;
-    --tester-text: #92400e;
+    --tester-bg: var(--evo-warning-light);
+    --tester-border: var(--evo-warning);
+    --tester-text: var(--evo-warning);
 
-    --reviewer-bg: #fff1f2;
-    --reviewer-border: #fecdd3;
-    --reviewer-text: #9f1239;
+    --reviewer-bg: var(--evo-danger-light);
+    --reviewer-border: var(--evo-danger);
+    --reviewer-text: var(--evo-danger);
 
-    --analytic-bg: #ffffff;
-    --analytic-border: #e2e8f0;
-    --analytic-text: #1e293b;
+    --analytic-bg: var(--evo-surface);
+    --analytic-border: var(--evo-border);
+    --analytic-text: var(--evo-text);
 
-    --general-bg: #fdf4ff;
-    --general-border: #fae8ff;
-    --general-text: #86198f;
+    --general-bg: var(--evo-surface-alt);
+    --general-border: var(--evo-border);
+    --general-text: var(--evo-text);
 
-    --terminal-bg: #f1f5f9;
-    --terminal-border: #e2e8f0;
-    --terminal-text: #334155;
+    --terminal-bg: var(--evo-bg);
+    --terminal-border: var(--evo-border);
+    --terminal-text: var(--evo-text);
 
-    --file-bg: #ecfdf5;
-    --file-border: #d1fae5;
-    --file-text: #065f46;
+    --file-bg: var(--evo-success-light);
+    --file-border: var(--evo-success);
+    --file-text: var(--evo-success);
 
-    --maven-bg: #fff7ed;
-    --maven-border: #ffedd5;
-    --maven-text: #9a3412;
+    --maven-bg: var(--evo-warning-light);
+    --maven-border: var(--evo-warning);
+    --maven-text: var(--evo-warning);
 
-    --git-bg: #eff6ff;
-    --git-border: #dbeafe;
-    --git-text: #1e40af;
+    --git-bg: var(--evo-primary-light);
+    --git-border: var(--evo-primary);
+    --git-text: var(--evo-primary);
 
-    --structure-bg: #f0f9ff;
-    --structure-border: #e0f2fe;
-    --structure-text: #075985;
+    --structure-bg: var(--evo-info-light);
+    --structure-border: var(--evo-info);
+    --structure-text: var(--evo-info);
 
     --websearch-bg: #f5f3ff;
     --websearch-border: #ede9fe;
     --websearch-text: #5b21b6;
 
-    --quality-bg: #fdf2f8;
-    --quality-border: #fce7f3;
-    --quality-text: #9d174d;
+    --quality-bg: var(--evo-danger-light);
+    --quality-border: var(--evo-danger);
+    --quality-text: var(--evo-danger);
 
-    --observability-bg: #fff7ed;
-    --observability-border: #ffedd5;
-    --observability-text: #9a3412;
+    --observability-bg: var(--evo-warning-light);
+    --observability-border: var(--evo-warning);
+    --observability-text: var(--evo-warning);
 
-    --orchestrator-bg: #f8fafc;
-    --orchestrator-border: #cbd5e1;
-    --orchestrator-text: #1e293b;
+    --orchestrator-bg: var(--evo-surface-alt);
+    --orchestrator-border: var(--evo-border-dark);
+    --orchestrator-text: var(--evo-text);
 
-    --final-response-bg: #dcfce7;
-    --final-response-border: #15803d;
-    --final-response-text: #14532d;
+    --final-response-bg: var(--evo-success-light);
+    --final-response-border: var(--evo-success);
+    --final-response-text: var(--evo-success);
 
-    --result-summary-bg: #eff6ff;
-    --result-summary-border: #3b82f6;
-    --result-summary-text: #1e40af;
+    --result-summary-bg: var(--evo-primary-light);
+    --result-summary-border: var(--evo-primary);
+    --result-summary-text: var(--evo-primary);
 
-    --tool-bg: #f8fafc;
-    --tool-border: #e2e8f0;
-    --tool-text: #475569;
+    --tool-bg: var(--evo-surface-alt);
+    --tool-border: var(--evo-border);
+    --tool-text: var(--evo-text-secondary);
 
-    --waiting-bg: #f97316;
-    --waiting-border: #ea580c;
-    --waiting-text: #ffffff;
+    --waiting-bg: var(--evo-warning);
+    --waiting-border: var(--evo-warning-hover);
+    --waiting-text: var(--evo-text-inverse);
 
-    --error-bg: #fee2e2;
-    --error-border: #dc2626;
-    --error-text: #991b1b;
+    --error-bg: var(--evo-danger-light);
+    --error-border: var(--evo-danger);
+    --error-text: var(--evo-danger);
 
-    --thinking-bg: #f8fafc;
-    --thinking-border: #94a3b8;
-    --thinking-text: #475569;
+    --thinking-bg: var(--evo-surface-alt);
+    --thinking-border: var(--evo-border-dark);
+    --thinking-text: var(--evo-text-secondary);
 
-    --response-bg: #f1f5f9;
-    --response-border: #64748b;
-    --response-text: #1e293b;
+    --response-bg: var(--evo-bg);
+    --response-border: var(--evo-border);
+    --response-text: var(--evo-text);
 }

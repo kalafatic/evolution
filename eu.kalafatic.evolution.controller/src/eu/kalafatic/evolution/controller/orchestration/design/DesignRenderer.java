@@ -53,11 +53,9 @@ public class DesignRenderer {
             navigatorJs = "log('ERROR: /js/navigator.js not found in bundle resources!');";
         }
 
-        String sharedCss = eu.kalafatic.evolution.controller.tools.FileTool.readResource("/shared.css");
-        if (sharedCss == null) sharedCss = "";
+        String sharedCss = eu.kalafatic.evolution.controller.ui.EvoStyleManager.getInstance().getEvoStyleCss();
 
-        String architectureCss = eu.kalafatic.evolution.controller.tools.FileTool.readResource("/architecture.css");
-        if (architectureCss == null) architectureCss = "";
+        String architectureCss = eu.kalafatic.evolution.controller.ui.EvoStyleManager.getInstance().getArchitectureCss();
 
         String creaticCss = eu.kalafatic.evolution.controller.tools.FileTool.readResource("/creatic.css");
         if (creaticCss == null) creaticCss = "";

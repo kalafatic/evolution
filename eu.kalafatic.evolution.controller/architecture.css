@@ -1,46 +1,21 @@
-/* Evolution Architecture Visualization Engine Stylesheet */
+/* Evolution Architecture Visualization Engine - Workstation Stylesheet */
+@import url("evo-style.css");
+
 :root {
-    --bg-primary: #0f172a;
-    --bg-secondary: #1e293b;
-    --bg-card: #0f172a;
-    --border: #334155;
-    --border-highlight: #38bdf8;
-    --accent: #38bdf8;
-    --accent-hover: #0284c7;
-    --text: #f8fafc;
-    --text-dim: #94a3b8;
-    --text-muted: #64748b;
-    --success: #10b981;
-    --warning: #f59e0b;
-    --danger: #ef4444;
-    --error: #ef4444;
-}
-
-body, html {
-    margin: 0;
-    padding: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background-color: var(--bg-primary);
-    color: var(--text);
-    overflow: hidden;
-    height: 100vh;
-    width: 100vw;
-}
-
-/* Custom Scrollbars */
-::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-}
-::-webkit-scrollbar-track {
-    background: var(--bg-primary);
-}
-::-webkit-scrollbar-thumb {
-    background: var(--border);
-    border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-    background: var(--text-muted);
+    --bg-primary: var(--evo-surface);
+    --bg-secondary: var(--evo-surface-alt);
+    --bg-card: var(--evo-surface);
+    --border: var(--evo-border);
+    --border-highlight: var(--evo-primary);
+    --accent: var(--evo-primary);
+    --accent-hover: var(--evo-primary-hover);
+    --text: var(--evo-text);
+    --text-dim: var(--evo-text-secondary);
+    --text-muted: var(--evo-text-muted);
+    --success: var(--evo-success);
+    --warning: var(--evo-warning);
+    --danger: var(--evo-danger);
+    --error: var(--evo-danger);
 }
 
 #layout {
@@ -53,12 +28,12 @@ body, html {
 #sidebar {
     width: 280px;
     min-width: 280px;
-    background-color: var(--bg-secondary);
-    border-right: 1px solid var(--border);
+    background-color: var(--evo-surface-alt);
+    border-right: 1px solid var(--evo-border);
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
-    padding: 16px;
+    padding: 14px;
     box-sizing: border-box;
     z-index: 100;
     overflow-y: auto;
@@ -66,104 +41,43 @@ body, html {
 
 #sidebar h1 {
     font-size: 1.15em;
-    margin: 0 0 16px 0;
-    color: var(--accent);
+    margin: 0 0 14px 0;
+    color: var(--evo-primary);
     font-weight: 700;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.3px;
     display: flex;
     align-items: center;
     gap: 8px;
 }
 
 .sidebar-section {
-    margin-bottom: 16px;
-    padding-bottom: 14px;
-    border-bottom: 1px solid var(--border);
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--evo-border);
 }
 
 .sidebar-section h2 {
-    font-size: 0.7em;
+    font-size: 0.72em;
     font-weight: 700;
     text-transform: uppercase;
-    color: var(--text-dim);
-    margin: 0 0 10px 0;
-    letter-spacing: 0.8px;
+    color: var(--evo-text-secondary);
+    margin: 0 0 8px 0;
+    letter-spacing: 0.6px;
 }
 
 .control-group {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
 }
 
 .btn-group {
     display: flex;
-    gap: 6px;
+    gap: 4px;
 }
 
 .btn-group .btn {
     flex: 1;
-}
-
-/* Inputs, Selects, Options */
-select, input[type="text"] {
-    background-color: var(--bg-primary);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 7px 10px;
-    border-radius: 6px;
-    font-size: 0.82em;
-    outline: none;
-    transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-select option {
-    background-color: var(--bg-secondary);
-    color: var(--text);
-    padding: 6px;
-}
-
-select:focus, input[type="text"]:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
-}
-
-.btn {
-    background-color: #334155;
-    color: var(--text);
-    border: 1px solid var(--border);
-    padding: 8px 12px;
-    border-radius: 6px;
-    font-size: 0.82em;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    text-decoration: none;
-}
-
-.btn:hover {
-    background-color: #475569;
-    border-color: #64748b;
-}
-
-.btn-primary {
-    background-color: #0284c7;
-    border-color: #38bdf8;
-    color: #ffffff;
-}
-
-.btn-primary:hover {
-    background-color: #0369a1;
-    border-color: #7dd3fc;
-}
-
-.btn-sm {
-    padding: 4px 8px;
-    font-size: 0.75em;
 }
 
 /* Main Canvas */
@@ -176,23 +90,23 @@ select:focus, input[type="text"]:focus {
 }
 
 #header {
-    height: 48px;
-    background-color: var(--bg-secondary);
+    height: 44px;
+    background-color: var(--evo-surface-alt);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 20px;
-    border-bottom: 1px solid var(--border);
+    padding: 0 16px;
+    border-bottom: 1px solid var(--evo-border);
     z-index: 10;
 }
 
 #architecture-container {
     flex-grow: 1;
     position: relative;
-    background-color: var(--bg-primary);
+    background-color: var(--evo-surface);
     background-image:
-        radial-gradient(circle, rgba(255, 255, 255, 0.07) 1px, transparent 1px);
-    background-size: 28px 28px;
+        radial-gradient(circle, var(--evo-border) 1px, transparent 1px);
+    background-size: 24px 24px;
     cursor: grab;
 }
 
@@ -208,18 +122,18 @@ select:focus, input[type="text"]:focus {
 /* Floating Panels */
 #details-panel {
     width: 340px;
-    background-color: var(--bg-secondary);
-    border-left: 1px solid var(--border);
+    background-color: var(--evo-surface);
+    border-left: 1px solid var(--evo-border);
     display: flex;
     flex-direction: column;
     z-index: 100;
     transform: translateX(100%);
-    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: transform 0.2s ease-out;
     position: absolute;
     right: 0;
     top: 0;
     bottom: 0;
-    box-shadow: -6px 0 20px rgba(0, 0, 0, 0.4);
+    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.08);
 }
 
 #details-panel.active {
@@ -239,33 +153,34 @@ select:focus, input[type="text"]:focus {
 }
 
 .panel-header {
-    padding: 16px;
-    border-bottom: 1px solid var(--border);
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--evo-border);
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    background: rgba(15, 23, 42, 0.5);
+    background: var(--evo-surface-alt);
 }
 
 .panel-body {
-    padding: 18px;
+    padding: 14px;
     overflow-y: auto;
     flex: 1;
     font-size: 0.85em;
-    line-height: 1.6;
+    line-height: 1.5;
 }
 
 .type-badge {
     display: inline-block;
-    padding: 3px 8px;
-    border-radius: 4px;
+    padding: 2px 6px;
+    border-radius: var(--evo-radius);
     font-size: 0.7em;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    background: rgba(255, 255, 255, 0.1);
-    color: var(--text-dim);
-    margin-top: 6px;
+    background: var(--evo-surface-alt);
+    color: var(--evo-text-secondary);
+    border: 1px solid var(--evo-border);
+    margin-top: 4px;
 }
 
 #empty-state {
@@ -274,14 +189,14 @@ select:focus, input[type="text"]:focus {
     left: 50%;
     transform: translate(-50%, -50%);
     text-align: center;
-    color: var(--text-dim);
+    color: var(--evo-text-secondary);
     display: none;
     pointer-events: none;
-    background: rgba(30, 41, 59, 0.8);
-    padding: 30px 40px;
-    border-radius: 12px;
-    border: 1px solid var(--border);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    background: var(--evo-surface);
+    padding: 24px 32px;
+    border-radius: var(--evo-radius);
+    border: 1px solid var(--evo-border);
+    box-shadow: var(--evo-shadow-md);
 }
 
 #empty-state.active {
@@ -295,22 +210,21 @@ select:focus, input[type="text"]:focus {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(15, 23, 42, 0.85);
-    backdrop-filter: blur(4px);
+    background: rgba(242, 243, 245, 0.85);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     z-index: 3000;
-    color: var(--text);
-    gap: 16px;
+    color: var(--evo-text);
+    gap: 12px;
 }
 
 .loading-spinner {
-    width: 36px;
-    height: 36px;
-    border: 3px solid var(--border);
-    border-top-color: var(--accent);
+    width: 30px;
+    height: 30px;
+    border: 3px solid var(--evo-border);
+    border-top-color: var(--evo-primary);
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
 }
@@ -320,42 +234,46 @@ select:focus, input[type="text"]:focus {
     100% { transform: rotate(360deg); }
 }
 
-/* Graph Elements Styling */
+/* Technical Graph Elements Styling */
 .node {
     cursor: pointer;
-    transition: transform 0.15s ease-out;
 }
 
 .node:hover .node-card {
-    filter: drop-shadow(0 8px 16px rgba(56, 189, 248, 0.3));
-    stroke-width: 2.5px !important;
+    stroke: var(--evo-primary) !important;
+    stroke-width: 2px !important;
 }
 
 .node-card {
-    transition: all 0.2s ease;
+    fill: var(--evo-surface);
+    stroke: var(--evo-border-dark);
+    stroke-width: 1px;
+    transition: stroke 0.15s ease, stroke-width 0.15s ease;
 }
 
 .link {
     fill: none;
-    transition: stroke 0.2s, stroke-width 0.2s;
+    stroke: var(--evo-border-dark);
+    stroke-width: 1.5px;
+    transition: stroke 0.15s, stroke-width 0.15s;
 }
 
 .link:hover {
-    stroke-width: 3.5px !important;
-    filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.6));
+    stroke: var(--evo-primary) !important;
+    stroke-width: 2.5px !important;
 }
 
 /* Context Menu */
 #context-menu {
     position: absolute;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
-    padding: 6px 0;
+    background: var(--evo-surface);
+    border: 1px solid var(--evo-border);
+    border-radius: var(--evo-radius);
+    box-shadow: var(--evo-shadow-md);
+    padding: 4px 0;
     z-index: 1000;
     display: none;
-    min-width: 180px;
+    min-width: 170px;
 }
 
 #context-menu.active {
@@ -363,24 +281,23 @@ select:focus, input[type="text"]:focus {
 }
 
 .menu-item {
-    padding: 8px 16px;
+    padding: 6px 12px;
     font-size: 0.82em;
     cursor: pointer;
-    transition: background 0.15s, color 0.15s;
-    color: var(--text);
+    color: var(--evo-text);
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
 }
 
 .menu-item:hover {
-    background: rgba(56, 189, 248, 0.15);
-    color: var(--accent);
+    background: var(--evo-surface-hover);
+    color: var(--evo-primary);
 }
 
 .menu-item hr {
     border: none;
-    border-top: 1px solid var(--border);
+    border-top: 1px solid var(--evo-border);
     margin: 4px 0;
 }
 
@@ -390,29 +307,29 @@ select:focus, input[type="text"]:focus {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 520px;
+    width: 500px;
     max-height: 80vh;
-    background: var(--bg-secondary);
-    border-radius: 12px;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7);
+    background: var(--evo-surface);
+    border-radius: var(--evo-radius);
+    box-shadow: var(--evo-shadow-md);
     z-index: 2000;
     display: none;
     flex-direction: column;
-    border: 1px solid var(--border);
+    border: 1px solid var(--evo-border);
     overflow: hidden;
 }
 
 #popup-header {
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--border);
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--evo-border);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: rgba(15, 23, 42, 0.5);
+    background: var(--evo-surface-alt);
 }
 
 #popup-content {
-    padding: 20px;
+    padding: 16px;
     overflow-y: auto;
     flex: 1;
     font-size: 0.88em;
@@ -421,36 +338,35 @@ select:focus, input[type="text"]:focus {
 /* Zoom & Control Tools */
 #zoom-controls {
     position: absolute;
-    bottom: 24px;
-    right: 24px;
+    bottom: 20px;
+    right: 20px;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
     z-index: 100;
 }
 
 .zoom-btn {
-    width: 36px;
-    height: 36px;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border);
-    border-radius: 8px;
+    width: 32px;
+    height: 32px;
+    background: var(--evo-surface);
+    border: 1px solid var(--evo-border);
+    border-radius: var(--evo-radius);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 700;
-    color: var(--text);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-    transition: all 0.2s ease;
+    color: var(--evo-text);
+    box-shadow: var(--evo-shadow-sm);
+    transition: background 0.15s, border-color 0.15s;
 }
 
 .zoom-btn:hover {
-    background: #334155;
-    border-color: var(--accent);
-    color: var(--accent);
-    transform: scale(1.05);
+    background: var(--evo-surface-hover);
+    border-color: var(--evo-primary);
+    color: var(--evo-primary);
 }
 
 /* Search & Filter Styling */
@@ -458,32 +374,32 @@ select:focus, input[type="text"]:focus {
     position: relative;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     flex: 1;
-    max-width: 450px;
-    margin: 0 20px;
+    max-width: 420px;
+    margin: 0 16px;
 }
 
 #graph-search {
     width: 100%;
-    background: var(--bg-primary);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 6px 12px;
-    border-radius: 6px;
+    background: var(--evo-surface);
+    border: 1px solid var(--evo-border);
+    color: var(--evo-text);
+    padding: 5px 10px;
+    border-radius: var(--evo-radius);
     font-size: 0.85em;
 }
 
 #search-dropdown {
     position: absolute;
-    top: 38px;
+    top: 36px;
     left: 0;
     right: 0;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.6);
-    max-height: 280px;
+    background: var(--evo-surface);
+    border: 1px solid var(--evo-border);
+    border-radius: var(--evo-radius);
+    box-shadow: var(--evo-shadow-md);
+    max-height: 260px;
     overflow-y: auto;
     z-index: 2000;
     display: none;
@@ -494,18 +410,18 @@ select:focus, input[type="text"]:focus {
 }
 
 .search-item {
-    padding: 8px 12px;
+    padding: 6px 10px;
     font-size: 0.82em;
     cursor: pointer;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
+    border-bottom: 1px solid var(--evo-border);
     display: flex;
     flex-direction: column;
     gap: 2px;
 }
 
 .search-item:hover {
-    background: rgba(56, 189, 248, 0.15);
-    color: var(--accent);
+    background: var(--evo-surface-hover);
+    color: var(--evo-primary);
 }
 
 .search-item-title {
@@ -517,7 +433,7 @@ select:focus, input[type="text"]:focus {
 
 .search-item-sub {
     font-size: 0.75em;
-    color: var(--text-dim);
+    color: var(--evo-text-secondary);
 }
 
 .filter-grid {
@@ -525,7 +441,7 @@ select:focus, input[type="text"]:focus {
     grid-template-columns: 1fr 1fr;
     gap: 6px;
     font-size: 0.78em;
-    color: var(--text-dim);
+    color: var(--evo-text-secondary);
 }
 
 .filter-checkbox {
@@ -537,52 +453,47 @@ select:focus, input[type="text"]:focus {
 }
 
 .filter-checkbox input[type="checkbox"] {
-    accent-color: var(--accent);
+    accent-color: var(--evo-primary);
     cursor: pointer;
 }
 
 /* Dimmed & Focused States */
 .node.dimmed, .link.dimmed {
-    opacity: 0.12 !important;
-    filter: grayscale(80%);
+    opacity: 0.15 !important;
 }
 
 .node.focused .node-card {
-    stroke: #38bdf8 !important;
-    stroke-width: 3px !important;
-    filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.8)) !important;
+    stroke: var(--evo-primary) !important;
+    stroke-width: 2.5px !important;
 }
 
 .link.incoming-link {
-    stroke: #38bdf8 !important;
-    stroke-width: 3px !important;
-    filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.8));
+    stroke: var(--evo-primary) !important;
+    stroke-width: 2.5px !important;
 }
 
 .link.outgoing-link {
-    stroke: #10b981 !important;
-    stroke-width: 3px !important;
-    filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.8));
+    stroke: var(--evo-success) !important;
+    stroke-width: 2.5px !important;
 }
 
 /* Aggregated Edge Label Badge */
 .edge-badge {
     font-size: 9px;
     font-weight: 700;
-    fill: #f8fafc;
-    background: #0f172a;
-    border: 1px solid #38bdf8;
-    padding: 2px 5px;
-    border-radius: 4px;
+    fill: var(--evo-text);
+    background: var(--evo-surface-alt);
+    border: 1px solid var(--evo-border);
+    padding: 2px 4px;
+    border-radius: var(--evo-radius);
     pointer-events: none;
 }
 
 /* Expand / Collapse Button Badge on Nodes */
 .expand-badge {
     cursor: pointer;
-    transition: transform 0.15s ease;
 }
 
 .expand-badge:hover {
-    transform: scale(1.2);
+    fill: var(--evo-primary);
 }

@@ -111,13 +111,14 @@ public class DiffViewerGroup extends AEvoGroup {
     private String getDiffHtml(String diff) {
         StringBuilder html = new StringBuilder();
         html.append("<!DOCTYPE html><html><head><style>");
-        html.append("body { font-family: 'Consolas', 'Monaco', 'Courier New', monospace; font-size: 12px; margin: 0; padding: 10px; background: #fff; }");
-        html.append(".line { display: block; padding: 0 5px; min-height: 1.2em; border-bottom: 1px solid #f0f0f0; }");
-        html.append(".added { background-color: #e6ffed; color: #22863a; }");
-        html.append(".deleted { background-color: #ffeef0; color: #cb2431; }");
-        html.append(".header { background-color: #f1f8ff; color: #005cc5; font-weight: bold; border-top: 1px solid #c0d3eb; border-bottom: 1px solid #c0d3eb; }");
-        html.append(".info { color: #6a737d; }");
-        html.append(".line:hover { background-color: #f6f8fa; cursor: pointer; }");
+        html.append(eu.kalafatic.evolution.controller.ui.EvoStyleManager.getInstance().getEvoStyleCss());
+        html.append("body { font-family: var(--evo-font-mono); font-size: 11px; margin: 0; padding: 10px; background: var(--evo-surface); }");
+        html.append(".line { display: block; padding: 0 5px; min-height: 1.2em; border-bottom: 1px solid var(--evo-border); }");
+        html.append(".added { background-color: var(--evo-success-light); color: var(--evo-success); }");
+        html.append(".deleted { background-color: var(--evo-danger-light); color: var(--evo-danger); }");
+        html.append(".header { background-color: var(--evo-primary-light); color: var(--evo-primary); font-weight: bold; border-top: 1px solid var(--evo-border); border-bottom: 1px solid var(--evo-border); }");
+        html.append(".info { color: var(--evo-text-secondary); }");
+        html.append(".line:hover { background-color: var(--evo-surface-hover); cursor: pointer; }");
         html.append("</style></head><body>");
 
         if (diff == null || diff.isEmpty()) {

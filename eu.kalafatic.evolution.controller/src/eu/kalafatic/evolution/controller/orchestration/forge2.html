@@ -4,24 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Forge Models</title>
+    <link rel="stylesheet" href="evo-style.css">
     <style>
         :root {
-            --bg-primary: #ffffff;
-            --bg-secondary: #f3f3f3;
-            --border: #cccccc;
-            --text: #333333;
-            --text-dim: #666666;
-            --accent: #007acc;
-            --accent-hover: #1177bb;
-            --error: #f48771;
-            --success: #89d185;
+            --bg-primary: var(--evo-surface);
+            --bg-secondary: var(--evo-surface-alt);
+            --border: var(--evo-border);
+            --text: var(--evo-text);
+            --text-dim: var(--evo-text-secondary);
+            --accent: var(--evo-primary);
+            --accent-hover: var(--evo-primary-hover);
+            --error: var(--evo-danger);
+            --success: var(--evo-success);
         }
 
         body, html {
             margin: 0; padding: 0; height: 100%;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-primary);
-            color: var(--text);
+            font-family: var(--evo-font-family);
+            background-color: var(--evo-bg);
+            color: var(--evo-text);
             overflow: hidden;
         }
 

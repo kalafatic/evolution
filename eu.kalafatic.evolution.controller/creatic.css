@@ -1,36 +1,38 @@
-/* Creatic Assistant Styles */
+/* Creatic Assistant Styles - Workstation Theme */
+@import url("evo-style.css");
+
 .creatic-root {
     position: fixed;
-    top: 60px;
+    top: 50px;
     right: 20px;
     width: 280px;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    background: var(--evo-surface);
+    border: 1px solid var(--evo-border);
+    border-radius: var(--evo-radius);
+    box-shadow: var(--evo-shadow-md);
     z-index: 10000;
     display: flex;
     flex-direction: column;
-    transition: transform 0.3s ease, width 0.3s ease, height 0.3s ease;
-    max-height: calc(100vh - 100px);
+    transition: width 0.2s ease, height 0.2s ease;
+    max-height: calc(100vh - 80px);
     overflow: hidden;
 }
 
 .creatic-root.collapsed {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     overflow: hidden;
 }
 
 .creatic-header {
-    padding: 10px;
-    background: var(--accent);
-    color: white;
+    padding: 8px 10px;
+    background: var(--evo-primary);
+    color: var(--evo-text-inverse);
     display: flex;
     justify-content: space-between;
     align-items: center;
     cursor: default;
-    min-height: 40px;
+    min-height: 36px;
     box-sizing: border-box;
 }
 
@@ -43,21 +45,21 @@
 .creatic-toggle {
     background: none;
     border: none;
-    color: white;
+    color: var(--evo-text-inverse);
     cursor: pointer;
-    font-size: 1.2em;
-    padding: 0 5px;
+    font-size: 1.1em;
+    padding: 0 4px;
 }
 
 .creatic-body {
-    padding: 15px;
+    padding: 12px;
     overflow-y: auto;
-    background: var(--bg-secondary);
+    background: var(--evo-surface);
 }
 
 .creatic-loader {
     font-size: 0.8em;
-    color: var(--text-dim);
+    color: var(--evo-text-secondary);
     font-style: italic;
     text-align: center;
     padding: 10px;
@@ -66,60 +68,60 @@
 .creatic-summary {
     font-size: 0.9em;
     font-weight: bold;
-    margin-bottom: 15px;
-    color: var(--accent);
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 5px;
+    margin-bottom: 12px;
+    color: var(--evo-primary);
+    border-bottom: 1px solid var(--evo-border);
+    padding-bottom: 4px;
 }
 
 .creatic-section {
-    margin-bottom: 15px;
+    margin-bottom: 12px;
 }
 
 .creatic-section label {
     display: block;
     font-size: 0.7em;
     text-transform: uppercase;
-    color: var(--text-dim);
-    margin-bottom: 8px;
-    letter-spacing: 1px;
+    color: var(--evo-text-secondary);
+    margin-bottom: 6px;
+    letter-spacing: 0.5px;
 }
 
 .creatic-item {
     font-size: 0.8em;
-    padding: 8px;
-    border-radius: 4px;
-    margin-bottom: 5px;
+    padding: 6px 8px;
+    border-radius: var(--evo-radius);
+    margin-bottom: 4px;
     line-height: 1.4;
 }
 
-.creatic-item.insight { background: rgba(0, 122, 204, 0.1); border-left: 3px solid var(--accent); }
-.creatic-item.warning { background: rgba(244, 135, 113, 0.1); border-left: 3px solid var(--error); color: var(--error); }
-.creatic-item.tip { background: rgba(137, 209, 133, 0.1); border-left: 3px solid var(--success); }
+.creatic-item.insight { background: var(--evo-primary-light); border-left: 3px solid var(--evo-primary); color: var(--evo-text); }
+.creatic-item.warning { background: var(--evo-danger-light); border-left: 3px solid var(--evo-danger); color: var(--evo-danger); }
+.creatic-item.tip { background: var(--evo-success-light); border-left: 3px solid var(--evo-success); color: var(--evo-success); }
 
 .creatic-btn {
     width: 100%;
     text-align: left;
-    background: var(--bg-primary);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 8px;
-    border-radius: 4px;
+    background: var(--evo-surface-alt);
+    border: 1px solid var(--evo-border);
+    color: var(--evo-text);
+    padding: 6px 8px;
+    border-radius: var(--evo-radius);
     font-size: 0.8em;
     cursor: pointer;
-    margin-bottom: 5px;
-    transition: background 0.2s;
+    margin-bottom: 4px;
+    transition: background 0.1s;
 }
 
 .creatic-btn:hover {
-    background: var(--accent);
-    color: white;
-    border-color: var(--accent);
+    background: var(--evo-primary);
+    color: var(--evo-text-inverse);
+    border-color: var(--evo-primary-border);
 }
 
 .creatic-empty {
     font-size: 0.75em;
-    color: var(--text-dim);
+    color: var(--evo-text-muted);
     font-style: italic;
 }
 
@@ -128,7 +130,7 @@
     display: none;
 }
 .collapsed .creatic-header {
-    padding: 5px;
+    padding: 4px;
     justify-content: center;
 }
 
@@ -136,28 +138,28 @@
 .creatic-tooltip {
     position: absolute;
     z-index: 20000;
-    background: #ffffff;
-    border: 1px solid var(--accent);
-    border-radius: 6px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    background: var(--evo-surface);
+    border: 1px solid var(--evo-border);
+    border-radius: var(--evo-radius);
+    box-shadow: var(--evo-shadow-md);
     padding: 0;
     pointer-events: none;
     max-width: 250px;
-    transition: opacity 0.2s;
+    transition: opacity 0.15s;
 }
 
 .tooltip-header {
-    background: var(--accent);
-    color: white;
-    padding: 5px 10px;
+    background: var(--evo-primary);
+    color: var(--evo-text-inverse);
+    padding: 4px 8px;
     font-size: 0.75em;
     font-weight: bold;
-    border-radius: 4px 4px 0 0;
+    border-radius: var(--evo-radius) var(--evo-radius) 0 0;
 }
 
 .tooltip-content {
-    padding: 10px;
-    color: var(--text);
+    padding: 8px;
+    color: var(--evo-text);
     font-size: 0.85em;
     line-height: 1.4;
 }
@@ -166,29 +168,29 @@
 .creatic-context-menu {
     position: absolute;
     z-index: 21000;
-    background: #ffffff;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-    padding: 5px 0;
+    background: var(--evo-surface);
+    border: 1px solid var(--evo-border);
+    border-radius: var(--evo-radius);
+    box-shadow: var(--evo-shadow-md);
+    padding: 4px 0;
     min-width: 160px;
 }
 
 .context-item {
-    padding: 8px 15px;
+    padding: 6px 12px;
     font-size: 0.85em;
     cursor: pointer;
-    color: var(--text);
-    transition: background 0.2s;
+    color: var(--evo-text);
+    transition: background 0.1s;
 }
 
 .context-item:hover {
-    background: var(--accent);
-    color: white;
+    background: var(--evo-surface-hover);
+    color: var(--evo-primary);
 }
 
 .context-divider {
     height: 1px;
-    background: var(--border);
-    margin: 5px 0;
+    background: var(--evo-border);
+    margin: 4px 0;
 }

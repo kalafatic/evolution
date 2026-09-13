@@ -4,34 +4,35 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EVO Develop - Autonomous Coding Agent</title>
+    <link rel="stylesheet" href="evo-style.css">
     <style>
         :root {
-            --bg-primary: #18181b;
-            --bg-secondary: #202024;
-            --bg-tertiary: #27272a;
-            --border: #3f3f46;
-            --text-primary: #f4f4f5;
-            --text-dim: #a1a1aa;
-            --accent: #2563eb;
-            --accent-hover: #1d4ed8;
-            --success: #10b981;
-            --error: #ef4444;
-            --warning: #f59e0b;
-            --user-msg-bg: #2563eb;
-            --ai-msg-bg: #27272a;
-            --diff-add-bg: rgba(16, 185, 129, 0.15);
-            --diff-add-text: #34d399;
-            --diff-del-bg: rgba(239, 68, 68, 0.15);
-            --diff-del-text: #f87171;
+            --bg-primary: var(--evo-surface);
+            --bg-secondary: var(--evo-surface-alt);
+            --bg-tertiary: var(--evo-surface-hover);
+            --border: var(--evo-border);
+            --text-primary: var(--evo-text);
+            --text-dim: var(--evo-text-secondary);
+            --accent: var(--evo-primary);
+            --accent-hover: var(--evo-primary-hover);
+            --success: var(--evo-success);
+            --error: var(--evo-danger);
+            --warning: var(--evo-warning);
+            --user-msg-bg: var(--evo-primary);
+            --ai-msg-bg: var(--evo-surface-alt);
+            --diff-add-bg: var(--evo-success-light);
+            --diff-add-text: var(--evo-success);
+            --diff-del-bg: var(--evo-danger-light);
+            --diff-del-text: var(--evo-danger);
         }
 
         * { box-sizing: border-box; }
 
         body, html {
             margin: 0; padding: 0; height: 100%;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background-color: var(--bg-primary);
-            color: var(--text-primary);
+            font-family: var(--evo-font-family);
+            background-color: var(--evo-bg);
+            color: var(--evo-text);
             overflow: hidden;
         }
 
