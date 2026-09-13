@@ -2,16 +2,18 @@
  */
 package eu.kalafatic.evolution.model.orchestration.impl;
 
-import org.eclipse.emf.common.notify.Notification;
-import org.eclipse.emf.common.notify.NotificationChain;
-import org.eclipse.emf.ecore.EClass;
-import org.eclipse.emf.ecore.InternalEObject;
-import org.eclipse.emf.ecore.impl.ENotificationImpl;
-import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
-
 import eu.kalafatic.evolution.model.orchestration.Git;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 import eu.kalafatic.evolution.model.orchestration.SupervisorSettings;
+
+import org.eclipse.emf.common.notify.Notification;
+import org.eclipse.emf.common.notify.NotificationChain;
+
+import org.eclipse.emf.ecore.EClass;
+import org.eclipse.emf.ecore.InternalEObject;
+
+import org.eclipse.emf.ecore.impl.ENotificationImpl;
+import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
 
 /**
  * <!-- begin-user-doc -->
@@ -157,51 +159,6 @@ public class SupervisorSettingsImpl extends MinimalEObjectImpl.Container impleme
 	 * @generated
 	 */
 	@Override
-	public Git getGit() {
-		return git;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public NotificationChain basicSetGit(Git newGit, NotificationChain msgs) {
-		Git oldGit = git;
-		git = newGit;
-		if (eNotificationRequired()) {
-			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, OrchestrationPackage.SUPERVISOR_SETTINGS__GIT, oldGit, newGit);
-			if (msgs == null) msgs = notification; else msgs.add(notification);
-		}
-		return msgs;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public void setGit(Git newGit) {
-		if (newGit != git) {
-			NotificationChain msgs = null;
-			if (git != null)
-				msgs = ((InternalEObject)git).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.SUPERVISOR_SETTINGS__GIT, null, msgs);
-			if (newGit != null)
-				msgs = ((InternalEObject)newGit).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.SUPERVISOR_SETTINGS__GIT, null, msgs);
-			msgs = basicSetGit(newGit, msgs);
-			if (msgs != null) msgs.dispatch();
-		}
-		else if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.SUPERVISOR_SETTINGS__GIT, newGit, newGit));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
 	protected EClass eStaticClass() {
 		return OrchestrationPackage.Literals.SUPERVISOR_SETTINGS;
 	}
@@ -326,6 +283,46 @@ public class SupervisorSettingsImpl extends MinimalEObjectImpl.Container impleme
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	@Override
+	public Git getGit() {
+		return git;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public NotificationChain basicSetGit(Git newGit, NotificationChain msgs) {
+		Git oldGit = git;
+		git = newGit;
+		if (eNotificationRequired()) {
+			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, OrchestrationPackage.SUPERVISOR_SETTINGS__GIT, oldGit, newGit);
+			if (msgs == null) msgs = notification; else msgs.add(notification);
+		}
+		return msgs;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public void setGit(Git newGit) {
+		if (newGit != git) {
+			NotificationChain msgs = null;
+			if (git != null)
+				msgs = ((InternalEObject)git).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.SUPERVISOR_SETTINGS__GIT, null, msgs);
+			if (newGit != null)
+				msgs = ((InternalEObject)newGit).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - OrchestrationPackage.SUPERVISOR_SETTINGS__GIT, null, msgs);
+			msgs = basicSetGit(newGit, msgs);
+			if (msgs != null) msgs.dispatch();
+		}
+		else if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.SUPERVISOR_SETTINGS__GIT, newGit, newGit));
+	}
+
 	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->

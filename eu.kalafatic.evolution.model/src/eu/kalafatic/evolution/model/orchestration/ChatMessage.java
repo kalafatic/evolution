@@ -25,6 +25,8 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.ChatMessage#getSequenceNumber <em>Sequence Number</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.ChatMessage#getTurnId <em>Turn Id</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.ChatMessage#isIsTerminal <em>Is Terminal</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.ChatMessage#getReasoning <em>Reasoning</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.ChatMessage#getResponseKind <em>Response Kind</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getChatMessage()
@@ -298,29 +300,45 @@ public interface ChatMessage extends EObject {
 
 	/**
 	 * Returns the value of the '<em><b>Reasoning</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
 	 * @return the value of the '<em>Reasoning</em>' attribute.
 	 * @see #setReasoning(String)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getChatMessage_Reasoning()
+	 * @model
+	 * @generated
 	 */
 	String getReasoning();
 
 	/**
 	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.ChatMessage#getReasoning <em>Reasoning</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
 	 * @param value the new value of the '<em>Reasoning</em>' attribute.
 	 * @see #getReasoning()
+	 * @generated
 	 */
 	void setReasoning(String value);
 
 	/**
 	 * Returns the value of the '<em><b>Response Kind</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
 	 * @return the value of the '<em>Response Kind</em>' attribute.
 	 * @see #setResponseKind(String)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getChatMessage_ResponseKind()
+	 * @model
+	 * @generated
 	 */
 	String getResponseKind();
 
 	/**
 	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.ChatMessage#getResponseKind <em>Response Kind</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
 	 * @param value the new value of the '<em>Response Kind</em>' attribute.
 	 * @see #getResponseKind()
+	 * @generated
 	 */
 	void setResponseKind(String value);
 

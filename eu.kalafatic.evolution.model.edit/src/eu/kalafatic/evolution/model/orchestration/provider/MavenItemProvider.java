@@ -62,6 +62,7 @@ public class MavenItemProvider
 
 			addGoalsPropertyDescriptor(object);
 			addProfilesPropertyDescriptor(object);
+			addTestStatusPropertyDescriptor(object);
 		}
 		return itemPropertyDescriptors;
 	}
@@ -111,6 +112,28 @@ public class MavenItemProvider
 	}
 
 	/**
+	 * This adds a property descriptor for the Test Status feature.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void addTestStatusPropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 getString("_UI_Maven_testStatus_feature"),
+				 getString("_UI_PropertyDescriptor_description", "_UI_Maven_testStatus_feature", "_UI_Maven_type"),
+				 OrchestrationPackage.Literals.MAVEN__TEST_STATUS,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.GENERIC_VALUE_IMAGE,
+				 null,
+				 null));
+	}
+
+	/**
 	 * This returns Maven.gif.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -129,7 +152,10 @@ public class MavenItemProvider
 	 */
 	@Override
 	public String getText(Object object) {
-		return getString("_UI_Maven_type");
+		String label = ((Maven)object).getTestStatus();
+		return label == null || label.length() == 0 ?
+			getString("_UI_Maven_type") :
+			getString("_UI_Maven_type") + " " + label;
 	}
 
 
@@ -147,6 +173,7 @@ public class MavenItemProvider
 		switch (notification.getFeatureID(Maven.class)) {
 			case OrchestrationPackage.MAVEN__GOALS:
 			case OrchestrationPackage.MAVEN__PROFILES:
+			case OrchestrationPackage.MAVEN__TEST_STATUS:
 				fireNotifyChanged(new ViewerNotification(notification, notification.getNotifier(), false, true));
 				return;
 		}

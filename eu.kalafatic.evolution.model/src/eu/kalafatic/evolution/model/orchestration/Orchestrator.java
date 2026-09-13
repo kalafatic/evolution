@@ -3,6 +3,7 @@
 package eu.kalafatic.evolution.model.orchestration;
 
 import org.eclipse.emf.common.util.EList;
+
 import org.eclipse.emf.ecore.EObject;
 
 /**
@@ -731,6 +732,13 @@ public interface Orchestrator extends EObject {
 	EList<GenomeSnapshot> getGenomeSnapshots();
 
 	/**
+	 * Returns the value of the '<em><b>Forge Sessions</b></em>' containment reference list.
+	 * The list contents are of type {@link eu.kalafatic.evolution.model.orchestration.ForgeSession}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Forge Sessions</em>' containment reference list.
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getOrchestrator_ForgeSessions()
+	 * @model containment="true"
 	 * @generated
 	 */
 	EList<ForgeSession> getForgeSessions();

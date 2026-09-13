@@ -1,16 +1,6 @@
+/**
+ */
 package eu.kalafatic.evolution.model.orchestration.impl;
-
-import java.util.Collection;
-
-import org.eclipse.emf.common.notify.Notification;
-import org.eclipse.emf.common.notify.NotificationChain;
-import org.eclipse.emf.common.util.EList;
-import org.eclipse.emf.ecore.EClass;
-import org.eclipse.emf.ecore.InternalEObject;
-import org.eclipse.emf.ecore.impl.ENotificationImpl;
-import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
-import org.eclipse.emf.ecore.util.EObjectContainmentEList;
-import org.eclipse.emf.ecore.util.InternalEList;
 
 import eu.kalafatic.evolution.model.orchestration.ForgeSession;
 import eu.kalafatic.evolution.model.orchestration.ForgeStatus;
@@ -20,40 +10,260 @@ import eu.kalafatic.evolution.model.orchestration.SessionExperiment;
 import eu.kalafatic.evolution.model.orchestration.SessionModelState;
 import eu.kalafatic.evolution.model.orchestration.SessionSnapshot;
 
+import java.util.Collection;
+
+import org.eclipse.emf.common.notify.Notification;
+import org.eclipse.emf.common.notify.NotificationChain;
+
+import org.eclipse.emf.common.util.EList;
+
+import org.eclipse.emf.ecore.EClass;
+import org.eclipse.emf.ecore.InternalEObject;
+
+import org.eclipse.emf.ecore.impl.ENotificationImpl;
+import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
+
+import org.eclipse.emf.ecore.util.EObjectContainmentEList;
+import org.eclipse.emf.ecore.util.InternalEList;
+
+/**
+ * <!-- begin-user-doc -->
+ * An implementation of the model object '<em><b>Forge Session</b></em>'.
+ * <!-- end-user-doc -->
+ * <p>
+ * The following features are implemented:
+ * </p>
+ * <ul>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ForgeSessionImpl#getSessionId <em>Session Id</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ForgeSessionImpl#getName <em>Name</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ForgeSessionImpl#getCreatedAt <em>Created At</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ForgeSessionImpl#getLastModified <em>Last Modified</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ForgeSessionImpl#getStatus <em>Status</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ForgeSessionImpl#getActiveModelId <em>Active Model Id</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ForgeSessionImpl#getSelectedModelType <em>Selected Model Type</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ForgeSessionImpl#getGit <em>Git</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ForgeSessionImpl#getModelState <em>Model State</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ForgeSessionImpl#getExperiments <em>Experiments</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ForgeSessionImpl#getSnapshots <em>Snapshots</em>}</li>
+ * </ul>
+ *
+ * @generated
+ */
 public class ForgeSessionImpl extends MinimalEObjectImpl.Container implements ForgeSession {
+	/**
+	 * The default value of the '{@link #getSessionId() <em>Session Id</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getSessionId()
+	 * @generated
+	 * @ordered
+	 */
 	protected static final String SESSION_ID_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getSessionId() <em>Session Id</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getSessionId()
+	 * @generated
+	 * @ordered
+	 */
 	protected String sessionId = SESSION_ID_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getName() <em>Name</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getName()
+	 * @generated
+	 * @ordered
+	 */
 	protected static final String NAME_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getName() <em>Name</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getName()
+	 * @generated
+	 * @ordered
+	 */
 	protected String name = NAME_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getCreatedAt() <em>Created At</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getCreatedAt()
+	 * @generated
+	 * @ordered
+	 */
 	protected static final long CREATED_AT_EDEFAULT = 0L;
+
+	/**
+	 * The cached value of the '{@link #getCreatedAt() <em>Created At</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getCreatedAt()
+	 * @generated
+	 * @ordered
+	 */
 	protected long createdAt = CREATED_AT_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getLastModified() <em>Last Modified</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getLastModified()
+	 * @generated
+	 * @ordered
+	 */
 	protected static final long LAST_MODIFIED_EDEFAULT = 0L;
+
+	/**
+	 * The cached value of the '{@link #getLastModified() <em>Last Modified</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getLastModified()
+	 * @generated
+	 * @ordered
+	 */
 	protected long lastModified = LAST_MODIFIED_EDEFAULT;
-	protected static final ForgeStatus STATUS_EDEFAULT = eu.kalafatic.evolution.model.orchestration.ForgeStatus.IDLE;
+
+	/**
+	 * The default value of the '{@link #getStatus() <em>Status</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getStatus()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final ForgeStatus STATUS_EDEFAULT = ForgeStatus.IDLE;
+
+	/**
+	 * The cached value of the '{@link #getStatus() <em>Status</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getStatus()
+	 * @generated
+	 * @ordered
+	 */
 	protected ForgeStatus status = STATUS_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getActiveModelId() <em>Active Model Id</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getActiveModelId()
+	 * @generated
+	 * @ordered
+	 */
 	protected static final String ACTIVE_MODEL_ID_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getActiveModelId() <em>Active Model Id</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getActiveModelId()
+	 * @generated
+	 * @ordered
+	 */
 	protected String activeModelId = ACTIVE_MODEL_ID_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getSelectedModelType() <em>Selected Model Type</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getSelectedModelType()
+	 * @generated
+	 * @ordered
+	 */
 	protected static final String SELECTED_MODEL_TYPE_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getSelectedModelType() <em>Selected Model Type</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getSelectedModelType()
+	 * @generated
+	 * @ordered
+	 */
 	protected String selectedModelType = SELECTED_MODEL_TYPE_EDEFAULT;
+
+	/**
+	 * The cached value of the '{@link #getGit() <em>Git</em>}' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getGit()
+	 * @generated
+	 * @ordered
+	 */
 	protected Git git;
+
+	/**
+	 * The cached value of the '{@link #getModelState() <em>Model State</em>}' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getModelState()
+	 * @generated
+	 * @ordered
+	 */
 	protected SessionModelState modelState;
+
+	/**
+	 * The cached value of the '{@link #getExperiments() <em>Experiments</em>}' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getExperiments()
+	 * @generated
+	 * @ordered
+	 */
 	protected EList<SessionExperiment> experiments;
+
+	/**
+	 * The cached value of the '{@link #getSnapshots() <em>Snapshots</em>}' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getSnapshots()
+	 * @generated
+	 * @ordered
+	 */
 	protected EList<SessionSnapshot> snapshots;
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	protected ForgeSessionImpl() {
 		super();
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@Override
 	protected EClass eStaticClass() {
 		return OrchestrationPackage.Literals.FORGE_SESSION;
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@Override
 	public String getSessionId() {
 		return sessionId;
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@Override
 	public void setSessionId(String newSessionId) {
 		String oldSessionId = sessionId;
@@ -62,11 +272,21 @@ public class ForgeSessionImpl extends MinimalEObjectImpl.Container implements Fo
 			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.FORGE_SESSION__SESSION_ID, oldSessionId, sessionId));
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@Override
 	public String getName() {
 		return name;
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@Override
 	public void setName(String newName) {
 		String oldName = name;
@@ -75,11 +295,21 @@ public class ForgeSessionImpl extends MinimalEObjectImpl.Container implements Fo
 			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.FORGE_SESSION__NAME, oldName, name));
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@Override
 	public long getCreatedAt() {
 		return createdAt;
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@Override
 	public void setCreatedAt(long newCreatedAt) {
 		long oldCreatedAt = createdAt;
@@ -88,11 +318,21 @@ public class ForgeSessionImpl extends MinimalEObjectImpl.Container implements Fo
 			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.FORGE_SESSION__CREATED_AT, oldCreatedAt, createdAt));
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@Override
 	public long getLastModified() {
 		return lastModified;
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@Override
 	public void setLastModified(long newLastModified) {
 		long oldLastModified = lastModified;
@@ -101,11 +341,21 @@ public class ForgeSessionImpl extends MinimalEObjectImpl.Container implements Fo
 			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.FORGE_SESSION__LAST_MODIFIED, oldLastModified, lastModified));
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@Override
 	public ForgeStatus getStatus() {
 		return status;
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@Override
 	public void setStatus(ForgeStatus newStatus) {
 		ForgeStatus oldStatus = status;
@@ -114,11 +364,21 @@ public class ForgeSessionImpl extends MinimalEObjectImpl.Container implements Fo
 			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.FORGE_SESSION__STATUS, oldStatus, status));
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@Override
 	public String getActiveModelId() {
 		return activeModelId;
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@Override
 	public void setActiveModelId(String newActiveModelId) {
 		String oldActiveModelId = activeModelId;
@@ -127,11 +387,21 @@ public class ForgeSessionImpl extends MinimalEObjectImpl.Container implements Fo
 			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.FORGE_SESSION__ACTIVE_MODEL_ID, oldActiveModelId, activeModelId));
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@Override
 	public String getSelectedModelType() {
 		return selectedModelType;
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@Override
 	public void setSelectedModelType(String newSelectedModelType) {
 		String oldSelectedModelType = selectedModelType;
@@ -140,11 +410,21 @@ public class ForgeSessionImpl extends MinimalEObjectImpl.Container implements Fo
 			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.FORGE_SESSION__SELECTED_MODEL_TYPE, oldSelectedModelType, selectedModelType));
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@Override
 	public Git getGit() {
 		return git;
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	public NotificationChain basicSetGit(Git newGit, NotificationChain msgs) {
 		Git oldGit = git;
 		git = newGit;
@@ -155,6 +435,11 @@ public class ForgeSessionImpl extends MinimalEObjectImpl.Container implements Fo
 		return msgs;
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@Override
 	public void setGit(Git newGit) {
 		if (newGit != git) {
@@ -170,11 +455,21 @@ public class ForgeSessionImpl extends MinimalEObjectImpl.Container implements Fo
 			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.FORGE_SESSION__GIT, newGit, newGit));
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@Override
 	public SessionModelState getModelState() {
 		return modelState;
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	public NotificationChain basicSetModelState(SessionModelState newModelState, NotificationChain msgs) {
 		SessionModelState oldModelState = modelState;
 		modelState = newModelState;
@@ -185,6 +480,11 @@ public class ForgeSessionImpl extends MinimalEObjectImpl.Container implements Fo
 		return msgs;
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@Override
 	public void setModelState(SessionModelState newModelState) {
 		if (newModelState != modelState) {
@@ -200,6 +500,11 @@ public class ForgeSessionImpl extends MinimalEObjectImpl.Container implements Fo
 			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.FORGE_SESSION__MODEL_STATE, newModelState, newModelState));
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@Override
 	public EList<SessionExperiment> getExperiments() {
 		if (experiments == null) {
@@ -208,6 +513,11 @@ public class ForgeSessionImpl extends MinimalEObjectImpl.Container implements Fo
 		return experiments;
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@Override
 	public EList<SessionSnapshot> getSnapshots() {
 		if (snapshots == null) {
@@ -216,6 +526,11 @@ public class ForgeSessionImpl extends MinimalEObjectImpl.Container implements Fo
 		return snapshots;
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@Override
 	public NotificationChain eInverseRemove(InternalEObject otherEnd, int featureID, NotificationChain msgs) {
 		switch (featureID) {
@@ -231,6 +546,11 @@ public class ForgeSessionImpl extends MinimalEObjectImpl.Container implements Fo
 		return super.eInverseRemove(otherEnd, featureID, msgs);
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@Override
 	public Object eGet(int featureID, boolean resolve, boolean coreType) {
 		switch (featureID) {
@@ -260,6 +580,11 @@ public class ForgeSessionImpl extends MinimalEObjectImpl.Container implements Fo
 		return super.eGet(featureID, resolve, coreType);
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@SuppressWarnings("unchecked")
 	@Override
 	public void eSet(int featureID, Object newValue) {
@@ -303,6 +628,11 @@ public class ForgeSessionImpl extends MinimalEObjectImpl.Container implements Fo
 		super.eSet(featureID, newValue);
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@Override
 	public void eUnset(int featureID) {
 		switch (featureID) {
@@ -343,6 +673,11 @@ public class ForgeSessionImpl extends MinimalEObjectImpl.Container implements Fo
 		super.eUnset(featureID);
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@Override
 	public boolean eIsSet(int featureID) {
 		switch (featureID) {
@@ -372,9 +707,15 @@ public class ForgeSessionImpl extends MinimalEObjectImpl.Container implements Fo
 		return super.eIsSet(featureID);
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@Override
 	public String toString() {
 		if (eIsProxy()) return super.toString();
+
 		StringBuilder result = new StringBuilder(super.toString());
 		result.append(" (sessionId: ");
 		result.append(sessionId);
@@ -393,4 +734,5 @@ public class ForgeSessionImpl extends MinimalEObjectImpl.Container implements Fo
 		result.append(')');
 		return result.toString();
 	}
-}
+
+} //ForgeSessionImpl

@@ -59,6 +59,7 @@ public class SelfDevSessionItemProvider
 			addMaxIterationsPropertyDescriptor(object);
 			addStatusPropertyDescriptor(object);
 			addRationalePropertyDescriptor(object);
+			addInitialRequestPropertyDescriptor(object);
 		}
 		return itemPropertyDescriptors;
 	}
@@ -77,6 +78,28 @@ public class SelfDevSessionItemProvider
 	}
 	protected void addRationalePropertyDescriptor(Object object) {
 		itemPropertyDescriptors.add(createItemPropertyDescriptor(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(), getResourceLocator(), "Rationale", "Rationale", OrchestrationPackage.Literals.SELF_DEV_SESSION__RATIONALE, true, false, false, ItemPropertyDescriptor.GENERIC_VALUE_IMAGE, null, null));
+	}
+
+	/**
+	 * This adds a property descriptor for the Initial Request feature.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void addInitialRequestPropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 getString("_UI_SelfDevSession_initialRequest_feature"),
+				 getString("_UI_PropertyDescriptor_description", "_UI_SelfDevSession_initialRequest_feature", "_UI_SelfDevSession_type"),
+				 OrchestrationPackage.Literals.SELF_DEV_SESSION__INITIAL_REQUEST,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.GENERIC_VALUE_IMAGE,
+				 null,
+				 null));
 	}
 
 	/**

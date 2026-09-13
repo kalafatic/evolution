@@ -56,7 +56,9 @@ public enum FeedbackLevel implements Enumerator {
 	 * @generated
 	 * @ordered
 	 */
-	FULL(3, "FULL", "FULL"), /**
+	FULL(3, "FULL", "FULL"),
+
+	/**
 	 * The '<em><b>DEBUG</b></em>' literal object.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->

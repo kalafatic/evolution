@@ -3,6 +3,7 @@
 package eu.kalafatic.evolution.model.orchestration;
 
 import org.eclipse.emf.common.util.EList;
+
 import org.eclipse.emf.ecore.EObject;
 
 /**
@@ -587,13 +588,13 @@ public interface Task extends EObject {
 
 	/**
 	 * Returns the value of the '<em><b>Auto Escalate</b></em>' attribute.
-	 * The default value is <code>"true"</code>.
+	 * The default value is <code>"false"</code>.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @return the value of the '<em>Auto Escalate</em>' attribute.
 	 * @see #setAutoEscalate(boolean)
 	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getTask_AutoEscalate()
-	 * @model default="true"
+	 * @model default="false"
 	 * @generated
 	 */
 	boolean isAutoEscalate();

@@ -2,13 +2,15 @@
  */
 package eu.kalafatic.evolution.model.orchestration.impl;
 
-import org.eclipse.emf.common.notify.Notification;
-import org.eclipse.emf.ecore.EClass;
-import org.eclipse.emf.ecore.impl.ENotificationImpl;
-import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
-
 import eu.kalafatic.evolution.model.orchestration.ChatMessage;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
+
+import org.eclipse.emf.common.notify.Notification;
+
+import org.eclipse.emf.ecore.EClass;
+
+import org.eclipse.emf.ecore.impl.ENotificationImpl;
+import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
 
 /**
  * <!-- begin-user-doc -->
@@ -30,6 +32,8 @@ import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatMessageImpl#getSequenceNumber <em>Sequence Number</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatMessageImpl#getTurnId <em>Turn Id</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatMessageImpl#isIsTerminal <em>Is Terminal</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatMessageImpl#getReasoning <em>Reasoning</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.ChatMessageImpl#getResponseKind <em>Response Kind</em>}</li>
  * </ul>
  *
  * @generated
@@ -275,10 +279,44 @@ public class ChatMessageImpl extends MinimalEObjectImpl.Container implements Cha
 	 */
 	protected boolean isTerminal = IS_TERMINAL_EDEFAULT;
 
+	/**
+	 * The default value of the '{@link #getReasoning() <em>Reasoning</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getReasoning()
+	 * @generated
+	 * @ordered
+	 */
 	protected static final String REASONING_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getReasoning() <em>Reasoning</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getReasoning()
+	 * @generated
+	 * @ordered
+	 */
 	protected String reasoning = REASONING_EDEFAULT;
 
+	/**
+	 * The default value of the '{@link #getResponseKind() <em>Response Kind</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getResponseKind()
+	 * @generated
+	 * @ordered
+	 */
 	protected static final String RESPONSE_KIND_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getResponseKind() <em>Response Kind</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getResponseKind()
+	 * @generated
+	 * @ordered
+	 */
 	protected String responseKind = RESPONSE_KIND_EDEFAULT;
 
 	/**
@@ -576,10 +614,22 @@ public class ChatMessageImpl extends MinimalEObjectImpl.Container implements Cha
 			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_MESSAGE__IS_TERMINAL, oldIsTerminal, isTerminal));
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public String getReasoning() {
 		return reasoning;
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public void setReasoning(String newReasoning) {
 		String oldReasoning = reasoning;
 		reasoning = newReasoning;
@@ -587,10 +637,22 @@ public class ChatMessageImpl extends MinimalEObjectImpl.Container implements Cha
 			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.CHAT_MESSAGE__REASONING, oldReasoning, reasoning));
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public String getResponseKind() {
 		return responseKind;
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public void setResponseKind(String newResponseKind) {
 		String oldResponseKind = responseKind;
 		responseKind = newResponseKind;
@@ -630,6 +692,10 @@ public class ChatMessageImpl extends MinimalEObjectImpl.Container implements Cha
 				return getTurnId();
 			case OrchestrationPackage.CHAT_MESSAGE__IS_TERMINAL:
 				return isIsTerminal();
+			case OrchestrationPackage.CHAT_MESSAGE__REASONING:
+				return getReasoning();
+			case OrchestrationPackage.CHAT_MESSAGE__RESPONSE_KIND:
+				return getResponseKind();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -677,6 +743,12 @@ public class ChatMessageImpl extends MinimalEObjectImpl.Container implements Cha
 				return;
 			case OrchestrationPackage.CHAT_MESSAGE__IS_TERMINAL:
 				setIsTerminal((Boolean)newValue);
+				return;
+			case OrchestrationPackage.CHAT_MESSAGE__REASONING:
+				setReasoning((String)newValue);
+				return;
+			case OrchestrationPackage.CHAT_MESSAGE__RESPONSE_KIND:
+				setResponseKind((String)newValue);
 				return;
 		}
 		super.eSet(featureID, newValue);
@@ -726,6 +798,12 @@ public class ChatMessageImpl extends MinimalEObjectImpl.Container implements Cha
 			case OrchestrationPackage.CHAT_MESSAGE__IS_TERMINAL:
 				setIsTerminal(IS_TERMINAL_EDEFAULT);
 				return;
+			case OrchestrationPackage.CHAT_MESSAGE__REASONING:
+				setReasoning(REASONING_EDEFAULT);
+				return;
+			case OrchestrationPackage.CHAT_MESSAGE__RESPONSE_KIND:
+				setResponseKind(RESPONSE_KIND_EDEFAULT);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -762,6 +840,10 @@ public class ChatMessageImpl extends MinimalEObjectImpl.Container implements Cha
 				return TURN_ID_EDEFAULT == null ? turnId != null : !TURN_ID_EDEFAULT.equals(turnId);
 			case OrchestrationPackage.CHAT_MESSAGE__IS_TERMINAL:
 				return isTerminal != IS_TERMINAL_EDEFAULT;
+			case OrchestrationPackage.CHAT_MESSAGE__REASONING:
+				return REASONING_EDEFAULT == null ? reasoning != null : !REASONING_EDEFAULT.equals(reasoning);
+			case OrchestrationPackage.CHAT_MESSAGE__RESPONSE_KIND:
+				return RESPONSE_KIND_EDEFAULT == null ? responseKind != null : !RESPONSE_KIND_EDEFAULT.equals(responseKind);
 		}
 		return super.eIsSet(featureID);
 	}
@@ -800,6 +882,10 @@ public class ChatMessageImpl extends MinimalEObjectImpl.Container implements Cha
 		result.append(turnId);
 		result.append(", isTerminal: ");
 		result.append(isTerminal);
+		result.append(", reasoning: ");
+		result.append(reasoning);
+		result.append(", responseKind: ");
+		result.append(responseKind);
 		result.append(')');
 		return result.toString();
 	}

@@ -19,6 +19,8 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.ServerSettings#isMcpEnabled <em>Mcp Enabled</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.ServerSettings#getMcpPort <em>Mcp Port</em>}</li>
  *   <li>{@link eu.kalafatic.evolution.model.orchestration.ServerSettings#isAuthenticate <em>Authenticate</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.ServerSettings#getPortalPort <em>Portal Port</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.ServerSettings#getPortalUrl <em>Portal Url</em>}</li>
  * </ul>
  *
  * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getServerSettings()
@@ -167,32 +169,46 @@ public interface ServerSettings extends EObject {
 	/**
 	 * Returns the value of the '<em><b>Portal Port</b></em>' attribute.
 	 * The default value is <code>"58080"</code>.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
 	 * @return the value of the '<em>Portal Port</em>' attribute.
 	 * @see #setPortalPort(int)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getServerSettings_PortalPort()
 	 * @model default="58080"
+	 * @generated
 	 */
 	int getPortalPort();
 
 	/**
 	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.ServerSettings#getPortalPort <em>Portal Port</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
 	 * @param value the new value of the '<em>Portal Port</em>' attribute.
 	 * @see #getPortalPort()
+	 * @generated
 	 */
 	void setPortalPort(int value);
 
 	/**
 	 * Returns the value of the '<em><b>Portal Url</b></em>' attribute.
 	 * The default value is <code>"http://localhost:58080/dashboard.html"</code>.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
 	 * @return the value of the '<em>Portal Url</em>' attribute.
 	 * @see #setPortalUrl(String)
+	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getServerSettings_PortalUrl()
 	 * @model default="http://localhost:58080/dashboard.html"
+	 * @generated
 	 */
 	String getPortalUrl();
 
 	/**
 	 * Sets the value of the '{@link eu.kalafatic.evolution.model.orchestration.ServerSettings#getPortalUrl <em>Portal Url</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
 	 * @param value the new value of the '<em>Portal Url</em>' attribute.
 	 * @see #getPortalUrl()
+	 * @generated
 	 */
 	void setPortalUrl(String value);
 

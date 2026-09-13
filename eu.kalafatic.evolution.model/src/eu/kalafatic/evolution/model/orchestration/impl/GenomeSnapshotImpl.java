@@ -1,13 +1,35 @@
+/**
+ */
 package eu.kalafatic.evolution.model.orchestration.impl;
-
-import org.eclipse.emf.common.notify.Notification;
-import org.eclipse.emf.ecore.EClass;
-import org.eclipse.emf.ecore.impl.ENotificationImpl;
-import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
 
 import eu.kalafatic.evolution.model.orchestration.GenomeSnapshot;
 import eu.kalafatic.evolution.model.orchestration.OrchestrationPackage;
 
+import org.eclipse.emf.common.notify.Notification;
+
+import org.eclipse.emf.ecore.EClass;
+
+import org.eclipse.emf.ecore.impl.ENotificationImpl;
+import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
+
+/**
+ * <!-- begin-user-doc -->
+ * An implementation of the model object '<em><b>Genome Snapshot</b></em>'.
+ * <!-- end-user-doc -->
+ * <p>
+ * The following features are implemented:
+ * </p>
+ * <ul>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.GenomeSnapshotImpl#getTimestamp <em>Timestamp</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.GenomeSnapshotImpl#getArchitectureArtifact <em>Architecture Artifact</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.GenomeSnapshotImpl#getUseCaseArtifact <em>Use Case Artifact</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.GenomeSnapshotImpl#getMilestoneArtifact <em>Milestone Artifact</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.GenomeSnapshotImpl#getGenomeArtifact <em>Genome Artifact</em>}</li>
+ *   <li>{@link eu.kalafatic.evolution.model.orchestration.impl.GenomeSnapshotImpl#getDashboardArtifact <em>Dashboard Artifact</em>}</li>
+ * </ul>
+ *
+ * @generated
+ */
 public class GenomeSnapshotImpl extends MinimalEObjectImpl.Container implements GenomeSnapshot {
 	/**
 	 * The default value of the '{@link #getTimestamp() <em>Timestamp</em>}' attribute.
@@ -18,7 +40,17 @@ public class GenomeSnapshotImpl extends MinimalEObjectImpl.Container implements 
 	 * @ordered
 	 */
 	protected static final String TIMESTAMP_EDEFAULT = null;
-	protected String timestamp = null;
+
+	/**
+	 * The cached value of the '{@link #getTimestamp() <em>Timestamp</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getTimestamp()
+	 * @generated
+	 * @ordered
+	 */
+	protected String timestamp = TIMESTAMP_EDEFAULT;
+
 	/**
 	 * The default value of the '{@link #getArchitectureArtifact() <em>Architecture Artifact</em>}' attribute.
 	 * <!-- begin-user-doc -->
@@ -28,7 +60,17 @@ public class GenomeSnapshotImpl extends MinimalEObjectImpl.Container implements 
 	 * @ordered
 	 */
 	protected static final String ARCHITECTURE_ARTIFACT_EDEFAULT = null;
-	protected String architectureArtifact = null;
+
+	/**
+	 * The cached value of the '{@link #getArchitectureArtifact() <em>Architecture Artifact</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getArchitectureArtifact()
+	 * @generated
+	 * @ordered
+	 */
+	protected String architectureArtifact = ARCHITECTURE_ARTIFACT_EDEFAULT;
+
 	/**
 	 * The default value of the '{@link #getUseCaseArtifact() <em>Use Case Artifact</em>}' attribute.
 	 * <!-- begin-user-doc -->
@@ -38,7 +80,17 @@ public class GenomeSnapshotImpl extends MinimalEObjectImpl.Container implements 
 	 * @ordered
 	 */
 	protected static final String USE_CASE_ARTIFACT_EDEFAULT = null;
-	protected String useCaseArtifact = null;
+
+	/**
+	 * The cached value of the '{@link #getUseCaseArtifact() <em>Use Case Artifact</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getUseCaseArtifact()
+	 * @generated
+	 * @ordered
+	 */
+	protected String useCaseArtifact = USE_CASE_ARTIFACT_EDEFAULT;
+
 	/**
 	 * The default value of the '{@link #getMilestoneArtifact() <em>Milestone Artifact</em>}' attribute.
 	 * <!-- begin-user-doc -->
@@ -48,7 +100,17 @@ public class GenomeSnapshotImpl extends MinimalEObjectImpl.Container implements 
 	 * @ordered
 	 */
 	protected static final String MILESTONE_ARTIFACT_EDEFAULT = null;
-	protected String milestoneArtifact = null;
+
+	/**
+	 * The cached value of the '{@link #getMilestoneArtifact() <em>Milestone Artifact</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getMilestoneArtifact()
+	 * @generated
+	 * @ordered
+	 */
+	protected String milestoneArtifact = MILESTONE_ARTIFACT_EDEFAULT;
+
 	/**
 	 * The default value of the '{@link #getGenomeArtifact() <em>Genome Artifact</em>}' attribute.
 	 * <!-- begin-user-doc -->
@@ -58,7 +120,17 @@ public class GenomeSnapshotImpl extends MinimalEObjectImpl.Container implements 
 	 * @ordered
 	 */
 	protected static final String GENOME_ARTIFACT_EDEFAULT = null;
-	protected String genomeArtifact = null;
+
+	/**
+	 * The cached value of the '{@link #getGenomeArtifact() <em>Genome Artifact</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getGenomeArtifact()
+	 * @generated
+	 * @ordered
+	 */
+	protected String genomeArtifact = GENOME_ARTIFACT_EDEFAULT;
+
 	/**
 	 * The default value of the '{@link #getDashboardArtifact() <em>Dashboard Artifact</em>}' attribute.
 	 * <!-- begin-user-doc -->
@@ -68,21 +140,52 @@ public class GenomeSnapshotImpl extends MinimalEObjectImpl.Container implements 
 	 * @ordered
 	 */
 	protected static final String DASHBOARD_ARTIFACT_EDEFAULT = null;
-	protected String dashboardArtifact = null;
 
+	/**
+	 * The cached value of the '{@link #getDashboardArtifact() <em>Dashboard Artifact</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getDashboardArtifact()
+	 * @generated
+	 * @ordered
+	 */
+	protected String dashboardArtifact = DASHBOARD_ARTIFACT_EDEFAULT;
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	protected GenomeSnapshotImpl() {
 		super();
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@Override
 	protected EClass eStaticClass() {
 		return OrchestrationPackage.Literals.GENOME_SNAPSHOT;
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public String getTimestamp() {
 		return timestamp;
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public void setTimestamp(String newTimestamp) {
 		String oldTimestamp = timestamp;
 		timestamp = newTimestamp;
@@ -90,10 +193,22 @@ public class GenomeSnapshotImpl extends MinimalEObjectImpl.Container implements 
 			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.GENOME_SNAPSHOT__TIMESTAMP, oldTimestamp, timestamp));
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public String getArchitectureArtifact() {
 		return architectureArtifact;
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public void setArchitectureArtifact(String newArchitectureArtifact) {
 		String oldArchitectureArtifact = architectureArtifact;
 		architectureArtifact = newArchitectureArtifact;
@@ -101,10 +216,22 @@ public class GenomeSnapshotImpl extends MinimalEObjectImpl.Container implements 
 			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.GENOME_SNAPSHOT__ARCHITECTURE_ARTIFACT, oldArchitectureArtifact, architectureArtifact));
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public String getUseCaseArtifact() {
 		return useCaseArtifact;
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public void setUseCaseArtifact(String newUseCaseArtifact) {
 		String oldUseCaseArtifact = useCaseArtifact;
 		useCaseArtifact = newUseCaseArtifact;
@@ -112,10 +239,22 @@ public class GenomeSnapshotImpl extends MinimalEObjectImpl.Container implements 
 			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.GENOME_SNAPSHOT__USE_CASE_ARTIFACT, oldUseCaseArtifact, useCaseArtifact));
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public String getMilestoneArtifact() {
 		return milestoneArtifact;
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public void setMilestoneArtifact(String newMilestoneArtifact) {
 		String oldMilestoneArtifact = milestoneArtifact;
 		milestoneArtifact = newMilestoneArtifact;
@@ -123,10 +262,22 @@ public class GenomeSnapshotImpl extends MinimalEObjectImpl.Container implements 
 			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.GENOME_SNAPSHOT__MILESTONE_ARTIFACT, oldMilestoneArtifact, milestoneArtifact));
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public String getGenomeArtifact() {
 		return genomeArtifact;
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public void setGenomeArtifact(String newGenomeArtifact) {
 		String oldGenomeArtifact = genomeArtifact;
 		genomeArtifact = newGenomeArtifact;
@@ -134,10 +285,22 @@ public class GenomeSnapshotImpl extends MinimalEObjectImpl.Container implements 
 			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.GENOME_SNAPSHOT__GENOME_ARTIFACT, oldGenomeArtifact, genomeArtifact));
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public String getDashboardArtifact() {
 		return dashboardArtifact;
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
 	public void setDashboardArtifact(String newDashboardArtifact) {
 		String oldDashboardArtifact = dashboardArtifact;
 		dashboardArtifact = newDashboardArtifact;
@@ -145,6 +308,11 @@ public class GenomeSnapshotImpl extends MinimalEObjectImpl.Container implements 
 			eNotify(new ENotificationImpl(this, Notification.SET, OrchestrationPackage.GENOME_SNAPSHOT__DASHBOARD_ARTIFACT, oldDashboardArtifact, dashboardArtifact));
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@Override
 	public Object eGet(int featureID, boolean resolve, boolean coreType) {
 		switch (featureID) {
@@ -164,6 +332,11 @@ public class GenomeSnapshotImpl extends MinimalEObjectImpl.Container implements 
 		return super.eGet(featureID, resolve, coreType);
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@Override
 	public void eSet(int featureID, Object newValue) {
 		switch (featureID) {
@@ -189,53 +362,69 @@ public class GenomeSnapshotImpl extends MinimalEObjectImpl.Container implements 
 		super.eSet(featureID, newValue);
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@Override
 	public void eUnset(int featureID) {
 		switch (featureID) {
 			case OrchestrationPackage.GENOME_SNAPSHOT__TIMESTAMP:
-				setTimestamp((String)null);
+				setTimestamp(TIMESTAMP_EDEFAULT);
 				return;
 			case OrchestrationPackage.GENOME_SNAPSHOT__ARCHITECTURE_ARTIFACT:
-				setArchitectureArtifact((String)null);
+				setArchitectureArtifact(ARCHITECTURE_ARTIFACT_EDEFAULT);
 				return;
 			case OrchestrationPackage.GENOME_SNAPSHOT__USE_CASE_ARTIFACT:
-				setUseCaseArtifact((String)null);
+				setUseCaseArtifact(USE_CASE_ARTIFACT_EDEFAULT);
 				return;
 			case OrchestrationPackage.GENOME_SNAPSHOT__MILESTONE_ARTIFACT:
-				setMilestoneArtifact((String)null);
+				setMilestoneArtifact(MILESTONE_ARTIFACT_EDEFAULT);
 				return;
 			case OrchestrationPackage.GENOME_SNAPSHOT__GENOME_ARTIFACT:
-				setGenomeArtifact((String)null);
+				setGenomeArtifact(GENOME_ARTIFACT_EDEFAULT);
 				return;
 			case OrchestrationPackage.GENOME_SNAPSHOT__DASHBOARD_ARTIFACT:
-				setDashboardArtifact((String)null);
+				setDashboardArtifact(DASHBOARD_ARTIFACT_EDEFAULT);
 				return;
 		}
 		super.eUnset(featureID);
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@Override
 	public boolean eIsSet(int featureID) {
 		switch (featureID) {
 			case OrchestrationPackage.GENOME_SNAPSHOT__TIMESTAMP:
-				return timestamp != null;
+				return TIMESTAMP_EDEFAULT == null ? timestamp != null : !TIMESTAMP_EDEFAULT.equals(timestamp);
 			case OrchestrationPackage.GENOME_SNAPSHOT__ARCHITECTURE_ARTIFACT:
-				return architectureArtifact != null;
+				return ARCHITECTURE_ARTIFACT_EDEFAULT == null ? architectureArtifact != null : !ARCHITECTURE_ARTIFACT_EDEFAULT.equals(architectureArtifact);
 			case OrchestrationPackage.GENOME_SNAPSHOT__USE_CASE_ARTIFACT:
-				return useCaseArtifact != null;
+				return USE_CASE_ARTIFACT_EDEFAULT == null ? useCaseArtifact != null : !USE_CASE_ARTIFACT_EDEFAULT.equals(useCaseArtifact);
 			case OrchestrationPackage.GENOME_SNAPSHOT__MILESTONE_ARTIFACT:
-				return milestoneArtifact != null;
+				return MILESTONE_ARTIFACT_EDEFAULT == null ? milestoneArtifact != null : !MILESTONE_ARTIFACT_EDEFAULT.equals(milestoneArtifact);
 			case OrchestrationPackage.GENOME_SNAPSHOT__GENOME_ARTIFACT:
-				return genomeArtifact != null;
+				return GENOME_ARTIFACT_EDEFAULT == null ? genomeArtifact != null : !GENOME_ARTIFACT_EDEFAULT.equals(genomeArtifact);
 			case OrchestrationPackage.GENOME_SNAPSHOT__DASHBOARD_ARTIFACT:
-				return dashboardArtifact != null;
+				return DASHBOARD_ARTIFACT_EDEFAULT == null ? dashboardArtifact != null : !DASHBOARD_ARTIFACT_EDEFAULT.equals(dashboardArtifact);
 		}
 		return super.eIsSet(featureID);
 	}
 
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@Override
 	public String toString() {
 		if (eIsProxy()) return super.toString();
+
 		StringBuilder result = new StringBuilder(super.toString());
 		result.append(" (timestamp: ");
 		result.append(timestamp);
@@ -252,4 +441,5 @@ public class GenomeSnapshotImpl extends MinimalEObjectImpl.Container implements 
 		result.append(')');
 		return result.toString();
 	}
-}
+
+} //GenomeSnapshotImpl

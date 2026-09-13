@@ -781,6 +781,9 @@ public interface OrchestrationPackage extends EPackage {
 	int ORCHESTRATOR__GENOME_SNAPSHOTS = 33;
 
 	/**
+	 * The feature id for the '<em><b>Forge Sessions</b></em>' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
@@ -951,13 +954,31 @@ public interface OrchestrationPackage extends EPackage {
 	int SERVER_SETTINGS__AUTHENTICATE = 5;
 
 	/**
+	 * The feature id for the '<em><b>Portal Port</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int SERVER_SETTINGS__PORTAL_PORT = 6;
+
+	/**
+	 * The feature id for the '<em><b>Portal Url</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int SERVER_SETTINGS__PORTAL_URL = 7;
+
+	/**
 	 * The number of structural features of the '<em>Server Settings</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int SERVER_SETTINGS_FEATURE_COUNT = 6;
+	int SERVER_SETTINGS_FEATURE_COUNT = 8;
 
 	/**
 	 * The number of operations of the '<em>Server Settings</em>' class.
@@ -3439,7 +3460,22 @@ public interface OrchestrationPackage extends EPackage {
 	 */
 	int CHAT_MESSAGE__IS_TERMINAL = 11;
 
+	/**
+	 * The feature id for the '<em><b>Reasoning</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
 	int CHAT_MESSAGE__REASONING = 12;
+
+	/**
+	 * The feature id for the '<em><b>Response Kind</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
 	int CHAT_MESSAGE__RESPONSE_KIND = 13;
 
 	/**
@@ -3643,197 +3679,357 @@ public interface OrchestrationPackage extends EPackage {
 	int PROMPT_INSTRUCTIONS_OPERATION_COUNT = 0;
 
 	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ForgeSessionImpl <em>Forge Session</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.ForgeSessionImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getForgeSession()
 	 * @generated
 	 */
 	int FORGE_SESSION = 39;
 
 	/**
+	 * The feature id for the '<em><b>Session Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
 	 * @generated
+	 * @ordered
 	 */
 	int FORGE_SESSION__SESSION_ID = 0;
 
 	/**
+	 * The feature id for the '<em><b>Name</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
 	 * @generated
+	 * @ordered
 	 */
 	int FORGE_SESSION__NAME = 1;
 
 	/**
+	 * The feature id for the '<em><b>Created At</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
 	 * @generated
+	 * @ordered
 	 */
 	int FORGE_SESSION__CREATED_AT = 2;
 
 	/**
+	 * The feature id for the '<em><b>Last Modified</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
 	 * @generated
+	 * @ordered
 	 */
 	int FORGE_SESSION__LAST_MODIFIED = 3;
 
 	/**
+	 * The feature id for the '<em><b>Status</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
 	 * @generated
+	 * @ordered
 	 */
 	int FORGE_SESSION__STATUS = 4;
 
 	/**
+	 * The feature id for the '<em><b>Active Model Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
 	 * @generated
+	 * @ordered
 	 */
 	int FORGE_SESSION__ACTIVE_MODEL_ID = 5;
 
 	/**
+	 * The feature id for the '<em><b>Selected Model Type</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
 	 * @generated
+	 * @ordered
 	 */
 	int FORGE_SESSION__SELECTED_MODEL_TYPE = 6;
 
 	/**
+	 * The feature id for the '<em><b>Git</b></em>' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
 	 * @generated
+	 * @ordered
 	 */
 	int FORGE_SESSION__GIT = 7;
 
 	/**
+	 * The feature id for the '<em><b>Model State</b></em>' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
 	 * @generated
+	 * @ordered
 	 */
 	int FORGE_SESSION__MODEL_STATE = 8;
 
 	/**
+	 * The feature id for the '<em><b>Experiments</b></em>' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
 	 * @generated
+	 * @ordered
 	 */
 	int FORGE_SESSION__EXPERIMENTS = 9;
 
 	/**
+	 * The feature id for the '<em><b>Snapshots</b></em>' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
 	 * @generated
+	 * @ordered
 	 */
 	int FORGE_SESSION__SNAPSHOTS = 10;
 
 	/**
+	 * The number of structural features of the '<em>Forge Session</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
 	 * @generated
+	 * @ordered
 	 */
 	int FORGE_SESSION_FEATURE_COUNT = 11;
 
 	/**
+	 * The number of operations of the '<em>Forge Session</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
 	 * @generated
+	 * @ordered
 	 */
 	int FORGE_SESSION_OPERATION_COUNT = 0;
 
 	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.SessionModelStateImpl <em>Session Model State</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.SessionModelStateImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSessionModelState()
 	 * @generated
 	 */
 	int SESSION_MODEL_STATE = 40;
 
 	/**
+	 * The feature id for the '<em><b>Session Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
 	 * @generated
+	 * @ordered
 	 */
 	int SESSION_MODEL_STATE__SESSION_ID = 0;
 
 	/**
+	 * The feature id for the '<em><b>Model Graph</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
 	 * @generated
+	 * @ordered
 	 */
 	int SESSION_MODEL_STATE__MODEL_GRAPH = 1;
 
 	/**
+	 * The feature id for the '<em><b>Hyperparameters</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
 	 * @generated
+	 * @ordered
 	 */
 	int SESSION_MODEL_STATE__HYPERPARAMETERS = 2;
 
 	/**
+	 * The feature id for the '<em><b>Dataset Bindings</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
 	 * @generated
+	 * @ordered
 	 */
 	int SESSION_MODEL_STATE__DATASET_BINDINGS = 3;
 
 	/**
+	 * The feature id for the '<em><b>Runtime State</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
 	 * @generated
+	 * @ordered
 	 */
 	int SESSION_MODEL_STATE__RUNTIME_STATE = 4;
 
 	/**
+	 * The number of structural features of the '<em>Session Model State</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
 	 * @generated
+	 * @ordered
 	 */
 	int SESSION_MODEL_STATE_FEATURE_COUNT = 5;
 
 	/**
+	 * The number of operations of the '<em>Session Model State</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
 	 * @generated
+	 * @ordered
 	 */
 	int SESSION_MODEL_STATE_OPERATION_COUNT = 0;
 
 	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.SessionExperimentImpl <em>Session Experiment</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.SessionExperimentImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSessionExperiment()
 	 * @generated
 	 */
 	int SESSION_EXPERIMENT = 41;
 
 	/**
+	 * The feature id for the '<em><b>Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
 	 * @generated
+	 * @ordered
 	 */
 	int SESSION_EXPERIMENT__ID = 0;
 
 	/**
+	 * The feature id for the '<em><b>Session Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
 	 * @generated
+	 * @ordered
 	 */
 	int SESSION_EXPERIMENT__SESSION_ID = 1;
 
 	/**
+	 * The feature id for the '<em><b>Model Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
 	 * @generated
+	 * @ordered
 	 */
 	int SESSION_EXPERIMENT__MODEL_ID = 2;
 
 	/**
+	 * The feature id for the '<em><b>Dataset Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
 	 * @generated
+	 * @ordered
 	 */
 	int SESSION_EXPERIMENT__DATASET_ID = 3;
 
 	/**
+	 * The feature id for the '<em><b>Metrics</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
 	 * @generated
+	 * @ordered
 	 */
 	int SESSION_EXPERIMENT__METRICS = 4;
 
 	/**
+	 * The feature id for the '<em><b>Logs</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
 	 * @generated
+	 * @ordered
 	 */
 	int SESSION_EXPERIMENT__LOGS = 5;
 
 	/**
+	 * The number of structural features of the '<em>Session Experiment</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
 	 * @generated
+	 * @ordered
 	 */
 	int SESSION_EXPERIMENT_FEATURE_COUNT = 6;
 
 	/**
+	 * The number of operations of the '<em>Session Experiment</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
 	 * @generated
+	 * @ordered
 	 */
 	int SESSION_EXPERIMENT_OPERATION_COUNT = 0;
 
 	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.impl.SessionSnapshotImpl <em>Session Snapshot</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.SessionSnapshotImpl
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSessionSnapshot()
 	 * @generated
 	 */
 	int SESSION_SNAPSHOT = 42;
 
 	/**
+	 * The feature id for the '<em><b>Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
 	 * @generated
+	 * @ordered
 	 */
 	int SESSION_SNAPSHOT__ID = 0;
 
 	/**
+	 * The feature id for the '<em><b>Session Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
 	 * @generated
+	 * @ordered
 	 */
 	int SESSION_SNAPSHOT__SESSION_ID = 1;
 
 	/**
+	 * The feature id for the '<em><b>Genome Snapshot Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
 	 * @generated
+	 * @ordered
 	 */
 	int SESSION_SNAPSHOT__GENOME_SNAPSHOT_ID = 2;
 
 	/**
+	 * The feature id for the '<em><b>Full Serialized State</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
 	 * @generated
+	 * @ordered
 	 */
 	int SESSION_SNAPSHOT__FULL_SERIALIZED_STATE = 3;
 
 	/**
+	 * The feature id for the '<em><b>Timestamp</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
 	 * @generated
+	 * @ordered
 	 */
 	int SESSION_SNAPSHOT__TIMESTAMP = 4;
 
 	/**
+	 * The number of structural features of the '<em>Session Snapshot</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
 	 * @generated
+	 * @ordered
 	 */
 	int SESSION_SNAPSHOT_FEATURE_COUNT = 5;
 
 	/**
+	 * The number of operations of the '<em>Session Snapshot</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
 	 * @generated
+	 * @ordered
 	 */
 	int SESSION_SNAPSHOT_OPERATION_COUNT = 0;
 
@@ -3966,6 +4162,16 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 */
 	int REVIEW_DECISION = 55;
+
+	/**
+	 * The meta object id for the '{@link eu.kalafatic.evolution.model.orchestration.ForgeStatus <em>Forge Status</em>}' enum.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see eu.kalafatic.evolution.model.orchestration.ForgeStatus
+	 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getForgeStatus()
+	 * @generated
+	 */
+	int FORGE_STATUS = 56;
 
 
 	/**
@@ -4802,6 +5008,12 @@ public interface OrchestrationPackage extends EPackage {
 	EReference getOrchestrator_GenomeSnapshots();
 
 	/**
+	 * Returns the meta object for the containment reference list '{@link eu.kalafatic.evolution.model.orchestration.Orchestrator#getForgeSessions <em>Forge Sessions</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference list '<em>Forge Sessions</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.Orchestrator#getForgeSessions()
+	 * @see #getOrchestrator()
 	 * @generated
 	 */
 	EReference getOrchestrator_ForgeSessions();
@@ -4957,6 +5169,28 @@ public interface OrchestrationPackage extends EPackage {
 	 * @generated
 	 */
 	EAttribute getServerSettings_Authenticate();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.ServerSettings#getPortalPort <em>Portal Port</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Portal Port</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ServerSettings#getPortalPort()
+	 * @see #getServerSettings()
+	 * @generated
+	 */
+	EAttribute getServerSettings_PortalPort();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.ServerSettings#getPortalUrl <em>Portal Url</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Portal Url</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ServerSettings#getPortalUrl()
+	 * @see #getServerSettings()
+	 * @generated
+	 */
+	EAttribute getServerSettings_PortalUrl();
 
 	/**
 	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.ServerSession <em>Server Session</em>}'.
@@ -7137,7 +7371,26 @@ public interface OrchestrationPackage extends EPackage {
 	 */
 	EAttribute getChatMessage_IsTerminal();
 
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.ChatMessage#getReasoning <em>Reasoning</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Reasoning</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ChatMessage#getReasoning()
+	 * @see #getChatMessage()
+	 * @generated
+	 */
 	EAttribute getChatMessage_Reasoning();
+
+	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.ChatMessage#getResponseKind <em>Response Kind</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Response Kind</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ChatMessage#getResponseKind()
+	 * @see #getChatMessage()
+	 * @generated
+	 */
 	EAttribute getChatMessage_ResponseKind();
 
 	/**
@@ -7315,158 +7568,338 @@ public interface OrchestrationPackage extends EPackage {
 	EAttribute getPromptInstructions_StepMode();
 
 	/**
-	 * @generated
-	 */
-	EEnum getForgeStatus();
-
-	/**
+	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.ForgeSession <em>Forge Session</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Forge Session</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ForgeSession
 	 * @generated
 	 */
 	EClass getForgeSession();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.ForgeSession#getSessionId <em>Session Id</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Session Id</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ForgeSession#getSessionId()
+	 * @see #getForgeSession()
 	 * @generated
 	 */
 	EAttribute getForgeSession_SessionId();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.ForgeSession#getName <em>Name</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Name</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ForgeSession#getName()
+	 * @see #getForgeSession()
 	 * @generated
 	 */
 	EAttribute getForgeSession_Name();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.ForgeSession#getCreatedAt <em>Created At</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Created At</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ForgeSession#getCreatedAt()
+	 * @see #getForgeSession()
 	 * @generated
 	 */
 	EAttribute getForgeSession_CreatedAt();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.ForgeSession#getLastModified <em>Last Modified</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Last Modified</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ForgeSession#getLastModified()
+	 * @see #getForgeSession()
 	 * @generated
 	 */
 	EAttribute getForgeSession_LastModified();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.ForgeSession#getStatus <em>Status</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Status</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ForgeSession#getStatus()
+	 * @see #getForgeSession()
 	 * @generated
 	 */
 	EAttribute getForgeSession_Status();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.ForgeSession#getActiveModelId <em>Active Model Id</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Active Model Id</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ForgeSession#getActiveModelId()
+	 * @see #getForgeSession()
 	 * @generated
 	 */
 	EAttribute getForgeSession_ActiveModelId();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.ForgeSession#getSelectedModelType <em>Selected Model Type</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Selected Model Type</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ForgeSession#getSelectedModelType()
+	 * @see #getForgeSession()
 	 * @generated
 	 */
 	EAttribute getForgeSession_SelectedModelType();
 
 	/**
+	 * Returns the meta object for the containment reference '{@link eu.kalafatic.evolution.model.orchestration.ForgeSession#getGit <em>Git</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference '<em>Git</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ForgeSession#getGit()
+	 * @see #getForgeSession()
 	 * @generated
 	 */
 	EReference getForgeSession_Git();
 
+	/**
+	 * Returns the meta object for the containment reference '{@link eu.kalafatic.evolution.model.orchestration.ForgeSession#getModelState <em>Model State</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference '<em>Model State</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ForgeSession#getModelState()
+	 * @see #getForgeSession()
+	 * @generated
+	 */
 	EReference getForgeSession_ModelState();
 
 	/**
+	 * Returns the meta object for the containment reference list '{@link eu.kalafatic.evolution.model.orchestration.ForgeSession#getExperiments <em>Experiments</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference list '<em>Experiments</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ForgeSession#getExperiments()
+	 * @see #getForgeSession()
 	 * @generated
 	 */
 	EReference getForgeSession_Experiments();
 
 	/**
+	 * Returns the meta object for the containment reference list '{@link eu.kalafatic.evolution.model.orchestration.ForgeSession#getSnapshots <em>Snapshots</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference list '<em>Snapshots</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ForgeSession#getSnapshots()
+	 * @see #getForgeSession()
 	 * @generated
 	 */
 	EReference getForgeSession_Snapshots();
 
 	/**
+	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.SessionModelState <em>Session Model State</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Session Model State</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.SessionModelState
 	 * @generated
 	 */
 	EClass getSessionModelState();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.SessionModelState#getSessionId <em>Session Id</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Session Id</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.SessionModelState#getSessionId()
+	 * @see #getSessionModelState()
 	 * @generated
 	 */
 	EAttribute getSessionModelState_SessionId();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.SessionModelState#getModelGraph <em>Model Graph</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Model Graph</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.SessionModelState#getModelGraph()
+	 * @see #getSessionModelState()
 	 * @generated
 	 */
 	EAttribute getSessionModelState_ModelGraph();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.SessionModelState#getHyperparameters <em>Hyperparameters</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Hyperparameters</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.SessionModelState#getHyperparameters()
+	 * @see #getSessionModelState()
 	 * @generated
 	 */
 	EAttribute getSessionModelState_Hyperparameters();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.SessionModelState#getDatasetBindings <em>Dataset Bindings</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Dataset Bindings</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.SessionModelState#getDatasetBindings()
+	 * @see #getSessionModelState()
 	 * @generated
 	 */
 	EAttribute getSessionModelState_DatasetBindings();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.SessionModelState#getRuntimeState <em>Runtime State</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Runtime State</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.SessionModelState#getRuntimeState()
+	 * @see #getSessionModelState()
 	 * @generated
 	 */
 	EAttribute getSessionModelState_RuntimeState();
 
 	/**
+	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.SessionExperiment <em>Session Experiment</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Session Experiment</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.SessionExperiment
 	 * @generated
 	 */
 	EClass getSessionExperiment();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.SessionExperiment#getId <em>Id</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Id</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.SessionExperiment#getId()
+	 * @see #getSessionExperiment()
 	 * @generated
 	 */
 	EAttribute getSessionExperiment_Id();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.SessionExperiment#getSessionId <em>Session Id</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Session Id</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.SessionExperiment#getSessionId()
+	 * @see #getSessionExperiment()
 	 * @generated
 	 */
 	EAttribute getSessionExperiment_SessionId();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.SessionExperiment#getModelId <em>Model Id</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Model Id</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.SessionExperiment#getModelId()
+	 * @see #getSessionExperiment()
 	 * @generated
 	 */
 	EAttribute getSessionExperiment_ModelId();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.SessionExperiment#getDatasetId <em>Dataset Id</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Dataset Id</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.SessionExperiment#getDatasetId()
+	 * @see #getSessionExperiment()
 	 * @generated
 	 */
 	EAttribute getSessionExperiment_DatasetId();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.SessionExperiment#getMetrics <em>Metrics</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Metrics</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.SessionExperiment#getMetrics()
+	 * @see #getSessionExperiment()
 	 * @generated
 	 */
 	EAttribute getSessionExperiment_Metrics();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.SessionExperiment#getLogs <em>Logs</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Logs</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.SessionExperiment#getLogs()
+	 * @see #getSessionExperiment()
 	 * @generated
 	 */
 	EAttribute getSessionExperiment_Logs();
 
 	/**
+	 * Returns the meta object for class '{@link eu.kalafatic.evolution.model.orchestration.SessionSnapshot <em>Session Snapshot</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Session Snapshot</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.SessionSnapshot
 	 * @generated
 	 */
 	EClass getSessionSnapshot();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.SessionSnapshot#getId <em>Id</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Id</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.SessionSnapshot#getId()
+	 * @see #getSessionSnapshot()
 	 * @generated
 	 */
 	EAttribute getSessionSnapshot_Id();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.SessionSnapshot#getSessionId <em>Session Id</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Session Id</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.SessionSnapshot#getSessionId()
+	 * @see #getSessionSnapshot()
 	 * @generated
 	 */
 	EAttribute getSessionSnapshot_SessionId();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.SessionSnapshot#getGenomeSnapshotId <em>Genome Snapshot Id</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Genome Snapshot Id</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.SessionSnapshot#getGenomeSnapshotId()
+	 * @see #getSessionSnapshot()
 	 * @generated
 	 */
 	EAttribute getSessionSnapshot_GenomeSnapshotId();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.SessionSnapshot#getFullSerializedState <em>Full Serialized State</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Full Serialized State</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.SessionSnapshot#getFullSerializedState()
+	 * @see #getSessionSnapshot()
 	 * @generated
 	 */
 	EAttribute getSessionSnapshot_FullSerializedState();
 
 	/**
+	 * Returns the meta object for the attribute '{@link eu.kalafatic.evolution.model.orchestration.SessionSnapshot#getTimestamp <em>Timestamp</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Timestamp</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.SessionSnapshot#getTimestamp()
+	 * @see #getSessionSnapshot()
 	 * @generated
 	 */
 	EAttribute getSessionSnapshot_Timestamp();
@@ -7602,8 +8035,14 @@ public interface OrchestrationPackage extends EPackage {
 	EEnum getReviewDecision();
 
 	/**
+	 * Returns the meta object for enum '{@link eu.kalafatic.evolution.model.orchestration.ForgeStatus <em>Forge Status</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for enum '<em>Forge Status</em>'.
+	 * @see eu.kalafatic.evolution.model.orchestration.ForgeStatus
+	 * @generated
 	 */
-	int FORGE_STATUS = 56;
+	EEnum getForgeStatus();
 
 	/**
 	 * Returns the factory that creates the instances of the model.
@@ -8243,6 +8682,9 @@ public interface OrchestrationPackage extends EPackage {
 		EReference ORCHESTRATOR__GENOME_SNAPSHOTS = eINSTANCE.getOrchestrator_GenomeSnapshots();
 
 		/**
+		 * The meta object literal for the '<em><b>Forge Sessions</b></em>' containment reference list feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
 		 * @generated
 		 */
 		EReference ORCHESTRATOR__FORGE_SESSIONS = eINSTANCE.getOrchestrator_ForgeSessions();
@@ -8362,6 +8804,22 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute SERVER_SETTINGS__AUTHENTICATE = eINSTANCE.getServerSettings_Authenticate();
+
+		/**
+		 * The meta object literal for the '<em><b>Portal Port</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute SERVER_SETTINGS__PORTAL_PORT = eINSTANCE.getServerSettings_PortalPort();
+
+		/**
+		 * The meta object literal for the '<em><b>Portal Url</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute SERVER_SETTINGS__PORTAL_URL = eINSTANCE.getServerSettings_PortalUrl();
 
 		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ServerSessionImpl <em>Server Session</em>}' class.
@@ -10034,7 +10492,21 @@ public interface OrchestrationPackage extends EPackage {
 		 * @generated
 		 */
 		EAttribute CHAT_MESSAGE__IS_TERMINAL = eINSTANCE.getChatMessage_IsTerminal();
+
+		/**
+		 * The meta object literal for the '<em><b>Reasoning</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
 		EAttribute CHAT_MESSAGE__REASONING = eINSTANCE.getChatMessage_Reasoning();
+
+		/**
+		 * The meta object literal for the '<em><b>Response Kind</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
 		EAttribute CHAT_MESSAGE__RESPONSE_KIND = eINSTANCE.getChatMessage_ResponseKind();
 
 		/**
@@ -10170,6 +10642,262 @@ public interface OrchestrationPackage extends EPackage {
 		EAttribute PROMPT_INSTRUCTIONS__STEP_MODE = eINSTANCE.getPromptInstructions_StepMode();
 
 		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.ForgeSessionImpl <em>Forge Session</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.ForgeSessionImpl
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getForgeSession()
+		 * @generated
+		 */
+		EClass FORGE_SESSION = eINSTANCE.getForgeSession();
+
+		/**
+		 * The meta object literal for the '<em><b>Session Id</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute FORGE_SESSION__SESSION_ID = eINSTANCE.getForgeSession_SessionId();
+
+		/**
+		 * The meta object literal for the '<em><b>Name</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute FORGE_SESSION__NAME = eINSTANCE.getForgeSession_Name();
+
+		/**
+		 * The meta object literal for the '<em><b>Created At</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute FORGE_SESSION__CREATED_AT = eINSTANCE.getForgeSession_CreatedAt();
+
+		/**
+		 * The meta object literal for the '<em><b>Last Modified</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute FORGE_SESSION__LAST_MODIFIED = eINSTANCE.getForgeSession_LastModified();
+
+		/**
+		 * The meta object literal for the '<em><b>Status</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute FORGE_SESSION__STATUS = eINSTANCE.getForgeSession_Status();
+
+		/**
+		 * The meta object literal for the '<em><b>Active Model Id</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute FORGE_SESSION__ACTIVE_MODEL_ID = eINSTANCE.getForgeSession_ActiveModelId();
+
+		/**
+		 * The meta object literal for the '<em><b>Selected Model Type</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute FORGE_SESSION__SELECTED_MODEL_TYPE = eINSTANCE.getForgeSession_SelectedModelType();
+
+		/**
+		 * The meta object literal for the '<em><b>Git</b></em>' containment reference feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference FORGE_SESSION__GIT = eINSTANCE.getForgeSession_Git();
+
+		/**
+		 * The meta object literal for the '<em><b>Model State</b></em>' containment reference feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference FORGE_SESSION__MODEL_STATE = eINSTANCE.getForgeSession_ModelState();
+
+		/**
+		 * The meta object literal for the '<em><b>Experiments</b></em>' containment reference list feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference FORGE_SESSION__EXPERIMENTS = eINSTANCE.getForgeSession_Experiments();
+
+		/**
+		 * The meta object literal for the '<em><b>Snapshots</b></em>' containment reference list feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference FORGE_SESSION__SNAPSHOTS = eINSTANCE.getForgeSession_Snapshots();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.SessionModelStateImpl <em>Session Model State</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.SessionModelStateImpl
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSessionModelState()
+		 * @generated
+		 */
+		EClass SESSION_MODEL_STATE = eINSTANCE.getSessionModelState();
+
+		/**
+		 * The meta object literal for the '<em><b>Session Id</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute SESSION_MODEL_STATE__SESSION_ID = eINSTANCE.getSessionModelState_SessionId();
+
+		/**
+		 * The meta object literal for the '<em><b>Model Graph</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute SESSION_MODEL_STATE__MODEL_GRAPH = eINSTANCE.getSessionModelState_ModelGraph();
+
+		/**
+		 * The meta object literal for the '<em><b>Hyperparameters</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute SESSION_MODEL_STATE__HYPERPARAMETERS = eINSTANCE.getSessionModelState_Hyperparameters();
+
+		/**
+		 * The meta object literal for the '<em><b>Dataset Bindings</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute SESSION_MODEL_STATE__DATASET_BINDINGS = eINSTANCE.getSessionModelState_DatasetBindings();
+
+		/**
+		 * The meta object literal for the '<em><b>Runtime State</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute SESSION_MODEL_STATE__RUNTIME_STATE = eINSTANCE.getSessionModelState_RuntimeState();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.SessionExperimentImpl <em>Session Experiment</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.SessionExperimentImpl
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSessionExperiment()
+		 * @generated
+		 */
+		EClass SESSION_EXPERIMENT = eINSTANCE.getSessionExperiment();
+
+		/**
+		 * The meta object literal for the '<em><b>Id</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute SESSION_EXPERIMENT__ID = eINSTANCE.getSessionExperiment_Id();
+
+		/**
+		 * The meta object literal for the '<em><b>Session Id</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute SESSION_EXPERIMENT__SESSION_ID = eINSTANCE.getSessionExperiment_SessionId();
+
+		/**
+		 * The meta object literal for the '<em><b>Model Id</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute SESSION_EXPERIMENT__MODEL_ID = eINSTANCE.getSessionExperiment_ModelId();
+
+		/**
+		 * The meta object literal for the '<em><b>Dataset Id</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute SESSION_EXPERIMENT__DATASET_ID = eINSTANCE.getSessionExperiment_DatasetId();
+
+		/**
+		 * The meta object literal for the '<em><b>Metrics</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute SESSION_EXPERIMENT__METRICS = eINSTANCE.getSessionExperiment_Metrics();
+
+		/**
+		 * The meta object literal for the '<em><b>Logs</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute SESSION_EXPERIMENT__LOGS = eINSTANCE.getSessionExperiment_Logs();
+
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.impl.SessionSnapshotImpl <em>Session Snapshot</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.SessionSnapshotImpl
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getSessionSnapshot()
+		 * @generated
+		 */
+		EClass SESSION_SNAPSHOT = eINSTANCE.getSessionSnapshot();
+
+		/**
+		 * The meta object literal for the '<em><b>Id</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute SESSION_SNAPSHOT__ID = eINSTANCE.getSessionSnapshot_Id();
+
+		/**
+		 * The meta object literal for the '<em><b>Session Id</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute SESSION_SNAPSHOT__SESSION_ID = eINSTANCE.getSessionSnapshot_SessionId();
+
+		/**
+		 * The meta object literal for the '<em><b>Genome Snapshot Id</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute SESSION_SNAPSHOT__GENOME_SNAPSHOT_ID = eINSTANCE.getSessionSnapshot_GenomeSnapshotId();
+
+		/**
+		 * The meta object literal for the '<em><b>Full Serialized State</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute SESSION_SNAPSHOT__FULL_SERIALIZED_STATE = eINSTANCE.getSessionSnapshot_FullSerializedState();
+
+		/**
+		 * The meta object literal for the '<em><b>Timestamp</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute SESSION_SNAPSHOT__TIMESTAMP = eINSTANCE.getSessionSnapshot_Timestamp();
+
+		/**
 		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.TaskStatus <em>Task Status</em>}' enum.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
@@ -10299,68 +11027,14 @@ public interface OrchestrationPackage extends EPackage {
 		 */
 		EEnum REVIEW_DECISION = eINSTANCE.getReviewDecision();
 
-		EClass FORGE_SESSION = eINSTANCE.getForgeSession();
-
-		EAttribute FORGE_SESSION__SESSION_ID = eINSTANCE.getForgeSession_SessionId();
-
-		EAttribute FORGE_SESSION__NAME = eINSTANCE.getForgeSession_Name();
-
-		EAttribute FORGE_SESSION__CREATED_AT = eINSTANCE.getForgeSession_CreatedAt();
-
-		EAttribute FORGE_SESSION__LAST_MODIFIED = eINSTANCE.getForgeSession_LastModified();
-
-		EAttribute FORGE_SESSION__STATUS = eINSTANCE.getForgeSession_Status();
-
-		EAttribute FORGE_SESSION__ACTIVE_MODEL_ID = eINSTANCE.getForgeSession_ActiveModelId();
-
-		EAttribute FORGE_SESSION__SELECTED_MODEL_TYPE = eINSTANCE.getForgeSession_SelectedModelType();
-
-		EReference FORGE_SESSION__GIT = eINSTANCE.getForgeSession_Git();
-
-		EReference FORGE_SESSION__MODEL_STATE = eINSTANCE.getForgeSession_ModelState();
-
-		EReference FORGE_SESSION__EXPERIMENTS = eINSTANCE.getForgeSession_Experiments();
-
-		EReference FORGE_SESSION__SNAPSHOTS = eINSTANCE.getForgeSession_Snapshots();
-
-		EClass SESSION_MODEL_STATE = eINSTANCE.getSessionModelState();
-
-		EAttribute SESSION_MODEL_STATE__SESSION_ID = eINSTANCE.getSessionModelState_SessionId();
-
-		EAttribute SESSION_MODEL_STATE__MODEL_GRAPH = eINSTANCE.getSessionModelState_ModelGraph();
-
-		EAttribute SESSION_MODEL_STATE__HYPERPARAMETERS = eINSTANCE.getSessionModelState_Hyperparameters();
-
-		EAttribute SESSION_MODEL_STATE__DATASET_BINDINGS = eINSTANCE.getSessionModelState_DatasetBindings();
-
-		EAttribute SESSION_MODEL_STATE__RUNTIME_STATE = eINSTANCE.getSessionModelState_RuntimeState();
-
-		EClass SESSION_EXPERIMENT = eINSTANCE.getSessionExperiment();
-
-		EAttribute SESSION_EXPERIMENT__ID = eINSTANCE.getSessionExperiment_Id();
-
-		EAttribute SESSION_EXPERIMENT__SESSION_ID = eINSTANCE.getSessionExperiment_SessionId();
-
-		EAttribute SESSION_EXPERIMENT__MODEL_ID = eINSTANCE.getSessionExperiment_ModelId();
-
-		EAttribute SESSION_EXPERIMENT__DATASET_ID = eINSTANCE.getSessionExperiment_DatasetId();
-
-		EAttribute SESSION_EXPERIMENT__METRICS = eINSTANCE.getSessionExperiment_Metrics();
-
-		EAttribute SESSION_EXPERIMENT__LOGS = eINSTANCE.getSessionExperiment_Logs();
-
-		EClass SESSION_SNAPSHOT = eINSTANCE.getSessionSnapshot();
-
-		EAttribute SESSION_SNAPSHOT__ID = eINSTANCE.getSessionSnapshot_Id();
-
-		EAttribute SESSION_SNAPSHOT__SESSION_ID = eINSTANCE.getSessionSnapshot_SessionId();
-
-		EAttribute SESSION_SNAPSHOT__GENOME_SNAPSHOT_ID = eINSTANCE.getSessionSnapshot_GenomeSnapshotId();
-
-		EAttribute SESSION_SNAPSHOT__FULL_SERIALIZED_STATE = eINSTANCE.getSessionSnapshot_FullSerializedState();
-
-		EAttribute SESSION_SNAPSHOT__TIMESTAMP = eINSTANCE.getSessionSnapshot_Timestamp();
-
+		/**
+		 * The meta object literal for the '{@link eu.kalafatic.evolution.model.orchestration.ForgeStatus <em>Forge Status</em>}' enum.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see eu.kalafatic.evolution.model.orchestration.ForgeStatus
+		 * @see eu.kalafatic.evolution.model.orchestration.impl.OrchestrationPackageImpl#getForgeStatus()
+		 * @generated
+		 */
 		EEnum FORGE_STATUS = eINSTANCE.getForgeStatus();
 
 	}

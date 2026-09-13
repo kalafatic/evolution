@@ -2,13 +2,6 @@
  */
 package eu.kalafatic.evolution.model.orchestration.impl;
 
-import org.eclipse.emf.ecore.EClass;
-import org.eclipse.emf.ecore.EDataType;
-import org.eclipse.emf.ecore.EObject;
-import org.eclipse.emf.ecore.EPackage;
-import org.eclipse.emf.ecore.impl.EFactoryImpl;
-import org.eclipse.emf.ecore.plugin.EcorePlugin;
-
 import eu.kalafatic.evolution.model.orchestration.AIProvider;
 import eu.kalafatic.evolution.model.orchestration.AccessRule;
 import eu.kalafatic.evolution.model.orchestration.Agent;
@@ -66,6 +59,15 @@ import eu.kalafatic.evolution.model.orchestration.Task;
 import eu.kalafatic.evolution.model.orchestration.TaskStatus;
 import eu.kalafatic.evolution.model.orchestration.Test;
 import eu.kalafatic.evolution.model.orchestration.TestStatus;
+
+import org.eclipse.emf.ecore.EClass;
+import org.eclipse.emf.ecore.EDataType;
+import org.eclipse.emf.ecore.EObject;
+import org.eclipse.emf.ecore.EPackage;
+
+import org.eclipse.emf.ecore.impl.EFactoryImpl;
+
+import org.eclipse.emf.ecore.plugin.EcorePlugin;
 
 /**
  * <!-- begin-user-doc -->
@@ -282,30 +284,6 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 	public GenomeSnapshot createGenomeSnapshot() {
 		GenomeSnapshotImpl genomeSnapshot = new GenomeSnapshotImpl();
 		return genomeSnapshot;
-	}
-
-	@Override
-	public ForgeSession createForgeSession() {
-		ForgeSessionImpl forgeSession = new ForgeSessionImpl();
-		return forgeSession;
-	}
-
-	@Override
-	public SessionModelState createSessionModelState() {
-		SessionModelStateImpl sessionModelState = new SessionModelStateImpl();
-		return sessionModelState;
-	}
-
-	@Override
-	public SessionExperiment createSessionExperiment() {
-		SessionExperimentImpl sessionExperiment = new SessionExperimentImpl();
-		return sessionExperiment;
-	}
-
-	@Override
-	public SessionSnapshot createSessionSnapshot() {
-		SessionSnapshotImpl sessionSnapshot = new SessionSnapshotImpl();
-		return sessionSnapshot;
 	}
 
 	/**
@@ -687,14 +665,52 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public TaskStatus createTaskStatusFromString(EDataType eDataType, String initialValue) {
-		TaskStatus result = TaskStatus.get(initialValue);
-		if (result == null) throw new IllegalArgumentException("The value '" + initialValue + "' is not a valid enumerator of '" + eDataType.getName() + "'");
-		return result;
+	@Override
+	public ForgeSession createForgeSession() {
+		ForgeSessionImpl forgeSession = new ForgeSessionImpl();
+		return forgeSession;
 	}
 
-	public ForgeStatus createForgeStatusFromString(EDataType eDataType, String initialValue) {
-		ForgeStatus result = ForgeStatus.get(initialValue);
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public SessionModelState createSessionModelState() {
+		SessionModelStateImpl sessionModelState = new SessionModelStateImpl();
+		return sessionModelState;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public SessionExperiment createSessionExperiment() {
+		SessionExperimentImpl sessionExperiment = new SessionExperimentImpl();
+		return sessionExperiment;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public SessionSnapshot createSessionSnapshot() {
+		SessionSnapshotImpl sessionSnapshot = new SessionSnapshotImpl();
+		return sessionSnapshot;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public TaskStatus createTaskStatusFromString(EDataType eDataType, String initialValue) {
+		TaskStatus result = TaskStatus.get(initialValue);
 		if (result == null) throw new IllegalArgumentException("The value '" + initialValue + "' is not a valid enumerator of '" + eDataType.getName() + "'");
 		return result;
 	}
@@ -888,10 +904,6 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 		return instanceValue == null ? null : instanceValue.toString();
 	}
 
-	public String convertForgeStatusToString(EDataType eDataType, Object instanceValue) {
-		return instanceValue == null ? null : instanceValue.toString();
-	}
-
 	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -949,6 +961,26 @@ public class OrchestrationFactoryImpl extends EFactoryImpl implements Orchestrat
 	 * @generated
 	 */
 	public String convertReviewDecisionToString(EDataType eDataType, Object instanceValue) {
+		return instanceValue == null ? null : instanceValue.toString();
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public ForgeStatus createForgeStatusFromString(EDataType eDataType, String initialValue) {
+		ForgeStatus result = ForgeStatus.get(initialValue);
+		if (result == null) throw new IllegalArgumentException("The value '" + initialValue + "' is not a valid enumerator of '" + eDataType.getName() + "'");
+		return result;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public String convertForgeStatusToString(EDataType eDataType, Object instanceValue) {
 		return instanceValue == null ? null : instanceValue.toString();
 	}
 
