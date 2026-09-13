@@ -1,71 +1,42 @@
-/* Genome Visualization Styles */
+/* Genome Visualization Styles - Workstation Theme */
+@import url("evo-style.css");
 
 .node {
     cursor: pointer;
-    transition: transform 0.2s;
 }
 
-.node:hover {
-    filter: brightness(1.1);
+.node:hover rect {
+    stroke: var(--evo-primary) !important;
+    stroke-width: 2px !important;
 }
 
 .node rect {
-    stroke-width: 2px;
-    fill: #ffffff;
+    stroke-width: 1.5px;
+    stroke: var(--evo-border-dark);
+    fill: var(--evo-surface);
 }
 
 .node text {
     font-size: 11px;
-    fill: #333333;
+    fill: var(--evo-text);
     pointer-events: none;
     font-weight: 600;
 }
 
 .node-description {
     font-size: 9px;
-    fill: #666;
+    fill: var(--evo-text-secondary);
     pointer-events: none;
 }
 
 .link {
-    stroke: #999;
+    stroke: var(--evo-border-dark);
     stroke-width: 1.5px;
     fill: none;
-    transition: stroke 0.2s;
 }
 
 .link-label {
     font-size: 8px;
-    fill: #888;
+    fill: var(--evo-text-muted);
     pointer-events: none;
-}
-
-/* Animations */
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-.graph-root {
-    animation: fadeIn 0.5s ease-in-out;
-}
-
-/* Dark theme support (optional) */
-@media (prefers-color-scheme: dark) {
-    :root {
-        --bg-primary: #1e1e1e;
-        --bg-secondary: #252526;
-        --border: #3c3c3c;
-        --text: #cccccc;
-        --text-dim: #888888;
-        --accent: #0e639c;
-    }
-
-    .node rect {
-        fill: #2d2d2d;
-    }
-
-    .node text {
-        fill: #e0e0e0;
-    }
 }

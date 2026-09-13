@@ -1,0 +1,301 @@
+/* EVO Unified Master Stylesheet - Professional Engineering Workstation */
+:root {
+    /* Working Surface & Canvas */
+    --evo-bg: #f2f3f5;
+    --evo-surface: #ffffff;
+    --evo-surface-alt: #f8f9fa;
+    --evo-surface-hover: #e9ecef;
+    --evo-surface-selected: #e7eef7;
+
+    /* Borders & Separators */
+    --evo-border: #c8ccd1;
+    --evo-border-dark: #aeb4bb;
+    --evo-border-focus: #2864a5;
+
+    /* Typography & Text */
+    --evo-text: #202428;
+    --evo-text-secondary: #555b62;
+    --evo-text-muted: #747b83;
+    --evo-text-inverse: #ffffff;
+    --evo-font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+    --evo-font-mono: 'Consolas', 'Fira Code', 'JetBrains Mono', 'Courier New', monospace;
+
+    /* Accent & Branding */
+    --evo-primary: #2864a5;
+    --evo-primary-hover: #1f5289;
+    --evo-primary-light: #e7eef7;
+    --evo-primary-border: #1f5289;
+
+    /* Status & Semantic Colors */
+    --evo-success: #287a45;
+    --evo-success-hover: #1e5e34;
+    --evo-success-light: #e6f4ea;
+    --evo-warning: #9a6a00;
+    --evo-warning-hover: #785200;
+    --evo-warning-light: #fef7e0;
+    --evo-danger: #a52a2a;
+    --evo-danger-hover: #802020;
+    --evo-danger-light: #fce8e8;
+    --evo-info: #0066cc;
+    --evo-info-light: #e8f2fc;
+
+    /* Geometry & Components */
+    --evo-radius: 3px;
+    --evo-shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+    --evo-shadow-md: 0 2px 6px rgba(0,0,0,0.12);
+}
+
+/* Base Workstation Typography & Reset */
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+    background-color: var(--evo-bg);
+    color: var(--evo-text);
+    font-family: var(--evo-font-family);
+    font-size: 12px;
+    line-height: 1.4;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Precise Workstation Scrollbars */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: var(--evo-bg);
+}
+::-webkit-scrollbar-thumb {
+    background: var(--evo-border-dark);
+    border-radius: var(--evo-radius);
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--evo-text-muted);
+}
+
+a {
+    color: var(--evo-primary);
+    text-decoration: none;
+}
+a:hover {
+    text-decoration: underline;
+}
+
+/* Common Workstation UI Components */
+
+/* Buttons */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    background-color: var(--evo-surface);
+    color: var(--evo-text);
+    border: 1px solid var(--evo-border);
+    padding: 5px 10px;
+    border-radius: var(--evo-radius);
+    font-family: var(--evo-font-family);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.1s, border-color 0.1s, color 0.1s;
+    text-decoration: none;
+}
+.btn:hover:not(:disabled) {
+    background-color: var(--evo-surface-hover);
+    border-color: var(--evo-border-dark);
+}
+.btn:active:not(:disabled) {
+    background-color: var(--evo-border);
+}
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-primary {
+    background-color: var(--evo-primary);
+    color: var(--evo-text-inverse);
+    border-color: var(--evo-primary-border);
+}
+.btn-primary:hover:not(:disabled) {
+    background-color: var(--evo-primary-hover);
+    border-color: var(--evo-primary-hover);
+}
+
+.btn-secondary {
+    background-color: var(--evo-surface-alt);
+    color: var(--evo-text);
+    border-color: var(--evo-border);
+}
+.btn-secondary:hover:not(:disabled) {
+    background-color: var(--evo-surface-hover);
+}
+
+.btn-danger {
+    background-color: var(--evo-danger);
+    color: var(--evo-text-inverse);
+    border-color: var(--evo-danger);
+}
+.btn-danger:hover:not(:disabled) {
+    background-color: var(--evo-danger-hover);
+}
+
+.btn-success {
+    background-color: var(--evo-success);
+    color: var(--evo-text-inverse);
+    border-color: var(--evo-success);
+}
+.btn-success:hover:not(:disabled) {
+    background-color: var(--evo-success-hover);
+}
+
+.btn-sm {
+    padding: 3px 6px;
+    font-size: 10px;
+}
+
+/* Inputs & Selects */
+input[type="text"],
+input[type="number"],
+input[type="search"],
+select,
+textarea {
+    background-color: var(--evo-surface);
+    border: 1px solid var(--evo-border);
+    color: var(--evo-text);
+    padding: 5px 8px;
+    border-radius: var(--evo-radius);
+    font-family: var(--evo-font-family);
+    font-size: 11px;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+input[type="text"]:focus,
+input[type="number"]:focus,
+input[type="search"]:focus,
+select:focus,
+textarea:focus {
+    border-color: var(--evo-border-focus);
+    box-shadow: 0 0 0 1px var(--evo-border-focus);
+}
+select option {
+    background-color: var(--evo-surface);
+    color: var(--evo-text);
+}
+
+/* Panels */
+.evo-panel, .panel {
+    background-color: var(--evo-surface);
+    border: 1px solid var(--evo-border);
+    border-radius: var(--evo-radius);
+    display: flex;
+    flex-direction: column;
+}
+.evo-panel-header, .panel-header {
+    padding: 8px 12px;
+    background-color: var(--evo-surface-alt);
+    border-bottom: 1px solid var(--evo-border);
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--evo-text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.evo-panel-body, .panel-body {
+    padding: 10px;
+    flex: 1;
+    overflow: auto;
+}
+
+/* Toolbars */
+.evo-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background-color: var(--evo-surface-alt);
+    border-bottom: 1px solid var(--evo-border);
+}
+
+/* Badges & Status */
+.evo-badge {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: var(--evo-radius);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    background-color: var(--evo-surface-alt);
+    color: var(--evo-text-secondary);
+    border: 1px solid var(--evo-border);
+}
+.evo-status-success {
+    background-color: var(--evo-success-light);
+    color: var(--evo-success);
+    border-color: var(--evo-success);
+}
+.evo-status-warning {
+    background-color: var(--evo-warning-light);
+    color: var(--evo-warning);
+    border-color: var(--evo-warning);
+}
+.evo-status-error {
+    background-color: var(--evo-danger-light);
+    color: var(--evo-danger);
+    border-color: var(--evo-danger);
+}
+
+/* Tables */
+.evo-table, .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    background-color: var(--evo-surface);
+}
+.evo-table th, .data-table th,
+.evo-table td, .data-table td {
+    border: 1px solid var(--evo-border);
+    padding: 6px 10px;
+    text-align: left;
+    vertical-align: top;
+}
+.evo-table th, .data-table th {
+    background-color: var(--evo-surface-alt);
+    color: var(--evo-text);
+    font-weight: 700;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+.evo-table tr:hover, .data-table tr:hover {
+    background-color: var(--evo-surface-hover);
+}
+
+/* Empty & Loading States */
+.evo-empty {
+    text-align: center;
+    color: var(--evo-text-muted);
+    padding: 20px;
+    font-style: italic;
+}
+.evo-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 15px;
+    color: var(--evo-text-secondary);
+}
