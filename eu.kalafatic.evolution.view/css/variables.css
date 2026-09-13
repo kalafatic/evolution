@@ -1,48 +1,48 @@
 /* EVO Unified Theme Tokens & Legacy Map - AI Chat */
 :root {
     /* Working Surface & Canvas */
-    --evo-bg: #f2f3f5;
+    --evo-bg: #e8ecef;
     --evo-surface: #ffffff;
-    --evo-surface-alt: #f8f9fa;
-    --evo-surface-hover: #e9ecef;
-    --evo-surface-selected: #e7eef7;
+    --evo-surface-alt: #f1f3f6;
+    --evo-surface-hover: #e2e7ec;
+    --evo-surface-selected: #dbe4f0;
 
     /* Borders & Separators */
-    --evo-border: #c8ccd1;
-    --evo-border-dark: #aeb4bb;
-    --evo-border-focus: #2864a5;
+    --evo-border: #b8c0c8;
+    --evo-border-dark: #98a2ac;
+    --evo-border-focus: #1d5296;
 
     /* Typography & Text */
-    --evo-text: #202428;
-    --evo-text-secondary: #555b62;
-    --evo-text-muted: #747b83;
+    --evo-text: #1a202c;
+    --evo-text-secondary: #4a5568;
+    --evo-text-muted: #718096;
     --evo-text-inverse: #ffffff;
     --evo-font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
     --evo-font-mono: 'Consolas', 'Fira Code', 'JetBrains Mono', 'Courier New', monospace;
 
     /* Accent & Branding */
-    --evo-primary: #2864a5;
-    --evo-primary-hover: #1f5289;
-    --evo-primary-light: #e7eef7;
-    --evo-primary-border: #1f5289;
+    --evo-primary: #1d5296;
+    --evo-primary-hover: #153e70;
+    --evo-primary-light: #e8f0fe;
+    --evo-primary-border: #153e70;
 
     /* Status & Semantic Colors */
-    --evo-success: #287a45;
-    --evo-success-hover: #1e5e34;
+    --evo-success: #1e7e34;
+    --evo-success-hover: #145827;
     --evo-success-light: #e6f4ea;
-    --evo-warning: #9a6a00;
-    --evo-warning-hover: #785200;
-    --evo-warning-light: #fef7e0;
-    --evo-danger: #a52a2a;
-    --evo-danger-hover: #802020;
-    --evo-danger-light: #fce8e8;
-    --evo-info: #0066cc;
-    --evo-info-light: #e8f2fc;
+    --evo-warning: #b45309;
+    --evo-warning-hover: #853704;
+    --evo-warning-light: #fef3c7;
+    --evo-danger: #b91c1c;
+    --evo-danger-hover: #881313;
+    --evo-danger-light: #fee2e2;
+    --evo-info: #0284c7;
+    --evo-info-light: #e0f2fe;
 
     /* Geometry & Components */
-    --evo-radius: 3px;
-    --evo-shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
-    --evo-shadow-md: 0 2px 6px rgba(0,0,0,0.12);
+    --evo-radius: 4px;
+    --evo-shadow-sm: 0 1px 2px rgba(0,0,0,0.06);
+    --evo-shadow-md: 0 2px 5px rgba(0,0,0,0.1);
 
     /* Legacy Variables Mapping for AI Chat Compatibility */
     --bg-canvas: var(--evo-bg);

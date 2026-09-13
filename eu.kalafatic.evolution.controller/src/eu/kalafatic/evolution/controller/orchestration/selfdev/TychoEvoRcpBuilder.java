@@ -13,6 +13,10 @@ import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import eu.kalafatic.evolution.controller.resource.ProductDefinition;
+import eu.kalafatic.evolution.controller.resource.ResourceManager;
+import eu.kalafatic.evolution.controller.resource.TargetPlatform;
+
 public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcpBuilder {
 
     private boolean skipTests = false;
@@ -29,223 +33,39 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
         this.skipTests = skipTests;
     }
 
-    public static class TargetPlatform {
-        private final String os;
-        private final String ws;
-        private final String arch;
-        private final String packaging;
-        private final String profile;
-
+    // Retain static nested classes for backwards compatibility
+    public static class TargetPlatform extends eu.kalafatic.evolution.controller.resource.TargetPlatform {
         public TargetPlatform(String os, String ws, String arch, String packaging, String profile) {
-            this.os = os != null ? os : "win32";
-            this.ws = ws != null ? ws : (this.os.equals("win32") ? "win32" : "gtk");
-            this.arch = arch != null ? arch : "x86_64";
-            this.packaging = packaging != null ? packaging : "zip";
-            this.profile = profile != null ? profile : (this.os.equals("win32") ? "-Pwindows" : "-Plinux");
-        }
-
-        public String getOs() { return os; }
-        public String getWs() { return ws; }
-        public String getArch() { return arch; }
-        public String getPackaging() { return packaging; }
-        public String getProfile() { return profile; }
-
-        public boolean isWindows() { return "win32".equalsIgnoreCase(os) || os.toLowerCase().contains("win"); }
-        public boolean isLinux() { return "linux".equalsIgnoreCase(os) || os.toLowerCase().contains("linux"); }
-
-        @Override
-        public String toString() {
-            return os + "." + ws + "." + arch + " (" + packaging + ")";
+            super(os, ws, arch, packaging, profile);
         }
     }
 
-    public static class ProductDefinition {
-        private final String productId;
-        private final String launcherName;
-        private final String rootFolder;
-        private final String repositoryModule;
-        private final File productFile;
-
+    public static class ProductDefinition extends eu.kalafatic.evolution.controller.resource.ProductDefinition {
         public ProductDefinition(String productId, String launcherName, String rootFolder, String repositoryModule, File productFile) {
-            this.productId = productId != null && !productId.trim().isEmpty() ? productId.trim() : "evolution";
-            this.launcherName = launcherName != null && !launcherName.trim().isEmpty() ? launcherName.trim() : "evo";
-            this.rootFolder = rootFolder != null && !rootFolder.trim().isEmpty() ? rootFolder.trim() : "evolution";
-            this.repositoryModule = repositoryModule != null && !repositoryModule.trim().isEmpty() ? repositoryModule.trim() : "eu.kalafatic.evolution.repository";
-            this.productFile = productFile;
-        }
-
-        public String getProductId() { return productId; }
-        public String getLauncherName() { return launcherName; }
-        public String getRootFolder() { return rootFolder; }
-        public String getRepositoryModule() { return repositoryModule; }
-        public File getProductFile() { return productFile; }
-
-        @Override
-        public String toString() {
-            return "ProductDefinition{" +
-                    "productId='" + productId + '\'' +
-                    ", launcherName='" + launcherName + '\'' +
-                    ", rootFolder='" + rootFolder + '\'' +
-                    ", repositoryModule='" + repositoryModule + '\'' +
-                    '}';
+            super(productId, launcherName, rootFolder, repositoryModule, productFile);
         }
     }
 
     public File discoverSourceDir(SelfDevContext context) {
-        if (context == null) return new File(".");
-        File srcDir = context.getSourceDirectory();
-        if (srcDir != null && srcDir.exists() && new File(srcDir, "pom.xml").exists()) {
-            return srcDir;
-        }
-        File projRoot = context.getProjectRoot();
-        if (projRoot != null && projRoot.exists()) {
-            return projRoot;
-        }
-        return srcDir != null ? srcDir : new File(".");
+        ResourceManager rm = context != null ? context.getResourceManager() : ResourceManager.getInstance();
+        return rm.getEvoSource().toFile();
     }
 
     public File discoverReactorRoot(File sourceDir) {
-        if (sourceDir == null) return null;
-        File pom = new File(sourceDir, "pom.xml");
-        if (pom.exists() && isEvoAggregatorPom(pom)) {
-            return sourceDir;
-        }
-        File parent = sourceDir.getParentFile();
-        if (parent != null && new File(parent, "pom.xml").exists() && isEvoAggregatorPom(new File(parent, "pom.xml"))) {
-            return parent;
-        }
-        return pom.exists() ? sourceDir : null;
-    }
-
-    private boolean isEvoAggregatorPom(File pomFile) {
-        try {
-            String content = Files.readString(pomFile.toPath());
-            return content.contains("eu.kalafatic.evolution.aggregator") || content.contains("eu.kalafatic.evolution");
-        } catch (Exception e) {
-            return false;
-        }
+        ResourceManager rm = ResourceManager.getInstance();
+        return rm.getEvoReactor().toFile();
     }
 
     public ProductDefinition discoverTychoProduct(File reactorRoot) {
-        if (reactorRoot == null || !reactorRoot.exists()) {
-            return new ProductDefinition("evolution", "evo", "evolution", "eu.kalafatic.evolution.repository", null);
-        }
-
-        File repoModuleDir = new File(reactorRoot, "eu.kalafatic.evolution.repository");
-        File productFile = new File(repoModuleDir, "evolution.product");
-        if (!productFile.exists()) {
-            File[] productFiles = repoModuleDir.listFiles((dir, name) -> name.endsWith(".product"));
-            if (productFiles != null && productFiles.length > 0) {
-                productFile = productFiles[0];
-            }
-        }
-
-        String productId = "evolution";
-        String launcherName = "evo";
-        String rootFolder = "evolution";
-        String repoModuleName = "eu.kalafatic.evolution.repository";
-
-        if (productFile.exists()) {
-            try {
-                String content = Files.readString(productFile.toPath());
-                String parsedUid = extractAttribute(content, "uid");
-                String parsedId = extractAttribute(content, "id");
-                if (parsedUid != null && !parsedUid.isEmpty()) {
-                    productId = parsedUid;
-                } else if (parsedId != null && !parsedId.isEmpty()) {
-                    productId = parsedId;
-                }
-
-                String parsedLauncher = extractLauncherName(content);
-                if (parsedLauncher != null && !parsedLauncher.isEmpty()) {
-                    launcherName = parsedLauncher;
-                }
-            } catch (Exception e) {
-                System.err.println("[TychoEvoRcpBuilder] Error reading product definition " + productFile + ": " + e.getMessage());
-            }
-        }
-
-        File repoPom = new File(repoModuleDir, "pom.xml");
-        if (repoPom.exists()) {
-            try {
-                String pomContent = Files.readString(repoPom.toPath());
-                String parsedRootFolder = extractTagValue(pomContent, "rootFolder");
-                if (parsedRootFolder != null && !parsedRootFolder.isEmpty()) {
-                    rootFolder = parsedRootFolder;
-                }
-            } catch (Exception e) {
-                System.err.println("[TychoEvoRcpBuilder] Error reading repo pom " + repoPom + ": " + e.getMessage());
-            }
-        }
-
-        return new ProductDefinition(productId, launcherName, rootFolder, repoModuleName, productFile.exists() ? productFile : null);
+        ResourceManager rm = ResourceManager.getInstance();
+        eu.kalafatic.evolution.controller.resource.ProductDefinition pd = rm.getProductDefinition();
+        return new ProductDefinition(pd.getProductId(), pd.getLauncherName(), pd.getRootFolder(), pd.getRepositoryModule(), pd.getProductFile());
     }
 
     public TargetPlatform resolveTargetPlatform(SelfDevContext context) {
-        if (context != null) {
-            for (TaskResult tr : context.getTaskResults().values()) {
-                if (tr != null && tr.getDiagnostics() != null) {
-                    Object targetOsObj = tr.getDiagnostics().get("targetOS");
-                    if (targetOsObj != null) {
-                        String osStr = targetOsObj.toString().toLowerCase();
-                        if (osStr.contains("win")) {
-                            return new TargetPlatform("win32", "win32", "x86_64", "zip", "-Pwindows");
-                        } else if (osStr.contains("linux")) {
-                            return new TargetPlatform("linux", "gtk", "x86_64", "tar.gz", "-Plinux");
-                        }
-                    }
-                }
-            }
-        }
-
-        String sysOs = System.getProperty("evo.target.os", System.getProperty("os.name")).toLowerCase();
-        if (sysOs.contains("win")) {
-            return new TargetPlatform("win32", "win32", "x86_64", "zip", "-Pwindows");
-        } else {
-            return new TargetPlatform("linux", "gtk", "x86_64", "tar.gz", "-Plinux");
-        }
-    }
-
-    private String extractAttribute(String xmlContent, String attrName) {
-        String key = attrName + "=\"";
-        int idx = xmlContent.indexOf(key);
-        if (idx != -1) {
-            int start = idx + key.length();
-            int end = xmlContent.indexOf("\"", start);
-            if (end != -1) {
-                return xmlContent.substring(start, end);
-            }
-        }
-        return null;
-    }
-
-    private String extractLauncherName(String xmlContent) {
-        int launcherIdx = xmlContent.indexOf("<launcher");
-        if (launcherIdx != -1) {
-            int nameIdx = xmlContent.indexOf("name=\"", launcherIdx);
-            if (nameIdx != -1) {
-                int start = nameIdx + "name=\"".length();
-                int end = xmlContent.indexOf("\"", start);
-                if (end != -1) {
-                    return xmlContent.substring(start, end);
-                }
-            }
-        }
-        return null;
-    }
-
-    private String extractTagValue(String xmlContent, String tagName) {
-        String openTag = "<" + tagName + ">";
-        String closeTag = "</" + tagName + ">";
-        int start = xmlContent.indexOf(openTag);
-        if (start != -1) {
-            int valStart = start + openTag.length();
-            int end = xmlContent.indexOf(closeTag, valStart);
-            if (end != -1) {
-                return xmlContent.substring(valStart, end).trim();
-            }
-        }
-        return null;
+        ResourceManager rm = context != null ? context.getResourceManager() : ResourceManager.getInstance();
+        eu.kalafatic.evolution.controller.resource.TargetPlatform tp = rm.getTargetPlatform();
+        return new TargetPlatform(tp.getOs(), tp.getWs(), tp.getArch(), tp.getPackaging(), tp.getProfile());
     }
 
     @Override
@@ -255,12 +75,8 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
             return TaskResult.failure("build_evo_rcp", "SelfDevContext is null", null);
         }
 
-        File srcDir = discoverSourceDir(context);
-        File reactorRoot = discoverReactorRoot(srcDir);
-        if (reactorRoot == null) {
-            return TaskResult.failure("build_evo_rcp", "Tycho reactor root containing pom.xml not found at " + srcDir.getAbsolutePath(), null);
-        }
-
+        ResourceManager rm = context.getResourceManager();
+        File reactorRoot = rm.getEvoReactor().toFile();
         ProductDefinition prodDef = discoverTychoProduct(reactorRoot);
         TargetPlatform platform = resolveTargetPlatform(context);
         File logFile = getLogFile(context, "evo_build.log");
@@ -319,21 +135,33 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
             return TaskResult.failure("export_evo_rcp", "SelfDevContext is null", null);
         }
 
-        File srcDir = discoverSourceDir(context);
-        File reactorRoot = discoverReactorRoot(srcDir);
-        if (reactorRoot == null) {
-            return TaskResult.failure("export_evo_rcp", "Tycho reactor root containing pom.xml not found at " + srcDir.getAbsolutePath(), null);
-        }
-
+        ResourceManager rm = context.getResourceManager();
+        File reactorRoot = rm.getEvoReactor().toFile();
         ProductDefinition prodDef = discoverTychoProduct(reactorRoot);
         TargetPlatform platform = resolveTargetPlatform(context);
         File logFile = getLogFile(context, "evo_build.log");
 
-        // Note on EVO Tycho Product Export:
-        // In eu.kalafatic.evolution.repository/pom.xml, tycho-p2-director-plugin goals 'materialize-products'
-        // and 'archive-products' are bound to the 'package'/'verify' lifecycle phase.
-        // Executing clean verify or clean package triggers the materialize and archive goals.
+        // REQUIREMENT 11: BUILD MUST BUILD ONCE!
+        // First check if a valid build artifact is already available in context or on disk.
+        BuildArtifact existingArtifact = context.getArtifact(ArtifactType.EVO_RCP);
+        if (existingArtifact == null) {
+            existingArtifact = getArtifact(context);
+        }
 
+        if (existingArtifact != null && existingArtifact.getPath() != null && existingArtifact.getPath().exists()) {
+            System.out.println("[TychoEvoRcpBuilder] Reusing existing verified build artifact for export: " + existingArtifact.getPath().getAbsolutePath());
+            context.recordArtifact(existingArtifact);
+            long duration = System.currentTimeMillis() - startTime;
+            return new TaskResult.Builder("export_evo_rcp")
+                    .status(TaskStatus.SUCCESS)
+                    .message("EVO RCP product export reused existing build artifact: " + existingArtifact.getPath().getAbsolutePath())
+                    .artifact(existingArtifact)
+                    .duration(duration)
+                    .logFile(logFile)
+                    .build();
+        }
+
+        // If no artifact exists, trigger clean verify build once
         List<String> goals = Arrays.asList("clean", "verify");
         List<String> args = new ArrayList<>();
         args.add(platform.getProfile());
@@ -396,10 +224,8 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
     public BuildArtifact getArtifact(SelfDevContext context) {
         if (context == null) return null;
 
-        File srcDir = discoverSourceDir(context);
-        File reactorRoot = discoverReactorRoot(srcDir);
-        if (reactorRoot == null) return null;
-
+        ResourceManager rm = context.getResourceManager();
+        File reactorRoot = rm.getEvoReactor().toFile();
         ProductDefinition prodDef = discoverTychoProduct(reactorRoot);
         TargetPlatform platform = resolveTargetPlatform(context);
 
