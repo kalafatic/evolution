@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import eu.kalafatic.evolution.controller.resource.EvoService;
+
 public class SupervisorRuntime implements ProcessLifecycle {
 
     private static volatile Process supervisorProcess;
@@ -64,9 +66,11 @@ public class SupervisorRuntime implements ProcessLifecycle {
             long duration = System.currentTimeMillis() - startTime;
 
             if (readyRes.isSuccess()) {
+                EvoService service = context.getResourceManager().getService("SUPERVISOR");
+                String serviceUrl = service != null ? service.getUrl() : "http://127.0.0.1:48080";
                 return new TaskResult.Builder("start_supervisor")
                         .status(TaskStatus.SUCCESS)
-                        .message("Supervisor started successfully and responding on http://127.0.0.1:8089")
+                        .message("Supervisor started successfully and responding on " + serviceUrl)
                         .duration(duration)
                         .command(String.join(" ", cmd))
                         .workingDirectory(jarFile.getParentFile())

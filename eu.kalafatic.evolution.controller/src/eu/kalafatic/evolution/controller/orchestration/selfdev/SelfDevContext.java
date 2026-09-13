@@ -9,11 +9,14 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import eu.kalafatic.evolution.controller.resource.EvoPath;
+import eu.kalafatic.evolution.controller.resource.ProductDefinition;
 import eu.kalafatic.evolution.controller.resource.ResourceManager;
+import eu.kalafatic.evolution.controller.resource.TargetPlatform;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 
 public class SelfDevContext {
     private final String runId;
+    private final ResourceManager resourceManager;
     private final File repositoryRoot;
     private final File projectRoot;
     private final File sourceDirectory;
@@ -43,14 +46,14 @@ public class SelfDevContext {
     }
 
     public SelfDevContext(File projectRoot, File baseRunDir, Orchestrator orchestrator) {
-        ResourceManager rm = ResourceManager.getInstance();
+        this.resourceManager = ResourceManager.getInstance();
         if (orchestrator != null) {
-            rm.setOrchestrator(orchestrator);
+            this.resourceManager.setOrchestrator(orchestrator);
         }
-        this.orchestrator = rm.getOrchestrator();
+        this.orchestrator = this.resourceManager.getOrchestrator();
 
-        this.repositoryRoot = rm.getPath(EvoPath.EVO_ROOT).toFile();
-        this.projectRoot = projectRoot != null ? rm.resolvePath(rm.getPath(EvoPath.EVO_ROOT), projectRoot.getPath()).toFile() : rm.getPath(EvoPath.PROJECT_ROOT).toFile();
+        this.repositoryRoot = this.resourceManager.getPath(EvoPath.EVO_ROOT).toFile();
+        this.projectRoot = projectRoot != null ? this.resourceManager.resolvePath(this.resourceManager.getPath(EvoPath.EVO_ROOT), projectRoot.getPath()).toFile() : this.resourceManager.getPath(EvoPath.PROJECT_ROOT).toFile();
 
         String timestamp = new SimpleDateFormat("ddMMyy_HHmmss").format(new Date());
         this.runId = "run_" + timestamp;
@@ -66,7 +69,7 @@ public class SelfDevContext {
         this.buildDirectory = resolvePath(runDir, "build");
         this.exportDirectory = resolvePath(runDir, "export");
         this.runtimeDirectory = resolvePath(runDir, "runtime");
-        this.logDirectory = rm.resolvePath(rm.getPath(EvoPath.EVO_ROOT), "self-dev-run/logs").toFile();
+        this.logDirectory = this.resourceManager.resolvePath(this.resourceManager.getPath(EvoPath.EVO_ROOT), "self-dev-run/logs").toFile();
 
         initTargetPlatform();
         discoverAndRepairModulePaths();
@@ -74,19 +77,19 @@ public class SelfDevContext {
         printPreflightReport();
     }
 
+    public ResourceManager getResourceManager() {
+        return resourceManager;
+    }
+
     private void initTargetPlatform() {
-        String sysOs = System.getProperty("evo.target.os", System.getProperty("os.name")).toLowerCase();
-        if (sysOs.contains("win")) {
-            this.os = "win32";
-            this.ws = "win32";
-            this.arch = "x86_64";
-            this.launcher = "evo.exe";
-        } else {
-            this.os = "linux";
-            this.ws = "gtk";
-            this.arch = "x86_64";
-            this.launcher = "evo";
-        }
+        TargetPlatform platform = resourceManager.getTargetPlatform();
+        this.os = platform.getOs();
+        this.ws = platform.getWs();
+        this.arch = platform.getArch();
+
+        ProductDefinition prodDef = resourceManager.getProductDefinition();
+        this.productId = prodDef.getProductId();
+        this.launcher = prodDef.getLauncherName();
     }
 
     public static File resolvePath(File semanticBase, File configured) {
@@ -104,14 +107,13 @@ public class SelfDevContext {
         if (configuredPath == null || configuredPath.trim().isEmpty()) {
             return semanticBase != null ? semanticBase.getAbsoluteFile().toPath().normalize().toFile() : null;
         }
-        File configured = new File(configuredPath);
-        return resolvePath(semanticBase, configured);
+        Path base = semanticBase != null ? semanticBase.toPath() : ResourceManager.getInstance().getPath(EvoPath.EVO_ROOT);
+        return ResourceManager.getInstance().resolvePath(base, configuredPath).toFile();
     }
 
     public void discoverAndRepairModulePaths() {
-        ResourceManager rm = ResourceManager.getInstance();
-        this.supervisorDirectory = rm.getPath(EvoPath.SUPERVISOR_SOURCE).toFile();
-        this.genomeDirectory = rm.getPath(EvoPath.GENOME).toFile();
+        this.supervisorDirectory = resourceManager.getPath(EvoPath.SUPERVISOR_SOURCE).toFile();
+        this.genomeDirectory = resourceManager.getPath(EvoPath.GENOME).toFile();
     }
 
     public File discoverModuleDirectory(String moduleName, File primaryLocation, File... searchRoots) {

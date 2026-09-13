@@ -3,6 +3,7 @@ package eu.kalafatic.evolution.controller.orchestration.selfdev;
 import java.io.File;
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import eu.kalafatic.evolution.controller.resource.ResourceManager;
 
 public class GenomeCheckTask extends AbstractSelfDevTask {
 
@@ -14,7 +15,8 @@ public class GenomeCheckTask extends AbstractSelfDevTask {
 
     @Override
     protected void resolveResources(SelfDevContext context) throws Exception {
-        this.genomeModuleDir = context.getGenomeDirectory();
+        ResourceManager rm = context.getResourceManager();
+        this.genomeModuleDir = rm.getGenome().toFile();
         if (this.genomeModuleDir == null || !this.genomeModuleDir.exists()) {
             context.discoverAndRepairModulePaths();
             this.genomeModuleDir = context.getGenomeDirectory();

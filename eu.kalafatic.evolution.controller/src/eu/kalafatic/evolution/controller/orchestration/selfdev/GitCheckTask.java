@@ -1,6 +1,7 @@
 package eu.kalafatic.evolution.controller.orchestration.selfdev;
 
 import java.io.File;
+import eu.kalafatic.evolution.controller.resource.ResourceManager;
 
 public class GitCheckTask extends AbstractSelfDevTask {
     private final SourceProvider sourceProvider;
@@ -14,12 +15,13 @@ public class GitCheckTask extends AbstractSelfDevTask {
 
     @Override
     protected void resolveResources(SelfDevContext context) throws Exception {
+        ResourceManager rm = context.getResourceManager();
         if ("GIT_SUPERVISOR".equalsIgnoreCase(id)) {
             File supervisorSource = context.getSupervisorDirectory();
             if (supervisorSource == null || !supervisorSource.exists()) {
-                supervisorSource = context.getSourceDirectory();
+                supervisorSource = rm.getSupervisorSource().toFile();
             }
-            this.targetRepo = supervisorSource != null ? supervisorSource : context.getProjectRoot();
+            this.targetRepo = supervisorSource != null && supervisorSource.exists() ? supervisorSource : context.getProjectRoot();
         } else {
             this.targetRepo = context.getProjectRoot();
         }
