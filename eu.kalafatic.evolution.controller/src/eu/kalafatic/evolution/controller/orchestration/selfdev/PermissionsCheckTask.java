@@ -8,20 +8,35 @@ public class PermissionsCheckTask extends AbstractSelfDevTask {
         super(id, "Filesystem Permissions Check (" + id + ")");
     }
 
+    private File logDir;
+
     @Override
-    protected TaskResult run(SelfDevContext context) throws Exception {
-        File logDir = context.getLogDirectory();
+    protected void resolveResources(SelfDevContext context) throws Exception {
+        this.logDir = context.getLogDirectory();
+    }
+
+    @Override
+    protected TaskResult preValidate(SelfDevContext context) throws Exception {
         if (logDir == null) {
-            return TaskResult.failure(id, "Log directory is null", null);
+            return TaskResult.failure(id, "PermissionsCheckTask pre-validation failed: Log directory is null", null);
         }
 
         if (!logDir.exists()) {
             boolean created = logDir.mkdirs();
             if (!created) {
-                return TaskResult.failure(id, "Failed to create log directory: " + logDir.getAbsolutePath(), null);
+                return TaskResult.failure(id, "PermissionsCheckTask pre-validation failed: Could not create log directory at " + logDir.getAbsolutePath(), null);
             }
         }
 
+        return new TaskResult.Builder(id)
+                .status(TaskStatus.READY)
+                .message("Log directory verified at " + logDir.getAbsolutePath())
+                .workingDirectory(logDir)
+                .build();
+    }
+
+    @Override
+    protected TaskResult run(SelfDevContext context) throws Exception {
         try {
             File testFile = new File(logDir, ".perm_test_" + System.currentTimeMillis());
             boolean created = testFile.createNewFile();

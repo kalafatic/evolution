@@ -12,4 +12,15 @@ public class StopSupervisorTask extends AbstractSelfDevTask {
     protected TaskResult run(SelfDevContext context) throws Exception {
         return runtime.stop(context);
     }
+
+    @Override
+    protected TaskResult postValidate(SelfDevContext context, TaskResult runResult) throws Exception {
+        if (!runResult.isSuccess()) {
+            return runResult;
+        }
+        if (runtime.isAlive()) {
+            return TaskResult.failure(id, "StopSupervisorTask post-validation failed: process is still alive after stop.", null);
+        }
+        return runResult;
+    }
 }

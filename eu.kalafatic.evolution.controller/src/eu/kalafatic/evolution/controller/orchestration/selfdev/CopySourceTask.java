@@ -12,23 +12,51 @@ public class CopySourceTask extends AbstractSelfDevTask {
         this.sourceProvider = new GitSourceProvider();
     }
 
+    private File sourceRoot;
+    private File targetDir;
+
+    @Override
+    protected void resolveResources(SelfDevContext context) throws Exception {
+        if ("COPY_SUPERVISOR".equalsIgnoreCase(id)) {
+            this.sourceRoot = ResourceManager.getInstance().getPath(EvoPath.SUPERVISOR_SOURCE).toFile();
+            this.targetDir = new File(context.getSourceDirectory(), "eu.kalafatic.evolution.supervisor");
+        } else {
+            this.sourceRoot = ResourceManager.getInstance().getPath(EvoPath.EVO_ROOT).toFile();
+            this.targetDir = context.getSourceDirectory();
+        }
+    }
+
+    @Override
+    protected TaskResult preValidate(SelfDevContext context) throws Exception {
+        if (sourceRoot == null || !sourceRoot.exists()) {
+            return TaskResult.failure(id, "CopySourceTask pre-validation failed: source root directory does not exist at " + (sourceRoot != null ? sourceRoot.getAbsolutePath() : "null"), null);
+        }
+        if (!new File(sourceRoot, "pom.xml").exists()) {
+            return TaskResult.failure(id, "CopySourceTask pre-validation failed: source directory missing pom.xml at " + sourceRoot.getAbsolutePath(), null);
+        }
+        if (targetDir == null) {
+            return TaskResult.failure(id, "CopySourceTask pre-validation failed: target directory is null", null);
+        }
+        return new TaskResult.Builder(id)
+                .status(TaskStatus.READY)
+                .message("Source directory verified: " + sourceRoot.getAbsolutePath())
+                .workingDirectory(sourceRoot)
+                .build();
+    }
+
     @Override
     protected TaskResult run(SelfDevContext context) throws Exception {
-        File sourceRoot = ResourceManager.getInstance().getPath(EvoPath.EVO_ROOT).toFile();
-        File targetDir = context.getSourceDirectory();
+        return sourceProvider.fetchSource(sourceRoot, targetDir);
+    }
 
-        if (sourceRoot == null || !sourceRoot.exists() || !new File(sourceRoot, "pom.xml").exists()) {
-            return TaskResult.failure(id, "Source root directory invalid or missing pom.xml: " + (sourceRoot != null ? sourceRoot.getAbsolutePath() : "null"), null);
+    @Override
+    protected TaskResult postValidate(SelfDevContext context, TaskResult runResult) throws Exception {
+        if (!runResult.isSuccess()) {
+            return runResult;
         }
 
-        TaskResult res = sourceProvider.fetchSource(sourceRoot, targetDir);
-        if (!res.isSuccess()) {
-            return res;
-        }
-
-        // Post-copy verification
         if (!targetDir.exists() || !new File(targetDir, "pom.xml").exists()) {
-            return TaskResult.failure(id, "Copy verification failed: destination directory " + targetDir.getAbsolutePath() + " is missing required pom.xml", null);
+            return TaskResult.failure(id, "Copy post-validation failed: destination directory " + targetDir.getAbsolutePath() + " is missing required pom.xml", null);
         }
 
         if (context != null) {

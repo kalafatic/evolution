@@ -48,54 +48,100 @@ public abstract class AbstractSelfDevTask implements SelfDevTask {
         this.cancelled = true;
     }
 
+    protected void logTaskStep(String stepName, String details) {
+        System.out.println("[" + id + "] " + stepName + (details != null && !details.isEmpty() ? ": " + details : ""));
+    }
+
     @Override
     public TaskResult execute(SelfDevContext context) {
+        long startTime = System.currentTimeMillis();
+        logTaskStep(">>> START", "Task [" + id + ": " + name + "]");
+
         if (cancelled) {
             status = TaskStatus.SKIPPED;
             TaskResult res = TaskResult.skipped(id, "Task was cancelled before execution.");
+            logTaskStep("STATE", status.name());
+            logTaskStep("RESULT", res.getMessage());
+            logTaskStep("<<< END", "SKIPPED");
             if (context != null) context.recordTaskResult(res);
             return res;
         }
 
-        long startTime = System.currentTimeMillis();
         status = TaskStatus.RUNNING;
-        logInfo(">>> Starting task [" + id + ": " + name + "]...");
 
         try {
-            TaskResult preValidation = validate(context);
-            if (preValidation != null && !preValidation.isSuccess() && preValidation.getStatus() != TaskStatus.READY) {
-                status = preValidation.getStatus();
-                logError("Pre-validation failed for task [" + id + "]: " + preValidation.getMessage());
-                if (context != null) context.recordTaskResult(preValidation);
-                return preValidation;
+            // Step 1: Validate dependencies
+            logTaskStep("DEPENDENCIES", dependencies.isEmpty() ? "None" : dependencies.toString());
+            TaskResult depValidation = validateDependencies(context);
+            if (depValidation != null && !depValidation.isSuccess()) {
+                status = depValidation.getStatus();
+                logTaskStep("PRE_VALIDATION", "FAILED: " + depValidation.getMessage());
+                logTaskStep("STATE", status.name());
+                logTaskStep("RESULT", depValidation.getMessage());
+                logTaskStep("<<< END", status.name());
+                if (context != null) context.recordTaskResult(depValidation);
+                return depValidation;
             }
 
-            TaskResult result = run(context);
+            // Step 2: Resolve resources
+            logTaskStep("RESOURCE_RESOLUTION", "Resolving required resources...");
+            resolveResources(context);
+
+            // Step 3: Pre-validate task conditions
+            TaskResult preVal = preValidate(context);
+            if (preVal != null && !preVal.isSuccess() && preVal.getStatus() != TaskStatus.READY) {
+                status = preVal.getStatus();
+                logTaskStep("PRE_VALIDATION", "FAILED: " + preVal.getMessage());
+                logTaskStep("STATE", status.name());
+                logTaskStep("RESULT", preVal.getMessage());
+                logTaskStep("<<< END", status.name());
+                if (context != null) context.recordTaskResult(preVal);
+                return preVal;
+            }
+            logTaskStep("PRE_VALIDATION", "PASSED");
+
+            // Step 4: Execute main task logic
+            logTaskStep("EXECUTION", "Executing task logic...");
+            TaskResult runResult = run(context);
+
+            // Step 5: Post-validate output artifacts and state
+            logTaskStep("POST_VALIDATION", "Validating task output...");
+            TaskResult finalResult = postValidate(context, runResult);
+
             long duration = System.currentTimeMillis() - startTime;
-
-            TaskResult finalResult = new TaskResult.Builder(id)
-                    .status(result.getStatus())
-                    .message(result.getMessage())
-                    .error(result.getError())
-                    .command(result.getCommand())
-                    .workingDirectory(result.getWorkingDirectory())
-                    .exitCode(result.getExitCode())
+            TaskResult.Builder builder = new TaskResult.Builder(id)
+                    .status(finalResult.getStatus())
+                    .message(finalResult.getMessage())
+                    .error(finalResult.getError())
+                    .command(finalResult.getCommand())
+                    .workingDirectory(finalResult.getWorkingDirectory())
+                    .exitCode(finalResult.getExitCode())
                     .duration(duration)
-                    .artifact(result.getArtifact())
-                    .logFile(result.getLogFile())
-                    .build();
+                    .artifact(finalResult.getArtifact())
+                    .logFile(finalResult.getLogFile());
 
-            status = finalResult.getStatus();
-            if (finalResult.isSuccess()) {
-                logInfo("<<< Finished task [" + id + "]. Status: SUCCESS (took " + duration + "ms)");
-            } else {
-                logError("<<< Task [" + id + "] failed. Status: " + finalResult.getStatus() + ", Message: " + finalResult.getMessage());
+            for (var entry : finalResult.getDiagnostics().entrySet()) {
+                builder.diagnostic(entry.getKey(), entry.getValue());
             }
+
+            TaskResult recordedResult = builder.build();
+            status = recordedResult.getStatus();
+
+            if (recordedResult.getCommand() != null && !recordedResult.getCommand().isEmpty()) {
+                logTaskStep("COMMAND", recordedResult.getCommand());
+            }
+            if (recordedResult.getWorkingDirectory() != null) {
+                logTaskStep("WORKING_DIRECTORY", recordedResult.getWorkingDirectory().getAbsolutePath());
+            }
+            logTaskStep("EXIT_CODE", String.valueOf(recordedResult.getExitCode()));
+            logTaskStep("STATE", status.name());
+            logTaskStep("RESULT", recordedResult.getMessage());
+            logTaskStep("<<< END", status.name() + " (" + duration + "ms)");
 
             if (context != null) {
-                context.recordTaskResult(finalResult);
+                context.recordTaskResult(recordedResult);
             }
-            return finalResult;
+            return recordedResult;
 
         } catch (Throwable t) {
             long duration = System.currentTimeMillis() - startTime;
@@ -109,6 +155,10 @@ public abstract class AbstractSelfDevTask implements SelfDevTask {
                     .duration(duration)
                     .build();
 
+            logTaskStep("STATE", status.name());
+            logTaskStep("RESULT", errResult.getMessage());
+            logTaskStep("<<< END", status.name() + " (" + duration + "ms)");
+
             if (context != null) {
                 context.recordTaskResult(errResult);
             }
@@ -118,6 +168,10 @@ public abstract class AbstractSelfDevTask implements SelfDevTask {
 
     @Override
     public TaskResult validate(SelfDevContext context) {
+        return validateDependencies(context);
+    }
+
+    protected TaskResult validateDependencies(SelfDevContext context) {
         if (context == null) {
             return TaskResult.failure(id, "SelfDevContext is null.", null);
         }
@@ -129,7 +183,19 @@ public abstract class AbstractSelfDevTask implements SelfDevTask {
                 return TaskResult.blocked(id, msg);
             }
         }
-        return new TaskResult.Builder(id).status(TaskStatus.READY).message("Context and dependencies valid").build();
+        return new TaskResult.Builder(id).status(TaskStatus.READY).message("Dependencies valid").build();
+    }
+
+    protected void resolveResources(SelfDevContext context) throws Exception {
+        // Default no-op hook for subclasses to resolve and verify required resources
+    }
+
+    protected TaskResult preValidate(SelfDevContext context) throws Exception {
+        return new TaskResult.Builder(id).status(TaskStatus.READY).message("Pre-validation passed").build();
+    }
+
+    protected TaskResult postValidate(SelfDevContext context, TaskResult runResult) throws Exception {
+        return runResult;
     }
 
     protected abstract TaskResult run(SelfDevContext context) throws Exception;

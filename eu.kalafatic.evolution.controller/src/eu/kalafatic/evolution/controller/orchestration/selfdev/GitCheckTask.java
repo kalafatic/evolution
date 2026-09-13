@@ -10,24 +10,44 @@ public class GitCheckTask extends AbstractSelfDevTask {
         this.sourceProvider = new GitSourceProvider();
     }
 
+    private File targetRepo;
+
+    @Override
+    protected void resolveResources(SelfDevContext context) throws Exception {
+        if ("GIT_SUPERVISOR".equalsIgnoreCase(id)) {
+            File supervisorSource = context.getSupervisorDirectory();
+            if (supervisorSource == null || !supervisorSource.exists()) {
+                supervisorSource = context.getSourceDirectory();
+            }
+            this.targetRepo = supervisorSource != null ? supervisorSource : context.getProjectRoot();
+        } else {
+            this.targetRepo = context.getProjectRoot();
+        }
+    }
+
+    @Override
+    protected TaskResult preValidate(SelfDevContext context) throws Exception {
+        if (targetRepo == null || !targetRepo.exists()) {
+            return TaskResult.failure(id, "Git check pre-validation failed: target repository directory does not exist at " + (targetRepo != null ? targetRepo.getAbsolutePath() : "null"), null);
+        }
+        return new TaskResult.Builder(id)
+                .status(TaskStatus.READY)
+                .message("Git target directory exists: " + targetRepo.getAbsolutePath())
+                .workingDirectory(targetRepo)
+                .build();
+    }
+
     @Override
     protected TaskResult run(SelfDevContext context) throws Exception {
-        File repoRoot = context.getProjectRoot();
-        if ("GIT_SUPERVISOR".equalsIgnoreCase(id)) {
-            File supervisorSource = context.getSourceDirectory();
-            if (supervisorSource != null && supervisorSource.exists() && sourceProvider.validateRepository(supervisorSource).isSuccess()) {
-                repoRoot = supervisorSource;
-            }
-        }
-
-        TaskResult valRes = sourceProvider.validateRepository(repoRoot);
+        TaskResult valRes = sourceProvider.validateRepository(targetRepo);
         if (valRes.isSuccess()) {
-            String rev = sourceProvider.getSourceRevision(repoRoot);
-            String branch = sourceProvider.getBranch(repoRoot);
+            String rev = sourceProvider.getSourceRevision(targetRepo);
+            String branch = sourceProvider.getBranch(targetRepo);
             context.setSourceRevision(rev);
             return new TaskResult.Builder(id)
                     .status(TaskStatus.SUCCESS)
                     .message("Git check OK. Branch: " + branch + ", Revision: " + rev)
+                    .workingDirectory(targetRepo)
                     .diagnostic("revision", rev)
                     .diagnostic("branch", branch)
                     .build();
