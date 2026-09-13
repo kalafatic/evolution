@@ -766,6 +766,7 @@ public class EvolutionServer extends NanoHTTPD {
         }
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
             String content = reader.lines().collect(Collectors.joining("\n"));
+            content = eu.kalafatic.evolution.controller.ui.EvoStyleManager.getInstance().injectEvoStyle(content);
             return newFixedLengthResponse(Response.Status.OK, "text/html", content);
         } catch (IOException e) {
             return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", e.getMessage());
@@ -1224,6 +1225,7 @@ public class EvolutionServer extends NanoHTTPD {
             }
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
                 String content = reader.lines().collect(Collectors.joining("\n"));
+                content = eu.kalafatic.evolution.controller.ui.EvoStyleManager.getInstance().injectEvoStyle(content);
                 return newFixedLengthResponse(Response.Status.OK, "text/html", content);
             }
         } catch (IOException e) {
@@ -1238,6 +1240,7 @@ public class EvolutionServer extends NanoHTTPD {
             }
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
                 String content = reader.lines().collect(Collectors.joining("\n"));
+                content = eu.kalafatic.evolution.controller.ui.EvoStyleManager.getInstance().injectEvoStyle(content);
                 return newFixedLengthResponse(Response.Status.OK, "text/html", content);
             }
         } catch (IOException e) {
