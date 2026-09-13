@@ -352,31 +352,11 @@ public class DevelopmentPage extends AEvoPage {
 	}
 
 	private String getTargetPath() {
-		String sid = getCurrentSessionName();
-		RuntimeProjection projection = ProjectionService.getInstance().getProjection(sid);
-		String targetPath = (String) projection.getConfiguration().get("targetPath");
-		if (targetPath == null && orchestrator != null && orchestrator.getSupervisorSettings() != null) {
-			targetPath = orchestrator.getSupervisorSettings().getExecutablePath();
-		}
-		if (targetPath == null) {
-			String dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("ddMMyy"));
-			targetPath = new File(new File(System.getProperty("user.home"), "projects/evo/supervisor"),
-					dateStr + "/builds").getPath();
-		}
-		return eu.kalafatic.evolution.controller.manager.ProjectModelManager.migratePath(targetPath);
+		return eu.kalafatic.evolution.controller.resource.ResourceManager.getInstance().getPath(eu.kalafatic.evolution.controller.resource.EvoPath.SUPERVISOR_RUNTIME).toString();
 	}
 
 	private String getSupervisorSourcePath() {
-		String sourcePath = null;
-		if (orchestrator != null && orchestrator.getSupervisorSettings() != null) {
-			sourcePath = orchestrator.getSupervisorSettings().getSourcePath();
-		}
-		if (sourcePath == null || sourcePath.trim().isEmpty()) {
-			String dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("ddMMyy"));
-			sourcePath = new File(new File(System.getProperty("user.home"), "projects/evo/supervisor"),
-					dateStr + "/sources").getPath();
-		}
-		return eu.kalafatic.evolution.controller.manager.ProjectModelManager.migratePath(sourcePath);
+		return eu.kalafatic.evolution.controller.resource.ResourceManager.getInstance().getPath(eu.kalafatic.evolution.controller.resource.EvoPath.SUPERVISOR_SOURCE).toString();
 	}
 
 	private void createSelfDevContextMenu() {

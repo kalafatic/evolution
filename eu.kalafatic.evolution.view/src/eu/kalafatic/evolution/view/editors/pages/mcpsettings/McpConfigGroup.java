@@ -103,7 +103,7 @@ public class McpConfigGroup extends AEvoGroup {
 		loadDemoBtn.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				mcpUrlText.setText("http://localhost:38080/mcp");
+				mcpUrlText.setText(eu.kalafatic.evolution.controller.resource.ResourceManager.getInstance().getService("MCP").getUrl());
 				if (orchestrator != null) {
 					orchestrator.setMcpServerUrl(mcpUrlText.getText());
 					page.setDirty(true);

@@ -1,12 +1,15 @@
 package eu.kalafatic.evolution.controller.orchestration.selfdev;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import eu.kalafatic.evolution.controller.resource.EvoPath;
+import eu.kalafatic.evolution.controller.resource.ResourceManager;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 
 public class SelfDevContext {
@@ -40,10 +43,14 @@ public class SelfDevContext {
     }
 
     public SelfDevContext(File projectRoot, File baseRunDir, Orchestrator orchestrator) {
-        this.projectRoot = projectRoot != null ? projectRoot.getAbsoluteFile().toPath().normalize().toFile() : new File(".").getAbsoluteFile().toPath().normalize().toFile();
-        this.orchestrator = orchestrator;
+        ResourceManager rm = ResourceManager.getInstance();
+        if (orchestrator != null) {
+            rm.setOrchestrator(orchestrator);
+        }
+        this.orchestrator = rm.getOrchestrator();
 
-        this.repositoryRoot = discoverRepositoryRoot(this.projectRoot);
+        this.repositoryRoot = rm.getPath(EvoPath.EVO_ROOT).toFile();
+        this.projectRoot = projectRoot != null ? rm.resolvePath(rm.getPath(EvoPath.EVO_ROOT), projectRoot.getPath()).toFile() : rm.getPath(EvoPath.PROJECT_ROOT).toFile();
 
         String timestamp = new SimpleDateFormat("ddMMyy_HHmmss").format(new Date());
         this.runId = "run_" + timestamp;
@@ -59,24 +66,12 @@ public class SelfDevContext {
         this.buildDirectory = resolvePath(runDir, "build");
         this.exportDirectory = resolvePath(runDir, "export");
         this.runtimeDirectory = resolvePath(runDir, "runtime");
-        this.logDirectory = resolvePath(this.projectRoot, "self-dev-run/logs");
+        this.logDirectory = rm.resolvePath(rm.getPath(EvoPath.EVO_ROOT), "self-dev-run/logs").toFile();
 
         initTargetPlatform();
         discoverAndRepairModulePaths();
         ensureDirectories();
         printPreflightReport();
-    }
-
-    private File discoverRepositoryRoot(File root) {
-        if (root == null) return new File(".").getAbsoluteFile().toPath().normalize().toFile();
-        File current = root;
-        while (current != null) {
-            if (new File(current, ".git").exists() || new File(current, "pom.xml").exists()) {
-                return current.getAbsoluteFile().toPath().normalize().toFile();
-            }
-            current = current.getParentFile();
-        }
-        return root;
     }
 
     private void initTargetPlatform() {
@@ -101,10 +96,8 @@ public class SelfDevContext {
         if (configured.isAbsolute()) {
             return configured.getAbsoluteFile().toPath().normalize().toFile();
         }
-        if (semanticBase == null) {
-            return configured.getAbsoluteFile().toPath().normalize().toFile();
-        }
-        return new File(semanticBase, configured.getPath()).getAbsoluteFile().toPath().normalize().toFile();
+        Path base = semanticBase != null ? semanticBase.toPath() : ResourceManager.getInstance().getPath(EvoPath.EVO_ROOT);
+        return ResourceManager.getInstance().resolvePath(base, configured.getPath()).toFile();
     }
 
     public static File resolvePath(File semanticBase, String configuredPath) {
@@ -116,13 +109,9 @@ public class SelfDevContext {
     }
 
     public void discoverAndRepairModulePaths() {
-        this.supervisorDirectory = discoverModuleDirectory("eu.kalafatic.evolution.supervisor",
-                new File(this.sourceDirectory, "eu.kalafatic.evolution.supervisor"),
-                this.sourceDirectory, this.projectRoot, this.repositoryRoot);
-
-        this.genomeDirectory = discoverModuleDirectory("eu.kalafatic.evolution.selfdev.genome",
-                new File(this.sourceDirectory, "eu.kalafatic.evolution.selfdev.genome"),
-                this.sourceDirectory, this.projectRoot, this.repositoryRoot);
+        ResourceManager rm = ResourceManager.getInstance();
+        this.supervisorDirectory = rm.getPath(EvoPath.SUPERVISOR_SOURCE).toFile();
+        this.genomeDirectory = rm.getPath(EvoPath.GENOME).toFile();
     }
 
     public File discoverModuleDirectory(String moduleName, File primaryLocation, File... searchRoots) {
@@ -130,35 +119,26 @@ public class SelfDevContext {
             return primaryLocation.getAbsoluteFile().toPath().normalize().toFile();
         }
 
-        System.out.println("[SelfDevContext] Primary location for module '" + moduleName + "' not found at: " +
-                (primaryLocation != null ? primaryLocation.getAbsolutePath() : "null") + ". Investigating search roots...");
-
         for (File root : searchRoots) {
             if (root == null || !root.exists()) continue;
 
             File directCandidate = new File(root, moduleName);
             if (directCandidate.exists() && isModuleDirectory(directCandidate)) {
-                File resolved = directCandidate.getAbsoluteFile().toPath().normalize().toFile();
-                System.out.println("[SelfDevContext] DISCOVERY REPAIR: Discovered valid module '" + moduleName + "' at: " + resolved.getAbsolutePath());
-                return resolved;
+                return directCandidate.getAbsoluteFile().toPath().normalize().toFile();
             }
 
-            // Search one level deep under search root
             File[] children = root.listFiles(File::isDirectory);
             if (children != null) {
                 for (File child : children) {
                     File candidate = new File(child, moduleName);
                     if (candidate.exists() && isModuleDirectory(candidate)) {
-                        File resolved = candidate.getAbsoluteFile().toPath().normalize().toFile();
-                        System.out.println("[SelfDevContext] DISCOVERY REPAIR: Discovered valid module '" + moduleName + "' at: " + resolved.getAbsolutePath());
-                        return resolved;
+                        return candidate.getAbsoluteFile().toPath().normalize().toFile();
                     }
                 }
             }
         }
 
         File fallback = primaryLocation != null ? primaryLocation.getAbsoluteFile().toPath().normalize().toFile() : new File(projectRoot, moduleName).getAbsoluteFile().toPath().normalize().toFile();
-        System.out.println("[SelfDevContext] WARNING: Module '" + moduleName + "' could not be discovered under search roots. Defaulting to: " + fallback.getAbsolutePath());
         return fallback;
     }
 

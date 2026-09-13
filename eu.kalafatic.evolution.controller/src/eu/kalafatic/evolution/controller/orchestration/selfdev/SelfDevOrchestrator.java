@@ -1,6 +1,7 @@
 package eu.kalafatic.evolution.controller.orchestration.selfdev;
 
 import java.io.File;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -109,6 +110,10 @@ public class SelfDevOrchestrator {
         taskRegistry.put("SUPERVISOR", supervisorCheck);
         taskRegistry.put("GENOME", genome);
         taskRegistry.put("PERMISSIONS", permissions);
+    }
+
+    public Map<String, SelfDevTask> getTaskRegistry() {
+        return Collections.unmodifiableMap(taskRegistry);
     }
 
     public SelfDevContext getContext() {
