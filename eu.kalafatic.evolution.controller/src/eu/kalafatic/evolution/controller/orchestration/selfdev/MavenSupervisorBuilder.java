@@ -16,16 +16,14 @@ public class MavenSupervisorBuilder extends AbstractProjectBuilder implements Su
             return TaskResult.failure("build_supervisor", "SelfDevContext is null", null);
         }
 
-        File srcDir = context.getSourceDirectory() != null && context.getSourceDirectory().exists() ?
-                context.getSourceDirectory() : context.getProjectRoot();
-
-        File supervisorModuleDir = new File(srcDir, "eu.kalafatic.evolution.supervisor");
-        if (!supervisorModuleDir.exists() && context.getProjectRoot() != null) {
-            supervisorModuleDir = new File(context.getProjectRoot(), "eu.kalafatic.evolution.supervisor");
+        File supervisorModuleDir = context.getSupervisorDirectory();
+        if (supervisorModuleDir == null || !supervisorModuleDir.exists()) {
+            context.discoverAndRepairModulePaths();
+            supervisorModuleDir = context.getSupervisorDirectory();
         }
 
-        if (!supervisorModuleDir.exists()) {
-            return TaskResult.failure("build_supervisor", "Supervisor module directory does not exist: " + supervisorModuleDir.getAbsolutePath(), null);
+        if (supervisorModuleDir == null || !supervisorModuleDir.exists()) {
+            return TaskResult.failure("build_supervisor", "Supervisor module directory does not exist: " + (supervisorModuleDir != null ? supervisorModuleDir.getAbsolutePath() : "null"), null);
         }
 
         File logFile = getLogFile(context, "supervisor_build.log");
@@ -38,9 +36,15 @@ public class MavenSupervisorBuilder extends AbstractProjectBuilder implements Su
         }
 
         BuildArtifact artifact = getArtifact(context);
+        if (artifact == null || artifact.getPath() == null || !artifact.getPath().exists() || artifact.getPath().length() == 0) {
+            return TaskResult.failure("build_supervisor", "Maven returned exit code 0 but supervisor artifact was missing or invalid at " + (supervisorModuleDir != null ? supervisorModuleDir.getAbsolutePath() : "null"), null);
+        }
+
+        context.recordArtifact(artifact);
+
         return new TaskResult.Builder("build_supervisor")
                 .status(TaskStatus.SUCCESS)
-                .message("Supervisor build completed successfully.")
+                .message("Supervisor build completed and artifact verified: " + artifact.getPath().getAbsolutePath())
                 .duration(buildResult.getDuration())
                 .artifact(artifact)
                 .logFile(logFile)
@@ -51,14 +55,9 @@ public class MavenSupervisorBuilder extends AbstractProjectBuilder implements Su
     public BuildArtifact getArtifact(SelfDevContext context) {
         if (context == null) return null;
 
-        File srcDir = context.getSourceDirectory() != null && context.getSourceDirectory().exists() ?
-                context.getSourceDirectory() : context.getProjectRoot();
-
-        File targetDir = new File(srcDir, "eu.kalafatic.evolution.supervisor/target");
-        if (!targetDir.exists() && context.getProjectRoot() != null) {
-            targetDir = new File(context.getProjectRoot(), "eu.kalafatic.evolution.supervisor/target");
-        }
-        if (targetDir.exists()) {
+        File supervisorModuleDir = context.getSupervisorDirectory();
+        File targetDir = supervisorModuleDir != null ? new File(supervisorModuleDir, "target") : null;
+        if (targetDir != null && targetDir.exists()) {
             File[] jars = targetDir.listFiles((dir, name) -> name.endsWith(".jar") && !name.endsWith("-sources.jar"));
             if (jars != null && jars.length > 0) {
                 return new BuildArtifact(ArtifactType.SUPERVISOR, jars[0], context.getSourceRevision(), null, null);

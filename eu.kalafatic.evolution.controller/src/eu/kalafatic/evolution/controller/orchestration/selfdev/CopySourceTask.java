@@ -10,6 +10,10 @@ public class CopySourceTask extends AbstractSelfDevTask {
 
     @Override
     protected TaskResult run(SelfDevContext context) throws Exception {
-        return sourceProvider.fetchSource(context.getProjectRoot(), context.getSourceDirectory());
+        TaskResult res = sourceProvider.fetchSource(context.getProjectRoot(), context.getSourceDirectory());
+        if (res.isSuccess() && context != null) {
+            context.discoverAndRepairModulePaths();
+        }
+        return res;
     }
 }

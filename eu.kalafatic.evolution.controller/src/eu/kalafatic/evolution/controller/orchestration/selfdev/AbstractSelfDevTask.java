@@ -1,14 +1,31 @@
 package eu.kalafatic.evolution.controller.orchestration.selfdev;
 
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.Set;
+
 public abstract class AbstractSelfDevTask implements SelfDevTask {
     protected final String id;
     protected final String name;
+    protected final Set<String> dependencies = new LinkedHashSet<>();
     protected volatile TaskStatus status = TaskStatus.READY;
     protected volatile boolean cancelled = false;
 
     protected AbstractSelfDevTask(String id, String name) {
         this.id = id;
         this.name = name;
+    }
+
+    @Override
+    public Set<String> getDependencies() {
+        return Collections.unmodifiableSet(dependencies);
+    }
+
+    @Override
+    public void addDependency(String dependencyTaskId) {
+        if (dependencyTaskId != null && !dependencyTaskId.trim().isEmpty() && !dependencyTaskId.equalsIgnoreCase(this.id)) {
+            this.dependencies.add(dependencyTaskId.trim().toUpperCase());
+        }
     }
 
     @Override
@@ -104,7 +121,15 @@ public abstract class AbstractSelfDevTask implements SelfDevTask {
         if (context == null) {
             return TaskResult.failure(id, "SelfDevContext is null.", null);
         }
-        return new TaskResult.Builder(id).status(TaskStatus.READY).message("Context valid").build();
+        for (String depId : getDependencies()) {
+            TaskResult depResult = context.getTaskResult(depId);
+            if (depResult == null || !depResult.isSuccess()) {
+                String depStatusStr = depResult != null ? depResult.getStatus().name() : "NOT_EXECUTED";
+                String msg = "BLOCKED: required dependency " + depId + " failed or was not executed (status: " + depStatusStr + ").";
+                return TaskResult.blocked(id, msg);
+            }
+        }
+        return new TaskResult.Builder(id).status(TaskStatus.READY).message("Context and dependencies valid").build();
     }
 
     protected abstract TaskResult run(SelfDevContext context) throws Exception;
