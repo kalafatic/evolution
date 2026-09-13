@@ -10,7 +10,10 @@ import eu.kalafatic.evolution.forge.data.api.preference.TrainingDataPreferences;
 import eu.kalafatic.evolution.forge.data.api.service.TrainingDataAcquisitionRequest;
 import eu.kalafatic.evolution.forge.data.api.service.TrainingDataAcquisitionResult;
 import eu.kalafatic.evolution.forge.data.api.service.TrainingDataAcquisitionService;
+import eu.kalafatic.evolution.forge.data.api.source.DatasetSourceConfig;
 import eu.kalafatic.evolution.forge.data.impl.service.TrainingDataAcquisitionServiceImpl;
+import eu.kalafatic.evolution.forge.data.impl.source.HuggingFaceDatasetSource;
+import eu.kalafatic.evolution.forge.data.impl.source.LocalDatasetSource;
 
 /**
  * System tool capability for dataset acquisition and preparation.
@@ -92,6 +95,15 @@ public class DatasetAcquisitionTool implements ITool {
 
         TrainingDataAcquisitionRequest request = new TrainingDataAcquisitionRequest()
                 .setPreferences(builder.build());
+
+        if ("HUGGING_FACE".equalsIgnoreCase(sourceType)) {
+            DatasetSourceConfig cfg = new DatasetSourceConfig("HUGGING_FACE", repo);
+            cfg.setSplit(split);
+            request.addSource(new HuggingFaceDatasetSource(cfg));
+        } else if ("LOCAL".equalsIgnoreCase(sourceType)) {
+            DatasetSourceConfig cfg = new DatasetSourceConfig("LOCAL", repo);
+            request.addSource(new LocalDatasetSource(cfg));
+        }
 
         TrainingDataAcquisitionResult result = acquisitionService.acquireDataset(request);
 

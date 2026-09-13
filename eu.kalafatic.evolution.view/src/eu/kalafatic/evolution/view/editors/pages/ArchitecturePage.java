@@ -1201,21 +1201,18 @@ public class ArchitecturePage extends AEvoPage {
     }
 
     private DesignModel discoverArchitectureNodes(java.io.File root) {
-        DesignModel model = new DesignModel();
+        eu.kalafatic.evolution.controller.log.Log.log("[ARCH_PAGE] Running RepoArchitectureScanner for: " + root.getAbsolutePath());
+        eu.kalafatic.evolution.controller.orchestration.design.RepoArchitectureScanner scanner = new eu.kalafatic.evolution.controller.orchestration.design.RepoArchitectureScanner();
+        DesignModel model = scanner.scanRepository(root);
+
         eu.kalafatic.utils.semantic.AIContextTool tool = new eu.kalafatic.utils.semantic.AIContextTool();
         Map<String, ComponentRecord> nodes = new HashMap<>();
-
-        eu.kalafatic.evolution.controller.log.Log.log("[ARCH_PAGE] Scanning for metadata at: " + root.getAbsolutePath());
-        // 1. Structural Local Discovery
-        discoverLocalStructure(root, root, model);
         for (ComponentRecord c : model.getComponents()) {
             nodes.put(c.getId(), c);
         }
 
-        // 2. Scan for .ai.json files
         scanForMetadata(root, root, tool, nodes, model);
 
-        // 3. Parse ARCHITECTURE_CONTEXT.md if it exists
         java.io.File archCtx = new java.io.File(root, "ARCHITECTURE_CONTEXT.md");
         if (archCtx.exists()) {
             parseArchitectureContext(archCtx, nodes, model);

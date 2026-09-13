@@ -58,6 +58,7 @@ public class EvaluationResultItemProvider
 			addErrorsPropertyDescriptor(object);
 			addDecisionPropertyDescriptor(object);
 			addUserSatisfactionPropertyDescriptor(object);
+			addFitnessHistoryPropertyDescriptor(object);
 		}
 		return itemPropertyDescriptors;
 	}
@@ -79,6 +80,28 @@ public class EvaluationResultItemProvider
 	}
 	protected void addUserSatisfactionPropertyDescriptor(Object object) {
 		itemPropertyDescriptors.add(createItemPropertyDescriptor(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(), getResourceLocator(), "User Satisfaction", "User Satisfaction", OrchestrationPackage.Literals.EVALUATION_RESULT__USER_SATISFACTION, true, false, false, ItemPropertyDescriptor.REAL_VALUE_IMAGE, null, null));
+	}
+
+	/**
+	 * This adds a property descriptor for the Fitness History feature.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void addFitnessHistoryPropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 getString("_UI_EvaluationResult_fitnessHistory_feature"),
+				 getString("_UI_PropertyDescriptor_description", "_UI_EvaluationResult_fitnessHistory_feature", "_UI_EvaluationResult_type"),
+				 OrchestrationPackage.Literals.EVALUATION_RESULT__FITNESS_HISTORY,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.GENERIC_VALUE_IMAGE,
+				 null,
+				 null));
 	}
 
 	@Override

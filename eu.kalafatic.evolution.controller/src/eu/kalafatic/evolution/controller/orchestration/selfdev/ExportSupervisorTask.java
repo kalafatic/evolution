@@ -12,11 +12,12 @@ public class ExportSupervisorTask extends AbstractSelfDevTask {
 
     @Override
     protected TaskResult run(SelfDevContext context) throws Exception {
-        BuildArtifact artifact = builder.getArtifact(context);
+        BuildArtifact artifact = context.getArtifact(ArtifactType.SUPERVISOR);
         if (artifact == null) {
-            TaskResult bRes = builder.build(context);
-            if (!bRes.isSuccess()) return bRes;
             artifact = builder.getArtifact(context);
+        }
+        if (artifact == null) {
+            return TaskResult.failure(id, "No validated supervisor build artifact found in context for export.", null);
         }
         return deployer.deploy(context, artifact);
     }

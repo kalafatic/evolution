@@ -42,6 +42,13 @@ public class DecisionResolver {
         // Authority over selection engine
         ActivationResolver activationResolver = new ActivationResolver(context.getSemanticWorkspace().getTrajectoryMemory());
         
+        if (context.getExecutionProfile() == null) {
+            throw new IllegalStateException(String.format(
+                "[INVARIANT_VIOLATION] ExecutionProfile is null in DecisionResolver. SessionId: %s, TaskId: %s, Stage: WinnerResolution",
+                context.getSessionId(), context.getCurrentTaskId()
+            ));
+        }
+
         // If manual selection is provided, we bypass standard resolution for the winner
         if (manualSelectionId != null) {
             String resolvedId = resolveFuzzyId(manualSelectionId, variants, context);

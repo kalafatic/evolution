@@ -61,6 +61,11 @@ public class IterationItemProvider
 			addCommentsPropertyDescriptor(object);
 			addRatingPropertyDescriptor(object);
 			addRationalePropertyDescriptor(object);
+			addJustificationPropertyDescriptor(object);
+			addSemanticPressurePropertyDescriptor(object);
+			addSurvivalArgumentPropertyDescriptor(object);
+			addTradeoffsPropertyDescriptor(object);
+			addFailureRisksPropertyDescriptor(object);
 		}
 		return itemPropertyDescriptors;
 	}
@@ -85,6 +90,116 @@ public class IterationItemProvider
 	}
 	protected void addRationalePropertyDescriptor(Object object) {
 		itemPropertyDescriptors.add(createItemPropertyDescriptor(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(), getResourceLocator(), "Rationale", "Rationale", OrchestrationPackage.Literals.ITERATION__RATIONALE, true, false, false, ItemPropertyDescriptor.GENERIC_VALUE_IMAGE, null, null));
+	}
+
+	/**
+	 * This adds a property descriptor for the Justification feature.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void addJustificationPropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 getString("_UI_Iteration_justification_feature"),
+				 getString("_UI_PropertyDescriptor_description", "_UI_Iteration_justification_feature", "_UI_Iteration_type"),
+				 OrchestrationPackage.Literals.ITERATION__JUSTIFICATION,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.GENERIC_VALUE_IMAGE,
+				 null,
+				 null));
+	}
+
+	/**
+	 * This adds a property descriptor for the Semantic Pressure feature.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void addSemanticPressurePropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 getString("_UI_Iteration_semanticPressure_feature"),
+				 getString("_UI_PropertyDescriptor_description", "_UI_Iteration_semanticPressure_feature", "_UI_Iteration_type"),
+				 OrchestrationPackage.Literals.ITERATION__SEMANTIC_PRESSURE,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.GENERIC_VALUE_IMAGE,
+				 null,
+				 null));
+	}
+
+	/**
+	 * This adds a property descriptor for the Survival Argument feature.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void addSurvivalArgumentPropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 getString("_UI_Iteration_survivalArgument_feature"),
+				 getString("_UI_PropertyDescriptor_description", "_UI_Iteration_survivalArgument_feature", "_UI_Iteration_type"),
+				 OrchestrationPackage.Literals.ITERATION__SURVIVAL_ARGUMENT,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.GENERIC_VALUE_IMAGE,
+				 null,
+				 null));
+	}
+
+	/**
+	 * This adds a property descriptor for the Tradeoffs feature.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void addTradeoffsPropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 getString("_UI_Iteration_tradeoffs_feature"),
+				 getString("_UI_PropertyDescriptor_description", "_UI_Iteration_tradeoffs_feature", "_UI_Iteration_type"),
+				 OrchestrationPackage.Literals.ITERATION__TRADEOFFS,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.GENERIC_VALUE_IMAGE,
+				 null,
+				 null));
+	}
+
+	/**
+	 * This adds a property descriptor for the Failure Risks feature.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void addFailureRisksPropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 getString("_UI_Iteration_failureRisks_feature"),
+				 getString("_UI_PropertyDescriptor_description", "_UI_Iteration_failureRisks_feature", "_UI_Iteration_type"),
+				 OrchestrationPackage.Literals.ITERATION__FAILURE_RISKS,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.GENERIC_VALUE_IMAGE,
+				 null,
+				 null));
 	}
 
 	/**

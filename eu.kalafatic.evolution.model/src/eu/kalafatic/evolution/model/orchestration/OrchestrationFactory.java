@@ -58,26 +58,6 @@ public interface OrchestrationFactory extends EFactory {
 	GenomeSnapshot createGenomeSnapshot();
 
 	/**
-	 * @generated
-	 */
-	ForgeSession createForgeSession();
-
-	/**
-	 * @generated
-	 */
-	SessionModelState createSessionModelState();
-
-	/**
-	 * @generated
-	 */
-	SessionExperiment createSessionExperiment();
-
-	/**
-	 * @generated
-	 */
-	SessionSnapshot createSessionSnapshot();
-
-	/**
 	 * Returns a new object of class '<em>Server Settings</em>'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -382,6 +362,42 @@ public interface OrchestrationFactory extends EFactory {
 	 * @generated
 	 */
 	PromptInstructions createPromptInstructions();
+
+	/**
+	 * Returns a new object of class '<em>Forge Session</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>Forge Session</em>'.
+	 * @generated
+	 */
+	ForgeSession createForgeSession();
+
+	/**
+	 * Returns a new object of class '<em>Session Model State</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>Session Model State</em>'.
+	 * @generated
+	 */
+	SessionModelState createSessionModelState();
+
+	/**
+	 * Returns a new object of class '<em>Session Experiment</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>Session Experiment</em>'.
+	 * @generated
+	 */
+	SessionExperiment createSessionExperiment();
+
+	/**
+	 * Returns a new object of class '<em>Session Snapshot</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return a new object of class '<em>Session Snapshot</em>'.
+	 * @generated
+	 */
+	SessionSnapshot createSessionSnapshot();
 
 	/**
 	 * Returns the package supported by this factory.

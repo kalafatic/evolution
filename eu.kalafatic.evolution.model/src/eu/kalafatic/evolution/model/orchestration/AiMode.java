@@ -76,9 +76,7 @@ public enum AiMode implements Enumerator {
 	 * @generated
 	 * @ordered
 	 */
-	INTENT(5, "INTENT", "Intent"),
-
-	/**
+	INTENT(5, "INTENT", "Intent"), /**
 	 * The '<em><b>FORGE</b></em>' literal object.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->

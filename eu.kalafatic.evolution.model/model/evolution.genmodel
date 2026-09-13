@@ -60,6 +60,7 @@
       <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//AiMode/PROXY"/>
       <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//AiMode/MEDIATED"/>
       <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//AiMode/INTENT"/>
+      <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//AiMode/FORGE"/>
     </genEnums>
     <genEnums typeSafeEnumCompatible="false" ecoreEnum="evolution.ecore#//SelfDevStatus">
       <genEnumLiterals ecoreEnumLiteral="evolution.ecore#//SelfDevStatus/RUNNING"/>
@@ -192,6 +193,8 @@
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ServerSettings/mcpEnabled"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ServerSettings/mcpPort"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ServerSettings/authenticate"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ServerSettings/portalPort"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ServerSettings/portalUrl"/>
     </genClasses>
     <genClasses ecoreClass="evolution.ecore#//ServerSession">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ServerSession/id"/>
@@ -425,6 +428,8 @@
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ChatMessage/sequenceNumber"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ChatMessage/turnId"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ChatMessage/isTerminal"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ChatMessage/reasoning"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//ChatMessage/responseKind"/>
     </genClasses>
     <genClasses ecoreClass="evolution.ecore#//NetworkEntry">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute evolution.ecore#//NetworkEntry/host"/>

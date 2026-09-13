@@ -74,6 +74,8 @@ public class OrchestratorItemProvider
 			addHybridModelPropertyDescriptor(object);
 			addOfflineModePropertyDescriptor(object);
 			addSharedMemoryPropertyDescriptor(object);
+			addDarwinModePropertyDescriptor(object);
+			addDefaultTargetPropertyDescriptor(object);
 		}
 		return itemPropertyDescriptors;
 	}
@@ -178,6 +180,50 @@ public class OrchestratorItemProvider
 	}
 
 	/**
+	 * This adds a property descriptor for the Darwin Mode feature.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void addDarwinModePropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 getString("_UI_Orchestrator_darwinMode_feature"),
+				 getString("_UI_PropertyDescriptor_description", "_UI_Orchestrator_darwinMode_feature", "_UI_Orchestrator_type"),
+				 OrchestrationPackage.Literals.ORCHESTRATOR__DARWIN_MODE,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.BOOLEAN_VALUE_IMAGE,
+				 null,
+				 null));
+	}
+
+	/**
+	 * This adds a property descriptor for the Default Target feature.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void addDefaultTargetPropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 getString("_UI_Orchestrator_defaultTarget_feature"),
+				 getString("_UI_PropertyDescriptor_description", "_UI_Orchestrator_defaultTarget_feature", "_UI_Orchestrator_type"),
+				 OrchestrationPackage.Literals.ORCHESTRATOR__DEFAULT_TARGET,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.GENERIC_VALUE_IMAGE,
+				 null,
+				 null));
+	}
+
+	/**
 	 * This adds a property descriptor for the Name feature.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -213,6 +259,7 @@ public class OrchestratorItemProvider
 			super.getChildrenFeatures(object);
 			childrenFeatures.add(OrchestrationPackage.Literals.ORCHESTRATOR__AGENTS);
 			childrenFeatures.add(OrchestrationPackage.Literals.ORCHESTRATOR__TASKS);
+			childrenFeatures.add(OrchestrationPackage.Literals.ORCHESTRATOR__TESTS);
 			childrenFeatures.add(OrchestrationPackage.Literals.ORCHESTRATOR__GIT);
 			childrenFeatures.add(OrchestrationPackage.Literals.ORCHESTRATOR__MAVEN);
 			childrenFeatures.add(OrchestrationPackage.Literals.ORCHESTRATOR__LLM);
@@ -224,6 +271,14 @@ public class OrchestratorItemProvider
 			childrenFeatures.add(OrchestrationPackage.Literals.ORCHESTRATOR__DATABASE);
 			childrenFeatures.add(OrchestrationPackage.Literals.ORCHESTRATOR__FILE_CONFIG);
 			childrenFeatures.add(OrchestrationPackage.Literals.ORCHESTRATOR__ECLIPSE);
+			childrenFeatures.add(OrchestrationPackage.Literals.ORCHESTRATOR__AI_PROVIDERS);
+			childrenFeatures.add(OrchestrationPackage.Literals.ORCHESTRATOR__SERVER_SETTINGS);
+			childrenFeatures.add(OrchestrationPackage.Literals.ORCHESTRATOR__SERVER_SESSIONS);
+			childrenFeatures.add(OrchestrationPackage.Literals.ORCHESTRATOR__MONITORING_HISTORY);
+			childrenFeatures.add(OrchestrationPackage.Literals.ORCHESTRATOR__SUPERVISOR_SETTINGS);
+			childrenFeatures.add(OrchestrationPackage.Literals.ORCHESTRATOR__NETWORK_ENTRIES);
+			childrenFeatures.add(OrchestrationPackage.Literals.ORCHESTRATOR__GENOME_SNAPSHOTS);
+			childrenFeatures.add(OrchestrationPackage.Literals.ORCHESTRATOR__FORGE_SESSIONS);
 		}
 		return childrenFeatures;
 	}
@@ -290,10 +345,13 @@ public class OrchestratorItemProvider
 			case OrchestrationPackage.ORCHESTRATOR__HYBRID_MODEL:
 			case OrchestrationPackage.ORCHESTRATOR__OFFLINE_MODE:
 			case OrchestrationPackage.ORCHESTRATOR__SHARED_MEMORY:
+			case OrchestrationPackage.ORCHESTRATOR__DARWIN_MODE:
+			case OrchestrationPackage.ORCHESTRATOR__DEFAULT_TARGET:
 				fireNotifyChanged(new ViewerNotification(notification, notification.getNotifier(), false, true));
 				return;
 			case OrchestrationPackage.ORCHESTRATOR__AGENTS:
 			case OrchestrationPackage.ORCHESTRATOR__TASKS:
+			case OrchestrationPackage.ORCHESTRATOR__TESTS:
 			case OrchestrationPackage.ORCHESTRATOR__GIT:
 			case OrchestrationPackage.ORCHESTRATOR__MAVEN:
 			case OrchestrationPackage.ORCHESTRATOR__LLM:
@@ -305,6 +363,14 @@ public class OrchestratorItemProvider
 			case OrchestrationPackage.ORCHESTRATOR__DATABASE:
 			case OrchestrationPackage.ORCHESTRATOR__FILE_CONFIG:
 			case OrchestrationPackage.ORCHESTRATOR__ECLIPSE:
+			case OrchestrationPackage.ORCHESTRATOR__AI_PROVIDERS:
+			case OrchestrationPackage.ORCHESTRATOR__SERVER_SETTINGS:
+			case OrchestrationPackage.ORCHESTRATOR__SERVER_SESSIONS:
+			case OrchestrationPackage.ORCHESTRATOR__MONITORING_HISTORY:
+			case OrchestrationPackage.ORCHESTRATOR__SUPERVISOR_SETTINGS:
+			case OrchestrationPackage.ORCHESTRATOR__NETWORK_ENTRIES:
+			case OrchestrationPackage.ORCHESTRATOR__GENOME_SNAPSHOTS:
+			case OrchestrationPackage.ORCHESTRATOR__FORGE_SESSIONS:
 				fireNotifyChanged(new ViewerNotification(notification, notification.getNotifier(), true, false));
 				return;
 		}
@@ -331,6 +397,11 @@ public class OrchestratorItemProvider
 			(createChildParameter
 				(OrchestrationPackage.Literals.ORCHESTRATOR__TASKS,
 				 OrchestrationFactory.eINSTANCE.createTask()));
+
+		newChildDescriptors.add
+			(createChildParameter
+				(OrchestrationPackage.Literals.ORCHESTRATOR__TESTS,
+				 OrchestrationFactory.eINSTANCE.createTest()));
 
 		newChildDescriptors.add
 			(createChildParameter
@@ -386,6 +457,46 @@ public class OrchestratorItemProvider
 			(createChildParameter
 				(OrchestrationPackage.Literals.ORCHESTRATOR__ECLIPSE,
 				 OrchestrationFactory.eINSTANCE.createEclipse()));
+
+		newChildDescriptors.add
+			(createChildParameter
+				(OrchestrationPackage.Literals.ORCHESTRATOR__AI_PROVIDERS,
+				 OrchestrationFactory.eINSTANCE.createAIProvider()));
+
+		newChildDescriptors.add
+			(createChildParameter
+				(OrchestrationPackage.Literals.ORCHESTRATOR__SERVER_SETTINGS,
+				 OrchestrationFactory.eINSTANCE.createServerSettings()));
+
+		newChildDescriptors.add
+			(createChildParameter
+				(OrchestrationPackage.Literals.ORCHESTRATOR__SERVER_SESSIONS,
+				 OrchestrationFactory.eINSTANCE.createServerSession()));
+
+		newChildDescriptors.add
+			(createChildParameter
+				(OrchestrationPackage.Literals.ORCHESTRATOR__MONITORING_HISTORY,
+				 OrchestrationFactory.eINSTANCE.createMonitoringData()));
+
+		newChildDescriptors.add
+			(createChildParameter
+				(OrchestrationPackage.Literals.ORCHESTRATOR__SUPERVISOR_SETTINGS,
+				 OrchestrationFactory.eINSTANCE.createSupervisorSettings()));
+
+		newChildDescriptors.add
+			(createChildParameter
+				(OrchestrationPackage.Literals.ORCHESTRATOR__NETWORK_ENTRIES,
+				 OrchestrationFactory.eINSTANCE.createNetworkEntry()));
+
+		newChildDescriptors.add
+			(createChildParameter
+				(OrchestrationPackage.Literals.ORCHESTRATOR__GENOME_SNAPSHOTS,
+				 OrchestrationFactory.eINSTANCE.createGenomeSnapshot()));
+
+		newChildDescriptors.add
+			(createChildParameter
+				(OrchestrationPackage.Literals.ORCHESTRATOR__FORGE_SESSIONS,
+				 OrchestrationFactory.eINSTANCE.createForgeSession()));
 	}
 
 	/**

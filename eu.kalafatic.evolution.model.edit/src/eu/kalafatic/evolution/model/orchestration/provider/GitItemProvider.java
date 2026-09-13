@@ -64,6 +64,10 @@ public class GitItemProvider
 			addBranchPropertyDescriptor(object);
 			addUsernamePropertyDescriptor(object);
 			addLocalPathPropertyDescriptor(object);
+			addTestStatusPropertyDescriptor(object);
+			addBranchNamePropertyDescriptor(object);
+			addCommitMsgPropertyDescriptor(object);
+			addPasswordPropertyDescriptor(object);
 		}
 		return itemPropertyDescriptors;
 	}
@@ -157,6 +161,94 @@ public class GitItemProvider
 	}
 
 	/**
+	 * This adds a property descriptor for the Test Status feature.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void addTestStatusPropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 getString("_UI_Git_testStatus_feature"),
+				 getString("_UI_PropertyDescriptor_description", "_UI_Git_testStatus_feature", "_UI_Git_type"),
+				 OrchestrationPackage.Literals.GIT__TEST_STATUS,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.GENERIC_VALUE_IMAGE,
+				 null,
+				 null));
+	}
+
+	/**
+	 * This adds a property descriptor for the Branch Name feature.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void addBranchNamePropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 getString("_UI_Git_branchName_feature"),
+				 getString("_UI_PropertyDescriptor_description", "_UI_Git_branchName_feature", "_UI_Git_type"),
+				 OrchestrationPackage.Literals.GIT__BRANCH_NAME,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.GENERIC_VALUE_IMAGE,
+				 null,
+				 null));
+	}
+
+	/**
+	 * This adds a property descriptor for the Commit Msg feature.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void addCommitMsgPropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 getString("_UI_Git_commitMsg_feature"),
+				 getString("_UI_PropertyDescriptor_description", "_UI_Git_commitMsg_feature", "_UI_Git_type"),
+				 OrchestrationPackage.Literals.GIT__COMMIT_MSG,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.GENERIC_VALUE_IMAGE,
+				 null,
+				 null));
+	}
+
+	/**
+	 * This adds a property descriptor for the Password feature.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void addPasswordPropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 getString("_UI_Git_password_feature"),
+				 getString("_UI_PropertyDescriptor_description", "_UI_Git_password_feature", "_UI_Git_type"),
+				 OrchestrationPackage.Literals.GIT__PASSWORD,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.GENERIC_VALUE_IMAGE,
+				 null,
+				 null));
+	}
+
+	/**
 	 * This returns Git.gif.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -198,6 +290,10 @@ public class GitItemProvider
 			case OrchestrationPackage.GIT__BRANCH:
 			case OrchestrationPackage.GIT__USERNAME:
 			case OrchestrationPackage.GIT__LOCAL_PATH:
+			case OrchestrationPackage.GIT__TEST_STATUS:
+			case OrchestrationPackage.GIT__BRANCH_NAME:
+			case OrchestrationPackage.GIT__COMMIT_MSG:
+			case OrchestrationPackage.GIT__PASSWORD:
 				fireNotifyChanged(new ViewerNotification(notification, notification.getNotifier(), false, true));
 				return;
 		}

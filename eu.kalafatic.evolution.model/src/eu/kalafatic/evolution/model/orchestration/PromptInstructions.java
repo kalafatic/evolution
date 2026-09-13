@@ -28,12 +28,13 @@ import org.eclipse.emf.ecore.EObject;
 public interface PromptInstructions extends EObject {
 	/**
 	 * Returns the value of the '<em><b>Auto Approve</b></em>' attribute.
+	 * The default value is <code>"true"</code>.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @return the value of the '<em>Auto Approve</em>' attribute.
 	 * @see #setAutoApprove(boolean)
 	 * @see eu.kalafatic.evolution.model.orchestration.OrchestrationPackage#getPromptInstructions_AutoApprove()
-	 * @model
+	 * @model default="true"
 	 * @generated
 	 */
 	boolean isAutoApprove();

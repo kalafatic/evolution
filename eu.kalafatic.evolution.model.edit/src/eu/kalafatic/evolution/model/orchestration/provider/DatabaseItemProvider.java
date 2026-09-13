@@ -64,6 +64,7 @@ public class DatabaseItemProvider
 			addUsernamePropertyDescriptor(object);
 			addPasswordPropertyDescriptor(object);
 			addDriverPropertyDescriptor(object);
+			addTestStatusPropertyDescriptor(object);
 		}
 		return itemPropertyDescriptors;
 	}
@@ -157,6 +158,28 @@ public class DatabaseItemProvider
 	}
 
 	/**
+	 * This adds a property descriptor for the Test Status feature.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void addTestStatusPropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 getString("_UI_Database_testStatus_feature"),
+				 getString("_UI_PropertyDescriptor_description", "_UI_Database_testStatus_feature", "_UI_Database_type"),
+				 OrchestrationPackage.Literals.DATABASE__TEST_STATUS,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.GENERIC_VALUE_IMAGE,
+				 null,
+				 null));
+	}
+
+	/**
 	 * This returns Database.gif.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -198,6 +221,7 @@ public class DatabaseItemProvider
 			case OrchestrationPackage.DATABASE__USERNAME:
 			case OrchestrationPackage.DATABASE__PASSWORD:
 			case OrchestrationPackage.DATABASE__DRIVER:
+			case OrchestrationPackage.DATABASE__TEST_STATUS:
 				fireNotifyChanged(new ViewerNotification(notification, notification.getNotifier(), false, true));
 				return;
 		}

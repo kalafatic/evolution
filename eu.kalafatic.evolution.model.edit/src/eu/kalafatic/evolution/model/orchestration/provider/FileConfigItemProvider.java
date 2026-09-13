@@ -61,6 +61,7 @@ public class FileConfigItemProvider
 			super.getPropertyDescriptors(object);
 
 			addLocalPathPropertyDescriptor(object);
+			addTestStatusPropertyDescriptor(object);
 		}
 		return itemPropertyDescriptors;
 	}
@@ -79,6 +80,28 @@ public class FileConfigItemProvider
 				 getString("_UI_FileConfig_localPath_feature"),
 				 getString("_UI_PropertyDescriptor_description", "_UI_FileConfig_localPath_feature", "_UI_FileConfig_type"),
 				 OrchestrationPackage.Literals.FILE_CONFIG__LOCAL_PATH,
+				 true,
+				 false,
+				 false,
+				 ItemPropertyDescriptor.GENERIC_VALUE_IMAGE,
+				 null,
+				 null));
+	}
+
+	/**
+	 * This adds a property descriptor for the Test Status feature.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void addTestStatusPropertyDescriptor(Object object) {
+		itemPropertyDescriptors.add
+			(createItemPropertyDescriptor
+				(((ComposeableAdapterFactory)adapterFactory).getRootAdapterFactory(),
+				 getResourceLocator(),
+				 getString("_UI_FileConfig_testStatus_feature"),
+				 getString("_UI_PropertyDescriptor_description", "_UI_FileConfig_testStatus_feature", "_UI_FileConfig_type"),
+				 OrchestrationPackage.Literals.FILE_CONFIG__TEST_STATUS,
 				 true,
 				 false,
 				 false,
@@ -126,6 +149,7 @@ public class FileConfigItemProvider
 
 		switch (notification.getFeatureID(FileConfig.class)) {
 			case OrchestrationPackage.FILE_CONFIG__LOCAL_PATH:
+			case OrchestrationPackage.FILE_CONFIG__TEST_STATUS:
 				fireNotifyChanged(new ViewerNotification(notification, notification.getNotifier(), false, true));
 				return;
 		}
