@@ -9,16 +9,22 @@ public class CognitiveBudget {
     private final long maxWallClockTimeMs;
     private final int maxDarwinInvocations;
     private final int maxConsecutiveNoProgress;
+    private final int maxRetries;
 
     public CognitiveBudget() {
-        this(15, 600000L, 3, 3); // Default: 15 iterations, 10 min, 3 Darwin runs, 3 no-progress steps
+        this(15, 600000L, 3, 3, 2); // Default: 15 iterations, 10 min, 3 Darwin runs, 3 no-progress steps, 2 retries
     }
 
     public CognitiveBudget(int maxIterations, long maxWallClockTimeMs, int maxDarwinInvocations, int maxConsecutiveNoProgress) {
+        this(maxIterations, maxWallClockTimeMs, maxDarwinInvocations, maxConsecutiveNoProgress, 2);
+    }
+
+    public CognitiveBudget(int maxIterations, long maxWallClockTimeMs, int maxDarwinInvocations, int maxConsecutiveNoProgress, int maxRetries) {
         this.maxIterations = maxIterations;
         this.maxWallClockTimeMs = maxWallClockTimeMs;
         this.maxDarwinInvocations = maxDarwinInvocations;
         this.maxConsecutiveNoProgress = maxConsecutiveNoProgress;
+        this.maxRetries = maxRetries;
     }
 
     public int getMaxIterations() {
@@ -37,6 +43,10 @@ public class CognitiveBudget {
         return maxConsecutiveNoProgress;
     }
 
+    public int getMaxRetries() {
+        return maxRetries;
+    }
+
     public boolean isExhausted(int currentIteration, long elapsedTimeMs, int currentDarwinInvocations, int consecutiveNoProgress) {
         if (currentIteration >= maxIterations) return true;
         if (elapsedTimeMs >= maxWallClockTimeMs) return true;
@@ -52,6 +62,7 @@ public class CognitiveBudget {
                 ", maxWallClockTimeMs=" + maxWallClockTimeMs +
                 ", maxDarwinInvocations=" + maxDarwinInvocations +
                 ", maxConsecutiveNoProgress=" + maxConsecutiveNoProgress +
+                ", maxRetries=" + maxRetries +
                 '}';
     }
 }

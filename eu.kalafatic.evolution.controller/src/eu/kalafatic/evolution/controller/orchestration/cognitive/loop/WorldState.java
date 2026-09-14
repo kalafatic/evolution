@@ -2,22 +2,47 @@ package eu.kalafatic.evolution.controller.orchestration.cognitive.loop;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Session-scoped representation of the system's understanding of world state,
- * known facts, artifacts, goal progress, information gain, and capability availability.
+ * known facts, artifacts, goal progress, information gain, strategy history, and capability availability.
  */
 public class WorldState {
+
+    public static class StrategyAttemptRecord {
+        private final CognitiveStrategy strategy;
+        private final CognitiveObservation observation;
+        private final CognitiveFailureType failureType;
+        private final int iteration;
+        private final long timestamp;
+
+        public StrategyAttemptRecord(CognitiveStrategy strategy, CognitiveObservation observation, CognitiveFailureType failureType, int iteration) {
+            this.strategy = strategy;
+            this.observation = observation;
+            this.failureType = failureType != null ? failureType : CognitiveFailureType.UNKNOWN_FAILURE;
+            this.iteration = iteration;
+            this.timestamp = System.currentTimeMillis();
+        }
+
+        public CognitiveStrategy getStrategy() { return strategy; }
+        public CognitiveObservation getObservation() { return observation; }
+        public CognitiveFailureType getFailureType() { return failureType; }
+        public int getIteration() { return iteration; }
+        public long getTimestamp() { return timestamp; }
+    }
 
     private final String sessionId;
     private final Map<String, Object> facts = new ConcurrentHashMap<>();
     private final Map<String, Object> artifacts = new ConcurrentHashMap<>();
     private final List<CognitiveObservation> observations = Collections.synchronizedList(new ArrayList<>());
     private final List<CognitiveDecision> decisionHistory = Collections.synchronizedList(new ArrayList<>());
+    private final List<StrategyAttemptRecord> attemptHistory = Collections.synchronizedList(new ArrayList<>());
+    private final Map<String, Integer> retryCounts = new ConcurrentHashMap<>();
+    private final Map<String, Boolean> executedActionsGuard = new ConcurrentHashMap<>();
+
     private double currentProgress = 0.0;
     private double informationGain = 0.0;
     private CognitiveStrategy activeStrategy;
@@ -98,6 +123,71 @@ public class WorldState {
         this.activeStrategy = activeStrategy != null ? activeStrategy : CognitiveStrategy.ofDefault("DEFAULT_STRATEGY");
     }
 
+    public void recordStrategyAttempt(CognitiveStrategy strategy, CognitiveObservation obs, int iteration) {
+        if (strategy == null || obs == null) return;
+        CognitiveFailureType failureType = obs.getFailureType();
+        String sig = strategy.getSignature();
+        StrategyAttemptRecord record = new StrategyAttemptRecord(strategy, obs, failureType, iteration);
+        attemptHistory.add(record);
+
+        if (failureType.isTransient()) {
+            retryCounts.merge(sig, 1, Integer::sum);
+        }
+    }
+
+    public List<StrategyAttemptRecord> getAttemptHistory() {
+        return Collections.unmodifiableList(new ArrayList<>(attemptHistory));
+    }
+
+    public boolean isStrategyExhausted(CognitiveStrategy strategy) {
+        return isStrategyExhausted(strategy, 2);
+    }
+
+    public boolean isStrategyExhausted(String signature) {
+        return isStrategyExhausted(signature, 2);
+    }
+
+    public boolean isStrategyExhausted(CognitiveStrategy strategy, int maxRetries) {
+        if (strategy == null) return false;
+        return isStrategyExhausted(strategy.getSignature(), maxRetries);
+    }
+
+    public boolean isStrategyExhausted(String signature, int maxRetries) {
+        if (signature == null) return false;
+        String normalizedSig = signature.trim().toLowerCase();
+        for (StrategyAttemptRecord rec : attemptHistory) {
+            if (rec.getStrategy() != null) {
+                String recSig = rec.getStrategy().getSignature();
+                if (recSig.equals(normalizedSig) || recSig.contains(normalizedSig) || normalizedSig.contains(recSig)) {
+                    CognitiveFailureType ft = rec.getFailureType();
+                    if (ft != null && ft.isFailure()) {
+                        if (!ft.isTransient()) {
+                            return true;
+                        } else if (getRetryCount(recSig) >= maxRetries) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    public int getRetryCount(CognitiveStrategy strategy) {
+        if (strategy == null) return 0;
+        return getRetryCount(strategy.getSignature());
+    }
+
+    public int getRetryCount(String signature) {
+        if (signature == null) return 0;
+        return retryCounts.getOrDefault(signature.trim().toLowerCase(), 0);
+    }
+
+    public boolean isActionAlreadyExecuted(String actionKey) {
+        if (actionKey == null) return false;
+        return executedActionsGuard.putIfAbsent(actionKey, Boolean.TRUE) != null;
+    }
+
     public boolean detectStagnation(int windowSize) {
         if (observations.size() < windowSize) {
             return false;
@@ -123,6 +213,7 @@ public class WorldState {
                 ", infoGain=" + String.format("%.2f", informationGain) +
                 ", activeStrategy='" + activeStrategy.getIdentifier() + '\'' +
                 ", observationsCount=" + observations.size() +
+                ", attemptsCount=" + attemptHistory.size() +
                 '}';
     }
 }
