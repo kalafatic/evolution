@@ -86,4 +86,11 @@ public class EvoProjectTest extends TestCase {
 		setFixture(null);
 	}
 
+	/**
+	 * Tests the fixture creation.
+	 */
+	public void testFixture() {
+		assertNotNull(getFixture());
+	}
+
 } //EvoProjectTest

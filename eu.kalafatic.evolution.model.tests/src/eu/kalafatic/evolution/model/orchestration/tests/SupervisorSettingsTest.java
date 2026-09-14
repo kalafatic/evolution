@@ -86,4 +86,11 @@ public class SupervisorSettingsTest extends TestCase {
 		setFixture(null);
 	}
 
+	/**
+	 * Tests the fixture creation.
+	 */
+	public void testFixture() {
+		assertNotNull(getFixture());
+	}
+
 } //SupervisorSettingsTest

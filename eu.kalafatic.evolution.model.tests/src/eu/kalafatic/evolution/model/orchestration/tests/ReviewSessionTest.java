@@ -86,4 +86,11 @@ public class ReviewSessionTest extends TestCase {
 		setFixture(null);
 	}
 
+	/**
+	 * Tests the fixture creation.
+	 */
+	public void testFixture() {
+		assertNotNull(getFixture());
+	}
+
 } //ReviewSessionTest
