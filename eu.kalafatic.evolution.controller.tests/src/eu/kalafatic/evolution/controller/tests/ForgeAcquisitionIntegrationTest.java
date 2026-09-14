@@ -53,6 +53,33 @@ public class ForgeAcquisitionIntegrationTest {
     }
 
     @Test
+    public void testHuggingFaceSourceSplitImmutabilityAndPreflight() throws Exception {
+        DatasetSourceConfig config = new DatasetSourceConfig("HUGGING_FACE", "Salesforce/wikitext");
+        config.setSplit("train");
+        config.setConfiguration("wikitext-103-v1");
+
+        eu.kalafatic.evolution.forge.data.impl.source.HuggingFaceDatasetSource source =
+                new eu.kalafatic.evolution.forge.data.impl.source.HuggingFaceDatasetSource(config);
+
+        eu.kalafatic.evolution.forge.data.api.source.ResolvedSource preflight = source.preflight();
+        assertNotNull(preflight);
+        assertEquals("Salesforce/wikitext", preflight.getRepository());
+        assertEquals("train", preflight.getRequestedSplit());
+        assertEquals("train", preflight.getResolvedSplit());
+
+        source.initialize();
+        assertEquals("Hugging Face: Salesforce/wikitext (train)", source.getSourceName());
+        assertEquals("train", source.getConfig().getSplit());
+
+        if (source.hasNext()) {
+            NormalizedSample sample = source.next();
+            assertNotNull(sample);
+            assertEquals("train", source.getConfig().getSplit());
+        }
+        source.close();
+    }
+
+    @Test
     public void testToBytesUnitNormalization() {
         assertEquals(524_288_000L, ForgeJob.toBytes(500, 524_288_000L));
         assertEquals(524_288_000L, ForgeJob.toBytes("500", 524_288_000L));

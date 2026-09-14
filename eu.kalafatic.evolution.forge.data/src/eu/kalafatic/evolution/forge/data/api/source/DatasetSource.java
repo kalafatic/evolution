@@ -16,6 +16,23 @@ public interface DatasetSource extends Closeable, Iterable<NormalizedSample> {
 
     void initialize() throws Exception;
 
+    default ResolvedSource preflight() {
+        return new ResolvedSource(
+                getConfig() != null ? getConfig().getSourceType() : "UNKNOWN",
+                getConfig() != null ? getConfig().getRepository() : "",
+                getConfig() != null ? getConfig().getSplit() : "train",
+                getConfig() != null ? getConfig().getSplit() : "train",
+                getConfig() != null ? getConfig().getConfiguration() : "default",
+                getConfig() != null ? getConfig().getRevision() : "main",
+                "DIRECT",
+                "text/plain",
+                0L,
+                true,
+                true,
+                null
+        );
+    }
+
     boolean hasNext();
 
     NormalizedSample next();
