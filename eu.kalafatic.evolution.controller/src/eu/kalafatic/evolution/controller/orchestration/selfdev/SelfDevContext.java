@@ -54,8 +54,9 @@ public class SelfDevContext {
         }
         this.orchestrator = this.resourceManager.getOrchestrator();
 
-        this.repositoryRoot = this.resourceManager.getPath(EvoPath.EVO_ROOT).toFile();
-        this.projectRoot = projectRoot != null ? this.resourceManager.resolvePath(this.resourceManager.getPath(EvoPath.EVO_ROOT), projectRoot.getPath()).toFile() : this.resourceManager.getPath(EvoPath.PROJECT_ROOT).toFile();
+        this.repositoryRoot = this.resourceManager.getPath(EvoPath.EVO_ROOT).toFile().getAbsoluteFile().toPath().normalize().toFile();
+
+        this.projectRoot = projectRoot != null ? projectRoot.getAbsoluteFile().toPath().normalize().toFile() : this.repositoryRoot;
 
         String timestamp = new SimpleDateFormat("ddMMyy_HHmmss").format(new Date());
         this.runId = "run_" + timestamp;
@@ -64,14 +65,14 @@ public class SelfDevContext {
         if (baseRunDir != null) {
             runDir = resolvePath(this.projectRoot, baseRunDir);
         } else {
-            runDir = new File(this.projectRoot, "projects/evo/supervisor/" + new SimpleDateFormat("ddMMyy").format(new Date())).getAbsoluteFile();
+            runDir = this.repositoryRoot.toPath().resolve("self-dev-run/run_" + new SimpleDateFormat("ddMMyy").format(new Date())).toAbsolutePath().normalize().toFile();
         }
 
         this.sourceDirectory = resolvePath(runDir, "source");
         this.buildDirectory = resolvePath(runDir, "build");
         this.exportDirectory = resolvePath(runDir, "export");
         this.runtimeDirectory = resolvePath(runDir, "runtime");
-        this.logDirectory = this.resourceManager.resolvePath(this.resourceManager.getPath(EvoPath.EVO_ROOT), "self-dev-run/logs").toFile();
+        this.logDirectory = this.repositoryRoot.toPath().resolve("self-dev-run/logs").toAbsolutePath().normalize().toFile();
 
         initTargetPlatform();
         discoverAndRepairModulePaths();
@@ -101,21 +102,25 @@ public class SelfDevContext {
         if (configured.isAbsolute()) {
             return configured.getAbsoluteFile().toPath().normalize().toFile();
         }
-        Path base = semanticBase != null ? semanticBase.toPath() : ResourceManager.getInstance().getPath(EvoPath.EVO_ROOT);
-        return ResourceManager.getInstance().resolvePath(base, configured.getPath()).toFile();
+        Path base = semanticBase != null ? semanticBase.toPath().toAbsolutePath().normalize() : ResourceManager.getInstance().getPath(EvoPath.EVO_ROOT);
+        return base.resolve(configured.toPath()).toAbsolutePath().normalize().toFile();
     }
 
     public static File resolvePath(File semanticBase, String configuredPath) {
         if (configuredPath == null || configuredPath.trim().isEmpty()) {
             return semanticBase != null ? semanticBase.getAbsoluteFile().toPath().normalize().toFile() : null;
         }
-        Path base = semanticBase != null ? semanticBase.toPath() : ResourceManager.getInstance().getPath(EvoPath.EVO_ROOT);
-        return ResourceManager.getInstance().resolvePath(base, configuredPath).toFile();
+        Path p = java.nio.file.Paths.get(configuredPath.trim());
+        if (p.isAbsolute()) {
+            return p.toAbsolutePath().normalize().toFile();
+        }
+        Path base = semanticBase != null ? semanticBase.toPath().toAbsolutePath().normalize() : ResourceManager.getInstance().getPath(EvoPath.EVO_ROOT);
+        return base.resolve(p).toAbsolutePath().normalize().toFile();
     }
 
     public void discoverAndRepairModulePaths() {
-        this.supervisorDirectory = resourceManager.getPath(EvoPath.SUPERVISOR_SOURCE).toFile();
-        this.genomeDirectory = resourceManager.getPath(EvoPath.GENOME).toFile();
+        this.supervisorDirectory = resourceManager.getPath(EvoPath.SUPERVISOR_SOURCE).toFile().getAbsoluteFile().toPath().normalize().toFile();
+        this.genomeDirectory = resourceManager.getPath(EvoPath.GENOME).toFile().getAbsoluteFile().toPath().normalize().toFile();
     }
 
     public File discoverModuleDirectory(String moduleName, File primaryLocation, File... searchRoots) {
@@ -221,15 +226,15 @@ public class SelfDevContext {
     }
 
     public File getRepositoryRoot() {
-        return repositoryRoot;
+        return resolvedResources != null && resolvedResources.getRepositoryRoot() != null ? resolvedResources.getRepositoryRoot() : repositoryRoot;
     }
 
     public File getProjectRoot() {
-        return projectRoot;
+        return resolvedResources != null && resolvedResources.getProjectRoot() != null ? resolvedResources.getProjectRoot() : projectRoot;
     }
 
     public File getSupervisorDirectory() {
-        return supervisorDirectory;
+        return resolvedResources != null && resolvedResources.getSupervisorDirectory() != null ? resolvedResources.getSupervisorDirectory() : supervisorDirectory;
     }
 
     public void setSupervisorDirectory(File supervisorDirectory) {
@@ -237,7 +242,7 @@ public class SelfDevContext {
     }
 
     public File getGenomeDirectory() {
-        return genomeDirectory;
+        return resolvedResources != null && resolvedResources.getGenomeDirectory() != null ? resolvedResources.getGenomeDirectory() : genomeDirectory;
     }
 
     public void setGenomeDirectory(File genomeDirectory) {
@@ -245,19 +250,19 @@ public class SelfDevContext {
     }
 
     public String getOs() {
-        return os;
+        return resolvedResources != null && resolvedResources.getOs() != null ? resolvedResources.getOs() : os;
     }
 
     public String getWs() {
-        return ws;
+        return resolvedResources != null && resolvedResources.getWs() != null ? resolvedResources.getWs() : ws;
     }
 
     public String getArch() {
-        return arch;
+        return resolvedResources != null && resolvedResources.getArch() != null ? resolvedResources.getArch() : arch;
     }
 
     public String getProductId() {
-        return productId;
+        return resolvedResources != null && resolvedResources.getProductId() != null ? resolvedResources.getProductId() : productId;
     }
 
     public void setProductId(String productId) {
@@ -265,7 +270,7 @@ public class SelfDevContext {
     }
 
     public String getLauncher() {
-        return launcher;
+        return resolvedResources != null && resolvedResources.getLauncher() != null ? resolvedResources.getLauncher() : launcher;
     }
 
     public void setLauncher(String launcher) {
@@ -273,23 +278,23 @@ public class SelfDevContext {
     }
 
     public File getSourceDirectory() {
-        return sourceDirectory;
+        return resolvedResources != null && resolvedResources.getSourceDirectory() != null ? resolvedResources.getSourceDirectory() : sourceDirectory;
     }
 
     public File getBuildDirectory() {
-        return buildDirectory;
+        return resolvedResources != null && resolvedResources.getBuildDirectory() != null ? resolvedResources.getBuildDirectory() : buildDirectory;
     }
 
     public File getExportDirectory() {
-        return exportDirectory;
+        return resolvedResources != null && resolvedResources.getExportDirectory() != null ? resolvedResources.getExportDirectory() : exportDirectory;
     }
 
     public File getRuntimeDirectory() {
-        return runtimeDirectory;
+        return resolvedResources != null && resolvedResources.getRuntimeDirectory() != null ? resolvedResources.getRuntimeDirectory() : runtimeDirectory;
     }
 
     public File getLogDirectory() {
-        return logDirectory;
+        return resolvedResources != null && resolvedResources.getLogDirectory() != null ? resolvedResources.getLogDirectory() : logDirectory;
     }
 
     public Orchestrator getOrchestrator() {

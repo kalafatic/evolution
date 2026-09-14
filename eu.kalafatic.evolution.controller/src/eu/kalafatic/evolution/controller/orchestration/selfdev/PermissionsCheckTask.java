@@ -12,7 +12,8 @@ public class PermissionsCheckTask extends AbstractSelfDevTask {
 
     @Override
     protected void resolveResources(SelfDevContext context) throws Exception {
-        this.logDir = context.getLogDirectory();
+        ResolvedSelfDevResources res = context != null ? context.getResolvedResources() : null;
+        this.logDir = (res != null && res.getLogDirectory() != null) ? res.getLogDirectory() : (context != null ? context.getLogDirectory() : null);
     }
 
     @Override

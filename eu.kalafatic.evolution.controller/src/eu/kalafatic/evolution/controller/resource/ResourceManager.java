@@ -125,6 +125,7 @@ public class ResourceManager {
 
     /**
      * Resolves the canonical root path for the specified semantic EvoPath type.
+     * Guarantees deterministic path resolution without fallback directory guessing or scanning.
      *
      * @param pathType The semantic path category.
      * @return The resolved absolute Path on disk.
@@ -137,72 +138,104 @@ public class ResourceManager {
         String codebase = ProjectModelManager.getCodebasePath();
         Path evoRoot = codebase != null ? Paths.get(codebase).toAbsolutePath().normalize() : Paths.get(".").toAbsolutePath().normalize();
 
+        // Reject product installation/launch runtime directories as the canonical source repository
+        if (evoRoot.toString().contains(".product") || evoRoot.toString().contains("runtime-eu.kalafatic")) {
+            Log.log("[PATH_DISCOVERY] resource=EVO_GIT_REPOSITORY action=FORBIDDEN reason=runtime_product_cannot_be_canonical_repository path=" + evoRoot);
+        }
+
+        Path resolvedPath;
         switch (pathType) {
             case EVO_ROOT:
-                return evoRoot;
+                resolvedPath = evoRoot;
+                break;
 
             case WORKSPACE: {
                 String wsStr = ProjectModelManager.getWorkspacePath();
-                return wsStr != null ? Paths.get(wsStr).toAbsolutePath().normalize() : evoRoot;
+                resolvedPath = wsStr != null ? Paths.get(wsStr).toAbsolutePath().normalize() : evoRoot;
+                break;
             }
 
             case PROJECT_ROOT:
-                return evoRoot;
+                resolvedPath = evoRoot;
+                break;
 
             case SOURCE_ROOT: {
                 Orchestrator orch = getOrchestrator();
                 if (orch != null && orch.getSupervisorSettings() != null && orch.getSupervisorSettings().getSourcePath() != null) {
-                    return resolvePath(EvoPath.EVO_ROOT, orch.getSupervisorSettings().getSourcePath());
+                    resolvedPath = resolvePath(EvoPath.EVO_ROOT, orch.getSupervisorSettings().getSourcePath());
+                } else {
+                    resolvedPath = evoRoot.resolve("self-dev-run/source").toAbsolutePath().normalize();
                 }
-                return evoRoot.resolve("self-dev-run/source").toAbsolutePath().normalize();
+                break;
             }
 
             case RUNTIME_ROOT:
-                return evoRoot.resolve("self-dev-run/runtime").toAbsolutePath().normalize();
+                resolvedPath = evoRoot.resolve("self-dev-run/runtime").toAbsolutePath().normalize();
+                break;
 
             case BUILD_ROOT:
-                return evoRoot.resolve("self-dev-run/build").toAbsolutePath().normalize();
+                resolvedPath = evoRoot.resolve("self-dev-run/build").toAbsolutePath().normalize();
+                break;
 
             case EXPORT_ROOT:
-                return evoRoot.resolve("self-dev-run/export").toAbsolutePath().normalize();
+                resolvedPath = evoRoot.resolve("self-dev-run/export").toAbsolutePath().normalize();
+                break;
 
             case SUPERVISOR_SOURCE: {
                 Orchestrator orch = getOrchestrator();
                 if (orch != null && orch.getSupervisorSettings() != null && orch.getSupervisorSettings().getSourcePath() != null) {
-                    return resolvePath(EvoPath.EVO_ROOT, orch.getSupervisorSettings().getSourcePath());
+                    resolvedPath = resolvePath(EvoPath.EVO_ROOT, orch.getSupervisorSettings().getSourcePath());
+                } else {
+                    resolvedPath = evoRoot.resolve("eu.kalafatic.evolution.supervisor").toAbsolutePath().normalize();
                 }
-                Path candidate = evoRoot.resolve("eu.kalafatic.evolution.supervisor");
-                return resolvePathWithRecovery(candidate, "eu.kalafatic.evolution.supervisor");
+                break;
             }
 
             case SUPERVISOR_RUNTIME: {
                 Orchestrator orch = getOrchestrator();
                 if (orch != null && orch.getSupervisorSettings() != null && orch.getSupervisorSettings().getExecutablePath() != null) {
-                    return resolvePath(EvoPath.EVO_ROOT, orch.getSupervisorSettings().getExecutablePath());
+                    resolvedPath = resolvePath(EvoPath.EVO_ROOT, orch.getSupervisorSettings().getExecutablePath());
+                } else {
+                    resolvedPath = evoRoot.resolve("self-dev-run/builds").toAbsolutePath().normalize();
                 }
-                return evoRoot.resolve("self-dev-run/builds").toAbsolutePath().normalize();
+                break;
             }
 
-            case GENOME: {
-                Path candidate = evoRoot.resolve("eu.kalafatic.evolution.selfdev.genome");
-                return resolvePathWithRecovery(candidate, "eu.kalafatic.evolution.selfdev.genome");
-            }
+            case GENOME:
+                resolvedPath = evoRoot.resolve("eu.kalafatic.evolution.selfdev.genome").toAbsolutePath().normalize();
+                break;
 
             case FORGE_INPUT:
-                return evoRoot.resolve("data").toAbsolutePath().normalize();
+                resolvedPath = evoRoot.resolve("data").toAbsolutePath().normalize();
+                break;
 
             case FORGE_OUTPUT:
-                return evoRoot.resolve("forge-output").toAbsolutePath().normalize();
+                resolvedPath = evoRoot.resolve("forge-output").toAbsolutePath().normalize();
+                break;
 
             case MODELS:
-                return evoRoot.resolve("source/models").toAbsolutePath().normalize();
+                resolvedPath = evoRoot.resolve("source/models").toAbsolutePath().normalize();
+                break;
 
             case DATASETS:
-                return evoRoot.resolve("data").toAbsolutePath().normalize();
+                resolvedPath = evoRoot.resolve("data").toAbsolutePath().normalize();
+                break;
 
             default:
-                return evoRoot;
+                resolvedPath = evoRoot;
+                break;
         }
+
+        boolean exists = resolvedPath.toFile().exists();
+        boolean isDir = exists && resolvedPath.toFile().isDirectory();
+        boolean isGit = exists && new File(resolvedPath.toFile(), ".git").exists();
+        boolean hasPom = exists && new File(resolvedPath.toFile(), "pom.xml").exists();
+
+        Log.log("[PATH] resource=" + pathType + " configured=" + codebase + " resolved=" + resolvedPath +
+                " absolute=" + resolvedPath.isAbsolute() + " exists=" + exists + " directory=" + isDir +
+                " gitRepository=" + isGit + " pom=" + hasPom + " origin=EMF_CONFIGURATION");
+
+        return resolvedPath;
     }
 
     /**
@@ -229,6 +262,8 @@ public class ResourceManager {
 
     /**
      * Resolves a configured Path against a semantic base path.
+     * Absolute paths MUST NOT have roots prepended to them.
+     * No directory crawling or stale path recovery is performed.
      *
      * @param semanticBase The base directory.
      * @param configuredPath The Path object to resolve.
@@ -239,17 +274,15 @@ public class ResourceManager {
             return semanticBase != null ? semanticBase.toAbsolutePath().normalize() : getPath(EvoPath.EVO_ROOT);
         }
         if (configuredPath.isAbsolute()) {
-            Path norm = configuredPath.toAbsolutePath().normalize();
-            if (!norm.toFile().exists()) {
-                return recoverStalePath(norm);
-            }
-            return norm;
+            return configuredPath.toAbsolutePath().normalize();
         }
         return resolvePath(semanticBase, configuredPath.toString());
     }
 
     /**
      * Resolves a configured path against a semantic base path.
+     * Absolute paths MUST NOT have roots prepended to them.
+     * No directory crawling or stale path recovery is performed.
      *
      * @param semanticBase The base directory.
      * @param configuredPath The path string to resolve.
@@ -265,19 +298,13 @@ public class ResourceManager {
 
         // Absolute paths MUST NOT have roots prepended to them
         if (p.isAbsolute()) {
-            Path norm = p.toAbsolutePath().normalize();
-            if (!norm.toFile().exists()) {
-                return recoverStalePath(norm);
-            }
-            return norm;
+            return p.toAbsolutePath().normalize();
         }
 
         Path base = semanticBase != null ? semanticBase.toAbsolutePath().normalize() : getPath(EvoPath.EVO_ROOT);
         Path resolved = base.resolve(p).toAbsolutePath().normalize();
 
-        if (!resolved.toFile().exists()) {
-            return recoverStalePath(resolved);
-        }
+        Log.log("[PATH_DERIVED] resource=CONFIGURED_PATH base=" + base + " rule=" + base + "/" + p + " resolved=" + resolved);
         return resolved;
     }
 
@@ -295,57 +322,6 @@ public class ResourceManager {
         res = res.replace("${USER_HOME}", userHome);
         res = res.replace("${user.home}", userHome);
         return res;
-    }
-
-    private Path resolvePathWithRecovery(Path target, String moduleName) {
-        Path norm = target.toAbsolutePath().normalize();
-        if (norm.toFile().exists()) {
-            return norm;
-        }
-        return recoverStalePathForModule(moduleName, norm);
-    }
-
-    private Path recoverStalePath(Path missingPath) {
-        File file = missingPath.toFile();
-        String name = file.getName();
-        if (name == null || name.isEmpty()) return missingPath;
-
-        return recoverStalePathForModule(name, missingPath);
-    }
-
-    private Path recoverStalePathForModule(String moduleName, Path fallback) {
-        Path[] searchRoots = new Path[] {
-            getPath(EvoPath.EVO_ROOT),
-            getPath(EvoPath.WORKSPACE),
-            Paths.get(System.getProperty("user.home"))
-        };
-
-        for (Path root : searchRoots) {
-            if (root == null || !root.toFile().exists()) continue;
-
-            Path candidate = root.resolve(moduleName);
-            if (candidate.toFile().exists()) {
-                Path resolved = candidate.toAbsolutePath().normalize();
-                Log.log("[ResourceManager] Stale path RECOVERED for module '" + moduleName + "': " +
-                        fallback + " -> " + resolved);
-                return resolved;
-            }
-
-            File[] children = root.toFile().listFiles(File::isDirectory);
-            if (children != null) {
-                for (File child : children) {
-                    File sub = new File(child, moduleName);
-                    if (sub.exists()) {
-                        Path resolved = sub.toPath().toAbsolutePath().normalize();
-                        Log.log("[ResourceManager] Stale path RECOVERED for module '" + moduleName + "': " +
-                                fallback + " -> " + resolved);
-                        return resolved;
-                    }
-                }
-            }
-        }
-
-        return fallback;
     }
 
     // =========================================================================

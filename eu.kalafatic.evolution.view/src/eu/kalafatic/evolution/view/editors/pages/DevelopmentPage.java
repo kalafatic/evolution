@@ -311,15 +311,7 @@ public class DevelopmentPage extends AEvoPage {
 		String llmModel = (orchestrator != null && orchestrator.getLlm() != null) ? orchestrator.getLlm().getModel()
 				: "supervisor.llm";
 		String targetPath = getTargetPath();
-
-		String exportPath;
-		if (targetPath != null && (targetPath.endsWith("builds") || targetPath.endsWith("builds/")
-				|| targetPath.endsWith("builds\\"))) {
-			File parent = new File(targetPath).getParentFile();
-			exportPath = new File(parent, "export").getPath();
-		} else {
-			exportPath = targetPath + "/export";
-		}
+		String exportPath = eu.kalafatic.evolution.controller.resource.ResourceManager.getInstance().getPath(eu.kalafatic.evolution.controller.resource.EvoPath.EXPORT_ROOT).toString();
 
 		String customSuperSrc = getSupervisorSourcePath();
 		String customSuperBin = getTargetPath();
@@ -349,7 +341,7 @@ public class DevelopmentPage extends AEvoPage {
 	}
 
 	private String getTargetPath() {
-		return eu.kalafatic.evolution.controller.resource.ResourceManager.getInstance().getPath(eu.kalafatic.evolution.controller.resource.EvoPath.SUPERVISOR_RUNTIME).toString();
+		return eu.kalafatic.evolution.controller.resource.ResourceManager.getInstance().getPath(eu.kalafatic.evolution.controller.resource.EvoPath.BUILD_ROOT).toString();
 	}
 
 	private String getSupervisorSourcePath() {
