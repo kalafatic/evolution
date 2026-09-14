@@ -22,7 +22,7 @@
         if (!listBody) return;
         
         if (!window.currentDatasources || window.currentDatasources.length === 0) {
-            listBody.innerHTML = `<tr><td colspan="2" style="padding: 10px; text-align: center; color: #888; font-style: italic;">No data sources selected. Default: c:\\Users\\petrk\\git\\evolution</td></tr>`;
+            listBody.innerHTML = `<tr><td colspan="2" style="padding: 10px; text-align: center; color: #888; font-style: italic;">No data sources selected. Default: &lt;user-home&gt;/git/evolution</td></tr>`;
             return;
         }
         

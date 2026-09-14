@@ -39,26 +39,31 @@ public class OrchestrationPathTest {
     @Test
     public void testMigratePathRobustness() {
         String dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("ddMMyy"));
+        String userHome = System.getProperty("user.home");
 
         // 1. Test migration of existing projects/evo/supervisor/ with old date (July 31, 2026 -> 310726)
-        String path1 = "C:\\Users\\petrk\\projects\\evo\\supervisor\\310726\\sources";
+        String path1 = "C:\\Users\\testuser\\projects\\evo\\supervisor\\310726\\sources";
         String migrated1 = eu.kalafatic.evolution.controller.manager.ProjectModelManager.migratePath(path1);
-        assertEquals("C:\\Users\\petrk\\projects\\evo\\supervisor\\" + dateStr + "\\sources", migrated1);
+        String expected1 = (userHome + "\\workspace\\self-dev-run\\" + dateStr + "\\sources").replace("/", "\\");
+        assertEquals(expected1, migrated1);
 
         // 2. Test migration of supervisor/ without projects/evo/ and old date
-        String path2 = "C:\\Users\\petrk\\supervisor\\310726\\sources";
+        String path2 = "C:\\Users\\testuser\\supervisor\\310726\\sources";
         String migrated2 = eu.kalafatic.evolution.controller.manager.ProjectModelManager.migratePath(path2);
-        assertEquals("C:\\Users\\petrk\\projects\\evo\\supervisor\\" + dateStr + "\\sources", migrated2);
+        String expected2 = (userHome + "\\workspace\\self-dev-run\\" + dateStr + "\\sources").replace("/", "\\");
+        assertEquals(expected2, migrated2);
 
         // 3. Test migration of old supervisor/ without date segment
-        String path3 = "C:\\Users\\petrk\\supervisor\\sources";
+        String path3 = userHome + "\\supervisor\\sources";
         String migrated3 = eu.kalafatic.evolution.controller.manager.ProjectModelManager.migratePath(path3);
-        assertEquals("C:\\Users\\petrk\\projects\\evo\\supervisor\\" + dateStr + "\\sources", migrated3);
+        String expected3 = (userHome + "\\workspace\\self-dev-run\\" + dateStr + "\\sources").replace("/", "\\");
+        assertEquals(expected3, migrated3);
 
         // 4. Test with forward slashes
-        String path4 = "C:/Users/petrk/projects/evo/supervisor/310726/builds";
+        String path4 = "C:/Users/testuser/projects/evo/supervisor/310726/builds";
         String migrated4 = eu.kalafatic.evolution.controller.manager.ProjectModelManager.migratePath(path4);
-        assertEquals("C:/Users/petrk/projects/evo/supervisor/" + dateStr + "/builds", migrated4);
+        String expected4 = (userHome.replace("\\", "/") + "/workspace/self-dev-run/" + dateStr + "/builds");
+        assertEquals(expected4, migrated4);
     }
 
     @Test

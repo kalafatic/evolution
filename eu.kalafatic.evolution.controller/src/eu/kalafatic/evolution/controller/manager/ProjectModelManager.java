@@ -189,9 +189,9 @@ public class ProjectModelManager {
 
         if (orchestrator.getSupervisorSettings() == null) {
             SupervisorSettings supervisor = OrchestrationFactory.eINSTANCE.createSupervisorSettings();
-            // OS-independent paths using user.home and dynamic DDMMYY date format
+            // OS-independent paths using user.home under workspace/self-dev-run
             String dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("ddMMyy"));
-            java.io.File baseDir = new java.io.File(new java.io.File(userHome, "projects/evo/supervisor"), dateStr);
+            java.io.File baseDir = new java.io.File(new java.io.File(new java.io.File(userHome, "workspace"), "self-dev-run"), dateStr);
             supervisor.setExecutablePath(new java.io.File(baseDir, "builds").getPath());
             supervisor.setSourcePath(new java.io.File(baseDir, "sources").getPath());
             orchestrator.setSupervisorSettings(supervisor);
@@ -1337,41 +1337,31 @@ public class ProjectModelManager {
     public static String migratePath(String path) {
         if (path == null) return null;
         String dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("ddMMyy"));
+        String userHomeNorm = System.getProperty("user.home").replace("\\", "/");
 
         // Normalize backslashes/forwardslashes to simplify comparisons
         String normalized = path.replace("\\", "/");
 
-        // 1. Replace any 6-digit date segment under projects/evo/supervisor/
+        // Strip hardcoded user prefix if present
+        if (normalized.matches("(?i)[a-z]:/users/[^/]+/.*")) {
+            normalized = userHomeNorm + normalized.substring(normalized.indexOf('/', 10));
+        }
+
+        // 1. Replace any 6-digit date segment under projects/evo/supervisor/ or self-dev-run/
         if (normalized.contains("projects/evo/supervisor/")) {
-            normalized = normalized.replaceAll("(?i)projects/evo/supervisor/\\d{6}", "projects/evo/supervisor/" + dateStr);
+            normalized = normalized.replaceAll("(?i)projects/evo/supervisor/\\d{6}", "workspace/self-dev-run/" + dateStr);
             return path.contains("\\") ? normalized.replace("/", "\\") : normalized;
         }
 
         // 2. Also handle if it contains supervisor/<some_old_date>
         if (normalized.contains("supervisor/")) {
-            normalized = normalized.replaceAll("(?i)supervisor/\\d{6}", "projects/evo/supervisor/" + dateStr);
-            normalized = normalized.replaceAll("(?i)supervisor/(sources|builds|export|src|bin|sources-)", "projects/evo/supervisor/" + dateStr + "/$1");
+            normalized = normalized.replaceAll("(?i)supervisor/\\d{6}", "workspace/self-dev-run/" + dateStr);
+            normalized = normalized.replaceAll("(?i)supervisor/(sources|builds|export|src|bin|sources-)", "workspace/self-dev-run/" + dateStr + "/$1");
             return path.contains("\\") ? normalized.replace("/", "\\") : normalized;
         }
 
-        String oldPrefix1 = "C:/Users/petrk/supervisor";
-        String oldHomePrefix = System.getProperty("user.home").replace("\\", "/") + "/supervisor";
-
-        String newPrefix = "C:/Users/petrk/projects/evo/supervisor/" + dateStr;
-        String newHomePrefix = System.getProperty("user.home").replace("\\", "/") + "/projects/evo/supervisor/" + dateStr;
-
-        if (normalized.startsWith(oldPrefix1)) {
-            String remainder = normalized.substring(oldPrefix1.length());
-            if (remainder.equals("/source") || remainder.equals("/sources")) {
-                remainder = "/sources";
-            } else if (remainder.equals("/bin") || remainder.equals("/builds")) {
-                remainder = "/builds";
-            } else if (remainder.equals("/bin/export") || remainder.equals("/export")) {
-                remainder = "/export";
-            }
-            String migrated = newPrefix + remainder;
-            return path.contains("\\") ? migrated.replace("/", "\\") : migrated;
-        }
+        String oldHomePrefix = userHomeNorm + "/supervisor";
+        String newHomePrefix = userHomeNorm + "/workspace/self-dev-run/" + dateStr;
 
         if (normalized.startsWith(oldHomePrefix)) {
             String remainder = normalized.substring(oldHomePrefix.length());

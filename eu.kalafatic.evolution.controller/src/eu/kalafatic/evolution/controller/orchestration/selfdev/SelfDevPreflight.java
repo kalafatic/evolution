@@ -188,11 +188,15 @@ public class SelfDevPreflight {
         // 8. Consistency Check across ResourceManager, SelfDevContext, Task Snapshots
         if (context != null && context.getResolvedResources() != null) {
             File snapshotSource = context.getResolvedResources().getSourceDirectory();
-            if (snapshotSource != null && !snapshotSource.getCanonicalPath().equals(resolvedSource.getCanonicalPath())) {
-                String conflict = "PATH_CONFLICT: SelfDevContext snapshot source (" + snapshotSource.getAbsolutePath() + ") differs from canonical source (" + resolvedSource.getAbsolutePath() + ")";
-                Log.log("[PATH_CONFLICT] resource=EVO_GIT_REPOSITORY canonical=" + resolvedSource.getAbsolutePath() + " other=" + snapshotSource.getAbsolutePath() + " source=SelfDevContext action=BLOCK");
-                conflicts.add(conflict);
-                errors.add(conflict);
+            try {
+                if (snapshotSource != null && !snapshotSource.getCanonicalPath().equals(resolvedSource.getCanonicalPath())) {
+                    String conflict = "PATH_CONFLICT: SelfDevContext snapshot source (" + snapshotSource.getAbsolutePath() + ") differs from canonical source (" + resolvedSource.getAbsolutePath() + ")";
+                    Log.log("[PATH_CONFLICT] resource=EVO_GIT_REPOSITORY canonical=" + resolvedSource.getAbsolutePath() + " other=" + snapshotSource.getAbsolutePath() + " source=SelfDevContext action=BLOCK");
+                    conflicts.add(conflict);
+                    errors.add(conflict);
+                }
+            } catch (Exception e) {
+                Log.log("[SelfDevPreflight] Failed canonical path comparison: " + e.getMessage());
             }
         }
 
