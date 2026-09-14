@@ -7,6 +7,7 @@ import eu.kalafatic.evolution.forge.data.api.downloader.DownloadResult;
 import eu.kalafatic.evolution.forge.data.api.source.DatasetSource;
 import eu.kalafatic.evolution.forge.data.api.source.DatasetSourceConfig;
 import eu.kalafatic.evolution.forge.data.api.source.DatasetSourceStats;
+import eu.kalafatic.evolution.forge.data.api.source.ResolvedSource;
 import eu.kalafatic.evolution.forge.data.impl.downloader.HuggingFaceDownloader;
 
 import org.json.JSONArray;
@@ -36,9 +37,8 @@ public class HuggingFaceDatasetSource implements DatasetSource {
     private boolean initialized = false;
     private String detectedSchemaInfo = "UNKNOWN";
     private String lastError = null;
-
-    private final List<String[]> availableSplits = new ArrayList<>(); // Pairs of [configName, splitName]
-    private int currentSplitIndex = 0;
+    private String resolvedConfig = null;
+    private String resolvedSplit = null;
 
     public HuggingFaceDatasetSource(String repo) {
         this(new DatasetSourceConfig("HUGGING_FACE", repo != null ? repo : "wikitext"), new HuggingFaceDownloader());
@@ -64,6 +64,101 @@ public class HuggingFaceDatasetSource implements DatasetSource {
     }
 
     @Override
+    public ResolvedSource preflight() {
+        String rawRepo = config.getRepository();
+        String requestedSplit = config.getSplit() != null ? config.getSplit() : "train";
+        String requestedCfg = config.getConfiguration();
+
+        String repo = rawRepo;
+        if ("wikitext".equalsIgnoreCase(rawRepo)) {
+            repo = "Salesforce/wikitext";
+        }
+
+        if (repo.startsWith("http://") || repo.startsWith("https://")) {
+            ResolvedSource res = new ResolvedSource("HUGGING_FACE", repo, requestedSplit, requestedSplit, "url", "main", repo, "raw", 0L, true, true, null);
+            res.logPreflight();
+            return res;
+        }
+
+        try {
+            String splitsUrl = "https://datasets-server.huggingface.co/splits?dataset=" + repo;
+            DownloadRequest req = new DownloadRequest(splitsUrl);
+            DownloadResult result = downloader.download(req);
+
+            if (!result.isSuccess()) {
+                ResolvedSource res = new ResolvedSource("HUGGING_FACE", repo, requestedSplit, requestedSplit, requestedCfg, "main", splitsUrl, "json", 0L, false, false, "HTTP " + result.getStatusCode() + ": " + result.getStatusMessage());
+                res.logPreflight();
+                return res;
+            }
+
+            JSONObject root = new JSONObject(result.getContentText());
+            if (root.has("error")) {
+                String err = root.getString("error");
+                ResolvedSource res = new ResolvedSource("HUGGING_FACE", repo, requestedSplit, requestedSplit, requestedCfg, "main", splitsUrl, "json", 0L, false, false, err);
+                res.logPreflight();
+                return res;
+            }
+
+            boolean configFound = false;
+            boolean splitFound = false;
+            String matchingCfg = null;
+            long estimatedSize = 0L;
+
+            if (root.has("splits")) {
+                JSONArray splits = root.getJSONArray("splits");
+                for (int i = 0; i < splits.length(); i++) {
+                    JSONObject sObj = splits.getJSONObject(i);
+                    String cfg = sObj.optString("config", "default");
+                    String sp = sObj.optString("split", "train");
+
+                    if (requestedCfg != null && !requestedCfg.trim().isEmpty() && !requestedCfg.equalsIgnoreCase("default")) {
+                        if (cfg.equalsIgnoreCase(requestedCfg)) {
+                            configFound = true;
+                            matchingCfg = cfg;
+                            if (sp.equalsIgnoreCase(requestedSplit)) {
+                                splitFound = true;
+                                break;
+                            }
+                        }
+                    } else {
+                        if ("Salesforce/wikitext".equalsIgnoreCase(repo) && cfg.contains("103")) {
+                            matchingCfg = cfg;
+                        } else if (matchingCfg == null) {
+                            matchingCfg = cfg;
+                        }
+                        configFound = true;
+                        if (sp.equalsIgnoreCase(requestedSplit)) {
+                            splitFound = true;
+                            if (matchingCfg != null) break;
+                        }
+                    }
+                }
+            }
+
+            if (matchingCfg != null) {
+                this.resolvedConfig = matchingCfg;
+            }
+            this.resolvedSplit = requestedSplit;
+
+            if (!splitFound) {
+                String reason = !configFound ? ("Config not found: " + requestedCfg) : ("Split not found in repository: " + requestedSplit);
+                ResolvedSource res = new ResolvedSource("HUGGING_FACE", repo, requestedSplit, requestedSplit, matchingCfg != null ? matchingCfg : requestedCfg, "main", splitsUrl, "json", 0L, false, false, reason);
+                res.logPreflight();
+                return res;
+            }
+
+            ResolvedSource res = new ResolvedSource("HUGGING_FACE", repo, requestedSplit, requestedSplit, this.resolvedConfig != null ? this.resolvedConfig : "default", "main", "https://datasets-server.huggingface.co/rows", "application/json", estimatedSize, true, true, null);
+            res.logPreflight();
+            return res;
+
+        } catch (Exception ex) {
+            ResolvedSource res = new ResolvedSource("HUGGING_FACE", repo, requestedSplit, requestedSplit, requestedCfg, "main", "https://datasets-server.huggingface.co/splits", "json", 0L, false, false, ex.getMessage());
+            res.logPreflight();
+            return res;
+        }
+    }
+
+    @Override
     public DatasetSourceStats getStats() {
         return stats;
     }
@@ -86,7 +181,6 @@ public class HuggingFaceDatasetSource implements DatasetSource {
         if ("wikitext".equalsIgnoreCase(rawRepo)) {
             repo = "Salesforce/wikitext";
         }
-        discoverSplits(repo);
         try {
             fetchNextChunk();
         } catch (Exception ex) {
@@ -109,70 +203,6 @@ public class HuggingFaceDatasetSource implements DatasetSource {
         return false;
     }
 
-    private void discoverSplits(String repo) {
-        if (repo.startsWith("http://") || repo.startsWith("https://")) return;
-        try {
-            String targetUrl = "https://datasets-server.huggingface.co/splits?dataset=" + repo;
-            DownloadRequest req = new DownloadRequest(targetUrl);
-            DownloadResult res = downloader.download(req);
-
-            if (res.isSuccess()) {
-                JSONObject root = new JSONObject(res.getContentText());
-                if (root.has("splits")) {
-                    JSONArray splits = root.getJSONArray("splits");
-                    for (int i = 0; i < splits.length(); i++) {
-                        JSONObject sObj = splits.getJSONObject(i);
-                        String cfg = sObj.optString("config", "default");
-                        String sp = sObj.optString("split", "train");
-                        addSplitIfAbsent(cfg, sp);
-                    }
-                }
-            }
-        } catch (Exception ignored) {}
-
-        if (availableSplits.isEmpty()) {
-            String cfg = config.getConfiguration() != null ? config.getConfiguration() : "default";
-            String sp = config.getSplit() != null ? config.getSplit() : "train";
-            addSplitIfAbsent(cfg, sp);
-            if ("train".equalsIgnoreCase(sp)) {
-                addSplitIfAbsent(cfg, "validation");
-                addSplitIfAbsent(cfg, "test");
-            }
-        }
-
-        // Prioritize train splits over validation/test and larger configs
-        availableSplits.sort((a, b) -> {
-            String cfgA = a[0];
-            String spA = a[1];
-            String cfgB = b[0];
-            String spB = b[1];
-
-            boolean isTrainA = "train".equalsIgnoreCase(spA);
-            boolean isTrainB = "train".equalsIgnoreCase(spB);
-
-            if (isTrainA != isTrainB) {
-                return isTrainA ? -1 : 1;
-            }
-
-            boolean is103A = cfgA.contains("103");
-            boolean is103B = cfgB.contains("103");
-            if (is103A != is103B) {
-                return is103A ? -1 : 1;
-            }
-
-            return 0;
-        });
-    }
-
-    private void addSplitIfAbsent(String cfg, String sp) {
-        for (String[] pair : availableSplits) {
-            if (pair[0].equals(cfg) && pair[1].equals(sp)) {
-                return;
-            }
-        }
-        availableSplits.add(new String[] { cfg, sp });
-    }
-
     private void fetchNextChunk() throws IOException {
         currentChunk.clear();
         currentChunkIndex = 0;
@@ -183,17 +213,25 @@ public class HuggingFaceDatasetSource implements DatasetSource {
         }
 
         String rawRepo = config.getRepository();
-        String configName = config.getConfiguration();
-        String split = config.getSplit() != null ? config.getSplit() : "train";
+        String requestedSplit = config.getSplit() != null ? config.getSplit() : "train";
+        String requestedCfg = config.getConfiguration();
 
         String repo = rawRepo;
-        String cfg = (configName != null && !configName.trim().isEmpty()) ? configName : "default";
         if ("wikitext".equalsIgnoreCase(rawRepo)) {
             repo = "Salesforce/wikitext";
-            if ("default".equalsIgnoreCase(cfg) || "train".equalsIgnoreCase(cfg) || "wikitext".equalsIgnoreCase(cfg)) {
+        }
+
+        String cfg = resolvedConfig;
+        if (cfg == null) {
+            cfg = (requestedCfg != null && !requestedCfg.trim().isEmpty()) ? requestedCfg : "default";
+            if ("Salesforce/wikitext".equalsIgnoreCase(repo) && ("default".equalsIgnoreCase(cfg) || "wikitext".equalsIgnoreCase(cfg))) {
                 cfg = "wikitext-103-v1";
             }
+            resolvedConfig = cfg;
         }
+
+        String split = resolvedSplit != null ? resolvedSplit : requestedSplit;
+        resolvedSplit = split;
 
         String targetUrl;
         if (repo.startsWith("http://") || repo.startsWith("https://")) {
@@ -207,20 +245,9 @@ public class HuggingFaceDatasetSource implements DatasetSource {
         try {
             result = downloader.download(req);
         } catch (IOException e) {
-            // If current split failed, try next split before giving up
-            if (!availableSplits.isEmpty() && currentSplitIndex < availableSplits.size() - 1) {
-                currentSplitIndex++;
-                currentOffset = 0;
-                String[] nextSplit = availableSplits.get(currentSplitIndex);
-                config.setConfiguration(nextSplit[0]);
-                config.setSplit(nextSplit[1]);
-                fetchNextChunk();
-                return;
-            } else {
-                lastError = e.getMessage();
-                endOfStream = true;
-                return;
-            }
+            lastError = e.getMessage();
+            endOfStream = true;
+            return;
         }
 
         String body = result.getContentText();
@@ -252,20 +279,9 @@ public class HuggingFaceDatasetSource implements DatasetSource {
             try {
                 JSONObject root = new JSONObject(body);
                 if (root.has("error")) {
-                    // Try next split if available
-                    if (!availableSplits.isEmpty() && currentSplitIndex < availableSplits.size() - 1) {
-                        currentSplitIndex++;
-                        currentOffset = 0;
-                        String[] nextSplit = availableSplits.get(currentSplitIndex);
-                        config.setConfiguration(nextSplit[0]);
-                        config.setSplit(nextSplit[1]);
-                        fetchNextChunk();
-                        return;
-                    } else {
-                        lastError = root.getString("error");
-                        endOfStream = true;
-                        return;
-                    }
+                    lastError = root.getString("error");
+                    endOfStream = true;
+                    return;
                 }
                 if (root.has("rows")) {
                     JSONArray rows = root.getJSONArray("rows");
@@ -282,30 +298,10 @@ public class HuggingFaceDatasetSource implements DatasetSource {
                             repo, cfg, split, currentOffset, rows.length(), currentChunk.size(), stats.getTotalSamplesRead());
                     currentOffset += rows.length();
                     if (rows.length() == 0) {
-                        if (!availableSplits.isEmpty() && currentSplitIndex < availableSplits.size() - 1) {
-                            currentSplitIndex++;
-                            currentOffset = 0;
-                            String[] nextSplit = availableSplits.get(currentSplitIndex);
-                            config.setConfiguration(nextSplit[0]);
-                            config.setSplit(nextSplit[1]);
-                            fetchNextChunk();
-                            return;
-                        } else {
-                            endOfStream = true;
-                        }
-                    }
-                } else {
-                    if (!availableSplits.isEmpty() && currentSplitIndex < availableSplits.size() - 1) {
-                        currentSplitIndex++;
-                        currentOffset = 0;
-                        String[] nextSplit = availableSplits.get(currentSplitIndex);
-                        config.setConfiguration(nextSplit[0]);
-                        config.setSplit(nextSplit[1]);
-                        fetchNextChunk();
-                        return;
-                    } else {
                         endOfStream = true;
                     }
+                } else {
+                    endOfStream = true;
                 }
             } catch (Exception e) {
                 lastError = e.getMessage();

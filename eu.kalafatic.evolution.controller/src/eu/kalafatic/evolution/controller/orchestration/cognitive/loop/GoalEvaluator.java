@@ -23,15 +23,21 @@ public class GoalEvaluator {
 
         // 1. Generic quantitative target metric evaluation
         Object targetMetricObj = goal.getParameter("targetMetric");
-        Object currentMetricObj = goal.getParameter("currentMetricKey");
+        if (targetMetricObj == null) {
+            targetMetricObj = goal.getParameter("targetUsableBytes");
+        }
+        Object currentMetricKeyObj = goal.getParameter("currentMetricKey");
+        String metricKey = currentMetricKeyObj != null ? currentMetricKeyObj.toString() : "quantity";
 
         if (targetMetricObj instanceof Number) {
             double target = ((Number) targetMetricObj).doubleValue();
             double accumulated = 0.0;
 
-            String metricKey = currentMetricObj != null ? currentMetricObj.toString() : "quantity";
             for (CognitiveObservation obs : observations) {
-                if (obs.isSuccess()) {
+                long usable = obs.getUsableBytes();
+                if (usable > 0) {
+                    accumulated += usable;
+                } else if (obs.isSuccess()) {
                     Object val = obs.getMetadata().get(metricKey);
                     if (val instanceof Number) {
                         accumulated += ((Number) val).doubleValue();
@@ -39,11 +45,15 @@ public class GoalEvaluator {
                 }
             }
 
+            double progress = target > 0 ? Math.min(1.0, accumulated / target) : 1.0;
+            if (worldState != null) {
+                worldState.setCurrentProgress(progress);
+            }
+
             if (accumulated < target && target > 0) {
-                double prog = Math.min(0.99, accumulated / target);
-                missing.add("Required " + metricKey + ": " + target + ", accumulated: " + accumulated);
-                evidence.add("Accumulated " + accumulated + " for " + metricKey);
-                return GoalEvaluation.partial(prog, missing, evidence);
+                missing.add("Required " + metricKey + ": " + target + ", accumulated: " + accumulated + " (" + String.format("%.1f%%", progress * 100) + ")");
+                evidence.add("Accumulated " + accumulated + " / " + target + " for " + metricKey);
+                return GoalEvaluation.partial(progress, missing, evidence);
             } else if (target > 0) {
                 evidence.add("Reached requirement for " + metricKey + ": " + accumulated + " / " + target);
             }
@@ -64,8 +74,8 @@ public class GoalEvaluator {
 
         // 3. Last action outcome assessment
         CognitiveObservation lastObs = observations.get(observations.size() - 1);
-        if (lastObs.isSuccess() && missing.isEmpty()) {
-            evidence.add("Successful execution of capability action: " + lastObs.getActionName());
+        if (missing.isEmpty()) {
+            evidence.add("Goal target metric requirements satisfied");
             return GoalEvaluation.achieved("All declared goal requirements verified by observations");
         } else if (!lastObs.isSuccess()) {
             missing.add("Last action failed: " + lastObs.getStructuredError());

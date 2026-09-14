@@ -1,11 +1,14 @@
 package eu.kalafatic.evolution.controller.tools;
 
 import java.io.File;
+import java.util.List;
 import java.util.Map;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
+import eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveFailureType;
 import eu.kalafatic.evolution.forge.data.api.preference.TrainingDataPreferences;
 import eu.kalafatic.evolution.forge.data.api.service.TrainingDataAcquisitionRequest;
 import eu.kalafatic.evolution.forge.data.api.service.TrainingDataAcquisitionResult;
@@ -50,12 +53,35 @@ public class DatasetAcquisitionTool implements ITool {
 
         Map<String, Object> metadata = context != null ? context.getMetadata() : Map.of();
 
-        String sourceType = params.optString("sourceType", (String) metadata.get("sourceType"));
-        String repo = params.optString("repository", (String) metadata.get("repository"));
-        if (repo == null || repo.trim().isEmpty()) {
-            repo = params.optString("domain", (String) metadata.get("domain"));
+        String sourceType = params.optString("sourceType", null);
+        if (sourceType == null || sourceType.trim().isEmpty()) {
+            sourceType = (String) metadata.get("sourceType");
         }
-        String split = params.optString("split", (String) metadata.get("split"));
+        if (sourceType == null || sourceType.trim().isEmpty()) {
+            sourceType = "HUGGING_FACE";
+        }
+
+        String repo = params.optString("repository", null);
+        if (repo == null || repo.trim().isEmpty()) {
+            repo = params.optString("domain", null);
+        }
+        if (repo == null || repo.trim().isEmpty()) {
+            repo = (String) metadata.get("repository");
+        }
+        if (repo == null || repo.trim().isEmpty()) {
+            repo = (String) metadata.get("domain");
+        }
+        if (repo == null || repo.trim().isEmpty()) {
+            repo = "Salesforce/wikitext";
+        }
+
+        String split = params.optString("split", null);
+        if (split == null || split.trim().isEmpty()) {
+            split = (String) metadata.get("split");
+        }
+        if (split == null || split.trim().isEmpty()) {
+            split = "train";
+        }
 
         long targetUsableBytes = 0;
         if (params.has("targetUsableBytes")) {
@@ -105,27 +131,91 @@ public class DatasetAcquisitionTool implements ITool {
             request.addSource(new LocalDatasetSource(cfg));
         }
 
-        TrainingDataAcquisitionResult result = acquisitionService.acquireDataset(request);
+        TrainingDataAcquisitionResult result;
+        try {
+            result = acquisitionService.acquireDataset(request);
+        } catch (Exception ex) {
+            String exMsg = ex.getMessage() != null ? ex.getMessage() : ex.toString();
+            CognitiveFailureType failureType = (exMsg.contains("Connect") || exMsg.contains("Timeout") || exMsg.contains("Network"))
+                    ? CognitiveFailureType.NETWORK_FAILURE
+                    : CognitiveFailureType.CAPABILITY_FAILURE;
+
+            JSONObject errObj = new JSONObject();
+            errObj.put("status", "FAILED");
+            errObj.put("requestedMinimumUsableBytes", targetUsableBytes);
+            errObj.put("usableContentBytes", 0);
+            errObj.put("quantity", 0);
+            errObj.put("remainingBytes", targetUsableBytes);
+            errObj.put("sourceType", sourceType);
+            errObj.put("repository", repo);
+            errObj.put("split", split);
+            errObj.put("isSourceExhausted", true);
+            errObj.put("failureType", failureType.name());
+            errObj.put("failureReason", exMsg);
+            errObj.put("recommendedNextActions", new JSONArray(List.of("TRY_OTHER_DATASET", "TRY_OTHER_SOURCE")));
+
+            if (context != null) {
+                context.getMetadata().put("usableContentBytes", 0L);
+                context.getMetadata().put("quantity", 0L);
+                context.getMetadata().put("remainingBytes", targetUsableBytes);
+                context.getMetadata().put("sourceType", sourceType);
+                context.getMetadata().put("repository", repo);
+                context.getMetadata().put("split", split);
+                context.getMetadata().put("failureType", failureType.name());
+                context.getMetadata().put("isSourceExhausted", true);
+            }
+            return errObj.toString();
+        }
+
+        long usableBytes = result.getAcceptedContentBytes();
+        long remaining = Math.max(0, targetUsableBytes - usableBytes);
+        boolean targetReached = result.isTargetReached() || (targetUsableBytes > 0 && usableBytes >= targetUsableBytes);
+
+        CognitiveFailureType failureType;
+        if (targetReached) {
+            failureType = CognitiveFailureType.TARGET_REACHED;
+        } else if (result.getDownloadedBytes() == 0 && usableBytes == 0) {
+            failureType = CognitiveFailureType.SOURCE_EMPTY;
+        } else if (result.isSourceExhausted() || usableBytes == 0) {
+            failureType = CognitiveFailureType.SOURCE_EXHAUSTED;
+        } else {
+            failureType = CognitiveFailureType.CAPABILITY_FAILURE;
+        }
+
+        List<String> nextActions = targetReached ? List.of() : List.of("TRY_OTHER_SPLIT", "TRY_OTHER_DATASET", "TRY_OTHER_SOURCE");
 
         JSONObject resObj = new JSONObject();
         resObj.put("status", result.getStatus().name());
         resObj.put("requestedMinimumUsableBytes", result.getRequestedMinimumUsableBytes());
         resObj.put("downloadedBytes", result.getDownloadedBytes());
         resObj.put("extractedBytes", result.getExtractedBytes());
-        resObj.put("usableContentBytes", result.getAcceptedContentBytes());
-        resObj.put("quantity", result.getAcceptedContentBytes());
+        resObj.put("usableContentBytes", usableBytes);
+        resObj.put("quantity", usableBytes);
+        resObj.put("remainingBytes", remaining);
         resObj.put("rejectedBytes", result.getRejectedBytes());
         resObj.put("duplicateBytes", result.getDuplicateBytes());
         resObj.put("trainingBytes", result.getTrainingBytes());
         resObj.put("validationBytes", result.getValidationBytes());
         resObj.put("sourcesUsed", result.getSourcesUsed());
+        resObj.put("sourceType", sourceType);
+        resObj.put("repository", repo);
+        resObj.put("split", split);
         resObj.put("isSourceExhausted", result.isSourceExhausted());
+        resObj.put("failureType", failureType.name());
+        resObj.put("failureReason", result.getFailureReason() != null ? result.getFailureReason() : "");
+        resObj.put("recommendedNextActions", new JSONArray(nextActions));
 
         if (context != null) {
-            context.getMetadata().put("usableContentBytes", result.getAcceptedContentBytes());
-            context.getMetadata().put("quantity", result.getAcceptedContentBytes());
+            context.getMetadata().put("usableContentBytes", usableBytes);
+            context.getMetadata().put("quantity", usableBytes);
+            context.getMetadata().put("remainingBytes", remaining);
+            context.getMetadata().put("sourceType", sourceType);
+            context.getMetadata().put("repository", repo);
+            context.getMetadata().put("split", split);
             context.getMetadata().put("acquisitionStatus", result.getStatus().name());
             context.getMetadata().put("isSourceExhausted", result.isSourceExhausted());
+            context.getMetadata().put("failureType", failureType.name());
+            context.getMetadata().put("recommendedNextActions", nextActions);
             context.getMetadata().put("acquisitionResult", result);
         }
 

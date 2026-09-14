@@ -33,26 +33,14 @@ public class GitManager {
     }
 
     public GitManager(File root) {
+        if (root == null) {
+            throw new IllegalArgumentException("GitManager root repository path must be explicitly provided and cannot be null.");
+        }
         this.root = root;
     }
     
     public static String getDefaultRepositoryPath() {
-        String userHome = System.getProperty("user.home");
-        String osName = System.getProperty("os.name").toLowerCase();
-        
-        String repoName = "git";//DEFAULT_REPO_NAME;
-//        
-//        // You can customize repository name per OS if needed
-//        if (osName.contains("win")) {
-//            repoName = WINDOWS_REPO;
-//        } else if (osName.contains("mac")) {
-//            repoName = MAC_REPO;
-//        } else if (osName.contains("nix") || osName.contains("nux") || osName.contains("aix")) {
-//            repoName = LINUX_REPO;
-//        }
-        
-        // Use File separator for OS independence
-        return userHome + File.separator + repoName + File.separator;
+        throw new UnsupportedOperationException("Implicit Git repository path guessing is disabled. Canonical EVO Git repository must be explicitly configured.");
     }
     
     public static Git createOrOpenRepo(String path) throws Exception {

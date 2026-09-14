@@ -2,6 +2,7 @@ package eu.kalafatic.evolution.controller.orchestration.cognitive.loop;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -66,6 +67,68 @@ public class CognitiveObservation {
 
     public Map<String, Object> getMetadata() {
         return Collections.unmodifiableMap(metadata);
+    }
+
+    public CognitiveFailureType getFailureType() {
+        if (success) {
+            return CognitiveFailureType.TARGET_REACHED;
+        }
+        Object failTypeObj = metadata.get("failureType");
+        if (failTypeObj instanceof String) {
+            return CognitiveFailureType.fromString((String) failTypeObj);
+        }
+        return CognitiveFailureType.fromString(structuredError);
+    }
+
+    public long getRequestedBytes() {
+        Object val = metadata.get("requestedMinimumUsableBytes");
+        if (val == null) val = metadata.get("targetUsableBytes");
+        if (val instanceof Number) return ((Number) val).longValue();
+        return 0L;
+    }
+
+    public long getUsableBytes() {
+        Object val = metadata.get("usableContentBytes");
+        if (val == null) val = metadata.get("quantity");
+        if (val instanceof Number) return ((Number) val).longValue();
+        return 0L;
+    }
+
+    public long getRemainingBytes() {
+        Object val = metadata.get("remainingBytes");
+        if (val instanceof Number) return ((Number) val).longValue();
+        long req = getRequestedBytes();
+        long usable = getUsableBytes();
+        return req > usable ? (req - usable) : 0L;
+    }
+
+    public String getSource() {
+        Object val = metadata.get("sourceType");
+        return val != null ? val.toString() : "UNKNOWN";
+    }
+
+    public String getDataset() {
+        Object val = metadata.get("repository");
+        if (val == null) val = metadata.get("domain");
+        return val != null ? val.toString() : "UNKNOWN";
+    }
+
+    public String getSplit() {
+        Object val = metadata.get("split");
+        return val != null ? val.toString() : "train";
+    }
+
+    public boolean isExhausted() {
+        Object val = metadata.get("isSourceExhausted");
+        if (val instanceof Boolean) return (Boolean) val;
+        return !success;
+    }
+
+    @SuppressWarnings("unchecked")
+    public List<String> getRecommendedNextActions() {
+        Object val = metadata.get("recommendedNextActions");
+        if (val instanceof List) return (List<String>) val;
+        return List.of();
     }
 
     @Override

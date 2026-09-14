@@ -156,8 +156,7 @@ public class EclipseGitEvoTool {
 
 	public static String getEvoDefaultPath() {
 		try {
-			File workspaceDir = ResourcesPlugin.getWorkspace().getRoot().getLocation().toFile();
-			File path = new File(workspaceDir, "evo");
+			File path = Paths.get(System.getProperty("user.home"), "git", "evo").toFile();
 			if (!path.exists()) {
 				path.mkdirs();
 			}
@@ -169,8 +168,7 @@ public class EclipseGitEvoTool {
 
 	public static String getLlmDefaultPath() {
 		try {
-			File workspaceDir = ResourcesPlugin.getWorkspace().getRoot().getLocation().toFile();
-			File path = new File(workspaceDir, "llm");
+			File path = Paths.get(System.getProperty("user.home"), "git", "llm").toFile();
 			if (!path.exists()) {
 				path.mkdirs();
 			}

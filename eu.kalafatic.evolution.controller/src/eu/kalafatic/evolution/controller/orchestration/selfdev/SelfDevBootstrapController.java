@@ -49,6 +49,10 @@ public class SelfDevBootstrapController {
         return json;
     }
 
+    public SelfDevPreflightResult executePreflight() {
+        return orchestrator.executePreflight();
+    }
+
     public String check(String checkType) {
         return orchestrator.executeCheck(checkType);
     }

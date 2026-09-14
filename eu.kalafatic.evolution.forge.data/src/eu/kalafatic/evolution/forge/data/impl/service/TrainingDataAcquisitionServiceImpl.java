@@ -130,6 +130,12 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
                     continue;
                 }
 
+                var res = source.preflight();
+                if (!res.isAccessible() || !res.isAvailable()) {
+                    System.err.println("[ACQ-PREFLIGHT REJECTED] Source unavailable or inaccessible: " + source.getSourceName() + " | Reason: " + res.getFailureReason());
+                    continue;
+                }
+
                 try {
                     source.initialize();
                 } catch (Exception initEx) {

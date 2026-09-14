@@ -311,15 +311,7 @@ public class DevelopmentPage extends AEvoPage {
 		String llmModel = (orchestrator != null && orchestrator.getLlm() != null) ? orchestrator.getLlm().getModel()
 				: "supervisor.llm";
 		String targetPath = getTargetPath();
-
-		String exportPath;
-		if (targetPath != null && (targetPath.endsWith("builds") || targetPath.endsWith("builds/")
-				|| targetPath.endsWith("builds\\"))) {
-			File parent = new File(targetPath).getParentFile();
-			exportPath = new File(parent, "export").getPath();
-		} else {
-			exportPath = targetPath + "/export";
-		}
+		String exportPath = eu.kalafatic.evolution.controller.resource.ResourceManager.getInstance().getPath(eu.kalafatic.evolution.controller.resource.EvoPath.EXPORT_ROOT).toString();
 
 		String customSuperSrc = getSupervisorSourcePath();
 		String customSuperBin = getTargetPath();
@@ -349,7 +341,7 @@ public class DevelopmentPage extends AEvoPage {
 	}
 
 	private String getTargetPath() {
-		return eu.kalafatic.evolution.controller.resource.ResourceManager.getInstance().getPath(eu.kalafatic.evolution.controller.resource.EvoPath.SUPERVISOR_RUNTIME).toString();
+		return eu.kalafatic.evolution.controller.resource.ResourceManager.getInstance().getPath(eu.kalafatic.evolution.controller.resource.EvoPath.BUILD_ROOT).toString();
 	}
 
 	private String getSupervisorSourcePath() {
@@ -693,6 +685,22 @@ public class DevelopmentPage extends AEvoPage {
 				"[DevelopmentPage] [RUN_DEBUG_START] Resetting statuses and preparing to launch debug thread...");
 		resetAllStatuses();
 		new Thread(() -> {
+			if (bootstrapController != null) {
+				System.out.println("[DevelopmentPage] [RUN_DEBUG] Executing Self-Dev Preflight check...");
+				eu.kalafatic.evolution.controller.orchestration.selfdev.SelfDevPreflightResult preflightRes = bootstrapController.executePreflight();
+				if (!preflightRes.isSuccess()) {
+					System.err.println("[DevelopmentPage] [RUN_DEBUG] Preflight FAILED/BLOCKED:\n" + preflightRes.generateSummaryReport());
+					Display.getDefault().asyncExec(() -> {
+						org.eclipse.jface.dialogs.MessageDialog.openError(
+								getShell(),
+								"Self-Dev Preflight Failed",
+								"Self-Dev execution cannot proceed safely.\n\n" + preflightRes.generateSummaryReport());
+					});
+					return;
+				}
+				System.out.println("[DevelopmentPage] [RUN_DEBUG] Preflight PASSED: status=" + preflightRes.getStatus());
+			}
+
 			if (!(selfDevTable.getInput() instanceof List<?> rows)) {
 				System.err.println(
 						"[DevelopmentPage] [RUN_DEBUG_FAIL] Table input is not a valid list of SelfDevRow rows.");

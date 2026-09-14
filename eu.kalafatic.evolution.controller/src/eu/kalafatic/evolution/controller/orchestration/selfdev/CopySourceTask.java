@@ -16,14 +16,18 @@ public class CopySourceTask extends AbstractSelfDevTask {
 
     @Override
     protected void resolveResources(SelfDevContext context) throws Exception {
-        ResourceManager rm = context.getResourceManager();
+        ResolvedSelfDevResources res = context != null ? context.getResolvedResources() : null;
+
         if ("COPY_SUPERVISOR".equalsIgnoreCase(id)) {
-            this.sourceRoot = rm.getSupervisorSource().toFile();
-            this.targetDir = new File(context.getSourceDirectory(), "eu.kalafatic.evolution.supervisor");
+            this.sourceRoot = (res != null && res.getSupervisorDirectory() != null) ? res.getSupervisorDirectory() : (context != null ? context.getSupervisorDirectory() : null);
+            File baseSourceDir = (res != null && res.getSourceDirectory() != null) ? res.getSourceDirectory() : (context != null ? context.getSourceDirectory() : null);
+            this.targetDir = baseSourceDir != null ? new File(baseSourceDir, "eu.kalafatic.evolution.supervisor") : null;
         } else {
-            this.sourceRoot = rm.getEvoSource().toFile();
-            this.targetDir = context.getSourceDirectory();
+            this.sourceRoot = (res != null && res.getReactorDirectory() != null) ? res.getReactorDirectory() : ((res != null && res.getRepositoryRoot() != null) ? res.getRepositoryRoot() : (context != null ? context.getRepositoryRoot() : null));
+            this.targetDir = (res != null && res.getSourceDirectory() != null) ? res.getSourceDirectory() : (context != null ? context.getSourceDirectory() : null);
         }
+
+        logTaskStep("PATH_SOURCE", "property=sourceRoot, value=" + (sourceRoot != null ? sourceRoot.getAbsolutePath() : "null") + ", origin=" + (res != null ? "ResolvedSelfDevResources" : "SelfDevContext"));
     }
 
     @Override

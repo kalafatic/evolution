@@ -675,7 +675,7 @@ public class EvolutionServer extends NanoHTTPD {
                 if (codebase != null) {
                     dataSources.add(codebase);
                 } else {
-                    dataSources.add("c:\\Users\\petrk\\git\\evolution");
+                    dataSources.add(java.nio.file.Paths.get(System.getProperty("user.home"), "git", "evolution").toString());
                 }
             }
 
@@ -1099,7 +1099,7 @@ public class EvolutionServer extends NanoHTTPD {
             if (codebase != null) {
                 arr.put(codebase);
             } else {
-                arr.put("c:\\Users\\petrk\\git\\evolution");
+                arr.put(java.nio.file.Paths.get(System.getProperty("user.home"), "git", "evolution").toString());
             }
         } else {
             try {
@@ -1110,7 +1110,7 @@ public class EvolutionServer extends NanoHTTPD {
                 if (codebase != null) {
                     arr.put(codebase);
                 } else {
-                    arr.put("c:\\Users\\petrk\\git\\evolution");
+                    arr.put(java.nio.file.Paths.get(System.getProperty("user.home"), "git", "evolution").toString());
                 }
             }
         }
