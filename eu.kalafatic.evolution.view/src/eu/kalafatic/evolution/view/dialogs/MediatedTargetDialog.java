@@ -315,9 +315,8 @@ public class MediatedTargetDialog extends DynamicMapDialog {
     }
 
     private static String getDefaultOutputPath() {
-        File projectsDir = new File(System.getProperty("user.home"), "projects");
-        File evoDir = new File(projectsDir, "evo");
-        File targetDir = new File(evoDir, "target");
+        File workspaceDir = new File(System.getProperty("user.home"), "workspace");
+        File targetDir = new File(workspaceDir, "target");
         return targetDir.getAbsolutePath() + File.separator;
     }
 
