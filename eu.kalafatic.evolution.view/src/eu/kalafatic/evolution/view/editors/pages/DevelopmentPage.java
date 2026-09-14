@@ -693,6 +693,22 @@ public class DevelopmentPage extends AEvoPage {
 				"[DevelopmentPage] [RUN_DEBUG_START] Resetting statuses and preparing to launch debug thread...");
 		resetAllStatuses();
 		new Thread(() -> {
+			if (bootstrapController != null) {
+				System.out.println("[DevelopmentPage] [RUN_DEBUG] Executing Self-Dev Preflight check...");
+				eu.kalafatic.evolution.controller.orchestration.selfdev.SelfDevPreflightResult preflightRes = bootstrapController.executePreflight();
+				if (!preflightRes.isSuccess()) {
+					System.err.println("[DevelopmentPage] [RUN_DEBUG] Preflight FAILED/BLOCKED:\n" + preflightRes.generateSummaryReport());
+					Display.getDefault().asyncExec(() -> {
+						org.eclipse.jface.dialogs.MessageDialog.openError(
+								getShell(),
+								"Self-Dev Preflight Failed",
+								"Self-Dev execution cannot proceed safely.\n\n" + preflightRes.generateSummaryReport());
+					});
+					return;
+				}
+				System.out.println("[DevelopmentPage] [RUN_DEBUG] Preflight PASSED: status=" + preflightRes.getStatus());
+			}
+
 			if (!(selfDevTable.getInput() instanceof List<?> rows)) {
 				System.err.println(
 						"[DevelopmentPage] [RUN_DEBUG_FAIL] Table input is not a valid list of SelfDevRow rows.");

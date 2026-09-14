@@ -38,6 +38,8 @@ public class SelfDevContext {
     private String sourceRevision;
     private boolean debugMode;
 
+    private ResolvedSelfDevResources resolvedResources;
+
     private final Map<String, TaskResult> taskResults = new ConcurrentHashMap<>();
     private final Map<ArtifactType, BuildArtifact> artifacts = new ConcurrentHashMap<>();
 
@@ -147,6 +149,37 @@ public class SelfDevContext {
     private boolean isModuleDirectory(File dir) {
         if (dir == null || !dir.exists() || !dir.isDirectory()) return false;
         return new File(dir, "pom.xml").exists() || new File(dir, "META-INF/MANIFEST.MF").exists();
+    }
+
+    public ResolvedSelfDevResources getResolvedResources() {
+        return resolvedResources;
+    }
+
+    public void setResolvedResources(ResolvedSelfDevResources resolvedResources) {
+        this.resolvedResources = resolvedResources;
+        if (resolvedResources != null) {
+            if (resolvedResources.getSupervisorDirectory() != null) {
+                this.supervisorDirectory = resolvedResources.getSupervisorDirectory();
+            }
+            if (resolvedResources.getGenomeDirectory() != null) {
+                this.genomeDirectory = resolvedResources.getGenomeDirectory();
+            }
+            if (resolvedResources.getOs() != null) {
+                this.os = resolvedResources.getOs();
+            }
+            if (resolvedResources.getWs() != null) {
+                this.ws = resolvedResources.getWs();
+            }
+            if (resolvedResources.getArch() != null) {
+                this.arch = resolvedResources.getArch();
+            }
+            if (resolvedResources.getProductId() != null) {
+                this.productId = resolvedResources.getProductId();
+            }
+            if (resolvedResources.getLauncher() != null) {
+                this.launcher = resolvedResources.getLauncher();
+            }
+        }
     }
 
     public void printPreflightReport() {
