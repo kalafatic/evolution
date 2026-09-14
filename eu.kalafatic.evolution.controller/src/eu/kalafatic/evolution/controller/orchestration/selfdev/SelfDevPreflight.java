@@ -34,14 +34,18 @@ public class SelfDevPreflight {
 
     /**
      * Executes the comprehensive preflight validation.
+     * Strictly validates canonical repository paths without searching or discovering candidate directories.
      *
-     * @param context The active SelfDevContext (can be updated with recovered paths)
+     * @param context The active SelfDevContext
      * @param orchestrator Optional SelfDevOrchestrator to validate task graph
      * @return SelfDevPreflightResult
      */
     public SelfDevPreflightResult executePreflight(SelfDevContext context, SelfDevOrchestrator orchestrator) {
+        String preflightRunId = UUID.randomUUID().toString();
+        String sessionId = context != null ? context.getRunId() : "default_session";
+
         Log.log("[SelfDevPreflight] ==========================================");
-        Log.log("[SelfDevPreflight] START");
+        Log.log("[SelfDevPreflight] START preflightRunId=" + preflightRunId + ", sessionId=" + sessionId);
         Log.log("[SelfDevPreflight] ==========================================");
 
         List<SelfDevPreflightResult.CheckDetail> checks = new ArrayList<>();
@@ -50,73 +54,122 @@ public class SelfDevPreflight {
         List<String> errors = new ArrayList<>();
         List<String> warnings = new ArrayList<>();
 
-        boolean recoveredAny = false;
+        // 1. Initial path resolution & strict source verification
+        File repositoryRoot = (context != null && context.getRepositoryRoot() != null) ? context.getRepositoryRoot().getAbsoluteFile() : resourceManager.getPath(EvoPath.EVO_ROOT).toFile().getAbsoluteFile();
+        File projectRoot = (context != null && context.getProjectRoot() != null) ? context.getProjectRoot().getAbsoluteFile() : repositoryRoot;
+        File sourceDirectory = (context != null && context.getSourceDirectory() != null) ? context.getSourceDirectory().getAbsoluteFile() : repositoryRoot;
 
-        // 1. Initial path resolution & source verification
-        File repositoryRoot = resourceManager.getPath(EvoPath.EVO_ROOT).toFile();
-        File projectRoot = context != null ? context.getProjectRoot() : repositoryRoot;
+        Log.log("[PATH] resource=EVO_GIT_REPOSITORY configured=" + repositoryRoot.getAbsolutePath() +
+                " resolved=" + repositoryRoot.getAbsolutePath() + " absolute=" + repositoryRoot.isAbsolute() +
+                " exists=" + repositoryRoot.exists() + " directory=" + repositoryRoot.isDirectory() +
+                " gitRepository=" + new File(repositoryRoot, ".git").exists() +
+                " pom=" + new File(repositoryRoot, "pom.xml").exists() + " origin=EMF_CONFIGURATION");
 
-        Log.log("[SelfDevPreflight][PATH] Repository Root: " + repositoryRoot.getAbsolutePath());
-        Log.log("[SelfDevPreflight][PATH] Project Root   : " + projectRoot.getAbsolutePath());
+        Log.log("[PATH_DISCOVERY] resource=EVO_GIT_REPOSITORY action=FORBIDDEN reason=canonical_repository_must_be_explicitly_configured");
 
-        // 2. Validate Source Directory / Maven Reactor Root
-        File candidateSource = context != null ? context.getSourceDirectory() : resourceManager.getPath(EvoPath.SOURCE_ROOT).toFile();
-        File resolvedSource = candidateSource;
+        // 2. Validate Canonical EVO Repository Integrity (EVO_GIT_REPOSITORY)
+        boolean isRuntimeProduct = repositoryRoot.getAbsolutePath().contains(".product") || repositoryRoot.getAbsolutePath().contains("runtime-eu.kalafatic");
+        boolean isGitRepo = repositoryRoot.exists() && repositoryRoot.isDirectory() && new File(repositoryRoot, ".git").exists();
 
-        String sourceStatus = "VERIFIED";
-        if (candidateSource == null || !candidateSource.exists() || !new File(candidateSource, "pom.xml").exists()) {
-            Log.log("[SelfDevPreflight][PATH] Configured source path is INVALID or missing pom.xml: " + (candidateSource != null ? candidateSource.getAbsolutePath() : "null"));
-            if (candidateSource != null && candidateSource.getAbsolutePath().contains(".product")) {
-                Log.log("[SelfDevPreflight][PATH] Classified candidate as RUNTIME_PRODUCT directory - NOT a Maven source reactor!");
-            }
-
-            // Perform deterministic recovery search for valid Maven source root
-            List<File> validCandidates = findValidSourceCandidates(projectRoot, repositoryRoot);
-            if (validCandidates.size() == 1) {
-                resolvedSource = validCandidates.get(0);
-                recoveredAny = true;
-                String recMsg = "Stale/invalid source RECOVERED: " + (candidateSource != null ? candidateSource.getAbsolutePath() : "null") + " -> " + resolvedSource.getAbsolutePath();
-                Log.log("[SelfDevPreflight][RECOVERY] " + recMsg);
-                recoveries.add(recMsg);
-                sourceStatus = "RECOVERED";
-            } else if (validCandidates.size() > 1) {
-                String err = "AMBIGUOUS_SOURCE_ROOT: Multiple valid Maven source candidates found: " + validCandidates;
-                Log.log("[SelfDevPreflight][PATH] " + err);
-                errors.add(err);
-                sourceStatus = "AMBIGUOUS";
-            } else {
-                String err = "INVALID_MAVEN_SOURCE: No valid Maven source directory with pom.xml found. Checked path: " + (candidateSource != null ? candidateSource.getAbsolutePath() : "null");
-                Log.log("[SelfDevPreflight][PATH] " + err);
-                errors.add(err);
-                sourceStatus = "INVALID";
-            }
+        if (isRuntimeProduct) {
+            String err = "Canonical EVO Git repository is invalid. Configured path '" + repositoryRoot.getAbsolutePath() +
+                    "' is a runtime product directory, NOT a Maven source repository. No automatic repository discovery was attempted.";
+            Log.log("[SelfDevPreflight][PATH_ERROR] " + err);
+            errors.add(err);
+            checks.add(new SelfDevPreflightResult.CheckDetail(
+                    "EVO_GIT_REPOSITORY", "BLOCKED",
+                    "Canonical EVO repository validation",
+                    repositoryRoot.getAbsolutePath(),
+                    "Directory with .git (not a runtime product)",
+                    "Runtime Product Directory",
+                    "Configure canonical EVO Git repository path"
+            ));
+        } else if (!repositoryRoot.exists() || !repositoryRoot.isDirectory()) {
+            String err = "Canonical EVO Git repository is invalid. Configured path '" + repositoryRoot.getAbsolutePath() +
+                    "' does not exist or is not a directory. Expected: Directory containing .git and pom.xml. Actual: missing directory. No automatic repository discovery was attempted.";
+            Log.log("[SelfDevPreflight][PATH_ERROR] " + err);
+            errors.add(err);
+            checks.add(new SelfDevPreflightResult.CheckDetail(
+                    "EVO_GIT_REPOSITORY", "BLOCKED",
+                    "Canonical EVO repository validation",
+                    repositoryRoot.getAbsolutePath(),
+                    "Existing directory containing .git",
+                    "Directory Missing",
+                    "Configure valid canonical EVO repository location"
+            ));
+        } else if (!isGitRepo) {
+            String err = "Canonical EVO Git repository is invalid. Configured path '" + repositoryRoot.getAbsolutePath() +
+                    "' is not a Git repository (missing .git). Expected: Directory containing .git and pom.xml. Actual: .git missing. No automatic repository discovery was attempted.";
+            Log.log("[SelfDevPreflight][PATH_ERROR] " + err);
+            errors.add(err);
+            checks.add(new SelfDevPreflightResult.CheckDetail(
+                    "EVO_GIT_REPOSITORY", "BLOCKED",
+                    "Canonical EVO repository validation",
+                    repositoryRoot.getAbsolutePath(),
+                    "Directory containing .git folder",
+                    "Missing .git folder",
+                    "Configure valid Git repository"
+            ));
+        } else {
+            checks.add(new SelfDevPreflightResult.CheckDetail(
+                    "EVO_GIT_REPOSITORY", "OK",
+                    "Canonical EVO repository validation",
+                    repositoryRoot.getAbsolutePath(),
+                    "Directory with .git",
+                    "VERIFIED",
+                    "None"
+            ));
         }
 
-        checks.add(new SelfDevPreflightResult.CheckDetail(
-                "SOURCE_DIRECTORY", sourceStatus,
-                "Maven source directory validation",
-                resolvedSource != null ? resolvedSource.getAbsolutePath() : "null",
-                "Directory with pom.xml",
-                sourceStatus,
-                recoveredAny ? "Recovered to valid source root" : "None"
-        ));
+        // 3. Validate Maven Reactor Source Root Integrity (EVO_SOURCE_ROOT / MAVEN_REACTOR)
+        File reactorDir = (new File(sourceDirectory, "pom.xml").exists()) ? sourceDirectory : repositoryRoot;
+        boolean hasPom = reactorDir.exists() && reactorDir.isDirectory() && new File(reactorDir, "pom.xml").exists();
 
-        // 3. Reactor & Output Directories
-        File reactorDir = resolvedSource;
-        File buildDir = context != null ? context.getBuildDirectory() : resourceManager.getEvoBuildOutput().toFile();
-        File exportDir = context != null ? context.getExportDirectory() : resourceManager.getEvoExport().toFile();
-        File runtimeDir = context != null ? context.getRuntimeDirectory() : resourceManager.getPath(EvoPath.RUNTIME_ROOT).toFile();
-        File logDir = context != null ? context.getLogDirectory() : resourceManager.resolvePath("self-dev-run/logs").toFile();
-        File supervisorDir = context != null ? context.getSupervisorDirectory() : resourceManager.getSupervisorSource().toFile();
-        File genomeDir = context != null ? context.getGenomeDirectory() : resourceManager.getGenome().toFile();
+        if (!hasPom) {
+            String err = "Canonical EVO source reactor is invalid. Configured path '" + reactorDir.getAbsolutePath() +
+                    "' is missing root pom.xml. Expected: Directory containing pom.xml. Actual: pom.xml missing. No automatic repository discovery was attempted.";
+            Log.log("[SelfDevPreflight][PATH_ERROR] " + err);
+            errors.add(err);
+            checks.add(new SelfDevPreflightResult.CheckDetail(
+                    "EVO_SOURCE_ROOT", "BLOCKED",
+                    "Maven reactor source validation",
+                    reactorDir.getAbsolutePath(),
+                    "Directory containing root pom.xml",
+                    "Missing pom.xml",
+                    "Provide valid Maven reactor source root"
+            ));
+        } else {
+            checks.add(new SelfDevPreflightResult.CheckDetail(
+                    "EVO_SOURCE_ROOT", "OK",
+                    "Maven reactor source validation",
+                    reactorDir.getAbsolutePath(),
+                    "Directory containing pom.xml",
+                    "VERIFIED",
+                    "None"
+            ));
+        }
 
-        // 4. Test Write Permissions on Output Directories
+        File resolvedSource = reactorDir;
+
+        // 4. Output Directories & Platform
+        File buildDir = (context != null && context.getBuildDirectory() != null) ? context.getBuildDirectory() : resourceManager.getEvoBuildOutput().toFile();
+        File exportDir = (context != null && context.getExportDirectory() != null) ? context.getExportDirectory() : resourceManager.getEvoExport().toFile();
+        File runtimeDir = (context != null && context.getRuntimeDirectory() != null) ? context.getRuntimeDirectory() : resourceManager.getPath(EvoPath.RUNTIME_ROOT).toFile();
+        File logDir = (context != null && context.getLogDirectory() != null) ? context.getLogDirectory() : resourceManager.resolvePath("self-dev-run/logs").toFile();
+        File supervisorDir = (context != null && context.getSupervisorDirectory() != null) ? context.getSupervisorDirectory() : resourceManager.getSupervisorSource().toFile();
+        File genomeDir = (context != null && context.getGenomeDirectory() != null) ? context.getGenomeDirectory() : resourceManager.getGenome().toFile();
+
+        Log.log("[PATH_DERIVED] resource=BUILD_DIR base=SELF_DEV_ROOT rule=selfDevRoot/build resolved=" + buildDir.getAbsolutePath());
+        Log.log("[PATH_DERIVED] resource=EXPORT_DIR base=SELF_DEV_ROOT rule=selfDevRoot/export resolved=" + exportDir.getAbsolutePath());
+        Log.log("[PATH_DERIVED] resource=RUNTIME_DIR base=SELF_DEV_ROOT rule=selfDevRoot/runtime resolved=" + runtimeDir.getAbsolutePath());
+
+        // 5. Test Write Permissions on Output Directories
         testWritePermission("BUILD_DIR", buildDir, checks, errors);
         testWritePermission("EXPORT_DIR", exportDir, checks, errors);
         testWritePermission("LOG_DIR", logDir, checks, errors);
         testWritePermission("RUNTIME_DIR", runtimeDir, checks, errors);
 
-        // 5. Target Platform Verification
+        // 6. Target Platform Verification
         TargetPlatform targetPlatform = resourceManager.getTargetPlatform();
         Log.log("[SelfDevPreflight][ENV] Target Platform: " + targetPlatform);
         checks.add(new SelfDevPreflightResult.CheckDetail(
@@ -128,20 +181,18 @@ public class SelfDevPreflight {
                 "None"
         ));
 
-        // 6. Executable Validation (Java & Maven)
+        // 7. Executable Validation (Java & Maven)
         File javaExec = validateJavaExecutable(checks, errors, warnings);
         File mavenExec = validateMavenExecutable(resolvedSource, checks, errors, warnings);
 
-        // 7. Consistency Check across ResourceManager, SelfDevContext, Task Snapshots
-        if (context != null) {
-            File rmSource = resourceManager.getEvoSource().toFile();
-            File ctxSource = context.getSourceDirectory();
-            Log.log("[SelfDevPreflight][PATH] Comparing layer sources: ResourceManager=" + rmSource.getAbsolutePath() + ", SelfDevContext=" + (ctxSource != null ? ctxSource.getAbsolutePath() : "null") + ", resolved=" + (resolvedSource != null ? resolvedSource.getAbsolutePath() : "null"));
-
-            if (ctxSource != null && resolvedSource != null && !ctxSource.getAbsoluteFile().equals(resolvedSource.getAbsoluteFile())) {
-                String conflict = "PATH_CONFLICT: SelfDevContext source (" + ctxSource.getAbsolutePath() + ") differs from resolved source (" + resolvedSource.getAbsolutePath() + ")";
-                Log.log("[SelfDevPreflight][PATH_CONFLICT] " + conflict);
+        // 8. Consistency Check across ResourceManager, SelfDevContext, Task Snapshots
+        if (context != null && context.getResolvedResources() != null) {
+            File snapshotSource = context.getResolvedResources().getSourceDirectory();
+            if (snapshotSource != null && !snapshotSource.getCanonicalPath().equals(resolvedSource.getCanonicalPath())) {
+                String conflict = "PATH_CONFLICT: SelfDevContext snapshot source (" + snapshotSource.getAbsolutePath() + ") differs from canonical source (" + resolvedSource.getAbsolutePath() + ")";
+                Log.log("[PATH_CONFLICT] resource=EVO_GIT_REPOSITORY canonical=" + resolvedSource.getAbsolutePath() + " other=" + snapshotSource.getAbsolutePath() + " source=SelfDevContext action=BLOCK");
                 conflicts.add(conflict);
+                errors.add(conflict);
             }
         }
 
@@ -150,12 +201,10 @@ public class SelfDevPreflight {
             validateTaskGraph(orchestrator, resolvedSource, checks, errors);
         }
 
-        // 9. Synchronize & Propagate Recovered Snapshot if safe
+        // 9. Synchronize & Propagate Resolved Snapshot if safe
         SelfDevPreflightResult.PreflightStatus overallStatus;
         if (!errors.isEmpty()) {
             overallStatus = SelfDevPreflightResult.PreflightStatus.BLOCKED;
-        } else if (recoveredAny) {
-            overallStatus = SelfDevPreflightResult.PreflightStatus.RECOVERED;
         } else {
             overallStatus = SelfDevPreflightResult.PreflightStatus.SUCCESS;
         }
@@ -170,7 +219,7 @@ public class SelfDevPreflight {
         );
 
         Log.log("[SelfDevPreflight] ==========================================");
-        Log.log("[SelfDevPreflight] RESULT=" + overallStatus);
+        Log.log("[SelfDevPreflight] RESULT=" + overallStatus + " preflightRunId=" + preflightRunId);
         Log.log("[SelfDevPreflight] ==========================================");
 
         SelfDevPreflightResult result = new SelfDevPreflightResult(
@@ -179,54 +228,6 @@ public class SelfDevPreflight {
 
         Log.log(result.generateSummaryReport());
         return result;
-    }
-
-    private List<File> findValidSourceCandidates(File projectRoot, File repositoryRoot) {
-        List<File> candidates = new ArrayList<>();
-        List<File> searchRoots = Arrays.asList(
-                repositoryRoot,
-                projectRoot,
-                new File(System.getProperty("user.home")),
-                new File(System.getProperty("user.dir"))
-        );
-
-        for (File root : searchRoots) {
-            if (root == null || !root.exists()) continue;
-
-            // Direct check
-            if (isValidMavenSourceRoot(root)) {
-                addCandidateIfNotPresent(candidates, root);
-            }
-
-            // Standard subdirectories
-            File[] subDirs = new File[] {
-                    new File(root, "sources"),
-                    new File(root, "source"),
-                    new File(root, "evo")
-            };
-            for (File sub : subDirs) {
-                if (isValidMavenSourceRoot(sub)) {
-                    addCandidateIfNotPresent(candidates, sub);
-                }
-            }
-        }
-
-        return candidates;
-    }
-
-    private boolean isValidMavenSourceRoot(File dir) {
-        if (dir == null || !dir.exists() || !dir.isDirectory()) return false;
-        // MUST contain pom.xml and MUST NOT be a runtime .product directory
-        if (dir.getAbsolutePath().contains(".product")) return false;
-        return new File(dir, "pom.xml").exists();
-    }
-
-    private void addCandidateIfNotPresent(List<File> candidates, File dir) {
-        File norm = dir.getAbsoluteFile().toPath().normalize().toFile();
-        for (File existing : candidates) {
-            if (existing.equals(norm)) return;
-        }
-        candidates.add(norm);
     }
 
     private void testWritePermission(String name, File dir, List<SelfDevPreflightResult.CheckDetail> checks, List<String> errors) {
@@ -297,6 +298,19 @@ public class SelfDevPreflight {
         }
 
         if (mvnExec == null) {
+            String m2Home = System.getenv("M2_HOME");
+            if (m2Home == null || m2Home.isEmpty()) {
+                m2Home = System.getenv("MAVEN_HOME");
+            }
+            if (m2Home != null && !m2Home.isEmpty()) {
+                File homeMvn = new File(m2Home, "bin/" + (isWin ? "mvn.cmd" : "mvn"));
+                if (homeMvn.exists()) {
+                    mvnExec = homeMvn;
+                }
+            }
+        }
+
+        if (mvnExec == null) {
             mvnExec = new File(isWin ? "mvn.cmd" : "mvn");
         }
 
@@ -318,10 +332,10 @@ public class SelfDevPreflight {
             checks.add(new SelfDevPreflightResult.CheckDetail("MAVEN", "OK", "Maven executable verified: " + verOutput.trim(), mvnExec.getAbsolutePath(), "Maven 3.9+", verOutput.trim(), "None"));
             return mvnExec;
         } catch (Exception e) {
-            String warn = "MAVEN_CHECK WARNING: Could not execute mvn -version via " + mvnExec.getAbsolutePath() + ": " + e.getMessage();
-            Log.log("[SelfDevPreflight][MAVEN] " + warn);
-            warnings.add(warn);
-            checks.add(new SelfDevPreflightResult.CheckDetail("MAVEN", "WARNING", warn, mvnExec.getAbsolutePath(), "Executable mvn", "Failed to run", "Ensure Maven is on PATH"));
+            String err = "MAVEN_CHECK FAILED: Required Maven executable is missing or not functional via " + mvnExec.getAbsolutePath() + ": " + e.getMessage();
+            Log.log("[SelfDevPreflight][MAVEN] " + err);
+            errors.add(err);
+            checks.add(new SelfDevPreflightResult.CheckDetail("MAVEN", "FAILED", err, mvnExec.getAbsolutePath(), "Executable mvn", "Failed to run", "Ensure Maven or mvnw is configured"));
             return mvnExec;
         }
     }

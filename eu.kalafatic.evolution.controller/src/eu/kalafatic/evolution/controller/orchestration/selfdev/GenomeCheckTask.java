@@ -15,12 +15,8 @@ public class GenomeCheckTask extends AbstractSelfDevTask {
 
     @Override
     protected void resolveResources(SelfDevContext context) throws Exception {
-        ResourceManager rm = context.getResourceManager();
-        this.genomeModuleDir = rm.getGenome().toFile();
-        if (this.genomeModuleDir == null || !this.genomeModuleDir.exists()) {
-            context.discoverAndRepairModulePaths();
-            this.genomeModuleDir = context.getGenomeDirectory();
-        }
+        ResolvedSelfDevResources res = context != null ? context.getResolvedResources() : null;
+        this.genomeModuleDir = (res != null && res.getGenomeDirectory() != null) ? res.getGenomeDirectory() : (context != null ? context.getGenomeDirectory() : null);
     }
 
     @Override

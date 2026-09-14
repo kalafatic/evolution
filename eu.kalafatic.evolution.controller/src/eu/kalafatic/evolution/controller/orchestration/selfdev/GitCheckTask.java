@@ -15,15 +15,12 @@ public class GitCheckTask extends AbstractSelfDevTask {
 
     @Override
     protected void resolveResources(SelfDevContext context) throws Exception {
-        ResourceManager rm = context.getResourceManager();
+        ResolvedSelfDevResources res = context != null ? context.getResolvedResources() : null;
         if ("GIT_SUPERVISOR".equalsIgnoreCase(id)) {
-            File supervisorSource = context.getSupervisorDirectory();
-            if (supervisorSource == null || !supervisorSource.exists()) {
-                supervisorSource = rm.getSupervisorSource().toFile();
-            }
-            this.targetRepo = supervisorSource != null && supervisorSource.exists() ? supervisorSource : context.getProjectRoot();
+            File supervisorSource = (res != null && res.getSupervisorDirectory() != null) ? res.getSupervisorDirectory() : (context != null ? context.getSupervisorDirectory() : null);
+            this.targetRepo = (supervisorSource != null && supervisorSource.exists()) ? supervisorSource : (context != null ? context.getProjectRoot() : null);
         } else {
-            this.targetRepo = context.getProjectRoot();
+            this.targetRepo = (res != null && res.getRepositoryRoot() != null) ? res.getRepositoryRoot() : (context != null ? context.getProjectRoot() : null);
         }
     }
 
