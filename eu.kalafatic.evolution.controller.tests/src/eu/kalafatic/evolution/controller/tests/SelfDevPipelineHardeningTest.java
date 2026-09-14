@@ -106,4 +106,52 @@ public class SelfDevPipelineHardeningTest {
             tempDir.delete();
         }
     }
+
+    @Test
+    public void testPreflightValidSourcePasses() {
+        File repoRoot = new File(".").getAbsoluteFile();
+        SelfDevContext context = new SelfDevContext(repoRoot, null);
+        SelfDevOrchestrator orchestrator = new SelfDevOrchestrator(context, null, null);
+
+        eu.kalafatic.evolution.controller.orchestration.selfdev.SelfDevPreflight preflight = new eu.kalafatic.evolution.controller.orchestration.selfdev.SelfDevPreflight();
+        eu.kalafatic.evolution.controller.orchestration.selfdev.SelfDevPreflightResult result = preflight.executePreflight(context, orchestrator);
+
+        assertTrue("Preflight must succeed for repository root", result.isSuccess());
+        assertNotNull(result.getResolvedResources());
+        assertTrue(new File(result.getResolvedResources().getSourceDirectory(), "pom.xml").exists());
+    }
+
+    @Test
+    public void testPreflightDetectsInvalidRuntimeProductDirectory() {
+        File productDir = new File(System.getProperty("java.io.tmpdir"), "runtime-eu.kalafatic.evolution.view/.product/evo");
+        productDir.mkdirs();
+        try {
+            SelfDevContext context = new SelfDevContext(productDir, null);
+            eu.kalafatic.evolution.controller.orchestration.selfdev.SelfDevPreflight preflight = new eu.kalafatic.evolution.controller.orchestration.selfdev.SelfDevPreflight();
+            eu.kalafatic.evolution.controller.orchestration.selfdev.SelfDevPreflightResult result = preflight.executePreflight(context, null);
+
+            // Since productDir is missing pom.xml, preflight either recovers a valid repo root or fails if ambiguous/missing
+            assertNotNull(result);
+            if (result.isSuccess()) {
+                assertFalse("Recovered source directory must not be the product directory",
+                        result.getResolvedResources().getSourceDirectory().getAbsolutePath().contains(".product"));
+            }
+        } finally {
+            productDir.delete();
+        }
+    }
+
+    @Test
+    public void testPreflightPathPropagationToCopyTask() throws Exception {
+        File repoRoot = new File(".").getAbsoluteFile();
+        SelfDevContext context = new SelfDevContext(repoRoot, null);
+        SelfDevOrchestrator orchestrator = new SelfDevOrchestrator(context, null, null);
+
+        eu.kalafatic.evolution.controller.orchestration.selfdev.SelfDevTask copyTask = orchestrator.getTaskRegistry().get("COPY");
+        assertNotNull(copyTask);
+
+        // Preflight already ran on orchestrator creation
+        assertNotNull(context.getResolvedResources());
+        assertEquals(repoRoot.getAbsoluteFile().toPath().normalize().toFile(), context.getResolvedResources().getSourceDirectory());
+    }
 }

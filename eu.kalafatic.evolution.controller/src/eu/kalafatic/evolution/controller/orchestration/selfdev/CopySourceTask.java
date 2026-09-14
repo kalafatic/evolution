@@ -16,14 +16,20 @@ public class CopySourceTask extends AbstractSelfDevTask {
 
     @Override
     protected void resolveResources(SelfDevContext context) throws Exception {
-        ResourceManager rm = context.getResourceManager();
+        ResourceManager rm = context != null ? context.getResourceManager() : ResourceManager.getInstance();
+        ResolvedSelfDevResources res = context != null ? context.getResolvedResources() : null;
+
         if ("COPY_SUPERVISOR".equalsIgnoreCase(id)) {
-            this.sourceRoot = rm.getSupervisorSource().toFile();
+            this.sourceRoot = (res != null && res.getSupervisorDirectory() != null) ? res.getSupervisorDirectory() : rm.getSupervisorSource().toFile();
             this.targetDir = new File(context.getSourceDirectory(), "eu.kalafatic.evolution.supervisor");
         } else {
-            this.sourceRoot = rm.getEvoSource().toFile();
+            this.sourceRoot = (res != null && res.getSourceDirectory() != null && new File(res.getSourceDirectory(), "pom.xml").exists())
+                    ? res.getSourceDirectory()
+                    : rm.getEvoSource().toFile();
             this.targetDir = context.getSourceDirectory();
         }
+
+        logTaskStep("PATH_SOURCE", "property=sourceRoot, value=" + (sourceRoot != null ? sourceRoot.getAbsolutePath() : "null") + ", origin=" + (res != null ? "ResolvedSelfDevResources" : "ResourceManager"));
     }
 
     @Override
