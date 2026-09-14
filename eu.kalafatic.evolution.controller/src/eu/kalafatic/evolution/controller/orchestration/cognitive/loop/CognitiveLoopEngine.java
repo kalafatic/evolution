@@ -475,10 +475,10 @@ public class CognitiveLoopEngine implements ICognitiveLoop {
         String capName = decision.getTargetCapability();
         String stratSig = worldState.getActiveStrategy().getSignature();
         String actionKey = session != null ? session.getSessionId() : "session";
-        actionKey += ":iter" + iteration + ":" + capName + ":" + stratSig;
+        actionKey += ":" + capName + ":" + stratSig;
 
         if (worldState.isActionAlreadyExecuted(actionKey)) {
-            return CognitiveObservation.ofFailure(capName, 409, "", "Action already executed in this iteration", "DUPLICATE_ACTION_PREVENTED", 0);
+            return CognitiveObservation.ofFailure(capName, 409, "", "Strategy action already executed in session: " + actionKey, "DUPLICATE_ACTION_PREVENTED", 0);
         }
 
         return executeCapability(session, taskContext, decision);
