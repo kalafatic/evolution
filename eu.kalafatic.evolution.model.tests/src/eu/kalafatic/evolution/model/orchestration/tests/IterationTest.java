@@ -86,4 +86,11 @@ public class IterationTest extends TestCase {
 		setFixture(null);
 	}
 
+	/**
+	 * Tests the fixture creation.
+	 */
+	public void testFixture() {
+		assertNotNull(getFixture());
+	}
+
 } //IterationTest

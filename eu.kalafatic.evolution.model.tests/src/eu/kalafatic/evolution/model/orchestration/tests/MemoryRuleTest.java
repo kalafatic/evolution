@@ -67,4 +67,11 @@ public class MemoryRuleTest extends RuleTest {
 		setFixture(null);
 	}
 
+	/**
+	 * Tests the fixture creation.
+	 */
+	public void testFixture() {
+		assertNotNull(getFixture());
+	}
+
 } //MemoryRuleTest
