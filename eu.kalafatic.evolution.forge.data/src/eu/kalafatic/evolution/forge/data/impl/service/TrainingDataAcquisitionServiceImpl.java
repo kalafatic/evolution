@@ -112,6 +112,10 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
         long accumulatedUsableBytes = 0;
         Set<String> processedSourceNames = new HashSet<>();
 
+        long cleanerRejections = 0;
+        long filterRejections = 0;
+        long duplicateRejections = 0;
+
         int sourceIndex = 0;
         int searchRound = 1;
         int maxSearchRounds = 10;
@@ -153,12 +157,20 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
                         accounting.recordRaw(rawLen);
 
                         NormalizedSample clean = normalizer.normalize(s);
-                        if (clean == null || !filter.accept(clean)) {
+                        if (clean == null) {
+                            cleanerRejections++;
+                            accounting.recordRejected(rawLen);
+                            continue;
+                        }
+
+                        if (!filter.accept(clean)) {
+                            filterRejections++;
                             accounting.recordRejected(rawLen);
                             continue;
                         }
 
                         if (deduplicator.isDuplicate(clean)) {
+                            duplicateRejections++;
                             accounting.recordDuplicate(rawLen);
                             continue;
                         }
@@ -222,6 +234,12 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
             }
         }
 
+        // CRITICAL PIPELINE INVARIANT CHECK
+        if (stats.getAcceptedSamples() > 0 && accumulatedUsableBytes == 0) {
+            throw new IllegalStateException("CRITICAL PIPELINE INVARIANT VIOLATION: acceptedSamples="
+                    + stats.getAcceptedSamples() + " but accumulatedUsableBytes is 0! Data conversion/accounting broken.");
+        }
+
         accounting.setTrainValidationRatio(valSplitRatio);
 
         TrainingDataPreferenceEvaluation eval = preferenceEvaluator.evaluate(prefs, stats);
@@ -244,7 +262,8 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
                     + targetUsableBytes + " bytes (" + (targetUsableBytes / (1024 * 1024)) + " MB), Acquired Usable: "
                     + accumulatedUsableBytes + " bytes (" + (accumulatedUsableBytes / (1024 * 1024)) + " MB), Max Download: "
                     + prefs.getMaximumDownloadBytes() + " bytes (" + (prefs.getMaximumDownloadBytes() / (1024 * 1024)) + " MB), Shortfall: "
-                    + shortfall + " bytes (" + (shortfall / (1024 * 1024)) + " MB), Coverage: " + String.format("%.2f", coveragePercent) + "%, Sources used: " + sourcesUsedNames + ".";
+                    + shortfall + " bytes (" + (shortfall / (1024 * 1024)) + " MB), Coverage: " + String.format("%.2f", coveragePercent) + "%, Sources used: " + sourcesUsedNames
+                    + ". Rejections breakdown: Cleaner=" + cleanerRejections + ", QualityFilter=" + filterRejections + ", Duplicates=" + duplicateRejections + ".";
             System.err.println("[ACQ-TRACE] TARGET NOT REACHED! " + failureReason);
         } else {
             System.out.printf("[ACQ-TRACE] TARGET REACHED! Requested: %d bytes, Acquired Usable: %d bytes (%.2f%% coverage).\n",

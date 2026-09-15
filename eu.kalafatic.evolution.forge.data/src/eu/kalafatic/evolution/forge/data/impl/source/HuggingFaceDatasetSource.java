@@ -23,7 +23,7 @@ import java.util.NoSuchElementException;
 
 /**
  * Hugging Face Dataset Source supporting real public dataset streams via Hugging Face rows API or raw URL endpoints with pagination,
- * dynamic schema detection, multi-split traversal, and resilient failure recovery.
+ * dynamic schema detection, multi-split traversal, full chunk-level accounting, and resilient failure recovery.
  */
 public class HuggingFaceDatasetSource implements DatasetSource {
 
@@ -39,6 +39,12 @@ public class HuggingFaceDatasetSource implements DatasetSource {
     private String lastError = null;
     private String resolvedConfig = null;
     private String resolvedSplit = null;
+
+    // Stream & Chunk Level Accounting
+    private long totalRowsFetched = 0;
+    private long totalSamplesExtracted = 0;
+    private long totalExtractionRejections = 0;
+    private long totalRawBytesDownloaded = 0;
 
     public HuggingFaceDatasetSource(String repo) {
         this(new DatasetSourceConfig("HUGGING_FACE", repo != null ? repo : "wikitext"), new HuggingFaceDownloader());
@@ -169,6 +175,11 @@ public class HuggingFaceDatasetSource implements DatasetSource {
         return lastError;
     }
 
+    public long getTotalRowsFetched() { return totalRowsFetched; }
+    public long getTotalSamplesExtracted() { return totalSamplesExtracted; }
+    public long getTotalExtractionRejections() { return totalExtractionRejections; }
+    public long getTotalRawBytesDownloaded() { return totalRawBytesDownloaded; }
+
     @Override
     public void initialize() throws Exception {
         if (initialized) return;
@@ -249,6 +260,8 @@ public class HuggingFaceDatasetSource implements DatasetSource {
         }
 
         String body = result.getContentText();
+        long chunkBodyBytes = result.getDownloadedBytes() > 0 ? result.getDownloadedBytes() : body.getBytes(StandardCharsets.UTF_8).length;
+        totalRawBytesDownloaded += chunkBodyBytes;
 
         if (targetUrl.contains("raw.githubusercontent.com") || targetUrl.endsWith(".txt") || targetUrl.endsWith(".raw")) {
             detectedSchemaInfo = "text: string (raw lines)";
@@ -261,11 +274,15 @@ public class HuggingFaceDatasetSource implements DatasetSource {
 
                 int count = 0;
                 while ((line = reader.readLine()) != null && count < 100) {
+                    totalRowsFetched++;
                     String trimmed = line.trim();
                     if (!trimmed.isEmpty() && !trimmed.startsWith("=") && trimmed.length() > 5) {
                         NormalizedSample sample = NormalizedSample.createTextSample(trimmed, getSourceName());
                         currentChunk.add(sample);
+                        totalSamplesExtracted++;
                         count++;
+                    } else {
+                        totalExtractionRejections++;
                     }
                 }
                 currentOffset += count;
@@ -283,18 +300,43 @@ public class HuggingFaceDatasetSource implements DatasetSource {
                 }
                 if (root.has("rows")) {
                     JSONArray rows = root.getJSONArray("rows");
+                    int fetchedRows = rows.length();
+                    int extractedInChunk = 0;
+                    int rejectedInChunk = 0;
+                    long chunkExtractedBytes = 0;
+
                     for (int i = 0; i < rows.length(); i++) {
+                        totalRowsFetched++;
                         JSONObject rowObj = rows.getJSONObject(i).optJSONObject("row");
                         if (rowObj != null) {
                             NormalizedSample sample = extractSampleFromRow(rowObj);
                             if (sample != null) {
                                 currentChunk.add(sample);
+                                extractedInChunk++;
+                                totalSamplesExtracted++;
+                                chunkExtractedBytes += sample.toFullText().getBytes(StandardCharsets.UTF_8).length;
+                            } else {
+                                rejectedInChunk++;
+                                totalExtractionRejections++;
                             }
+                        } else {
+                            rejectedInChunk++;
+                            totalExtractionRejections++;
                         }
                     }
-                    System.out.printf("[HF-TRACE] Repo: %s | Config: %s | Split: %s | Offset: %d | Fetched rows: %d | Chunk samples: %d | Total samples read: %d\n",
-                            repo, cfg, split, currentOffset, rows.length(), currentChunk.size(), stats.getTotalSamplesRead());
+
+                    stats.addDownloadedBytes(chunkBodyBytes);
+                    stats.addExtractedBytes(chunkExtractedBytes);
+
+                    long currentOffsetCopy = currentOffset;
                     currentOffset += rows.length();
+
+                    System.out.printf("[HF-TRACE] repository=%s config=%s split=%s offset=%d fetchedRows=%d extractedSamples=%d acceptedSamples=%d rejectedSamples=%d rawBytes=%d serializedBytes=%d writtenBytes=%d usableBytes=%d totalSamplesRead=%d totalAcceptedSamples=%d totalUsableBytes=%d\n",
+                            repo, cfg, split, currentOffsetCopy, fetchedRows, extractedInChunk,
+                            stats.getAcceptedRecords(), rejectedInChunk, chunkBodyBytes,
+                            chunkExtractedBytes, chunkExtractedBytes, stats.getAcceptedBytes(),
+                            stats.getTotalSamplesRead(), stats.getAcceptedRecords(), stats.getAcceptedBytes());
+
                     if (rows.length() == 0) {
                         endOfStream = true;
                     }
@@ -339,12 +381,12 @@ public class HuggingFaceDatasetSource implements DatasetSource {
         }
 
         // 3. Instruction / Input / Output or Response
-        if (row.has("instruction") || row.has("response") || row.has("output")) {
+        if (row.has("instruction") || row.has("response") || row.has("output") || row.has("input")) {
             detectedSchemaInfo = "instruction / input / output";
-            String inst = row.optString("instruction", "");
-            String input = row.optString("input", "");
+            String inst = row.optString("instruction", row.optString("input", ""));
+            String input = row.has("instruction") ? row.optString("input", "") : "";
             String resp = row.optString("response", row.optString("output", ""));
-            if (!input.trim().isEmpty()) {
+            if (!input.trim().isEmpty() && !inst.equals(input)) {
                 inst = inst + "\n\nContext:\n" + input.trim();
             }
             if (!inst.trim().isEmpty() || !resp.trim().isEmpty()) {
@@ -370,19 +412,15 @@ public class HuggingFaceDatasetSource implements DatasetSource {
             return NormalizedSample.createInstructionSample("Q: " + q.trim(), a.trim(), getSourceName());
         }
 
-        // 6. Direct text or content
-        if (row.has("text")) {
-            detectedSchemaInfo = "text: string";
-            String text = row.optString("text", null);
-            if (text != null && !text.trim().isEmpty()) {
-                return NormalizedSample.createTextSample(text.trim(), getSourceName());
-            }
-        }
-        if (row.has("content")) {
-            detectedSchemaInfo = "content: string";
-            String content = row.optString("content", null);
-            if (content != null && !content.trim().isEmpty()) {
-                return NormalizedSample.createTextSample(content.trim(), getSourceName());
+        // 6. Direct text schema keys
+        String[] textKeys = {"text", "content", "sentence", "document", "passage", "article", "body", "summary", "dialogue", "context", "code", "solution", "raw"};
+        for (String key : textKeys) {
+            if (row.has(key)) {
+                detectedSchemaInfo = key + ": string";
+                String textVal = row.optString(key, null);
+                if (textVal != null && !textVal.trim().isEmpty()) {
+                    return NormalizedSample.createTextSample(textVal.trim(), getSourceName());
+                }
             }
         }
 
@@ -400,13 +438,18 @@ public class HuggingFaceDatasetSource implements DatasetSource {
             }
         }
 
-        // 8. Fallback key inspection
+        // 8. Nested JSONObject inspection and Fallback key inspection
         List<String> keys = new ArrayList<>(row.keySet());
         detectedSchemaInfo = "keys: " + keys;
         for (String key : keys) {
             Object val = row.get(key);
-            if (val instanceof String s && s.trim().length() > 5) {
+            if (val instanceof String s && !s.trim().isEmpty()) {
                 return NormalizedSample.createTextSample(s.trim(), getSourceName());
+            } else if (val instanceof JSONObject nestedObj) {
+                NormalizedSample nestedSample = extractSampleFromRow(nestedObj);
+                if (nestedSample != null) {
+                    return nestedSample;
+                }
             } else if (val instanceof JSONArray arr && arr.length() > 0) {
                 List<NormalizedSample.Message> msgList = parseMessagesArray(arr, "role", "content");
                 if (!msgList.isEmpty()) {
@@ -443,10 +486,7 @@ public class HuggingFaceDatasetSource implements DatasetSource {
         if (isBoundsExceeded()) {
             return false;
         }
-        if (currentChunkIndex < currentChunk.size()) {
-            return true;
-        }
-        if (!endOfStream) {
+        while (currentChunkIndex >= currentChunk.size() && !endOfStream) {
             try {
                 fetchNextChunk();
             } catch (Exception e) {
@@ -454,9 +494,8 @@ public class HuggingFaceDatasetSource implements DatasetSource {
                 endOfStream = true;
                 return false;
             }
-            return currentChunkIndex < currentChunk.size();
         }
-        return false;
+        return currentChunkIndex < currentChunk.size();
     }
 
     @Override
