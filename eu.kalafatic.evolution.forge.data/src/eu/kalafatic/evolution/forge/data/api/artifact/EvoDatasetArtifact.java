@@ -1,10 +1,12 @@
 package eu.kalafatic.evolution.forge.data.api.artifact;
 
+import eu.kalafatic.evolution.forge.data.api.NormalizedMessage;
 import eu.kalafatic.evolution.forge.data.api.NormalizedSample;
 import eu.kalafatic.evolution.forge.data.api.TrainingSampleType;
 import eu.kalafatic.evolution.forge.data.api.source.DatasetSourceConfig;
 import eu.kalafatic.evolution.forge.data.api.source.DatasetSourceStats;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
@@ -202,6 +204,27 @@ public class EvoDatasetArtifact {
                                 sample.setText(json.optString("text", ""));
                                 sample.setInstruction(json.optString("instruction", null));
                                 sample.setResponse(json.optString("response", null));
+                                if (json.has("conversationId") && !json.isNull("conversationId")) {
+                                    sample.setConversationId(json.optString("conversationId"));
+                                }
+                                if (json.has("messages")) {
+                                    JSONArray msgArray = json.optJSONArray("messages");
+                                    if (msgArray != null) {
+                                        List<NormalizedMessage> normMsgs = new ArrayList<>();
+                                        for (int i = 0; i < msgArray.length(); i++) {
+                                            JSONObject mObj = msgArray.optJSONObject(i);
+                                            if (mObj != null) {
+                                                NormalizedMessage m = new NormalizedMessage();
+                                                m.setRole(mObj.optString("role", "user"));
+                                                m.setText(mObj.optString("text", mObj.optString("content", "")));
+                                                m.setMessageId(mObj.has("messageId") && !mObj.isNull("messageId") ? mObj.optString("messageId") : null);
+                                                m.setParentMessageId(mObj.has("parentMessageId") && !mObj.isNull("parentMessageId") ? mObj.optString("parentMessageId") : null);
+                                                normMsgs.add(m);
+                                            }
+                                        }
+                                        sample.setConversationMessages(normMsgs);
+                                    }
+                                }
                                 sample.setSource(json.optString("source", file.getName()));
                                 sample.setQualityScore(json.optDouble("qualityScore", 1.0));
                                 sample.setTokenCount(json.optInt("tokenCount", 0));
