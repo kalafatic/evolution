@@ -56,7 +56,6 @@ public class SelfDevContext {
         this.orchestrator = this.resourceManager.getOrchestrator();
 
         this.repositoryRoot = this.resourceManager.getPath(EvoPath.EVO_GIT_REPOSITORY).toFile().getAbsoluteFile().toPath().normalize().toFile();
-        this.sourceReactorDirectory = this.resourceManager.getPath(EvoPath.EVO_SOURCE_REACTOR).toFile().getAbsoluteFile().toPath().normalize().toFile();
 
         this.projectRoot = projectRoot != null ? projectRoot.getAbsoluteFile().toPath().normalize().toFile() : this.repositoryRoot;
 
@@ -73,6 +72,7 @@ public class SelfDevContext {
         }
 
         this.preparedReactorDirectory = resolvePath(runDir, "source");
+        this.sourceReactorDirectory = this.preparedReactorDirectory; // Map source reactor directly to selfDevRun/source
         this.buildDirectory = resolvePath(runDir, "build");
         this.exportDirectory = resolvePath(runDir, "export");
         this.runtimeDirectory = resolvePath(runDir, "runtime");

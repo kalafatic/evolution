@@ -146,20 +146,21 @@ public class ResourceManager {
         String codebase = ProjectModelManager.getCodebasePath();
         Path evoRoot = codebase != null ? Paths.get(codebase).toAbsolutePath().normalize() : Paths.get(".").toAbsolutePath().normalize();
 
-        // Reject product installation/launch runtime directories as the canonical source repository
-        if (evoRoot.toString().contains(".product") || evoRoot.toString().contains("runtime-eu.kalafatic")) {
-            Log.log("[PATH_DISCOVERY] resource=EVO_GIT_REPOSITORY action=FORBIDDEN reason=runtime_product_cannot_be_canonical_repository path=" + evoRoot);
-        }
-
         String wsStr = ProjectModelManager.getWorkspacePath();
         Path wsRoot = wsStr != null ? Paths.get(wsStr).toAbsolutePath().normalize() : Paths.get(System.getProperty("user.home"), "workspace").toAbsolutePath().normalize();
 
         Path resolvedPath;
         switch (pathType) {
             case EVO_GIT_REPOSITORY:
-            case EVO_ROOT:
-                resolvedPath = evoRoot;
+            case EVO_ROOT: {
+                Orchestrator orch = getOrchestrator();
+                if (orch != null && orch.getGit() != null && orch.getGit().getLocalPath() != null && !orch.getGit().getLocalPath().trim().isEmpty()) {
+                    resolvedPath = Paths.get(expandVariables(orch.getGit().getLocalPath().trim())).toAbsolutePath().normalize();
+                } else {
+                    resolvedPath = evoRoot;
+                }
                 break;
+            }
 
             case EVO_SOURCE_REACTOR: {
                 Orchestrator orch = getOrchestrator();
@@ -245,15 +246,6 @@ public class ResourceManager {
                 resolvedPath = evoRoot;
                 break;
         }
-
-        boolean exists = resolvedPath.toFile().exists();
-        boolean isDir = exists && resolvedPath.toFile().isDirectory();
-        boolean isGit = exists && new File(resolvedPath.toFile(), ".git").exists();
-        boolean hasPom = exists && new File(resolvedPath.toFile(), "pom.xml").exists();
-
-        Log.log("[PATH] resource=" + pathType + " configured=" + codebase + " resolved=" + resolvedPath +
-                " absolute=" + resolvedPath.isAbsolute() + " exists=" + exists + " directory=" + isDir +
-                " gitRepository=" + isGit + " pom=" + hasPom + " origin=EMF_CONFIGURATION");
 
         return resolvedPath;
     }

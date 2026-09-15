@@ -118,7 +118,7 @@ public class SelfDevPipelineHardeningTest {
 
         assertTrue("Preflight must succeed for repository root", result.isSuccess());
         assertNotNull(result.getResolvedResources());
-        assertTrue(new File(result.getResolvedResources().getSourceDirectory(), "pom.xml").exists());
+        assertTrue(new File(result.getResolvedResources().getRepositoryRoot(), "pom.xml").exists());
     }
 
     @Test
@@ -152,6 +152,6 @@ public class SelfDevPipelineHardeningTest {
 
         // Preflight already ran on orchestrator creation
         assertNotNull(context.getResolvedResources());
-        assertEquals(repoRoot.getAbsoluteFile().toPath().normalize().toFile(), context.getResolvedResources().getSourceDirectory());
+        assertEquals(repoRoot.getAbsoluteFile().toPath().normalize().toFile(), context.getResolvedResources().getRepositoryRoot());
     }
 }
