@@ -1819,6 +1819,15 @@ public class EvolutionServer extends NanoHTTPD {
                 goalParams
             );
 
+        if (sessionCont.getIterationManager() == null) {
+            try {
+                IterationManager iterManager = KernelFactory.create(goal.getDescription(), taskContext, sessionCont);
+                sessionCont.setIterationManager(iterManager);
+            } catch (Exception e) {
+                eu.kalafatic.evolution.controller.log.Log.log("[EVO-SERVER] Warning: Failed to initialize IterationManager for session " + sessionId + ": " + e.getMessage());
+            }
+        }
+
         eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveLoopEngine cognitiveEngine =
             new eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveLoopEngine(10, null);
 
