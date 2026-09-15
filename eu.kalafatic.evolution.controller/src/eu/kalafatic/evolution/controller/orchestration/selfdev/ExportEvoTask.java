@@ -13,6 +13,9 @@ public class ExportEvoTask extends AbstractSelfDevTask {
         if (context == null) {
             return TaskResult.failure(id, "SelfDevContext is null", null);
         }
+        java.io.File exportDir = context.getExportDirectory();
+        eu.kalafatic.evolution.controller.log.Log.log("[SELF-DEV][EXPORT]\nOUTPUT = " + (exportDir != null ? exportDir.getAbsolutePath() : "null"));
+        System.out.println("[SELF-DEV][EXPORT]\nOUTPUT = " + (exportDir != null ? exportDir.getAbsolutePath() : "null"));
         return new TaskResult.Builder(id).status(TaskStatus.READY).message("Context valid for EVO export.").build();
     }
 

@@ -13,6 +13,9 @@ public class BuildEvoTask extends AbstractSelfDevTask {
         if (context == null) {
             return TaskResult.failure(id, "SelfDevContext is null", null);
         }
+        java.io.File workDir = context.getPreparedReactorDirectory();
+        eu.kalafatic.evolution.controller.log.Log.log("[SELF-DEV][BUILD]\nWORKDIR = " + (workDir != null ? workDir.getAbsolutePath() : "null"));
+        System.out.println("[SELF-DEV][BUILD]\nWORKDIR = " + (workDir != null ? workDir.getAbsolutePath() : "null"));
         return new TaskResult.Builder(id).status(TaskStatus.READY).message("Context valid for EVO build.").build();
     }
 

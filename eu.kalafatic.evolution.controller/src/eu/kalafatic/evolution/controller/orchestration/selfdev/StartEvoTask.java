@@ -13,6 +13,10 @@ public class StartEvoTask extends AbstractSelfDevTask {
         if (context == null) {
             return TaskResult.failure(id, "SelfDevContext is null", null);
         }
+        java.io.File runtimeDir = context.getRuntimeDirectory();
+        eu.kalafatic.evolution.controller.log.Log.log("[SELF-DEV][START]\nRUNTIME = " + (runtimeDir != null ? runtimeDir.getAbsolutePath() : "null"));
+        System.out.println("[SELF-DEV][START]\nRUNTIME = " + (runtimeDir != null ? runtimeDir.getAbsolutePath() : "null"));
+
         BuildArtifact artifact = context.getArtifact(ArtifactType.EVO_RCP);
         if (artifact == null || artifact.getPath() == null || !artifact.getPath().exists()) {
             return TaskResult.failure(id, "StartEvoTask pre-validation failed: missing required EVO RCP build artifact in context.", null);

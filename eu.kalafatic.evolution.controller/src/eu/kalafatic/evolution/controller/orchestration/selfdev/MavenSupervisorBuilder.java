@@ -17,10 +17,6 @@ public class MavenSupervisorBuilder extends AbstractProjectBuilder implements Su
         }
 
         File supervisorModuleDir = context.getSupervisorDirectory();
-        if (supervisorModuleDir == null || !supervisorModuleDir.exists()) {
-            context.discoverAndRepairModulePaths();
-            supervisorModuleDir = context.getSupervisorDirectory();
-        }
 
         if (supervisorModuleDir == null || !supervisorModuleDir.exists()) {
             return TaskResult.failure("build_supervisor", "Supervisor module directory does not exist: " + (supervisorModuleDir != null ? supervisorModuleDir.getAbsolutePath() : "null"), null);

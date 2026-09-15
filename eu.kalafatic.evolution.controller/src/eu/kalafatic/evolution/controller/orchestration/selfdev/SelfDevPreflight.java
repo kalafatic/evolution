@@ -60,7 +60,7 @@ public class SelfDevPreflight {
         File projectRoot = (context != null && context.getProjectRoot() != null) ? context.getProjectRoot().getAbsoluteFile() : repositoryRoot;
 
         File buildDir = (context != null && context.getBuildDirectory() != null) ? context.getBuildDirectory().getAbsoluteFile() : resourceManager.getEvoBuildOutput().toFile().getAbsoluteFile();
-        File preparedReactor = (context != null && context.getPreparedReactorDirectory() != null) ? context.getPreparedReactorDirectory().getAbsoluteFile() : new File(buildDir, "evo-rcp").getAbsoluteFile();
+        File preparedReactor = (context != null && context.getPreparedReactorDirectory() != null) ? context.getPreparedReactorDirectory().getAbsoluteFile() : new File(buildDir.getParentFile(), "source").getAbsoluteFile();
         File exportDir = (context != null && context.getExportDirectory() != null) ? context.getExportDirectory().getAbsoluteFile() : resourceManager.getEvoExport().toFile().getAbsoluteFile();
         File runtimeDir = (context != null && context.getRuntimeDirectory() != null) ? context.getRuntimeDirectory().getAbsoluteFile() : resourceManager.getPath(EvoPath.RUNTIME_ROOT).toFile().getAbsoluteFile();
         File logDir = (context != null && context.getLogDirectory() != null) ? context.getLogDirectory().getAbsoluteFile() : resourceManager.resolvePath("self-dev-run/logs").toFile().getAbsoluteFile();
