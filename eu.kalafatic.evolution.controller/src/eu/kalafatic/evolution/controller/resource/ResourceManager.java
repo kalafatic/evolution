@@ -153,14 +153,12 @@ public class ResourceManager {
 
             case EVO_RUNTIME_ROOT:
             case RUNTIME_ROOT: {
-                Path ws = getPath(EvoPath.ECLIPSE_WORKSPACE);
-                resolvedPath = ws.resolve("runtime").toAbsolutePath().normalize();
+                resolvedPath = wsRoot.resolve("self-dev-run/runtime").toAbsolutePath().normalize();
                 break;
             }
 
             case SELF_DEV_ROOT: {
-                Path ws = getPath(EvoPath.ECLIPSE_WORKSPACE);
-                resolvedPath = ws.resolve("self-dev-run").toAbsolutePath().normalize();
+                resolvedPath = wsRoot.resolve("self-dev-run").toAbsolutePath().normalize();
                 break;
             }
 
