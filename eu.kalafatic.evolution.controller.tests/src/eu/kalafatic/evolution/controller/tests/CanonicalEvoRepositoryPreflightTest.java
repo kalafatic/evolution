@@ -96,18 +96,18 @@ public class CanonicalEvoRepositoryPreflightTest {
     }
 
     @Test
-    public void testLayerSourceConflictTriggersPathConflictBlock() throws IOException {
+    public void testLayerRepositoryConflictTriggersPathConflictBlock() throws IOException {
         File repo = tempFolder.newFolder("canonical_repo");
         new File(repo, ".git").mkdirs();
         Files.writeString(new File(repo, "pom.xml").toPath(), "<project></project>");
 
-        File conflictingSource = tempFolder.newFolder("other_source");
+        File conflictingRepo = tempFolder.newFolder("other_repo");
 
         SelfDevContext context = new SelfDevContext(repo, resourceManager.getOrchestrator());
 
-        // Manually set a conflicting source path on context
+        // Manually set a conflicting repository path on context snapshot
         ResolvedSelfDevResources conflictingSnapshot = new ResolvedSelfDevResources(
-                repo, repo, conflictingSource, conflictingSource,
+                conflictingRepo, repo, repo, repo,
                 new File(repo, "build"), new File(repo, "export"), new File(repo, "runtime"), new File(repo, "logs"),
                 new File(repo, "supervisor"), new File(repo, "genome"),
                 "win32", "win32", "x86_64", "evolution", "evo",
@@ -121,54 +121,6 @@ public class CanonicalEvoRepositoryPreflightTest {
         assertNotNull(result);
         assertEquals(SelfDevPreflightResult.PreflightStatus.BLOCKED, result.getStatus());
         assertTrue(result.getConflicts().stream().anyMatch(c -> c.contains("PATH_CONFLICT")));
-    }
-
-    @Test
-    public void testRepoWithoutPomPassesPreflightIfSourceReactorConfiguredWithPom() throws IOException {
-        File gitRepo = tempFolder.newFolder("git_only_repo");
-        new File(gitRepo, ".git").mkdirs();
-
-        File sourceReactor = tempFolder.newFolder("source_reactor");
-        Files.writeString(new File(sourceReactor, "pom.xml").toPath(), "<project></project>");
-
-        SelfDevContext context = new SelfDevContext(gitRepo, resourceManager.getOrchestrator());
-        ResolvedSelfDevResources res = new ResolvedSelfDevResources(
-                gitRepo, gitRepo, sourceReactor, new File(context.getBuildDirectory(), "evo-rcp"),
-                context.getBuildDirectory(), context.getExportDirectory(), context.getRuntimeDirectory(),
-                context.getLogDirectory(), context.getSupervisorDirectory(), context.getGenomeDirectory(),
-                "win32", "win32", "x86_64", "evolution", "evo", new File("java"), new File("mvn")
-        );
-        context.setResolvedResources(res);
-
-        SelfDevPreflight preflight = new SelfDevPreflight(resourceManager);
-        SelfDevPreflightResult result = preflight.executePreflight(context, null);
-
-        assertNotNull(result);
-        assertEquals(SelfDevPreflightResult.PreflightStatus.SUCCESS, result.getStatus());
-    }
-
-    @Test
-    public void testInvalidSourceReactorFailsPreflightImmediatelyWithoutSearching() throws IOException {
-        File gitRepo = tempFolder.newFolder("git_repo");
-        new File(gitRepo, ".git").mkdirs();
-
-        File invalidSourceReactor = tempFolder.newFolder("invalid_source_reactor");
-
-        SelfDevContext context = new SelfDevContext(gitRepo, resourceManager.getOrchestrator());
-        ResolvedSelfDevResources res = new ResolvedSelfDevResources(
-                gitRepo, gitRepo, invalidSourceReactor, new File(context.getBuildDirectory(), "evo-rcp"),
-                context.getBuildDirectory(), context.getExportDirectory(), context.getRuntimeDirectory(),
-                context.getLogDirectory(), context.getSupervisorDirectory(), context.getGenomeDirectory(),
-                "win32", "win32", "x86_64", "evolution", "evo", new File("java"), new File("mvn")
-        );
-        context.setResolvedResources(res);
-
-        SelfDevPreflight preflight = new SelfDevPreflight(resourceManager);
-        SelfDevPreflightResult result = preflight.executePreflight(context, null);
-
-        assertNotNull(result);
-        assertEquals(SelfDevPreflightResult.PreflightStatus.BLOCKED, result.getStatus());
-        assertTrue(result.getErrors().stream().anyMatch(e -> e.contains("Configured EVO_SOURCE_REACTOR is invalid: root pom.xml missing")));
     }
 
     @Test

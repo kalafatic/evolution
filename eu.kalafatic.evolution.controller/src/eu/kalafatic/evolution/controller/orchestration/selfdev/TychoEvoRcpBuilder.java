@@ -66,24 +66,21 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
         }
 
         File sourceRepo = context.getRepositoryRoot().getAbsoluteFile();
-        File sourceReactor = context.getSourceReactorDirectory().getAbsoluteFile();
         File reactorRoot = context.getPreparedReactorDirectory().getAbsoluteFile();
 
         try {
             boolean sameWithRepo = reactorRoot.getCanonicalFile().equals(sourceRepo.getCanonicalFile());
-            boolean sameWithSourceReactor = reactorRoot.getCanonicalFile().equals(sourceReactor.getCanonicalFile());
 
             System.out.println("================================================================================");
             System.out.println("[TychoEvoRcpBuilder] EVO_GIT_REPOSITORY : " + sourceRepo.getAbsolutePath());
-            System.out.println("[TychoEvoRcpBuilder] EVO_SOURCE_REACTOR  : " + sourceReactor.getAbsolutePath());
             System.out.println("[TychoEvoRcpBuilder] BUILD_WORKSPACE     : " + context.getBuildDirectory().getAbsolutePath());
-            System.out.println("[TychoEvoRcpBuilder] SELF_DEV_REACTOR     : " + reactorRoot.getAbsolutePath());
+            System.out.println("[TychoEvoRcpBuilder] SELF_DEV_SOURCE      : " + reactorRoot.getAbsolutePath());
             System.out.println("[TychoEvoRcpBuilder] EXPORT_DIRECTORY    : " + context.getExportDirectory().getAbsolutePath());
             System.out.println("[TychoEvoRcpBuilder] Maven working directory: " + reactorRoot.getAbsolutePath());
             System.out.println("================================================================================");
 
-            if (sameWithRepo || sameWithSourceReactor || !reactorRoot.exists() || !reactorRoot.isDirectory() || !new File(reactorRoot, "pom.xml").exists()) {
-                String err = "[TychoEvoRcpBuilder] BUILD REACTOR VALIDATION FAILED\nsourceRepository: " + sourceRepo.getAbsolutePath() + "\nsourceReactor: " + sourceReactor.getAbsolutePath() + "\nbuildReactor: " + reactorRoot.getAbsolutePath() + "\nReason: build reactor resolves to canonical Git repo or source reactor, or is invalid. Build reactor must be physically isolated in build workspace.";
+            if (sameWithRepo || !reactorRoot.exists() || !reactorRoot.isDirectory() || !new File(reactorRoot, "pom.xml").exists()) {
+                String err = "[TychoEvoRcpBuilder] BUILD REACTOR VALIDATION FAILED\nsourceRepository: " + sourceRepo.getAbsolutePath() + "\nbuildReactor: " + reactorRoot.getAbsolutePath() + "\nReason: build reactor resolves to canonical Git repo or is invalid/missing pom.xml. Build reactor must be copied source in run directory.";
                 System.err.println(err);
                 return TaskResult.failure("build_evo_rcp", err, null);
             }
@@ -106,12 +103,12 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
         System.out.println("[TychoEvoRcpBuilder] Building Tycho reactor at " + reactorRoot.getAbsolutePath() + " for platform " + platform);
         TaskResult buildResult = mavenExecutor.executeBuild(reactorRoot, goals, args, logFile, 45);
 
-        // Verify source repository safety
-        File sourceTarget = new File(sourceReactor, "target");
-        if (sourceTarget.exists()) {
-            System.out.println("[SOURCE_SAFETY] WARNING: target directory exists in source reactor: " + sourceTarget.getAbsolutePath());
+        // Verify canonical repository safety
+        File repoTarget = new File(sourceRepo, "target");
+        if (repoTarget.exists()) {
+            System.out.println("[SOURCE_SAFETY] WARNING: target directory exists in canonical repository: " + repoTarget.getAbsolutePath());
         } else {
-            System.out.println("[SOURCE_SAFETY] Verified: canonical source reactor remains clean (no target/ created).");
+            System.out.println("[SOURCE_SAFETY] Verified: canonical repository remains clean (no target/ created).");
         }
 
         if (!buildResult.isSuccess()) {

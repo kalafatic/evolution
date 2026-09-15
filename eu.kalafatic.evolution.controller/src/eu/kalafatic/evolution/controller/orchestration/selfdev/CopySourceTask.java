@@ -23,7 +23,7 @@ public class CopySourceTask extends AbstractSelfDevTask {
             File prepared = (res != null && res.getPreparedReactorDirectory() != null) ? res.getPreparedReactorDirectory() : (context != null ? context.getPreparedReactorDirectory() : null);
             this.targetDir = prepared != null ? new File(prepared, "eu.kalafatic.evolution.supervisor") : null;
         } else {
-            this.sourceRoot = (res != null && res.getSourceReactorDirectory() != null) ? res.getSourceReactorDirectory() : (context != null ? context.getSourceReactorDirectory() : null);
+            this.sourceRoot = (res != null && res.getRepositoryRoot() != null) ? res.getRepositoryRoot() : (context != null ? context.getRepositoryRoot() : null);
             this.targetDir = (res != null && res.getPreparedReactorDirectory() != null) ? res.getPreparedReactorDirectory() : (context != null ? context.getPreparedReactorDirectory() : null);
         }
 
