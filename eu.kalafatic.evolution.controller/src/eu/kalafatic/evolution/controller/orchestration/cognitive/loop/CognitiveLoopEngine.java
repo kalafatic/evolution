@@ -559,6 +559,15 @@ public class CognitiveLoopEngine implements ICognitiveLoop {
                 IDarwinEngine darwin = DarwinEngineFactory.createEngine(PlatformType.ASSISTED_CODING, taskContext, memoryService, stateProvider);
                 if (darwin != null) {
                     IterationManager manager = session != null ? session.getIterationManager() : null;
+                    if (manager == null && session != null) {
+                        try {
+                            manager = eu.kalafatic.evolution.controller.orchestration.KernelFactory.create(
+                                goal != null ? goal.getDescription() : "Darwin Execution", taskContext, session);
+                            session.setIterationManager(manager);
+                        } catch (Exception e) {
+                            logTrace(taskContext, null, session.getSessionId(), "[COGNITIVE] Failed to initialize IterationManager for session: " + e.getMessage());
+                        }
+                    }
                     if (manager != null) {
                         EvaluationResult evalResult = darwin.runDarwinIteration(taskContext, manager);
                         long duration = System.currentTimeMillis() - start;
