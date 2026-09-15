@@ -163,6 +163,42 @@ public class SelfDevPreflight {
         Log.log("[PATH_DERIVED] resource=EXPORT_DIR base=SELF_DEV_ROOT rule=selfDevRoot/export resolved=" + exportDir.getAbsolutePath());
         Log.log("[PATH_DERIVED] resource=RUNTIME_DIR base=SELF_DEV_ROOT rule=selfDevRoot/runtime resolved=" + runtimeDir.getAbsolutePath());
 
+        // Validate Path Invariants: Source Repository != Build Workspace
+        try {
+            boolean srcEqualsBuild = repositoryRoot.getCanonicalFile().equals(buildDir.getCanonicalFile());
+            boolean srcEqualsExport = repositoryRoot.getCanonicalFile().equals(exportDir.getCanonicalFile());
+            boolean srcEqualsSourceDir = repositoryRoot.getCanonicalFile().equals(sourceDirectory.getCanonicalFile());
+
+            Log.log("[SELF-DEV] PATH_INVARIANT: repositoryRoot != buildDirectory : " + (!srcEqualsBuild ? "PASSED" : "FAILED"));
+            Log.log("[SELF-DEV] PATH_INVARIANT: repositoryRoot != exportDirectory : " + (!srcEqualsExport ? "PASSED" : "FAILED"));
+            Log.log("[SELF-DEV] PATH_INVARIANT: repositoryRoot != sourceDirectory : " + (!srcEqualsSourceDir ? "PASSED" : "FAILED"));
+
+            if (srcEqualsBuild || srcEqualsSourceDir) {
+                String err = "PREFLIGHT FAILED: EVO_SOURCE_REPOSITORY (" + repositoryRoot.getAbsolutePath() + ") and SELF_DEV_BUILD (" + buildDir.getAbsolutePath() + ") or SELF_DEV_SOURCE (" + sourceDirectory.getAbsolutePath() + ") resolve to the same directory. Source Git repository must be distinct from build workspace.";
+                Log.log("[SelfDevPreflight][PATH_ERROR] " + err);
+                errors.add(err);
+                checks.add(new SelfDevPreflightResult.CheckDetail(
+                        "PATH_INVARIANT", "BLOCKED",
+                        "Source repository != Build workspace invariant check",
+                        repositoryRoot.getAbsolutePath(),
+                        "Distinct directories for source and build",
+                        "Source and Build Directories Coincide",
+                        "Ensure build workspace resolves under <user-home>/workspace/"
+                ));
+            } else {
+                checks.add(new SelfDevPreflightResult.CheckDetail(
+                        "PATH_INVARIANT", "OK",
+                        "Source repository != Build workspace invariant check",
+                        "Source: " + repositoryRoot.getAbsolutePath() + " | Build: " + buildDir.getAbsolutePath(),
+                        "Distinct directories",
+                        "VERIFIED",
+                        "None"
+                ));
+            }
+        } catch (Exception e) {
+            Log.log("[SelfDevPreflight] Failed path invariant check: " + e.getMessage());
+        }
+
         // 5. Test Write Permissions on Output Directories
         testWritePermission("BUILD_DIR", buildDir, checks, errors);
         testWritePermission("EXPORT_DIR", exportDir, checks, errors);

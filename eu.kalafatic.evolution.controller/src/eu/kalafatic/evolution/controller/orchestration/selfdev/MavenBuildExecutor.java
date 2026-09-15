@@ -44,7 +44,16 @@ public class MavenBuildExecutor {
         }
 
         String fullCommandStr = String.join(" ", command);
-        System.out.println("[MavenBuildExecutor] Executing: " + fullCommandStr + " in " + workingDir.getAbsolutePath());
+        File wsBuildDir = eu.kalafatic.evolution.controller.resource.ResourceManager.getInstance()
+                .getPath(eu.kalafatic.evolution.controller.resource.EvoPath.BUILD_ROOT).toFile();
+        System.out.println("================================================================================");
+        System.out.println("[SELF-DEV] Maven Build Execution:");
+        System.out.println("  source/reactor   : " + workingDir.getAbsolutePath());
+        System.out.println("  build workspace  : " + wsBuildDir.getAbsolutePath());
+        System.out.println("  working directory: " + workingDir.getAbsolutePath());
+        System.out.println("  Maven executable : " + mavenExec);
+        System.out.println("  full command     : " + fullCommandStr);
+        System.out.println("================================================================================");
 
         ProcessBuilder pb = new ProcessBuilder(command);
         pb.directory(workingDir);

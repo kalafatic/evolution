@@ -41,6 +41,9 @@ public class CopySourceTask extends AbstractSelfDevTask {
         if (targetDir == null) {
             return TaskResult.failure(id, "CopySourceTask pre-validation failed: target directory is null", null);
         }
+        if (sourceRoot.getCanonicalFile().equals(targetDir.getCanonicalFile())) {
+            return TaskResult.failure(id, "COPY FAILED: Source repository (" + sourceRoot.getAbsolutePath() + ") and build workspace target (" + targetDir.getAbsolutePath() + ") are identical. Source repository must remain untouched by builds.", null);
+        }
         return new TaskResult.Builder(id)
                 .status(TaskStatus.READY)
                 .message("Source directory verified: " + sourceRoot.getAbsolutePath())

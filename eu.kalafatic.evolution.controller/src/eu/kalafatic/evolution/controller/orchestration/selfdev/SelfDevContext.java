@@ -61,18 +61,20 @@ public class SelfDevContext {
         String timestamp = new SimpleDateFormat("ddMMyy_HHmmss").format(new Date());
         this.runId = "run_" + timestamp;
 
+        File wsRoot = this.resourceManager.getPath(EvoPath.WORKSPACE).toFile().getAbsoluteFile();
+
         File runDir;
         if (baseRunDir != null) {
-            runDir = resolvePath(this.projectRoot, baseRunDir);
+            runDir = resolvePath(wsRoot, baseRunDir);
         } else {
-            runDir = this.repositoryRoot.toPath().resolve("self-dev-run/run_" + new SimpleDateFormat("ddMMyy").format(new Date())).toAbsolutePath().normalize().toFile();
+            runDir = wsRoot.toPath().resolve("self-dev-run/run_" + new SimpleDateFormat("ddMMyy").format(new Date())).toAbsolutePath().normalize().toFile();
         }
 
         this.sourceDirectory = resolvePath(runDir, "source");
         this.buildDirectory = resolvePath(runDir, "build");
         this.exportDirectory = resolvePath(runDir, "export");
         this.runtimeDirectory = resolvePath(runDir, "runtime");
-        this.logDirectory = this.repositoryRoot.toPath().resolve("self-dev-run/logs").toAbsolutePath().normalize().toFile();
+        this.logDirectory = wsRoot.toPath().resolve("self-dev-run/logs").toAbsolutePath().normalize().toFile();
 
         initTargetPlatform();
         discoverAndRepairModulePaths();

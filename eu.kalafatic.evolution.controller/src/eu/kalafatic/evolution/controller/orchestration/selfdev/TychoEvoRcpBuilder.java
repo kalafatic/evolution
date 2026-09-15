@@ -52,6 +52,9 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
     }
 
     public File discoverReactorRoot(File sourceDir) {
+        if (sourceDir != null && sourceDir.exists() && new File(sourceDir, "pom.xml").exists()) {
+            return sourceDir;
+        }
         ResourceManager rm = ResourceManager.getInstance();
         return rm.getEvoReactor().toFile();
     }
@@ -76,7 +79,7 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
         }
 
         ResourceManager rm = context.getResourceManager();
-        File reactorRoot = rm.getEvoReactor().toFile();
+        File reactorRoot = discoverReactorRoot(context.getSourceDirectory());
         ProductDefinition prodDef = discoverTychoProduct(reactorRoot);
         TargetPlatform platform = resolveTargetPlatform(context);
         File logFile = getLogFile(context, "evo_build.log");
@@ -139,7 +142,7 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
         }
 
         ResourceManager rm = context.getResourceManager();
-        File reactorRoot = rm.getEvoReactor().toFile();
+        File reactorRoot = discoverReactorRoot(context.getSourceDirectory());
         ProductDefinition prodDef = discoverTychoProduct(reactorRoot);
         TargetPlatform platform = resolveTargetPlatform(context);
         File logFile = getLogFile(context, "evo_build.log");

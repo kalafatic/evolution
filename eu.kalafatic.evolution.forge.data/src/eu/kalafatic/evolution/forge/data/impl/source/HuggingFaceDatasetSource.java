@@ -117,17 +117,19 @@ public class HuggingFaceDatasetSource implements DatasetSource {
                             matchingCfg = cfg;
                             if (sp.equalsIgnoreCase(requestedSplit)) {
                                 splitFound = true;
+                                break;
                             }
                         }
                     } else {
+                        if ("Salesforce/wikitext".equalsIgnoreCase(repo) && cfg.contains("103")) {
+                            matchingCfg = cfg;
+                        } else if (matchingCfg == null) {
+                            matchingCfg = cfg;
+                        }
                         configFound = true;
                         if (sp.equalsIgnoreCase(requestedSplit)) {
                             splitFound = true;
-                            if ("Salesforce/wikitext".equalsIgnoreCase(repo) && cfg.contains("103-v1")) {
-                                matchingCfg = cfg;
-                            } else if (matchingCfg == null || (!matchingCfg.contains("103") && cfg.contains("103"))) {
-                                matchingCfg = cfg;
-                            }
+                            if (matchingCfg != null) break;
                         }
                     }
                 }

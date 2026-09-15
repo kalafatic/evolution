@@ -67,6 +67,21 @@ public class OrchestrationPathTest {
     }
 
     @Test
+    public void testSelfDevPathIsolation() throws Exception {
+        File repoRoot = new File(System.getProperty("user.home"), "git/evolution");
+        eu.kalafatic.evolution.controller.orchestration.selfdev.SelfDevContext context =
+                new eu.kalafatic.evolution.controller.orchestration.selfdev.SelfDevContext(repoRoot, null);
+
+        assertNotEquals("Source repository must not equal build directory",
+                context.getRepositoryRoot().getCanonicalPath(),
+                context.getBuildDirectory().getCanonicalPath());
+
+        assertNotEquals("Source repository must not equal source copy directory",
+                context.getRepositoryRoot().getCanonicalPath(),
+                context.getSourceDirectory().getCanonicalPath());
+    }
+
+    @Test
     public void testProjectManagerPathUtils() {
         // Test static methods on ProjectModelManager
         String codebasePathModel = eu.kalafatic.evolution.controller.manager.ProjectModelManager.getCodebasePath();
