@@ -98,11 +98,6 @@ public class CognitiveLoopEngine implements ICognitiveLoop {
                 return new CognitiveResult(sessionId, goal, currentState, observations, decisions, iteration, darwinInvocations, msg, System.currentTimeMillis() - startTime);
             }
 
-            CognitiveStrategy previousActive = worldState.getActiveStrategy();
-            if (previousActive != null && !previousActive.isEquivalent(activeStrategy)) {
-                consecutiveNoProgress = 0; // Reset consecutive no-progress counter when rotating to a new untried strategy candidate
-            }
-
             worldState.setActiveStrategy(activeStrategy);
             logTrace(taskContext, eventBus, sessionId, "[COGNITIVE] Iteration #" + iteration + "\n[COGNITIVE] Strategy:\n    " + activeStrategy.getSignature());
 
@@ -480,10 +475,10 @@ public class CognitiveLoopEngine implements ICognitiveLoop {
         String capName = decision.getTargetCapability();
         String stratSig = worldState.getActiveStrategy().getSignature();
         String actionKey = session != null ? session.getSessionId() : "session";
-        actionKey += ":iter" + iteration + ":" + capName + ":" + stratSig;
+        actionKey += ":" + capName + ":" + stratSig;
 
         if (worldState.isActionAlreadyExecuted(actionKey)) {
-            return CognitiveObservation.ofFailure(capName, 409, "", "Strategy action already executed in iteration " + iteration + ": " + actionKey, "DUPLICATE_ACTION_PREVENTED", 0);
+            return CognitiveObservation.ofFailure(capName, 409, "", "Strategy action already executed in session: " + actionKey, "DUPLICATE_ACTION_PREVENTED", 0);
         }
 
         return executeCapability(session, taskContext, decision);

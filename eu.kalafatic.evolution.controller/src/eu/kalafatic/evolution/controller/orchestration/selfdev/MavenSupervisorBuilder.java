@@ -28,9 +28,7 @@ public class MavenSupervisorBuilder extends AbstractProjectBuilder implements Su
 
         File logFile = getLogFile(context, "supervisor_build.log");
         List<String> goals = Arrays.asList("clean", "package");
-        File wsBuildDir = context.getBuildDirectory();
-        File moduleTarget = new File(wsBuildDir, supervisorModuleDir.getName() + "/target");
-        List<String> args = Arrays.asList("-DskipTests", "-Dproject.build.directory=" + moduleTarget.getAbsolutePath());
+        List<String> args = Arrays.asList("-DskipTests");
 
         TaskResult buildResult = mavenExecutor.executeBuild(supervisorModuleDir, goals, args, logFile, 15);
         if (!buildResult.isSuccess()) {

@@ -32,9 +32,6 @@ public class RcpBuildTool {
             command.add("-P" + profile);
         }
 
-        File wsBuildDir = new File(System.getProperty("user.home"), "workspace/self-dev-run/build");
-        File moduleTarget = new File(wsBuildDir, (config.getWorkspacePath() != null ? config.getWorkspacePath().getName() : "build") + "/target");
-        command.add("-Dproject.build.directory=" + moduleTarget.getAbsolutePath());
 
         ProcessBuilder pb = new ProcessBuilder(command);
         pb.directory(config.getWorkspacePath());

@@ -43,7 +43,6 @@ import eu.kalafatic.utils.factories.GUIFactory;
  * @evo:19:A reason=dynamic-architecture-page
  */
 public class ArchitecturePage extends AEvoPage {
-    private static final java.util.Set<String> IGNORE_DIRS = java.util.Set.of(".git", "target", "bin", "node_modules", ".settings", ".metadata", ".idea", "dist", "build", "self-dev-run", "iterations", "projects", "forge-output", "out", ".gradle", ".mvn");
     private Browser browser;
     private DesignRenderer renderer = new DesignRenderer();
     private Runnable refreshRunnable = this::refreshBrowser;
@@ -1232,7 +1231,7 @@ public class ArchitecturePage extends AEvoPage {
         for (java.io.File f : files) {
             if (f.isDirectory()) {
                 String name = f.getName();
-                if (!name.startsWith(".") && !IGNORE_DIRS.contains(name)) {
+                if (!name.startsWith(".") && !name.equals("target") && !name.equals("bin") && !name.equals("node_modules")) {
                     ComponentRecord rec = new ComponentRecord();
                     String relPath = root.toURI().relativize(f.toURI()).getPath();
                     if (relPath.endsWith("/")) relPath = relPath.substring(0, relPath.length() - 1);
@@ -1293,7 +1292,7 @@ public class ArchitecturePage extends AEvoPage {
 
         for (java.io.File f : files) {
             if (f.isDirectory()) {
-                if (!f.getName().startsWith(".") && !IGNORE_DIRS.contains(f.getName())) {
+                if (!f.getName().startsWith(".") && !f.getName().equals("target") && !f.getName().equals("bin")) {
                     scanForMetadata(f, root, tool, nodes, model);
                 }
             } else if (f.getName().endsWith(".java") || f.getName().endsWith(".md") || f.getName().endsWith(".json")) {

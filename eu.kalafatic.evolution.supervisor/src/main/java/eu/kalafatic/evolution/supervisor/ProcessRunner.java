@@ -67,9 +67,6 @@ public class ProcessRunner {
 
         File logFile = getLogFile(variantDir, taskId, "build.log");
         List<String> command = new ArrayList<>();
-        File wsBuildDir = new File(System.getProperty("user.home"), "workspace/self-dev-run/build");
-        File moduleTarget = new File(wsBuildDir, variantDir.getName() + "/target");
-
         if (PlatformInfo.isWindows()) {
             File mvnwCmd = new File(variantDir, "mvnw.cmd");
             if (mvnwCmd.exists()) {
@@ -80,7 +77,6 @@ public class ProcessRunner {
             command.add("clean");
             command.add("verify");
             command.add("-DskipTests");
-            command.add("-Dproject.build.directory=" + moduleTarget.getAbsolutePath());
             command.add("-Pwindows");
         } else {
             File mvnw = new File(variantDir, "mvnw");
@@ -97,7 +93,6 @@ public class ProcessRunner {
             command.add("clean");
             command.add("verify");
             command.add("-DskipTests");
-            command.add("-Dproject.build.directory=" + moduleTarget.getAbsolutePath());
             command.add("-Plinux");
         }
 
@@ -141,9 +136,7 @@ public class ProcessRunner {
         System.out.println(msg);
         appendToLog(logFile, msg);
 
-        File wsBuildDir = new File(System.getProperty("user.home"), "workspace/self-dev-run/build");
-        File moduleTarget = new File(wsBuildDir, variantDir.getName() + "/target");
-        ProcessBuilder pb = new ProcessBuilder(mvnCmd, "test", "-Dproject.build.directory=" + moduleTarget.getAbsolutePath());
+        ProcessBuilder pb = new ProcessBuilder(mvnCmd, "test");
         pb.directory(variantDir);
         pb.redirectErrorStream(true);
         pb.redirectOutput(ProcessBuilder.Redirect.appendTo(logFile));
