@@ -105,12 +105,12 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
         }
 
         DataSizeAccounting accounting = new DefaultDataSizeAccounting();
-        DatasetSourceStats stats = accounting.getSnapshot();
-        stats.setRequestedUsableBytes(targetUsableBytes);
 
         List<NormalizedSample> acceptedSamples = new ArrayList<>();
         long accumulatedUsableBytes = 0;
         Set<String> processedSourceNames = new HashSet<>();
+        Set<String> exhaustedSourceNames = new HashSet<>();
+        Set<String> failedSourceNames = new HashSet<>();
 
         long cleanerRejections = 0;
         long filterRejections = 0;
@@ -136,18 +136,22 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
 
                 var res = source.preflight();
                 if (!res.isAccessible() || !res.isAvailable()) {
-                    System.err.println("[ACQ-PREFLIGHT REJECTED] Source unavailable or inaccessible: " + source.getSourceName() + " | Reason: " + res.getFailureReason());
+                    String reason = res.getFailureReason() != null ? res.getFailureReason() : "Inaccessible";
+                    failedSourceNames.add(source.getSourceName() + " (Preflight: " + reason + ")");
+                    System.err.println("[ACQ-PREFLIGHT REJECTED] Source unavailable or inaccessible: " + source.getSourceName() + " | Reason: " + reason);
                     continue;
                 }
 
                 try {
                     source.initialize();
                 } catch (Exception initEx) {
+                    failedSourceNames.add(source.getSourceName() + " (Init error: " + initEx.getMessage() + ")");
                     System.err.println("[ACQUISITION LOG] Failed to initialize source " + source.getSourceName() + ": " + initEx.getMessage());
                     continue;
                 }
 
                 long sourceStartUsable = accumulatedUsableBytes;
+                boolean sourceReadError = false;
                 try (source) {
                     while ((targetUsableBytes <= 0 || accumulatedUsableBytes < targetUsableBytes) && source.hasNext()) {
                         NormalizedSample s = source.next();
@@ -179,6 +183,12 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
                         byte[] cleanBytes = clean.toFullText().getBytes(StandardCharsets.UTF_8);
                         long cleanLen = cleanBytes.length;
 
+                        if (cleanLen == 0) {
+                            cleanerRejections++;
+                            accounting.recordRejected(rawLen);
+                            continue;
+                        }
+
                         acceptedSamples.add(clean);
                         accumulatedUsableBytes += cleanLen;
 
@@ -190,7 +200,13 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
                         }
                     }
                 } catch (Exception ex) {
+                    sourceReadError = true;
+                    failedSourceNames.add(source.getSourceName() + " (Read error: " + ex.getMessage() + ")");
                     System.err.println("[ACQUISITION LOG] Error reading source " + source.getSourceName() + ": " + ex.getMessage());
+                }
+
+                if (!sourceReadError) {
+                    exhaustedSourceNames.add(source.getSourceName());
                 }
 
                 long sourceYield = accumulatedUsableBytes - sourceStartUsable;
@@ -235,12 +251,14 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
         }
 
         // CRITICAL PIPELINE INVARIANT CHECK
-        if (stats.getAcceptedSamples() > 0 && accumulatedUsableBytes == 0) {
-            throw new IllegalStateException("CRITICAL PIPELINE INVARIANT VIOLATION: acceptedSamples="
-                    + stats.getAcceptedSamples() + " but accumulatedUsableBytes is 0! Data conversion/accounting broken.");
+        if (!acceptedSamples.isEmpty() && accumulatedUsableBytes == 0) {
+            throw new IllegalStateException("CRITICAL PIPELINE INVARIANT VIOLATION: acceptedSamples count="
+                    + acceptedSamples.size() + " but accumulatedUsableBytes is 0! Data conversion/accounting broken.");
         }
 
         accounting.setTrainValidationRatio(valSplitRatio);
+        DatasetSourceStats stats = accounting.getSnapshot();
+        stats.setRequestedUsableBytes(targetUsableBytes);
 
         TrainingDataPreferenceEvaluation eval = preferenceEvaluator.evaluate(prefs, stats);
 
@@ -254,7 +272,7 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
                 : TrainingDataAcquisitionResult.Status.INSUFFICIENT_SOURCE_DATA;
 
         List<String> sourcesUsedNames = new ArrayList<>(processedSourceNames);
-        List<String> sourcesExhaustedNames = sourceExhausted ? new ArrayList<>(processedSourceNames) : List.of();
+        List<String> sourcesExhaustedNamesList = sourceExhausted ? new ArrayList<>(exhaustedSourceNames) : List.of();
 
         String failureReason = null;
         if (!targetReached) {
@@ -262,8 +280,11 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
                     + targetUsableBytes + " bytes (" + (targetUsableBytes / (1024 * 1024)) + " MB), Acquired Usable: "
                     + accumulatedUsableBytes + " bytes (" + (accumulatedUsableBytes / (1024 * 1024)) + " MB), Max Download: "
                     + prefs.getMaximumDownloadBytes() + " bytes (" + (prefs.getMaximumDownloadBytes() / (1024 * 1024)) + " MB), Shortfall: "
-                    + shortfall + " bytes (" + (shortfall / (1024 * 1024)) + " MB), Coverage: " + String.format("%.2f", coveragePercent) + "%, Sources used: " + sourcesUsedNames
-                    + ". Rejections breakdown: Cleaner=" + cleanerRejections + ", QualityFilter=" + filterRejections + ", Duplicates=" + duplicateRejections + ".";
+                    + shortfall + " bytes (" + (shortfall / (1024 * 1024)) + " MB), Coverage: " + String.format("%.2f", coveragePercent) + "%, Sources used: " + sourcesUsedNames;
+            if (!failedSourceNames.isEmpty()) {
+                failureReason += ", Failed sources: " + failedSourceNames;
+            }
+            failureReason += ". Rejections breakdown: Cleaner=" + cleanerRejections + ", QualityFilter=" + filterRejections + ", Duplicates=" + duplicateRejections + ".";
             System.err.println("[ACQ-TRACE] TARGET NOT REACHED! " + failureReason);
         } else {
             System.out.printf("[ACQ-TRACE] TARGET REACHED! Requested: %d bytes, Acquired Usable: %d bytes (%.2f%% coverage).\n",
@@ -294,7 +315,7 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
                 stats.getValidationBytes(),
                 stats.getEstimatedTokens(),
                 sourcesUsedNames,
-                sourcesExhaustedNames,
+                sourcesExhaustedNamesList,
                 hardFailures,
                 List.of(),
                 failureReason != null ? List.of(failureReason) : List.of(),
