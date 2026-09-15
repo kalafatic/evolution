@@ -69,17 +69,18 @@ public class SelfDevContext {
         if (baseRunDir != null) {
             runDir = resolvePath(wsRoot, baseRunDir);
         } else {
-            runDir = wsRoot.toPath().resolve("self-dev-run/run_" + new SimpleDateFormat("ddMMyy").format(new Date())).toAbsolutePath().normalize().toFile();
+            runDir = wsRoot.toPath().resolve("self-dev/" + this.runId).toAbsolutePath().normalize().toFile();
         }
 
+        this.preparedReactorDirectory = resolvePath(runDir, "source");
         this.buildDirectory = resolvePath(runDir, "build");
-        this.preparedReactorDirectory = resolvePath(this.buildDirectory, "evo-rcp");
         this.exportDirectory = resolvePath(runDir, "export");
         this.runtimeDirectory = resolvePath(runDir, "runtime");
-        this.logDirectory = wsRoot.toPath().resolve("self-dev-run/logs").toAbsolutePath().normalize().toFile();
+        this.logDirectory = resolvePath(runDir, "logs");
+        this.supervisorDirectory = this.resourceManager.getPath(EvoPath.SUPERVISOR_SOURCE).toFile().getAbsoluteFile().toPath().normalize().toFile();
+        this.genomeDirectory = this.resourceManager.getPath(EvoPath.GENOME).toFile().getAbsoluteFile().toPath().normalize().toFile();
 
         initTargetPlatform();
-        discoverAndRepairModulePaths();
         ensureDirectories();
         printPreflightReport();
     }
@@ -122,43 +123,6 @@ public class SelfDevContext {
         return base.resolve(p).toAbsolutePath().normalize().toFile();
     }
 
-    public void discoverAndRepairModulePaths() {
-        this.supervisorDirectory = resourceManager.getPath(EvoPath.SUPERVISOR_SOURCE).toFile().getAbsoluteFile().toPath().normalize().toFile();
-        this.genomeDirectory = resourceManager.getPath(EvoPath.GENOME).toFile().getAbsoluteFile().toPath().normalize().toFile();
-    }
-
-    public File discoverModuleDirectory(String moduleName, File primaryLocation, File... searchRoots) {
-        if (primaryLocation != null && primaryLocation.exists() && isModuleDirectory(primaryLocation)) {
-            return primaryLocation.getAbsoluteFile().toPath().normalize().toFile();
-        }
-
-        for (File root : searchRoots) {
-            if (root == null || !root.exists()) continue;
-
-            File directCandidate = new File(root, moduleName);
-            if (directCandidate.exists() && isModuleDirectory(directCandidate)) {
-                return directCandidate.getAbsoluteFile().toPath().normalize().toFile();
-            }
-
-            File[] children = root.listFiles(File::isDirectory);
-            if (children != null) {
-                for (File child : children) {
-                    File candidate = new File(child, moduleName);
-                    if (candidate.exists() && isModuleDirectory(candidate)) {
-                        return candidate.getAbsoluteFile().toPath().normalize().toFile();
-                    }
-                }
-            }
-        }
-
-        File fallback = primaryLocation != null ? primaryLocation.getAbsoluteFile().toPath().normalize().toFile() : new File(projectRoot, moduleName).getAbsoluteFile().toPath().normalize().toFile();
-        return fallback;
-    }
-
-    private boolean isModuleDirectory(File dir) {
-        if (dir == null || !dir.exists() || !dir.isDirectory()) return false;
-        return new File(dir, "pom.xml").exists() || new File(dir, "META-INF/MANIFEST.MF").exists();
-    }
 
     public ResolvedSelfDevResources getResolvedResources() {
         return resolvedResources;

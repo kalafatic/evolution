@@ -45,7 +45,7 @@ public class CopySourceTask extends AbstractSelfDevTask {
 
         boolean samePath = sourceRoot.getCanonicalFile().equals(targetDir.getCanonicalFile());
         if (samePath) {
-            eu.kalafatic.evolution.controller.log.Log.log("[COPY]\nsourceReactor=" + sourceRoot.getAbsolutePath() + "\npreparedReactor=" + targetDir.getAbsolutePath() + "\nsamePath=true\ndestinationPom=false\nresult=FAILED");
+            eu.kalafatic.evolution.controller.log.Log.log("[SELF-DEV][COPY]\nSOURCE = " + sourceRoot.getAbsolutePath() + "\nTARGET = " + targetDir.getAbsolutePath() + "\nRESULT = FAILED (Same Path)");
             return TaskResult.failure(id, "COPY FAILED: Source reactor (" + sourceRoot.getAbsolutePath() + ") and prepared reactor (" + targetDir.getAbsolutePath() + ") resolve to the same directory.", null);
         }
 
@@ -58,6 +58,8 @@ public class CopySourceTask extends AbstractSelfDevTask {
 
     @Override
     protected TaskResult run(SelfDevContext context) throws Exception {
+        eu.kalafatic.evolution.controller.log.Log.log("[SELF-DEV][COPY]\nSOURCE = " + sourceRoot.getAbsolutePath() + "\nTARGET = " + targetDir.getAbsolutePath());
+        System.out.println("[SELF-DEV][COPY]\nSOURCE = " + sourceRoot.getAbsolutePath() + "\nTARGET = " + targetDir.getAbsolutePath());
         return sourceProvider.fetchSource(sourceRoot, targetDir);
     }
 
@@ -66,10 +68,9 @@ public class CopySourceTask extends AbstractSelfDevTask {
         boolean destinationPom = targetDir.exists() && new File(targetDir, "pom.xml").exists();
         boolean success = runResult.isSuccess() && destinationPom;
 
-        eu.kalafatic.evolution.controller.log.Log.log("[COPY]\nsourceReactor=" + sourceRoot.getAbsolutePath() +
-                "\npreparedReactor=" + targetDir.getAbsolutePath() +
-                "\nsamePath=false\ndestinationPom=" + destinationPom +
-                "\nresult=" + (success ? "SUCCESS" : "FAILED"));
+        eu.kalafatic.evolution.controller.log.Log.log("[SELF-DEV][COPY]\nSOURCE = " + sourceRoot.getAbsolutePath() +
+                "\nTARGET = " + targetDir.getAbsolutePath() +
+                "\nRESULT = " + (success ? "SUCCESS" : "FAILED"));
 
         if (!runResult.isSuccess()) {
             return runResult;
@@ -77,10 +78,6 @@ public class CopySourceTask extends AbstractSelfDevTask {
 
         if (!destinationPom) {
             return TaskResult.failure(id, "Copy post-validation failed: destination directory " + targetDir.getAbsolutePath() + " is missing required pom.xml", null);
-        }
-
-        if (context != null) {
-            context.discoverAndRepairModulePaths();
         }
 
         return new TaskResult.Builder(id)

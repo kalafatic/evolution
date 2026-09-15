@@ -184,17 +184,17 @@ public class ResourceManager {
                 if (orch != null && orch.getSupervisorSettings() != null && orch.getSupervisorSettings().getSourcePath() != null) {
                     resolvedPath = resolvePath(EvoPath.EVO_ROOT, orch.getSupervisorSettings().getSourcePath());
                 } else {
-                    resolvedPath = wsRoot.resolve("self-dev-run/source").toAbsolutePath().normalize();
+                    resolvedPath = wsRoot.resolve("self-dev/source").toAbsolutePath().normalize();
                 }
                 break;
             }
 
             case BUILD_ROOT:
-                resolvedPath = wsRoot.resolve("self-dev-run/build").toAbsolutePath().normalize();
+                resolvedPath = wsRoot.resolve("self-dev/build").toAbsolutePath().normalize();
                 break;
 
             case EXPORT_ROOT:
-                resolvedPath = wsRoot.resolve("self-dev-run/export").toAbsolutePath().normalize();
+                resolvedPath = wsRoot.resolve("self-dev/export").toAbsolutePath().normalize();
                 break;
 
             case SUPERVISOR_SOURCE: {
@@ -212,7 +212,7 @@ public class ResourceManager {
                 if (orch != null && orch.getSupervisorSettings() != null && orch.getSupervisorSettings().getExecutablePath() != null) {
                     resolvedPath = resolvePath(EvoPath.EVO_ROOT, orch.getSupervisorSettings().getExecutablePath());
                 } else {
-                    resolvedPath = wsRoot.resolve("self-dev-run/builds").toAbsolutePath().normalize();
+                    resolvedPath = wsRoot.resolve("self-dev/builds").toAbsolutePath().normalize();
                 }
                 break;
             }
@@ -222,19 +222,23 @@ public class ResourceManager {
                 break;
 
             case FORGE_INPUT:
-                resolvedPath = wsRoot.resolve("data").toAbsolutePath().normalize();
+                Path forgeIn = wsRoot.resolve("forge/input").toAbsolutePath().normalize();
+                resolvedPath = forgeIn.toFile().exists() ? forgeIn : wsRoot.resolve("data").toAbsolutePath().normalize();
                 break;
 
             case FORGE_OUTPUT:
-                resolvedPath = wsRoot.resolve("forge-output").toAbsolutePath().normalize();
+                Path forgeOut = wsRoot.resolve("forge/output").toAbsolutePath().normalize();
+                resolvedPath = forgeOut.toFile().exists() ? forgeOut : wsRoot.resolve("forge-output").toAbsolutePath().normalize();
                 break;
 
             case MODELS:
-                resolvedPath = wsRoot.resolve("models").toAbsolutePath().normalize();
+                Path sharedModels = wsRoot.resolve("shared/models").toAbsolutePath().normalize();
+                resolvedPath = sharedModels.toFile().exists() ? sharedModels : wsRoot.resolve("models").toAbsolutePath().normalize();
                 break;
 
             case DATASETS:
-                resolvedPath = wsRoot.resolve("datasets").toAbsolutePath().normalize();
+                Path sharedDatasets = wsRoot.resolve("shared/datasets").toAbsolutePath().normalize();
+                resolvedPath = sharedDatasets.toFile().exists() ? sharedDatasets : wsRoot.resolve("datasets").toAbsolutePath().normalize();
                 break;
 
             default:

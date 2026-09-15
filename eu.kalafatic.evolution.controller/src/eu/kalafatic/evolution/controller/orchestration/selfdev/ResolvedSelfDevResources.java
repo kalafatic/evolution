@@ -41,7 +41,7 @@ public class ResolvedSelfDevResources {
         if (preparedReactorDirectory != null) {
             this.preparedReactorDirectory = normalize(preparedReactorDirectory);
         } else if (this.buildDirectory != null) {
-            this.preparedReactorDirectory = normalize(new File(this.buildDirectory, "evo-rcp"));
+            this.preparedReactorDirectory = normalize(new File(this.buildDirectory.getParentFile(), "source"));
         } else {
             this.preparedReactorDirectory = null;
         }

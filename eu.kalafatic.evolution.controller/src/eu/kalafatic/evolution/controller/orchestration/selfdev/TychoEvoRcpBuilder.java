@@ -46,20 +46,7 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
         }
     }
 
-    public File discoverSourceDir(SelfDevContext context) {
-        ResourceManager rm = context != null ? context.getResourceManager() : ResourceManager.getInstance();
-        return rm.getEvoSource().toFile();
-    }
-
-    public File discoverReactorRoot(File sourceDir) {
-        if (sourceDir != null && sourceDir.exists() && new File(sourceDir, "pom.xml").exists()) {
-            return sourceDir;
-        }
-        ResourceManager rm = ResourceManager.getInstance();
-        return rm.getEvoReactor().toFile();
-    }
-
-    public ProductDefinition discoverTychoProduct(File reactorRoot) {
+    private ProductDefinition getProductDefinition() {
         ResourceManager rm = ResourceManager.getInstance();
         eu.kalafatic.evolution.controller.resource.ProductDefinition pd = rm.getProductDefinition();
         return new ProductDefinition(pd.getProductId(), pd.getLauncherName(), pd.getRootFolder(), pd.getRepositoryModule(), pd.getProductFile());
@@ -104,7 +91,7 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
             return TaskResult.failure("build_evo_rcp", "Build reactor validation exception: " + e.getMessage(), e);
         }
 
-        ProductDefinition prodDef = discoverTychoProduct(reactorRoot);
+        ProductDefinition prodDef = getProductDefinition();
         TargetPlatform platform = resolveTargetPlatform(context);
         File logFile = getLogFile(context, "evo_build.log");
 
@@ -172,7 +159,7 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
         }
 
         File reactorRoot = context.getPreparedReactorDirectory().getAbsoluteFile();
-        ProductDefinition prodDef = discoverTychoProduct(reactorRoot);
+        ProductDefinition prodDef = getProductDefinition();
         TargetPlatform platform = resolveTargetPlatform(context);
         File logFile = getLogFile(context, "evo_build.log");
 
@@ -242,7 +229,7 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
         if (context == null) return null;
 
         File reactorRoot = context.getPreparedReactorDirectory().getAbsoluteFile();
-        ProductDefinition prodDef = discoverTychoProduct(reactorRoot);
+        ProductDefinition prodDef = getProductDefinition();
         TargetPlatform platform = resolveTargetPlatform(context);
 
         File exportedLocation;
