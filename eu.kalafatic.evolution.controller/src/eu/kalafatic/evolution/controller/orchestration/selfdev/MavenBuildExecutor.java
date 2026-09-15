@@ -34,14 +34,6 @@ public class MavenBuildExecutor {
             command.addAll(userArgs);
         }
 
-        boolean hasBuildDirArg = (userArgs != null && userArgs.stream().anyMatch(a -> a.startsWith("-Dproject.build.directory=")))
-                || (goals != null && goals.stream().anyMatch(g -> g.startsWith("-Dproject.build.directory=")));
-        if (!hasBuildDirArg) {
-            File wsBuildDir = eu.kalafatic.evolution.controller.resource.ResourceManager.getInstance()
-                    .getPath(eu.kalafatic.evolution.controller.resource.EvoPath.BUILD_ROOT).toFile();
-            File moduleTarget = new File(wsBuildDir, workingDir.getName() + "/target");
-            command.add("-Dproject.build.directory=" + moduleTarget.getAbsolutePath());
-        }
 
         String fullCommandStr = String.join(" ", command);
         File wsBuildDir = eu.kalafatic.evolution.controller.resource.ResourceManager.getInstance()

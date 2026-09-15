@@ -79,7 +79,29 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
         }
 
         ResourceManager rm = context.getResourceManager();
-        File reactorRoot = discoverReactorRoot(context.getSourceDirectory());
+        File sourceRepo = rm.getEvoSource().toFile().getAbsoluteFile();
+        File reactorRoot = discoverReactorRoot(context.getSourceDirectory()).getAbsoluteFile();
+
+        try {
+            boolean sameDir = reactorRoot.getCanonicalFile().equals(sourceRepo.getCanonicalFile());
+            System.out.println("================================================================================");
+            System.out.println("[TychoEvoRcpBuilder] SOURCE_REPOSITORY: " + sourceRepo.getAbsolutePath());
+            System.out.println("[TychoEvoRcpBuilder] BUILD_WORKSPACE  : " + context.getBuildDirectory().getAbsolutePath());
+            System.out.println("[TychoEvoRcpBuilder] BUILD_REACTOR    : " + reactorRoot.getAbsolutePath());
+            System.out.println("[TychoEvoRcpBuilder] EXPORT_DIRECTORY : " + context.getExportDirectory().getAbsolutePath());
+            System.out.println("[TychoEvoRcpBuilder] SOURCE == BUILD_REACTOR: " + sameDir);
+            System.out.println("[TychoEvoRcpBuilder] Maven working directory: " + reactorRoot.getAbsolutePath());
+            System.out.println("================================================================================");
+
+            if (sameDir || !reactorRoot.exists() || !reactorRoot.isDirectory() || !new File(reactorRoot, "pom.xml").exists()) {
+                String err = "[TychoEvoRcpBuilder] BUILD REACTOR VALIDATION FAILED\nsourceRepository: " + sourceRepo.getAbsolutePath() + "\nbuildReactor: " + reactorRoot.getAbsolutePath() + "\nReason: build reactor resolves to the Git source repository or is invalid. Build workspace must be distinct from Git repository.";
+                System.err.println(err);
+                return TaskResult.failure("build_evo_rcp", err, null);
+            }
+        } catch (Exception e) {
+            return TaskResult.failure("build_evo_rcp", "Build reactor validation exception: " + e.getMessage(), e);
+        }
+
         ProductDefinition prodDef = discoverTychoProduct(reactorRoot);
         TargetPlatform platform = resolveTargetPlatform(context);
         File logFile = getLogFile(context, "evo_build.log");
@@ -87,9 +109,6 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
         List<String> goals = Arrays.asList("clean", "verify");
         List<String> args = new ArrayList<>();
         args.add(platform.getProfile());
-        File wsBuildDir = context.getBuildDirectory();
-        File moduleTarget = new File(wsBuildDir, "evo-rcp/target");
-        args.add("-Dproject.build.directory=" + moduleTarget.getAbsolutePath());
 
         if (isSkipTests()) {
             args.add("-DskipTests");
@@ -142,7 +161,20 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
         }
 
         ResourceManager rm = context.getResourceManager();
-        File reactorRoot = discoverReactorRoot(context.getSourceDirectory());
+        File sourceRepo = rm.getEvoSource().toFile().getAbsoluteFile();
+        File reactorRoot = discoverReactorRoot(context.getSourceDirectory()).getAbsoluteFile();
+
+        try {
+            boolean sameDir = reactorRoot.getCanonicalFile().equals(sourceRepo.getCanonicalFile());
+            if (sameDir || !reactorRoot.exists() || !reactorRoot.isDirectory() || !new File(reactorRoot, "pom.xml").exists()) {
+                String err = "[TychoEvoRcpBuilder] BUILD REACTOR VALIDATION FAILED\nsourceRepository: " + sourceRepo.getAbsolutePath() + "\nbuildReactor: " + reactorRoot.getAbsolutePath() + "\nReason: build reactor resolves to the Git source repository or is invalid. Build workspace must be distinct from Git repository.";
+                System.err.println(err);
+                return TaskResult.failure("export_evo_rcp", err, null);
+            }
+        } catch (Exception e) {
+            return TaskResult.failure("export_evo_rcp", "Build reactor validation exception: " + e.getMessage(), e);
+        }
+
         ProductDefinition prodDef = discoverTychoProduct(reactorRoot);
         TargetPlatform platform = resolveTargetPlatform(context);
         File logFile = getLogFile(context, "evo_build.log");
@@ -171,9 +203,6 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
         List<String> goals = Arrays.asList("clean", "verify");
         List<String> args = new ArrayList<>();
         args.add(platform.getProfile());
-        File wsBuildDir = context.getBuildDirectory();
-        File moduleTarget = new File(wsBuildDir, "evo-rcp/target");
-        args.add("-Dproject.build.directory=" + moduleTarget.getAbsolutePath());
 
         if (isSkipTests()) {
             args.add("-DskipTests");
@@ -234,8 +263,7 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
     public BuildArtifact getArtifact(SelfDevContext context) {
         if (context == null) return null;
 
-        ResourceManager rm = context.getResourceManager();
-        File reactorRoot = rm.getEvoReactor().toFile();
+        File reactorRoot = discoverReactorRoot(context.getSourceDirectory());
         ProductDefinition prodDef = discoverTychoProduct(reactorRoot);
         TargetPlatform platform = resolveTargetPlatform(context);
 
@@ -266,7 +294,7 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
     }
 
     public File findExactExportedProduct(File reactorRoot, ProductDefinition prodDef, TargetPlatform platform, SelfDevContext context) throws IOException {
-        if (reactorRoot == null || prodDef == null || platform == null) return null;
+        if (prodDef == null || platform == null) return null;
 
         List<File> candidates = new ArrayList<>();
 
@@ -285,13 +313,16 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
             }
         }
 
-        File targetProductsDir = new File(reactorRoot, prodDef.getRepositoryModule() + "/target/products");
-        if (targetProductsDir.exists() && targetProductsDir.isDirectory()) {
-            File[] files = targetProductsDir.listFiles();
-            if (files != null) {
-                for (File f : files) {
-                    if (isExactMatchingArtifact(f, prodDef, platform) && !candidates.contains(f)) {
-                        candidates.add(f);
+        File srcDir = context != null ? context.getSourceDirectory() : null;
+        if (srcDir != null && srcDir.exists()) {
+            File targetProductsDir = new File(srcDir, prodDef.getRepositoryModule() + "/target/products");
+            if (targetProductsDir.exists() && targetProductsDir.isDirectory()) {
+                File[] files = targetProductsDir.listFiles();
+                if (files != null) {
+                    for (File f : files) {
+                        if (isExactMatchingArtifact(f, prodDef, platform) && !candidates.contains(f)) {
+                            candidates.add(f);
+                        }
                     }
                 }
             }
@@ -304,22 +335,6 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
                     if (isExactMatchingArtifact(f, prodDef, platform) && !candidates.contains(f)) {
                         candidates.add(f);
                     }
-                }
-            }
-        }
-
-        if (candidates.isEmpty()) {
-            // Check exact nested materialized directory
-            File nestedDir = platform.isWindows() ?
-                    new File(targetProductsDir, prodDef.getProductId() + "/win32/win32/x86_64/" + prodDef.getRootFolder()) :
-                    new File(targetProductsDir, prodDef.getProductId() + "/linux/gtk/x86_64/" + prodDef.getRootFolder());
-
-            if (nestedDir.exists() && nestedDir.isDirectory()) {
-                candidates.add(nestedDir);
-            } else {
-                File rootFolderDir = new File(targetProductsDir, prodDef.getRootFolder());
-                if (rootFolderDir.exists() && rootFolderDir.isDirectory()) {
-                    candidates.add(rootFolderDir);
                 }
             }
         }
