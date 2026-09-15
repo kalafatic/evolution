@@ -140,9 +140,7 @@ public class ResourceManager {
 
         Path resolvedPath;
         switch (pathType) {
-            case EVO_SOURCE_REPOSITORY:
-            case EVO_ROOT:
-            case PROJECT_ROOT:
+            case EVO_SOURCE_REPOSITORY:            
                 resolvedPath = gitDir.resolve("evolution").toAbsolutePath().normalize();
                 break;
 
@@ -154,6 +152,8 @@ public class ResourceManager {
                 resolvedPath = gitDir.resolve("llm").toAbsolutePath().normalize();
                 break;
 
+            case EVO_ROOT:
+            case PROJECT_ROOT:            	
             case ECLIPSE_WORKSPACE:
             case WORKSPACE: {
                 String wsStr = ProjectModelManager.getWorkspacePath();
