@@ -17,6 +17,7 @@ public class TrainingDataAcquisitionRequest {
     private double validationSplitRatio = 0.02;
     private TrainingDataPreferences preferences;
     private TrainingDataAcquisitionPlan plan;
+    private String runId;
 
     public TrainingDataAcquisitionRequest() {}
 
@@ -77,6 +78,18 @@ public class TrainingDataAcquisitionRequest {
         if (plan != null && plan.getPreferences() != null) {
             setPreferences(plan.getPreferences());
         }
+        return this;
+    }
+
+    public String getRunId() {
+        if (runId == null || runId.trim().isEmpty()) {
+            runId = java.util.UUID.randomUUID().toString().substring(0, 6).toUpperCase();
+        }
+        return runId;
+    }
+
+    public TrainingDataAcquisitionRequest setRunId(String runId) {
+        this.runId = runId;
         return this;
     }
 }

@@ -34,8 +34,16 @@ public class HuggingFaceDownloader implements DataDownloader {
             conn.setRequestProperty(header.getKey(), header.getValue());
         }
 
-        int status = conn.getResponseCode();
-        String message = conn.getResponseMessage();
+        long startMs = System.currentTimeMillis();
+        int status;
+        String message;
+        try {
+            status = conn.getResponseCode();
+            message = conn.getResponseMessage();
+        } catch (IOException ioe) {
+            long durationMs = System.currentTimeMillis() - startMs;
+            throw new IOException("HTTP Connection failed after " + durationMs + "ms: " + ioe.getMessage(), ioe);
+        }
         String contentType = conn.getContentType();
 
         InputStream stream = (status >= 200 && status < 300) ? conn.getInputStream() : conn.getErrorStream();
