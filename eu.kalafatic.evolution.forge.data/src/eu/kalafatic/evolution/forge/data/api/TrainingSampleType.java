@@ -10,7 +10,8 @@ public enum TrainingSampleType {
     QA,
     CODE,
     REASONING,
-    CLASSIFICATION;
+    CLASSIFICATION,
+    CONVERSATION;
 
     public static TrainingSampleType fromString(String typeStr) {
         if (typeStr == null || typeStr.trim().isEmpty()) {
