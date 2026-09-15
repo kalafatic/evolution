@@ -120,12 +120,13 @@ public class TrainingDataPreferences {
 
         public Builder minimumUsableBytes(long bytes) {
             this.minimumUsableBytes = bytes;
-            if (this.targetUsableBytes < bytes) this.targetUsableBytes = bytes;
+            this.targetUsableBytes = bytes;
             return this;
         }
 
         public Builder targetUsableBytes(long bytes) {
             this.targetUsableBytes = bytes;
+            if (this.minimumUsableBytes > bytes) this.minimumUsableBytes = bytes;
             return this;
         }
 

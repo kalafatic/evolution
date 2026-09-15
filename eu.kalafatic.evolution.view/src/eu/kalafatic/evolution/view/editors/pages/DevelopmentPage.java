@@ -205,7 +205,7 @@ public class DevelopmentPage extends AEvoPage {
 		loadTableData();
 
 		Composite sdControlPanel = toolkit.createComposite(selfDevComp);
-		sdControlPanel.setLayout(new GridLayout(6, false));
+		sdControlPanel.setLayout(new GridLayout(7, false));
 		sdControlPanel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		Button runSelectedBtn = GUIFactory.INSTANCE.createButton(sdControlPanel, "▶ Run Selected");
 		runSelectedBtn.addSelectionListener(new SelectionAdapter() {
@@ -244,6 +244,14 @@ public class DevelopmentPage extends AEvoPage {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				runDebug();
+			}
+		});
+
+		Button scenariosBtn = GUIFactory.INSTANCE.createButton(sdControlPanel, "📋 Task Scenarios");
+		scenariosBtn.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				showTaskScenariosDialog();
 			}
 		});
 
@@ -647,6 +655,97 @@ public class DevelopmentPage extends AEvoPage {
 			orchestrator.getSupervisorSettings().setExecutablePath(row.path);
 			break;
 		}
+	}
+
+	private void showTaskScenariosDialog() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("================================================================================\n");
+		sb.append("EVO SELF-DEVELOPMENT PIPELINE TASK SCENARIOS\n");
+		sb.append("================================================================================\n\n");
+
+		sb.append("ARCHITECTURE PIPELINE FLOW:\n");
+		sb.append("  Remote Git Repository -> Local Git Repository -> Build Workspace -> Supervisor -> EVO RCP\n\n");
+
+		sb.append("CONFIGURED PATHS:\n");
+		sb.append("  Local Git Repository (Source) : ").append(eu.kalafatic.evolution.controller.resource.ResourceManager.getInstance().getPath(eu.kalafatic.evolution.controller.resource.EvoPath.EVO_SOURCE_REPOSITORY)).append("\n");
+		sb.append("  Build Workspace (Output)      : ").append(eu.kalafatic.evolution.controller.resource.ResourceManager.getInstance().getPath(eu.kalafatic.evolution.controller.resource.EvoPath.BUILD_ROOT)).append("\n");
+		sb.append("  Export Directory              : ").append(eu.kalafatic.evolution.controller.resource.ResourceManager.getInstance().getPath(eu.kalafatic.evolution.controller.resource.EvoPath.EXPORT_ROOT)).append("\n");
+		sb.append("  Supervisor Source             : ").append(eu.kalafatic.evolution.controller.resource.ResourceManager.getInstance().getPath(eu.kalafatic.evolution.controller.resource.EvoPath.SUPERVISOR_SOURCE)).append("\n\n");
+
+		sb.append("TASK SCENARIOS (WHAT WILL BE DONE, PATHS FROM / TO):\n");
+		sb.append("--------------------------------------------------------------------------------\n");
+
+		if (selfDevTable.getInput() instanceof List<?> rows) {
+			for (Object obj : rows) {
+				if (obj instanceof SelfDevRow row) {
+					sb.append(String.format("#%02d [%s] Executor: %s\n", row.order, row.name, row.executor));
+					sb.append("    Path/Target : ").append(row.path).append("\n");
+					sb.append("    Scenario    : ").append(getScenarioDescription(row)).append("\n");
+					sb.append("--------------------------------------------------------------------------------\n");
+				}
+			}
+		}
+
+		String reportText = sb.toString();
+
+		org.eclipse.jface.dialogs.Dialog dialog = new org.eclipse.jface.dialogs.Dialog(getShell()) {
+			@Override
+			protected void configureShell(org.eclipse.swt.widgets.Shell newShell) {
+				super.configureShell(newShell);
+				newShell.setText("Self-Development Task Scenarios");
+				newShell.setSize(750, 550);
+			}
+
+			@Override
+			protected org.eclipse.swt.widgets.Control createDialogArea(Composite parent) {
+				Composite area = (Composite) super.createDialogArea(parent);
+				area.setLayout(new GridLayout(1, false));
+
+				org.eclipse.swt.widgets.Text textArea = new org.eclipse.swt.widgets.Text(area, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL | SWT.READ_ONLY);
+				textArea.setLayoutData(new GridData(GridData.FILL_BOTH));
+				textArea.setFont(org.eclipse.jface.resource.JFaceResources.getTextFont());
+				textArea.setText(reportText);
+
+				return area;
+			}
+
+			@Override
+			protected void createButtonsForButtonBar(Composite parent) {
+				Button copyBtn = createButton(parent, 99, "Copy Content", false);
+				copyBtn.addSelectionListener(new SelectionAdapter() {
+					@Override
+					public void widgetSelected(SelectionEvent e) {
+						org.eclipse.swt.dnd.Clipboard cb = new org.eclipse.swt.dnd.Clipboard(Display.getDefault());
+						cb.setContents(new Object[] { reportText }, new org.eclipse.swt.dnd.Transfer[] { org.eclipse.swt.dnd.TextTransfer.getInstance() });
+						cb.dispose();
+						org.eclipse.jface.dialogs.MessageDialog.openInformation(getShell(), "Copied", "Task scenarios copied to clipboard.");
+					}
+				});
+				createButton(parent, org.eclipse.jface.dialogs.IDialogConstants.OK_ID, "Close", true);
+			}
+		};
+		dialog.open();
+	}
+
+	private String getScenarioDescription(SelfDevRow row) {
+		return switch (row.name) {
+		case SelfDevRow.LLM_CHECK -> "Verifies configured LLM model availability and inference responsiveness.";
+		case SelfDevRow.GIT_CHECK_EVO, SelfDevRow.GIT_CHECK_SUPERVISOR -> "FROM Remote Git Repository TO Local Git Repository: Fetches/pulls latest commits and verifies repository remote state.";
+		case SelfDevRow.MAVEN_CHECK_EVO, SelfDevRow.MAVEN_CHECK_SUPERVISOR -> "Verifies Maven executable (mvn/mvnw) and pom.xml build reactor configuration.";
+		case SelfDevRow.COPY_SUPERVISOR_SRC -> "FROM Local Git Repository TO Workspace Source: Copies supervisor source module into build workspace directory.";
+		case SelfDevRow.BUILD_SUPERVISOR_LOCAL -> "FROM Workspace Source TO Workspace Build Target: Runs Maven build to compile Supervisor JAR into build workspace.";
+		case SelfDevRow.SUPERVISOR_CHECK -> "Verifies built Supervisor JAR executable and HTTP health control endpoints.";
+		case SelfDevRow.GENOME_CHECK -> "Verifies Self-Dev Genome module source and compilation integrity.";
+		case SelfDevRow.PERM_CHECK -> "Tests write permissions on workspace build, export, log, and runtime directories.";
+		case SelfDevRow.COPY_SOURCE -> "FROM Local Git Repository TO Workspace Source: Prepares clean source copy in build workspace without polluting Git checkout.";
+		case SelfDevRow.BUILD_PROJECT_EVO, SelfDevRow.BUILD_PROJECT_SUPERVISOR -> "FROM Local Git Source Checkout TO Workspace Build Target: Compiles Tycho RCP modules into build workspace (-Dproject.build.directory=...).";
+		case SelfDevRow.EXPORT_PRODUCT_EVO, SelfDevRow.EXPORT_PRODUCT_SUPERVISOR -> "FROM Workspace Build Target TO Workspace Export Directory: Materializes unzipped RCP product layout (executables, plugins, configuration).";
+		case SelfDevRow.START_EVO_PRODUCT_SUPERVISOR -> "FROM Workspace Export Directory TO Active Process: Launches EVO RCP product via Supervisor runner and verifies startup.";
+		case SelfDevRow.STOP_EVO_PRODUCT_SUPERVISOR -> "Sends graceful stop request to running EVO RCP product via Supervisor.";
+		case SelfDevRow.SUPERVISOR_LOOP -> "Starts continuous Supervisor process monitoring loop for EVO RCP runtime.";
+		case SelfDevRow.SELF_DEV_LOOP -> "Executes autonomous Self-Development iteration loop in Orchestrator.";
+		default -> "Executes task scenario for " + row.name + ".";
+		};
 	}
 
 	private void openSelfDevEditDialog() {

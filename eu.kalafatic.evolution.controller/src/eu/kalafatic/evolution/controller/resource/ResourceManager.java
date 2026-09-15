@@ -170,10 +170,6 @@ public class ResourceManager {
                 break;
             }
 
-            case RUNTIME_ROOT:
-                resolvedPath = wsRoot.resolve("self-dev-run/runtime").toAbsolutePath().normalize();
-                break;
-
             case BUILD_ROOT:
                 resolvedPath = wsRoot.resolve("self-dev-run/build").toAbsolutePath().normalize();
                 break;

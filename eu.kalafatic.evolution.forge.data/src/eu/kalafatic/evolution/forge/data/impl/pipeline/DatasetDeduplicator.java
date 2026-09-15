@@ -25,7 +25,7 @@ public class DatasetDeduplicator implements DataDeduplicator {
     public boolean isDuplicate(NormalizedSample sample) {
         if (sample == null) return true;
 
-        // 1. Exact hash check
+        // 1. Exact SHA-256 hash check
         String hash = sample.getHash();
         if (hash != null && !hash.isEmpty()) {
             if (exactHashes.contains(hash)) {
@@ -33,7 +33,7 @@ public class DatasetDeduplicator implements DataDeduplicator {
             }
         }
 
-        // 2. Near-duplicate check using character 5-gram shingle fingerprinting
+        // 2. Near-duplicate check using MinHash 5-gram shingle fingerprinting for long documents (>= 150 chars)
         if (nearDuplicateEnabled) {
             String text = sample.toFullText();
             long fp = computeShingleFingerprint(text);
@@ -60,15 +60,26 @@ public class DatasetDeduplicator implements DataDeduplicator {
     }
 
     private long computeShingleFingerprint(String text) {
-        if (text == null || text.length() < 10) return 0L;
-        // Compute simple 64-bit rolling 5-gram shingle fingerprint
-        long hash = 1125899906842597L; // Prime multiplier
+        if (text == null || text.length() < 150) return 0L;
+        // Compute MinHash fingerprint over character 5-grams
         int k = 5;
-        for (int i = 0; i <= text.length() - k; i += 3) {
+        long minHash = Long.MAX_VALUE;
+        long maxHash = Long.MIN_VALUE;
+        for (int i = 0; i <= text.length() - k; i += 2) {
             String gram = text.substring(i, i + k);
-            hash = 31 * hash + gram.hashCode();
+            long h = mixHash(gram.hashCode());
+            if (h < minHash) minHash = h;
+            if (h > maxHash) maxHash = h;
         }
-        return hash;
+        return minHash != Long.MAX_VALUE ? (minHash ^ maxHash) : 0L;
+    }
+
+    private static long mixHash(int code) {
+        long h = code & 0xFFFFFFFFL;
+        h = (h ^ (h >>> 16)) * 0x45d9f3bL;
+        h = (h ^ (h >>> 16)) * 0x45d9f3bL;
+        h = (h ^ (h >>> 16));
+        return h;
     }
 
     @Override
