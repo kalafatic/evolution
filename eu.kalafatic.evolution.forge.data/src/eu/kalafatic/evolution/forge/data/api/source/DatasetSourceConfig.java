@@ -10,6 +10,8 @@ public class DatasetSourceConfig {
     private long maxTokens = 0; // 0 = unlimited
     private long maxSamples = 0; // 0 = unlimited
     private boolean streaming = true;
+    private String runId;
+    private String origin = "REQUEST";
 
     public DatasetSourceConfig() {}
 
@@ -44,4 +46,10 @@ public class DatasetSourceConfig {
 
     public boolean isStreaming() { return streaming; }
     public void setStreaming(boolean streaming) { this.streaming = streaming; }
+
+    public String getRunId() { return runId; }
+    public void setRunId(String runId) { this.runId = runId; }
+
+    public String getOrigin() { return origin; }
+    public void setOrigin(String origin) { this.origin = origin; }
 }

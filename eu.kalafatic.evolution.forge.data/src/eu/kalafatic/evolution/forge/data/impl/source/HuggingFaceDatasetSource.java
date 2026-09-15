@@ -80,20 +80,31 @@ public class HuggingFaceDatasetSource implements DatasetSource {
             repo = "Salesforce/wikitext";
         }
 
+        String runId = config != null ? config.getRunId() : null;
+        String runTag = runId != null && !runId.trim().isEmpty() ? runId : "UNKNOWN";
+
         if (repo.startsWith("http://") || repo.startsWith("https://")) {
             ResolvedSource res = new ResolvedSource("HUGGING_FACE", repo, requestedSplit, requestedSplit, "url", "main", repo, "raw", 0L, true, true, null);
-            res.logPreflight();
+            res.logPreflight(runId);
             return res;
         }
 
         try {
             String splitsUrl = "https://datasets-server.huggingface.co/splits?dataset=" + repo;
+            System.out.printf("[HF-ACQ][run=%s][HTTP]\nrepository=%s\nconfig=%s\nsplit=%s\nrevision=%s\noffset=%d\nlimit=%d\n",
+                    runTag, repo, requestedCfg != null ? requestedCfg : "default", requestedSplit, "main", 0, 100);
+
+            long httpStartMs = System.currentTimeMillis();
             DownloadRequest req = new DownloadRequest(splitsUrl);
             DownloadResult result = downloader.download(req);
+            long httpDurationMs = System.currentTimeMillis() - httpStartMs;
+
+            System.out.printf("[HF-ACQ][run=%s][HTTP-RESULT]\noffset=%d\nrequestedRows=%d\nreceivedRows=%d\nhttpStatus=%d\nresponseBytes=%d\ndurationMs=%d\n",
+                    runTag, 0, 100, 0, result.getStatusCode(), result.getDownloadedBytes(), httpDurationMs);
 
             if (!result.isSuccess()) {
                 ResolvedSource res = new ResolvedSource("HUGGING_FACE", repo, requestedSplit, requestedSplit, requestedCfg, "main", splitsUrl, "json", 0L, false, false, "HTTP " + result.getStatusCode() + ": " + result.getStatusMessage());
-                res.logPreflight();
+                res.logPreflight(runId);
                 return res;
             }
 
@@ -101,7 +112,7 @@ public class HuggingFaceDatasetSource implements DatasetSource {
             if (root.has("error")) {
                 String err = root.getString("error");
                 ResolvedSource res = new ResolvedSource("HUGGING_FACE", repo, requestedSplit, requestedSplit, requestedCfg, "main", splitsUrl, "json", 0L, false, false, err);
-                res.logPreflight();
+                res.logPreflight(runId);
                 return res;
             }
 
@@ -149,17 +160,17 @@ public class HuggingFaceDatasetSource implements DatasetSource {
             if (!splitFound) {
                 String reason = !configFound ? ("Config not found: " + requestedCfg) : ("Split not found in repository: " + requestedSplit);
                 ResolvedSource res = new ResolvedSource("HUGGING_FACE", repo, requestedSplit, requestedSplit, matchingCfg != null ? matchingCfg : requestedCfg, "main", splitsUrl, "json", 0L, false, false, reason);
-                res.logPreflight();
+                res.logPreflight(runId);
                 return res;
             }
 
             ResolvedSource res = new ResolvedSource("HUGGING_FACE", repo, requestedSplit, requestedSplit, this.resolvedConfig != null ? this.resolvedConfig : "default", "main", "https://datasets-server.huggingface.co/rows", "application/json", estimatedSize, true, true, null);
-            res.logPreflight();
+            res.logPreflight(runId);
             return res;
 
         } catch (Exception ex) {
             ResolvedSource res = new ResolvedSource("HUGGING_FACE", repo, requestedSplit, requestedSplit, requestedCfg, "main", "https://datasets-server.huggingface.co/splits", "json", 0L, false, false, ex.getMessage());
-            res.logPreflight();
+            res.logPreflight(runId);
             return res;
         }
     }
@@ -251,22 +262,39 @@ public class HuggingFaceDatasetSource implements DatasetSource {
             targetUrl = "https://datasets-server.huggingface.co/rows?dataset=" + repo + "&config=" + cfg + "&split=" + split + "&offset=" + currentOffset + "&length=100";
         }
 
+        String runId = config != null ? config.getRunId() : null;
+        String runTag = runId != null && !runId.trim().isEmpty() ? runId : "UNKNOWN";
+        String rev = config != null && config.getRevision() != null ? config.getRevision() : "main";
+
+        int requestedLength = 100;
+        System.out.printf("[HF-ACQ][run=%s][HTTP]\nrepository=%s\nconfig=%s\nsplit=%s\nrevision=%s\noffset=%d\nlimit=%d\n",
+                runTag, repo, cfg, split, rev, currentOffset, requestedLength);
+
+        long httpStartMs = System.currentTimeMillis();
         DownloadRequest req = new DownloadRequest(targetUrl);
         DownloadResult result;
         try {
             result = downloader.download(req);
         } catch (IOException e) {
+            long httpDurationMs = System.currentTimeMillis() - httpStartMs;
+            System.out.printf("[HF-ACQ][run=%s][HTTP-RESULT]\noffset=%d\nrequestedRows=%d\nreceivedRows=%d\nhttpStatus=%d\nresponseBytes=%d\ndurationMs=%d\n",
+                    runTag, currentOffset, requestedLength, 0, 500, 0, httpDurationMs);
             lastError = e.getMessage();
             endOfStream = true;
             return;
         }
+        long httpDurationMs = System.currentTimeMillis() - httpStartMs;
 
         String body = result.getContentText();
         long chunkBodyBytes = result.getDownloadedBytes() > 0 ? result.getDownloadedBytes() : body.getBytes(StandardCharsets.UTF_8).length;
         totalRawBytesDownloaded += chunkBodyBytes;
 
+        int currentPage = (int) (currentOffset / requestedLength);
+        long pageOffset = currentOffset;
+
         if (targetUrl.contains("raw.githubusercontent.com") || targetUrl.endsWith(".txt") || targetUrl.endsWith(".raw")) {
             detectedSchemaInfo = "text: string (raw lines)";
+            int count = 0;
             try (BufferedReader reader = new BufferedReader(new StringReader(body))) {
                 String line;
                 long skipped = 0;
@@ -274,8 +302,7 @@ public class HuggingFaceDatasetSource implements DatasetSource {
                     skipped++;
                 }
 
-                int count = 0;
-                while ((line = reader.readLine()) != null && count < 100) {
+                while ((line = reader.readLine()) != null && count < requestedLength) {
                     totalRowsFetched++;
                     String trimmed = line.trim();
                     if (!trimmed.isEmpty() && !trimmed.startsWith("=") && trimmed.length() > 5) {
@@ -292,12 +319,23 @@ public class HuggingFaceDatasetSource implements DatasetSource {
                     endOfStream = true;
                 }
             }
+            System.out.printf("[HF-ACQ][run=%s][HTTP-RESULT]\noffset=%d\nrequestedRows=%d\nreceivedRows=%d\nhttpStatus=%d\nresponseBytes=%d\ndurationMs=%d\n",
+                    runTag, pageOffset, requestedLength, count, result.getStatusCode(), chunkBodyBytes, httpDurationMs);
+
+            boolean continuation = count > 0 && !endOfStream;
+            String reason = continuation ? "CONTINUE" : (count == 0 ? "NO_MORE_ROWS" : "END_OF_DATASET");
+            System.out.printf("[HF-ACQ][run=%s][PAGE]\npage=%d\noffset=%d\nrequestedRows=%d\nreceivedRows=%d\nnextOffset=%d\ncontinuation=%s\nreason=%s\n",
+                    runTag, currentPage, pageOffset, requestedLength, count, currentOffset, continuation ? "YES" : "NO", reason);
         } else {
             try {
                 JSONObject root = new JSONObject(body);
                 if (root.has("error")) {
                     lastError = root.getString("error");
                     endOfStream = true;
+                    System.out.printf("[HF-ACQ][run=%s][HTTP-RESULT]\noffset=%d\nrequestedRows=%d\nreceivedRows=%d\nhttpStatus=%d\nresponseBytes=%d\ndurationMs=%d\n",
+                            runTag, pageOffset, requestedLength, 0, result.getStatusCode(), chunkBodyBytes, httpDurationMs);
+                    System.out.printf("[HF-ACQ][run=%s][PAGE]\npage=%d\noffset=%d\nrequestedRows=%d\nreceivedRows=%d\nnextOffset=%d\ncontinuation=NO\nreason=SOURCE_FAILURE\n",
+                            runTag, currentPage, pageOffset, requestedLength, 0, currentOffset);
                     return;
                 }
                 if (root.has("rows")) {
@@ -307,23 +345,44 @@ public class HuggingFaceDatasetSource implements DatasetSource {
                     int rejectedInChunk = 0;
                     long chunkExtractedBytes = 0;
 
+                    System.out.printf("[HF-ACQ][run=%s][HTTP-RESULT]\noffset=%d\nrequestedRows=%d\nreceivedRows=%d\nhttpStatus=%d\nresponseBytes=%d\ndurationMs=%d\n",
+                            runTag, pageOffset, requestedLength, fetchedRows, result.getStatusCode(), chunkBodyBytes, httpDurationMs);
+
                     for (int i = 0; i < rows.length(); i++) {
                         totalRowsFetched++;
+                        long globalRowIndex = totalRowsFetched;
                         JSONObject rowObj = rows.getJSONObject(i).optJSONObject("row");
+
+                        boolean isSampledRow = (globalRowIndex <= 5 || globalRowIndex % 100 == 0);
+
                         if (rowObj != null) {
                             NormalizedSample sample = extractSampleFromRow(rowObj);
                             if (sample != null) {
                                 currentChunk.add(sample);
                                 extractedInChunk++;
                                 totalSamplesExtracted++;
-                                chunkExtractedBytes += sample.toFullText().getBytes(StandardCharsets.UTF_8).length;
+                                byte[] fullTextBytes = sample.toFullText().getBytes(StandardCharsets.UTF_8);
+                                chunkExtractedBytes += fullTextBytes.length;
+
+                                if (isSampledRow) {
+                                    System.out.printf("[HF-ACQ][run=%s][ROW]\npage=%d\nrowIndex=%d\nglobalRowIndex=%d\nfields=%s\ntextField=%s\nrawTextLength=%d\nrawTextBytes=%d\ntextPresent=%b\n",
+                                            runTag, currentPage, i, globalRowIndex, rowObj.keySet(), detectedSchemaInfo, sample.toFullText().length(), fullTextBytes.length, !sample.toFullText().isEmpty());
+                                }
                             } else {
                                 rejectedInChunk++;
                                 totalExtractionRejections++;
+                                if (isSampledRow) {
+                                    System.out.printf("[HF-ACQ][run=%s][ROW]\npage=%d\nrowIndex=%d\nglobalRowIndex=%d\nfields=%s\ntextField=NONE\nrawTextLength=0\nrawTextBytes=0\ntextPresent=false\n",
+                                            runTag, currentPage, i, globalRowIndex, rowObj.keySet());
+                                }
                             }
                         } else {
                             rejectedInChunk++;
                             totalExtractionRejections++;
+                            if (isSampledRow) {
+                                System.out.printf("[HF-ACQ][run=%s][ROW]\npage=%d\nrowIndex=%d\nglobalRowIndex=%d\nfields=[]\ntextField=NONE\nrawTextLength=0\nrawTextBytes=0\ntextPresent=false\n",
+                                        runTag, currentPage, i, globalRowIndex);
+                            }
                         }
                     }
 
@@ -332,6 +391,12 @@ public class HuggingFaceDatasetSource implements DatasetSource {
 
                     long currentOffsetCopy = currentOffset;
                     currentOffset += rows.length();
+
+                    boolean continuation = fetchedRows > 0 && !endOfStream;
+                    String reason = continuation ? "CONTINUE" : (fetchedRows == 0 ? "NO_MORE_ROWS" : "END_OF_DATASET");
+
+                    System.out.printf("[HF-ACQ][run=%s][PAGE]\npage=%d\noffset=%d\nrequestedRows=%d\nreceivedRows=%d\nnextOffset=%d\ncontinuation=%s\nreason=%s\n",
+                            runTag, currentPage, pageOffset, requestedLength, fetchedRows, currentOffset, continuation ? "YES" : "NO", reason);
 
                     System.out.printf("[HF-TRACE] repository=%s config=%s split=%s offset=%d fetchedRows=%d extractedSamples=%d acceptedSamples=%d rejectedSamples=%d rawBytes=%d serializedBytes=%d writtenBytes=%d usableBytes=%d totalSamplesRead=%d totalAcceptedSamples=%d totalUsableBytes=%d\n",
                             repo, cfg, split, currentOffsetCopy, fetchedRows, extractedInChunk,
@@ -344,10 +409,16 @@ public class HuggingFaceDatasetSource implements DatasetSource {
                     }
                 } else {
                     endOfStream = true;
+                    System.out.printf("[HF-ACQ][run=%s][HTTP-RESULT]\noffset=%d\nrequestedRows=%d\nreceivedRows=%d\nhttpStatus=%d\nresponseBytes=%d\ndurationMs=%d\n",
+                            runTag, pageOffset, requestedLength, 0, result.getStatusCode(), chunkBodyBytes, httpDurationMs);
+                    System.out.printf("[HF-ACQ][run=%s][PAGE]\npage=%d\noffset=%d\nrequestedRows=%d\nreceivedRows=%d\nnextOffset=%d\ncontinuation=NO\nreason=NO_MORE_ROWS\n",
+                            runTag, currentPage, pageOffset, requestedLength, 0, currentOffset);
                 }
             } catch (Exception e) {
                 lastError = e.getMessage();
                 endOfStream = true;
+                System.out.printf("[HF-ACQ][run=%s][PAGE]\npage=%d\noffset=%d\nrequestedRows=%d\nreceivedRows=%d\nnextOffset=%d\ncontinuation=NO\nreason=SOURCE_FAILURE\n",
+                        runTag, currentPage, pageOffset, requestedLength, 0, currentOffset);
             }
         }
     }

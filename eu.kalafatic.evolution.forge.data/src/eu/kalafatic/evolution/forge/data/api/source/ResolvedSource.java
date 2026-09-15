@@ -46,7 +46,12 @@ public class ResolvedSource {
     public String getFailureReason() { return failureReason; }
 
     public void logPreflight() {
-        System.out.printf("[ACQ-PREFLIGHT]\n  provider=%s\n  repository=%s\n  requestedSplit=%s\n  resolvedSplit=%s\n  configuration=%s\n  revision=%s\n  accessible=%b\n  estimatedSize=%d\n  downloadMethod=%s\n  failureReason=%s\n",
-                provider, repository, requestedSplit, resolvedSplit, configuration, revision, accessible, estimatedSize, downloadLocation, failureReason != null ? failureReason : "none");
+        logPreflight(null);
+    }
+
+    public void logPreflight(String runId) {
+        String runTag = runId != null && !runId.trim().isEmpty() ? "[run=" + runId + "]" : "";
+        System.out.printf("[HF-ACQ]%s[PREFLIGHT]\nsource=%s\naccessible=%b\nestimatedSize=%d\ndownloadMethod=%s\nfailureReason=%s\n",
+                runTag, repository, accessible, estimatedSize, downloadLocation, failureReason != null ? failureReason : "none");
     }
 }
