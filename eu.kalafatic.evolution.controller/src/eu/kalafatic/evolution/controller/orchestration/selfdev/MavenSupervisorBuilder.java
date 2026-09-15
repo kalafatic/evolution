@@ -28,7 +28,9 @@ public class MavenSupervisorBuilder extends AbstractProjectBuilder implements Su
 
         File logFile = getLogFile(context, "supervisor_build.log");
         List<String> goals = Arrays.asList("clean", "package");
-        List<String> args = Arrays.asList("-DskipTests");
+        File wsBuildDir = context.getBuildDirectory();
+        File moduleTarget = new File(wsBuildDir, supervisorModuleDir.getName() + "/target");
+        List<String> args = Arrays.asList("-DskipTests", "-Dproject.build.directory=" + moduleTarget.getAbsolutePath());
 
         TaskResult buildResult = mavenExecutor.executeBuild(supervisorModuleDir, goals, args, logFile, 15);
         if (!buildResult.isSuccess()) {
@@ -56,6 +58,17 @@ public class MavenSupervisorBuilder extends AbstractProjectBuilder implements Su
         if (context == null) return null;
 
         File supervisorModuleDir = context.getSupervisorDirectory();
+        File buildDir = context.getBuildDirectory();
+        if (buildDir != null && buildDir.exists()) {
+            File wsTargetDir = new File(buildDir, (supervisorModuleDir != null ? supervisorModuleDir.getName() : "eu.kalafatic.evolution.supervisor") + "/target");
+            if (wsTargetDir.exists()) {
+                File[] jars = wsTargetDir.listFiles((dir, name) -> name.endsWith(".jar") && !name.endsWith("-sources.jar"));
+                if (jars != null && jars.length > 0) {
+                    return new BuildArtifact(ArtifactType.SUPERVISOR, jars[0], context.getSourceRevision(), null, null);
+                }
+            }
+        }
+
         File targetDir = supervisorModuleDir != null ? new File(supervisorModuleDir, "target") : null;
         if (targetDir != null && targetDir.exists()) {
             File[] jars = targetDir.listFiles((dir, name) -> name.endsWith(".jar") && !name.endsWith("-sources.jar"));

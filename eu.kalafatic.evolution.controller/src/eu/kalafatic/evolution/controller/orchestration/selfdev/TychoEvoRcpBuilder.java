@@ -84,6 +84,9 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
         List<String> goals = Arrays.asList("clean", "verify");
         List<String> args = new ArrayList<>();
         args.add(platform.getProfile());
+        File wsBuildDir = context.getBuildDirectory();
+        File moduleTarget = new File(wsBuildDir, "evo-rcp/target");
+        args.add("-Dproject.build.directory=" + moduleTarget.getAbsolutePath());
 
         if (isSkipTests()) {
             args.add("-DskipTests");
@@ -165,6 +168,10 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
         List<String> goals = Arrays.asList("clean", "verify");
         List<String> args = new ArrayList<>();
         args.add(platform.getProfile());
+        File wsBuildDir = context.getBuildDirectory();
+        File moduleTarget = new File(wsBuildDir, "evo-rcp/target");
+        args.add("-Dproject.build.directory=" + moduleTarget.getAbsolutePath());
+
         if (isSkipTests()) {
             args.add("-DskipTests");
         }
@@ -258,14 +265,29 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
     public File findExactExportedProduct(File reactorRoot, ProductDefinition prodDef, TargetPlatform platform, SelfDevContext context) throws IOException {
         if (reactorRoot == null || prodDef == null || platform == null) return null;
 
-        File targetProductsDir = new File(reactorRoot, prodDef.getRepositoryModule() + "/target/products");
         List<File> candidates = new ArrayList<>();
 
+        File wsBuildDir = context != null ? context.getBuildDirectory() : null;
+        if (wsBuildDir != null && wsBuildDir.exists()) {
+            File wsProductsDir = new File(wsBuildDir, "evo-rcp/target/products");
+            if (wsProductsDir.exists() && wsProductsDir.isDirectory()) {
+                File[] files = wsProductsDir.listFiles();
+                if (files != null) {
+                    for (File f : files) {
+                        if (isExactMatchingArtifact(f, prodDef, platform) && !candidates.contains(f)) {
+                            candidates.add(f);
+                        }
+                    }
+                }
+            }
+        }
+
+        File targetProductsDir = new File(reactorRoot, prodDef.getRepositoryModule() + "/target/products");
         if (targetProductsDir.exists() && targetProductsDir.isDirectory()) {
             File[] files = targetProductsDir.listFiles();
             if (files != null) {
                 for (File f : files) {
-                    if (isExactMatchingArtifact(f, prodDef, platform)) {
+                    if (isExactMatchingArtifact(f, prodDef, platform) && !candidates.contains(f)) {
                         candidates.add(f);
                     }
                 }
