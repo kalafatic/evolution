@@ -95,12 +95,20 @@ public class ResourceManager {
     // 1. CENTRALIZED PATH RESOLUTION & ACCESSORS
     // =========================================================================
 
+    public Path getEvoGitRepository() {
+        return getPath(EvoPath.EVO_GIT_REPOSITORY);
+    }
+
+    public Path getEvoSourceReactor() {
+        return getPath(EvoPath.EVO_SOURCE_REACTOR);
+    }
+
     public Path getEvoSource() {
-        return getPath(EvoPath.EVO_ROOT);
+        return getPath(EvoPath.EVO_SOURCE_REACTOR);
     }
 
     public Path getEvoReactor() {
-        return getPath(EvoPath.EVO_ROOT);
+        return getPath(EvoPath.EVO_SOURCE_REACTOR);
     }
 
     public Path getEvoBuildOutput() {
@@ -148,9 +156,20 @@ public class ResourceManager {
 
         Path resolvedPath;
         switch (pathType) {
+            case EVO_GIT_REPOSITORY:
             case EVO_ROOT:
                 resolvedPath = evoRoot;
                 break;
+
+            case EVO_SOURCE_REACTOR: {
+                Orchestrator orch = getOrchestrator();
+                if (orch != null && orch.getSupervisorSettings() != null && orch.getSupervisorSettings().getSourcePath() != null) {
+                    resolvedPath = resolvePath(EvoPath.EVO_ROOT, orch.getSupervisorSettings().getSourcePath());
+                } else {
+                    resolvedPath = evoRoot;
+                }
+                break;
+            }
 
             case WORKSPACE:
                 resolvedPath = wsRoot;

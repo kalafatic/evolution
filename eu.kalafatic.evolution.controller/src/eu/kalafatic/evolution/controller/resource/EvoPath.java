@@ -4,6 +4,8 @@ package eu.kalafatic.evolution.controller.resource;
  * Enumeration of semantic path concepts used across the EVO platform.
  */
 public enum EvoPath {
+    EVO_GIT_REPOSITORY,
+    EVO_SOURCE_REACTOR,
     EVO_ROOT,
     WORKSPACE,
     PROJECT_ROOT,

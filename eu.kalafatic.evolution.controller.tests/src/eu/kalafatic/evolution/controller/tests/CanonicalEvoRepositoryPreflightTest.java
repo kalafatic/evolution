@@ -124,6 +124,54 @@ public class CanonicalEvoRepositoryPreflightTest {
     }
 
     @Test
+    public void testRepoWithoutPomPassesPreflightIfSourceReactorConfiguredWithPom() throws IOException {
+        File gitRepo = tempFolder.newFolder("git_only_repo");
+        new File(gitRepo, ".git").mkdirs();
+
+        File sourceReactor = tempFolder.newFolder("source_reactor");
+        Files.writeString(new File(sourceReactor, "pom.xml").toPath(), "<project></project>");
+
+        SelfDevContext context = new SelfDevContext(gitRepo, resourceManager.getOrchestrator());
+        ResolvedSelfDevResources res = new ResolvedSelfDevResources(
+                gitRepo, gitRepo, sourceReactor, new File(context.getBuildDirectory(), "evo-rcp"),
+                context.getBuildDirectory(), context.getExportDirectory(), context.getRuntimeDirectory(),
+                context.getLogDirectory(), context.getSupervisorDirectory(), context.getGenomeDirectory(),
+                "win32", "win32", "x86_64", "evolution", "evo", new File("java"), new File("mvn")
+        );
+        context.setResolvedResources(res);
+
+        SelfDevPreflight preflight = new SelfDevPreflight(resourceManager);
+        SelfDevPreflightResult result = preflight.executePreflight(context, null);
+
+        assertNotNull(result);
+        assertEquals(SelfDevPreflightResult.PreflightStatus.SUCCESS, result.getStatus());
+    }
+
+    @Test
+    public void testInvalidSourceReactorFailsPreflightImmediatelyWithoutSearching() throws IOException {
+        File gitRepo = tempFolder.newFolder("git_repo");
+        new File(gitRepo, ".git").mkdirs();
+
+        File invalidSourceReactor = tempFolder.newFolder("invalid_source_reactor");
+
+        SelfDevContext context = new SelfDevContext(gitRepo, resourceManager.getOrchestrator());
+        ResolvedSelfDevResources res = new ResolvedSelfDevResources(
+                gitRepo, gitRepo, invalidSourceReactor, new File(context.getBuildDirectory(), "evo-rcp"),
+                context.getBuildDirectory(), context.getExportDirectory(), context.getRuntimeDirectory(),
+                context.getLogDirectory(), context.getSupervisorDirectory(), context.getGenomeDirectory(),
+                "win32", "win32", "x86_64", "evolution", "evo", new File("java"), new File("mvn")
+        );
+        context.setResolvedResources(res);
+
+        SelfDevPreflight preflight = new SelfDevPreflight(resourceManager);
+        SelfDevPreflightResult result = preflight.executePreflight(context, null);
+
+        assertNotNull(result);
+        assertEquals(SelfDevPreflightResult.PreflightStatus.BLOCKED, result.getStatus());
+        assertTrue(result.getErrors().stream().anyMatch(e -> e.contains("Configured EVO_SOURCE_REACTOR is invalid: root pom.xml missing")));
+    }
+
+    @Test
     public void testTaskSnapshotPropagation() throws IOException {
         File repo = tempFolder.newFolder("snapshot_propagation_repo");
         new File(repo, ".git").mkdirs();
