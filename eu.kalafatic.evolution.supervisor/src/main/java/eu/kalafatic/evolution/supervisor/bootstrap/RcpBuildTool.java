@@ -85,7 +85,7 @@ public class RcpBuildTool {
     }
 
     private File findArtifact(File workspace) {
-        File wsBuildDir = new File(System.getProperty("user.home"), "workspace/self-dev-run/build");
+        File wsBuildDir = new File(System.getProperty("user.home"), "workspace/runtime/builds");
         File supervisorTarget = new File(wsBuildDir, "eu.kalafatic.evolution.supervisor/target");
         if (supervisorTarget.exists()) {
             File[] jars = supervisorTarget.listFiles((dir, name) -> name.endsWith("-shaded.jar") || (name.endsWith(".jar") && !name.endsWith("-sources.jar")));
@@ -94,11 +94,13 @@ public class RcpBuildTool {
             }
         }
 
-        File localSupervisorTarget = new File(workspace, "eu.kalafatic.evolution.supervisor/target");
-        if (localSupervisorTarget.exists()) {
-            File[] jars = localSupervisorTarget.listFiles((dir, name) -> name.endsWith("-shaded.jar") || (name.endsWith(".jar") && !name.endsWith("-sources.jar")));
-            if (jars != null && jars.length > 0) {
-                return jars[0];
+        if (workspace != null) {
+            File localSupervisorTarget = new File(workspace, "eu.kalafatic.evolution.supervisor/target");
+            if (localSupervisorTarget.exists()) {
+                File[] jars = localSupervisorTarget.listFiles((dir, name) -> name.endsWith("-shaded.jar") || (name.endsWith(".jar") && !name.endsWith("-sources.jar")));
+                if (jars != null && jars.length > 0) {
+                    return jars[0];
+                }
             }
         }
         return null;

@@ -37,12 +37,15 @@ public class ResourceManagerTest {
 
     @Test
     public void testPathResolution() {
+        Path userHome = Paths.get(System.getProperty("user.home")).toAbsolutePath().normalize();
+
         Path evoRoot = resourceManager.getPath(EvoPath.EVO_ROOT);
         assertNotNull("EVO_ROOT path should not be null", evoRoot);
-        assertTrue("EVO_ROOT directory should exist on disk", evoRoot.toFile().exists());
+        assertTrue("EVO_ROOT must reside under user.home/git/", evoRoot.startsWith(userHome.resolve("git")));
 
         Path workspace = resourceManager.getPath(EvoPath.WORKSPACE);
         assertNotNull("WORKSPACE path should not be null", workspace);
+        assertTrue("WORKSPACE must reside under user.home/workspace/", workspace.startsWith(userHome.resolve("workspace")));
 
         Path supervisorSource = resourceManager.getPath(EvoPath.SUPERVISOR_SOURCE);
         assertNotNull("SUPERVISOR_SOURCE path should not be null", supervisorSource);
@@ -53,17 +56,20 @@ public class ResourceManagerTest {
         assertTrue("GENOME should point to genome module", genomeDir.toFile().getName().contains("genome"));
     }
 
-    @Test
-    public void testAbsolutePathResolutionDoesNotPrependRoot() {
+    @Test(expected = IllegalArgumentException.class)
+    public void testOutofBoundsPathFailsFast() {
         File tempFile = new File(System.getProperty("java.io.tmpdir"), "evo_test_abs_path");
-        String absPathStr = tempFile.getAbsolutePath();
+        resourceManager.resolvePath(EvoPath.EVO_ROOT, tempFile.getAbsolutePath());
+    }
 
-        Path resolved = resourceManager.resolvePath(EvoPath.EVO_ROOT, absPathStr);
-        assertEquals("Absolute path resolution must return original normalized absolute path",
-                tempFile.toPath().toAbsolutePath().normalize(), resolved);
+    @Test
+    public void testCanonicalAbsolutePathResolution() {
+        Path userHome = Paths.get(System.getProperty("user.home")).toAbsolutePath().normalize();
+        Path validWorkspaceFile = userHome.resolve("workspace/datasets/sample.txt");
 
-        assertTrue("Resolved path must not contain double nested runtime roots",
-                !resolved.toString().contains("runtime-") || resolved.toString().startsWith("runtime-"));
+        Path resolved = resourceManager.resolvePath(EvoPath.WORKSPACE, validWorkspaceFile.toString());
+        assertEquals("Valid canonical absolute path resolution must return normalized path",
+                validWorkspaceFile.toAbsolutePath().normalize(), resolved);
     }
 
     @Test

@@ -301,37 +301,19 @@ public class LlamaService {
     }
 
     /**
-     * Resolves all target model directories across codebase, workspace, and user.dir.
+     * Resolves all target model directories across canonical workspace and controller roots.
      * @return List of target model directories.
      */
     public static List<File> resolveAllTargetModelDirs() {
         List<File> targetDirs = new ArrayList<>();
-        String codebasePath = ProjectModelManager.getCodebasePath();
-        String userDir = System.getProperty("user.dir");
-        String userHome = System.getProperty("user.home");
+        File workspaceModels = eu.kalafatic.evolution.controller.resource.ResourceManager.getInstance()
+                .getPath(eu.kalafatic.evolution.controller.resource.EvoPath.MODELS)
+                .toFile();
+        targetDirs.add(workspaceModels);
 
-        List<String> candidatePaths = new ArrayList<>();
-        candidatePaths.add(userHome + "/workspace/models");
-        if (codebasePath != null && !codebasePath.isEmpty()) {
-            candidatePaths.add(codebasePath + "/eu.kalafatic.evolution.controller/lib/models");
-            candidatePaths.add(codebasePath + "/lib/models");
-        }
-        if (userDir != null && !userDir.isEmpty()) {
-            candidatePaths.add(userDir + "/eu.kalafatic.evolution.controller/lib/models");
-            candidatePaths.add(userDir + "/../eu.kalafatic.evolution.controller/lib/models");
-            candidatePaths.add(userDir + "/lib/models");
-            candidatePaths.add(userDir + "/eu.kalafatic.evolution.forge.agent.api/lib/models");
-        }
-
-        for (String pathStr : candidatePaths) {
-            File dir = new File(pathStr);
-            if (!targetDirs.contains(dir)) {
-                targetDirs.add(dir);
-            }
-        }
-
-        if (targetDirs.isEmpty()) {
-            targetDirs.add(resolveControllerModelsDir());
+        File controllerModels = resolveControllerModelsDir();
+        if (controllerModels != null && !targetDirs.contains(controllerModels)) {
+            targetDirs.add(controllerModels);
         }
         return targetDirs;
     }
