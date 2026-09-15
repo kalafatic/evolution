@@ -78,23 +78,25 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
             return TaskResult.failure("build_evo_rcp", "SelfDevContext is null", null);
         }
 
-        ResourceManager rm = context.getResourceManager();
-        File sourceRepo = rm.getEvoSource().toFile().getAbsoluteFile();
-        File reactorRoot = discoverReactorRoot(context.getSourceDirectory()).getAbsoluteFile();
+        File sourceRepo = context.getRepositoryRoot().getAbsoluteFile();
+        File sourceReactor = context.getSourceReactorDirectory().getAbsoluteFile();
+        File reactorRoot = context.getPreparedReactorDirectory().getAbsoluteFile();
 
         try {
-            boolean sameDir = reactorRoot.getCanonicalFile().equals(sourceRepo.getCanonicalFile());
+            boolean sameWithRepo = reactorRoot.getCanonicalFile().equals(sourceRepo.getCanonicalFile());
+            boolean sameWithSourceReactor = reactorRoot.getCanonicalFile().equals(sourceReactor.getCanonicalFile());
+
             System.out.println("================================================================================");
-            System.out.println("[TychoEvoRcpBuilder] SOURCE_REPOSITORY: " + sourceRepo.getAbsolutePath());
-            System.out.println("[TychoEvoRcpBuilder] BUILD_WORKSPACE  : " + context.getBuildDirectory().getAbsolutePath());
-            System.out.println("[TychoEvoRcpBuilder] BUILD_REACTOR    : " + reactorRoot.getAbsolutePath());
-            System.out.println("[TychoEvoRcpBuilder] EXPORT_DIRECTORY : " + context.getExportDirectory().getAbsolutePath());
-            System.out.println("[TychoEvoRcpBuilder] SOURCE == BUILD_REACTOR: " + sameDir);
+            System.out.println("[TychoEvoRcpBuilder] EVO_GIT_REPOSITORY : " + sourceRepo.getAbsolutePath());
+            System.out.println("[TychoEvoRcpBuilder] EVO_SOURCE_REACTOR  : " + sourceReactor.getAbsolutePath());
+            System.out.println("[TychoEvoRcpBuilder] BUILD_WORKSPACE     : " + context.getBuildDirectory().getAbsolutePath());
+            System.out.println("[TychoEvoRcpBuilder] SELF_DEV_REACTOR     : " + reactorRoot.getAbsolutePath());
+            System.out.println("[TychoEvoRcpBuilder] EXPORT_DIRECTORY    : " + context.getExportDirectory().getAbsolutePath());
             System.out.println("[TychoEvoRcpBuilder] Maven working directory: " + reactorRoot.getAbsolutePath());
             System.out.println("================================================================================");
 
-            if (sameDir || !reactorRoot.exists() || !reactorRoot.isDirectory() || !new File(reactorRoot, "pom.xml").exists()) {
-                String err = "[TychoEvoRcpBuilder] BUILD REACTOR VALIDATION FAILED\nsourceRepository: " + sourceRepo.getAbsolutePath() + "\nbuildReactor: " + reactorRoot.getAbsolutePath() + "\nReason: build reactor resolves to the Git source repository or is invalid. Build workspace must be distinct from Git repository.";
+            if (sameWithRepo || sameWithSourceReactor || !reactorRoot.exists() || !reactorRoot.isDirectory() || !new File(reactorRoot, "pom.xml").exists()) {
+                String err = "[TychoEvoRcpBuilder] BUILD REACTOR VALIDATION FAILED\nsourceRepository: " + sourceRepo.getAbsolutePath() + "\nsourceReactor: " + sourceReactor.getAbsolutePath() + "\nbuildReactor: " + reactorRoot.getAbsolutePath() + "\nReason: build reactor resolves to canonical Git repo or source reactor, or is invalid. Build reactor must be physically isolated in build workspace.";
                 System.err.println(err);
                 return TaskResult.failure("build_evo_rcp", err, null);
             }
@@ -116,6 +118,15 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
 
         System.out.println("[TychoEvoRcpBuilder] Building Tycho reactor at " + reactorRoot.getAbsolutePath() + " for platform " + platform);
         TaskResult buildResult = mavenExecutor.executeBuild(reactorRoot, goals, args, logFile, 45);
+
+        // Verify source repository safety
+        File sourceTarget = new File(sourceReactor, "target");
+        if (sourceTarget.exists()) {
+            System.out.println("[SOURCE_SAFETY] WARNING: target directory exists in source reactor: " + sourceTarget.getAbsolutePath());
+        } else {
+            System.out.println("[SOURCE_SAFETY] Verified: canonical source reactor remains clean (no target/ created).");
+        }
+
         if (!buildResult.isSuccess()) {
             return new TaskResult.Builder("build_evo_rcp")
                     .status(TaskStatus.FAILED)
@@ -160,27 +171,12 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
             return TaskResult.failure("export_evo_rcp", "SelfDevContext is null", null);
         }
 
-        ResourceManager rm = context.getResourceManager();
-        File sourceRepo = rm.getEvoSource().toFile().getAbsoluteFile();
-        File reactorRoot = discoverReactorRoot(context.getSourceDirectory()).getAbsoluteFile();
-
-        try {
-            boolean sameDir = reactorRoot.getCanonicalFile().equals(sourceRepo.getCanonicalFile());
-            if (sameDir || !reactorRoot.exists() || !reactorRoot.isDirectory() || !new File(reactorRoot, "pom.xml").exists()) {
-                String err = "[TychoEvoRcpBuilder] BUILD REACTOR VALIDATION FAILED\nsourceRepository: " + sourceRepo.getAbsolutePath() + "\nbuildReactor: " + reactorRoot.getAbsolutePath() + "\nReason: build reactor resolves to the Git source repository or is invalid. Build workspace must be distinct from Git repository.";
-                System.err.println(err);
-                return TaskResult.failure("export_evo_rcp", err, null);
-            }
-        } catch (Exception e) {
-            return TaskResult.failure("export_evo_rcp", "Build reactor validation exception: " + e.getMessage(), e);
-        }
-
+        File reactorRoot = context.getPreparedReactorDirectory().getAbsoluteFile();
         ProductDefinition prodDef = discoverTychoProduct(reactorRoot);
         TargetPlatform platform = resolveTargetPlatform(context);
         File logFile = getLogFile(context, "evo_build.log");
 
-        // REQUIREMENT 11: BUILD MUST BUILD ONCE!
-        // First check if a valid build artifact is already available in context or on disk.
+        // First check if a valid build artifact is already available in context or on disk in SELF_DEV_REACTOR.
         BuildArtifact existingArtifact = context.getArtifact(ArtifactType.EVO_RCP);
         if (existingArtifact == null) {
             existingArtifact = getArtifact(context);
@@ -199,28 +195,10 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
                     .build();
         }
 
-        // If no artifact exists, trigger clean verify build once
-        List<String> goals = Arrays.asList("clean", "verify");
-        List<String> args = new ArrayList<>();
-        args.add(platform.getProfile());
-
-        if (isSkipTests()) {
-            args.add("-DskipTests");
-        }
-
-        System.out.println("[TychoEvoRcpBuilder] Executing Tycho product export for " + prodDef.getProductId() + " (" + platform + ")...");
-        TaskResult exportExecResult = mavenExecutor.executeBuild(reactorRoot, goals, args, logFile, 45);
-        if (!exportExecResult.isSuccess()) {
-            return new TaskResult.Builder("export_evo_rcp")
-                    .status(TaskStatus.FAILED)
-                    .message("Tycho product export build failed: " + exportExecResult.getMessage())
-                    .error(exportExecResult.getError())
-                    .logFile(logFile)
-                    .diagnostic("reactorRoot", reactorRoot.getAbsolutePath())
-                    .diagnostic("productDefinition", prodDef.toString())
-                    .diagnostic("targetPlatform", platform.toString())
-                    .diagnostic("mavenCommand", exportExecResult.getCommand())
-                    .build();
+        // If no artifact exists, trigger build in SELF_DEV_REACTOR once
+        TaskResult buildRes = build(context);
+        if (!buildRes.isSuccess()) {
+            return buildRes;
         }
 
         File exportedLocation;
@@ -263,7 +241,7 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
     public BuildArtifact getArtifact(SelfDevContext context) {
         if (context == null) return null;
 
-        File reactorRoot = discoverReactorRoot(context.getSourceDirectory());
+        File reactorRoot = context.getPreparedReactorDirectory().getAbsoluteFile();
         ProductDefinition prodDef = discoverTychoProduct(reactorRoot);
         TargetPlatform platform = resolveTargetPlatform(context);
 
@@ -296,45 +274,27 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
     public File findExactExportedProduct(File reactorRoot, ProductDefinition prodDef, TargetPlatform platform, SelfDevContext context) throws IOException {
         if (prodDef == null || platform == null) return null;
 
+        File preparedReactor = context != null ? context.getPreparedReactorDirectory().getAbsoluteFile() : reactorRoot;
+        if (preparedReactor == null || !preparedReactor.exists()) {
+            return null;
+        }
+
+        // Restrict product discovery STRICTLY to current Self-Dev build reactor/output
+        File targetProductsDir = new File(preparedReactor, prodDef.getRepositoryModule() + "/target/products");
+        if (!targetProductsDir.exists() || !targetProductsDir.isDirectory()) {
+            targetProductsDir = new File(preparedReactor, "target/products");
+        }
+
+        if (!targetProductsDir.exists() || !targetProductsDir.isDirectory()) {
+            return null;
+        }
+
         List<File> candidates = new ArrayList<>();
-
-        File wsBuildDir = context != null ? context.getBuildDirectory() : null;
-        if (wsBuildDir != null && wsBuildDir.exists()) {
-            File wsProductsDir = new File(wsBuildDir, "evo-rcp/target/products");
-            if (wsProductsDir.exists() && wsProductsDir.isDirectory()) {
-                File[] files = wsProductsDir.listFiles();
-                if (files != null) {
-                    for (File f : files) {
-                        if (isExactMatchingArtifact(f, prodDef, platform) && !candidates.contains(f)) {
-                            candidates.add(f);
-                        }
-                    }
-                }
-            }
-        }
-
-        File srcDir = context != null ? context.getSourceDirectory() : null;
-        if (srcDir != null && srcDir.exists()) {
-            File targetProductsDir = new File(srcDir, prodDef.getRepositoryModule() + "/target/products");
-            if (targetProductsDir.exists() && targetProductsDir.isDirectory()) {
-                File[] files = targetProductsDir.listFiles();
-                if (files != null) {
-                    for (File f : files) {
-                        if (isExactMatchingArtifact(f, prodDef, platform) && !candidates.contains(f)) {
-                            candidates.add(f);
-                        }
-                    }
-                }
-            }
-        }
-
-        if (context != null && context.getExportDirectory() != null && context.getExportDirectory().exists()) {
-            File[] expFiles = context.getExportDirectory().listFiles();
-            if (expFiles != null) {
-                for (File f : expFiles) {
-                    if (isExactMatchingArtifact(f, prodDef, platform) && !candidates.contains(f)) {
-                        candidates.add(f);
-                    }
+        File[] files = targetProductsDir.listFiles();
+        if (files != null) {
+            for (File f : files) {
+                if (isExactMatchingArtifact(f, prodDef, platform)) {
+                    candidates.add(f);
                 }
             }
         }
@@ -342,7 +302,7 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
         if (candidates.size() == 1) {
             return candidates.get(0);
         } else if (candidates.size() > 1) {
-            throw new IOException("Multiple candidate exported products found matching " + prodDef.getProductId() + " (" + platform + "): " + candidates + ". Rejecting ambiguous selection.");
+            throw new IOException("Multiple candidate exported products found under " + targetProductsDir.getAbsolutePath() + " matching " + prodDef.getProductId() + " (" + platform + "): " + candidates + ". Rejecting ambiguous selection.");
         }
 
         return null;

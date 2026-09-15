@@ -252,12 +252,12 @@ public class TychoEvoRcpBuilderTest {
         TaskResult buildRes = builder.build(context);
         assertNotNull(buildRes);
         assertFalse(buildRes.isSuccess());
-        assertTrue(buildRes.getMessage().contains("pom.xml not found"));
+        assertTrue(buildRes.getMessage().contains("BUILD REACTOR VALIDATION FAILED") || buildRes.getMessage().contains("pom.xml not found"));
 
         TaskResult exportRes = builder.exportProduct(context);
         assertNotNull(exportRes);
         assertFalse(exportRes.isSuccess());
-        assertTrue(exportRes.getMessage().contains("pom.xml not found"));
+        assertTrue(exportRes.getMessage().contains("BUILD REACTOR VALIDATION FAILED") || exportRes.getMessage().contains("pom.xml not found"));
 
         BuildArtifact artifact = builder.getArtifact(context);
         assertNull(artifact);

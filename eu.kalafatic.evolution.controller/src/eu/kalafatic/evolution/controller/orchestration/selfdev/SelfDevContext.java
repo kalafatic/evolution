@@ -18,9 +18,10 @@ public class SelfDevContext {
     private final String runId;
     private final ResourceManager resourceManager;
     private final File repositoryRoot;
+    private final File sourceReactorDirectory;
     private final File projectRoot;
-    private final File sourceDirectory;
     private final File buildDirectory;
+    private final File preparedReactorDirectory;
     private final File exportDirectory;
     private final File runtimeDirectory;
     private final File logDirectory;
@@ -54,7 +55,8 @@ public class SelfDevContext {
         }
         this.orchestrator = this.resourceManager.getOrchestrator();
 
-        this.repositoryRoot = this.resourceManager.getPath(EvoPath.EVO_ROOT).toFile().getAbsoluteFile().toPath().normalize().toFile();
+        this.repositoryRoot = this.resourceManager.getPath(EvoPath.EVO_GIT_REPOSITORY).toFile().getAbsoluteFile().toPath().normalize().toFile();
+        this.sourceReactorDirectory = this.resourceManager.getPath(EvoPath.EVO_SOURCE_REACTOR).toFile().getAbsoluteFile().toPath().normalize().toFile();
 
         this.projectRoot = projectRoot != null ? projectRoot.getAbsoluteFile().toPath().normalize().toFile() : this.repositoryRoot;
 
@@ -70,8 +72,8 @@ public class SelfDevContext {
             runDir = wsRoot.toPath().resolve("self-dev-run/run_" + new SimpleDateFormat("ddMMyy").format(new Date())).toAbsolutePath().normalize().toFile();
         }
 
-        this.sourceDirectory = resolvePath(runDir, "source");
         this.buildDirectory = resolvePath(runDir, "build");
+        this.preparedReactorDirectory = resolvePath(this.buildDirectory, "evo-rcp");
         this.exportDirectory = resolvePath(runDir, "export");
         this.runtimeDirectory = resolvePath(runDir, "runtime");
         this.logDirectory = wsRoot.toPath().resolve("self-dev-run/logs").toAbsolutePath().normalize().toFile();
@@ -195,9 +197,10 @@ public class SelfDevContext {
         System.out.println("--------------------------------------------------------------------------------");
         System.out.println("Run ID          : " + runId);
         System.out.println("Repository Root : " + repositoryRoot.getAbsolutePath() + " (exists: " + repositoryRoot.exists() + ")");
+        System.out.println("Source Reactor  : " + sourceReactorDirectory.getAbsolutePath() + " (exists: " + sourceReactorDirectory.exists() + ")");
         System.out.println("Project Root    : " + projectRoot.getAbsolutePath() + " (exists: " + projectRoot.exists() + ")");
-        System.out.println("Source Directory: " + sourceDirectory.getAbsolutePath() + " (exists: " + sourceDirectory.exists() + ")");
         System.out.println("Build Directory : " + buildDirectory.getAbsolutePath() + " (exists: " + buildDirectory.exists() + ")");
+        System.out.println("Prepared Reactor: " + preparedReactorDirectory.getAbsolutePath() + " (exists: " + preparedReactorDirectory.exists() + ")");
         System.out.println("Export Directory: " + exportDirectory.getAbsolutePath() + " (exists: " + exportDirectory.exists() + ")");
         System.out.println("Runtime Dir     : " + runtimeDirectory.getAbsolutePath() + " (exists: " + runtimeDirectory.exists() + ")");
         System.out.println("Log Directory   : " + logDirectory.getAbsolutePath() + " (exists: " + logDirectory.exists() + ")");
@@ -210,8 +213,8 @@ public class SelfDevContext {
     }
 
     private void ensureDirectories() {
-        createDirIfNeeded(sourceDirectory);
         createDirIfNeeded(buildDirectory);
+        createDirIfNeeded(preparedReactorDirectory);
         createDirIfNeeded(exportDirectory);
         createDirIfNeeded(runtimeDirectory);
         createDirIfNeeded(logDirectory);
@@ -279,8 +282,20 @@ public class SelfDevContext {
         this.launcher = launcher;
     }
 
+    public File getSourceReactorDirectory() {
+        return resolvedResources != null && resolvedResources.getSourceReactorDirectory() != null ? resolvedResources.getSourceReactorDirectory() : sourceReactorDirectory;
+    }
+
     public File getSourceDirectory() {
-        return resolvedResources != null && resolvedResources.getSourceDirectory() != null ? resolvedResources.getSourceDirectory() : sourceDirectory;
+        return getSourceReactorDirectory();
+    }
+
+    public File getPreparedReactorDirectory() {
+        return resolvedResources != null && resolvedResources.getPreparedReactorDirectory() != null ? resolvedResources.getPreparedReactorDirectory() : preparedReactorDirectory;
+    }
+
+    public File getReactorDirectory() {
+        return getPreparedReactorDirectory();
     }
 
     public File getBuildDirectory() {

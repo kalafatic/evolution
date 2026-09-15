@@ -54,20 +54,49 @@ public class SelfDevPreflight {
         List<String> errors = new ArrayList<>();
         List<String> warnings = new ArrayList<>();
 
-        // 1. Initial path resolution & strict source verification
-        File repositoryRoot = (context != null && context.getRepositoryRoot() != null) ? context.getRepositoryRoot().getAbsoluteFile() : resourceManager.getPath(EvoPath.EVO_ROOT).toFile().getAbsoluteFile();
+        // 1. Initial path resolution
+        File repositoryRoot = (context != null && context.getRepositoryRoot() != null) ? context.getRepositoryRoot().getAbsoluteFile() : resourceManager.getEvoGitRepository().toFile().getAbsoluteFile();
+        File sourceReactor = (context != null && context.getSourceReactorDirectory() != null) ? context.getSourceReactorDirectory().getAbsoluteFile() : resourceManager.getEvoSourceReactor().toFile().getAbsoluteFile();
         File projectRoot = (context != null && context.getProjectRoot() != null) ? context.getProjectRoot().getAbsoluteFile() : repositoryRoot;
-        File sourceDirectory = (context != null && context.getSourceDirectory() != null) ? context.getSourceDirectory().getAbsoluteFile() : repositoryRoot;
 
+        File buildDir = (context != null && context.getBuildDirectory() != null) ? context.getBuildDirectory().getAbsoluteFile() : resourceManager.getEvoBuildOutput().toFile().getAbsoluteFile();
+        File preparedReactor = (context != null && context.getPreparedReactorDirectory() != null) ? context.getPreparedReactorDirectory().getAbsoluteFile() : new File(buildDir, "evo-rcp").getAbsoluteFile();
+        File exportDir = (context != null && context.getExportDirectory() != null) ? context.getExportDirectory().getAbsoluteFile() : resourceManager.getEvoExport().toFile().getAbsoluteFile();
+        File runtimeDir = (context != null && context.getRuntimeDirectory() != null) ? context.getRuntimeDirectory().getAbsoluteFile() : resourceManager.getPath(EvoPath.RUNTIME_ROOT).toFile().getAbsoluteFile();
+        File logDir = (context != null && context.getLogDirectory() != null) ? context.getLogDirectory().getAbsoluteFile() : resourceManager.resolvePath("self-dev-run/logs").toFile().getAbsoluteFile();
+        File supervisorDir = (context != null && context.getSupervisorDirectory() != null) ? context.getSupervisorDirectory().getAbsoluteFile() : resourceManager.getSupervisorSource().toFile().getAbsoluteFile();
+        File genomeDir = (context != null && context.getGenomeDirectory() != null) ? context.getGenomeDirectory().getAbsoluteFile() : resourceManager.getGenome().toFile().getAbsoluteFile();
+
+        // Path Logging for every resource
         Log.log("[PATH] resource=EVO_GIT_REPOSITORY configured=" + repositoryRoot.getAbsolutePath() +
                 " resolved=" + repositoryRoot.getAbsolutePath() + " absolute=" + repositoryRoot.isAbsolute() +
                 " exists=" + repositoryRoot.exists() + " directory=" + repositoryRoot.isDirectory() +
                 " gitRepository=" + new File(repositoryRoot, ".git").exists() +
                 " pom=" + new File(repositoryRoot, "pom.xml").exists() + " origin=EMF_CONFIGURATION");
 
+        Log.log("[PATH] resource=EVO_SOURCE_REACTOR configured=" + sourceReactor.getAbsolutePath() +
+                " resolved=" + sourceReactor.getAbsolutePath() + " absolute=" + sourceReactor.isAbsolute() +
+                " exists=" + sourceReactor.exists() + " directory=" + sourceReactor.isDirectory() +
+                " pom=" + new File(sourceReactor, "pom.xml").exists() + " origin=EMF_CONFIGURATION");
+
+        Log.log("[PATH] resource=SELF_DEV_BUILD configured=" + buildDir.getAbsolutePath() +
+                " resolved=" + buildDir.getAbsolutePath() + " absolute=" + buildDir.isAbsolute() +
+                " exists=" + buildDir.exists() + " directory=" + buildDir.isDirectory() +
+                " pom=" + new File(buildDir, "pom.xml").exists() + " origin=SELF_DEV_CONTEXT");
+
+        Log.log("[PATH] resource=SELF_DEV_REACTOR configured=" + preparedReactor.getAbsolutePath() +
+                " resolved=" + preparedReactor.getAbsolutePath() + " absolute=" + preparedReactor.isAbsolute() +
+                " exists=" + preparedReactor.exists() + " directory=" + preparedReactor.isDirectory() +
+                " pom=" + new File(preparedReactor, "pom.xml").exists() + " origin=SELF_DEV_CONTEXT");
+
+        Log.log("[PATH] resource=SELF_DEV_EXPORT configured=" + exportDir.getAbsolutePath() +
+                " resolved=" + exportDir.getAbsolutePath() + " absolute=" + exportDir.isAbsolute() +
+                " exists=" + exportDir.exists() + " directory=" + exportDir.isDirectory() +
+                " pom=" + new File(exportDir, "pom.xml").exists() + " origin=SELF_DEV_CONTEXT");
+
         Log.log("[PATH_DISCOVERY] resource=EVO_GIT_REPOSITORY action=FORBIDDEN reason=canonical_repository_must_be_explicitly_configured");
 
-        // 2. Validate Canonical EVO Repository Integrity (EVO_GIT_REPOSITORY)
+        // 2. Validate Canonical EVO Git Repository Integrity (EVO_GIT_REPOSITORY)
         boolean isRuntimeProduct = repositoryRoot.getAbsolutePath().contains(".product") || repositoryRoot.getAbsolutePath().contains("runtime-eu.kalafatic");
         boolean isGitRepo = repositoryRoot.exists() && repositoryRoot.isDirectory() && new File(repositoryRoot, ".git").exists();
 
@@ -84,22 +113,22 @@ public class SelfDevPreflight {
                     "Runtime Product Directory",
                     "Configure canonical EVO Git repository path"
             ));
-        } else if (!repositoryRoot.exists() || !repositoryRoot.isDirectory()) {
+        } else if (!repositoryRoot.exists() || !repositoryRoot.isDirectory() || !repositoryRoot.isAbsolute()) {
             String err = "Canonical EVO Git repository is invalid. Configured path '" + repositoryRoot.getAbsolutePath() +
-                    "' does not exist or is not a directory. Expected: Directory containing .git and pom.xml. Actual: missing directory. No automatic repository discovery was attempted.";
+                    "' does not exist, is not absolute, or is not a directory. Expected: Absolute directory containing .git. Actual: missing directory. No automatic repository discovery was attempted.";
             Log.log("[SelfDevPreflight][PATH_ERROR] " + err);
             errors.add(err);
             checks.add(new SelfDevPreflightResult.CheckDetail(
                     "EVO_GIT_REPOSITORY", "BLOCKED",
                     "Canonical EVO repository validation",
                     repositoryRoot.getAbsolutePath(),
-                    "Existing directory containing .git",
-                    "Directory Missing",
+                    "Existing absolute directory containing .git",
+                    "Directory Missing or Not Absolute",
                     "Configure valid canonical EVO repository location"
             ));
         } else if (!isGitRepo) {
             String err = "Canonical EVO Git repository is invalid. Configured path '" + repositoryRoot.getAbsolutePath() +
-                    "' is not a Git repository (missing .git). Expected: Directory containing .git and pom.xml. Actual: .git missing. No automatic repository discovery was attempted.";
+                    "' is not a Git repository (missing .git). Expected: Directory containing .git. Actual: .git missing. No automatic repository discovery was attempted.";
             Log.log("[SelfDevPreflight][PATH_ERROR] " + err);
             errors.add(err);
             checks.add(new SelfDevPreflightResult.CheckDetail(
@@ -121,82 +150,81 @@ public class SelfDevPreflight {
             ));
         }
 
-        // 3. Validate Maven Reactor Source Root Integrity (EVO_SOURCE_ROOT / MAVEN_REACTOR)
-        File reactorDir = (new File(sourceDirectory, "pom.xml").exists()) ? sourceDirectory : repositoryRoot;
-        boolean hasPom = reactorDir.exists() && reactorDir.isDirectory() && new File(reactorDir, "pom.xml").exists();
+        // 3. Validate Maven Source Reactor Integrity (EVO_SOURCE_REACTOR)
+        boolean sourceReactorHasPom = sourceReactor.exists() && sourceReactor.isDirectory() && sourceReactor.isAbsolute() && new File(sourceReactor, "pom.xml").exists();
 
-        if (!hasPom) {
-            String err = "Canonical EVO source reactor is invalid. Configured path '" + reactorDir.getAbsolutePath() +
-                    "' is missing root pom.xml. Expected: Directory containing pom.xml. Actual: pom.xml missing. No automatic repository discovery was attempted.";
+        if (!sourceReactorHasPom) {
+            String err = "Configured EVO_SOURCE_REACTOR is invalid: root pom.xml missing. Configured path: '" + sourceReactor.getAbsolutePath() + "'";
             Log.log("[SelfDevPreflight][PATH_ERROR] " + err);
             errors.add(err);
             checks.add(new SelfDevPreflightResult.CheckDetail(
-                    "EVO_SOURCE_ROOT", "BLOCKED",
+                    "EVO_SOURCE_REACTOR", "BLOCKED",
                     "Maven reactor source validation",
-                    reactorDir.getAbsolutePath(),
+                    sourceReactor.getAbsolutePath(),
                     "Directory containing root pom.xml",
-                    "Missing pom.xml",
+                    "Missing pom.xml or invalid directory",
                     "Provide valid Maven reactor source root"
             ));
         } else {
             checks.add(new SelfDevPreflightResult.CheckDetail(
-                    "EVO_SOURCE_ROOT", "OK",
+                    "EVO_SOURCE_REACTOR", "OK",
                     "Maven reactor source validation",
-                    reactorDir.getAbsolutePath(),
+                    sourceReactor.getAbsolutePath(),
                     "Directory containing pom.xml",
                     "VERIFIED",
                     "None"
             ));
         }
 
-        File resolvedSource = reactorDir;
-
-        // 4. Output Directories & Platform
-        File buildDir = (context != null && context.getBuildDirectory() != null) ? context.getBuildDirectory() : resourceManager.getEvoBuildOutput().toFile();
-        File exportDir = (context != null && context.getExportDirectory() != null) ? context.getExportDirectory() : resourceManager.getEvoExport().toFile();
-        File runtimeDir = (context != null && context.getRuntimeDirectory() != null) ? context.getRuntimeDirectory() : resourceManager.getPath(EvoPath.RUNTIME_ROOT).toFile();
-        File logDir = (context != null && context.getLogDirectory() != null) ? context.getLogDirectory() : resourceManager.resolvePath("self-dev-run/logs").toFile();
-        File supervisorDir = (context != null && context.getSupervisorDirectory() != null) ? context.getSupervisorDirectory() : resourceManager.getSupervisorSource().toFile();
-        File genomeDir = (context != null && context.getGenomeDirectory() != null) ? context.getGenomeDirectory() : resourceManager.getGenome().toFile();
-
-        Log.log("[PATH_DERIVED] resource=BUILD_DIR base=SELF_DEV_ROOT rule=selfDevRoot/build resolved=" + buildDir.getAbsolutePath());
-        Log.log("[PATH_DERIVED] resource=EXPORT_DIR base=SELF_DEV_ROOT rule=selfDevRoot/export resolved=" + exportDir.getAbsolutePath());
-        Log.log("[PATH_DERIVED] resource=RUNTIME_DIR base=SELF_DEV_ROOT rule=selfDevRoot/runtime resolved=" + runtimeDir.getAbsolutePath());
-
-        // Validate Path Invariants: Source Repository != Build Workspace
+        // 4. Validate Path Invariants
         try {
-            boolean srcEqualsBuild = repositoryRoot.getCanonicalFile().equals(buildDir.getCanonicalFile());
-            boolean srcEqualsExport = repositoryRoot.getCanonicalFile().equals(exportDir.getCanonicalFile());
-            boolean srcEqualsSourceDir = repositoryRoot.getCanonicalFile().equals(sourceDirectory.getCanonicalFile());
+            File canonRepo = repositoryRoot.getCanonicalFile();
+            File canonSourceReactor = sourceReactor.getCanonicalFile();
+            File canonBuild = buildDir.getCanonicalFile();
+            File canonPreparedReactor = preparedReactor.getCanonicalFile();
+            File canonExport = exportDir.getCanonicalFile();
 
-            Log.log("[SELF-DEV] PATH_INVARIANT: repositoryRoot != buildDirectory : " + (!srcEqualsBuild ? "PASSED" : "FAILED"));
-            Log.log("[SELF-DEV] PATH_INVARIANT: repositoryRoot != exportDirectory : " + (!srcEqualsExport ? "PASSED" : "FAILED"));
-            Log.log("[SELF-DEV] PATH_INVARIANT: repositoryRoot != sourceDirectory : " + (!srcEqualsSourceDir ? "PASSED" : "FAILED"));
+            boolean repoNotBuild = !canonRepo.equals(canonBuild);
+            boolean repoNotPrepReactor = !canonRepo.equals(canonPreparedReactor);
+            boolean sourceReactorNotPrepReactor = !canonSourceReactor.equals(canonPreparedReactor);
+            boolean prepReactorInBuild = canonPreparedReactor.toPath().startsWith(canonBuild.toPath());
+            boolean exportNotPrepReactor = !canonExport.equals(canonPreparedReactor);
+            boolean exportNotRepo = !canonExport.equals(canonRepo);
 
-            if (srcEqualsBuild || srcEqualsSourceDir) {
-                String err = "PREFLIGHT FAILED: EVO_SOURCE_REPOSITORY (" + repositoryRoot.getAbsolutePath() + ") and SELF_DEV_BUILD (" + buildDir.getAbsolutePath() + ") or SELF_DEV_SOURCE (" + sourceDirectory.getAbsolutePath() + ") resolve to the same directory. Source Git repository must be distinct from build workspace.";
-                Log.log("[SelfDevPreflight][PATH_ERROR] " + err);
+            Log.log("[PATH_INVARIANT] EVO_GIT_REPOSITORY != SELF_DEV_BUILD : " + (repoNotBuild ? "PASS" : "FAIL"));
+            Log.log("[PATH_INVARIANT] EVO_GIT_REPOSITORY != SELF_DEV_REACTOR : " + (repoNotPrepReactor ? "PASS" : "FAIL"));
+            Log.log("[PATH_INVARIANT] EVO_SOURCE_REACTOR != SELF_DEV_REACTOR : " + (sourceReactorNotPrepReactor ? "PASS" : "FAIL"));
+            Log.log("[PATH_INVARIANT] SELF_DEV_REACTOR inside SELF_DEV_BUILD : " + (prepReactorInBuild ? "PASS" : "FAIL"));
+            Log.log("[PATH_INVARIANT] SELF_DEV_EXPORT != SELF_DEV_REACTOR : " + (exportNotPrepReactor ? "PASS" : "FAIL"));
+            Log.log("[PATH_INVARIANT] SELF_DEV_EXPORT != EVO_GIT_REPOSITORY : " + (exportNotRepo ? "PASS" : "FAIL"));
+
+            if (!repoNotBuild) {
+                String err = "PATH_INVARIANT FAILED: EVO_GIT_REPOSITORY (" + repositoryRoot.getAbsolutePath() + ") and SELF_DEV_BUILD (" + buildDir.getAbsolutePath() + ") resolve to the same directory.";
                 errors.add(err);
-                checks.add(new SelfDevPreflightResult.CheckDetail(
-                        "PATH_INVARIANT", "BLOCKED",
-                        "Source repository != Build workspace invariant check",
-                        repositoryRoot.getAbsolutePath(),
-                        "Distinct directories for source and build",
-                        "Source and Build Directories Coincide",
-                        "Ensure build workspace resolves under <user-home>/workspace/"
-                ));
-            } else {
-                checks.add(new SelfDevPreflightResult.CheckDetail(
-                        "PATH_INVARIANT", "OK",
-                        "Source repository != Build workspace invariant check",
-                        "Source: " + repositoryRoot.getAbsolutePath() + " | Build: " + buildDir.getAbsolutePath(),
-                        "Distinct directories",
-                        "VERIFIED",
-                        "None"
-                ));
+            }
+            if (!repoNotPrepReactor) {
+                String err = "PATH_INVARIANT FAILED: EVO_GIT_REPOSITORY (" + repositoryRoot.getAbsolutePath() + ") and SELF_DEV_REACTOR (" + preparedReactor.getAbsolutePath() + ") resolve to the same directory.";
+                errors.add(err);
+            }
+            if (!sourceReactorNotPrepReactor) {
+                String err = "PATH_INVARIANT FAILED: EVO_SOURCE_REACTOR (" + sourceReactor.getAbsolutePath() + ") and SELF_DEV_REACTOR (" + preparedReactor.getAbsolutePath() + ") resolve to the same directory.";
+                errors.add(err);
+            }
+            if (!prepReactorInBuild) {
+                String err = "PATH_INVARIANT FAILED: SELF_DEV_REACTOR (" + preparedReactor.getAbsolutePath() + ") is not inside SELF_DEV_BUILD (" + buildDir.getAbsolutePath() + ").";
+                errors.add(err);
+            }
+            if (!exportNotPrepReactor) {
+                String err = "PATH_INVARIANT FAILED: SELF_DEV_EXPORT (" + exportDir.getAbsolutePath() + ") and SELF_DEV_REACTOR (" + preparedReactor.getAbsolutePath() + ") resolve to the same directory.";
+                errors.add(err);
+            }
+            if (!exportNotRepo) {
+                String err = "PATH_INVARIANT FAILED: SELF_DEV_EXPORT (" + exportDir.getAbsolutePath() + ") and EVO_GIT_REPOSITORY (" + repositoryRoot.getAbsolutePath() + ") resolve to the same directory.";
+                errors.add(err);
             }
         } catch (Exception e) {
             Log.log("[SelfDevPreflight] Failed path invariant check: " + e.getMessage());
+            errors.add("Path invariant check exception: " + e.getMessage());
         }
 
         // 5. Test Write Permissions on Output Directories
@@ -219,15 +247,15 @@ public class SelfDevPreflight {
 
         // 7. Executable Validation (Java & Maven)
         File javaExec = validateJavaExecutable(checks, errors, warnings);
-        File mavenExec = validateMavenExecutable(resolvedSource, checks, errors, warnings);
+        File mavenExec = validateMavenExecutable(sourceReactor, checks, errors, warnings);
 
         // 8. Consistency Check across ResourceManager, SelfDevContext, Task Snapshots
         if (context != null && context.getResolvedResources() != null) {
-            File snapshotSource = context.getResolvedResources().getSourceDirectory();
+            File snapshotSource = context.getResolvedResources().getSourceReactorDirectory();
             try {
-                if (snapshotSource != null && !snapshotSource.getCanonicalPath().equals(resolvedSource.getCanonicalPath())) {
-                    String conflict = "PATH_CONFLICT: SelfDevContext snapshot source (" + snapshotSource.getAbsolutePath() + ") differs from canonical source (" + resolvedSource.getAbsolutePath() + ")";
-                    Log.log("[PATH_CONFLICT] resource=EVO_GIT_REPOSITORY canonical=" + resolvedSource.getAbsolutePath() + " other=" + snapshotSource.getAbsolutePath() + " source=SelfDevContext action=BLOCK");
+                if (snapshotSource != null && !snapshotSource.getCanonicalPath().equals(sourceReactor.getCanonicalPath())) {
+                    String conflict = "PATH_CONFLICT: SelfDevContext snapshot source (" + snapshotSource.getAbsolutePath() + ") differs from canonical source (" + sourceReactor.getAbsolutePath() + ")";
+                    Log.log("[PATH_CONFLICT] resource=EVO_SOURCE_REACTOR canonical=" + sourceReactor.getAbsolutePath() + " other=" + snapshotSource.getAbsolutePath() + " source=SelfDevContext action=BLOCK");
                     conflicts.add(conflict);
                     errors.add(conflict);
                 }
@@ -238,7 +266,7 @@ public class SelfDevPreflight {
 
         // 8. Task Graph & Dependencies Preflight
         if (orchestrator != null) {
-            validateTaskGraph(orchestrator, resolvedSource, checks, errors);
+            validateTaskGraph(orchestrator, sourceReactor, checks, errors);
         }
 
         // 9. Synchronize & Propagate Resolved Snapshot if safe
@@ -250,7 +278,7 @@ public class SelfDevPreflight {
         }
 
         ResolvedSelfDevResources snapshot = new ResolvedSelfDevResources(
-                repositoryRoot, projectRoot, resolvedSource, reactorDir,
+                repositoryRoot, projectRoot, sourceReactor, preparedReactor,
                 buildDir, exportDir, runtimeDir, logDir, supervisorDir, genomeDir,
                 targetPlatform.getOs(), targetPlatform.getWs(), targetPlatform.getArch(),
                 resourceManager.getProductDefinition().getProductId(),

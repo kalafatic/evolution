@@ -334,7 +334,7 @@ public class DevelopmentPage extends AEvoPage {
 		sdData.add(new SelfDevRow(8, SelfDevRow.MAVEN_CHECK_SUPERVISOR, mvnPath, "ready", "supervisor"));
 		sdData.add(new SelfDevRow(9, SelfDevRow.GENOME_CHECK, "supervisor.genome", "ready", "evo"));
 		sdData.add(new SelfDevRow(10, SelfDevRow.PERM_CHECK, "supervisor.fs", "ready", "evo"));
-		String evoSourcePath = eu.kalafatic.evolution.controller.resource.ResourceManager.getInstance().getPath(eu.kalafatic.evolution.controller.resource.EvoPath.EVO_ROOT).toString();
+		String evoSourcePath = eu.kalafatic.evolution.controller.resource.ResourceManager.getInstance().getPath(eu.kalafatic.evolution.controller.resource.EvoPath.EVO_GIT_REPOSITORY).toString();
 		sdData.add(new SelfDevRow(11, SelfDevRow.COPY_SOURCE, evoSourcePath, "ready", "evo"));
 		sdData.add(new SelfDevRow(12, SelfDevRow.BUILD_PROJECT_EVO, targetPath, "ready", "evo"));
 		sdData.add(new SelfDevRow(13, SelfDevRow.BUILD_PROJECT_SUPERVISOR, targetPath, "ready", "supervisor"));
@@ -667,7 +667,7 @@ public class DevelopmentPage extends AEvoPage {
 		sb.append("  Remote Git Repository -> Local Git Repository -> Build Workspace -> Supervisor -> EVO RCP\n\n");
 
 		sb.append("CONFIGURED PATHS:\n");
-		sb.append("  Local Git Repository (Source) : ").append(eu.kalafatic.evolution.controller.resource.ResourceManager.getInstance().getPath(eu.kalafatic.evolution.controller.resource.EvoPath.EVO_SOURCE_REPOSITORY)).append("\n");
+		sb.append("  Local Git Repository (Source) : ").append(eu.kalafatic.evolution.controller.resource.ResourceManager.getInstance().getPath(eu.kalafatic.evolution.controller.resource.EvoPath.EVO_GIT_REPOSITORY)).append("\n");
 		sb.append("  Build Workspace (Output)      : ").append(eu.kalafatic.evolution.controller.resource.ResourceManager.getInstance().getPath(eu.kalafatic.evolution.controller.resource.EvoPath.BUILD_ROOT)).append("\n");
 		sb.append("  Export Directory              : ").append(eu.kalafatic.evolution.controller.resource.ResourceManager.getInstance().getPath(eu.kalafatic.evolution.controller.resource.EvoPath.EXPORT_ROOT)).append("\n");
 		sb.append("  Supervisor Source             : ").append(eu.kalafatic.evolution.controller.resource.ResourceManager.getInstance().getPath(eu.kalafatic.evolution.controller.resource.EvoPath.SUPERVISOR_SOURCE)).append("\n\n");
