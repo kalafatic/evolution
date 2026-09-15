@@ -32,6 +32,10 @@ public class RcpBuildTool {
             command.add("-P" + profile);
         }
 
+        File wsBuildDir = new File(System.getProperty("user.home"), "workspace/self-dev-run/build");
+        File moduleTarget = new File(wsBuildDir, (config.getWorkspacePath() != null ? config.getWorkspacePath().getName() : "build") + "/target");
+        command.add("-Dproject.build.directory=" + moduleTarget.getAbsolutePath());
+
         ProcessBuilder pb = new ProcessBuilder(command);
         pb.directory(config.getWorkspacePath());
 
@@ -84,10 +88,18 @@ public class RcpBuildTool {
     }
 
     private File findArtifact(File workspace) {
-        // Look for shaded jars in supervisor or repository
-        File supervisorTarget = new File(workspace, "eu.kalafatic.evolution.supervisor/target");
+        File wsBuildDir = new File(System.getProperty("user.home"), "workspace/self-dev-run/build");
+        File supervisorTarget = new File(wsBuildDir, "eu.kalafatic.evolution.supervisor/target");
         if (supervisorTarget.exists()) {
-            File[] jars = supervisorTarget.listFiles((dir, name) -> name.endsWith("-shaded.jar"));
+            File[] jars = supervisorTarget.listFiles((dir, name) -> name.endsWith("-shaded.jar") || (name.endsWith(".jar") && !name.endsWith("-sources.jar")));
+            if (jars != null && jars.length > 0) {
+                return jars[0];
+            }
+        }
+
+        File localSupervisorTarget = new File(workspace, "eu.kalafatic.evolution.supervisor/target");
+        if (localSupervisorTarget.exists()) {
+            File[] jars = localSupervisorTarget.listFiles((dir, name) -> name.endsWith("-shaded.jar") || (name.endsWith(".jar") && !name.endsWith("-sources.jar")));
             if (jars != null && jars.length > 0) {
                 return jars[0];
             }

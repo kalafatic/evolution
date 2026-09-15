@@ -308,17 +308,17 @@ public class LlamaService {
         List<File> targetDirs = new ArrayList<>();
         String codebasePath = ProjectModelManager.getCodebasePath();
         String userDir = System.getProperty("user.dir");
+        String userHome = System.getProperty("user.home");
 
         List<String> candidatePaths = new ArrayList<>();
+        candidatePaths.add(userHome + "/workspace/models");
         if (codebasePath != null && !codebasePath.isEmpty()) {
             candidatePaths.add(codebasePath + "/eu.kalafatic.evolution.controller/lib/models");
-            candidatePaths.add(codebasePath + "/source/models");
             candidatePaths.add(codebasePath + "/lib/models");
         }
         if (userDir != null && !userDir.isEmpty()) {
             candidatePaths.add(userDir + "/eu.kalafatic.evolution.controller/lib/models");
             candidatePaths.add(userDir + "/../eu.kalafatic.evolution.controller/lib/models");
-            candidatePaths.add(userDir + "/source/models");
             candidatePaths.add(userDir + "/lib/models");
             candidatePaths.add(userDir + "/eu.kalafatic.evolution.forge.agent.api/lib/models");
         }

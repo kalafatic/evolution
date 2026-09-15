@@ -143,17 +143,18 @@ public class ResourceManager {
             Log.log("[PATH_DISCOVERY] resource=EVO_GIT_REPOSITORY action=FORBIDDEN reason=runtime_product_cannot_be_canonical_repository path=" + evoRoot);
         }
 
+        String wsStr = ProjectModelManager.getWorkspacePath();
+        Path wsRoot = wsStr != null ? Paths.get(wsStr).toAbsolutePath().normalize() : Paths.get(System.getProperty("user.home"), "workspace").toAbsolutePath().normalize();
+
         Path resolvedPath;
         switch (pathType) {
             case EVO_ROOT:
                 resolvedPath = evoRoot;
                 break;
 
-            case WORKSPACE: {
-                String wsStr = ProjectModelManager.getWorkspacePath();
-                resolvedPath = wsStr != null ? Paths.get(wsStr).toAbsolutePath().normalize() : evoRoot;
+            case WORKSPACE:
+                resolvedPath = wsRoot;
                 break;
-            }
 
             case PROJECT_ROOT:
                 resolvedPath = evoRoot;
@@ -164,21 +165,21 @@ public class ResourceManager {
                 if (orch != null && orch.getSupervisorSettings() != null && orch.getSupervisorSettings().getSourcePath() != null) {
                     resolvedPath = resolvePath(EvoPath.EVO_ROOT, orch.getSupervisorSettings().getSourcePath());
                 } else {
-                    resolvedPath = evoRoot.resolve("self-dev-run/source").toAbsolutePath().normalize();
+                    resolvedPath = wsRoot.resolve("self-dev-run/source").toAbsolutePath().normalize();
                 }
                 break;
             }
 
             case RUNTIME_ROOT:
-                resolvedPath = evoRoot.resolve("self-dev-run/runtime").toAbsolutePath().normalize();
+                resolvedPath = wsRoot.resolve("self-dev-run/runtime").toAbsolutePath().normalize();
                 break;
 
             case BUILD_ROOT:
-                resolvedPath = evoRoot.resolve("self-dev-run/build").toAbsolutePath().normalize();
+                resolvedPath = wsRoot.resolve("self-dev-run/build").toAbsolutePath().normalize();
                 break;
 
             case EXPORT_ROOT:
-                resolvedPath = evoRoot.resolve("self-dev-run/export").toAbsolutePath().normalize();
+                resolvedPath = wsRoot.resolve("self-dev-run/export").toAbsolutePath().normalize();
                 break;
 
             case SUPERVISOR_SOURCE: {
@@ -196,7 +197,7 @@ public class ResourceManager {
                 if (orch != null && orch.getSupervisorSettings() != null && orch.getSupervisorSettings().getExecutablePath() != null) {
                     resolvedPath = resolvePath(EvoPath.EVO_ROOT, orch.getSupervisorSettings().getExecutablePath());
                 } else {
-                    resolvedPath = evoRoot.resolve("self-dev-run/builds").toAbsolutePath().normalize();
+                    resolvedPath = wsRoot.resolve("self-dev-run/builds").toAbsolutePath().normalize();
                 }
                 break;
             }
@@ -206,19 +207,19 @@ public class ResourceManager {
                 break;
 
             case FORGE_INPUT:
-                resolvedPath = evoRoot.resolve("data").toAbsolutePath().normalize();
+                resolvedPath = wsRoot.resolve("data").toAbsolutePath().normalize();
                 break;
 
             case FORGE_OUTPUT:
-                resolvedPath = evoRoot.resolve("forge-output").toAbsolutePath().normalize();
+                resolvedPath = wsRoot.resolve("forge-output").toAbsolutePath().normalize();
                 break;
 
             case MODELS:
-                resolvedPath = evoRoot.resolve("source/models").toAbsolutePath().normalize();
+                resolvedPath = wsRoot.resolve("models").toAbsolutePath().normalize();
                 break;
 
             case DATASETS:
-                resolvedPath = evoRoot.resolve("data").toAbsolutePath().normalize();
+                resolvedPath = wsRoot.resolve("datasets").toAbsolutePath().normalize();
                 break;
 
             default:
