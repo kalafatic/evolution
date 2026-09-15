@@ -30,7 +30,7 @@ import java.util.regex.Pattern;
  */
 public class RepoArchitectureScanner {
 
-    private static final Set<String> IGNORE_DIRS = Set.of(".git", "target", "bin", "node_modules", ".settings", ".metadata", ".idea", "dist", "build");
+    private static final Set<String> IGNORE_DIRS = Set.of(".git", "target", "bin", "node_modules", ".settings", ".metadata", ".idea", "dist", "build", "self-dev-run", "iterations", "projects", "forge-output", "out", ".gradle", ".mvn");
 
     // Regex patterns for parsing Java code
     private static final Pattern PACKAGE_PATTERN = Pattern.compile("^\\s*package\\s+([a-zA-Z0-9_.]+)\\s*;", Pattern.MULTILINE);
@@ -337,23 +337,6 @@ public class RepoArchitectureScanner {
                         String fType = fieldMatcher.group(1);
                         String fName = fieldMatcher.group(2);
                         classNode.getFields().add(fType + " " + fName);
-
-                        // Level 5 Member Node for Field
-                        String fieldMemberId = "member:" + qualifiedName + "#" + fName;
-                        ComponentRecord fieldMember = new ComponentRecord();
-                        fieldMember.setId(fieldMemberId);
-                        fieldMember.setName(fName);
-                        fieldMember.setQualifiedName(qualifiedName + "." + fName);
-                        fieldMember.setType("FIELD");
-                        fieldMember.setLevel(5);
-                        fieldMember.setParentId(classId);
-                        fieldMember.setPath(relPath);
-                        fieldMember.setDescription("Field " + fType + " " + fName + " in " + simpleName);
-                        nodeMap.put(fieldMemberId, fieldMember);
-                        model.getComponents().add(fieldMember);
-
-                        addRelationship(relationships, classId, fieldMemberId, "CONTAINS", 1, "Contains field " + fName);
-                        addRelationship(relationships, fieldMemberId, "class:" + fType, "FIELD_REFERENCE", 1, "Type " + fType);
                     }
 
                     // Extract Methods
@@ -365,22 +348,6 @@ public class RepoArchitectureScanner {
 
                         String methodSig = retType + " " + mName + "(" + params + ")";
                         classNode.getMethods().add(methodSig);
-
-                        // Level 5 Member Node for Method
-                        String methodMemberId = "member:" + qualifiedName + "#" + mName + "()";
-                        ComponentRecord methodMember = new ComponentRecord();
-                        methodMember.setId(methodMemberId);
-                        methodMember.setName(mName + "()");
-                        methodMember.setQualifiedName(qualifiedName + "." + mName + "()");
-                        methodMember.setType("METHOD");
-                        methodMember.setLevel(5);
-                        methodMember.setParentId(classId);
-                        methodMember.setPath(relPath);
-                        methodMember.setDescription("Method " + methodSig + " in " + simpleName);
-                        nodeMap.put(methodMemberId, methodMember);
-                        model.getComponents().add(methodMember);
-
-                        addRelationship(relationships, classId, methodMemberId, "CONTAINS", 1, "Contains method " + mName);
                     }
 
                     // Method Calls inside code body

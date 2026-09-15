@@ -1,6 +1,7 @@
 package eu.kalafatic.evolution.controller.orchestration.selfdev;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -38,14 +39,16 @@ public class SelfDevOrchestrator {
         return executePreflightInternal();
     }
 
-    private SelfDevPreflightResult executePreflightInternal() {
-        SelfDevPreflight preflight = new SelfDevPreflight();
-        SelfDevPreflightResult res = preflight.executePreflight(context, this);
-        if (res.getResolvedResources() != null) {
-            context.setResolvedResources(res.getResolvedResources());
-        }
-        return res;
-    }
+	private SelfDevPreflightResult executePreflightInternal() {
+		SelfDevPreflight preflight = new SelfDevPreflight();
+		SelfDevPreflightResult res = preflight.executePreflight(context, this);
+
+		if (res.getResolvedResources() != null) {
+			context.setResolvedResources(res.getResolvedResources());
+		}
+
+		return res;
+	}
 
     private void registerTasks() {
         SelfDevTask git = new GitCheckTask("GIT");
