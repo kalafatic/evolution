@@ -61,19 +61,18 @@ public class ResourceManager {
         if (orchestrator == null) {
             ProjectModelManager pmm = ProjectModelManager.getInstance();
             if (pmm != null) {
-                String codebase = ProjectModelManager.getCodebasePath();
-                if (codebase != null) {
-                    File file = new File(codebase, "data/orchestrator.xml");
-                    if (!file.exists()) {
-                        file = new File(codebase, "orchestrator.xml");
-                    }
-                    if (file.exists()) {
-                        try {
-                            org.eclipse.emf.common.util.URI uri = org.eclipse.emf.common.util.URI.createFileURI(file.getAbsolutePath());
-                            orchestrator = (Orchestrator) pmm.loadModel(uri);
-                        } catch (Exception e) {
-                            Log.log("[ResourceManager] Could not load EMF orchestrator from file: " + e.getMessage());
-                        }
+                Path userHome = Paths.get(System.getProperty("user.home")).toAbsolutePath().normalize();
+                Path defaultEvoGitRepo = userHome.resolve("git").resolve("evolution");
+                File file = defaultEvoGitRepo.resolve("data/orchestrator.xml").toFile();
+                if (!file.exists()) {
+                    file = defaultEvoGitRepo.resolve("orchestrator.xml").toFile();
+                }
+                if (file.exists()) {
+                    try {
+                        org.eclipse.emf.common.util.URI uri = org.eclipse.emf.common.util.URI.createFileURI(file.getAbsolutePath());
+                        orchestrator = (Orchestrator) pmm.loadModel(uri);
+                    } catch (Exception e) {
+                        Log.log("[ResourceManager] Could not load EMF orchestrator from file: " + e.getMessage());
                     }
                 }
                 if (orchestrator == null) {
