@@ -10,8 +10,8 @@ import java.nio.file.Path;
 public class ResolvedSelfDevResources {
     private final File repositoryRoot;
     private final File projectRoot;
-    private final File sourceDirectory;
-    private final File reactorDirectory;
+    private final File sourceReactorDirectory;
+    private final File preparedReactorDirectory;
     private final File buildDirectory;
     private final File exportDirectory;
     private final File runtimeDirectory;
@@ -28,17 +28,23 @@ public class ResolvedSelfDevResources {
     private final File javaExecutable;
     private final File mavenExecutable;
 
-    public ResolvedSelfDevResources(File repositoryRoot, File projectRoot, File sourceDirectory,
-                                   File reactorDirectory, File buildDirectory, File exportDirectory,
+    public ResolvedSelfDevResources(File repositoryRoot, File projectRoot, File sourceReactorDirectory,
+                                   File preparedReactorDirectory, File buildDirectory, File exportDirectory,
                                    File runtimeDirectory, File logDirectory, File supervisorDirectory,
                                    File genomeDirectory, String os, String ws, String arch,
                                    String productId, String launcher, File javaExecutable,
                                    File mavenExecutable) {
         this.repositoryRoot = normalize(repositoryRoot);
         this.projectRoot = normalize(projectRoot);
-        this.sourceDirectory = normalize(sourceDirectory);
-        this.reactorDirectory = normalize(reactorDirectory);
+        this.sourceReactorDirectory = normalize(sourceReactorDirectory);
         this.buildDirectory = normalize(buildDirectory);
+        if (preparedReactorDirectory != null) {
+            this.preparedReactorDirectory = normalize(preparedReactorDirectory);
+        } else if (this.buildDirectory != null) {
+            this.preparedReactorDirectory = normalize(new File(this.buildDirectory.getParentFile(), "source"));
+        } else {
+            this.preparedReactorDirectory = null;
+        }
         this.exportDirectory = normalize(exportDirectory);
         this.runtimeDirectory = normalize(runtimeDirectory);
         this.logDirectory = normalize(logDirectory);
@@ -59,8 +65,10 @@ public class ResolvedSelfDevResources {
 
     public File getRepositoryRoot() { return repositoryRoot; }
     public File getProjectRoot() { return projectRoot; }
-    public File getSourceDirectory() { return sourceDirectory; }
-    public File getReactorDirectory() { return reactorDirectory; }
+    public File getSourceDirectory() { return sourceReactorDirectory; }
+    public File getSourceReactorDirectory() { return sourceReactorDirectory; }
+    public File getPreparedReactorDirectory() { return preparedReactorDirectory; }
+    public File getReactorDirectory() { return preparedReactorDirectory; }
     public File getBuildDirectory() { return buildDirectory; }
     public File getExportDirectory() { return exportDirectory; }
     public File getRuntimeDirectory() { return runtimeDirectory; }
@@ -80,8 +88,8 @@ public class ResolvedSelfDevResources {
     @Override
     public String toString() {
         return "ResolvedSelfDevResources[" +
-                "source=" + sourceDirectory +
-                ", reactor=" + reactorDirectory +
+                "sourceReactor=" + sourceReactorDirectory +
+                ", preparedReactor=" + preparedReactorDirectory +
                 ", build=" + buildDirectory +
                 ", export=" + exportDirectory +
                 ", supervisor=" + supervisorDirectory +

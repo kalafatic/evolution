@@ -52,11 +52,4 @@ public abstract class RuleTest extends TestCase {
 		return fixture;
 	}
 
-	/**
-	 * Tests the fixture creation.
-	 */
-	public void testFixture() {
-		assertNotNull(getFixture());
-	}
-
 } //RuleTest

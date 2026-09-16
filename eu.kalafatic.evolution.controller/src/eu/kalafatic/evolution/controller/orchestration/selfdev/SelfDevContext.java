@@ -18,9 +18,10 @@ public class SelfDevContext {
     private final String runId;
     private final ResourceManager resourceManager;
     private final File repositoryRoot;
+    private final File sourceReactorDirectory;
     private final File projectRoot;
-    private final File sourceDirectory;
     private final File buildDirectory;
+    private final File preparedReactorDirectory;
     private final File exportDirectory;
     private final File runtimeDirectory;
     private final File logDirectory;
@@ -54,28 +55,32 @@ public class SelfDevContext {
         }
         this.orchestrator = this.resourceManager.getOrchestrator();
 
-        this.repositoryRoot = this.resourceManager.getPath(EvoPath.EVO_ROOT).toFile().getAbsoluteFile().toPath().normalize().toFile();
+        this.repositoryRoot = this.resourceManager.getPath(EvoPath.EVO_GIT_REPOSITORY).toFile().getAbsoluteFile().toPath().normalize().toFile();
 
         this.projectRoot = projectRoot != null ? projectRoot.getAbsoluteFile().toPath().normalize().toFile() : this.repositoryRoot;
 
         String timestamp = new SimpleDateFormat("ddMMyy_HHmmss").format(new Date());
         this.runId = "run_" + timestamp;
 
+        File wsRoot = this.resourceManager.getPath(EvoPath.WORKSPACE).toFile().getAbsoluteFile();
+
         File runDir;
         if (baseRunDir != null) {
-            runDir = resolvePath(this.projectRoot, baseRunDir);
+            runDir = resolvePath(wsRoot, baseRunDir);
         } else {
-            runDir = this.repositoryRoot.toPath().resolve("self-dev-run/run_" + new SimpleDateFormat("ddMMyy").format(new Date())).toAbsolutePath().normalize().toFile();
+            runDir = wsRoot.toPath().resolve("self-dev/" + this.runId).toAbsolutePath().normalize().toFile();
         }
 
-        this.sourceDirectory = resolvePath(runDir, "source");
+        this.preparedReactorDirectory = resolvePath(runDir, "source");
+        this.sourceReactorDirectory = this.preparedReactorDirectory; // Map source reactor directly to selfDevRun/source
         this.buildDirectory = resolvePath(runDir, "build");
         this.exportDirectory = resolvePath(runDir, "export");
         this.runtimeDirectory = resolvePath(runDir, "runtime");
-        this.logDirectory = this.repositoryRoot.toPath().resolve("self-dev-run/logs").toAbsolutePath().normalize().toFile();
+        this.logDirectory = resolvePath(runDir, "logs");
+        this.supervisorDirectory = this.resourceManager.getPath(EvoPath.SUPERVISOR_SOURCE).toFile().getAbsoluteFile().toPath().normalize().toFile();
+        this.genomeDirectory = this.resourceManager.getPath(EvoPath.GENOME).toFile().getAbsoluteFile().toPath().normalize().toFile();
 
         initTargetPlatform();
-        discoverAndRepairModulePaths();
         ensureDirectories();
         printPreflightReport();
     }
@@ -118,43 +123,6 @@ public class SelfDevContext {
         return base.resolve(p).toAbsolutePath().normalize().toFile();
     }
 
-    public void discoverAndRepairModulePaths() {
-        this.supervisorDirectory = resourceManager.getPath(EvoPath.SUPERVISOR_SOURCE).toFile().getAbsoluteFile().toPath().normalize().toFile();
-        this.genomeDirectory = resourceManager.getPath(EvoPath.GENOME).toFile().getAbsoluteFile().toPath().normalize().toFile();
-    }
-
-    public File discoverModuleDirectory(String moduleName, File primaryLocation, File... searchRoots) {
-        if (primaryLocation != null && primaryLocation.exists() && isModuleDirectory(primaryLocation)) {
-            return primaryLocation.getAbsoluteFile().toPath().normalize().toFile();
-        }
-
-        for (File root : searchRoots) {
-            if (root == null || !root.exists()) continue;
-
-            File directCandidate = new File(root, moduleName);
-            if (directCandidate.exists() && isModuleDirectory(directCandidate)) {
-                return directCandidate.getAbsoluteFile().toPath().normalize().toFile();
-            }
-
-            File[] children = root.listFiles(File::isDirectory);
-            if (children != null) {
-                for (File child : children) {
-                    File candidate = new File(child, moduleName);
-                    if (candidate.exists() && isModuleDirectory(candidate)) {
-                        return candidate.getAbsoluteFile().toPath().normalize().toFile();
-                    }
-                }
-            }
-        }
-
-        File fallback = primaryLocation != null ? primaryLocation.getAbsoluteFile().toPath().normalize().toFile() : new File(projectRoot, moduleName).getAbsoluteFile().toPath().normalize().toFile();
-        return fallback;
-    }
-
-    private boolean isModuleDirectory(File dir) {
-        if (dir == null || !dir.exists() || !dir.isDirectory()) return false;
-        return new File(dir, "pom.xml").exists() || new File(dir, "META-INF/MANIFEST.MF").exists();
-    }
 
     public ResolvedSelfDevResources getResolvedResources() {
         return resolvedResources;
@@ -193,9 +161,10 @@ public class SelfDevContext {
         System.out.println("--------------------------------------------------------------------------------");
         System.out.println("Run ID          : " + runId);
         System.out.println("Repository Root : " + repositoryRoot.getAbsolutePath() + " (exists: " + repositoryRoot.exists() + ")");
+        System.out.println("Source Reactor  : " + sourceReactorDirectory.getAbsolutePath() + " (exists: " + sourceReactorDirectory.exists() + ")");
         System.out.println("Project Root    : " + projectRoot.getAbsolutePath() + " (exists: " + projectRoot.exists() + ")");
-        System.out.println("Source Directory: " + sourceDirectory.getAbsolutePath() + " (exists: " + sourceDirectory.exists() + ")");
         System.out.println("Build Directory : " + buildDirectory.getAbsolutePath() + " (exists: " + buildDirectory.exists() + ")");
+        System.out.println("Prepared Reactor: " + preparedReactorDirectory.getAbsolutePath() + " (exists: " + preparedReactorDirectory.exists() + ")");
         System.out.println("Export Directory: " + exportDirectory.getAbsolutePath() + " (exists: " + exportDirectory.exists() + ")");
         System.out.println("Runtime Dir     : " + runtimeDirectory.getAbsolutePath() + " (exists: " + runtimeDirectory.exists() + ")");
         System.out.println("Log Directory   : " + logDirectory.getAbsolutePath() + " (exists: " + logDirectory.exists() + ")");
@@ -208,8 +177,8 @@ public class SelfDevContext {
     }
 
     private void ensureDirectories() {
-        createDirIfNeeded(sourceDirectory);
         createDirIfNeeded(buildDirectory);
+        createDirIfNeeded(preparedReactorDirectory);
         createDirIfNeeded(exportDirectory);
         createDirIfNeeded(runtimeDirectory);
         createDirIfNeeded(logDirectory);
@@ -277,8 +246,20 @@ public class SelfDevContext {
         this.launcher = launcher;
     }
 
+    public File getSourceReactorDirectory() {
+        return resolvedResources != null && resolvedResources.getSourceReactorDirectory() != null ? resolvedResources.getSourceReactorDirectory() : sourceReactorDirectory;
+    }
+
     public File getSourceDirectory() {
-        return resolvedResources != null && resolvedResources.getSourceDirectory() != null ? resolvedResources.getSourceDirectory() : sourceDirectory;
+        return getSourceReactorDirectory();
+    }
+
+    public File getPreparedReactorDirectory() {
+        return resolvedResources != null && resolvedResources.getPreparedReactorDirectory() != null ? resolvedResources.getPreparedReactorDirectory() : preparedReactorDirectory;
+    }
+
+    public File getReactorDirectory() {
+        return getPreparedReactorDirectory();
     }
 
     public File getBuildDirectory() {

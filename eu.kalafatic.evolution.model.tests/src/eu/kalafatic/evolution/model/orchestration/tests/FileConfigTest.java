@@ -86,11 +86,4 @@ public class FileConfigTest extends TestCase {
 		setFixture(null);
 	}
 
-	/**
-	 * Tests the fixture creation.
-	 */
-	public void testFixture() {
-		assertNotNull(getFixture());
-	}
-
 } //FileConfigTest

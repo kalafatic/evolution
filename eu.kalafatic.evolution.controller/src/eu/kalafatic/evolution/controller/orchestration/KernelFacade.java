@@ -61,6 +61,11 @@ public class KernelFacade implements IOrchestrator {
 				);
 			}
 
+			if (session.getIterationManager() == null) {
+				kernel = KernelFactory.create(taskRequest.getPrompt(), context, session);
+				session.setIterationManager(kernel);
+			}
+
 			eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveLoopEngine cognitiveEngine =
 				new eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveLoopEngine(10, null);
 

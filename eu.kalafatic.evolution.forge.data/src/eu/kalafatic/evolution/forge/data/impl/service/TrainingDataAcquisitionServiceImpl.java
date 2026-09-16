@@ -105,21 +105,42 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
         }
 
         DataSizeAccounting accounting = new DefaultDataSizeAccounting();
-        DatasetSourceStats stats = accounting.getSnapshot();
-        stats.setRequestedUsableBytes(targetUsableBytes);
 
         List<NormalizedSample> acceptedSamples = new ArrayList<>();
         long accumulatedUsableBytes = 0;
         Set<String> processedSourceNames = new HashSet<>();
+        Set<String> exhaustedSourceNames = new HashSet<>();
+        Set<String> failedSourceNames = new HashSet<>();
+
+        long cleanerRejections = 0;
+        long filterRejections = 0;
+        long duplicateRejections = 0;
 
         int sourceIndex = 0;
         int searchRound = 1;
         int maxSearchRounds = 10;
         int consecutiveEmptyExpansions = 0;
 
-        System.out.printf("[ACQ-TRACE] ENTER TrainingDataAcquisitionServiceImpl | requestedTargetBytes=%d (%.2f MB) | pref.minBytes=%d | pref.targetBytes=%d | pref.maxDownloadBytes=%d\n",
-                targetUsableBytes, targetUsableBytes / (1024.0 * 1024.0),
-                prefs.getMinimumUsableBytes(), prefs.getTargetUsableBytes(), prefs.getMaximumDownloadBytes());
+        String runId = request.getRunId();
+        double targetUsableMB = targetUsableBytes / (1024.0 * 1024.0);
+
+        System.out.printf("[HF-ACQ][run=%s][START]\nrequestedUsableBytes=%d\nrequestedUsableMB=%.2f\nsourceCount=%d\n",
+                runId, targetUsableBytes, targetUsableMB, sources.size());
+
+        for (DatasetSource src : sources) {
+            if (src != null && src.getConfig() != null) {
+                if (src.getConfig().getRunId() == null) {
+                    src.getConfig().setRunId(runId);
+                }
+                var cfg = src.getConfig();
+                System.out.printf("[HF-ACQ][run=%s][SOURCES]\nsource=%s\ntype=%s\nrepository=%s\nconfig=%s\nsplit=%s\nrevision=%s\norigin=%s\n",
+                        runId, src.getSourceName(), cfg.getSourceType(), cfg.getRepository(),
+                        cfg.getConfiguration() != null ? cfg.getConfiguration() : "default",
+                        cfg.getSplit() != null ? cfg.getSplit() : "train",
+                        cfg.getRevision() != null ? cfg.getRevision() : "main",
+                        cfg.getOrigin() != null ? cfg.getOrigin() : "REQUEST");
+            }
+        }
 
         while ((targetUsableBytes <= 0 || accumulatedUsableBytes < targetUsableBytes)) {
 
@@ -130,20 +151,38 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
                     continue;
                 }
 
+                var cfg = source.getConfig();
+                String srcRepo = cfg != null ? cfg.getRepository() : source.getSourceName();
+                String srcCfg = cfg != null && cfg.getConfiguration() != null ? cfg.getConfiguration() : "default";
+                String srcSplit = cfg != null && cfg.getSplit() != null ? cfg.getSplit() : "train";
+                String srcRev = cfg != null && cfg.getRevision() != null ? cfg.getRevision() : "main";
+                long targetRemainingBytes = targetUsableBytes > 0 ? Math.max(0, targetUsableBytes - accumulatedUsableBytes) : 0;
+
+                System.out.printf("[HF-ACQ][run=%s][SOURCE-START]\nsource=%s\nrepository=%s\nconfig=%s\nsplit=%s\nrevision=%s\ntargetRemainingBytes=%d\n",
+                        runId, source.getSourceName(), srcRepo, srcCfg, srcSplit, srcRev, targetRemainingBytes);
+
                 var res = source.preflight();
                 if (!res.isAccessible() || !res.isAvailable()) {
-                    System.err.println("[ACQ-PREFLIGHT REJECTED] Source unavailable or inaccessible: " + source.getSourceName() + " | Reason: " + res.getFailureReason());
+                    String reason = res.getFailureReason() != null ? res.getFailureReason() : "Inaccessible";
+                    failedSourceNames.add(source.getSourceName() + " (Preflight: " + reason + ")");
+                    System.out.printf("[HF-ACQ][run=%s][INITIALIZE]\nsource=%s\nstatus=FAILED\nreason=%s\n",
+                            runId, source.getSourceName(), reason);
                     continue;
                 }
 
                 try {
                     source.initialize();
+                    System.out.printf("[HF-ACQ][run=%s][INITIALIZE]\nsource=%s\nstatus=SUCCESS\n",
+                            runId, source.getSourceName());
                 } catch (Exception initEx) {
-                    System.err.println("[ACQUISITION LOG] Failed to initialize source " + source.getSourceName() + ": " + initEx.getMessage());
+                    failedSourceNames.add(source.getSourceName() + " (Init error: " + initEx.getMessage() + ")");
+                    System.out.printf("[HF-ACQ][run=%s][INITIALIZE]\nsource=%s\nstatus=FAILED\nreason=%s\n",
+                            runId, source.getSourceName(), initEx.getMessage());
                     continue;
                 }
 
                 long sourceStartUsable = accumulatedUsableBytes;
+                boolean sourceReadError = false;
                 try (source) {
                     while ((targetUsableBytes <= 0 || accumulatedUsableBytes < targetUsableBytes) && source.hasNext()) {
                         NormalizedSample s = source.next();
@@ -153,12 +192,20 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
                         accounting.recordRaw(rawLen);
 
                         NormalizedSample clean = normalizer.normalize(s);
-                        if (clean == null || !filter.accept(clean)) {
+                        if (clean == null) {
+                            cleanerRejections++;
+                            accounting.recordRejected(rawLen);
+                            continue;
+                        }
+
+                        if (!filter.accept(clean)) {
+                            filterRejections++;
                             accounting.recordRejected(rawLen);
                             continue;
                         }
 
                         if (deduplicator.isDuplicate(clean)) {
+                            duplicateRejections++;
                             accounting.recordDuplicate(rawLen);
                             continue;
                         }
@@ -166,6 +213,12 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
                         deduplicator.register(clean);
                         byte[] cleanBytes = clean.toFullText().getBytes(StandardCharsets.UTF_8);
                         long cleanLen = cleanBytes.length;
+
+                        if (cleanLen == 0) {
+                            cleanerRejections++;
+                            accounting.recordRejected(rawLen);
+                            continue;
+                        }
 
                         acceptedSamples.add(clean);
                         accumulatedUsableBytes += cleanLen;
@@ -178,17 +231,21 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
                         }
                     }
                 } catch (Exception ex) {
+                    sourceReadError = true;
+                    failedSourceNames.add(source.getSourceName() + " (Read error: " + ex.getMessage() + ")");
                     System.err.println("[ACQUISITION LOG] Error reading source " + source.getSourceName() + ": " + ex.getMessage());
+                }
+
+                if (!sourceReadError) {
+                    exhaustedSourceNames.add(source.getSourceName());
                 }
 
                 long sourceYield = accumulatedUsableBytes - sourceStartUsable;
                 long remaining = targetUsableBytes > 0 ? Math.max(0, targetUsableBytes - accumulatedUsableBytes) : 0;
-                System.out.printf("[ACQ-TRACE] source=%s exhausted | yield=%.2f MB | totalUsable=%.2f MB / %.2f MB | remaining=%.2f MB\n",
-                        source.getSourceName(),
-                        sourceYield / (1024.0 * 1024.0),
-                        accumulatedUsableBytes / (1024.0 * 1024.0),
-                        targetUsableBytes / (1024.0 * 1024.0),
-                        remaining / (1024.0 * 1024.0));
+                System.out.printf("[HF-ACQ][run=%s][SOURCE-END]\nsource=%s\nyieldBytes=%d\nyieldMB=%.2f\ntotalUsableBytes=%d\ntotalUsableMB=%.2f\ntargetRemainingBytes=%d\ntargetRemainingMB=%.2f\n",
+                        runId, source.getSourceName(), sourceYield, sourceYield / (1024.0 * 1024.0),
+                        accumulatedUsableBytes, accumulatedUsableBytes / (1024.0 * 1024.0),
+                        remaining, remaining / (1024.0 * 1024.0));
             }
 
             // TARGET-DRIVEN SEARCH EXPANSION LOOP:
@@ -207,6 +264,9 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
                 int newlyAddedCount = 0;
                 for (DataSourceCandidate cand : expandedCandidates) {
                     if (cand.getSource() != null && !processedSourceNames.contains(cand.getSource().getSourceName())) {
+                        if (cand.getSource().getConfig() != null) {
+                            cand.getSource().getConfig().setRunId(runId);
+                        }
                         sources.add(cand.getSource());
                         newlyAddedCount++;
                     }
@@ -222,7 +282,15 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
             }
         }
 
+        // CRITICAL PIPELINE INVARIANT CHECK
+        if (!acceptedSamples.isEmpty() && accumulatedUsableBytes == 0) {
+            throw new IllegalStateException("CRITICAL PIPELINE INVARIANT VIOLATION: acceptedSamples count="
+                    + acceptedSamples.size() + " but accumulatedUsableBytes is 0! Data conversion/accounting broken.");
+        }
+
         accounting.setTrainValidationRatio(valSplitRatio);
+        DatasetSourceStats stats = accounting.getSnapshot();
+        stats.setRequestedUsableBytes(targetUsableBytes);
 
         TrainingDataPreferenceEvaluation eval = preferenceEvaluator.evaluate(prefs, stats);
 
@@ -236,7 +304,7 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
                 : TrainingDataAcquisitionResult.Status.INSUFFICIENT_SOURCE_DATA;
 
         List<String> sourcesUsedNames = new ArrayList<>(processedSourceNames);
-        List<String> sourcesExhaustedNames = sourceExhausted ? new ArrayList<>(processedSourceNames) : List.of();
+        List<String> sourcesExhaustedNamesList = sourceExhausted ? new ArrayList<>(exhaustedSourceNames) : List.of();
 
         String failureReason = null;
         if (!targetReached) {
@@ -244,7 +312,11 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
                     + targetUsableBytes + " bytes (" + (targetUsableBytes / (1024 * 1024)) + " MB), Acquired Usable: "
                     + accumulatedUsableBytes + " bytes (" + (accumulatedUsableBytes / (1024 * 1024)) + " MB), Max Download: "
                     + prefs.getMaximumDownloadBytes() + " bytes (" + (prefs.getMaximumDownloadBytes() / (1024 * 1024)) + " MB), Shortfall: "
-                    + shortfall + " bytes (" + (shortfall / (1024 * 1024)) + " MB), Coverage: " + String.format("%.2f", coveragePercent) + "%, Sources used: " + sourcesUsedNames + ".";
+                    + shortfall + " bytes (" + (shortfall / (1024 * 1024)) + " MB), Coverage: " + String.format("%.2f", coveragePercent) + "%, Sources used: " + sourcesUsedNames;
+            if (!failedSourceNames.isEmpty()) {
+                failureReason += ", Failed sources: " + failedSourceNames;
+            }
+            failureReason += ". Rejections breakdown: Cleaner=" + cleanerRejections + ", QualityFilter=" + filterRejections + ", Duplicates=" + duplicateRejections + ".";
             System.err.println("[ACQ-TRACE] TARGET NOT REACHED! " + failureReason);
         } else {
             System.out.printf("[ACQ-TRACE] TARGET REACHED! Requested: %d bytes, Acquired Usable: %d bytes (%.2f%% coverage).\n",
@@ -252,6 +324,10 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
         }
 
         List<String> hardFailures = (targetReached && eval.isAllHardRequirementsSatisfied()) ? List.of() : List.of("MinimumUsableBytesNotSatisfied");
+
+        System.out.printf("[HF-ACQ][run=%s][FINAL-RESULT]\nstatus=%s\ntargetReached=%b\nrequestedUsableBytes=%d\naccumulatedUsableBytes=%d\nshortfallBytes=%d\ncoveragePercent=%.2f%%\nacceptedSamples=%d\ncleanerRejections=%d\nfilterRejections=%d\nduplicateRejections=%d\nsourcesUsed=%s\n",
+                runId, status, targetReached, targetUsableBytes, accumulatedUsableBytes, shortfall, coveragePercent,
+                acceptedSamples.size(), cleanerRejections, filterRejections, duplicateRejections, sourcesUsedNames);
 
         return new TrainingDataAcquisitionResult(
                 acceptedSamples,
@@ -275,7 +351,7 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
                 stats.getValidationBytes(),
                 stats.getEstimatedTokens(),
                 sourcesUsedNames,
-                sourcesExhaustedNames,
+                sourcesExhaustedNamesList,
                 hardFailures,
                 List.of(),
                 failureReason != null ? List.of(failureReason) : List.of(),

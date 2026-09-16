@@ -56,4 +56,30 @@ public class DatasetAcquisitionCognitiveTest {
         System.out.println("Observations count: " + result.getObservations().size());
         System.out.println("Summary: " + result.getSummary());
     }
+
+    @Test
+    public void testIterationManagerAutoInitializationOnSession() throws Exception {
+        String sessionId = "TestSession_AutoInitIterationManager";
+        SessionContainer session = SessionManager.getInstance().getOrCreateSession(sessionId);
+        TaskContext context = new TaskContext(null, new File("."));
+        context.setSessionId(sessionId);
+
+        // Ensure session initially has null IterationManager
+        session.setIterationManager(null);
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("targetUsableBytes", 1024L * 1024L * 10L);
+
+        CognitiveGoal goal = new CognitiveGoal(
+                "Acquire at least 10MB of valid English conversational training data",
+                "DATASET_ACQUISITION",
+                params
+        );
+
+        CognitiveLoopEngine engine = new CognitiveLoopEngine(10, null);
+        CognitiveResult result = engine.solve(session, context, goal);
+
+        assertNotNull(result);
+        assertNotNull("IterationManager should be auto-initialized on session context", session.getIterationManager());
+    }
 }

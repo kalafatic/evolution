@@ -168,35 +168,34 @@ public class ProjectModelManager {
 
     public void initializeDefaults(Orchestrator orchestrator) {
         String userHome = System.getProperty("user.home");
+        String defaultGitRepo = new File(userHome, "git/evolution").getAbsolutePath();
 
         if (orchestrator.getGit() == null) {
             Git git = OrchestrationFactory.eINSTANCE.createGit();
-            git.setRepositoryUrl(EclipseGitEvoTool.getRepositoryRemote(EclipseGitEvoTool.REPO_EVOLUTION));
-            git.setBranch(EclipseGitEvoTool.getRepositoryBranch(EclipseGitEvoTool.REPO_EVOLUTION));
-            git.setLocalPath(EclipseGitEvoTool.getRepositoryPath(EclipseGitEvoTool.REPO_EVOLUTION));
+            git.setRepositoryUrl("https://github.com/kalafatic/evolution.git");
+            git.setBranch("main");
+            git.setLocalPath(defaultGitRepo);
             orchestrator.setGit(git);
         } else {
             if (orchestrator.getGit().getRepositoryUrl() == null || orchestrator.getGit().getRepositoryUrl().isEmpty()) {
-                orchestrator.getGit().setRepositoryUrl(EclipseGitEvoTool.getRepositoryRemote(EclipseGitEvoTool.REPO_EVOLUTION));
+                orchestrator.getGit().setRepositoryUrl("https://github.com/kalafatic/evolution.git");
             }
             if (orchestrator.getGit().getLocalPath() == null || orchestrator.getGit().getLocalPath().isEmpty()) {
-                orchestrator.getGit().setLocalPath(EclipseGitEvoTool.getRepositoryPath(EclipseGitEvoTool.REPO_EVOLUTION));
+                orchestrator.getGit().setLocalPath(defaultGitRepo);
             }
             if (orchestrator.getGit().getBranch() == null || orchestrator.getGit().getBranch().isEmpty()) {
-                orchestrator.getGit().setBranch(EclipseGitEvoTool.getRepositoryBranch(EclipseGitEvoTool.REPO_EVOLUTION));
+                orchestrator.getGit().setBranch("main");
             }
         }
 
         if (orchestrator.getSupervisorSettings() == null) {
             SupervisorSettings supervisor = OrchestrationFactory.eINSTANCE.createSupervisorSettings();
-            // OS-independent paths using user.home under workspace/self-dev-run
-            String dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("ddMMyy"));
-            java.io.File baseDir = new java.io.File(new java.io.File(new java.io.File(userHome, "workspace"), "self-dev-run"), dateStr);
-            supervisor.setExecutablePath(new java.io.File(baseDir, "builds").getPath());
-            supervisor.setSourcePath(new java.io.File(baseDir, "sources").getPath());
+            File runtimeBuilds = new File(userHome, "workspace/runtime/builds");
+            File runtimeSources = new File(userHome, "workspace/runtime/sources");
+            supervisor.setExecutablePath(runtimeBuilds.getAbsolutePath());
+            supervisor.setSourcePath(runtimeSources.getAbsolutePath());
             orchestrator.setSupervisorSettings(supervisor);
         } else {
-            // Migrate any existing paths in supervisorSettings!
             String oldExec = orchestrator.getSupervisorSettings().getExecutablePath();
             String oldSrc = orchestrator.getSupervisorSettings().getSourcePath();
             if (oldExec != null) orchestrator.getSupervisorSettings().setExecutablePath(migratePath(oldExec));
@@ -224,7 +223,14 @@ public class ProjectModelManager {
         
 
         if (orchestrator.getDefaultTarget() == null || orchestrator.getDefaultTarget().isEmpty()) {
-            orchestrator.setDefaultTarget(findEvolutionRepository());
+            SourceDiscoveryResult result = getOrDiscoverWorkspace();
+            if (result != null && result.getPrimaryRepository() != null) {
+                orchestrator.setDefaultTarget(result.getPrimaryRepository().getAbsolutePath());
+                eu.kalafatic.evolution.controller.log.Log.log("[MODEL] Default target discovered from workspace: " + orchestrator.getDefaultTarget());
+            } else {
+                // Fallback to legacy scan if workspace discovery failed
+                orchestrator.setDefaultTarget(findEvolutionRepository());
+            }
         }
 
         if (orchestrator.getLlm() == null) {
@@ -925,7 +931,6 @@ public class ProjectModelManager {
 
             // Check forge-output folder and scan for both directories and .evo files
             List<File> forgeDirsToScan = new ArrayList<>();
-            forgeDirsToScan.add(eu.kalafatic.evolution.controller.resource.ResourceManager.getInstance().getPath(eu.kalafatic.evolution.controller.resource.EvoPath.FORGE_OUTPUT).toFile());
             String workspacePathStr = getWorkspacePath();
             if (workspacePathStr != null && !workspacePathStr.isEmpty()) {
                 forgeDirsToScan.add(new File(workspacePathStr, "forge-output"));
@@ -934,6 +939,7 @@ public class ProjectModelManager {
             if (codebasePathStr != null && !codebasePathStr.isEmpty()) {
                 forgeDirsToScan.add(new File(codebasePathStr, "forge-output"));
             }
+            forgeDirsToScan.add(new File(System.getProperty("user.dir"), "forge-output"));
 
             for (File forgeOutputDir : forgeDirsToScan) {
                 if (forgeOutputDir.exists() && forgeOutputDir.isDirectory()) {
@@ -1107,27 +1113,40 @@ public class ProjectModelManager {
     }
 
     /**
-     * Finds the canonical evolution source repository on the local system.
+     * Finds the evolution repository on the local system.
      *
-     * @return The absolute path to ${user.home}/git/evolution.
+     * @return The absolute path to the evolution repository, or null if not found.
      */
     public String findEvolutionRepository() {
-        return java.nio.file.Paths.get(System.getProperty("user.home"), "git", "evolution").toAbsolutePath().normalize().toString();
+        List<java.io.File> repos = GitTool.getCachedLocalRepositories();
+        for (java.io.File repo : repos) {
+            String name = repo.getName().toLowerCase();
+            if (name.equals("evolution") || name.equals("evo")) {
+                return repo.getAbsolutePath();
+            }
+        }
+        return null;
     }
 
 	/**
-	 * Returns the canonical EVO source code repository path (${user.home}/git/evolution).
+	 * Returns the codebase folder/repository path where the real source code is.
+	 * This method attempts multiple robust strategies to locate the real source code repository,
+	 * including discovering workspace source roots, querying active Eclipse project locations,
+	 * searching local Git repositories, checking environment variables, and traversing up
+	 * from the user directory.
 	 *
-	 * @return the absolute path of the canonical evolution source repository.
+	 * @return the absolute path of the codebase folder/repository, or null if it cannot be determined.
 	 */
 	public static String getCodebasePath() {
-		return java.nio.file.Paths.get(System.getProperty("user.home"), "git", "evolution").toAbsolutePath().normalize().toString();
+		return eu.kalafatic.evolution.controller.resource.ResourceManager.getInstance()
+				.getPath(eu.kalafatic.evolution.controller.resource.EvoPath.EVO_GIT_REPOSITORY)
+				.toString();
 	}
 
 	/**
 	 * Returns the codebase folder/repository path where the real source code is (instance method).
 	 *
-	 * @return the absolute path of the codebase folder/repository.
+	 * @return the absolute path of the codebase folder/repository, or null if it cannot be determined.
 	 */
 	public String getCodebaseFolderPath() {
 		return getCodebasePath();
@@ -1135,49 +1154,20 @@ public class ProjectModelManager {
 
 	/**
 	 * Returns the workspace folder path.
-	 * This method returns the active Eclipse workspace root folder.
+	 * This method returns the canonical workspace root folder.
 	 *
 	 * @return the absolute path of the workspace folder.
 	 */
 	public static String getWorkspacePath() {
-		// 1. Try to get it from Eclipse ResourcesPlugin
-		try {
-			org.eclipse.core.resources.IWorkspaceRoot root = org.eclipse.core.resources.ResourcesPlugin.getWorkspace().getRoot();
-			if (root != null && root.getLocation() != null) {
-				return root.getLocation().toFile().getAbsolutePath();
-			}
-		} catch (Throwable t) {
-			// Ignore if ResourcesPlugin/workspace is not active
-		}
-
-		// 2. Try OSGi system properties or platform instance area
-		try {
-			String osgiInstance = System.getProperty("osgi.instance.area");
-			if (osgiInstance != null && !osgiInstance.trim().isEmpty()) {
-				if (osgiInstance.startsWith("file:")) {
-					if (osgiInstance.startsWith("file://") && !osgiInstance.startsWith("file:///")) {
-						osgiInstance = osgiInstance.replaceFirst("file://", "file:///");
-					}
-					osgiInstance = new java.net.URI(osgiInstance).getPath();
-					if (osgiInstance.startsWith("/") && osgiInstance.length() > 2 && osgiInstance.charAt(2) == ':') {
-						osgiInstance = osgiInstance.substring(1);
-					}
-				}
-				File f = new File(osgiInstance);
-				if (f.exists()) {
-					return f.getAbsolutePath();
-				}
-			}
-		} catch (Throwable t) {
-		}
-
-		return java.nio.file.Paths.get(System.getProperty("user.home"), "workspace").toAbsolutePath().normalize().toString();
+		return eu.kalafatic.evolution.controller.resource.ResourceManager.getInstance()
+				.getPath(eu.kalafatic.evolution.controller.resource.EvoPath.WORKSPACE)
+				.toString();
 	}
 
 	/**
 	 * Returns the workspace folder path (instance method).
 	 *
-	 * @return the absolute path of the workspace folder.
+	 * @return the absolute path of the workspace folder, or null if it cannot be determined.
 	 */
 	public String getWorkspaceFolderPath() {
 		return getWorkspacePath();
@@ -1185,11 +1175,46 @@ public class ProjectModelManager {
 
     public static String migratePath(String path) {
         if (path == null) return null;
+        String dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("ddMMyy"));
         String userHomeNorm = System.getProperty("user.home").replace("\\", "/");
+
+        // Normalize backslashes/forwardslashes to simplify comparisons
         String normalized = path.replace("\\", "/");
+
+        // Strip hardcoded user prefix if present
         if (normalized.matches("(?i)[a-z]:/users/[^/]+/.*")) {
             normalized = userHomeNorm + normalized.substring(normalized.indexOf('/', 10));
         }
-        return path.contains("\\") ? normalized.replace("/", "\\") : normalized;
+
+        // 1. Replace any 6-digit date segment under projects/evo/supervisor/ or self-dev-run/
+        if (normalized.contains("projects/evo/supervisor/")) {
+            normalized = normalized.replaceAll("(?i)projects/evo/supervisor/\\d{6}", "workspace/self-dev-run/" + dateStr);
+            return path.contains("\\") ? normalized.replace("/", "\\") : normalized;
+        }
+
+        // 2. Also handle if it contains supervisor/<some_old_date>
+        if (normalized.contains("supervisor/")) {
+            normalized = normalized.replaceAll("(?i)supervisor/\\d{6}", "workspace/self-dev-run/" + dateStr);
+            normalized = normalized.replaceAll("(?i)supervisor/(sources|builds|export|src|bin|sources-)", "workspace/self-dev-run/" + dateStr + "/$1");
+            return path.contains("\\") ? normalized.replace("/", "\\") : normalized;
+        }
+
+        String oldHomePrefix = userHomeNorm + "/supervisor";
+        String newHomePrefix = userHomeNorm + "/workspace/self-dev-run/" + dateStr;
+
+        if (normalized.startsWith(oldHomePrefix)) {
+            String remainder = normalized.substring(oldHomePrefix.length());
+            if (remainder.equals("/source") || remainder.equals("/sources")) {
+                remainder = "/sources";
+            } else if (remainder.equals("/bin") || remainder.equals("/builds")) {
+                remainder = "/builds";
+            } else if (remainder.equals("/bin/export") || remainder.equals("/export")) {
+                remainder = "/export";
+            }
+            String migrated = newHomePrefix + remainder;
+            return path.contains("\\") ? migrated.replace("/", "\\") : migrated;
+        }
+
+        return path;
     }
 }

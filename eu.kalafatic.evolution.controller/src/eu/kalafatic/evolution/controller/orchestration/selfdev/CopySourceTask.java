@@ -20,14 +20,15 @@ public class CopySourceTask extends AbstractSelfDevTask {
 
         if ("COPY_SUPERVISOR".equalsIgnoreCase(id)) {
             this.sourceRoot = (res != null && res.getSupervisorDirectory() != null) ? res.getSupervisorDirectory() : (context != null ? context.getSupervisorDirectory() : null);
-            File baseSourceDir = (res != null && res.getSourceDirectory() != null) ? res.getSourceDirectory() : (context != null ? context.getSourceDirectory() : null);
-            this.targetDir = baseSourceDir != null ? new File(baseSourceDir, "eu.kalafatic.evolution.supervisor") : null;
+            File prepared = (res != null && res.getPreparedReactorDirectory() != null) ? res.getPreparedReactorDirectory() : (context != null ? context.getPreparedReactorDirectory() : null);
+            this.targetDir = prepared != null ? new File(prepared, "eu.kalafatic.evolution.supervisor") : null;
         } else {
-            this.sourceRoot = (res != null && res.getReactorDirectory() != null) ? res.getReactorDirectory() : ((res != null && res.getRepositoryRoot() != null) ? res.getRepositoryRoot() : (context != null ? context.getRepositoryRoot() : null));
-            this.targetDir = (res != null && res.getSourceDirectory() != null) ? res.getSourceDirectory() : (context != null ? context.getSourceDirectory() : null);
+            this.sourceRoot = (res != null && res.getRepositoryRoot() != null) ? res.getRepositoryRoot() : (context != null ? context.getRepositoryRoot() : null);
+            this.targetDir = (res != null && res.getPreparedReactorDirectory() != null) ? res.getPreparedReactorDirectory() : (context != null ? context.getPreparedReactorDirectory() : null);
         }
 
         logTaskStep("PATH_SOURCE", "property=sourceRoot, value=" + (sourceRoot != null ? sourceRoot.getAbsolutePath() : "null") + ", origin=" + (res != null ? "ResolvedSelfDevResources" : "SelfDevContext"));
+        logTaskStep("PATH_TARGET", "property=targetDir, value=" + (targetDir != null ? targetDir.getAbsolutePath() : "null") + ", origin=" + (res != null ? "ResolvedSelfDevResources" : "SelfDevContext"));
     }
 
     @Override
@@ -41,6 +42,13 @@ public class CopySourceTask extends AbstractSelfDevTask {
         if (targetDir == null) {
             return TaskResult.failure(id, "CopySourceTask pre-validation failed: target directory is null", null);
         }
+
+        boolean samePath = sourceRoot.getCanonicalFile().equals(targetDir.getCanonicalFile());
+        if (samePath) {
+            eu.kalafatic.evolution.controller.log.Log.log("[SELF-DEV][COPY]\nSOURCE = " + sourceRoot.getAbsolutePath() + "\nTARGET = " + targetDir.getAbsolutePath() + "\nRESULT = FAILED (Same Path)");
+            return TaskResult.failure(id, "COPY FAILED: Source reactor (" + sourceRoot.getAbsolutePath() + ") and prepared reactor (" + targetDir.getAbsolutePath() + ") resolve to the same directory.", null);
+        }
+
         return new TaskResult.Builder(id)
                 .status(TaskStatus.READY)
                 .message("Source directory verified: " + sourceRoot.getAbsolutePath())
@@ -50,21 +58,26 @@ public class CopySourceTask extends AbstractSelfDevTask {
 
     @Override
     protected TaskResult run(SelfDevContext context) throws Exception {
+        eu.kalafatic.evolution.controller.log.Log.log("[SELF-DEV][COPY]\nSOURCE = " + sourceRoot.getAbsolutePath() + "\nTARGET = " + targetDir.getAbsolutePath());
+        System.out.println("[SELF-DEV][COPY]\nSOURCE = " + sourceRoot.getAbsolutePath() + "\nTARGET = " + targetDir.getAbsolutePath());
         return sourceProvider.fetchSource(sourceRoot, targetDir);
     }
 
     @Override
     protected TaskResult postValidate(SelfDevContext context, TaskResult runResult) throws Exception {
+        boolean destinationPom = targetDir.exists() && new File(targetDir, "pom.xml").exists();
+        boolean success = runResult.isSuccess() && destinationPom;
+
+        eu.kalafatic.evolution.controller.log.Log.log("[SELF-DEV][COPY]\nSOURCE = " + sourceRoot.getAbsolutePath() +
+                "\nTARGET = " + targetDir.getAbsolutePath() +
+                "\nRESULT = " + (success ? "SUCCESS" : "FAILED"));
+
         if (!runResult.isSuccess()) {
             return runResult;
         }
 
-        if (!targetDir.exists() || !new File(targetDir, "pom.xml").exists()) {
+        if (!destinationPom) {
             return TaskResult.failure(id, "Copy post-validation failed: destination directory " + targetDir.getAbsolutePath() + " is missing required pom.xml", null);
-        }
-
-        if (context != null) {
-            context.discoverAndRepairModulePaths();
         }
 
         return new TaskResult.Builder(id)

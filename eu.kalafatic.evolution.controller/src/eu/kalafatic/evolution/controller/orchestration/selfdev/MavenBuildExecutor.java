@@ -43,6 +43,7 @@ public class MavenBuildExecutor {
             command.addAll(userArgs);
         }
 
+
         String fullCommandStr = String.join(" ", command);
         String javaHome = System.getProperty("java.home");
         String startDateStr = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(startTime));

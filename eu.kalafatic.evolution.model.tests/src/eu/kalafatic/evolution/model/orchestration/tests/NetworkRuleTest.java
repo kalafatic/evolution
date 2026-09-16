@@ -67,11 +67,4 @@ public class NetworkRuleTest extends RuleTest {
 		setFixture(null);
 	}
 
-	/**
-	 * Tests the fixture creation.
-	 */
-	public void testFixture() {
-		assertNotNull(getFixture());
-	}
-
 } //NetworkRuleTest

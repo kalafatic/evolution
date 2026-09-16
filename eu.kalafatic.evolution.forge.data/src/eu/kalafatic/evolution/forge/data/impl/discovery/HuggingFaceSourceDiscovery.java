@@ -156,6 +156,7 @@ public class HuggingFaceSourceDiscovery implements TrainingDataSourceDiscovery {
                     long realMetadataBytes = extractRealMetadataBytes(obj);
 
                     DatasetSourceConfig cfg = new DatasetSourceConfig("HUGGING_FACE", id);
+                    cfg.setOrigin("DISCOVERY");
                     DatasetSource src = new HuggingFaceDatasetSource(cfg, downloader);
                     String lang = preferences != null && preferences.getRequiredLanguage() != null ? preferences.getRequiredLanguage() : "en";
 
@@ -205,6 +206,7 @@ public class HuggingFaceSourceDiscovery implements TrainingDataSourceDiscovery {
         for (String repo : repos) {
             if (seenRepos.add(repo)) {
                 DatasetSourceConfig cfg = new DatasetSourceConfig("HUGGING_FACE", repo);
+                cfg.setOrigin("FALLBACK");
                 if ("Salesforce/wikitext".equalsIgnoreCase(repo) || "wikitext".equalsIgnoreCase(repo)) {
                     cfg.setConfiguration("wikitext-103-v1");
                 }

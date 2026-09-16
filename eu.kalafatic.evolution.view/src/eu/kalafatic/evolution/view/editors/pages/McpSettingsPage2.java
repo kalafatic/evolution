@@ -41,7 +41,7 @@
 //			settings = OrchestrationFactory.eINSTANCE.createServerSettings();
 //			orchestrator.setServerSettings(settings);
 //		}
-//		
+//
 //		if (orchestrator.getMcpServerUrl() == null || orchestrator.getMcpServerUrl().isEmpty()) {
 //			orchestrator.setMcpServerUrl("http://" + MCP_ADDRESS + "/mcp");
 //		}
@@ -154,7 +154,7 @@
 //	}
 //
 //	public void refreshResources() {
-//		
+//
 //		String url = configGroup.getUrl();
 //
 //		resourcesGroup.clear();
@@ -194,8 +194,8 @@
 //		String url = configGroup.getUrl();
 //		if (url.isEmpty())
 //			return;
-//		
-//		
+//
+//
 //		toolsGroup.clear();
 //		new Thread(() -> {
 //			try {

@@ -183,7 +183,7 @@ public class EclipseGitEvoTool2 {
 
 	public static void registerRepository(RepoConfig repo) {
 		registry.put(repo.id, repo);
-		
+
 		EclipseGitEvoTool2.changeRemoteUrl(repo.id, repo.defaultRemote);
 		EclipseGitEvoTool2.changeRepositoryLocation(repo.id, repo.defaultLocalPath);
 		EclipseGitEvoTool2.changeBranch(repo.id, repo.defaultBranch);
@@ -298,8 +298,8 @@ public class EclipseGitEvoTool2 {
 			}
 		}
 		Display.getDefault().timerExec(2000, () -> refreshGitView());
-		
-		
+
+
 		log("Initialization complete.");
 		return new GitOpResult(OpStatus.SUCCESS, "Repositories initialized");
 	}
@@ -353,9 +353,9 @@ public class EclipseGitEvoTool2 {
 	public static GitOpResult registerRepositoriesInGitView() {
 		for (String id : registry.keySet())
 			registerRepositoriesInGitView(id);
-		
+
 		Display.getDefault().timerExec(2000, () -> refreshGitView());
-		
+
 		return new GitOpResult(OpStatus.SUCCESS, "All repositories registered");
 	}
 
@@ -420,7 +420,7 @@ public class EclipseGitEvoTool2 {
 
 				// Method 2: Force refresh of EGit's internal cache
 				// Activator.getDefault().getRepositoryCache().refresh();
-				
+
 				// Method 3: Notify the workspace
 
 				ResourcesPlugin.getWorkspace().getRoot().refreshLocal(IResource.DEPTH_INFINITE, null);
@@ -504,10 +504,10 @@ public class EclipseGitEvoTool2 {
 			log("Failed to save configuration: " + e.getMessage());
 		}
 	}
-	
+
 
 public static boolean isGitRepository(File repoDir) {
-    try {    	
+    try {
         File gitDir = repoDir.getName().equals(".git") ? repoDir : new File(repoDir, ".git");
         return FileKey.isGitRepository(gitDir, FS.DETECTED);
     } catch (Exception e) {
@@ -528,7 +528,7 @@ public static boolean isGitRepository(File repoDir) {
 				// 1. Create the repo using JGit
 				git = Git.init().setDirectory(canonicalRepoDir).call();
 				log("Created new repository at: " + canonicalRepoDir.getAbsolutePath());
-			}		
+			}
 
 			// 2. Clean up
 			git.close();
@@ -547,7 +547,7 @@ public static boolean isGitRepository(File repoDir) {
 			createAndShowRepository(gitDir.getParentFile());
 
 			List<Object> utils = new ArrayList<>();
-			
+
 			// 1. RepositoryUtil.INSTANCE
 			try {
 				utils.add(org.eclipse.egit.core.RepositoryUtil.INSTANCE);

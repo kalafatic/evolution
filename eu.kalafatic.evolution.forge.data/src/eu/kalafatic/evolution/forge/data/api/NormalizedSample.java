@@ -37,6 +37,8 @@ public class NormalizedSample {
     private String instruction;
     private String response;
     private List<Message> messages;
+    private String conversationId;
+    private List<NormalizedMessage> conversationMessages;
     private String category;
     private String source;
     private double qualityScore = 1.0;
@@ -49,6 +51,7 @@ public class NormalizedSample {
     public NormalizedSample() {
         this.type = TrainingSampleType.TEXT;
         this.messages = new ArrayList<>();
+        this.conversationMessages = new ArrayList<>();
     }
 
     public NormalizedSample(TrainingSampleType type, String text) {
@@ -79,6 +82,18 @@ public class NormalizedSample {
         sample.setType(TrainingSampleType.CHAT);
         if (messages != null) {
             sample.setMessages(new ArrayList<>(messages));
+        }
+        sample.setSource(source);
+        sample.recalculateCountsAndHash();
+        return sample;
+    }
+
+    public static NormalizedSample createConversationSample(String conversationId, List<NormalizedMessage> messages, String source) {
+        NormalizedSample sample = new NormalizedSample();
+        sample.setType(TrainingSampleType.CONVERSATION);
+        sample.setConversationId(conversationId);
+        if (messages != null) {
+            sample.setConversationMessages(new ArrayList<>(messages));
         }
         sample.setSource(source);
         sample.recalculateCountsAndHash();
@@ -116,6 +131,18 @@ public class NormalizedSample {
         if (text != null && !text.isEmpty()) {
             return text;
         }
+        if (conversationMessages != null && !conversationMessages.isEmpty()) {
+            StringBuilder sb = new StringBuilder();
+            for (NormalizedMessage m : conversationMessages) {
+                if (m != null) {
+                    sb.append(m.getRole() != null ? m.getRole() : "user")
+                      .append(": ")
+                      .append(m.getText() != null ? m.getText() : "")
+                      .append("\n");
+                }
+            }
+            return sb.toString().trim();
+        }
         if (instruction != null || response != null) {
             StringBuilder sb = new StringBuilder();
             if (instruction != null) sb.append(instruction).append("\n");
@@ -143,6 +170,31 @@ public class NormalizedSample {
         sb.append("\"type\":\"").append(type.name()).append("\",");
         sb.append("\"text\":\"").append(escapeJson(toFullText())).append("\",");
 
+        if (conversationId != null) {
+            sb.append("\"conversationId\":\"").append(escapeJson(conversationId)).append("\",");
+        }
+        if (conversationMessages != null && !conversationMessages.isEmpty()) {
+            sb.append("\"messages\":[");
+            for (int i = 0; i < conversationMessages.size(); i++) {
+                NormalizedMessage m = conversationMessages.get(i);
+                if (i > 0) sb.append(",");
+                sb.append("{");
+                sb.append("\"role\":\"").append(escapeJson(m.getRole() != null ? m.getRole() : "")).append("\",");
+                sb.append("\"text\":\"").append(escapeJson(m.getText() != null ? m.getText() : "")).append("\",");
+                if (m.getMessageId() != null) {
+                    sb.append("\"messageId\":\"").append(escapeJson(m.getMessageId())).append("\",");
+                } else {
+                    sb.append("\"messageId\":null,");
+                }
+                if (m.getParentMessageId() != null) {
+                    sb.append("\"parentMessageId\":\"").append(escapeJson(m.getParentMessageId())).append("\"");
+                } else {
+                    sb.append("\"parentMessageId\":null");
+                }
+                sb.append("}");
+            }
+            sb.append("],");
+        }
         if (instruction != null) {
             sb.append("\"instruction\":\"").append(escapeJson(instruction)).append("\",");
         }
@@ -200,6 +252,12 @@ public class NormalizedSample {
 
     public List<Message> getMessages() { return messages; }
     public void setMessages(List<Message> messages) { this.messages = messages; }
+
+    public String getConversationId() { return conversationId; }
+    public void setConversationId(String conversationId) { this.conversationId = conversationId; }
+
+    public List<NormalizedMessage> getConversationMessages() { return conversationMessages; }
+    public void setConversationMessages(List<NormalizedMessage> conversationMessages) { this.conversationMessages = conversationMessages; }
 
     public String getCategory() { return category; }
     public void setCategory(String category) { this.category = category; }

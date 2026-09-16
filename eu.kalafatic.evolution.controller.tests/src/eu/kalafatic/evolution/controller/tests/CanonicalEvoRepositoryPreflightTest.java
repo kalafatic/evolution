@@ -96,18 +96,18 @@ public class CanonicalEvoRepositoryPreflightTest {
     }
 
     @Test
-    public void testLayerSourceConflictTriggersPathConflictBlock() throws IOException {
+    public void testLayerRepositoryConflictTriggersPathConflictBlock() throws IOException {
         File repo = tempFolder.newFolder("canonical_repo");
         new File(repo, ".git").mkdirs();
         Files.writeString(new File(repo, "pom.xml").toPath(), "<project></project>");
 
-        File conflictingSource = tempFolder.newFolder("other_source");
+        File conflictingRepo = tempFolder.newFolder("other_repo");
 
         SelfDevContext context = new SelfDevContext(repo, resourceManager.getOrchestrator());
 
-        // Manually set a conflicting source path on context
+        // Manually set a conflicting repository path on context snapshot
         ResolvedSelfDevResources conflictingSnapshot = new ResolvedSelfDevResources(
-                repo, repo, conflictingSource, conflictingSource,
+                conflictingRepo, repo, repo, repo,
                 new File(repo, "build"), new File(repo, "export"), new File(repo, "runtime"), new File(repo, "logs"),
                 new File(repo, "supervisor"), new File(repo, "genome"),
                 "win32", "win32", "x86_64", "evolution", "evo",

@@ -41,19 +41,19 @@ public class OrchestrationExample {
 		// Create a resource set to hold the resources.
 		//
 		ResourceSet resourceSet = new ResourceSetImpl();
-		
+
 		// Register the appropriate resource factory to handle all file extensions.
 		//
 		resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap().put
-			(Resource.Factory.Registry.DEFAULT_EXTENSION, 
+			(Resource.Factory.Registry.DEFAULT_EXTENSION,
 			 new XMIResourceFactoryImpl());
 
 		// Register the package to ensure it is available during loading.
 		//
 		resourceSet.getPackageRegistry().put
-			(OrchestrationPackage.eNS_URI, 
+			(OrchestrationPackage.eNS_URI,
 			 OrchestrationPackage.eINSTANCE);
-        
+
 		// If there are no arguments, emit an appropriate usage message.
 		//
 		if (args.length == 0) {
@@ -101,7 +101,7 @@ public class OrchestrationExample {
 			}
 		}
 	}
-	
+
 	/**
 	 * <!-- begin-user-doc -->
 	 * Prints diagnostics with indentation.

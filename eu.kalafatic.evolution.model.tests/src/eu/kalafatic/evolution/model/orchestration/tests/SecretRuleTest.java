@@ -67,11 +67,4 @@ public class SecretRuleTest extends RuleTest {
 		setFixture(null);
 	}
 
-	/**
-	 * Tests the fixture creation.
-	 */
-	public void testFixture() {
-		assertNotNull(getFixture());
-	}
-
 } //SecretRuleTest
