@@ -70,10 +70,10 @@ public class DatasetPreparationService {
             return result;
         }
 
-        // Generate canonical timestamped evodata output filename
+        // Generate canonical timestamped evodata output filename (standard date time: yyyyMMdd_HHmmss.evodata)
         String timestampStr = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
         String cacheKey = computeCacheKey(checkedItems, context.getTargetUsableBytes());
-        File evodataFile = new File(outputDir, "evo-data-" + timestampStr + ".evodata");
+        File evodataFile = new File(outputDir, timestampStr + ".evodata");
         File cacheFile = new File(outputDir, "prepared_" + cacheKey + ".evodata");
 
         // Re-use cached evodata artifact if exact sources & configuration match
