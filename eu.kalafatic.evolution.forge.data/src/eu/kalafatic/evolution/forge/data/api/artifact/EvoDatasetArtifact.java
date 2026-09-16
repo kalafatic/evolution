@@ -70,6 +70,8 @@ public class EvoDatasetArtifact {
         // Split samples after deduplication
         trainSamples.clear();
         valSamples.clear();
+        totalTrainTokens = 0;
+        totalValTokens = 0;
 
         int valCount = (int) (allSamples.size() * valSplit);
         int trainCount = allSamples.size() - valCount;
@@ -239,7 +241,11 @@ public class EvoDatasetArtifact {
                                     artifact.totalTrainTokens += sample.getTokenCount();
                                 }
                             } catch (Exception ex) {
-                                artifact.trainSamples.add(NormalizedSample.createTextSample(trimmed, file.getName()));
+                                // Do NOT silently convert malformed JSON records into synthetic training samples
+                                if (artifact.stats != null) {
+                                    artifact.stats.incrementRejected();
+                                    artifact.stats.addRejectedBytes(trimmed.getBytes(StandardCharsets.UTF_8).length);
+                                }
                             }
                         }
                     }

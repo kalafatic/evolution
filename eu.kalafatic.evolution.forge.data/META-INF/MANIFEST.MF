@@ -27,4 +27,5 @@ Export-Package: eu.kalafatic.evolution.forge.data.api,
  eu.kalafatic.evolution.forge.data.impl.processor,
  eu.kalafatic.evolution.forge.data.impl.service,
  eu.kalafatic.evolution.forge.data.impl.source,
+ eu.kalafatic.evolution.forge.data.impl.source.adapters,
  eu.kalafatic.evolution.forge.data.impl.writer

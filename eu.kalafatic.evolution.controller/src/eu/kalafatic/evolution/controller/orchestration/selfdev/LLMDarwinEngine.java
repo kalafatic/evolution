@@ -394,192 +394,46 @@ public class LLMDarwinEngine extends ADarwinEngine {
 		}
 		context.log("[FORGE] Using base model for reference evaluation assistance: " + baseModel);
 
-		// Load dynamic configuration from ForgeSessionManager for progressive training
-		// sources and assistance settings
+		// Load dynamic configuration from ForgeSessionManager
 		JSONObject uiState = eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager.getInstance()
 				.getUiState(context.getSessionId());
-		boolean sourceMarkdown = uiState.optBoolean("source_markdown", true);
-		boolean sourceJava = uiState.optBoolean("source_java", false);
-		boolean sourceXml = uiState.optBoolean("source_xml", false);
-		boolean sourceJson = uiState.optBoolean("source_json", false);
-		boolean sourceConfiguration = uiState.optBoolean("source_configuration", false);
-		boolean sourceExternal = uiState.optBoolean("source_external", false);
 
-		boolean assistanceExtraction = uiState.optBoolean("assistance_extraction", true);
-		boolean assistanceQa = uiState.optBoolean("assistance_qa", true);
-		boolean assistanceQuality = uiState.optBoolean("assistance_quality", true);
-
-		List<Path> scannedPaths = new ArrayList<>();
-
-		// Check for ordered checked datasets in uiState first
-		JSONArray datasetsArr = null;
+		// Obtain selected datasetItems from Forge configuration as authoritative source of truth
+		List<eu.kalafatic.evolution.forge.data.api.source.DatasetItem> datasetItems = new ArrayList<>();
 		if (uiState.has("datasets")) {
-			Object dsObj = uiState.get("datasets");
-			if (dsObj instanceof JSONArray) {
-				datasetsArr = (JSONArray) dsObj;
-			} else if (dsObj instanceof String && !((String) dsObj).trim().isEmpty()) {
-				try {
-					datasetsArr = new JSONArray((String) dsObj);
-				} catch (Exception ex) {}
-			}
+			datasetItems = eu.kalafatic.evolution.forge.data.api.source.DatasetItem.parseJsonList(uiState.get("datasets"));
+		}
+		if (datasetItems.isEmpty()) {
+			datasetItems.add(new eu.kalafatic.evolution.forge.data.api.source.DatasetItem(true, targetPath, "FOLDER"));
 		}
 
-		if (datasetsArr != null && datasetsArr.length() > 0) {
-			context.log("[FORGE] Processing " + datasetsArr.length() + " configured dataset target entries in order...");
-			for (int i = 0; i < datasetsArr.length(); i++) {
-				JSONObject dsItem = datasetsArr.optJSONObject(i);
-				if (dsItem != null && dsItem.optBoolean("checked", true)) {
-					String pathStr = dsItem.optString("path", "").trim();
-					if (!pathStr.isEmpty()) {
-						Path path = Paths.get(pathStr);
-						if (Files.exists(path)) {
-							if (Files.isRegularFile(path)) {
-								if (!scannedPaths.contains(path)) {
-									scannedPaths.add(path);
-								}
-							} else if (Files.isDirectory(path)) {
-								try (Stream<Path> walk = Files.walk(path)) {
-									List<Path> files = walk.filter(Files::isRegularFile)
-											.filter(p -> !p.toString().contains("/.git/") && !p.toString().contains("\\.git\\")
-													&& !p.toString().contains("/target/") && !p.toString().contains("\\target\\")
-													&& !p.toString().contains("/node_modules/")
-													&& !p.toString().contains("\\node_modules\\"))
-											.sorted()
-											.limit(MAX_CORPUS_FILES).collect(Collectors.toList());
-									for (Path file : files) {
-										String name = file.getFileName().toString().toLowerCase();
-										boolean accept = false;
-										if (name.endsWith(".md") && sourceMarkdown) accept = true;
-										else if (name.endsWith(".java") && sourceJava) accept = true;
-										else if (name.endsWith(".xml") && sourceXml) accept = true;
-										else if (name.endsWith(".json") && sourceJson) accept = true;
-										else if ((name.endsWith(".properties") || name.equals("pom.xml") || name.equals("manifest.mf")) && sourceConfiguration) accept = true;
-										else if (sourceExternal && (name.endsWith(".html") || name.endsWith(".htm"))) accept = true;
+		long targetUsableBytes = uiState.optLong("targetUsableBytes", uiState.optLong("minimumUsableBytes", 524_288_000L));
+		eu.kalafatic.evolution.forge.data.api.source.DatasetPreparationContext prepContext =
+				new eu.kalafatic.evolution.forge.data.api.source.DatasetPreparationContext(targetUsableBytes, context::log);
 
-										if (!sourceMarkdown && !sourceJava && !sourceXml && !sourceJson && !sourceConfiguration && !sourceExternal) {
-											if (name.endsWith(".md")) accept = true;
-										}
+		eu.kalafatic.evolution.forge.data.impl.service.DatasetPreparationService prepService =
+				new eu.kalafatic.evolution.forge.data.impl.service.DatasetPreparationService();
 
-										if (accept && !scannedPaths.contains(file)) {
-											scannedPaths.add(file);
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
+		File datasetOutputDir = new File(System.getProperty("user.home"), "workspace/datasets");
+		eu.kalafatic.evolution.forge.data.api.service.DatasetPreparationResult prepResult =
+				prepService.prepareDatasets(datasetItems, prepContext, datasetOutputDir);
 
-		if (scannedPaths.isEmpty()) {
-			File targetFolder = new File(targetPath);
-			if (targetFolder.exists() && targetFolder.isDirectory()) {
-				try (Stream<Path> walk = Files.walk(targetFolder.toPath())) {
-					List<Path> files = walk.filter(Files::isRegularFile)
-							.filter(p -> !p.toString().contains("/.git/") && !p.toString().contains("\\.git\\")
-									&& !p.toString().contains("/target/") && !p.toString().contains("\\target\\")
-									&& !p.toString().contains("/node_modules/")
-									&& !p.toString().contains("\\node_modules\\"))
-							.sorted() // Deterministic file ordering
-							.limit(MAX_CORPUS_FILES).collect(Collectors.toList());
-					for (Path file : files) {
-						String name = file.getFileName().toString().toLowerCase();
-						boolean accept = false;
-						if (name.endsWith(".md") && sourceMarkdown)
-							accept = true;
-						else if (name.endsWith(".java") && sourceJava)
-							accept = true;
-						else if (name.endsWith(".xml") && sourceXml)
-							accept = true;
-						else if (name.endsWith(".json") && sourceJson)
-							accept = true;
-						else if ((name.endsWith(".properties") || name.equals("pom.xml") || name.equals("manifest.mf"))
-								&& sourceConfiguration)
-							accept = true;
-						else if (sourceExternal && (name.endsWith(".html") || name.endsWith(".htm")))
-							accept = true;
-
-						// Default to markdown if no training sources configured
-						if (!sourceMarkdown && !sourceJava && !sourceXml && !sourceJson && !sourceConfiguration
-								&& !sourceExternal) {
-							if (name.endsWith(".md"))
-								accept = true;
-						}
-
-						if (accept) {
-							scannedPaths.add(file);
-						}
-					}
-				}
-			}
-		}
-
-		// 1. SourceAnalysisAgent (Sub-agent)
-		SourceAnalysisAgent sourceAnalysisAgent = new SourceAnalysisAgent();
-		List<KnowledgeUnit> knowledgeUnits = sourceAnalysisAgent.analyze(scannedPaths,
-				context.getProjectRoot().toPath());
-		context.log("[FORGE] SourceAnalysisAgent completed. Analyzed knowledge units: " + knowledgeUnits.size());
-
-		// 2. ConsistencyAgent (Sub-agent)
-		ConsistencyAgent consistencyAgent = new ConsistencyAgent();
-		List<ConsistencyAgent.ConsistencyViolation> consistencyViolations = consistencyAgent
-				.checkConsistency(knowledgeUnits);
-		context.log("[FORGE] ConsistencyAgent complete. Violations detected: " + consistencyViolations.size());
-		for (ConsistencyAgent.ConsistencyViolation violation : consistencyViolations) {
-			context.log("[FORGE] [CONSISTENCY DRIFT] " + violation.toString());
-		}
-
-		// 3. KnowledgeExtractionAgent (Sub-agent)
-		LocalOllamaClient ollamaClient = new LocalOllamaClient(ollamaUrl, baseModel);
-		KnowledgeExtractionAgent knowledgeExtractionAgent = new KnowledgeExtractionAgent(ollamaClient,
-				assistanceExtraction);
-		List<KnowledgeFact> extractedFacts = knowledgeExtractionAgent.extract(knowledgeUnits);
-		context.log("[FORGE] KnowledgeExtractionAgent completed. Extracted facts: " + extractedFacts.size());
-
-		// 4. TrainingDataAgent (Sub-agent)
-		TrainingDataAgent trainingDataAgent = new TrainingDataAgent();
-		List<TrainingRecord> generatedRecords = trainingDataAgent.generate(extractedFacts);
-		context.log("[FORGE] TrainingDataAgent completed. Training records generated: " + generatedRecords.size());
-
-		// 5. DatasetQualityAgent (Sub-agent)
-		DatasetQualityAgent datasetQualityAgent = new DatasetQualityAgent();
-		List<DatasetQualityAgent.QualityReport> qualityReports = datasetQualityAgent.evaluate(generatedRecords);
-		List<TrainingRecord> acceptedRecords = new ArrayList<>();
-		int rejectedCount = 0;
-		for (DatasetQualityAgent.QualityReport report : qualityReports) {
-			if (report.getRecommendation() == DatasetQualityAgent.Recommendation.ACCEPT || !assistanceQuality) {
-				acceptedRecords.add(report.getRecord());
-			} else {
-				rejectedCount++;
-			}
-		}
-		context.log("[FORGE] DatasetQualityAgent completed. Accepted records: " + acceptedRecords.size()
-				+ ", Rejected: " + rejectedCount);
-
-		// Safe Fallback to raw Markdown if needed
 		StringBuilder corpusBuilder = new StringBuilder();
-		if (acceptedRecords.isEmpty() || !assistanceQa) {
-			context.log(
-					"[FORGE] No accepted QA training records or assistance disabled. Falling back to default raw content scan...");
-			int filesFound = 0;
-			for (KnowledgeUnit unit : knowledgeUnits) {
-				if (unit.getContent() != null && !unit.getContent().trim().isEmpty()) {
-					appendBounded(corpusBuilder, unit.getContent(), MAX_CORPUS_CHARS);
-					filesFound++;
-				}
+		if (prepResult != null && prepResult.getSamples() != null && !prepResult.getSamples().isEmpty()) {
+			for (eu.kalafatic.evolution.forge.data.api.NormalizedSample sample : prepResult.getSamples()) {
+				appendBounded(corpusBuilder, sample.toFullText(), MAX_CORPUS_CHARS);
 			}
-			if (corpusBuilder.length() == 0 || filesFound == 0) {
-				// Fallback to Repo Docs/
-				File fallbackDocs = new File(context.getProjectRoot(), "docs");
-				if (fallbackDocs.exists() && fallbackDocs.isDirectory()) {
-					try (Stream<Path> walk = Files.walk(fallbackDocs.toPath())) {
-						List<Path> files = walk.filter(Files::isRegularFile).filter(p -> p.toString().endsWith(".md"))
-								.sorted().limit(MAX_CORPUS_FILES).collect(Collectors.toList());
-						for (Path f : files) {
-							appendBounded(corpusBuilder, Files.readString(f), MAX_CORPUS_CHARS);
-							filesFound++;
-						}
+		}
+
+		if (corpusBuilder.length() == 0) {
+			context.log("[FORGE] Prepared dataset produced empty text. Falling back to target folder scan...");
+			File fallbackDocs = new File(targetPath);
+			if (fallbackDocs.exists() && fallbackDocs.isDirectory()) {
+				try (Stream<Path> walk = Files.walk(fallbackDocs.toPath())) {
+					List<Path> files = walk.filter(Files::isRegularFile).filter(p -> p.toString().endsWith(".md") || p.toString().endsWith(".txt"))
+							.sorted().limit(MAX_CORPUS_FILES).collect(Collectors.toList());
+					for (Path f : files) {
+						appendBounded(corpusBuilder, Files.readString(f), MAX_CORPUS_CHARS);
 					}
 				}
 			}
@@ -590,22 +444,9 @@ public class LLMDarwinEngine extends ADarwinEngine {
 								+ "political: independence and local control from centralized AI authorities.\n",
 						MAX_CORPUS_CHARS);
 			}
-		} else {
-			for (TrainingRecord r : acceptedRecords) {
-				appendBounded(corpusBuilder, r.getInstruction() + "\n" + r.getResponse(), MAX_CORPUS_CHARS);
-			}
 		}
 
 		String corpus = corpusBuilder.toString();
-		// Clear collections immediately to reclaim heap space
-		scannedPaths.clear();
-		knowledgeUnits.clear();
-		consistencyViolations.clear();
-		extractedFacts.clear();
-		generatedRecords.clear();
-		qualityReports.clear();
-		acceptedRecords.clear();
-
 		MarkdownCleaner cleaner = new MarkdownCleaner();
 		String cleanCorpus = cleaner.clean(corpus);
 		corpus = null; // release immediately
