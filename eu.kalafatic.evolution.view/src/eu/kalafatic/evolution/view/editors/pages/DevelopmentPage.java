@@ -3,6 +3,7 @@ package eu.kalafatic.evolution.view.editors.pages;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.resource.ImageRegistry;
 import org.eclipse.jface.viewers.ArrayContentProvider;
@@ -11,14 +12,12 @@ import org.eclipse.jface.viewers.ITableColorProvider;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.browser.Browser;
-import org.eclipse.swt.browser.LocationAdapter;
-import org.eclipse.swt.browser.LocationEvent;
 import org.eclipse.swt.browser.ProgressAdapter;
 import org.eclipse.swt.browser.ProgressEvent;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -27,24 +26,21 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Table;
-import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IFileEditorInput;
 import org.json.JSONArray;
 import org.json.JSONObject;
+
 import eu.kalafatic.evolution.controller.orchestration.OrchestratorServiceImpl;
 import eu.kalafatic.evolution.controller.orchestration.TaskRequest;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationMemoryService;
-import eu.kalafatic.evolution.controller.orchestration.selfdev.IterationRecord;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.SelfDevBootstrapController;
-import eu.kalafatic.evolution.controller.workflow.RuntimeEvent;
-import eu.kalafatic.evolution.view.projection.ProjectionService;
-import eu.kalafatic.evolution.view.projection.RuntimeProjection;
+import eu.kalafatic.evolution.controller.resource.EvoPath;
+import eu.kalafatic.evolution.controller.resource.ResourceManager;
+import eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool;
 import eu.kalafatic.evolution.model.orchestration.Agent;
-import eu.kalafatic.evolution.model.orchestration.Iteration;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
 import eu.kalafatic.evolution.model.orchestration.Task;
-import eu.kalafatic.utils.constants.FUIConstants;
 import eu.kalafatic.evolution.view.application.Activator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.development.InteractiveWorkflowGroup;
@@ -52,9 +48,19 @@ import eu.kalafatic.evolution.view.editors.pages.development.RowEditDialog;
 import eu.kalafatic.evolution.view.editors.pages.development.SupervisorGroup;
 import eu.kalafatic.evolution.view.editors.pages.development.VizGroup;
 import eu.kalafatic.evolution.view.editors.pages.iteration.SelfDevEditDialog;
+import eu.kalafatic.evolution.view.projection.ProjectionService;
+import eu.kalafatic.evolution.view.projection.RuntimeProjection;
+import eu.kalafatic.utils.constants.FUIConstants;
 import eu.kalafatic.utils.factories.GUIFactory;
 
 public class DevelopmentPage extends AEvoPage {
+	
+	enum EStatus {
+		READY, RUNNING, BLOCKED, ERROR, SUCCESS, NA
+	}
+	enum EApp {
+		EVO, SUPERVISOR
+	}
 
 	public static class SelfDevRow {
 		public static final String GIT_CHECK = "Git Check";
@@ -88,21 +94,21 @@ public class DevelopmentPage extends AEvoPage {
 		public String url;
 		public String status;
 		public String executor;
-		
-		public SelfDevRow(int order, String name, String path, String status) {
-			this(order, name, path, "NA", status, "NA");
+
+		public SelfDevRow(int order, String name, String path, EStatus eStatus) {
+			this(order, name, path, EStatus.NA.name(), eStatus, EApp.EVO.name());
 		}
 
-		public SelfDevRow(int order, String name, String path, String url, String status) {
-			this(order, name, path, url, status, "NA");
+		public SelfDevRow(int order, String name, String path, String url, EStatus eStatus) {
+			this(order, name, path, url, eStatus, EStatus.NA.name());
 		}
 
-		public SelfDevRow(int order, String name, String path, String url, String status, String executor) {
+		public SelfDevRow(int order, String name, String path, String url, EStatus eStatus, String executor) {
 			this.order = order;
 			this.name = name;
 			this.path = path;
 			this.url = url;
-			this.status = status;
+			this.status = eStatus.toString();
 			this.executor = executor;
 			this.selected = false;
 		}
@@ -310,57 +316,55 @@ public class DevelopmentPage extends AEvoPage {
 				? orchestrator.getGit().getRepositoryUrl()
 				: "";
 		if (localPath == null || localPath.isEmpty()) {
-			localPath = eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool
-					.getRepositoryPath(eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.REPO_EVOLUTION);
+			localPath = EclipseGitEvoTool.getRepositoryPath(EclipseGitEvoTool.REPO_EVOLUTION);
 		}
 		if (repoUrl == null || repoUrl.isEmpty()) {
-			repoUrl = eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool
-					.getRepositoryRemote(eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.REPO_EVOLUTION);
+			repoUrl = EclipseGitEvoTool.getRepositoryRemote(EclipseGitEvoTool.REPO_EVOLUTION);
 		}
-		
+
 		String mvnPath = (orchestrator != null && orchestrator.getMaven() != null)
 				? orchestrator.getMaven().getGoals().toString()
 				: "supervisor.maven";
 		String llmModel = (orchestrator != null && orchestrator.getLlm() != null) ? orchestrator.getLlm().getModel()
 				: "supervisor.llm";
 		String targetPath = getTargetPath();
-		String exportPath = eu.kalafatic.evolution.controller.resource.ResourceManager.getInstance().getPath(eu.kalafatic.evolution.controller.resource.EvoPath.EXPORT_ROOT).toString();
+		String exportPath = ResourceManager.getInstance().getPath(EvoPath.EXPORT_ROOT).toString();
 
 		String customSuperSrc = getSupervisorSourcePath();
 		String customSuperBin = getTargetPath();
 
 		int row = 1;
-		sdData.add(new SelfDevRow(row ++, SelfDevRow.LLM_CHECK, llmModel, "ready", "evo"));
-		sdData.add(new SelfDevRow(row ++, SelfDevRow.GIT_CHECK_EVO, localPath,repoUrl, "ready", "evo"));
-		sdData.add(new SelfDevRow(row ++, SelfDevRow.MAVEN_CHECK_EVO, mvnPath, "ready", "evo"));	
-		sdData.add(new SelfDevRow(row ++, SelfDevRow.COPY_SUPERVISOR_SRC, customSuperSrc, "ready", "evo"));
-		sdData.add(new SelfDevRow(row ++, SelfDevRow.BUILD_SUPERVISOR_LOCAL, customSuperBin, "ready", "evo"));
-		sdData.add(new SelfDevRow(row ++, SelfDevRow.SUPERVISOR_CHECK, "supervisor.exe", "ready", "evo"));
-		sdData.add(new SelfDevRow(row ++, SelfDevRow.GIT_CHECK_SUPERVISOR, localPath,repoUrl, "ready", "supervisor"));
-		sdData.add(new SelfDevRow(row ++, SelfDevRow.MAVEN_CHECK_SUPERVISOR, mvnPath, "ready", "supervisor"));
-		sdData.add(new SelfDevRow(row ++, SelfDevRow.GENOME_CHECK, "supervisor.genome", "ready", "evo"));
-		sdData.add(new SelfDevRow(row ++, SelfDevRow.PERM_CHECK, "supervisor.fs", "ready", "evo"));
-		String evoSourcePath = eu.kalafatic.evolution.controller.resource.ResourceManager.getInstance().getPath(eu.kalafatic.evolution.controller.resource.EvoPath.EVO_GIT_REPOSITORY).toString();
-		sdData.add(new SelfDevRow(row ++, SelfDevRow.COPY_SOURCE, evoSourcePath, "ready", "evo"));
-		sdData.add(new SelfDevRow(row ++, SelfDevRow.BUILD_PROJECT_EVO, targetPath, "ready", "evo"));
-		sdData.add(new SelfDevRow(row ++, SelfDevRow.BUILD_PROJECT_SUPERVISOR, targetPath, "ready", "supervisor"));
-		sdData.add(new SelfDevRow(row ++, SelfDevRow.EXPORT_PRODUCT_EVO, exportPath, "ready", "evo"));
-		sdData.add(new SelfDevRow(row ++, SelfDevRow.EXPORT_PRODUCT_SUPERVISOR, exportPath, "ready", "supervisor"));
-		sdData.add(new SelfDevRow(row ++, SelfDevRow.START_EVO_PRODUCT_SUPERVISOR, exportPath, "ready", "supervisor"));
-		sdData.add(new SelfDevRow(row ++, SelfDevRow.SUPERVISOR_LOOP, "supervisor.exe", "ready", "NA"));
-		sdData.add(new SelfDevRow(row ++, SelfDevRow.SELF_DEV_LOOP, "orchestrator", "ready", "NA"));
-		sdData.add(new SelfDevRow(row ++, SelfDevRow.STOP_EVO_PRODUCT_SUPERVISOR, exportPath, "ready", "supervisor"));
+		sdData.add(new SelfDevRow(row++, SelfDevRow.LLM_CHECK, llmModel, EStatus.READY));
+		sdData.add(new SelfDevRow(row++, SelfDevRow.GIT_CHECK_EVO, localPath, repoUrl, EStatus.READY));
+		sdData.add(new SelfDevRow(row++, SelfDevRow.MAVEN_CHECK_EVO, mvnPath, EStatus.READY));
+		sdData.add(new SelfDevRow(row++, SelfDevRow.COPY_SUPERVISOR_SRC, customSuperSrc, EStatus.READY));
+		sdData.add(new SelfDevRow(row++, SelfDevRow.BUILD_SUPERVISOR_LOCAL, customSuperBin, EStatus.READY));
+		sdData.add(new SelfDevRow(row++, SelfDevRow.SUPERVISOR_CHECK, "supervisor.exe", EStatus.READY));
+		sdData.add(new SelfDevRow(row++, SelfDevRow.GIT_CHECK_SUPERVISOR, localPath, repoUrl, EStatus.READY, EApp.SUPERVISOR.name()));
+		sdData.add(new SelfDevRow(row++, SelfDevRow.MAVEN_CHECK_SUPERVISOR, mvnPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
+		sdData.add(new SelfDevRow(row++, SelfDevRow.GENOME_CHECK, "supervisor.genome", EStatus.READY));
+		sdData.add(new SelfDevRow(row++, SelfDevRow.PERM_CHECK, "supervisor.fs", EStatus.READY));
+		String evoSourcePath = ResourceManager.getInstance().getPath(EvoPath.EVO_GIT_REPOSITORY).toString();
+		sdData.add(new SelfDevRow(row++, SelfDevRow.COPY_SOURCE, evoSourcePath, EStatus.READY));
+		sdData.add(new SelfDevRow(row++, SelfDevRow.BUILD_PROJECT_EVO, targetPath, EStatus.READY));
+		sdData.add(new SelfDevRow(row++, SelfDevRow.BUILD_PROJECT_SUPERVISOR, targetPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
+		sdData.add(new SelfDevRow(row++, SelfDevRow.EXPORT_PRODUCT_EVO, exportPath, EStatus.READY));
+		sdData.add(new SelfDevRow(row++, SelfDevRow.EXPORT_PRODUCT_SUPERVISOR, exportPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
+		sdData.add(new SelfDevRow(row++, SelfDevRow.START_EVO_PRODUCT_SUPERVISOR, exportPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
+		sdData.add(new SelfDevRow(row++, SelfDevRow.SUPERVISOR_LOOP, "supervisor.exe", EStatus.NA.name(),EStatus.READY, EApp.SUPERVISOR.name()));
+		sdData.add(new SelfDevRow(row++, SelfDevRow.SELF_DEV_LOOP, "orchestrator", EStatus.NA.name(), EStatus.READY,EApp.EVO.name()));
+		sdData.add(new SelfDevRow(row++, SelfDevRow.STOP_EVO_PRODUCT_SUPERVISOR, exportPath, EStatus.NA.name(),EStatus.READY, EApp.SUPERVISOR.name()));
 
 		sdData.sort((r1, r2) -> Integer.compare(r1.order, r2.order));
 		selfDevTable.setInput(sdData);
 	}
 
 	private String getTargetPath() {
-		return eu.kalafatic.evolution.controller.resource.ResourceManager.getInstance().getPath(eu.kalafatic.evolution.controller.resource.EvoPath.BUILD_ROOT).toString();
+		return ResourceManager.getInstance().getPath(EvoPath.BUILD_ROOT).toString();
 	}
 
 	private String getSupervisorSourcePath() {
-		return eu.kalafatic.evolution.controller.resource.ResourceManager.getInstance().getPath(eu.kalafatic.evolution.controller.resource.EvoPath.SUPERVISOR_SOURCE).toString();
+		return ResourceManager.getInstance().getPath(EvoPath.SUPERVISOR_SOURCE).toString();
 	}
 
 	private void createSelfDevContextMenu() {
@@ -394,7 +398,7 @@ public class DevelopmentPage extends AEvoPage {
 	}
 
 	private void createSelfDevColumns() {
-		String[] titles = { "#", "Action", "Edit", "Executed From", "Name", "Path","URL", "Status" };
+		String[] titles = { "#", "Action", "Edit", "Executed From", "Name", "Path", "URL", "Status" };
 		int[] bounds = { 40, 100, 50, 120, 150, 150, 250, 150 };
 		for (int i = 0; i < titles.length; i++) {
 			TableViewerColumn col = new TableViewerColumn(selfDevTable, SWT.NONE);
@@ -463,7 +467,7 @@ public class DevelopmentPage extends AEvoPage {
 					|| status.contains("updated") || status.startsWith("ready:")) {
 				return FUIConstants.LIGHT_GREEN;
 			}
-			if (status.equals("ready")) {
+			if (status.equals(EStatus.READY.name())) {
 				return FUIConstants.GRADIENT;
 			}
 			return null;
@@ -538,7 +542,7 @@ public class DevelopmentPage extends AEvoPage {
 			executeBackgroundTask(row, "BUILD_SUPERVISOR");
 		} else if (SelfDevRow.SUPERVISOR_CHECK.equals(row.name)) {
 			System.out.println("[DevelopmentPage] [SUPERVISOR_CHECK] Initiating background task execution.");
-			executeBackgroundTask(row, "SUPERVISOR");
+			executeBackgroundTask(row, EApp.SUPERVISOR.name());
 		} else {
 			String type = switch (row.name) {
 			case SelfDevRow.GIT_CHECK_EVO -> "GIT_EVO";
@@ -557,7 +561,7 @@ public class DevelopmentPage extends AEvoPage {
 			System.out
 					.println("[DevelopmentPage] [ACTION] Mapped row: '" + row.name + "' to check type: '" + type + "'");
 			if (type != null) {
-				if (type.contains("SUPERVISOR") || type.equals("COPY") || type.startsWith("BUILD")
+				if (type.contains(EApp.SUPERVISOR.name()) || type.equals("COPY") || type.startsWith("BUILD")
 						|| type.startsWith("EXPORT")) {
 					executeBackgroundTask(row, type);
 				} else {
@@ -674,10 +678,14 @@ public class DevelopmentPage extends AEvoPage {
 		sb.append("  Remote Git Repository -> Local Git Repository -> Build Workspace -> Supervisor -> EVO RCP\n\n");
 
 		sb.append("CONFIGURED PATHS:\n");
-		sb.append("  Local Git Repository (Source) : ").append(eu.kalafatic.evolution.controller.resource.ResourceManager.getInstance().getPath(eu.kalafatic.evolution.controller.resource.EvoPath.EVO_GIT_REPOSITORY)).append("\n");
-		sb.append("  Build Workspace (Output)      : ").append(eu.kalafatic.evolution.controller.resource.ResourceManager.getInstance().getPath(eu.kalafatic.evolution.controller.resource.EvoPath.BUILD_ROOT)).append("\n");
-		sb.append("  Export Directory              : ").append(eu.kalafatic.evolution.controller.resource.ResourceManager.getInstance().getPath(eu.kalafatic.evolution.controller.resource.EvoPath.EXPORT_ROOT)).append("\n");
-		sb.append("  Supervisor Source             : ").append(eu.kalafatic.evolution.controller.resource.ResourceManager.getInstance().getPath(eu.kalafatic.evolution.controller.resource.EvoPath.SUPERVISOR_SOURCE)).append("\n\n");
+		sb.append("  Local Git Repository (Source) : ")
+				.append(ResourceManager.getInstance().getPath(EvoPath.EVO_GIT_REPOSITORY)).append("\n");
+		sb.append("  Build Workspace (Output)      : ")
+				.append(ResourceManager.getInstance().getPath(EvoPath.BUILD_ROOT)).append("\n");
+		sb.append("  Export Directory              : ")
+				.append(ResourceManager.getInstance().getPath(EvoPath.EXPORT_ROOT)).append("\n");
+		sb.append("  Supervisor Source             : ")
+				.append(ResourceManager.getInstance().getPath(EvoPath.SUPERVISOR_SOURCE)).append("\n\n");
 
 		sb.append("TASK SCENARIOS (WHAT WILL BE DONE, PATHS FROM / TO):\n");
 		sb.append("--------------------------------------------------------------------------------\n");
@@ -708,7 +716,8 @@ public class DevelopmentPage extends AEvoPage {
 				Composite area = (Composite) super.createDialogArea(parent);
 				area.setLayout(new GridLayout(1, false));
 
-				org.eclipse.swt.widgets.Text textArea = new org.eclipse.swt.widgets.Text(area, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL | SWT.READ_ONLY);
+				org.eclipse.swt.widgets.Text textArea = new org.eclipse.swt.widgets.Text(area,
+						SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL | SWT.READ_ONLY);
 				textArea.setLayoutData(new GridData(GridData.FILL_BOTH));
 				textArea.setFont(org.eclipse.jface.resource.JFaceResources.getTextFont());
 				textArea.setText(reportText);
@@ -723,9 +732,11 @@ public class DevelopmentPage extends AEvoPage {
 					@Override
 					public void widgetSelected(SelectionEvent e) {
 						org.eclipse.swt.dnd.Clipboard cb = new org.eclipse.swt.dnd.Clipboard(Display.getDefault());
-						cb.setContents(new Object[] { reportText }, new org.eclipse.swt.dnd.Transfer[] { org.eclipse.swt.dnd.TextTransfer.getInstance() });
+						cb.setContents(new Object[] { reportText },
+								new org.eclipse.swt.dnd.Transfer[] { org.eclipse.swt.dnd.TextTransfer.getInstance() });
 						cb.dispose();
-						org.eclipse.jface.dialogs.MessageDialog.openInformation(getShell(), "Copied", "Task scenarios copied to clipboard.");
+						org.eclipse.jface.dialogs.MessageDialog.openInformation(getShell(), "Copied",
+								"Task scenarios copied to clipboard.");
 					}
 				});
 				createButton(parent, org.eclipse.jface.dialogs.IDialogConstants.OK_ID, "Close", true);
@@ -737,18 +748,29 @@ public class DevelopmentPage extends AEvoPage {
 	private String getScenarioDescription(SelfDevRow row) {
 		return switch (row.name) {
 		case SelfDevRow.LLM_CHECK -> "Verifies configured LLM model availability and inference responsiveness.";
-		case SelfDevRow.GIT_CHECK_EVO, SelfDevRow.GIT_CHECK_SUPERVISOR -> "FROM Remote Git Repository TO Local Git Repository: Fetches/pulls latest commits and verifies repository remote state.";
-		case SelfDevRow.MAVEN_CHECK_EVO, SelfDevRow.MAVEN_CHECK_SUPERVISOR -> "Verifies Maven executable (mvn/mvnw) and pom.xml build reactor configuration.";
-		case SelfDevRow.COPY_SUPERVISOR_SRC -> "FROM Local Git Repository TO Workspace Source: Copies supervisor source module into build workspace directory.";
-		case SelfDevRow.BUILD_SUPERVISOR_LOCAL -> "FROM Workspace Source TO Workspace Build Target: Runs Maven build to compile Supervisor JAR into build workspace.";
-		case SelfDevRow.SUPERVISOR_CHECK -> "Verifies built Supervisor JAR executable and HTTP health control endpoints.";
+		case SelfDevRow.GIT_CHECK_EVO, SelfDevRow.GIT_CHECK_SUPERVISOR ->
+			"FROM Remote Git Repository TO Local Git Repository: Fetches/pulls latest commits and verifies repository remote state.";
+		case SelfDevRow.MAVEN_CHECK_EVO, SelfDevRow.MAVEN_CHECK_SUPERVISOR ->
+			"Verifies Maven executable (mvn/mvnw) and pom.xml build reactor configuration.";
+		case SelfDevRow.COPY_SUPERVISOR_SRC ->
+			"FROM Local Git Repository TO Workspace Source: Copies supervisor source module into build workspace directory.";
+		case SelfDevRow.BUILD_SUPERVISOR_LOCAL ->
+			"FROM Workspace Source TO Workspace Build Target: Runs Maven build to compile Supervisor JAR into build workspace.";
+		case SelfDevRow.SUPERVISOR_CHECK ->
+			"Verifies built Supervisor JAR executable and HTTP health control endpoints.";
 		case SelfDevRow.GENOME_CHECK -> "Verifies Self-Dev Genome module source and compilation integrity.";
-		case SelfDevRow.PERM_CHECK -> "Tests write permissions on workspace build, export, log, and runtime directories.";
-		case SelfDevRow.COPY_SOURCE -> "FROM Local Git Repository TO Workspace Source: Prepares clean source copy in build workspace without polluting Git checkout.";
-		case SelfDevRow.BUILD_PROJECT_EVO, SelfDevRow.BUILD_PROJECT_SUPERVISOR -> "FROM Local Git Source Checkout TO Workspace Build Target: Compiles Tycho RCP modules into build workspace (-Dproject.build.directory=...).";
-		case SelfDevRow.EXPORT_PRODUCT_EVO, SelfDevRow.EXPORT_PRODUCT_SUPERVISOR -> "FROM Workspace Build Target TO Workspace Export Directory: Materializes unzipped RCP product layout (executables, plugins, configuration).";
-		case SelfDevRow.START_EVO_PRODUCT_SUPERVISOR -> "FROM Workspace Export Directory TO Active Process: Launches EVO RCP product via Supervisor runner and verifies startup.";
-		case SelfDevRow.STOP_EVO_PRODUCT_SUPERVISOR -> "Sends graceful stop request to running EVO RCP product via Supervisor.";
+		case SelfDevRow.PERM_CHECK ->
+			"Tests write permissions on workspace build, export, log, and runtime directories.";
+		case SelfDevRow.COPY_SOURCE ->
+			"FROM Local Git Repository TO Workspace Source: Prepares clean source copy in build workspace without polluting Git checkout.";
+		case SelfDevRow.BUILD_PROJECT_EVO, SelfDevRow.BUILD_PROJECT_SUPERVISOR ->
+			"FROM Local Git Source Checkout TO Workspace Build Target: Compiles Tycho RCP modules into build workspace (-Dproject.build.directory=...).";
+		case SelfDevRow.EXPORT_PRODUCT_EVO, SelfDevRow.EXPORT_PRODUCT_SUPERVISOR ->
+			"FROM Workspace Build Target TO Workspace Export Directory: Materializes unzipped RCP product layout (executables, plugins, configuration).";
+		case SelfDevRow.START_EVO_PRODUCT_SUPERVISOR ->
+			"FROM Workspace Export Directory TO Active Process: Launches EVO RCP product via Supervisor runner and verifies startup.";
+		case SelfDevRow.STOP_EVO_PRODUCT_SUPERVISOR ->
+			"Sends graceful stop request to running EVO RCP product via Supervisor.";
 		case SelfDevRow.SUPERVISOR_LOOP -> "Starts continuous Supervisor process monitoring loop for EVO RCP runtime.";
 		case SelfDevRow.SELF_DEV_LOOP -> "Executes autonomous Self-Development iteration loop in Orchestrator.";
 		default -> "Executes task scenario for " + row.name + ".";
@@ -794,18 +816,19 @@ public class DevelopmentPage extends AEvoPage {
 		new Thread(() -> {
 			if (bootstrapController != null) {
 				System.out.println("[DevelopmentPage] [RUN_DEBUG] Executing Self-Dev Preflight check...");
-				eu.kalafatic.evolution.controller.orchestration.selfdev.SelfDevPreflightResult preflightRes = bootstrapController.executePreflight();
+				eu.kalafatic.evolution.controller.orchestration.selfdev.SelfDevPreflightResult preflightRes = bootstrapController
+						.executePreflight();
 				if (!preflightRes.isSuccess()) {
-					System.err.println("[DevelopmentPage] [RUN_DEBUG] Preflight FAILED/BLOCKED:\n" + preflightRes.generateSummaryReport());
+					System.err.println("[DevelopmentPage] [RUN_DEBUG] Preflight FAILED/BLOCKED:\n"
+							+ preflightRes.generateSummaryReport());
 					Display.getDefault().asyncExec(() -> {
-						org.eclipse.jface.dialogs.MessageDialog.openError(
-								getShell(),
-								"Self-Dev Preflight Failed",
+						org.eclipse.jface.dialogs.MessageDialog.openError(getShell(), "Self-Dev Preflight Failed",
 								"Self-Dev execution cannot proceed safely.\n\n" + preflightRes.generateSummaryReport());
 					});
 					return;
 				}
-				System.out.println("[DevelopmentPage] [RUN_DEBUG] Preflight PASSED: status=" + preflightRes.getStatus());
+				System.out
+						.println("[DevelopmentPage] [RUN_DEBUG] Preflight PASSED: status=" + preflightRes.getStatus());
 			}
 
 			if (!(selfDevTable.getInput() instanceof List<?> rows)) {
@@ -870,7 +893,7 @@ public class DevelopmentPage extends AEvoPage {
 							failed = true;
 						break;
 					case SelfDevRow.SUPERVISOR_CHECK:
-						result = bootstrapController.check("SUPERVISOR");
+						result = bootstrapController.check(EApp.SUPERVISOR.name());
 						if (result.contains("ERROR") || result.contains("fail"))
 							failed = true;
 						break;
@@ -1076,12 +1099,10 @@ public class DevelopmentPage extends AEvoPage {
 						String lp = orchestrator.getGit().getLocalPath();
 						String url = orchestrator.getGit().getRepositoryUrl();
 						if (lp == null || lp.isEmpty()) {
-							lp = eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.getRepositoryPath(
-									eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.REPO_EVOLUTION);
+							lp = EclipseGitEvoTool.getRepositoryPath(EclipseGitEvoTool.REPO_EVOLUTION);
 						}
 						if (url == null || url.isEmpty()) {
-							url = eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.getRepositoryRemote(
-									eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.REPO_EVOLUTION);
+							url = EclipseGitEvoTool.getRepositoryRemote(EclipseGitEvoTool.REPO_EVOLUTION);
 						}
 						row.path = lp + "/" + url;
 					} else if ((SelfDevRow.MAVEN_CHECK_EVO.equals(row.name)
