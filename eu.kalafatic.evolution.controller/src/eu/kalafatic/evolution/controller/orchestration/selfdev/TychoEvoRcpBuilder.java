@@ -313,11 +313,6 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
             targetProductsDir = new File(preparedReactor, "target/products");
         }
 
-        if (candidates.isEmpty()) {
-            File nestedDir = platform.isWindows() ?
-                    new File(targetProductsDir, prodDef.getProductId() + "/win32/win32/x86_64/" + prodDef.getRootFolder()) :
-                    new File(targetProductsDir, prodDef.getProductId() + "/linux/gtk/x86_64/" + prodDef.getRootFolder());
-
         List<File> candidates = new ArrayList<>();
         File[] files = targetProductsDir.listFiles();
         if (files != null) {
@@ -325,6 +320,15 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
                 if (isExactMatchingArtifact(f, prodDef, platform)) {
                     candidates.add(f);
                 }
+            }
+        }
+
+        if (candidates.isEmpty()) {
+            File nestedDir = platform.isWindows() ?
+                    new File(targetProductsDir, prodDef.getProductId() + "/win32/win32/x86_64/" + prodDef.getRootFolder()) :
+                    new File(targetProductsDir, prodDef.getProductId() + "/linux/gtk/x86_64/" + prodDef.getRootFolder());
+            if (nestedDir.exists()) {
+                candidates.add(nestedDir);
             }
         }
 

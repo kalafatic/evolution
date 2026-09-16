@@ -1175,7 +1175,6 @@ public class ProjectModelManager {
 
     public static String migratePath(String path) {
         if (path == null) return null;
-        String dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("ddMMyy"));
         String userHomeNorm = System.getProperty("user.home").replace("\\", "/");
 
         // Normalize backslashes/forwardslashes to simplify comparisons
@@ -1186,33 +1185,21 @@ public class ProjectModelManager {
             normalized = userHomeNorm + normalized.substring(normalized.indexOf('/', 10));
         }
 
-        // 1. Replace any 6-digit date segment under projects/evo/supervisor/ or self-dev-run/
-        if (normalized.contains("projects/evo/supervisor/")) {
-            normalized = normalized.replaceAll("(?i)projects/evo/supervisor/\\d{6}", "workspace/self-dev-run/" + dateStr);
-            return path.contains("\\") ? normalized.replace("/", "\\") : normalized;
-        }
+        boolean isWinSlash = path.contains("\\");
 
-        // 2. Also handle if it contains supervisor/<some_old_date>
-        if (normalized.contains("supervisor/")) {
-            normalized = normalized.replaceAll("(?i)supervisor/\\d{6}", "workspace/self-dev-run/" + dateStr);
-            normalized = normalized.replaceAll("(?i)supervisor/(sources|builds|export|src|bin|sources-)", "workspace/self-dev-run/" + dateStr + "/$1");
-            return path.contains("\\") ? normalized.replace("/", "\\") : normalized;
-        }
-
-        String oldHomePrefix = userHomeNorm + "/supervisor";
-        String newHomePrefix = userHomeNorm + "/workspace/self-dev-run/" + dateStr;
-
-        if (normalized.startsWith(oldHomePrefix)) {
-            String remainder = normalized.substring(oldHomePrefix.length());
-            if (remainder.equals("/source") || remainder.equals("/sources")) {
-                remainder = "/sources";
-            } else if (remainder.equals("/bin") || remainder.equals("/builds")) {
-                remainder = "/builds";
-            } else if (remainder.equals("/bin/export") || remainder.equals("/export")) {
-                remainder = "/export";
+        if (normalized.contains("supervisor") || normalized.contains("self-dev-run")) {
+            String runtimeBase = userHomeNorm + "/workspace/runtime";
+            String migrated;
+            if (normalized.endsWith("/sources") || normalized.endsWith("/source") || normalized.contains("/sources/") || normalized.contains("/source/")) {
+                migrated = runtimeBase + "/sources";
+            } else if (normalized.endsWith("/builds") || normalized.endsWith("/build") || normalized.endsWith("/bin") || normalized.contains("/builds/") || normalized.contains("/build/") || normalized.contains("/bin/")) {
+                migrated = runtimeBase + "/builds";
+            } else if (normalized.endsWith("/export") || normalized.endsWith("/exports") || normalized.contains("/export/")) {
+                migrated = runtimeBase + "/exports";
+            } else {
+                migrated = runtimeBase;
             }
-            String migrated = newHomePrefix + remainder;
-            return path.contains("\\") ? migrated.replace("/", "\\") : migrated;
+            return isWinSlash ? migrated.replace("/", "\\") : migrated;
         }
 
         return path;
