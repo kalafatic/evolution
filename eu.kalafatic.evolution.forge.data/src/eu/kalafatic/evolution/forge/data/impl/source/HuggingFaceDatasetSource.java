@@ -103,11 +103,7 @@ public class HuggingFaceDatasetSource implements DatasetSource {
                     runTag, 0, 100, 0, result.getStatusCode(), result.getDownloadedBytes(), httpDurationMs);
 
             if (!result.isSuccess()) {
-                String reason = "HTTP " + result.getStatusCode() + " [" + result.getTransportClassification() + "]: " + result.getStatusMessage();
-                if (result.getContentText() != null && !result.getContentText().trim().isEmpty()) {
-                    reason += " - " + result.getContentText().trim();
-                }
-                ResolvedSource res = new ResolvedSource("HUGGING_FACE", repo, requestedSplit, requestedSplit, requestedCfg, "main", splitsUrl, "json", 0L, false, false, reason);
+                ResolvedSource res = new ResolvedSource("HUGGING_FACE", repo, requestedSplit, requestedSplit, requestedCfg, "main", splitsUrl, "json", 0L, false, false, "HTTP " + result.getStatusCode() + ": " + result.getStatusMessage());
                 res.logPreflight(runId);
                 return res;
             }
@@ -207,10 +203,12 @@ public class HuggingFaceDatasetSource implements DatasetSource {
         if ("wikitext".equalsIgnoreCase(rawRepo)) {
             repo = "Salesforce/wikitext";
         }
-        fetchNextChunk();
-        if (lastError != null) {
+        try {
+            fetchNextChunk();
+        } catch (Exception ex) {
+            lastError = ex.getMessage();
+            System.err.println("[HF DATASET SOURCE] Initial chunk fetch failed for " + repo + ": " + ex.getMessage());
             endOfStream = true;
-            throw new IOException("Failed to initialize Hugging Face source " + repo + ": " + lastError);
         }
     }
 
@@ -281,24 +279,11 @@ public class HuggingFaceDatasetSource implements DatasetSource {
             long httpDurationMs = System.currentTimeMillis() - httpStartMs;
             System.out.printf("[HF-ACQ][run=%s][HTTP-RESULT]\noffset=%d\nrequestedRows=%d\nreceivedRows=%d\nhttpStatus=%d\nresponseBytes=%d\ndurationMs=%d\n",
                     runTag, currentOffset, requestedLength, 0, 500, 0, httpDurationMs);
-            lastError = "Connection Error: " + e.getMessage();
+            lastError = e.getMessage();
             endOfStream = true;
             return;
         }
         long httpDurationMs = System.currentTimeMillis() - httpStartMs;
-
-        if (!result.isSuccess()) {
-            lastError = "HTTP " + result.getStatusCode() + " [" + result.getTransportClassification() + "]: " + result.getStatusMessage();
-            if (result.getContentText() != null && !result.getContentText().trim().isEmpty()) {
-                lastError += " - " + result.getContentText().trim();
-            }
-            endOfStream = true;
-            System.out.printf("[HF-ACQ][run=%s][HTTP-RESULT]\noffset=%d\nrequestedRows=%d\nreceivedRows=%d\nhttpStatus=%d\nresponseBytes=%d\ndurationMs=%d\n",
-                    runTag, currentOffset, requestedLength, 0, result.getStatusCode(), result.getDownloadedBytes(), httpDurationMs);
-            System.out.printf("[HF-ACQ][run=%s][PAGE]\npage=%d\noffset=%d\nrequestedRows=%d\nreceivedRows=%d\nnextOffset=%d\ncontinuation=NO\nreason=SOURCE_FAILURE\n",
-                    runTag, (int)(currentOffset / requestedLength), currentOffset, requestedLength, 0, currentOffset);
-            return;
-        }
 
         String body = result.getContentText();
         long chunkBodyBytes = result.getDownloadedBytes() > 0 ? result.getDownloadedBytes() : body.getBytes(StandardCharsets.UTF_8).length;
