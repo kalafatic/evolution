@@ -133,15 +133,7 @@ public class GitSourceProvider implements SourceProvider {
     private void copyDirectory(File sourceLocation, File targetLocation) throws Exception {
         if (sourceLocation.isDirectory()) {
             String dirName = sourceLocation.getName();
-            if (dirName.equalsIgnoreCase(".git") ||
-                dirName.equalsIgnoreCase("target") ||
-                dirName.equalsIgnoreCase("projects") ||
-                dirName.equalsIgnoreCase("self-dev-run") ||
-                dirName.equalsIgnoreCase("iterations") ||
-                dirName.equalsIgnoreCase("bin") ||
-                dirName.equalsIgnoreCase(".settings") ||
-                dirName.equalsIgnoreCase("forge-output") ||
-                dirName.equalsIgnoreCase("dist")) {
+            if (isExcludedDirectory(sourceLocation, dirName)) {
                 return;
             }
             if (!targetLocation.exists()) {
@@ -156,5 +148,32 @@ public class GitSourceProvider implements SourceProvider {
         } else {
             java.nio.file.Files.copy(sourceLocation.toPath(), targetLocation.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
         }
+    }
+
+    private boolean isExcludedDirectory(File sourceLocation, String dirName) {
+        if (dirName.equalsIgnoreCase(".git") ||
+            dirName.equalsIgnoreCase("projects") ||
+            dirName.equalsIgnoreCase("self-dev-run") ||
+            dirName.equalsIgnoreCase("iterations") ||
+            dirName.equalsIgnoreCase(".settings") ||
+            dirName.equalsIgnoreCase("forge-output") ||
+            dirName.equalsIgnoreCase("dist")) {
+            return true;
+        }
+        if (dirName.equalsIgnoreCase("target") || dirName.equalsIgnoreCase("bin")) {
+            return !isInsideSourceDirectory(sourceLocation);
+        }
+        return false;
+    }
+
+    private boolean isInsideSourceDirectory(File file) {
+        File parent = file.getParentFile();
+        while (parent != null) {
+            if ("src".equalsIgnoreCase(parent.getName())) {
+                return true;
+            }
+            parent = parent.getParentFile();
+        }
+        return false;
     }
 }

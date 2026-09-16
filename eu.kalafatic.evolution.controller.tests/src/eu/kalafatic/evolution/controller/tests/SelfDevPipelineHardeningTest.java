@@ -154,4 +154,44 @@ public class SelfDevPipelineHardeningTest {
         assertNotNull(context.getResolvedResources());
         assertEquals(repoRoot.getAbsoluteFile().toPath().normalize().toFile(), context.getResolvedResources().getRepositoryRoot());
     }
+
+    @Test
+    public void testCopyDirectoryPreservesSourcePackageTargetAndExcludesBuildTarget() throws Exception {
+        File tempDir = new File(System.getProperty("java.io.tmpdir"), "test_copy_target_" + System.currentTimeMillis());
+        File srcRepo = new File(tempDir, "srcRepo");
+        File dstRepo = new File(tempDir, "dstRepo");
+
+        File buildTargetDir = new File(srcRepo, "target");
+        buildTargetDir.mkdirs();
+        new File(buildTargetDir, "build.log").createNewFile();
+
+        File srcPackageTargetDir = new File(srcRepo, "src/eu/kalafatic/evolution/forge/model/target");
+        srcPackageTargetDir.mkdirs();
+        File forgeTargetJava = new File(srcPackageTargetDir, "ForgeTarget.java");
+        forgeTargetJava.createNewFile();
+
+        try {
+            eu.kalafatic.evolution.controller.orchestration.selfdev.GitSourceProvider provider =
+                new eu.kalafatic.evolution.controller.orchestration.selfdev.GitSourceProvider();
+            provider.fetchSource(srcRepo, dstRepo);
+
+            File copiedBuildLog = new File(dstRepo, "target/build.log");
+            assertFalse("Build output target directory must be excluded", copiedBuildLog.exists());
+
+            File copiedForgeTarget = new File(dstRepo, "src/eu/kalafatic/evolution/forge/model/target/ForgeTarget.java");
+            assertTrue("Java source package 'target' under src/ must be copied", copiedForgeTarget.exists());
+        } finally {
+            deleteRecursively(tempDir);
+        }
+    }
+
+    private void deleteRecursively(File f) {
+        if (f.isDirectory()) {
+            File[] children = f.listFiles();
+            if (children != null) {
+                for (File c : children) deleteRecursively(c);
+            }
+        }
+        f.delete();
+    }
 }
