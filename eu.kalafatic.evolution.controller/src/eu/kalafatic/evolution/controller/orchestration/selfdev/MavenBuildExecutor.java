@@ -5,20 +5,29 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import eu.kalafatic.evolution.controller.log.Log;
+
 public class MavenBuildExecutor {
 
     private final String taskId;
+    private static final int MAX_RECOVERY_ATTEMPTS = 1;
 
     public MavenBuildExecutor(String taskId) {
         this.taskId = taskId;
     }
 
     public TaskResult executeBuild(File workingDir, List<String> goals, List<String> userArgs, File logFile, long timeoutMinutes) {
+        return executeBuildInternal(workingDir, goals, userArgs, logFile, timeoutMinutes, 0);
+    }
+
+    private TaskResult executeBuildInternal(File workingDir, List<String> goals, List<String> userArgs, File logFile, long timeoutMinutes, int attempt) {
         long startTime = System.currentTimeMillis();
         if (workingDir == null || !workingDir.exists()) {
             return TaskResult.failure(taskId, "Working directory does not exist: " + (workingDir != null ? workingDir.getAbsolutePath() : "null"), null);
@@ -36,23 +45,24 @@ public class MavenBuildExecutor {
 
 
         String fullCommandStr = String.join(" ", command);
-        File wsBuildDir = eu.kalafatic.evolution.controller.resource.ResourceManager.getInstance()
-                .getPath(eu.kalafatic.evolution.controller.resource.EvoPath.BUILD_ROOT).toFile();
-        System.out.println("================================================================================");
-        System.out.println("[SELF-DEV] Maven Build Execution:");
-        System.out.println("  source/reactor   : " + workingDir.getAbsolutePath());
-        System.out.println("  build workspace  : " + wsBuildDir.getAbsolutePath());
-        System.out.println("  working directory: " + workingDir.getAbsolutePath());
-        System.out.println("  Maven executable : " + mavenExec);
-        System.out.println("  full command     : " + fullCommandStr);
-        System.out.println("================================================================================");
+        String javaHome = System.getProperty("java.home");
+        String startDateStr = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(startTime));
+
+        log("[MAVEN] ========================================");
+        log("[MAVEN] PROJECT       = " + taskId);
+        log("[MAVEN] REPOSITORY    = " + workingDir.getAbsolutePath());
+        log("[MAVEN] WORKDIR       = " + workingDir.getAbsolutePath());
+        log("[MAVEN] JAVA          = " + (javaHome != null ? javaHome : "System default"));
+        log("[MAVEN] MAVEN         = " + mavenExec);
+        log("[MAVEN] COMMAND       = " + fullCommandStr);
+        log("[MAVEN] START         = " + startDateStr);
+        log("[MAVEN] ========================================");
 
         ProcessBuilder pb = new ProcessBuilder(command);
         pb.directory(workingDir);
         pb.redirectErrorStream(true);
 
         Map<String, String> env = pb.environment();
-        String javaHome = System.getProperty("java.home");
         if (javaHome != null && !javaHome.isEmpty()) {
             env.put("JAVA_HOME", javaHome);
         }
@@ -78,6 +88,7 @@ public class MavenBuildExecutor {
             if (!finished) {
                 process.destroyForcibly();
                 long duration = System.currentTimeMillis() - startTime;
+                log("[MAVEN][ERROR] Build timed out after " + timeoutMinutes + " minutes.");
                 return new TaskResult.Builder(taskId)
                         .status(TaskStatus.FAILED)
                         .message("Maven execution timed out after " + timeoutMinutes + " minutes.")
@@ -85,6 +96,7 @@ public class MavenBuildExecutor {
                         .workingDirectory(workingDir)
                         .duration(duration)
                         .logFile(logFile)
+                        .diagnostic("errorCategory", MavenErrorCategory.TRANSIENT.name())
                         .diagnostic("outputTail", getTail(outputBuffer.toString(), 2000))
                         .build();
             }
@@ -93,6 +105,7 @@ public class MavenBuildExecutor {
             long duration = System.currentTimeMillis() - startTime;
 
             if (exitCode == 0) {
+                log("[MAVEN] Build succeeded in " + duration + " ms.");
                 return new TaskResult.Builder(taskId)
                         .status(TaskStatus.SUCCESS)
                         .message("Maven build succeeded.")
@@ -103,21 +116,54 @@ public class MavenBuildExecutor {
                         .logFile(logFile)
                         .build();
             } else {
-                String failureSummary = extractFailureSummary(outputBuffer.toString());
+                String fullOutput = outputBuffer.toString();
+                MavenErrorClassifier.ClassificationResult classification = MavenErrorClassifier.classify(fullOutput);
+
+                log("[MAVEN][ERROR]");
+                log("[MAVEN][ERROR] Exit code: " + exitCode);
+                log("[MAVEN][ERROR] Failed phase: " + classification.getFailedPhase());
+                log("[MAVEN][ERROR] Repository: " + workingDir.getAbsolutePath());
+                log("[MAVEN][ERROR] Working directory: " + workingDir.getAbsolutePath());
+                log("[MAVEN][ERROR] Command: " + fullCommandStr);
+                log("[MAVEN][ERROR] Error category: " + classification.getCategory());
+                log("[MAVEN][ERROR] Root cause: " + classification.getRootCause());
+                log("[MAVEN][ERROR] Last relevant Maven/Tycho output:\n" + classification.getLastRelevantOutput());
+
+                if (classification.getCategory().isRecoverable() && attempt < MAX_RECOVERY_ATTEMPTS) {
+                    log("[MAVEN][RECOVERY]");
+                    log("[MAVEN][RECOVERY] Detected recoverable error: " + classification.getCategory());
+                    log("[MAVEN][RECOVERY] Action: retry build");
+                    log("[MAVEN][RECOVERY] Attempt: " + (attempt + 1) + "/" + MAX_RECOVERY_ATTEMPTS);
+                    try {
+                        Thread.sleep(2000);
+                    } catch (InterruptedException ignored) {}
+                    return executeBuildInternal(workingDir, goals, userArgs, logFile, timeoutMinutes, attempt + 1);
+                }
+
+                if (attempt > 0) {
+                    log("[MAVEN][FATAL]");
+                    log("[MAVEN][FATAL] Build failed after recovery attempts.");
+                }
+
                 return new TaskResult.Builder(taskId)
                         .status(TaskStatus.FAILED)
-                        .message("Maven build failed with exit code " + exitCode + ": " + failureSummary)
+                        .message("Maven build failed with exit code " + exitCode + " [" + classification.getCategory() + "]: " + classification.getRootCause())
                         .command(fullCommandStr)
                         .workingDirectory(workingDir)
                         .exitCode(exitCode)
                         .duration(duration)
                         .logFile(logFile)
-                        .diagnostic("outputTail", getTail(outputBuffer.toString(), 2000))
+                        .diagnostic("errorCategory", classification.getCategory().name())
+                        .diagnostic("failedPhase", classification.getFailedPhase())
+                        .diagnostic("rootCause", classification.getRootCause())
+                        .diagnostic("recoveryAttempts", String.valueOf(attempt))
+                        .diagnostic("outputTail", classification.getLastRelevantOutput())
                         .build();
             }
 
         } catch (Exception e) {
             long duration = System.currentTimeMillis() - startTime;
+            log("[MAVEN][ERROR] Execution exception: " + e.getMessage());
             return TaskResult.failure(taskId, "Maven execution exception: " + e.getMessage(), e);
         }
     }
@@ -146,24 +192,14 @@ public class MavenBuildExecutor {
         return isWindows ? "mvn.cmd" : "mvn";
     }
 
-    private String extractFailureSummary(String fullOutput) {
-        if (fullOutput == null || fullOutput.isEmpty()) return "No output";
-        String[] lines = fullOutput.split("\r?\n");
-        StringBuilder sb = new StringBuilder();
-        for (String line : lines) {
-            if (line.contains("[ERROR]") || line.contains("BUILD FAILURE")) {
-                sb.append(line).append(" ");
-            }
-        }
-        if (sb.length() > 0) {
-            return sb.toString().trim();
-        }
-        return getTail(fullOutput, 300);
-    }
-
     private String getTail(String text, int maxLength) {
         if (text == null) return "";
         if (text.length() <= maxLength) return text;
         return text.substring(text.length() - maxLength);
+    }
+
+    private void log(String message) {
+        Log.log(message);
+        System.out.println(message);
     }
 }
