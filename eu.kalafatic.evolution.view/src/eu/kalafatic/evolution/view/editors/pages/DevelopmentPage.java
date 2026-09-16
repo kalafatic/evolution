@@ -38,6 +38,7 @@ import eu.kalafatic.evolution.controller.resource.EvoPath;
 import eu.kalafatic.evolution.controller.resource.ResourceManager;
 import eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool;
 import eu.kalafatic.evolution.model.orchestration.Agent;
+import eu.kalafatic.evolution.model.orchestration.OrchestrationFactory;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.model.orchestration.SelfDevSession;
 import eu.kalafatic.evolution.model.orchestration.Task;
@@ -54,10 +55,11 @@ import eu.kalafatic.utils.constants.FUIConstants;
 import eu.kalafatic.utils.factories.GUIFactory;
 
 public class DevelopmentPage extends AEvoPage {
-	
+
 	enum EStatus {
 		READY, RUNNING, BLOCKED, ERROR, SUCCESS, NA
 	}
+
 	enum EApp {
 		EVO, SUPERVISOR
 	}
@@ -340,20 +342,28 @@ public class DevelopmentPage extends AEvoPage {
 		sdData.add(new SelfDevRow(row++, SelfDevRow.COPY_SUPERVISOR_SRC, customSuperSrc, EStatus.READY));
 		sdData.add(new SelfDevRow(row++, SelfDevRow.BUILD_SUPERVISOR_LOCAL, customSuperBin, EStatus.READY));
 		sdData.add(new SelfDevRow(row++, SelfDevRow.SUPERVISOR_CHECK, "supervisor.exe", EStatus.READY));
-		sdData.add(new SelfDevRow(row++, SelfDevRow.GIT_CHECK_SUPERVISOR, localPath, repoUrl, EStatus.READY, EApp.SUPERVISOR.name()));
-		sdData.add(new SelfDevRow(row++, SelfDevRow.MAVEN_CHECK_SUPERVISOR, mvnPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
+		sdData.add(new SelfDevRow(row++, SelfDevRow.GIT_CHECK_SUPERVISOR, localPath, repoUrl, EStatus.READY,
+				EApp.SUPERVISOR.name()));
+		sdData.add(new SelfDevRow(row++, SelfDevRow.MAVEN_CHECK_SUPERVISOR, mvnPath, EStatus.NA.name(), EStatus.READY,
+				EApp.SUPERVISOR.name()));
 		sdData.add(new SelfDevRow(row++, SelfDevRow.GENOME_CHECK, "supervisor.genome", EStatus.READY));
 		sdData.add(new SelfDevRow(row++, SelfDevRow.PERM_CHECK, "supervisor.fs", EStatus.READY));
 		String evoSourcePath = ResourceManager.getInstance().getPath(EvoPath.EVO_GIT_REPOSITORY).toString();
 		sdData.add(new SelfDevRow(row++, SelfDevRow.COPY_SOURCE, evoSourcePath, EStatus.READY));
 		sdData.add(new SelfDevRow(row++, SelfDevRow.BUILD_PROJECT_EVO, targetPath, EStatus.READY));
-		sdData.add(new SelfDevRow(row++, SelfDevRow.BUILD_PROJECT_SUPERVISOR, targetPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
+		sdData.add(new SelfDevRow(row++, SelfDevRow.BUILD_PROJECT_SUPERVISOR, targetPath, EStatus.NA.name(),
+				EStatus.READY, EApp.SUPERVISOR.name()));
 		sdData.add(new SelfDevRow(row++, SelfDevRow.EXPORT_PRODUCT_EVO, exportPath, EStatus.READY));
-		sdData.add(new SelfDevRow(row++, SelfDevRow.EXPORT_PRODUCT_SUPERVISOR, exportPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
-		sdData.add(new SelfDevRow(row++, SelfDevRow.START_EVO_PRODUCT_SUPERVISOR, exportPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
-		sdData.add(new SelfDevRow(row++, SelfDevRow.SUPERVISOR_LOOP, "supervisor.exe", EStatus.NA.name(),EStatus.READY, EApp.SUPERVISOR.name()));
-		sdData.add(new SelfDevRow(row++, SelfDevRow.SELF_DEV_LOOP, "orchestrator", EStatus.NA.name(), EStatus.READY,EApp.EVO.name()));
-		sdData.add(new SelfDevRow(row++, SelfDevRow.STOP_EVO_PRODUCT_SUPERVISOR, exportPath, EStatus.NA.name(),EStatus.READY, EApp.SUPERVISOR.name()));
+		sdData.add(new SelfDevRow(row++, SelfDevRow.EXPORT_PRODUCT_SUPERVISOR, exportPath, EStatus.NA.name(),
+				EStatus.READY, EApp.SUPERVISOR.name()));
+		sdData.add(new SelfDevRow(row++, SelfDevRow.START_EVO_PRODUCT_SUPERVISOR, exportPath, EStatus.NA.name(),
+				EStatus.READY, EApp.SUPERVISOR.name()));
+		sdData.add(new SelfDevRow(row++, SelfDevRow.SUPERVISOR_LOOP, "supervisor.exe", EStatus.NA.name(), EStatus.READY,
+				EApp.SUPERVISOR.name()));
+		sdData.add(new SelfDevRow(row++, SelfDevRow.SELF_DEV_LOOP, "orchestrator", EStatus.NA.name(), EStatus.READY,
+				EApp.EVO.name()));
+		sdData.add(new SelfDevRow(row++, SelfDevRow.STOP_EVO_PRODUCT_SUPERVISOR, exportPath, EStatus.NA.name(),
+				EStatus.READY, EApp.SUPERVISOR.name()));
 
 		sdData.sort((r1, r2) -> Integer.compare(r1.order, r2.order));
 		selfDevTable.setInput(sdData);
@@ -609,28 +619,15 @@ public class DevelopmentPage extends AEvoPage {
 		case SelfDevRow.GIT_CHECK_EVO:
 		case SelfDevRow.GIT_CHECK_SUPERVISOR:
 			if (orchestrator.getGit() == null)
-				orchestrator
-						.setGit(eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createGit());
-			String pathVal = row.path;
-			if (pathVal != null) {
-				if (pathVal.contains("/http://") || pathVal.contains("/https://")) {
-					int index = pathVal.indexOf("/http");
-					String local = pathVal.substring(0, index);
-					String remote = pathVal.substring(index + 1);
-					orchestrator.getGit().setLocalPath(local);
-					orchestrator.getGit().setRepositoryUrl(remote);
-				} else if (pathVal.contains("://")) {
-					orchestrator.getGit().setRepositoryUrl(pathVal);
-				} else {
-					orchestrator.getGit().setLocalPath(pathVal);
-				}
-			}
+				orchestrator.setGit(OrchestrationFactory.eINSTANCE.createGit());
+
+			orchestrator.getGit().setRepositoryUrl(row.url);
+			orchestrator.getGit().setLocalPath(row.path);
 			break;
 		case SelfDevRow.MAVEN_CHECK_EVO:
 		case SelfDevRow.MAVEN_CHECK_SUPERVISOR:
 			if (orchestrator.getMaven() == null)
-				orchestrator.setMaven(
-						eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createMaven());
+				orchestrator.setMaven(OrchestrationFactory.eINSTANCE.createMaven());
 			orchestrator.getMaven().getGoals().clear();
 			String[] goals = row.path.replace("[", "").replace("]", "").split(",");
 			for (String g : goals)
@@ -639,30 +636,23 @@ public class DevelopmentPage extends AEvoPage {
 			break;
 		case SelfDevRow.LLM_CHECK:
 			if (orchestrator.getLlm() == null)
-				orchestrator
-						.setLlm(eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createLLM());
+				orchestrator.setLlm(OrchestrationFactory.eINSTANCE.createLLM());
 			orchestrator.getLlm().setModel(row.path);
 			break;
 		case SelfDevRow.COPY_SOURCE:
 			if (orchestrator.getSupervisorSettings() == null)
-				orchestrator
-						.setSupervisorSettings(eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE
-								.createSupervisorSettings());
+				orchestrator.setSupervisorSettings(OrchestrationFactory.eINSTANCE.createSupervisorSettings());
 			orchestrator.getSupervisorSettings().setSourcePath(row.path);
 			break;
 		case SelfDevRow.BUILD_PROJECT_EVO:
 		case SelfDevRow.BUILD_PROJECT_SUPERVISOR:
 			if (orchestrator.getSupervisorSettings() == null)
-				orchestrator
-						.setSupervisorSettings(eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE
-								.createSupervisorSettings());
+				orchestrator.setSupervisorSettings(OrchestrationFactory.eINSTANCE.createSupervisorSettings());
 			orchestrator.getSupervisorSettings().setExecutablePath(row.path);
 			break;
 		case SelfDevRow.SUPERVISOR_LOOP:
 			if (orchestrator.getSupervisorSettings() == null)
-				orchestrator
-						.setSupervisorSettings(eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE
-								.createSupervisorSettings());
+				orchestrator.setSupervisorSettings(OrchestrationFactory.eINSTANCE.createSupervisorSettings());
 			orchestrator.getSupervisorSettings().setExecutablePath(row.path);
 			break;
 		}
