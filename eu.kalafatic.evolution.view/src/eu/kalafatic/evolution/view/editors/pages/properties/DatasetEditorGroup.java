@@ -151,7 +151,7 @@ public class DatasetEditorGroup extends AEvoGroup {
         deduplicateCheck.setSelection(true);
 
         Composite btnBar = toolkit.createComposite(group);
-        btnBar.setLayout(new GridLayout(4, false));
+        btnBar.setLayout(new GridLayout(5, false));
         GridData gdBtn = new GridData(SWT.FILL, SWT.CENTER, true, false);
         gdBtn.horizontalSpan = 2;
         btnBar.setLayoutData(gdBtn);
@@ -185,6 +185,14 @@ public class DatasetEditorGroup extends AEvoGroup {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 handleListDatasets();
+            }
+        });
+
+        Button addTaskBtn = GUIFactory.INSTANCE.createButton(btnBar, "Add Task to Task Stack");
+        addTaskBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                handleAddTaskToStack();
             }
         });
 
@@ -277,6 +285,55 @@ public class DatasetEditorGroup extends AEvoGroup {
                 });
             }
         }).start();
+    }
+
+    private void handleAddTaskToStack() {
+        String repo = repoText.getText().trim();
+        String split = splitText.getText().trim();
+        String sizeMbStr = maxSizeMbText.getText().trim();
+
+        if (editor != null && orchestrator != null) {
+            try {
+                eu.kalafatic.evolution.view.editors.pages.TaskStackPage taskStackPage = editor.getTaskStackPage();
+
+                if (taskStackPage != null) {
+                    taskStackPage.addDownloadDatasetTask(repo, split, sizeMbStr);
+                } else {
+                    java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyyMMdd-HHmm");
+                    String timestamp = sdf.format(new java.util.Date());
+                    eu.kalafatic.evolution.model.orchestration.Task task = eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createTask();
+                    task.setId("DATASET-" + timestamp);
+                    task.setName("Download Simple Dataset from Hugging Face");
+                    task.setType("DATASET");
+                    task.setStatus(eu.kalafatic.evolution.model.orchestration.TaskStatus.READY);
+                    task.setSelected(true);
+                    String prompt = "Download Hugging Face dataset " + repo + " (split: " + split + ", target size: " + sizeMbStr + " MB) into forge-input directory.";
+                    task.setDescription(prompt);
+                    task.setPrompt(prompt);
+                    task.setBitState(eu.kalafatic.evolution.controller.orchestration.behavior.BitState.encode(
+                        eu.kalafatic.evolution.controller.orchestration.behavior.BitState.MODE_LOCAL,
+                        eu.kalafatic.evolution.controller.orchestration.behavior.BitState.SUPERVISION_AUTO,
+                        eu.kalafatic.evolution.controller.orchestration.behavior.BitState.INTERACTION_CONTINUOUS,
+                        eu.kalafatic.evolution.controller.orchestration.behavior.BitState.REASONING_ATOMIC,
+                        eu.kalafatic.evolution.controller.orchestration.behavior.BitState.WORKFLOW_TASK_ORIENTED));
+
+                    String[] subtaskNames = {"Validate Dataset Repository", "Acquire Hugging Face Chunks", "Clean & Deduplicate Content", "Package EVO Dataset Artifact (.evodata)"};
+                    for (String stName : subtaskNames) {
+                        eu.kalafatic.evolution.model.orchestration.Task subTask = eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createTask();
+                        subTask.setName(stName);
+                        subTask.setStatus(eu.kalafatic.evolution.model.orchestration.TaskStatus.READY);
+                        task.getSubTasks().add(subTask);
+                    }
+                    orchestrator.getTasks().add(task);
+                }
+
+                editor.setDirty(true);
+                reportArea.setText("TASK ADDED TO TASK STACK:\n- Task Name: Download Simple Dataset from Hugging Face\n- Repository: " + repo + "\n- Split: " + split + "\n- Target Size: " + sizeMbStr + " MB\n");
+                MessageDialog.openInformation(group.getShell(), "Task Queued", "Dataset download task successfully queued on the Task Stack!");
+            } catch (Exception ex) {
+                MessageDialog.openError(group.getShell(), "Task Queue Error", "Failed to add task to Task Stack: " + ex.getMessage());
+            }
+        }
     }
 
     private void handlePreview() {

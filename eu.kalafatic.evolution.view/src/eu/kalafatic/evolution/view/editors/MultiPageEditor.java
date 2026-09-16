@@ -813,6 +813,10 @@ public class MultiPageEditor extends MultiPageEditorPart {
 		return aiChatPage;
 	}
 
+	public TaskStackPage getTaskStackPage() {
+		return taskStackPage;
+	}
+
 	/**
 	 * Nested text editor that explicitly delegates its undo context to the parent
 	 * MultiPageEditor. This ensures that document changes in the text editor are
