@@ -774,7 +774,11 @@ public class ArchitecturePage extends AEvoPage {
         java.io.File root = new java.io.File(currentTargetPath);
         eu.kalafatic.evolution.controller.log.Log.log("[ARCH] Target path: " + currentTargetPath);
         eu.kalafatic.evolution.controller.log.Log.log("[ARCH] Mode: " + currentMode.name());
-        eu.kalafatic.evolution.controller.log.Log.log("[ARCH] Starting scan...");
+        eu.kalafatic.evolution.controller.log.Log.log("[ARCH] Starting async background scan...");
+
+        if (browser != null && !browser.isDisposed()) {
+            browser.execute("if(window.showPopup) { window.showPopup('Discovering Architecture', ['Scanning repository structure in background...', 'Progress will update dynamically.']); }");
+        }
 
         org.eclipse.core.runtime.jobs.Job job = new org.eclipse.core.runtime.jobs.Job("Discovering Architecture: " + root.getName()) {
             @Override
@@ -782,14 +786,20 @@ public class ArchitecturePage extends AEvoPage {
                 try {
                     monitor.beginTask("Discovering Architecture in " + root.getName(), 100);
 
-                    // 1. Physical Scan
+                    // 1. Physical Node Scan in Background Thread
+                    monitor.subTask("Scanning repository architecture nodes & modules...");
+                    DesignModel scannedModel = discoverArchitectureNodes(root);
+                    scannedModel.setName(root.getName() + " Architecture");
+                    monitor.worked(40);
+
+                    // 2. Physical Target Scan
                     monitor.subTask("Scanning filesystem structure & metadata...");
                     eu.kalafatic.evolution.controller.mediation.scanner.TargetScanner scanner = new eu.kalafatic.evolution.controller.mediation.scanner.TargetScanner();
                     eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot snapshot = scanner.scanToSnapshot(root, eu.kalafatic.evolution.controller.mediation.model.TargetSnapshot.TargetType.PROJECT);
                     eu.kalafatic.evolution.controller.log.Log.log("[ARCH_PAGE] Physical Scan complete. Found " + snapshot.getNodes().size() + " nodes.");
-                    monitor.worked(30);
+                    monitor.worked(20);
 
-                    // 2. AI Understanding (Mediated Mode Style)
+                    // 3. AI Understanding (Mediated Mode Style)
                     if (orchestrator != null) {
                         String sid = (orchestrator.getSelfDevSession() != null && orchestrator.getSelfDevSession().getId() != null) ?
                                      orchestrator.getSelfDevSession().getId() : "discovery-session";
@@ -812,36 +822,30 @@ public class ArchitecturePage extends AEvoPage {
 
                         eu.kalafatic.evolution.controller.mediation.analysis.SemanticExtractor extractor = new eu.kalafatic.evolution.controller.mediation.analysis.SemanticExtractor();
                         extractor.extractToSnapshot(snapshot, candidates);
-                        monitor.worked(20);
+                        monitor.worked(15);
 
                         monitor.subTask("Synthesizing Reality Model");
                         eu.kalafatic.evolution.controller.agents.RealityDiscoveryAgent agent = new eu.kalafatic.evolution.controller.agents.RealityDiscoveryAgent(session);
-
-                        // FIX: Avoid using Orchestrator.getAiService() which is undefined. Use TaskContext.getAiService().
                         agent.setAiService(ctx.getAiService());
 
                         eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel reality = agent.discover("Analyze repository architecture and key hotspots", ctx, currentTargetPath);
                         eu.kalafatic.evolution.controller.log.Log.log("[ARCH_PAGE] Reality Model synthesized: " + reality.getDomain());
 
-                        // Save to metadata for extractModel to find it
                         ctx.getOrchestrationState().getMetadata().put("targetRealityModel", reality);
-                        monitor.worked(20);
+                        convertRealityToModel(reality, scannedModel);
+                        monitor.worked(15);
 
-                        // Also trigger MetadataAgent for persistent sidecars
-                        monitor.subTask("Generating AI Metadata Sidecars");
-                        MetadataAgent generator = new MetadataAgent();
-                        generator.generate(root, monitor);
-
-                        // Persistent Cache in Shared Memory
-                        saveModelToCache(ctx, extractModel());
-                        monitor.worked(30);
+                        // Save to cache
+                        saveModelToCache(ctx, scannedModel);
                     }
 
+                    cachedFullModel = scannedModel;
+                    cachedFullModelPath = currentTargetPath;
+
                     Display.getDefault().asyncExec(() -> {
-                        invalidateInMemoryCache();
                         scheduleRefresh();
                         if (browser != null && !browser.isDisposed()) {
-                            String msg = "Discovered architecture for repository: " + root.getName();
+                            String msg = "Discovered architecture for repository: " + root.getName() + " (" + scannedModel.getComponents().size() + " components)";
                             browser.execute("if(window.showPopup) { window.showPopup('Discovery Complete', ['" + msg.replace("'", "\\'") + "']); }");
                         }
                     });
@@ -1069,36 +1073,26 @@ public class ArchitecturePage extends AEvoPage {
             return filterModel(cachedFullModel, currentMode);
         }
 
-        // 3. Initial view: physical scan for metadata
-        DesignModel model = discoverArchitectureNodes(root);
-        eu.kalafatic.evolution.controller.log.Log.log("[ARCH_PAGE] Discovered " + model.getComponents().size() + " components via node scan.");
+        // 3. Do NOT load automatically on startup/creation to keep RCP startup fast.
+        // Return a lightweight initial placeholder model until the user clicks "Discover Architecture".
+        DesignModel placeholder = createPlaceholderModel(root);
+        return filterModel(placeholder, currentMode);
+    }
 
-        // Integrate Reality Discovery Model if present in orchestrator
-        if (orchestrator != null && orchestrator.getSelfDevSession() != null) {
-            String sid = orchestrator.getSelfDevSession().getId();
-            eu.kalafatic.evolution.controller.orchestration.SessionContainer session = eu.kalafatic.evolution.controller.orchestration.SessionManager.getInstance().getSession(sid);
-            if (session instanceof eu.kalafatic.evolution.controller.orchestration.SessionContext) {
-                eu.kalafatic.evolution.controller.orchestration.TaskContext ctx = ((eu.kalafatic.evolution.controller.orchestration.SessionContext)session).getTaskContext();
-                if (ctx != null) {
-                    Object trm = ctx.getOrchestrationState().getMetadata().get("targetRealityModel");
-                    if (trm instanceof eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel) {
-                        convertRealityToModel((eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel) trm, model);
-                    }
-                }
-            }
-        }
+    private DesignModel createPlaceholderModel(java.io.File root) {
+        DesignModel model = new DesignModel();
+        model.setName(root != null ? root.getName() + " Architecture" : "Evolution Architecture");
 
-        model.setName(root.getName() + " Architecture");
+        ComponentRecord readyNode = new ComponentRecord();
+        readyNode.setId("repo_ready");
+        readyNode.setName(root != null ? root.getName() : "Repository");
+        readyNode.setType("REPOSITORY");
+        readyNode.setDescription("Architecture diagram ready. Click 'Discover Architecture' in toolbar to scan repository in background.");
+        readyNode.setImportanceScore(1.0);
+        readyNode.setPath(currentTargetPath != null ? currentTargetPath : "");
 
-        if (model.getComponents().isEmpty()) {
-            return createDefaultModel();
-        }
-
-        // Cache the scanned model in-memory for subsequent fast UI refreshes
-        cachedFullModel = model;
-        cachedFullModelPath = currentTargetPath;
-
-        return filterModel(model, currentMode);
+        model.getComponents().add(readyNode);
+        return model;
     }
 
     private void convertRealityToModel(eu.kalafatic.evolution.controller.mediation.model.TargetRealityModel reality, DesignModel model) {
