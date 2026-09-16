@@ -10,6 +10,7 @@ public class RowEditDialog extends DynamicMapDialog {
     private SelfDevRow row;
 
     private static final String NAME = "name";
+    private static final String COMMAND = "command";
     private static final String PATH = "path";
     private static final String STATUS = "status";
 
@@ -22,6 +23,7 @@ public class RowEditDialog extends DynamicMapDialog {
     private static LinkedHashMap<String, DynamicField> createFields(SelfDevRow row) {
         LinkedHashMap<String, DynamicField> fields = new LinkedHashMap<>();
         fields.put(NAME, new DynamicField("Name:", DynamicField.TYPE_TEXT, row.name));
+        fields.put(COMMAND, new DynamicField("Command:", DynamicField.TYPE_TEXT, row.command != null ? row.command : ""));
 
         int pathFlags = DynamicField.TYPE_TEXT;
         if (SelfDevRow.GIT_CHECK.equals(row.name) || SelfDevRow.GIT_CHECK_EVO.equals(row.name) || SelfDevRow.GIT_CHECK_SUPERVISOR.equals(row.name)) {
@@ -53,6 +55,7 @@ public class RowEditDialog extends DynamicMapDialog {
         if (!validate()) return;
         saveValues();
         row.name = getString(NAME);
+        row.command = getString(COMMAND);
         row.path = getString(PATH);
         row.status = getString(STATUS);
         super.okPressed();

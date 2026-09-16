@@ -92,22 +92,28 @@ public class DevelopmentPage extends AEvoPage {
 		public int order;
 		public boolean selected;
 		public String name;
+		public String command;
 		public String path;
 		public String url;
 		public String status;
 		public String executor;
 
 		public SelfDevRow(int order, String name, String path, EStatus eStatus) {
-			this(order, name, path, EStatus.NA.name(), eStatus, EApp.EVO.name());
+			this(order, name, "", path, EStatus.NA.name(), eStatus, EApp.EVO.name());
 		}
 
 		public SelfDevRow(int order, String name, String path, String url, EStatus eStatus) {
-			this(order, name, path, url, eStatus, EStatus.NA.name());
+			this(order, name, "", path, url, eStatus, EStatus.NA.name());
 		}
 
 		public SelfDevRow(int order, String name, String path, String url, EStatus eStatus, String executor) {
+			this(order, name, "", path, url, eStatus, executor);
+		}
+
+		public SelfDevRow(int order, String name, String command, String path, String url, EStatus eStatus, String executor) {
 			this.order = order;
 			this.name = name;
+			this.command = command;
 			this.path = path;
 			this.url = url;
 			this.status = eStatus.toString();
@@ -336,34 +342,26 @@ public class DevelopmentPage extends AEvoPage {
 		String customSuperBin = getTargetPath();
 
 		int row = 1;
-		sdData.add(new SelfDevRow(row++, SelfDevRow.LLM_CHECK, llmModel, EStatus.READY));
-		sdData.add(new SelfDevRow(row++, SelfDevRow.GIT_CHECK_EVO, localPath, repoUrl, EStatus.READY));
-		sdData.add(new SelfDevRow(row++, SelfDevRow.MAVEN_CHECK_EVO, mvnPath, EStatus.READY));
-		sdData.add(new SelfDevRow(row++, SelfDevRow.COPY_SUPERVISOR_SRC, customSuperSrc, EStatus.READY));
-		sdData.add(new SelfDevRow(row++, SelfDevRow.BUILD_SUPERVISOR_LOCAL, customSuperBin, EStatus.READY));
-		sdData.add(new SelfDevRow(row++, SelfDevRow.SUPERVISOR_CHECK, "supervisor.exe", EStatus.READY));
-		sdData.add(new SelfDevRow(row++, SelfDevRow.GIT_CHECK_SUPERVISOR, localPath, repoUrl, EStatus.READY,
-				EApp.SUPERVISOR.name()));
-		sdData.add(new SelfDevRow(row++, SelfDevRow.MAVEN_CHECK_SUPERVISOR, mvnPath, EStatus.NA.name(), EStatus.READY,
-				EApp.SUPERVISOR.name()));
-		sdData.add(new SelfDevRow(row++, SelfDevRow.GENOME_CHECK, "supervisor.genome", EStatus.READY));
-		sdData.add(new SelfDevRow(row++, SelfDevRow.PERM_CHECK, "supervisor.fs", EStatus.READY));
+		sdData.add(new SelfDevRow(row++, SelfDevRow.LLM_CHECK, "curl -s http://localhost:11434/api/tags", llmModel, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
+		sdData.add(new SelfDevRow(row++, SelfDevRow.GIT_CHECK_EVO, "git -C " + localPath + " fetch origin && git -C " + localPath + " pull", localPath, repoUrl, EStatus.READY, EApp.EVO.name()));
+		sdData.add(new SelfDevRow(row++, SelfDevRow.MAVEN_CHECK_EVO, "mvn clean verify -DskipTests", mvnPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
+		sdData.add(new SelfDevRow(row++, SelfDevRow.COPY_SUPERVISOR_SRC, "cp -r " + customSuperSrc + " " + targetPath, customSuperSrc, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
+		sdData.add(new SelfDevRow(row++, SelfDevRow.BUILD_SUPERVISOR_LOCAL, "mvn clean install -pl eu.kalafatic.evolution.supervisor -am -DskipTests", customSuperBin, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
+		sdData.add(new SelfDevRow(row++, SelfDevRow.SUPERVISOR_CHECK, "java -jar " + customSuperBin + "/supervisor.jar --check", "supervisor.exe", EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
+		sdData.add(new SelfDevRow(row++, SelfDevRow.GIT_CHECK_SUPERVISOR, "git -C " + localPath + " fetch origin && git -C " + localPath + " status", localPath, repoUrl, EStatus.READY, EApp.SUPERVISOR.name()));
+		sdData.add(new SelfDevRow(row++, SelfDevRow.MAVEN_CHECK_SUPERVISOR, "mvn -v && mvn validate", mvnPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
+		sdData.add(new SelfDevRow(row++, SelfDevRow.GENOME_CHECK, "mvn clean test -pl eu.kalafatic.evolution.selfdev.genome", "supervisor.genome", EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
+		sdData.add(new SelfDevRow(row++, SelfDevRow.PERM_CHECK, "chmod -R u+rwX " + targetPath, "supervisor.fs", EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
 		String evoSourcePath = ResourceManager.getInstance().getPath(EvoPath.EVO_GIT_REPOSITORY).toString();
-		sdData.add(new SelfDevRow(row++, SelfDevRow.COPY_SOURCE, evoSourcePath, EStatus.READY));
-		sdData.add(new SelfDevRow(row++, SelfDevRow.BUILD_PROJECT_EVO, targetPath, EStatus.READY));
-		sdData.add(new SelfDevRow(row++, SelfDevRow.BUILD_PROJECT_SUPERVISOR, targetPath, EStatus.NA.name(),
-				EStatus.READY, EApp.SUPERVISOR.name()));
-		sdData.add(new SelfDevRow(row++, SelfDevRow.EXPORT_PRODUCT_EVO, exportPath, EStatus.READY));
-		sdData.add(new SelfDevRow(row++, SelfDevRow.EXPORT_PRODUCT_SUPERVISOR, exportPath, EStatus.NA.name(),
-				EStatus.READY, EApp.SUPERVISOR.name()));
-		sdData.add(new SelfDevRow(row++, SelfDevRow.START_EVO_PRODUCT_SUPERVISOR, exportPath, EStatus.NA.name(),
-				EStatus.READY, EApp.SUPERVISOR.name()));
-		sdData.add(new SelfDevRow(row++, SelfDevRow.SUPERVISOR_LOOP, "supervisor.exe", EStatus.NA.name(), EStatus.READY,
-				EApp.SUPERVISOR.name()));
-		sdData.add(new SelfDevRow(row++, SelfDevRow.SELF_DEV_LOOP, "orchestrator", EStatus.NA.name(), EStatus.READY,
-				EApp.EVO.name()));
-		sdData.add(new SelfDevRow(row++, SelfDevRow.STOP_EVO_PRODUCT_SUPERVISOR, exportPath, EStatus.NA.name(),
-				EStatus.READY, EApp.SUPERVISOR.name()));
+		sdData.add(new SelfDevRow(row++, SelfDevRow.COPY_SOURCE, "cp -r " + evoSourcePath + " " + targetPath, evoSourcePath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
+		sdData.add(new SelfDevRow(row++, SelfDevRow.BUILD_PROJECT_EVO, "mvn clean verify -DskipTests -Plinux", targetPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
+		sdData.add(new SelfDevRow(row++, SelfDevRow.BUILD_PROJECT_SUPERVISOR, "mvn clean install -pl eu.kalafatic.evolution.supervisor -DskipTests", targetPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
+		sdData.add(new SelfDevRow(row++, SelfDevRow.EXPORT_PRODUCT_EVO, "mvn clean package -Pexport-product -DskipTests", exportPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
+		sdData.add(new SelfDevRow(row++, SelfDevRow.EXPORT_PRODUCT_SUPERVISOR, "mvn clean package -pl eu.kalafatic.evolution.supervisor -DskipTests", exportPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
+		sdData.add(new SelfDevRow(row++, SelfDevRow.START_EVO_PRODUCT_SUPERVISOR, "java -jar supervisor.jar --start-evo --path " + exportPath, exportPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
+		sdData.add(new SelfDevRow(row++, SelfDevRow.SUPERVISOR_LOOP, "java -jar supervisor.jar --loop", "supervisor.exe", EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
+		sdData.add(new SelfDevRow(row++, SelfDevRow.SELF_DEV_LOOP, "java -jar evolution.jar --self-dev-loop", "orchestrator", EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
+		sdData.add(new SelfDevRow(row++, SelfDevRow.STOP_EVO_PRODUCT_SUPERVISOR, "java -jar supervisor.jar --stop-evo", exportPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
 
 		sdData.sort((r1, r2) -> Integer.compare(r1.order, r2.order));
 		selfDevTable.setInput(sdData);
@@ -408,8 +406,8 @@ public class DevelopmentPage extends AEvoPage {
 	}
 
 	private void createSelfDevColumns() {
-		String[] titles = { "#", "Action", "Edit", "Executed From", "Name", "Path", "URL", "Status" };
-		int[] bounds = { 40, 100, 50, 120, 150, 150, 250, 150 };
+		String[] titles = { "#", "Action", "Edit", "Executed From", "Name", "Command", "Path", "URL", "Status" };
+		int[] bounds = { 40, 80, 40, 110, 140, 240, 150, 180, 120 };
 		for (int i = 0; i < titles.length; i++) {
 			TableViewerColumn col = new TableViewerColumn(selfDevTable, SWT.NONE);
 			col.getColumn().setText(titles[i]);
@@ -435,9 +433,10 @@ public class DevelopmentPage extends AEvoPage {
 			case 2 -> "\u270E";
 			case 3 -> row.executor != null ? row.executor : "NA";
 			case 4 -> row.name;
-			case 5 -> row.path;
-			case 6 -> row.url;
-			case 7 -> row.status;
+			case 5 -> row.command != null ? row.command : "";
+			case 6 -> row.path != null ? row.path : "";
+			case 7 -> row.url != null ? row.url : "";
+			case 8 -> row.status != null ? row.status : "";
 			default -> "";
 			};
 		}
@@ -684,6 +683,7 @@ public class DevelopmentPage extends AEvoPage {
 			for (Object obj : rows) {
 				if (obj instanceof SelfDevRow row) {
 					sb.append(String.format("#%02d [%s] Executor: %s\n", row.order, row.name, row.executor));
+					sb.append("    Command     : ").append(row.command != null ? row.command : "").append("\n");
 					sb.append("    Path/Target : ").append(row.path).append("\n");
 					sb.append("    Scenario    : ").append(getScenarioDescription(row)).append("\n");
 					sb.append("--------------------------------------------------------------------------------\n");
@@ -1096,6 +1096,7 @@ public class DevelopmentPage extends AEvoPage {
 						}
 						row.path = lp;
 						row.url = url;
+						row.command = "git -C " + lp + " fetch origin && git -C " + lp + " pull";
 					} else if ((SelfDevRow.MAVEN_CHECK_EVO.equals(row.name)
 							|| SelfDevRow.MAVEN_CHECK_SUPERVISOR.equals(row.name)) && orchestrator != null
 							&& orchestrator.getMaven() != null) {
@@ -1105,10 +1106,13 @@ public class DevelopmentPage extends AEvoPage {
 						row.path = orchestrator.getLlm().getModel();
 					} else if (SelfDevRow.COPY_SUPERVISOR_SRC.equals(row.name)) {
 						row.path = getSupervisorSourcePath();
+						row.command = "cp -r " + row.path + " " + targetPath;
 					} else if (SelfDevRow.BUILD_SUPERVISOR_LOCAL.equals(row.name)) {
 						row.path = getTargetPath();
 					} else if (SelfDevRow.COPY_SOURCE.equals(row.name)) {
-						row.path = getSupervisorSourcePath();
+						String evoSourcePath = ResourceManager.getInstance().getPath(EvoPath.EVO_GIT_REPOSITORY).toString();
+						row.path = evoSourcePath;
+						row.command = "cp -r " + evoSourcePath + " " + targetPath;
 					} else if (SelfDevRow.BUILD_PROJECT_EVO.equals(row.name)
 							|| SelfDevRow.BUILD_PROJECT_SUPERVISOR.equals(row.name)) {
 						row.path = targetPath;
@@ -1125,6 +1129,9 @@ public class DevelopmentPage extends AEvoPage {
 							exportPath = targetPath + "/export";
 						}
 						row.path = exportPath;
+						if (SelfDevRow.START_EVO_PRODUCT_SUPERVISOR.equals(row.name)) {
+							row.command = "java -jar supervisor.jar --start-evo --path " + exportPath;
+						}
 					}
 				}
 			}
