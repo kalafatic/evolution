@@ -85,17 +85,23 @@ public class DevelopmentPage extends AEvoPage {
 		public boolean selected;
 		public String name;
 		public String path;
+		public String url;
 		public String status;
 		public String executor;
-
+		
 		public SelfDevRow(int order, String name, String path, String status) {
-			this(order, name, path, status, "NA");
+			this(order, name, path, "NA", status, "NA");
 		}
 
-		public SelfDevRow(int order, String name, String path, String status, String executor) {
+		public SelfDevRow(int order, String name, String path, String url, String status) {
+			this(order, name, path, url, status, "NA");
+		}
+
+		public SelfDevRow(int order, String name, String path, String url, String status, String executor) {
 			this.order = order;
 			this.name = name;
 			this.path = path;
+			this.url = url;
 			this.status = status;
 			this.executor = executor;
 			this.selected = false;
@@ -311,8 +317,7 @@ public class DevelopmentPage extends AEvoPage {
 			repoUrl = eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool
 					.getRepositoryRemote(eu.kalafatic.evolution.controller.tools.EclipseGitEvoTool.REPO_EVOLUTION);
 		}
-		String gitPathUrl = localPath + "/" + repoUrl;
-
+		
 		String mvnPath = (orchestrator != null && orchestrator.getMaven() != null)
 				? orchestrator.getMaven().getGoals().toString()
 				: "supervisor.maven";
@@ -326,12 +331,12 @@ public class DevelopmentPage extends AEvoPage {
 
 		int row = 1;
 		sdData.add(new SelfDevRow(row ++, SelfDevRow.LLM_CHECK, llmModel, "ready", "evo"));
-		sdData.add(new SelfDevRow(row ++, SelfDevRow.GIT_CHECK_EVO, gitPathUrl, "ready", "evo"));
+		sdData.add(new SelfDevRow(row ++, SelfDevRow.GIT_CHECK_EVO, localPath,repoUrl, "ready", "evo"));
 		sdData.add(new SelfDevRow(row ++, SelfDevRow.MAVEN_CHECK_EVO, mvnPath, "ready", "evo"));	
 		sdData.add(new SelfDevRow(row ++, SelfDevRow.COPY_SUPERVISOR_SRC, customSuperSrc, "ready", "evo"));
 		sdData.add(new SelfDevRow(row ++, SelfDevRow.BUILD_SUPERVISOR_LOCAL, customSuperBin, "ready", "evo"));
 		sdData.add(new SelfDevRow(row ++, SelfDevRow.SUPERVISOR_CHECK, "supervisor.exe", "ready", "evo"));
-		sdData.add(new SelfDevRow(row ++, SelfDevRow.GIT_CHECK_SUPERVISOR, gitPathUrl, "ready", "supervisor"));
+		sdData.add(new SelfDevRow(row ++, SelfDevRow.GIT_CHECK_SUPERVISOR, localPath,repoUrl, "ready", "supervisor"));
 		sdData.add(new SelfDevRow(row ++, SelfDevRow.MAVEN_CHECK_SUPERVISOR, mvnPath, "ready", "supervisor"));
 		sdData.add(new SelfDevRow(row ++, SelfDevRow.GENOME_CHECK, "supervisor.genome", "ready", "evo"));
 		sdData.add(new SelfDevRow(row ++, SelfDevRow.PERM_CHECK, "supervisor.fs", "ready", "evo"));
@@ -389,8 +394,8 @@ public class DevelopmentPage extends AEvoPage {
 	}
 
 	private void createSelfDevColumns() {
-		String[] titles = { "#", "Action", "Edit", "Executed From", "Name", "Path/URL", "Status" };
-		int[] bounds = { 40, 100, 50, 120, 150, 250, 150 };
+		String[] titles = { "#", "Action", "Edit", "Executed From", "Name", "Path","URL", "Status" };
+		int[] bounds = { 40, 100, 50, 120, 150, 150, 250, 150 };
 		for (int i = 0; i < titles.length; i++) {
 			TableViewerColumn col = new TableViewerColumn(selfDevTable, SWT.NONE);
 			col.getColumn().setText(titles[i]);
@@ -417,7 +422,8 @@ public class DevelopmentPage extends AEvoPage {
 			case 3 -> row.executor != null ? row.executor : "NA";
 			case 4 -> row.name;
 			case 5 -> row.path;
-			case 6 -> row.status;
+			case 6 -> row.url;
+			case 7 -> row.status;
 			default -> "";
 			};
 		}
