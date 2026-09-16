@@ -2101,16 +2101,37 @@ public abstract class ADarwinEngine extends BaseAiAgent implements IDarwinEngine
 			String[] files = source.list();
 			if (files != null) {
 				for (String file : files) {
-					if (".git".equals(file) || "target".equals(file) || "bin".equals(file) || ".settings".equals(file)
-							|| ".project".equals(file) || ".classpath".equals(file))
+					File childSource = new File(source, file);
+					if (isExcludedDirectory(childSource, file))
 						continue;
-					copyDirectory(new File(source, file), new File(destination, file));
+					copyDirectory(childSource, new File(destination, file));
 				}
 			}
 		} else {
 			java.nio.file.Files.copy(source.toPath(), destination.toPath(),
 					java.nio.file.StandardCopyOption.REPLACE_EXISTING);
 		}
+	}
+
+	private boolean isExcludedDirectory(File file, String name) {
+		if (".git".equalsIgnoreCase(name) || ".settings".equalsIgnoreCase(name) || ".project".equalsIgnoreCase(name) || ".classpath".equalsIgnoreCase(name)) {
+			return true;
+		}
+		if ("target".equalsIgnoreCase(name) || "bin".equalsIgnoreCase(name)) {
+			return !isInsideSourceDirectory(file);
+		}
+		return false;
+	}
+
+	private boolean isInsideSourceDirectory(File file) {
+		File parent = file.getParentFile();
+		while (parent != null) {
+			if ("src".equalsIgnoreCase(parent.getName())) {
+				return true;
+			}
+			parent = parent.getParentFile();
+		}
+		return false;
 	}
 
 	public List<BranchVariant> generateVariants(GoalModel goal, StateSnapshot snapshot, FailureMemory failureMemory,
