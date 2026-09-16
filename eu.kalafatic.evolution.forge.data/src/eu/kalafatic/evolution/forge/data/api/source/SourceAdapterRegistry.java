@@ -3,9 +3,12 @@ package eu.kalafatic.evolution.forge.data.api.source;
 import eu.kalafatic.evolution.forge.data.impl.source.adapters.CSVAdapter;
 import eu.kalafatic.evolution.forge.data.impl.source.adapters.EVODataAdapter;
 import eu.kalafatic.evolution.forge.data.impl.source.adapters.FolderAdapter;
+import eu.kalafatic.evolution.forge.data.impl.source.adapters.GitAdapter;
+import eu.kalafatic.evolution.forge.data.impl.source.adapters.HuggingFaceAdapter;
 import eu.kalafatic.evolution.forge.data.impl.source.adapters.JSONAdapter;
 import eu.kalafatic.evolution.forge.data.impl.source.adapters.JSONLAdapter;
 import eu.kalafatic.evolution.forge.data.impl.source.adapters.OASST1Adapter;
+import eu.kalafatic.evolution.forge.data.impl.source.adapters.ParquetAdapter;
 import eu.kalafatic.evolution.forge.data.impl.source.adapters.TextAdapter;
 
 import java.util.ArrayList;
@@ -28,6 +31,9 @@ public class SourceAdapterRegistry {
         registry.registerAdapter(new JSONLAdapter());
         registry.registerAdapter(new JSONAdapter());
         registry.registerAdapter(new CSVAdapter());
+        registry.registerAdapter(new ParquetAdapter());
+        registry.registerAdapter(new HuggingFaceAdapter());
+        registry.registerAdapter(new GitAdapter(registry));
         registry.registerAdapter(new TextAdapter());
         registry.registerAdapter(new FolderAdapter(registry));
         return registry;

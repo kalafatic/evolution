@@ -1,5 +1,6 @@
 package eu.kalafatic.evolution.forge.controller.service.impl;
 
+import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -78,78 +79,44 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
             // STAGE 2: DATASET COMPOSITION & PREPARATION
             job.setState(JobState.PREPARING);
             job.setProgressPercent(30);
-            job.setCurrentStageDescription("Composing and preparing optimal dataset mix...");
+            job.setCurrentStageDescription("Composing and preparing optimal dataset mix into canonical .evodata artifact...");
             logToFile(logFile, "Stage 2: Dataset Composition starting.");
 
             var composition = datasetComposer.computeComposition(profiles, job.getObjective(), job.getCompositionStrategy().getTokenBudget());
             job.setCompositionStrategy(composition);
 
             long requestedTargetBytes = ForgeJob.toBytes(job.getRequestedMinimumUsableBytes(), 524_288_000L);
-            long maxDownloadBytes = Math.max(requestedTargetBytes * 2, 1_073_741_824L);
-            logToFile(logFile, "[DATA ACQUISITION] Requested usable data: " + (requestedTargetBytes / (1024 * 1024)) + " MB (" + requestedTargetBytes + " bytes), maxDownloadBytes: " + (maxDownloadBytes / (1024 * 1024)) + " MB");
 
-            TrainingDataPreferences.Builder prefsBuilder = TrainingDataPreferences.builder()
-                    .minimumUsableBytes(requestedTargetBytes)
-                    .targetUsableBytes(requestedTargetBytes)
-                    .maximumDownloadBytes(maxDownloadBytes)
-                    .capabilityObjective(job.getObjective() != null ? job.getObjective().name() : "AUTO");
-
+            List<eu.kalafatic.evolution.forge.data.api.source.DatasetItem> datasetItems = new ArrayList<>();
             if (job.getSourcePaths() != null) {
-                for (String pathStr : job.getSourcePaths()) {
-                    if (pathStr != null && !pathStr.trim().isEmpty()) {
-                        prefsBuilder.addTopic(pathStr.trim());
+                for (String src : job.getSourcePaths()) {
+                    if (src != null && !src.trim().isEmpty()) {
+                        datasetItems.add(new eu.kalafatic.evolution.forge.data.api.source.DatasetItem(true, src.trim(), "FILE"));
                     }
                 }
             }
-            TrainingDataPreferences preferences = prefsBuilder.build();
-
-            TrainingDataAcquisitionRequest acqRequest = new TrainingDataAcquisitionRequest();
-            acqRequest.setMinimumUsableBytes(requestedTargetBytes);
-            acqRequest.setPreferences(preferences);
-
-            if (job.getSourcePaths() != null) {
-                for (String sourceStr : job.getSourcePaths()) {
-                    if (sourceStr == null || sourceStr.trim().isEmpty()) continue;
-                    Path sourcePath = Paths.get(sourceStr);
-                    if (Files.exists(sourcePath)) {
-                        DatasetSourceConfig cfg = new DatasetSourceConfig("LOCAL", sourceStr);
-                        cfg.setMaxBytes(requestedTargetBytes);
-                        if (Files.isDirectory(sourcePath)) {
-                            acqRequest.addSource(new EvoCodebaseDatasetSource(cfg));
-                        } else {
-                            acqRequest.addSource(new LocalDatasetSource(cfg));
-                        }
-                    } else if (sourceStr.contains("/") || sourceStr.equalsIgnoreCase("wikitext")) {
-                        DatasetSourceConfig cfg = new DatasetSourceConfig("HUGGING_FACE", sourceStr);
-                        cfg.setMaxBytes(requestedTargetBytes);
-                        acqRequest.addSource(new HuggingFaceDatasetSource(cfg));
-                    }
-                }
+            if (datasetItems.isEmpty()) {
+                datasetItems.add(new eu.kalafatic.evolution.forge.data.api.source.DatasetItem(true, projectPath.toString(), "FOLDER"));
             }
 
-            TrainingDataAcquisitionService acquisitionService = new TrainingDataAcquisitionServiceImpl();
-            TrainingDataAcquisitionResult acqResult = acquisitionService.acquireDataset(acqRequest);
+            eu.kalafatic.evolution.forge.data.api.source.DatasetPreparationContext prepContext =
+                    new eu.kalafatic.evolution.forge.data.api.source.DatasetPreparationContext(requestedTargetBytes, msg -> logToFile(logFile, msg));
+            eu.kalafatic.evolution.forge.data.impl.service.DatasetPreparationService prepService =
+                    new eu.kalafatic.evolution.forge.data.impl.service.DatasetPreparationService();
 
-            logToFile(logFile, "[DATA ACQUISITION] Acquired: " + (acqResult.getUsableContentBytes() / (1024 * 1024)) + " MB / "
-                    + (requestedTargetBytes / (1024 * 1024)) + " MB. Status: " + acqResult.getStatus() + ", Target Reached: " + acqResult.isTargetReached());
+            File datasetOutputDir = projectPath.resolve("dist/datasets").toFile();
+            eu.kalafatic.evolution.forge.data.api.service.DatasetPreparationResult prepResult =
+                    prepService.prepareDatasets(datasetItems, prepContext, datasetOutputDir);
 
-            // HARD PRE-TRAINING GUARD (Invariant 10 & 20)
-            if (!acqResult.isTargetReached()) {
-                String failReason = "Training data acquisition incomplete: Acquired "
-                        + (acqResult.getUsableContentBytes() / (1024 * 1024)) + " MB (" + acqResult.getUsableContentBytes() + " bytes) / "
-                        + (requestedTargetBytes / (1024 * 1024)) + " MB (" + requestedTargetBytes + " bytes). "
-                        + (acqResult.getFailureReason() != null ? acqResult.getFailureReason() : "");
-                logToFile(logFile, "[ERROR] [ACQUISITION FAILED] " + failReason);
-                job.setState(JobState.FAILED);
-                job.setFailureReason(failReason);
-                throw new IllegalStateException(failReason);
-            }
-
-            logToFile(logFile, "[DATA ACQUISITION] HARD TARGET SATISFIED (" + (acqResult.getUsableContentBytes() / (1024 * 1024)) + " MB / " + (requestedTargetBytes / (1024 * 1024)) + " MB)");
+            String evodataFileName = (prepResult != null && prepResult.getOutputPath() != null && !prepResult.getOutputPath().isEmpty())
+                    ? new File(prepResult.getOutputPath()).getName() : "timestamp.evodata";
+            logToFile(logFile, "[FORGE-TRAINING] input=" + evodataFileName);
 
             StringBuilder corpusBuilder = new StringBuilder();
-            for (NormalizedSample sample : acqResult.getAcceptedSamples()) {
-                corpusBuilder.append(sample.toFullText()).append("\n\n");
+            if (prepResult != null && prepResult.getArtifact() != null && prepResult.getArtifact().getSamples() != null) {
+                for (NormalizedSample sample : prepResult.getArtifact().getSamples()) {
+                    corpusBuilder.append(sample.toFullText()).append("\n\n");
+                }
             }
 
             List<Path> scannedPaths = resolveScannedPaths(job.getSourcePaths(), projectPath, logFile);
