@@ -21,9 +21,7 @@ public class GitCheckTask extends AbstractSelfDevTask {
     protected void resolveResources(SelfDevContext context) throws Exception {
         ResourceManager rm = ResourceManager.getInstance();
         repositories.clear();
-        repositories.put("llm", rm.getPath(EvoPath.LLM_SELFDEV_REPOSITORY).toFile());
-        repositories.put("evo", rm.getPath(EvoPath.EVO_SELFDEV_REPOSITORY).toFile());
-        repositories.put("evolution", rm.getPath(EvoPath.EVO_SOURCE_REPOSITORY).toFile());
+        repositories.put("evolution", rm.getPath(EvoPath.EVO_GIT_REPOSITORY).toFile());
     }
 
     @Override
