@@ -249,7 +249,7 @@ public class TaskStackPage extends AEvoPage {
     }
 
     public void addDefaultModeTests() {
-        String[] modes = {"SIMPLE_CHAT", "ASSISTED_CODING", "DARWIN_MODE", "SELF_DEV_MODE", "HEADLESS_MODE", "PROMPT_HELLO", "PROMPT_CREATE_LOCAL", "PROMPT_CREATE_MEDIATED", "PROMPT_ANALYZE_MEDIATED"};
+        String[] modes = {"SIMPLE_CHAT", "ASSISTED_CODING", "DARWIN_MODE", "SELF_DEV_MODE", "HEADLESS_MODE", "PROMPT_HELLO", "PROMPT_CREATE_LOCAL", "PROMPT_CREATE_MEDIATED", "PROMPT_ANALYZE_MEDIATED", "PROMPT_FORGE_LLM", "PROMPT_DOWNLOAD_DATASET"};
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmm");
         String timestamp = sdf.format(new Date());
         for (String mode : modes) {
@@ -258,6 +258,8 @@ public class TaskStackPage extends AEvoPage {
                 case "PROMPT_CREATE_LOCAL" -> "Create Java Class (LOCAL)";
                 case "PROMPT_CREATE_MEDIATED" -> "Create Java Class (MEDIATED)";
                 case "PROMPT_ANALYZE_MEDIATED" -> "Analyze IterationManager (MEDIATED)";
+                case "PROMPT_FORGE_LLM" -> "Forge LLM EVO";
+                case "PROMPT_DOWNLOAD_DATASET" -> "Download Simple Dataset from Hugging Face";
                 default -> "Default Test: " + mode;
             };
 
@@ -266,7 +268,7 @@ public class TaskStackPage extends AEvoPage {
                 Task testPlan = OrchestrationFactory.eINSTANCE.createTask();
                 testPlan.setId("DT-" + mode + "-" + timestamp);
                 testPlan.setName(name);
-                testPlan.setType(mode.startsWith("PROMPT_") ? "coding" : mode);
+                testPlan.setType(mode.equals("PROMPT_FORGE_LLM") ? "FORGE" : (mode.equals("PROMPT_DOWNLOAD_DATASET") ? "DATASET" : (mode.startsWith("PROMPT_") ? "coding" : mode)));
                 testPlan.setStatus(TaskStatus.READY);
                 testPlan.setSelected(false);
 
@@ -280,6 +282,8 @@ public class TaskStackPage extends AEvoPage {
                     case "PROMPT_CREATE_LOCAL" -> "create java class which can print text";
                     case "PROMPT_CREATE_MEDIATED" -> "create java class which can print text";
                     case "PROMPT_ANALYZE_MEDIATED" -> "analyze IterationManager.java";
+                    case "PROMPT_FORGE_LLM" -> "Forge local EVO LLM model (SMALL) on configured dataset training sources.";
+                    case "PROMPT_DOWNLOAD_DATASET" -> "Download Hugging Face dataset Salesforce/wikitext (split: train, target size: 500 MB) into forge-input directory.";
                     default -> "";
                 };
                 testPlan.setDescription(description);
@@ -296,6 +300,11 @@ public class TaskStackPage extends AEvoPage {
                     testPlan.setBitState(BitState.encode(BitState.MODE_MEDIATED, BitState.SUPERVISION_MANUAL, BitState.INTERACTION_CONTINUOUS, BitState.REASONING_DARWIN, BitState.WORKFLOW_SELF_DEV));
                     testPlan.setDarwinMode(true);
                     testPlan.setSelfIterativeMode(true);
+                } else if (mode.equals("PROMPT_FORGE_LLM")) {
+                    testPlan.setBitState(BitState.encode(BitState.MODE_LOCAL, BitState.SUPERVISION_AUTO, BitState.INTERACTION_CONTINUOUS, BitState.REASONING_DARWIN, BitState.WORKFLOW_TASK_ORIENTED));
+                    testPlan.setDarwinMode(true);
+                } else if (mode.equals("PROMPT_DOWNLOAD_DATASET")) {
+                    testPlan.setBitState(BitState.encode(BitState.MODE_LOCAL, BitState.SUPERVISION_AUTO, BitState.INTERACTION_CONTINUOUS, BitState.REASONING_ATOMIC, BitState.WORKFLOW_TASK_ORIENTED));
                 }
 
                 String[] subtaskNames = switch(mode) {
@@ -304,6 +313,8 @@ public class TaskStackPage extends AEvoPage {
                     case "DARWIN_MODE" -> new String[]{"Variant Generation", "Parallel Execution", "Scoring & Selection", "Merge fittest solution"};
                     case "SELF_DEV_MODE" -> new String[]{"Supervisor Session Start", "Iterative Darwin Loop", "Self-Modification Check", "Regression Testing"};
                     case "HEADLESS_MODE" -> new String[]{"Supervisor Initialization", "Headless Maven Build", "External Loop Execution", "Result Aggregation"};
+                    case "PROMPT_FORGE_LLM" -> new String[]{"Analyze Training Corpus", "Compose Domain Weights", "Preflight Validation", "Train EVO Architecture", "Export GGUF & Native Artifacts", "Smoke Test Native Engine"};
+                    case "PROMPT_DOWNLOAD_DATASET" -> new String[]{"Validate Dataset Repository", "Acquire Hugging Face Chunks", "Clean & Deduplicate Content", "Package EVO Dataset Artifact (.evodata)"};
                     default -> new String[0];
                 };
 
@@ -320,6 +331,71 @@ public class TaskStackPage extends AEvoPage {
         setDirty(true);
         updateUIFromModel();
         taskStackGroup.getTreeViewer().expandAll();
+    }
+
+    public Task addForgeLlmTask() {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmm");
+        String timestamp = sdf.format(new Date());
+        Task task = OrchestrationFactory.eINSTANCE.createTask();
+        task.setId("FORGE-" + timestamp);
+        task.setName("Forge LLM EVO");
+        task.setType("FORGE");
+        task.setStatus(TaskStatus.READY);
+        task.setSelected(true);
+        String prompt = "Forge local EVO LLM model (SMALL) on configured dataset training sources.";
+        task.setDescription(prompt);
+        task.setPrompt(prompt);
+        task.setBitState(BitState.encode(BitState.MODE_LOCAL, BitState.SUPERVISION_AUTO, BitState.INTERACTION_CONTINUOUS, BitState.REASONING_DARWIN, BitState.WORKFLOW_TASK_ORIENTED));
+        task.setDarwinMode(true);
+
+        String[] subtaskNames = {"Analyze Training Corpus", "Compose Domain Weights", "Preflight Validation", "Train EVO Architecture", "Export GGUF & Native Artifacts", "Smoke Test Native Engine"};
+        for (String stName : subtaskNames) {
+            Task subTask = OrchestrationFactory.eINSTANCE.createTask();
+            subTask.setName(stName);
+            subTask.setStatus(TaskStatus.READY);
+            task.getSubTasks().add(subTask);
+        }
+
+        if (orchestrator != null) {
+            orchestrator.getTasks().add(task);
+            setDirty(true);
+            updateUIFromModel();
+        }
+        return task;
+    }
+
+    public Task addDownloadDatasetTask(String repo, String split, String sizeMb) {
+        if (repo == null || repo.trim().isEmpty()) repo = "wikitext";
+        if (split == null || split.trim().isEmpty()) split = "train";
+        if (sizeMb == null || sizeMb.trim().isEmpty()) sizeMb = "500";
+
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmm");
+        String timestamp = sdf.format(new Date());
+        Task task = OrchestrationFactory.eINSTANCE.createTask();
+        task.setId("DATASET-" + timestamp);
+        task.setName("Download Simple Dataset from Hugging Face");
+        task.setType("DATASET");
+        task.setStatus(TaskStatus.READY);
+        task.setSelected(true);
+        String prompt = "Download Hugging Face dataset " + repo + " (split: " + split + ", target size: " + sizeMb + " MB) into forge-input directory.";
+        task.setDescription(prompt);
+        task.setPrompt(prompt);
+        task.setBitState(BitState.encode(BitState.MODE_LOCAL, BitState.SUPERVISION_AUTO, BitState.INTERACTION_CONTINUOUS, BitState.REASONING_ATOMIC, BitState.WORKFLOW_TASK_ORIENTED));
+
+        String[] subtaskNames = {"Validate Dataset Repository", "Acquire Hugging Face Chunks", "Clean & Deduplicate Content", "Package EVO Dataset Artifact (.evodata)"};
+        for (String stName : subtaskNames) {
+            Task subTask = OrchestrationFactory.eINSTANCE.createTask();
+            subTask.setName(stName);
+            subTask.setStatus(TaskStatus.READY);
+            task.getSubTasks().add(subTask);
+        }
+
+        if (orchestrator != null) {
+            orchestrator.getTasks().add(task);
+            setDirty(true);
+            updateUIFromModel();
+        }
+        return task;
     }
 
     public void addNewTaskToSelectedPlan() {
