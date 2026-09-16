@@ -96,6 +96,11 @@ public class TaskResult {
         return Collections.unmodifiableMap(diagnostics);
     }
 
+    public String getDiagnostic(String key, String defaultValue) {
+        Object val = diagnostics.get(key);
+        return val != null ? val.toString() : defaultValue;
+    }
+
     @Override
     public String toString() {
         return "TaskResult{" +
