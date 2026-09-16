@@ -23,7 +23,11 @@ import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProduct;
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Platform;
+import org.eclipse.core.runtime.Status;
+import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.util.LocalSelectionTransfer;
@@ -198,19 +202,18 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor im
 //		createProject(Platform.getProduct().getName());
 //		openMultiPageEditor();
 
-		Display.getDefault().asyncExec(new Runnable() {
+		new ProjectManager().refreshAllProjects();
+
+		Job initJob = new Job("Evolution Repositories Initialization") {
 			@Override
-			public void run() {
-//				createProject(Platform.getProduct().getName());
-//				openMultiPageEditor();
-				new ProjectManager().refreshAllProjects();
-				
-				
+			protected IStatus run(IProgressMonitor monitor) {
 				EclipseGitEvoTool.initializeRepositories();
-				
 				EclipseGitEvoTool.lockMasterBranchForPush();
+				return Status.OK_STATUS;
 			}
-		});
+		};
+		initJob.setPriority(Job.LONG);
+		initJob.schedule();
 	}
 	
 	
