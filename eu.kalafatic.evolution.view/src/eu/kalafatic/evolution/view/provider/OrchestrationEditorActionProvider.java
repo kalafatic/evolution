@@ -10,10 +10,10 @@ import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.Separator;
 import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.jface.viewers.DoubleClickEvent;
+import org.eclipse.jface.viewers.IDoubleClickListener;
 import org.eclipse.jface.viewers.ISelection;
-import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
-import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.IWorkbenchActionConstants;
 import org.eclipse.ui.ide.IDE;
@@ -46,9 +46,9 @@ public class OrchestrationEditorActionProvider extends CommonActionProvider {
         super.init(aSite);
         makeActions();
 
-        aSite.getStructuredViewer().addSelectionChangedListener(new ISelectionChangedListener() {
+        aSite.getStructuredViewer().addDoubleClickListener(new IDoubleClickListener() {
             @Override
-            public void selectionChanged(SelectionChangedEvent event) {
+            public void doubleClick(DoubleClickEvent event) {
                 ISelection selection = event.getSelection();
                 if (selection instanceof IStructuredSelection) {
                     Object element = ((IStructuredSelection) selection).getFirstElement();
@@ -262,20 +262,15 @@ public class OrchestrationEditorActionProvider extends CommonActionProvider {
             return new Action("Open Evolution Project") {
                 @Override
                 public void run() {
-                    try {
-                        org.eclipse.core.resources.IProject project = (org.eclipse.core.resources.IProject) element;
-                        for (IResource res : project.members()) {
-                            if (res instanceof IFile) {
-                                String ext = ((IFile) res).getFileExtension();
-                                if ("evo".equals(ext) || "xml".equals(ext)) {
-                                    IWorkbenchPage page = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
-                                    IDE.openEditor(page, (IFile) res, MultiPageEditor.ID);
-                                    break;
-                                }
-                            }
+                    org.eclipse.core.resources.IProject project = (org.eclipse.core.resources.IProject) element;
+                    IFile targetFile = findConfigurationFile(project);
+                    if (targetFile != null && targetFile.exists()) {
+                        IWorkbenchPage page = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
+                        try {
+                            IDE.openEditor(page, targetFile, MultiPageEditor.ID);
+                        } catch (PartInitException e) {
+                            MessageDialog.openError(page.getWorkbenchWindow().getShell(), "Error", "Could not open MultiPageEditor: " + e.getMessage());
                         }
-                    } catch (org.eclipse.core.runtime.CoreException e) {
-                        e.printStackTrace();
                     }
                 }
             };
@@ -299,6 +294,35 @@ public class OrchestrationEditorActionProvider extends CommonActionProvider {
                     }
                 }
             };
+        }
+        return null;
+    }
+
+    private IFile findConfigurationFile(org.eclipse.core.resources.IProject project) {
+        try {
+            IFile primaryConfig = project.getFile("evo_config.xml");
+            if (primaryConfig != null && primaryConfig.exists()) {
+                return primaryConfig;
+            }
+            IResource[] members = project.members();
+            for (IResource res : members) {
+                if (res instanceof IFile) {
+                    IFile file = (IFile) res;
+                    if ("evo_config.xml".equalsIgnoreCase(file.getName()) || "evo".equalsIgnoreCase(file.getFileExtension())) {
+                        return file;
+                    }
+                }
+            }
+            for (IResource res : members) {
+                if (res instanceof IFile) {
+                    IFile file = (IFile) res;
+                    if ("xml".equalsIgnoreCase(file.getFileExtension())) {
+                        return file;
+                    }
+                }
+            }
+        } catch (org.eclipse.core.runtime.CoreException e) {
+            e.printStackTrace();
         }
         return null;
     }
