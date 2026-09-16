@@ -11,6 +11,7 @@ public enum MavenErrorCategory {
     JAVA(false),
     POM(false),
     PACKAGING(false),
+    TEST_FAILURE(false),
     TRANSIENT(true),
     UNKNOWN(false);
 

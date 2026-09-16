@@ -327,8 +327,7 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
             File nestedDir = platform.isWindows() ?
                     new File(targetProductsDir, prodDef.getProductId() + "/win32/win32/x86_64/" + prodDef.getRootFolder()) :
                     new File(targetProductsDir, prodDef.getProductId() + "/linux/gtk/x86_64/" + prodDef.getRootFolder());
-
-            if (nestedDir.exists() && isExactMatchingArtifact(nestedDir, prodDef, platform)) {
+            if (nestedDir.exists()) {
                 candidates.add(nestedDir);
             }
         }
