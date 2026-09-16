@@ -6,6 +6,10 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.egit.core.RepositoryCache;
 import org.eclipse.jgit.lib.Repository;
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Status;
+import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.IStartup;
 import org.eclipse.ui.IViewPart;
@@ -17,16 +21,17 @@ public class GitRepositoryStartup implements IStartup {
 
 	@Override
 	public void earlyStartup() {
-		// Register repositories as early as possible
-		// But need to be careful with UI thread timing
-		Display.getDefault().asyncExec(this::registerAllRepositories);
-	}
-
-	private void registerAllRepositories() {
-		// Same registration logic as above
-		System.out.println("Registering all Git repositories...");
-		
-		scanAndRegisterRepositories();
+		// Offload repository scanning and disk checks to a background Job
+		Job job = new Job("Git Repository Discovery") {
+			@Override
+			protected IStatus run(IProgressMonitor monitor) {
+				System.out.println("Registering all Git repositories in background job...");
+				scanAndRegisterRepositories();
+				return Status.OK_STATUS;
+			}
+		};
+		job.setPriority(Job.DECORATE);
+		job.schedule();
 	}
 	
 	 public void scanAndRegisterRepositories() {
