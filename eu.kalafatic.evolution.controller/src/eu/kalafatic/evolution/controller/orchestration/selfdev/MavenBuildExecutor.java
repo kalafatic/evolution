@@ -117,17 +117,26 @@ public class MavenBuildExecutor {
                         .build();
             } else {
                 String fullOutput = outputBuffer.toString();
-                MavenErrorClassifier.ClassificationResult classification = MavenErrorClassifier.classify(fullOutput);
+                MavenErrorClassifier.ClassificationResult classification = MavenErrorClassifier.classify(fullOutput, workingDir);
 
                 log("[MAVEN][ERROR]");
                 log("[MAVEN][ERROR] Exit code: " + exitCode);
                 log("[MAVEN][ERROR] Failed phase: " + classification.getFailedPhase());
+                log("[MAVEN][ERROR] Failing module: " + classification.getFailingModule());
+                log("[MAVEN][ERROR] Failing plugin: " + classification.getFailingPlugin());
+                log("[MAVEN][ERROR] Failing goal: " + classification.getFailingGoal());
                 log("[MAVEN][ERROR] Repository: " + workingDir.getAbsolutePath());
                 log("[MAVEN][ERROR] Working directory: " + workingDir.getAbsolutePath());
                 log("[MAVEN][ERROR] Command: " + fullCommandStr);
                 log("[MAVEN][ERROR] Error category: " + classification.getCategory());
                 log("[MAVEN][ERROR] Root cause: " + classification.getRootCause());
-                log("[MAVEN][ERROR] Last relevant Maven/Tycho output:\n" + classification.getLastRelevantOutput());
+                if (classification.getReportDirectory() != null) {
+                    log("[MAVEN][ERROR] Report directory: " + classification.getReportDirectory());
+                }
+                if (classification.getTestSummary() != null && !classification.getTestSummary().isEmpty()) {
+                    log("[MAVEN][ERROR] Test failure details:\n" + classification.getTestSummary());
+                }
+                log("[MAVEN][ERROR] Relevant Maven output excerpt:\n" + classification.getLastRelevantOutput());
 
                 if (classification.getCategory().isRecoverable() && attempt < MAX_RECOVERY_ATTEMPTS) {
                     log("[MAVEN][RECOVERY]");
@@ -145,7 +154,7 @@ public class MavenBuildExecutor {
                     log("[MAVEN][FATAL] Build failed after recovery attempts.");
                 }
 
-                return new TaskResult.Builder(taskId)
+                TaskResult.Builder resultBuilder = new TaskResult.Builder(taskId)
                         .status(TaskStatus.FAILED)
                         .message("Maven build failed with exit code " + exitCode + " [" + classification.getCategory() + "]: " + classification.getRootCause())
                         .command(fullCommandStr)
@@ -154,11 +163,22 @@ public class MavenBuildExecutor {
                         .duration(duration)
                         .logFile(logFile)
                         .diagnostic("errorCategory", classification.getCategory().name())
+                        .diagnostic("failingModule", classification.getFailingModule())
+                        .diagnostic("failingPlugin", classification.getFailingPlugin())
+                        .diagnostic("failingGoal", classification.getFailingGoal())
                         .diagnostic("failedPhase", classification.getFailedPhase())
                         .diagnostic("rootCause", classification.getRootCause())
                         .diagnostic("recoveryAttempts", String.valueOf(attempt))
-                        .diagnostic("outputTail", classification.getLastRelevantOutput())
-                        .build();
+                        .diagnostic("outputTail", classification.getLastRelevantOutput());
+
+                if (classification.getReportDirectory() != null) {
+                    resultBuilder.diagnostic("reportDirectory", classification.getReportDirectory());
+                }
+                if (classification.getTestSummary() != null && !classification.getTestSummary().isEmpty()) {
+                    resultBuilder.diagnostic("testSummary", classification.getTestSummary());
+                }
+
+                return resultBuilder.build();
             }
 
         } catch (Exception e) {

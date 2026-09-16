@@ -136,9 +136,16 @@ public class DatasetAcquisitionTool implements ITool {
             result = acquisitionService.acquireDataset(request);
         } catch (Exception ex) {
             String exMsg = ex.getMessage() != null ? ex.getMessage() : ex.toString();
-            CognitiveFailureType failureType = (exMsg.contains("Connect") || exMsg.contains("Timeout") || exMsg.contains("Network"))
-                    ? CognitiveFailureType.NETWORK_FAILURE
-                    : CognitiveFailureType.CAPABILITY_FAILURE;
+            CognitiveFailureType failureType;
+            if (exMsg.contains("401") || exMsg.contains("403") || exMsg.contains("AUTH")) {
+                failureType = CognitiveFailureType.AUTHENTICATION_FAILURE;
+            } else if (exMsg.contains("404") || exMsg.contains("Not found") || exMsg.contains("Config not found")) {
+                failureType = CognitiveFailureType.INVALID_CONFIGURATION;
+            } else if (exMsg.contains("Connect") || exMsg.contains("Timeout") || exMsg.contains("Network") || exMsg.contains("CONNECTION_ERROR")) {
+                failureType = CognitiveFailureType.NETWORK_FAILURE;
+            } else {
+                failureType = CognitiveFailureType.CAPABILITY_FAILURE;
+            }
 
             JSONObject errObj = new JSONObject();
             errObj.put("status", "FAILED");
@@ -149,7 +156,7 @@ public class DatasetAcquisitionTool implements ITool {
             errObj.put("sourceType", sourceType);
             errObj.put("repository", repo);
             errObj.put("split", split);
-            errObj.put("isSourceExhausted", true);
+            errObj.put("isSourceExhausted", false);
             errObj.put("failureType", failureType.name());
             errObj.put("failureReason", exMsg);
             errObj.put("recommendedNextActions", new JSONArray(List.of("TRY_OTHER_DATASET", "TRY_OTHER_SOURCE")));
@@ -162,7 +169,7 @@ public class DatasetAcquisitionTool implements ITool {
                 context.getMetadata().put("repository", repo);
                 context.getMetadata().put("split", split);
                 context.getMetadata().put("failureType", failureType.name());
-                context.getMetadata().put("isSourceExhausted", true);
+                context.getMetadata().put("isSourceExhausted", false);
             }
             return errObj.toString();
         }
@@ -171,9 +178,17 @@ public class DatasetAcquisitionTool implements ITool {
         long remaining = Math.max(0, targetUsableBytes - usableBytes);
         boolean targetReached = result.isTargetReached() || (targetUsableBytes > 0 && usableBytes >= targetUsableBytes);
 
+        String failureReason = result.getFailureReason() != null ? result.getFailureReason() : "";
+
         CognitiveFailureType failureType;
         if (targetReached) {
             failureType = CognitiveFailureType.TARGET_REACHED;
+        } else if (failureReason.contains("HTTP 401") || failureReason.contains("HTTP 403") || failureReason.contains("AUTHENTICATION")) {
+            failureType = CognitiveFailureType.AUTHENTICATION_FAILURE;
+        } else if (failureReason.contains("HTTP 404") || failureReason.contains("Not found") || failureReason.contains("Config not found") || failureReason.contains("Split not found")) {
+            failureType = CognitiveFailureType.INVALID_CONFIGURATION;
+        } else if (failureReason.contains("CONNECTION_ERROR") || failureReason.contains("TIMEOUT") || failureReason.contains("Network")) {
+            failureType = CognitiveFailureType.NETWORK_FAILURE;
         } else if (result.getDownloadedBytes() == 0 && usableBytes == 0) {
             failureType = CognitiveFailureType.SOURCE_EMPTY;
         } else if (result.isSourceExhausted() || usableBytes == 0) {
@@ -202,7 +217,7 @@ public class DatasetAcquisitionTool implements ITool {
         resObj.put("split", split);
         resObj.put("isSourceExhausted", result.isSourceExhausted());
         resObj.put("failureType", failureType.name());
-        resObj.put("failureReason", result.getFailureReason() != null ? result.getFailureReason() : "");
+        resObj.put("failureReason", failureReason);
         resObj.put("recommendedNextActions", new JSONArray(nextActions));
 
         if (context != null) {
