@@ -1,5 +1,7 @@
 package eu.kalafatic.evolution.controller.orchestration.selfdev;
 
+import eu.kalafatic.evolution.controller.log.Log;
+
 public class BuildEvoTask extends AbstractSelfDevTask {
     private final EvoRcpBuilder builder;
 
@@ -18,7 +20,24 @@ public class BuildEvoTask extends AbstractSelfDevTask {
 
     @Override
     protected TaskResult run(SelfDevContext context) throws Exception {
-        return builder.build(context);
+        TaskResult result = builder.build(context);
+        if (!result.isSuccess()) {
+            log("[MAVEN] ========================================");
+            log("[MAVEN][FATAL] Global Maven result: FAILURE");
+            log("[MAVEN] Failed component: Evolution");
+            log("[MAVEN] Error category: " + result.getDiagnostic("errorCategory", "UNKNOWN"));
+            log("[MAVEN] Root cause: " + result.getMessage());
+            log("[MAVEN] Recovery attempts: " + result.getDiagnostic("recoveryAttempts", "0"));
+            log("[MAVEN] ========================================");
+        } else {
+            log("[MAVEN] ========================================");
+            log("[MAVEN] Global Maven result: SUCCESS");
+            log("[MAVEN] Supervisor: SUCCESS");
+            log("[MAVEN] Evolution: SUCCESS");
+            log("[MAVEN] Artifacts: VALID");
+            log("[MAVEN] ========================================");
+        }
+        return result;
     }
 
     @Override
@@ -27,9 +46,21 @@ public class BuildEvoTask extends AbstractSelfDevTask {
             return runResult;
         }
         BuildArtifact artifact = context.getArtifact(ArtifactType.EVO_RCP);
-        if (artifact == null || artifact.getPath() == null || !artifact.getPath().exists()) {
-            return TaskResult.failure(id, "EVO RCP build post-validation failed: expected artifact missing from context or disk.", null);
+        if (artifact == null || artifact.getPath() == null || !artifact.getPath().exists() || artifact.getPath().length() == 0) {
+            log("[MAVEN] ========================================");
+            log("[MAVEN][FATAL] Global Maven result: FAILURE");
+            log("[MAVEN] Failed component: Evolution");
+            log("[MAVEN] Error category: ARTIFACT_MISSING");
+            log("[MAVEN] Root cause: Expected EVO RCP artifact missing or empty");
+            log("[MAVEN] Recovery attempts: 0");
+            log("[MAVEN] ========================================");
+            return TaskResult.failure(id, "EVO RCP build post-validation failed: expected artifact missing or empty.", null);
         }
         return runResult;
+    }
+
+    private void log(String msg) {
+        Log.log(msg);
+        System.out.println(msg);
     }
 }

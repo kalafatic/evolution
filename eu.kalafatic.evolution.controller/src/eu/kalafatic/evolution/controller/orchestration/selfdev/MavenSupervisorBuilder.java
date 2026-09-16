@@ -4,6 +4,8 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 
+import eu.kalafatic.evolution.controller.log.Log;
+
 public class MavenSupervisorBuilder extends AbstractProjectBuilder implements SupervisorBuilder {
 
     public MavenSupervisorBuilder() {
@@ -27,9 +29,10 @@ public class MavenSupervisorBuilder extends AbstractProjectBuilder implements Su
         }
 
         File logFile = getLogFile(context, "supervisor_build.log");
-        List<String> goals = Arrays.asList("clean", "package");
+        List<String> goals = Arrays.asList("validate", "clean", "package");
         List<String> args = Arrays.asList("-DskipTests");
 
+        log("[MAVEN] Building Supervisor module at " + supervisorModuleDir.getAbsolutePath());
         TaskResult buildResult = mavenExecutor.executeBuild(supervisorModuleDir, goals, args, logFile, 15);
         if (!buildResult.isSuccess()) {
             return buildResult;
@@ -37,8 +40,21 @@ public class MavenSupervisorBuilder extends AbstractProjectBuilder implements Su
 
         BuildArtifact artifact = getArtifact(context);
         if (artifact == null || artifact.getPath() == null || !artifact.getPath().exists() || artifact.getPath().length() == 0) {
-            return TaskResult.failure("build_supervisor", "Maven returned exit code 0 but supervisor artifact was missing or invalid at " + (supervisorModuleDir != null ? supervisorModuleDir.getAbsolutePath() : "null"), null);
+            log("[MAVEN][ARTIFACT]");
+            log("[MAVEN][ARTIFACT] Type: " + ArtifactType.SUPERVISOR);
+            log("[MAVEN][ARTIFACT] Path: " + (artifact != null && artifact.getPath() != null ? artifact.getPath().getAbsolutePath() : "null"));
+            log("[MAVEN][ARTIFACT] Exists: false");
+            log("[MAVEN][ARTIFACT] Validation: FAILED");
+
+            return TaskResult.failure("build_supervisor", "Maven returned exit code 0 but supervisor JAR artifact was missing, empty, or unverified at " + (supervisorModuleDir != null ? supervisorModuleDir.getAbsolutePath() : "null"), null);
         }
+
+        log("[MAVEN][ARTIFACT]");
+        log("[MAVEN][ARTIFACT] Type: " + ArtifactType.SUPERVISOR);
+        log("[MAVEN][ARTIFACT] Path: " + artifact.getPath().getAbsolutePath());
+        log("[MAVEN][ARTIFACT] Exists: true");
+        log("[MAVEN][ARTIFACT] Size: " + artifact.getPath().length() + " bytes");
+        log("[MAVEN][ARTIFACT] Validation: SUCCESS");
 
         context.recordArtifact(artifact);
 
@@ -73,5 +89,10 @@ public class MavenSupervisorBuilder extends AbstractProjectBuilder implements Su
         }
 
         return null;
+    }
+
+    private void log(String message) {
+        Log.log(message);
+        System.out.println(message);
     }
 }
