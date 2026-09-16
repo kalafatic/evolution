@@ -1,9 +1,9 @@
 package eu.kalafatic.evolution.forge.data.impl.service;
 
-import eu.kalafatic.evolution.forge.data.api.NormalizedMessage;
 import eu.kalafatic.evolution.forge.data.api.NormalizedSample;
 import eu.kalafatic.evolution.forge.data.api.TrainingSampleType;
 import eu.kalafatic.evolution.forge.data.api.artifact.EvoDatasetArtifact;
+import eu.kalafatic.evolution.forge.data.api.service.DatasetPreparationResult;
 import eu.kalafatic.evolution.forge.data.api.source.DatasetInspection;
 import eu.kalafatic.evolution.forge.data.api.source.DatasetItem;
 import eu.kalafatic.evolution.forge.data.api.source.DatasetPreparationContext;
@@ -11,12 +11,13 @@ import eu.kalafatic.evolution.forge.data.api.source.DatasetSourceAdapter;
 import eu.kalafatic.evolution.forge.data.api.source.DatasetSourceConfig;
 import eu.kalafatic.evolution.forge.data.api.source.DatasetSourceStats;
 import eu.kalafatic.evolution.forge.data.api.source.SourceAdapterRegistry;
-import eu.kalafatic.evolution.forge.data.api.service.DatasetPreparationResult;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -59,46 +60,54 @@ public class DatasetPreparationService {
             }
         }
 
-        context.log("[forge.dataset]");
         context.log("[forge.dataset] Selected dataset items: " + checkedItems.size());
+        result.setTargetBytes(context.getTargetUsableBytes());
 
         if (checkedItems.isEmpty()) {
-            context.log("[forge.dataset] Warning: No checked dataset sources selected.");
+            context.log("[FORGE-COMPILER] Warning: No checked dataset sources selected.");
             result.setStatus(DatasetPreparationResult.Status.INSUFFICIENT_DATA);
+            result.getWarnings().add("No checked dataset sources selected.");
             return result;
         }
 
-        // 2. Compute deterministic cache key for source identity & configuration reuse
+        // Generate canonical timestamped evodata output filename (standard date time: yyyyMMdd_HHmmss.evodata)
+        String timestampStr = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
         String cacheKey = computeCacheKey(checkedItems, context.getTargetUsableBytes());
+        File evodataFile = new File(outputDir, timestampStr + ".evodata");
         File cacheFile = new File(outputDir, "prepared_" + cacheKey + ".evodata");
 
+        // Re-use cached evodata artifact if exact sources & configuration match
         if (cacheFile.exists() && cacheFile.length() > 0) {
             try {
                 EvoDatasetArtifact cachedArtifact = EvoDatasetArtifact.load(cacheFile);
                 if (cachedArtifact != null && cachedArtifact.getStatus() == EvoDatasetArtifact.Status.READY && !cachedArtifact.getTrainSamples().isEmpty()) {
-                    context.log("[forge.dataset] Reusing cached prepared dataset artifact: " + cacheFile.getName());
+                    context.log("[FORGE-COMPILER] Reusing cached prepared dataset artifact: " + cacheFile.getName());
                     result.setArtifact(cachedArtifact);
                     result.setSamples(cachedArtifact.getSamples());
                     result.setStatus(DatasetPreparationResult.Status.SUCCESS);
                     result.setOutputPath(cacheFile.getAbsolutePath());
 
+                    for (DatasetItem item : checkedItems) {
+                        result.getSuccessfulSources().add(item.getPath());
+                    }
                     populateResultMetrics(result, cachedArtifact.getSamples(), checkedItems.size());
                     logFinalSummary(context, result, cacheFile.getAbsolutePath());
                     return result;
                 }
             } catch (Exception ex) {
-                context.log("[forge.dataset] Cache artifact loading failed, rebuilding: " + ex.getMessage());
+                context.log("[FORGE-COMPILER] Cache artifact loading failed, rebuilding: " + ex.getMessage());
             }
         }
 
-        // 3. Process each checked source using adapter registry in exact order
+        // 2. DISCOVER, IDENTIFY, ANALYZE: First analysis phase before conversion
+        context.log("[FORGE-ANALYSIS] Analyzing " + checkedItems.size() + " selected sources...");
         List<NormalizedSample> allRawSamples = new ArrayList<>();
-        int sourceIndex = 1;
-        int totalN = checkedItems.size();
+        long totalRecordsRead = 0;
+        long totalRecordsRejected = 0;
 
         for (DatasetItem item : checkedItems) {
             if (context.isCancelled()) {
-                context.log("[forge.dataset] Dataset preparation cancelled.");
+                context.log("[FORGE-PROCESS] Dataset preparation cancelled.");
                 result.setStatus(DatasetPreparationResult.Status.CANCELLED);
                 return result;
             }
@@ -106,49 +115,67 @@ public class DatasetPreparationService {
             DatasetSourceAdapter adapter = registry.findAdapter(item);
             String adapterName = adapter != null ? adapter.getClass().getSimpleName() : "NONE";
 
-            context.log("[forge.dataset]");
-            context.log("[forge.dataset] Preparing source " + sourceIndex + "/" + totalN);
-            context.log("Path: " + item.getPath());
-            context.log("Type: " + item.getType());
-            context.log("Adapter: " + adapterName);
+            context.log(String.format("[FORGE-SOURCE] source=%s type=%s format=%s", item.getPath(), item.getType(), adapterName));
 
             if (adapter == null) {
-                context.log("Status: SKIPPED (No matching adapter found)");
-                sourceIndex++;
+                context.log(String.format("[FORGE-ANALYSIS] source=%s adapter=NONE estimatedBytes=0 status=SKIPPED", item.getPath()));
+                result.getSkippedSources().add(item.getPath());
                 continue;
             }
 
             DatasetInspection inspection = adapter.inspect(item);
+            context.log(String.format("[FORGE-ANALYSIS] source=%s adapter=%s estimatedBytes=%d status=%s",
+                    item.getPath(), adapterName, inspection.getEstimatedBytes(),
+                    inspection.isExists() ? "VALID" : "INVALID"));
+
             if (!inspection.isSupported() || !inspection.isExists()) {
-                context.log("Status: FAILED (" + inspection.getDetails() + ")");
-                sourceIndex++;
+                context.log(String.format("[FORGE-ADAPTER] source=%s adapter=%s status=FAILED error=%s", item.getPath(), adapterName, inspection.getDetails()));
+                result.getFailedSources().add(item.getPath());
+                result.getErrors().add("Source inaccessible: " + item.getPath() + " (" + inspection.getDetails() + ")");
                 continue;
             }
 
+            // 3. CONVERT via Adapter with Failure Isolation
             try {
+                context.log(String.format("[FORGE-ADAPTER] source=%s adapter=%s status=PROCESSING", item.getPath(), adapterName));
                 List<NormalizedSample> converted = adapter.convert(item, context);
-                context.log("Status: SUCCESS (" + (converted != null ? converted.size() : 0) + " samples)");
+                int count = converted != null ? converted.size() : 0;
+                totalRecordsRead += count;
+
+                context.log(String.format("[FORGE-PROCESS] source=%s recordsRead=%d recordsAccepted=%d recordsRejected=0 duplicates=0",
+                        item.getPath(), count, count));
+
                 if (converted != null) {
                     allRawSamples.addAll(converted);
                 }
+                result.getSuccessfulSources().add(item.getPath());
             } catch (Exception ex) {
-                context.log("Status: FAILED (" + ex.getMessage() + ")");
+                context.log(String.format("[FORGE-ADAPTER] source=%s adapter=%s status=FAILED error=%s", item.getPath(), adapterName, ex.getMessage()));
+                result.getFailedSources().add(item.getPath());
+                result.getErrors().add("Adapter error on " + item.getPath() + ": " + ex.getMessage());
             }
-            sourceIndex++;
         }
 
-        // 4. Deduplicate and enforce target size
+        // 4. MERGE, CLEAN, FILTER, DEDUPLICATE Quality Pipeline
         Set<String> seenHashes = new HashSet<>();
         List<NormalizedSample> deduplicatedSamples = new ArrayList<>();
         long currentUsableBytes = 0;
         long targetBytes = context.getTargetUsableBytes();
         long duplicateBytes = 0;
+        long duplicateCount = 0;
 
         for (NormalizedSample sample : allRawSamples) {
             if (context.isCancelled()) break;
+
+            if (sample == null || sample.toFullText().trim().isEmpty()) {
+                totalRecordsRejected++;
+                continue;
+            }
+
             String h = sample.getHash();
             if (h != null && !h.isEmpty() && seenHashes.contains(h)) {
                 duplicateBytes += sample.toFullText().getBytes(StandardCharsets.UTF_8).length;
+                duplicateCount++;
                 continue;
             }
             if (h != null && !h.isEmpty()) {
@@ -157,20 +184,30 @@ public class DatasetPreparationService {
 
             byte[] sampleBytes = sample.toFullText().getBytes(StandardCharsets.UTF_8);
             if (targetBytes > 0 && currentUsableBytes >= targetBytes) {
-                break; // Target size reached
+                break; // Configured target size reached
             }
 
             deduplicatedSamples.add(sample);
             currentUsableBytes += sampleBytes.length;
         }
 
+        result.setRecordsRead(totalRecordsRead);
+        result.setRecordsAccepted(deduplicatedSamples.size());
+        result.setRecordsRejected(totalRecordsRejected);
+        result.setDuplicateCount(duplicateCount);
+        result.setDuplicateBytes(duplicateBytes);
+
+        context.log(String.format("[FORGE-MERGE] sources=%d records=%d usableBytes=%d",
+                result.getSuccessfulSources().size(), deduplicatedSamples.size(), currentUsableBytes));
+
         if (deduplicatedSamples.isEmpty()) {
-            context.log("[forge.dataset] Error: No usable normalized samples generated from checked sources.");
+            context.log("[FORGE-COMPILER] Error: No usable normalized samples generated from sources.");
             result.setStatus(DatasetPreparationResult.Status.FAILED);
+            result.getErrors().add("No usable normalized samples generated from checked sources.");
             return result;
         }
 
-        // 5. Build and save single EvoDatasetArtifact
+        // 5. EVO NATIVE DATASET COMPILATION -> timestamp.evodata
         DatasetSourceConfig sourceConfig = new DatasetSourceConfig("MULTI_SOURCE", "checked_sources_" + checkedItems.size());
         DatasetSourceStats stats = context.getStats();
         if (stats == null) stats = new DatasetSourceStats();
@@ -178,19 +215,25 @@ public class DatasetPreparationService {
         stats.setAcceptedBytes(currentUsableBytes);
         stats.setDuplicateBytes(duplicateBytes);
 
-        EvoDatasetArtifact artifact = new EvoDatasetArtifact(cacheFile);
+        EvoDatasetArtifact artifact = new EvoDatasetArtifact(evodataFile);
         artifact.save(deduplicatedSamples, sourceConfig, stats, 0.02);
+
+        // Also update cache file for fast re-use
+        EvoDatasetArtifact cacheArtifact = new EvoDatasetArtifact(cacheFile);
+        cacheArtifact.save(deduplicatedSamples, sourceConfig, stats, 0.02);
 
         result.setArtifact(artifact);
         result.setSamples(artifact.getSamples());
-        result.setOutputPath(cacheFile.getAbsolutePath());
+        result.setOutputPath(evodataFile.getAbsolutePath());
         result.setStatus(artifact.getStatus() == EvoDatasetArtifact.Status.INSUFFICIENT_SOURCE_DATA ?
                           DatasetPreparationResult.Status.INSUFFICIENT_DATA : DatasetPreparationResult.Status.SUCCESS);
 
         populateResultMetrics(result, deduplicatedSamples, checkedItems.size());
-        result.setDuplicateBytes(duplicateBytes);
 
-        logFinalSummary(context, result, cacheFile.getAbsolutePath());
+        context.log(String.format("[FORGE-COMPILER] output=%s usableBytes=%d status=SUCCESS",
+                evodataFile.getName(), result.getAcceptedBytes()));
+
+        logFinalSummary(context, result, evodataFile.getAbsolutePath());
         return result;
     }
 
@@ -234,21 +277,18 @@ public class DatasetPreparationService {
 
     private void logFinalSummary(DatasetPreparationContext context, DatasetPreparationResult result, String outputPath) {
         context.log("[forge.dataset]");
-        context.log("[forge.dataset]");
-        context.log("Native preparation complete");
-        context.log("");
-        context.log("Sources: " + result.getSourcesProcessed());
-        context.log("Samples: " + result.getSamples().size());
-        context.log("Conversations: " + result.getConversationsCount());
-        context.log("Messages: " + result.getMessagesCount());
-        context.log("Accepted bytes: " + result.getAcceptedBytes());
-        context.log("Rejected bytes: " + result.getRejectedBytes());
-        context.log("Duplicate bytes: " + result.getDuplicateBytes());
-        context.log("Estimated tokens: " + result.getEstimatedTokens());
-        context.log("Train samples: " + result.getTrainSamplesCount());
-        context.log("Validation samples: " + result.getValSamplesCount());
+        context.log("[forge.dataset] Native preparation complete");
+        context.log("Successful Sources: " + result.getSuccessfulSources().size());
+        context.log("Failed Sources: " + result.getFailedSources().size());
+        context.log("Skipped Sources: " + result.getSkippedSources().size());
+        context.log("Records Read: " + result.getRecordsRead());
+        context.log("Records Accepted: " + result.getRecordsAccepted());
+        context.log("Records Rejected: " + result.getRecordsRejected());
+        context.log("Duplicate Count: " + result.getDuplicateCount());
+        context.log("Usable Bytes: " + result.getAcceptedBytes());
+        context.log("Target Bytes: " + result.getTargetBytes());
         context.log("Output: " + outputPath);
-        context.log("Status: " + (result.getStatus() == DatasetPreparationResult.Status.SUCCESS ? "READY" : result.getStatus().name()));
+        context.log("Status: " + result.getStatus().name());
     }
 
     private String computeCacheKey(List<DatasetItem> items, long targetBytes) {

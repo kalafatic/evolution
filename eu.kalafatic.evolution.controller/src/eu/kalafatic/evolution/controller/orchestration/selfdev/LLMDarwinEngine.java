@@ -418,9 +418,15 @@ public class LLMDarwinEngine extends ADarwinEngine {
 		eu.kalafatic.evolution.forge.data.api.service.DatasetPreparationResult prepResult =
 				prepService.prepareDatasets(datasetItems, prepContext, datasetOutputDir);
 
+		String defaultTimestampName = new java.text.SimpleDateFormat("yyyyMMdd_HHmmss").format(new java.util.Date()) + ".evodata";
+		String evodataFileName = (prepResult != null && prepResult.getOutputPath() != null && !prepResult.getOutputPath().isEmpty())
+				? new File(prepResult.getOutputPath()).getName() : defaultTimestampName;
+		context.log("[FORGE-TRAINING] input=" + evodataFileName);
+
+		// The compiled .evodata is the ONLY input required by the EVO LLM training process
 		StringBuilder corpusBuilder = new StringBuilder();
-		if (prepResult != null && prepResult.getSamples() != null && !prepResult.getSamples().isEmpty()) {
-			for (eu.kalafatic.evolution.forge.data.api.NormalizedSample sample : prepResult.getSamples()) {
+		if (prepResult != null && prepResult.getArtifact() != null && prepResult.getArtifact().getSamples() != null) {
+			for (eu.kalafatic.evolution.forge.data.api.NormalizedSample sample : prepResult.getArtifact().getSamples()) {
 				appendBounded(corpusBuilder, sample.toFullText(), MAX_CORPUS_CHARS);
 			}
 		}
