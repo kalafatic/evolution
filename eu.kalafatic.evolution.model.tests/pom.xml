@@ -13,5 +13,16 @@
 
 	<build>
 		<sourceDirectory>src</sourceDirectory>
+		<plugins>
+			<plugin>
+				<groupId>org.eclipse.tycho</groupId>
+				<artifactId>tycho-surefire-plugin</artifactId>
+				<version>4.0.5</version>
+				<configuration>
+					<testClass>eu.kalafatic.evolution.model.orchestration.tests.EvolutionAllTests</testClass>
+					<failIfNoTests>false</failIfNoTests>
+				</configuration>
+			</plugin>
+		</plugins>
 	</build>
 </project>

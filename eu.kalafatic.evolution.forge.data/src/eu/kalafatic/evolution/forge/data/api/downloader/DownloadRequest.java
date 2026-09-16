@@ -12,8 +12,6 @@ public class DownloadRequest {
     private String method = "GET";
     private int connectTimeoutMs = 5000;
     private int readTimeoutMs = 10000;
-    private int maxRetries = 3;
-    private long backoffBaseMs = 500;
     private String userAgent = "EVO-Forge-Client/2.6";
     private final Map<String, String> headers = new HashMap<>();
 
@@ -49,24 +47,6 @@ public class DownloadRequest {
 
     public DownloadRequest setReadTimeoutMs(int readTimeoutMs) {
         this.readTimeoutMs = readTimeoutMs;
-        return this;
-    }
-
-    public int getMaxRetries() {
-        return maxRetries;
-    }
-
-    public DownloadRequest setMaxRetries(int maxRetries) {
-        this.maxRetries = maxRetries;
-        return this;
-    }
-
-    public long getBackoffBaseMs() {
-        return backoffBaseMs;
-    }
-
-    public DownloadRequest setBackoffBaseMs(long backoffBaseMs) {
-        this.backoffBaseMs = backoffBaseMs;
         return this;
     }
 
