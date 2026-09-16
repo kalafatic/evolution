@@ -43,7 +43,7 @@ public class RowEditDialog extends DynamicMapDialog {
             pathFlags |= DynamicField.FILE;
         }
 
-        fields.put(PATH, new DynamicField("Path/URL:", pathFlags, row.path));
+        fields.put(PATH, new DynamicField("Path:", pathFlags, row.path));
         fields.put(STATUS, new DynamicField("Status:", DynamicField.TYPE_TEXT, row.status));
         return fields;
     }

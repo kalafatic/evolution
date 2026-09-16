@@ -1094,7 +1094,8 @@ public class DevelopmentPage extends AEvoPage {
 						if (url == null || url.isEmpty()) {
 							url = EclipseGitEvoTool.getRepositoryRemote(EclipseGitEvoTool.REPO_EVOLUTION);
 						}
-						row.path = lp + "/" + url;
+						row.path = lp;
+						row.url = url;
 					} else if ((SelfDevRow.MAVEN_CHECK_EVO.equals(row.name)
 							|| SelfDevRow.MAVEN_CHECK_SUPERVISOR.equals(row.name)) && orchestrator != null
 							&& orchestrator.getMaven() != null) {
