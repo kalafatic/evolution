@@ -11,9 +11,12 @@ import eu.kalafatic.evolution.forge.data.api.source.DatasetSourceAdapter;
 import eu.kalafatic.evolution.forge.data.api.source.DatasetSourceConfig;
 import eu.kalafatic.evolution.forge.data.api.source.DatasetSourceStats;
 import eu.kalafatic.evolution.forge.data.api.source.SourceAdapterRegistry;
+import eu.kalafatic.evolution.forge.data.impl.source.DatasetMetadataFilter;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -21,9 +24,13 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Authoritative dataset preparation service converting user-selected dataset items into a unified EVO native .evodata dataset artifact.
+ * Handles intelligent source discovery, format detection, adapter selection, normalization, deduplication,
+ * multi-source merging, target limiting, and failure isolation.
  */
 public class DatasetPreparationService {
 
@@ -80,7 +87,7 @@ public class DatasetPreparationService {
         if (cacheFile.exists() && cacheFile.length() > 0) {
             try {
                 EvoDatasetArtifact cachedArtifact = EvoDatasetArtifact.load(cacheFile);
-                if (cachedArtifact != null && cachedArtifact.getStatus() == EvoDatasetArtifact.Status.READY && !cachedArtifact.getTrainSamples().isEmpty()) {
+                if (cachedArtifact != null && cachedArtifact.getStatus() != EvoDatasetArtifact.Status.FAILED && !cachedArtifact.getTrainSamples().isEmpty()) {
                     context.log("[FORGE-COMPILER] Reusing cached prepared dataset artifact: " + cacheFile.getName());
                     result.setArtifact(cachedArtifact);
                     result.setSamples(cachedArtifact.getSamples());
@@ -103,7 +110,6 @@ public class DatasetPreparationService {
         context.log("[FORGE-ANALYSIS] Analyzing " + checkedItems.size() + " selected sources...");
         List<NormalizedSample> allRawSamples = new ArrayList<>();
         long totalRecordsRead = 0;
-        long totalRecordsRejected = 0;
 
         for (DatasetItem item : checkedItems) {
             if (context.isCancelled()) {
@@ -126,12 +132,12 @@ public class DatasetPreparationService {
             DatasetInspection inspection = adapter.inspect(item);
             context.log(String.format("[FORGE-ANALYSIS] source=%s adapter=%s estimatedBytes=%d status=%s",
                     item.getPath(), adapterName, inspection.getEstimatedBytes(),
-                    inspection.isExists() ? "VALID" : "INVALID"));
+                    inspection.isSupported() ? "VALID" : "INVALID"));
 
             if (!inspection.isSupported() || !inspection.isExists()) {
                 context.log(String.format("[FORGE-ADAPTER] source=%s adapter=%s status=FAILED error=%s", item.getPath(), adapterName, inspection.getDetails()));
                 result.getFailedSources().add(item.getPath());
-                result.getErrors().add("Source inaccessible: " + item.getPath() + " (" + inspection.getDetails() + ")");
+                result.getErrors().add("Source inaccessible or unsupported: " + item.getPath() + " (" + inspection.getDetails() + ")");
                 continue;
             }
 
@@ -159,10 +165,11 @@ public class DatasetPreparationService {
         // 4. MERGE, CLEAN, FILTER, DEDUPLICATE Quality Pipeline
         Set<String> seenHashes = new HashSet<>();
         List<NormalizedSample> deduplicatedSamples = new ArrayList<>();
+        long totalRecordsRejected = 0;
+        long duplicateCount = 0;
+        long duplicateBytes = 0;
         long currentUsableBytes = 0;
         long targetBytes = context.getTargetUsableBytes();
-        long duplicateBytes = 0;
-        long duplicateCount = 0;
 
         for (NormalizedSample sample : allRawSamples) {
             if (context.isCancelled()) break;
@@ -183,8 +190,10 @@ public class DatasetPreparationService {
             }
 
             byte[] sampleBytes = sample.toFullText().getBytes(StandardCharsets.UTF_8);
+
+            // Deterministic target limit truncation
             if (targetBytes > 0 && currentUsableBytes >= targetBytes) {
-                break; // Configured target size reached
+                break;
             }
 
             deduplicatedSamples.add(sample);
@@ -196,6 +205,9 @@ public class DatasetPreparationService {
         result.setRecordsRejected(totalRecordsRejected);
         result.setDuplicateCount(duplicateCount);
         result.setDuplicateBytes(duplicateBytes);
+
+        context.log(String.format("[FORGE-DEDUPE] inputRecords=%d duplicates=%d uniqueRecords=%d",
+                totalRecordsRead, duplicateCount, deduplicatedSamples.size()));
 
         context.log(String.format("[FORGE-MERGE] sources=%d records=%d usableBytes=%d",
                 result.getSuccessfulSources().size(), deduplicatedSamples.size(), currentUsableBytes));
@@ -214,6 +226,9 @@ public class DatasetPreparationService {
         stats.setRequestedUsableBytes(targetBytes);
         stats.setAcceptedBytes(currentUsableBytes);
         stats.setDuplicateBytes(duplicateBytes);
+        stats.setAcceptedSamples(deduplicatedSamples.size());
+        stats.setRejectedSamples(totalRecordsRejected);
+        stats.setExactDuplicates(duplicateCount);
 
         EvoDatasetArtifact artifact = new EvoDatasetArtifact(evodataFile);
         artifact.save(deduplicatedSamples, sourceConfig, stats, 0.02);
@@ -225,13 +240,23 @@ public class DatasetPreparationService {
         result.setArtifact(artifact);
         result.setSamples(artifact.getSamples());
         result.setOutputPath(evodataFile.getAbsolutePath());
-        result.setStatus(artifact.getStatus() == EvoDatasetArtifact.Status.INSUFFICIENT_SOURCE_DATA ?
-                          DatasetPreparationResult.Status.INSUFFICIENT_DATA : DatasetPreparationResult.Status.SUCCESS);
+
+        // Process status: PARTIAL if some sources failed, SUCCESS if all non-skipped sources succeeded
+        if (!result.getFailedSources().isEmpty() && !result.getSuccessfulSources().isEmpty()) {
+            result.setStatus(DatasetPreparationResult.Status.PARTIAL);
+        } else {
+            result.setStatus(DatasetPreparationResult.Status.SUCCESS);
+        }
 
         populateResultMetrics(result, deduplicatedSamples, checkedItems.size());
 
         context.log(String.format("[FORGE-COMPILER] output=%s usableBytes=%d status=SUCCESS",
                 evodataFile.getName(), result.getAcceptedBytes()));
+
+        double coverage = targetBytes > 0 ? (currentUsableBytes * 100.0 / targetBytes) : 100.0;
+        String quantityStatus = (targetBytes > 0 && currentUsableBytes < targetBytes) ? "INSUFFICIENT_DATA" : "TARGET_REACHED";
+        context.log(String.format("[FORGE-QUANTITY] targetBytes=%d actualBytes=%d coverage=%.2f%% status=%s",
+                targetBytes, currentUsableBytes, coverage, quantityStatus));
 
         logFinalSummary(context, result, evodataFile.getAbsolutePath());
         return result;
@@ -298,7 +323,22 @@ public class DatasetPreparationService {
             sb.append(item.getPath()).append(":");
             File f = new File(item.getPath());
             if (f.exists()) {
-                sb.append(f.lastModified()).append(":").append(f.length());
+                if (f.isDirectory()) {
+                    try (Stream<Path> walk = Files.walk(f.toPath())) {
+                        List<Path> childFiles = walk.filter(Files::isRegularFile)
+                                .filter(p -> !DatasetMetadataFilter.isMetadataFile(p))
+                                .sorted()
+                                .collect(Collectors.toList());
+                        for (Path cp : childFiles) {
+                            File cf = cp.toFile();
+                            sb.append(cf.getAbsolutePath()).append(":").append(cf.lastModified()).append(":").append(cf.length()).append(";");
+                        }
+                    } catch (Exception ignored) {
+                        sb.append(f.lastModified()).append(":").append(f.length());
+                    }
+                } else {
+                    sb.append(f.lastModified()).append(":").append(f.length());
+                }
             }
             sb.append(";");
         }

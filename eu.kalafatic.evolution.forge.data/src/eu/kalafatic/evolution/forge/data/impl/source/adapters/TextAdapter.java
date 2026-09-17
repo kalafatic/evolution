@@ -5,6 +5,7 @@ import eu.kalafatic.evolution.forge.data.api.source.DatasetInspection;
 import eu.kalafatic.evolution.forge.data.api.source.DatasetItem;
 import eu.kalafatic.evolution.forge.data.api.source.DatasetPreparationContext;
 import eu.kalafatic.evolution.forge.data.api.source.DatasetSourceAdapter;
+import eu.kalafatic.evolution.forge.data.impl.source.DatasetMetadataFilter;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
@@ -14,19 +15,23 @@ import java.util.List;
 
 /**
  * Universal source adapter for plain text, Markdown, code, XML, HTML, and document files.
+ * Ignores metadata and documentation files (README, LICENSE, NOTICE, etc.).
  */
 public class TextAdapter implements DatasetSourceAdapter {
 
     @Override
     public boolean supports(DatasetItem item) {
         if (item == null || item.getPath() == null) return false;
+        File f = new File(item.getPath());
+        if (!f.exists() || !f.isFile()) return false;
+        if (DatasetMetadataFilter.isMetadataFile(f)) return false;
+
         String path = item.getPath().trim().toLowerCase();
-        if (path.endsWith(".txt") || path.endsWith(".md") || path.endsWith(".java") || path.endsWith(".xml") ||
-            path.endsWith(".html") || path.endsWith(".htm") || path.endsWith(".properties") || path.endsWith(".json") == false) {
-            File f = new File(item.getPath());
-            return f.exists() && f.isFile();
+        if (path.endsWith(".json") || path.endsWith(".jsonl") || path.endsWith(".parquet") ||
+            path.endsWith(".csv") || path.endsWith(".evodata")) {
+            return false;
         }
-        return "FILE".equalsIgnoreCase(item.getType()) || "TEXT".equalsIgnoreCase(item.getType());
+        return true;
     }
 
     @Override
@@ -36,8 +41,12 @@ public class TextAdapter implements DatasetSourceAdapter {
         }
         File file = new File(item.getPath());
         boolean exists = file.exists() && file.isFile();
-        long size = exists ? file.length() : 0;
-        return new DatasetInspection(item, "TextAdapter", exists, size, "text", exists, exists ? "Text File Source" : "File does not exist");
+        boolean isMetadata = exists && DatasetMetadataFilter.isMetadataFile(file);
+        boolean supported = exists && !isMetadata;
+        long size = supported ? file.length() : 0;
+        String details = isMetadata ? "Ignored metadata file" : (exists ? "Text File Source" : "File does not exist");
+
+        return new DatasetInspection(item, "TextAdapter", exists, size, "text", supported, details);
     }
 
     @Override
@@ -46,8 +55,8 @@ public class TextAdapter implements DatasetSourceAdapter {
         if (item == null || item.getPath() == null) return samples;
 
         File file = new File(item.getPath());
-        if (!file.exists() || !file.isFile()) {
-            context.log("[forge.dataset] [TextAdapter] File not found: " + item.getPath());
+        if (!file.exists() || !file.isFile() || DatasetMetadataFilter.isMetadataFile(file)) {
+            context.log("[forge.dataset] [TextAdapter] Ignored or missing file: " + item.getPath());
             return samples;
         }
 
