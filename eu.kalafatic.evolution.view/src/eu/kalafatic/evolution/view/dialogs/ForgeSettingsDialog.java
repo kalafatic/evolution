@@ -1,11 +1,14 @@
 package eu.kalafatic.evolution.view.dialogs;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import org.eclipse.jface.dialogs.Dialog;
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -35,6 +38,10 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import eu.kalafatic.evolution.controller.manager.ModelSizePreset;
+import eu.kalafatic.evolution.controller.manager.ProjectModelManager;
+import eu.kalafatic.evolution.forge.data.api.service.DatasetPreparationResult;
+import eu.kalafatic.evolution.forge.data.api.source.DatasetPreparationContext;
+import eu.kalafatic.evolution.forge.data.impl.service.DatasetPreparationService;
 import eu.kalafatic.utils.factories.GUIFactory;
 
 public class ForgeSettingsDialog extends Dialog {
@@ -340,6 +347,14 @@ public class ForgeSettingsDialog extends Dialog {
         Button moveUpBtn = GUIFactory.INSTANCE.createButton(btnComp, "Move Up");
         Button moveDownBtn = GUIFactory.INSTANCE.createButton(btnComp, "Move Down");
         Button selectAllBtn = GUIFactory.INSTANCE.createButton(btnComp, "Select All");
+        Button createEvodataBtn = GUIFactory.INSTANCE.createButton(btnComp, "Create Native .evodata");
+
+        createEvodataBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                handleCreateEvodata();
+            }
+        });
 
         addFileBtn.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -754,6 +769,77 @@ public class ForgeSettingsDialog extends Dialog {
 
         titleFont.dispose();
         currentFont.dispose();
+    }
+
+    private void handleCreateEvodata() {
+        List<DatasetItem> checkedItems = new ArrayList<>();
+        for (DatasetItem item : datasetItems) {
+            if (item.isChecked() && item.getPath() != null && !item.getPath().trim().isEmpty()) {
+                checkedItems.add(item);
+            }
+        }
+
+        if (checkedItems.isEmpty()) {
+            MessageDialog.openWarning(getShell(), "No Datasets Selected", "Please select and check at least one dataset item in the table.");
+            return;
+        }
+
+        List<eu.kalafatic.evolution.forge.data.api.source.DatasetItem> apiItems = new ArrayList<>();
+        for (DatasetItem item : checkedItems) {
+            apiItems.add(new eu.kalafatic.evolution.forge.data.api.source.DatasetItem(item.isChecked(), item.getPath(), item.getType()));
+        }
+
+        String baseWorkspace = ProjectModelManager.getWorkspacePath();
+        if (baseWorkspace == null || baseWorkspace.trim().isEmpty()) {
+            baseWorkspace = new File(System.getProperty("user.home"), "workspace").getAbsolutePath();
+        }
+        File outputDir = new File(baseWorkspace, "forge-input");
+        if (!outputDir.exists()) {
+            outputDir.mkdirs();
+        }
+
+        new Thread(() -> {
+            try {
+                DatasetPreparationService service = new DatasetPreparationService();
+                DatasetPreparationContext context = new DatasetPreparationContext();
+                DatasetPreparationResult result = service.prepareDatasets(apiItems, context, outputDir);
+
+                Display.getDefault().asyncExec(() -> {
+                    if (getShell() != null && !getShell().isDisposed()) {
+                        if (result.getStatus() == DatasetPreparationResult.Status.SUCCESS && result.getOutputPath() != null) {
+                            File evodataFile = new File(result.getOutputPath());
+                            boolean existsInList = false;
+                            for (DatasetItem item : datasetItems) {
+                                if (item.getPath().equalsIgnoreCase(evodataFile.getAbsolutePath())) {
+                                    item.setChecked(true);
+                                    existsInList = true;
+                                    break;
+                                }
+                            }
+                            if (!existsInList) {
+                                datasetItems.add(new DatasetItem(true, evodataFile.getAbsolutePath(), "FILE"));
+                            }
+                            refreshDatasetsTable();
+
+                            MessageDialog.openInformation(getShell(), "Dataset Created",
+                                "Native .evodata artifact created successfully!\n\n" +
+                                "Output File: " + evodataFile.getAbsolutePath() + "\n" +
+                                "Records Accepted: " + result.getRecordsAccepted() + "\n" +
+                                "Usable Bytes: " + result.getAcceptedBytes());
+                        } else {
+                            String errorMsg = !result.getErrors().isEmpty() ? String.join("\n", result.getErrors()) : "Status: " + result.getStatus();
+                            MessageDialog.openError(getShell(), "Dataset Creation Failed", "Failed to create .evodata artifact:\n" + errorMsg);
+                        }
+                    }
+                });
+            } catch (Exception ex) {
+                Display.getDefault().asyncExec(() -> {
+                    if (getShell() != null && !getShell().isDisposed()) {
+                        MessageDialog.openError(getShell(), "Error", "Error creating .evodata artifact: " + ex.getMessage());
+                    }
+                });
+            }
+        }).start();
     }
 
     private void refreshDatasetsTable() {
