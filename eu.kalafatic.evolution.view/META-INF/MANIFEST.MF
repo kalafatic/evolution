@@ -40,7 +40,8 @@ Require-Bundle: org.eclipse.core.runtime,
  eu.kalafatic.utils;bundle-version="2.6.5",
  eu.kalafatic.evolution.selfdev.genome;bundle-version="2.6.5",
  eu.kalafatic.evolution.forge.model;bundle-version="2.6.5",
- eu.kalafatic.evolution.forge.agent.api;bundle-version="2.6.5"
+ eu.kalafatic.evolution.forge.agent.api;bundle-version="2.6.5",
+ eu.kalafatic.evolution.forge.data;bundle-version="2.6.5"
 Import-Package: org.json
 Automatic-Module-Name: eu.kalafatic.evolution.view
 Bundle-RequiredExecutionEnvironment: JavaSE-21

@@ -260,4 +260,38 @@ public class DatasetSelectionAndAdapterIntegrationTest {
         assertTrue(result.getSamples().size() >= 3);
         assertTrue(new File(result.getOutputPath()).exists());
     }
+
+    @Test
+    public void testForgeSettingsDialogCreateEvodataInForgeInputFolder() throws Exception {
+        File txtFile = tempFolder.newFile("sample_training.txt");
+        Files.writeString(txtFile.toPath(), "Sample text content for creating native evodata from ForgeSettingsDialog.", StandardCharsets.UTF_8);
+
+        File jsonFile = tempFolder.newFile("sample_instruction.json");
+        JSONObject jsonRow = new JSONObject();
+        jsonRow.put("instruction", "Explain .evodata format.");
+        jsonRow.put("response", ".evodata is a native EVO dataset container.");
+        Files.writeString(jsonFile.toPath(), jsonRow.toString() + "\n", StandardCharsets.UTF_8);
+
+        List<DatasetItem> items = new ArrayList<>();
+        items.add(new DatasetItem(true, txtFile.getAbsolutePath(), "FILE"));
+        items.add(new DatasetItem(true, jsonFile.getAbsolutePath(), "FILE"));
+
+        File forgeInputDir = tempFolder.newFolder("forge-input");
+
+        DatasetPreparationService service = new DatasetPreparationService();
+        DatasetPreparationContext context = new DatasetPreparationContext();
+        DatasetPreparationResult result = service.prepareDatasets(items, context, forgeInputDir);
+
+        assertEquals(DatasetPreparationResult.Status.SUCCESS, result.getStatus());
+        assertNotNull(result.getOutputPath());
+        assertTrue(result.getOutputPath().endsWith(".evodata"));
+
+        File generatedEvodata = new File(result.getOutputPath());
+        assertTrue("Generated .evodata must exist in forge-input directory", generatedEvodata.exists());
+        assertEquals("Generated file must be inside forge-input folder", forgeInputDir.getAbsolutePath(), generatedEvodata.getParentFile().getAbsolutePath());
+
+        EvoDatasetArtifact loadedArtifact = EvoDatasetArtifact.load(generatedEvodata);
+        assertNotNull(loadedArtifact);
+        assertTrue(loadedArtifact.getTrainSamples().size() >= 2);
+    }
 }
