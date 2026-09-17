@@ -78,6 +78,8 @@ public class HuggingFaceDatasetSource implements DatasetSource {
         String repo = rawRepo;
         if ("wikitext".equalsIgnoreCase(rawRepo)) {
             repo = "Salesforce/wikitext";
+        } else if ("fineweb".equalsIgnoreCase(rawRepo) || "huggingfacefw/fineweb".equalsIgnoreCase(rawRepo) || "huggingfacefw/fineWeb".equalsIgnoreCase(rawRepo)) {
+            repo = "HuggingFaceFW/fineweb";
         }
 
         String runId = config != null ? config.getRunId() : null;
@@ -202,6 +204,8 @@ public class HuggingFaceDatasetSource implements DatasetSource {
         String repo = rawRepo;
         if ("wikitext".equalsIgnoreCase(rawRepo)) {
             repo = "Salesforce/wikitext";
+        } else if ("fineweb".equalsIgnoreCase(rawRepo) || "huggingfacefw/fineweb".equalsIgnoreCase(rawRepo) || "huggingfacefw/fineWeb".equalsIgnoreCase(rawRepo)) {
+            repo = "HuggingFaceFW/fineweb";
         }
         try {
             fetchNextChunk();
@@ -241,6 +245,8 @@ public class HuggingFaceDatasetSource implements DatasetSource {
         String repo = rawRepo;
         if ("wikitext".equalsIgnoreCase(rawRepo)) {
             repo = "Salesforce/wikitext";
+        } else if ("fineweb".equalsIgnoreCase(rawRepo) || "huggingfacefw/fineweb".equalsIgnoreCase(rawRepo) || "huggingfacefw/fineWeb".equalsIgnoreCase(rawRepo)) {
+            repo = "HuggingFaceFW/fineweb";
         }
 
         String cfg = resolvedConfig;

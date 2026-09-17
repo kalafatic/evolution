@@ -130,8 +130,8 @@ public class WorldState {
         StrategyAttemptRecord record = new StrategyAttemptRecord(strategy, obs, failureType, iteration);
         attemptHistory.add(record);
 
-        if (failureType.isTransient()) {
-            retryCounts.merge(sig, 1, Integer::sum);
+        if (failureType.isTransient() && sig != null) {
+            retryCounts.merge(sig.trim().toLowerCase(), 1, Integer::sum);
         }
     }
 
@@ -157,8 +157,8 @@ public class WorldState {
         String normalizedSig = signature.trim().toLowerCase();
         for (StrategyAttemptRecord rec : attemptHistory) {
             if (rec.getStrategy() != null) {
-                String recSig = rec.getStrategy().getSignature();
-                if (recSig.equals(normalizedSig) || recSig.contains(normalizedSig) || normalizedSig.contains(recSig)) {
+                String recSig = rec.getStrategy().getSignature() != null ? rec.getStrategy().getSignature().trim().toLowerCase() : "";
+                if (!recSig.isEmpty() && (recSig.equals(normalizedSig) || recSig.contains(normalizedSig) || normalizedSig.contains(recSig))) {
                     CognitiveFailureType ft = rec.getFailureType();
                     if (ft != null && ft.isFailure()) {
                         if (!ft.isTransient()) {
