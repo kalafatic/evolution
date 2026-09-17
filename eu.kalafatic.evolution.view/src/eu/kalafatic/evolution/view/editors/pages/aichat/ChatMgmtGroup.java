@@ -159,7 +159,7 @@ public class ChatMgmtGroup extends AEvoGroup {
         GUIFactory.INSTANCE.createEditButton(compositeRemote, remoteUrlText);        
 
         // AI Settings part (merged)
-        compositeLocal = GUIFactory.INSTANCE.createComposite(group, 5, SWT.BORDER);
+        compositeLocal = GUIFactory.INSTANCE.createComposite(group, 4, SWT.BORDER);
         compositeLocal.setBackground(lightGreen);
         
         GUIFactory.INSTANCE.createLabel(compositeLocal, "AI Mode:", SWT.NONE, GUIFactory.BUTTON_WIDTH);
@@ -172,16 +172,7 @@ public class ChatMgmtGroup extends AEvoGroup {
             public void widgetSelected(SelectionEvent e) {
                 openForgeSettingsDialog();
             }
-        });
-
-        Button addForgeTaskBtn = GUIFactory.INSTANCE.createButton(compositeLocal, "Add Forge Task");
-        addForgeTaskBtn.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                handleAddForgeTaskToStack();
-            }
-        });
-        
+        });        
         Button targetButton = GUIFactory.INSTANCE.createButton(compositeLocal, "Target");
         targetButton.setBackground(lightOrange);
         
@@ -199,12 +190,11 @@ public class ChatMgmtGroup extends AEvoGroup {
         GUIFactory.INSTANCE.createLabel(compositeLocal, "Engine:", SWT.NONE, GUIFactory.BUTTON_WIDTH);
         inferenceEngineCombo = selectEngine(compositeLocal);
         ((GridData)inferenceEngineCombo.getLayoutData()).widthHint = 100;
-        ((GridData)inferenceEngineCombo.getLayoutData()).horizontalSpan = 4;
+        ((GridData)inferenceEngineCombo.getLayoutData()).horizontalSpan = 3;
 
         GUIFactory.INSTANCE.createLabel(compositeLocal, "Model:", SWT.NONE, GUIFactory.BUTTON_WIDTH);
         localModelCombo = selectModel(compositeLocal);
         ((GridData)localModelCombo.getLayoutData()).widthHint = 100;
-        ((GridData)localModelCombo.getLayoutData()).horizontalSpan = 2;
         
         Button identifyButton = GUIFactory.INSTANCE.createButton(compositeLocal, "Identify LLM");
         identifyButton.addSelectionListener(new SelectionAdapter() {
@@ -620,51 +610,7 @@ public class ChatMgmtGroup extends AEvoGroup {
         return "SMALL";
     }
 
-    private void handleAddForgeTaskToStack() {
-        if (editor != null && orchestrator != null) {
-            try {
-                eu.kalafatic.evolution.view.editors.pages.TaskStackPage taskStackPage = editor.getTaskStackPage();
-
-                if (taskStackPage != null) {
-                    taskStackPage.addForgeLlmTask();
-                } else {
-                    java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyyMMdd-HHmm");
-                    String timestamp = sdf.format(new java.util.Date());
-                    eu.kalafatic.evolution.model.orchestration.Task task = eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createTask();
-                    task.setId("FORGE-" + timestamp);
-                    task.setName("Forge LLM EVO");
-                    task.setType("FORGE");
-                    task.setStatus(eu.kalafatic.evolution.model.orchestration.TaskStatus.READY);
-                    task.setSelected(true);
-                    String prompt = "Forge local EVO LLM model (SMALL) on configured dataset training sources.";
-                    task.setDescription(prompt);
-                    task.setPrompt(prompt);
-                    task.setBitState(eu.kalafatic.evolution.controller.orchestration.behavior.BitState.encode(
-                        eu.kalafatic.evolution.controller.orchestration.behavior.BitState.MODE_LOCAL,
-                        eu.kalafatic.evolution.controller.orchestration.behavior.BitState.SUPERVISION_AUTO,
-                        eu.kalafatic.evolution.controller.orchestration.behavior.BitState.INTERACTION_CONTINUOUS,
-                        eu.kalafatic.evolution.controller.orchestration.behavior.BitState.REASONING_DARWIN,
-                        eu.kalafatic.evolution.controller.orchestration.behavior.BitState.WORKFLOW_TASK_ORIENTED));
-                    task.setDarwinMode(true);
-
-                    String[] subtaskNames = {"Analyze Training Corpus", "Compose Domain Weights", "Preflight Validation", "Train EVO Architecture", "Export GGUF & Native Artifacts", "Smoke Test Native Engine"};
-                    for (String stName : subtaskNames) {
-                        eu.kalafatic.evolution.model.orchestration.Task subTask = eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createTask();
-                        subTask.setName(stName);
-                        subTask.setStatus(eu.kalafatic.evolution.model.orchestration.TaskStatus.READY);
-                        task.getSubTasks().add(subTask);
-                    }
-                    orchestrator.getTasks().add(task);
-                }
-
-                editor.setDirty(true);
-                org.eclipse.jface.dialogs.MessageDialog.openInformation(page.getShell(), "Task Queued", "Forge LLM EVO task successfully queued on the Task Stack!");
-            } catch (Exception ex) {
-                org.eclipse.jface.dialogs.MessageDialog.openError(page.getShell(), "Task Queue Error", "Failed to add task to Task Stack: " + ex.getMessage());
-            }
-        }
-    }
-
+   
 
     public int getAiModeIndex() {
         return aiModeCombo.getSelectionIndex();

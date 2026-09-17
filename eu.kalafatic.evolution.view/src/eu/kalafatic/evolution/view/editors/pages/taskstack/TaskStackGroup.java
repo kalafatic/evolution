@@ -761,6 +761,8 @@ public class TaskStackGroup extends AEvoGroup {
             }
         });
     }
+    
+    
 
 	public CheckboxTreeViewer getTreeViewer() {
 		return treeViewer;

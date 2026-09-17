@@ -98,7 +98,13 @@ public class GlobalActionsGroup extends AEvoGroup {
             }
         });
 
-        
+        Button addForgeTaskBtn = GUIFactory.INSTANCE.createButton(compositeRemote, "Add Forge Task");
+        addForgeTaskBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                handleAddForgeTaskToStack();
+            }
+        });
 
         Button clearBtn = GUIFactory.INSTANCE.createButton(compositeRemote, "Remove Selected", SWT.PUSH, 2 * GUIFactory.BUTTON_WIDTH);
         clearBtn.addSelectionListener(new SelectionAdapter() {
@@ -117,6 +123,52 @@ public class GlobalActionsGroup extends AEvoGroup {
         });        
         
     }  
+    
+    private void handleAddForgeTaskToStack() {
+        if (editor != null && orchestrator != null) {
+            try {
+                eu.kalafatic.evolution.view.editors.pages.TaskStackPage taskStackPage = editor.getTaskStackPage();
+
+                if (taskStackPage != null) {
+                    taskStackPage.addForgeLlmTask();
+                } else {
+                    java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyyMMdd-HHmm");
+                    String timestamp = sdf.format(new java.util.Date());
+                    eu.kalafatic.evolution.model.orchestration.Task task = eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createTask();
+                    task.setId("FORGE-" + timestamp);
+                    task.setName("Forge LLM EVO");
+                    task.setType("FORGE");
+                    task.setStatus(eu.kalafatic.evolution.model.orchestration.TaskStatus.READY);
+                    task.setSelected(true);
+                    String prompt = "Forge local EVO LLM model (SMALL) on configured dataset training sources.";
+                    task.setDescription(prompt);
+                    task.setPrompt(prompt);
+                    task.setBitState(eu.kalafatic.evolution.controller.orchestration.behavior.BitState.encode(
+                        eu.kalafatic.evolution.controller.orchestration.behavior.BitState.MODE_LOCAL,
+                        eu.kalafatic.evolution.controller.orchestration.behavior.BitState.SUPERVISION_AUTO,
+                        eu.kalafatic.evolution.controller.orchestration.behavior.BitState.INTERACTION_CONTINUOUS,
+                        eu.kalafatic.evolution.controller.orchestration.behavior.BitState.REASONING_DARWIN,
+                        eu.kalafatic.evolution.controller.orchestration.behavior.BitState.WORKFLOW_TASK_ORIENTED));
+                    task.setDarwinMode(true);
+
+                    String[] subtaskNames = {"Analyze Training Corpus", "Compose Domain Weights", "Preflight Validation", "Train EVO Architecture", "Export GGUF & Native Artifacts", "Smoke Test Native Engine"};
+                    for (String stName : subtaskNames) {
+                        eu.kalafatic.evolution.model.orchestration.Task subTask = eu.kalafatic.evolution.model.orchestration.OrchestrationFactory.eINSTANCE.createTask();
+                        subTask.setName(stName);
+                        subTask.setStatus(eu.kalafatic.evolution.model.orchestration.TaskStatus.READY);
+                        task.getSubTasks().add(subTask);
+                    }
+                    orchestrator.getTasks().add(task);
+                }
+
+                editor.setDirty(true);
+                org.eclipse.jface.dialogs.MessageDialog.openInformation(page.getShell(), "Task Queued", "Forge LLM EVO task successfully queued on the Task Stack!");
+            } catch (Exception ex) {
+                org.eclipse.jface.dialogs.MessageDialog.openError(page.getShell(), "Task Queue Error", "Failed to add task to Task Stack: " + ex.getMessage());
+            }
+        }
+    }
+
 
     private void applyBatchSettings() {
         if (orchestrator == null) return;
