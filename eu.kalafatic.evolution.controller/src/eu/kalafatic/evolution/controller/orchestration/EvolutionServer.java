@@ -1834,7 +1834,14 @@ public class EvolutionServer extends NanoHTTPD {
         eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveResult cognitiveResult =
             cognitiveEngine.solve(sessionCont, taskContext, goal);
 
-        long usableBytes = ((Number) taskContext.getMetadata().getOrDefault("usableContentBytes", 0L)).longValue();
+        long usableBytes = 0;
+        for (eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveObservation obs : cognitiveResult.getObservations()) {
+            usableBytes += obs.getUsableBytes();
+        }
+        if (usableBytes == 0) {
+            usableBytes = ((Number) taskContext.getMetadata().getOrDefault("usableContentBytes", 0L)).longValue();
+        }
+
         String acqStatus = (String) taskContext.getMetadata().getOrDefault("acquisitionStatus", cognitiveResult.getFinalState().name());
 
         JSONObject result = new JSONObject();
@@ -1846,7 +1853,7 @@ public class EvolutionServer extends NanoHTTPD {
         result.put("attempts", cognitiveResult.getAttempts());
         result.put("summary", cognitiveResult.getSummary());
 
-        if (cognitiveResult.getFinalState() == eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveState.SUCCESS) {
+        if (cognitiveResult.getFinalState() == eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveState.SUCCESS || usableBytes > 0) {
             return newFixedLengthResponse(Response.Status.OK, "application/json", result.toString());
         } else {
             return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", result.toString());

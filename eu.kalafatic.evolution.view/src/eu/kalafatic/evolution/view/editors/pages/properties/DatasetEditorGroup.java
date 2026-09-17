@@ -103,7 +103,7 @@ public class DatasetEditorGroup extends AEvoGroup {
         maxSamplesText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
         GUIFactory.INSTANCE.createLabel(group, "Target Usable Data Size (MB):");
-        maxSizeMbText = toolkit.createText(group, "500", SWT.BORDER);
+        maxSizeMbText = toolkit.createText(group, "50", SWT.BORDER);
         maxSizeMbText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
         GUIFactory.INSTANCE.createLabel(group, "Destination Output Directory:");
@@ -267,14 +267,32 @@ public class DatasetEditorGroup extends AEvoGroup {
                 req.put("split", split);
                 req.put("maxSamples", Long.parseLong(samples));
                 req.put("maxBytes", finalMaxBytes);
+                req.put("targetUsableBytes", finalMaxBytes);
                 req.put("outputDir", customOutputDir);
                 req.put("downloadOnly", true);
 
                 String res = postHttp("http://localhost:" + port + "/forge/dataset/prepare", req.toString());
                 Display.getDefault().asyncExec(() -> {
                     if (!reportArea.isDisposed()) {
-                        reportArea.setText("DATASET DOWNLOAD COMPLETE:\n" + res);
-                        MessageDialog.openInformation(group.getShell(), "Dataset Downloaded", "Dataset downloaded successfully to destination folder!");
+                        reportArea.setText("DATASET DOWNLOAD RESULT:\n" + res);
+                        try {
+                            org.json.JSONObject resJson = new org.json.JSONObject(res);
+                            String status = resJson.optString("status", "READY");
+                            long requestedBytes = resJson.optLong("requestedUsableBytes", 0);
+                            long actualBytes = resJson.optLong("actualUsableBytes", 0);
+
+                            if ("INSUFFICIENT_SOURCE_DATA".equalsIgnoreCase(status) || actualBytes < requestedBytes) {
+                                double reqMb = requestedBytes / (1024.0 * 1024.0);
+                                double actMb = actualBytes / (1024.0 * 1024.0);
+                                MessageDialog.openWarning(group.getShell(), "Dataset Source Exhausted",
+                                    String.format("Dataset download completed, but source was exhausted before target size was reached.\n\nRequested Target: %.2f MB\nUsable Content Downloaded: %.2f MB\nShortfall: %.2f MB\nStatus: %s",
+                                        reqMb, actMb, Math.max(0, reqMb - actMb), status));
+                            } else {
+                                MessageDialog.openInformation(group.getShell(), "Dataset Downloaded", "Dataset downloaded successfully to destination folder!");
+                            }
+                        } catch (Exception ex) {
+                            MessageDialog.openInformation(group.getShell(), "Dataset Downloaded", "Dataset downloaded successfully to destination folder!");
+                        }
                     }
                 });
             } catch (Exception ex) {
@@ -416,6 +434,7 @@ public class DatasetEditorGroup extends AEvoGroup {
                 req.put("split", split);
                 req.put("maxSamples", Long.parseLong(samples));
                 req.put("maxBytes", finalMaxBytes);
+                req.put("targetUsableBytes", finalMaxBytes);
                 req.put("outputDir", customOutputDir);
                 req.put("minQuality", 0.5);
 
