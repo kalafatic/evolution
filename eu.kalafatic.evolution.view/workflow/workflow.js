@@ -1,9 +1,110 @@
 (function() {
-    const svg = d3.select("#workflow-svg");
-    const container = d3.select("#workflow-container");
+    const SVG_NS = "http://www.w3.org/2000/svg";
+    const svg = document.getElementById("workflow-svg");
+    const container = document.getElementById("workflow-container");
 
     let width = window.innerWidth;
     let height = window.innerHeight;
+
+    // Create main viewport groups
+    const gMain = document.createElementNS(SVG_NS, "g");
+    gMain.setAttribute("id", "main-group");
+    const gLinks = document.createElementNS(SVG_NS, "g");
+    gLinks.setAttribute("class", "links");
+    const gNodes = document.createElementNS(SVG_NS, "g");
+    gNodes.setAttribute("class", "nodes");
+    gMain.appendChild(gLinks);
+    gMain.appendChild(gNodes);
+    svg.appendChild(gMain);
+
+    // Pan & Zoom state
+    let transform = { x: 0, y: 0, k: 1 };
+    let isPanning = false;
+    let startPos = { x: 0, y: 0 };
+
+    function updateTransform() {
+        gMain.setAttribute("transform", `translate(${transform.x}, ${transform.y}) scale(${transform.k})`);
+    }
+
+    svg.addEventListener("mousedown", (e) => {
+        if (e.target === svg || e.target === gMain || e.target === gLinks || e.target === gNodes) {
+            isPanning = true;
+            startPos = { x: e.clientX - transform.x, y: e.clientY - transform.y };
+            svg.style.cursor = "grabbing";
+        }
+    });
+
+    window.addEventListener("mousemove", (e) => {
+        if (isPanning) {
+            transform.x = e.clientX - startPos.x;
+            transform.y = e.clientY - startPos.y;
+            updateTransform();
+        }
+    });
+
+    window.addEventListener("mouseup", () => {
+        if (isPanning) {
+            isPanning = false;
+            svg.style.cursor = "default";
+        }
+    });
+
+    svg.addEventListener("wheel", (e) => {
+        e.preventDefault();
+        const factor = e.deltaY < 0 ? 1.15 : 0.85;
+        const newK = Math.min(Math.max(transform.k * factor, 0.1), 4);
+
+        const rect = svg.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        transform.x = mouseX - (mouseX - transform.x) * (newK / transform.k);
+        transform.y = mouseY - (mouseY - transform.y) * (newK / transform.k);
+        transform.k = newK;
+
+        updateTransform();
+    }, { passive: false });
+
+    window.resetZoom = function() {
+        transform = { x: 0, y: 0, k: 1 };
+        updateTransform();
+    };
+
+    window.applyZoom = function(factor) {
+        const center = { x: width / 2, y: height / 2 };
+        const newK = Math.min(Math.max(transform.k * factor, 0.1), 4);
+        transform.x = center.x - (center.x - transform.x) * (newK / transform.k);
+        transform.y = center.y - (center.y - transform.y) * (newK / transform.k);
+        transform.k = newK;
+        updateTransform();
+    };
+
+    window.fitToScreen = function() {
+        if (!graphData || !graphData.nodes || graphData.nodes.length === 0) return;
+
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        graphData.nodes.forEach(n => {
+            if (n.x < minX) minX = n.x;
+            if (n.y < minY) minY = n.y;
+            if (n.x + 140 > maxX) maxX = n.x + 140;
+            if (n.y + 60 > maxY) maxY = n.y + 60;
+        });
+
+        const graphWidth = maxX - minX;
+        const graphHeight = maxY - minY;
+        const padding = 40;
+
+        const scale = Math.min(
+            (width - padding * 2) / graphWidth,
+            (height - padding * 2) / graphHeight,
+            1.5
+        );
+
+        transform.k = scale;
+        transform.x = (width - graphWidth * scale) / 2 - minX * scale;
+        transform.y = (height - graphHeight * scale) / 2 - minY * scale;
+        updateTransform();
+    };
 
     const nodeNotes = {
         'user': 'Represents the active developer triggering evolutionary tasks, reviewing mutant code proposals, and directing training pipelines.',
@@ -22,24 +123,40 @@
         'workspace': 'Active Eclipse Developer Workspace. Contains the target project sources, EMF models, configurations, and test suites.'
     };
 
+    const typeIcons = {
+        'USER': '\uD83D\uDC64',        // 👤
+        'SUPERVISOR': '\uD83E\uDD16',  // 🤖
+        'EVOLUTION_LOOP': '\uD83D\uDD04', // 🔄
+        'LOCAL_LLM': '\uD83C\uDFE0',   // 🏠
+        'REMOTE_LLM': '\u2601\uFE0F',   // ☁️
+        'ZIP_EXPORT': '\uD83D\uDCE6',   // 📦
+        'DEPLOYMENT_TARGET': '\uD83D\uDE80', // 🚀
+        'DARWIN_VARIANT': '\uD83E\uDDEC', // 🧬
+        'SELF_DEV_TASK': '\uD83D\uDCC4', // 📄
+        'MEDIATED_FLOW': '\uD83D\uDD34'  // 🔴
+    };
+
     window.closeDetails = function() {
-        d3.select("#details-panel").classed("hidden", true);
+        const panel = document.getElementById("details-panel");
+        if (panel) panel.classList.add("hidden");
     };
 
     function showNodeDetails(node) {
-        const panel = d3.select("#details-panel");
-        panel.classed("hidden", false);
+        const panel = document.getElementById("details-panel");
+        if (!panel) return;
+        panel.classList.remove("hidden");
 
-        d3.select("#details-title").text(node.id.toUpperCase());
+        const title = document.getElementById("details-title");
+        if (title) title.textContent = (node.id || "").toUpperCase();
 
         let html = `
             <div class="metric-row">
                 <span class="metric-label">Node Type:</span>
-                <span class="metric-value">${node.type}</span>
+                <span class="metric-value">${node.type || 'N/A'}</span>
             </div>
             <div class="metric-row">
                 <span class="metric-label">Status:</span>
-                <span class="node-status-badge status-${node.status.toLowerCase()}">${node.status}</span>
+                <span class="node-status-badge status-${(node.status || '').toLowerCase()}">${node.status || 'N/A'}</span>
             </div>
         `;
 
@@ -64,7 +181,7 @@
             }
         }
 
-        const note = nodeNotes[node.id.toLowerCase()] || nodeNotes[node.type.toLowerCase()] || "Interactive node representing an active evolution task step.";
+        const note = nodeNotes[(node.id || '').toLowerCase()] || nodeNotes[(node.type || '').toLowerCase()] || "Interactive node representing an active evolution task step.";
         html += `
             <div class="node-notes">
                 <strong>Architectural Note:</strong><br/>
@@ -72,78 +189,9 @@
             </div>
         `;
 
-        d3.select("#details-content").html(html);
+        const detailsContent = document.getElementById("details-content");
+        if (detailsContent) detailsContent.innerHTML = html;
     }
-
-    const gMain = svg.append("g");
-    const gLinks = gMain.append("g").attr("class", "links");
-    const gNodes = gMain.append("g").attr("class", "nodes");
-
-    // Zoom setup
-    const zoom = d3.zoom()
-        .scaleExtent([0.1, 4])
-        .on("zoom", (event) => {
-            gMain.attr("transform", event.transform);
-        });
-
-    svg.call(zoom);
-
-    window.resetZoom = function() {
-        svg.transition().duration(750).call(
-            zoom.transform,
-            d3.zoomIdentity
-        );
-    };
-
-    window.fitToScreen = function() {
-        if (!graphData || !graphData.nodes || graphData.nodes.length === 0) return;
-
-        const nodes = graphData.nodes;
-        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-        nodes.forEach(n => {
-            if (n.x < minX) minX = n.x;
-            if (n.y < minY) minY = n.y;
-            if (n.x + 140 > maxX) maxX = n.x + 140;
-            if (n.y + 60 > maxY) maxY = n.y + 60;
-        });
-
-        const graphWidth = maxX - minX;
-        const graphHeight = maxY - minY;
-        const padding = 40;
-
-        const scale = Math.min(
-            (width - padding * 2) / graphWidth,
-            (height - padding * 2) / graphHeight,
-            1.5
-        );
-
-        const translateX = (width - graphWidth * scale) / 2 - minX * scale;
-        const translateY = (height - graphHeight * scale) / 2 - minY * scale;
-
-        svg.transition().duration(750).call(
-            zoom.transform,
-            d3.zoomIdentity.translate(translateX, translateY).scale(scale)
-        );
-    };
-
-    window.applyZoom = function(factor) {
-        svg.transition().duration(300).call(
-            zoom.scaleBy, factor
-        );
-    };
-
-    const typeIcons = {
-        'USER': '\uD83D\uDC64',        // 👤
-        'SUPERVISOR': '\uD83E\uDD16',  // 🤖
-        'EVOLUTION_LOOP': '\uD83D\uDD04', // 🔄
-        'LOCAL_LLM': '\uD83C\uDFE0',   // 🏠
-        'REMOTE_LLM': '\u2601\uFE0F',   // ☁️
-        'ZIP_EXPORT': '\uD83D\uDCE6',   // 📦
-        'DEPLOYMENT_TARGET': '\uD83D\uDE80', // 🚀
-        'DARWIN_VARIANT': '\uD83E\uDDEC', // 🧬
-        'SELF_DEV_TASK': '\uD83D\uDCC4', // 📄
-        'MEDIATED_FLOW': '\uD83D\uDD34'  // 🔴
-    };
 
     let graphData = { nodes: [], links: [] };
 
@@ -157,39 +205,43 @@
     window.addEventListener('resize', () => {
         width = window.innerWidth;
         height = window.innerHeight;
-        svg.attr("width", width).attr("height", height);
+        svg.setAttribute("width", width);
+        svg.setAttribute("height", height);
         render();
     });
 
     function render() {
-        const nodes = graphData.nodes;
-        const links = graphData.links;
+        gLinks.innerHTML = "";
+        gNodes.innerHTML = "";
 
-        // Simple Hierarchical Layout logic
+        const nodes = graphData.nodes || [];
+        const links = graphData.links || [];
+
         const nodeMap = new Map();
         nodes.forEach(n => nodeMap.set(n.id, n));
 
-        // Assign levels
+        // Hierarchical Level Assignment
         const levels = new Map();
-        const visited = new Set();
-
         function assignLevel(nodeId, level) {
             if (levels.has(nodeId) && levels.get(nodeId) >= level) return;
             levels.set(nodeId, level);
             links.filter(l => l.from === nodeId).forEach(l => assignLevel(l.to, level + 1));
         }
 
-        // Find roots (nodes with no incoming links)
         const targets = new Set(links.map(l => l.to));
         const roots = nodes.filter(n => !targets.has(n.id));
         if (roots.length === 0 && nodes.length > 0) roots.push(nodes[0]);
 
         roots.forEach(r => assignLevel(r.id, 0));
 
-        // Group by level for X positioning
-        const levelGroups = d3.group(nodes, n => levels.get(n.id) || 0);
-        const nodeWidth = 180;
-        const nodeHeight = 60;
+        // Group by level
+        const levelGroups = new Map();
+        nodes.forEach(node => {
+            const lvl = levels.get(node.id) || 0;
+            if (!levelGroups.has(lvl)) levelGroups.set(lvl, []);
+            levelGroups.get(lvl).push(node);
+        });
+
         const levelSpacing = 250;
         const siblingSpacing = 100;
 
@@ -201,8 +253,7 @@
             });
         });
 
-        // Specific Darwin Variant Positioning (Branching)
-        // If a node has multiple outgoing 'mutation' links, position them as branches
+        // Branching for Darwin variants / mutations
         nodes.forEach(node => {
             const children = links.filter(l => l.from === node.id);
             const mutations = children.filter(l => l.type === 'mutation');
@@ -216,131 +267,126 @@
             }
         });
 
-        // Draw Links
-        const linkGenerator = d3.linkHorizontal()
-            .x(d => d.x + (d.width || 140))
-            .y(d => d.y + 20);
+        const tooltip = document.getElementById("tooltip");
 
-        const linkData = links.map(l => {
-            const source = nodeMap.get(l.from);
-            const target = nodeMap.get(l.to);
-            if (!source || !target) return null;
-            return {
-                source: { x: source.x, y: source.y, width: 140 },
-                target: { x: target.x - 140, y: target.y } // Adjust for horizontal link
-            };
-        }).filter(l => l);
+        // Render Links
+        links.forEach(l => {
+            const s = nodeMap.get(l.from);
+            const t = nodeMap.get(l.to);
+            if (!s || !t) return;
 
-        const path = gLinks.selectAll(".link")
-            .data(links)
-            .join("path")
-            .attr("class", d => "link " + (d.active ? "active" : ""))
-            .attr("d", d => {
-                const s = nodeMap.get(d.from);
-                const t = nodeMap.get(d.to);
-                if (!s || !t) return "";
-                // Use curved diagonal
-                const x0 = s.x + 140;
-                const y0 = s.y + 20;
-                const x1 = t.x;
-                const y1 = t.y + 20;
-                return `M${x0},${y0} C${(x0 + x1) / 2},${y0} ${(x0 + x1) / 2},${y1} ${x1},${y1}`;
-            });
+            const x0 = s.x + 140;
+            const y0 = s.y + 20;
+            const x1 = t.x;
+            const y1 = t.y + 20;
+            const mx = (x0 + x1) / 2;
 
-        const tooltip = d3.select("#tooltip");
+            const path = document.createElementNS(SVG_NS, "path");
+            path.setAttribute("class", "link " + (l.active ? "active" : ""));
+            path.setAttribute("d", `M${x0},${y0} C${mx},${y0} ${mx},${y1} ${x1},${y1}`);
+            gLinks.appendChild(path);
+        });
 
-        // Draw Nodes
-        const nodeGroups = gNodes.selectAll(".node")
-            .data(nodes, d => d.id)
-            .join("g")
-            .attr("class", d => {
-                let cls = "node";
-                if (d.status === 'RUNNING') cls += " active";
-                if (d.status === 'WAITING_USER') cls += " waiting";
-                if (d.status === 'FAILED') cls += " failed";
-                return cls;
-            })
-            .attr("transform", d => `translate(${d.x}, ${d.y})`)
-            .on("mouseover", (event, d) => {
-                tooltip.transition().duration(200).style("opacity", 0.95);
+        // Render Nodes
+        nodes.forEach(d => {
+            const g = document.createElementNS(SVG_NS, "g");
+            let cls = "node";
+            if (d.status === 'RUNNING') cls += " active";
+            if (d.status === 'WAITING_USER') cls += " waiting";
+            if (d.status === 'FAILED') cls += " failed";
+            g.setAttribute("class", cls);
+            g.setAttribute("transform", `translate(${d.x}, ${d.y})`);
+
+            // Node Rectangle
+            const rect = document.createElementNS(SVG_NS, "rect");
+            rect.setAttribute("width", "140");
+            rect.setAttribute("height", "40");
+            g.appendChild(rect);
+
+            // Icon
+            const iconText = document.createElementNS(SVG_NS, "text");
+            iconText.setAttribute("class", "node-type-icon");
+            iconText.setAttribute("x", "15");
+            iconText.setAttribute("y", "26");
+            iconText.textContent = typeIcons[d.type] || '\uD83D\uDCC4';
+            g.appendChild(iconText);
+
+            // Label
+            const labelText = document.createElementNS(SVG_NS, "text");
+            labelText.setAttribute("class", "node-id");
+            labelText.setAttribute("x", "45");
+            labelText.setAttribute("y", "25");
+            labelText.textContent = d.id.length > 12 ? d.id.substring(0, 10) + ".." : d.id;
+            g.appendChild(labelText);
+
+            // Actions
+            if (d.actions && d.actions.length > 0) {
+                const ag = document.createElementNS(SVG_NS, "g");
+                ag.setAttribute("class", "actions-group");
+                d.actions.forEach((action, i) => {
+                    const circle = document.createElementNS(SVG_NS, "circle");
+                    circle.setAttribute("cx", 140 - (i * 15) - 10);
+                    circle.setAttribute("cy", 5);
+                    circle.setAttribute("r", 6);
+                    circle.setAttribute("class", "action-btn " + action.toLowerCase());
+
+                    const titleEl = document.createElementNS(SVG_NS, "title");
+                    titleEl.textContent = action;
+                    circle.appendChild(titleEl);
+
+                    circle.addEventListener("click", (e) => {
+                        e.stopPropagation();
+                        if (window.javaAction) window.javaAction(d.id, action);
+                    });
+                    ag.appendChild(circle);
+                });
+                g.appendChild(ag);
+            }
+
+            // Runtime State
+            if (d.runtimeState) {
+                const stateText = document.createElementNS(SVG_NS, "text");
+                stateText.setAttribute("class", "runtime-state");
+                stateText.setAttribute("x", "5");
+                stateText.setAttribute("y", "55");
+                stateText.textContent = d.runtimeState;
+                g.appendChild(stateText);
+            }
+
+            // Tooltip and Click events
+            g.addEventListener("mouseover", (e) => {
+                if (!tooltip) return;
+                tooltip.style.opacity = "0.95";
                 let tooltipHtml = `<h4>${d.id.toUpperCase()}</h4>`;
                 tooltipHtml += `<p><strong>Type:</strong> ${d.type}</p>`;
                 tooltipHtml += `<p><strong>Status:</strong> ${d.status}</p>`;
                 if (d.runtimeState) {
                     tooltipHtml += `<p><strong>State:</strong> ${d.runtimeState}</p>`;
                 }
-                tooltip.html(tooltipHtml)
-                    .style("left", (event.pageX + 15) + "px")
-                    .style("top", (event.pageY - 15) + "px");
-            })
-            .on("mousemove", (event) => {
-                tooltip
-                    .style("left", (event.pageX + 15) + "px")
-                    .style("top", (event.pageY - 15) + "px");
-            })
-            .on("mouseout", () => {
-                tooltip.transition().duration(200).style("opacity", 0);
-            })
-            .on("click", (event, d) => {
-                event.stopPropagation();
+                tooltip.innerHTML = tooltipHtml;
+                tooltip.style.left = (e.pageX + 15) + "px";
+                tooltip.style.top = (e.pageY - 15) + "px";
+            });
+
+            g.addEventListener("mousemove", (e) => {
+                if (!tooltip) return;
+                tooltip.style.left = (e.pageX + 15) + "px";
+                tooltip.style.top = (e.pageY - 15) + "px";
+            });
+
+            g.addEventListener("mouseout", () => {
+                if (!tooltip) return;
+                tooltip.style.opacity = "0";
+            });
+
+            g.addEventListener("click", (e) => {
+                e.stopPropagation();
                 showNodeDetails(d);
                 if (window.javaAction) window.javaAction(d.id, 'CLICK');
             });
 
-        nodeGroups.selectAll("rect")
-            .data(d => [d])
-            .join("rect")
-            .attr("width", 140)
-            .attr("height", 40);
-
-        nodeGroups.selectAll(".node-type-icon")
-            .data(d => [d])
-            .join("text")
-            .attr("class", "node-type-icon")
-            .attr("x", 15)
-            .attr("y", 26)
-            .text(d => typeIcons[d.type] || '\uD83D\uDCC4');
-
-        nodeGroups.selectAll(".node-id")
-            .data(d => [d])
-            .join("text")
-            .attr("class", "node-id")
-            .attr("x", 45)
-            .attr("y", 25)
-            .text(d => d.id.length > 12 ? d.id.substring(0, 10) + ".." : d.id);
-
-        // Actions
-        nodeGroups.each(function(d) {
-            if (d.actions && d.actions.length > 0) {
-                const ag = d3.select(this).selectAll(".actions-group")
-                    .data([d])
-                    .join("g")
-                    .attr("class", "actions-group");
-
-                ag.selectAll("circle")
-                    .data(d.actions)
-                    .join("circle")
-                    .attr("cx", (action, i) => 140 - (i * 15) - 10)
-                    .attr("cy", 5)
-                    .attr("r", 6)
-                    .attr("class", action => "action-btn " + action.toLowerCase())
-                    .on("click", (event, action) => {
-                        event.stopPropagation();
-                        if (window.javaAction) window.javaAction(d.id, action);
-                    })
-                    .append("title")
-                    .text(action => action);
-            }
+            gNodes.appendChild(g);
         });
-
-        // Runtime State
-        nodeGroups.selectAll(".runtime-state")
-            .data(d => d.runtimeState ? [d] : [])
-            .join("text")
-            .attr("class", "runtime-state")
-            .attr("x", 5)
-            .attr("y", 55)
-            .text(d => d.runtimeState);
     }
 
 })();
