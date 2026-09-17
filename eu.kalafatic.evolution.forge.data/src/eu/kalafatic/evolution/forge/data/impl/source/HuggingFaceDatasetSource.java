@@ -130,6 +130,10 @@ public class HuggingFaceDatasetSource implements DatasetSource {
                     String cfg = sObj.optString("config", "default");
                     String sp = sObj.optString("split", "train");
 
+                    if (sObj.has("num_bytes")) {
+                        estimatedSize = Math.max(estimatedSize, sObj.optLong("num_bytes", -1L));
+                    }
+
                     if (requestedCfg != null && !requestedCfg.trim().isEmpty() && !requestedCfg.equalsIgnoreCase("default")) {
                         if (cfg.equalsIgnoreCase(requestedCfg)) {
                             configFound = true;
@@ -161,7 +165,7 @@ public class HuggingFaceDatasetSource implements DatasetSource {
 
             if (!splitFound) {
                 String reason = !configFound ? ("Config not found: " + requestedCfg) : ("Split not found in repository: " + requestedSplit);
-                ResolvedSource res = new ResolvedSource("HUGGING_FACE", repo, requestedSplit, requestedSplit, matchingCfg != null ? matchingCfg : requestedCfg, "main", splitsUrl, "json", 0L, false, false, reason);
+                ResolvedSource res = new ResolvedSource("HUGGING_FACE", repo, requestedSplit, requestedSplit, matchingCfg != null ? matchingCfg : requestedCfg, "main", splitsUrl, "json", estimatedSize, false, false, reason);
                 res.logPreflight(runId);
                 return res;
             }
@@ -300,7 +304,10 @@ public class HuggingFaceDatasetSource implements DatasetSource {
 
         if (targetUrl.contains("raw.githubusercontent.com") || targetUrl.endsWith(".txt") || targetUrl.endsWith(".raw")) {
             detectedSchemaInfo = "text: string (raw lines)";
-            int count = 0;
+            int fetchedRows = 0;
+            int extractedInChunk = 0;
+            int rejectedInChunk = 0;
+            long chunkExtractedBytes = 0;
             try (BufferedReader reader = new BufferedReader(new StringReader(body))) {
                 String line;
                 long skipped = 0;
@@ -308,30 +315,45 @@ public class HuggingFaceDatasetSource implements DatasetSource {
                     skipped++;
                 }
 
-                while ((line = reader.readLine()) != null && count < requestedLength) {
+                while ((line = reader.readLine()) != null && fetchedRows < requestedLength) {
+                    fetchedRows++;
                     totalRowsFetched++;
                     String trimmed = line.trim();
                     if (!trimmed.isEmpty() && !trimmed.startsWith("=") && trimmed.length() > 5) {
                         NormalizedSample sample = NormalizedSample.createTextSample(trimmed, getSourceName());
                         currentChunk.add(sample);
+                        extractedInChunk++;
                         totalSamplesExtracted++;
-                        count++;
+                        byte[] fullTextBytes = sample.toFullText().getBytes(StandardCharsets.UTF_8);
+                        chunkExtractedBytes += fullTextBytes.length;
                     } else {
+                        rejectedInChunk++;
                         totalExtractionRejections++;
                     }
                 }
-                currentOffset += count;
-                if (count == 0) {
+                currentOffset += fetchedRows;
+                if (fetchedRows == 0) {
                     endOfStream = true;
                 }
             }
-            System.out.printf("[HF-ACQ][run=%s][HTTP-RESULT]\noffset=%d\nrequestedRows=%d\nreceivedRows=%d\nhttpStatus=%d\nresponseBytes=%d\ndurationMs=%d\n",
-                    runTag, pageOffset, requestedLength, count, result.getStatusCode(), chunkBodyBytes, httpDurationMs);
+            stats.addDownloadedBytes(chunkBodyBytes);
+            stats.addExtractedBytes(chunkExtractedBytes);
 
-            boolean continuation = count > 0 && !endOfStream;
-            String reason = continuation ? "CONTINUE" : (count == 0 ? "NO_MORE_ROWS" : "END_OF_DATASET");
-            System.out.printf("[HF-ACQ][run=%s][PAGE]\npage=%d\noffset=%d\nrequestedRows=%d\nreceivedRows=%d\nnextOffset=%d\ncontinuation=%s\nreason=%s\n",
-                    runTag, currentPage, pageOffset, requestedLength, count, currentOffset, continuation ? "YES" : "NO", reason);
+            System.out.printf("[HF-ACQ][run=%s][HTTP-RESULT]\noffset=%d\nrequestedRows=%d\nreceivedRows=%d\nhttpStatus=%d\nresponseBytes=%d\ndurationMs=%d\n",
+                    runTag, pageOffset, requestedLength, fetchedRows, result.getStatusCode(), chunkBodyBytes, httpDurationMs);
+
+            boolean continuation = fetchedRows > 0 && !endOfStream;
+            String reason = continuation ? "CONTINUE" : (fetchedRows == 0 ? "NO_MORE_ROWS" : "END_OF_DATASET");
+            System.out.printf("[HF-ACQ][run=%s][PAGE]\npage=%d\noffset=%d\nrequestedRows=%d\nreceivedRows=%d\nextractedSamples=%d\nrejectedSamples=%d\nnextOffset=%d\ncontinuation=%s\nreason=%s\n",
+                    runTag, currentPage, pageOffset, requestedLength, fetchedRows, extractedInChunk, rejectedInChunk, currentOffset, continuation ? "YES" : "NO", reason);
+
+            long targetUsableBytes = config.getMaxBytes();
+            long remainingUsableBytes = targetUsableBytes > 0 ? Math.max(0, targetUsableBytes - stats.getAcceptedBytes()) : 0;
+
+            System.out.printf("[HF-TRACE] repository=%s config=%s split=%s offset=%d pageFetchedRows=%d pageExtractedSamples=%d pageRejectedSamples=%d pageRawBytes=%d pageExtractedBytes=%d cumulativeRowsFetched=%d cumulativeSamplesExtracted=%d cumulativeExtractionRejections=%d cumulativeSamplesAccepted=%d cumulativeAcceptedBytes=%d cumulativeRawBytesDownloaded=%d currentChunkSize=%d currentChunkIndex=%d sourceExhausted=%b targetUsableBytes=%d remainingUsableBytes=%d\n",
+                    repo, cfg, split, pageOffset, fetchedRows, extractedInChunk, rejectedInChunk, chunkBodyBytes, chunkExtractedBytes,
+                    totalRowsFetched, totalSamplesExtracted, totalExtractionRejections, stats.getAcceptedRecords(), stats.getAcceptedBytes(),
+                    totalRawBytesDownloaded, currentChunk.size(), currentChunkIndex, endOfStream, targetUsableBytes, remainingUsableBytes);
         } else {
             try {
                 JSONObject root = new JSONObject(body);
@@ -340,7 +362,7 @@ public class HuggingFaceDatasetSource implements DatasetSource {
                     endOfStream = true;
                     System.out.printf("[HF-ACQ][run=%s][HTTP-RESULT]\noffset=%d\nrequestedRows=%d\nreceivedRows=%d\nhttpStatus=%d\nresponseBytes=%d\ndurationMs=%d\n",
                             runTag, pageOffset, requestedLength, 0, result.getStatusCode(), chunkBodyBytes, httpDurationMs);
-                    System.out.printf("[HF-ACQ][run=%s][PAGE]\npage=%d\noffset=%d\nrequestedRows=%d\nreceivedRows=%d\nnextOffset=%d\ncontinuation=NO\nreason=SOURCE_FAILURE\n",
+                    System.out.printf("[HF-ACQ][run=%s][PAGE]\npage=%d\noffset=%d\nrequestedRows=%d\nreceivedRows=%d\nextractedSamples=0\nrejectedSamples=0\nnextOffset=%d\ncontinuation=NO\nreason=SOURCE_FAILURE\n",
                             runTag, currentPage, pageOffset, requestedLength, 0, currentOffset);
                     return;
                 }
@@ -395,35 +417,36 @@ public class HuggingFaceDatasetSource implements DatasetSource {
                     stats.addDownloadedBytes(chunkBodyBytes);
                     stats.addExtractedBytes(chunkExtractedBytes);
 
-                    long currentOffsetCopy = currentOffset;
+                    if (rows.length() == 0) {
+                        endOfStream = true;
+                    }
+
                     currentOffset += rows.length();
 
                     boolean continuation = fetchedRows > 0 && !endOfStream;
                     String reason = continuation ? "CONTINUE" : (fetchedRows == 0 ? "NO_MORE_ROWS" : "END_OF_DATASET");
 
-                    System.out.printf("[HF-ACQ][run=%s][PAGE]\npage=%d\noffset=%d\nrequestedRows=%d\nreceivedRows=%d\nnextOffset=%d\ncontinuation=%s\nreason=%s\n",
-                            runTag, currentPage, pageOffset, requestedLength, fetchedRows, currentOffset, continuation ? "YES" : "NO", reason);
+                    System.out.printf("[HF-ACQ][run=%s][PAGE]\npage=%d\noffset=%d\nrequestedRows=%d\nreceivedRows=%d\nextractedSamples=%d\nrejectedSamples=%d\nnextOffset=%d\ncontinuation=%s\nreason=%s\n",
+                            runTag, currentPage, pageOffset, requestedLength, fetchedRows, extractedInChunk, rejectedInChunk, currentOffset, continuation ? "YES" : "NO", reason);
 
-                    System.out.printf("[HF-TRACE] repository=%s config=%s split=%s offset=%d fetchedRows=%d extractedSamples=%d acceptedSamples=%d rejectedSamples=%d rawBytes=%d serializedBytes=%d writtenBytes=%d usableBytes=%d totalSamplesRead=%d totalAcceptedSamples=%d totalUsableBytes=%d\n",
-                            repo, cfg, split, currentOffsetCopy, fetchedRows, extractedInChunk,
-                            stats.getAcceptedRecords(), rejectedInChunk, chunkBodyBytes,
-                            chunkExtractedBytes, chunkExtractedBytes, stats.getAcceptedBytes(),
-                            stats.getTotalSamplesRead(), stats.getAcceptedRecords(), stats.getAcceptedBytes());
+                    long targetUsableBytes = config.getMaxBytes();
+                    long remainingUsableBytes = targetUsableBytes > 0 ? Math.max(0, targetUsableBytes - stats.getAcceptedBytes()) : 0;
 
-                    if (rows.length() == 0) {
-                        endOfStream = true;
-                    }
+                    System.out.printf("[HF-TRACE] repository=%s config=%s split=%s offset=%d pageFetchedRows=%d pageExtractedSamples=%d pageRejectedSamples=%d pageRawBytes=%d pageExtractedBytes=%d cumulativeRowsFetched=%d cumulativeSamplesExtracted=%d cumulativeExtractionRejections=%d cumulativeSamplesAccepted=%d cumulativeAcceptedBytes=%d cumulativeRawBytesDownloaded=%d currentChunkSize=%d currentChunkIndex=%d sourceExhausted=%b targetUsableBytes=%d remainingUsableBytes=%d\n",
+                            repo, cfg, split, pageOffset, fetchedRows, extractedInChunk, rejectedInChunk, chunkBodyBytes, chunkExtractedBytes,
+                            totalRowsFetched, totalSamplesExtracted, totalExtractionRejections, stats.getAcceptedRecords(), stats.getAcceptedBytes(),
+                            totalRawBytesDownloaded, currentChunk.size(), currentChunkIndex, endOfStream, targetUsableBytes, remainingUsableBytes);
                 } else {
                     endOfStream = true;
                     System.out.printf("[HF-ACQ][run=%s][HTTP-RESULT]\noffset=%d\nrequestedRows=%d\nreceivedRows=%d\nhttpStatus=%d\nresponseBytes=%d\ndurationMs=%d\n",
                             runTag, pageOffset, requestedLength, 0, result.getStatusCode(), chunkBodyBytes, httpDurationMs);
-                    System.out.printf("[HF-ACQ][run=%s][PAGE]\npage=%d\noffset=%d\nrequestedRows=%d\nreceivedRows=%d\nnextOffset=%d\ncontinuation=NO\nreason=NO_MORE_ROWS\n",
+                    System.out.printf("[HF-ACQ][run=%s][PAGE]\npage=%d\noffset=%d\nrequestedRows=%d\nreceivedRows=%d\nextractedSamples=0\nrejectedSamples=0\nnextOffset=%d\ncontinuation=NO\nreason=NO_MORE_ROWS\n",
                             runTag, currentPage, pageOffset, requestedLength, 0, currentOffset);
                 }
             } catch (Exception e) {
                 lastError = e.getMessage();
                 endOfStream = true;
-                System.out.printf("[HF-ACQ][run=%s][PAGE]\npage=%d\noffset=%d\nrequestedRows=%d\nreceivedRows=%d\nnextOffset=%d\ncontinuation=NO\nreason=SOURCE_FAILURE\n",
+                System.out.printf("[HF-ACQ][run=%s][PAGE]\npage=%d\noffset=%d\nrequestedRows=%d\nreceivedRows=%d\nextractedSamples=0\nrejectedSamples=0\nnextOffset=%d\ncontinuation=NO\nreason=SOURCE_FAILURE\n",
                         runTag, currentPage, pageOffset, requestedLength, 0, currentOffset);
             }
         }
@@ -592,7 +615,6 @@ public class HuggingFaceDatasetSource implements DatasetSource {
         stats.incrementSamplesRead();
         stats.addBytesRead(sampleBytes);
         stats.addAcceptedBytes(sampleBytes);
-        stats.addDownloadedBytes(sampleBytes);
         stats.addEstimatedTokens(sampleTokens);
 
         return sample;

@@ -125,9 +125,11 @@ public class DatasetAcquisitionTool implements ITool {
         if ("HUGGING_FACE".equalsIgnoreCase(sourceType)) {
             DatasetSourceConfig cfg = new DatasetSourceConfig("HUGGING_FACE", repo);
             cfg.setSplit(split);
+            cfg.setMaxBytes(targetUsableBytes);
             request.addSource(new HuggingFaceDatasetSource(cfg));
         } else if ("LOCAL".equalsIgnoreCase(sourceType)) {
             DatasetSourceConfig cfg = new DatasetSourceConfig("LOCAL", repo);
+            cfg.setMaxBytes(targetUsableBytes);
             request.addSource(new LocalDatasetSource(cfg));
         }
 
@@ -174,9 +176,11 @@ public class DatasetAcquisitionTool implements ITool {
         CognitiveFailureType failureType;
         if (targetReached) {
             failureType = CognitiveFailureType.TARGET_REACHED;
-        } else if (result.getDownloadedBytes() == 0 && usableBytes == 0) {
+        } else if (result.getDownloadedBytes() == 0 && result.getExtractedBytes() == 0 && usableBytes == 0) {
             failureType = CognitiveFailureType.SOURCE_EMPTY;
-        } else if (result.isSourceExhausted() || usableBytes == 0) {
+        } else if (result.getExtractedBytes() > 0 && usableBytes == 0) {
+            failureType = CognitiveFailureType.FILTER_REJECTED_ALL;
+        } else if (result.isSourceExhausted() || usableBytes > 0) {
             failureType = CognitiveFailureType.SOURCE_EXHAUSTED;
         } else {
             failureType = CognitiveFailureType.CAPABILITY_FAILURE;

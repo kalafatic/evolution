@@ -297,7 +297,10 @@ public class DatasetEditorGroup extends AEvoGroup {
                             long requestedBytes = resJson.optLong("requestedUsableBytes", 0);
                             long actualBytes = resJson.optLong("actualUsableBytes", 0);
 
-                            if ("INSUFFICIENT_SOURCE_DATA".equalsIgnoreCase(status) || actualBytes < requestedBytes) {
+                            if ("FAILED".equalsIgnoreCase(status) || "SOURCE_EMPTY".equalsIgnoreCase(status)) {
+                                MessageDialog.openError(group.getShell(), "Dataset Download Failed",
+                                    "Dataset download failed or source was empty.\n\nStatus: " + status);
+                            } else if ("INSUFFICIENT_SOURCE_DATA".equalsIgnoreCase(status) || (requestedBytes > 0 && actualBytes < requestedBytes)) {
                                 double reqMb = requestedBytes / (1024.0 * 1024.0);
                                 double actMb = actualBytes / (1024.0 * 1024.0);
                                 MessageDialog.openWarning(group.getShell(), "Dataset Source Exhausted",
@@ -307,7 +310,7 @@ public class DatasetEditorGroup extends AEvoGroup {
                                 MessageDialog.openInformation(group.getShell(), "Dataset Downloaded", "Dataset downloaded successfully to destination folder!");
                             }
                         } catch (Exception ex) {
-                            MessageDialog.openInformation(group.getShell(), "Dataset Downloaded", "Dataset downloaded successfully to destination folder!");
+                            MessageDialog.openError(group.getShell(), "Dataset Download Error", "Error processing download response: " + ex.getMessage());
                         }
                     }
                 });
@@ -316,6 +319,7 @@ public class DatasetEditorGroup extends AEvoGroup {
                 Display.getDefault().asyncExec(() -> {
                     if (!reportArea.isDisposed()) {
                         reportArea.setText("Download Error: " + ex.getMessage());
+                        MessageDialog.openError(group.getShell(), "Dataset Download Error", "Download failed: " + ex.getMessage());
                     }
                 });
             }
@@ -474,7 +478,10 @@ public class DatasetEditorGroup extends AEvoGroup {
                             long requestedBytes = resJson.optLong("requestedUsableBytes", 0);
                             long actualBytes = resJson.optLong("actualUsableBytes", 0);
 
-                            if ("INSUFFICIENT_SOURCE_DATA".equalsIgnoreCase(status) || (sourceExhausted && actualBytes < requestedBytes)) {
+                            if ("FAILED".equalsIgnoreCase(status) || "SOURCE_EMPTY".equalsIgnoreCase(status)) {
+                                MessageDialog.openError(group.getShell(), "Dataset Preparation Failed",
+                                    "Dataset preparation failed or source was empty.\n\nStatus: " + status);
+                            } else if ("INSUFFICIENT_SOURCE_DATA".equalsIgnoreCase(status) || (sourceExhausted && actualBytes < requestedBytes) || (requestedBytes > 0 && actualBytes < requestedBytes)) {
                                 double reqMb = requestedBytes / (1024.0 * 1024.0);
                                 double actMb = actualBytes / (1024.0 * 1024.0);
                                 MessageDialog.openWarning(group.getShell(), "Source Data Shortfall Warning",
@@ -484,7 +491,7 @@ public class DatasetEditorGroup extends AEvoGroup {
                                 MessageDialog.openInformation(group.getShell(), "Dataset Prepared", "EVO Training Dataset artifact built successfully!");
                             }
                         } catch (Exception ex) {
-                            MessageDialog.openInformation(group.getShell(), "Dataset Prepared", "EVO Training Dataset artifact built successfully!");
+                            MessageDialog.openError(group.getShell(), "Dataset Preparation Error", "Error processing preparation response: " + ex.getMessage());
                         }
                     }
                 });
@@ -493,6 +500,7 @@ public class DatasetEditorGroup extends AEvoGroup {
                 Display.getDefault().asyncExec(() -> {
                     if (!reportArea.isDisposed()) {
                         reportArea.setText("Preparation Error: " + ex.getMessage());
+                        MessageDialog.openError(group.getShell(), "Dataset Preparation Error", "Preparation failed: " + ex.getMessage());
                     }
                 });
             }
