@@ -60,7 +60,7 @@ public class PropertiesPage extends AEvoPage {
 		statusGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		statusCanvas = new Canvas(statusGroup, SWT.DOUBLE_BUFFERED | SWT.BORDER);
 		statusCanvas.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		((GridData) statusCanvas.getLayoutData()).heightHint = 53;
+		((GridData) statusCanvas.getLayoutData()).heightHint = 70;
 		statusCanvas.addPaintListener(e -> {
 			if (orchestrator == null) {
 				e.gc.drawString("No Orchestrator selected", 10, 10);
@@ -72,13 +72,13 @@ public class PropertiesPage extends AEvoPage {
 			e.gc.setBackground(Display.getDefault().getSystemColor(SWT.COLOR_WHITE));
 			e.gc.fillRectangle(0, 0, statusCanvas.getClientArea().width, statusCanvas.getClientArea().height);
 			e.gc.setBackground(Display.getDefault().getSystemColor(SWT.COLOR_GRAY));
-			e.gc.fillRectangle(10, 30, statusCanvas.getClientArea().width - 20, 20);
+			e.gc.fillRectangle(10, 25, statusCanvas.getClientArea().width - 20, 18);
 			e.gc.setBackground(Display.getDefault().getSystemColor(SWT.COLOR_GREEN));
-			e.gc.fillRectangle(10, 30, (int) ((statusCanvas.getClientArea().width - 20) * progress), 20);
+			e.gc.fillRectangle(10, 25, (int) ((statusCanvas.getClientArea().width - 20) * progress), 18);
 			e.gc.setForeground(Display.getDefault().getSystemColor(SWT.COLOR_BLACK));
-			e.gc.drawRectangle(10, 30, statusCanvas.getClientArea().width - 20, 20);
-			e.gc.drawString("Status: " + status, 10, 60);
-			e.gc.drawString("Progress: " + (int) (progress * 100) + "%", 10, 10);
+			e.gc.drawRectangle(10, 25, statusCanvas.getClientArea().width - 20, 18);
+			e.gc.drawString("Progress: " + (int) (progress * 100) + "%", 10, 6);
+			e.gc.drawString("Status: " + status, 10, 48);
 		});
 		Runnable timer = new Runnable() {
 			@Override public void run() {
