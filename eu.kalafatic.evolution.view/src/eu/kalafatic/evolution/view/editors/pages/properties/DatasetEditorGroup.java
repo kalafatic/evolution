@@ -14,6 +14,7 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 
+import eu.kalafatic.evolution.controller.manager.OrchestrationStatusManager;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
@@ -238,6 +239,13 @@ public class DatasetEditorGroup extends AEvoGroup {
         return 48080;
     }
 
+    private String getOrchestratorId() {
+        if (orchestrator != null && orchestrator.getId() != null) {
+            return orchestrator.getId();
+        }
+        return "default";
+    }
+
     private void handleDownloadDataset() {
         String repo = repoText.getText().trim();
         String split = splitText.getText().trim();
@@ -255,6 +263,9 @@ public class DatasetEditorGroup extends AEvoGroup {
         };
         String customOutputDir = outputDirText.getText().trim();
 
+        String orchId = getOrchestratorId();
+        OrchestrationStatusManager.getInstance().updateStatus(orchId, 0.1, "Downloading dataset " + repo + " (" + split + ")...");
+
         reportArea.setText("Downloading dataset " + repo + " (" + split + ") into " + customOutputDir + "...\n");
 
         int port = getServerPort();
@@ -271,7 +282,12 @@ public class DatasetEditorGroup extends AEvoGroup {
                 req.put("outputDir", customOutputDir);
                 req.put("downloadOnly", true);
 
+                OrchestrationStatusManager.getInstance().updateStatus(orchId, 0.4, "Fetching dataset chunks for " + repo + "...");
+
                 String res = postHttp("http://localhost:" + port + "/forge/dataset/prepare", req.toString());
+
+                OrchestrationStatusManager.getInstance().updateStatus(orchId, 1.0, "Dataset Download Complete");
+
                 Display.getDefault().asyncExec(() -> {
                     if (!reportArea.isDisposed()) {
                         reportArea.setText("DATASET DOWNLOAD RESULT:\n" + res);
@@ -296,6 +312,7 @@ public class DatasetEditorGroup extends AEvoGroup {
                     }
                 });
             } catch (Exception ex) {
+                OrchestrationStatusManager.getInstance().updateStatus(orchId, 0.0, "Download Error: " + ex.getMessage());
                 Display.getDefault().asyncExec(() -> {
                     if (!reportArea.isDisposed()) {
                         reportArea.setText("Download Error: " + ex.getMessage());
@@ -421,6 +438,9 @@ public class DatasetEditorGroup extends AEvoGroup {
             default -> "LOCAL";
         };
 
+        String orchId = getOrchestratorId();
+        OrchestrationStatusManager.getInstance().updateStatus(orchId, 0.1, "Starting dataset preparation for " + repo + "...");
+
         reportArea.setText("Starting dataset preparation pipeline for " + repo + " (max " + sizeMbStr + " MB)...\n");
 
         String customOutputDir = outputDirText.getText().trim();
@@ -438,7 +458,12 @@ public class DatasetEditorGroup extends AEvoGroup {
                 req.put("outputDir", customOutputDir);
                 req.put("minQuality", 0.5);
 
+                OrchestrationStatusManager.getInstance().updateStatus(orchId, 0.5, "Building EVO dataset artifact (.evodata)...");
+
                 String res = postHttp("http://localhost:" + port + "/forge/dataset/prepare", req.toString());
+
+                OrchestrationStatusManager.getInstance().updateStatus(orchId, 1.0, "Dataset Preparation Complete");
+
                 Display.getDefault().asyncExec(() -> {
                     if (!reportArea.isDisposed()) {
                         reportArea.setText("DATASET PREPARATION RESULT:\n" + res);
@@ -464,6 +489,7 @@ public class DatasetEditorGroup extends AEvoGroup {
                     }
                 });
             } catch (Exception ex) {
+                OrchestrationStatusManager.getInstance().updateStatus(orchId, 0.0, "Preparation Error: " + ex.getMessage());
                 Display.getDefault().asyncExec(() -> {
                     if (!reportArea.isDisposed()) {
                         reportArea.setText("Preparation Error: " + ex.getMessage());
