@@ -43,6 +43,16 @@ public class MavenBuildExecutor {
             command.addAll(userArgs);
         }
 
+        // Add non-interactive batch mode and progress flags if missing
+        if (!command.contains("-B") && !command.contains("--batch-mode")) {
+            command.add("-B");
+        }
+        if (!command.contains("-ntp") && !command.contains("--no-transfer-progress")) {
+            command.add("-ntp");
+        }
+        if (!command.contains("-Dstyle.color=never")) {
+            command.add("-Dstyle.color=never");
+        }
 
         String fullCommandStr = String.join(" ", command);
         String javaHome = System.getProperty("java.home");
@@ -73,6 +83,11 @@ public class MavenBuildExecutor {
         try (PrintWriter logWriter = (logFile != null) ? new PrintWriter(new FileWriter(logFile, true)) : null) {
             Process process = pb.start();
 
+            // Close stdin immediately to prevent process blocking on unclosed input pipe
+            try {
+                process.getOutputStream().close();
+            } catch (Exception ignored) {}
+
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
@@ -81,6 +96,7 @@ public class MavenBuildExecutor {
                         logWriter.println(line);
                         logWriter.flush();
                     }
+                    log("[MAVEN] " + line);
                 }
             }
 

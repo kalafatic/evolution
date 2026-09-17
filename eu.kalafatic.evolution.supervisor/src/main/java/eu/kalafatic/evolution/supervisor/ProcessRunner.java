@@ -76,6 +76,8 @@ public class ProcessRunner {
             }
             command.add("clean");
             command.add("verify");
+            command.add("-B");
+            command.add("-ntp");
             command.add("-DskipTests");
             command.add("-Pwindows");
         } else {
@@ -92,6 +94,8 @@ public class ProcessRunner {
             }
             command.add("clean");
             command.add("verify");
+            command.add("-B");
+            command.add("-ntp");
             command.add("-DskipTests");
             command.add("-Plinux");
         }
@@ -107,6 +111,9 @@ public class ProcessRunner {
 
         try {
             Process process = pb.start();
+            try {
+                process.getOutputStream().close();
+            } catch (Exception ignored) {}
             int exitCode = process.waitFor();
             String exitMsg = "[BUILD] Build exited with code: " + exitCode;
             System.out.println(exitMsg);
@@ -136,13 +143,16 @@ public class ProcessRunner {
         System.out.println(msg);
         appendToLog(logFile, msg);
 
-        ProcessBuilder pb = new ProcessBuilder(mvnCmd, "test");
+        ProcessBuilder pb = new ProcessBuilder(mvnCmd, "test", "-B", "-ntp");
         pb.directory(variantDir);
         pb.redirectErrorStream(true);
         pb.redirectOutput(ProcessBuilder.Redirect.appendTo(logFile));
 
         try {
             Process process = pb.start();
+            try {
+                process.getOutputStream().close();
+            } catch (Exception ignored) {}
             int exitCode = process.waitFor();
             String exitMsg = "[TEST] Tests exited with code: " + exitCode;
             System.out.println(exitMsg);

@@ -32,14 +32,25 @@ public class RcpBuildTool {
             command.add("-P" + profile);
         }
 
+        if (!command.contains("-B") && !command.contains("--batch-mode")) {
+            command.add("-B");
+        }
+        if (!command.contains("-ntp") && !command.contains("--no-transfer-progress")) {
+            command.add("-ntp");
+        }
 
         ProcessBuilder pb = new ProcessBuilder(command);
         pb.directory(config.getWorkspacePath());
+        pb.redirectErrorStream(true);
 
         try {
             Process process = pb.start();
+            try {
+                process.getOutputStream().close();
+            } catch (Exception ignored) {}
+
             String stdout = readStream(process.getInputStream());
-            String stderr = readStream(process.getErrorStream());
+            String stderr = "";
 
             int exitCode = process.waitFor();
             long duration = System.currentTimeMillis() - startTime;
