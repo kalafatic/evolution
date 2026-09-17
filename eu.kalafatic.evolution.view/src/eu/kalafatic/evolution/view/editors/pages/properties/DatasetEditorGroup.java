@@ -71,7 +71,7 @@ public class DatasetEditorGroup extends AEvoGroup {
 
         GUIFactory.INSTANCE.createLabel(group, "WHERE (Predefined Target Preset):");
         Combo presetCombo = new Combo(group, SWT.DROP_DOWN | SWT.READ_ONLY);
-        presetCombo.setItems(new String[] { "Salesforce/wikitext (Wikitext-2)", "huggingFaceFW/fineWeb (FineWeb-10B)", "HuggingFaceH4/ultrachat_200k (UltraChat)", "bigcode/the-stack (Code Stack)", "gsm8k (GSM8K Math Proofs)", "Custom / Manual Entry..." });
+        presetCombo.setItems(new String[] { "Salesforce/wikitext (Wikitext-2)", "HuggingFaceFW/fineweb (FineWeb-10B)", "HuggingFaceH4/ultrachat_200k (UltraChat)", "bigcode/the-stack (Code Stack)", "gsm8k (GSM8K Math Proofs)", "Custom / Manual Entry..." });
         presetCombo.select(0);
         presetCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
@@ -85,7 +85,7 @@ public class DatasetEditorGroup extends AEvoGroup {
                 int idx = presetCombo.getSelectionIndex();
                 switch (idx) {
                     case 0: repoText.setText("wikitext"); break;
-                    case 1: repoText.setText("huggingFaceFW/fineWeb"); break;
+                    case 1: repoText.setText("HuggingFaceFW/fineweb"); break;
                     case 2: repoText.setText("HuggingFaceH4/ultrachat_200k"); break;
                     case 3: repoText.setText("bigcode/the-stack"); break;
                     case 4: repoText.setText("gsm8k"); break;
