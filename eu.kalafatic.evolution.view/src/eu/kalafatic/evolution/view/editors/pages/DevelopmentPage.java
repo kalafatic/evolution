@@ -1203,7 +1203,536 @@ public class DevelopmentPage extends AEvoPage {
 	}
 
 	private String getHtmlTemplate() {
-		return "<html><body><div id='info'>AI Network Structure</div><script>function updateGraph(data) {}</script></body></html>";
+		return """
+			<!DOCTYPE html>
+			<html>
+			<head>
+			    <meta charset="UTF-8">
+			    <style>
+			        :root {
+			            --evo-bg: #f2f3f5;
+			            --evo-surface: #ffffff;
+			            --evo-surface-alt: #f8f9fa;
+			            --evo-border: #c8ccd1;
+			            --evo-border-dark: #aeb4bb;
+			            --evo-text: #202428;
+			            --evo-text-secondary: #555b62;
+			            --evo-primary: #2864a5;
+			            --evo-success: #287a45;
+			            --evo-warning: #9a6a00;
+			            --evo-danger: #a52a2a;
+			            --evo-radius: 4px;
+			            --evo-shadow: 0 2px 8px rgba(0,0,0,0.1);
+			        }
+			        body {
+			            margin: 0;
+			            padding: 0;
+			            overflow: hidden;
+			            background-color: var(--evo-bg);
+			            color: var(--evo-text);
+			            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+			            font-size: 12px;
+			            height: 100vh;
+			            width: 100vw;
+			        }
+			        #net-svg {
+			            width: 100%;
+			            height: 100%;
+			            display: block;
+			        }
+			        .net-node {
+			            cursor: pointer;
+			        }
+			        .net-node rect {
+			            fill: var(--evo-surface);
+			            stroke: var(--evo-border-dark);
+			            stroke-width: 1.5px;
+			            rx: var(--evo-radius);
+			            transition: stroke 0.15s ease, fill 0.15s ease;
+			        }
+			        .net-node:hover rect {
+			            stroke: var(--evo-primary) !important;
+			            stroke-width: 2px !important;
+			        }
+			        .net-node.agent rect {
+			            stroke: var(--evo-primary);
+			            stroke-width: 2px;
+			            fill: #f0f4f9;
+			        }
+			        .net-node.status-running rect {
+			            stroke: var(--evo-primary);
+			            stroke-width: 2px;
+			            fill: #e8f2fc;
+			        }
+			        .net-node.status-success rect, .net-node.status-ok rect {
+			            stroke: var(--evo-success);
+			            fill: #e6f4ea;
+			        }
+			        .net-node.status-ready rect {
+			            stroke: var(--evo-warning);
+			            fill: #fef7e0;
+			        }
+			        .net-node.status-error rect, .net-node.status-failed rect, .net-node.status-blocked rect {
+			            stroke: var(--evo-danger);
+			            fill: #fce8e8;
+			        }
+			        .net-node text {
+			            font-size: 11px;
+			            fill: var(--evo-text);
+			            pointer-events: none;
+			        }
+			        .node-title {
+			            font-weight: 600;
+			        }
+			        .node-icon {
+			            font-size: 14px;
+			        }
+			        .link-path {
+			            fill: none;
+			            stroke: var(--evo-border-dark);
+			            stroke-width: 1.5px;
+			            transition: stroke 0.15s ease;
+			        }
+			        .link-path.agent-link {
+			            stroke-dasharray: 4,3;
+			            stroke: var(--evo-primary);
+			            opacity: 0.6;
+			        }
+			        .link-path.active {
+			            stroke: var(--evo-primary);
+			            stroke-width: 2px;
+			            stroke-dasharray: 5,5;
+			            animation: dash 1s linear infinite;
+			        }
+			        @keyframes dash {
+			            to { stroke-dashoffset: -10; }
+			        }
+			        #legend-bar {
+			            position: absolute;
+			            top: 10px;
+			            left: 10px;
+			            background: var(--evo-surface);
+			            border: 1px solid var(--evo-border);
+			            padding: 6px 12px;
+			            border-radius: var(--evo-radius);
+			            box-shadow: var(--evo-shadow);
+			            display: flex;
+			            gap: 12px;
+			            align-items: center;
+			            font-size: 11px;
+			            z-index: 10;
+			        }
+			        .badge {
+			            display: inline-block;
+			            padding: 2px 6px;
+			            border-radius: var(--evo-radius);
+			            font-size: 10px;
+			            font-weight: 700;
+			            text-transform: uppercase;
+			        }
+			        .badge-agent { background: #e8f2fc; color: var(--evo-primary); border: 1px solid var(--evo-primary); }
+			        .badge-task { background: var(--evo-surface-alt); color: var(--evo-text-secondary); border: 1px solid var(--evo-border); }
+			        .badge-ready { background: #fef7e0; color: var(--evo-warning); }
+			        .badge-running { background: #e8f2fc; color: var(--evo-primary); }
+			        .badge-success { background: #e6f4ea; color: var(--evo-success); }
+			        .badge-error { background: #fce8e8; color: var(--evo-danger); }
+			        #tooltip {
+			            position: absolute;
+			            opacity: 0;
+			            pointer-events: none;
+			            z-index: 100;
+			            background: rgba(15, 23, 42, 0.92);
+			            color: white;
+			            padding: 8px 12px;
+			            border-radius: 6px;
+			            font-size: 11px;
+			            box-shadow: var(--evo-shadow);
+			            max-width: 220px;
+			            line-height: 1.4;
+			        }
+			        #details-panel {
+			            position: absolute;
+			            top: 10px;
+			            right: 10px;
+			            width: 260px;
+			            background: var(--evo-surface);
+			            border: 1px solid var(--evo-border);
+			            border-radius: var(--evo-radius);
+			            box-shadow: var(--evo-shadow);
+			            z-index: 20;
+			            display: flex;
+			            flex-direction: column;
+			            max-height: calc(100% - 20px);
+			            overflow-y: auto;
+			            transition: transform 0.2s ease, opacity 0.2s ease;
+			        }
+			        #details-panel.hidden {
+			            transform: translateX(300px);
+			            opacity: 0;
+			            pointer-events: none;
+			        }
+			        .panel-header {
+			            display: flex;
+			            justify-content: space-between;
+			            align-items: center;
+			            padding: 8px 12px;
+			            background: var(--evo-surface-alt);
+			            border-bottom: 1px solid var(--evo-border);
+			            font-weight: 700;
+			        }
+			        .close-btn {
+			            background: none;
+			            border: none;
+			            font-size: 14px;
+			            cursor: pointer;
+			            color: var(--evo-text-secondary);
+			        }
+			        .panel-body {
+			            padding: 12px;
+			        }
+			        .prop-row {
+			            display: flex;
+			            justify-content: space-between;
+			            margin-bottom: 6px;
+			            padding-bottom: 4px;
+			            border-bottom: 1px dashed var(--evo-border);
+			        }
+			        .prop-label {
+			            color: var(--evo-text-secondary);
+			            font-weight: 500;
+			        }
+			        .prop-val {
+			            font-weight: 600;
+			            word-break: break-all;
+			        }
+			    </style>
+			</head>
+			<body>
+			    <div id="legend-bar">
+			        <span style="font-weight:700;">AI Structure:</span>
+			        <span class="badge badge-agent">🤖 Agent</span>
+			        <span class="badge badge-task">📄 Task</span>
+			        <span class="badge badge-ready">READY</span>
+			        <span class="badge badge-running">RUNNING</span>
+			        <span class="badge badge-success">SUCCESS</span>
+			        <span class="badge badge-error">ERROR</span>
+			    </div>
+
+			    <svg id="net-svg">
+			        <g id="main-g">
+			            <g id="links-g"></g>
+			            <g id="nodes-g"></g>
+			        </g>
+			    </svg>
+
+			    <div id="tooltip"></div>
+
+			    <div id="details-panel" class="hidden">
+			        <div class="panel-header">
+			            <span id="panel-title">Node Details</span>
+			            <button class="close-btn" onclick="hideDetails()">×</button>
+			        </div>
+			        <div class="panel-body" id="panel-content"></div>
+			    </div>
+
+			    <script>
+			        const SVG_NS = "http://www.w3.org/2000/svg";
+			        const svg = document.getElementById("net-svg");
+			        const mainG = document.getElementById("main-g");
+			        const linksG = document.getElementById("links-g");
+			        const nodesG = document.getElementById("nodes-g");
+			        const tooltip = document.getElementById("tooltip");
+
+			        let transform = { x: 0, y: 0, k: 1 };
+			        let isPanning = false;
+			        let startPos = { x: 0, y: 0 };
+			        let graphData = { agents: [], tasks: [] };
+
+			        function applyTransform() {
+			            mainG.setAttribute("transform", `translate(${transform.x}, ${transform.y}) scale(${transform.k})`);
+			        }
+
+			        svg.addEventListener("mousedown", (e) => {
+			            if (e.target === svg || e.target === mainG || e.target === linksG || e.target === nodesG) {
+			                isPanning = true;
+			                startPos = { x: e.clientX - transform.x, y: e.clientY - transform.y };
+			                svg.style.cursor = "grabbing";
+			            }
+			        });
+
+			        window.addEventListener("mousemove", (e) => {
+			            if (isPanning) {
+			                transform.x = e.clientX - startPos.x;
+			                transform.y = e.clientY - startPos.y;
+			                applyTransform();
+			            }
+			        });
+
+			        window.addEventListener("mouseup", () => {
+			            if (isPanning) {
+			                isPanning = false;
+			                svg.style.cursor = "default";
+			            }
+			        });
+
+			        svg.addEventListener("wheel", (e) => {
+			            e.preventDefault();
+			            const factor = e.deltaY < 0 ? 1.15 : 0.85;
+			            const newK = Math.min(Math.max(transform.k * factor, 0.1), 4);
+
+			            const rect = svg.getBoundingClientRect();
+			            const mouseX = e.clientX - rect.left;
+			            const mouseY = e.clientY - rect.top;
+
+			            transform.x = mouseX - (mouseX - transform.x) * (newK / transform.k);
+			            transform.y = mouseY - (mouseY - transform.y) * (newK / transform.k);
+			            transform.k = newK;
+			            applyTransform();
+			        }, { passive: false });
+
+			        window.resetZoom = function() {
+			            transform = { x: 0, y: 0, k: 1 };
+			            applyTransform();
+			        };
+
+			        window.applyZoom = function(factor) {
+			            const width = window.innerWidth;
+			            const height = window.innerHeight;
+			            const center = { x: width / 2, y: height / 2 };
+			            const newK = Math.min(Math.max(transform.k * factor, 0.1), 4);
+			            transform.x = center.x - (center.x - transform.x) * (newK / transform.k);
+			            transform.y = center.y - (center.y - transform.y) * (newK / transform.k);
+			            transform.k = newK;
+			            applyTransform();
+			        };
+
+			        window.fitToScreen = function() {
+			            const allNodes = Array.from(nodesG.children);
+			            if (allNodes.length === 0) return;
+
+			            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+			            allNodes.forEach(g => {
+			                const t = g.getAttribute("transform");
+			                if (t) {
+			                    const match = /translate\\(([^,]+),\\s*([^)]+)\\)/.exec(t);
+			                    if (match) {
+			                        const x = parseFloat(match[1]);
+			                        const y = parseFloat(match[2]);
+			                        minX = Math.min(minX, x);
+			                        minY = Math.min(minY, y);
+			                        maxX = Math.max(maxX, x + 160);
+			                        maxY = Math.max(maxY, y + 50);
+			                    }
+			                }
+			            });
+
+			            const width = window.innerWidth;
+			            const height = window.innerHeight;
+			            const gWidth = maxX - minX || 500;
+			            const gHeight = maxY - minY || 300;
+			            const padding = 50;
+
+			            const scale = Math.min((width - padding * 2) / gWidth, (height - padding * 2) / gHeight, 1.5);
+			            transform.k = scale;
+			            transform.x = (width - gWidth * scale) / 2 - minX * scale;
+			            transform.y = (height - gHeight * scale) / 2 - minY * scale;
+			            applyTransform();
+			        };
+
+			        window.hideDetails = function() {
+			            document.getElementById("details-panel").classList.add("hidden");
+			        };
+
+			        function showNodeDetails(node) {
+			            const panel = document.getElementById("details-panel");
+			            panel.classList.remove("hidden");
+			            document.getElementById("panel-title").textContent = (node.name || node.id || "Node").toUpperCase();
+
+			            let html = `
+			                <div class="prop-row"><span class="prop-label">ID:</span><span class="prop-val">${node.id || 'N/A'}</span></div>
+			                <div class="prop-row"><span class="prop-label">Category:</span><span class="prop-val">${node.isAgent ? 'Agent' : 'Task'}</span></div>
+			            `;
+
+			            if (node.type) {
+			                html += `<div class="prop-row"><span class="prop-label">Type:</span><span class="prop-val">${node.type}</span></div>`;
+			            }
+			            if (node.status) {
+			                html += `<div class="prop-row"><span class="prop-label">Status:</span><span class="prop-val">${node.status}</span></div>`;
+			            }
+			            if (node.next && node.next.length > 0) {
+			                html += `<div class="prop-row"><span class="prop-label">Next Tasks:</span><span class="prop-val">${node.next.join(', ')}</span></div>`;
+			            }
+
+			            document.getElementById("panel-content").innerHTML = html;
+			        }
+
+			        window.updateGraph = function(data) {
+			            if (!data) return;
+			            graphData = data;
+			            render();
+			        };
+
+			        function render() {
+			            linksG.innerHTML = "";
+			            nodesG.innerHTML = "";
+
+			            const agents = graphData.agents || [];
+			            const tasks = graphData.tasks || [];
+
+			            const nodeMap = new Map();
+
+			            // Position Agents (left column)
+			            agents.forEach((ag, i) => {
+			                const node = { ...ag, isAgent: true, x: 60, y: 100 + i * 110, width: 150, height: 45 };
+			                nodeMap.set("agent_" + ag.id, node);
+			            });
+
+			            // Position Tasks (horizontal flow/levels)
+			            const taskLevels = new Map();
+			            function assignTaskLevel(taskId, lvl) {
+			                if (taskLevels.has(taskId) && taskLevels.get(taskId) >= lvl) return;
+			                taskLevels.set(taskId, lvl);
+			                const t = tasks.find(item => item.id === taskId);
+			                if (t && t.next) {
+			                    t.next.forEach(nxtId => assignTaskLevel(nxtId, lvl + 1));
+			                }
+			            }
+
+			            const targetTaskIds = new Set();
+			            tasks.forEach(t => (t.next || []).forEach(nid => targetTaskIds.add(nid)));
+			            const rootTasks = tasks.filter(t => !targetTaskIds.has(t.id));
+			            if (rootTasks.length === 0 && tasks.length > 0) rootTasks.push(tasks[0]);
+
+			            rootTasks.forEach(r => assignTaskLevel(r.id, 0));
+
+			            const levelGroups = new Map();
+			            tasks.forEach(t => {
+			                const lvl = taskLevels.get(t.id) || 0;
+			                if (!levelGroups.has(lvl)) levelGroups.set(lvl, []);
+			                levelGroups.get(lvl).push(t);
+			            });
+
+			            levelGroups.forEach((group, lvl) => {
+			                const startY = 100;
+			                group.forEach((t, i) => {
+			                    const node = { ...t, isAgent: false, x: 280 + lvl * 210, y: startY + i * 90, width: 150, height: 45 };
+			                    nodeMap.set("task_" + t.id, node);
+			                });
+			            });
+
+			            // Draw Agent-to-Task dashed connections
+			            agents.forEach(ag => {
+			                const source = nodeMap.get("agent_" + ag.id);
+			                if (!source) return;
+			                tasks.forEach(t => {
+			                    const target = nodeMap.get("task_" + t.id);
+			                    if (!target) return;
+
+			                    const path = document.createElementNS(SVG_NS, "path");
+			                    path.setAttribute("class", "link-path agent-link");
+			                    const x0 = source.x + source.width;
+			                    const y0 = source.y + source.height / 2;
+			                    const x1 = target.x;
+			                    const y1 = target.y + target.height / 2;
+			                    const mx = (x0 + x1) / 2;
+			                    path.setAttribute("d", `M${x0},${y0} C${mx},${y0} ${mx},${y1} ${x1},${y1}`);
+			                    linksG.appendChild(path);
+			                });
+			            });
+
+			            // Draw Task-to-Next Task connections
+			            tasks.forEach(t => {
+			                const source = nodeMap.get("task_" + t.id);
+			                if (!source || !t.next) return;
+			                t.next.forEach(nxtId => {
+			                    const target = nodeMap.get("task_" + nxtId);
+			                    if (!target) return;
+
+			                    const path = document.createElementNS(SVG_NS, "path");
+			                    const isActive = (t.status === 'RUNNING' || t.status === 'EXECUTING');
+			                    path.setAttribute("class", "link-path " + (isActive ? "active" : ""));
+			                    const x0 = source.x + source.width;
+			                    const y0 = source.y + source.height / 2;
+			                    const x1 = target.x;
+			                    const y1 = target.y + target.height / 2;
+			                    const mx = (x0 + x1) / 2;
+			                    path.setAttribute("d", `M${x0},${y0} C${mx},${y0} ${mx},${y1} ${x1},${y1}`);
+			                    linksG.appendChild(path);
+			                });
+			            });
+
+			            // Render Node Groups
+			            nodeMap.forEach(node => {
+			                const g = document.createElementNS(SVG_NS, "g");
+			                let cls = "net-node " + (node.isAgent ? "agent" : "");
+			                if (node.status) {
+			                    cls += " status-" + node.status.toLowerCase();
+			                }
+			                g.setAttribute("class", cls);
+			                g.setAttribute("transform", `translate(${node.x}, ${node.y})`);
+
+			                const rect = document.createElementNS(SVG_NS, "rect");
+			                rect.setAttribute("width", node.width);
+			                rect.setAttribute("height", node.height);
+			                g.appendChild(rect);
+
+			                const iconText = document.createElementNS(SVG_NS, "text");
+			                iconText.setAttribute("class", "node-icon");
+			                iconText.setAttribute("x", "12");
+			                iconText.setAttribute("y", "28");
+			                iconText.textContent = node.isAgent ? '🤖' : '📄';
+			                g.appendChild(iconText);
+
+			                const titleText = document.createElementNS(SVG_NS, "text");
+			                titleText.setAttribute("class", "node-title");
+			                titleText.setAttribute("x", "38");
+			                titleText.setAttribute("y", "20");
+			                const displayName = node.name || node.id || 'Node';
+			                titleText.textContent = displayName.length > 12 ? displayName.substring(0, 10) + '..' : displayName;
+			                g.appendChild(titleText);
+
+			                if (node.status) {
+			                    const statusText = document.createElementNS(SVG_NS, "text");
+			                    statusText.setAttribute("x", "38");
+			                    statusText.setAttribute("y", "35");
+			                    statusText.setAttribute("fill", "#64748b");
+			                    statusText.setAttribute("font-size", "10");
+			                    statusText.textContent = node.status;
+			                    g.appendChild(statusText);
+			                }
+
+			                g.addEventListener("mouseover", (e) => {
+			                    tooltip.style.opacity = "1";
+			                    tooltip.innerHTML = `
+			                        <strong>${node.isAgent ? 'Agent' : 'Task'}:</strong> ${node.name || node.id}<br/>
+			                        ${node.type ? '<strong>Type:</strong> ' + node.type + '<br/>' : ''}
+			                        ${node.status ? '<strong>Status:</strong> ' + node.status : ''}
+			                    `;
+			                    tooltip.style.left = (e.pageX + 12) + "px";
+			                    tooltip.style.top = (e.pageY - 12) + "px";
+			                });
+
+			                g.addEventListener("mousemove", (e) => {
+			                    tooltip.style.left = (e.pageX + 12) + "px";
+			                    tooltip.style.top = (e.pageY - 12) + "px";
+			                });
+
+			                g.addEventListener("mouseout", () => {
+			                    tooltip.style.opacity = "0";
+			                });
+
+			                g.addEventListener("click", (e) => {
+			                    e.stopPropagation();
+			                    showNodeDetails(node);
+			                });
+
+			                nodesG.appendChild(g);
+			            });
+			        }
+			    </script>
+			</body>
+			</html>
+			""";
 	}
 
 	@Override
