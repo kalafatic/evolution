@@ -23,6 +23,7 @@ import java.util.zip.GZIPInputStream;
 
 /**
  * Universal streaming adapter for JSONL / JSONL.GZ dataset files.
+ * Schema-tolerant with fallback support for arbitrary JSON schemas.
  */
 public class JSONLAdapter implements DatasetSourceAdapter {
 
@@ -99,18 +100,19 @@ public class JSONLAdapter implements DatasetSourceAdapter {
         TrainingSampleType type = TrainingSampleType.fromString(typeStr);
 
         // 1. Conversation / Chat
-        if (type == TrainingSampleType.CONVERSATION || json.has("conversationMessages") || json.has("messages")) {
+        if (type == TrainingSampleType.CONVERSATION || json.has("conversationMessages") || json.has("messages") || json.has("conversations") || json.has("dialog")) {
             JSONArray msgArray = json.optJSONArray("conversationMessages");
-            if (msgArray == null) {
-                msgArray = json.optJSONArray("messages");
-            }
+            if (msgArray == null) msgArray = json.optJSONArray("messages");
+            if (msgArray == null) msgArray = json.optJSONArray("conversations");
+            if (msgArray == null) msgArray = json.optJSONArray("dialog");
+
             if (msgArray != null && msgArray.length() > 0) {
                 List<NormalizedMessage> normMsgs = new ArrayList<>();
                 for (int i = 0; i < msgArray.length(); i++) {
                     JSONObject mObj = msgArray.optJSONObject(i);
                     if (mObj != null) {
-                        String role = mObj.optString("role", mObj.optString("from", "user"));
-                        String text = mObj.optString("text", mObj.optString("content", mObj.optString("value", "")));
+                        String role = mObj.optString("role", mObj.optString("from", mObj.optString("speaker", "user")));
+                        String text = mObj.optString("text", mObj.optString("content", mObj.optString("value", mObj.optString("message", ""))));
                         String msgId = mObj.has("messageId") && !mObj.isNull("messageId") ? mObj.optString("messageId") : null;
                         String parentId = mObj.has("parentMessageId") && !mObj.isNull("parentMessageId") ? mObj.optString("parentMessageId") : null;
                         if (!text.trim().isEmpty()) {
@@ -126,18 +128,49 @@ public class JSONLAdapter implements DatasetSourceAdapter {
         }
 
         // 2. Instruction / Response
-        String instruction = json.optString("instruction", json.optString("prompt", json.optString("input", null)));
-        String response = json.optString("response", json.optString("output", json.optString("completion", null)));
+        String instruction = optAnyString(json, "instruction", "prompt", "input", "question", "problem", "user_prompt", "query");
+        String response = optAnyString(json, "response", "output", "completion", "answer", "solution", "assistant_response", "reply");
         if (instruction != null && response != null && !instruction.trim().isEmpty() && !response.trim().isEmpty()) {
             return NormalizedSample.createInstructionSample(instruction, response, sourceName);
         }
 
         // 3. Plain Text
-        String text = json.optString("text", json.optString("content", json.optString("document", json.optString("body", null))));
+        String text = optAnyString(json, "text", "content", "document", "body", "article", "code", "raw", "context", "chunk");
         if (text != null && !text.trim().isEmpty()) {
             return NormalizedSample.createTextSample(text, sourceName);
         }
 
+        // 4. Fallback for unknown schema: collect all non-empty string fields
+        List<String> textValues = new ArrayList<>();
+        for (String key : json.keySet()) {
+            Object val = json.opt(key);
+            if (val instanceof String) {
+                String str = ((String) val).trim();
+                if (str.length() >= 5) {
+                    textValues.add(str);
+                }
+            }
+        }
+        if (!textValues.isEmpty()) {
+            if (textValues.size() >= 2) {
+                return NormalizedSample.createInstructionSample(textValues.get(0), String.join("\n", textValues.subList(1, textValues.size())), sourceName);
+            } else {
+                return NormalizedSample.createTextSample(textValues.get(0), sourceName);
+            }
+        }
+
+        return null;
+    }
+
+    private static String optAnyString(JSONObject json, String... keys) {
+        for (String key : keys) {
+            if (json.has(key) && !json.isNull(key)) {
+                String val = json.optString(key, "").trim();
+                if (!val.isEmpty()) {
+                    return val;
+                }
+            }
+        }
         return null;
     }
 }

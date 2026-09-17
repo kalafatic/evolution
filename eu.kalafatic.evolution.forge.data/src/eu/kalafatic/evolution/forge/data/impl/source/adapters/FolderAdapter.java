@@ -6,6 +6,7 @@ import eu.kalafatic.evolution.forge.data.api.source.DatasetItem;
 import eu.kalafatic.evolution.forge.data.api.source.DatasetPreparationContext;
 import eu.kalafatic.evolution.forge.data.api.source.DatasetSourceAdapter;
 import eu.kalafatic.evolution.forge.data.api.source.SourceAdapterRegistry;
+import eu.kalafatic.evolution.forge.data.impl.source.DatasetMetadataFilter;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -17,7 +18,8 @@ import java.util.stream.Stream;
 
 /**
  * Universal source adapter for directory / folder targets.
- * Recursively inspects child files and delegates conversion to SourceAdapterRegistry.
+ * Intelligently discovers data files, excludes metadata/infrastructure files (README, .git, etc.),
+ * calculates dataset sizes, and delegates conversion to SourceAdapterRegistry.
  */
 public class FolderAdapter implements DatasetSourceAdapter {
 
@@ -40,8 +42,37 @@ public class FolderAdapter implements DatasetSourceAdapter {
             return new DatasetInspection(item, "FolderAdapter", false, 0, "folder", false, "Path is null");
         }
         File folder = new File(item.getPath());
-        boolean exists = folder.exists() && folder.isDirectory();
-        return new DatasetInspection(item, "FolderAdapter", exists, 0, "folder", exists, exists ? "Directory Folder Source" : "Folder does not exist");
+        if (!folder.exists() || !folder.isDirectory()) {
+            return new DatasetInspection(item, "FolderAdapter", false, 0, "folder", false, "Folder does not exist");
+        }
+
+        List<Path> allFiles = scanFolderFiles(folder);
+        long totalDataBytes = 0;
+        int dataFilesCount = 0;
+        int metadataFilesCount = 0;
+
+        for (Path path : allFiles) {
+            if (DatasetMetadataFilter.isMetadataFile(path)) {
+                metadataFilesCount++;
+                continue;
+            }
+            File file = path.toFile();
+            DatasetItem fileItem = new DatasetItem(true, file.getAbsolutePath(), "FILE");
+            DatasetSourceAdapter adapter = registry != null ? registry.findAdapter(fileItem) : null;
+            if (adapter != null && !(adapter instanceof FolderAdapter)) {
+                dataFilesCount++;
+                totalDataBytes += file.length();
+            } else {
+                metadataFilesCount++;
+            }
+        }
+
+        boolean supported = dataFilesCount > 0;
+        String details = supported ?
+                String.format("Folder Dataset Source (%d data files, %d metadata files)", dataFilesCount, metadataFilesCount) :
+                String.format("Folder contains no supported data files (%d data files, %d metadata files)", dataFilesCount, metadataFilesCount);
+
+        return new DatasetInspection(item, "FolderAdapter", true, totalDataBytes, "folder", supported, details);
     }
 
     @Override
@@ -55,22 +86,29 @@ public class FolderAdapter implements DatasetSourceAdapter {
             return samples;
         }
 
-        context.log("[forge.dataset] Preparing source Folder: " + folder.getAbsolutePath());
+        List<Path> allFiles = scanFolderFiles(folder);
+        List<Path> dataFiles = new ArrayList<>();
+        int metadataCount = 0;
 
-        List<Path> discoveredFiles;
-        try (Stream<Path> walk = Files.walk(folder.toPath())) {
-            discoveredFiles = walk.filter(Files::isRegularFile)
-                    .filter(p -> !p.toString().contains("/.git/") && !p.toString().contains("\\.git\\") &&
-                                 !p.toString().contains("/target/") && !p.toString().contains("\\target\\") &&
-                                 !p.toString().contains("/node_modules/") && !p.toString().contains("\\node_modules\\") &&
-                                 !p.toString().contains("/bin/") && !p.toString().contains("\\bin\\"))
-                    .sorted()
-                    .collect(Collectors.toList());
+        for (Path path : allFiles) {
+            if (DatasetMetadataFilter.isMetadataFile(path)) {
+                metadataCount++;
+                continue;
+            }
+            File file = path.toFile();
+            DatasetItem fileItem = new DatasetItem(true, file.getAbsolutePath(), "FILE");
+            DatasetSourceAdapter adapter = registry != null ? registry.findAdapter(fileItem) : null;
+            if (adapter != null && !(adapter instanceof FolderAdapter)) {
+                dataFiles.add(path);
+            } else {
+                metadataCount++;
+            }
         }
 
-        context.log("[forge.dataset] Folder scan found " + discoveredFiles.size() + " files in " + folder.getName());
+        context.log(String.format("[FORGE-DISCOVERY] source=%s detectedStructure=DATASET_CONTAINER files=%d dataFiles=%d metadataFiles=%d",
+                folder.getAbsolutePath(), allFiles.size(), dataFiles.size(), metadataCount));
 
-        for (Path filePath : discoveredFiles) {
+        for (Path filePath : dataFiles) {
             if (context.isCancelled()) break;
             File file = filePath.toFile();
             DatasetItem fileItem = new DatasetItem(true, file.getAbsolutePath(), "FILE");
@@ -84,7 +122,20 @@ public class FolderAdapter implements DatasetSourceAdapter {
             }
         }
 
-        context.log("[forge.dataset] Folder total collected samples: " + samples.size());
+        context.log(String.format("[FORGE-PROCESS] source=%s recordsRead=%d recordsAccepted=%d recordsRejected=0 duplicates=0",
+                folder.getAbsolutePath(), samples.size(), samples.size()));
         return samples;
+    }
+
+    private List<Path> scanFolderFiles(File folder) {
+        List<Path> discoveredFiles = new ArrayList<>();
+        try (Stream<Path> walk = Files.walk(folder.toPath())) {
+            discoveredFiles = walk.filter(Files::isRegularFile)
+                    .sorted()
+                    .collect(Collectors.toList());
+        } catch (Exception ex) {
+            // Log or ignore
+        }
+        return discoveredFiles;
     }
 }

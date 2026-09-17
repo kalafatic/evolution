@@ -6,6 +6,8 @@ import eu.kalafatic.evolution.forge.data.api.source.DatasetItem;
 import eu.kalafatic.evolution.forge.data.api.source.DatasetPreparationContext;
 import eu.kalafatic.evolution.forge.data.api.source.DatasetSourceAdapter;
 
+import org.json.JSONObject;
+
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -14,7 +16,7 @@ import java.util.List;
 
 /**
  * Universal source adapter for Parquet columnar dataset files.
- * Extracts usable text, instruction, or tabular string records from .parquet dataset files.
+ * Extracts usable text, instruction, JSON, or tabular string records from .parquet dataset files.
  */
 public class ParquetAdapter implements DatasetSourceAdapter {
 
@@ -51,30 +53,61 @@ public class ParquetAdapter implements DatasetSourceAdapter {
         byte[] bytes = Files.readAllBytes(file.toPath());
         if (bytes.length == 0) return samples;
 
-        // Extract printable UTF-8 text/records from parquet bytes or text content
         String rawStr = new String(bytes, StandardCharsets.UTF_8);
-        String[] lines = rawStr.split("\r?\n");
 
-        StringBuilder sampleBuffer = new StringBuilder();
-        for (String line : lines) {
-            String cleaned = line.replaceAll("[^\\x20-\\x7E\\t\\r\\n]", "").trim();
-            if (cleaned.length() >= 10) {
-                if (sampleBuffer.length() > 0) sampleBuffer.append("\n");
-                sampleBuffer.append(cleaned);
-                if (sampleBuffer.length() >= 200) {
-                    samples.add(NormalizedSample.createTextSample(sampleBuffer.toString(), file.getName()));
-                    sampleBuffer.setLength(0);
+        // Extract JSON records embedded in Parquet stream if present
+        int braceStart = -1;
+        int depth = 0;
+        for (int i = 0; i < rawStr.length(); i++) {
+            if (context.isCancelled()) break;
+            char c = rawStr.charAt(i);
+            if (c == '{') {
+                if (depth == 0) braceStart = i;
+                depth++;
+            } else if (c == '}' && depth > 0) {
+                depth--;
+                if (depth == 0 && braceStart >= 0) {
+                    String jsonCandidate = rawStr.substring(braceStart, i + 1);
+                    if (jsonCandidate.length() >= 15) {
+                        try {
+                            JSONObject json = new JSONObject(jsonCandidate);
+                            NormalizedSample sample = JSONLAdapter.parseJsonObject(json, file.getName());
+                            if (sample != null) {
+                                samples.add(sample);
+                            }
+                        } catch (Exception ignored) {
+                        }
+                    }
+                    braceStart = -1;
                 }
             }
         }
-        if (sampleBuffer.length() > 0) {
-            samples.add(NormalizedSample.createTextSample(sampleBuffer.toString(), file.getName()));
-        }
 
-        if (samples.isEmpty() && rawStr.trim().length() > 0) {
-            String textClean = rawStr.replaceAll("[^\\x20-\\x7E\\t\\r\\n]", " ").replaceAll("\\s+", " ").trim();
-            if (!textClean.isEmpty()) {
-                samples.add(NormalizedSample.createTextSample(textClean, file.getName()));
+        // If embedded JSON parsing did not extract samples, perform clean text chunk extraction
+        if (samples.isEmpty()) {
+            String[] lines = rawStr.split("\r?\n");
+            StringBuilder sampleBuffer = new StringBuilder();
+            for (String line : lines) {
+                if (context.isCancelled()) break;
+                String cleaned = line.replaceAll("[^\\x20-\\x7E\\t\\r\\n]", "").trim();
+                if (cleaned.length() >= 10) {
+                    if (sampleBuffer.length() > 0) sampleBuffer.append("\n");
+                    sampleBuffer.append(cleaned);
+                    if (sampleBuffer.length() >= 200) {
+                        samples.add(NormalizedSample.createTextSample(sampleBuffer.toString(), file.getName()));
+                        sampleBuffer.setLength(0);
+                    }
+                }
+            }
+            if (sampleBuffer.length() > 0) {
+                samples.add(NormalizedSample.createTextSample(sampleBuffer.toString(), file.getName()));
+            }
+
+            if (samples.isEmpty() && rawStr.trim().length() > 0) {
+                String textClean = rawStr.replaceAll("[^\\x20-\\x7E\\t\\r\\n]", " ").replaceAll("\\s+", " ").trim();
+                if (!textClean.isEmpty()) {
+                    samples.add(NormalizedSample.createTextSample(textClean, file.getName()));
+                }
             }
         }
 
