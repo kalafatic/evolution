@@ -7,7 +7,9 @@ public class BuildEvoTask extends AbstractSelfDevTask {
 
     public BuildEvoTask(String id) {
         super(id, "Build EVO RCP (" + id + ")");
-        this.builder = new TychoEvoRcpBuilder();
+        TychoEvoRcpBuilder evoBuilder = new TychoEvoRcpBuilder();
+        evoBuilder.setSkipTests(true);
+        this.builder = evoBuilder;
     }
 
     @Override

@@ -95,6 +95,10 @@ public class SelfDevOrchestrator {
         SelfDevTask genome = new GenomeCheckTask("GENOME");
         SelfDevTask permissions = new PermissionsCheckTask("PERMISSIONS");
 
+        SelfDevTask llm = new LlmCheckTask("LLM");
+        SelfDevTask supervisorLoop = new SupervisorLoopTask("SUPERVISOR_LOOP");
+        SelfDevTask selfDevLoop = new SelfDevLoopTask("SELF_DEV_LOOP");
+
         taskRegistry.put("GIT", git);
         taskRegistry.put("GIT_EVO", gitEvo);
         taskRegistry.put("GIT_SUPERVISOR", gitSuper);
@@ -125,6 +129,10 @@ public class SelfDevOrchestrator {
         taskRegistry.put("SUPERVISOR", supervisorCheck);
         taskRegistry.put("GENOME", genome);
         taskRegistry.put("PERMISSIONS", permissions);
+
+        taskRegistry.put("LLM", llm);
+        taskRegistry.put("SUPERVISOR_LOOP", supervisorLoop);
+        taskRegistry.put("SELF_DEV_LOOP", selfDevLoop);
     }
 
     public Map<String, SelfDevTask> getTaskRegistry() {
@@ -153,9 +161,6 @@ public class SelfDevOrchestrator {
     private TaskResult executeTaskWithDependenciesInternal(String taskId, java.util.Set<String> visitingStack) {
         SelfDevTask task = taskRegistry.get(taskId);
         if (task == null) {
-            if ("LLM".equalsIgnoreCase(taskId)) {
-                return TaskResult.success("LLM", "LLM check OK.");
-            }
             return TaskResult.failure(taskId, "Unknown task ID: " + taskId, null);
         }
 

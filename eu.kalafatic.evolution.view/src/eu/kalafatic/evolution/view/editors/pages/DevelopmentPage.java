@@ -91,6 +91,7 @@ public class DevelopmentPage extends AEvoPage {
 
 		public int order;
 		public boolean selected;
+		public String taskId;
 		public String name;
 		public String command;
 		public String path;
@@ -98,20 +99,21 @@ public class DevelopmentPage extends AEvoPage {
 		public String status;
 		public String executor;
 
-		public SelfDevRow(int order, String name, String path, EStatus eStatus) {
-			this(order, name, "", path, EStatus.NA.name(), eStatus, EApp.EVO.name());
+		public SelfDevRow(int order, String taskId, String name, String path, EStatus eStatus) {
+			this(order, taskId, name, "", path, EStatus.NA.name(), eStatus, EApp.EVO.name());
 		}
 
-		public SelfDevRow(int order, String name, String path, String url, EStatus eStatus) {
-			this(order, name, "", path, url, eStatus, EStatus.NA.name());
+		public SelfDevRow(int order, String taskId, String name, String path, String url, EStatus eStatus) {
+			this(order, taskId, name, "", path, url, eStatus, EStatus.NA.name());
 		}
 
-		public SelfDevRow(int order, String name, String path, String url, EStatus eStatus, String executor) {
-			this(order, name, "", path, url, eStatus, executor);
+		public SelfDevRow(int order, String taskId, String name, String path, String url, EStatus eStatus, String executor) {
+			this(order, taskId, name, "", path, url, eStatus, executor);
 		}
 
-		public SelfDevRow(int order, String name, String command, String path, String url, EStatus eStatus, String executor) {
+		public SelfDevRow(int order, String taskId, String name, String command, String path, String url, EStatus eStatus, String executor) {
 			this.order = order;
+			this.taskId = taskId;
 			this.name = name;
 			this.command = command;
 			this.path = path;
@@ -342,26 +344,26 @@ public class DevelopmentPage extends AEvoPage {
 		String customSuperBin = getTargetPath();
 
 		int row = 1;
-		sdData.add(new SelfDevRow(row++, SelfDevRow.LLM_CHECK, "curl -s http://localhost:11434/api/tags", llmModel, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
-		sdData.add(new SelfDevRow(row++, SelfDevRow.GIT_CHECK_EVO, "git -C " + localPath + " fetch origin && git -C " + localPath + " pull", localPath, repoUrl, EStatus.READY, EApp.EVO.name()));
-		sdData.add(new SelfDevRow(row++, SelfDevRow.MAVEN_CHECK_EVO, "mvn clean verify -DskipTests", mvnPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
-		sdData.add(new SelfDevRow(row++, SelfDevRow.COPY_SUPERVISOR_SRC, "cp -r " + customSuperSrc + " " + targetPath, customSuperSrc, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
-		sdData.add(new SelfDevRow(row++, SelfDevRow.BUILD_SUPERVISOR_LOCAL, "mvn clean install -pl eu.kalafatic.evolution.supervisor -am -DskipTests", customSuperBin, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
-		sdData.add(new SelfDevRow(row++, SelfDevRow.SUPERVISOR_CHECK, "java -jar " + customSuperBin + "/supervisor.jar --check", "supervisor.exe", EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
-		sdData.add(new SelfDevRow(row++, SelfDevRow.GIT_CHECK_SUPERVISOR, "git -C " + localPath + " fetch origin && git -C " + localPath + " status", localPath, repoUrl, EStatus.READY, EApp.SUPERVISOR.name()));
-		sdData.add(new SelfDevRow(row++, SelfDevRow.MAVEN_CHECK_SUPERVISOR, "mvn -v && mvn validate", mvnPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
-		sdData.add(new SelfDevRow(row++, SelfDevRow.GENOME_CHECK, "mvn clean test -pl eu.kalafatic.evolution.selfdev.genome", "supervisor.genome", EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
-		sdData.add(new SelfDevRow(row++, SelfDevRow.PERM_CHECK, "chmod -R u+rwX " + targetPath, "supervisor.fs", EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
+		sdData.add(new SelfDevRow(row++, "LLM", SelfDevRow.LLM_CHECK, "curl -s http://localhost:11434/api/tags", llmModel, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
+		sdData.add(new SelfDevRow(row++, "GIT_EVO", SelfDevRow.GIT_CHECK_EVO, "git -C " + localPath + " fetch origin && git -C " + localPath + " pull", localPath, repoUrl, EStatus.READY, EApp.EVO.name()));
+		sdData.add(new SelfDevRow(row++, "MAVEN_EVO", SelfDevRow.MAVEN_CHECK_EVO, "mvn clean verify -DskipTests", mvnPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
+		sdData.add(new SelfDevRow(row++, "COPY_SUPERVISOR", SelfDevRow.COPY_SUPERVISOR_SRC, "cp -r " + customSuperSrc + " " + targetPath, customSuperSrc, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
+		sdData.add(new SelfDevRow(row++, "BUILD_SUPERVISOR_LOCAL", SelfDevRow.BUILD_SUPERVISOR_LOCAL, "mvn clean install -pl eu.kalafatic.evolution.supervisor -am -DskipTests", customSuperBin, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
+		sdData.add(new SelfDevRow(row++, "SUPERVISOR", SelfDevRow.SUPERVISOR_CHECK, "java -jar " + customSuperBin + "/supervisor.jar --check", "supervisor.exe", EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
+		sdData.add(new SelfDevRow(row++, "GIT_SUPERVISOR", SelfDevRow.GIT_CHECK_SUPERVISOR, "git -C " + localPath + " fetch origin && git -C " + localPath + " status", localPath, repoUrl, EStatus.READY, EApp.SUPERVISOR.name()));
+		sdData.add(new SelfDevRow(row++, "MAVEN_SUPERVISOR", SelfDevRow.MAVEN_CHECK_SUPERVISOR, "mvn -v && mvn validate", mvnPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
+		sdData.add(new SelfDevRow(row++, "GENOME", SelfDevRow.GENOME_CHECK, "mvn clean test -pl eu.kalafatic.evolution.selfdev.genome", "supervisor.genome", EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
+		sdData.add(new SelfDevRow(row++, "PERMISSIONS", SelfDevRow.PERM_CHECK, "chmod -R u+rwX " + targetPath, "supervisor.fs", EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
 		String evoSourcePath = ResourceManager.getInstance().getPath(EvoPath.EVO_GIT_REPOSITORY).toString();
-		sdData.add(new SelfDevRow(row++, SelfDevRow.COPY_SOURCE, "cp -r " + evoSourcePath + " " + targetPath, evoSourcePath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
-		sdData.add(new SelfDevRow(row++, SelfDevRow.BUILD_PROJECT_EVO, "mvn clean verify -DskipTests -Plinux", targetPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
-		sdData.add(new SelfDevRow(row++, SelfDevRow.BUILD_PROJECT_SUPERVISOR, "mvn clean install -pl eu.kalafatic.evolution.supervisor -DskipTests", targetPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
-		sdData.add(new SelfDevRow(row++, SelfDevRow.EXPORT_PRODUCT_EVO, "mvn clean package -Pexport-product -DskipTests", exportPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
-		sdData.add(new SelfDevRow(row++, SelfDevRow.EXPORT_PRODUCT_SUPERVISOR, "mvn clean package -pl eu.kalafatic.evolution.supervisor -DskipTests", exportPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
-		sdData.add(new SelfDevRow(row++, SelfDevRow.START_EVO_PRODUCT_SUPERVISOR, "java -jar supervisor.jar --start-evo --path " + exportPath, exportPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
-		sdData.add(new SelfDevRow(row++, SelfDevRow.SUPERVISOR_LOOP, "java -jar supervisor.jar --loop", "supervisor.exe", EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
-		sdData.add(new SelfDevRow(row++, SelfDevRow.SELF_DEV_LOOP, "java -jar evolution.jar --self-dev-loop", "orchestrator", EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
-		sdData.add(new SelfDevRow(row++, SelfDevRow.STOP_EVO_PRODUCT_SUPERVISOR, "java -jar supervisor.jar --stop-evo", exportPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
+		sdData.add(new SelfDevRow(row++, "COPY", SelfDevRow.COPY_SOURCE, "cp -r " + evoSourcePath + " " + targetPath, evoSourcePath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
+		sdData.add(new SelfDevRow(row++, "BUILD_EVO", SelfDevRow.BUILD_PROJECT_EVO, "mvn clean verify -DskipTests -Plinux", targetPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
+		sdData.add(new SelfDevRow(row++, "BUILD_SUPERVISOR", SelfDevRow.BUILD_PROJECT_SUPERVISOR, "mvn clean install -pl eu.kalafatic.evolution.supervisor -DskipTests", targetPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
+		sdData.add(new SelfDevRow(row++, "EXPORT_EVO", SelfDevRow.EXPORT_PRODUCT_EVO, "mvn clean package -Pexport-product -DskipTests", exportPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
+		sdData.add(new SelfDevRow(row++, "EXPORT_SUPERVISOR", SelfDevRow.EXPORT_PRODUCT_SUPERVISOR, "mvn clean package -pl eu.kalafatic.evolution.supervisor -DskipTests", exportPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
+		sdData.add(new SelfDevRow(row++, "START_EVO_SUPERVISOR", SelfDevRow.START_EVO_PRODUCT_SUPERVISOR, "java -jar supervisor.jar --start-evo --path " + exportPath, exportPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
+		sdData.add(new SelfDevRow(row++, "SUPERVISOR_LOOP", SelfDevRow.SUPERVISOR_LOOP, "java -jar supervisor.jar --loop", "supervisor.exe", EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
+		sdData.add(new SelfDevRow(row++, "SELF_DEV_LOOP", SelfDevRow.SELF_DEV_LOOP, "java -jar evolution.jar --self-dev-loop", "orchestrator", EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
+		sdData.add(new SelfDevRow(row++, "STOP_EVO_SUPERVISOR", SelfDevRow.STOP_EVO_PRODUCT_SUPERVISOR, "java -jar supervisor.jar --stop-evo", exportPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
 
 		sdData.sort((r1, r2) -> Integer.compare(r1.order, r2.order));
 		selfDevTable.setInput(sdData);
@@ -505,109 +507,24 @@ public class DevelopmentPage extends AEvoPage {
 	}
 
 	private void handleActionInternal(SelfDevRow row) {
-		System.out.println("[DevelopmentPage] [ACTION_TRIGGERED] User clicked action for row: "
-				+ (row != null ? row.name : "null") + ", path=" + (row != null ? row.path : "null") + ", currentStatus="
-				+ (row != null ? row.status : "null"));
-		if (SelfDevRow.SELF_DEV_LOOP.equals(row.name)) {
-			RuntimeProjection projection = ProjectionService.getInstance().getProjection(getCurrentSessionName());
-			System.out.println(
-					"[DevelopmentPage] [SELF_DEV_LOOP] Projection current running status: " + projection.isRunning());
-			if (projection.isRunning()) {
-				System.out.println("[DevelopmentPage] [SELF_DEV_LOOP] Requesting shutdown for session: "
-						+ getCurrentSessionName());
-				OrchestratorServiceImpl.getInstance().shutdownSession(getCurrentSessionName());
-			} else {
-				System.out.println(
-						"[DevelopmentPage] [SELF_DEV_LOOP] Submitting TaskRequest to start Self-Dev Bootstrap for projectRoot: "
-								+ (projectRoot != null ? projectRoot.getAbsolutePath() : "null"));
-				TaskRequest req = new TaskRequest("Start Self-Dev Bootstrap", projectRoot);
-				req.getContext().put("orchestrator", orchestrator);
-				req.getContext().put("sessionId", getCurrentSessionName());
-				OrchestratorServiceImpl.getInstance().submit(getCurrentSessionName(), req);
-			}
-		} else if (SelfDevRow.SUPERVISOR_LOOP.equals(row.name)) {
-			System.out.println(
-					"[DevelopmentPage] [SUPERVISOR_LOOP] Controller alive: " + bootstrapController.isRunning());
-			if (bootstrapController.isRunning()) {
-				System.out.println("[DevelopmentPage] [SUPERVISOR_LOOP] Requesting stopBootstrap()");
-				bootstrapController.stopBootstrap();
-				row.status = "STOPPED";
-			} else {
-				try {
-					System.out.println("[DevelopmentPage] [SUPERVISOR_LOOP] Requesting startBootstrap()");
-					bootstrapController.startBootstrap();
-					row.status = "RUNNING";
-				} catch (Exception e) {
-					System.err.println(
-							"[DevelopmentPage] [SUPERVISOR_LOOP_ERROR] Failed to start bootstrap: " + e.getMessage());
-					row.status = "ERROR";
-				}
-			}
-			selfDevTable.refresh(row);
-		} else if (SelfDevRow.COPY_SUPERVISOR_SRC.equals(row.name)) {
-			System.out.println("[DevelopmentPage] [COPY_SUPERVISOR_SRC] Initiating background task execution.");
-			executeBackgroundTask(row, "COPY_SUPERVISOR");
-		} else if (SelfDevRow.BUILD_SUPERVISOR_LOCAL.equals(row.name)) {
-			System.out.println("[DevelopmentPage] [BUILD_SUPERVISOR_LOCAL] Initiating background task execution.");
-			executeBackgroundTask(row, "BUILD_SUPERVISOR_LOCAL");
-		} else if (SelfDevRow.COPY_SOURCE.equals(row.name)) {
-			System.out.println("[DevelopmentPage] [COPY_SOURCE] Initiating background task execution.");
-			executeBackgroundTask(row, "COPY");
-		} else if (SelfDevRow.BUILD_PROJECT_EVO.equals(row.name)) {
-			System.out.println("[DevelopmentPage] [BUILD_PROJECT_EVO] Initiating background task execution.");
-			executeBackgroundTask(row, "BUILD_EVO");
-		} else if (SelfDevRow.BUILD_PROJECT_SUPERVISOR.equals(row.name)) {
-			System.out.println("[DevelopmentPage] [BUILD_PROJECT_SUPERVISOR] Initiating background task execution.");
-			executeBackgroundTask(row, "BUILD_SUPERVISOR");
-		} else if (SelfDevRow.SUPERVISOR_CHECK.equals(row.name)) {
-			System.out.println("[DevelopmentPage] [SUPERVISOR_CHECK] Initiating background task execution.");
-			executeBackgroundTask(row, EApp.SUPERVISOR.name());
-		} else {
-			String type = switch (row.name) {
-			case SelfDevRow.GIT_CHECK_EVO -> "GIT_EVO";
-			case SelfDevRow.GIT_CHECK_SUPERVISOR -> "GIT_SUPERVISOR";
-			case SelfDevRow.MAVEN_CHECK_EVO -> "MAVEN_EVO";
-			case SelfDevRow.MAVEN_CHECK_SUPERVISOR -> "MAVEN_SUPERVISOR";
-			case SelfDevRow.LLM_CHECK -> "LLM";
-			case SelfDevRow.GENOME_CHECK -> "GENOME";
-			case SelfDevRow.PERM_CHECK -> "PERMISSIONS";
-			case SelfDevRow.EXPORT_PRODUCT_EVO -> "EXPORT_EVO";
-			case SelfDevRow.EXPORT_PRODUCT_SUPERVISOR -> "EXPORT_SUPERVISOR";
-			case SelfDevRow.START_EVO_PRODUCT_SUPERVISOR -> "START_EVO_SUPERVISOR";
-			case SelfDevRow.STOP_EVO_PRODUCT_SUPERVISOR -> "STOP_EVO_SUPERVISOR";
-			default -> null;
-			};
-			System.out
-					.println("[DevelopmentPage] [ACTION] Mapped row: '" + row.name + "' to check type: '" + type + "'");
-			if (type != null) {
-				if (type.contains(EApp.SUPERVISOR.name()) || type.equals("COPY") || type.startsWith("BUILD")
-						|| type.startsWith("EXPORT")) {
-					executeBackgroundTask(row, type);
-				} else {
-					row.status = bootstrapController.check(type);
-					System.out.println("[DevelopmentPage] [ACTION_RESULT] Check type: " + type + ", returned status: "
-							+ row.status);
-					selfDevTable.refresh(row);
-				}
-			}
-		}
+		if (row == null || row.taskId == null) return;
+		System.out.println("[DevelopmentPage] [ACTION_TRIGGERED] Executing task row: " + row.name + ", taskId=" + row.taskId);
+		executeBackgroundTask(row);
 	}
 
-	private void executeBackgroundTask(SelfDevRow row, String type) {
-		System.out.println("[DevelopmentPage] [BACKGROUND_TASK_START] Submitting background execution for type: " + type
-				+ ", row: " + row.name);
+	private void executeBackgroundTask(SelfDevRow row) {
+		if (row == null || row.taskId == null) return;
+		System.out.println("[DevelopmentPage] [BACKGROUND_TASK_START] Submitting execution for taskId: " + row.taskId + ", row: " + row.name);
 		row.status = "running";
 		selfDevTable.refresh(row);
 		new Thread(() -> {
-			String res = bootstrapController.check(type);
-			System.out.println(
-					"[DevelopmentPage] [BACKGROUND_TASK_END] Background task " + type + " finished. Result: " + res);
+			eu.kalafatic.evolution.controller.orchestration.selfdev.TaskResult res = bootstrapController.runTask(row.taskId);
+			String statusStr = res.isSuccess() ? "SUCCESS" : (res.getStatus() == eu.kalafatic.evolution.controller.orchestration.selfdev.TaskStatus.BLOCKED ? "BLOCKED: " + res.getMessage() : "FAIL: " + res.getMessage());
+			System.out.println("[DevelopmentPage] [BACKGROUND_TASK_END] Task " + row.taskId + " finished with status: " + res.getStatus() + ", message: " + res.getMessage());
 			Display.getDefault().asyncExec(() -> {
 				if (!selfDevTable.getTable().isDisposed()) {
-					row.status = res;
+					row.status = statusStr;
 					selfDevTable.refresh(row);
-					System.out.println("[DevelopmentPage] [BACKGROUND_TASK_UI_UPDATED] UI row " + row.name
-							+ " updated with status: " + res);
 				}
 			});
 		}).start();
@@ -851,8 +768,8 @@ public class DevelopmentPage extends AEvoPage {
 				bootstrapController.setDebugMode(true);
 			}
 			for (SelfDevRow row : sortedRows) {
-				System.out.println("[DevelopmentPage] [RUN_DEBUG_STEP] Starting phase: " + row.name
-						+ ", expected path/URL: " + row.path + ", currentStatus: " + row.status);
+				if (row.taskId == null) continue;
+				System.out.println("[DevelopmentPage] [RUN_DEBUG_STEP] Executing phase: " + row.name + " (taskId=" + row.taskId + ")");
 				Display.getDefault().syncExec(() -> {
 					row.status = "running";
 					selfDevTable.refresh(row);
@@ -860,117 +777,19 @@ public class DevelopmentPage extends AEvoPage {
 				String result = "";
 				boolean failed = false;
 				try {
-					switch (row.name) {
-					case SelfDevRow.GIT_CHECK_EVO:
-						result = bootstrapController.check("GIT_EVO");
-						if (result.contains("ERROR") || result.contains("fail"))
-							failed = true;
-						break;
-					case SelfDevRow.GIT_CHECK_SUPERVISOR:
-						result = bootstrapController.check("GIT_SUPERVISOR");
-						if (result.contains("ERROR") || result.contains("fail"))
-							failed = true;
-						break;
-					case SelfDevRow.COPY_SUPERVISOR_SRC:
-						result = bootstrapController.check("COPY_SUPERVISOR");
-						if (result.contains("ERROR") || result.contains("fail"))
-							failed = true;
-						break;
-					case SelfDevRow.BUILD_SUPERVISOR_LOCAL:
-						result = bootstrapController.check("BUILD_SUPERVISOR_LOCAL");
-						if (result.contains("ERROR") || result.contains("fail"))
-							failed = true;
-						break;
-
-					case SelfDevRow.MAVEN_CHECK_EVO:
-						result = bootstrapController.check("MAVEN_EVO");
-						if (result.contains("ERROR") || result.contains("fail"))
-							failed = true;
-						break;
-					case SelfDevRow.MAVEN_CHECK_SUPERVISOR:
-						result = bootstrapController.check("MAVEN_SUPERVISOR");
-						if (result.contains("ERROR") || result.contains("fail"))
-							failed = true;
-						break;
-					case SelfDevRow.SUPERVISOR_CHECK:
-						result = bootstrapController.check(EApp.SUPERVISOR.name());
-						if (result.contains("ERROR") || result.contains("fail"))
-							failed = true;
-						break;
-					case SelfDevRow.LLM_CHECK:
-						result = bootstrapController.check("LLM");
-						if (result.contains("ERROR") || result.contains("fail"))
-							failed = true;
-						break;
-					case SelfDevRow.GENOME_CHECK:
-						result = bootstrapController.check("GENOME");
-						if (result.contains("ERROR") || result.contains("fail"))
-							failed = true;
-						break;
-					case SelfDevRow.PERM_CHECK:
-						result = bootstrapController.check("PERMISSIONS");
-						if (result.contains("ERROR") || result.contains("fail"))
-							failed = true;
-						break;
-					case SelfDevRow.COPY_SOURCE:
-						result = bootstrapController.check("COPY");
-						if (result.contains("ERROR") || result.contains("fail"))
-							failed = true;
-						break;
-					case SelfDevRow.BUILD_PROJECT_EVO:
-						result = bootstrapController.check("BUILD_EVO");
-						if (result.contains("ERROR") || result.contains("fail"))
-							failed = true;
-						break;
-					case SelfDevRow.BUILD_PROJECT_SUPERVISOR:
-						result = bootstrapController.check("BUILD_SUPERVISOR");
-						if (result.contains("ERROR") || result.contains("fail"))
-							failed = true;
-						break;
-					case SelfDevRow.EXPORT_PRODUCT_EVO:
-						result = bootstrapController.check("EXPORT_EVO");
-						if (result.contains("ERROR") || result.contains("fail"))
-							failed = true;
-						break;
-					case SelfDevRow.EXPORT_PRODUCT_SUPERVISOR:
-						result = bootstrapController.check("EXPORT_SUPERVISOR");
-						if (result.contains("ERROR") || result.contains("fail"))
-							failed = true;
-						break;
-					case SelfDevRow.START_EVO_PRODUCT_SUPERVISOR:
-						result = bootstrapController.check("START_EVO_SUPERVISOR");
-						if (result.contains("ERROR") || result.contains("fail"))
-							failed = true;
-						break;
-					case SelfDevRow.STOP_EVO_PRODUCT_SUPERVISOR:
-						result = bootstrapController.check("STOP_EVO_SUPERVISOR");
-						if (result.contains("ERROR") || result.contains("fail"))
-							failed = true;
-						break;
-					case SelfDevRow.SUPERVISOR_LOOP:
-						bootstrapController.startBootstrap();
-						result = "RUNNING";
-						break;
-					case SelfDevRow.SELF_DEV_LOOP:
-						Display.getDefault().syncExec(() -> {
-							RuntimeProjection projection = ProjectionService.getInstance()
-									.getProjection(getCurrentSessionName());
-							if (projection.isRunning()) {
-								OrchestratorServiceImpl.getInstance().shutdownSession(getCurrentSessionName());
-							}
-							TaskRequest req = new TaskRequest("Start Self-Dev Bootstrap", projectRoot);
-							req.getContext().put("orchestrator", orchestrator);
-							req.getContext().put("sessionId", getCurrentSessionName());
-							req.getContext().put("debug", true);
-							req.getContext().put("mode", "DEBUG");
-							OrchestratorServiceImpl.getInstance().submit(getCurrentSessionName(), req);
-						});
-						result = "RUNNING";
-						break;
+					eu.kalafatic.evolution.controller.orchestration.selfdev.TaskResult taskRes = bootstrapController.runTask(row.taskId);
+					if (taskRes.isSuccess()) {
+						result = "SUCCESS";
+					} else if (taskRes.getStatus() == eu.kalafatic.evolution.controller.orchestration.selfdev.TaskStatus.BLOCKED) {
+						result = "BLOCKED: " + taskRes.getMessage();
+						failed = true;
+					} else {
+						result = "FAIL: " + taskRes.getMessage();
+						failed = true;
 					}
 				} catch (Exception e) {
 					System.err.println("[DevelopmentPage] [RUN_DEBUG_STEP_ERROR] Exception in execution of phase "
-							+ row.name + ": " + e.getMessage());
+							+ row.name + " (" + row.taskId + "): " + e.getMessage());
 					e.printStackTrace();
 					result = "ERROR: " + e.getMessage();
 					failed = true;

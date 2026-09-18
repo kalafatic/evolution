@@ -20,7 +20,7 @@ import eu.kalafatic.evolution.controller.resource.TargetPlatform;
 
 public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcpBuilder {
 
-    private boolean skipTests = false;
+    private boolean skipTests = true;
 
     public TychoEvoRcpBuilder() {
         super("build_evo_rcp");

@@ -95,6 +95,7 @@ public class MavenBuildExecutor {
             log("[MAVEN][PROCESS] starting");
             Process process = pb.start();
             long pid = process.pid();
+            log("[MAVEN]\ntaskId=" + taskId + "\npid=" + pid + "\nworkingDirectory=" + workingDir.getAbsolutePath() + "\ncommand=" + fullCommandStr);
             log("[MAVEN][PROCESS] started pid=" + pid);
 
             // Close stdin immediately to prevent process blocking on unclosed input pipe
