@@ -262,11 +262,14 @@ public class DatasetEditorGroup extends AEvoGroup {
             default -> "LOCAL";
         };
         String customOutputDir = outputDirText.getText().trim();
+        File targetDatasetDir = eu.kalafatic.evolution.controller.tools.DatasetAcquisitionTool.resolveDatasetOutputDir(customOutputDir, repo);
+        targetDatasetDir.mkdirs();
+        String resolvedOutputDir = targetDatasetDir.getAbsolutePath();
 
         String orchId = getOrchestratorId();
         OrchestrationStatusManager.getInstance().updateStatus(orchId, 0.1, "Downloading dataset " + repo + " (" + split + ")...");
 
-        reportArea.setText("Downloading dataset " + repo + " (" + split + ") into " + customOutputDir + "...\n");
+        reportArea.setText("Downloading dataset " + repo + " (" + split + ") into " + resolvedOutputDir + "...\n");
 
         int port = getServerPort();
         final long finalMaxBytes = maxBytes;
@@ -279,7 +282,7 @@ public class DatasetEditorGroup extends AEvoGroup {
                 req.put("maxSamples", Long.parseLong(samples));
                 req.put("maxBytes", finalMaxBytes);
                 req.put("targetUsableBytes", finalMaxBytes);
-                req.put("outputDir", customOutputDir);
+                req.put("outputDir", resolvedOutputDir);
                 req.put("downloadOnly", true);
 
                 OrchestrationStatusManager.getInstance().updateStatus(orchId, 0.4, "Fetching dataset chunks for " + repo + "...");
@@ -445,9 +448,13 @@ public class DatasetEditorGroup extends AEvoGroup {
         String orchId = getOrchestratorId();
         OrchestrationStatusManager.getInstance().updateStatus(orchId, 0.1, "Starting dataset preparation for " + repo + "...");
 
-        reportArea.setText("Starting dataset preparation pipeline for " + repo + " (max " + sizeMbStr + " MB)...\n");
-
         String customOutputDir = outputDirText.getText().trim();
+        File targetDatasetDir = eu.kalafatic.evolution.controller.tools.DatasetAcquisitionTool.resolveDatasetOutputDir(customOutputDir, repo);
+        targetDatasetDir.mkdirs();
+        String resolvedOutputDir = targetDatasetDir.getAbsolutePath();
+
+        reportArea.setText("Starting dataset preparation pipeline for " + repo + " (max " + sizeMbStr + " MB) into " + resolvedOutputDir + "...\n");
+
         int port = getServerPort();
         final long finalMaxBytes = maxBytes;
         new Thread(() -> {
@@ -459,7 +466,7 @@ public class DatasetEditorGroup extends AEvoGroup {
                 req.put("maxSamples", Long.parseLong(samples));
                 req.put("maxBytes", finalMaxBytes);
                 req.put("targetUsableBytes", finalMaxBytes);
-                req.put("outputDir", customOutputDir);
+                req.put("outputDir", resolvedOutputDir);
                 req.put("minQuality", 0.5);
 
                 OrchestrationStatusManager.getInstance().updateStatus(orchId, 0.5, "Building EVO dataset artifact (.evodata)...");
@@ -574,6 +581,7 @@ public class DatasetEditorGroup extends AEvoGroup {
             return sb.toString();
         }
     }
+
 
     @Override
     protected void refreshUI() {}

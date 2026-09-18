@@ -42,6 +42,29 @@ public class DatasetAcquisitionTool implements ITool {
         return NAME;
     }
 
+    public static File resolveDatasetOutputDir(String baseOutputDir, String repo) {
+        if (baseOutputDir == null || baseOutputDir.trim().isEmpty()) {
+            baseOutputDir = new File(System.getProperty("user.home"), "workspace/forge-input").getAbsolutePath();
+        }
+        File baseDir = new File(baseOutputDir.trim());
+        if (repo == null || repo.trim().isEmpty()) {
+            return baseDir;
+        }
+
+        String shortName = repo.trim();
+        int lastSlash = shortName.lastIndexOf('/');
+        if (lastSlash >= 0 && lastSlash < shortName.length() - 1) {
+            shortName = shortName.substring(lastSlash + 1);
+        }
+        shortName = shortName.trim();
+
+        if (baseDir.getName().equalsIgnoreCase(shortName)) {
+            return baseDir;
+        }
+
+        return new File(baseDir, shortName);
+    }
+
     @Override
     public String execute(String command, File workingDir, TaskContext context) throws Exception {
         JSONObject params = new JSONObject();
