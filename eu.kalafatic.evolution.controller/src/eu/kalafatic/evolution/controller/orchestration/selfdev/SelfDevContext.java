@@ -77,8 +77,25 @@ public class SelfDevContext {
         this.exportDirectory = resolvePath(runDir, "export");
         this.runtimeDirectory = resolvePath(runDir, "runtime");
         this.logDirectory = resolvePath(runDir, "logs");
-        this.supervisorDirectory = this.resourceManager.getPath(EvoPath.SUPERVISOR_SOURCE).toFile().getAbsoluteFile().toPath().normalize().toFile();
-        this.genomeDirectory = this.resourceManager.getPath(EvoPath.GENOME).toFile().getAbsoluteFile().toPath().normalize().toFile();
+        File runModuleSup = new File(this.preparedReactorDirectory, "eu.kalafatic.evolution.supervisor");
+        File repoModuleSup = new File(this.repositoryRoot, "eu.kalafatic.evolution.supervisor");
+        if (runModuleSup.exists()) {
+            this.supervisorDirectory = runModuleSup.getAbsoluteFile().toPath().normalize().toFile();
+        } else if (repoModuleSup.exists()) {
+            this.supervisorDirectory = repoModuleSup.getAbsoluteFile().toPath().normalize().toFile();
+        } else {
+            this.supervisorDirectory = this.resourceManager.getPath(EvoPath.SUPERVISOR_SOURCE).toFile().getAbsoluteFile().toPath().normalize().toFile();
+        }
+
+        File runModuleGenome = new File(this.preparedReactorDirectory, "eu.kalafatic.evolution.selfdev.genome");
+        File repoModuleGenome = new File(this.repositoryRoot, "eu.kalafatic.evolution.selfdev.genome");
+        if (runModuleGenome.exists()) {
+            this.genomeDirectory = runModuleGenome.getAbsoluteFile().toPath().normalize().toFile();
+        } else if (repoModuleGenome.exists()) {
+            this.genomeDirectory = repoModuleGenome.getAbsoluteFile().toPath().normalize().toFile();
+        } else {
+            this.genomeDirectory = this.resourceManager.getPath(EvoPath.GENOME).toFile().getAbsoluteFile().toPath().normalize().toFile();
+        }
 
         initTargetPlatform();
         ensureDirectories();
