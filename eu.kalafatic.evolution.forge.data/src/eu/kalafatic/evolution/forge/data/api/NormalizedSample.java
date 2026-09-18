@@ -114,22 +114,63 @@ public class NormalizedSample {
 
     public void setText(String text) {
         this.text = text;
-        this.hash = null;
+        recalculateCountsAndHash();
     }
 
     public void setInstruction(String instruction) {
         this.instruction = instruction;
-        this.hash = null;
+        recalculateCountsAndHash();
     }
 
     public void setResponse(String response) {
         this.response = response;
-        this.hash = null;
+        recalculateCountsAndHash();
     }
 
     public String toFullText() {
+        if (type == TrainingSampleType.INSTRUCTION && (instruction != null || response != null)) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("### Instruction:\n");
+            if (instruction != null) sb.append(instruction.trim()).append("\n");
+            sb.append("\n### Response:\n");
+            if (response != null) sb.append(response.trim());
+            return sb.toString().trim();
+        }
+        if ((type == TrainingSampleType.CONVERSATION || type == TrainingSampleType.CHAT)
+                && conversationMessages != null && !conversationMessages.isEmpty()) {
+            StringBuilder sb = new StringBuilder();
+            for (NormalizedMessage m : conversationMessages) {
+                if (m != null) {
+                    String role = m.getRole() != null ? m.getRole() : "user";
+                    sb.append("### ").append(role).append(":\n")
+                      .append(m.getText() != null ? m.getText().trim() : "")
+                      .append("\n\n");
+                }
+            }
+            return sb.toString().trim();
+        }
+        if (type == TrainingSampleType.CHAT && messages != null && !messages.isEmpty()) {
+            StringBuilder sb = new StringBuilder();
+            for (Message m : messages) {
+                if (m != null) {
+                    String role = m.getRole() != null ? m.getRole() : "user";
+                    sb.append("### ").append(role).append(":\n")
+                      .append(m.getContent() != null ? m.getContent().trim() : "")
+                      .append("\n\n");
+                }
+            }
+            return sb.toString().trim();
+        }
         if (text != null && !text.isEmpty()) {
             return text;
+        }
+        if (instruction != null || response != null) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("### Instruction:\n");
+            if (instruction != null) sb.append(instruction.trim()).append("\n");
+            sb.append("\n### Response:\n");
+            if (response != null) sb.append(response.trim());
+            return sb.toString().trim();
         }
         if (conversationMessages != null && !conversationMessages.isEmpty()) {
             StringBuilder sb = new StringBuilder();
@@ -141,12 +182,6 @@ public class NormalizedSample {
                       .append("\n");
                 }
             }
-            return sb.toString().trim();
-        }
-        if (instruction != null || response != null) {
-            StringBuilder sb = new StringBuilder();
-            if (instruction != null) sb.append(instruction).append("\n");
-            if (response != null) sb.append(response);
             return sb.toString().trim();
         }
         if (messages != null && !messages.isEmpty()) {

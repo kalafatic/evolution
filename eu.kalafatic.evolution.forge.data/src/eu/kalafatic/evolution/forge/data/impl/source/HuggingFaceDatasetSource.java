@@ -485,33 +485,49 @@ public class HuggingFaceDatasetSource implements DatasetSource {
         // 3. Instruction / Input / Output or Response
         if (row.has("instruction") || row.has("response") || row.has("output") || row.has("input")) {
             detectedSchemaInfo = "instruction / input / output";
-            String inst = row.optString("instruction", row.optString("input", ""));
-            String input = row.has("instruction") ? row.optString("input", "") : "";
-            String resp = row.optString("response", row.optString("output", ""));
-            if (!input.trim().isEmpty() && !inst.equals(input)) {
-                inst = inst + "\n\nContext:\n" + input.trim();
+            String inst = row.optString("instruction", "").trim();
+            String input = row.optString("input", "").trim();
+            String resp = row.optString("response", row.optString("output", "")).trim();
+
+            if (!input.isEmpty() && !inst.isEmpty() && !inst.equals(input)) {
+                inst = inst + "\n\nContext:\n" + input;
+            } else if (inst.isEmpty() && !input.isEmpty()) {
+                inst = input;
             }
-            if (!inst.trim().isEmpty() || !resp.trim().isEmpty()) {
-                return NormalizedSample.createInstructionSample(inst.trim(), resp.trim(), getSourceName());
+
+            // Require BOTH non-empty instruction AND non-empty response
+            if (!inst.isEmpty() && !resp.isEmpty()) {
+                return NormalizedSample.createInstructionSample(inst, resp, getSourceName());
+            } else {
+                System.err.println("[HF-SOURCE] Rejected partial instruction row for missing instruction or response: fields=" + row.keySet());
+                return null;
             }
         }
 
         // 4. Prompt / Response or Prompt / Completion
         if (row.has("prompt") && (row.has("response") || row.has("completion") || row.has("chosen"))) {
             detectedSchemaInfo = "prompt / response";
-            String p = row.optString("prompt", "");
-            String r = row.optString("response", row.optString("completion", row.optString("chosen", "")));
-            if (!p.trim().isEmpty() || !r.trim().isEmpty()) {
-                return NormalizedSample.createInstructionSample(p.trim(), r.trim(), getSourceName());
+            String p = row.optString("prompt", "").trim();
+            String r = row.optString("response", row.optString("completion", row.optString("chosen", ""))).trim();
+            if (!p.isEmpty() && !r.isEmpty()) {
+                return NormalizedSample.createInstructionSample(p, r, getSourceName());
+            } else {
+                System.err.println("[HF-SOURCE] Rejected partial prompt row: fields=" + row.keySet());
+                return null;
             }
         }
 
         // 5. Question / Answer
         if (row.has("question") && row.has("answer")) {
             detectedSchemaInfo = "question / answer";
-            String q = row.optString("question", "");
-            String a = row.optString("answer", "");
-            return NormalizedSample.createInstructionSample("Q: " + q.trim(), a.trim(), getSourceName());
+            String q = row.optString("question", "").trim();
+            String a = row.optString("answer", "").trim();
+            if (!q.isEmpty() && !a.isEmpty()) {
+                return NormalizedSample.createInstructionSample(q, a, getSourceName());
+            } else {
+                System.err.println("[HF-SOURCE] Rejected partial Q&A row: fields=" + row.keySet());
+                return null;
+            }
         }
 
         // 6. Direct text schema keys
@@ -540,26 +556,20 @@ public class HuggingFaceDatasetSource implements DatasetSource {
             }
         }
 
-        // 8. Nested JSONObject inspection and Fallback key inspection
+        // 8. Nested JSONObject inspection (do NOT blindly accept arbitrary string fields as text)
         List<String> keys = new ArrayList<>(row.keySet());
-        detectedSchemaInfo = "keys: " + keys;
         for (String key : keys) {
             Object val = row.get(key);
-            if (val instanceof String s && !s.trim().isEmpty()) {
-                return NormalizedSample.createTextSample(s.trim(), getSourceName());
-            } else if (val instanceof JSONObject nestedObj) {
+            if (val instanceof JSONObject nestedObj) {
                 NormalizedSample nestedSample = extractSampleFromRow(nestedObj);
                 if (nestedSample != null) {
                     return nestedSample;
                 }
-            } else if (val instanceof JSONArray arr && arr.length() > 0) {
-                List<NormalizedSample.Message> msgList = parseMessagesArray(arr, "role", "content");
-                if (!msgList.isEmpty()) {
-                    return NormalizedSample.createChatSample(msgList, getSourceName());
-                }
             }
         }
 
+        detectedSchemaInfo = "UNKNOWN_SCHEMA: " + row.keySet();
+        System.err.println("[HF-SOURCE] Rejected row with unhandled/unknown schema: fields=" + row.keySet());
         return null;
     }
 

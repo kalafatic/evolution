@@ -425,8 +425,11 @@ public class LLMDarwinEngine extends ADarwinEngine {
 
 		// The compiled .evodata is the ONLY input required by the EVO LLM training process
 		StringBuilder corpusBuilder = new StringBuilder();
-		if (prepResult != null && prepResult.getArtifact() != null && prepResult.getArtifact().getSamples() != null) {
-			for (eu.kalafatic.evolution.forge.data.api.NormalizedSample sample : prepResult.getArtifact().getSamples()) {
+		List<eu.kalafatic.evolution.forge.data.api.NormalizedSample> normSamples = (prepResult != null && prepResult.getArtifact() != null && prepResult.getArtifact().getSamples() != null)
+				? prepResult.getArtifact().getSamples() : Collections.emptyList();
+
+		if (!normSamples.isEmpty()) {
+			for (eu.kalafatic.evolution.forge.data.api.NormalizedSample sample : normSamples) {
 				appendBounded(corpusBuilder, sample.toFullText(), MAX_CORPUS_CHARS);
 			}
 		}
@@ -682,7 +685,7 @@ public class LLMDarwinEngine extends ADarwinEngine {
 					// EvoLlmModel.
 					boolean nativeSuccess = false;
 					try {
-						CandidateTrainingResult trainingResult = runOfflineTraining(cleanCorpus, config, modelSource);
+						CandidateTrainingResult trainingResult = runOfflineTraining(cleanCorpus, normSamples, config, modelSource);
 						nativeLoss = trainingResult.loss;
 						paramCount = trainingResult.paramCount;
 						nativeFitness = trainingResult.fitness;
@@ -986,21 +989,38 @@ public class LLMDarwinEngine extends ADarwinEngine {
 		// Reconstruct/retrain the winning candidate for final export
 		context.log("[FORGE] Reconstructing selected global winner for final export.");
 		SimpleBPETokenizer finalTokenizer = modelSource.getTokenizer(cleanCorpus, overallWinner.config.vocabSize);
-		List<Integer> allTokens = finalTokenizer.encode(cleanCorpus);
-		if (allTokens.size() > MAX_TOKENS_LIMIT) {
-			List<Integer> truncated = new ArrayList<>(allTokens.subList(0, MAX_TOKENS_LIMIT));
-			allTokens.clear();
-			allTokens = truncated;
-		}
 		DatasetBuilder finalDatasetBuilder = new DatasetBuilder();
 		int finalSeqLen = overallWinner.config.maxSeqLen;
-		int finalStride = Math.max(1, finalSeqLen / 2);
-		List<DatasetBuilder.Sample> samples = finalDatasetBuilder.buildSlidingWindow(allTokens, finalSeqLen,
-				finalStride);
+
+		List<eu.kalafatic.evolution.forge.data.api.TrainingSample> samples;
+		if (normSamples != null && !normSamples.isEmpty()) {
+			samples = finalDatasetBuilder.buildTrainingSamples(normSamples, finalTokenizer, finalSeqLen);
+		} else {
+			List<Integer> allTokens = finalTokenizer.encode(cleanCorpus);
+			if (allTokens.size() > MAX_TOKENS_LIMIT) {
+				allTokens = new ArrayList<>(allTokens.subList(0, MAX_TOKENS_LIMIT));
+			}
+			int finalStride = Math.max(1, finalSeqLen / 2);
+			List<DatasetBuilder.Sample> slidingSamples = finalDatasetBuilder.buildSlidingWindow(allTokens, finalSeqLen, finalStride);
+			samples = new ArrayList<>();
+			for (DatasetBuilder.Sample s : slidingSamples) {
+				int len = s.input.size();
+				int[] inputIds = new int[len];
+				int[] labels = new int[len];
+				boolean[] lossMask = new boolean[len];
+				float[] attMask = new float[len];
+				for (int i = 0; i < len; i++) {
+					inputIds[i] = s.input.get(i);
+					labels[i] = (i + 1 < len) ? s.input.get(i + 1) : (s.target != null ? s.target : s.input.get(i));
+					lossMask[i] = true;
+					attMask[i] = 1.0f;
+				}
+				samples.add(new eu.kalafatic.evolution.forge.data.api.TrainingSample(inputIds, labels, lossMask, attMask));
+			}
+		}
+
 		if (samples.size() > MAX_TRAINING_SAMPLES) {
-			List<DatasetBuilder.Sample> truncated = new ArrayList<>(samples.subList(0, MAX_TRAINING_SAMPLES));
-			samples.clear();
-			samples = truncated;
+			samples = new ArrayList<>(samples.subList(0, MAX_TRAINING_SAMPLES));
 		}
 
 		// Build final model and save configuration & tokenizer
@@ -1012,7 +1032,7 @@ public class LLMDarwinEngine extends ADarwinEngine {
 
 		EvoLlmTrainer trainer = new EvoLlmTrainer(winningModel);
 		trainer.setProgressListener((epoch, totalEpochs, sampleIndex, totalSamples, currentLoss) -> {
-			int logInterval = Math.max(1, totalSamples / 10);
+			int logInterval = Math.max(1, Math.max(1, totalSamples / 10));
 			if (sampleIndex % logInterval == 0 || sampleIndex == totalSamples) {
 				double pct = (double) sampleIndex / totalSamples * 100.0;
 				context.log(String.format(
@@ -1257,33 +1277,46 @@ public class LLMDarwinEngine extends ADarwinEngine {
 	/**
 	 * Helper method to train custom tokenizer and model in Java cleanly.
 	 */
-	private CandidateTrainingResult runOfflineTraining(String cleanCorpus, LlmConfig config, ForgeModelSource modelSource) {
+	private CandidateTrainingResult runOfflineTraining(String cleanCorpus, List<eu.kalafatic.evolution.forge.data.api.NormalizedSample> normSamples, LlmConfig config, ForgeModelSource modelSource) {
 		SimpleBPETokenizer tokenizer = null;
-		List<Integer> allTokens = null;
-		List<DatasetBuilder.Sample> samples = null;
-		List<DatasetBuilder.Sample> trainSamples = null;
-		List<DatasetBuilder.Sample> valSamples = null;
+		List<eu.kalafatic.evolution.forge.data.api.TrainingSample> samples = null;
+		List<eu.kalafatic.evolution.forge.data.api.TrainingSample> trainSamples = null;
+		List<eu.kalafatic.evolution.forge.data.api.TrainingSample> valSamples = null;
 		EvoLlmModel model = null;
 		EvoLlmTrainer trainer = null;
 		try {
 			tokenizer = modelSource != null ? modelSource.getTokenizer(cleanCorpus, config.vocabSize) : trainTokenizerWithFullVocab(cleanCorpus, config.vocabSize);
-			allTokens = tokenizer.encode(cleanCorpus);
-
-			if (allTokens.size() > MAX_TOKENS_LIMIT) {
-				List<Integer> truncated = new ArrayList<>(allTokens.subList(0, MAX_TOKENS_LIMIT));
-				allTokens.clear();
-				allTokens = truncated;
-			}
-
 			DatasetBuilder datasetBuilder = new DatasetBuilder();
 			int seqLen = config.maxSeqLen;
-			int stride = Math.max(1, seqLen / 2);
-			samples = datasetBuilder.buildSlidingWindow(allTokens, seqLen, stride);
+
+			if (normSamples != null && !normSamples.isEmpty()) {
+				samples = datasetBuilder.buildTrainingSamples(normSamples, tokenizer, seqLen);
+			} else {
+				List<Integer> allTokens = tokenizer.encode(cleanCorpus);
+				if (allTokens.size() > MAX_TOKENS_LIMIT) {
+					allTokens = new ArrayList<>(allTokens.subList(0, MAX_TOKENS_LIMIT));
+				}
+				int stride = Math.max(1, seqLen / 2);
+				List<DatasetBuilder.Sample> slidingSamples = datasetBuilder.buildSlidingWindow(allTokens, seqLen, stride);
+				samples = new ArrayList<>();
+				for (DatasetBuilder.Sample s : slidingSamples) {
+					int len = s.input.size();
+					int[] inputIds = new int[len];
+					int[] labels = new int[len];
+					boolean[] lossMask = new boolean[len];
+					float[] attMask = new float[len];
+					for (int i = 0; i < len; i++) {
+						inputIds[i] = s.input.get(i);
+						labels[i] = (i + 1 < len) ? s.input.get(i + 1) : (s.target != null ? s.target : s.input.get(i));
+						lossMask[i] = true;
+						attMask[i] = 1.0f;
+					}
+					samples.add(new eu.kalafatic.evolution.forge.data.api.TrainingSample(inputIds, labels, lossMask, attMask));
+				}
+			}
 
 			if (samples.size() > MAX_TRAINING_SAMPLES) {
-				List<DatasetBuilder.Sample> truncated = new ArrayList<>(samples.subList(0, MAX_TRAINING_SAMPLES));
-				samples.clear();
-				samples = truncated;
+				samples = new ArrayList<>(samples.subList(0, MAX_TRAINING_SAMPLES));
 			}
 
 			// Bounded, deterministic 80/20 train/validation split
@@ -1337,33 +1370,29 @@ public class LLMDarwinEngine extends ADarwinEngine {
 			double valLossSum = 0;
 			int valCount = 0;
 			if (!valSamples.isEmpty()) {
-				for (DatasetBuilder.Sample valSample : valSamples) {
-					int[] inputIds = valSample.input.stream().mapToInt(i -> i).toArray();
-					Tensor logits = model.forward(inputIds);
+				for (eu.kalafatic.evolution.forge.data.api.TrainingSample valSample : valSamples) {
+					Tensor logits = model.forward(valSample.inputIds, valSample.getAttentionMaskAsFloat());
 					float[] logitsData = logits.getData();
-					int sLen = (int) logits.getShape()[0];
+					int sLen = valSample.inputIds.length;
 					int vSize = (int) logits.getShape()[1];
-					int lastOffset = (sLen - 1) * vSize;
-					int target = valSample.target;
 
-					// Softmax
-					float max = Float.NEGATIVE_INFINITY;
-					for (int i = 0; i < vSize; i++) {
-						if (logitsData[lastOffset + i] > max)
-							max = logitsData[lastOffset + i];
-					}
-					float sum = 0;
-					float[] probs = new float[vSize];
-					for (int i = 0; i < vSize; i++) {
-						probs[i] = (float) Math.exp(logitsData[lastOffset + i] - max);
-						sum += probs[i];
-					}
-					for (int i = 0; i < vSize; i++)
-						probs[i] /= sum;
+					for (int t = 0; t < sLen; t++) {
+						if (!valSample.lossMask[t]) continue;
+						int offset = t * vSize;
+						int target = valSample.labels[t];
 
-					double sampleLoss = -Math.log(Math.max(probs[target], 1e-10));
-					valLossSum += sampleLoss;
-					valCount++;
+						float max = Float.NEGATIVE_INFINITY;
+						for (int i = 0; i < vSize; i++) {
+							if (logitsData[offset + i] > max) max = logitsData[offset + i];
+						}
+						float sum = 0;
+						for (int i = 0; i < vSize; i++) sum += (float) Math.exp(logitsData[offset + i] - max);
+						float logSumExp = max + (float) Math.log(sum);
+
+						double sampleLoss = (logSumExp - logitsData[offset + target]);
+						valLossSum += sampleLoss;
+						valCount++;
+					}
 				}
 			}
 
@@ -1383,8 +1412,6 @@ public class LLMDarwinEngine extends ADarwinEngine {
 
 			return new CandidateTrainingResult(valLoss, paramCount, fitness);
 		} finally {
-			if (allTokens != null)
-				allTokens.clear();
 			if (samples != null)
 				samples.clear();
 			if (trainSamples != null)
@@ -1392,7 +1419,6 @@ public class LLMDarwinEngine extends ADarwinEngine {
 			if (valSamples != null)
 				valSamples.clear();
 			tokenizer = null;
-			allTokens = null;
 			samples = null;
 			trainSamples = null;
 			valSamples = null;

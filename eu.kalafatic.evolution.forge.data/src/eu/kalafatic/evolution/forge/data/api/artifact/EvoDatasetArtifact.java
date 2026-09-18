@@ -203,9 +203,14 @@ public class EvoDatasetArtifact {
                                 JSONObject json = new JSONObject(trimmed);
                                 NormalizedSample sample = new NormalizedSample();
                                 sample.setType(TrainingSampleType.fromString(json.optString("type", "TEXT")));
-                                sample.setText(json.optString("text", ""));
-                                sample.setInstruction(json.optString("instruction", null));
-                                sample.setResponse(json.optString("response", null));
+                                String inst = json.has("instruction") && !json.isNull("instruction") ? json.optString("instruction") : null;
+                                String resp = json.has("response") && !json.isNull("response") ? json.optString("response") : null;
+                                if (inst != null || resp != null) {
+                                    sample.setInstruction(inst);
+                                    sample.setResponse(resp);
+                                } else {
+                                    sample.setText(json.optString("text", ""));
+                                }
                                 if (json.has("conversationId") && !json.isNull("conversationId")) {
                                     sample.setConversationId(json.optString("conversationId"));
                                 }
