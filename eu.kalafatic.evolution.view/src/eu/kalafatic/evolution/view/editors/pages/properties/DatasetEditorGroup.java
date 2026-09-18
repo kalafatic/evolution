@@ -21,10 +21,13 @@ import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
 import eu.kalafatic.utils.factories.GUIFactory;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 
 /**
  * Dataset Editor UI Panel on Forge Models / Properties Page for managing,
- * previewing, and preparing local and Hugging Face training datasets.
+ * previewing, preparing, and exporting local and Hugging Face training datasets.
  */
 public class DatasetEditorGroup extends AEvoGroup {
 
@@ -72,7 +75,15 @@ public class DatasetEditorGroup extends AEvoGroup {
 
         GUIFactory.INSTANCE.createLabel(group, "WHERE (Predefined Target Preset):");
         Combo presetCombo = new Combo(group, SWT.DROP_DOWN | SWT.READ_ONLY);
-        presetCombo.setItems(new String[] { "Salesforce/wikitext (Wikitext-2)", "HuggingFaceFW/fineweb (FineWeb-10B)", "HuggingFaceH4/ultrachat_200k (UltraChat)", "bigcode/the-stack (Code Stack)", "gsm8k (GSM8K Math Proofs)", "Custom / Manual Entry..." });
+        presetCombo.setItems(new String[] {
+            "Salesforce/wikitext (Wikitext-2)",
+            "tatsu-lab/alpaca (Alpaca Instruction Tuning)",
+            "HuggingFaceFW/fineweb (FineWeb-10B)",
+            "HuggingFaceH4/ultrachat_200k (UltraChat)",
+            "bigcode/the-stack (Code Stack)",
+            "gsm8k (GSM8K Math Proofs)",
+            "Custom / Manual Entry..."
+        });
         presetCombo.select(0);
         presetCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
@@ -85,12 +96,13 @@ public class DatasetEditorGroup extends AEvoGroup {
             public void widgetSelected(SelectionEvent e) {
                 int idx = presetCombo.getSelectionIndex();
                 switch (idx) {
-                    case 0: repoText.setText("wikitext"); break;
-                    case 1: repoText.setText("HuggingFaceFW/fineweb"); break;
-                    case 2: repoText.setText("HuggingFaceH4/ultrachat_200k"); break;
-                    case 3: repoText.setText("bigcode/the-stack"); break;
-                    case 4: repoText.setText("gsm8k"); break;
-                    default: break;
+                    case 0 -> repoText.setText("wikitext");
+                    case 1 -> repoText.setText("tatsu-lab/alpaca");
+                    case 2 -> repoText.setText("HuggingFaceFW/fineweb");
+                    case 3 -> repoText.setText("HuggingFaceH4/ultrachat_200k");
+                    case 4 -> repoText.setText("bigcode/the-stack");
+                    case 5 -> repoText.setText("gsm8k");
+                    default -> {}
                 }
             }
         });
@@ -152,7 +164,7 @@ public class DatasetEditorGroup extends AEvoGroup {
         deduplicateCheck.setSelection(true);
 
         Composite btnBar = toolkit.createComposite(group);
-        btnBar.setLayout(new GridLayout(5, false));
+        btnBar.setLayout(new GridLayout(6, false));
         GridData gdBtn = new GridData(SWT.FILL, SWT.CENTER, true, false);
         gdBtn.horizontalSpan = 2;
         btnBar.setLayoutData(gdBtn);
@@ -178,6 +190,14 @@ public class DatasetEditorGroup extends AEvoGroup {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 handlePrepareDataset();
+            }
+        });
+
+        Button exportEvodataBtn = GUIFactory.INSTANCE.createButton(btnBar, "Export to .evodata");
+        exportEvodataBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                handleExportEvodata();
             }
         });
 
@@ -246,6 +266,36 @@ public class DatasetEditorGroup extends AEvoGroup {
         return "default";
     }
 
+    private long calculateDirectoryOrFileSize(File fileOrDir) {
+        if (!fileOrDir.exists()) return 0L;
+        if (fileOrDir.isFile()) return fileOrDir.length();
+        long total = 0L;
+        File[] files = fileOrDir.listFiles();
+        if (files != null) {
+            for (File f : files) {
+                total += calculateDirectoryOrFileSize(f);
+            }
+        }
+        return total;
+    }
+
+    private int countDataFiles(File dir) {
+        if (!dir.exists()) return 0;
+        if (dir.isFile()) return 1;
+        int count = 0;
+        File[] files = dir.listFiles();
+        if (files != null) {
+            for (File f : files) {
+                if (f.isDirectory()) {
+                    count += countDataFiles(f);
+                } else if (!f.getName().startsWith(".")) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
     private void handleDownloadDataset() {
         String repo = repoText.getText().trim();
         String split = splitText.getText().trim();
@@ -293,7 +343,29 @@ public class DatasetEditorGroup extends AEvoGroup {
 
                 Display.getDefault().asyncExec(() -> {
                     if (!reportArea.isDisposed()) {
-                        reportArea.setText("DATASET DOWNLOAD RESULT:\n" + res);
+                        File downloadedDir = targetDatasetDir;
+                        long actualBytesOnDisk = calculateDirectoryOrFileSize(downloadedDir);
+                        double actualMbOnDisk = actualBytesOnDisk / (1024.0 * 1024.0);
+                        int dataFiles = countDataFiles(downloadedDir);
+
+                        // Use actual properties in UI
+                        repoText.setText(repo);
+                        outputDirText.setText(downloadedDir.getAbsolutePath());
+                        if (actualMbOnDisk > 0.0) {
+                            maxSizeMbText.setText(String.format(Locale.US, "%.2f", actualMbOnDisk));
+                        }
+
+                        StringBuilder reportSb = new StringBuilder();
+                        reportSb.append("ACTUAL DATASET PROPERTIES (DOWNLOADED):\n");
+                        reportSb.append("- Name / Target ID: ").append(repo).append("\n");
+                        reportSb.append("- Location on Disk: ").append(downloadedDir.getAbsolutePath()).append("\n");
+                        reportSb.append("- Actual Size: ").append(String.format(Locale.US, "%.2f MB (%d bytes)", actualMbOnDisk, actualBytesOnDisk)).append("\n");
+                        reportSb.append("- Total Data Files: ").append(dataFiles).append("\n");
+                        reportSb.append("- Split: ").append(split).append("\n\n");
+                        reportSb.append("DATASET DOWNLOAD RESPONSE:\n").append(res);
+
+                        reportArea.setText(reportSb.toString());
+
                         try {
                             org.json.JSONObject resJson = new org.json.JSONObject(res);
                             String status = resJson.optString("status", "READY");
@@ -307,10 +379,11 @@ public class DatasetEditorGroup extends AEvoGroup {
                                 double reqMb = requestedBytes / (1024.0 * 1024.0);
                                 double actMb = actualBytes / (1024.0 * 1024.0);
                                 MessageDialog.openWarning(group.getShell(), "Dataset Source Exhausted",
-                                    String.format("Dataset download completed, but source was exhausted before target size was reached.\n\nRequested Target: %.2f MB\nUsable Content Downloaded: %.2f MB\nShortfall: %.2f MB\nStatus: %s",
-                                        reqMb, actMb, Math.max(0, reqMb - actMb), status));
+                                    String.format("Dataset download completed, but source was exhausted before target size was reached.\n\nRequested Target: %.2f MB\nUsable Content Downloaded: %.2f MB\nShortfall: %.2f MB\nLocation: %s\nStatus: %s",
+                                        reqMb, actMb, Math.max(0, reqMb - actMb), downloadedDir.getAbsolutePath(), status));
                             } else {
-                                MessageDialog.openInformation(group.getShell(), "Dataset Downloaded", "Dataset downloaded successfully to destination folder!");
+                                MessageDialog.openInformation(group.getShell(), "Dataset Downloaded",
+                                    "Dataset " + repo + " downloaded successfully!\n\nLocation: " + downloadedDir.getAbsolutePath() + "\nSize: " + String.format(Locale.US, "%.2f MB", actualMbOnDisk));
                             }
                         } catch (Exception ex) {
                             MessageDialog.openError(group.getShell(), "Dataset Download Error", "Error processing download response: " + ex.getMessage());
@@ -323,6 +396,86 @@ public class DatasetEditorGroup extends AEvoGroup {
                     if (!reportArea.isDisposed()) {
                         reportArea.setText("Download Error: " + ex.getMessage());
                         MessageDialog.openError(group.getShell(), "Dataset Download Error", "Download failed: " + ex.getMessage());
+                    }
+                });
+            }
+        }).start();
+    }
+
+    private void handleExportEvodata() {
+        String repoOrPath = repoText.getText().trim();
+        if (repoOrPath.isEmpty()) {
+            MessageDialog.openWarning(group.getShell(), "No Dataset Specified", "Please specify a repository ID or target directory/file path to export.");
+            return;
+        }
+
+        String customOutputDir = outputDirText.getText().trim();
+        File targetDatasetDir = eu.kalafatic.evolution.controller.tools.DatasetAcquisitionTool.resolveDatasetOutputDir(customOutputDir, repoOrPath);
+        if (!targetDatasetDir.exists()) {
+            targetDatasetDir.mkdirs();
+        }
+
+        String itemType = "REPOSITORY";
+        File pathFile = new File(repoOrPath);
+        if (pathFile.exists()) {
+            itemType = pathFile.isDirectory() ? "FOLDER" : "FILE";
+        }
+
+        List<eu.kalafatic.evolution.forge.data.api.source.DatasetItem> apiItems = new ArrayList<>();
+        apiItems.add(new eu.kalafatic.evolution.forge.data.api.source.DatasetItem(true, pathFile.exists() ? pathFile.getAbsolutePath() : repoOrPath, itemType));
+
+        String orchId = getOrchestratorId();
+        OrchestrationStatusManager.getInstance().updateStatus(orchId, 0.2, "Exporting .evodata artifact for " + repoOrPath + "...");
+        reportArea.setText("Starting Native .evodata Export for " + repoOrPath + "...\nTarget Output Directory: " + targetDatasetDir.getAbsolutePath() + "\n");
+
+        final File outputDir = targetDatasetDir;
+        new Thread(() -> {
+            try {
+                eu.kalafatic.evolution.forge.data.impl.service.DatasetPreparationService service = new eu.kalafatic.evolution.forge.data.impl.service.DatasetPreparationService();
+                eu.kalafatic.evolution.forge.data.api.source.DatasetPreparationContext context = new eu.kalafatic.evolution.forge.data.api.source.DatasetPreparationContext();
+                eu.kalafatic.evolution.forge.data.api.service.DatasetPreparationResult result = service.prepareDatasets(apiItems, context, outputDir);
+
+                OrchestrationStatusManager.getInstance().updateStatus(orchId, 1.0, "Export Complete");
+
+                Display.getDefault().asyncExec(() -> {
+                    if (!reportArea.isDisposed()) {
+                        if (result.getStatus() == eu.kalafatic.evolution.forge.data.api.service.DatasetPreparationResult.Status.SUCCESS && result.getOutputPath() != null) {
+                            File evodataFile = new File(result.getOutputPath());
+                            double sizeMb = evodataFile.length() / (1024.0 * 1024.0);
+
+                            // Update UI fields with actual properties of exported dataset
+                            repoText.setText(repoOrPath);
+                            outputDirText.setText(evodataFile.getParentFile().getAbsolutePath());
+                            maxSizeMbText.setText(String.format(Locale.US, "%.2f", sizeMb));
+
+                            String reportText = String.format(Locale.US,
+                                "EXPORT TO .EVODATA SUCCESSFUL:\n" +
+                                "- Output File: %s\n" +
+                                "- Target Name: %s\n" +
+                                "- Records Accepted: %d\n" +
+                                "- Usable Bytes: %d (%.2f MB)\n" +
+                                "- Status: %s\n",
+                                evodataFile.getAbsolutePath(), repoOrPath, result.getRecordsAccepted(), result.getAcceptedBytes(), sizeMb, result.getStatus());
+                            reportArea.setText(reportText);
+
+                            MessageDialog.openInformation(group.getShell(), "Dataset Exported",
+                                "Native .evodata artifact created successfully!\n\n" +
+                                "Output File: " + evodataFile.getAbsolutePath() + "\n" +
+                                "Records Accepted: " + result.getRecordsAccepted() + "\n" +
+                                "Usable Bytes: " + result.getAcceptedBytes() + " (" + String.format(Locale.US, "%.2f", sizeMb) + " MB)");
+                        } else {
+                            String errorMsg = !result.getErrors().isEmpty() ? String.join("\n", result.getErrors()) : "Status: " + result.getStatus();
+                            reportArea.setText("EXPORT TO .EVODATA FAILED:\n" + errorMsg);
+                            MessageDialog.openError(group.getShell(), "Dataset Export Failed", "Failed to create .evodata artifact:\n" + errorMsg);
+                        }
+                    }
+                });
+            } catch (Exception ex) {
+                OrchestrationStatusManager.getInstance().updateStatus(orchId, 0.0, "Export Error: " + ex.getMessage());
+                Display.getDefault().asyncExec(() -> {
+                    if (!reportArea.isDisposed()) {
+                        reportArea.setText("EXPORT ERROR: " + ex.getMessage());
+                        MessageDialog.openError(group.getShell(), "Error Exporting Dataset", "Error creating .evodata artifact: " + ex.getMessage());
                     }
                 });
             }
@@ -477,7 +630,28 @@ public class DatasetEditorGroup extends AEvoGroup {
 
                 Display.getDefault().asyncExec(() -> {
                     if (!reportArea.isDisposed()) {
-                        reportArea.setText("DATASET PREPARATION RESULT:\n" + res);
+                        File preparedDir = targetDatasetDir;
+                        long actualBytesOnDisk = calculateDirectoryOrFileSize(preparedDir);
+                        double actualMbOnDisk = actualBytesOnDisk / (1024.0 * 1024.0);
+                        int dataFiles = countDataFiles(preparedDir);
+
+                        // Update actual properties in UI
+                        repoText.setText(repo);
+                        outputDirText.setText(preparedDir.getAbsolutePath());
+                        if (actualMbOnDisk > 0.0) {
+                            maxSizeMbText.setText(String.format(Locale.US, "%.2f", actualMbOnDisk));
+                        }
+
+                        StringBuilder reportSb = new StringBuilder();
+                        reportSb.append("ACTUAL PREPARED DATASET PROPERTIES:\n");
+                        reportSb.append("- Name / Target ID: ").append(repo).append("\n");
+                        reportSb.append("- Location on Disk: ").append(preparedDir.getAbsolutePath()).append("\n");
+                        reportSb.append("- Actual Size: ").append(String.format(Locale.US, "%.2f MB (%d bytes)", actualMbOnDisk, actualBytesOnDisk)).append("\n");
+                        reportSb.append("- Total Data Files: ").append(dataFiles).append("\n\n");
+                        reportSb.append("DATASET PREPARATION RESULT:\n").append(res);
+
+                        reportArea.setText(reportSb.toString());
+
                         try {
                             org.json.JSONObject resJson = new org.json.JSONObject(res);
                             String status = resJson.optString("status", "READY");
@@ -492,10 +666,11 @@ public class DatasetEditorGroup extends AEvoGroup {
                                 double reqMb = requestedBytes / (1024.0 * 1024.0);
                                 double actMb = actualBytes / (1024.0 * 1024.0);
                                 MessageDialog.openWarning(group.getShell(), "Source Data Shortfall Warning",
-                                    String.format("Dataset source was exhausted before target size was reached.\n\nRequested Target: %.2f MB\nUsable Content Collected: %.2f MB\nShortfall: %.2f MB\nStatus: %s",
-                                        reqMb, actMb, Math.max(0, reqMb - actMb), status));
+                                    String.format("Dataset source was exhausted before target size was reached.\n\nRequested Target: %.2f MB\nUsable Content Collected: %.2f MB\nShortfall: %.2f MB\nLocation: %s\nStatus: %s",
+                                        reqMb, actMb, Math.max(0, reqMb - actMb), preparedDir.getAbsolutePath(), status));
                             } else {
-                                MessageDialog.openInformation(group.getShell(), "Dataset Prepared", "EVO Training Dataset artifact built successfully!");
+                                MessageDialog.openInformation(group.getShell(), "Dataset Prepared",
+                                    "EVO Training Dataset artifact built successfully!\n\nLocation: " + preparedDir.getAbsolutePath() + "\nSize: " + String.format(Locale.US, "%.2f MB", actualMbOnDisk));
                             }
                         } catch (Exception ex) {
                             MessageDialog.openError(group.getShell(), "Dataset Preparation Error", "Error processing preparation response: " + ex.getMessage());
@@ -518,10 +693,38 @@ public class DatasetEditorGroup extends AEvoGroup {
         int port = getServerPort();
         new Thread(() -> {
             try {
-                String res = getHttp("http://localhost:" + port + "/forge/dataset/artifacts");
+                String serverRes = getHttp("http://localhost:" + port + "/forge/dataset/artifacts");
+
+                // Scan local dataset output directories as well
+                String customOutputDir = outputDirText.getText().trim();
+                File targetDir = new File(customOutputDir);
+                List<File> localArtifacts = scanLocalDatasetFiles(targetDir);
+
                 Display.getDefault().asyncExec(() -> {
                     if (!reportArea.isDisposed()) {
-                        reportArea.setText("AVAILABLE EVO DATASET ARTIFACTS:\n" + res);
+                        StringBuilder sb = new StringBuilder();
+                        sb.append("AVAILABLE EVO DATASET ARTIFACTS & DOWNLOADED LOCATIONS:\n");
+                        sb.append("=========================================================\n");
+
+                        if (localArtifacts != null && !localArtifacts.isEmpty()) {
+                            sb.append("LOCAL DISCOVERED DATASETS / ARTIFACTS:\n");
+                            for (File f : localArtifacts) {
+                                double mb = f.length() / (1024.0 * 1024.0);
+                                sb.append(String.format(Locale.US, "- %-30s | %-60s | %.2f MB\n", f.getName(), f.getAbsolutePath(), mb));
+                            }
+                            sb.append("\n");
+
+                            // Use actual properties of first discovered local dataset if available
+                            File first = localArtifacts.get(0);
+                            double firstMb = first.length() / (1024.0 * 1024.0);
+                            outputDirText.setText(first.getParentFile().getAbsolutePath());
+                            maxSizeMbText.setText(String.format(Locale.US, "%.2f", firstMb));
+                            String nameWithoutExt = first.getName().replaceAll("\\.(evodata|jsonl|parquet|txt)$", "");
+                            repoText.setText(nameWithoutExt);
+                        }
+
+                        sb.append("SERVER REGISTERED ARTIFACTS:\n").append(serverRes);
+                        reportArea.setText(sb.toString());
                     }
                 });
             } catch (Exception ex) {
@@ -532,6 +735,23 @@ public class DatasetEditorGroup extends AEvoGroup {
                 });
             }
         }).start();
+    }
+
+    private List<File> scanLocalDatasetFiles(File baseDir) {
+        List<File> list = new ArrayList<>();
+        if (baseDir == null || !baseDir.exists()) return list;
+
+        File[] children = baseDir.listFiles();
+        if (children == null) return list;
+
+        for (File f : children) {
+            if (f.isDirectory()) {
+                list.addAll(scanLocalDatasetFiles(f));
+            } else if (f.getName().endsWith(".evodata") || f.getName().endsWith(".jsonl") || f.getName().endsWith(".parquet")) {
+                list.add(f);
+            }
+        }
+        return list;
     }
 
     private String postHttp(String urlStr, String jsonBody) throws Exception {
