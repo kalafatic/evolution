@@ -232,6 +232,27 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
             return TaskResult.failure("export_evo_rcp", "Could not locate exact exported product for " + prodDef.getProductId() + " (" + platform + ") under " + reactorRoot.getAbsolutePath(), null);
         }
 
+        File exportDir = context.getExportDirectory();
+        if (exportDir != null) {
+            if (!exportDir.exists()) {
+                exportDir.mkdirs();
+            }
+            File targetInExportDir = new File(exportDir, exportedLocation.getName());
+            if (!targetInExportDir.equals(exportedLocation.getAbsoluteFile())) {
+                try {
+                    if (exportedLocation.isDirectory()) {
+                        copyDirectoryRecursively(exportedLocation, targetInExportDir);
+                    } else {
+                        Files.copy(exportedLocation.toPath(), targetInExportDir.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                    }
+                    exportedLocation = targetInExportDir;
+                    log("[TychoEvoRcpBuilder] Materialized exported RCP product into export directory: " + exportedLocation.getAbsolutePath());
+                } catch (IOException e) {
+                    return TaskResult.failure("export_evo_rcp", "Failed to copy product to export directory: " + e.getMessage(), e);
+                }
+            }
+        }
+
         TaskResult valRes = validateProductDeployment(exportedLocation, prodDef, platform);
         if (!valRes.isSuccess()) {
             return TaskResult.failure("export_evo_rcp", "Exported EVO RCP product validation failed for " + exportedLocation.getAbsolutePath() + ": " + valRes.getMessage(), null);
@@ -564,6 +585,20 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
         int code = p.waitFor();
         if (code != 0) {
             throw new IOException("tar extraction failed with exit code: " + code);
+        }
+    }
+
+    private void copyDirectoryRecursively(File src, File dest) throws IOException {
+        if (src.isDirectory()) {
+            if (!dest.exists()) dest.mkdirs();
+            File[] children = src.listFiles();
+            if (children != null) {
+                for (File child : children) {
+                    copyDirectoryRecursively(child, new File(dest, child.getName()));
+                }
+            }
+        } else {
+            Files.copy(src.toPath(), dest.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
         }
     }
 

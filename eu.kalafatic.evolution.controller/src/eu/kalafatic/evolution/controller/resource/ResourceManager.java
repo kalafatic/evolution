@@ -121,23 +121,23 @@ public class ResourceManager {
     }
 
     public Path getEvoSourceReactor() {
-        return getPath(EvoPath.EVO_SOURCE_REACTOR);
+        return getEvoGitRepository();
     }
 
     public Path getEvoSource() {
-        return getPath(EvoPath.EVO_SOURCE_REACTOR);
+        return getEvoGitRepository();
     }
 
     public Path getEvoReactor() {
-        return getPath(EvoPath.EVO_SOURCE_REACTOR);
+        return getEvoGitRepository();
     }
 
     public Path getEvoBuildOutput() {
-        return getPath(EvoPath.BUILD_ROOT);
+        return getEvoGitRepository();
     }
 
     public Path getEvoExport() {
-        return getPath(EvoPath.EXPORT_ROOT);
+        return getEvoGitRepository();
     }
 
     public Path getSupervisorSource() {
@@ -176,17 +176,22 @@ public class ResourceManager {
             case EVO_ROOT:
             case PROJECT_ROOT: {
                 Orchestrator orch = getOrchestrator();
+                String source = "DEFAULT";
                 if (orch != null && orch.getGit() != null && orch.getGit().getLocalPath() != null && !orch.getGit().getLocalPath().trim().isEmpty()) {
                     Path configured = Paths.get(expandVariables(orch.getGit().getLocalPath().trim())).toAbsolutePath().normalize();
                     resolvedPath = configured;
+                    source = "EMF";
                 } else {
                     resolvedPath = defaultEvoGitRepo;
                 }
+                Log.log("[RESOURCE][EVO_REPOSITORY] source=" + source + " path=" + resolvedPath);
                 break;
             }
 
             case EVO_SOURCE_REACTOR:
-            case SOURCE_ROOT: {
+            case SOURCE_ROOT:
+            case BUILD_ROOT:
+            case EXPORT_ROOT: {
                 resolvedPath = getPath(EvoPath.EVO_GIT_REPOSITORY);
                 break;
             }
@@ -197,14 +202,6 @@ public class ResourceManager {
 
             case RUNTIME_ROOT:
                 resolvedPath = runtimeRoot;
-                break;
-
-            case BUILD_ROOT:
-                resolvedPath = runtimeRoot.resolve("builds");
-                break;
-
-            case EXPORT_ROOT:
-                resolvedPath = runtimeRoot.resolve("exports");
                 break;
 
             case SUPERVISOR_SOURCE: {
@@ -324,7 +321,7 @@ public class ResourceManager {
             resolved = base.resolve(p).toAbsolutePath().normalize();
         }
 
-        Log.log("[PATH_DERIVED] resource=CONFIGURED_PATH base=" + semanticBase + " rule=" + configuredPath + " resolved=" + resolved);
+        Log.log("[RESOURCE][RESOLVE_PATH] base=" + semanticBase + " rule=" + configuredPath + " resolved=" + resolved);
         return validateCanonicalPath(resolved);
     }
 
@@ -373,8 +370,8 @@ public class ResourceManager {
     }
 
     public ProductDefinition getProductDefinition() {
-        Path reactorRoot = getEvoReactor();
-        Path repoModuleDir = reactorRoot.resolve("eu.kalafatic.evolution.repository");
+        Path repoRoot = getEvoGitRepository();
+        Path repoModuleDir = repoRoot.resolve("eu.kalafatic.evolution.repository");
         Path productFile = repoModuleDir.resolve("evolution.product");
         File pFile = productFile.toFile().exists() ? productFile.toFile() : null;
 

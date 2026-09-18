@@ -61,12 +61,16 @@ public abstract class AbstractSelfDevTask implements SelfDevTask {
 
         logTaskStep("==================================================", null);
         logTaskStep("START", "Task [" + id + ": " + name + "]");
-        logTaskStep("ResourceManager:", null);
-        logTaskStep("  source", String.valueOf(rm.getEvoSource()));
-        logTaskStep("  reactor", String.valueOf(rm.getEvoReactor()));
-        logTaskStep("  buildOutput", String.valueOf(rm.getEvoBuildOutput()));
-        logTaskStep("  export", String.valueOf(rm.getEvoExport()));
-        logTaskStep("  targetOS", String.valueOf(rm.getTargetPlatform()));
+        if (context != null) {
+            logTaskStep("SELF-DEV PATHS", null);
+            logTaskStep("  repository", String.valueOf(context.getRepositoryRoot()));
+            logTaskStep("  preparedSource", String.valueOf(context.getPreparedReactorDirectory()));
+            logTaskStep("  build", String.valueOf(context.getBuildDirectory()));
+            logTaskStep("  export", String.valueOf(context.getExportDirectory()));
+            logTaskStep("  targetOS", context.getOs() + "." + context.getWs() + "." + context.getArch());
+        } else {
+            logTaskStep("ResourceManager repository", String.valueOf(rm.getEvoGitRepository()));
+        }
         logTaskStep("--------------------------------------------------", null);
 
         if (cancelled) {

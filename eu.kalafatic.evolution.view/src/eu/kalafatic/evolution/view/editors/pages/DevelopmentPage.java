@@ -336,7 +336,7 @@ public class DevelopmentPage extends AEvoPage {
 		String llmModel = (orchestrator != null && orchestrator.getLlm() != null) ? orchestrator.getLlm().getModel()
 				: "supervisor.llm";
 		String targetPath = getTargetPath();
-		String exportPath = ResourceManager.getInstance().getPath(EvoPath.EXPORT_ROOT).toString();
+		String exportPath = getExportPath();
 
 		String customSuperSrc = getSupervisorSourcePath();
 		String customSuperBin = getTargetPath();
@@ -368,11 +368,21 @@ public class DevelopmentPage extends AEvoPage {
 	}
 
 	private String getTargetPath() {
-		return ResourceManager.getInstance().getPath(EvoPath.BUILD_ROOT).toString();
+		if (bootstrapController != null && bootstrapController.getOrchestrator() != null && bootstrapController.getOrchestrator().getContext() != null) {
+			return bootstrapController.getOrchestrator().getContext().getPreparedReactorDirectory().getAbsolutePath();
+		}
+		return ResourceManager.getInstance().getPath(EvoPath.WORKSPACE).resolve("self-dev/run/source").toString();
+	}
+
+	private String getExportPath() {
+		if (bootstrapController != null && bootstrapController.getOrchestrator() != null && bootstrapController.getOrchestrator().getContext() != null) {
+			return bootstrapController.getOrchestrator().getContext().getExportDirectory().getAbsolutePath();
+		}
+		return ResourceManager.getInstance().getPath(EvoPath.WORKSPACE).resolve("self-dev/run/export").toString();
 	}
 
 	private String getSupervisorSourcePath() {
-		return ResourceManager.getInstance().getPath(EvoPath.SUPERVISOR_SOURCE).toString();
+		return ResourceManager.getInstance().getSupervisorSource().toString();
 	}
 
 	private void createSelfDevContextMenu() {
@@ -668,13 +678,13 @@ public class DevelopmentPage extends AEvoPage {
 
 		sb.append("CONFIGURED PATHS:\n");
 		sb.append("  Local Git Repository (Source) : ")
-				.append(ResourceManager.getInstance().getPath(EvoPath.EVO_GIT_REPOSITORY)).append("\n");
-		sb.append("  Build Workspace (Output)      : ")
-				.append(ResourceManager.getInstance().getPath(EvoPath.BUILD_ROOT)).append("\n");
+				.append(ResourceManager.getInstance().getEvoGitRepository()).append("\n");
+		sb.append("  Prepared Source (Reactor)     : ")
+				.append(getTargetPath()).append("\n");
 		sb.append("  Export Directory              : ")
-				.append(ResourceManager.getInstance().getPath(EvoPath.EXPORT_ROOT)).append("\n");
+				.append(getExportPath()).append("\n");
 		sb.append("  Supervisor Source             : ")
-				.append(ResourceManager.getInstance().getPath(EvoPath.SUPERVISOR_SOURCE)).append("\n\n");
+				.append(ResourceManager.getInstance().getSupervisorSource()).append("\n\n");
 
 		sb.append("TASK SCENARIOS (WHAT WILL BE DONE, PATHS FROM / TO):\n");
 		sb.append("--------------------------------------------------------------------------------\n");
@@ -1120,14 +1130,7 @@ public class DevelopmentPage extends AEvoPage {
 							|| SelfDevRow.EXPORT_PRODUCT_SUPERVISOR.equals(row.name)
 							|| SelfDevRow.START_EVO_PRODUCT_SUPERVISOR.equals(row.name)
 							|| SelfDevRow.STOP_EVO_PRODUCT_SUPERVISOR.equals(row.name)) {
-						String exportPath;
-						if (targetPath != null && (targetPath.endsWith("builds") || targetPath.endsWith("builds/")
-								|| targetPath.endsWith("builds\\"))) {
-							File parent = new File(targetPath).getParentFile();
-							exportPath = new File(parent, "export").getPath();
-						} else {
-							exportPath = targetPath + "/export";
-						}
+						String exportPath = getExportPath();
 						row.path = exportPath;
 						if (SelfDevRow.START_EVO_PRODUCT_SUPERVISOR.equals(row.name)) {
 							row.command = "java -jar supervisor.jar --start-evo --path " + exportPath;
