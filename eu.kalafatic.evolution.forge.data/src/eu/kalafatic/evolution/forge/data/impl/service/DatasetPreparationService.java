@@ -206,8 +206,8 @@ public class DatasetPreparationService {
         result.setDuplicateCount(duplicateCount);
         result.setDuplicateBytes(duplicateBytes);
 
-        context.log(String.format("[FORGE-DEDUPE] inputRecords=%d duplicates=%d uniqueRecords=%d",
-                totalRecordsRead, duplicateCount, deduplicatedSamples.size()));
+        context.log(String.format("[FORGE-DEDUPE] inputRecords=%d duplicates=%d rejected=%d uniqueRecords=%d",
+                totalRecordsRead, duplicateCount, totalRecordsRejected, deduplicatedSamples.size()));
 
         context.log(String.format("[FORGE-MERGE] sources=%d records=%d usableBytes=%d",
                 result.getSuccessfulSources().size(), deduplicatedSamples.size(), currentUsableBytes));

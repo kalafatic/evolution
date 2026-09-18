@@ -53,65 +53,196 @@ public class ParquetAdapter implements DatasetSourceAdapter {
         byte[] bytes = Files.readAllBytes(file.toPath());
         if (bytes.length == 0) return samples;
 
-        String rawStr = new String(bytes, StandardCharsets.UTF_8);
+        boolean isParquetMagic = bytes.length >= 12 && (bytes[0] == 'P' && bytes[1] == 'A' && bytes[2] == 'R' && bytes[3] == '1');
 
-        // Extract JSON records embedded in Parquet stream if present
-        int braceStart = -1;
-        int depth = 0;
-        for (int i = 0; i < rawStr.length(); i++) {
-            if (context.isCancelled()) break;
-            char c = rawStr.charAt(i);
-            if (c == '{') {
-                if (depth == 0) braceStart = i;
-                depth++;
-            } else if (c == '}' && depth > 0) {
-                depth--;
-                if (depth == 0 && braceStart >= 0) {
-                    String jsonCandidate = rawStr.substring(braceStart, i + 1);
-                    if (jsonCandidate.length() >= 15) {
-                        try {
-                            JSONObject json = new JSONObject(jsonCandidate);
-                            NormalizedSample sample = JSONLAdapter.parseJsonObject(json, file.getName());
-                            if (sample != null) {
-                                samples.add(sample);
-                            }
-                        } catch (Exception ignored) {
-                        }
-                    }
-                    braceStart = -1;
-                }
-            }
-        }
+        context.log(String.format("[FORGE-PARQUET-DIAG] file=%s physicalBytes=%d format=%s",
+                file.getName(), bytes.length, isParquetMagic ? "BINARY_PARQUET_PAR1" : "PLAIN_TEXT_FALLBACK"));
 
-        // If embedded JSON parsing did not extract samples, perform clean text chunk extraction
-        if (samples.isEmpty()) {
+        if (!isParquetMagic) {
+            String rawStr = new String(bytes, StandardCharsets.UTF_8);
             String[] lines = rawStr.split("\r?\n");
-            StringBuilder sampleBuffer = new StringBuilder();
             for (String line : lines) {
                 if (context.isCancelled()) break;
-                String cleaned = line.replaceAll("[^\\x20-\\x7E\\t\\r\\n]", "").trim();
-                if (cleaned.length() >= 10) {
-                    if (sampleBuffer.length() > 0) sampleBuffer.append("\n");
-                    sampleBuffer.append(cleaned);
-                    if (sampleBuffer.length() >= 200) {
-                        samples.add(NormalizedSample.createTextSample(sampleBuffer.toString(), file.getName()));
-                        sampleBuffer.setLength(0);
-                    }
+                String trimmed = line.trim();
+                if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+                    try {
+                        JSONObject json = new JSONObject(trimmed);
+                        NormalizedSample s = JSONLAdapter.parseJsonObject(json, file.getName());
+                        if (s != null) samples.add(s);
+                        continue;
+                    } catch (Exception ignored) {}
+                }
+                if (trimmed.length() >= 10) {
+                    samples.add(NormalizedSample.createTextSample(trimmed, file.getName()));
                 }
             }
-            if (sampleBuffer.length() > 0) {
-                samples.add(NormalizedSample.createTextSample(sampleBuffer.toString(), file.getName()));
+        } else {
+            List<byte[]> decompressedBlocks = new ArrayList<>();
+
+            // Scan and decompress Snappy / GZIP pages embedded in Parquet stream
+            int pos = 4;
+            int end = bytes.length - 4;
+            while (pos < end) {
+                if (context.isCancelled()) break;
+                byte[] dec = decompressSnappyBlock(bytes, pos, Math.min(end - pos, 250000));
+                if (dec.length >= 64) {
+                    decompressedBlocks.add(dec);
+                    pos += Math.max(16, dec.length / 4);
+                } else {
+                    pos += 1;
+                }
+            }
+            decompressedBlocks.add(bytes);
+
+            List<String> rawExtractedStrings = new ArrayList<>();
+            for (byte[] block : decompressedBlocks) {
+                if (context.isCancelled()) break;
+                int bpos = 0;
+                int bend = block.length;
+                while (bpos <= bend - 5) {
+                    int len = (block[bpos] & 0xFF) | ((block[bpos + 1] & 0xFF) << 8) | ((block[bpos + 2] & 0xFF) << 16) | ((block[bpos + 3] & 0xFF) << 24);
+                    if (len >= 15 && len <= 50000 && bpos + 4 + len <= bend) {
+                        boolean isAsciiPrintable = true;
+                        for (int k = 0; k < Math.min(len, 100); k++) {
+                            int ch = block[bpos + 4 + k] & 0xFF;
+                            if ((ch < 0x20 || ch > 0x7E) && ch != '\n' && ch != '\r' && ch != '\t') {
+                                isAsciiPrintable = false;
+                                break;
+                            }
+                        }
+                        if (isAsciiPrintable) {
+                            String strCandidate = new String(block, bpos + 4, len, StandardCharsets.UTF_8).trim();
+                            if (!strCandidate.isEmpty()) {
+                                rawExtractedStrings.add(strCandidate);
+                            }
+                            bpos += 4 + len;
+                            continue;
+                        }
+                    }
+                    bpos++;
+                }
             }
 
-            if (samples.isEmpty() && rawStr.trim().length() > 0) {
-                String textClean = rawStr.replaceAll("[^\\x20-\\x7E\\t\\r\\n]", " ").replaceAll("\\s+", " ").trim();
-                if (!textClean.isEmpty()) {
-                    samples.add(NormalizedSample.createTextSample(textClean, file.getName()));
+            // Group or structure extracted string tokens into normalized samples
+            String instructionBuf = null;
+            String inputBuf = null;
+
+            for (String str : rawExtractedStrings) {
+                if (context.isCancelled()) break;
+                if (str.startsWith("{") && str.endsWith("}")) {
+                    try {
+                        JSONObject json = new JSONObject(str);
+                        NormalizedSample s = JSONLAdapter.parseJsonObject(json, file.getName());
+                        if (s != null) {
+                            samples.add(s);
+                            continue;
+                        }
+                    } catch (Exception ignored) {}
                 }
+
+                if (instructionBuf == null) {
+                    instructionBuf = str;
+                } else {
+                    samples.add(NormalizedSample.createInstructionSample(instructionBuf, str, file.getName()));
+                    instructionBuf = null;
+                }
+            }
+            if (instructionBuf != null && !instructionBuf.trim().isEmpty()) {
+                samples.add(NormalizedSample.createTextSample(instructionBuf, file.getName()));
             }
         }
 
+        context.log(String.format("[FORGE-PARQUET] file=%s rows=%d status=SUCCESS", file.getName(), samples.size()));
         context.log("[forge.dataset] Parquet Parsed " + samples.size() + " samples from " + file.getName());
         return samples;
+    }
+
+    private byte[] decompressSnappyBlock(byte[] input, int offset, int length) {
+        if (input == null || offset < 0 || length <= 0 || offset + length > input.length) return new byte[0];
+        int pos = offset;
+        int end = offset + length;
+
+        int uncompressedLen = 0;
+        int shift = 0;
+        while (pos < end) {
+            int b = input[pos++] & 0xFF;
+            uncompressedLen |= (b & 0x7F) << shift;
+            if ((b & 0x80) == 0) break;
+            shift += 7;
+        }
+
+        if (uncompressedLen <= 0 || uncompressedLen > 100 * 1024 * 1024) {
+            return new byte[0];
+        }
+
+        byte[] decompressed = new byte[uncompressedLen];
+        int destPos = 0;
+
+        try {
+            while (pos < end && destPos < uncompressedLen) {
+                int b = input[pos++] & 0xFF;
+                int tag = b & 0x03;
+                if (tag == 0) { // Literal
+                    int len = (b >> 2);
+                    if (len < 60) {
+                        len = len + 1;
+                    } else if (len == 60) {
+                        if (pos >= end) break;
+                        len = (input[pos++] & 0xFF) + 1;
+                    } else if (len == 61) {
+                        if (pos + 1 >= end) break;
+                        len = ((input[pos++] & 0xFF) | ((input[pos++] & 0xFF) << 8)) + 1;
+                    } else if (len == 62) {
+                        if (pos + 2 >= end) break;
+                        len = ((input[pos++] & 0xFF) | ((input[pos++] & 0xFF) << 8) | ((input[pos++] & 0xFF) << 16)) + 1;
+                    } else {
+                        if (pos + 3 >= end) break;
+                        len = ((input[pos++] & 0xFF) | ((input[pos++] & 0xFF) << 8) | ((input[pos++] & 0xFF) << 16) | ((input[pos++] & 0xFF) << 24)) + 1;
+                    }
+                    int copyLen = Math.min(len, Math.min(end - pos, uncompressedLen - destPos));
+                    if (copyLen <= 0) break;
+                    System.arraycopy(input, pos, decompressed, destPos, copyLen);
+                    pos += copyLen;
+                    destPos += copyLen;
+                } else if (tag == 1) { // Copy 1-byte offset
+                    int len = ((b >> 2) & 0x07) + 4;
+                    if (pos >= end) break;
+                    int off = ((b >> 5) & 0x07) << 8 | (input[pos++] & 0xFF);
+                    if (off <= 0 || off > destPos) break;
+                    int srcPos = destPos - off;
+                    for (int i = 0; i < len && destPos < uncompressedLen; i++) {
+                        decompressed[destPos] = decompressed[srcPos + i];
+                        destPos++;
+                    }
+                } else if (tag == 2) { // Copy 2-byte offset
+                    int len = (b >> 2) + 1;
+                    if (pos + 1 >= end) break;
+                    int off = (input[pos++] & 0xFF) | ((input[pos++] & 0xFF) << 8);
+                    if (off <= 0 || off > destPos) break;
+                    int srcPos = destPos - off;
+                    for (int i = 0; i < len && destPos < uncompressedLen; i++) {
+                        decompressed[destPos] = decompressed[srcPos + i];
+                        destPos++;
+                    }
+                } else if (tag == 3) { // Copy 4-byte offset
+                    int len = (b >> 2) + 1;
+                    if (pos + 3 >= end) break;
+                    int off = (input[pos++] & 0xFF) | ((input[pos++] & 0xFF) << 8) | ((input[pos++] & 0xFF) << 16) | ((input[pos++] & 0xFF) << 24);
+                    if (off <= 0 || off > destPos) break;
+                    int srcPos = destPos - off;
+                    for (int i = 0; i < len && destPos < uncompressedLen; i++) {
+                        decompressed[destPos] = decompressed[srcPos + i];
+                        destPos++;
+                    }
+                }
+            }
+        } catch (Exception ignored) {}
+
+        if (destPos > 0) {
+            byte[] res = new byte[destPos];
+            System.arraycopy(decompressed, 0, res, 0, destPos);
+            return res;
+        }
+        return new byte[0];
     }
 }

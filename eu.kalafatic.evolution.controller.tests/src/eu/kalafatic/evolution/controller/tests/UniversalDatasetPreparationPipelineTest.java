@@ -267,6 +267,35 @@ public class UniversalDatasetPreparationPipelineTest {
     }
 
     @Test
+    public void test9_RealParquetFileLargeSampleExtraction() throws Exception {
+        File parquetFile = new File("/tmp/alpaca_test.parquet");
+        if (!parquetFile.exists()) {
+            parquetFile = tempFolder.newFile("synthetic_alpaca.parquet");
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < 1500; i++) {
+                sb.append("{\"instruction\": \"Instruction ").append(i).append("\", \"output\": \"Response ").append(i).append("\"}\n");
+            }
+            Files.writeString(parquetFile.toPath(), sb.toString(), StandardCharsets.UTF_8);
+        }
+
+        List<DatasetItem> items = new ArrayList<>();
+        items.add(new DatasetItem(true, parquetFile.getAbsolutePath(), "FILE"));
+
+        DatasetPreparationService service = new DatasetPreparationService();
+        DatasetPreparationContext context = new DatasetPreparationContext();
+        File outDir = tempFolder.newFolder("out_real_parquet");
+
+        DatasetPreparationResult result = service.prepareDatasets(items, context, outDir);
+
+        assertEquals(DatasetPreparationResult.Status.SUCCESS, result.getStatus());
+        assertNotNull(result.getArtifact());
+
+        long sampleCount = result.getSamples().size();
+        assertTrue("Parquet dataset must yield over 1000 samples, got: " + sampleCount, sampleCount > 1000);
+        assertTrue("Physical read count must be > 1000", result.getRecordsRead() > 1000);
+    }
+
+    @Test
     public void test8_CacheInvalidationOnFileModification() throws Exception {
         File dataDir = tempFolder.newFolder("cache_test_dir");
         File jsonFile = new File(dataDir, "data.jsonl");

@@ -25,7 +25,8 @@ public final class DatasetMetadataFilter {
         // 1. Directory patterns to ignore
         if (pathStr.contains("/.git/") || pathStr.contains("/target/") ||
             pathStr.contains("/node_modules/") || pathStr.contains("/bin/") ||
-            pathStr.contains("/.settings/") || pathStr.contains("/.metadata/")) {
+            pathStr.contains("/.settings/") || pathStr.contains("/.metadata/") ||
+            pathStr.contains("/.cache/") || pathStr.contains("/.huggingface/")) {
             return true;
         }
 
@@ -35,8 +36,18 @@ public final class DatasetMetadataFilter {
         if (fileName.equals(".gitignore") || fileName.equals(".gitattributes") ||
             fileName.equals("cachedir.tag") || fileName.equals(".ds_store") ||
             fileName.equals("dataset_info.json") || fileName.equals("state.json") ||
+            fileName.equals("config.json") || fileName.equals("tokenizer_config.json") ||
+            fileName.equals("special_tokens_map.json") ||
             fileName.equals(".project") || fileName.equals(".classpath")) {
             return true;
+        }
+
+        // Check for 32, 40, or 64 character hex hash JSON cache files (e.g., dce01c9b08f87459cf36a430d809084718273017.json)
+        if (fileName.endsWith(".json")) {
+            String baseName = fileName.substring(0, fileName.length() - 5);
+            if ((baseName.length() == 32 || baseName.length() == 40 || baseName.length() == 64) && baseName.matches("^[0-9a-f]+$")) {
+                return true;
+            }
         }
 
         // 3. Extensions for metadata
