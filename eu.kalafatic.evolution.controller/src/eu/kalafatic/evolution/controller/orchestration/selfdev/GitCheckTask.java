@@ -100,12 +100,14 @@ public class GitCheckTask extends AbstractSelfDevTask {
             }
 
             String revisionAfter = sourceProvider.getSourceRevision(repoPath);
-            String status = sourceProvider.getStatus(repoPath);
+            String workingTreeStatus = sourceProvider.getStatus(repoPath);
+            boolean revisionChanged = !revisionBefore.equalsIgnoreCase(revisionAfter);
 
             log("[GIT_CHECK] revisionAfter=" + revisionAfter);
-            log("[GIT_CHECK] status=" + status);
+            log("[GIT_CHECK] revisionChanged=" + revisionChanged);
+            log("[GIT_CHECK] workingTreeStatus=" + workingTreeStatus);
 
-            if ("FAILED".equalsIgnoreCase(status)) {
+            if ("FAILED".equalsIgnoreCase(workingTreeStatus)) {
                 log("[GIT_CHECK] Global result: FAILURE");
                 log("[GIT_CHECK] Verified repositories: " + verifiedCount + "/" + totalRepos);
                 log("[GIT_CHECK] Failed repository: " + repoName);
