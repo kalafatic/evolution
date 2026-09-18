@@ -140,13 +140,17 @@ public class JSONLAdapter implements DatasetSourceAdapter {
             return NormalizedSample.createTextSample(text, sourceName);
         }
 
-        // 4. Fallback for unknown schema: collect all non-empty string fields
+        // 4. Fallback for unknown schema: collect non-empty string fields excluding metadata infrastructure keys
         List<String> textValues = new ArrayList<>();
         for (String key : json.keySet()) {
+            String lowerKey = key.toLowerCase();
+            if (isMetadataKey(lowerKey)) {
+                continue;
+            }
             Object val = json.opt(key);
             if (val instanceof String) {
                 String str = ((String) val).trim();
-                if (str.length() >= 5) {
+                if (str.length() >= 10 && !str.startsWith("http://") && !str.startsWith("https://")) {
                     textValues.add(str);
                 }
             }
@@ -160,6 +164,15 @@ public class JSONLAdapter implements DatasetSourceAdapter {
         }
 
         return null;
+    }
+
+    private static boolean isMetadataKey(String key) {
+        return key.equals("url") || key.equals("etag") || key.equals("sha1") || key.equals("sha256") ||
+               key.equals("md5") || key.equals("hash") || key.equals("checksum") || key.equals("download_url") ||
+               key.equals("dataset_name") || key.equals("config") || key.equals("split") || key.equals("revision") ||
+               key.equals("num_bytes") || key.equals("created_at") || key.equals("modified_at") || key.equals("status") ||
+               key.equals("error") || key.equals("version") || key.equals("author") || key.equals("license") ||
+               key.equals("repository") || key.equals("repo_id") || key.equals("splits") || key.equals("features");
     }
 
     private static String optAnyString(JSONObject json, String... keys) {

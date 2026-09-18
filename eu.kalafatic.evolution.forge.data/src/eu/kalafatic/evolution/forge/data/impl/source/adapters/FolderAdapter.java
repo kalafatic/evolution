@@ -122,8 +122,6 @@ public class FolderAdapter implements DatasetSourceAdapter {
             }
         }
 
-        context.log(String.format("[FORGE-PROCESS] source=%s recordsRead=%d recordsAccepted=%d recordsRejected=0 duplicates=0",
-                folder.getAbsolutePath(), samples.size(), samples.size()));
         return samples;
     }
 
