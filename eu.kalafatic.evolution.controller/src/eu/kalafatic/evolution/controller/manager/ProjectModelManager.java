@@ -190,16 +190,24 @@ public class ProjectModelManager {
 
         if (orchestrator.getSupervisorSettings() == null) {
             SupervisorSettings supervisor = OrchestrationFactory.eINSTANCE.createSupervisorSettings();
-            File runtimeBuilds = new File(userHome, "workspace/runtime/builds");
-            File runtimeSources = new File(userHome, "workspace/runtime/sources");
-            supervisor.setExecutablePath(runtimeBuilds.getAbsolutePath());
-            supervisor.setSourcePath(runtimeSources.getAbsolutePath());
+            File runtimeInstances = new File(userHome, "workspace/runtime/instances");
+            File repoSupervisorModule = new File(userHome, "git/evolution/eu.kalafatic.evolution.supervisor");
+            supervisor.setExecutablePath(runtimeInstances.getAbsolutePath());
+            supervisor.setSourcePath(repoSupervisorModule.getAbsolutePath());
             orchestrator.setSupervisorSettings(supervisor);
         } else {
             String oldExec = orchestrator.getSupervisorSettings().getExecutablePath();
             String oldSrc = orchestrator.getSupervisorSettings().getSourcePath();
-            if (oldExec != null) orchestrator.getSupervisorSettings().setExecutablePath(migratePath(oldExec));
-            if (oldSrc != null) orchestrator.getSupervisorSettings().setSourcePath(migratePath(oldSrc));
+            if (oldExec != null && oldExec.contains("workspace/runtime/builds")) {
+                orchestrator.getSupervisorSettings().setExecutablePath(new File(userHome, "workspace/runtime/instances").getAbsolutePath());
+            } else if (oldExec != null) {
+                orchestrator.getSupervisorSettings().setExecutablePath(migratePath(oldExec));
+            }
+            if (oldSrc != null && oldSrc.contains("workspace/runtime/sources")) {
+                orchestrator.getSupervisorSettings().setSourcePath(new File(userHome, "git/evolution/eu.kalafatic.evolution.supervisor").getAbsolutePath());
+            } else if (oldSrc != null) {
+                orchestrator.getSupervisorSettings().setSourcePath(migratePath(oldSrc));
+            }
         }
 
         if (orchestrator.getSupervisorSettings().getGit() == null) {

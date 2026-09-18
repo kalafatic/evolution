@@ -185,13 +185,9 @@ public class ResourceManager {
                 break;
             }
 
-            case EVO_SOURCE_REACTOR: {
-                Orchestrator orch = getOrchestrator();
-                if (orch != null && orch.getSupervisorSettings() != null && orch.getSupervisorSettings().getSourcePath() != null) {
-                    resolvedPath = resolvePath(getPath(EvoPath.EVO_ROOT), orch.getSupervisorSettings().getSourcePath());
-                } else {
-                    resolvedPath = defaultEvoGitRepo;
-                }
+            case EVO_SOURCE_REACTOR:
+            case SOURCE_ROOT: {
+                resolvedPath = getPath(EvoPath.EVO_GIT_REPOSITORY);
                 break;
             }
 
@@ -202,16 +198,6 @@ public class ResourceManager {
             case RUNTIME_ROOT:
                 resolvedPath = runtimeRoot;
                 break;
-
-            case SOURCE_ROOT: {
-                Orchestrator orch = getOrchestrator();
-                if (orch != null && orch.getSupervisorSettings() != null && orch.getSupervisorSettings().getSourcePath() != null) {
-                    resolvedPath = resolvePath(getPath(EvoPath.EVO_ROOT), orch.getSupervisorSettings().getSourcePath());
-                } else {
-                    resolvedPath = runtimeRoot.resolve("source");
-                }
-                break;
-            }
 
             case BUILD_ROOT:
                 resolvedPath = runtimeRoot.resolve("builds");
@@ -224,10 +210,13 @@ public class ResourceManager {
             case SUPERVISOR_SOURCE: {
                 Orchestrator orch = getOrchestrator();
                 if (orch != null && orch.getSupervisorSettings() != null && orch.getSupervisorSettings().getSourcePath() != null) {
-                    resolvedPath = resolvePath(getPath(EvoPath.EVO_ROOT), orch.getSupervisorSettings().getSourcePath());
-                } else {
-                    resolvedPath = defaultEvoGitRepo.resolve("eu.kalafatic.evolution.supervisor");
+                    Path configured = resolvePath(getPath(EvoPath.EVO_ROOT), orch.getSupervisorSettings().getSourcePath());
+                    if (configured.toFile().exists() && new File(configured.toFile(), "pom.xml").exists()) {
+                        resolvedPath = configured;
+                        break;
+                    }
                 }
+                resolvedPath = getPath(EvoPath.EVO_GIT_REPOSITORY).resolve("eu.kalafatic.evolution.supervisor");
                 break;
             }
 

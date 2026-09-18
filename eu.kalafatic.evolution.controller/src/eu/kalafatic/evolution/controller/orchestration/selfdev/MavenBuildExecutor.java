@@ -33,9 +33,16 @@ public class MavenBuildExecutor {
             return TaskResult.failure(taskId, "Working directory does not exist: " + (workingDir != null ? workingDir.getAbsolutePath() : "null"), null);
         }
 
+        boolean isWindows = System.getProperty("os.name").toLowerCase().contains("win");
         String mavenExec = resolveMavenExecutable(workingDir);
+
         List<String> command = new ArrayList<>();
+        if (isWindows && (mavenExec.toLowerCase().endsWith(".cmd") || mavenExec.toLowerCase().endsWith(".bat"))) {
+            command.add("cmd.exe");
+            command.add("/c");
+        }
         command.add(mavenExec);
+
         if (goals != null && !goals.isEmpty()) {
             command.addAll(goals);
         }
@@ -68,9 +75,13 @@ public class MavenBuildExecutor {
         log("[MAVEN] START         = " + startDateStr);
         log("[MAVEN] ========================================");
 
+        log("[MAVEN][PROCESS] creating");
+        log("[MAVEN][PROCESS] executable=" + mavenExec);
+        log("[MAVEN][PROCESS] arguments=" + command);
+        log("[MAVEN][PROCESS] workingDirectory=" + workingDir.getAbsolutePath());
+
         ProcessBuilder pb = new ProcessBuilder(command);
         pb.directory(workingDir);
-        pb.redirectErrorStream(true);
 
         Map<String, String> env = pb.environment();
         if (javaHome != null && !javaHome.isEmpty()) {
@@ -81,44 +92,134 @@ public class MavenBuildExecutor {
         int exitCode = -1;
 
         try (PrintWriter logWriter = (logFile != null) ? new PrintWriter(new FileWriter(logFile, true)) : null) {
+            log("[MAVEN][PROCESS] starting");
             Process process = pb.start();
+            long pid = process.pid();
+            log("[MAVEN][PROCESS] started pid=" + pid);
 
             // Close stdin immediately to prevent process blocking on unclosed input pipe
             try {
                 process.getOutputStream().close();
             } catch (Exception ignored) {}
 
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    outputBuffer.append(line).append("\n");
-                    if (logWriter != null) {
-                        logWriter.println(line);
-                        logWriter.flush();
+            // Concurrent stream handling for stdout and stderr
+            Thread stdoutThread = new Thread(() -> {
+                log("[MAVEN][PROCESS] stdout-reader started");
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        synchronized (outputBuffer) {
+                            outputBuffer.append(line).append("\n");
+                        }
+                        if (logWriter != null) {
+                            synchronized (logWriter) {
+                                logWriter.println("[STDOUT] " + line);
+                                logWriter.flush();
+                            }
+                        }
+                        log("[MAVEN][STDOUT] " + line);
                     }
-                    log("[MAVEN] " + line);
+                } catch (Exception e) {
+                    log("[MAVEN][STDOUT][ERROR] Exception reading stdout: " + e.getMessage());
+                } finally {
+                    log("[MAVEN][PROCESS] stdout-reader finished");
                 }
-            }
+            }, "Maven-Stdout-Reader-" + taskId);
 
-            boolean finished = process.waitFor(timeoutMinutes > 0 ? timeoutMinutes : 30, TimeUnit.MINUTES);
+            Thread stderrThread = new Thread(() -> {
+                log("[MAVEN][PROCESS] stderr-reader started");
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        synchronized (outputBuffer) {
+                            outputBuffer.append(line).append("\n");
+                        }
+                        if (logWriter != null) {
+                            synchronized (logWriter) {
+                                logWriter.println("[STDERR] " + line);
+                                logWriter.flush();
+                            }
+                        }
+                        log("[MAVEN][STDERR] " + line);
+                    }
+                } catch (Exception e) {
+                    log("[MAVEN][STDERR][ERROR] Exception reading stderr: " + e.getMessage());
+                } finally {
+                    log("[MAVEN][PROCESS] stderr-reader finished");
+                }
+            }, "Maven-Stderr-Reader-" + taskId);
+
+            stdoutThread.setDaemon(true);
+            stderrThread.setDaemon(true);
+            stdoutThread.start();
+            stderrThread.start();
+
+            log("[MAVEN][PROCESS] waiting");
+            long timeout = timeoutMinutes > 0 ? timeoutMinutes : 30;
+            boolean finished = process.waitFor(timeout, TimeUnit.MINUTES);
+
             if (!finished) {
-                process.destroyForcibly();
                 long duration = System.currentTimeMillis() - startTime;
-                log("[MAVEN][ERROR] Build timed out after " + timeoutMinutes + " minutes.");
+                log("[MAVEN][ERROR] Build timed out after " + timeout + " minutes (PID: " + pid + ").");
+                log("[MAVEN][PROCESS] Timeout reached. PID: " + pid + ", WorkingDir: " + workingDir.getAbsolutePath() + ", Cmd: " + fullCommandStr + ", Elapsed: " + duration + " ms");
+
+                try {
+                    process.descendants().forEach(ph -> {
+                        try {
+                            ph.destroyForcibly();
+                        } catch (Exception ignored) {}
+                    });
+                } catch (Exception e) {
+                    log("[MAVEN][PROCESS] Error killing process descendants: " + e.getMessage());
+                }
+
+                try {
+                    process.destroy();
+                    Thread.sleep(1000);
+                } catch (Exception ignored) {}
+
+                if (process.isAlive()) {
+                    process.destroyForcibly();
+                }
+
+                try { stdoutThread.join(2000); } catch (Exception ignored) {}
+                try { stderrThread.join(2000); } catch (Exception ignored) {}
+
+                log("[MAVEN][PROCESS] completed (timed out)");
+                log("[MAVEN][PROCESS] durationMs=" + duration);
+
+                String currentOutput;
+                synchronized (outputBuffer) {
+                    currentOutput = outputBuffer.toString();
+                }
+
                 return new TaskResult.Builder(taskId)
                         .status(TaskStatus.FAILED)
-                        .message("Maven execution timed out after " + timeoutMinutes + " minutes.")
+                        .message("Maven execution timed out after " + timeout + " minutes (PID: " + pid + ").")
                         .command(fullCommandStr)
                         .workingDirectory(workingDir)
                         .duration(duration)
                         .logFile(logFile)
                         .diagnostic("errorCategory", MavenErrorCategory.TRANSIENT.name())
-                        .diagnostic("outputTail", getTail(outputBuffer.toString(), 2000))
+                        .diagnostic("pid", String.valueOf(pid))
+                        .diagnostic("outputTail", getTail(currentOutput, 2000))
                         .build();
             }
 
             exitCode = process.exitValue();
+            log("[MAVEN][PROCESS] exitCode=" + exitCode);
+
+            try { stdoutThread.join(5000); } catch (Exception ignored) {}
+            try { stderrThread.join(5000); } catch (Exception ignored) {}
+
+            log("[MAVEN][PROCESS] completed");
             long duration = System.currentTimeMillis() - startTime;
+            log("[MAVEN][PROCESS] durationMs=" + duration);
+
+            String fullOutput;
+            synchronized (outputBuffer) {
+                fullOutput = outputBuffer.toString();
+            }
 
             if (exitCode == 0) {
                 log("[MAVEN] Build succeeded in " + duration + " ms.");
@@ -132,7 +233,6 @@ public class MavenBuildExecutor {
                         .logFile(logFile)
                         .build();
             } else {
-                String fullOutput = outputBuffer.toString();
                 MavenErrorClassifier.ClassificationResult classification = MavenErrorClassifier.classify(fullOutput, workingDir);
 
                 log("[MAVEN][ERROR]");
