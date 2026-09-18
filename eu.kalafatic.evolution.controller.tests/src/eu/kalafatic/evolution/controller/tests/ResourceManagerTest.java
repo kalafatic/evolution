@@ -87,8 +87,8 @@ public class ResourceManagerTest {
 
         EvoService supervisor = resourceManager.getService("SUPERVISOR");
         assertNotNull("SUPERVISOR service should exist", supervisor);
-        assertTrue("SUPERVISOR URL should start with http://", supervisor.getUrl().startsWith("http://"));
-        assertTrue("SUPERVISOR URL should contain port", supervisor.getUrl().contains(":" + supervisor.getPort()));
+        assertEquals("SUPERVISOR service port must default to 8089", 8089, supervisor.getPort());
+        assertEquals("http://127.0.0.1:8089", supervisor.getUrl());
 
         EvoService server = resourceManager.getService("SERVER");
         assertNotNull("SERVER service should exist", server);

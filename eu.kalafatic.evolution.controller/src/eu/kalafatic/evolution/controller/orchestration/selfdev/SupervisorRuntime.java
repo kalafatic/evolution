@@ -27,10 +27,7 @@ public class SupervisorRuntime implements ProcessLifecycle {
         }
 
         if (supervisorProcess != null) {
-            supervisorProcess.destroyForcibly();
-            try {
-                supervisorProcess.waitFor(2, TimeUnit.SECONDS);
-            } catch (InterruptedException ignored) {}
+            killProcessTree(supervisorProcess);
             supervisorProcess = null;
         }
 
@@ -52,11 +49,12 @@ public class SupervisorRuntime implements ProcessLifecycle {
             cmd.add("--debug");
         }
 
+        File logFile = new File(context.getLogDirectory(), "supervisor_runtime.log");
+
         try {
             ProcessBuilder pb = new ProcessBuilder(cmd);
             pb.directory(jarFile.getParentFile());
 
-            File logFile = new File(context.getLogDirectory(), "supervisor_runtime.log");
             pb.redirectErrorStream(true);
             pb.redirectOutput(ProcessBuilder.Redirect.appendTo(logFile));
 
@@ -67,7 +65,7 @@ public class SupervisorRuntime implements ProcessLifecycle {
 
             if (readyRes.isSuccess()) {
                 EvoService service = context.getResourceManager().getService("SUPERVISOR");
-                String serviceUrl = service != null ? service.getUrl() : "http://127.0.0.1:48080";
+                String serviceUrl = service != null ? service.getUrl() : "http://127.0.0.1:8089";
                 return new TaskResult.Builder("start_supervisor")
                         .status(TaskStatus.SUCCESS)
                         .message("Supervisor started successfully and responding on " + serviceUrl)
@@ -77,16 +75,49 @@ public class SupervisorRuntime implements ProcessLifecycle {
                         .logFile(logFile)
                         .build();
             } else {
-                if (supervisorProcess != null) {
-                    supervisorProcess.destroyForcibly();
-                    supervisorProcess = null;
+                int exitCode = -1;
+                try {
+                    if (supervisorProcess != null && !supervisorProcess.isAlive()) {
+                        exitCode = supervisorProcess.exitValue();
+                    }
+                } catch (Throwable ignored) {}
+
+                String logSnippet = getRecentLogSnippet(logFile);
+                killProcessTree(supervisorProcess);
+                supervisorProcess = null;
+
+                String failMsg = "Supervisor process started but failed ping check: " + readyRes.getMessage();
+                if (exitCode != -1) {
+                    failMsg += " (Process exited with code " + exitCode + ")";
                 }
-                return TaskResult.failure("start_supervisor", "Supervisor process started but failed ping check: " + readyRes.getMessage(), null);
+
+                return new TaskResult.Builder("start_supervisor")
+                        .status(TaskStatus.FAILED)
+                        .message(failMsg)
+                        .duration(duration)
+                        .command(String.join(" ", cmd))
+                        .workingDirectory(jarFile.getParentFile())
+                        .logFile(logFile)
+                        .exitCode(exitCode)
+                        .diagnostic("logSnippet", logSnippet)
+                        .build();
             }
 
         } catch (Exception e) {
             long duration = System.currentTimeMillis() - startTime;
-            return TaskResult.failure("start_supervisor", "Failed to start Supervisor process: " + e.getMessage(), e);
+            String logSnippet = getRecentLogSnippet(logFile);
+            killProcessTree(supervisorProcess);
+            supervisorProcess = null;
+            return new TaskResult.Builder("start_supervisor")
+                    .status(TaskStatus.FAILED)
+                    .message("Failed to start Supervisor process: " + e.getMessage())
+                    .duration(duration)
+                    .command(String.join(" ", cmd))
+                    .workingDirectory(jarFile.getParentFile())
+                    .logFile(logFile)
+                    .diagnostic("logSnippet", logSnippet)
+                    .error(e)
+                    .build();
         }
     }
 
@@ -111,7 +142,13 @@ public class SupervisorRuntime implements ProcessLifecycle {
             }
 
             if (supervisorProcess != null && !supervisorProcess.isAlive()) {
-                return TaskResult.failure("supervisor_ready", "Supervisor process terminated unexpectedly.", null);
+                int exitVal = -1;
+                try { exitVal = supervisorProcess.exitValue(); } catch (Throwable ignored) {}
+                return new TaskResult.Builder("supervisor_ready")
+                        .status(TaskStatus.FAILED)
+                        .message("Supervisor process terminated unexpectedly with exit code " + exitVal)
+                        .exitCode(exitVal)
+                        .build();
             }
 
             try {
@@ -141,13 +178,8 @@ public class SupervisorRuntime implements ProcessLifecycle {
                 Thread.sleep(1000);
             }
 
-            if (supervisorProcess != null && supervisorProcess.isAlive()) {
-                supervisorProcess.destroy();
-                boolean exited = supervisorProcess.waitFor(5, TimeUnit.SECONDS);
-                if (!exited) {
-                    supervisorProcess.destroyForcibly();
-                    supervisorProcess.waitFor(2, TimeUnit.SECONDS);
-                }
+            if (supervisorProcess != null) {
+                killProcessTree(supervisorProcess);
             }
             supervisorProcess = null;
 
@@ -161,6 +193,37 @@ public class SupervisorRuntime implements ProcessLifecycle {
         } catch (Exception e) {
             long duration = System.currentTimeMillis() - startTime;
             return TaskResult.failure("stop_supervisor", "Failed to stop Supervisor process: " + e.getMessage(), e);
+        }
+    }
+
+    private static void killProcessTree(Process p) {
+        if (p == null) return;
+        try {
+            p.descendants().forEach(ph -> {
+                try { ph.destroyForcibly(); } catch (Throwable ignored) {}
+            });
+        } catch (Throwable ignored) {}
+        try {
+            p.destroyForcibly();
+            p.waitFor(3, TimeUnit.SECONDS);
+        } catch (Throwable ignored) {}
+    }
+
+    private String getRecentLogSnippet(File logFile) {
+        if (logFile == null || !logFile.exists() || logFile.length() == 0) {
+            return "Log file empty or not created.";
+        }
+        try {
+            List<String> lines = java.nio.file.Files.readAllLines(logFile.toPath(), java.nio.charset.StandardCharsets.UTF_8);
+            int total = lines.size();
+            int start = Math.max(0, total - 50);
+            StringBuilder sb = new StringBuilder();
+            for (int i = start; i < total; i++) {
+                sb.append(lines.get(i)).append("\n");
+            }
+            return sb.toString().trim();
+        } catch (Exception e) {
+            return "Failed to read log file: " + e.getMessage();
         }
     }
 

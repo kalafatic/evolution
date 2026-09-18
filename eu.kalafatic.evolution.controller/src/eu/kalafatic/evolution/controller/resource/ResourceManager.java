@@ -34,6 +34,7 @@ public class ResourceManager {
     private static final ResourceManager INSTANCE = new ResourceManager();
 
     private Orchestrator orchestrator;
+    private String lastLoggedEvoRepoMsg;
 
     private ResourceManager() {
     }
@@ -184,7 +185,11 @@ public class ResourceManager {
                 } else {
                     resolvedPath = defaultEvoGitRepo;
                 }
-                Log.log("[RESOURCE][EVO_REPOSITORY] source=" + source + " path=" + resolvedPath);
+                String logMsg = "[RESOURCE][EVO_REPOSITORY] source=" + source + " path=" + resolvedPath;
+                if (!logMsg.equals(lastLoggedEvoRepoMsg)) {
+                    lastLoggedEvoRepoMsg = logMsg;
+                    Log.log(logMsg);
+                }
                 break;
             }
 
@@ -420,7 +425,7 @@ public class ResourceManager {
         Orchestrator orch = getOrchestrator();
 
         // 1. SUPERVISOR Service
-        int supervisorPort = 48080;
+        int supervisorPort = 8089;
         String supervisorHost = "127.0.0.1";
         if (orch != null && orch.getSupervisorSettings() != null) {
             SupervisorSettings sup = orch.getSupervisorSettings();

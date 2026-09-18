@@ -26,7 +26,7 @@ public class SupervisorClient {
         if (service != null && service.getUrl() != null) {
             return service.getUrl();
         }
-        return "http://127.0.0.1:48080";
+        return "http://127.0.0.1:8089";
     }
 
     public boolean ping() {

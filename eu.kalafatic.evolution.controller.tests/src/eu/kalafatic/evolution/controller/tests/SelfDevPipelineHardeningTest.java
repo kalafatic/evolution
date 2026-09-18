@@ -8,6 +8,7 @@ import java.util.Set;
 import org.junit.Test;
 
 import eu.kalafatic.evolution.controller.orchestration.selfdev.AbstractSelfDevTask;
+import eu.kalafatic.evolution.controller.orchestration.selfdev.ArtifactType;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.BuildArtifact;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.MavenSupervisorBuilder;
 import eu.kalafatic.evolution.controller.orchestration.selfdev.SelfDevContext;
@@ -63,6 +64,33 @@ public class SelfDevPipelineHardeningTest {
             assertNull("Empty directory must yield no artifact", artifact);
         } finally {
             tempDir.delete();
+        }
+    }
+
+    @Test
+    public void testSupervisorRuntimeDiagnosticOutputAndCleanupOnFailure() {
+        File tempDir = new File(System.getProperty("java.io.tmpdir"), "test_sup_diag_" + System.currentTimeMillis());
+        tempDir.mkdirs();
+        try {
+            File fakeJar = new File(tempDir, "eu.kalafatic.evolution.supervisor.jar");
+            java.nio.file.Files.write(fakeJar.toPath(), "invalid jar content".getBytes());
+
+            SelfDevContext context = new SelfDevContext(tempDir, null);
+            BuildArtifact artifact = new BuildArtifact(ArtifactType.SUPERVISOR, fakeJar, "HEAD", null, null);
+            context.recordArtifact(artifact);
+
+            SupervisorRuntime runtime = new SupervisorRuntime();
+            TaskResult res = runtime.start(context);
+
+            assertEquals(TaskStatus.FAILED, res.getStatus());
+            assertFalse(runtime.isAlive());
+            assertNotNull("Diagnostic log snippet should be captured", res.getDiagnostics().get("logSnippet"));
+            assertNotNull("Log file location should be recorded", res.getLogFile());
+            assertTrue("Command should be recorded in result", res.getCommand() != null && res.getCommand().contains("java"));
+        } catch (Exception e) {
+            fail("Exception thrown during supervisor diagnostic test: " + e.getMessage());
+        } finally {
+            deleteRecursively(tempDir);
         }
     }
 
