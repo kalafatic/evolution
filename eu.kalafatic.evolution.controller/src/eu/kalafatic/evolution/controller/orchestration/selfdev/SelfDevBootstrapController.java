@@ -53,6 +53,10 @@ public class SelfDevBootstrapController {
         return orchestrator.executePreflight();
     }
 
+    public TaskResult runTask(String taskId) {
+        return orchestrator.executeTaskWithDependencies(taskId);
+    }
+
     public String check(String checkType) {
         return orchestrator.executeCheck(checkType);
     }

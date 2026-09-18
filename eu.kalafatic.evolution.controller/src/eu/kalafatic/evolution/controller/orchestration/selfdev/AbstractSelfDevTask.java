@@ -59,6 +59,7 @@ public abstract class AbstractSelfDevTask implements SelfDevTask {
         long startTime = System.currentTimeMillis();
         ResourceManager rm = context != null ? context.getResourceManager() : ResourceManager.getInstance();
 
+        System.out.println("[SELF-DEV][TASK]\nid=" + id + "\nname=" + name + "\nphase=START");
         logTaskStep("==================================================", null);
         logTaskStep("START", "Task [" + id + ": " + name + "]");
         if (context != null) {
@@ -115,6 +116,7 @@ public abstract class AbstractSelfDevTask implements SelfDevTask {
             logTaskStep("PRE_VALIDATION", "PASSED");
 
             // Step 4: Execute main task logic
+            System.out.println("[SELF-DEV][TASK]\nid=" + id + "\nphase=EXECUTE");
             logTaskStep("EXECUTION", "Executing task logic...");
             TaskResult runResult = run(context);
 
@@ -140,6 +142,7 @@ public abstract class AbstractSelfDevTask implements SelfDevTask {
 
             TaskResult recordedResult = builder.build();
             status = recordedResult.getStatus();
+            System.out.println("[SELF-DEV][TASK]\nid=" + id + "\nphase=RESULT\nstatus=" + status);
 
             if (recordedResult.getCommand() != null && !recordedResult.getCommand().isEmpty()) {
                 logTaskStep("COMMAND", recordedResult.getCommand());
