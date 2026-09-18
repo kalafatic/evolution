@@ -1785,7 +1785,10 @@ public class EvolutionServer extends NanoHTTPD {
         String sourceType = body.optString("sourceType", "HUGGING_FACE");
         String repo = body.optString("repository", "wikitext");
         String split = body.optString("split", "train");
-        String customOutputDir = body.optString("outputDir", "").trim();
+        String rawOutputDir = body.optString("outputDir", "").trim();
+        File targetDir = eu.kalafatic.evolution.controller.tools.DatasetAcquisitionTool.resolveDatasetOutputDir(rawOutputDir, repo);
+        targetDir.mkdirs();
+        String customOutputDir = targetDir.getAbsolutePath();
 
         long maxSamples = body.optLong("maxSamples", 0);
         long maxBytes = body.optLong("maxBytes", 0);
