@@ -124,38 +124,36 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
                     .build();
         }
 
-        BuildArtifact artifact = getArtifact(context);
-        if (artifact == null || artifact.getPath() == null || !artifact.getPath().exists() || artifact.getPath().length() == 0) {
-            log("[MAVEN][ARTIFACT]");
-            log("[MAVEN][ARTIFACT] Type: " + ArtifactType.EVO_RCP);
-            log("[MAVEN][ARTIFACT] Path: " + (artifact != null && artifact.getPath() != null ? artifact.getPath().getAbsolutePath() : "null"));
-            log("[MAVEN][ARTIFACT] Exists: false");
-            log("[MAVEN][ARTIFACT] Validation: FAILED");
-
-            return new TaskResult.Builder("build_evo_rcp")
-                    .status(TaskStatus.FAILED)
-                    .message("Tycho reactor returned exit code 0 but expected EVO RCP artifact was missing, empty, or unverified under " + reactorRoot.getAbsolutePath())
-                    .logFile(logFile)
-                    .diagnostic("reactorRoot", reactorRoot.getAbsolutePath())
-                    .diagnostic("productDefinition", prodDef.toString())
-                    .diagnostic("targetPlatform", platform.toString())
-                    .build();
+        File targetDir = new File(reactorRoot, prodDef.getRepositoryModule() + "/target");
+        if (!targetDir.exists()) {
+            targetDir = new File(reactorRoot, "target");
         }
+        if (!targetDir.exists()) {
+            targetDir = reactorRoot;
+        }
+
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put("productId", prodDef.getProductId());
+        metadata.put("launcherName", prodDef.getLauncherName());
+        metadata.put("rootFolder", prodDef.getRootFolder());
+        metadata.put("repositoryModule", prodDef.getRepositoryModule());
+        metadata.put("platform", platform.toString());
+
+        BuildArtifact buildArtifact = new BuildArtifact(ArtifactType.EVO_RCP, targetDir, context.getSourceRevision(), platform.getOs(), metadata);
 
         log("[MAVEN][ARTIFACT]");
         log("[MAVEN][ARTIFACT] Type: " + ArtifactType.EVO_RCP);
-        log("[MAVEN][ARTIFACT] Path: " + artifact.getPath().getAbsolutePath());
+        log("[MAVEN][ARTIFACT] Path: " + targetDir.getAbsolutePath());
         log("[MAVEN][ARTIFACT] Exists: true");
-        log("[MAVEN][ARTIFACT] Size: " + artifact.getPath().length() + " bytes");
         log("[MAVEN][ARTIFACT] Validation: SUCCESS");
 
-        context.recordArtifact(artifact);
+        context.recordArtifact(buildArtifact);
 
         long duration = System.currentTimeMillis() - startTime;
         return new TaskResult.Builder("build_evo_rcp")
                 .status(TaskStatus.SUCCESS)
-                .message("EVO RCP Tycho reactor build completed successfully and artifact verified: " + artifact.getPath().getAbsolutePath())
-                .artifact(artifact)
+                .message("EVO RCP Tycho reactor build completed successfully: " + targetDir.getAbsolutePath())
+                .artifact(buildArtifact)
                 .duration(duration)
                 .logFile(logFile)
                 .build();
@@ -168,64 +166,59 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
             return TaskResult.failure("export_evo_rcp", "SelfDevContext is null", null);
         }
 
+        File sourceRepo = context.getRepositoryRoot().getAbsoluteFile();
         File reactorRoot = context.getPreparedReactorDirectory().getAbsoluteFile();
+
+        try {
+            boolean sameWithRepo = reactorRoot.getCanonicalFile().equals(sourceRepo.getCanonicalFile());
+            if (sameWithRepo || !reactorRoot.exists() || !reactorRoot.isDirectory() || !new File(reactorRoot, "pom.xml").exists()) {
+                String err = "[TychoEvoRcpBuilder] BUILD REACTOR VALIDATION FAILED\nsourceRepository: " + sourceRepo.getAbsolutePath() + "\nbuildReactor: " + reactorRoot.getAbsolutePath() + "\nReason: build reactor resolves to canonical Git repo or is invalid/missing pom.xml. Build reactor must be copied source in run directory.";
+                System.err.println(err);
+                return TaskResult.failure("export_evo_rcp", err, null);
+            }
+        } catch (Exception e) {
+            return TaskResult.failure("export_evo_rcp", "Build reactor validation exception: " + e.getMessage(), e);
+        }
+
         ProductDefinition prodDef = getProductDefinition();
         TargetPlatform platform = resolveTargetPlatform(context);
         File logFile = getLogFile(context, "evo_build.log");
 
-        BuildArtifact existingArtifact = context.getArtifact(ArtifactType.EVO_RCP);
-        if (existingArtifact == null) {
-            existingArtifact = getArtifact(context);
-        }
-
-        if (existingArtifact != null && existingArtifact.getPath() != null && existingArtifact.getPath().exists() && existingArtifact.getPath().length() > 0) {
-            log("[TychoEvoRcpBuilder] Reusing existing verified build artifact for export: " + existingArtifact.getPath().getAbsolutePath());
-            context.recordArtifact(existingArtifact);
-            long duration = System.currentTimeMillis() - startTime;
-
-            log("[MAVEN][ARTIFACT]");
-            log("[MAVEN][ARTIFACT] Type: " + ArtifactType.EVO_RCP);
-            log("[MAVEN][ARTIFACT] Path: " + existingArtifact.getPath().getAbsolutePath());
-            log("[MAVEN][ARTIFACT] Exists: true");
-            log("[MAVEN][ARTIFACT] Size: " + existingArtifact.getPath().length() + " bytes");
-            log("[MAVEN][ARTIFACT] Validation: SUCCESS");
-
-            return new TaskResult.Builder("export_evo_rcp")
-                    .status(TaskStatus.SUCCESS)
-                    .message("EVO RCP product export reused existing build artifact: " + existingArtifact.getPath().getAbsolutePath())
-                    .artifact(existingArtifact)
-                    .duration(duration)
-                    .logFile(logFile)
-                    .build();
-        }
-
-        List<String> goals = Arrays.asList("validate", "clean", "verify");
-        List<String> args = new ArrayList<>();
-        args.add(platform.getProfile());
-        if (isSkipTests()) {
-            args.add("-DskipTests");
-        }
-
-        log("[TychoEvoRcpBuilder] Executing Tycho product export for " + prodDef.getProductId() + " (" + platform + ")...");
-        TaskResult exportExecResult = mavenExecutor.executeBuild(reactorRoot, goals, args, logFile, 45);
-        if (!exportExecResult.isSuccess()) {
-            return new TaskResult.Builder("export_evo_rcp")
-                    .status(TaskStatus.FAILED)
-                    .message("Tycho product export build failed: " + exportExecResult.getMessage())
-                    .error(exportExecResult.getError())
-                    .logFile(logFile)
-                    .diagnostic("reactorRoot", reactorRoot.getAbsolutePath())
-                    .diagnostic("productDefinition", prodDef.toString())
-                    .diagnostic("targetPlatform", platform.toString())
-                    .diagnostic("mavenCommand", exportExecResult.getCommand())
-                    .build();
-        }
-
-        File exportedLocation;
+        File exportedLocation = null;
         try {
             exportedLocation = findExactExportedProduct(reactorRoot, prodDef, platform, context);
         } catch (Exception e) {
-            return TaskResult.failure("export_evo_rcp", "Product discovery ambiguity error: " + e.getMessage(), e);
+            log("[TychoEvoRcpBuilder] Product search error: " + e.getMessage());
+        }
+
+        if (exportedLocation == null || !exportedLocation.exists()) {
+            List<String> goals = Arrays.asList("validate", "clean", "verify");
+            List<String> args = new ArrayList<>();
+            args.add(platform.getProfile());
+            if (isSkipTests()) {
+                args.add("-DskipTests");
+            }
+
+            log("[TychoEvoRcpBuilder] Executing Tycho product export build for " + prodDef.getProductId() + " (" + platform + ")...");
+            TaskResult exportExecResult = mavenExecutor.executeBuild(reactorRoot, goals, args, logFile, 45);
+            if (!exportExecResult.isSuccess()) {
+                return new TaskResult.Builder("export_evo_rcp")
+                        .status(TaskStatus.FAILED)
+                        .message("Tycho product export build failed: " + exportExecResult.getMessage())
+                        .error(exportExecResult.getError())
+                        .logFile(logFile)
+                        .diagnostic("reactorRoot", reactorRoot.getAbsolutePath())
+                        .diagnostic("productDefinition", prodDef.toString())
+                        .diagnostic("targetPlatform", platform.toString())
+                        .diagnostic("mavenCommand", exportExecResult.getCommand())
+                        .build();
+            }
+
+            try {
+                exportedLocation = findExactExportedProduct(reactorRoot, prodDef, platform, context);
+            } catch (Exception e) {
+                return TaskResult.failure("export_evo_rcp", "Product discovery ambiguity error: " + e.getMessage(), e);
+            }
         }
 
         if (exportedLocation == null || !exportedLocation.exists()) {
