@@ -747,6 +747,10 @@ public class HuggingFaceDatasetSource implements DatasetSource {
 
     private boolean fetchNextParquetFileChunk(String runTag) {
         while (currentParquetUrlIndex < pendingParquetUrls.size()) {
+            if (isBoundsExceeded()) {
+                endOfStream = true;
+                return false;
+            }
             String fileUrl = pendingParquetUrls.get(currentParquetUrlIndex++);
             System.out.printf("[HF-PARQUET-STREAM][run=%s] Downloading parquet file %d/%d: %s\n",
                     runTag, currentParquetUrlIndex, pendingParquetUrls.size(), fileUrl);
@@ -756,33 +760,38 @@ public class HuggingFaceDatasetSource implements DatasetSource {
                 DownloadResult res = downloader.download(req);
                 if (res != null && res.isSuccess()) {
                     byte[] rawBytes = res.getRawBytes();
-                    long dlBytes = res.getDownloadedBytes() > 0 ? res.getDownloadedBytes() : rawBytes.length;
+                    long dlBytes = res.getDownloadedBytes() > 0 ? res.getDownloadedBytes() : (rawBytes != null ? rawBytes.length : 0);
                     totalRawBytesDownloaded += dlBytes;
                     stats.addDownloadedBytes(dlBytes);
 
-                    File tempParquetFile = File.createTempFile("hf_parquet_", ".parquet");
-                    tempParquetFile.deleteOnExit();
-                    try {
-                        Files.write(tempParquetFile.toPath(), rawBytes);
-                        DatasetItem localItem = new DatasetItem(true, tempParquetFile.getAbsolutePath(), "PARQUET");
-                        DatasetPreparationContext prepCtx = new DatasetPreparationContext();
-                        ParquetAdapter adapter = new ParquetAdapter();
-                        List<NormalizedSample> extracted = adapter.convert(localItem, prepCtx);
-                        if (extracted != null && !extracted.isEmpty()) {
-                            long chunkExtractedBytes = 0;
-                            for (NormalizedSample s : extracted) {
-                                currentChunk.add(s);
-                                totalSamplesExtracted++;
-                                byte[] b = s.toFullText().getBytes(StandardCharsets.UTF_8);
-                                chunkExtractedBytes += b.length;
+                    if (rawBytes != null && rawBytes.length > 0) {
+                        File tempParquetFile = File.createTempFile("hf_parquet_", ".parquet");
+                        tempParquetFile.deleteOnExit();
+                        try {
+                            Files.write(tempParquetFile.toPath(), rawBytes);
+                            rawBytes = null; // enable GC
+                            DatasetItem localItem = new DatasetItem(true, tempParquetFile.getAbsolutePath(), "PARQUET");
+                            DatasetPreparationContext prepCtx = new DatasetPreparationContext();
+                            ParquetAdapter adapter = new ParquetAdapter();
+                            List<NormalizedSample> extracted = adapter.convert(localItem, prepCtx);
+                            if (extracted != null && !extracted.isEmpty()) {
+                                long chunkExtractedBytes = 0;
+                                for (NormalizedSample s : extracted) {
+                                    currentChunk.add(s);
+                                    totalSamplesExtracted++;
+                                    byte[] b = s.toFullText().getBytes(StandardCharsets.UTF_8);
+                                    chunkExtractedBytes += b.length;
+                                }
+                                stats.addExtractedBytes(chunkExtractedBytes);
+                                System.out.printf("[HF-PARQUET-STREAM][run=%s] Successfully extracted %d samples (%d bytes) from parquet file %s\n",
+                                        runTag, extracted.size(), chunkExtractedBytes, fileUrl);
+                                return true;
                             }
-                            stats.addExtractedBytes(chunkExtractedBytes);
-                            System.out.printf("[HF-PARQUET-STREAM][run=%s] Successfully extracted %d samples (%d bytes) from parquet file %s\n",
-                                    runTag, extracted.size(), chunkExtractedBytes, fileUrl);
-                            return true;
+                        } finally {
+                            if (tempParquetFile.exists()) {
+                                tempParquetFile.delete();
+                            }
                         }
-                    } finally {
-                        tempParquetFile.delete();
                     }
                 }
             } catch (Exception ex) {
