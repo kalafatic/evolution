@@ -244,44 +244,53 @@ public class CognitiveLoopEngine implements ICognitiveLoop {
 
         String reqSource = (String) goalParams.getOrDefault("sourceType", meta.get("sourceType"));
         String reqRepo = (String) goalParams.getOrDefault("repository", meta.get("repository"));
-        if (reqRepo == null) reqRepo = (String) goalParams.getOrDefault("domain", meta.get("domain"));
+        if (reqRepo == null) {
+            String dom = (String) goalParams.getOrDefault("domain", meta.get("domain"));
+            if (dom != null && dom.contains("/")) {
+                reqRepo = dom.trim();
+            }
+        }
         String reqSplit = (String) goalParams.getOrDefault("split", meta.get("split"));
 
-        if (reqSource != null || reqRepo != null) {
+        boolean hasExplicitRepo = (reqRepo != null && !reqRepo.trim().isEmpty());
+
+        if (reqSource != null || hasExplicitRepo) {
             String src = reqSource != null ? reqSource : "HUGGING_FACE";
-            String repo = reqRepo != null ? reqRepo : "Salesforce/wikitext";
-            String split = reqSplit != null ? reqSplit : "validation";
+            String repo = hasExplicitRepo ? reqRepo : "Salesforce/wikitext";
+            String split = reqSplit != null ? reqSplit : "train";
             pool.add(CognitiveStrategy.acquisitionStrategy("EXPLICIT_REQUESTED_STRATEGY", src, repo, split, goalParams));
         }
 
-        // Dynamic Source Discovery integration using HuggingFaceSourceDiscovery
-        String domain = goal != null ? goal.getTargetDomain() : "";
-        String desc = goal != null ? goal.getDescription().toLowerCase() : "";
-        if ("DATASET_ACQUISITION".equalsIgnoreCase(domain) || desc.contains("acquire") || desc.contains("dataset") || desc.contains("data")) {
-            long targetBytes = 500L * 1024L * 1024L;
-            Object tbObj = goalParams.get("targetUsableBytes");
-            if (tbObj instanceof Number) targetBytes = ((Number) tbObj).longValue();
+        // Only run dynamic discovery if no explicit repository was requested
+        if (!hasExplicitRepo) {
+            String domain = goal != null ? goal.getTargetDomain() : "";
+            String desc = goal != null ? goal.getDescription().toLowerCase() : "";
+            if ("DATASET_ACQUISITION".equalsIgnoreCase(domain) || desc.contains("acquire") || desc.contains("dataset") || desc.contains("data")) {
+                long targetBytes = 500L * 1024L * 1024L;
+                Object tbObj = goalParams.get("targetUsableBytes");
+                if (tbObj instanceof Number) targetBytes = ((Number) tbObj).longValue();
 
-            TrainingDataPreferences prefs = TrainingDataPreferences.builder()
-                    .minimumUsableBytes(targetBytes)
-                    .targetUsableBytes(targetBytes)
-                    .addDomain(reqRepo != null ? reqRepo : "text")
-                    .build();
+                TrainingDataPreferences prefs = TrainingDataPreferences.builder()
+                        .minimumUsableBytes(targetBytes)
+                        .targetUsableBytes(targetBytes)
+                        .addDomain("text")
+                        .build();
 
-            HuggingFaceSourceDiscovery discovery = new HuggingFaceSourceDiscovery();
-            List<DataSourceCandidate> candidates = discovery.discover(prefs);
-            for (DataSourceCandidate cand : candidates) {
-                if (cand.getDatasetId() != null) {
-                    String repoName = cand.getDatasetId();
-                    CognitiveStrategy strat = CognitiveStrategy.acquisitionStrategy(
-                            "DISCOVERED_STRAT_" + repoName.replaceAll("[^a-zA-Z0-9_]", "_"),
-                            cand.getProvider(),
-                            repoName,
-                            "train",
-                            goalParams
-                    );
-                    if (!pool.contains(strat)) {
-                        pool.add(strat);
+                HuggingFaceSourceDiscovery discovery = new HuggingFaceSourceDiscovery();
+                List<DataSourceCandidate> candidates = discovery.discover(prefs);
+                for (DataSourceCandidate cand : candidates) {
+                    if (cand.getDatasetId() != null) {
+                        String repoName = cand.getDatasetId();
+                        CognitiveStrategy strat = CognitiveStrategy.acquisitionStrategy(
+                                "DISCOVERED_STRAT_" + repoName.replaceAll("[^a-zA-Z0-9_]", "_"),
+                                cand.getProvider(),
+                                repoName,
+                                "train",
+                                goalParams
+                        );
+                        if (!pool.contains(strat)) {
+                            pool.add(strat);
+                        }
                     }
                 }
             }

@@ -1837,26 +1837,30 @@ public class EvolutionServer extends NanoHTTPD {
         eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveResult cognitiveResult =
             cognitiveEngine.solve(sessionCont, taskContext, goal);
 
-        long usableBytes = 0;
-        for (eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveObservation obs : cognitiveResult.getObservations()) {
-            usableBytes += obs.getUsableBytes();
-        }
-        if (usableBytes == 0) {
-            usableBytes = ((Number) taskContext.getMetadata().getOrDefault("usableContentBytes", 0L)).longValue();
-        }
+        // Retrieve authoritative acquisition result from TaskContext metadata
+        eu.kalafatic.evolution.forge.data.api.service.TrainingDataAcquisitionResult acqResult =
+            (eu.kalafatic.evolution.forge.data.api.service.TrainingDataAcquisitionResult) taskContext.getMetadata().get("acquisitionResult");
 
-        String acqStatus = (String) taskContext.getMetadata().getOrDefault("acquisitionStatus", cognitiveResult.getFinalState().name());
+        long usableBytes = acqResult != null ? acqResult.getAcceptedContentBytes() : 0L;
+        String acqStatus = acqResult != null ? acqResult.getStatus().name() : cognitiveResult.getFinalState().name();
+        String failureReason = acqResult != null ? (acqResult.getFailureReason() != null ? acqResult.getFailureReason() : "") : "";
 
         JSONObject result = new JSONObject();
         result.put("sessionId", sessionId);
         result.put("status", acqStatus);
         result.put("cognitiveState", cognitiveResult.getFinalState().name());
+        result.put("repository", repo);
+        result.put("sourceType", sourceType);
+        result.put("split", split);
         result.put("requestedUsableBytes", targetUsableBytes);
         result.put("actualUsableBytes", usableBytes);
         result.put("attempts", cognitiveResult.getAttempts());
+        result.put("failureReason", failureReason);
         result.put("summary", cognitiveResult.getSummary());
 
-        if (cognitiveResult.getFinalState() == eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveState.SUCCESS || usableBytes > 0) {
+        if (acqResult != null && acqResult.getStatus() == eu.kalafatic.evolution.forge.data.api.service.TrainingDataAcquisitionResult.Status.READY) {
+            return newFixedLengthResponse(Response.Status.OK, "application/json", result.toString());
+        } else if (usableBytes > 0) {
             return newFixedLengthResponse(Response.Status.OK, "application/json", result.toString());
         } else {
             return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", result.toString());

@@ -163,6 +163,11 @@ public class HuggingFaceSourceDiscovery implements TrainingDataSourceDiscovery {
                     double baseRelevance = 0.95 - (round * 0.05) - (i * 0.01);
                     double relevance = Math.max(0.3, baseRelevance);
 
+                    String lowerId = id.toLowerCase();
+                    if (lowerId.contains("tokenizer") || lowerId.contains("distilgpt2") || lowerId.contains("gguf") || lowerId.contains("lora")) {
+                        continue;
+                    }
+
                     candidates.add(new DataSourceCandidate(
                             id,
                             "HUGGING_FACE",
