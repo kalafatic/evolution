@@ -198,22 +198,30 @@ public class ForgeOrchestratorImpl implements ForgeOrchestrator {
             );
 
             EvoLlmTrainer trainer = new EvoLlmTrainer(model, EvoLlmTrainer.TrainingProfile.EVO_FAST);
-            List<TrainingSample> trainingSamples = samples.stream()
-                    .map(s -> {
-                        int len = s.input.size();
-                        int[] inputIds = new int[len];
-                        int[] labels = new int[len];
-                        boolean[] lossMask = new boolean[len];
-                        float[] attMask = new float[len];
-                        for (int i = 0; i < len; i++) {
-                            inputIds[i] = s.input.get(i);
-                            labels[i] = (i + 1 < len) ? s.input.get(i + 1) : (s.target != null ? s.target : s.input.get(i));
-                            lossMask[i] = true;
-                            attMask[i] = 1.0f;
-                        }
-                        return new TrainingSample(inputIds, labels, lossMask, attMask);
-                    })
-                    .collect(Collectors.toList());
+            List<NormalizedSample> normSamples = (prepResult != null && prepResult.getArtifact() != null && prepResult.getArtifact().getSamples() != null)
+                    ? prepResult.getArtifact().getSamples() : java.util.Collections.emptyList();
+
+            List<TrainingSample> trainingSamples;
+            if (!normSamples.isEmpty()) {
+                trainingSamples = datasetBuilder.buildTrainingSamples(normSamples, tokenizer, job.getModelConfig().getMaxSeqLen());
+            } else {
+                trainingSamples = samples.stream()
+                        .map(s -> {
+                            int len = s.input.size();
+                            int[] inputIds = new int[len];
+                            int[] labels = new int[len];
+                            boolean[] lossMask = new boolean[len];
+                            float[] attMask = new float[len];
+                            for (int i = 0; i < len; i++) {
+                                inputIds[i] = s.input.get(i);
+                                labels[i] = (i + 1 < len) ? s.input.get(i + 1) : (s.target != null ? s.target : s.input.get(i));
+                                lossMask[i] = true;
+                                attMask[i] = 1.0f;
+                            }
+                            return new TrainingSample(inputIds, labels, lossMask, attMask);
+                        })
+                        .collect(Collectors.toList());
+            }
 
             trainer.train(trainingSamples, job.getTrainingConfig().getEpochs());
             List<Double> losses = trainer.getLossHistory();
