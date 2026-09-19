@@ -291,16 +291,34 @@ public class HuggingFaceDatasetSource implements DatasetSource {
 
         long httpStartMs = System.currentTimeMillis();
         DownloadRequest req = new DownloadRequest(targetUrl);
-        DownloadResult result;
-        try {
-            result = downloader.download(req);
-        } catch (IOException e) {
-            long httpDurationMs = System.currentTimeMillis() - httpStartMs;
-            System.out.printf("[HF-ACQ][run=%s][HTTP-RESULT]\noffset=%d\nrequestedRows=%d\nreceivedRows=%d\nhttpStatus=%d\nresponseBytes=%d\ndurationMs=%d\n",
-                    runTag, currentOffset, requestedLength, 0, 500, 0, httpDurationMs);
-            lastError = e.getMessage();
-            endOfStream = true;
-            return;
+        DownloadResult result = null;
+        int pageAttempts = 0;
+        int maxPageAttempts = 3;
+        while (pageAttempts < maxPageAttempts) {
+            pageAttempts++;
+            try {
+                result = downloader.download(req);
+                break;
+            } catch (IOException e) {
+                lastError = e.getMessage();
+                if (pageAttempts < maxPageAttempts) {
+                    System.err.printf("[HF-SOURCE] Page fetch error at offset %d (attempt %d/%d): %s. Retrying...\n",
+                            currentOffset, pageAttempts, maxPageAttempts, e.getMessage());
+                    try {
+                        Thread.sleep(500L * pageAttempts);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        endOfStream = true;
+                        return;
+                    }
+                } else {
+                    long httpDurationMs = System.currentTimeMillis() - httpStartMs;
+                    System.out.printf("[HF-ACQ][run=%s][HTTP-RESULT]\noffset=%d\nrequestedRows=%d\nreceivedRows=%d\nhttpStatus=%d\nresponseBytes=%d\ndurationMs=%d\n",
+                            runTag, currentOffset, requestedLength, 0, 500, 0, httpDurationMs);
+                    endOfStream = true;
+                    return;
+                }
+            }
         }
         long httpDurationMs = System.currentTimeMillis() - httpStartMs;
 

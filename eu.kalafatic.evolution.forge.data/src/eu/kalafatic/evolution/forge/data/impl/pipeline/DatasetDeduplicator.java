@@ -59,19 +59,49 @@ public class DatasetDeduplicator implements DataDeduplicator {
         }
     }
 
+    private static final long[] SEEDS = {
+        0x9e3779b97f4a7c15L,
+        0xbf58476d1ce4e5b9L,
+        0x94d049bb133111ebL,
+        0x2545f4914f6cdd1dL
+    };
+
     private long computeShingleFingerprint(String text) {
         if (text == null || text.length() < 150) return 0L;
-        // Compute MinHash fingerprint over character 5-grams
+
+        String[] words = text.toLowerCase().split("\\s+");
+        if (words.length < 15) return 0L;
+
         int k = 5;
-        long minHash = Long.MAX_VALUE;
-        long maxHash = Long.MIN_VALUE;
-        for (int i = 0; i <= text.length() - k; i += 2) {
-            String gram = text.substring(i, i + k);
-            long h = mixHash(gram.hashCode());
-            if (h < minHash) minHash = h;
-            if (h > maxHash) maxHash = h;
+        long[] minHashes = new long[SEEDS.length];
+        for (int s = 0; s < SEEDS.length; s++) {
+            minHashes[s] = Long.MAX_VALUE;
         }
-        return minHash != Long.MAX_VALUE ? (minHash ^ maxHash) : 0L;
+
+        for (int i = 0; i <= words.length - k; i++) {
+            StringBuilder sb = new StringBuilder();
+            for (int j = 0; j < k; j++) {
+                if (j > 0) sb.append(' ');
+                sb.append(words[i + j]);
+            }
+            String gram = sb.toString();
+            long baseHash = mixHash(gram.hashCode());
+
+            for (int s = 0; s < SEEDS.length; s++) {
+                long h = mixHash((int) (baseHash ^ SEEDS[s]));
+                if (h < minHashes[s]) {
+                    minHashes[s] = h;
+                }
+            }
+        }
+
+        long combined = 17L;
+        for (int s = 0; s < SEEDS.length; s++) {
+            if (minHashes[s] == Long.MAX_VALUE) return 0L;
+            combined = combined * 31L + minHashes[s];
+        }
+
+        return combined != 0L ? combined : 1L;
     }
 
     private static long mixHash(int code) {
