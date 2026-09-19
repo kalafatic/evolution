@@ -167,6 +167,7 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
                     failedSourceNames.add(source.getSourceName() + " (Preflight: " + reason + ")");
                     System.out.printf("[HF-ACQ][run=%s][INITIALIZE]\nsource=%s\nstatus=FAILED\nreason=%s\n",
                             runId, source.getSourceName(), reason);
+                    exhaustedSourceNames.add(source.getSourceName());
                     continue;
                 }
 
