@@ -38,6 +38,8 @@ public class RowEditDialog extends DynamicMapDialog {
                    SelfDevRow.EXPORT_PRODUCT.equals(row.name) ||
                    SelfDevRow.EXPORT_PRODUCT_EVO.equals(row.name) ||
                    SelfDevRow.EXPORT_PRODUCT_SUPERVISOR.equals(row.name) ||
+                   SelfDevRow.START_SUPERVISOR.equals(row.name) ||
+                   SelfDevRow.START_EVO.equals(row.name) ||
                    SelfDevRow.START_EVO_PRODUCT_SUPERVISOR.equals(row.name) ||
                    SelfDevRow.STOP_EVO_PRODUCT_SUPERVISOR.equals(row.name)) {
             pathFlags |= DynamicField.DIRECTORY;

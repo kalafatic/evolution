@@ -84,6 +84,8 @@ public class DevelopmentPage extends AEvoPage {
 		public static final String EXPORT_PRODUCT = "Export Product";
 		public static final String EXPORT_PRODUCT_EVO = "Export Product (Evo)";
 		public static final String EXPORT_PRODUCT_SUPERVISOR = "Export Product (Supervisor)";
+		public static final String START_SUPERVISOR = "Start Supervisor";
+		public static final String START_EVO = "Start Evo Product";
 		public static final String START_EVO_PRODUCT_SUPERVISOR = "Start Evo Product (Supervisor)";
 		public static final String STOP_EVO_PRODUCT_SUPERVISOR = "Stop Evo Product (Supervisor)";
 		public static final String SUPERVISOR_LOOP = "Supervisor Engine";
@@ -360,6 +362,8 @@ public class DevelopmentPage extends AEvoPage {
 		sdData.add(new SelfDevRow(row++, "BUILD_SUPERVISOR", SelfDevRow.BUILD_PROJECT_SUPERVISOR, "mvn clean install -pl eu.kalafatic.evolution.supervisor -DskipTests", targetPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
 		sdData.add(new SelfDevRow(row++, "EXPORT_EVO", SelfDevRow.EXPORT_PRODUCT_EVO, "mvn clean package -Pexport-product -DskipTests", exportPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
 		sdData.add(new SelfDevRow(row++, "EXPORT_SUPERVISOR", SelfDevRow.EXPORT_PRODUCT_SUPERVISOR, "mvn clean package -pl eu.kalafatic.evolution.supervisor -DskipTests", exportPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
+		sdData.add(new SelfDevRow(row++, "START_SUPERVISOR", SelfDevRow.START_SUPERVISOR, "java -jar supervisor.jar --port 8099", exportPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
+		sdData.add(new SelfDevRow(row++, "START_EVO", SelfDevRow.START_EVO, "./evo --port 48091", exportPath, EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
 		sdData.add(new SelfDevRow(row++, "START_EVO_SUPERVISOR", SelfDevRow.START_EVO_PRODUCT_SUPERVISOR, "java -jar supervisor.jar --start-evo --path " + exportPath, exportPath, EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
 		sdData.add(new SelfDevRow(row++, "SUPERVISOR_LOOP", SelfDevRow.SUPERVISOR_LOOP, "java -jar supervisor.jar --loop", "supervisor.exe", EStatus.NA.name(), EStatus.READY, EApp.SUPERVISOR.name()));
 		sdData.add(new SelfDevRow(row++, "SELF_DEV_LOOP", SelfDevRow.SELF_DEV_LOOP, "java -jar evolution.jar --self-dev-loop", "orchestrator", EStatus.NA.name(), EStatus.READY, EApp.EVO.name()));
@@ -684,6 +688,10 @@ public class DevelopmentPage extends AEvoPage {
 			"FROM Local Git Source Checkout TO Workspace Build Target: Compiles Tycho RCP modules into build workspace (-Dproject.build.directory=...).";
 		case SelfDevRow.EXPORT_PRODUCT_EVO, SelfDevRow.EXPORT_PRODUCT_SUPERVISOR ->
 			"FROM Workspace Build Target TO Workspace Export Directory: Materializes unzipped RCP product layout (executables, plugins, configuration).";
+		case SelfDevRow.START_SUPERVISOR ->
+			"FROM Workspace Export Directory TO Active Process: Launches Supervisor process on offset port and verifies endpoint readiness.";
+		case SelfDevRow.START_EVO ->
+			"FROM Workspace Export Directory TO Active Process: Launches EVO RCP product process on offset port directly.";
 		case SelfDevRow.START_EVO_PRODUCT_SUPERVISOR ->
 			"FROM Workspace Export Directory TO Active Process: Launches EVO RCP product via Supervisor runner and verifies startup.";
 		case SelfDevRow.STOP_EVO_PRODUCT_SUPERVISOR ->
@@ -947,12 +955,18 @@ public class DevelopmentPage extends AEvoPage {
 						row.path = targetPath;
 					} else if (SelfDevRow.EXPORT_PRODUCT_EVO.equals(row.name)
 							|| SelfDevRow.EXPORT_PRODUCT_SUPERVISOR.equals(row.name)
+							|| SelfDevRow.START_SUPERVISOR.equals(row.name)
+							|| SelfDevRow.START_EVO.equals(row.name)
 							|| SelfDevRow.START_EVO_PRODUCT_SUPERVISOR.equals(row.name)
 							|| SelfDevRow.STOP_EVO_PRODUCT_SUPERVISOR.equals(row.name)) {
 						String exportPath = getExportPath();
 						row.path = exportPath;
 						if (SelfDevRow.START_EVO_PRODUCT_SUPERVISOR.equals(row.name)) {
 							row.command = "java -jar supervisor.jar --start-evo --path " + exportPath;
+						} else if (SelfDevRow.START_SUPERVISOR.equals(row.name)) {
+							row.command = "java -jar supervisor.jar --port 8099";
+						} else if (SelfDevRow.START_EVO.equals(row.name)) {
+							row.command = "./evo --port 48091";
 						}
 					}
 				}
