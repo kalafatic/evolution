@@ -23,11 +23,40 @@ public class SupervisorRuntime implements ProcessLifecycle {
         int supervisorPort = context.getEffectiveSupervisorPort();
         int controlPort = context.getEffectiveSupervisorControlPort();
 
-        if (isAlive() && activeClient.ping()) {
-            return new TaskResult.Builder("start_supervisor")
-                    .status(TaskStatus.SUCCESS)
-                    .message("Supervisor is already running and responding to ping on " + activeClient.getBaseUrl() + ".")
-                    .build();
+        boolean isReachable = activeClient.ping();
+        log("[START_EVO_SUPERVISOR][EXISTING_ENDPOINT]");
+        log("endpoint=" + activeClient.getBaseUrl());
+        log("reachable=" + isReachable);
+        log("runId=" + context.getRunId());
+        log("configuredSupervisorPort=" + (supervisorPort - context.getPortOffset()));
+        log("effectiveSupervisorPort=" + supervisorPort);
+        log("portOffset=" + context.getPortOffset());
+
+        if (isReachable) {
+            long currentPid = context.getSupervisorPid() > 0 ? context.getSupervisorPid() : (isAlive() ? getPid() : -1);
+            SelfDevContext.ProcessOwnership ownership = context.classifyProcessOwnership(currentPid);
+
+            log("[START_EVO_SUPERVISOR][OWNERSHIP]");
+            log("endpoint=" + activeClient.getBaseUrl());
+            log("pid=" + currentPid);
+            log("ownership=" + ownership);
+            log("runId=" + context.getRunId());
+            log("processWorkingDirectory=" + (context.getSupervisorWorkingDirectory() != null ? context.getSupervisorWorkingDirectory().getAbsolutePath() : "null"));
+            log("runtimeRoot=" + context.getRuntimeDirectory().getAbsolutePath());
+
+            if (ownership == SelfDevContext.ProcessOwnership.CURRENT_RUN) {
+                log("[START_EVO_SUPERVISOR] Existing supervisor process is verified to belong to current run. Reusing.");
+                return new TaskResult.Builder("start_supervisor")
+                        .status(TaskStatus.SUCCESS)
+                        .message("Supervisor is already running and responding to ping on " + activeClient.getBaseUrl() + ".")
+                        .build();
+            } else {
+                log("[START_EVO_SUPERVISOR] Endpoint " + activeClient.getBaseUrl() + " responded but ownership is " + ownership + ". Will NOT reuse.");
+                if (isAlive() && supervisorProcess != null) {
+                    killProcessTree(supervisorProcess);
+                    supervisorProcess = null;
+                }
+            }
         }
 
         if (supervisorProcess != null) {
@@ -59,6 +88,14 @@ public class SupervisorRuntime implements ProcessLifecycle {
 
         File logFile = new File(context.getLogDirectory(), "supervisor_runtime.log");
 
+        log("[START_EVO_SUPERVISOR][LAUNCH]");
+        log("artifact=" + jarFile.getAbsolutePath());
+        log("runtimeRoot=" + context.getRuntimeDirectory().getAbsolutePath());
+        log("executable=java");
+        log("workingDirectory=" + jarFile.getParentFile().getAbsolutePath());
+        log("effectiveSupervisorPort=" + supervisorPort);
+        log("command=" + String.join(" ", cmd));
+
         try {
             ProcessBuilder pb = new ProcessBuilder(cmd);
             pb.directory(jarFile.getParentFile());
@@ -67,6 +104,13 @@ public class SupervisorRuntime implements ProcessLifecycle {
             pb.redirectOutput(ProcessBuilder.Redirect.appendTo(logFile));
 
             supervisorProcess = pb.start();
+            long pid = supervisorProcess.pid();
+            context.setSupervisorPid(pid);
+            context.setSupervisorExecutable(jarFile.getAbsolutePath());
+            context.setSupervisorWorkingDirectory(jarFile.getParentFile());
+
+            log("[START_EVO_SUPERVISOR][PROCESS_STARTED]");
+            log("pid=" + pid);
 
             TaskResult readyRes = waitUntilReady(context, 15);
             long duration = System.currentTimeMillis() - startTime;
@@ -174,7 +218,20 @@ public class SupervisorRuntime implements ProcessLifecycle {
     public TaskResult stop(SelfDevContext context) {
         long startTime = System.currentTimeMillis();
         SupervisorClient activeClient = new SupervisorClient(context);
-        if (supervisorProcess == null && !activeClient.ping()) {
+
+        long targetPid = context != null ? context.getSupervisorPid() : getPid();
+        String executable = context != null ? context.getSupervisorExecutable() : null;
+        File workDir = context != null ? context.getSupervisorWorkingDirectory() : null;
+
+        log("[STOP_EVO_SUPERVISOR][TARGET]");
+        log("pid=" + targetPid);
+        log("runId=" + (context != null ? context.getRunId() : "null"));
+        log("effectivePort=" + (context != null ? context.getEffectiveSupervisorPort() : 8089));
+        log("executable=" + executable);
+        log("workingDirectory=" + (workDir != null ? workDir.getAbsolutePath() : "null"));
+
+        if (supervisorProcess == null && targetPid <= 0 && !activeClient.ping()) {
+            log("[STOP_EVO_SUPERVISOR] No active child Supervisor process recorded for current run.");
             return new TaskResult.Builder("stop_supervisor")
                     .status(TaskStatus.SUCCESS)
                     .message("Supervisor is not running.")
@@ -182,15 +239,25 @@ public class SupervisorRuntime implements ProcessLifecycle {
         }
 
         try {
-            if (activeClient.ping()) {
+            if (activeClient.ping() && context != null && context.classifyProcessOwnership(targetPid) == SelfDevContext.ProcessOwnership.CURRENT_RUN) {
                 activeClient.sendCommand("shutdown", null);
                 Thread.sleep(1000);
             }
 
             if (supervisorProcess != null) {
                 killProcessTree(supervisorProcess);
+                supervisorProcess = null;
+            } else if (targetPid > 0) {
+                java.util.Optional<ProcessHandle> ph = ProcessHandle.of(targetPid);
+                ph.ifPresent(p -> {
+                    p.descendants().forEach(ProcessHandle::destroyForcibly);
+                    p.destroyForcibly();
+                });
             }
-            supervisorProcess = null;
+
+            if (context != null) {
+                context.setSupervisorPid(-1);
+            }
 
             long duration = System.currentTimeMillis() - startTime;
             return new TaskResult.Builder("stop_supervisor")
@@ -203,6 +270,11 @@ public class SupervisorRuntime implements ProcessLifecycle {
             long duration = System.currentTimeMillis() - startTime;
             return TaskResult.failure("stop_supervisor", "Failed to stop Supervisor process: " + e.getMessage(), e);
         }
+    }
+
+    private void log(String msg) {
+        eu.kalafatic.evolution.controller.log.Log.log(msg);
+        System.out.println(msg);
     }
 
     private static void killProcessTree(Process p) {
