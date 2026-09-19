@@ -363,6 +363,64 @@ public class HuggingFaceAccountingAndLifecycleTest {
     }
 
     @Test
+    public void testHuggingFaceParquetFallbackOnHttpError() throws Exception {
+        // Mock downloader that fails on offset 100 with HTTP 500, but recovers via /parquet API
+        DataDownloader mockDownloader = new DataDownloader() {
+            @Override
+            public DownloadResult download(DownloadRequest request) throws IOException {
+                String url = request.getUrl();
+                if (url.contains("/rows") && url.contains("offset=0")) {
+                    JSONObject root = new JSONObject();
+                    JSONArray rows = new JSONArray();
+                    for (int i = 0; i < 5; i++) {
+                        rows.put(new JSONObject().put("row", new JSONObject().put("text", "Initial row #" + i)));
+                    }
+                    root.put("rows", rows);
+                    String json = root.toString();
+                    return new DownloadResult(200, "OK", json, null, json.getBytes(StandardCharsets.UTF_8).length, "application/json");
+                } else if (url.contains("/rows")) {
+                    throw new IOException("Hugging Face HTTP Error (500): Server Error");
+                } else if (url.contains("/parquet?dataset=")) {
+                    JSONObject root = new JSONObject();
+                    JSONArray files = new JSONArray();
+                    JSONObject file1 = new JSONObject();
+                    file1.put("dataset", "roneneldan/TinyStories");
+                    file1.put("config", "default");
+                    file1.put("split", "train");
+                    file1.put("url", "https://mock.hf.co/0000.parquet");
+                    files.put(file1);
+                    root.put("parquet_files", files);
+                    String json = root.toString();
+                    return new DownloadResult(200, "OK", json, null, json.getBytes(StandardCharsets.UTF_8).length, "application/json");
+                } else if (url.contains("0000.parquet")) {
+                    // Parquet fallback payload containing text lines
+                    String textPayload = "{\"prompt\": \"Once upon a time in TinyStories.\", \"completion\": \"The end.\"} \n{\"prompt\": \"A little bird sang.\", \"completion\": \"It was happy.\"}";
+                    byte[] raw = textPayload.getBytes(StandardCharsets.UTF_8);
+                    return new DownloadResult(200, "OK", textPayload, raw, null, raw.length, "application/octet-stream");
+                }
+                throw new IOException("404 Not Found");
+            }
+        };
+
+        DatasetSourceConfig config = new DatasetSourceConfig("HUGGING_FACE", "roneneldan/TinyStories");
+        config.setSplit("train");
+
+        try (HuggingFaceDatasetSource source = new HuggingFaceDatasetSource(config, mockDownloader)) {
+            source.initialize();
+
+            int totalConsumed = 0;
+            while (source.hasNext()) {
+                NormalizedSample sample = source.next();
+                assertNotNull(sample);
+                totalConsumed++;
+            }
+
+            // 5 samples from page 0 rows + 2 samples from parquet fallback
+            assertEquals("Source MUST recover via Parquet fallback and yield 7 total samples", 7, totalConsumed);
+        }
+    }
+
+    @Test
     public void testResolveDatasetOutputDirFolderStructure() {
         File baseDir = new File("/home/petr/workspace/forge-input");
         File resolved = DatasetAcquisitionTool.resolveDatasetOutputDir(baseDir.getAbsolutePath(), "tatsu-lab/alpaca");

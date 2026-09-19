@@ -34,6 +34,7 @@ public class HuggingFaceDownloader implements DataDownloader {
             try {
                 URL url = URI.create(request.getUrl()).toURL();
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setInstanceFollowRedirects(true);
                 conn.setRequestMethod(request.getMethod());
                 conn.setConnectTimeout(request.getConnectTimeoutMs());
                 conn.setReadTimeout(request.getReadTimeoutMs());
@@ -45,6 +46,28 @@ public class HuggingFaceDownloader implements DataDownloader {
                 }
 
                 int status = conn.getResponseCode();
+                int redirects = 0;
+                while ((status == HttpURLConnection.HTTP_MOVED_TEMP || status == HttpURLConnection.HTTP_MOVED_PERM
+                        || status == HttpURLConnection.HTTP_SEE_OTHER || status == 307 || status == 308)
+                        && redirects < 5) {
+                    redirects++;
+                    String location = conn.getHeaderField("Location");
+                    if (location == null) break;
+                    url = URI.create(location).toURL();
+                    conn = (HttpURLConnection) url.openConnection();
+                    conn.setInstanceFollowRedirects(true);
+                    conn.setRequestMethod(request.getMethod());
+                    conn.setConnectTimeout(request.getConnectTimeoutMs());
+                    conn.setReadTimeout(request.getReadTimeoutMs());
+                    if (request.getUserAgent() != null) {
+                        conn.setRequestProperty("User-Agent", request.getUserAgent());
+                    }
+                    for (Map.Entry<String, String> header : request.getHeaders().entrySet()) {
+                        conn.setRequestProperty(header.getKey(), header.getValue());
+                    }
+                    status = conn.getResponseCode();
+                }
+
                 String message = conn.getResponseMessage();
                 String contentType = conn.getContentType();
 
@@ -53,16 +76,17 @@ public class HuggingFaceDownloader implements DataDownloader {
                     throw new IOException("Failed connection to " + request.getUrl() + ". HTTP Status: " + status + " (" + message + ")");
                 }
 
-                StringBuilder sb = new StringBuilder();
-                try (InputStream in = stream;
-                     BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        sb.append(line).append("\n");
+                java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+                byte[] buf = new byte[8192];
+                int read;
+                try (InputStream in = stream) {
+                    while ((read = in.read(buf)) != -1) {
+                        baos.write(buf, 0, read);
                     }
                 }
-                String body = sb.toString();
-                long totalBytes = body.getBytes(StandardCharsets.UTF_8).length;
+                byte[] rawBytes = baos.toByteArray();
+                String body = new String(rawBytes, StandardCharsets.UTF_8);
+                long totalBytes = rawBytes.length;
 
                 // Check for transient server errors that warrant a retry (e.g. HTTP 500, 502, 503, 504, 429)
                 if (status == 429 || (status >= 500 && status <= 504)) {
@@ -84,7 +108,7 @@ public class HuggingFaceDownloader implements DataDownloader {
                     throw new IOException("Hugging Face HTTP Error (" + status + "): " + body.trim());
                 }
 
-                return new DownloadResult(status, message, body, null, totalBytes, contentType);
+                return new DownloadResult(status, message, body, rawBytes, null, totalBytes, contentType);
 
             } catch (IOException ioe) {
                 lastException = ioe;
