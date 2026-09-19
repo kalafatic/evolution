@@ -87,6 +87,44 @@ public class TychoEvoRcpBuilderTest {
     }
 
     @Test
+    public void testExplodedDirectoryAndZipNoAmbiguity() throws Exception {
+        File productsDir = new File(mockRepoRoot, "eu.kalafatic.evolution.repository/target/products");
+        productsDir.mkdirs();
+
+        // Exploded directory
+        File explodedDir = new File(productsDir, "evolution");
+        explodedDir.mkdirs();
+
+        // Actual ZIP artifact
+        File winZip = new File(productsDir, "evolution-win32.win32.x86_64.zip");
+        try (FileOutputStream fos = new FileOutputStream(winZip)) {
+            fos.write("dummy win zip content".getBytes());
+        }
+
+        ProductDefinition prodDef = new ProductDefinition("evolution", "evo", "evolution", "eu.kalafatic.evolution.repository", null);
+        TargetPlatform winPlatform = new TargetPlatform("win32", "win32", "x86_64", "zip", "-Pwindows");
+
+        File found = builder.findExactExportedProduct(mockRepoRoot, prodDef, winPlatform, null);
+        assertNotNull("Should discover the ZIP file without ambiguity error", found);
+        assertEquals(winZip.getAbsoluteFile(), found.getAbsoluteFile());
+    }
+
+    @Test
+    public void testOnlyExplodedDirectoryReturnsNotFoundForZipRequest() throws Exception {
+        File productsDir = new File(mockRepoRoot, "eu.kalafatic.evolution.repository/target/products");
+        productsDir.mkdirs();
+
+        File explodedDir = new File(productsDir, "evolution");
+        explodedDir.mkdirs();
+
+        ProductDefinition prodDef = new ProductDefinition("evolution", "evo", "evolution", "eu.kalafatic.evolution.repository", null);
+        TargetPlatform winPlatform = new TargetPlatform("win32", "win32", "x86_64", "zip", "-Pwindows");
+
+        File found = builder.findExactExportedProduct(mockRepoRoot, prodDef, winPlatform, null);
+        assertNull("Should return null (product not found) when only exploded directory exists for ZIP request", found);
+    }
+
+    @Test
     public void testMultipleCandidateArtifactRejection() throws Exception {
         File productsDir = new File(mockRepoRoot, "eu.kalafatic.evolution.repository/target/products");
         productsDir.mkdirs();
@@ -106,6 +144,40 @@ public class TychoEvoRcpBuilderTest {
         } catch (IOException e) {
             assertTrue(e.getMessage().contains("Multiple candidate exported products found"));
         }
+    }
+
+    @Test
+    public void testUnrelatedZipFilteredOut() throws Exception {
+        File productsDir = new File(mockRepoRoot, "eu.kalafatic.evolution.repository/target/products");
+        productsDir.mkdirs();
+
+        File targetZip = new File(productsDir, "evolution-win32.win32.x86_64.zip");
+        try (FileOutputStream fos = new FileOutputStream(targetZip)) { fos.write("target zip".getBytes()); }
+
+        File unrelatedZip = new File(productsDir, "other-product-win32.win32.x86_64.zip");
+        try (FileOutputStream fos = new FileOutputStream(unrelatedZip)) { fos.write("unrelated zip".getBytes()); }
+
+        ProductDefinition prodDef = new ProductDefinition("evolution", "evo", "evolution", "eu.kalafatic.evolution.repository", null);
+        TargetPlatform winPlatform = new TargetPlatform("win32", "win32", "x86_64", "zip", "-Pwindows");
+
+        File found = builder.findExactExportedProduct(mockRepoRoot, prodDef, winPlatform, null);
+        assertNotNull("Should select the matching product zip", found);
+        assertEquals(targetZip.getAbsoluteFile(), found.getAbsoluteFile());
+    }
+
+    @Test
+    public void testWrongPlatformZipFilteredOut() throws Exception {
+        File productsDir = new File(mockRepoRoot, "eu.kalafatic.evolution.repository/target/products");
+        productsDir.mkdirs();
+
+        File linuxTar = new File(productsDir, "evolution-linux.gtk.x86_64.tar.gz");
+        try (FileOutputStream fos = new FileOutputStream(linuxTar)) { fos.write("linux tar".getBytes()); }
+
+        ProductDefinition prodDef = new ProductDefinition("evolution", "evo", "evolution", "eu.kalafatic.evolution.repository", null);
+        TargetPlatform winPlatform = new TargetPlatform("win32", "win32", "x86_64", "zip", "-Pwindows");
+
+        File found = builder.findExactExportedProduct(mockRepoRoot, prodDef, winPlatform, null);
+        assertNull("Should ignore Linux archive when Windows platform is requested", found);
     }
 
     @Test

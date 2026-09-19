@@ -19,30 +19,54 @@ public class SupervisorMain {
     public static void main(String[] args) {
         System.out.println("=== EVO AI SUPERVISOR STARTING ===");
 
-        String path = (args.length > 0) ? args[0] : ".";
+        String path = ".";
+        int supervisorPort = Integer.getInteger("port", Integer.getInteger("evo.supervisor.port", 8089));
+        int controlPort = Integer.getInteger("control.port", 28080);
+        boolean debugArg = Boolean.getBoolean("debug") || "debug".equalsIgnoreCase(System.getProperty("evo.mode"));
+
+        for (int i = 0; i < args.length; i++) {
+            String arg = args[i];
+            if (arg.startsWith("--port=")) {
+                try { supervisorPort = Integer.parseInt(arg.substring(7).trim()); } catch (Exception ignored) {}
+            } else if ("--port".equals(arg) && i + 1 < args.length) {
+                try { supervisorPort = Integer.parseInt(args[++i].trim()); } catch (Exception ignored) {}
+            } else if (arg.startsWith("--control-port=")) {
+                try { controlPort = Integer.parseInt(arg.substring(15).trim()); } catch (Exception ignored) {}
+            } else if ("--control-port".equals(arg) && i + 1 < args.length) {
+                try { controlPort = Integer.parseInt(args[++i].trim()); } catch (Exception ignored) {}
+            } else if ("--debug".equalsIgnoreCase(arg)) {
+                debugArg = true;
+            } else if (!arg.startsWith("-")) {
+                path = arg;
+            }
+        }
+
         File baseDir = new File(path);
 
         System.out.println("[CONFIG] Base Directory: " + baseDir.getAbsolutePath());
+        System.out.println("[CONFIG] Effective Supervisor Port: " + supervisorPort);
+        System.out.println("[CONFIG] Effective Control Port   : " + controlPort);
+        System.out.println("[CONFIG] Debug Mode              : " + debugArg);
 
         // ============================================================
         // START THE HTTP SERVERS FIRST - BEFORE THE MONITORING LOOP
         // ============================================================
         try {
-            System.out.println("[HTTP] Initializing HTTP servers on port 8089 and 28080...");
+            System.out.println("[HTTP] Initializing HTTP servers on port " + supervisorPort + " and " + controlPort + "...");
             
             // Verify NanoHTTPD is in classpath
             Class.forName("fi.iki.elonen.NanoHTTPD");
             System.out.println("[HTTP] NanoHTTPD class found in classpath");
             
             // 1. Create and start the main supervisor API server
-            server = new EVOSupervisorServer(8089, baseDir);
+            server = new EVOSupervisorServer(supervisorPort, baseDir);
             server.start(NanoHTTPD.SOCKET_READ_TIMEOUT, false);
-            System.out.println("[HTTP] API Server started successfully on http://127.0.0.1:8089");
+            System.out.println("[HTTP] API Server started successfully on http://127.0.0.1:" + supervisorPort);
 
             // 2. Create and start the premium control dashboard server
-            controlServer = new EVOSupervisorControlServer(28080, baseDir);
+            controlServer = new EVOSupervisorControlServer(controlPort, supervisorPort, baseDir);
             controlServer.start(NanoHTTPD.SOCKET_READ_TIMEOUT, false);
-            System.out.println("[HTTP] Control Dashboard started successfully on http://127.0.0.1:28080");
+            System.out.println("[HTTP] Control Dashboard started successfully on http://127.0.0.1:" + controlPort);
 
             System.out.println("[HTTP] Endpoints:");
             System.out.println("[HTTP]   GET /ping         - Health check");
@@ -56,7 +80,7 @@ public class SupervisorMain {
             // Self-test: verify the server is actually responding
             try {
                 java.net.HttpURLConnection conn = (java.net.HttpURLConnection) 
-                    new java.net.URL("http://127.0.0.1:8089/ping").openConnection();
+                    new java.net.URL("http://127.0.0.1:" + supervisorPort + "/ping").openConnection();
                 conn.setConnectTimeout(3000);
                 conn.setReadTimeout(3000);
                 conn.connect();
@@ -106,11 +130,13 @@ public class SupervisorMain {
     private static class EVOSupervisorServer extends NanoHTTPD {
         private final File baseDir;
         private final File runDir;
+        private final int port;
         private static volatile Process activeEvoProcess;
         
         public EVOSupervisorServer(int port, File baseDir) {
             // Explicitly bind to 127.0.0.1 to avoid Windows dual-stack issues
             super("127.0.0.1", port);
+            this.port = port;
             this.baseDir = baseDir;
             this.runDir = new File(baseDir, "self-dev-run");
             System.out.println("[HTTP] EVOSupervisorServer created on port " + port + " bound to 127.0.0.1");
@@ -548,7 +574,13 @@ public class SupervisorMain {
                         } catch (InterruptedException ignored) {}
                     }
 
-                    int portToUse = findAvailablePort(48080);
+                    int baseStartPort = 48080;
+                    if (System.getProperty("evo.server.port") != null) {
+                        try { baseStartPort = Integer.parseInt(System.getProperty("evo.server.port")); } catch (Exception ignored) {}
+                    }
+                    int portOffset = (this.port > 8089) ? (this.port - 8089) : 0;
+                    int portToUse = findAvailablePort(baseStartPort + portOffset);
+
                     List<String> command = new ArrayList<>();
                     command.add(executable.getAbsolutePath());
                     command.add("-consoleLog");
@@ -611,7 +643,13 @@ public class SupervisorMain {
                             try { activeEvoProcess.waitFor(2, TimeUnit.SECONDS); } catch (InterruptedException ignored) {}
                         }
 
-                        int portToUse = findAvailablePort(48080);
+                        int baseStartPort = 48080;
+                        if (System.getProperty("evo.server.port") != null) {
+                            try { baseStartPort = Integer.parseInt(System.getProperty("evo.server.port")); } catch (Exception ignored) {}
+                        }
+                        int portOffset = (this.port > 8089) ? (this.port - 8089) : 0;
+                        int portToUse = findAvailablePort(baseStartPort + portOffset);
+
                         List<String> command = new ArrayList<>();
                         command.add("java");
                         command.add("-jar");
@@ -748,7 +786,13 @@ public class SupervisorMain {
                     command.add(runnableJar.getAbsolutePath());
                 }
 
-                int portToUse = findAvailablePort(48080);
+                int baseStartPort = 48080;
+                if (System.getProperty("evo.server.port") != null) {
+                    try { baseStartPort = Integer.parseInt(System.getProperty("evo.server.port")); } catch (Exception ignored) {}
+                }
+                int portOffset = (this.port > 8089) ? (this.port - 8089) : 0;
+                int portToUse = findAvailablePort(baseStartPort + portOffset);
+
                 command.add("--mode=SELF_DEV");
                 command.add("--variant=" + baseDir.getAbsolutePath());
                 command.add("--port=" + portToUse);

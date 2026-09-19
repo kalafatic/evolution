@@ -23,11 +23,17 @@ import fi.iki.elonen.NanoHTTPD;
 public class EVOSupervisorControlServer extends NanoHTTPD {
 
     private final File baseDir;
+    private final int supervisorApiPort;
 
     public EVOSupervisorControlServer(int port, File baseDir) {
+        this(port, 8089, baseDir);
+    }
+
+    public EVOSupervisorControlServer(int port, int supervisorApiPort, File baseDir) {
         super("127.0.0.1", port);
+        this.supervisorApiPort = supervisorApiPort > 0 ? supervisorApiPort : 8089;
         this.baseDir = baseDir;
-        System.out.println("[CONTROL-HTTP] Control Server created on port " + port + " bound to 127.0.0.1");
+        System.out.println("[CONTROL-HTTP] Control Server created on port " + port + " (proxying to API port " + this.supervisorApiPort + ") bound to 127.0.0.1");
     }
 
     @Override
@@ -172,7 +178,7 @@ public class EVOSupervisorControlServer extends NanoHTTPD {
             }
         }
 
-        String targetUrl = "http://127.0.0.1:8089" + subPath + queryParams.toString();
+        String targetUrl = "http://127.0.0.1:" + supervisorApiPort + subPath + queryParams.toString();
         System.out.println("[CONTROL-PROXY] Forwarding request to target: " + targetUrl);
 
         try {
