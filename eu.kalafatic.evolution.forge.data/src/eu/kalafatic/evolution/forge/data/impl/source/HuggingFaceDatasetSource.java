@@ -4,19 +4,24 @@ import eu.kalafatic.evolution.forge.data.api.NormalizedSample;
 import eu.kalafatic.evolution.forge.data.api.downloader.DataDownloader;
 import eu.kalafatic.evolution.forge.data.api.downloader.DownloadRequest;
 import eu.kalafatic.evolution.forge.data.api.downloader.DownloadResult;
+import eu.kalafatic.evolution.forge.data.api.source.DatasetItem;
+import eu.kalafatic.evolution.forge.data.api.source.DatasetPreparationContext;
 import eu.kalafatic.evolution.forge.data.api.source.DatasetSource;
 import eu.kalafatic.evolution.forge.data.api.source.DatasetSourceConfig;
 import eu.kalafatic.evolution.forge.data.api.source.DatasetSourceStats;
 import eu.kalafatic.evolution.forge.data.api.source.ResolvedSource;
 import eu.kalafatic.evolution.forge.data.impl.downloader.HuggingFaceDownloader;
+import eu.kalafatic.evolution.forge.data.impl.source.adapters.ParquetAdapter;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -39,6 +44,11 @@ public class HuggingFaceDatasetSource implements DatasetSource {
     private String lastError = null;
     private String resolvedConfig = null;
     private String resolvedSplit = null;
+
+    // Parquet API Fallback Recovery
+    private boolean triedParquetFallback = false;
+    private final List<String> pendingParquetUrls = new ArrayList<>();
+    private int currentParquetUrlIndex = 0;
 
     // Stream & Chunk Level Accounting
     private long totalRowsFetched = 0;
@@ -274,6 +284,18 @@ public class HuggingFaceDatasetSource implements DatasetSource {
         String split = resolvedSplit != null ? resolvedSplit : requestedSplit;
         resolvedSplit = split;
 
+        String runId = config != null ? config.getRunId() : null;
+        String runTag = runId != null && !runId.trim().isEmpty() ? runId : "UNKNOWN";
+
+        if (triedParquetFallback) {
+            if (fetchNextParquetFileChunk(runTag)) {
+                endOfStream = false;
+            } else {
+                endOfStream = true;
+            }
+            return;
+        }
+
         String targetUrl;
         if (repo.startsWith("http://") || repo.startsWith("https://")) {
             targetUrl = repo;
@@ -281,8 +303,6 @@ public class HuggingFaceDatasetSource implements DatasetSource {
             targetUrl = "https://datasets-server.huggingface.co/rows?dataset=" + repo + "&config=" + cfg + "&split=" + split + "&offset=" + currentOffset + "&length=100";
         }
 
-        String runId = config != null ? config.getRunId() : null;
-        String runTag = runId != null && !runId.trim().isEmpty() ? runId : "UNKNOWN";
         String rev = config != null && config.getRevision() != null ? config.getRevision() : "main";
 
         int requestedLength = 100;
@@ -315,6 +335,10 @@ public class HuggingFaceDatasetSource implements DatasetSource {
                     long httpDurationMs = System.currentTimeMillis() - httpStartMs;
                     System.out.printf("[HF-ACQ][run=%s][HTTP-RESULT]\noffset=%d\nrequestedRows=%d\nreceivedRows=%d\nhttpStatus=%d\nresponseBytes=%d\ndurationMs=%d\n",
                             runTag, currentOffset, requestedLength, 0, 500, 0, httpDurationMs);
+                    if (!triedParquetFallback && tryFetchFromParquetApi(repo, cfg, split, runTag)) {
+                        endOfStream = false;
+                        return;
+                    }
                     endOfStream = true;
                     return;
                 }
@@ -386,11 +410,15 @@ public class HuggingFaceDatasetSource implements DatasetSource {
                 JSONObject root = new JSONObject(body);
                 if (root.has("error")) {
                     lastError = root.getString("error");
-                    endOfStream = true;
                     System.out.printf("[HF-ACQ][run=%s][HTTP-RESULT]\noffset=%d\nrequestedRows=%d\nreceivedRows=%d\nhttpStatus=%d\nresponseBytes=%d\ndurationMs=%d\n",
                             runTag, pageOffset, requestedLength, 0, result.getStatusCode(), chunkBodyBytes, httpDurationMs);
                     System.out.printf("[HF-ACQ][run=%s][PAGE]\npage=%d\noffset=%d\nrequestedRows=%d\nreceivedRows=%d\nextractedSamples=0\nrejectedSamples=0\nnextOffset=%d\ncontinuation=NO\nreason=SOURCE_FAILURE\n",
                             runTag, currentPage, pageOffset, requestedLength, 0, currentOffset);
+                    if (!triedParquetFallback && tryFetchFromParquetApi(repo, cfg, split, runTag)) {
+                        endOfStream = false;
+                        return;
+                    }
+                    endOfStream = true;
                     return;
                 }
                 if (root.has("rows")) {
@@ -445,6 +473,10 @@ public class HuggingFaceDatasetSource implements DatasetSource {
                     stats.addExtractedBytes(chunkExtractedBytes);
 
                     if (rows.length() == 0) {
+                        if (!triedParquetFallback && tryFetchFromParquetApi(repo, cfg, split, runTag)) {
+                            endOfStream = false;
+                            return;
+                        }
                         endOfStream = true;
                     }
 
@@ -464,17 +496,25 @@ public class HuggingFaceDatasetSource implements DatasetSource {
                             totalRowsFetched, totalSamplesExtracted, totalExtractionRejections, stats.getAcceptedRecords(), stats.getAcceptedBytes(),
                             totalRawBytesDownloaded, currentChunk.size(), currentChunkIndex, endOfStream, targetUsableBytes, remainingUsableBytes);
                 } else {
-                    endOfStream = true;
                     System.out.printf("[HF-ACQ][run=%s][HTTP-RESULT]\noffset=%d\nrequestedRows=%d\nreceivedRows=%d\nhttpStatus=%d\nresponseBytes=%d\ndurationMs=%d\n",
                             runTag, pageOffset, requestedLength, 0, result.getStatusCode(), chunkBodyBytes, httpDurationMs);
                     System.out.printf("[HF-ACQ][run=%s][PAGE]\npage=%d\noffset=%d\nrequestedRows=%d\nreceivedRows=%d\nextractedSamples=0\nrejectedSamples=0\nnextOffset=%d\ncontinuation=NO\nreason=NO_MORE_ROWS\n",
                             runTag, currentPage, pageOffset, requestedLength, 0, currentOffset);
+                    if (!triedParquetFallback && tryFetchFromParquetApi(repo, cfg, split, runTag)) {
+                        endOfStream = false;
+                        return;
+                    }
+                    endOfStream = true;
                 }
             } catch (Exception e) {
                 lastError = e.getMessage();
-                endOfStream = true;
                 System.out.printf("[HF-ACQ][run=%s][PAGE]\npage=%d\noffset=%d\nrequestedRows=%d\nreceivedRows=%d\nextractedSamples=0\nrejectedSamples=0\nnextOffset=%d\ncontinuation=NO\nreason=SOURCE_FAILURE\n",
                         runTag, currentPage, pageOffset, requestedLength, 0, currentOffset);
+                if (!triedParquetFallback && tryFetchFromParquetApi(repo, cfg, split, runTag)) {
+                    endOfStream = false;
+                    return;
+                }
+                endOfStream = true;
             }
         }
     }
@@ -655,6 +695,102 @@ public class HuggingFaceDatasetSource implements DatasetSource {
         stats.addEstimatedTokens(sampleTokens);
 
         return sample;
+    }
+
+    private boolean tryFetchFromParquetApi(String repo, String cfg, String split, String runTag) {
+        triedParquetFallback = true;
+        pendingParquetUrls.clear();
+        currentParquetUrlIndex = 0;
+
+        String parquetApiUrl = "https://datasets-server.huggingface.co/parquet?dataset=" + repo;
+        System.out.printf("[HF-PARQUET-FALLBACK][run=%s] Querying Parquet API stream recovery for %s (cfg=%s, split=%s) at %s\n",
+                runTag, repo, cfg, split, parquetApiUrl);
+
+        try {
+            DownloadRequest req = new DownloadRequest(parquetApiUrl).setReadTimeoutMs(15000);
+            DownloadResult res = downloader.download(req);
+            if (res != null && res.isSuccess() && res.getContentText() != null) {
+                JSONObject root = new JSONObject(res.getContentText());
+                if (root.has("parquet_files")) {
+                    JSONArray files = root.getJSONArray("parquet_files");
+                    for (int i = 0; i < files.length(); i++) {
+                        JSONObject fObj = files.getJSONObject(i);
+                        String fileCfg = fObj.optString("config", "default");
+                        String fileSplit = fObj.optString("split", "train");
+                        String fileUrl = fObj.optString("url", null);
+
+                        boolean configMatch = cfg == null || cfg.isEmpty() || "default".equalsIgnoreCase(cfg)
+                                || fileCfg.equalsIgnoreCase(cfg) || fileCfg.equalsIgnoreCase("default");
+                        boolean splitMatch = split == null || split.isEmpty() || fileSplit.equalsIgnoreCase(split);
+
+                        if (fileUrl != null && configMatch && splitMatch) {
+                            pendingParquetUrls.add(fileUrl);
+                        }
+                    }
+                }
+            }
+        } catch (Exception ex) {
+            System.err.printf("[HF-PARQUET-FALLBACK][run=%s] Failed to query Parquet API for %s: %s\n",
+                    runTag, repo, ex.getMessage());
+        }
+
+        if (!pendingParquetUrls.isEmpty()) {
+            System.out.printf("[HF-PARQUET-FALLBACK][run=%s] Discovered %d matching parquet files for %s (%s/%s)\n",
+                    runTag, pendingParquetUrls.size(), repo, cfg, split);
+            return fetchNextParquetFileChunk(runTag);
+        } else {
+            System.err.printf("[HF-PARQUET-FALLBACK][run=%s] No matching parquet files found for %s (%s/%s)\n",
+                    runTag, repo, cfg, split);
+            return false;
+        }
+    }
+
+    private boolean fetchNextParquetFileChunk(String runTag) {
+        while (currentParquetUrlIndex < pendingParquetUrls.size()) {
+            String fileUrl = pendingParquetUrls.get(currentParquetUrlIndex++);
+            System.out.printf("[HF-PARQUET-STREAM][run=%s] Downloading parquet file %d/%d: %s\n",
+                    runTag, currentParquetUrlIndex, pendingParquetUrls.size(), fileUrl);
+
+            try {
+                DownloadRequest req = new DownloadRequest(fileUrl).setReadTimeoutMs(60000);
+                DownloadResult res = downloader.download(req);
+                if (res != null && res.isSuccess()) {
+                    byte[] rawBytes = res.getRawBytes();
+                    long dlBytes = res.getDownloadedBytes() > 0 ? res.getDownloadedBytes() : rawBytes.length;
+                    totalRawBytesDownloaded += dlBytes;
+                    stats.addDownloadedBytes(dlBytes);
+
+                    File tempParquetFile = File.createTempFile("hf_parquet_", ".parquet");
+                    tempParquetFile.deleteOnExit();
+                    try {
+                        Files.write(tempParquetFile.toPath(), rawBytes);
+                        DatasetItem localItem = new DatasetItem(true, tempParquetFile.getAbsolutePath(), "PARQUET");
+                        DatasetPreparationContext prepCtx = new DatasetPreparationContext();
+                        ParquetAdapter adapter = new ParquetAdapter();
+                        List<NormalizedSample> extracted = adapter.convert(localItem, prepCtx);
+                        if (extracted != null && !extracted.isEmpty()) {
+                            long chunkExtractedBytes = 0;
+                            for (NormalizedSample s : extracted) {
+                                currentChunk.add(s);
+                                totalSamplesExtracted++;
+                                byte[] b = s.toFullText().getBytes(StandardCharsets.UTF_8);
+                                chunkExtractedBytes += b.length;
+                            }
+                            stats.addExtractedBytes(chunkExtractedBytes);
+                            System.out.printf("[HF-PARQUET-STREAM][run=%s] Successfully extracted %d samples (%d bytes) from parquet file %s\n",
+                                    runTag, extracted.size(), chunkExtractedBytes, fileUrl);
+                            return true;
+                        }
+                    } finally {
+                        tempParquetFile.delete();
+                    }
+                }
+            } catch (Exception ex) {
+                System.err.printf("[HF-PARQUET-STREAM][run=%s] Error fetching/parsing parquet file %s: %s\n",
+                        runTag, fileUrl, ex.getMessage());
+            }
+        }
+        return false;
     }
 
     @Override

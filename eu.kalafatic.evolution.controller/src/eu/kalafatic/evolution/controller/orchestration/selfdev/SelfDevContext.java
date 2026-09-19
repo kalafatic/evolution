@@ -256,30 +256,6 @@ public class SelfDevContext {
         this.supervisorDirectory = supervisorDirectory;
     }
 
-    public long getSupervisorPid() {
-        return supervisorPid;
-    }
-
-    public void setSupervisorPid(long supervisorPid) {
-        this.supervisorPid = supervisorPid;
-    }
-
-    public String getSupervisorExecutable() {
-        return supervisorExecutable;
-    }
-
-    public void setSupervisorExecutable(String supervisorExecutable) {
-        this.supervisorExecutable = supervisorExecutable;
-    }
-
-    public File getSupervisorWorkingDirectory() {
-        return supervisorWorkingDirectory;
-    }
-
-    public void setSupervisorWorkingDirectory(File supervisorWorkingDirectory) {
-        this.supervisorWorkingDirectory = supervisorWorkingDirectory;
-    }
-
     public File getGenomeDirectory() {
         return resolvedResources != null && resolvedResources.getGenomeDirectory() != null ? resolvedResources.getGenomeDirectory() : genomeDirectory;
     }
