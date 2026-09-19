@@ -17,7 +17,7 @@ public class StartSupervisorTask extends AbstractSelfDevTask {
         if (artifact == null || artifact.getPath() == null || !artifact.getPath().exists()) {
             java.io.File fallbackJar = findSupervisorJarFallback(context);
             if (fallbackJar != null && fallbackJar.exists() && fallbackJar.length() > 0) {
-                artifact = new BuildArtifact(ArtifactType.SUPERVISOR, fallbackJar, context.getSourceRevision(), fallbackJar.getParentFile(), null);
+                artifact = new BuildArtifact(ArtifactType.SUPERVISOR, fallbackJar, context.getSourceRevision(), (String) null, null);
                 context.recordArtifact(artifact);
             }
         }

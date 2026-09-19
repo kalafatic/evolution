@@ -21,7 +21,7 @@ public class StartEvoTask extends AbstractSelfDevTask {
         if (artifact == null || artifact.getPath() == null || !artifact.getPath().exists()) {
             java.io.File fallbackProduct = findEvoRcpProductFallback(context);
             if (fallbackProduct != null && fallbackProduct.exists()) {
-                artifact = new BuildArtifact(ArtifactType.EVO_RCP, fallbackProduct, context.getSourceRevision(), fallbackProduct.getParentFile(), null);
+                artifact = new BuildArtifact(ArtifactType.EVO_RCP, fallbackProduct, context.getSourceRevision(), (String) null, null);
                 context.recordArtifact(artifact);
             }
         }
