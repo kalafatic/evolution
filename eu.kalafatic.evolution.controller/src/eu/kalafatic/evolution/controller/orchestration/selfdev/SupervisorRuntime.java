@@ -19,10 +19,14 @@ public class SupervisorRuntime implements ProcessLifecycle {
             return TaskResult.failure("start_supervisor", "SelfDevContext is null", null);
         }
 
-        if (isAlive() && client.ping()) {
+        SupervisorClient activeClient = new SupervisorClient(context);
+        int supervisorPort = context.getEffectiveSupervisorPort();
+        int controlPort = context.getEffectiveSupervisorControlPort();
+
+        if (isAlive() && activeClient.ping()) {
             return new TaskResult.Builder("start_supervisor")
                     .status(TaskStatus.SUCCESS)
-                    .message("Supervisor is already running and responding to ping.")
+                    .message("Supervisor is already running and responding to ping on " + activeClient.getBaseUrl() + ".")
                     .build();
         }
 
@@ -42,9 +46,13 @@ public class SupervisorRuntime implements ProcessLifecycle {
             cmd.add("-Devo.mode=debug");
             cmd.add("-Ddebug=true");
         }
+        cmd.add("-Dport=" + supervisorPort);
+        cmd.add("-Dcontrol.port=" + controlPort);
         cmd.add("-jar");
         cmd.add(jarFile.getAbsolutePath());
         cmd.add(context.getProjectRoot().getAbsolutePath());
+        cmd.add("--port=" + supervisorPort);
+        cmd.add("--control-port=" + controlPort);
         if (context.isDebugMode()) {
             cmd.add("--debug");
         }
@@ -64,8 +72,7 @@ public class SupervisorRuntime implements ProcessLifecycle {
             long duration = System.currentTimeMillis() - startTime;
 
             if (readyRes.isSuccess()) {
-                EvoService service = context.getResourceManager().getService("SUPERVISOR");
-                String serviceUrl = service != null ? service.getUrl() : "http://127.0.0.1:8089";
+                String serviceUrl = activeClient.getBaseUrl();
                 return new TaskResult.Builder("start_supervisor")
                         .status(TaskStatus.SUCCESS)
                         .message("Supervisor started successfully and responding on " + serviceUrl)
@@ -130,13 +137,14 @@ public class SupervisorRuntime implements ProcessLifecycle {
     public TaskResult waitUntilReady(SelfDevContext context, long timeoutSeconds) {
         long startTime = System.currentTimeMillis();
         long deadline = startTime + (timeoutSeconds * 1000);
+        SupervisorClient activeClient = new SupervisorClient(context);
 
         while (System.currentTimeMillis() < deadline) {
-            if (client.ping()) {
+            if (activeClient.ping()) {
                 long duration = System.currentTimeMillis() - startTime;
                 return new TaskResult.Builder("supervisor_ready")
                         .status(TaskStatus.SUCCESS)
-                        .message("Supervisor HTTP endpoint is responsive.")
+                        .message("Supervisor HTTP endpoint is responsive on " + activeClient.getBaseUrl() + ".")
                         .duration(duration)
                         .build();
             }
@@ -165,7 +173,8 @@ public class SupervisorRuntime implements ProcessLifecycle {
     @Override
     public TaskResult stop(SelfDevContext context) {
         long startTime = System.currentTimeMillis();
-        if (supervisorProcess == null && !client.ping()) {
+        SupervisorClient activeClient = new SupervisorClient(context);
+        if (supervisorProcess == null && !activeClient.ping()) {
             return new TaskResult.Builder("stop_supervisor")
                     .status(TaskStatus.SUCCESS)
                     .message("Supervisor is not running.")
@@ -173,8 +182,8 @@ public class SupervisorRuntime implements ProcessLifecycle {
         }
 
         try {
-            if (client.ping()) {
-                client.sendCommand("shutdown", null);
+            if (activeClient.ping()) {
+                activeClient.sendCommand("shutdown", null);
                 Thread.sleep(1000);
             }
 

@@ -40,7 +40,7 @@ public class SelfDevPipelineHardeningTest {
 
     @Test
     public void testStalePathRecoveryAndDiscovery() {
-        File repoRoot = new File(".").getAbsoluteFile();
+        File repoRoot = findRepoRoot();
         SelfDevContext context = new SelfDevContext(repoRoot, null);
 
         assertNotNull(context.getSupervisorDirectory());
@@ -50,6 +50,19 @@ public class SelfDevPipelineHardeningTest {
         assertNotNull(context.getGenomeDirectory());
         assertTrue(context.getGenomeDirectory().exists());
         assertTrue(context.getGenomeDirectory().getName().endsWith("eu.kalafatic.evolution.selfdev.genome"));
+    }
+
+    private File findRepoRoot() {
+        File app = new File("/app");
+        if (app.exists() && new File(app, "pom.xml").exists()) return app;
+        File cur = new File(".").getAbsoluteFile();
+        while (cur != null) {
+            if (new File(cur, "pom.xml").exists() && new File(cur, "eu.kalafatic.evolution.supervisor").exists()) {
+                return cur;
+            }
+            cur = cur.getParentFile();
+        }
+        return eu.kalafatic.evolution.controller.resource.ResourceManager.getInstance().getEvoGitRepository().toFile();
     }
 
     @Test
@@ -137,7 +150,7 @@ public class SelfDevPipelineHardeningTest {
 
     @Test
     public void testPreflightValidSourcePasses() {
-        File repoRoot = new File(".").getAbsoluteFile();
+        File repoRoot = findRepoRoot();
         SelfDevContext context = new SelfDevContext(repoRoot, null);
         SelfDevOrchestrator orchestrator = new SelfDevOrchestrator(context, null, null);
 
@@ -171,8 +184,8 @@ public class SelfDevPipelineHardeningTest {
 
     @Test
     public void testPreflightPathPropagationToCopyTask() throws Exception {
-        File repoRoot = new File(".").getAbsoluteFile();
-        SelfDevContext context = new SelfDevContext(repoRoot, null);
+        SelfDevContext context = new SelfDevContext(null, null);
+        File repoRoot = context.getRepositoryRoot();
         SelfDevOrchestrator orchestrator = new SelfDevOrchestrator(context, null, null);
 
         eu.kalafatic.evolution.controller.orchestration.selfdev.SelfDevTask copyTask = orchestrator.getTaskRegistry().get("COPY");
@@ -211,6 +224,50 @@ public class SelfDevPipelineHardeningTest {
         } finally {
             deleteRecursively(tempDir);
         }
+    }
+
+    @Test
+    public void testPortOffsetInNormalAndDebugMode() {
+        File repoRoot = new File(".").getAbsoluteFile();
+        SelfDevContext context = new SelfDevContext(repoRoot, null);
+
+        // Normal mode
+        context.setDebugMode(false);
+        assertFalse(context.isDebugMode());
+        assertEquals("Port offset for normal run must be 0", 0, context.getPortOffset());
+
+        int baseSupervisorPort = context.getResourceManager().getService("SUPERVISOR") != null ? context.getResourceManager().getService("SUPERVISOR").getPort() : 8089;
+        int baseServerPort = context.getResourceManager().getService("SERVER") != null ? context.getResourceManager().getService("SERVER").getPort() : 48081;
+
+        assertEquals(baseSupervisorPort, context.getEffectiveSupervisorPort());
+        assertEquals(28080, context.getEffectiveSupervisorControlPort());
+        assertEquals(baseServerPort, context.getEffectiveServerPort());
+
+        // Debug mode
+        context.setDebugMode(true);
+        assertTrue(context.isDebugMode());
+        assertEquals("Port offset for debug run must be 10", 10, context.getPortOffset());
+
+        assertEquals(baseSupervisorPort + 10, context.getEffectiveSupervisorPort());
+        assertEquals(28080 + 10, context.getEffectiveSupervisorControlPort());
+        assertEquals(baseServerPort + 10, context.getEffectiveServerPort());
+
+        // Verify base ResourceManager configuration was NOT modified
+        assertEquals(baseSupervisorPort, context.getResourceManager().getService("SUPERVISOR").getPort());
+        assertEquals(baseServerPort, context.getResourceManager().getService("SERVER").getPort());
+    }
+
+    @Test
+    public void testSupervisorClientAndRuntimeEffectivePortResolution() {
+        File repoRoot = new File(".").getAbsoluteFile();
+        SelfDevContext context = new SelfDevContext(repoRoot, null);
+
+        context.setDebugMode(true);
+        eu.kalafatic.evolution.controller.orchestration.selfdev.SupervisorClient client =
+                new eu.kalafatic.evolution.controller.orchestration.selfdev.SupervisorClient(context);
+
+        assertTrue("SupervisorClient URL in debug mode must use offset port",
+                client.getBaseUrl().contains(":" + context.getEffectiveSupervisorPort()));
     }
 
     private void deleteRecursively(File f) {

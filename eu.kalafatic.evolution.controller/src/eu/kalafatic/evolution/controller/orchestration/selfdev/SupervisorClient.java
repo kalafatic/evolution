@@ -14,19 +14,34 @@ public class SupervisorClient {
     private final String baseUrl;
 
     public SupervisorClient() {
-        this(resolveSupervisorUrl());
+        this(resolveSupervisorUrl(null));
+    }
+
+    public SupervisorClient(SelfDevContext context) {
+        this(resolveSupervisorUrl(context));
+    }
+
+    public SupervisorClient(int port) {
+        this("http://127.0.0.1:" + port);
     }
 
     public SupervisorClient(String baseUrl) {
-        this.baseUrl = baseUrl != null && !baseUrl.isEmpty() ? baseUrl : resolveSupervisorUrl();
+        this.baseUrl = baseUrl != null && !baseUrl.isEmpty() ? baseUrl : resolveSupervisorUrl(null);
     }
 
-    private static String resolveSupervisorUrl() {
+    private static String resolveSupervisorUrl(SelfDevContext context) {
+        if (context != null) {
+            return "http://127.0.0.1:" + context.getEffectiveSupervisorPort();
+        }
         EvoService service = ResourceManager.getInstance().getService("SUPERVISOR");
         if (service != null && service.getUrl() != null) {
             return service.getUrl();
         }
         return "http://127.0.0.1:8089";
+    }
+
+    public String getBaseUrl() {
+        return baseUrl;
     }
 
     public boolean ping() {
