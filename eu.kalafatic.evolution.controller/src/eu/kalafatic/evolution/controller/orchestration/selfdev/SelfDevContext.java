@@ -389,30 +389,6 @@ public class SelfDevContext {
         return basePort + getPortOffset();
     }
 
-    public long getSupervisorPid() {
-        return supervisorPid;
-    }
-
-    public void setSupervisorPid(long supervisorPid) {
-        this.supervisorPid = supervisorPid;
-    }
-
-    public String getSupervisorExecutable() {
-        return supervisorExecutable;
-    }
-
-    public void setSupervisorExecutable(String supervisorExecutable) {
-        this.supervisorExecutable = supervisorExecutable;
-    }
-
-    public File getSupervisorWorkingDirectory() {
-        return supervisorWorkingDirectory;
-    }
-
-    public void setSupervisorWorkingDirectory(File supervisorWorkingDirectory) {
-        this.supervisorWorkingDirectory = supervisorWorkingDirectory;
-    }
-
     public void recordTaskResult(TaskResult result) {
         if (result != null && result.getTaskId() != null) {
             taskResults.put(result.getTaskId(), result);
