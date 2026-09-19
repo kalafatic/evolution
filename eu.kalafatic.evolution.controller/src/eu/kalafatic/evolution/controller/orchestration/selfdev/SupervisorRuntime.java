@@ -189,6 +189,8 @@ public class SupervisorRuntime implements ProcessLifecycle {
     public TaskResult stop(SelfDevContext context) {
         long startTime = System.currentTimeMillis();
         SupervisorClient activeClient = new SupervisorClient(context);
+        long targetPid = context != null ? context.getSupervisorPid() : -1;
+
         if (supervisorProcess == null && !activeClient.ping()) {
             return new TaskResult.Builder("stop_supervisor")
                     .status(TaskStatus.SUCCESS)
