@@ -252,7 +252,13 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
 
             // TARGET-DRIVEN SEARCH EXPANSION LOOP:
             // If accumulatedUsableBytes < targetUsableBytes and current sources list is exhausted,
-            // trigger progressive discovery expansion to find additional datasets/files!
+            // trigger progressive discovery expansion ONLY IF explicit sources were NOT requested by the caller!
+            boolean hasExplicitSources = request.getSources() != null && !request.getSources().isEmpty();
+            if (hasExplicitSources) {
+                System.out.println("[ACQUISITION LOG] Explicit sources were provided in request. Disabling multi-domain search expansion to prevent mixing unrelated datasets.");
+                break;
+            }
+
             if (targetUsableBytes > 0 && accumulatedUsableBytes < targetUsableBytes) {
                 if (searchRound >= maxSearchRounds || consecutiveEmptyExpansions >= 3) {
                     System.out.println("[ACQUISITION LOG] Search strategy exhausted after " + searchRound + " rounds. No more candidates available.");
