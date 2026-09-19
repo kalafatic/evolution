@@ -327,17 +327,42 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
             targetProductsDir = new File(preparedReactor, "target/products");
         }
 
+        String reqFormat = platform.getPackaging() != null ? platform.getPackaging().trim().toLowerCase() : "zip";
+        String reqTarget = platform.getOs() + "." + platform.getWs() + "." + platform.getArch();
+
+        log("[PRODUCT_DISCOVERY] productsRoot=" + targetProductsDir.getAbsolutePath());
+        log("[PRODUCT_DISCOVERY] requestedProduct=" + prodDef.getProductId());
+        log("[PRODUCT_DISCOVERY] requestedTarget=" + reqTarget);
+        log("[PRODUCT_DISCOVERY] requestedFormat=" + reqFormat);
+
         List<File> candidates = new ArrayList<>();
         File[] files = targetProductsDir.listFiles();
         if (files != null) {
             for (File f : files) {
-                if (isExactMatchingArtifact(f, prodDef, platform)) {
+                log("[PRODUCT_DISCOVERY] Inspecting:\n" + f.getAbsolutePath());
+                if (f.isDirectory()) {
+                    log("[PRODUCT_DISCOVERY] type=DIRECTORY");
+                } else if (f.isFile()) {
+                    log("[PRODUCT_DISCOVERY] type=FILE");
+                } else {
+                    log("[PRODUCT_DISCOVERY] type=OTHER");
+                }
+
+                String reason = getExclusionReason(f, prodDef, platform);
+                if (reason == null) {
+                    log("[PRODUCT_DISCOVERY] format=" + reqFormat.toUpperCase());
+                    log("[PRODUCT_DISCOVERY] product=" + prodDef.getProductId());
+                    log("[PRODUCT_DISCOVERY] target=" + reqTarget);
+                    log("[PRODUCT_DISCOVERY] candidate=true");
                     candidates.add(f);
+                } else {
+                    log("[PRODUCT_DISCOVERY] excluded reason=" + reason);
                 }
             }
         }
 
-        if (candidates.isEmpty()) {
+        boolean isArchiveRequested = reqFormat.contains("zip") || reqFormat.contains("tar") || reqFormat.contains("gz") || reqFormat.contains("tgz");
+        if (candidates.isEmpty() && !isArchiveRequested) {
             File nestedDir = platform.isWindows() ?
                     new File(targetProductsDir, prodDef.getProductId() + "/win32/win32/x86_64/" + prodDef.getRootFolder()) :
                     new File(targetProductsDir, prodDef.getProductId() + "/linux/gtk/x86_64/" + prodDef.getRootFolder());
@@ -346,7 +371,10 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
             }
         }
 
+        log("[PRODUCT_DISCOVERY] candidateCount=" + candidates.size());
+
         if (candidates.size() == 1) {
+            log("[PRODUCT_DISCOVERY] selected=" + candidates.get(0).getAbsolutePath());
             return candidates.get(0);
         } else if (candidates.size() > 1) {
             throw new IOException("Multiple candidate exported products found under " + targetProductsDir.getAbsolutePath() + " matching " + prodDef.getProductId() + " (" + platform + "): " + candidates + ". Rejecting ambiguous selection.");
@@ -355,28 +383,79 @@ public class TychoEvoRcpBuilder extends AbstractProjectBuilder implements EvoRcp
         return null;
     }
 
-    private boolean isExactMatchingArtifact(File file, ProductDefinition prodDef, TargetPlatform platform) {
-        if (file == null || !file.exists()) return false;
-        String name = file.getName().toLowerCase();
-
-        if (file.isFile()) {
-            boolean isZipOrTar = name.endsWith(".zip") || name.endsWith(".tar.gz") || name.endsWith(".tgz");
-            if (!isZipOrTar) return false;
-
-            boolean nameMatchesProduct = name.startsWith(prodDef.getProductId().toLowerCase()) || name.contains(prodDef.getProductId().toLowerCase()) || name.contains("evo");
-            if (!nameMatchesProduct) return false;
-
-            if (platform.isWindows()) {
-                return name.contains("win32") || name.contains("win");
-            } else {
-                return name.contains("linux") || name.contains("gtk") || name.endsWith(".tar.gz");
-            }
-        } else if (file.isDirectory()) {
-            boolean nameMatchesProduct = name.startsWith(prodDef.getProductId().toLowerCase()) || name.contains(prodDef.getProductId().toLowerCase());
-            return nameMatchesProduct || name.equals(prodDef.getRootFolder().toLowerCase()) || name.equals(prodDef.getProductId().toLowerCase());
+    private String getExclusionReason(File file, ProductDefinition prodDef, TargetPlatform platform) {
+        if (file == null || !file.exists()) {
+            return "FILE_NULL_OR_NON_EXISTENT";
         }
 
-        return false;
+        String reqFormat = platform.getPackaging() != null ? platform.getPackaging().trim().toLowerCase() : "zip";
+        boolean isArchiveRequested = reqFormat.contains("zip") || reqFormat.contains("tar") || reqFormat.contains("gz") || reqFormat.contains("tgz");
+        boolean isDirRequested = reqFormat.contains("dir") || reqFormat.contains("folder") || reqFormat.contains("exploded");
+
+        String name = file.getName().toLowerCase();
+
+        if (isArchiveRequested) {
+            if (!file.isFile()) {
+                return "REQUESTED_FORMAT_" + (reqFormat.contains("zip") ? "ZIP" : reqFormat.toUpperCase()) + "_REQUIRES_REGULAR_FILE";
+            }
+
+            if (reqFormat.contains("zip") && !name.endsWith(".zip")) {
+                return "FORMAT_MISMATCH_EXPECTED_ZIP";
+            }
+            if ((reqFormat.contains("tar") || reqFormat.contains("gz") || reqFormat.contains("tgz")) && !(name.endsWith(".tar.gz") || name.endsWith(".tgz"))) {
+                return "FORMAT_MISMATCH_EXPECTED_TAR_GZ";
+            }
+
+            boolean nameMatchesProduct = name.startsWith(prodDef.getProductId().toLowerCase()) || name.contains(prodDef.getProductId().toLowerCase()) || name.contains("evo");
+            if (!nameMatchesProduct) {
+                return "UNMATCHED_PRODUCT_NAME";
+            }
+
+            if (platform.isWindows()) {
+                if (!(name.contains("win32") || name.contains("win"))) {
+                    return "UNMATCHED_TARGET_PLATFORM";
+                }
+            } else {
+                if (!(name.contains("linux") || name.contains("gtk") || name.endsWith(".tar.gz"))) {
+                    return "UNMATCHED_TARGET_PLATFORM";
+                }
+            }
+
+            return null;
+        } else if (isDirRequested) {
+            if (!file.isDirectory()) {
+                return "REQUESTED_FORMAT_DIRECTORY_REQUIRES_DIRECTORY";
+            }
+
+            boolean nameMatchesProduct = name.startsWith(prodDef.getProductId().toLowerCase()) || name.contains(prodDef.getProductId().toLowerCase()) || name.equals(prodDef.getRootFolder().toLowerCase());
+            if (!nameMatchesProduct) {
+                return "UNMATCHED_PRODUCT_NAME";
+            }
+
+            return null;
+        } else {
+            if (file.isFile()) {
+                boolean isZipOrTar = name.endsWith(".zip") || name.endsWith(".tar.gz") || name.endsWith(".tgz");
+                if (!isZipOrTar) return "UNSUPPORTED_FILE_FORMAT";
+
+                boolean nameMatchesProduct = name.startsWith(prodDef.getProductId().toLowerCase()) || name.contains(prodDef.getProductId().toLowerCase()) || name.contains("evo");
+                if (!nameMatchesProduct) return "UNMATCHED_PRODUCT_NAME";
+
+                if (platform.isWindows()) {
+                    if (!(name.contains("win32") || name.contains("win"))) return "UNMATCHED_TARGET_PLATFORM";
+                } else {
+                    if (!(name.contains("linux") || name.contains("gtk") || name.endsWith(".tar.gz"))) return "UNMATCHED_TARGET_PLATFORM";
+                }
+                return null;
+            } else if (file.isDirectory()) {
+                return "UNEXPECTED_DIRECTORY_FOR_DEFAULT_FORMAT";
+            }
+            return "UNKNOWN_ARTIFACT_TYPE";
+        }
+    }
+
+    private boolean isExactMatchingArtifact(File file, ProductDefinition prodDef, TargetPlatform platform) {
+        return getExclusionReason(file, prodDef, platform) == null;
     }
 
     public TaskResult validateProductDeployment(File location, ProductDefinition prodDef, TargetPlatform platform) {
