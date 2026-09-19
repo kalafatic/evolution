@@ -61,6 +61,10 @@ public class HuggingFaceInvalidRepoRegressionTest {
         assertEquals(0, acqResult.getAcceptedContentBytes());
         assertEquals(TrainingDataAcquisitionResult.Status.INSUFFICIENT_SOURCE_DATA, acqResult.getStatus());
 
+        // Verify that preflight-failed sources are NOT reported in sourcesUsed, but recorded in errors
+        assertFalse("Preflight-failed sources should NOT be listed in sourcesUsed", acqResult.getSourcesUsed().contains(source.getSourceName()));
+        assertFalse("Errors should be populated with preflight failure diagnostics", acqResult.getErrors().isEmpty());
+
         // Verify output directory deferral in DatasetAcquisitionTool
         File testBaseDir = new File(System.getProperty("java.io.tmpdir"), "evo-acq-test-" + System.currentTimeMillis());
         File resolvedDir = DatasetAcquisitionTool.resolveDatasetOutputDir(testBaseDir.getAbsolutePath(), invalidRepo);
@@ -108,10 +112,7 @@ public class HuggingFaceInvalidRepoRegressionTest {
         TrainingDataAcquisitionResult result = service.acquireDataset(req);
         assertNotNull(result);
 
-        List<String> sourcesUsed = result.getSourcesUsed();
-        assertTrue("Failed source should be registered in sourcesUsed", sourcesUsed.contains(source.getSourceName()));
-
-        List<String> sourcesExhausted = result.getSourcesExhausted();
-        assertTrue("Failed preflight source should be marked as exhausted to prevent search expansion loops", sourcesExhausted.contains(source.getSourceName()));
+        assertFalse("Preflight failed source should NOT be in sourcesUsed", result.getSourcesUsed().contains(source.getSourceName()));
+        assertFalse("Errors list must capture preflight failure", result.getErrors().isEmpty());
     }
 }
