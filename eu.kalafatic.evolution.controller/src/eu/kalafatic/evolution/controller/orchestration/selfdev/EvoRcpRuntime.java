@@ -40,6 +40,8 @@ public class EvoRcpRuntime implements ProcessLifecycle {
 
         List<String> command = new ArrayList<>();
         command.add(executable.getAbsolutePath());
+        int effectiveServerPort = context.getEffectiveServerPort();
+        command.add("--port=" + effectiveServerPort);
         if (context.isDebugMode()) {
             command.add("-debug");
             command.add("-consoleLog");

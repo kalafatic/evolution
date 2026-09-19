@@ -55,9 +55,24 @@ public class SelfDevContext {
         }
         this.orchestrator = this.resourceManager.getOrchestrator();
 
-        this.repositoryRoot = this.resourceManager.getPath(EvoPath.EVO_GIT_REPOSITORY).toFile().getAbsoluteFile().toPath().normalize().toFile();
+        File pRoot = projectRoot != null ? projectRoot.getAbsoluteFile().toPath().normalize().toFile() : null;
+        File defaultRepo = this.resourceManager.getPath(EvoPath.EVO_GIT_REPOSITORY).toFile().getAbsoluteFile().toPath().normalize().toFile();
 
-        this.projectRoot = projectRoot != null ? projectRoot.getAbsoluteFile().toPath().normalize().toFile() : this.repositoryRoot;
+        boolean defaultRepoValid = defaultRepo.exists() && new File(defaultRepo, ".git").exists();
+        if (!defaultRepoValid) {
+            File appRepo = new File("/app");
+            if (appRepo.exists() && new File(appRepo, ".git").exists()) {
+                this.repositoryRoot = appRepo;
+            } else if (pRoot != null && pRoot.exists() && new File(pRoot, ".git").exists()) {
+                this.repositoryRoot = pRoot;
+            } else {
+                this.repositoryRoot = defaultRepo;
+            }
+        } else {
+            this.repositoryRoot = defaultRepo;
+        }
+
+        this.projectRoot = pRoot != null ? pRoot : this.repositoryRoot;
 
         String timestamp = new SimpleDateFormat("ddMMyy_HHmmss").format(new Date());
         this.runId = "run_" + timestamp;
@@ -190,6 +205,8 @@ public class SelfDevContext {
         System.out.println("Platform        : " + os + "." + ws + "." + arch);
         System.out.println("Product ID      : " + productId);
         System.out.println("Launcher Name   : " + launcher);
+        System.out.println("Debug Mode      : " + debugMode + " (portOffset: +" + getPortOffset() + ")");
+        System.out.println("Effective Ports : Supervisor=" + getEffectiveSupervisorPort() + ", Control=" + getEffectiveSupervisorControlPort() + ", Server=" + getEffectiveServerPort());
         System.out.println("================================================================================");
     }
 
@@ -313,6 +330,27 @@ public class SelfDevContext {
 
     public void setDebugMode(boolean debugMode) {
         this.debugMode = debugMode;
+    }
+
+    public int getPortOffset() {
+        return isDebugMode() ? 10 : 0;
+    }
+
+    public int getEffectiveSupervisorPort() {
+        eu.kalafatic.evolution.controller.resource.EvoService svc = resourceManager.getService("SUPERVISOR");
+        int basePort = svc != null && svc.getPort() > 0 ? svc.getPort() : 8089;
+        return basePort + getPortOffset();
+    }
+
+    public int getEffectiveSupervisorControlPort() {
+        int basePort = 28080;
+        return basePort + getPortOffset();
+    }
+
+    public int getEffectiveServerPort() {
+        eu.kalafatic.evolution.controller.resource.EvoService svc = resourceManager.getService("SERVER");
+        int basePort = svc != null && svc.getPort() > 0 ? svc.getPort() : 48081;
+        return basePort + getPortOffset();
     }
 
     public void recordTaskResult(TaskResult result) {
