@@ -77,51 +77,23 @@ public class ParquetAdapter implements DatasetSourceAdapter {
                 }
             }
         } else {
-            List<byte[]> decompressedBlocks = new ArrayList<>();
+            List<String> rawExtractedStrings = new ArrayList<>();
+            int maxStrings = 50000;
 
             // Scan and decompress Snappy / GZIP pages embedded in Parquet stream
             int pos = 4;
             int end = bytes.length - 4;
-            while (pos < end) {
+            while (pos < end && rawExtractedStrings.size() < maxStrings) {
                 if (context.isCancelled()) break;
                 byte[] dec = decompressSnappyBlock(bytes, pos, Math.min(end - pos, 250000));
                 if (dec.length >= 64) {
-                    decompressedBlocks.add(dec);
-                    pos += Math.max(16, dec.length / 4);
+                    extractStringsFromBlock(dec, rawExtractedStrings, maxStrings);
+                    pos += Math.max(32, dec.length / 2);
                 } else {
-                    pos += 1;
+                    pos += 16;
                 }
             }
-            decompressedBlocks.add(bytes);
-
-            List<String> rawExtractedStrings = new ArrayList<>();
-            for (byte[] block : decompressedBlocks) {
-                if (context.isCancelled()) break;
-                int bpos = 0;
-                int bend = block.length;
-                while (bpos <= bend - 5) {
-                    int len = (block[bpos] & 0xFF) | ((block[bpos + 1] & 0xFF) << 8) | ((block[bpos + 2] & 0xFF) << 16) | ((block[bpos + 3] & 0xFF) << 24);
-                    if (len >= 15 && len <= 50000 && bpos + 4 + len <= bend) {
-                        boolean isAsciiPrintable = true;
-                        for (int k = 0; k < Math.min(len, 100); k++) {
-                            int ch = block[bpos + 4 + k] & 0xFF;
-                            if ((ch < 0x20 || ch > 0x7E) && ch != '\n' && ch != '\r' && ch != '\t') {
-                                isAsciiPrintable = false;
-                                break;
-                            }
-                        }
-                        if (isAsciiPrintable) {
-                            String strCandidate = new String(block, bpos + 4, len, StandardCharsets.UTF_8).trim();
-                            if (!strCandidate.isEmpty()) {
-                                rawExtractedStrings.add(strCandidate);
-                            }
-                            bpos += 4 + len;
-                            continue;
-                        }
-                    }
-                    bpos++;
-                }
-            }
+            extractStringsFromBlock(bytes, rawExtractedStrings, maxStrings);
 
             // Group or structure extracted string tokens into normalized samples
             String instructionBuf = null;
@@ -157,6 +129,34 @@ public class ParquetAdapter implements DatasetSourceAdapter {
         return samples;
     }
 
+    private void extractStringsFromBlock(byte[] block, List<String> rawExtractedStrings, int maxStrings) {
+        if (block == null) return;
+        int bpos = 0;
+        int bend = block.length;
+        while (bpos <= bend - 5 && rawExtractedStrings.size() < maxStrings) {
+            int len = (block[bpos] & 0xFF) | ((block[bpos + 1] & 0xFF) << 8) | ((block[bpos + 2] & 0xFF) << 16) | ((block[bpos + 3] & 0xFF) << 24);
+            if (len >= 15 && len <= 50000 && bpos + 4 + len <= bend) {
+                boolean isAsciiPrintable = true;
+                for (int k = 0; k < Math.min(len, 100); k++) {
+                    int ch = block[bpos + 4 + k] & 0xFF;
+                    if ((ch < 0x20 || ch > 0x7E) && ch != '\n' && ch != '\r' && ch != '\t') {
+                        isAsciiPrintable = false;
+                        break;
+                    }
+                }
+                if (isAsciiPrintable) {
+                    String strCandidate = new String(block, bpos + 4, len, StandardCharsets.UTF_8).trim();
+                    if (!strCandidate.isEmpty()) {
+                        rawExtractedStrings.add(strCandidate);
+                    }
+                    bpos += 4 + len;
+                    continue;
+                }
+            }
+            bpos++;
+        }
+    }
+
     private byte[] decompressSnappyBlock(byte[] input, int offset, int length) {
         if (input == null || offset < 0 || length <= 0 || offset + length > input.length) return new byte[0];
         int pos = offset;
@@ -171,11 +171,16 @@ public class ParquetAdapter implements DatasetSourceAdapter {
             shift += 7;
         }
 
-        if (uncompressedLen <= 0 || uncompressedLen > 100 * 1024 * 1024) {
+        if (shift > 28 || uncompressedLen <= 0 || uncompressedLen > 2 * 1024 * 1024) {
             return new byte[0];
         }
 
-        byte[] decompressed = new byte[uncompressedLen];
+        byte[] decompressed;
+        try {
+            decompressed = new byte[uncompressedLen];
+        } catch (OutOfMemoryError oom) {
+            return new byte[0];
+        }
         int destPos = 0;
 
         try {

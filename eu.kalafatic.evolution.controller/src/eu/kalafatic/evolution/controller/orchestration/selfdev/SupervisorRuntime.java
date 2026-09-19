@@ -207,7 +207,7 @@ public class SupervisorRuntime implements ProcessLifecycle {
             if (supervisorProcess != null) {
                 killProcessTree(supervisorProcess);
                 supervisorProcess = null;
-            } else if (targetPid > 0) {
+            } else if (context != null && context.getSupervisorPid() > 0) {
                 java.util.Optional<ProcessHandle> ph = ProcessHandle.of(targetPid);
                 ph.ifPresent(p -> {
                     p.descendants().forEach(ProcessHandle::destroyForcibly);

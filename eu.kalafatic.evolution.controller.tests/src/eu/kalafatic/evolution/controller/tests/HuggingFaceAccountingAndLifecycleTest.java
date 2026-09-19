@@ -23,6 +23,7 @@ import eu.kalafatic.evolution.forge.data.api.downloader.DownloadResult;
 import eu.kalafatic.evolution.forge.data.api.preference.TrainingDataPreferences;
 import eu.kalafatic.evolution.forge.data.api.service.TrainingDataAcquisitionRequest;
 import eu.kalafatic.evolution.forge.data.api.service.TrainingDataAcquisitionResult;
+import eu.kalafatic.evolution.forge.data.api.service.TrainingDataAcquisitionService;
 import eu.kalafatic.evolution.forge.data.api.source.DatasetSource;
 import eu.kalafatic.evolution.forge.data.api.source.DatasetSourceConfig;
 import eu.kalafatic.evolution.forge.data.api.source.DatasetSourceStats;
@@ -363,6 +364,64 @@ public class HuggingFaceAccountingAndLifecycleTest {
     }
 
     @Test
+    public void testHuggingFaceParquetFallbackOnHttpError() throws Exception {
+        // Mock downloader that fails on offset 100 with HTTP 500, but recovers via /parquet API
+        DataDownloader mockDownloader = new DataDownloader() {
+            @Override
+            public DownloadResult download(DownloadRequest request) throws IOException {
+                String url = request.getUrl();
+                if (url.contains("/rows") && url.contains("offset=0")) {
+                    JSONObject root = new JSONObject();
+                    JSONArray rows = new JSONArray();
+                    for (int i = 0; i < 5; i++) {
+                        rows.put(new JSONObject().put("row", new JSONObject().put("text", "Initial row #" + i)));
+                    }
+                    root.put("rows", rows);
+                    String json = root.toString();
+                    return new DownloadResult(200, "OK", json, null, json.getBytes(StandardCharsets.UTF_8).length, "application/json");
+                } else if (url.contains("/rows")) {
+                    throw new IOException("Hugging Face HTTP Error (500): Server Error");
+                } else if (url.contains("/parquet?dataset=")) {
+                    JSONObject root = new JSONObject();
+                    JSONArray files = new JSONArray();
+                    JSONObject file1 = new JSONObject();
+                    file1.put("dataset", "roneneldan/TinyStories");
+                    file1.put("config", "default");
+                    file1.put("split", "train");
+                    file1.put("url", "https://mock.hf.co/0000.parquet");
+                    files.put(file1);
+                    root.put("parquet_files", files);
+                    String json = root.toString();
+                    return new DownloadResult(200, "OK", json, null, json.getBytes(StandardCharsets.UTF_8).length, "application/json");
+                } else if (url.contains("0000.parquet")) {
+                    // Parquet fallback payload containing text lines
+                    String textPayload = "{\"prompt\": \"Once upon a time in TinyStories.\", \"completion\": \"The end.\"} \n{\"prompt\": \"A little bird sang.\", \"completion\": \"It was happy.\"}";
+                    byte[] raw = textPayload.getBytes(StandardCharsets.UTF_8);
+                    return new DownloadResult(200, "OK", textPayload, raw, null, raw.length, "application/octet-stream");
+                }
+                throw new IOException("404 Not Found");
+            }
+        };
+
+        DatasetSourceConfig config = new DatasetSourceConfig("HUGGING_FACE", "roneneldan/TinyStories");
+        config.setSplit("train");
+
+        try (HuggingFaceDatasetSource source = new HuggingFaceDatasetSource(config, mockDownloader)) {
+            source.initialize();
+
+            int totalConsumed = 0;
+            while (source.hasNext()) {
+                NormalizedSample sample = source.next();
+                assertNotNull(sample);
+                totalConsumed++;
+            }
+
+            // 5 samples from page 0 rows + 2 samples from parquet fallback
+            assertEquals("Source MUST recover via Parquet fallback and yield 7 total samples", 7, totalConsumed);
+        }
+    }
+
+    @Test
     public void testResolveDatasetOutputDirFolderStructure() {
         File baseDir = new File("/home/petr/workspace/forge-input");
         File resolved = DatasetAcquisitionTool.resolveDatasetOutputDir(baseDir.getAbsolutePath(), "tatsu-lab/alpaca");
@@ -376,6 +435,100 @@ public class HuggingFaceAccountingAndLifecycleTest {
         File resolved3 = DatasetAcquisitionTool.resolveDatasetOutputDir(baseDir.getAbsolutePath(), "Salesforce/wikitext");
         assertEquals("wikitext", resolved3.getName());
         assertEquals(new File(baseDir, "wikitext").getAbsolutePath(), resolved3.getAbsolutePath());
+    }
+
+    @Test
+    public void testDownloadedParquetAndJsonlDatasetPersistence() throws Exception {
+        File tempBaseDir = new File(System.getProperty("java.io.tmpdir"), "persistence_test_" + System.currentTimeMillis());
+        tempBaseDir.mkdirs();
+
+        try {
+            // Test 1: HuggingFaceDatasetSource parquet fallback persistence
+            DataDownloader parquetDownloader = new DataDownloader() {
+                @Override
+                public DownloadResult download(DownloadRequest request) throws IOException {
+                    String url = request.getUrl();
+                    if (url.contains("/rows")) {
+                        throw new IOException("Rows API error to trigger parquet fallback");
+                    } else if (url.contains("/parquet?dataset=")) {
+                        JSONObject root = new JSONObject();
+                        JSONArray files = new JSONArray();
+                        JSONObject file1 = new JSONObject();
+                        file1.put("dataset", "test/persistence");
+                        file1.put("config", "default");
+                        file1.put("split", "train");
+                        file1.put("url", "https://mock.hf.co/0000.parquet");
+                        files.put(file1);
+                        root.put("parquet_files", files);
+                        String json = root.toString();
+                        return new DownloadResult(200, "OK", json, null, json.getBytes(StandardCharsets.UTF_8).length, "application/json");
+                    } else if (url.contains("0000.parquet")) {
+                        String textPayload = "{\"prompt\": \"Once upon a time.\", \"completion\": \"The end.\"}";
+                        byte[] raw = textPayload.getBytes(StandardCharsets.UTF_8);
+                        return new DownloadResult(200, "OK", textPayload, raw, null, raw.length, "application/octet-stream");
+                    }
+                    throw new IOException("404 Not Found");
+                }
+            };
+
+            DatasetSourceConfig parquetConfig = new DatasetSourceConfig("HUGGING_FACE", "test/persistence");
+            parquetConfig.setSplit("train");
+            parquetConfig.setOutputDir(tempBaseDir.getAbsolutePath());
+
+            File resolvedDir = DatasetSourceConfig.resolveDatasetOutputDir(tempBaseDir.getAbsolutePath(), "test/persistence");
+
+            try (HuggingFaceDatasetSource source = new HuggingFaceDatasetSource(parquetConfig, parquetDownloader)) {
+                source.initialize();
+                assertTrue(source.hasNext());
+                NormalizedSample sample = source.next();
+                assertNotNull(sample);
+            }
+
+            // Verify parquet file exists in resolvedDir and was NOT deleted!
+            File persistedParquet = new File(resolvedDir, "0000.parquet");
+            assertTrue("Downloaded parquet file MUST remain persisted on disk in target output directory", persistedParquet.exists());
+            assertTrue("Persisted parquet file MUST be non-empty", persistedParquet.length() > 0);
+
+            // Test 2: DatasetAcquisitionTool raw jsonl persistence
+            TrainingDataAcquisitionService acqService = new TrainingDataAcquisitionServiceImpl() {
+                @Override
+                public TrainingDataAcquisitionResult acquireDataset(TrainingDataAcquisitionRequest request) throws Exception {
+                    List<NormalizedSample> samples = List.of(NormalizedSample.createTextSample("Persisted jsonl row text content sample", "test/rows"));
+                    DatasetSourceStats stats = new DatasetSourceStats();
+                    stats.addAcceptedBytes(100);
+                    stats.addDownloadedBytes(100);
+                    return new TrainingDataAcquisitionResult(
+                            samples, stats, true, false, 100.0, 100, 100, 0,
+                            TrainingDataAcquisitionResult.Status.READY, null, null,
+                            100, 100, 100, 100, 0, 0, 100, 0, 25,
+                            List.of("test/rows"), List.of(), List.of(), List.of(), List.of(), "MOCK"
+                    );
+                }
+            };
+
+            File rowsTargetDir = new File(tempBaseDir, "rows_test");
+            DatasetAcquisitionTool tool = new DatasetAcquisitionTool(acqService);
+            JSONObject cmd = new JSONObject();
+            cmd.put("repository", "test/rows");
+            cmd.put("split", "train");
+            cmd.put("outputDir", rowsTargetDir.getAbsolutePath());
+            cmd.put("targetUsableBytes", 100);
+
+            String resultJson = tool.execute(cmd.toString(), tempBaseDir, null);
+            JSONObject res = new JSONObject(resultJson);
+            assertEquals("READY", res.getString("status"));
+
+            File resolvedRowsDir = DatasetAcquisitionTool.resolveDatasetOutputDir(rowsTargetDir.getAbsolutePath(), "test/rows");
+            File persistedJsonl = new File(resolvedRowsDir, "train.jsonl");
+            File persistedEvodata = new File(resolvedRowsDir, "test_rows.evodata");
+
+            assertTrue("Downloaded JSONL file MUST exist and stay persisted", persistedJsonl.exists());
+            assertTrue("Persisted JSONL file MUST be non-empty", persistedJsonl.length() > 0);
+            assertTrue("Evodata container artifact MUST exist", persistedEvodata.exists());
+
+        } finally {
+            deleteRecursive(tempBaseDir);
+        }
     }
 
     private void deleteRecursive(File f) {
