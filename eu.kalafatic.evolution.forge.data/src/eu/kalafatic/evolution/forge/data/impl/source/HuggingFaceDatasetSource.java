@@ -105,7 +105,16 @@ public class HuggingFaceDatasetSource implements DatasetSource {
                     runTag, 0, 100, 0, result.getStatusCode(), result.getDownloadedBytes(), httpDurationMs);
 
             if (!result.isSuccess()) {
-                ResolvedSource res = new ResolvedSource("HUGGING_FACE", repo, requestedSplit, requestedSplit, requestedCfg, "main", splitsUrl, "json", 0L, false, false, "HTTP " + result.getStatusCode() + ": " + result.getStatusMessage());
+                String errMsg = "HTTP " + result.getStatusCode() + ": " + result.getStatusMessage();
+                if (result.getContentText() != null && !result.getContentText().trim().isEmpty()) {
+                    try {
+                        JSONObject errJson = new JSONObject(result.getContentText());
+                        if (errJson.has("error")) {
+                            errMsg = "HTTP " + result.getStatusCode() + " (" + errJson.getString("error") + "): " + result.getStatusMessage();
+                        }
+                    } catch (Exception ignored) {}
+                }
+                ResolvedSource res = new ResolvedSource("HUGGING_FACE", repo, requestedSplit, requestedSplit, requestedCfg, "main", splitsUrl, "json", 0L, false, false, errMsg);
                 res.logPreflight(runId);
                 return res;
             }

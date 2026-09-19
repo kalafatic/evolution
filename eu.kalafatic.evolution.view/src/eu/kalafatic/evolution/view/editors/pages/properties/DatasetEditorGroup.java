@@ -313,7 +313,6 @@ public class DatasetEditorGroup extends AEvoGroup {
         };
         String customOutputDir = outputDirText.getText().trim();
         File targetDatasetDir = eu.kalafatic.evolution.controller.tools.DatasetAcquisitionTool.resolveDatasetOutputDir(customOutputDir, repo);
-        targetDatasetDir.mkdirs();
         String resolvedOutputDir = targetDatasetDir.getAbsolutePath();
 
         String orchId = getOrchestratorId();

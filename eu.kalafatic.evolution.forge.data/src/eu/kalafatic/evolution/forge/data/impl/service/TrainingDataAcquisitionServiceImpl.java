@@ -108,7 +108,8 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
 
         List<NormalizedSample> acceptedSamples = new ArrayList<>();
         long accumulatedUsableBytes = 0;
-        Set<String> processedSourceNames = new HashSet<>();
+        Set<String> attemptedSourceNames = new HashSet<>();
+        Set<String> successfullyReadSourceNames = new HashSet<>();
         Set<String> exhaustedSourceNames = new HashSet<>();
         Set<String> failedSourceNames = new HashSet<>();
 
@@ -147,7 +148,7 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
             // Process all available sources in the sources list
             while (sourceIndex < sources.size() && (targetUsableBytes <= 0 || accumulatedUsableBytes < targetUsableBytes)) {
                 DatasetSource source = sources.get(sourceIndex++);
-                if (source == null || !processedSourceNames.add(source.getSourceName())) {
+                if (source == null || !attemptedSourceNames.add(source.getSourceName())) {
                     continue;
                 }
 
@@ -236,6 +237,7 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
                     System.err.println("[ACQUISITION LOG] Error reading source " + source.getSourceName() + ": " + ex.getMessage());
                 }
 
+                successfullyReadSourceNames.add(source.getSourceName());
                 if (!sourceReadError) {
                     exhaustedSourceNames.add(source.getSourceName());
                 }
@@ -263,7 +265,7 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
                 List<DataSourceCandidate> expandedCandidates = discovery.discover(prefs);
                 int newlyAddedCount = 0;
                 for (DataSourceCandidate cand : expandedCandidates) {
-                    if (cand.getSource() != null && !processedSourceNames.contains(cand.getSource().getSourceName())) {
+                    if (cand.getSource() != null && !attemptedSourceNames.contains(cand.getSource().getSourceName())) {
                         if (cand.getSource().getConfig() != null) {
                             cand.getSource().getConfig().setRunId(runId);
                         }
@@ -303,8 +305,9 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
                 ? TrainingDataAcquisitionResult.Status.READY
                 : TrainingDataAcquisitionResult.Status.INSUFFICIENT_SOURCE_DATA;
 
-        List<String> sourcesUsedNames = new ArrayList<>(processedSourceNames);
+        List<String> sourcesUsedNames = new ArrayList<>(successfullyReadSourceNames);
         List<String> sourcesExhaustedNamesList = sourceExhausted ? new ArrayList<>(exhaustedSourceNames) : List.of();
+        List<String> errorMessages = new ArrayList<>(failedSourceNames);
 
         String failureReason = null;
         if (!targetReached) {
@@ -354,7 +357,7 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
                 sourcesExhaustedNamesList,
                 hardFailures,
                 List.of(),
-                failureReason != null ? List.of(failureReason) : List.of(),
+                errorMessages,
                 "EVO_TARGET_DRIVEN_MULTI_SOURCE_PIPELINE"
         );
     }

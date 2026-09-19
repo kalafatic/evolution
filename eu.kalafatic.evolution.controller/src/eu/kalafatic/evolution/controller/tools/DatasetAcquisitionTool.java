@@ -126,6 +126,16 @@ public class DatasetAcquisitionTool implements ITool {
             minUsableBytes = targetUsableBytes;
         }
 
+        String customOutputDir = params.optString("outputDir", null);
+        if (customOutputDir == null || customOutputDir.trim().isEmpty()) {
+            customOutputDir = (String) metadata.get("outputDir");
+        }
+        if (customOutputDir == null || customOutputDir.trim().isEmpty()) {
+            customOutputDir = (String) metadata.get("customOutputDir");
+        }
+
+        File targetOutputDir = resolveDatasetOutputDir(customOutputDir, repo);
+
         TrainingDataPreferences.Builder builder = TrainingDataPreferences.builder()
                 .minimumUsableBytes(minUsableBytes)
                 .targetUsableBytes(targetUsableBytes);
@@ -196,10 +206,19 @@ public class DatasetAcquisitionTool implements ITool {
         long remaining = Math.max(0, targetUsableBytes - usableBytes);
         boolean targetReached = result.isTargetReached() || (targetUsableBytes > 0 && usableBytes >= targetUsableBytes);
 
+        if (usableBytes > 0 && targetOutputDir != null) {
+            targetOutputDir.mkdirs();
+        }
+
         CognitiveFailureType failureType;
+        String reasonStr = result.getFailureReason() != null ? result.getFailureReason() : "";
         if (targetReached) {
             failureType = CognitiveFailureType.TARGET_REACHED;
-        } else if (result.getDownloadedBytes() == 0 && result.getExtractedBytes() == 0 && usableBytes == 0) {
+        } else if (reasonStr.contains("HTTP 401") || reasonStr.contains("HTTP 403") || reasonStr.contains("Unauthorized") || reasonStr.contains("Forbidden")) {
+            failureType = CognitiveFailureType.AUTHENTICATION_FAILURE;
+        } else if (reasonStr.contains("HTTP 404") || reasonStr.contains("SOURCE_INACCESSIBLE") || reasonStr.contains("Not Found")) {
+            failureType = CognitiveFailureType.SOURCE_INACCESSIBLE;
+        } else if (reasonStr.contains("EmptyDatasetError") || (result.getDownloadedBytes() == 0 && result.getExtractedBytes() == 0 && usableBytes == 0)) {
             failureType = CognitiveFailureType.SOURCE_EMPTY;
         } else if (result.getExtractedBytes() > 0 && usableBytes == 0) {
             failureType = CognitiveFailureType.FILTER_REJECTED_ALL;
