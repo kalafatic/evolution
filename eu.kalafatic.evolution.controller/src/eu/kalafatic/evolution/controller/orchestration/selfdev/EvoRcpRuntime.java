@@ -25,11 +25,29 @@ public class EvoRcpRuntime implements ProcessLifecycle {
         }
 
         File evoRuntimeDir = new File(context.getRuntimeDirectory(), "evo");
-        if (!evoRuntimeDir.exists()) {
-            evoRuntimeDir = context.getExportDirectory();
+        File executable = findExecutable(evoRuntimeDir);
+
+        if (executable == null) {
+            BuildArtifact artifact = context.getArtifact(ArtifactType.EVO_RCP);
+            if (artifact == null && context.getExportDirectory() != null && context.getExportDirectory().exists()) {
+                File[] zips = context.getExportDirectory().listFiles((dir, name) -> name.endsWith(".zip") || name.startsWith("evolution"));
+                if (zips != null && zips.length > 0) {
+                    artifact = new BuildArtifact(ArtifactType.EVO_RCP, zips[0], context.getSourceRevision(), null, null);
+                }
+            }
+            if (artifact != null) {
+                EvoRcpDeployer deployer = new EvoRcpDeployer();
+                TaskResult deployResult = deployer.deploy(context, artifact);
+                if (deployResult.isSuccess()) {
+                    executable = findExecutable(evoRuntimeDir);
+                }
+            }
         }
 
-        File executable = findExecutable(evoRuntimeDir);
+        if (executable == null && context.getExportDirectory() != null && context.getExportDirectory().exists()) {
+            executable = findExecutable(context.getExportDirectory());
+        }
+
         if (executable == null) {
             return TaskResult.failure("start_evo_rcp", "Could not locate EVO RCP executable in " + evoRuntimeDir.getAbsolutePath(), null);
         }
