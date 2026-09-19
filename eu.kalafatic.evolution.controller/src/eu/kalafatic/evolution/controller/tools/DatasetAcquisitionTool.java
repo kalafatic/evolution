@@ -43,45 +43,26 @@ public class DatasetAcquisitionTool implements ITool {
     }
 
     public static File resolveDatasetOutputDir(String baseOutputDir, String repo) {
-        return DatasetSourceConfig.resolveDatasetOutputDir(baseOutputDir, repo);
-    }
+        if (baseOutputDir == null || baseOutputDir.trim().isEmpty()) {
+            baseOutputDir = new File(System.getProperty("user.home"), "workspace/forge-input").getAbsolutePath();
+        }
+        File baseDir = new File(baseOutputDir.trim());
+        if (repo == null || repo.trim().isEmpty()) {
+            return baseDir;
+        }
 
-    private void persistRawJsonlDataset(File targetOutputDir, String split, List<eu.kalafatic.evolution.forge.data.api.NormalizedSample> samples) {
-        if (samples == null || samples.isEmpty()) return;
-        boolean hasExistingRawFile = false;
-        File[] children = targetOutputDir.listFiles();
-        if (children != null) {
-            for (File child : children) {
-                String name = child.getName().toLowerCase();
-                if (name.endsWith(".parquet") || name.endsWith(".jsonl") || name.endsWith(".json") || name.endsWith(".csv") || name.endsWith(".txt")) {
-                    hasExistingRawFile = true;
-                    break;
-                }
-            }
+        String shortName = repo.trim();
+        int lastSlash = shortName.lastIndexOf('/');
+        if (lastSlash >= 0 && lastSlash < shortName.length() - 1) {
+            shortName = shortName.substring(lastSlash + 1);
         }
-        if (!hasExistingRawFile) {
-            String splitName = (split != null && !split.trim().isEmpty()) ? split.trim() : "train";
-            File jsonlFile = new File(targetOutputDir, splitName + ".jsonl");
-            try (java.io.PrintWriter writer = new java.io.PrintWriter(new java.io.OutputStreamWriter(new java.io.FileOutputStream(jsonlFile), java.nio.charset.StandardCharsets.UTF_8))) {
-                for (eu.kalafatic.evolution.forge.data.api.NormalizedSample sample : samples) {
-                    JSONObject row = new JSONObject();
-                    if (sample.getInstruction() != null) row.put("instruction", sample.getInstruction());
-                    if (sample.getResponse() != null) row.put("response", sample.getResponse());
-                    if (sample.getText() != null) row.put("text", sample.getText());
-                    if (sample.getMessages() != null && !sample.getMessages().isEmpty()) {
-                        JSONArray msgs = new JSONArray();
-                        for (var m : sample.getMessages()) {
-                            msgs.put(new JSONObject().put("role", m.getRole()).put("content", m.getContent()));
-                        }
-                        row.put("messages", msgs);
-                    }
-                    writer.println(row.toString());
-                }
-                System.out.printf("[DATASET TOOL] Persisted %d downloaded raw samples to %s\n", samples.size(), jsonlFile.getAbsolutePath());
-            } catch (Exception ex) {
-                System.err.println("[DATASET TOOL] Failed to persist raw jsonl dataset to " + jsonlFile + ": " + ex.getMessage());
-            }
+        shortName = shortName.trim();
+
+        if (baseDir.getName().equalsIgnoreCase(shortName)) {
+            return baseDir;
         }
+
+        return new File(baseDir, shortName);
     }
 
     @Override
@@ -204,12 +185,10 @@ public class DatasetAcquisitionTool implements ITool {
             DatasetSourceConfig cfg = new DatasetSourceConfig("HUGGING_FACE", repo);
             cfg.setSplit(split);
             cfg.setMaxBytes(targetUsableBytes);
-            cfg.setOutputDir(targetOutputDir.getAbsolutePath());
             request.addSource(new HuggingFaceDatasetSource(cfg));
         } else if ("LOCAL".equalsIgnoreCase(sourceType)) {
             DatasetSourceConfig cfg = new DatasetSourceConfig("LOCAL", repo);
             cfg.setMaxBytes(targetUsableBytes);
-            cfg.setOutputDir(targetOutputDir.getAbsolutePath());
             request.addSource(new LocalDatasetSource(cfg));
         }
 
@@ -266,8 +245,6 @@ public class DatasetAcquisitionTool implements ITool {
             } catch (Exception ex) {
                 System.err.println("[DATASET TOOL] Failed to write .evodata artifact to " + targetOutputDir + ": " + ex.getMessage());
             }
-
-            persistRawJsonlDataset(targetOutputDir, split, result.getAcceptedSamples());
         }
 
         CognitiveFailureType failureType;

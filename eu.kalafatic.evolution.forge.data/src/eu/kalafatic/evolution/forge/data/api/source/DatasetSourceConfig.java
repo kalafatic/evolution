@@ -12,7 +12,6 @@ public class DatasetSourceConfig {
     private boolean streaming = true;
     private String runId;
     private String origin = "REQUEST";
-    private String outputDir;
 
     public DatasetSourceConfig() {}
 
@@ -53,30 +52,4 @@ public class DatasetSourceConfig {
 
     public String getOrigin() { return origin; }
     public void setOrigin(String origin) { this.origin = origin; }
-
-    public String getOutputDir() { return outputDir; }
-    public void setOutputDir(String outputDir) { this.outputDir = outputDir; }
-
-    public static java.io.File resolveDatasetOutputDir(String baseOutputDir, String repo) {
-        if (baseOutputDir == null || baseOutputDir.trim().isEmpty()) {
-            baseOutputDir = new java.io.File(System.getProperty("user.home"), "workspace/forge-input").getAbsolutePath();
-        }
-        java.io.File baseDir = new java.io.File(baseOutputDir.trim());
-        if (repo == null || repo.trim().isEmpty()) {
-            return baseDir;
-        }
-
-        String shortName = repo.trim();
-        int lastSlash = shortName.lastIndexOf('/');
-        if (lastSlash >= 0 && lastSlash < shortName.length() - 1) {
-            shortName = shortName.substring(lastSlash + 1);
-        }
-        shortName = shortName.trim();
-
-        if (baseDir.getName().equalsIgnoreCase(shortName)) {
-            return baseDir;
-        }
-
-        return new java.io.File(baseDir, shortName);
-    }
 }
