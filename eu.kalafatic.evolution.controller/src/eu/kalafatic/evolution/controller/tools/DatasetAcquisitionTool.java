@@ -86,16 +86,42 @@ public class DatasetAcquisitionTool implements ITool {
 
         String repo = params.optString("repository", null);
         if (repo == null || repo.trim().isEmpty()) {
-            repo = params.optString("domain", null);
-        }
-        if (repo == null || repo.trim().isEmpty()) {
             repo = (String) metadata.get("repository");
         }
+
+        // Only fall back to domain if repository is completely absent AND domain looks like an explicit repo ID (contains '/')
         if (repo == null || repo.trim().isEmpty()) {
-            repo = (String) metadata.get("domain");
+            String domainParam = params.optString("domain", null);
+            if (domainParam == null || domainParam.trim().isEmpty()) {
+                domainParam = (String) metadata.get("domain");
+            }
+            if (domainParam != null && domainParam.contains("/")) {
+                repo = domainParam.trim();
+            }
         }
+
         if (repo == null || repo.trim().isEmpty()) {
-            repo = "Salesforce/wikitext";
+            JSONObject errObj = new JSONObject();
+            errObj.put("status", "FAILED");
+            errObj.put("requestedMinimumUsableBytes", 0);
+            errObj.put("usableContentBytes", 0);
+            errObj.put("quantity", 0);
+            errObj.put("sourceType", sourceType);
+            errObj.put("repository", "");
+            errObj.put("split", "");
+            errObj.put("isSourceExhausted", true);
+            errObj.put("failureType", CognitiveFailureType.INVALID_CONFIGURATION.name());
+            errObj.put("failureReason", "INVALID_CONFIGURATION: Missing mandatory dataset repository or valid target ID.");
+            errObj.put("recommendedNextActions", new JSONArray(List.of("PROVIDE_VALID_REPOSITORY")));
+
+            if (context != null) {
+                context.getMetadata().put("usableContentBytes", 0L);
+                context.getMetadata().put("quantity", 0L);
+                context.getMetadata().put("sourceType", sourceType);
+                context.getMetadata().put("failureType", CognitiveFailureType.INVALID_CONFIGURATION.name());
+                context.getMetadata().put("isSourceExhausted", true);
+            }
+            return errObj.toString();
         }
 
         String split = params.optString("split", null);

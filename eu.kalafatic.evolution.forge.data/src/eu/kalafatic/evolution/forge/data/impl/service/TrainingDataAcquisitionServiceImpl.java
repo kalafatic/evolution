@@ -275,7 +275,8 @@ public class TrainingDataAcquisitionServiceImpl implements TrainingDataAcquisiti
                 }
 
                 if (newlyAddedCount == 0) {
-                    consecutiveEmptyExpansions++;
+                    System.out.println("[ACQUISITION LOG] Search expansion yielded 0 new candidate sources. Short-circuiting expansion loop.");
+                    break;
                 } else {
                     consecutiveEmptyExpansions = 0;
                 }
