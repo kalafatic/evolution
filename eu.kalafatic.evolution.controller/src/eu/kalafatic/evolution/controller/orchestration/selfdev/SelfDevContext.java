@@ -6,6 +6,7 @@ import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 import eu.kalafatic.evolution.controller.resource.EvoPath;
@@ -39,7 +40,18 @@ public class SelfDevContext {
     private String sourceRevision;
     private boolean debugMode;
 
+    private long supervisorPid = -1;
+    private String supervisorExecutable;
+    private File supervisorWorkingDirectory;
+
     private ResolvedSelfDevResources resolvedResources;
+
+    public enum ProcessOwnership {
+        CURRENT_RUN,
+        OTHER_RUN,
+        PARENT_RCP,
+        UNKNOWN
+    }
 
     private final Map<String, TaskResult> taskResults = new ConcurrentHashMap<>();
     private final Map<ArtifactType, BuildArtifact> artifacts = new ConcurrentHashMap<>();

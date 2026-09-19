@@ -12,6 +12,20 @@ public class SelfDevLoopTask extends AbstractSelfDevTask {
         if (context == null) {
             return TaskResult.failure(id, "SelfDevContext is null", null);
         }
-        return TaskResult.success(id, "Self-Dev Loop task executed successfully.");
+
+        SupervisorClient client = new SupervisorClient(context);
+        boolean reachable = client.ping();
+
+        if (!reachable) {
+            String msg = "Self-Dev Loop verification failed: Child Supervisor process for run " + context.getRunId() + " is not responsive on HTTP endpoint " + client.getBaseUrl();
+            logError(msg);
+            return TaskResult.failure(id, msg, null);
+        }
+
+        return new TaskResult.Builder(id)
+                .status(TaskStatus.SUCCESS)
+                .message("Self-Dev Loop active and verifying child Supervisor responsiveness on " + client.getBaseUrl())
+                .workingDirectory(context.getRuntimeDirectory())
+                .build();
     }
 }

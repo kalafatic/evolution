@@ -59,6 +59,14 @@ public class SupervisorRuntime implements ProcessLifecycle {
 
         File logFile = new File(context.getLogDirectory(), "supervisor_runtime.log");
 
+        log("[START_EVO_SUPERVISOR][LAUNCH]");
+        log("artifact=" + jarFile.getAbsolutePath());
+        log("runtimeRoot=" + context.getRuntimeDirectory().getAbsolutePath());
+        log("executable=java");
+        log("workingDirectory=" + jarFile.getParentFile().getAbsolutePath());
+        log("effectiveSupervisorPort=" + supervisorPort);
+        log("command=" + String.join(" ", cmd));
+
         try {
             ProcessBuilder pb = new ProcessBuilder(cmd);
             pb.directory(jarFile.getParentFile());
@@ -67,6 +75,13 @@ public class SupervisorRuntime implements ProcessLifecycle {
             pb.redirectOutput(ProcessBuilder.Redirect.appendTo(logFile));
 
             supervisorProcess = pb.start();
+            long pid = supervisorProcess.pid();
+            context.setSupervisorPid(pid);
+            context.setSupervisorExecutable(jarFile.getAbsolutePath());
+            context.setSupervisorWorkingDirectory(jarFile.getParentFile());
+
+            log("[START_EVO_SUPERVISOR][PROCESS_STARTED]");
+            log("pid=" + pid);
 
             TaskResult readyRes = waitUntilReady(context, 15);
             long duration = System.currentTimeMillis() - startTime;
@@ -189,8 +204,18 @@ public class SupervisorRuntime implements ProcessLifecycle {
 
             if (supervisorProcess != null) {
                 killProcessTree(supervisorProcess);
+                supervisorProcess = null;
+            } else if (targetPid > 0) {
+                java.util.Optional<ProcessHandle> ph = ProcessHandle.of(targetPid);
+                ph.ifPresent(p -> {
+                    p.descendants().forEach(ProcessHandle::destroyForcibly);
+                    p.destroyForcibly();
+                });
             }
-            supervisorProcess = null;
+
+            if (context != null) {
+                context.setSupervisorPid(-1);
+            }
 
             long duration = System.currentTimeMillis() - startTime;
             return new TaskResult.Builder("stop_supervisor")
@@ -203,6 +228,11 @@ public class SupervisorRuntime implements ProcessLifecycle {
             long duration = System.currentTimeMillis() - startTime;
             return TaskResult.failure("stop_supervisor", "Failed to stop Supervisor process: " + e.getMessage(), e);
         }
+    }
+
+    private void log(String msg) {
+        eu.kalafatic.evolution.controller.log.Log.log(msg);
+        System.out.println(msg);
     }
 
     private static void killProcessTree(Process p) {
