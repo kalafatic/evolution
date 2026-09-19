@@ -23,40 +23,11 @@ public class SupervisorRuntime implements ProcessLifecycle {
         int supervisorPort = context.getEffectiveSupervisorPort();
         int controlPort = context.getEffectiveSupervisorControlPort();
 
-        boolean isReachable = activeClient.ping();
-        log("[START_EVO_SUPERVISOR][EXISTING_ENDPOINT]");
-        log("endpoint=" + activeClient.getBaseUrl());
-        log("reachable=" + isReachable);
-        log("runId=" + context.getRunId());
-        log("configuredSupervisorPort=" + (supervisorPort - context.getPortOffset()));
-        log("effectiveSupervisorPort=" + supervisorPort);
-        log("portOffset=" + context.getPortOffset());
-
-        if (isReachable) {
-            long currentPid = context.getSupervisorPid() > 0 ? context.getSupervisorPid() : (isAlive() ? getPid() : -1);
-            SelfDevContext.ProcessOwnership ownership = context.classifyProcessOwnership(currentPid);
-
-            log("[START_EVO_SUPERVISOR][OWNERSHIP]");
-            log("endpoint=" + activeClient.getBaseUrl());
-            log("pid=" + currentPid);
-            log("ownership=" + ownership);
-            log("runId=" + context.getRunId());
-            log("processWorkingDirectory=" + (context.getSupervisorWorkingDirectory() != null ? context.getSupervisorWorkingDirectory().getAbsolutePath() : "null"));
-            log("runtimeRoot=" + context.getRuntimeDirectory().getAbsolutePath());
-
-            if (ownership == SelfDevContext.ProcessOwnership.CURRENT_RUN) {
-                log("[START_EVO_SUPERVISOR] Existing supervisor process is verified to belong to current run. Reusing.");
-                return new TaskResult.Builder("start_supervisor")
-                        .status(TaskStatus.SUCCESS)
-                        .message("Supervisor is already running and responding to ping on " + activeClient.getBaseUrl() + ".")
-                        .build();
-            } else {
-                log("[START_EVO_SUPERVISOR] Endpoint " + activeClient.getBaseUrl() + " responded but ownership is " + ownership + ". Will NOT reuse.");
-                if (isAlive() && supervisorProcess != null) {
-                    killProcessTree(supervisorProcess);
-                    supervisorProcess = null;
-                }
-            }
+        if (isAlive() && activeClient.ping()) {
+            return new TaskResult.Builder("start_supervisor")
+                    .status(TaskStatus.SUCCESS)
+                    .message("Supervisor is already running and responding to ping on " + activeClient.getBaseUrl() + ".")
+                    .build();
         }
 
         if (supervisorProcess != null) {
@@ -218,20 +189,7 @@ public class SupervisorRuntime implements ProcessLifecycle {
     public TaskResult stop(SelfDevContext context) {
         long startTime = System.currentTimeMillis();
         SupervisorClient activeClient = new SupervisorClient(context);
-
-        long targetPid = context != null ? context.getSupervisorPid() : getPid();
-        String executable = context != null ? context.getSupervisorExecutable() : null;
-        File workDir = context != null ? context.getSupervisorWorkingDirectory() : null;
-
-        log("[STOP_EVO_SUPERVISOR][TARGET]");
-        log("pid=" + targetPid);
-        log("runId=" + (context != null ? context.getRunId() : "null"));
-        log("effectivePort=" + (context != null ? context.getEffectiveSupervisorPort() : 8089));
-        log("executable=" + executable);
-        log("workingDirectory=" + (workDir != null ? workDir.getAbsolutePath() : "null"));
-
-        if (supervisorProcess == null && targetPid <= 0 && !activeClient.ping()) {
-            log("[STOP_EVO_SUPERVISOR] No active child Supervisor process recorded for current run.");
+        if (supervisorProcess == null && !activeClient.ping()) {
             return new TaskResult.Builder("stop_supervisor")
                     .status(TaskStatus.SUCCESS)
                     .message("Supervisor is not running.")
@@ -239,7 +197,7 @@ public class SupervisorRuntime implements ProcessLifecycle {
         }
 
         try {
-            if (activeClient.ping() && context != null && context.classifyProcessOwnership(targetPid) == SelfDevContext.ProcessOwnership.CURRENT_RUN) {
+            if (activeClient.ping()) {
                 activeClient.sendCommand("shutdown", null);
                 Thread.sleep(1000);
             }

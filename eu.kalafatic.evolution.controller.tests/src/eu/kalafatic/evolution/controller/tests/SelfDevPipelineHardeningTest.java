@@ -270,29 +270,6 @@ public class SelfDevPipelineHardeningTest {
                 client.getBaseUrl().contains(":" + context.getEffectiveSupervisorPort()));
     }
 
-    @Test
-    public void testProcessOwnershipClassificationAndRejection() {
-        File repoRoot = findRepoRoot();
-        SelfDevContext context = new SelfDevContext(repoRoot, null);
-        context.setDebugMode(true);
-
-        long currentJvmPid = ProcessHandle.current().pid();
-
-        // Current JVM pid must be classified as PARENT_RCP
-        SelfDevContext.ProcessOwnership parentOwnership = context.classifyProcessOwnership(currentJvmPid);
-        assertEquals("Current JVM PID must be classified as PARENT_RCP", SelfDevContext.ProcessOwnership.PARENT_RCP, parentOwnership);
-
-        // Unknown/unstarted PID must be classified as UNKNOWN
-        SelfDevContext.ProcessOwnership unknownOwnership = context.classifyProcessOwnership(-1);
-        assertEquals(SelfDevContext.ProcessOwnership.UNKNOWN, unknownOwnership);
-
-        // Explicitly set supervisor PID in context -> must be classified as CURRENT_RUN
-        long fakeStartedPid = 999999L;
-        context.setSupervisorPid(fakeStartedPid);
-        SelfDevContext.ProcessOwnership childOwnership = context.classifyProcessOwnership(fakeStartedPid);
-        assertEquals("Context-recorded supervisor PID must be classified as CURRENT_RUN", SelfDevContext.ProcessOwnership.CURRENT_RUN, childOwnership);
-    }
-
     private void deleteRecursively(File f) {
         if (f.isDirectory()) {
             File[] children = f.listFiles();

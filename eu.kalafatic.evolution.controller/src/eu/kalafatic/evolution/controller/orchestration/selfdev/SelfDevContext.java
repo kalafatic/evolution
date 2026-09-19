@@ -365,57 +365,6 @@ public class SelfDevContext {
         return basePort + getPortOffset();
     }
 
-    public long getSupervisorPid() {
-        return supervisorPid;
-    }
-
-    public void setSupervisorPid(long supervisorPid) {
-        this.supervisorPid = supervisorPid;
-    }
-
-    public String getSupervisorExecutable() {
-        return supervisorExecutable;
-    }
-
-    public void setSupervisorExecutable(String supervisorExecutable) {
-        this.supervisorExecutable = supervisorExecutable;
-    }
-
-    public File getSupervisorWorkingDirectory() {
-        return supervisorWorkingDirectory;
-    }
-
-    public void setSupervisorWorkingDirectory(File supervisorWorkingDirectory) {
-        this.supervisorWorkingDirectory = supervisorWorkingDirectory;
-    }
-
-    public ProcessOwnership classifyProcessOwnership(long pid) {
-        if (pid <= 0) return ProcessOwnership.UNKNOWN;
-
-        if (this.supervisorPid > 0 && pid == this.supervisorPid) {
-            return ProcessOwnership.CURRENT_RUN;
-        }
-
-        long currentJvmPid = ProcessHandle.current().pid();
-        if (pid == currentJvmPid) {
-            return ProcessOwnership.PARENT_RCP;
-        }
-
-        Optional<ProcessHandle> ph = ProcessHandle.of(pid);
-        if (ph.isPresent()) {
-            ProcessHandle.Info info = ph.get().info();
-            String cmdLine = info.commandLine().orElse("").toLowerCase();
-            String runIdLower = getRunId().toLowerCase();
-            if (!runIdLower.isEmpty() && cmdLine.contains(runIdLower)) {
-                return ProcessOwnership.CURRENT_RUN;
-            }
-            if (cmdLine.contains("self-dev") || cmdLine.contains("supervisor")) {
-                return ProcessOwnership.OTHER_RUN;
-            }
-        }
-        return ProcessOwnership.UNKNOWN;
-    }
-
     public void recordTaskResult(TaskResult result) {
         if (result != null && result.getTaskId() != null) {
             taskResults.put(result.getTaskId(), result);
