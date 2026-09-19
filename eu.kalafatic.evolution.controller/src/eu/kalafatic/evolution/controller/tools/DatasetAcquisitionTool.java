@@ -234,6 +234,17 @@ public class DatasetAcquisitionTool implements ITool {
 
         if (usableBytes > 0 && targetOutputDir != null) {
             targetOutputDir.mkdirs();
+            try {
+                String artifactName = repo.replace('/', '_').replaceAll("[^a-zA-Z0-9_.-]", "_") + ".evodata";
+                File targetEvodataFile = new File(targetOutputDir, artifactName);
+                DatasetSourceConfig srcCfg = new DatasetSourceConfig("HUGGING_FACE", repo);
+                srcCfg.setSplit(split);
+
+                eu.kalafatic.evolution.forge.data.impl.writer.EvoDataWriter writer = new eu.kalafatic.evolution.forge.data.impl.writer.EvoDataWriter();
+                writer.write(targetEvodataFile, result.getAcceptedSamples(), srcCfg, result.getGlobalStats(), 0.05);
+            } catch (Exception ex) {
+                System.err.println("[DATASET TOOL] Failed to write .evodata artifact to " + targetOutputDir + ": " + ex.getMessage());
+            }
         }
 
         CognitiveFailureType failureType;

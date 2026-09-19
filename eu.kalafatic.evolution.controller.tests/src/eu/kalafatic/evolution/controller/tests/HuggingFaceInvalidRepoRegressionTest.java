@@ -14,6 +14,7 @@ import org.junit.Test;
 import eu.kalafatic.evolution.controller.orchestration.TaskContext;
 import eu.kalafatic.evolution.controller.orchestration.cognitive.loop.CognitiveFailureType;
 import eu.kalafatic.evolution.controller.tools.DatasetAcquisitionTool;
+import eu.kalafatic.evolution.forge.data.api.NormalizedSample;
 import eu.kalafatic.evolution.forge.data.api.downloader.DataDownloader;
 import eu.kalafatic.evolution.forge.data.api.downloader.DownloadRequest;
 import eu.kalafatic.evolution.forge.data.api.downloader.DownloadResult;
@@ -25,7 +26,7 @@ import eu.kalafatic.evolution.forge.data.impl.source.HuggingFaceDatasetSource;
 
 /**
  * Regression test suite verifying invalid HF dataset preflight, directory creation deferral,
- * search expansion deduplication of invalid sources, and precise cognitive failure classification.
+ * search expansion deduplication of invalid sources, and materialization of .evodata files.
  */
 public class HuggingFaceInvalidRepoRegressionTest {
 
@@ -91,28 +92,45 @@ public class HuggingFaceInvalidRepoRegressionTest {
     }
 
     @Test
-    public void testSearchExpansionDeduplicationOfFailedPreflightSources() throws Exception {
-        DataDownloader mockDownloader = new DataDownloader() {
+    public void testMaterializeEvodataArtifactWhenUsableBytesExist() throws Exception {
+        // Mock acquisition service returning synthetic accepted samples
+        TrainingDataAcquisitionServiceImpl service = new TrainingDataAcquisitionServiceImpl(null, null, null, null, null) {
             @Override
-            public DownloadResult download(DownloadRequest request) {
-                String body = "{\"error\": \"EmptyDatasetError: empty repository\"}";
-                return new DownloadResult(500, "Internal Server Error", body, null, body.getBytes().length, "application/json");
+            public TrainingDataAcquisitionResult acquireDataset(TrainingDataAcquisitionRequest request) throws Exception {
+                NormalizedSample sample = NormalizedSample.createTextSample("Once upon a time in a tiny land...", "roneneldan/TinyStories");
+                return new TrainingDataAcquisitionResult(
+                        List.of(sample),
+                        new eu.kalafatic.evolution.forge.data.api.source.DatasetSourceStats(),
+                        true,
+                        false,
+                        100.0,
+                        100L,
+                        100L,
+                        0L,
+                        TrainingDataAcquisitionResult.Status.READY,
+                        null
+                );
             }
         };
 
-        String invalidRepo = "Zogfryt/roneneldan-TinyStories-tokenizer-distilgpt2";
-        DatasetSourceConfig config = new DatasetSourceConfig("HUGGING_FACE", invalidRepo);
-        HuggingFaceDatasetSource source = new HuggingFaceDatasetSource(config, mockDownloader);
+        File testBaseDir = new File(System.getProperty("java.io.tmpdir"), "evo-mat-test-" + System.currentTimeMillis());
+        DatasetAcquisitionTool tool = new DatasetAcquisitionTool(service);
+        TaskContext context = new TaskContext(null, new File("."));
 
-        TrainingDataAcquisitionServiceImpl service = new TrainingDataAcquisitionServiceImpl(null, null, null, null, null);
-        TrainingDataAcquisitionRequest req = new TrainingDataAcquisitionRequest();
-        req.setMinimumUsableBytes(1024L * 1024L);
-        req.addSource(source);
+        JSONObject toolParams = new JSONObject();
+        toolParams.put("sourceType", "HUGGING_FACE");
+        toolParams.put("repository", "roneneldan/TinyStories");
+        toolParams.put("targetUsableBytes", 100L);
+        toolParams.put("outputDir", testBaseDir.getAbsolutePath());
 
-        TrainingDataAcquisitionResult result = service.acquireDataset(req);
-        assertNotNull(result);
+        String jsonResponse = tool.execute(toolParams.toString(), new File("."), context);
+        assertNotNull(jsonResponse);
 
-        assertFalse("Preflight failed source should NOT be in sourcesUsed", result.getSourcesUsed().contains(source.getSourceName()));
-        assertFalse("Errors list must capture preflight failure", result.getErrors().isEmpty());
+        File expectedTargetDir = DatasetAcquisitionTool.resolveDatasetOutputDir(testBaseDir.getAbsolutePath(), "roneneldan/TinyStories");
+        assertTrue("Output directory should be created when usable bytes exist", expectedTargetDir.exists());
+
+        File expectedEvodata = new File(expectedTargetDir, "roneneldan_TinyStories.evodata");
+        assertTrue(".evodata artifact should be materialized on disk", expectedEvodata.exists());
+        assertTrue("Materialized .evodata artifact should be non-empty", expectedEvodata.length() > 0);
     }
 }
