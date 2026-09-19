@@ -6,6 +6,9 @@ public interface SupervisorLifecycle {
     TaskResult start(SelfDevContext context);
     TaskResult verifyReady(SelfDevContext context, long timeoutSeconds);
     TaskResult sendCommand(String command, String param);
+    default TaskResult sendCommand(SelfDevContext context, String command, String param) {
+        return sendCommand(command, param);
+    }
     TaskResult stop(SelfDevContext context);
     TaskResult runFullLifecycle(SelfDevContext context);
 }

@@ -46,7 +46,13 @@ public class DefaultSupervisorLifecycle extends AbstractSupervisorLifecycle {
 
     @Override
     public TaskResult sendCommand(String command, String param) {
-        return runtime.getClient().sendCommand(command, param);
+        return sendCommand(null, command, param);
+    }
+
+    @Override
+    public TaskResult sendCommand(SelfDevContext context, String command, String param) {
+        SupervisorClient activeClient = new SupervisorClient(context);
+        return activeClient.sendCommand(command, param);
     }
 
     @Override
@@ -69,7 +75,7 @@ public class DefaultSupervisorLifecycle extends AbstractSupervisorLifecycle {
         TaskResult startRes = start(context);
         if (!startRes.isSuccess()) return startRes;
 
-        TaskResult pingRes = sendCommand("ping", null);
+        TaskResult pingRes = sendCommand(context, "ping", null);
         if (!pingRes.isSuccess()) return pingRes;
 
         long duration = System.currentTimeMillis() - startTime;
