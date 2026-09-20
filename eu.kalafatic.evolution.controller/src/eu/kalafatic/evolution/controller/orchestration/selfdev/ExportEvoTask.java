@@ -13,10 +13,21 @@ public class ExportEvoTask extends AbstractSelfDevTask {
         if (context == null) {
             return TaskResult.failure(id, "SelfDevContext is null", null);
         }
+        java.io.File workDir = context.getPreparedReactorDirectory();
+        if (workDir == null || !workDir.exists() || !workDir.isDirectory()) {
+            return TaskResult.failure(id, "EXPORT_EVO pre-validation failed: prepared reactor directory does not exist at " + (workDir != null ? workDir.getAbsolutePath() : "null"), null);
+        }
+        java.io.File pomFile = new java.io.File(workDir, "pom.xml");
+        if (!pomFile.exists()) {
+            return TaskResult.failure(id, "EXPORT_EVO pre-validation failed: missing pom.xml in prepared reactor at " + workDir.getAbsolutePath(), null);
+        }
         java.io.File exportDir = context.getExportDirectory();
-        eu.kalafatic.evolution.controller.log.Log.log("[SELF-DEV][EXPORT]\nOUTPUT = " + (exportDir != null ? exportDir.getAbsolutePath() : "null"));
-        System.out.println("[SELF-DEV][EXPORT]\nOUTPUT = " + (exportDir != null ? exportDir.getAbsolutePath() : "null"));
-        return new TaskResult.Builder(id).status(TaskStatus.READY).message("Context valid for EVO export.").build();
+        if (exportDir == null) {
+            return TaskResult.failure(id, "EXPORT_EVO pre-validation failed: export directory in context is null", null);
+        }
+        eu.kalafatic.evolution.controller.log.Log.log("[SELF-DEV][EXPORT]\nOUTPUT = " + exportDir.getAbsolutePath());
+        System.out.println("[SELF-DEV][EXPORT]\nOUTPUT = " + exportDir.getAbsolutePath());
+        return new TaskResult.Builder(id).status(TaskStatus.READY).message("Context valid for EVO export at " + exportDir.getAbsolutePath()).workingDirectory(exportDir).build();
     }
 
     @Override

@@ -18,9 +18,21 @@ public class BuildEvoTask extends AbstractSelfDevTask {
             return TaskResult.failure(id, "SelfDevContext is null", null);
         }
         java.io.File workDir = context.getPreparedReactorDirectory();
-        eu.kalafatic.evolution.controller.log.Log.log("[SELF-DEV][BUILD]\nWORKDIR = " + (workDir != null ? workDir.getAbsolutePath() : "null"));
-        System.out.println("[SELF-DEV][BUILD]\nWORKDIR = " + (workDir != null ? workDir.getAbsolutePath() : "null"));
-        return new TaskResult.Builder(id).status(TaskStatus.READY).message("Context valid for EVO build.").build();
+        if (workDir == null || !workDir.exists() || !workDir.isDirectory()) {
+            return TaskResult.failure(id, "BUILD_EVO pre-validation failed: prepared reactor directory does not exist at " + (workDir != null ? workDir.getAbsolutePath() : "null"), null);
+        }
+        java.io.File pomFile = new java.io.File(workDir, "pom.xml");
+        if (!pomFile.exists()) {
+            return TaskResult.failure(id, "BUILD_EVO pre-validation failed: missing pom.xml in prepared reactor at " + workDir.getAbsolutePath(), null);
+        }
+        java.io.File sourceRepo = context.getRepositoryRoot();
+        if (sourceRepo != null && sourceRepo.exists() && workDir.getCanonicalFile().equals(sourceRepo.getCanonicalFile())) {
+            return TaskResult.failure(id, "BUILD_EVO pre-validation failed: prepared reactor (" + workDir.getAbsolutePath() + ") points to canonical Git repository root (" + sourceRepo.getAbsolutePath() + "). Direct build on Git root is forbidden.", null);
+        }
+
+        eu.kalafatic.evolution.controller.log.Log.log("[SELF-DEV][BUILD]\nWORKDIR = " + workDir.getAbsolutePath());
+        System.out.println("[SELF-DEV][BUILD]\nWORKDIR = " + workDir.getAbsolutePath());
+        return new TaskResult.Builder(id).status(TaskStatus.READY).message("Context valid for EVO build at " + workDir.getAbsolutePath()).workingDirectory(workDir).build();
     }
 
     @Override

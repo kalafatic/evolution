@@ -28,7 +28,7 @@ public class StartEvoTask extends AbstractSelfDevTask {
         if (artifact == null || artifact.getPath() == null || !artifact.getPath().exists()) {
             return TaskResult.failure(id, "StartEvoTask pre-validation failed: missing required EVO RCP build artifact in context.", null);
         }
-        return new TaskResult.Builder(id).status(TaskStatus.READY).message("EVO RCP artifact verified: " + artifact.getPath().getAbsolutePath()).build();
+        return new TaskResult.Builder(id).status(TaskStatus.READY).message("EVO RCP artifact verified: " + artifact.getPath().getAbsolutePath()).workingDirectory(runtimeDir).build();
     }
 
     @Override

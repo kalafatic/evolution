@@ -41,6 +41,8 @@ public class EvoRcpDeployer extends AbstractDeployer<BuildArtifact> {
                 copyDirectory(artifactFile, evoRuntimeSubDir);
             } else if (artifactFile.getName().endsWith(".zip")) {
                 unzip(artifactFile, evoRuntimeSubDir);
+            } else if (artifactFile.getName().endsWith(".tar.gz") || artifactFile.getName().endsWith(".tgz")) {
+                untar(artifactFile, evoRuntimeSubDir);
             } else {
                 File dest = new File(evoRuntimeSubDir, artifactFile.getName());
                 Files.copy(artifactFile.toPath(), dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
@@ -131,6 +133,15 @@ public class EvoRcpDeployer extends AbstractDeployer<BuildArtifact> {
                 throw new RuntimeException(e);
             }
         });
+    }
+
+    private void untar(File tarFile, File destDir) throws IOException, InterruptedException {
+        ProcessBuilder pb = new ProcessBuilder("tar", "-xzf", tarFile.getAbsolutePath(), "-C", destDir.getAbsolutePath());
+        Process p = pb.start();
+        int code = p.waitFor();
+        if (code != 0) {
+            throw new IOException("tar extraction failed with exit code: " + code);
+        }
     }
 
     private void unzip(File zipFile, File destDir) throws IOException {

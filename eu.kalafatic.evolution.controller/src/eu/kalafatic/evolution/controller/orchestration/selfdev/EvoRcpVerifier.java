@@ -5,6 +5,10 @@ import java.io.File;
 public class EvoRcpVerifier {
 
     public TaskResult verifyReady(Process process, File runtimeDir, long timeoutSeconds) {
+        return verifyReady(process, runtimeDir, null, timeoutSeconds);
+    }
+
+    public TaskResult verifyReady(Process process, File runtimeDir, File logDir, long timeoutSeconds) {
         long startTime = System.currentTimeMillis();
         long deadline = startTime + (timeoutSeconds * 1000);
 
@@ -18,7 +22,7 @@ public class EvoRcpVerifier {
                 return TaskResult.failure("evo_verifier", "EVO RCP process terminated unexpectedly during startup with exit code: " + exitCode, null);
             }
 
-            File logFile = findLatestLogFile(runtimeDir);
+            File logFile = findLatestLogFile(runtimeDir, logDir);
             if (logFile != null && logFile.exists()) {
                 if (containsReadyMarker(logFile)) {
                     long duration = System.currentTimeMillis() - startTime;
@@ -51,20 +55,29 @@ public class EvoRcpVerifier {
         return TaskResult.failure("evo_verifier", "Timed out waiting for EVO RCP process startup after " + timeoutSeconds + "s.", null);
     }
 
-    private File findLatestLogFile(File runtimeDir) {
+    private File findLatestLogFile(File runtimeDir, File logDir) {
+        if (logDir != null && logDir.exists()) {
+            File runtimeLog = new File(logDir, "evo_runtime.log");
+            if (runtimeLog.exists() && runtimeLog.length() > 0) return runtimeLog;
+        }
         if (runtimeDir == null || !runtimeDir.exists()) return null;
         File configuration = new File(runtimeDir, "configuration");
         if (configuration.exists()) {
             File[] logs = configuration.listFiles((dir, name) -> name.endsWith(".log"));
             if (logs != null && logs.length > 0) return logs[0];
         }
+        File runtimeLog = new File(runtimeDir, "evo_runtime.log");
+        if (runtimeLog.exists() && runtimeLog.length() > 0) return runtimeLog;
         return null;
     }
 
     private boolean containsReadyMarker(File logFile) {
         try {
             String content = java.nio.file.Files.readString(logFile.toPath());
-            return content.contains("Application READY") || content.contains("EVO Framework initialized") || content.contains("Framework Launched");
+            return content.contains("Application READY") ||
+                   content.contains("EVO Framework initialized") ||
+                   content.contains("Framework Launched") ||
+                   content.contains("Evolution background server started on port");
         } catch (Exception ignored) {
             return false;
         }
