@@ -11,10 +11,19 @@ import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Table;
+import org.eclipse.swt.widgets.TableColumn;
+import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 
 import eu.kalafatic.evolution.controller.manager.OrchestrationStatusManager;
+import eu.kalafatic.evolution.controller.orchestration.DatasetCandidateManager;
+import eu.kalafatic.evolution.controller.orchestration.ForgeSessionManager;
+import eu.kalafatic.evolution.forge.data.api.discovery.DatasetCandidate;
+import eu.kalafatic.evolution.forge.data.api.discovery.DatasetSearchRequest;
+import eu.kalafatic.evolution.forge.data.impl.discovery.HuggingFaceDatasetProvider;
+import eu.kalafatic.evolution.model.orchestration.ForgeSession;
 import eu.kalafatic.evolution.model.orchestration.Orchestrator;
 import eu.kalafatic.evolution.view.editors.MultiPageEditor;
 import eu.kalafatic.evolution.view.editors.pages.AEvoGroup;
@@ -27,11 +36,13 @@ import java.util.Locale;
 
 /**
  * Dataset Editor UI Panel on Forge Models / Properties Page for managing,
- * previewing, preparing, and exporting local and Hugging Face training datasets.
+ * previewing, preparing, exporting local and Hugging Face training datasets,
+ * and performing remote dataset candidate discovery.
  */
 public class DatasetEditorGroup extends AEvoGroup {
 
     private Combo sourceTypeCombo;
+    private Combo domainCombo;
     private Text repoText;
     private Text splitText;
     private Text maxSamplesText;
@@ -41,6 +52,9 @@ public class DatasetEditorGroup extends AEvoGroup {
     private Button cleanCheck;
     private Button deduplicateCheck;
     private Text reportArea;
+
+    private Table candidatesTable;
+    private List<DatasetCandidate> candidateList = new ArrayList<>();
 
     public DatasetEditorGroup(FormToolkit toolkit, Composite parent, MultiPageEditor editor, Orchestrator orchestrator) {
         super(editor, orchestrator);
@@ -68,7 +82,7 @@ public class DatasetEditorGroup extends AEvoGroup {
         });
 
         GUIFactory.INSTANCE.createLabel(group, "WHAT (Schema / Domain):");
-        Combo domainCombo = new Combo(group, SWT.DROP_DOWN | SWT.READ_ONLY);
+        domainCombo = new Combo(group, SWT.DROP_DOWN | SWT.READ_ONLY);
         domainCombo.setItems(new String[] { "General Text Corpus (Unstructured)", "Instruction Tuning & QA Pairs", "Source Code & Repositories", "Reasoning & Step-by-Step Proofs" });
         domainCombo.select(0);
         domainCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
@@ -164,10 +178,18 @@ public class DatasetEditorGroup extends AEvoGroup {
         deduplicateCheck.setSelection(true);
 
         Composite btnBar = toolkit.createComposite(group);
-        btnBar.setLayout(new GridLayout(6, false));
+        btnBar.setLayout(new GridLayout(7, false));
         GridData gdBtn = new GridData(SWT.FILL, SWT.CENTER, true, false);
         gdBtn.horizontalSpan = 2;
         btnBar.setLayoutData(gdBtn);
+
+        Button discoverBtn = GUIFactory.INSTANCE.createButton(btnBar, "Discover Datasets");
+        discoverBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                handleDiscoverDatasets();
+            }
+        });
 
         Button downloadBtn = GUIFactory.INSTANCE.createButton(btnBar, "Download Dataset");
         downloadBtn.addSelectionListener(new SelectionAdapter() {
@@ -217,7 +239,93 @@ public class DatasetEditorGroup extends AEvoGroup {
             }
         });
 
-        Label infoDescLabel = toolkit.createLabel(group, "Usage Info: .evodata files (e.g., wikitext.evodata) package cleaned, deduplicated, and tokenized training/validation splits with metadata. The Forge Trainer ingests .evodata artifacts directly for offline or fine-tuning forging runs.");
+        // SECTION: Discovered Remote Dataset Candidates SWT Table
+        Composite candGroup = GUIFactory.INSTANCE.createExpandableGroup(toolkit, group, "Discovered Remote Dataset Candidates (EMF Persisted)", 2, true, true);
+        GridData gdCandGroup = new GridData(GridData.FILL_HORIZONTAL);
+        gdCandGroup.horizontalSpan = 2;
+        candGroup.setLayoutData(gdCandGroup);
+
+        candidatesTable = new Table(candGroup, SWT.BORDER | SWT.FULL_SELECTION | SWT.MULTI);
+        candidatesTable.setHeaderVisible(true);
+        candidatesTable.setLinesVisible(true);
+        GridData gdCandTable = new GridData(SWT.FILL, SWT.FILL, true, true);
+        gdCandTable.heightHint = 130;
+        candidatesTable.setLayoutData(gdCandTable);
+
+        TableColumn colProvider = new TableColumn(candidatesTable, SWT.LEFT);
+        colProvider.setText("Provider");
+        colProvider.setWidth(85);
+
+        TableColumn colRepo = new TableColumn(candidatesTable, SWT.LEFT);
+        colRepo.setText("Dataset Repository ID");
+        colRepo.setWidth(210);
+
+        TableColumn colTask = new TableColumn(candidatesTable, SWT.LEFT);
+        colTask.setText("Task / Domain");
+        colTask.setWidth(110);
+
+        TableColumn colLang = new TableColumn(candidatesTable, SWT.LEFT);
+        colLang.setText("Lang");
+        colLang.setWidth(45);
+
+        TableColumn colFormat = new TableColumn(candidatesTable, SWT.LEFT);
+        colFormat.setText("Format");
+        colFormat.setWidth(95);
+
+        TableColumn colSize = new TableColumn(candidatesTable, SWT.LEFT);
+        colSize.setText("Size");
+        colSize.setWidth(80);
+
+        TableColumn colSplit = new TableColumn(candidatesTable, SWT.LEFT);
+        colSplit.setText("Splits");
+        colSplit.setWidth(60);
+
+        TableColumn colCompat = new TableColumn(candidatesTable, SWT.CENTER);
+        colCompat.setText("Compat.");
+        colCompat.setWidth(65);
+
+        TableColumn colStatus = new TableColumn(candidatesTable, SWT.LEFT);
+        colStatus.setText("Status");
+        colStatus.setWidth(80);
+
+        Composite candBtnComp = toolkit.createComposite(candGroup);
+        candBtnComp.setLayoutData(new GridData(SWT.FILL, SWT.TOP, false, false));
+        candBtnComp.setLayout(new GridLayout(1, true));
+
+        Button useAsSourceBtn = GUIFactory.INSTANCE.createButton(candBtnComp, "Use as Dataset Source");
+        Button viewCompatBtn = GUIFactory.INSTANCE.createButton(candBtnComp, "View Compatibility");
+        Button removeCandBtn = GUIFactory.INSTANCE.createButton(candBtnComp, "Remove Candidate");
+        Button clearCandBtn = GUIFactory.INSTANCE.createButton(candBtnComp, "Clear All");
+
+        useAsSourceBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                handleUseCandidateAsSource();
+            }
+        });
+
+        viewCompatBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                handleViewCandidateCompatibility();
+            }
+        });
+
+        removeCandBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                handleRemoveCandidate();
+            }
+        });
+
+        clearCandBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                handleClearCandidates();
+            }
+        });
+
+        Label infoDescLabel = toolkit.createLabel(group, "Usage Info: Discovered dataset candidates are evaluated for technical compatibility against requested dataset parameters, displayed above, and persisted in EMF. Discovered candidates serve as fallback candidates if primary dataset acquisition fails.");
         GridData gdInfo = new GridData(GridData.FILL_HORIZONTAL);
         gdInfo.horizontalSpan = 2;
         infoDescLabel.setLayoutData(gdInfo);
@@ -250,6 +358,183 @@ public class DatasetEditorGroup extends AEvoGroup {
         gdArea.horizontalSpan = 2;
         gdArea.heightHint = 120;
         reportArea.setLayoutData(gdArea);
+
+        refreshCandidatesTableFromEmf();
+    }
+
+    private void handleDiscoverDatasets() {
+        String repo = repoText.getText().trim();
+        String domain = domainCombo != null ? domainCombo.getText().trim() : "General Text";
+        String split = splitText.getText().trim();
+        String sizeMbStr = maxSizeMbText.getText().trim();
+        long targetBytes = 50 * 1024 * 1024L;
+        try {
+            targetBytes = Long.parseLong(sizeMbStr) * 1024L * 1024L;
+        } catch (Exception ignored) {}
+
+        String task = switch (domainCombo.getSelectionIndex()) {
+            case 1 -> "INSTRUCTION";
+            case 2 -> "CODE";
+            case 3 -> "REASONING";
+            default -> "GENERAL_TEXT";
+        };
+
+        List<String> requiredFields = "INSTRUCTION".equals(task) ? List.of("instruction", "input", "output") : List.of("text");
+
+        DatasetSearchRequest request = new DatasetSearchRequest.Builder()
+                .datasetName(repo)
+                .task(task)
+                .domain(domain)
+                .language("en")
+                .format(task)
+                .requiredFields(requiredFields)
+                .preferredSplit(split.isEmpty() ? "train" : split)
+                .minimumSizeBytes(targetBytes / 5)
+                .targetSizeBytes(targetBytes)
+                .limit(20)
+                .build();
+
+        reportArea.setText("Searching remote dataset providers (Hugging Face) for compatible datasets matching:\n" +
+                "- Requested Task: " + task + "\n" +
+                "- Domain: " + domain + "\n" +
+                "- Target Size: " + sizeMbStr + " MB\n" +
+                "- Preferred Split: " + request.getPreferredSplit() + "\n\nSearching...\n");
+
+        new Thread(() -> {
+            try {
+                HuggingFaceDatasetProvider provider = new HuggingFaceDatasetProvider();
+                List<DatasetCandidate> discovered = provider.search(request);
+
+                ForgeSession activeSession = ForgeSessionManager.getInstance().findSession("Active Forge Session");
+                DatasetCandidateManager.getInstance().addCandidates(activeSession, discovered);
+
+                Display.getDefault().asyncExec(() -> {
+                    if (!reportArea.isDisposed()) {
+                        refreshCandidatesTableFromEmf();
+
+                        StringBuilder sb = new StringBuilder();
+                        sb.append("REMOTE DATASET DISCOVERY COMPLETED:\n");
+                        sb.append("- Discovered & Evaluated Candidates: ").append(discovered.size()).append("\n");
+                        sb.append("- Saved to EMF Persistence Session: ").append(activeSession != null ? activeSession.getSessionId() : "Active").append("\n\n");
+                        for (int i = 0; i < Math.min(10, discovered.size()); i++) {
+                            DatasetCandidate c = discovered.get(i);
+                            double mb = c.getSizeBytes() / (1024.0 * 1024.0);
+                            sb.append(String.format(Locale.US, "#%d %-25s | Compat: %3d%% | Size: %6.1f MB | Status: %s\n",
+                                    (i + 1), c.getRepository(), c.getCompatibilityScore(), mb, c.getStatus()));
+                        }
+                        reportArea.setText(sb.toString());
+
+                        MessageDialog.openInformation(group.getShell(), "Dataset Discovery Complete",
+                                "Discovered " + discovered.size() + " compatible remote dataset candidates!\nResults evaluated and persisted in EMF.");
+                    }
+                });
+            } catch (Exception ex) {
+                Display.getDefault().asyncExec(() -> {
+                    if (!reportArea.isDisposed()) {
+                        reportArea.setText("Discovery Error: " + ex.getMessage());
+                        MessageDialog.openError(group.getShell(), "Dataset Discovery Error", "Failed to discover remote datasets: " + ex.getMessage());
+                    }
+                });
+            }
+        }).start();
+    }
+
+    private void handleUseCandidateAsSource() {
+        int idx = candidatesTable.getSelectionIndex();
+        if (idx >= 0 && idx < candidateList.size()) {
+            DatasetCandidate cand = candidateList.get(idx);
+            repoText.setText(cand.getRepository());
+            if (!cand.getSplits().isEmpty()) {
+                splitText.setText(cand.getSplits().get(0));
+            }
+            if (cand.getSizeBytes() > 0) {
+                double mb = cand.getSizeBytes() / (1024.0 * 1024.0);
+                maxSizeMbText.setText(String.format(Locale.US, "%.2f", mb));
+            }
+            sourceTypeCombo.select(0); // Hugging Face Hub
+            reportArea.setText("ACTIVE DATASET SOURCE UPDATED:\n" +
+                    "- Selected Repository: " + cand.getRepository() + "\n" +
+                    "- Technical Compatibility Score: " + cand.getCompatibilityScore() + "%\n" +
+                    "- Provider: " + cand.getProvider() + "\n" +
+                    "- Format: " + cand.getFormat() + "\n");
+            MessageDialog.openInformation(group.getShell(), "Dataset Source Selected",
+                    "Selected candidate '" + cand.getRepository() + "' as active Forge dataset source!");
+        } else {
+            MessageDialog.openWarning(group.getShell(), "No Candidate Selected", "Please select a candidate in the table first.");
+        }
+    }
+
+    private void handleViewCandidateCompatibility() {
+        int idx = candidatesTable.getSelectionIndex();
+        if (idx >= 0 && idx < candidateList.size()) {
+            DatasetCandidate cand = candidateList.get(idx);
+            StringBuilder sb = new StringBuilder();
+            sb.append("CANDIDATE COMPATIBILITY REPORT:\n\n");
+            sb.append("Dataset: ").append(cand.getRepository()).append("\n");
+            sb.append("Provider: ").append(cand.getProvider()).append("\n");
+            sb.append("Technical Score: ").append(cand.getCompatibilityScore()).append("/100\n");
+            sb.append("Status: ").append(cand.getStatus()).append("\n\n");
+
+            sb.append("POSITIVE MATCH REASONS (+):\n");
+            if (cand.getCompatibilityReasons().isEmpty()) {
+                sb.append("  (None listed)\n");
+            } else {
+                for (String r : cand.getCompatibilityReasons()) {
+                    sb.append("  ").append(r).append("\n");
+                }
+            }
+
+            sb.append("\nWARNINGS & SHORTFALLS (-):\n");
+            if (cand.getCompatibilityWarnings().isEmpty()) {
+                sb.append("  (No warnings)\n");
+            } else {
+                for (String w : cand.getCompatibilityWarnings()) {
+                    sb.append("  ").append(w).append("\n");
+                }
+            }
+
+            MessageDialog.openInformation(group.getShell(), "Candidate Compatibility Details", sb.toString());
+        } else {
+            MessageDialog.openWarning(group.getShell(), "No Candidate Selected", "Please select a candidate in the table first.");
+        }
+    }
+
+    private void handleRemoveCandidate() {
+        int idx = candidatesTable.getSelectionIndex();
+        if (idx >= 0 && idx < candidateList.size()) {
+            DatasetCandidate cand = candidateList.remove(idx);
+            ForgeSession activeSession = ForgeSessionManager.getInstance().findSession("Active Forge Session");
+            DatasetCandidateManager.getInstance().removeCandidate(activeSession, cand.getId());
+            refreshCandidatesTableFromEmf();
+        }
+    }
+
+    private void handleClearCandidates() {
+        ForgeSession activeSession = ForgeSessionManager.getInstance().findSession("Active Forge Session");
+        DatasetCandidateManager.getInstance().clearCandidates(activeSession);
+        refreshCandidatesTableFromEmf();
+    }
+
+    private void refreshCandidatesTableFromEmf() {
+        if (candidatesTable == null || candidatesTable.isDisposed()) return;
+        candidatesTable.removeAll();
+        ForgeSession activeSession = ForgeSessionManager.getInstance().findSession("Active Forge Session");
+        candidateList = DatasetCandidateManager.getInstance().getCandidates(activeSession);
+
+        for (DatasetCandidate cand : candidateList) {
+            TableItem item = new TableItem(candidatesTable, SWT.NONE);
+            item.setText(0, cand.getProvider());
+            item.setText(1, cand.getRepository());
+            item.setText(2, cand.getTask());
+            item.setText(3, cand.getLanguage());
+            item.setText(4, cand.getFormat());
+            double mb = cand.getSizeBytes() / (1024.0 * 1024.0);
+            item.setText(5, cand.getSizeBytes() > 0 ? String.format(Locale.US, "%.1f MB", mb) : "Stream");
+            item.setText(6, cand.getSplits().isEmpty() ? "train" : String.join(",", cand.getSplits()));
+            item.setText(7, cand.getCompatibilityScore() + "%");
+            item.setText(8, cand.getStatus());
+            item.setData(cand);
+        }
     }
 
     private int getServerPort() {
