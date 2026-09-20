@@ -60,6 +60,13 @@ public class EvoRcpRuntime implements ProcessLifecycle {
         command.add(executable.getAbsolutePath());
         int effectiveServerPort = context.getEffectiveServerPort();
         command.add("--port=" + effectiveServerPort);
+        command.add("--mode=SELF_DEV");
+        File runtimeWs = new File(context.getRuntimeDirectory(), "workspace");
+        if (!runtimeWs.exists()) {
+            runtimeWs.mkdirs();
+        }
+        command.add("-data");
+        command.add(runtimeWs.getAbsolutePath());
         if (context.isDebugMode()) {
             command.add("-debug");
             command.add("-consoleLog");
@@ -108,7 +115,8 @@ public class EvoRcpRuntime implements ProcessLifecycle {
             return TaskResult.failure("verify_evo_rcp", "EVO RCP process is not running", null);
         }
         File evoRuntimeDir = new File(context.getRuntimeDirectory(), "evo");
-        return verifier.verifyReady(evoProcess, evoRuntimeDir, timeoutSeconds);
+        File logDir = context != null ? context.getLogDirectory() : null;
+        return verifier.verifyReady(evoProcess, evoRuntimeDir, logDir, timeoutSeconds);
     }
 
     @Override
